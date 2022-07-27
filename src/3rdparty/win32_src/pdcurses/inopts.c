@@ -29,6 +29,8 @@ inopts
     void timeout(int delay);
     void wtimeout(WINDOW *win, int delay);
     int typeahead(int fildes);
+    bool PDC_getcbreak(void);
+    bool PDC_getecho(void);
 
     int crmode(void);
     int nocrmode(void);
@@ -47,6 +49,9 @@ inopts
    echo() and noecho() control whether typed characters are echoed by
    the input routine. Initially, input characters are echoed. Subsequent
    calls to echo() and noecho() do not flush type-ahead.
+
+   PDC_getcbreak() and PDC_getecho() return the current cbreak and echo
+   states.
 
    halfdelay() is similar to cbreak(), but allows for a time limit to be
    specified, in tenths of a second. This causes getch() to block for
@@ -104,6 +109,8 @@ inopts
     nocbreak                    Y       Y       Y
     echo                        Y       Y       Y
     noecho                      Y       Y       Y
+    PDC_getcbreak               -       -       -
+    PDC_getecho                 -       -       -
     halfdelay                   Y       Y       Y
     intrflush                   Y       Y       Y
     keypad                      Y       Y       Y
@@ -152,6 +159,14 @@ int nocbreak(void)
     return OK;
 }
 
+bool PDC_getcbreak(void)
+{
+    PDC_LOG(("PDC_getcbreak() - called\n"));
+
+    assert( SP);
+    return( SP->cbreak);
+}
+
 int echo(void)
 {
     PDC_LOG(("echo() - called\n"));
@@ -178,6 +193,14 @@ int noecho(void)
     return OK;
 }
 
+bool PDC_getecho(void)
+{
+    PDC_LOG(("PDC_getecho() - called\n"));
+
+    assert( SP);
+    return( SP->echo);
+}
+
 int halfdelay(int tenths)
 {
     PDC_LOG(("halfdelay() - called\n"));
@@ -195,6 +218,8 @@ int intrflush(WINDOW *win, bool bf)
 {
     PDC_LOG(("intrflush() - called\n"));
 
+    INTENTIONALLY_UNUSED_PARAMETER( win);
+    INTENTIONALLY_UNUSED_PARAMETER( bf);
     return OK;
 }
 
@@ -202,6 +227,7 @@ int keypad(WINDOW *win, bool bf)
 {
     PDC_LOG(("keypad() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -214,6 +240,7 @@ int meta(WINDOW *win, bool bf)
 {
     PDC_LOG(("meta() - called\n"));
 
+    INTENTIONALLY_UNUSED_PARAMETER( win);
     assert( SP);
     if (!SP)
         return ERR;
@@ -253,6 +280,7 @@ int nodelay(WINDOW *win, bool flag)
 {
     PDC_LOG(("nodelay() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -265,6 +293,8 @@ int notimeout(WINDOW *win, bool flag)
 {
     PDC_LOG(("notimeout() - called\n"));
 
+    INTENTIONALLY_UNUSED_PARAMETER( win);
+    INTENTIONALLY_UNUSED_PARAMETER( flag);
     return OK;
 }
 
@@ -308,6 +338,7 @@ void qiflush(void)
 
 int typeahead(int fildes)
 {
+    INTENTIONALLY_UNUSED_PARAMETER( fildes);
     PDC_LOG(("typeahead() - called\n"));
 
     return OK;
@@ -317,6 +348,7 @@ void wtimeout(WINDOW *win, int delay)
 {
     PDC_LOG(("wtimeout() - called\n"));
 
+    assert( win);
     if (!win)
         return;
 
@@ -372,6 +404,7 @@ bool is_keypad(const WINDOW *win)
 {
     PDC_LOG(("is_keypad() - called\n"));
 
+    assert( win);
     if (!win)
         return FALSE;
 

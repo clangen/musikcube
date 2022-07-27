@@ -55,6 +55,7 @@ int flash(void)
 
     PDC_LOG(("flash() - called\n"));
 
+    assert( curscr);
     if (!curscr)
         return ERR;
 

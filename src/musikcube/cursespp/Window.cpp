@@ -105,6 +105,7 @@ static inline void DrawCursor(IInput* input) {
                 const int targetY = 0;
                 const int targetX = (int) input->Position();
                 wmove(content, targetY, targetX);
+                wnoutrefresh(content);
             }
             return;
         }
@@ -131,8 +132,8 @@ bool Window::WriteToScreen(IInput* input) {
     if (drawPending && !freeze) {
         drawPending = false;
         update_panels();
-        doupdate();
         DrawCursor(input);
+        doupdate();
         return true;
     }
     else if (freeze) {

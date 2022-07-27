@@ -14,9 +14,6 @@ HANDLE pdc_con_in = INVALID_HANDLE_VALUE;
 
 DWORD pdc_quick_edit;
 
-/* special purpose function keys */
-static int PDC_shutdown_key[PDC_MAX_FUNCTION_KEYS] = { 0, 0, 0, 0, 0 };
-
 static short realtocurs[16] =
 {
     COLOR_BLACK, COLOR_BLUE, COLOR_GREEN, COLOR_CYAN, COLOR_RED,
@@ -35,7 +32,7 @@ static short ansitocurs[16] =
 
 short pdc_curstoreal[16], pdc_curstoansi[16];
 short pdc_oldf, pdc_oldb, pdc_oldu;
-bool pdc_conemu, pdc_ansi;
+bool pdc_conemu, pdc_wt, pdc_ansi;
 
 enum { PDC_RESTORE_NONE, PDC_RESTORE_BUFFER };
 
@@ -107,7 +104,15 @@ static LPTOP_LEVEL_EXCEPTION_FILTER xcpt_filter;
 
 static DWORD old_console_mode = 0;
 
-static bool is_nt;
+/* MSVC++ 7.1 was the last version to support Win95/98/ME.  If we're
+on any MSVC after that (_MSC_VER > 1310),  is_nt is going to be true
+no matter what.  */
+
+#if defined(_MSC_VER) && _MSC_VER > 1310
+   const bool is_nt = TRUE;
+#else
+   static bool is_nt;
+#endif
 
 static void _reset_old_colors(void)
 {
@@ -319,6 +324,7 @@ static LONG WINAPI _restore_console(LPEXCEPTION_POINTERS ep)
 {
     PDC_scr_close();
 
+    INTENTIONALLY_UNUSED_PARAMETER( ep);
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
@@ -387,8 +393,8 @@ int PDC_scr_open(void)
 
     for (i = 0; i < 16; i++)
     {
-        pdc_curstoreal[realtocurs[i]] = i;
-        pdc_curstoansi[ansitocurs[i]] = i;
+        pdc_curstoreal[realtocurs[i]] = (short)i;
+        pdc_curstoansi[ansitocurs[i]] = (short)i;
     }
     _reset_old_colors();
 
@@ -402,11 +408,18 @@ int PDC_scr_open(void)
         exit(1);
     }
 
+#if !defined(_MSC_VER) || _MSC_VER <= 1310
     is_nt = !(GetVersion() & 0x80000000);
+#endif
 
-    str = getenv("ConEmuANSI");
+    pdc_wt = !!getenv("WT_SESSION");
+    str = pdc_wt ? NULL : getenv("ConEmuANSI");
     pdc_conemu = !!str;
-    pdc_ansi = pdc_conemu ? !strcmp(str, "ON") : FALSE;
+    pdc_ansi =
+#ifdef PDC_WIDE
+        pdc_wt ? TRUE :
+#endif
+        pdc_conemu ? !strcmp(str, "ON") : FALSE;
 
     GetConsoleScreenBufferInfo(pdc_con_out, &csbi);
     GetConsoleScreenBufferInfo(pdc_con_out, &orig_scr);
@@ -462,6 +475,7 @@ int PDC_scr_open(void)
         SP->termattrs |= A_UNDERLINE | A_LEFT | A_RIGHT;
 
     PDC_reset_prog_mode();
+    PDC_set_function_key( FUNCTION_KEY_COPY, 0);
 
     SP->mono = FALSE;
 
@@ -518,8 +532,12 @@ int PDC_resize_screen(int nlines, int ncols)
 {
     SMALL_RECT rect;
     COORD size, max;
+    const bool prog_resize = nlines || ncols;
 
-    bool prog_resize = nlines || ncols;
+    if( !stdscr)     /* We're trying to specify an initial screen size */
+    {                /* before calling initscr().  This works on some  */
+        return OK;   /* some platforms,  but not on this one (yet).    */
+    }
 
     if (!prog_resize)
     {
@@ -533,12 +551,12 @@ int PDC_resize_screen(int nlines, int ncols)
     max = GetLargestConsoleWindowSize(pdc_con_out);
 
     rect.Left = rect.Top = 0;
-    rect.Right = ncols - 1;
+    rect.Right = (SHORT)ncols - 1;
 
     if (rect.Right > max.X)
         rect.Right = max.X;
 
-    rect.Bottom = nlines - 1;
+    rect.Bottom = (SHORT)nlines - 1;
 
     if (rect.Bottom > max.Y)
         rect.Bottom = max.Y;
@@ -608,10 +626,12 @@ void PDC_reset_shell_mode(void)
 
 void PDC_restore_screen_mode(int i)
 {
+    INTENTIONALLY_UNUSED_PARAMETER( i);
 }
 
 void PDC_save_screen_mode(int i)
 {
+    INTENTIONALLY_UNUSED_PARAMETER( i);
 }
 
 bool PDC_can_change_color(void)
@@ -621,7 +641,7 @@ bool PDC_can_change_color(void)
 
 int PDC_color_content(int color, int *red, int *green, int *blue)
 {
-    if (color < 16 && !pdc_conemu)
+    if (color < 16 && !(pdc_conemu || pdc_wt))
     {
         COLORREF *color_table = _get_colors();
 
@@ -660,7 +680,7 @@ int PDC_init_color(int color, int red, int green, int blue)
         return OK;
     }
 
-    if (color < 16 && !pdc_conemu)
+    if (color < 16 && !(pdc_conemu || pdc_wt))
     {
         COLORREF *color_table = _get_colors();
 
@@ -678,9 +698,9 @@ int PDC_init_color(int color, int red, int green, int blue)
     }
     else
     {
-        pdc_color[color].r = red;
-        pdc_color[color].g = green;
-        pdc_color[color].b = blue;
+        pdc_color[color].r = (short)red;
+        pdc_color[color].g = (short)green;
+        pdc_color[color].b = (short)blue;
         pdc_color[color].mapped = TRUE;
     }
 
@@ -693,17 +713,12 @@ without this,  we get an unresolved external... */
 void PDC_set_resize_limits( const int new_min_lines, const int new_max_lines,
                   const int new_min_cols, const int new_max_cols)
 {
+    INTENTIONALLY_UNUSED_PARAMETER( new_min_lines);
+    INTENTIONALLY_UNUSED_PARAMETER( new_max_lines);
+    INTENTIONALLY_UNUSED_PARAMETER( new_min_cols);
+    INTENTIONALLY_UNUSED_PARAMETER( new_max_cols);
 }
 
-/* PDC_set_function_key() does nothing on this platform */
-int PDC_set_function_key( const unsigned function, const int new_key)
+void PDC_free_platform_dependent_memory( void)
 {
-    int old_key = -1;
-
-    if( function < PDC_MAX_FUNCTION_KEYS)
-    {
-         old_key = PDC_shutdown_key[function];
-         PDC_shutdown_key[function] = new_key;
-    }
-    return( old_key);
 }

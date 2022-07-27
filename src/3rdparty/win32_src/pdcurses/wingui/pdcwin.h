@@ -2,6 +2,14 @@
 
 /* $Id: pdcwin.h,v 1.6 2008/07/13 06:36:32 wmcbrine Exp $ */
 
+#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
+# define _CRT_SECURE_NO_DEPRECATE 1   /* kill nonsense warnings */
+#endif
+
+#if defined( PDC_FORCE_UTF8) && !defined( PDC_WIDE)
+   #define PDC_WIDE
+#endif
+
 #ifdef PDC_WIDE
    #if !defined( UNICODE)
       # define UNICODE
@@ -9,10 +17,6 @@
    #if !defined( _UNICODE)
       # define _UNICODE
    #endif
-#endif
-
-#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
-# define _CRT_SECURE_NO_DEPRECATE 1   /* kill nonsense warnings */
 #endif
 
 #define WIN32_LEAN_AND_MEAN
@@ -79,49 +83,3 @@ the PDC_CURSOR macro for this,  as in...
 #define PDC_CURSOR( A, B) ((A)<<8 | (B))
 #define PDC_CURSOR_IS_BLINKING    \
           ((SP->visibility >> 8) != (SP->visibility & 0xff))
-
-/* With 64-bit chtypes,  we're allowing 20 bits for the character
-(thus Unicode values up to 0xffffff) plus one bit to indicate the
-alternate character set.  With 32-bit chtypes,  we don't have so
-many bits to play with and limit ourselves to 16-bit characters
-(i.e.,  Unicode past 0xffff can't be shown),  plus that one bit
-for alternate chars.  With 16-bit chtypes,  there are only eight
-bits available to the character.  PDC_REAL_ATTR_SHIFT gives the
-number of low bits devoted to storing characters. */
-
-# ifdef CHTYPE_32
-    # define PDC_REAL_ATTR_SHIFT  17
-#else          /* 64-bit chtypes */
-    # define PDC_REAL_ATTR_SHIFT  21
-#endif
-
- /* The PDC_set_function_key() function allows one to set a 'shut down'
-key,  and reassign hotkeys used for pasting from the clipboard and
-enlarging and decreasing the font size,  and for using the font selection
-dialog.  For example, calling
-
-PDC_set_function_key( FUNCTION_KEY_SHUT_DOWN, ALT_Q);
-
-would reset the library so that,  if the user clicks on the 'close' box,
-Alt-Q would be added to the key queue.  This would give the app the
-opportunity to shut things down (and perhaps ask "are you sure",  and/or
-"save changes or discard or cancel"),  rather than just having the
-window close (the default behavior).
-
-   Also,  by default,  Ctrl-V "pastes" the clipboard into the key queue,
-and Ctrl-Equals brings up the font selection dialog.  But one could
-call,  for example,
-
-PDC_set_function_key( FUNCTION_KEY_PASTE, CTL_Z);
-
-   to reset the "paste" key to be Ctrl-Z.  Or one could call
-
-PDC_set_function_key( FUNCTION_KEY_PASTE, 0);
-
-   to shut off that function.  (It would still be accessible from the menu.)
-
-   Thus far,  this is a WinGUI-flavor specific function.  But it could,  and
-in my opinion should,  be made available in the SDL and XCurses flavors too.
-
-   The return value is the key previously used for that function.
-*/

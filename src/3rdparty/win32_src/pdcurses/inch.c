@@ -1,5 +1,6 @@
 /* PDCurses */
 
+#include <assert.h>
 #include <curspriv.h>
 
 /*man-start**************************************************************
@@ -47,6 +48,7 @@ chtype winch(WINDOW *win)
 {
     PDC_LOG(("winch() - called\n"));
 
+    assert( win);
     if (!win)
         return (chtype)ERR;
 
@@ -85,6 +87,8 @@ int win_wch(WINDOW *win, cchar_t *wcval)
 {
     PDC_LOG(("win_wch() - called\n"));
 
+    assert( win);
+    assert( wcval);
     if (!win || !wcval)
         return ERR;
 
@@ -104,6 +108,7 @@ int mvin_wch(int y, int x, cchar_t *wcval)
 {
     PDC_LOG(("mvin_wch() - called\n"));
 
+    assert( wcval);
     if (!wcval || (move(y, x) == ERR))
         return ERR;
 
@@ -116,6 +121,7 @@ int mvwin_wch(WINDOW *win, int y, int x, cchar_t *wcval)
 {
     PDC_LOG(("mvwin_wch() - called\n"));
 
+    assert( wcval);
     if (!wcval || (wmove(win, y, x) == ERR))
         return ERR;
 

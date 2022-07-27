@@ -4,6 +4,7 @@
 * fixed PulseAudio compile issue.
 * fixed `musikdroid` app notification on Android 13 devices.
 * updated `musikdroid` dependencies and tooling, fixed a few warnings.
+* merged latest upstream `PDCurses` code for Windows builds.
 
 --------------------------------------------------------------------------------
 

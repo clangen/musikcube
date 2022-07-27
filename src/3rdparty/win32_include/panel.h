@@ -40,6 +40,8 @@ PDCEX int     move_panel(PANEL *pan, int starty, int startx);
 PDCEX PANEL  *new_panel(WINDOW *win);
 PDCEX PANEL  *panel_above(const PANEL *pan);
 PDCEX PANEL  *panel_below(const PANEL *pan);
+PDCEX PANEL  *ground_panel(SCREEN *sp);
+PDCEX PANEL  *ceiling_panel(SCREEN *sp);
 PDCEX int     panel_hidden(const PANEL *pan);
 PDCEX const void *panel_userptr(const PANEL *pan);
 PDCEX WINDOW *panel_window(const PANEL *pan);
