@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -45,6 +46,7 @@ int wscrl(WINDOW *win, int n)
 
     /* Check if window scrolls. Valid for window AND pad */
 
+    assert( win);
     if (!win || !win->_scroll || !n)
         return ERR;
 

@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.ui.settings.activity
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -80,10 +81,8 @@ class RemoteSettingsActivity: BaseActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        menu?.findItem(R.id.action_save)?.isEnabled =
-            viewModel.state == ViewModelState.Ready
-
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.action_save)?.isEnabled =  viewModel.state == ViewModelState.Ready
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -139,6 +138,7 @@ class RemoteSettingsActivity: BaseActivity() {
         viewModel.save(replayGainMode, preampGain, transport, driverName, deviceId)
     }
 
+    @SuppressLint("CheckResult")
     private fun initListeners() {
         /* metadata */
         reindexButton.setOnClickListener {

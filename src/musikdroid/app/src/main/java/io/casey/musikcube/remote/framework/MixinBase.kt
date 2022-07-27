@@ -1,9 +1,8 @@
 package io.casey.musikcube.remote.framework
 
-import android.content.Intent
 import android.os.Bundle
 
-abstract class MixinBase : IMixin {
+abstract class MixinBase: IMixin {
     enum class State {
         Unknown, Created, Started, Resumed, Paused, Stopped, Destroyed
     }
@@ -32,9 +31,6 @@ abstract class MixinBase : IMixin {
 
     override fun onStop() {
         state = State.Stopped
-    }
-
-    override fun onActivityResult(request: Int, result: Int, data: Intent?) {
     }
 
     override fun onSaveInstanceState(bundle: Bundle) {

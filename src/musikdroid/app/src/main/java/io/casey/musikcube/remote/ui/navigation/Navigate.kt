@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.ui.navigation
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.util.Pair
@@ -21,7 +22,10 @@ import io.casey.musikcube.remote.ui.download.activity.TrackDownloadActivity
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
 import io.casey.musikcube.remote.ui.playqueue.fragment.PlayQueueFragment
-import io.casey.musikcube.remote.ui.shared.extension.*
+import io.casey.musikcube.remote.ui.shared.extension.pushContainerId
+import io.casey.musikcube.remote.ui.shared.extension.pushWithToolbar
+import io.casey.musikcube.remote.ui.shared.extension.withTransitionType
+import io.casey.musikcube.remote.ui.shared.extension.withoutTransport
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.tracks.activity.EditPlaylistActivity
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
@@ -146,28 +150,22 @@ object Navigate {
      *
      */
 
-    fun toPlaylistChooser(requestCode: Int,
-                          activity: AppCompatActivity,
-                          fragment: BaseFragment? = null) =
-        CategoryBrowseActivity.getStartIntent(
+    fun toPlaylistChooser(launcher: ActivityResultLauncher<Intent>,
+                          activity: AppCompatActivity) =
+        launcher.launch(
+            CategoryBrowseActivity.getStartIntent(
                 activity,
                 Metadata.Category.PLAYLISTS,
                 NavigationType.Select,
                 activity.getString(R.string.playlist_edit_pick_playlist))
             .withoutTransport()
-            .withTransitionType(Transition.Vertical)
-            .apply {
-                startActivityForResult(this, requestCode, activity, fragment)
-            }
+            .withTransitionType(Transition.Vertical))
 
-    fun toPlaylistEditor(requestCode: Int,
+    fun toPlaylistEditor(launcher: ActivityResultLauncher<Intent>,
                          playlistName: String,
                          playlistId: Long,
-                         activity: AppCompatActivity,
-                         fragment: BaseFragment? = null) =
-        EditPlaylistActivity.getStartIntent(activity, playlistName, playlistId).apply {
-            startActivityForResult(this, requestCode, activity, fragment)
-        }
+                         activity: AppCompatActivity) =
+        launcher.launch(EditPlaylistActivity.getStartIntent(activity, playlistName, playlistId))
 
     /*
      *

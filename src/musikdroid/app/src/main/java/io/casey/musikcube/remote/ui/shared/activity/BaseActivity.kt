@@ -1,7 +1,6 @@
 package io.casey.musikcube.remote.ui.shared.activity
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.media.AudioManager
 import android.os.Bundle
@@ -9,6 +8,7 @@ import android.view.KeyEvent
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -29,7 +29,7 @@ import io.casey.musikcube.remote.ui.shared.mixin.RunnerMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.disposables.CompositeDisposable
 
-abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.TaskCallbacks {
+abstract class BaseActivity: AppCompatActivity(), ViewModel.Provider, Runner.TaskCallbacks {
     protected var disposables = CompositeDisposable()
         private set
 
@@ -55,6 +55,7 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
         prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         volumeControlStream = AudioManager.STREAM_MUSIC
         mixins.onCreate(savedInstanceState ?: Bundle())
+        onBackPressedDispatcher.addCallback(this, backHandler)
     }
 
     override fun onStart() {
@@ -82,11 +83,6 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
         mixins.onStop()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        mixins.onActivityResult(requestCode, resultCode, data)
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         mixins.onSaveInstanceState(outState)
@@ -97,19 +93,41 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
         mixins.onDestroy()
     }
 
+    override fun onNavigateUp(): Boolean {
+        if (!navigateBack()) {
+            finish()
+        }
+        return true
+    }
 
-    override fun onBackPressed() {
+    private fun navigateBack(): Boolean {
         (top as? IBackHandler)?.let {
-            if (it.onBackPressed()) {
-                return
+            if (it.onInterceptBackButton()) {
+                return true
             }
         }
 
-        when {
-            fm.backStackEntryCount > 1 -> fm.popBackStack()
-            else -> super.onBackPressed()
+        if (onInterceptBackButton()) {
+            return true
+        }
+
+        if (fm.backStackEntryCount >= 1) {
+            fm.popBackStack()
+            return true
+        }
+
+        return false
+    }
+
+    private val backHandler = object: OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (!navigateBack()) {
+                finish()
+            }
         }
     }
+
+    protected open fun onInterceptBackButton(): Boolean = false
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (mixin(PlaybackMixin::class.java)?.onKeyDown(keyCode) == true) {
@@ -163,12 +181,11 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
 
     private val top: Fragment?
         get() {
-            return when {
-                fm.backStackEntryCount == 0 ->
+            return when (fm.backStackEntryCount) {
+                0 ->
                     fm.findFragmentByTag(BrowseFragment.TAG)
                 else -> fm.findFragmentByTag(
                     fm.getBackStackEntryAt(fm.backStackEntryCount - 1).name)
-
             }
         }
 

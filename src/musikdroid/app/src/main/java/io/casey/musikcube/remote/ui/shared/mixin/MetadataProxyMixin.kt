@@ -18,16 +18,8 @@ class MetadataProxyMixin : MixinBase() {
         DaggerViewComponent.builder()
             .appComponent(Application.appComponent)
             .build().inject(this)
-    }
 
-    override fun onResume() {
-        super.onResume()
         provider.attach()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        provider.detach()
     }
 
     override fun onDestroy() {

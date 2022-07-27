@@ -95,8 +95,8 @@ class RemoteSettingsViewModel(private val environment: IEnvironment): BaseRemote
             val transportQuery = proxy.setTransportType(transport)
             Observable.zip<Boolean, Boolean, Boolean>(
                     gainQuery,
-                    transportQuery,
-                    { b1, b2 -> b1 && b2 })
+                    transportQuery
+            ) { b1, b2 -> b1 && b2 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = { success ->
@@ -126,9 +126,9 @@ class RemoteSettingsViewModel(private val environment: IEnvironment): BaseRemote
                 Observable.zip<Boolean, Boolean, Boolean, Boolean>(
                     gainQuery,
                     outputQuery,
-                    transportQuery,
-                        { b1, b2, b3 -> b1 && b2 && b3 })
-                .observeOn(AndroidSchedulers.mainThread())
+                    transportQuery
+                ) { b1, b2, b3 -> b1 && b2 && b3 }
+                    .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = { success ->
                         if (success) { state = State.Saved }
@@ -153,13 +153,13 @@ class RemoteSettingsViewModel(private val environment: IEnvironment): BaseRemote
             Observable.zip<IGainSettings, IOutputs, TransportType, Boolean>(
                 gainQuery,
                 outputsQuery,
-                transportQuery,
-                    { gainSettings, outputs, transportType ->
-                        this.gain = gainSettings
-                        this.outputs = outputs
-                        this.transportType = transportType
-                        true
-                    })
+                transportQuery
+            ) { gainSettings, outputs, transportType ->
+                this.gain = gainSettings
+                this.outputs = outputs
+                this.transportType = transportType
+                true
+            }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = { state = State.Ready },

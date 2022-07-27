@@ -5,6 +5,10 @@ extern int PDC_blink_state;
 
 typedef uint32_t PACKED_RGB;
 
+#define Get_BValue( rgb) ((int)( (rgb) >> 16))
+#define Get_GValue( rgb) ((int)( (rgb) >> 8) & 0xff)
+#define Get_RValue( rgb) ((int)((rgb) & 0xff))
+
 int PDC_init_palette( void);
 void PDC_get_rgb_values( const chtype srcp,
             PACKED_RGB *foreground_rgb, PACKED_RGB *background_rgb);

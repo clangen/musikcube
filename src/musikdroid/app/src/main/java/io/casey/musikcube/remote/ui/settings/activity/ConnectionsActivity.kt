@@ -196,12 +196,12 @@ private class RenameTask(val db: ConnectionsDb, val connection: Connection, val 
 
 class ConfirmDeleteDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val connection = arguments!!.getParcelable<Connection>(EXTRA_CONNECTION)
+        val connection = requireArguments().getParcelableCompat<Connection>(EXTRA_CONNECTION)
 
         return when (connection == null) {
             true -> throw IllegalArgumentException("invalid connection")
             else -> {
-                AlertDialog.Builder(activity!!)
+                AlertDialog.Builder(requireActivity())
                     .setTitle(R.string.settings_confirm_delete_title)
                     .setMessage(getString(R.string.settings_confirm_delete_message, connection.name))
                     .setNegativeButton(R.string.button_no, null)
@@ -229,7 +229,7 @@ class ConfirmDeleteDialog : DialogFragment() {
 
 class RenameDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val connection = arguments!!.getParcelable<Connection>(EXTRA_CONNECTION)
+        val connection = requireArguments().getParcelableCompat<Connection>(EXTRA_CONNECTION)
 
         return when (connection == null) {
             true -> throw IllegalArgumentException("invalid connection")
@@ -242,7 +242,7 @@ class RenameDialog : DialogFragment() {
                 edit.setText(connection.name)
                 edit.selectAll()
 
-                AlertDialog.Builder(activity!!)
+                AlertDialog.Builder(requireActivity())
                     .setTitle(R.string.settings_save_as_title)
                     .setNegativeButton(R.string.button_cancel) { _, _ -> hideKeyboard() }
                     .setOnCancelListener { hideKeyboard() }

@@ -1,6 +1,5 @@
 package io.casey.musikcube.remote.ui.shared.fragment
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
@@ -35,11 +34,6 @@ open class BaseDialogFragment: DialogFragment(), ViewModel.Provider {
     override fun onStop() {
         super.onStop()
         mixins.onStop()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        mixins.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

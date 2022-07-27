@@ -225,6 +225,18 @@ static inline bool replayGainValid(ReplayGain& rg) {
         rg.trackGain != 1.0 || rg.trackPeak != 1.0;
 }
 
+static inline void processAlbumArt(TagLib::List<TagLib::FLAC::Picture*> pictures, ITagStore* target) {
+    for (auto picture : pictures) {
+        if (picture->type() == TagLib::FLAC::Picture::FrontCover) {
+            auto byteVector = picture->data();
+            if (byteVector.size()) {
+                target->SetThumbnail(byteVector.data(), byteVector.size());
+            }
+            break;
+        }
+    }
+}
+
 TaglibMetadataReader::TaglibMetadataReader() {
 }
 
@@ -337,6 +349,7 @@ bool TaglibMetadataReader::ReadGeneric(
             field list. if we're dealing with a straight-up Xiph tag, process it now */
             const auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
             if (xiphTag) {
+                processAlbumArt(xiphTag->pictureList(), target);
                 this->ReadFromMap(xiphTag->fieldListMap(), target);
                 this->ExtractReplayGain(xiphTag->fieldListMap(), target);
             }
@@ -347,24 +360,15 @@ bool TaglibMetadataReader::ReadGeneric(
                 bool handled = false;
 
                 /* flac files may have more than one type of tag embedded. see if there's
-                see if there's a xiph comment burried deep. */
+                see if there's a xiph comment buried deep. */
                 auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
                 if (flacFile) {
-                    auto pictures = flacFile->pictureList();
-                    for (auto picture : pictures) {
-                        if (picture->type() == TagLib::FLAC::Picture::FrontCover) {
-                            auto byteVector = picture->data();
-                            if (byteVector.size()) {
-                                target->SetThumbnail(byteVector.data(), byteVector.size());
-                            }
-                            break;
-                        }
+                    processAlbumArt(flacFile->pictureList(), target);
+                    if (flacFile->hasXiphComment()) {
+                        this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
+                        this->ExtractReplayGain(flacFile->xiphComment()->fieldListMap(), target);
+                        handled = true;
                     }
-                }
-                if (flacFile && flacFile->hasXiphComment()) {
-                    this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
-                    this->ExtractReplayGain(flacFile->xiphComment()->fieldListMap(), target);
-                    handled = true;
                 }
 
                 /* similarly, mp4 buries disc number and album artist. however, taglib does

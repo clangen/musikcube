@@ -12,6 +12,7 @@ import com.bumptech.glide.module.AppGlideModule
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.ResponseBody.Companion.toResponseBody
 import java.io.InputStream
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.canIntercept as canInterceptArtwork
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.intercept as interceptArtwork
@@ -46,7 +47,7 @@ class GlideModule : AppGlideModule() {
             .request(chain.request())
             .code(404)
             .protocol(Protocol.HTTP_1_1)
-            .body(ResponseBody.create("application/json".toMediaTypeOrNull(), "{ }"))
+            .body("{ }".toResponseBody("application/json".toMediaTypeOrNull()))
             .message("not found")
             .build()
     }

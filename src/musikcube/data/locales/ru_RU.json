@@ -236,6 +236,7 @@
     "transport_muted": "звук откл.",
     "transport_playing_format": "$state $title от $artist из $album",
     "transport_playing_format_buffering": "буферизация",
+    "transport_playing_format_paused": "_TSTR_paused",
     "transport_playing_format_playing": "играет",
     "transport_repeat_list": "повтор списка",
     "transport_repeat_off": "повтор откл.",

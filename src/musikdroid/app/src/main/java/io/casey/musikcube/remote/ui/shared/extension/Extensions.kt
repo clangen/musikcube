@@ -1,10 +1,12 @@
 package io.casey.musikcube.remote.ui.shared.extension
 
+import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Resources
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -19,6 +21,7 @@ import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -62,7 +65,7 @@ fun SharedPreferences.getString(key: String): String? =
 fun Toolbar.setTitleFromIntent(defaultTitle: String) {
     val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
     val title = extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
-    this.title = if (title.isNotEmpty()) title else defaultTitle
+    this.title = title.ifEmpty { defaultTitle }
 }
 
 fun Toolbar.collapseActionViewIfExpanded(): Boolean {
@@ -106,7 +109,7 @@ fun AppCompatActivity.enableUpNavigation() {
 
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     val title = this.intent.getStringExtra(Shared.Extra.TITLE_OVERRIDE) ?: ""
-    this.title = if (title.isNotEmpty()) title else defaultTitle
+    this.title = title.ifEmpty { defaultTitle }
 }
 
 fun BaseFragment.addFilterAction(menu: Menu, filterable: IFilterable?): Boolean {
@@ -276,9 +279,9 @@ inline fun <reified T: BaseFragment> T.withTitleOverride(activity: AppCompatActi
 
 fun BaseFragment.initToolbarIfNecessary(view: View, showFilter: Boolean = true) {
     view.findViewById<Toolbar>(R.id.toolbar)?.let {
-        it.navigationIcon = appCompatActivity.getDrawable(R.drawable.ic_back)
+        it.navigationIcon = AppCompatResources.getDrawable(appCompatActivity, R.drawable.ic_back)
         it.setNavigationOnClickListener {
-            appCompatActivity.onBackPressed()
+            appCompatActivity.onNavigateUp()
         }
         if (showFilter) {
             this.addFilterAction(it.menu, this as? IFilterable)
@@ -311,7 +314,7 @@ fun BaseFragment.setupDefaultRecyclerView(
 
 fun BaseFragment.getTitleOverride(defaultTitle: String): String {
     val title = this.extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
-    return if (title.isNotEmpty()) title else defaultTitle
+    return title.ifEmpty { defaultTitle }
 }
 
 /*
@@ -396,9 +399,16 @@ fun AppCompatActivity.getColorCompat(resourceId: Int): Int =
  *
  */
 
-fun showKeyboard(context: Context) {
+@Suppress("deprecation")
+fun showKeyboard(context: Activity) {
     val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+    if (Build.VERSION.SDK_INT >= 31) {
+        val view = context.currentFocus ?: context.findViewById(android.R.id.content)
+        imm.showSoftInput(view , 0)
+    }
+    else {
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+    }
 }
 
 fun hideKeyboard(context: Context, view: View) {
@@ -412,10 +422,10 @@ fun AppCompatActivity.hideKeyboard(view: View? = null) {
 }
 
 fun DialogFragment.showKeyboard() =
-    showKeyboard(activity!!)
+    showKeyboard(requireActivity())
 
 fun DialogFragment.hideKeyboard() {
-    val fragmentActivity = activity!! /* keep it in the closure so it doesn't get gc'd */
+    val fragmentActivity = requireActivity() /* keep it in the closure so it doesn't get gc'd */
     Handler(Looper.getMainLooper()).postDelayed({
         hideKeyboard(
             fragmentActivity,
@@ -530,16 +540,3 @@ fun fallback(input: String?, fallback: String): String =
 
 fun fallback(input: String?, fallback: Int): String =
     if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input
-
-fun startActivityForResult(intent: Intent,
-                           requestCode: Int,
-                           activity: AppCompatActivity?,
-                           fragment: BaseFragment? = null) =
-    when {
-        fragment != null ->
-            fragment.startActivityForResult(intent, requestCode)
-        activity != null ->
-            activity.startActivityForResult(intent, requestCode)
-        else ->
-            throw IllegalArgumentException("")
-    }

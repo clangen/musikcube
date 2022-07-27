@@ -1,4 +1,14 @@
-0.98
+0.98.1
+
+* fixed album art extraction for xiph comments.
+* fixed PulseAudio compile issue.
+* fixed `musikdroid` app notification on Android 13 devices.
+* updated `musikdroid` dependencies and tooling, fixed a few warnings.
+* merged latest upstream `PDCurses` code for Windows builds.
+
+--------------------------------------------------------------------------------
+
+0.98.0
 
 * added the ability to click the browse and tracklist headers to change filter
   options
@@ -692,7 +702,7 @@ sdk:
 FreeBSD only release.
 
 musikcube:
-* *finally* fixed the FreeBSD scrollbar crasher. yeesh.
+* *finally* fixed the FreeBSD scrollbar crash. yeesh.
 * fixed a bug in the `sndio` output plugin that may cause the first few buffers
 of audio data to be discarded when manually changing tracks.
 
@@ -1574,7 +1584,7 @@ win32 only release:
 
 user-facing:
 
-* added new `musikdroid` android remote control! super userful with a Raspberry
+* added new `musikdroid` android remote control! super useful with a Raspberry
   Pi. run musikbox in the background and control it from your phone.
 * added a new `websocket_remote` plugin that allows any client capable of
   communciating with websockets the ability to control playback and query

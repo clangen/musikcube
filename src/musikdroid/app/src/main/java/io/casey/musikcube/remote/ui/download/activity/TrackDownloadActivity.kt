@@ -96,8 +96,9 @@ class TrackDownloadActivity: BaseActivity() {
         cancel()
     }
 
-    override fun onBackPressed() {
+    override fun onInterceptBackButton(): Boolean {
         confirmCancelDialog()
+        return true
     }
 
     private fun cancel() {
@@ -161,10 +162,9 @@ class TrackDownloadActivity: BaseActivity() {
         catch (ex: Exception) {
             /* move on... */
         }
-        finally {
-            synchronized (mutex) {
-                pendingCall = null
-            }
+
+        synchronized (mutex) {
+            pendingCall = null
             response.close()
         }
 

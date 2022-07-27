@@ -780,7 +780,7 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
 
     /* note: the user can query the "live" (i.e. current) play queue, or a
     a previously "snapshotted" playqueue. the former is generally used for
-    remote playback, the latter is used for transfering context from remote
+    remote playback, the latter is used for transferring context from remote
     to streaming. */
     std::string type = value::live;
 

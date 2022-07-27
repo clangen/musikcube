@@ -236,6 +236,7 @@
     "transport_muted": "muto",
     "transport_playing_format": "riproduco $title by $artist da $album",
     "transport_playing_format_buffering": "_TSTR_buffering",
+    "transport_playing_format_paused": "_TSTR_paused",
     "transport_playing_format_playing": "_TSTR_playing",
     "transport_repeat_list": "ripeti lista",
     "transport_repeat_off": "ripeti off",

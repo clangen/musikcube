@@ -119,6 +119,7 @@ namespace musik {
 
                 void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
                 void OnPlaybackModeChanged();
+                void OnPlaybackStateChanged(musik::core::sdk::PlaybackState);
                 void OnPlaybackStreamStateChanged(musik::core::sdk::StreamState);
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);

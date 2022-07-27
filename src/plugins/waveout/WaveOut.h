@@ -103,7 +103,7 @@ class WaveOut : public IOutput {
         double currentVolume;
         bool playing;
 
-        /* a queue of buffers we've recieved from the core Player, and have enqueued
+        /* a queue of buffers we've received from the core Player, and have enqueued
         to the output device. we need to notify the IBufferProvider when they have finished
         playing. */
         BufferList queuedBuffers;

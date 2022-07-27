@@ -1,12 +1,8 @@
 package io.casey.musikcube.remote.framework
 
-import android.content.Intent
 import android.os.Bundle
 
-class MixinSet : MixinBase() {
-    private data class ActivityResult (val request: Int, val result: Int, val data: Intent?)
-
-    private var activityResult: ActivityResult? = null
+class MixinSet: MixinBase() {
     private val components: MutableMap<Class<out IMixin>, IMixin> = mutableMapOf()
     private var bundle = Bundle()
 
@@ -54,12 +50,6 @@ class MixinSet : MixinBase() {
     override fun onResume() {
         super.onResume()
         components.values.forEach { it.onResume() }
-
-        val ar = activityResult
-        if (ar != null) {
-            components.values.forEach { it.onActivityResult(ar.request, ar.result, ar.data) }
-            activityResult = null
-        }
     }
 
     override fun onPause() {
@@ -75,16 +65,6 @@ class MixinSet : MixinBase() {
     override fun onSaveInstanceState(bundle: Bundle) {
         super.onSaveInstanceState(bundle)
         components.values.forEach { it.onSaveInstanceState(bundle) }
-    }
-
-    override fun onActivityResult(request: Int, result: Int, data: Intent?) {
-        super.onActivityResult(request, result, data)
-        if (active) {
-            components.values.forEach { it.onActivityResult(request, result, data) }
-        }
-        else {
-            activityResult = ActivityResult(request, result, data)
-        }
     }
 
     override fun onDestroy() {

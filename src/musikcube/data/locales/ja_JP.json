@@ -236,6 +236,7 @@
     "transport_muted": "ミュート",
     "transport_playing_format": "再生中: $title by $artist from $album",
     "transport_playing_format_buffering": "_TSTR_buffering",
+    "transport_playing_format_paused": "_TSTR_paused",
     "transport_playing_format_playing": "_TSTR_playing",
     "transport_repeat_list": "リピート:リスト",
     "transport_repeat_off": "リピート:オフ",

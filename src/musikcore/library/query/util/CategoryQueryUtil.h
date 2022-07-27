@@ -89,7 +89,7 @@ namespace musik { namespace core { namespace library { namespace query {
         respective IDs for regular properties, that is, albums, artists, album artists,
         and genres. these resource types are the most common, and are optimized for display.
         the query may also be predicated to select all resources that are related to other
-        resources, including extended resources. the full requerly propety looks something
+        resources, including extended resources. the full requerly property looks something
         like the following example where we query all albums made in "1995" by "J. Cantrell": */
 
         // SELECT DISTINCT albums.id, albums.name
@@ -155,7 +155,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "ORDER BY extended_metadata.value ASC";
 
         /* used to select all tracks that match a specified set of predicates. both
-        regular and extended predicates are supported. in essense: */
+        regular and extended predicates are supported. in essence: */
 
         // SELECT DISTINCT tracks.*
         //     FROM tracks

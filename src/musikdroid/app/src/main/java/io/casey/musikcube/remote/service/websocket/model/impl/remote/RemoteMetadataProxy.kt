@@ -395,7 +395,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .map<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .map { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -414,7 +414,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .map<Int> { socketMessage -> toCount(socketMessage) }
+            .map { socketMessage -> toCount(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -430,7 +430,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .map<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .map { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 

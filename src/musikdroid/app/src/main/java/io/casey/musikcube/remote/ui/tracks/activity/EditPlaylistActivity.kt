@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -45,14 +46,7 @@ class EditPlaylistActivity: BaseActivity() {
         adapter = EditPlaylistAdapter(viewModel, touchHelper, prefs)
         setupDefaultRecyclerView(recycler, adapter)
         setResult(RESULT_CANCELED)
-    }
-
-    override fun onBackPressed() {
-        if (viewModel.modified) {
-            ConfirmDiscardChangesDialog.show(this)
-            return
-        }
-        super.onBackPressed()
+        onBackPressedDispatcher.addCallback(this, backHandler)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -78,6 +72,16 @@ class EditPlaylistActivity: BaseActivity() {
             },
             onError = { }
         ))
+    }
+
+    private val backHandler = object: OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (viewModel.modified) {
+                ConfirmDiscardChangesDialog.show(this@EditPlaylistActivity)
+                return
+            }
+            finish()
+        }
     }
 
     override fun <T: ViewModel<*>> createViewModel(): T {
@@ -116,16 +120,16 @@ class EditPlaylistActivity: BaseActivity() {
             ItemTouchHelper.LEFT)
     {
         override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-            val from = viewHolder.adapterPosition
-            val to = target.adapterPosition
+            val from = viewHolder.bindingAdapterPosition
+            val to = target.bindingAdapterPosition
             viewModel.move(from, to)
             adapter.notifyItemMoved(from, to)
             return true
         }
 
         override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-            viewModel.remove(viewHolder.adapterPosition)
-            adapter.notifyItemRemoved(viewHolder.adapterPosition)
+            viewModel.remove(viewHolder.bindingAdapterPosition)
+            adapter.notifyItemRemoved(viewHolder.bindingAdapterPosition)
         }
     }
 

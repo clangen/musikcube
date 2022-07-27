@@ -5,12 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
 import androidx.core.content.ContextCompat
+import io.casey.musikcube.remote.ui.shared.extension.getParcelableExtraCompat
 
 class MediaButtonReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
         if (Intent.ACTION_MEDIA_BUTTON == action) {
-            val event = intent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT)
+            val event = intent.getParcelableExtraCompat<KeyEvent>(Intent.EXTRA_KEY_EVENT)
 
             if (event != null && event.action == KeyEvent.ACTION_DOWN) {
                 when (event.keyCode) {

@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -60,6 +61,7 @@ int wdeleteln(WINDOW *win)
 
     PDC_LOG(("wdeleteln() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -72,8 +74,7 @@ int wdeleteln(WINDOW *win)
     for (y = win->_cury; y < win->_bmarg; y++)
     {
         win->_y[y] = win->_y[y + 1];
-        win->_firstch[y] = 0;
-        win->_lastch[y] = win->_maxx - 1;
+        PDC_mark_line_as_changed( win, y);
     }
 
     for (ptr = temp; (ptr - temp < win->_maxx); ptr++)
@@ -81,8 +82,7 @@ int wdeleteln(WINDOW *win)
 
     if (win->_cury <= win->_bmarg)
     {
-        win->_firstch[win->_bmarg] = 0;
-        win->_lastch[win->_bmarg] = win->_maxx - 1;
+        PDC_mark_line_as_changed( win, win->_bmarg);
         win->_y[win->_bmarg] = temp;
     }
 
@@ -122,6 +122,7 @@ int winsdelln(WINDOW *win, int n)
 
     PDC_LOG(("winsdelln() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -156,6 +157,7 @@ int winsertln(WINDOW *win)
 
     PDC_LOG(("winsertln() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -168,8 +170,7 @@ int winsertln(WINDOW *win)
     for (y = win->_maxy - 1; y > win->_cury; y--)
     {
         win->_y[y] = win->_y[y - 1];
-        win->_firstch[y] = 0;
-        win->_lastch[y] = win->_maxx - 1;
+        PDC_mark_line_as_changed( win, y);
     }
 
     win->_y[win->_cury] = temp;
@@ -177,8 +178,7 @@ int winsertln(WINDOW *win)
     for (end = &temp[win->_maxx - 1]; temp <= end; temp++)
         *temp = blank;
 
-    win->_firstch[win->_cury] = 0;
-    win->_lastch[win->_cury] = win->_maxx - 1;
+    PDC_mark_line_as_changed( win, win->_cury);
 
     return OK;
 }

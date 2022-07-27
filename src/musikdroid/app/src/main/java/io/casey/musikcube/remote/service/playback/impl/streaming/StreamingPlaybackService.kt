@@ -496,7 +496,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                 state = PlaybackState.Playing
                 prefetchNextTrackAudio()
                 cancelScheduledPausedSleep()
-                precacheTrackMetadata(playContext.currentIndex, PRECACHE_METADATA_SIZE)
+                precacheTrackMetadataPage(playContext.currentIndex)
             }
 
             PlayerWrapper.State.Buffering -> state = PlaybackState.Buffering
@@ -673,6 +673,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
     }
 
+    @SuppressLint("CheckResult")
     private fun prefetchNextTrackMetadata() {
         if (playContext.nextMetadata == null) {
             val originalParams = queryContext
@@ -770,9 +771,9 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     @SuppressLint("CheckResult")
-    private fun precacheTrackMetadata(start: Int, count: Int) {
+    private fun precacheTrackMetadataPage(start: Int) {
         val originalParams = queryContext
-        val query = playlistQueryFactory.page(start, count)
+        val query = playlistQueryFactory.page(start, PRECACHE_METADATA_SIZE)
 
         if (query != null) {
             @Suppress("unused")

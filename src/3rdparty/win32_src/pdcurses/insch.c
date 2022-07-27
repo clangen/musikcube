@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -71,6 +72,7 @@ int winsch(WINDOW *win, chtype ch)
     PDC_LOG(("winsch() - called: win=%p ch=%x (text=%c attr=0x%x)\n",
              win, ch, ch & A_CHARTEXT, ch & A_ATTRIBUTES));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -154,10 +156,7 @@ int winsch(WINDOW *win, chtype ch)
 
         memmove(temp + 1, temp, (maxx - x - 1) * sizeof(chtype));
 
-        win->_lastch[y] = maxx - 1;
-
-        if ((win->_firstch[y] == _NO_CHANGE) || (win->_firstch[y] > x))
-            win->_firstch[y] = x;
+        PDC_mark_cells_as_changed( win, y, x, maxx - 1);
 
         *temp = ch;
     }
@@ -238,6 +237,8 @@ int wins_wch(WINDOW *win, const cchar_t *wch)
 {
     PDC_LOG(("wins_wch() - called\n"));
 
+    assert( win);
+    assert( wch);
     return wch ? winsch(win, *wch) : ERR;
 }
 

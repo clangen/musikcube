@@ -181,7 +181,7 @@ object AlbumArtLookup {
 
                 if (images.size > 0) {
                     /* find the image with the closest to the requested size.
-                exact match preferred. */
+                    exact match preferred. */
                     var closest = images[0]
                     var lastDelta = Integer.MAX_VALUE
                     for (check in images) {

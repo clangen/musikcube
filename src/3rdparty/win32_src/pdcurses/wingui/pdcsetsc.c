@@ -1,5 +1,6 @@
 /* Public Domain Curses */
 
+#include <assert.h>
 #include "pdcwin.h"
 #include "pdccolor.h"
 
@@ -89,15 +90,26 @@ void PDC_set_title(const char *title)
         /* the user _must_ pay attention;  say,  "the nuclear reactor    */
         /* is about to melt down".  Otherwise,  the bolder,  brighter    */
         /* text should be attention-getting enough.                      */
+        /* Note also that when turning 'blink' On,  we don't have to     */
+        /* mark curscr as needing to be cleared.  Blinking will begin    */
+        /* within half a second anyway.  (This is an exception to the    */
+        /* general rule that changes only take place after refresh().)   */
 
 static int reset_attr( const attr_t attr, const bool attron)
 {
+    attr_t prev_termattrs;
+
+    assert( SP);
     if (!SP)
         return ERR;
+    prev_termattrs = SP->termattrs;
     if( attron)
         SP->termattrs |= attr;
     else
         SP->termattrs &= ~attr;
+    if( prev_termattrs != SP->termattrs)
+        if( !attron || attr == A_BOLD)
+            curscr->_clear = TRUE;
     return OK;
 }
 

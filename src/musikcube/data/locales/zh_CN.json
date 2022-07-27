@@ -236,6 +236,7 @@
     "transport_muted": "静音",
     "transport_playing_format": "$state $title 艺术家: $artist 专辑: $album",
     "transport_playing_format_buffering": "正在缓冲",
+    "transport_playing_format_paused": "_TSTR_paused",
     "transport_playing_format_playing": "正在播放",
     "transport_repeat_list": "列表循环",
     "transport_repeat_off": "循环关闭",

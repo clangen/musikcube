@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <panel.h>
 #include <assert.h>
 
 /*man-start**************************************************************
@@ -17,6 +18,7 @@ initscr
     SCREEN *newterm(const char *type, FILE *outfd, FILE *infd);
     SCREEN *set_term(SCREEN *new);
     void delscreen(SCREEN *sp);
+    void PDC_free_memory_allocations( void);
 
     int resize_term(int nlines, int ncols);
     bool is_termresized(void);
@@ -50,6 +52,15 @@ initscr
    needed. In PDCurses, the parameter must be the value of SP, and
    delscreen() sets SP to NULL.
 
+   PDC_free_memory_allocations() frees all memory allocated by PDCurses,
+   including SP and any platform-dependent memory.  It should be called
+   after endwin(),  not instead of it.  It need not be called,  because
+   remaining memory will be freed at exit;  but it can help in diagnosing
+   memory leak issues by ruling out any from PDCurses.
+
+   Note that SDLn and X11 have known memory leaks within their libraries,
+   which appear to be effectively unfixable.
+
    set_term() does nothing meaningful in PDCurses, but is included for
    compatibility with other curses implementations.
 
@@ -61,10 +72,9 @@ initscr
    and X11 allow user resizing, while DOS, OS/2, SDL and Windows console
    allow programmatic resizing. If you want to support user resizing,
    you should check for getch() returning KEY_RESIZE, and/or call
-   is_termresized() at appropriate times; if either condition occurs,
-   call resize_term(0, 0). Then, with either user or programmatic
-   resizing, you'll have to resize any windows you've created, as
-   appropriate; resize_term() only handles stdscr and curscr.
+   is_termresized() at appropriate times.   Then, with either user or
+   programmatic resizing, you'll have to resize any windows you've
+   created, as appropriate; resize_term() only handles stdscr and curscr.
 
    is_termresized() returns TRUE if the curses screen has been resized
    by the user, and a call to resize_term() is needed. Checking for
@@ -102,7 +112,38 @@ initscr
 
 char ttytype[128];
 
-const char *_curses_notice = "PDCurses " PDC_VERDOT " - " __DATE__;
+#if PDC_VER_MONTH == 1
+   #define PDC_VER_MONTH_STR "Jan"
+#elif PDC_VER_MONTH == 2
+   #define PDC_VER_MONTH_STR "Feb"
+#elif PDC_VER_MONTH == 3
+   #define PDC_VER_MONTH_STR "Mar"
+#elif PDC_VER_MONTH == 4
+   #define PDC_VER_MONTH_STR "Apr"
+#elif PDC_VER_MONTH == 5
+   #define PDC_VER_MONTH_STR "May"
+#elif PDC_VER_MONTH == 6
+   #define PDC_VER_MONTH_STR "Jun"
+#elif PDC_VER_MONTH == 7
+   #define PDC_VER_MONTH_STR "Jul"
+#elif PDC_VER_MONTH == 8
+   #define PDC_VER_MONTH_STR "Aug"
+#elif PDC_VER_MONTH == 9
+   #define PDC_VER_MONTH_STR "Sep"
+#elif PDC_VER_MONTH == 10
+   #define PDC_VER_MONTH_STR "Oct"
+#elif PDC_VER_MONTH == 11
+   #define PDC_VER_MONTH_STR "Nov"
+#elif PDC_VER_MONTH == 12
+   #define PDC_VER_MONTH_STR "Dec"
+#else
+   #define PDC_VER_MONTH_STR "!!!"
+#endif
+
+const char *_curses_notice = "PDCursesMod " PDC_VERDOT " - "\
+                    PDC_stringize( PDC_VER_YEAR) "-" \
+                    PDC_VER_MONTH_STR "-" \
+                    PDC_stringize( PDC_VER_DAY);
 
 SCREEN *SP = (SCREEN*)NULL;           /* curses variables */
 WINDOW *curscr = (WINDOW *)NULL;      /* the current screen image */
@@ -240,7 +281,7 @@ WINDOW *initscr(void)
 
     def_shell_mode();
 
-    sprintf(ttytype, "pdcurses|PDCurses for %s", PDC_sysname());
+    longname( );
 
     SP->c_buffer = malloc(_INBUFSIZ * sizeof(int));
     if (!SP->c_buffer)
@@ -269,6 +310,7 @@ WINDOW *Xinitscr(int argc, char **argv)
 
 int endwin(void)
 {
+    SP->in_endwin = TRUE;
     PDC_LOG(("endwin() - called\n"));
 
     /* Allow temporary exit from curses using endwin() */
@@ -279,6 +321,7 @@ int endwin(void)
     assert( SP);
     SP->alive = FALSE;
 
+    SP->in_endwin = FALSE;
     return OK;
 }
 
@@ -286,13 +329,25 @@ bool isendwin(void)
 {
     PDC_LOG(("isendwin() - called\n"));
 
+    assert( SP);
     return SP ? !(SP->alive) : FALSE;
+}
+
+void PDC_free_memory_allocations( void)
+{
+   PDC_free_platform_dependent_memory( );
+   PDC_clearclipboard( );
+   traceoff( );
+   delscreen( SP);
 }
 
 SCREEN *newterm(const char *type, FILE *outfd, FILE *infd)
 {
     PDC_LOG(("newterm() - called\n"));
 
+    INTENTIONALLY_UNUSED_PARAMETER( type);
+    INTENTIONALLY_UNUSED_PARAMETER( outfd);
+    INTENTIONALLY_UNUSED_PARAMETER( infd);
     return initscr() ? SP : NULL;
 }
 
@@ -305,6 +360,8 @@ SCREEN *set_term(SCREEN *new)
     return (new == SP) ? SP : NULL;
 }
 
+void PDC_free_pair_hash_table( void);        /* color.c */
+
 void delscreen(SCREEN *sp)
 {
     PDC_LOG(("delscreen() - called\n"));
@@ -316,6 +373,7 @@ void delscreen(SCREEN *sp)
     free(SP->c_ungch);
     free(SP->c_buffer);
     free(SP->atrtab);
+    PDC_free_pair_hash_table();
 
     PDC_slk_free();     /* free the soft label keys, if needed */
 
@@ -336,10 +394,15 @@ void delscreen(SCREEN *sp)
 
 int resize_term(int nlines, int ncols)
 {
+    PANEL *panel_ptr = NULL;
+
     PDC_LOG(("resize_term() - called: nlines %d\n", nlines));
 
-    if (!stdscr || PDC_resize_screen(nlines, ncols) == ERR)
+    if( PDC_resize_screen(nlines, ncols) == ERR)
         return ERR;
+
+    if( !stdscr)
+        return OK;
 
     SP->resized = FALSE;
 
@@ -374,6 +437,11 @@ int resize_term(int nlines, int ncols)
     touchwin(stdscr);
     wnoutrefresh(stdscr);
 
+    while( (panel_ptr = panel_above( panel_ptr)) != NULL)
+    {
+        touchwin(panel_window(panel_ptr));
+        wnoutrefresh(panel_window(panel_ptr));
+    }
     return OK;
 }
 
@@ -393,6 +461,7 @@ void PDC_get_version(PDC_VERSION *ver)
 {
     extern enum PDC_port PDC_port_val;
 
+    assert( ver);
     if (!ver)
         return;
 

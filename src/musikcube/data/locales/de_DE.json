@@ -236,6 +236,7 @@
     "transport_muted": "stumm",
     "transport_playing_format": "$state $title von $artist aus $album",
     "transport_playing_format_buffering": "puffert",
+    "transport_playing_format_paused": "_TSTR_paused",
     "transport_playing_format_playing": "spielt ab",
     "transport_repeat_list": "liste wiederholen",
     "transport_repeat_off": "nicht wiederholen",
