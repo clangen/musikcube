@@ -207,13 +207,13 @@ WINDOW *getwin(FILE *filep)
     }
     win->_attrs = _get_chtype_from_eight_bytes( buff);
     win->_bkgd = _get_chtype_from_eight_bytes( buff + 8);
-    win->_clear      = _clear;
-    win->_leaveit    = _leaveit;
-    win->_scroll     = _scroll;
-    win->_nodelay    = _nodelay;
-    win->_immed      = _immed;
-    win->_sync       = _sync;
-    win->_use_keypad = _use_keypad;
+    win->_clear      = (bool)_clear;
+    win->_leaveit    = (bool)_leaveit;
+    win->_scroll     = (bool)_scroll;
+    win->_nodelay    = (bool)_nodelay;
+    win->_immed      = (bool)_immed;
+    win->_sync       = (bool)_sync;
+    win->_use_keypad = (bool)_use_keypad;
 
     nlines = win->_maxy;
 

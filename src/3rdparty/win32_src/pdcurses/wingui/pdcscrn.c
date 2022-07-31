@@ -985,6 +985,7 @@ INLINE int set_default_sizes_from_registry( const int n_cols, const int n_rows,
 static void adjust_font_size( const int font_size_change)
 {
     extern int PDC_font_size;
+    RECT client_rect;
 
     PDC_font_size += font_size_change;
     if( PDC_font_size < 2)
@@ -1001,22 +1002,21 @@ static void adjust_font_size( const int font_size_change)
           /* you disagree,  I have others.                    */
     if( IsZoomed( PDC_hWnd))
     {
-        RECT client_rect;
-        GetClientRect( PDC_hWnd, &client_rect);
+        GetClientRect(PDC_hWnd, &client_rect);
         PDC_n_rows = client_rect.bottom / PDC_cyChar;
         PDC_n_cols = client_rect.right / PDC_cxChar;
-        keep_size_within_bounds( &PDC_n_rows, &PDC_n_cols);
-        PDC_resize_screen( PDC_n_rows, PDC_n_cols);
-        add_key_to_queue( KEY_RESIZE);
+        keep_size_within_bounds(&PDC_n_rows, &PDC_n_cols);
+        PDC_resize_screen(PDC_n_rows, PDC_n_cols);
+        add_key_to_queue(KEY_RESIZE);
         SP->resized = TRUE;
-        GetClientRect( PDC_hWnd, &client_rect);
-        InvalidateRect(PDC_hWnd, &client_rect, FALSE);
     }
     else
     {
         PDC_resize_screen( PDC_n_rows, PDC_n_cols);
-        InvalidateRect( PDC_hWnd, NULL, FALSE);
     }
+
+    InvalidateRect(PDC_hWnd, NULL, FALSE);
+    UpdateWindow(PDC_hWnd);
 }
 
 #define WM_ENLARGE_FONT       (WM_USER + 1)

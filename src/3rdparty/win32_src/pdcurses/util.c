@@ -21,10 +21,6 @@ util
                  short color_pair, const void *opts);
     wchar_t *wunctrl(cchar_t *wc);
 
-    int PDC_mbtowc(wchar_t *pwc, const char *s, size_t n);
-    size_t PDC_mbstowcs(wchar_t *dest, const char *src, size_t n);
-    size_t PDC_wcstombs(char *dest, const wchar_t *src, size_t n);
-
 ### Description
 
    unctrl() expands the text portion of the chtype c into a printable
@@ -67,9 +63,6 @@ util
     getcchar                    Y       Y       Y
     setcchar                    Y       Y       Y
     wunctrl                     Y       Y       Y
-    PDC_mbtowc                  -       -       -
-    PDC_mbstowcs                -       -       -
-    PDC_wcstombs                -       -       -
 
 **man-end****************************************************************/
 
