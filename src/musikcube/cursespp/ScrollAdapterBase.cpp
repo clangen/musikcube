@@ -133,6 +133,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
         for (size_t e = 0; e < visible.size(); e++) {
             EntryPtr entry = visible.at(e);
             size_t count = entry->GetLineCount();
+            wmove(window, drawnLines, 0);
 
             for (size_t i = 0; i < count && drawnLines < this->height; i++) {
                 Color attrs = Color::Default;
@@ -161,7 +162,6 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
                 }
 
                 /* string is padded above, we don't need a \n */
-
                 checked_wprintw(window, "%s", line.c_str());
 
                 if (attrs != -1) {
