@@ -270,6 +270,12 @@ static void initUtf8() {
     boost::filesystem::path::imbue(utf8Locale);
 }
 
+static void rescanHandler(int signal) {
+    debug::info("daemon", "received SIGUSR1, rescanning the library...");
+    auto library = LibraryFactory::Instance().DefaultLocalLibrary();
+    library->Indexer()->Schedule(IIndexer::SyncType::All);
+}
+
 int main(int argc, char** argv) {
     initUtf8();
     std::cout << "\n  using lockfile at: " << getLockfileFn();
@@ -279,6 +285,8 @@ int main(int argc, char** argv) {
     ::foreground ? initForeground() : initDaemon();
 
     srand((unsigned int) time(0));
+
+    std::signal(SIGUSR1, rescanHandler);
 
     plugin::Init();
 
