@@ -226,8 +226,8 @@ static LONG scale_font_for_current_dpi( LONG size)
 }
 
 int PDC_font_size = -1;
-TCHAR PDC_font_name[128];
-TCHAR PDC_preferred_fontface[128]; /* can be set by application */
+TCHAR PDC_font_name[256] = _T("\0");
+TCHAR PDC_preferred_fontface[256] = _T("\0"); /* can be set by application */
 static TCHAR* PDC_default_font_name = _T("Courier New");
 
 /* The calling application can override the default fontface with
