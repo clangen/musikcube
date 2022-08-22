@@ -106,22 +106,25 @@ namespace str {
 
     std::string trim(const std::string& str) {
         if (str.size()) {
-            int start = 0;
-            for (size_t i = 0; i < str.length(); i++) {
+            int length = (size_t) str.size();
+            int start = 0, end = length;
+            int i = 0;
+            while (i < length) {
                 if (!isSpace(str[i])) {
                     break;
                 }
                 ++start;
+                ++i;
             }
-            int end = (int)str.length();
-            for (size_t i = str.length() - 1; i >= 0; i--) {
+            i = end - 1;
+            while (i >= 0) {
                 if (!isSpace(str[i])) {
                     break;
                 }
-                --end;
+                --i;
             }
-            if (end > start) {
-                std::string result = str.substr((size_t)start, (size_t)end - start);
+            if (end >= start) {
+                std::string result = str.substr((size_t) start, (size_t) end - start);
                 return result;
             }
         }
