@@ -247,7 +247,6 @@ function build_ffmpeg() {
         --disable-decoders \
         --disable-hwaccels \
         --disable-nvenc \
-        --disable-xvmc \
         --disable-videotoolbox \
         --disable-audiotoolbox \
         --disable-filters \
