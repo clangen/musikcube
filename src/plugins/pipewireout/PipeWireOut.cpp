@@ -48,8 +48,11 @@
 constexpr const char* TAG = "PipeWireOut";
 constexpr size_t SAMPLES_PER_BUFFER = 2048;
 constexpr size_t SAMPLE_SIZE_BYTES = sizeof(float);
-constexpr size_t MAX_BUFFERS = 16;
 constexpr const char* PREF_DEVICE_ID = "device_id";
+constexpr const char* PREF_OUTPUT_BUFFER_SIZE_IN_SAMPLES = "output_buffer_size_in_samples";
+constexpr const char* PREF_OUTPUT_BUFFER_COUNT = "output_buffer_count";
+constexpr int DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES = 2048;
+constexpr int DEFAULT_OUTPUT_BUFFER_COUNT = 16;
 
 static std::atomic<bool> pipeWireInitialized(false);
 
@@ -68,6 +71,12 @@ extern "C" void SetPreferences(IPreferences* prefs) {
 
 extern "C" musik::core::sdk::ISchema* GetSchema() {
     auto schema = new TSchema<>();
+    schema->AddInt(
+        PREF_OUTPUT_BUFFER_SIZE_IN_SAMPLES,
+        DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES,
+        DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES / 8,
+        DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES * 16);
+    schema->AddInt(PREF_OUTPUT_BUFFER_COUNT, DEFAULT_OUTPUT_BUFFER_COUNT, 8, 64);
     return schema;
 }
 
@@ -348,7 +357,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
         if (this->pwStream) {
             uint8_t builderBuffer[4096];
             spa_pod_builder builder = SPA_POD_BUILDER_INIT(builderBuffer, sizeof(builderBuffer));
-            const spa_pod *params[1];
+            const spa_pod *params[2];
 
             this->channelCount = buffer->Channels();
             this->sampleRate = buffer->SampleRate();
@@ -369,12 +378,15 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
                 goto cleanup;
             }
 
-            // params[1] = (spa_pod*) spa_pod_builder_add_object(
-            //     &builder,
-            //     SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
-            //     SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(MAX_BUFFERS),
-            //     SPA_PARAM_BUFFERS_size, SPA_POD_Int(SAMPLES_PER_BUFFER * SAMPLE_SIZE_BYTES * buffer->Channels()),
-            //     SPA_PARAM_BUFFERS_stride, SPA_POD_Int(SAMPLE_SIZE_BYTES * audioInfo.channels));
+            int pwOutputBufferSize = prefs->GetInt(PREF_OUTPUT_BUFFER_SIZE_IN_SAMPLES, DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES);
+            int pwOutputBufferCount = prefs->GetInt(PREF_OUTPUT_BUFFER_COUNT, DEFAULT_OUTPUT_BUFFER_COUNT);
+
+            params[1] = (spa_pod*) spa_pod_builder_add_object(
+                &builder,
+                SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
+                SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(pwOutputBufferCount),
+                SPA_PARAM_BUFFERS_size, SPA_POD_Int(pwOutputBufferSize * SAMPLE_SIZE_BYTES * buffer->Channels()),
+                SPA_PARAM_BUFFERS_stride, SPA_POD_Int(SAMPLE_SIZE_BYTES * audioInfo.channels));
 
             pw_stream_flags streamFlags = (pw_stream_flags)(
                 PW_STREAM_FLAG_AUTOCONNECT |
@@ -386,7 +398,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
                 this->deviceList.ResolveId(getDeviceId()),
                 streamFlags,
                 params,
-                1);
+                2);
 
             if (result == 0) {
                 pw_thread_loop_unlock(this->pwThreadLoop);
@@ -417,6 +429,7 @@ cleanup:
 OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (!this->initialized) {
         std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        this->maxInternalBuffers = prefs->GetInt(PREF_OUTPUT_BUFFER_COUNT, DEFAULT_OUTPUT_BUFFER_COUNT);
         if (!pipeWireInitialized) {
             pw_init(nullptr, nullptr);
             pipeWireInitialized = true;
@@ -443,7 +456,7 @@ OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     {
         std::unique_lock<std::recursive_mutex> lock(this->mutex);
-        if (this->buffers.size() >= MAX_BUFFERS) {
+        if (this->buffers.size() >= maxInternalBuffers) {
             return OutputState::BufferFull;
         }
         this->buffers.push_back(new InBufferContext(buffer, provider));

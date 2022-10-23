@@ -294,5 +294,6 @@ class PipeWireOut : public IOutput {
         OutBufferContext outBufferContext;
         long channelCount{0};
         long sampleRate{0};
+        size_t maxInternalBuffers{0};
         DeviceList deviceList;
 };
