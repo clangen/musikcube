@@ -66,6 +66,7 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
                 }
             }
 
+            pager.isSaveEnabled = false
             pager.adapter = adapter
             pager.offscreenPageLimit = adapter.itemCount
 
