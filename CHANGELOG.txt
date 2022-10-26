@@ -9,6 +9,9 @@
 * updated `musikdroid` dependencies and tooling, fixed a few warnings.
 * merged latest upstream `PDCurses` code for Windows builds.
 * sending `musikcubed` a SIGUSR1 will trigger a library rescan.
+* fixed a bug when querying tracks by category with a filter.
+* fixed a `musikdroid` bug that could cause the BrowseFragment to get into
+  a bad state where search would no longer work.
 
 --------------------------------------------------------------------------------
 
