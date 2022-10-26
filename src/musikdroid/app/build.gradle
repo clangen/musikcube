@@ -39,6 +39,7 @@ android {
             ext.alwaysUpdateBuildId = false
         }
     }
+    namespace 'io.casey.musikcube.remote'
 }
 
 repositories {
@@ -55,18 +56,18 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
-    implementation 'com.google.firebase:firebase-analytics:21.1.0'
-    implementation 'com.google.firebase:firebase-core:21.1.0'
-    implementation 'com.google.firebase:firebase-crashlytics:18.2.11'
+    implementation 'com.google.firebase:firebase-analytics:21.2.0'
+    implementation 'com.google.firebase:firebase-core:21.1.1'
+    implementation 'com.google.firebase:firebase-crashlytics:18.3.1'
 
     implementation 'org.slf4j:slf4j-android:1.7.21'
 
-    implementation "androidx.room:room-runtime:2.4.2"
-    kapt "androidx.room:room-compiler:2.4.2"
+    implementation "androidx.room:room-runtime:2.4.3"
+    kapt "androidx.room:room-compiler:2.4.3"
 
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.5.0"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.5.1"
     implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
-    implementation "androidx.lifecycle:lifecycle-common-java8:2.5.0"
+    implementation "androidx.lifecycle:lifecycle-common-java8:2.5.1"
 
     compileOnly 'org.glassfish:javax.annotation:10.0-b28'
     implementation 'com.google.dagger:dagger:2.42'
@@ -85,10 +86,10 @@ dependencies {
     implementation 'com.simplecityapps:recyclerview-fastscroll:2.0.0'
     implementation 'me.zhanghai.android.materialprogressbar:library:1.6.1'
 
-    implementation 'androidx.appcompat:appcompat:1.4.2'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'androidx.viewpager2:viewpager2:1.1.0-beta01'
-    implementation 'com.google.android.material:material:1.7.0-alpha03'
+    implementation 'com.google.android.material:material:1.8.0-alpha02'
     implementation 'androidx.media:media:1.6.0'
 
     testImplementation 'junit:junit:4.13.1'
