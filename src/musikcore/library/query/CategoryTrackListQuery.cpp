@@ -100,6 +100,7 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     this->durations = std::make_shared<std::map<size_t, size_t>>();
     this->hash = category::Hash(predicates);
     this->sortType = sortType;
+    this->filter = filter;
 
     category::SplitPredicates(predicates, this->regular, this->extended);
     this->ScanPredicateListsForQueryType();
