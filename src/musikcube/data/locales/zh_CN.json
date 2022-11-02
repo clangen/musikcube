@@ -61,7 +61,7 @@
     "hotkeys_backup": "备份",
     "hotkeys_backup_failure_message": "备份失败！请确认您有该目录的写入权限：\n\n{{path}}",
     "hotkeys_backup_failure_title": "备份失败",
-    "hotkeys_backup_success_message": "快捷键已备份至\n\n{{path}}",
+    "hotkeys_backup_success_message": "快捷键已备份至：\n\n{{path}}",
     "hotkeys_backup_success_title": "备份成功",
     "hotkeys_conflict_message": "快捷键 {{hotkey}} 在某些场合 *可能* 和 {{existing}} 冲突。\n\n确定指派吗？",
     "hotkeys_conflict_title": "快捷键冲突",
