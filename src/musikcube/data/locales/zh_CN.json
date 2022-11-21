@@ -155,7 +155,7 @@
     "settings_library_type_remote_hostname": "主机名：",
     "settings_library_type_remote_http_port": "音频端口：",
     "settings_library_type_remote_library_transcoder_bitrate": "码率：%d",
-    "settings_library_type_remote_library_transcoder_bitrate_title": "选择转码器码率",
+    "settings_library_type_remote_library_transcoder_bitrate_overlay_title": "选择转码器码率",
     "settings_library_type_remote_library_transcoder_enable": "音频转码",
     "settings_library_type_remote_library_transcoder_format": "格式：%s",
     "settings_library_type_remote_library_transcoder_format_overlay_title": "选择转码器格式",

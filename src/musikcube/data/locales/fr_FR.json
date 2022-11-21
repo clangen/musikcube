@@ -155,7 +155,7 @@
     "settings_library_type_remote_hostname": "_TSTR_hostname:",
     "settings_library_type_remote_http_port": "_TSTR_audio port:",
     "settings_library_type_remote_library_transcoder_bitrate": "_TSTR_bitrate: %d",
-    "settings_library_type_remote_library_transcoder_bitrate_title": "_TSTR_select transcoder bitrate",
+    "settings_library_type_remote_library_transcoder_bitrate_overlay_title": "_TSTR_select transcoder bitrate",
     "settings_library_type_remote_library_transcoder_enable": "_TSTR_transcode audio",
     "settings_library_type_remote_library_transcoder_format": "_TSTR_format: %s",
     "settings_library_type_remote_library_transcoder_format_overlay_title": "_TSTR_select transcoder format",

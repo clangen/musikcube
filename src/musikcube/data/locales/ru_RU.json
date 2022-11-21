@@ -155,7 +155,7 @@
     "settings_library_type_remote_hostname": "имя хоста:",
     "settings_library_type_remote_http_port": "порт аудио:",
     "settings_library_type_remote_library_transcoder_bitrate": "битрейт: %d",
-    "settings_library_type_remote_library_transcoder_bitrate_title": "выбрать битрейт транскодера",
+    "settings_library_type_remote_library_transcoder_bitrate_overlay_title": "выбрать битрейт транскодера",
     "settings_library_type_remote_library_transcoder_enable": "перекодировать аудио",
     "settings_library_type_remote_library_transcoder_format": "формат: %s",
     "settings_library_type_remote_library_transcoder_format_overlay_title": "выбрать формат транскодера",
