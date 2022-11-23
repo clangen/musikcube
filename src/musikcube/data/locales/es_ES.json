@@ -155,7 +155,7 @@
     "settings_library_type_remote_hostname": "diracción:",
     "settings_library_type_remote_http_port": "puerto de audio:",
     "settings_library_type_remote_library_transcoder_bitrate": "tasa de bits: %d",
-    "settings_library_type_remote_library_transcoder_bitrate_title": "seleccionar tasa de bits de la transcodificación",
+    "settings_library_type_remote_library_transcoder_bitrate_overlay_title": "seleccionar tasa de bits de la transcodificación",
     "settings_library_type_remote_library_transcoder_enable": "transcodificar audio",
     "settings_library_type_remote_library_transcoder_format": "formato: %s",
     "settings_library_type_remote_library_transcoder_format_overlay_title": "seleccionar formato de transcodificación",
