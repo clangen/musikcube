@@ -1,3 +1,13 @@
+0.98.2
+
+* reverted ViewPager2 changes in `musikdroid`, as there is a bug that is
+  preventing fragments from getting re-initialized properly during the resume
+  cycle.
+* updated Simplified Chinese translation (@UM-Li)
+* added Czech translation (@khagaroth)
+
+--------------------------------------------------------------------------------
+
 0.98.1
 
 * fixed album art extraction for xiph comments.
