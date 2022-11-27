@@ -4,10 +4,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.viewpager2.widget.ViewPager2
+import androidx.viewpager.widget.ViewPager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.browse.adapter.BrowseFragmentAdapter
 import io.casey.musikcube.remote.ui.browse.constant.Browse
@@ -33,7 +32,7 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(R.layout.browse_fragment, container, false).apply {
             val fab = findViewById<FloatingActionButton>(R.id.fab)
-            val pager = findViewById<ViewPager2>(R.id.view_pager)
+            val pager = findViewById<ViewPager>(R.id.view_pager)
             val tabs = findViewById<TabLayout>(R.id.tab_layout)
 
             val showFabIfNecessary = { pos: Int ->
@@ -57,7 +56,7 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
             adapter = BrowseFragmentAdapter(
                 appCompatActivity,
                 playback,
-                this@BrowseFragment,
+                childFragmentManager,
                 R.id.content_container)
 
             adapter.onFragmentInstantiated = { pos ->
@@ -68,26 +67,23 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
 
             pager.isSaveEnabled = false
             pager.adapter = adapter
-            pager.offscreenPageLimit = adapter.itemCount
+            pager.currentItem = adapter.indexOf(extras.getString(Browse.Extras.INITIAL_CATEGORY_TYPE))
 
-            pager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
-                override fun onPageSelected(position: Int) {
-                    showFabIfNecessary(position)
+            tabs.setupWithViewPager(pager)
+
+            pager.addOnPageChangeListener(object: ViewPager.OnPageChangeListener {
+                override fun onPageScrollStateChanged(state: Int) {
+                }
+
+                override fun onPageScrolled(pos: Int, offset: Float, offsetPixels: Int) {
+                }
+
+                override fun onPageSelected(pos: Int) {
+                    showFabIfNecessary(pos)
                 }
             })
 
-            TabLayoutMediator(tabs, pager, true) { tab, position ->
-                tab.text = adapter.getPageTitle(position)
-            }.attach()
-
-            val initialIndex = adapter.indexOf(
-                extras.getString(Browse.Extras.INITIAL_CATEGORY_TYPE))
-
-            pager.setCurrentItem(initialIndex, false)
-
-            pager.post {
-                showFabIfNecessary(pager.currentItem)
-            }
+            showFabIfNecessary(pager.currentItem)
         }
 
     override fun onTransportChanged() =

@@ -1,8 +1,10 @@
 package io.casey.musikcube.remote.ui.browse.adapter
 
 import android.content.Context
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentPagerAdapter
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
@@ -17,9 +19,9 @@ import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 
 class BrowseFragmentAdapter(private val context: Context,
                             private val playback: PlaybackMixin,
-                            fragment: Fragment,
+                            fm: FragmentManager,
                             private val containerId: Int = -1)
-    : FragmentStateAdapter(fragment)
+    : FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT)
 {
     private val fragments = mutableMapOf<Int, Fragment>()
 
@@ -50,16 +52,7 @@ class BrowseFragmentAdapter(private val context: Context,
             else -> 0
         }
 
-    fun getPageTitle(position: Int): CharSequence =
-        context.getString(when (position) {
-            0 -> R.string.button_artists
-            1 -> R.string.button_albums
-            2 -> R.string.button_tracks
-            3 -> R.string.button_playlists
-            else -> R.string.button_offline
-        })
-
-    override fun createFragment(index: Int): Fragment {
+    override fun getItem(index: Int): Fragment {
         val fragment: BaseFragment = when (index) {
             0 -> CategoryBrowseFragment.create(
                 CategoryBrowseFragment.arguments(context, Metadata.Category.ALBUM_ARTIST))
@@ -70,14 +63,27 @@ class BrowseFragmentAdapter(private val context: Context,
             else -> TrackListFragment.create(
                 TrackListFragment.arguments(context, Metadata.Category.OFFLINE))
         }
-        fragment.pushTo(this.containerId)
-        (fragment as? IFilterable)?.setFilter(filter)
-        onFragmentInstantiated?.invoke(index)
-        fragments[index] = fragment
-        return fragment
+        return fragment.pushTo(this.containerId)
     }
 
-    override fun getItemCount(): Int {
+    override fun getPageTitle(position: Int): CharSequence =
+        context.getString(when (position) {
+            0 -> R.string.button_artists
+            1 -> R.string.button_albums
+            2 -> R.string.button_tracks
+            3 -> R.string.button_playlists
+            else -> R.string.button_offline
+        })
+
+    override fun getCount(): Int {
         return if (playback.streaming) 5 else 4 /* hide "offline" for remote playback */
+    }
+
+    override fun instantiateItem(container: ViewGroup, position: Int): Any {
+        val result = super.instantiateItem(container, position)
+        fragments[position] = result as Fragment
+        (result as? IFilterable)?.setFilter(filter)
+        onFragmentInstantiated?.invoke(position)
+        return result
     }
 }

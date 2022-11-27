@@ -23,6 +23,11 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -88,7 +93,6 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
-    implementation 'androidx.viewpager2:viewpager2:1.1.0-beta01'
     implementation 'com.google.android.material:material:1.8.0-alpha02'
     implementation 'androidx.media:media:1.6.0'
 
