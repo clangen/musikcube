@@ -191,8 +191,7 @@ namespace musik { namespace core { namespace sdk { namespace fs {
 
             struct stat info = {0};
             if (stat(fn.c_str(), &info) < 0) {
-                closedir(dir);
-                return;
+                continue;
             }
             if (S_ISDIR(info.st_mode)) {
                 std::string name = entry->d_name;
