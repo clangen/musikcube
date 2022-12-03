@@ -1,5 +1,6 @@
 0.98.2
 
+* fix issue with directory scanning that may lead to incomplete indexing
 * reverted ViewPager2 changes in `musikdroid`, as there is a bug that is
   preventing fragments from getting re-initialized properly during the resume
   cycle.
