@@ -465,10 +465,8 @@ void Indexer::SyncDirectory(
 
     /* start recursive filesystem scan */
 
-    try { /* boost::filesystem may throw */
-
+    try {
         /* for each file in the current path... */
-
         boost::filesystem::path path(currentPath);
         boost::filesystem::directory_iterator end;
         boost::filesystem::directory_iterator file(path);
@@ -486,28 +484,33 @@ void Indexer::SyncDirectory(
                 this->SyncDirectory(io, syncRoot, file->path().string(), pathId);
             }
             else {
-                std::string extension = file->path().extension().string();
-                for (auto it : this->tagReaders) {
-                    if (it->CanRead(extension.c_str())) {
-                        if (io) {
-                            io->post(boost::bind(
-                                &Indexer::ReadMetadataFromFile,
-                                this,
-                                io,
-                                file->path(),
-                                pathIdStr));
+                try {
+                    std::string extension = file->path().extension().string();
+                    for (auto it : this->tagReaders) {
+                        if (it->CanRead(extension.c_str())) {
+                            if (io) {
+                                io->post(boost::bind(
+                                    &Indexer::ReadMetadataFromFile,
+                                    this,
+                                    io,
+                                    file->path(),
+                                    pathIdStr));
+                            }
+                            else {
+                                this->ReadMetadataFromFile(nullptr, file->path(), pathIdStr);
+                            }
+                            break;
                         }
-                        else {
-                            this->ReadMetadataFromFile(nullptr, file->path(), pathIdStr);
-                        }
-                        break;
                     }
                 }
-
+                catch (...) {
+                    /* boost::filesystem may throw trying to stat the file */
+                }
             }
         }
     }
     catch(...) {
+        /* boost::filesystem may throw trying to open the directory */
     }
 }
 

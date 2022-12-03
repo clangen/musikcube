@@ -76,15 +76,21 @@ static bool hasSubdirectories(
         directory_iterator file(p);
 
         while (file != end) {
-            if (is_directory(file->status())) {
-                if (showDotfiles || file->path().leaf().string()[0] != '.') {
-                    return true;
+            try {
+                if (is_directory(file->status())) {
+                    if (showDotfiles || file->path().leaf().string()[0] != '.') {
+                        return true;
+                    }
                 }
+            }
+            catch (...) {
+                /* may throw trying to stat the file */
             }
             ++file;
         }
     }
     catch (...) {
+        /* may throw trying to open the dir */
     }
 
     return false;
@@ -102,16 +108,22 @@ static void buildDirectoryList(
         directory_iterator file(p);
 
         while (file != end) {
-            if (is_directory(file->status())) {
-                std::string leaf = file->path().leaf().string();
-                if (showDotfiles || leaf[0] != '.') {
-                    target.push_back(leaf);
+            try {
+                if (is_directory(file->status())) {
+                    std::string leaf = file->path().leaf().string();
+                    if (showDotfiles || leaf[0] != '.') {
+                        target.push_back(leaf);
+                    }
                 }
+            }
+            catch (...) {
+                /* may throw trying to stat the file */
             }
             ++file;
         }
     }
     catch (...) {
+        /* may throw trying to open the directory */
     }
 
     try {
