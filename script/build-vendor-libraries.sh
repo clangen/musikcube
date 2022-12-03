@@ -108,7 +108,7 @@ function fetch_packages() {
 function build_boost() {
     BOOST_CXX_FLAGS="-fPIC"
     if [[ $OS == "Darwin" ]]; then
-        BOOST_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++"
+        BOOST_CXX_FLAGS="-fPIC -std=c++17 -stdlib=libc++"
     fi
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
