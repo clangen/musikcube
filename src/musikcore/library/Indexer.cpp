@@ -53,14 +53,12 @@
 #include <musikcore/sdk/IAnalyzer.h>
 #include <musikcore/sdk/IIndexerSource.h>
 #include <musikcore/audio/Stream.h>
+#include <musikcore/support/ThreadGroup.h>
 
 #include <filesystem>
 #include <algorithm>
 #include <atomic>
-
-#pragma warning(push, 0)
-#include <boost/bind.hpp>
-#pragma warning(pop)
+#include <functional>
 
 #define STRESS_TEST_DB 0
 
@@ -85,7 +83,7 @@ using namespace musik::core::library;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 
-using Thread = std::unique_ptr<boost::thread>;
+using Thread = std::unique_ptr<std::thread>;
 
 using TagReaderDestroyer = PluginFactory::ReleaseDeleter<ITagReader>;
 using DecoderDeleter = PluginFactory::ReleaseDeleter<IDecoderFactory>;
@@ -151,7 +149,7 @@ Indexer::~Indexer() {
 void Indexer::Shutdown() {
     if (this->thread) {
         {
-            boost::mutex::scoped_lock lock(this->stateMutex);
+            std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
             this->syncQueue.clear();
             this->state = StateStopping;
@@ -172,7 +170,7 @@ void Indexer::Schedule(SyncType type) {
 }
 
 void Indexer::Schedule(SyncType type, IIndexerSource* source) {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
     if (!this->thread) {
         this->state = StateIdle;
@@ -200,7 +198,7 @@ void Indexer::AddPath(const std::string& path) {
     context.path = NormalizeDir(path);
 
     {
-        boost::mutex::scoped_lock lock(this->stateMutex);
+        std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
         if (std::find(this->paths.begin(), this->paths.end(), path) == this->paths.end()) {
             this->paths.push_back(path);
@@ -216,7 +214,7 @@ void Indexer::RemovePath(const std::string& path) {
     context.path = NormalizeDir(path);
 
     {
-        boost::mutex::scoped_lock lock(this->stateMutex);
+        std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
         auto it = std::find(this->paths.begin(), this->paths.end(), path);
         if (it != this->paths.end()) {
@@ -492,7 +490,7 @@ void Indexer::SyncDirectory(
                     for (auto it : this->tagReaders) {
                         if (it->CanRead(extension.c_str())) {
                             if (io) {
-                                io->post(boost::bind(
+                                io->post(std::bind(
                                     &Indexer::ReadMetadataFromFile,
                                     this,
                                     io,
@@ -604,7 +602,7 @@ void Indexer::ThreadLoop() {
     while (true) {
         /* wait for some work. */
         {
-            boost::mutex::scoped_lock lock(this->stateMutex);
+            std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
             while (!this->Bail() && this->syncQueue.size() == 0) {
                 this->state = StateIdle;
                 this->waitCondition.wait(lock);
@@ -629,12 +627,14 @@ void Indexer::ThreadLoop() {
 
         if (threadCount > 1) {
             boost::asio::io_service io;
-            boost::thread_group threadPool;
             boost::asio::io_service::work work(io);
+            ThreadGroup threadGroup;
 
             /* initialize the thread pool -- we'll use this to index tracks in parallel. */
             for (int i = 0; i < threadCount; i++) {
-                threadPool.create_thread(boost::bind(&boost::asio::io_service::run, &io));
+                threadGroup.create_thread([&io]() {
+                    io.run();
+                });
             }
 
             this->Synchronize(context, &io);
@@ -647,7 +647,8 @@ void Indexer::ThreadLoop() {
                     io.stop();
                 }
             });
-            threadPool.join_all();
+
+            threadGroup.join_all();
         }
         else {
             this->Synchronize(context, nullptr);
@@ -800,7 +801,7 @@ void Indexer::SyncPlaylistTracksOrder() {
 }
 
 void Indexer::GetPaths(std::vector<std::string>& paths) {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
     std::copy(this->paths.begin(), this->paths.end(), std::back_inserter(paths));
 }
 
@@ -849,7 +850,7 @@ static int optimize(
         ++count;
     }
 
-    boost::thread::yield();
+    std::this_thread::yield();
 
     return count;
 }
@@ -863,8 +864,7 @@ void Indexer::SyncOptimize() {
 }
 
 void Indexer::ProcessAddRemoveQueue() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
-
+    std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
     while (!this->addRemoveQueue.empty()) {
         AddRemoveContext context = this->addRemoveQueue.front();
 

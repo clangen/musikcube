@@ -729,6 +729,7 @@
     <ClInclude Include="support\Playback.h" />
     <ClInclude Include="support\PreferenceKeys.h" />
     <ClInclude Include="support\Preferences.h" />
+    <ClInclude Include="support\ThreadGroup.h" />
     <ClInclude Include="utfutil.h" />
     <ClInclude Include="version.h" />
   </ItemGroup>

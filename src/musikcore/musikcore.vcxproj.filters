@@ -666,5 +666,8 @@
     <ClInclude Include="support\PiggyDebugBackend.h">
       <Filter>src\support</Filter>
     </ClInclude>
+    <ClInclude Include="support\ThreadGroup.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

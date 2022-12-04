@@ -41,18 +41,16 @@
 #include <musikcore/sdk/IIndexerNotifier.h>
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/support/Preferences.h>
-
+#include <musikcore/support/ThreadGroup.h>
 
 #pragma warning(push, 0)
 #include <sigslot/sigslot.h>
-
-#include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
 #include <boost/asio/io_service.hpp>
 #pragma warning(pop)
 
 #include <filesystem>
 #include <thread>
+#include <condition_variable>
 #include <deque>
 #include <vector>
 #include <atomic>
@@ -163,8 +161,8 @@ namespace musik { namespace core {
             std::string libraryPath;
             std::string dbFilename;
             std::atomic<State> state;
-            boost::mutex stateMutex;
-            boost::condition waitCondition;
+            std::mutex stateMutex;
+            std::condition_variable_any waitCondition;
             std::unique_ptr<std::thread> thread;
             std::atomic<int> incrementalUrisScanned, totalUrisScanned;
             std::deque<AddRemoveContext> addRemoveQueue;
