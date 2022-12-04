@@ -3,7 +3,7 @@
 PLATFORM=$(uname)
 
 if [[ "$PLATFORM" == 'Linux' ]]; then
-    echo "[patch-static-vendor-libraries] patch Linux .so files..."
+    echo "[patch-linux-rpath] patch Linux .so files..."
 
     # update the RPATH so libraries in libs/ can discover each other,
     # and plugins can discover themselves, and libs/ (but not the
