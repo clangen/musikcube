@@ -6,6 +6,7 @@
   cycle.
 * updated Simplified Chinese translation (@UM-Li)
 * added Czech translation (@khagaroth)
+* upgrade to c++-17 runtime
 
 --------------------------------------------------------------------------------
 

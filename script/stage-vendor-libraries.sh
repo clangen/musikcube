@@ -45,12 +45,12 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/bin/lib/libavformat-musikcube.so.59 ./bin/lib
     cp vendor/bin/lib/libavutil-musikcube.so.57 ./bin/lib
     cp vendor/bin/lib/libswresample-musikcube.so.4 ./bin/lib
-    cp vendor/bin/lib/libboost_atomic.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_chrono.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_date_time.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_filesystem.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_system.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_thread.so.1.79.0 ./bin/lib
+    cp vendor/bin/lib/libboost_atomic.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_chrono.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_date_time.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_filesystem.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_system.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_thread.so.1.80.0 ./bin/lib
     cp vendor/bin/lib/libcrypto.so.3 ./bin/lib
     cp vendor/bin/lib/libssl.so.3 ./bin/lib
     cp vendor/bin/lib/libcurl.so.4 ./bin/lib
