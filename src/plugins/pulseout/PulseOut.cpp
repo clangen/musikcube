@@ -39,6 +39,7 @@
 #include <pulse/pulseaudio.h>
 #include <pulse/thread-mainloop.h>
 #include <math.h>
+#include <vector>
 
 using namespace musik::core::sdk;
 
