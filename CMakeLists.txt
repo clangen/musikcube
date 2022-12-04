@@ -88,6 +88,11 @@ if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
   endif()
 endif()
 
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+  message(STATUS "[build] detected old gcc, manually adding -lstdc++fs")
+  set (musikcube_LINK_LIBS ${musikcube_LINK_LIBS} stdc++fs)
+endif()
+
 message(STATUS "[build] musikcube_LINK_LIBS: " ${musikcube_LINK_LIBS})
 
 add_subdirectory(src/musikcore)
