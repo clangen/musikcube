@@ -291,55 +291,6 @@ namespace musik { namespace core {
         return path;
     }
 
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace) {
-        size_t pos = input.find(find);
-        while (pos != std::string::npos) {
-            input.replace(pos, find.size(), replace);
-            pos = input.find(find, pos + replace.size());
-        }
-    }
-
-    static inline bool IsSpace(const char c) {
-        return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f';
-    }
-
-    std::string Trim(const std::string& str) {
-        if (str.size()) {
-            int start = 0;
-            for (size_t i = 0; i < str.length(); i++) {
-                if (!IsSpace(str[i])) {
-                    break;
-                }
-                ++start;
-            }
-            int end = (int)str.length();
-            for (size_t i = str.length() - 1; i >= 0; i--) {
-                if (!IsSpace(str[i])) {
-                    break;
-                }
-                --end;
-            }
-            if (end > start) {
-                std::string result = str.substr((size_t)start, (size_t)end - start);
-                return result;
-            }
-        }
-        return str;
-    }
-
-    std::vector<std::string> Split(
-        const std::string& in, const std::string& delim)
-    {
-        std::vector<std::string> result;
-        size_t last = 0, next = 0;
-        while ((next = in.find(delim, last)) != std::string::npos) {
-            result.push_back(std::move(Trim(in.substr(last, next - last))));
-            last = next + 1;
-        }
-        result.push_back(std::move(Trim(in.substr(last))));
-        return result;
-    }
-
     void OpenFile(const std::string& path) {
     #ifdef WIN32
         ShellExecuteA(nullptr, nullptr, path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);

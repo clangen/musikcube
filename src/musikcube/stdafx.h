@@ -68,8 +68,6 @@ asio's streambuf. include it up front so work around this */
 #include <string>
 
 #pragma warning(push, 0)
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string.hpp>
 #include <nlohmann/json.hpp>
 #include <sigslot/sigslot.h>
 #pragma warning(pop)

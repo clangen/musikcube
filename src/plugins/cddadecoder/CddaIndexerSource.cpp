@@ -37,6 +37,7 @@
 #include "CddaIndexerSource.h"
 
 #include <musikcore/sdk/IIndexerNotifier.h>
+#include <musikcore/sdk/String.h>
 
 #include <curl/curl.h>
 
@@ -44,10 +45,6 @@
 #include <sstream>
 #include <set>
 #include <map>
-
-#pragma warning(push, 0)
-#include <boost/algorithm/string.hpp>
-#pragma warning(pop)
 
 using namespace musik::core::sdk;
 
@@ -179,18 +176,15 @@ static void cddbLookup(const std::string& discId, std::string listQueryParams) {
     std::string discQueryParams;
 
     if (result == CURLE_OK) { /* well... we got something back */
-        listResponse = boost::replace_all_copy(listResponse, "\r\n", "\n");
+        listResponse = str::ReplaceAllCopy(listResponse, "\r\n", "\n");
 
-        std::vector<std::string> lines;
-        boost::algorithm::split(lines, listResponse, boost::is_any_of("\n"));
+        std::vector<std::string> lines = str::Split(listResponse, "\n");
 
         /* just choose the first disc for now. we don't have a way to present a
         UI to the user, so this is really all we can do. */
         if (lines.size() >= 1) {
             if (lines.at(0).find("200") == 0) {
-                std::vector<std::string> parts;
-                boost::algorithm::split(parts, lines.at(0), boost::is_any_of(" "));
-
+                std::vector<std::string> parts = str::Split(lines.at(0), " ");
                 if (parts.size() >= 3) {
                     discQueryParams = "cmd=cddb+read+" + parts[1] + "+" + parts[2] + FREEDB_HELLO;
                 }
@@ -198,9 +192,7 @@ static void cddbLookup(const std::string& discId, std::string listQueryParams) {
             /* the first line of the response has a status code. anything
             in the 200 range is fine. */
             else if (lines.at(0).find("21") == 0) {
-                std::vector<std::string> parts;
-                boost::algorithm::split(parts, lines.at(1), boost::is_any_of(" "));
-
+                std::vector<std::string> parts = str::Split(lines.at(1), " ");
                 if (parts.size() >= 2) {
                     discQueryParams = "cmd=cddb+read+" + parts[0] + "+" + parts[1] + FREEDB_HELLO;
                 }
@@ -219,11 +211,8 @@ static void cddbLookup(const std::string& discId, std::string listQueryParams) {
         curl_easy_cleanup(details);
 
         if (result == CURLE_OK) {
-            discResponse = boost::replace_all_copy(discResponse, "\r\n", "\n");
-
-            std::vector<std::string> lines;
-            boost::algorithm::split(lines, discResponse, boost::is_any_of("\n"));
-
+            discResponse = str::ReplaceAllCopy(discResponse, "\r\n", "\n");
+            std::vector<std::string> lines = str::Split(discResponse, " ");
             std::shared_ptr<CddbMetadata> metadata(new CddbMetadata());
 
             for (auto line : lines) {
@@ -231,8 +220,8 @@ static void cddbLookup(const std::string& discId, std::string listQueryParams) {
                 if (len) {
                     auto eq = line.find_first_of('=');
                     if (eq != std::string::npos) {
-                        std::string key = boost::trim_copy(line.substr(0, eq));
-                        std::string value = boost::trim_copy(line.substr(eq + 1));
+                        std::string key = str::Trim(line.substr(0, eq));
+                        std::string value = str::Trim(line.substr(eq + 1));
 
                         if (key == "DTITLE") {
                             auto slash = value.find_first_of('/');
@@ -242,8 +231,8 @@ static void cddbLookup(const std::string& discId, std::string listQueryParams) {
                                 artist = album = value;
                             }
                             else {
-                                artist = boost::trim_copy(value.substr(0, slash));
-                                album = boost::trim_copy(value.substr(slash + 1));
+                                artist = str::Trim(value.substr(0, slash));
+                                album = str::Trim(value.substr(slash + 1));
                             }
 
                             metadata->artist = artist;

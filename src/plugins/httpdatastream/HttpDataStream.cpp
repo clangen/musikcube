@@ -40,6 +40,7 @@
 #include <musikcore/sdk/IEnvironment.h>
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/ISchema.h>
+#include <musikcore/sdk/String.h>
 
 #include <iostream>
 #include <algorithm>
@@ -51,9 +52,6 @@
 #include <atomic>
 
 #pragma warning(push, 0)
-#include <boost/algorithm/string.hpp>
-
-/* meh... */
 #include <../../3rdparty/include/nlohmann/json.hpp>
 #include <../../3rdparty/include/websocketpp/base64/base64.hpp>
 #pragma warning(pop)
@@ -70,7 +68,6 @@
 
 using namespace std::chrono;
 using namespace musik::core::sdk;
-namespace al = boost::algorithm;
 
 static std::mutex globalMutex;
 static IEnvironment* environment;
@@ -119,12 +116,12 @@ extern "C" DLLEXPORT musik::core::sdk::ISchema * GetSchema() {
 }
 
 static bool parseHeader(std::string raw, std::string& key, std::string& value) {
-    al::replace_all(raw, "\r\n", "");
+    str::ReplaceAll(raw, "\r\n", "");
 
     size_t splitAt = raw.find_first_of(":");
     if (splitAt != std::string::npos) {
-        key = boost::trim_copy(raw.substr(0, splitAt));
-        value = boost::trim_copy(raw.substr(splitAt + 1));
+        key = str::Trim(raw.substr(0, splitAt));
+        value = str::Trim(raw.substr(splitAt + 1));
         return true;
     }
 

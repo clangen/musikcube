@@ -36,6 +36,7 @@
 #include "Constants.h"
 
 #include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/String.h>
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -49,19 +50,8 @@ static const char* TAG = "WebSocketServer";
 
 /* UTILITY METHODS */
 
-namespace str {
-    template<typename... Args>
-    static std::string format(const std::string& format, Args ... args) {
-        /* https://stackoverflow.com/a/26221725 */
-        size_t size = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; /* extra space for '\0' */
-        std::unique_ptr<char[]> buf(new char[size]);
-        std::snprintf(buf.get(), size, format.c_str(), args ...);
-        return std::string(buf.get(), buf.get() + size - 1); /* omit the '\0' */
-    }
-}
-
 static std::string nextMessageId() {
-    return str::format("musikcube-server-%d", ++nextId);
+    return str::Format("musikcube-server-%d", ++nextId);
 }
 
 static std::shared_ptr<char*> jsonToStringArray(const json& jsonArray) {
@@ -194,10 +184,10 @@ void WebSocketServer::ThreadProc() {
         wss->run();
     }
     catch (websocketpp::exception const & e) {
-        this->context.debug->Error(TAG, str::format("[ThreadProc] websocketpp::exception: %s", e.what()).c_str());
+        this->context.debug->Error(TAG, str::Format("[ThreadProc] websocketpp::exception: %s", e.what()).c_str());
     }
     catch (std::exception& e) {
-        this->context.debug->Error(TAG, str::format("[ThreadProc] sttd::exception: %s", e.what()).c_str());
+        this->context.debug->Error(TAG, str::Format("[ThreadProc] sttd::exception: %s", e.what()).c_str());
     }
     catch (...) {
         this->context.debug->Error(TAG, "[ThreadProc] unknown/unexpected exception");
@@ -1655,11 +1645,11 @@ void WebSocketServer::OnMessage(server* s, connection_hdl hdl, message_ptr msg) 
         }
     }
     catch (std::exception& e) {
-        this->context.debug->Error(TAG, str::format("OnMessage failed: %s", e.what()).c_str());
+        this->context.debug->Error(TAG, str::Format("OnMessage failed: %s", e.what()).c_str());
         this->RespondWithInvalidRequest(hdl, value::invalid, value::invalid);
     }
     catch (...) {
-        this->context.debug->Error(TAG, str::format("message parse failed: %s", msg->get_payload().c_str()).c_str());
+        this->context.debug->Error(TAG, str::Format("message parse failed: %s", msg->get_payload().c_str()).c_str());
         this->RespondWithInvalidRequest(hdl, value::invalid, value::invalid);
     }
 }

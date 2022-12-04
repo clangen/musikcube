@@ -36,19 +36,17 @@
 
 #include "LruDiskCache.h"
 
+#include <musikcore/sdk/String.h>
+
 #include <algorithm>
 #include <filesystem>
 #include <chrono>
-
-#pragma warning(push, 0)
-#include <boost/algorithm/string.hpp>
-#pragma warning(pop)
 
 const std::string PREFIX = "musikcube";
 const std::string TEMP_EXTENSION = ".tmp";
 
 namespace fs = std::filesystem;
-namespace al = boost::algorithm;
+using namespace musik::core::sdk;
 
 using Lock = std::unique_lock<std::recursive_mutex>;
 
@@ -57,7 +55,7 @@ static std::string tempFilename(const std::string& root, size_t id, int64_t inst
 }
 
 static std::string finalFilename(const std::string& root, size_t id, std::string type) {
-    al::replace_all(type, "/", "-");
+    str::ReplaceAll(type, "/", "-");
     return root + "/" + PREFIX + "_" + std::to_string(id) + "_" + type;
 }
 
@@ -152,8 +150,7 @@ void LruDiskCache::Purge() {
 
 LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
     std::string fn = path.stem().u8string() + path.extension().u8string();
-    std::vector<std::string> parts;
-    boost::split(parts, fn, boost::is_any_of("_"));
+    std::vector<std::string> parts = str::Split(fn, "_");
     if (parts.size() == 3 && parts[0] == PREFIX) {
         try {
             auto entry = std::shared_ptr<Entry>(new Entry());
@@ -161,7 +158,7 @@ LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
             entry->path = path.u8string();
             entry->type = parts[2];
             entry->time = fs::last_write_time(path);
-            al::replace_all(entry->type, "-", "/");
+            str::ReplaceAll(entry->type, "-", "/");
             return entry;
         }
         catch (...) {

@@ -37,7 +37,7 @@
 #include <app/util/Messages.h>
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/support/Auddio.h>
-#include <musikcore/support/Common.h>
+#include <musikcore/sdk/String.h>
 #include <musikcore/library/query/LyricsQuery.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
@@ -183,9 +183,9 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
 
 void LyricsLayout::UpdateAdapter() {
     std::string fixed = this->currentLyrics;
-    ReplaceAll(fixed, "\r\n", "\n");
-    ReplaceAll(fixed, "\r", "\n");
-    auto items = Split(fixed, "\n");
+    str::ReplaceAll(fixed, "\r\n", "\n");
+    str::ReplaceAll(fixed, "\r", "\n");
+    auto items = str::Split(fixed, "\n");
     this->adapter->Clear();
     for (auto& text : items) {
         this->adapter->AddEntry(std::make_shared<SingleLineEntry>(text));
