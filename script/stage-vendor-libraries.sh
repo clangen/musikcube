@@ -45,14 +45,14 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/bin/lib/libavformat-musikcube.so.59 ./bin/lib
     cp vendor/bin/lib/libavutil-musikcube.so.57 ./bin/lib
     cp vendor/bin/lib/libswresample-musikcube.so.4 ./bin/lib
-    cp vendor/bin/lib/libboost_atomic.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_chrono.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_date_time.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_filesystem.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_system.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libboost_thread.so.1.79.0 ./bin/lib
-    cp vendor/bin/lib/libcrypto.so.3 ./bin/lib
-    cp vendor/bin/lib/libssl.so.3 ./bin/lib
+    cp vendor/bin/lib/libboost_atomic.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_chrono.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_date_time.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_filesystem.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_system.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libboost_thread.so.1.80.0 ./bin/lib
+    cp vendor/bin/lib/libcrypto.so.1.1 ./bin/lib
+    cp vendor/bin/lib/libssl.so.1.1 ./bin/lib
     cp vendor/bin/lib/libcurl.so.4 ./bin/lib
     cp vendor/bin/lib/libmp3lame.so.0 ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.so.12 ./bin/lib
@@ -77,21 +77,4 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     mkdir -p ./bin/share/terminfo
     cp -rfp /lib/terminfo/* ./bin/share/terminfo
 
-    # update the RPATH so libraries in libs/ can discover each other,
-    # and plugins can discover themselves, and libs/ (but not the
-    # other way around)
-
-    FILES="./bin/lib/*"
-    for f in $FILES
-    do
-        patchelf --set-rpath "\$ORIGIN" "$f"
-    done
-
-    FILES="./bin/plugins/*.so"
-    for f in $FILES
-    do
-        patchelf --set-rpath "\$ORIGIN:\$ORIGIN/../lib" "$f"
-    done
-
-    chmod -x ./bin/lib/*
 fi

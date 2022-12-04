@@ -20,7 +20,7 @@
 #
 
 export CFLAGS="-fPIC"
-export CXXFLAGS="-fPIC"
+export CXXFLAGS="-fPIC -std=c++17"
 
 RPATH="@rpath"
 
@@ -106,9 +106,9 @@ function fetch_packages() {
 #
 
 function build_boost() {
-    BOOST_CXX_FLAGS="-fPIC"
+    BOOST_CXX_FLAGS="-fPIC -std=c++17"
     if [[ $OS == "Darwin" ]]; then
-        BOOST_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++"
+        BOOST_CXX_FLAGS="-fPIC -std=c++17 -stdlib=libc++"
     fi
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
@@ -124,7 +124,7 @@ function build_boost() {
 
     ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread || exit $?
     ./b2 headers || exit $?
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" --prefix=${OUTDIR} install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} cxxstd=17 threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" --prefix=${OUTDIR} install || exit $?
     cd ..
 }
 

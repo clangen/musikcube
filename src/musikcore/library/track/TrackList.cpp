@@ -47,12 +47,15 @@
 #include <musikcore/support/NarrowCast.h>
 #include <unordered_set>
 #include <map>
+#include <random>
+#include <chrono>
 
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library;
 using namespace musik::core::library::query;
 using namespace musik::core::sdk;
+using namespace std::chrono;
 
 static constexpr size_t kDefaultCacheSize = 50;
 static constexpr int64_t kCacheWindowTimeoutMs = 150LL;
@@ -218,7 +221,9 @@ int TrackList::IndexOf(int64_t id) const {
 }
 
 void TrackList::Shuffle() {
-    std::random_shuffle(this->ids.begin(), this->ids.end());
+    auto seed = static_cast<unsigned>(system_clock::now().time_since_epoch().count());
+    auto rng = std::default_random_engine(seed);
+    std::shuffle(this->ids.begin(), this->ids.end(), rng);
 }
 
 void TrackList::Clear() noexcept {

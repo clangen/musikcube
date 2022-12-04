@@ -294,6 +294,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib32-msvc-14.2;../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -340,6 +341,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib32-msvc-14.2;../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -386,6 +388,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib32-msvc-14.2;../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -431,6 +434,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib64-msvc-14.2;../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -475,6 +479,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib64-msvc-14.2;../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -519,6 +524,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib64-msvc-14.2;../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -566,6 +572,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib32-msvc-14.2;../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -618,6 +625,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib32-msvc-14.2;../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -670,6 +678,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib32-msvc-14.2;../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -722,6 +731,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib64-msvc-14.2;../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -773,6 +783,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib64-msvc-14.2;../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -824,6 +835,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>../../../boost_1_74_0/lib64-msvc-14.2;../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
