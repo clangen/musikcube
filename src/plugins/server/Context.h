@@ -40,15 +40,13 @@
 #include <musikcore/sdk/IEnvironment.h>
 #include <musikcore/sdk/IDebug.h>
 
-#pragma warning(push, 0)
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/locks.hpp>
-#pragma warning(pop)
+#include <shared_mutex>
+#include <mutex>
 
 class ReadWriteLock {
-    typedef boost::shared_mutex Mutex;
-    typedef boost::unique_lock<Mutex> WriteLock;
-    typedef boost::shared_lock<Mutex> ReadLock;
+    typedef std::shared_mutex Mutex;
+    typedef std::unique_lock<Mutex> WriteLock;
+    typedef std::shared_lock<Mutex> ReadLock;
 
     public:
         WriteLock Write() {
