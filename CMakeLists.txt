@@ -52,14 +52,19 @@ include_directories(
   "${musikcube_SOURCE_DIR}/src/musikcore"
   "${musikcube_SOURCE_DIR}/src/musikcube"
   "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
-  "${musikcube_SOURCE_DIR}/src/3rdparty/include")
+  "${musikcube_SOURCE_DIR}/src/3rdparty/include"
+  "${musikcube_SOURCE_DIR}/src/3rdparty/asio/asio/include")
 
 link_directories("${musikcube_SOURCE_DIR}/bin/plugins")
 
-find_package(Boost 1.55.0 REQUIRED system filesystem thread)
-include_directories(${Boost_INCLUDE_DIRS})
-message(STATUS "[boost] libs: " ${Boost_LIBRARIES})
-message(STATUS "[boost] includes: " ${Boost_INCLUDE_DIRS})
+# these are used to (1) disable the standalone ASIO from trying to use
+# boost, and (2) instruct websocketpp to use standalone (not boost) ASIO
+add_definitions(
+  -DBOOST_DATE_TIME_NO_LIB
+  -DBOOST_REGEX_NO_LIB
+  -D_WEBSOCKETPP_CPP11_TYPE_TRAITS_
+  -D_WEBSOCKETPP_CPP11_RANDOM_DEVICE_
+  -DASIO_STANDALONE)
 
 if (${BUILD_STANDALONE} MATCHES "true")
   find_vendor_library(LIBCURL curl)
@@ -74,7 +79,7 @@ endif()
 
 find_library(LIBZ NAMES z)
 
-set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${Boost_LIBRARIES} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ})
+set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ})
 
 if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
   if(NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)

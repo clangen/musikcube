@@ -26,4 +26,4 @@ endif()
 find_library(LIBZ NAMES z)
 message(STATUS "[server] using " ${LIBMICROHTTPD} ", " ${LIBZ})
 
-target_link_libraries(server ${Boost_LIBRARIES} ${LIBZ} ${LIBMICROHTTPD} ${EXTRA_LIBS})
+target_link_libraries(server ${LIBZ} ${LIBMICROHTTPD} ${EXTRA_LIBS})
