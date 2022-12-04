@@ -1417,7 +1417,7 @@ void WebSocketServer::RespondWithGetGainSettings(connection_hdl connection, json
     float preampGain = context.environment->GetPreampGain();
 
     this->RespondWithOptions(connection, request, {
-        { key::replaygain_mode, REPLAYGAIN_MODE_TO_STRING.left.find(replayGainMode)->second },
+        { key::replaygain_mode, REPLAYGAIN_MODE_TO_STRING.find(replayGainMode)->second },
         { key::preamp_gain, preampGain }
     });
 }
@@ -1429,10 +1429,11 @@ void WebSocketServer::RespondWithSetGainSettings(connection_hdl connection, json
 
     float currentGain = context.environment->GetPreampGain();
     auto currentMode = context.environment->GetReplayGainMode();
-    auto currentModeString = REPLAYGAIN_MODE_TO_STRING.left.find(currentMode)->second;
+    auto currentModeString = REPLAYGAIN_MODE_TO_STRING.find(currentMode)->second;
 
-    ReplayGainMode newMode = REPLAYGAIN_MODE_TO_STRING.right.find(
-        options.value(key::replaygain_mode, currentModeString))->second;
+    ReplayGainMode newMode = FindKeyByValue<musik::core::sdk::ReplayGainMode, std::string>(
+        REPLAYGAIN_MODE_TO_STRING,
+        options.value(key::replaygain_mode, currentModeString))->first;
 
     float newGain = options.value(key::preamp_gain, currentGain);
 
@@ -1494,20 +1495,21 @@ void WebSocketServer::RespondWithSetEqualizerSettings(connection_hdl connection,
 void WebSocketServer::RespondWithGetTransportType(connection_hdl connection, json& request) {
     auto type = context.environment->GetTransportType();
     this->RespondWithOptions(connection, request, {
-        { key::type, TRANSPORT_TYPE_TO_STRING.left.find(type)->second }
+        { key::type, TRANSPORT_TYPE_TO_STRING.find(type)->second }
     });
 }
 
 void WebSocketServer::RespondWithSetTransportType(connection_hdl connection, json& request) {
     auto& options = request[message::options];
 
-    std::string currentType = TRANSPORT_TYPE_TO_STRING.left
+    std::string currentType = TRANSPORT_TYPE_TO_STRING
         .find(context.environment->GetTransportType())->second;
 
     auto newType = options.value(key::type, currentType);
 
     if (currentType != newType) {
-        auto enumType = TRANSPORT_TYPE_TO_STRING.right.find(newType)->second;
+        auto enumType = FindKeyByValue<musik::core::sdk::TransportType, std::string>(
+            TRANSPORT_TYPE_TO_STRING, newType)->first;
         context.environment->SetTransportType(enumType);
     }
 
@@ -1607,8 +1609,8 @@ json WebSocketServer::WebSocketServer::ReadTrackMetadata(ITrack* track) {
 }
 
 void WebSocketServer::BuildPlaybackOverview(json& options) {
-    options[key::state] = PLAYBACK_STATE_TO_STRING.left.find(context.playback->GetPlaybackState())->second;
-    options[key::repeat_mode] = REPEAT_MODE_TO_STRING.left.find(context.playback->GetRepeatMode())->second;
+    options[key::state] = PLAYBACK_STATE_TO_STRING.find(context.playback->GetPlaybackState())->second;
+    options[key::repeat_mode] = REPEAT_MODE_TO_STRING.find(context.playback->GetRepeatMode())->second;
     options[key::volume] = context.playback->GetVolume();
     options[key::shuffled] = context.playback->IsShuffled();
     options[key::muted] = context.playback->IsMuted();
