@@ -225,7 +225,7 @@ void Indexer::RemovePath(const std::string& path) {
     }
 }
 
-void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* io) {
+void Indexer::Synchronize(const SyncContext& context, asio::io_service* io) {
     LocalLibrary::CreateIndexes(this->dbConnection);
 
     IndexerTrack::OnIndexerStarted(this->dbConnection);
@@ -354,7 +354,7 @@ void Indexer::FinalizeSync(const SyncContext& context) {
 }
 
 void Indexer::ReadMetadataFromFile(
-    boost::asio::io_service* io,
+    asio::io_service* io,
     const std::fs::path& file,
     const std::string& pathId)
 {
@@ -457,7 +457,7 @@ inline void Indexer::IncrementTracksScanned(int delta) {
 }
 
 void Indexer::SyncDirectory(
-    boost::asio::io_service* io,
+    asio::io_service* io,
     const std::string &syncRoot,
     const std::string &currentPath,
     int64_t pathId)
@@ -626,8 +626,8 @@ void Indexer::ThreadLoop() {
             prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS);
 
         if (threadCount > 1) {
-            boost::asio::io_service io;
-            boost::asio::io_service::work work(io);
+            asio::io_service io;
+            asio::io_service::work work(io);
             ThreadGroup threadGroup;
 
             /* initialize the thread pool -- we'll use this to index tracks in parallel. */

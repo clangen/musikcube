@@ -52,7 +52,7 @@
 /* curses defines a timeout() method that causes issues with
 asio's streambuf. include it up front so work around this */
 #pragma warning(push, 0)
-#include <boost/asio/basic_socket_streambuf.hpp>
+#include <asio/basic_socket_streambuf.hpp>
 #pragma warning(pop)
 
 #include <set>

@@ -55,7 +55,7 @@ namespace musik { namespace core { namespace net {
             using PlainTextClientPtr = std::unique_ptr<PlainTextClient>;
             using TlsClient = websocketpp::client<websocketpp::config::asio_tls_client>;
             using TlsClientPtr = std::unique_ptr<TlsClient>;
-            using SslContext = std::shared_ptr<boost::asio::ssl::context>;
+            using SslContext = std::shared_ptr<asio::ssl::context>;
             using Message = websocketpp::config::asio_client::message_type::ptr;
             using Connection = websocketpp::connection_hdl;
 
@@ -70,7 +70,7 @@ namespace musik { namespace core { namespace net {
                 TLS = 1
             };
 
-            RawWebSocketClient(boost::asio::io_service& io);
+            RawWebSocketClient(asio::io_service& io);
             RawWebSocketClient(const RawWebSocketClient&) = delete;
             ~RawWebSocketClient();
 
