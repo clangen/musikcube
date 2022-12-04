@@ -1,3 +1,6 @@
 [submodule "src/3rdparty/bin"]
 	path = src/3rdparty/bin
 	url = https://github.com/clangen/musikcube-bin
+[submodule "src/3rdparty/asio"]
+	path = src/3rdparty/asio
+	url = https://github.com/chriskohlhoff/asio/
