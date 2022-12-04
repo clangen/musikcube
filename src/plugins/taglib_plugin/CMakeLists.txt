@@ -4,7 +4,6 @@ set (taglibreader_SOURCES
 )
 
 add_library(taglibreader SHARED ${taglibreader_SOURCES})
-include_directories(${Boost_INCLUDE_DIRS})
 
 find_library(LIBZ z)
 
@@ -34,4 +33,4 @@ else()
 endif()
 
 message(STATUS "[taglibmetadatareader] using ${LIBTAG}")
-target_link_libraries(taglibreader ${Boost_LIBRARIES} ${LIBTAG} ${LIBZ})
+target_link_libraries(taglibreader ${LIBTAG} ${LIBZ})
