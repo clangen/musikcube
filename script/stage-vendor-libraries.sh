@@ -28,8 +28,8 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libboost_filesystem.dylib ./bin/lib
     cp vendor/bin/lib/libboost_system.dylib ./bin/lib
     cp vendor/bin/lib/libboost_thread.dylib ./bin/lib
-    cp vendor/bin/lib/libcrypto.3.dylib ./bin/lib
-    cp vendor/bin/lib/libssl.3.dylib ./bin/lib
+    cp vendor/bin/lib/libcrypto.1.1.dylib ./bin/lib
+    cp vendor/bin/lib/libssl.1.1.dylib ./bin/lib
     cp vendor/bin/lib/libcurl.4.dylib ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.12.dylib ./bin/lib
     cp vendor/bin/lib/libmp3lame.0.dylib ./bin/lib
