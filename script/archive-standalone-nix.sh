@@ -73,6 +73,8 @@ else
   make ${JOBS} || exit $?
 fi
 
+./script/patch-vendor-libraries.sh || exit $?
+
 rm -rf dist/$VERSION/*${OS_ARCH}_$VERSION* 2> /dev/null
 
 mkdir -p $OUTDIR/lib

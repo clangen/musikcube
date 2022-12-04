@@ -77,21 +77,4 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     mkdir -p ./bin/share/terminfo
     cp -rfp /lib/terminfo/* ./bin/share/terminfo
 
-    # update the RPATH so libraries in libs/ can discover each other,
-    # and plugins can discover themselves, and libs/ (but not the
-    # other way around)
-
-    FILES="./bin/lib/*"
-    for f in $FILES
-    do
-        patchelf --set-rpath "\$ORIGIN" "$f"
-    done
-
-    FILES="./bin/plugins/*.so"
-    for f in $FILES
-    do
-        patchelf --set-rpath "\$ORIGIN:\$ORIGIN/../lib" "$f"
-    done
-
-    chmod -x ./bin/lib/*
 fi
