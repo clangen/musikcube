@@ -36,6 +36,10 @@
 
 #include <musikcore/config.h>
 
+#ifdef timeout
+#undef timeout
+#endif
+
 #pragma warning(push, 0)
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_client.hpp>
