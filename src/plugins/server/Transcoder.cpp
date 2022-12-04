@@ -43,6 +43,7 @@
 #include <set>
 #include <map>
 #include <filesystem>
+#include <functional>
 #include <chrono>
 
 namespace fs = std::filesystem;
