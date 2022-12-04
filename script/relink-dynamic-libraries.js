@@ -21,15 +21,15 @@ if (!mac) {
   process.exit(0);
 }
 
-/* these are the libraries we'll scan, and update linked libraries from 
+/* these are the libraries we'll scan, and update linked libraries from
 absolute paths to "@rpath/filename" */
 const libraries = [
   'libavcodec-musikcube.59.dylib',
   'libavformat-musikcube.59.dylib',
   'libavutil-musikcube.57.dylib',
   'libswresample-musikcube.4.dylib',
-  'libcrypto.3.dylib',
-  'libssl.3.dylib',
+  'libcrypto.1.1.dylib',
+  'libssl.1.1.dylib',
   'libcurl.4.dylib',
   'libmicrohttpd.12.dylib',
   'libmp3lame.0.dylib',
@@ -46,8 +46,8 @@ const symlinks = [
   ['libavformat-musikcube.59.dylib', 'libavformat-musikcube.dylib'],
   ['libavutil-musikcube.57.dylib', 'libavutil-musikcube.dylib'],
   ['libswresample-musikcube.4.dylib', 'libswresample-musikcube.dylib'],
-  ['libcrypto.3.dylib', 'libcrypto.dylib'],
-  ['libssl.3.dylib', 'libssl.dylib'],
+  ['libcrypto.1.1.dylib', 'libcrypto.dylib'],
+  ['libssl.1.1.dylib', 'libssl.dylib'],
   ['libcurl.4.dylib', 'libcurl.dylib'],
   ['libmicrohttpd.12.dylib', 'libmicrohttpd.dylib'],
   ['libmp3lame.0.dylib', 'libmp3lame.dylib'],
