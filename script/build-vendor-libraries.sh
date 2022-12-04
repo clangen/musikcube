@@ -124,7 +124,7 @@ function build_boost() {
 
     ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread || exit $?
     ./b2 headers || exit $?
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" --prefix=${OUTDIR} install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} cxxstd=17 threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" --prefix=${OUTDIR} install || exit $?
     cd ..
 }
 
