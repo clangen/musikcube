@@ -20,7 +20,7 @@
 #
 
 export CFLAGS="-fPIC"
-export CXXFLAGS="-fPIC"
+export CXXFLAGS="-fPIC -std=c++17"
 
 RPATH="@rpath"
 
@@ -106,7 +106,7 @@ function fetch_packages() {
 #
 
 function build_boost() {
-    BOOST_CXX_FLAGS="-fPIC"
+    BOOST_CXX_FLAGS="-fPIC -std=c++17"
     if [[ $OS == "Darwin" ]]; then
         BOOST_CXX_FLAGS="-fPIC -std=c++17 -stdlib=libc++"
     fi
