@@ -62,12 +62,12 @@ asio's streambuf. include it up front so work around this */
 #include <algorithm>
 #include <unordered_map>
 #include <thread>
+#include <filesystem>
 
 #include <cmath>
 #include <string>
 
 #pragma warning(push, 0)
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 #include <nlohmann/json.hpp>

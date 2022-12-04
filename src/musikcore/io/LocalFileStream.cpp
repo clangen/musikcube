@@ -41,6 +41,7 @@
 #include <musikcore/config.h>
 #include <cstdio>
 #include <iostream>
+#include <filesystem>
 
 static const std::string TAG = "LocalFileStream";
 
@@ -70,21 +71,21 @@ bool LocalFileStream::Open(const char *filename, OpenFlags flags) {
         this->uri = filename;
         debug::info(TAG, "opening file: " + std::string(filename));
 
-        boost::filesystem::path file(filename);
-        const bool exists = boost::filesystem::exists(file);
+        std::filesystem::path file(std::filesystem::u8path(filename));
+        const bool exists = std::filesystem::exists(file);
 
         if (flags & OpenFlags::Read && !exists) {
             debug::error(TAG, "open with OpenFlags::Read failed because file doesn't exist. " + this->uri);
             return false;
         }
 
-        if (exists && !boost::filesystem::is_regular(file)) {
+        if (exists && !std::filesystem::is_regular_file(file)) {
             debug::error(TAG, "not a regular file" + this->uri);
             return false;
         }
 
-        boost::system::error_code ec;
-        this->filesize = narrow_cast<long>(boost::filesystem::file_size(file, ec));
+        std::error_code ec;
+        this->filesize = narrow_cast<long>(std::filesystem::file_size(file, ec));
 
         if (ec && flags & OpenFlags::Write) {
             this->filesize = 0;
@@ -106,7 +107,7 @@ bool LocalFileStream::Open(const char *filename, OpenFlags flags) {
             }
         }
 
-        this->extension = file.extension().string();
+        this->extension = file.extension().u8string();
 #ifdef WIN32
         std::wstring u16fn = u8to16(this->uri);
         std::wstring u16flags = u8to16(openFlags);

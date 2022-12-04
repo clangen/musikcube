@@ -44,6 +44,7 @@
 #include <string>
 #include <cctype>
 #include <algorithm>
+#include <filesystem>
 
 #pragma warning(push, 0)
 #include <utf8/utf8.h>
@@ -74,9 +75,11 @@
     #include <sys/sysctl.h>
 #endif
 
+namespace fs = std::filesystem;
+
 static inline void silentDelete(const std::string fn) {
-    boost::system::error_code ec;
-    boost::filesystem::remove(boost::filesystem::path(fn), ec);
+    std::error_code ec;
+    fs::remove(fs::path(fs::u8path(fn)), ec);
 }
 
 namespace musik { namespace core {
@@ -127,8 +130,8 @@ namespace musik { namespace core {
                 argv = new char*[len];
                 if (sysctl(mib, 4, argv, &len, nullptr, 0) < 0) abort();
 
-                boost::filesystem::path command = boost::filesystem::system_complete(argv[0]);
-                realpath(command.c_str(), pathbuf);
+                fs::path command = fs::absolute(fs::path(fs::u8path(argv[0])));
+                realpath(command.u8string().c_str(), pathbuf);
                 delete[] argv;
             #else
                 std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
@@ -170,13 +173,12 @@ namespace musik { namespace core {
 
         if (create) {
             try {
-                boost::filesystem::path path(directory);
-                if (!boost::filesystem::exists(path)) {
-                    boost::filesystem::create_directories(path);
+                fs::path path(fs::u8path(directory));
+                if (!fs::exists(path)) {
+                    fs::create_directories(path);
                 }
             }
             catch (...) {
-                /* ugh, fixme */
             }
         }
 
@@ -279,9 +281,9 @@ namespace musik { namespace core {
     }
 
     std::string NormalizeDir(std::string path) {
-        path = boost::filesystem::path(path).make_preferred().string();
+        path = fs::path(fs::u8path(path)).make_preferred().u8string();
 
-        std::string sep(1, boost::filesystem::path::preferred_separator);
+        std::string sep(1, fs::path::preferred_separator);
         if (path.size() && path.substr(path.size() - 1, 1) != sep) {
             path += sep;
         }

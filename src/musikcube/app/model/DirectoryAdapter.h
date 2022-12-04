@@ -36,7 +36,8 @@
 
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/ListWindow.h>
-#include <boost/filesystem.hpp>
+
+#include <filesystem>
 #include <vector>
 #include <stack>
 
@@ -74,7 +75,7 @@ namespace musik {
                 bool IsCurrentDirectory(size_t index);
                 size_t GetHeaderCount();
 
-                boost::filesystem::path dir, rootDir;
+                std::filesystem::path dir, rootDir;
                 std::vector<std::string> subdirs;
                 std::stack<size_t> selectedIndexStack;
                 bool showDotfiles, allowEscapeRoot, showRootDirectory;

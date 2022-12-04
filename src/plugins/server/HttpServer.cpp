@@ -42,7 +42,6 @@
 #include <musikcore/sdk/String.h>
 
 #pragma warning(push, 0)
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <websocketpp/base64/base64.hpp>
 #pragma warning(pop, 0)
@@ -50,6 +49,7 @@
 #include <unordered_map>
 #include <string>
 #include <cstdlib>
+#include <filesystem>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -65,6 +65,10 @@
 
 static const char* ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH = "MUSIKCUBE_DISABLE_HTTP_SERVER_AUTH";
 static const char* TAG = "HttpServer";
+
+namespace std {
+    namespace fs = std::filesystem;
+}
 
 using namespace musik::core::sdk;
 
@@ -100,8 +104,8 @@ struct Range {
 
 static std::string contentType(const std::string& fn) {
     try {
-        boost::filesystem::path p(fn);
-        std::string ext = boost::trim_copy(p.extension().string());
+        std::fs::path p(std::fs::u8path(fn));
+        std::string ext = boost::trim_copy(p.extension().u8string());
         boost::to_lower(ext);
 
         auto it = CONTENT_TYPE_MAP.find(ext);
@@ -117,8 +121,8 @@ static std::string contentType(const std::string& fn) {
 
 static std::string fileExtension(const std::string& fn) {
     try {
-        boost::filesystem::path p(fn);
-        std::string ext = boost::trim_copy(p.extension().string());
+        std::fs::path p(std::fs::u8path(fn));
+        std::string ext = boost::trim_copy(p.extension().u8string());
         if (ext.size()) {
             boost::to_lower(ext);
             return ext[0] == '.' ? ext.substr(1) : ext;
@@ -555,7 +559,7 @@ int HttpServer::HandleAudioTrackRequest(
                 if (!isOnDemandTranscoder) {
                     MHD_add_response_header(response, "Accept-Ranges", "bytes");
 
-                    if (boost::filesystem::exists(title)) {
+                    if (std::fs::exists(std::fs::u8path(filename))) {
                         MHD_add_response_header(response, "X-musikcube-Filename-Override", externalId.c_str());
                     }
                 }

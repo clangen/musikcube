@@ -49,6 +49,11 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/SchemaOverlay.h>
 
+#include <filesystem>
+
+namespace std {
+    namespace fs = std::filesystem;
+}
 using namespace musik;
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -171,7 +176,7 @@ class PluginListAdapter : public ScrollAdapterBase {
                 [&plugins, prefs](IPlugin* raw, Plugin plugin, const std::string& fn) {
                     PluginInfoPtr info(new PluginInfo());
                     info->plugin = raw;
-                    info->fn = boost::filesystem::path(fn).filename().string();
+                    info->fn = std::fs::path(std::fs::u8path(fn)).filename().u8string();
                     info->enabled = prefs->GetBool(info->fn, true);
                     plugins.push_back(info);
                 });

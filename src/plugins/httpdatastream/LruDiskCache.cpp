@@ -37,16 +37,17 @@
 #include "LruDiskCache.h"
 
 #include <algorithm>
+#include <filesystem>
+#include <chrono>
 
 #pragma warning(push, 0)
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #pragma warning(pop)
 
 const std::string PREFIX = "musikcube";
 const std::string TEMP_EXTENSION = ".tmp";
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace al = boost::algorithm;
 
 using Lock = std::unique_lock<std::recursive_mutex>;
@@ -61,22 +62,23 @@ static std::string finalFilename(const std::string& root, size_t id, std::string
 }
 
 static bool isTemp(const fs::path& path) {
-    return path.extension().string() == TEMP_EXTENSION;
+    return path.extension().u8string() == TEMP_EXTENSION;
 }
 
 static bool isTemp(const std::string& path) {
-    return isTemp(fs::path(path));
+    return isTemp(fs::path(fs::u8path(path)));
 }
 
-static time_t touch(const std::string& path) {
+static std::filesystem::file_time_type touch(const std::string& path) {
+    auto fsPath = fs::u8path(path);
     try {
-        std::time_t now = time(nullptr);
-        fs::last_write_time(path, now);
+        std::chrono::time_point now = fs::file_time_type::clock::now();
+        fs::last_write_time(fsPath, now);
     }
     catch (...) {
     }
 
-    return fs::last_write_time(path);
+    return fs::last_write_time(fsPath);
 }
 
 static bool rm(const std::string& path) {
@@ -91,7 +93,7 @@ static bool rm(const std::string& path) {
 }
 
 static bool rm(const fs::path& p) {
-    return rm(p.string());
+    return rm(p.u8string());
 }
 
 LruDiskCache::LruDiskCache()
@@ -111,9 +113,9 @@ void LruDiskCache::Init(const std::string& root, size_t maxEntries) {
         this->Purge(); /* always purge partial files on startup */
 
         /* index all the completed files... */
-        boost::system::error_code ec;
+        std::error_code ec;
         fs::directory_iterator end;
-        fs::directory_iterator file(this->root, ec);
+        fs::directory_iterator file(fs::u8path(this->root), ec);
 
         while (file != end) {
             if (!is_directory(file->status())) {
@@ -134,9 +136,9 @@ void LruDiskCache::Init(const std::string& root, size_t maxEntries) {
 void LruDiskCache::Purge() {
     Lock lock(stateMutex);
 
-    boost::system::error_code ec;
+    std::error_code ec;
     fs::directory_iterator end;
-    fs::directory_iterator file(this->root, ec);
+    fs::directory_iterator file(fs::u8path(this->root), ec);
 
     while (file != end) {
         if (!is_directory(file->status())) {
@@ -149,14 +151,14 @@ void LruDiskCache::Purge() {
 }
 
 LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
-    std::string fn = path.stem().string() + path.extension().string();
+    std::string fn = path.stem().u8string() + path.extension().u8string();
     std::vector<std::string> parts;
     boost::split(parts, fn, boost::is_any_of("_"));
     if (parts.size() == 3 && parts[0] == PREFIX) {
         try {
             auto entry = std::shared_ptr<Entry>(new Entry());
             entry->id = std::stoull(parts[1].c_str());
-            entry->path = path.string();
+            entry->path = path.u8string();
             entry->type = parts[2];
             entry->time = fs::last_write_time(path);
             al::replace_all(entry->type, "-", "/");
@@ -249,10 +251,10 @@ FILE* LruDiskCache::Open(size_t id, int64_t instanceId, const std::string& mode,
     }
 
     /* ensure the cache directory exists */
-    boost::system::error_code ec;
-    boost::filesystem::path p(this->root);
-    if (!boost::filesystem::exists(p)) {
-        boost::filesystem::create_directories(p, ec);
+    std::error_code ec;
+    fs::path p(fs::u8path(this->root));
+    if (!fs::exists(p)) {
+        fs::create_directories(p, ec);
     }
 
     /* open the file and return it regardless of cache status. */
@@ -308,8 +310,8 @@ void LruDiskCache::Touch(size_t id) {
     if (it != end) {
         auto e = (*it);
         fs::path p(e->path);
-        if (boost::filesystem::exists(p)) {
-            e->time = touch(p.string());
+        if (fs::exists(p)) {
+            e->time = touch(p.u8string());
             this->SortAndPrune();
             return;
         }

@@ -52,7 +52,6 @@ using namespace musik;
 using namespace musik::core;
 using namespace musik::cube;
 using namespace cursespp;
-using namespace boost::filesystem;
 
 using Callback = std::function<void()>;
 

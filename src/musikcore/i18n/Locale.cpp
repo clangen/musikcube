@@ -34,12 +34,10 @@
 
 #include "pch.hpp"
 
-#pragma warning(push, 0)
-#include <boost/filesystem.hpp>
-#pragma warning(pop)
-
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Common.h>
+
+#include <filesystem>
 
 #include "Locale.h"
 
@@ -50,7 +48,6 @@
 using namespace musik::core::i18n;
 using namespace musik::core;
 using namespace musik::core::prefs;
-using namespace boost::filesystem;
 
 static nlohmann::json empty;
 
@@ -83,18 +80,19 @@ Locale::~Locale() {
 }
 
 void Locale::Initialize(const std::string& localePath) {
+    namespace fs = std::filesystem;
+
     this->locales.clear();
     this->localePath = localePath;
 
-    path locales(localePath);
+    fs::path locales(fs::u8path(localePath));
 
-    if (exists(locales)) {
-        directory_iterator end;
-        for (directory_iterator file(locales); file != end; file++) {
-            const path& p = file->path();
-
-            if (p.has_extension() && p.extension().string() == ".json") {
-                std::string fn = p.filename().string();
+    if (fs::exists(locales)) {
+        fs::directory_iterator end;
+        for (fs::directory_iterator it(locales); it != end; it++) {
+            const fs::path& p = it->path();
+            if (p.has_extension() && p.extension().u8string() == ".json") {
+                std::string fn = p.filename().u8string();
                 fn = fn.substr(0, fn.rfind("."));
                 this->locales.push_back(fn);
             }

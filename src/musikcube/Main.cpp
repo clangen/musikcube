@@ -61,11 +61,6 @@
 #include <musikcore/net/PiggyWebSocketClient.h>
 #include <musikcore/support/PiggyDebugBackend.h>
 
-#include <boost/locale.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
-
 #ifdef WIN32
 #include <cursespp/Win32Util.h>
 #include "resource.h"
@@ -96,11 +91,6 @@ int main(int argc, char* argv[]) {
 #endif
 
     srand((unsigned int) time(0));
-
-    /* the following allows boost::filesystem to use utf8 on Windows */
-    std::locale locale = std::locale();
-    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-    boost::filesystem::path::imbue(utf8Locale);
 
     /* ensure we have the correct locale loaded */
     core::i18n::Locale::Instance().Initialize(core::GetApplicationDirectory() + "/locales/");

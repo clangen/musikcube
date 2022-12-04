@@ -36,15 +36,14 @@
 #include "Util.h"
 #include <algorithm>
 #include <atomic>
-
-#pragma warning(push, 0)
-#include <boost/filesystem.hpp>
-#pragma warning(pop)
+#include <filesystem>
 
 #define BUFFER_SIZE 8192
 #define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
 
 static std::atomic<int> activeCount(0);
+
+namespace fs = std::filesystem;
 
 using PositionType = TranscodingAudioDataStream::PositionType;
 
@@ -138,8 +137,8 @@ bool TranscodingAudioDataStream::Close() {
                 /* incomplete, delete... */
                 fclose(this->outFile);
                 this->outFile = nullptr;
-                boost::system::error_code ec;
-                boost::filesystem::remove(this->tempFilename, ec);
+                std::error_code ec;
+                fs::remove(fs::u8path(this->tempFilename), ec);
             }
 
             Dispose();
@@ -173,8 +172,8 @@ void TranscodingAudioDataStream::Dispose() {
     if (this->outFile) {
         fclose(this->outFile);
         this->outFile = nullptr;
-        boost::system::error_code ec;
-        boost::filesystem::remove(this->tempFilename, ec);
+        std::error_code ec;
+        fs::remove(fs::u8path(this->tempFilename), ec);
     }
 
     delete this;
@@ -297,10 +296,13 @@ PositionType TranscodingAudioDataStream::Read(void *buffer, PositionType bytesTo
 
                 this->encoder->Finalize(this->tempFilename.c_str());
 
-                boost::system::error_code ec;
-                boost::filesystem::rename(this->tempFilename, this->finalFilename, ec);
+                std::error_code ec;
+                fs::rename(
+                    fs::u8path(this->tempFilename),
+                    fs::u8path(this->finalFilename),
+                    ec);
                 if (ec) {
-                    boost::filesystem::remove(this->tempFilename, ec);
+                    fs::remove(fs::u8path(this->tempFilename), ec);
                 }
             }
         }
@@ -316,8 +318,8 @@ internal_error:
     this->eof = true;
     fclose(this->outFile);
     this->outFile = nullptr;
-    boost::system::error_code ec;
-    boost::filesystem::remove(this->tempFilename, ec);
+    std::error_code ec;
+    fs::remove(fs::u8path(this->tempFilename), ec);
     return 0;
 }
 

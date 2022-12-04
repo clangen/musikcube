@@ -41,13 +41,14 @@
 
 #include <thread>
 #include <set>
+#include <map>
+#include <filesystem>
+#include <chrono>
 
-#pragma warning(push, 0)
-#include <boost/filesystem.hpp>
-#pragma warning(pop)
+namespace fs = std::filesystem;
 
+using namespace std::chrono;
 using namespace musik::core::sdk;
-using namespace boost::filesystem;
 
 std::mutex transcoderMutex;
 std::condition_variable waitForTranscode;
@@ -71,22 +72,44 @@ static T* getTypedEncoder(Context& context, const std::string& format) {
     return nullptr;
 }
 
+static size_t lastWriteTime(const fs::path& path) {
+    std::error_code ec;
+    return (size_t)duration_cast<milliseconds>(
+        std::filesystem::last_write_time(path, ec).time_since_epoch()).count();
+}
+
+static size_t lastWriteTime(const std::string& path) {
+    return lastWriteTime(fs::u8path(path));
+}
+
+static std::filesystem::file_time_type touch(const std::string& path) {
+    auto fsPath = fs::u8path(path);
+    try {
+        std::chrono::time_point now = fs::file_time_type::clock::now();
+        fs::last_write_time(fsPath, now);
+    }
+    catch (...) {
+    }
+
+    return fs::last_write_time(fsPath);
+}
+
 static std::string cachePath(Context& context) {
     char buf[4096];
     context.environment->GetPath(PathType::Data, buf, sizeof(buf));
     std::string path = std::string(buf) + "/cache/transcoder/";
-	boost::filesystem::path boostPath(path);
-    if (!exists(boostPath)) {
-        create_directories(boostPath);
+	fs::path fsPath(fs::u8path(path));
+    if (!fs::exists(fsPath)) {
+        fs::create_directories(fsPath);
     }
 
     return path;
 }
 
-static void iterateTranscodeCache(Context& context, std::function<void(path)> cb) {
+static void iterateTranscodeCache(Context& context, std::function<void(fs::path)> cb) {
     if (cb) {
-        directory_iterator end;
-        directory_iterator file(cachePath(context));
+        fs::directory_iterator end;
+        fs::directory_iterator file(cachePath(context));
 
         while (file != end) {
             if (!is_directory(file->status())) {
@@ -98,20 +121,19 @@ static void iterateTranscodeCache(Context& context, std::function<void(path)> cb
 }
 
 void Transcoder::RemoveTempTranscodeFiles(Context& context) {
-    iterateTranscodeCache(context, [](path p) {
-        if (p.extension().string() == ".tmp") {
-            boost::system::error_code ec;
-            remove(p, ec);
+    iterateTranscodeCache(context, [](fs::path p) {
+        if (p.extension().u8string() == ".tmp") {
+            std::error_code ec;
+            fs::remove(p, ec);
         }
     });
 }
 
 void Transcoder::PruneTranscodeCache(Context& context) {
-    std::map<time_t, path> sorted;
+    std::map<time_t, fs::path> sorted;
 
-    boost::system::error_code ec;
-    iterateTranscodeCache(context, [&sorted, &ec](path p) {
-        sorted[last_write_time(p, ec)] = p;
+    iterateTranscodeCache(context, [&sorted](fs::path p) {
+        sorted[lastWriteTime(p)] = p;
     });
 
     int maxSize = context.prefs->GetInt(
@@ -122,8 +144,8 @@ void Transcoder::PruneTranscodeCache(Context& context) {
     auto it = sorted.begin();
     while (extra > 0 && it != sorted.end()) {
         auto p = it->second;
-        boost::system::error_code ec;
-        if (remove(p, ec)) {
+        std::error_code ec;
+        if (fs::remove(p, ec)) {
             --extra;
         }
         ++it;
@@ -146,7 +168,7 @@ static void getTempAndFinalFilename(
 
     do {
         tempFn = finalFn + "." + std::to_string(rand()) + ".tmp";
-    } while (exists(tempFn));
+    } while (fs::exists(fs::u8path(tempFn)));
 }
 
 IDataStream* Transcoder::Transcode(
@@ -192,9 +214,8 @@ IDataStream* Transcoder::TranscodeOnDemand(
     std::string expectedFilename, tempFilename;
     getTempAndFinalFilename(context, uri, bitrate, format, tempFilename, expectedFilename);
 
-    if (exists(expectedFilename)) {
-        boost::system::error_code ec;
-        last_write_time(expectedFilename, time(nullptr), ec);
+    if (fs::exists(fs::u8path(expectedFilename))) {
+        touch(expectedFilename);
         return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 
@@ -211,7 +232,7 @@ IDataStream* Transcoder::TranscodeOnDemand(
         transcoderStream = new TranscodingAudioDataStream(
             context, encoder, uri, tempFilename, expectedFilename, bitrate, format);
 
-        /* if the stream has an indeterminite length, close it down and
+        /* if the stream has an indeterminate length, close it down and
         re-open it without caching options; we don't want to fill up
         the storage disk */
         if (transcoderStream->Length() < 0) {
@@ -247,9 +268,8 @@ IDataStream* Transcoder::TranscodeAndWait(
     getTempAndFinalFilename(context, uri, bitrate, format, tempFilename, expectedFilename);
 
     /* already exists? */
-    if (exists(expectedFilename)) {
-        boost::system::error_code ec;
-        last_write_time(expectedFilename, time(nullptr), ec);
+    if (fs::exists(fs::u8path(expectedFilename))) {
+        touch(expectedFilename);
         return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 

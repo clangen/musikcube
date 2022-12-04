@@ -35,17 +35,18 @@
 #include <stdafx.h>
 #include <nlohmann/json.hpp>
 #include <cursespp/Colors.h>
-#include <boost/filesystem.hpp>
 #include <musikcore/support/Common.h>
 #include <set>
+#include <filesystem>
 
 /* this whole source unit is freaking bananas, but the curses interface
 for setting colors is awful. i'm sorry for anyone who has to do work in here. */
 
+namespace fs = std::filesystem;
+
 using namespace musik::core;
 using namespace cursespp;
 using namespace nlohmann;
-using namespace boost::filesystem;
 
 /* if the terminal supports custom colors, these are the palette
 indices we'll use to store them */
@@ -573,14 +574,14 @@ static Colors::Mode colorMode = Colors::Basic;
 static Colors::BgType bgType = Colors::Theme;
 
 static void indexThemes(const std::string& directory) {
-    path colorPath(directory);
-    if (exists(colorPath)) {
-        directory_iterator end;
-        for (directory_iterator file(colorPath); file != end; file++) {
-            const path& p = file->path();
+    fs::path colorPath(fs::u8path(directory));
+    if (fs::exists(colorPath)) {
+        fs::directory_iterator end;
+        for (fs::directory_iterator file(colorPath); file != end; file++) {
+            const fs::path& p = file->path();
 
-            if (p.has_extension() && p.extension().string() == ".json") {
-                std::string fn = p.filename().string();
+            if (p.has_extension() && p.extension().u8string() == ".json") {
+                std::string fn = p.filename().u8string();
                 Theme theme;
                 if (theme.LoadFromFile(directory + "/" + fn)) {
                    ::themes.push_back(theme);

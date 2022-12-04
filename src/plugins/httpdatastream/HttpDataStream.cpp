@@ -51,7 +51,6 @@
 #include <atomic>
 
 #pragma warning(push, 0)
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
 /* meh... */

@@ -41,11 +41,6 @@
 #include <musikcore/sdk/IPlaybackRemote.h>
 #include <musikcore/sdk/IPlugin.h>
 
-#pragma warning(push, 0)
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
-#pragma warning(pop)
-
 #include <thread>
 
 #ifdef WIN32
@@ -154,13 +149,6 @@ static class PlaybackRemote : public IPlaybackRemote {
 
 static class Plugin : public IPlugin {
     public:
-        Plugin() {
-            /* enable utf8 filesystem (required in windows, maybe not macos/linux */
-            std::locale locale = std::locale();
-            std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-            boost::filesystem::path::imbue(utf8Locale);
-        }
-
         virtual void Release() { }
         virtual const char* Name() { return "musikcube Server (wss, http)"; }
         virtual const char* Version() { return "0.7.0"; }

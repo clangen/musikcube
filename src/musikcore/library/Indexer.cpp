@@ -54,6 +54,7 @@
 #include <musikcore/sdk/IIndexerSource.h>
 #include <musikcore/audio/Stream.h>
 
+#include <filesystem>
 #include <algorithm>
 #include <atomic>
 
@@ -72,6 +73,10 @@ constexpr int DEFAULT_MAX_THREADS = 2;
 #else
 constexpr int DEFAULT_MAX_THREADS = 4;
 #endif
+
+namespace std {
+    namespace fs = std::filesystem;
+}
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -105,7 +110,7 @@ static void closeLogFile() noexcept {
 }
 
 static std::string normalizePath(const std::string& path) {
-    return boost::filesystem::path(path).make_preferred().string();
+    return std::fs::path(std::fs::u8path(path)).make_preferred().u8string();
 }
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
@@ -264,9 +269,9 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
         try {
             const int64_t id = stmt.ColumnInt64(0);
             std::string path = stmt.ColumnText(1);
-            boost::filesystem::path dir(path);
+            std::fs::path dir(std::fs::u8path(path));
 
-            if (boost::filesystem::exists(dir)) {
+            if (std::fs::exists(dir)) {
                 paths.push_back(path);
                 pathIds.push_back(id);
             }
@@ -352,7 +357,7 @@ void Indexer::FinalizeSync(const SyncContext& context) {
 
 void Indexer::ReadMetadataFromFile(
     boost::asio::io_service* io,
-    const boost::filesystem::path& file,
+    const std::fs::path& file,
     const std::string& pathId)
 {
     /* we do this here because work may have already been queued before the abort
@@ -365,7 +370,7 @@ void Indexer::ReadMetadataFromFile(
         return;
     }
 
-    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, file.string().c_str()); }
+    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, file.u8string().c_str()); }
 
     musik::core::IndexerTrack track(0);
 
@@ -385,7 +390,7 @@ void Indexer::ReadMetadataFromFile(
             try {
                 if ((*it)->CanRead(track.GetString("extension").c_str())) {
                     APPEND_LOG("can read")
-                    if ((*it)->Read(file.string().c_str(), &store)) {
+                    if ((*it)->Read(file.u8string().c_str(), &store)) {
                         APPEND_LOG("did read")
                         saveToDb = true;
                         break;
@@ -461,15 +466,14 @@ void Indexer::SyncDirectory(
 {
     std::string normalizedSyncRoot = NormalizeDir(syncRoot);
     std::string normalizedCurrentPath = NormalizeDir(currentPath);
-    std::string leaf = boost::filesystem::path(currentPath).leaf().string(); /* trailing subdir in currentPath */
 
     /* start recursive filesystem scan */
 
     try {
         /* for each file in the current path... */
-        boost::filesystem::path path(currentPath);
-        boost::filesystem::directory_iterator end;
-        boost::filesystem::directory_iterator file(path);
+        std::fs::path path(std::fs::u8path(currentPath));
+        std::fs::directory_iterator end;
+        std::fs::directory_iterator file(path);
 
         std::string pathIdStr = std::to_string(pathId);
         std::vector<Thread> threads;
@@ -480,12 +484,11 @@ void Indexer::SyncDirectory(
             }
             if (is_directory(file->status())) {
                 /* recursion here */
-                /* musik::debug::info(TAG, "scanning subdirectory " + file->path().string()); */
-                this->SyncDirectory(io, syncRoot, file->path().string(), pathId);
+                this->SyncDirectory(io, syncRoot, file->path().u8string(), pathId);
             }
             else {
                 try {
-                    std::string extension = file->path().extension().string();
+                    std::string extension = file->path().extension().u8string();
                     for (auto it : this->tagReaders) {
                         if (it->CanRead(extension.c_str())) {
                             if (io) {
@@ -504,13 +507,13 @@ void Indexer::SyncDirectory(
                     }
                 }
                 catch (...) {
-                    /* boost::filesystem may throw trying to stat the file */
+                    /* std::filesystem may throw trying to stat the file */
                 }
             }
         }
     }
     catch(...) {
-        /* boost::filesystem may throw trying to open the directory */
+        /* std::filesystem may throw trying to open the directory */
     }
 }
 
@@ -592,10 +595,10 @@ ScanResult Indexer::SyncSource(
 }
 
 void Indexer::ThreadLoop() {
-    boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
+    std::fs::path thumbPath(std::fs::u8path(this->libraryPath + "thumbs/"));
 
-    if (!boost::filesystem::exists(thumbPath)) {
-        boost::filesystem::create_directories(thumbPath);
+    if (!std::fs::exists(thumbPath)) {
+        std::fs::create_directories(thumbPath);
     }
 
     while (true) {
@@ -686,8 +689,8 @@ void Indexer::SyncDelete() {
             std::string fn = allTracks.ColumnText(1);
 
             try {
-                boost::filesystem::path file(fn);
-                if (!boost::filesystem::exists(file)) {
+                std::fs::path file(std::fs::u8path(fn));
+                if (!std::fs::exists(file)) {
                     remove = true;
                 }
             }

@@ -39,10 +39,6 @@
 
 #include <memory>
 
-#pragma warning(push, 0)
-#include <boost/filesystem.hpp>
-#pragma warning(pop)
-
 #include <musikcore/support/NarrowCast.h>
 #include <musikcore/support/DeleteDefaults.h>
 

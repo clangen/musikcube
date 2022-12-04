@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <thread>
+#include <filesystem>
 
 #include <cmath>
 #include <string>
@@ -47,9 +48,6 @@
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/client.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string.hpp>
 #include <nlohmann/json.hpp>
 #include <sigslot/sigslot.h>
 #pragma warning(pop)

@@ -48,10 +48,10 @@
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/asio/io_service.hpp>
 #pragma warning(pop)
 
+#include <filesystem>
 #include <thread>
 #include <deque>
 #include <vector>
@@ -154,7 +154,7 @@ namespace musik { namespace core {
 
             void ReadMetadataFromFile(
                 boost::asio::io_service* io,
-                const boost::filesystem::path& path,
+                const std::filesystem::path& path,
                 const std::string& pathId);
 
             bool Bail() noexcept;

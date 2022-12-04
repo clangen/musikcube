@@ -38,10 +38,7 @@
 #include <memory>
 #include <ctime>
 #include <cstdint>
-
-#pragma warning(push, 0)
-#include <boost/filesystem.hpp>
-#pragma warning(pop)
+#include <filesystem>
 
 class LruDiskCache {
     public:
@@ -63,7 +60,7 @@ class LruDiskCache {
             uint64_t id;
             std::string path;
             std::string type;
-            std::time_t time;
+            std::filesystem::file_time_type time;
         };
 
         using EntryPtr = std::shared_ptr<Entry>;
@@ -71,7 +68,7 @@ class LruDiskCache {
 
         void SortAndPrune();
 
-        static std::shared_ptr<Entry> Parse(const boost::filesystem::path& path);
+        static std::shared_ptr<Entry> Parse(const std::filesystem::path& path);
 
         std::recursive_mutex stateMutex;
 
