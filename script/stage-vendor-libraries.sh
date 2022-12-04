@@ -51,8 +51,8 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/bin/lib/libboost_filesystem.so.1.80.0 ./bin/lib
     cp vendor/bin/lib/libboost_system.so.1.80.0 ./bin/lib
     cp vendor/bin/lib/libboost_thread.so.1.80.0 ./bin/lib
-    cp vendor/bin/lib/libcrypto.so.3 ./bin/lib
-    cp vendor/bin/lib/libssl.so.3 ./bin/lib
+    cp vendor/bin/lib/libcrypto.so.1.1 ./bin/lib
+    cp vendor/bin/lib/libssl.so.1.1 ./bin/lib
     cp vendor/bin/lib/libcurl.so.4 ./bin/lib
     cp vendor/bin/lib/libmp3lame.so.0 ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.so.12 ./bin/lib
