@@ -150,6 +150,22 @@ namespace musik { namespace core {
         std::string directory;
 
     #ifdef WIN32
+        DWORD bufferSize = GetEnvironmentVariable(L"HOMEPATH", 0, 0);
+        wchar_t* buffer = new wchar_t[bufferSize + 2];
+        GetEnvironmentVariable(L"HOMEPATH", buffer, bufferSize);
+        directory.assign(u16to8(buffer));
+        delete[] buffer;
+    #else
+        directory = std::string(std::getenv("HOME"));
+    #endif
+
+        return directory;
+    }
+
+    std::string GetDataDirectory(bool create) {
+        std::string directory;
+
+    #ifdef WIN32
         DWORD bufferSize = GetEnvironmentVariable(L"APPDATA", 0, 0);
         wchar_t* buffer = new wchar_t[bufferSize + 2];
         GetEnvironmentVariable(L"APPDATA", buffer, bufferSize);
@@ -165,11 +181,7 @@ namespace musik { namespace core {
         }
     #endif
 
-        return directory;
-    }
-
-    std::string GetDataDirectory(bool create) {
-        std::string directory = GetHomeDirectory() + std::string("/musikcube/");
+        directory += std::string("/musikcube/");
 
         if (create) {
             try {
