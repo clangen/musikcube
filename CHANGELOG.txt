@@ -1,12 +1,15 @@
-0.98.2
+0.99.0
 
-* fix issue with directory scanning that may lead to incomplete indexing
+* completely removed boost as a dependency across all projects; this is a
+  huge milestone in the project, and will make it much easier to distribute
+  stable builds moving forward.
+* fixed issue with directory scanning that may lead to incomplete indexing
 * reverted ViewPager2 changes in `musikdroid`, as there is a bug that is
   preventing fragments from getting re-initialized properly during the resume
   cycle.
 * updated Simplified Chinese translation (@UM-Li)
 * added Czech translation (@khagaroth)
-* upgrade to c++-17 runtime
+* upgraded to c++-17 runtime
 
 --------------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 %define name musikcube
 %define build_timestamp %{lua: print(os.date("%Y%m%d"))}
-%define version 0.98.2
+%define version 0.99.0
 Name: %{name}
 Version: %{version}
 Release: %{dist}
