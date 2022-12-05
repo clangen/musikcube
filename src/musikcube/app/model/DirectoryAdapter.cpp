@@ -109,7 +109,7 @@ static void buildDirectoryList(
                 if (is_directory(file->status())) {
                     std::string leaf = file->path().filename().u8string();
                     if (showDotfiles || leaf.at(0) != '.') {
-                        target.push_back(leaf);
+                        target.push_back(file->path().u8string());
                     }
                 }
             }
@@ -134,8 +134,12 @@ static void buildDirectoryList(
     }
 }
 
-static std::string normalizePath(fs::path path) {
+static std::string pathToString(fs::path path) {
     return musik::core::NormalizeDir(path.u8string());
+}
+
+static fs::path stringToPath(const std::string& path) {
+    return fs::u8path(musik::core::NormalizeDir(path));
 }
 
 DirectoryAdapter::DirectoryAdapter() {
@@ -190,7 +194,7 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
     else {
         selectedIndexStack.push(initialIndex);
         initialIndex -= this->GetHeaderCount();
-        this->dir /= this->subdirs.at(initialIndex);
+        this->dir = fs::u8path(this->subdirs.at(initialIndex));
     }
 
 #ifdef WIN32
@@ -209,7 +213,7 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
 
 void DirectoryAdapter::SetRootDirectory(const std::string& directory) {
     if (directory.size()) {
-        dir = rootDir = musik::core::NormalizeDir(directory);
+        dir = rootDir = stringToPath(directory);
     }
     else {
         dir = musik::core::GetHomeDirectory();
@@ -227,7 +231,7 @@ std::string DirectoryAdapter::GetFullPathAt(size_t index) {
         return this->dir.u8string();
     }
     index -= this->GetHeaderCount();
-    return normalizePath((dir / this->subdirs[index]).u8string());
+    return pathToString(fs::u8path(this->subdirs.at(index)));
 }
 
 std::string DirectoryAdapter::GetLeafAt(size_t index) {
@@ -237,7 +241,7 @@ std::string DirectoryAdapter::GetLeafAt(size_t index) {
     if (this->IsCurrentDirectory(index)) {
         return ".";
     }
-    return this->subdirs.at(index);
+    return fs::u8path(this->subdirs.at(index)).u8string();
 }
 
 size_t DirectoryAdapter::IndexOf(const std::string& leaf) {
@@ -268,16 +272,16 @@ void DirectoryAdapter::SetDotfilesVisible(bool visible) {
 
 std::string DirectoryAdapter::GetParentPath() {
     if (dir.has_parent_path() &&
-        normalizePath(this->dir) != normalizePath(this->rootDir))
+        pathToString(this->dir) != pathToString(this->rootDir))
     {
-        return normalizePath(dir.parent_path().u8string());
+        return pathToString(dir.parent_path().u8string());
     }
 
     return "";
 }
 
 std::string DirectoryAdapter::GetCurrentPath() {
-    return normalizePath(dir.u8string());
+    return pathToString(dir.u8string());
 }
 
 void DirectoryAdapter::Refresh() {
@@ -285,7 +289,7 @@ void DirectoryAdapter::Refresh() {
 }
 
 bool DirectoryAdapter::IsAtRoot() {
-    return normalizePath(this->dir) == normalizePath(this->rootDir);
+    return pathToString(this->dir) == pathToString(this->rootDir);
 }
 
 bool DirectoryAdapter::ShowParentPath() {
@@ -312,7 +316,7 @@ bool DirectoryAdapter::HasSubDirectories(size_t index) {
         return !this->subdirs.empty();
     }
     index -= this->GetHeaderCount();
-    return hasSubdirectories(this->dir / this->subdirs.at(index), this->showDotfiles);
+    return hasSubdirectories(fs::u8path(this->subdirs.at(index)), this->showDotfiles);
 }
 
 bool DirectoryAdapter::HasSubDirectories() {
@@ -340,6 +344,6 @@ IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* 
         }
     }
     index -= this->GetHeaderCount();
-    auto text = text::Ellipsize(this->subdirs[index], this->GetWidth());
+    auto text = text::Ellipsize(fs::u8path(this->subdirs[index]).filename().u8string(), this->GetWidth());
     return IScrollAdapter::EntryPtr(new SingleLineEntry(text));
 }
