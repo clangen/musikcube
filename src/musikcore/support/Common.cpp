@@ -150,9 +150,9 @@ namespace musik { namespace core {
         std::string directory;
 
     #ifdef WIN32
-        DWORD bufferSize = GetEnvironmentVariable(L"HOMEPATH", 0, 0);
+        DWORD bufferSize = GetEnvironmentVariable(L"USERPROFILE", 0, 0);
         wchar_t* buffer = new wchar_t[bufferSize + 2];
-        GetEnvironmentVariable(L"HOMEPATH", buffer, bufferSize);
+        GetEnvironmentVariable(L"USERPROFILE", buffer, bufferSize);
         directory.assign(u16to8(buffer));
         delete[] buffer;
     #else
