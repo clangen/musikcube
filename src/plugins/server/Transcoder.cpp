@@ -103,15 +103,13 @@ static std::string cachePath(Context& context) {
     if (!fs::exists(fsPath)) {
         fs::create_directories(fsPath);
     }
-
     return path;
 }
 
 static void iterateTranscodeCache(Context& context, std::function<void(fs::path)> cb) {
     if (cb) {
         fs::directory_iterator end;
-        fs::directory_iterator file(cachePath(context));
-
+        fs::directory_iterator file(fs::u8path(cachePath(context)));
         while (file != end) {
             if (!is_directory(file->status())) {
                 cb(file->path());
