@@ -44,7 +44,11 @@
 #include <app/util/Messages.h>
 #include <app/overlay/PlayQueueOverlays.h>
 
+#include <filesystem>
+
 #include "DirectoryLayout.h"
+
+namespace fs = std::filesystem;
 
 using namespace musik;
 using namespace musik::core::library::constants;
@@ -157,8 +161,6 @@ void DirectoryLayout::RequeryTrackList(ListWindow *view) {
     }
 
     if (fullPath.size()) {
-        fullPath = NormalizeDir(fullPath);
-
         auto query = std::shared_ptr<TrackListQueryBase>(
             new DirectoryTrackListQuery(this->library, fullPath));
 

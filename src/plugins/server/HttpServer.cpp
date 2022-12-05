@@ -42,14 +42,13 @@
 #include <musikcore/sdk/String.h>
 
 #pragma warning(push, 0)
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
 #include <websocketpp/base64/base64.hpp>
 #pragma warning(pop, 0)
 
 #include <unordered_map>
 #include <string>
 #include <cstdlib>
+#include <filesystem>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -65,6 +64,10 @@
 
 static const char* ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH = "MUSIKCUBE_DISABLE_HTTP_SERVER_AUTH";
 static const char* TAG = "HttpServer";
+
+namespace std {
+    namespace fs = std::filesystem;
+}
 
 using namespace musik::core::sdk;
 
@@ -100,10 +103,8 @@ struct Range {
 
 static std::string contentType(const std::string& fn) {
     try {
-        boost::filesystem::path p(fn);
-        std::string ext = boost::trim_copy(p.extension().string());
-        boost::to_lower(ext);
-
+        std::fs::path p(std::fs::u8path(fn));
+        std::string ext = str::ToLowerCopy(str::Trim(p.extension().u8string()));
         auto it = CONTENT_TYPE_MAP.find(ext);
         if (it != CONTENT_TYPE_MAP.end()) {
             return it->second;
@@ -117,10 +118,9 @@ static std::string contentType(const std::string& fn) {
 
 static std::string fileExtension(const std::string& fn) {
     try {
-        boost::filesystem::path p(fn);
-        std::string ext = boost::trim_copy(p.extension().string());
+        std::fs::path p(std::fs::u8path(fn));
+        std::string ext = str::ToLowerCopy(str::Trim(p.extension().u8string()));
         if (ext.size()) {
-            boost::to_lower(ext);
             return ext[0] == '.' ? ext.substr(1) : ext;
         }
     }
@@ -177,17 +177,14 @@ static Range* parseRange(IDataStream* file, const char* range) {
 
         if (str.substr(0, 6) == "bytes=") {
             str = str.substr(6);
-
-            std::vector<std::string> parts;
-            boost::split(parts, str, boost::is_any_of("-"));
-
+            std::vector<std::string> parts = str::Split(str, "-");
             if (parts.size() == 2) {
                 try {
-                    size_t from = (size_t) std::max(0, std::stoi(boost::algorithm::trim_copy(parts[0])));
+                    size_t from = (size_t) std::max(0, std::stoi(str::Trim(parts[0])));
                     size_t to = size;
 
                     if (parts.at(1).size()) {
-                        to = (size_t) std::min((int) size, std::stoi(boost::algorithm::trim_copy(parts[1])));
+                        to = (size_t) std::min((int) size, std::stoi(str::Trim(parts[1])));
                     }
 
                     if (to > from) {
@@ -265,10 +262,7 @@ static bool isAuthenticated(MHD_Connection *connection, Context& context) {
             std::string encoded = auth.substr(6);
             if (encoded.size()) {
                 std::string decoded = websocketpp::base64_decode(encoded);
-
-                std::vector<std::string> userPass;
-                boost::split(userPass, decoded, boost::is_any_of(":"));
-
+                std::vector<std::string> userPass = str::Split(decoded, ":");
                 if (userPass.size() == 2) {
                     std::string password = GetPreferenceString(context.prefs, key::password, defaults::password);
                     return userPass[0] == "default" && userPass[1] == password;
@@ -368,7 +362,7 @@ MHD_Result HttpServer::HandleRequest(
     auto server = static_cast<HttpServer*>(cls);
 
 #ifdef ENABLE_DEBUG
-    server->context.debug->Info(TAG, str::format("new request: %s", url).c_str());
+    server->context.debug->Info(TAG, str::Format("new request: %s", url).c_str());
 #endif
 
     struct MHD_Response* response = nullptr;
@@ -393,8 +387,7 @@ MHD_Result HttpServer::HandleRequest(
                     urlStr = urlStr.substr(1);
                 }
 
-                std::vector<std::string> parts;
-                boost::split(parts, urlStr, boost::is_any_of("/"));
+                std::vector<std::string> parts = str::Split(urlStr, "/");
                 if (parts.size() > 0) {
                     /* /audio/id/<id> OR /audio/external_id/<external_id> */
                     if (parts.at(0) == fragment::audio && parts.size() == 3) {
@@ -413,7 +406,7 @@ MHD_Result HttpServer::HandleRequest(
 
     if (response) {
 #ifdef ENABLE_DEBUG
-        server->context.debug->Info(TAG, str::format("return http %d", status).c_str());
+        server->context.debug->Info(TAG, str::Format("return http %d", status).c_str());
 #endif
 
         ret = MHD_queue_response(connection, status, response);
@@ -480,7 +473,7 @@ int HttpServer::HandleAudioTrackRequest(
         bool isOnDemandTranscoder = !!dynamic_cast<TranscodingAudioDataStream*>(file);
 
 #ifdef ENABLE_DEBUG
-        server->context.debug->Info(TAG, str::format(
+        server->context.debug->Info(TAG, str::Format(
             "range request: %s, resolved range: %s, isOnDemandTranscoder=%s",
             rangeVal ? rangeVal : "[unspecified]",
             range ? range->HeaderValue().c_str() : "[unresolved]",
@@ -543,7 +536,7 @@ int HttpServer::HandleAudioTrackRequest(
                 &fileFreeCallback);
 
 #ifdef ENABLE_DEBUG
-            server->context.debug->Info(TAG, str::format("response length=%d", ((length == 0) ? 0 : length + 1)).c_str());
+            server->context.debug->Info(TAG, str::Format("response length=%d", ((length == 0) ? 0 : length + 1)).c_str());
 #endif
 
             if (response) {
@@ -555,7 +548,7 @@ int HttpServer::HandleAudioTrackRequest(
                 if (!isOnDemandTranscoder) {
                     MHD_add_response_header(response, "Accept-Ranges", "bytes");
 
-                    if (boost::filesystem::exists(title)) {
+                    if (std::fs::exists(std::fs::u8path(filename))) {
                         MHD_add_response_header(response, "X-musikcube-Filename-Override", externalId.c_str());
                     }
                 }
@@ -587,7 +580,7 @@ int HttpServer::HandleAudioTrackRequest(
                         status = MHD_HTTP_PARTIAL_CONTENT;
 #ifdef ENABLE_DEBUG
                         if (rangeVal) {
-                            server->context.debug->Info(TAG, str::format("range header: %s", range->HeaderValue().c_str()).c_str());
+                            server->context.debug->Info(TAG, str::Format("range header: %s", range->HeaderValue().c_str()).c_str());
                         }
 #endif
                     }

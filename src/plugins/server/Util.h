@@ -35,10 +35,8 @@
 #pragma once
 
 #include <string>
-
-#pragma warning(push, 0)
-#include <boost/bimap.hpp>
-#pragma warning(pop)
+#include <algorithm>
+#include <unordered_map>
 
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/IValue.h>
@@ -53,11 +51,12 @@ extern __thread char threadLocalBuffer[4096];
 extern thread_local char threadLocalBuffer[4096];
 #endif
 
-template <typename L, typename R>
-boost::bimap<L, R>
-static makeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
-    /* http://stackoverflow.com/a/31841462 */
-    return boost::bimap<L, R>(list.begin(), list.end());
+template <typename K, typename V>
+typename std::unordered_map<K, V>::const_iterator
+static FindKeyByValue(const std::unordered_map<K, V>& map, const V& value) {
+    return std::find_if(map.begin(), map.end(), [&value](const std::pair<K, V> &p) {
+        return p.second == value;
+    });
 }
 
 static std::string GetPreferenceString(

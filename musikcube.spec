@@ -1,6 +1,6 @@
 %define name musikcube
 %define build_timestamp %{lua: print(os.date("%Y%m%d"))}
-%define version 0.98.2
+%define version 0.99.0
 Name: %{name}
 Version: %{version}
 Release: %{dist}
@@ -8,8 +8,8 @@ Summary: A cross-platform, terminal-based audio engine, library, player and serv
 Source0: https://github.com/clangen/musikcube/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 License: BSD-3-Clause
 Packager: David Muckle <dvdmuckle@dvdmuckle.xyz>
-BuildRequires: gcc-c++ cmake boost-devel libogg-devel libvorbis-devel ffmpeg-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel openssl-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel taglib-devel systemd-devel make libopenmpt-devel
-Requires: boost libogg libvorbis ffmpeg-libs ncurses zlib alsa-lib pulseaudio-libs openssl libcurl libmicrohttpd lame libev taglib libopenmpt
+BuildRequires: gcc-c++ cmake libogg-devel libvorbis-devel ffmpeg-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel openssl-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel taglib-devel systemd-devel make libopenmpt-devel
+Requires: libogg libvorbis ffmpeg-libs ncurses zlib alsa-lib pulseaudio-libs openssl libcurl libmicrohttpd lame libev taglib libopenmpt
 
 %description
 

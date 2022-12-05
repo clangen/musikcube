@@ -46,7 +46,7 @@ static musik::core::sdk::IPreferences* prefs;
 
 #define LOCK(x) \
     /*std::cerr << "locking " << x << "\n";*/ \
-    boost::recursive_mutex::scoped_lock lock(this->stateMutex); \
+    std::unique_lock<std::recursive_mutex> lock(this->stateMutex); \
     /*std::cerr << "locked " << x << "\n";*/ \
 
 #define WAIT() this->threadEvent.wait(lock);
@@ -143,7 +143,7 @@ AlsaOut::AlsaOut()
 , latency(0)
 , initialized(false) {
     std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
-    this->writeThread.reset(new boost::thread(boost::bind(&AlsaOut::WriteLoop, this)));
+    this->writeThread.reset(new std::thread(std::bind(&AlsaOut::WriteLoop, this)));
 }
 
 AlsaOut::~AlsaOut() {

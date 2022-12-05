@@ -41,16 +41,25 @@
 
 #include "DirectoryAdapter.h"
 
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 using namespace musik::cube;
 using namespace cursespp;
-using namespace boost::filesystem;
+
+#ifdef WIN32
+static const fs::path kDefaultRoot("");
+#else
+static const fs::path kDefaultRoot("/");
+#endif
 
 #ifdef WIN32
 static void buildDriveList(std::vector<std::string>& target) {
     target.clear();
     static char buffer[4096];
-    DWORD result = ::GetLogicalDriveStringsA(4096, buffer);
-    if (result) {
+    const DWORD result = ::GetLogicalDriveStringsA(4096, buffer);
+    if (result && buffer) {
         char* current = buffer;
         while (*current) {
             target.push_back(std::string(current));
@@ -59,26 +68,20 @@ static void buildDriveList(std::vector<std::string>& target) {
     }
 }
 
-static bool shouldBuildDriveList(const boost::filesystem::path& dir) {
-    std::string pathstr = dir.string();
-    return
-        (pathstr.size() == 2 && pathstr[1] == ':') ||
-        (pathstr.size() == 3 && pathstr[2] == ':') ||
-        (pathstr.size() == 0);
+static bool shouldBuildDriveList(const fs::path& dir) {
+    return dir.u8string().size() == 0;
 }
 #endif
 
-static bool hasSubdirectories(
-    boost::filesystem::path p, bool showDotfiles)
-{
+static bool hasSubdirectories(fs::path p, bool showDotfiles) {
     try {
-        directory_iterator end;
-        directory_iterator file(p);
+        fs::directory_iterator end;
+        fs::directory_iterator file(p);
 
         while (file != end) {
             try {
-                if (is_directory(file->status())) {
-                    if (showDotfiles || file->path().leaf().string()[0] != '.') {
+                if (fs::is_directory(file->status())) {
+                    if (showDotfiles || file->path().filename().u8string().at(0) != '.') {
                         return true;
                     }
                 }
@@ -97,22 +100,22 @@ static bool hasSubdirectories(
 }
 
 static void buildDirectoryList(
-    const path& p,
+    const fs::path& p,
     std::vector<std::string>& target,
     bool showDotfiles)
 {
     target.clear();
 
     try {
-        directory_iterator end;
-        directory_iterator file(p);
+        fs::directory_iterator end;
+        fs::directory_iterator file(p);
 
         while (file != end) {
             try {
                 if (is_directory(file->status())) {
-                    std::string leaf = file->path().leaf().string();
-                    if (showDotfiles || leaf[0] != '.') {
-                        target.push_back(leaf);
+                    std::string leaf = file->path().filename().u8string();
+                    if (showDotfiles || leaf.at(0) != '.') {
+                        target.push_back(file->path().u8string());
                     }
                 }
             }
@@ -137,14 +140,19 @@ static void buildDirectoryList(
     }
 }
 
-static std::string normalizePath(boost::filesystem::path path) {
-    return musik::core::NormalizeDir(path.string());
+static std::string pathToString(fs::path path) {
+    return musik::core::NormalizeDir(path.u8string());
+}
+
+static fs::path stringToPath(const std::string& path) {
+    return fs::u8path(musik::core::NormalizeDir(path));
 }
 
 DirectoryAdapter::DirectoryAdapter() {
     this->showDotfiles = false;
     this->showRootDirectory = false;
-    this->dir = musik::core::GetHomeDirectory();
+    this->dir = fs::path(fs::u8path(musik::core::GetHomeDirectory()));
+    this->rootDir = kDefaultRoot;
     buildDirectoryList(dir, subdirs, showDotfiles);
 }
 
@@ -163,10 +171,9 @@ void DirectoryAdapter::SetShowRootDirectory(bool show) {
 }
 
 size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
-    bool hasParent = this->ShowParentPath();
+    const bool hasParent = this->ShowParentPath();
     size_t selectedIndex = NO_INDEX;
     size_t initialIndex = window->GetSelectedIndex();
-    bool selectParent = false;
     if (this->IsCurrentDirectory(initialIndex)) {
         return initialIndex;
     }
@@ -175,17 +182,31 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
             selectedIndex = this->selectedIndexStack.top();
             this->selectedIndexStack.pop();
         }
+#ifdef WIN32
+        /* has_relative_path() is weird, as it does what i'd expect
+        has_parent_path() to do... documentation doesn't really help
+        much, but basically we're checking if we're at the root here;
+        if we are, we reset the directory to empty so we can build a
+        drive list. */
+        if (!this->dir.has_relative_path()) {
+            this->dir = "";
+        }
+        else {
+            this->dir = this->dir.parent_path();
+        }
+#else
         this->dir = this->dir.parent_path();
+#endif
     }
     else {
         selectedIndexStack.push(initialIndex);
         initialIndex -= this->GetHeaderCount();
-        this->dir /= this->subdirs[initialIndex];
+        this->dir = fs::u8path(this->subdirs.at(initialIndex));
     }
 
 #ifdef WIN32
     if (shouldBuildDriveList(this->dir)) {
-        dir = path();
+        dir = fs::path();
         buildDriveList(subdirs);
         return selectedIndex;
     }
@@ -199,25 +220,25 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
 
 void DirectoryAdapter::SetRootDirectory(const std::string& directory) {
     if (directory.size()) {
-        dir = rootDir = musik::core::NormalizeDir(directory);
+        dir = rootDir = stringToPath(directory);
     }
     else {
         dir = musik::core::GetHomeDirectory();
-        rootDir = path();
+        rootDir = kDefaultRoot;
     }
     buildDirectoryList(dir, subdirs, showDotfiles);
 }
 
 std::string DirectoryAdapter::GetFullPathAt(size_t index) {
-    bool hasParent = this->ShowParentPath();
+    const bool hasParent = this->ShowParentPath();
     if (hasParent && index == 0) {
         return "";
     }
     if (this->IsCurrentDirectory(index)) {
-        return this->dir.string();
+        return this->dir.u8string();
     }
     index -= this->GetHeaderCount();
-    return normalizePath((dir / this->subdirs[index]).string());
+    return pathToString(fs::u8path(this->subdirs.at(index)));
 }
 
 std::string DirectoryAdapter::GetLeafAt(size_t index) {
@@ -227,12 +248,12 @@ std::string DirectoryAdapter::GetLeafAt(size_t index) {
     if (this->IsCurrentDirectory(index)) {
         return ".";
     }
-    return this->subdirs[index];
+    return fs::u8path(this->subdirs.at(index)).u8string();
 }
 
 size_t DirectoryAdapter::IndexOf(const std::string& leaf) {
    for (size_t i = 0; i < this->subdirs.size(); i++) {
-        if (this->subdirs[i] == leaf) {
+        if (this->subdirs.at(i) == leaf) {
             return i + this->GetHeaderCount();
         }
     }
@@ -258,16 +279,16 @@ void DirectoryAdapter::SetDotfilesVisible(bool visible) {
 
 std::string DirectoryAdapter::GetParentPath() {
     if (dir.has_parent_path() &&
-        normalizePath(this->dir) != normalizePath(this->rootDir))
+        pathToString(this->dir) != pathToString(this->rootDir))
     {
-        return normalizePath(dir.parent_path().string());
+        return pathToString(dir.parent_path().u8string());
     }
 
     return "";
 }
 
 std::string DirectoryAdapter::GetCurrentPath() {
-    return normalizePath(dir.string());
+    return pathToString(dir.u8string());
 }
 
 void DirectoryAdapter::Refresh() {
@@ -275,7 +296,7 @@ void DirectoryAdapter::Refresh() {
 }
 
 bool DirectoryAdapter::IsAtRoot() {
-    return normalizePath(this->dir) == normalizePath(this->rootDir);
+    return pathToString(this->dir) == pathToString(this->rootDir);
 }
 
 bool DirectoryAdapter::ShowParentPath() {
@@ -294,7 +315,7 @@ size_t DirectoryAdapter::GetHeaderCount() {
 }
 
 bool DirectoryAdapter::HasSubDirectories(size_t index) {
-    bool hasParent = this->ShowParentPath();
+    const bool hasParent = this->ShowParentPath();
     if (index == 0 && hasParent) {
         return true;
     }
@@ -302,7 +323,7 @@ bool DirectoryAdapter::HasSubDirectories(size_t index) {
         return !this->subdirs.empty();
     }
     index -= this->GetHeaderCount();
-    return hasSubdirectories(this->dir / this->subdirs[index], this->showDotfiles);
+    return hasSubdirectories(fs::u8path(this->subdirs.at(index)), this->showDotfiles);
 }
 
 bool DirectoryAdapter::HasSubDirectories() {
@@ -325,11 +346,18 @@ IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* 
     }
     else if (this->ShowCurrentDirectory()) {
         if (IsCurrentDirectory(index)) {
-            const auto dir = u8fmt("[%s]", + this->rootDir.branch_path().leaf().string().c_str());
+            const auto dir = u8fmt("[%s]", + this->rootDir.parent_path().filename().u8string().c_str());
             return IScrollAdapter::EntryPtr(new SingleLineEntry(dir));
         }
     }
     index -= this->GetHeaderCount();
-    auto text = text::Ellipsize(this->subdirs[index], this->GetWidth());
+    auto path = fs::u8path(this->subdirs[index]);
+    auto pathString = path.filename().u8string();
+    /* windows root drives are 'x:\', so they don't have a filename leaf. if
+    we resolve an empty string, just use the whole path */
+    if (!pathString.size()) {
+        pathString = path.u8string();
+    }
+    auto text = text::Ellipsize(pathString, this->GetWidth());
     return IScrollAdapter::EntryPtr(new SingleLineEntry(text));
 }

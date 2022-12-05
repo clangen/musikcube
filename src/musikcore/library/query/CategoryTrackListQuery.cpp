@@ -40,12 +40,7 @@
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/util/Serialization.h>
-
-#pragma warning(push, 0)
-#include <nlohmann/json.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string.hpp>
-#pragma warning(pop)
+#include <musikcore/sdk/String.h>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -57,7 +52,6 @@ using namespace musik::core::db;
 using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
 using namespace musik::core::library::constants;
-using namespace boost::algorithm;
 
 const std::string CategoryTrackListQuery::kQueryName = "CategoryTrackListQuery";
 
@@ -154,7 +148,7 @@ void CategoryTrackListQuery::RegularQuery(musik::core::db::Connection &db) {
     std::string limitAndOffset = this->GetLimitAndOffset();
 
     if (this->filter.size()) {
-        trackFilterValue = "%" + trim_copy(to_lower_copy(filter)) + "%";
+        trackFilterValue = "%" + sdk::str::Trim(sdk::str::ToLowerCopy(filter)) + "%";
         trackFilterClause = category::CATEGORY_TRACKLIST_FILTER;
         args.push_back(category::StringArgument(trackFilterValue));
         args.push_back(category::StringArgument(trackFilterValue));

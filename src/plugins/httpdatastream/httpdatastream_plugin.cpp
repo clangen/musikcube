@@ -39,11 +39,6 @@
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPlugin.h>
 
-#pragma warning(push, 0)
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
-#pragma warning(pop)
-
 #ifdef WIN32
     BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
         return true;
@@ -56,13 +51,6 @@
 
 static class HttpDataStreamPlugin : public musik::core::sdk::IPlugin {
     public:
-        HttpDataStreamPlugin() {
-            /* enable utf8 filesystem (required in windows, maybe not macos/linux */
-            std::locale locale = std::locale();
-            std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-            boost::filesystem::path::imbue(utf8Locale);
-        }
-
         virtual void Release() { };
         virtual const char* Name() { return "HTTP IDataStream"; }
         virtual const char* Version() { return "0.1.0"; }

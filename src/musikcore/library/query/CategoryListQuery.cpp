@@ -36,6 +36,7 @@
 #include "CategoryListQuery.h"
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/util/Serialization.h>
+#include <musikcore/sdk/String.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/utfutil.h>
@@ -43,6 +44,7 @@
 using musik::core::db::Statement;
 using musik::core::db::Row;
 
+using namespace musik::core::sdk;
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::library::query;
@@ -208,7 +210,7 @@ void CategoryListQuery::ProcessResult(musik::core::db::Statement &stmt) {
     SdkValueList unknowns;
     while (stmt.Step() == Row) {
         int64_t id = stmt.ColumnInt64(0);
-        std::string displayValue = musik::core::Trim(stmt.ColumnText(1));
+        std::string displayValue = str::Trim(stmt.ColumnText(1));
 
         /* we track empty / blank values separately, then sort them to the bottom
         of the returned list so they don't pollute the first results */

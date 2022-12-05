@@ -41,14 +41,14 @@ using namespace musik::core::net;
 
 static inline RawWebSocketClient::SslContext createSslContext() {
     RawWebSocketClient::SslContext ctx =
-        std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
+        std::make_shared<asio::ssl::context>(asio::ssl::context::sslv23);
 
     try {
-        ctx->set_options(boost::asio::ssl::context::default_workarounds |
-            boost::asio::ssl::context::no_sslv2 |
-            boost::asio::ssl::context::no_sslv3 |
-            boost::asio::ssl::context::single_dh_use |
-            boost::asio::ssl::context::verify_none);
+        ctx->set_options(asio::ssl::context::default_workarounds |
+            asio::ssl::context::no_sslv2 |
+            asio::ssl::context::no_sslv3 |
+            asio::ssl::context::single_dh_use |
+            asio::ssl::context::verify_none);
     }
     catch (std::exception& e) {
         std::cerr << "Error in context pointer: " << e.what() << std::endl;
@@ -56,7 +56,7 @@ static inline RawWebSocketClient::SslContext createSslContext() {
     return ctx;
 }
 
-RawWebSocketClient::RawWebSocketClient(boost::asio::io_service& io) {
+RawWebSocketClient::RawWebSocketClient(asio::io_service& io) {
     websocketpp::lib::error_code ec;
 
     plainTextClient = std::make_unique<PlainTextClient>();

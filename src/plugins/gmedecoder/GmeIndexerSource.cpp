@@ -85,7 +85,7 @@ ScanResult GmeIndexerSource::Scan(
                 this->UpdateMetadata(path, this, indexer);
             }
             catch (...) {
-                std::string error = str::format("error reading metadata for %s", path.c_str());
+                std::string error = str::Format("error reading metadata for %s", path.c_str());
                 debug->Error(PLUGIN_NAME, error.c_str());
             }
         }
@@ -159,7 +159,7 @@ void GmeIndexerSource::UpdateMetadata(
         gme_t* data = nullptr;
         gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
         if (err) {
-            debug->Error(PLUGIN_NAME, str::format("error opening %s", fn.c_str()).c_str());
+            debug->Error(PLUGIN_NAME, str::Format("error opening %s", fn.c_str()).c_str());
             invalidFiles.insert(fn);
         }
         else {
@@ -174,7 +174,7 @@ void GmeIndexerSource::UpdateMetadata(
                 if (m3u.size()) {
                     err = gme_load_m3u(data, m3u.c_str());
                     if (err) {
-                        debug->Error(PLUGIN_NAME, str::format("m3u found, but load failed '%s'", err).c_str());
+                        debug->Error(PLUGIN_NAME, str::Format("m3u found, but load failed '%s'", err).c_str());
                     }
                 }
             }
@@ -201,7 +201,7 @@ void GmeIndexerSource::UpdateMetadata(
                 gme_info_t* info = nullptr;
                 err = gme_track_info(data, &info, i);
                 if (err) {
-                    debug->Error(PLUGIN_NAME, str::format("error getting track %d: %s", i, err).c_str());
+                    debug->Error(PLUGIN_NAME, str::Format("error getting track %d: %s", i, err).c_str());
                     track->SetValue("duration", defaultDuration.c_str());
                     track->SetValue("title", defaultTitle.c_str());
                 }

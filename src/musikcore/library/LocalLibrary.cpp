@@ -42,10 +42,14 @@
 #include <musikcore/library/Indexer.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/debug.h>
+
 #include <limits>
+#include <filesystem>
 
 static const std::string TAG = "LocalLibrary";
 static bool scheduleSyncDueToDbUpgrade = false;
+
+namespace fs = std::filesystem;
 
 using namespace musik::core;
 using namespace musik::core::library;
@@ -167,12 +171,12 @@ std::string LocalLibrary::GetLibraryDirectory() {
         directory.append(this->identifier + "/" );
     }
 
-    boost::filesystem::path dir(directory);
-    if(!boost::filesystem::exists(dir)){
-        boost::filesystem::create_directories(dir);
+    fs::path dir(fs::u8path(directory));
+    if(!fs::exists(dir)){
+        fs::create_directories(dir);
     }
 
-    directory = dir.string();
+    directory = dir.u8string();
 
     return directory;
 }

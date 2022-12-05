@@ -38,6 +38,8 @@
 #include <musikcore/library/query/util/Serialization.h>
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/query/util/TrackQueryFragments.h>
+#include <musikcore/sdk/String.h>
+
 #include <musikcore/sdk/ReplayGain.h>
 
 #pragma warning(push, 0)
@@ -45,6 +47,7 @@
 #pragma warning(pop)
 
 using namespace musik::core;
+using namespace musik::core::sdk;
 using namespace musik::core::db;
 using namespace musik::core::library;
 using namespace musik::core::library::query;
@@ -70,7 +73,7 @@ bool TrackMetadataBatchQuery::OnRun(Connection& db) {
     }
 
     std::string query = tracks::kAllMetadataQueryByIdBatch;
-    ReplaceAll(query, "{{ids}}", idList);
+    str::ReplaceAll(query, "{{ids}}", idList.c_str());
 
     Statement trackQuery(query.c_str(), db);
 

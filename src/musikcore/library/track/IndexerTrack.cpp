@@ -45,9 +45,12 @@
 #include <musikcore/io/DataStreamFactory.h>
 
 #include <unordered_map>
+#include <chrono>
 
 using namespace musik::core;
 using namespace musik::core::sdk;
+
+using namespace std::chrono;
 
 #define GENRE_TRACK_COLUMN_NAME "genre"
 #define GENRES_TABLE_NAME "genres"
@@ -255,20 +258,21 @@ int64_t IndexerTrack::GetId() {
 }
 
 bool IndexerTrack::NeedsToBeIndexed(
-    const boost::filesystem::path &file,
+    const std::filesystem::path &file,
     db::Connection &dbConnection)
 {
     try {
-        this->SetValue("path", file.string().c_str());
-        this->SetValue("filename", file.string().c_str());
+        this->SetValue("path", file.u8string().c_str());
+        this->SetValue("filename", file.u8string().c_str());
 
-        size_t lastDot = file.leaf().string().find_last_of(".");
+        size_t lastDot = file.filename().u8string().find_last_of(".");
         if (lastDot != std::string::npos) {
-            this->SetValue("extension", file.leaf().string().substr(lastDot + 1).c_str());
+            this->SetValue("extension", file.filename().u8string().substr(lastDot + 1).c_str());
         }
 
-        const size_t fileSize = (size_t) boost::filesystem::file_size(file);
-        const size_t fileTime = (size_t) boost::filesystem::last_write_time(file);
+        const size_t fileSize = (size_t) std::filesystem::file_size(file);
+        const size_t fileTime = (size_t)duration_cast<milliseconds>(
+            std::filesystem::last_write_time(file).time_since_epoch()).count();
 
         this->SetValue("filesize", std::to_string(fileSize).c_str());
         this->SetValue("filetime", std::to_string(fileTime).c_str());
@@ -757,7 +761,7 @@ int64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
 void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename) {
     try {
         std::string dir = NormalizeDir(
-            boost::filesystem::path(filename).parent_path().string());
+            std::filesystem::path(std::filesystem::u8path(filename)).parent_path().u8string());
 
         int64_t dirId = -1;
         if (metadataIdCache.find("directoryId-" + dir) != metadataIdCache.end()) {

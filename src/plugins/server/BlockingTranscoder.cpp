@@ -34,7 +34,7 @@
 
 #include "BlockingTranscoder.h"
 #include "Util.h"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <algorithm>
 #include <atomic>
 
@@ -42,6 +42,10 @@
 #define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
 
 static std::atomic<int> activeCount(0);
+
+namespace std {
+    namespace fs = std::filesystem;
+}
 
 using namespace musik::core::sdk;
 
@@ -116,10 +120,15 @@ bool BlockingTranscoder::Transcode() {
                 this->encoder->Finalize();
                 this->output->Release();
                 this->output = nullptr;
-                boost::system::error_code ec;
-                boost::filesystem::rename(this->tempFilename, this->finalFilename, ec);
+                std::error_code ec;
+                std::fs::rename(
+                    std::fs::u8path(this->tempFilename),
+                    std::fs::u8path(this->finalFilename),
+                    ec);
                 if (ec) {
-                    boost::filesystem::remove(this->tempFilename, ec);
+                    std::fs::remove(
+                        std::fs::u8path(this->tempFilename),
+                        ec);
                 }
                 else {
                     result = true;
@@ -134,8 +143,8 @@ bool BlockingTranscoder::Transcode() {
     this->Cleanup();
 
     if (!result) {
-        boost::system::error_code ec;
-        boost::filesystem::remove(this->tempFilename, ec);
+        std::error_code ec;
+        std::fs::remove(std::fs::u8path(this->tempFilename), ec);
     }
 
     return result;

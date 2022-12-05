@@ -21,9 +21,6 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Common.h>
 
-#include <boost/locale.hpp>
-#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
-
 #include "../musikcore/version.h"
 
 using namespace musik;
@@ -264,12 +261,6 @@ static void initForeground() {
     });
 }
 
-static void initUtf8() {
-    std::locale locale = std::locale();
-    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-    boost::filesystem::path::imbue(utf8Locale);
-}
-
 static void rescanHandler(int signal) {
     debug::info("daemon", "received SIGUSR1, rescanning the library...");
     auto library = LibraryFactory::Instance().DefaultLocalLibrary();
@@ -277,7 +268,6 @@ static void rescanHandler(int signal) {
 }
 
 int main(int argc, char** argv) {
-    initUtf8();
     std::cout << "\n  using lockfile at: " << getLockfileFn();
     handleCommandLine(argc, argv);
     exitIfRunning();

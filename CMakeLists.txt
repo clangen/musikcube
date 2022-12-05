@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project(musikcube)
 set (musikcube_VERSION_MAJOR 0)
-set (musikcube_VERSION_MINOR 98)
-set (musikcube_VERSION_PATCH 2)
+set (musikcube_VERSION_MINOR 99)
+set (musikcube_VERSION_PATCH 0)
 set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 set (LIBRARY_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin/plugins)
 set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
@@ -52,14 +52,19 @@ include_directories(
   "${musikcube_SOURCE_DIR}/src/musikcore"
   "${musikcube_SOURCE_DIR}/src/musikcube"
   "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
-  "${musikcube_SOURCE_DIR}/src/3rdparty/include")
+  "${musikcube_SOURCE_DIR}/src/3rdparty/include"
+  "${musikcube_SOURCE_DIR}/src/3rdparty/asio/asio/include")
 
 link_directories("${musikcube_SOURCE_DIR}/bin/plugins")
 
-find_package(Boost 1.55.0 REQUIRED system filesystem thread)
-include_directories(${Boost_INCLUDE_DIRS})
-message(STATUS "[boost] libs: " ${Boost_LIBRARIES})
-message(STATUS "[boost] includes: " ${Boost_INCLUDE_DIRS})
+# these are used to (1) disable the standalone ASIO from trying to use
+# boost, and (2) instruct websocketpp to use standalone (not boost) ASIO
+add_definitions(
+  -DBOOST_DATE_TIME_NO_LIB
+  -DBOOST_REGEX_NO_LIB
+  -D_WEBSOCKETPP_CPP11_TYPE_TRAITS_
+  -D_WEBSOCKETPP_CPP11_RANDOM_DEVICE_
+  -DASIO_STANDALONE)
 
 if (${BUILD_STANDALONE} MATCHES "true")
   find_vendor_library(LIBCURL curl)
@@ -73,14 +78,20 @@ else()
 endif()
 
 find_library(LIBZ NAMES z)
+find_library(PTHREAD NAMES pthread)
 
-set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${Boost_LIBRARIES} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ})
+set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ} ${PTHREAD})
 
 if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
   if(NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)
     message(STATUS "[build] libatomic required, adding to library list")
     set (musikcube_LINK_LIBS ${musikcube_LINK_LIBS} atomic)
   endif()
+endif()
+
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+  message(STATUS "[build] detected old gcc, manually adding -lstdc++fs")
+  set (musikcube_LINK_LIBS ${musikcube_LINK_LIBS} stdc++fs)
 endif()
 
 message(STATUS "[build] musikcube_LINK_LIBS: " ${musikcube_LINK_LIBS})

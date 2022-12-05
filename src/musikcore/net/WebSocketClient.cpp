@@ -35,7 +35,7 @@
 #include "pch.hpp"
 
 #include <musikcore/net/WebSocketClient.h>
-#include <musikcore/support/Common.h>
+#include <musikcore/sdk/String.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/Message.h>
@@ -46,6 +46,7 @@
 #pragma warning(pop)
 
 using namespace musik::core;
+using namespace musik::core::sdk;
 using namespace musik::core::net;
 using namespace musik::core::runtime;
 
@@ -112,7 +113,7 @@ static inline bool extractRawQueryResult(
 }
 
 static inline bool isVersionCompatible(const std::string& str) {
-    auto parts = Split(str, ".");
+    auto parts = str::Split(str, ".");
     return
         parts.size() == 3 &&
         parts[0] == std::to_string(VERSION_MAJOR) &&

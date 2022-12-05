@@ -93,7 +93,7 @@ ScanResult OpenMptIndexerSource::Scan(
                 this->UpdateMetadata(path, this, indexer);
             }
             catch (...) {
-                std::string error = str::format("error reading metadata for %s", path.c_str());
+                std::string error = str::Format("error reading metadata for %s", path.c_str());
                 debug->Error(PLUGIN_NAME.c_str(), error.c_str());
             }
         }
@@ -161,7 +161,7 @@ static std::string formatDefaultValue(const char* key, const char* defaultValue,
     prefs->GetString(key, threadLocalBuffer, 4096, defaultValue);
     std::string value(threadLocalBuffer);
     threadLocalBuffer[0] = 0;
-    return str::format(value, type.c_str());
+    return str::Format(value, type.c_str());
 }
 
 void OpenMptIndexerSource::UpdateMetadata(
@@ -184,7 +184,7 @@ void OpenMptIndexerSource::UpdateMetadata(
                 nullptr, nullptr, nullptr, nullptr, nullptr);
 
             if (!module) {
-                debug->Error(PLUGIN_NAME.c_str(), str::format("error opening %s", fn.c_str()).c_str());
+                debug->Error(PLUGIN_NAME.c_str(), str::Format("error opening %s", fn.c_str()).c_str());
                 invalidFiles.insert(fn);
             }
             else {

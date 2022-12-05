@@ -53,13 +53,12 @@
 #include <musikcore/sdk/IAnalyzer.h>
 #include <musikcore/sdk/IIndexerSource.h>
 #include <musikcore/audio/Stream.h>
+#include <musikcore/support/ThreadGroup.h>
 
+#include <filesystem>
 #include <algorithm>
 #include <atomic>
-
-#pragma warning(push, 0)
-#include <boost/bind.hpp>
-#pragma warning(pop)
+#include <functional>
 
 #define STRESS_TEST_DB 0
 
@@ -73,6 +72,10 @@ constexpr int DEFAULT_MAX_THREADS = 2;
 constexpr int DEFAULT_MAX_THREADS = 4;
 #endif
 
+namespace std {
+    namespace fs = std::filesystem;
+}
+
 using namespace musik::core;
 using namespace musik::core::sdk;
 using namespace musik::core::audio;
@@ -80,7 +83,7 @@ using namespace musik::core::library;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 
-using Thread = std::unique_ptr<boost::thread>;
+using Thread = std::unique_ptr<std::thread>;
 
 using TagReaderDestroyer = PluginFactory::ReleaseDeleter<ITagReader>;
 using DecoderDeleter = PluginFactory::ReleaseDeleter<IDecoderFactory>;
@@ -105,7 +108,7 @@ static void closeLogFile() noexcept {
 }
 
 static std::string normalizePath(const std::string& path) {
-    return boost::filesystem::path(path).make_preferred().string();
+    return std::fs::path(std::fs::u8path(path)).make_preferred().u8string();
 }
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
@@ -146,7 +149,7 @@ Indexer::~Indexer() {
 void Indexer::Shutdown() {
     if (this->thread) {
         {
-            boost::mutex::scoped_lock lock(this->stateMutex);
+            std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
             this->syncQueue.clear();
             this->state = StateStopping;
@@ -167,7 +170,7 @@ void Indexer::Schedule(SyncType type) {
 }
 
 void Indexer::Schedule(SyncType type, IIndexerSource* source) {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
     if (!this->thread) {
         this->state = StateIdle;
@@ -195,7 +198,7 @@ void Indexer::AddPath(const std::string& path) {
     context.path = NormalizeDir(path);
 
     {
-        boost::mutex::scoped_lock lock(this->stateMutex);
+        std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
         if (std::find(this->paths.begin(), this->paths.end(), path) == this->paths.end()) {
             this->paths.push_back(path);
@@ -211,7 +214,7 @@ void Indexer::RemovePath(const std::string& path) {
     context.path = NormalizeDir(path);
 
     {
-        boost::mutex::scoped_lock lock(this->stateMutex);
+        std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
         auto it = std::find(this->paths.begin(), this->paths.end(), path);
         if (it != this->paths.end()) {
@@ -222,7 +225,7 @@ void Indexer::RemovePath(const std::string& path) {
     }
 }
 
-void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* io) {
+void Indexer::Synchronize(const SyncContext& context, asio::io_service* io) {
     LocalLibrary::CreateIndexes(this->dbConnection);
 
     IndexerTrack::OnIndexerStarted(this->dbConnection);
@@ -264,9 +267,9 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
         try {
             const int64_t id = stmt.ColumnInt64(0);
             std::string path = stmt.ColumnText(1);
-            boost::filesystem::path dir(path);
+            std::fs::path dir(std::fs::u8path(path));
 
-            if (boost::filesystem::exists(dir)) {
+            if (std::fs::exists(dir)) {
                 paths.push_back(path);
                 pathIds.push_back(id);
             }
@@ -351,8 +354,8 @@ void Indexer::FinalizeSync(const SyncContext& context) {
 }
 
 void Indexer::ReadMetadataFromFile(
-    boost::asio::io_service* io,
-    const boost::filesystem::path& file,
+    asio::io_service* io,
+    const std::fs::path& file,
     const std::string& pathId)
 {
     /* we do this here because work may have already been queued before the abort
@@ -365,7 +368,7 @@ void Indexer::ReadMetadataFromFile(
         return;
     }
 
-    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, file.string().c_str()); }
+    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, file.u8string().c_str()); }
 
     musik::core::IndexerTrack track(0);
 
@@ -385,7 +388,7 @@ void Indexer::ReadMetadataFromFile(
             try {
                 if ((*it)->CanRead(track.GetString("extension").c_str())) {
                     APPEND_LOG("can read")
-                    if ((*it)->Read(file.string().c_str(), &store)) {
+                    if ((*it)->Read(file.u8string().c_str(), &store)) {
                         APPEND_LOG("did read")
                         saveToDb = true;
                         break;
@@ -454,22 +457,21 @@ inline void Indexer::IncrementTracksScanned(int delta) {
 }
 
 void Indexer::SyncDirectory(
-    boost::asio::io_service* io,
+    asio::io_service* io,
     const std::string &syncRoot,
     const std::string &currentPath,
     int64_t pathId)
 {
     std::string normalizedSyncRoot = NormalizeDir(syncRoot);
     std::string normalizedCurrentPath = NormalizeDir(currentPath);
-    std::string leaf = boost::filesystem::path(currentPath).leaf().string(); /* trailing subdir in currentPath */
 
     /* start recursive filesystem scan */
 
     try {
         /* for each file in the current path... */
-        boost::filesystem::path path(currentPath);
-        boost::filesystem::directory_iterator end;
-        boost::filesystem::directory_iterator file(path);
+        std::fs::path path(std::fs::u8path(currentPath));
+        std::fs::directory_iterator end;
+        std::fs::directory_iterator file(path);
 
         std::string pathIdStr = std::to_string(pathId);
         std::vector<Thread> threads;
@@ -480,16 +482,15 @@ void Indexer::SyncDirectory(
             }
             if (is_directory(file->status())) {
                 /* recursion here */
-                /* musik::debug::info(TAG, "scanning subdirectory " + file->path().string()); */
-                this->SyncDirectory(io, syncRoot, file->path().string(), pathId);
+                this->SyncDirectory(io, syncRoot, file->path().u8string(), pathId);
             }
             else {
                 try {
-                    std::string extension = file->path().extension().string();
+                    std::string extension = file->path().extension().u8string();
                     for (auto it : this->tagReaders) {
                         if (it->CanRead(extension.c_str())) {
                             if (io) {
-                                io->post(boost::bind(
+                                io->post(std::bind(
                                     &Indexer::ReadMetadataFromFile,
                                     this,
                                     io,
@@ -504,13 +505,13 @@ void Indexer::SyncDirectory(
                     }
                 }
                 catch (...) {
-                    /* boost::filesystem may throw trying to stat the file */
+                    /* std::filesystem may throw trying to stat the file */
                 }
             }
         }
     }
     catch(...) {
-        /* boost::filesystem may throw trying to open the directory */
+        /* std::filesystem may throw trying to open the directory */
     }
 }
 
@@ -592,16 +593,16 @@ ScanResult Indexer::SyncSource(
 }
 
 void Indexer::ThreadLoop() {
-    boost::filesystem::path thumbPath(this->libraryPath + "thumbs/");
+    std::fs::path thumbPath(std::fs::u8path(this->libraryPath + "thumbs/"));
 
-    if (!boost::filesystem::exists(thumbPath)) {
-        boost::filesystem::create_directories(thumbPath);
+    if (!std::fs::exists(thumbPath)) {
+        std::fs::create_directories(thumbPath);
     }
 
     while (true) {
         /* wait for some work. */
         {
-            boost::mutex::scoped_lock lock(this->stateMutex);
+            std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
             while (!this->Bail() && this->syncQueue.size() == 0) {
                 this->state = StateIdle;
                 this->waitCondition.wait(lock);
@@ -625,13 +626,15 @@ void Indexer::ThreadLoop() {
             prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS);
 
         if (threadCount > 1) {
-            boost::asio::io_service io;
-            boost::thread_group threadPool;
-            boost::asio::io_service::work work(io);
+            asio::io_service io;
+            asio::io_service::work work(io);
+            ThreadGroup threadGroup;
 
             /* initialize the thread pool -- we'll use this to index tracks in parallel. */
             for (int i = 0; i < threadCount; i++) {
-                threadPool.create_thread(boost::bind(&boost::asio::io_service::run, &io));
+                threadGroup.create_thread([&io]() {
+                    io.run();
+                });
             }
 
             this->Synchronize(context, &io);
@@ -644,7 +647,8 @@ void Indexer::ThreadLoop() {
                     io.stop();
                 }
             });
-            threadPool.join_all();
+
+            threadGroup.join_all();
         }
         else {
             this->Synchronize(context, nullptr);
@@ -686,8 +690,8 @@ void Indexer::SyncDelete() {
             std::string fn = allTracks.ColumnText(1);
 
             try {
-                boost::filesystem::path file(fn);
-                if (!boost::filesystem::exists(file)) {
+                std::fs::path file(std::fs::u8path(fn));
+                if (!std::fs::exists(file)) {
                     remove = true;
                 }
             }
@@ -797,7 +801,7 @@ void Indexer::SyncPlaylistTracksOrder() {
 }
 
 void Indexer::GetPaths(std::vector<std::string>& paths) {
-    boost::mutex::scoped_lock lock(this->stateMutex);
+    std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
     std::copy(this->paths.begin(), this->paths.end(), std::back_inserter(paths));
 }
 
@@ -846,7 +850,7 @@ static int optimize(
         ++count;
     }
 
-    boost::thread::yield();
+    std::this_thread::yield();
 
     return count;
 }
@@ -860,8 +864,7 @@ void Indexer::SyncOptimize() {
 }
 
 void Indexer::ProcessAddRemoveQueue() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
-
+    std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
     while (!this->addRemoveQueue.empty()) {
         AddRemoveContext context = this->addRemoveQueue.front();
 

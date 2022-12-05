@@ -39,7 +39,7 @@
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/Common.h>
+#include <musikcore/sdk/String.h>
 #include <musikcore/library/ILibrary.h>
 
 #include <musikcube/app/util/PreferenceKeys.h>
@@ -54,6 +54,7 @@
 
 using namespace musik;
 using namespace musik::core;
+using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace musik::cube::SettingsOverlays;
 using namespace cursespp;
@@ -201,7 +202,7 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
         auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = _TSTR("settings_library_type_remote_tls_warning_overlay_message");
-        musik::core::ReplaceAll(message, "{{link}}", kTlsInfoUrl);
+        str::ReplaceAll(message, "{{link}}", kTlsInfoUrl.c_str());
 
         (*dialog)
             .SetTitle(_TSTR("settings_library_type_remote_tls_warning_overlay_title"))

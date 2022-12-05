@@ -87,7 +87,7 @@ class WaveOut : public IOutput {
 
         /* note we apparently use a std::list<> here, and not std::set<> because
         when we need to do a lookup we have a WaveOutBuffer*, and not a shared_ptr.
-        we could fix this up by using boost::enable_shared_from_this */
+        we could fix this up by using std::enable_shared_from_this */
         typedef std::deque<WaveOutBufferPtr> BufferList;
 
         /* instance state relating to output device, including the thread that

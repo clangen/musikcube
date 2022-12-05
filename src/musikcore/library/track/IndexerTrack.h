@@ -38,6 +38,8 @@
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/LocalLibrary.h>
 
+#include <filesystem>
+
 namespace musik { namespace core {
 
     class IndexerTrack: public Track {
@@ -72,7 +74,7 @@ namespace musik { namespace core {
             void SetMetadataState(musik::core::sdk::MetadataState state)  override;
 
             bool NeedsToBeIndexed(
-                const boost::filesystem::path &file,
+                const std::filesystem::path &file,
                 db::Connection &dbConnection);
 
             bool Save(

@@ -35,15 +35,15 @@
 
 #include "pch.h"
 
-#include <boost/thread/condition.hpp>
-#include <boost/thread/thread.hpp>
-
 #include <musikcore/sdk/IOutput.h>
 #include <musikcore/sdk/IDevice.h>
 
-#include <boost/thread/recursive_mutex.hpp>
-#include <boost/thread/condition.hpp>
 #include <list>
+#include <vector>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+#include <functional>
 
 class AlsaOut : public musik::core::sdk::IOutput {
     public:
@@ -97,10 +97,10 @@ class AlsaOut : public musik::core::sdk::IOutput {
         double latency;
         volatile bool quit, paused, initialized;
 
-        std::unique_ptr<boost::thread> writeThread;
-        boost::recursive_mutex stateMutex;
-        boost::condition threadEvent;
+        std::unique_ptr<std::thread> writeThread;
+        std::recursive_mutex stateMutex;
+        std::condition_variable_any threadEvent;
+        std::mutex mutex;
 
         std::list<std::shared_ptr<BufferContext> > buffers;
-        boost::mutex mutex;
 };

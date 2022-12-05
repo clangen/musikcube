@@ -34,6 +34,8 @@
 
 #include "TaglibMetadataReader.h"
 
+#include <musikcore/sdk/String.h>
+
 #ifdef WIN32
     #include <taglib/toolkit/tlist.h>
     #include <taglib/toolkit/tfile.h>
@@ -94,57 +96,6 @@
 
 using namespace musik::core::sdk;
 
-namespace str {
-    static std::string lower(std::string input) {
-        std::transform(input.begin(), input.end(), input.begin(), ::tolower);
-        return input;
-    }
-
-    static inline bool isSpace(const char c) {
-        return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f';
-    }
-
-    std::string trim(const std::string& str) {
-        if (str.size()) {
-            int length = (size_t) str.size();
-            int start = 0, end = length;
-            int i = 0;
-            while (i < length) {
-                if (!isSpace(str[i])) {
-                    break;
-                }
-                ++start;
-                ++i;
-            }
-            i = end - 1;
-            while (i >= 0) {
-                if (!isSpace(str[i])) {
-                    break;
-                }
-                --i;
-            }
-            if (end >= start) {
-                std::string result = str.substr((size_t) start, (size_t) end - start);
-                return result;
-            }
-        }
-        return str;
-    }
-
-    static std::vector<std::string> split(
-        const std::string& in, const std::string& delim)
-    {
-        std::vector<std::string> result;
-        size_t last = 0, next = 0;
-        while ((next = in.find(delim, last)) != std::string::npos) {
-            result.push_back(std::move(trim(in.substr(last, next - last))));
-            last = next + 1;
-        }
-        result.push_back(std::move(trim(in.substr(last))));
-        return result;
-    }
-}
-
 #ifdef WIN32
 static inline std::wstring utf8to16(const char* utf8) {
     int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
@@ -200,7 +151,7 @@ static bool isValidYear(const std::string& year) {
 
 static float toReplayGainFloat(const std::string& input) {
     /* trim any trailing " db" or "db" noise... */
-    std::string lower = str::lower(input);
+    std::string lower = str::ToLowerCopy(input);
     if (lower.find(" db") == lower.length() - 3) {
         lower = lower.substr(0, lower.length() - 3);
     }
@@ -252,7 +203,8 @@ void TaglibMetadataReader::Release() {
 
 bool TaglibMetadataReader::CanRead(const char *extension) {
     if (extension && strlen(extension)) {
-        std::string ext(str::lower(extension[0] == '.' ? &extension[1] : extension));
+        std::string withoutLeadingDot = std::string(extension[0] == '.' ? &extension[1] : extension);
+        std::string ext = str::ToLowerCopy(withoutLeadingDot);
         return
             ext.compare("opus") == 0 ||
             ext.compare("wv") == 0 ||
@@ -294,7 +246,7 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
 
     /* ID3v2 is a trainwreck, so it requires special processing */
     if (extension.size()) {
-        if (str::lower(extension) == "mp3") {
+        if (str::ToLowerCopy(extension) == "mp3") {
             this->ReadID3V2(uri, track);
         }
     }
@@ -522,7 +474,7 @@ void TaglibMetadataReader::ExtractReplayGain(const T& map, ITagStore *target)
 void TaglibMetadataReader::SetTagValueWithPossibleTotal(
     const std::string& value, const std::string& valueKey, const std::string& totalKey, ITagStore* track)
 {
-    std::vector<std::string> parts = str::split(value, "/");
+    std::vector<std::string> parts = str::Split(value, "/");
     this->SetTagValue(valueKey.c_str(), parts[0].c_str(), track);
     if (parts.size() > 1) {
         this->SetTagValue(totalKey.c_str(), parts[1].c_str(), track);
@@ -809,7 +761,7 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
 {
     if (!tagString.isEmpty()) {
         std::string value(tagString.to8Bit(true));
-        std::vector<std::string> splitValues = str::split(value, "/");
+        std::vector<std::string> splitValues = str::Split(value, "/");
         std::vector<std::string>::iterator it = splitValues.begin();
         for( ; it != splitValues.end(); ++it) {
             track->SetValue(key, it->c_str());

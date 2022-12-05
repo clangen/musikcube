@@ -85,7 +85,7 @@ static std::string getDeviceId() {
 }
 
 void PipeWireOut::OnStreamStateChanged(void* data, enum pw_stream_state old, enum pw_stream_state state, const char* error) {
-    ::debug->Info(TAG, str::format("state changed from %d to %d. (%s)", old, state, error ? error : "no additional context").c_str());
+    ::debug->Info(TAG, str::Format("state changed from %d to %d. (%s)", old, state, error ? error : "no additional context").c_str());
 }
 
 void PipeWireOut::OnCoreDone(void* userdata, uint32_t id, int seq) {
@@ -119,7 +119,7 @@ void PipeWireOut::OnRegistryGlobal(void *userdata, uint32_t id, uint32_t permiss
             }
             pw_properties_free(dict);
         }
-        ::debug->Info(TAG, str::format("detected PipeWire:Interface:Device with id=%d", id).c_str());
+        ::debug->Info(TAG, str::Format("detected PipeWire:Interface:Device with id=%d", id).c_str());
         context->instance->deviceList.Add(std::to_string(id), formattedName);
     }
 }
@@ -337,7 +337,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
         int result;
 
         if ((result = pw_thread_loop_start(this->pwThreadLoop)) != 0) {
-            ::debug->Error(TAG, str::format("error starting thread loop: %s", spa_strerror(result)).c_str());
+            ::debug->Error(TAG, str::Format("error starting thread loop: %s", spa_strerror(result)).c_str());
             goto cleanup;
         };
 
@@ -371,7 +371,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
             params[0] = spa_format_audio_raw_build(&builder, SPA_PARAM_EnumFormat, &audioInfo);
 
             if (!params[0]) {
-                ::debug->Error(TAG, str::format(
+                ::debug->Error(TAG, str::Format(
                     "failed to create audio format. channels=%d, rate=%d",
                     this->channelCount,
                     this->sampleRate).c_str());
@@ -408,7 +408,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
                 return true;
             }
             else {
-                ::debug->Error(TAG, str::format(
+                ::debug->Error(TAG, str::Format(
                     "error starting stream: %s",
                     spa_strerror(result)).c_str());
             }

@@ -36,13 +36,14 @@
 #include "LastFmOverlay.h"
 #include <app/util/Messages.h>
 #include <musikcore/support/LastFm.h>
-#include <musikcore/support/Common.h>
+#include <musikcore/sdk/String.h>
 #include <cursespp/App.h>
 #include <map>
 #include <vector>
 
 using namespace musik::cube;
 using namespace musik::core;
+using namespace musik::core::sdk;
 using namespace musik;
 using namespace cursespp;
 
@@ -122,14 +123,14 @@ void LastFmOverlay::UpdateMessage() {
     switch (this->state) {
         case State::Registered: {
             auto session = lastfm::LoadSession();
-            core::ReplaceAll(message, "{{username}}", session.username);
+            str::ReplaceAll(message, "{{username}}", session.username.c_str());
             break;
         }
 
         case State::WaitingForUser:
         case State::RegisterError: {
             std::string url = lastfm::CreateAccountLinkUrl(this->linkToken);
-            core::ReplaceAll(message, "{{link}}", url);
+            str::ReplaceAll(message, "{{link}}", url.c_str());
             break;
         }
 

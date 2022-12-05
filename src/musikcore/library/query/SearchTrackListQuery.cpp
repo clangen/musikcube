@@ -39,13 +39,12 @@
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/query/util/Serialization.h>
 #include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/sdk/String.h>
 #include <musikcore/db/Statement.h>
+#include <musikcore/sdk/String.h>
 
 #pragma warning(push, 0)
 #include <nlohmann/json.hpp>
-
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string.hpp>
 #pragma warning(pop)
 
 using musik::core::db::Statement;
@@ -54,11 +53,12 @@ using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
 using musik::core::ILibraryPtr;
 
+using namespace musik::core;
+using namespace musik::core::sdk;
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
-using namespace boost::algorithm;
 
 const std::string SearchTrackListQuery::kQueryName = "SearchTrackListQuery";
 
@@ -129,7 +129,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
                 " AND tracks.album_id=al.id AND tracks.visual_genre_id=gn.id AND tracks.visual_artist_id=ar.id "
             "ORDER BY " + this->orderBy + " ";
 
-        ReplaceAll(query, "{{match_type}}", useRegex ? "REGEXP" : "LIKE");
+        str::ReplaceAll(query, "{{match_type}}", useRegex ? "REGEXP" : "LIKE");
     }
     else {
         query =
@@ -148,7 +148,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
 
     if (hasFilter) {
         std::string patternToMatch = useRegex
-            ? filter :  "%" + trim_copy(to_lower_copy(filter)) + "%";
+            ? filter :  "%" + sdk::str::Trim(sdk::str::ToLowerCopy(filter)) + "%";
 
         trackQuery.BindText(0, patternToMatch);
         trackQuery.BindText(1, patternToMatch);

@@ -22,12 +22,6 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libogg.0.dylib ./bin/lib
     cp vendor/bin/lib/libvorbis.0.dylib ./bin/lib
     cp vendor/bin/lib/libvorbisenc.2.dylib ./bin/lib
-    cp vendor/bin/lib/libboost_atomic.dylib ./bin/lib
-    cp vendor/bin/lib/libboost_chrono.dylib ./bin/lib
-    cp vendor/bin/lib/libboost_date_time.dylib ./bin/lib
-    cp vendor/bin/lib/libboost_filesystem.dylib ./bin/lib
-    cp vendor/bin/lib/libboost_system.dylib ./bin/lib
-    cp vendor/bin/lib/libboost_thread.dylib ./bin/lib
     cp vendor/bin/lib/libcrypto.1.1.dylib ./bin/lib
     cp vendor/bin/lib/libssl.1.1.dylib ./bin/lib
     cp vendor/bin/lib/libcurl.4.dylib ./bin/lib
@@ -45,12 +39,6 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/bin/lib/libavformat-musikcube.so.59 ./bin/lib
     cp vendor/bin/lib/libavutil-musikcube.so.57 ./bin/lib
     cp vendor/bin/lib/libswresample-musikcube.so.4 ./bin/lib
-    cp vendor/bin/lib/libboost_atomic.so.1.80.0 ./bin/lib
-    cp vendor/bin/lib/libboost_chrono.so.1.80.0 ./bin/lib
-    cp vendor/bin/lib/libboost_date_time.so.1.80.0 ./bin/lib
-    cp vendor/bin/lib/libboost_filesystem.so.1.80.0 ./bin/lib
-    cp vendor/bin/lib/libboost_system.so.1.80.0 ./bin/lib
-    cp vendor/bin/lib/libboost_thread.so.1.80.0 ./bin/lib
     cp vendor/bin/lib/libcrypto.so.1.1 ./bin/lib
     cp vendor/bin/lib/libssl.so.1.1 ./bin/lib
     cp vendor/bin/lib/libcurl.so.4 ./bin/lib

@@ -50,9 +50,6 @@ namespace musik { namespace core {
     bool CopyFile(const std::string& from, const std::string& to);
     int64_t Checksum(char *data,unsigned int bytes);
     size_t CopyString(const std::string& src, char* dst, size_t size);
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
-    std::vector<std::string> Split(const std::string& in, const std::string& delim);
-    std::string Trim(const std::string& str);
     bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
 
 } }

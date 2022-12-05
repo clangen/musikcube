@@ -46,12 +46,6 @@
 #include <musikcore/library/LocalMetadataProxy.h>
 #include <musikcore/support/PreferenceKeys.h>
 
-#pragma warning(push, 0)
-#include <boost/locale.hpp>
-#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
-#include <boost/filesystem.hpp>
-#pragma warning(pop)
-
 #include <thread>
 
 using namespace musik;
@@ -143,9 +137,6 @@ mcsdk_export void mcsdk_env_init() {
     std::unique_lock<std::recursive_mutex> lock(global_mutex);
 
     if (!environment_initialized) {
-        std::locale locale = std::locale();
-        std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-        boost::filesystem::path::imbue(utf8Locale);
         debug::Start();
         message_queue = new mcsdk_context_message_queue();
         message_queue_thread = std::thread([]{ /* needs to be last */

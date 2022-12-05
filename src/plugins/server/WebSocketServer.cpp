@@ -36,6 +36,7 @@
 #include "Constants.h"
 
 #include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/String.h>
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -49,19 +50,8 @@ static const char* TAG = "WebSocketServer";
 
 /* UTILITY METHODS */
 
-namespace str {
-    template<typename... Args>
-    static std::string format(const std::string& format, Args ... args) {
-        /* https://stackoverflow.com/a/26221725 */
-        size_t size = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; /* extra space for '\0' */
-        std::unique_ptr<char[]> buf(new char[size]);
-        std::snprintf(buf.get(), size, format.c_str(), args ...);
-        return std::string(buf.get(), buf.get() + size - 1); /* omit the '\0' */
-    }
-}
-
 static std::string nextMessageId() {
-    return str::format("musikcube-server-%d", ++nextId);
+    return str::Format("musikcube-server-%d", ++nextId);
 }
 
 static std::shared_ptr<char*> jsonToStringArray(const json& jsonArray) {
@@ -194,10 +184,10 @@ void WebSocketServer::ThreadProc() {
         wss->run();
     }
     catch (websocketpp::exception const & e) {
-        this->context.debug->Error(TAG, str::format("[ThreadProc] websocketpp::exception: %s", e.what()).c_str());
+        this->context.debug->Error(TAG, str::Format("[ThreadProc] websocketpp::exception: %s", e.what()).c_str());
     }
     catch (std::exception& e) {
-        this->context.debug->Error(TAG, str::format("[ThreadProc] sttd::exception: %s", e.what()).c_str());
+        this->context.debug->Error(TAG, str::Format("[ThreadProc] sttd::exception: %s", e.what()).c_str());
     }
     catch (...) {
         this->context.debug->Error(TAG, "[ThreadProc] unknown/unexpected exception");
@@ -1427,7 +1417,7 @@ void WebSocketServer::RespondWithGetGainSettings(connection_hdl connection, json
     float preampGain = context.environment->GetPreampGain();
 
     this->RespondWithOptions(connection, request, {
-        { key::replaygain_mode, REPLAYGAIN_MODE_TO_STRING.left.find(replayGainMode)->second },
+        { key::replaygain_mode, REPLAYGAIN_MODE_TO_STRING.find(replayGainMode)->second },
         { key::preamp_gain, preampGain }
     });
 }
@@ -1439,10 +1429,11 @@ void WebSocketServer::RespondWithSetGainSettings(connection_hdl connection, json
 
     float currentGain = context.environment->GetPreampGain();
     auto currentMode = context.environment->GetReplayGainMode();
-    auto currentModeString = REPLAYGAIN_MODE_TO_STRING.left.find(currentMode)->second;
+    auto currentModeString = REPLAYGAIN_MODE_TO_STRING.find(currentMode)->second;
 
-    ReplayGainMode newMode = REPLAYGAIN_MODE_TO_STRING.right.find(
-        options.value(key::replaygain_mode, currentModeString))->second;
+    ReplayGainMode newMode = FindKeyByValue<musik::core::sdk::ReplayGainMode, std::string>(
+        REPLAYGAIN_MODE_TO_STRING,
+        options.value(key::replaygain_mode, currentModeString))->first;
 
     float newGain = options.value(key::preamp_gain, currentGain);
 
@@ -1504,20 +1495,21 @@ void WebSocketServer::RespondWithSetEqualizerSettings(connection_hdl connection,
 void WebSocketServer::RespondWithGetTransportType(connection_hdl connection, json& request) {
     auto type = context.environment->GetTransportType();
     this->RespondWithOptions(connection, request, {
-        { key::type, TRANSPORT_TYPE_TO_STRING.left.find(type)->second }
+        { key::type, TRANSPORT_TYPE_TO_STRING.find(type)->second }
     });
 }
 
 void WebSocketServer::RespondWithSetTransportType(connection_hdl connection, json& request) {
     auto& options = request[message::options];
 
-    std::string currentType = TRANSPORT_TYPE_TO_STRING.left
+    std::string currentType = TRANSPORT_TYPE_TO_STRING
         .find(context.environment->GetTransportType())->second;
 
     auto newType = options.value(key::type, currentType);
 
     if (currentType != newType) {
-        auto enumType = TRANSPORT_TYPE_TO_STRING.right.find(newType)->second;
+        auto enumType = FindKeyByValue<musik::core::sdk::TransportType, std::string>(
+            TRANSPORT_TYPE_TO_STRING, newType)->first;
         context.environment->SetTransportType(enumType);
     }
 
@@ -1617,8 +1609,8 @@ json WebSocketServer::WebSocketServer::ReadTrackMetadata(ITrack* track) {
 }
 
 void WebSocketServer::BuildPlaybackOverview(json& options) {
-    options[key::state] = PLAYBACK_STATE_TO_STRING.left.find(context.playback->GetPlaybackState())->second;
-    options[key::repeat_mode] = REPEAT_MODE_TO_STRING.left.find(context.playback->GetRepeatMode())->second;
+    options[key::state] = PLAYBACK_STATE_TO_STRING.find(context.playback->GetPlaybackState())->second;
+    options[key::repeat_mode] = REPEAT_MODE_TO_STRING.find(context.playback->GetRepeatMode())->second;
     options[key::volume] = context.playback->GetVolume();
     options[key::shuffled] = context.playback->IsShuffled();
     options[key::muted] = context.playback->IsMuted();
@@ -1655,11 +1647,11 @@ void WebSocketServer::OnMessage(server* s, connection_hdl hdl, message_ptr msg) 
         }
     }
     catch (std::exception& e) {
-        this->context.debug->Error(TAG, str::format("OnMessage failed: %s", e.what()).c_str());
+        this->context.debug->Error(TAG, str::Format("OnMessage failed: %s", e.what()).c_str());
         this->RespondWithInvalidRequest(hdl, value::invalid, value::invalid);
     }
     catch (...) {
-        this->context.debug->Error(TAG, str::format("message parse failed: %s", msg->get_payload().c_str()).c_str());
+        this->context.debug->Error(TAG, str::Format("message parse failed: %s", msg->get_payload().c_str()).c_str());
         this->RespondWithInvalidRequest(hdl, value::invalid, value::invalid);
     }
 }

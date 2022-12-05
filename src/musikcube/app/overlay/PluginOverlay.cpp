@@ -36,11 +36,11 @@
 
 #include "PluginOverlay.h"
 
-#include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/sdk/ISchema.h>
+#include <musikcore/sdk/String.h>
 
 #include <cursespp/App.h>
 #include <cursespp/DialogOverlay.h>
@@ -49,6 +49,11 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/SchemaOverlay.h>
 
+#include <filesystem>
+
+namespace std {
+    namespace fs = std::filesystem;
+}
 using namespace musik;
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -71,7 +76,7 @@ using SchemaPtr = std::shared_ptr<ISchema>;
 
 static void showConfigureOverlay(IPlugin* plugin, SchemaPtr schema) {
     std::string title = _TSTR("settings_configure_plugin_title");
-    ReplaceAll(title, "{{name}}", plugin->Name());
+    str::ReplaceAll(title, "{{name}}", plugin->Name());
     auto prefs = Preferences::ForPlugin(plugin->Name());
     SchemaOverlay::Show(title, prefs, schema, [](bool) {});
 }
@@ -80,7 +85,7 @@ static void showNoSchemaDialog(const std::string& name) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     std::string message = _TSTR("settings_no_plugin_config_message");
-    ReplaceAll(message, "{{name}}", name);
+    str::ReplaceAll(message, "{{name}}", name.c_str());
 
     (*dialog)
         .SetTitle(_TSTR("settings_no_plugin_config_title"))
@@ -171,7 +176,7 @@ class PluginListAdapter : public ScrollAdapterBase {
                 [&plugins, prefs](IPlugin* raw, Plugin plugin, const std::string& fn) {
                     PluginInfoPtr info(new PluginInfo());
                     info->plugin = raw;
-                    info->fn = boost::filesystem::path(fn).filename().string();
+                    info->fn = std::fs::path(std::fs::u8path(fn)).filename().u8string();
                     info->enabled = prefs->GetBool(info->fn, true);
                     plugins.push_back(info);
                 });

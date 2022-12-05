@@ -41,18 +41,16 @@
 #include <musikcore/sdk/IIndexerNotifier.h>
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/support/Preferences.h>
-
+#include <musikcore/support/ThreadGroup.h>
 
 #pragma warning(push, 0)
 #include <sigslot/sigslot.h>
-
-#include <boost/thread/thread.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/asio/io_service.hpp>
+#include <asio/io_service.hpp>
 #pragma warning(pop)
 
+#include <filesystem>
 #include <thread>
+#include <condition_variable>
 #include <deque>
 #include <vector>
 #include <atomic>
@@ -124,7 +122,7 @@ namespace musik { namespace core {
 
             void ThreadLoop();
 
-            void Synchronize(const SyncContext& context, boost::asio::io_service* io);
+            void Synchronize(const SyncContext& context, asio::io_service* io);
 
             void FinalizeSync(const SyncContext& context);
 
@@ -147,14 +145,14 @@ namespace musik { namespace core {
             void IncrementTracksScanned(int delta = 1);
 
             void SyncDirectory(
-                boost::asio::io_service* io,
+                asio::io_service* io,
                 const std::string& syncRoot,
                 const std::string& currentPath,
                 int64_t pathId);
 
             void ReadMetadataFromFile(
-                boost::asio::io_service* io,
-                const boost::filesystem::path& path,
+                asio::io_service* io,
+                const std::filesystem::path& path,
                 const std::string& pathId);
 
             bool Bail() noexcept;
@@ -163,8 +161,8 @@ namespace musik { namespace core {
             std::string libraryPath;
             std::string dbFilename;
             std::atomic<State> state;
-            boost::mutex stateMutex;
-            boost::condition waitCondition;
+            std::mutex stateMutex;
+            std::condition_variable_any waitCondition;
             std::unique_ptr<std::thread> thread;
             std::atomic<int> incrementalUrisScanned, totalUrisScanned;
             std::deque<AddRemoveContext> addRemoveQueue;

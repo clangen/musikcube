@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include "HotkeysLayout.h"
-#include <musikcore/support/Common.h>
+#include <musikcore/sdk/String.h>
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
 #include <cursespp/DialogOverlay.h>
@@ -48,6 +48,7 @@
 using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
+using namespace musik::core::sdk;
 
 using Entry = IScrollAdapter::EntryPtr;
 using Callback = std::function<void()>;
@@ -92,8 +93,8 @@ static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, Callbac
         auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = _TSTR("hotkeys_conflict_message");
-        ReplaceAll(message, "{{hotkey}}", key);
-        ReplaceAll(message, "{{existing}}", existing);
+        str::ReplaceAll(message, "{{hotkey}}", key.c_str());
+        str::ReplaceAll(message, "{{existing}}", existing.c_str());
 
         (*dialog)
             .SetTitle(_TSTR("hotkeys_conflict_title"))
@@ -125,7 +126,7 @@ static void backupAndShowDialog() {
         auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = _TSTR("hotkeys_backup_success_message");
-        ReplaceAll(message, "{{path}}", out);
+        str::ReplaceAll(message, "{{path}}", out.c_str());
 
         (*dialog)
             .SetTitle(_TSTR("hotkeys_backup_success_title"))
@@ -138,7 +139,7 @@ static void backupAndShowDialog() {
         auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = _TSTR("hotkeys_backup_failure_message");
-        ReplaceAll(message, "{{path}}", dir);
+        str::ReplaceAll(message, "{{path}}", dir.c_str());
 
         (*dialog)
             .SetTitle(_TSTR("hotkeys_backup_failure_title"))
@@ -153,8 +154,8 @@ static void showDeleteOverlay(Hotkeys::Id id, Callback cb) {
     auto dialog = std::make_shared<DialogOverlay>();
 
     std::string message = _TSTR("hotkeys_delete_binding_message");
-    ReplaceAll(message, "{{key}}", Hotkeys::Name(id));
-    ReplaceAll(message, "{{default}}", Hotkeys::Default(id));
+    str::ReplaceAll(message, "{{key}}", Hotkeys::Name(id).c_str());
+    str::ReplaceAll(message, "{{default}}", Hotkeys::Default(id).c_str());
 
     (*dialog)
         .SetTitle(_TSTR("hotkeys_delete_binding_title"))

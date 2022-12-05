@@ -44,6 +44,7 @@
 #include <string>
 #include <cctype>
 #include <algorithm>
+#include <filesystem>
 
 #pragma warning(push, 0)
 #include <utf8/utf8.h>
@@ -74,9 +75,11 @@
     #include <sys/sysctl.h>
 #endif
 
+namespace fs = std::filesystem;
+
 static inline void silentDelete(const std::string fn) {
-    boost::system::error_code ec;
-    boost::filesystem::remove(boost::filesystem::path(fn), ec);
+    std::error_code ec;
+    fs::remove(fs::path(fs::u8path(fn)), ec);
 }
 
 namespace musik { namespace core {
@@ -127,8 +130,8 @@ namespace musik { namespace core {
                 argv = new char*[len];
                 if (sysctl(mib, 4, argv, &len, nullptr, 0) < 0) abort();
 
-                boost::filesystem::path command = boost::filesystem::system_complete(argv[0]);
-                realpath(command.c_str(), pathbuf);
+                fs::path command = fs::absolute(fs::path(fs::u8path(argv[0])));
+                realpath(command.u8string().c_str(), pathbuf);
                 delete[] argv;
             #else
                 std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
@@ -147,6 +150,22 @@ namespace musik { namespace core {
         std::string directory;
 
     #ifdef WIN32
+        DWORD bufferSize = GetEnvironmentVariable(L"USERPROFILE", 0, 0);
+        wchar_t* buffer = new wchar_t[bufferSize + 2];
+        GetEnvironmentVariable(L"USERPROFILE", buffer, bufferSize);
+        directory.assign(u16to8(buffer));
+        delete[] buffer;
+    #else
+        directory = std::string(std::getenv("HOME"));
+    #endif
+
+        return directory;
+    }
+
+    std::string GetDataDirectory(bool create) {
+        std::string directory;
+
+    #ifdef WIN32
         DWORD bufferSize = GetEnvironmentVariable(L"APPDATA", 0, 0);
         wchar_t* buffer = new wchar_t[bufferSize + 2];
         GetEnvironmentVariable(L"APPDATA", buffer, bufferSize);
@@ -162,21 +181,16 @@ namespace musik { namespace core {
         }
     #endif
 
-        return directory;
-    }
-
-    std::string GetDataDirectory(bool create) {
-        std::string directory = GetHomeDirectory() + std::string("/musikcube/");
+        directory += std::string("/musikcube/");
 
         if (create) {
             try {
-                boost::filesystem::path path(directory);
-                if (!boost::filesystem::exists(path)) {
-                    boost::filesystem::create_directories(path);
+                fs::path path(fs::u8path(directory));
+                if (!fs::exists(path)) {
+                    fs::create_directories(path);
                 }
             }
             catch (...) {
-                /* ugh, fixme */
             }
         }
 
@@ -279,63 +293,14 @@ namespace musik { namespace core {
     }
 
     std::string NormalizeDir(std::string path) {
-        path = boost::filesystem::path(path).make_preferred().string();
+        path = fs::path(fs::u8path(path)).make_preferred().u8string();
 
-        std::string sep(1, boost::filesystem::path::preferred_separator);
+        std::string sep(1, fs::path::preferred_separator);
         if (path.size() && path.substr(path.size() - 1, 1) != sep) {
             path += sep;
         }
 
         return path;
-    }
-
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace) {
-        size_t pos = input.find(find);
-        while (pos != std::string::npos) {
-            input.replace(pos, find.size(), replace);
-            pos = input.find(find, pos + replace.size());
-        }
-    }
-
-    static inline bool IsSpace(const char c) {
-        return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f';
-    }
-
-    std::string Trim(const std::string& str) {
-        if (str.size()) {
-            int start = 0;
-            for (size_t i = 0; i < str.length(); i++) {
-                if (!IsSpace(str[i])) {
-                    break;
-                }
-                ++start;
-            }
-            int end = (int)str.length();
-            for (size_t i = str.length() - 1; i >= 0; i--) {
-                if (!IsSpace(str[i])) {
-                    break;
-                }
-                --end;
-            }
-            if (end > start) {
-                std::string result = str.substr((size_t)start, (size_t)end - start);
-                return result;
-            }
-        }
-        return str;
-    }
-
-    std::vector<std::string> Split(
-        const std::string& in, const std::string& delim)
-    {
-        std::vector<std::string> result;
-        size_t last = 0, next = 0;
-        while ((next = in.find(delim, last)) != std::string::npos) {
-            result.push_back(std::move(Trim(in.substr(last, next - last))));
-            last = next + 1;
-        }
-        result.push_back(std::move(Trim(in.substr(last))));
-        return result;
     }
 
     void OpenFile(const std::string& path) {

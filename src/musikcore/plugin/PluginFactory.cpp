@@ -43,9 +43,12 @@
 #include <musikcore/debug.h>
 #include <musikcore/utfutil.h>
 #include <iostream>
+#include <filesystem>
 
 static const std::string TAG = "PluginFactory";
 static std::mutex instanceMutex;
+
+namespace fs = std::filesystem;
 
 using namespace musik::core;
 
@@ -92,17 +95,17 @@ void PluginFactory::LoadPlugins() {
 #endif
 
     std::string pluginDir(GetPluginDirectory());
-    boost::filesystem::path dir(pluginDir);
+    fs::path dir(fs::u8path(pluginDir));
 
     try {
-        boost::filesystem::directory_iterator end;
-        for (boost::filesystem::directory_iterator file(dir); file != end; file++) {
-            if (boost::filesystem::is_regular(file->status())){
-                std::string filename(file->path().string());
+        fs::directory_iterator end;
+        for (fs::directory_iterator file(dir); file != end; file++) {
+            if (fs::is_regular_file(file->status())){
+                std::string filename(file->path().u8string());
 
                 std::shared_ptr<Descriptor> descriptor(new Descriptor());
                 descriptor->filename = filename;
-                descriptor->key = boost::filesystem::path(filename).filename().string();
+                descriptor->key = fs::path(fs::u8path(filename)).filename().u8string();
 
 #ifdef WIN32
                 /* if the file ends with ".dll", we'll try to load it*/

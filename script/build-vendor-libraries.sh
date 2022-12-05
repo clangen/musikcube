@@ -11,7 +11,7 @@
 # the script will create a "vendor" subdirectory in the current path, and stage
 # all final files in "vendor/lib".
 #
-# dependencies: boost, openssl, curl, libmicrohttpd, ffmpeg, lame, libopenmpt
+# dependencies: openssl, curl, libmicrohttpd, ffmpeg, lame, libopenmpt
 
 # set -x
 
@@ -27,8 +27,6 @@ RPATH="@rpath"
 OS=$(uname)
 ARCH=$(uname -m)
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-BOOST_VERSION_URL_PATH="1.80.0"
-BOOST_VERSION="1_80_0"
 OPENSSL_VERSION="1.1.1q"
 CURL_VERSION="7.85.0"
 LIBMICROHTTPD_VERSION="0.9.75"
@@ -59,11 +57,10 @@ if [[ $CROSSCOMPILE == "rpi" ]]; then
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
-    BOOST_TOOLSET="toolset=gcc-arm"
     PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
-    printf "  BOOST_TOOLSET=${BOOST_TOOLSET}\n  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
+    printf "  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
     printf "  FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n  PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n\n"
     sleep 3
 fi
@@ -92,40 +89,12 @@ function copy_or_download {
 
 function fetch_packages() {
     # no trailing slash on url dirs!
-    copy_or_download https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION_URL_PATH}/source boost_${BOOST_VERSION}.tar.bz2
     copy_or_download https://www.openssl.org/source openssl-${OPENSSL_VERSION}.tar.gz
     copy_or_download https://curl.se/download curl-${CURL_VERSION}.tar.gz
     copy_or_download https://ftp.gnu.org/gnu/libmicrohttpd libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
     copy_or_download https://ffmpeg.org/releases ffmpeg-${FFMPEG_VERSION}.tar.bz2
     copy_or_download https://downloads.sourceforge.net/project/lame/lame/3.100 lame-${LAME_VERSION}.tar.gz
     copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
-}
-
-#
-# boost
-#
-
-function build_boost() {
-    BOOST_CXX_FLAGS="-fPIC -std=c++17"
-    if [[ $OS == "Darwin" ]]; then
-        BOOST_CXX_FLAGS="-fPIC -std=c++17 -stdlib=libc++"
-    fi
-
-    tar xvfj boost_${BOOST_VERSION}.tar.bz2
-    cd boost_${BOOST_VERSION}
-
-    if [[ $CROSSCOMPILE == "rpi" ]]; then
-        printf "creating ~/user-config.jam with arm compiler\n"
-        echo "using gcc : arm : arm-linux-gnueabihf-g++ ;" > ~/user-config.jam
-    else
-        printf "removing ~/user-config.jam\n"
-        rm ~/user-config.jam 2> /dev/null
-    fi
-
-    ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread || exit $?
-    ./b2 headers || exit $?
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} cxxstd=17 threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" --prefix=${OUTDIR} install || exit $?
-    cd ..
 }
 
 #
@@ -495,7 +464,6 @@ cd vendor
 
 stage_prebuilt_libraries
 fetch_packages
-build_boost
 build_openssl
 build_curl
 build_libmicrohttpd
