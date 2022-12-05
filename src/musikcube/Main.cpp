@@ -104,7 +104,11 @@ int main(int argc, char* argv[]) {
 #endif
 
     std::string errorFn = core::GetDataDirectory() + "stderr.txt";
+#ifdef WIN32
+    _wfreopen(u8to16(errorFn).c_str(), L"w", stderr);
+#else
     freopen(errorFn.c_str(), "w", stderr);
+#endif
 
     auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
 
