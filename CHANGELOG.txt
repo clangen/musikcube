@@ -3,7 +3,11 @@
 * completely removed boost as a dependency across all projects; this is a
   huge milestone in the project, and will make it much easier to distribute
   stable builds moving forward.
+* fixed issues with usernames on Windows that contain non-latin characters
+* fixed issues displaying paths with non-latin characters in some parts of
+  the app.
 * fixed issue with directory scanning that may lead to incomplete indexing
+* fixed issue where user's home directory may not be resolved correctly.
 * reverted ViewPager2 changes in `musikdroid`, as there is a bug that is
   preventing fragments from getting re-initialized properly during the resume
   cycle.
