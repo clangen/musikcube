@@ -1,6 +1,8 @@
 0.99.1
 
-* fix OpenBSD compile
+* fixed OpenBSD compile
+* fixed issue with FfmpegDecoder that was preventing .wma files (and possibly
+  other formats) from playing properly.
 
 --------------------------------------------------------------------------------
 
