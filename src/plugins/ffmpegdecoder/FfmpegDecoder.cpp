@@ -203,7 +203,7 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
         buffer->SetSamples(0);
 
         if (!this->eof) {
-            if (!this->resampler && !this->InitializeResampler(buffer)) {
+            if (!this->resampler && !this->InitializeResampler()) {
                 this->exhausted = true;
                 logError("unable to initialize resampler. marking as done.");
                 return false;
@@ -261,12 +261,19 @@ void FfmpegDecoder::Reset() {
     this->streamId = -1;
 }
 
-bool FfmpegDecoder::InitializeResampler(IBuffer* buffer) {
+bool FfmpegDecoder::InitializeResampler() {
+    if (this->resampler) {
+        swr_free(&this->resampler);
+        this->resampler = nullptr;
+    }
+
+    int outSampleRate = (int) RESOLVE_SAMPLE_RATE();
+
     this->resampler = swr_alloc_set_opts(
         this->resampler,
         this->codecContext->channel_layout,
         AV_SAMPLE_FMT_FLT,
-        (int) RESOLVE_SAMPLE_RATE(),
+        outSampleRate,
         this->codecContext->channel_layout,
         this->codecContext->sample_fmt,
         this->codecContext->sample_rate,
@@ -427,8 +434,14 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket* packet) {
 
             if (error < 0) {
                 logAvError("swr_convert_frame", error);
+                this->InitializeResampler();
+                error = swr_convert_frame(
+                    this->resampler,
+                    this->resampledFrame,
+                    this->decodedFrame);
             }
-            else {
+
+            if (error >= 0) {
                 error = av_audio_fifo_write(
                     this->outputFifo,
                     (void**) this->resampledFrame->extended_data,
@@ -579,8 +592,11 @@ AVFrame* FfmpegDecoder::AllocFrame(AVFrame* original, AVSampleFormat format, int
         if (original || frameSizeChanged) {
             av_frame_free(&original);
         }
+        const int channelLayout = this->codecContext->channel_layout == 0
+            ? av_get_default_channel_layout(this->codecContext->channels)
+            : this->codecContext->channel_layout;
         original = av_frame_alloc();
-        original->channel_layout = this->codecContext->channel_layout;
+        original->channel_layout = channelLayout;
         original->format = format;
         original->sample_rate = sampleRate;
         if (frameSizeChanged) {

@@ -81,7 +81,7 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         bool RefillFifoQueue();
         bool DrainResamplerToFifoQueue();
         bool ReadFromFifoAndWriteToBuffer(IBuffer* buffer);
-        bool InitializeResampler(IBuffer* buffer);
+        bool InitializeResampler();
         bool ReadSendAndReceivePacket(AVPacket* packet);
         void FlushAndFinalizeDecoder();
 
