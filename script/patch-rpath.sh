@@ -3,7 +3,7 @@
 PLATFORM=$(uname)
 
 if [[ "$PLATFORM" == 'Linux' ]]; then
-    echo "[patch-linux-rpath] patch Linux .so files..."
+    echo "[patch-rpath] patch Linux .so files..."
 
     # update the RPATH so libraries in libs/ can discover each other,
     # and plugins can discover themselves, and libs/ (but not the
@@ -23,3 +23,14 @@ if [[ "$PLATFORM" == 'Linux' ]]; then
 
     chmod -x ./bin/lib/*
 fi
+
+if [[ "$PLATFORM" == 'Darwin' ]]; then
+    echo "[patch-rpath] patch macOS binaries..."
+
+    install_name_tool -add_rpath "@executable_path/" bin/musikcube
+    install_name_tool -add_rpath "@executable_path/lib" bin/musikcube
+    install_name_tool -add_rpath "@executable_path/" bin/musikcubed
+    install_name_tool -add_rpath "@executable_path/lib" bin/musikcubed
+fi
+
+exit 0

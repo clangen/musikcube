@@ -7,7 +7,7 @@ add_custom_command(TARGET postbuild POST_BUILD COMMAND cmake .)
 # ensure the binaries can find libmusikcore.so, which lives in the same directory.
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   message(STATUS "[post-build] patching macOS rpath...")
-  add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/patch-macos-rpath.sh")
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/patch-rpath.sh")
 endif()
 
 # copy boost and ffmpeg libraries (which can't be statically linked) to bin/
