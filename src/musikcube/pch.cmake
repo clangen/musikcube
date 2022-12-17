@@ -1,6 +1,5 @@
 target_precompile_headers(musikcube
   PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:<boost/asio/basic_socket_streambuf.hpp$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<set$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<vector$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<map$<ANGLE-R>>"
@@ -10,9 +9,6 @@ target_precompile_headers(musikcube
     "$<$<COMPILE_LANGUAGE:CXX>:<thread$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<cmath$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<string$<ANGLE-R>>"
-    "$<$<COMPILE_LANGUAGE:CXX>:<boost/filesystem.hpp$<ANGLE-R>>"
-    "$<$<COMPILE_LANGUAGE:CXX>:<boost/algorithm/string/case_conv.hpp$<ANGLE-R>>"
-    "$<$<COMPILE_LANGUAGE:CXX>:<boost/algorithm/string.hpp$<ANGLE-R>>"
 
   PUBLIC
     "$<$<COMPILE_LANGUAGE:CXX>:cursespp/cursespp/App.h>"
