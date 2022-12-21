@@ -364,7 +364,7 @@ static int64_t writeToTracksTable(
     stmt.BindInt32(4, track.GetInt32("filesize"));
     stmt.BindText(5, track.GetString("title"));
     stmt.BindText(6, track.GetString("filename"));
-    stmt.BindInt32(7, track.GetInt32("filetime"));
+    stmt.BindInt64(7, track.GetInt64("filetime"));
     stmt.BindInt64(8, track.GetInt64("path_id"));
     stmt.BindText(9, track.GetString("external_id"));
 
