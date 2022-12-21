@@ -304,11 +304,13 @@ bool IndexerTrack::NeedsToBeIndexed(
 
 static int stringToInt(const std::string& str, const int defaultValue) {
     try {
-        return std::stoi(str, 0, 10);
+        if (str.size()) {
+            return std::stoi(str, 0, 10);
+        }
     }
     catch (...) {
-        return defaultValue;
     }
+    return defaultValue;
 }
 
 static int64_t writeToTracksTable(
