@@ -36,55 +36,29 @@
 
 #include <musikcore/sdk/String.h>
 
-#ifdef WIN32
-    #include <taglib/toolkit/tlist.h>
-    #include <taglib/toolkit/tfile.h>
-    #include <taglib/tag.h>
-    #include <taglib/fileref.h>
-    #include <taglib/audioproperties.h>
-    #include <taglib/mpeg/mpegfile.h>
-    #include <taglib/mpeg/id3v1/id3v1tag.h>
-    #include <taglib/mpeg/id3v1/id3v1genres.h>
-    #include <taglib/mpeg/id3v2/id3v2tag.h>
-    #include <taglib/mpeg/id3v2/id3v2header.h>
-    #include <taglib/mpeg/id3v2/id3v2frame.h>
-    #include <taglib/mpeg/id3v2/frames/attachedpictureframe.h>
-    #include <taglib/mpeg/id3v2/frames/commentsframe.h>
-    #include <taglib/mpeg/id3v2/frames/textidentificationframe.h>
-    #include <taglib/mp4/mp4file.h>
-    #include <taglib/ogg/oggfile.h>
-    #include <taglib/ogg/xiphcomment.h>
-    #include <taglib/ogg/opus/opusfile.h>
-    #include <taglib/flac/flacfile.h>
-    #include <taglib/toolkit/tpropertymap.h>
-    #include <taglib/wavpack/wavpackfile.h>
-    #include <taglib/riff/aiff/aifffile.h>
-    #include <taglib/riff/wav/wavfile.h>
-#else
-    #include <taglib/tlist.h>
-    #include <taglib/tfile.h>
-    #include <taglib/tag.h>
-    #include <taglib/fileref.h>
-    #include <taglib/audioproperties.h>
-    #include <taglib/mpegfile.h>
-    #include <taglib/id3v1tag.h>
-    #include <taglib/id3v1genres.h>
-    #include <taglib/id3v2tag.h>
-    #include <taglib/id3v2header.h>
-    #include <taglib/id3v2frame.h>
-    #include <taglib/attachedpictureframe.h>
-    #include <taglib/commentsframe.h>
-    #include <taglib/mp4file.h>
-    #include <taglib/oggfile.h>
-    #include <taglib/opusfile.h>
-    #include <taglib/flacfile.h>
-    #include <taglib/wavpackfile.h>
-    #include <taglib/xiphcomment.h>
-    #include <taglib/tpropertymap.h>
-    #include <taglib/aifffile.h>
-    #include <taglib/wavfile.h>
-    #include <taglib/textidentificationframe.h>
-#endif
+#include <taglib/tlist.h>
+#include <taglib/tfile.h>
+#include <taglib/tag.h>
+#include <taglib/fileref.h>
+#include <taglib/audioproperties.h>
+#include <taglib/mpegfile.h>
+#include <taglib/id3v1tag.h>
+#include <taglib/id3v1genres.h>
+#include <taglib/id3v2tag.h>
+#include <taglib/id3v2header.h>
+#include <taglib/id3v2frame.h>
+#include <taglib/attachedpictureframe.h>
+#include <taglib/commentsframe.h>
+#include <taglib/mp4file.h>
+#include <taglib/oggfile.h>
+#include <taglib/opusfile.h>
+#include <taglib/flacfile.h>
+#include <taglib/wavpackfile.h>
+#include <taglib/xiphcomment.h>
+#include <taglib/tpropertymap.h>
+#include <taglib/aifffile.h>
+#include <taglib/wavfile.h>
+#include <taglib/textidentificationframe.h>
 
 #include <vector>
 #include <string>
@@ -580,13 +554,13 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
 
             /* TRCK is the track number (or "trackNum/totalTracks") */
             if (!allTags["TRCK"].isEmpty()) {
-                std::string trackNumber = allTags["TRCK"].front()->toString().toCString(true);
+                std::string trackNumber = allTags["TRCK"].front()->toString().to8Bit(true);
                 this->SetTagValueWithPossibleTotal(trackNumber, "track", "totaltracks", track);
             }
 
             /* TPOS is the disc number (or "discNum/totalDiscs") */
             if (!allTags["TPOS"].isEmpty()) {
-                std::string discNumber = allTags["TPOS"].front()->toString().toCString(true);
+                std::string discNumber = allTags["TPOS"].front()->toString().to8Bit(true);
                 this->SetTagValueWithPossibleTotal(discNumber, "disc", "totaldiscs", track);
             }
             else {

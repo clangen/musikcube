@@ -6,6 +6,8 @@
 * fixed issues when searching for metadata with accented characters
 * fixed issue with FfmpegDecoder that was preventing .wma files (and possibly
   other formats) from playing properly.
+* updated to taglib 1.13. vendor the library by default on unix platforms,
+  and use pre-compiled version on windows. (also: remove source bundle)
 * fixed OpenBSD compile
 
 --------------------------------------------------------------------------------

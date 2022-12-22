@@ -36,25 +36,15 @@
 
 #include "config.h"
 
-#ifdef WIN32
-    #pragma warning(push, 0)
-    #include <taglib/toolkit/tlist.h>
-    #include <taglib/toolkit/tfile.h>
-    #include <taglib/tag.h>
-    #include <taglib/fileref.h>
-    #include <taglib/audioproperties.h>
-    #include <taglib/mpeg/id3v2/id3v2tag.h>
-    #include <taglib/mp4/mp4file.h>
-    #pragma warning(pop)
-#else
-    #include <taglib/tlist.h>
-    #include <taglib/tfile.h>
-    #include <taglib/tag.h>
-    #include <taglib/fileref.h>
-    #include <taglib/audioproperties.h>
-    #include <taglib/id3v2tag.h>
-    #include <taglib/mp4file.h>
-#endif
+#pragma warning(push, 0)
+#include <taglib/tlist.h>
+#include <taglib/tfile.h>
+#include <taglib/tag.h>
+#include <taglib/fileref.h>
+#include <taglib/audioproperties.h>
+#include <taglib/id3v2tag.h>
+#include <taglib/mp4file.h>
+#pragma warning(pop)
 
 #include <set>
 

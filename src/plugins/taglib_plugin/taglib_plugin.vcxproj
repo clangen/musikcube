@@ -259,7 +259,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -278,7 +278,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
@@ -286,12 +286,13 @@
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>tagD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -310,7 +311,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
@@ -318,12 +319,13 @@
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>tagD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Con|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -342,7 +344,7 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
@@ -350,12 +352,13 @@
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>tagD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -374,19 +377,20 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
       <MapExports>true</MapExports>
       <SubSystem>Windows</SubSystem>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>tagD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -405,19 +409,20 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
       <MapExports>true</MapExports>
       <SubSystem>Windows</SubSystem>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>tagD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Con|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -436,13 +441,14 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
       <MapExports>true</MapExports>
       <SubSystem>Windows</SubSystem>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>tagD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -450,7 +456,7 @@
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -470,12 +476,13 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>tag.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
@@ -483,7 +490,7 @@
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -503,12 +510,13 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>tag.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-Con|Win32'">
@@ -516,7 +524,7 @@
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -536,12 +544,13 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>tag.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -549,7 +558,7 @@
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -569,11 +578,12 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalDependencies>tag.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|x64'">
@@ -581,7 +591,7 @@
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -601,11 +611,12 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalDependencies>tag.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-Con|x64'">
@@ -613,7 +624,7 @@
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;taglib-1.11;taglib-1.11/taglib;taglib-1.11/taglib/ape;taglib-1.11/taglib/asf;taglib-1.11/taglib/flac;taglib-1.11/taglib/mpc;taglib-1.11/taglib/mpeg;taglib-1.11/taglib/mpeg/id3v1;taglib-1.11/taglib/mpeg/id3v2;taglib-1.11/taglib/mpeg/id3v2/frames;taglib-1.11/taglib/ogg;taglib-1.11/taglib/ogg/flac;taglib-1.11/taglib/ogg/opus;taglib-1.11/taglib/ogg/speex;taglib-1.11/taglib/ogg/vorbis;taglib-1.11/taglib/toolkit;taglib-1.11/taglib/trueaudio;taglib-1.11/taglib/wavpack;taglib-1.11/taglib/xm;taglib-1.11/taglib/riff;taglib-1.11/taglib/riff/aiff;taglib-1.11/taglib/riff/wav;taglib-1.11/taglib/mod;taglib-1.11/taglib/s3m;taglib-1.11/taglib/mp4;taglib-1.11/taglib/it;taglib-1.11/3rdparty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../;../../3rdparty/include/;../../3rdparty/win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TAGLIB_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -633,233 +644,20 @@
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <AdditionalDependencies>tag.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="taglib-1.11\taglib\ape\apefile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ape\apefooter.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ape\apeitem.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ape\apeproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ape\apetag.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\asf\asfattribute.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\asf\asffile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\asf\asfpicture.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\asf\asfproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\asf\asftag.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\audioproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\fileref.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\flac\flacfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\flac\flacmetadatablock.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\flac\flacpicture.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\flac\flacproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\flac\flacunknownmetadatablock.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\it\itfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\it\itproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mod\modfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mod\modfilebase.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mod\modproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mod\modtag.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mp4\mp4atom.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mp4\mp4coverart.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mp4\mp4file.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mp4\mp4item.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mp4\mp4properties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mp4\mp4tag.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpc\mpcfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpc\mpcproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v1\id3v1genres.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v1\id3v1tag.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\attachedpictureframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\chapterframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\commentsframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\eventtimingcodesframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\ownershipframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\podcastframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\popularimeterframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\privateframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\relativevolumeframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\synchronizedlyricsframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\tableofcontentsframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\textidentificationframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\unknownframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\frames\urllinkframe.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2extendedheader.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2footer.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2frame.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2framefactory.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2header.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2synchdata.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\id3v2\id3v2tag.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\mpegfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\mpegheader.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\mpegproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\mpeg\xingheader.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\flac\oggflacfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\oggfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\oggpage.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\oggpageheader.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\opus\opusfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\opus\opusproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\speex\speexfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\speex\speexproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\vorbis\vorbisfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\vorbis\vorbisproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\ogg\xiphcomment.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\riff\aiff\aifffile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\riff\aiff\aiffproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\riff\rifffile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\riff\wav\infotag.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\riff\wav\wavfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\riff\wav\wavproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\s3m\s3mfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\s3m\s3mproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\tag.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\tagunion.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\tagutils.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tbytevector.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tbytevectorlist.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tbytevectorstream.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tdebug.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tdebuglistener.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tfilestream.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tiostream.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tpropertymap.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\trefcounter.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tstring.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tstringlist.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\toolkit\tzlib.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\trueaudio\trueaudiofile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\trueaudio\trueaudioproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\wavpack\wavpackfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\wavpack\wavpackproperties.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\xm\xmfile.cpp" />
-    <ClCompile Include="taglib-1.11\taglib\xm\xmproperties.cpp" />
     <ClCompile Include="taglib_plugin.cpp" />
     <ClCompile Include="TaglibMetadataReader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
-    <ClInclude Include="taglib-1.11\config.h" />
-    <ClInclude Include="taglib-1.11\taglib\ape\apefile.h" />
-    <ClInclude Include="taglib-1.11\taglib\ape\apefooter.h" />
-    <ClInclude Include="taglib-1.11\taglib\ape\apeitem.h" />
-    <ClInclude Include="taglib-1.11\taglib\ape\apeproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\ape\apetag.h" />
-    <ClInclude Include="taglib-1.11\taglib\asf\asfattribute.h" />
-    <ClInclude Include="taglib-1.11\taglib\asf\asffile.h" />
-    <ClInclude Include="taglib-1.11\taglib\asf\asfpicture.h" />
-    <ClInclude Include="taglib-1.11\taglib\asf\asfproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\asf\asftag.h" />
-    <ClInclude Include="taglib-1.11\taglib\asf\asfutils.h" />
-    <ClInclude Include="taglib-1.11\taglib\audioproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\fileref.h" />
-    <ClInclude Include="taglib-1.11\taglib\flac\flacfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\flac\flacmetadatablock.h" />
-    <ClInclude Include="taglib-1.11\taglib\flac\flacpicture.h" />
-    <ClInclude Include="taglib-1.11\taglib\flac\flacproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\flac\flacunknownmetadatablock.h" />
-    <ClInclude Include="taglib-1.11\taglib\it\itfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\it\itproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\mod\modfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\mod\modfilebase.h" />
-    <ClInclude Include="taglib-1.11\taglib\mod\modfileprivate.h" />
-    <ClInclude Include="taglib-1.11\taglib\mod\modproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\mod\modtag.h" />
-    <ClInclude Include="taglib-1.11\taglib\mp4\mp4atom.h" />
-    <ClInclude Include="taglib-1.11\taglib\mp4\mp4coverart.h" />
-    <ClInclude Include="taglib-1.11\taglib\mp4\mp4file.h" />
-    <ClInclude Include="taglib-1.11\taglib\mp4\mp4item.h" />
-    <ClInclude Include="taglib-1.11\taglib\mp4\mp4properties.h" />
-    <ClInclude Include="taglib-1.11\taglib\mp4\mp4tag.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpc\mpcfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpc\mpcproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v1\id3v1genres.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v1\id3v1tag.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\attachedpictureframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\chapterframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\commentsframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\eventtimingcodesframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\generalencapsulatedobjectframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\ownershipframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\podcastframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\popularimeterframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\privateframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\relativevolumeframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\synchronizedlyricsframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\tableofcontentsframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\textidentificationframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\uniquefileidentifierframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\unknownframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\unsynchronizedlyricsframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\frames\urllinkframe.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2extendedheader.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2footer.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2frame.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2framefactory.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2header.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2synchdata.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\id3v2\id3v2tag.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\mpegfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\mpegheader.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\mpegproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\mpegutils.h" />
-    <ClInclude Include="taglib-1.11\taglib\mpeg\xingheader.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\flac\oggflacfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\oggfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\oggpage.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\oggpageheader.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\opus\opusfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\opus\opusproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\speex\speexfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\speex\speexproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\vorbis\vorbisfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\vorbis\vorbisproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\ogg\xiphcomment.h" />
-    <ClInclude Include="taglib-1.11\taglib\riff\aiff\aifffile.h" />
-    <ClInclude Include="taglib-1.11\taglib\riff\aiff\aiffproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\riff\rifffile.h" />
-    <ClInclude Include="taglib-1.11\taglib\riff\riffutils.h" />
-    <ClInclude Include="taglib-1.11\taglib\riff\wav\infotag.h" />
-    <ClInclude Include="taglib-1.11\taglib\riff\wav\wavfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\riff\wav\wavproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\s3m\s3mfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\s3m\s3mproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\tag.h" />
-    <ClInclude Include="taglib-1.11\taglib\taglib_export.h" />
-    <ClInclude Include="taglib-1.11\taglib\tagunion.h" />
-    <ClInclude Include="taglib-1.11\taglib\tagutils.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\taglib.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tbytevector.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tbytevectorlist.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tbytevectorstream.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tdebug.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tdebuglistener.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tfilestream.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tiostream.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tlist.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tmap.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tpropertymap.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\trefcounter.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tstring.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tstringlist.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tutils.h" />
-    <ClInclude Include="taglib-1.11\taglib\toolkit\tzlib.h" />
-    <ClInclude Include="taglib-1.11\taglib\trueaudio\trueaudiofile.h" />
-    <ClInclude Include="taglib-1.11\taglib\trueaudio\trueaudioproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\wavpack\wavpackfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\wavpack\wavpackproperties.h" />
-    <ClInclude Include="taglib-1.11\taglib\xm\xmfile.h" />
-    <ClInclude Include="taglib-1.11\taglib\xm\xmproperties.h" />
     <ClInclude Include="TaglibMetadataReader.h" />
   </ItemGroup>
   <ItemGroup>
