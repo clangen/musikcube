@@ -271,7 +271,7 @@ bool IndexerTrack::NeedsToBeIndexed(
         }
 
         const size_t fileSize = (size_t) std::filesystem::file_size(file);
-        const size_t fileTime = (size_t)duration_cast<milliseconds>(
+        const int64_t fileTime = (int64_t) duration_cast<milliseconds>(
             std::filesystem::last_write_time(file).time_since_epoch()).count();
 
         this->SetValue("filesize", std::to_string(fileSize).c_str());
@@ -289,7 +289,7 @@ bool IndexerTrack::NeedsToBeIndexed(
         if (stmt.Step() == db::Row) {
             this->trackId = stmt.ColumnInt64(0);
             const int dbFileSize = stmt.ColumnInt32(2);
-            const int dbFileTime = stmt.ColumnInt32(3);
+            const int64_t dbFileTime = stmt.ColumnInt64(3);
 
             if (fileSize == dbFileSize && fileTime == dbFileTime) {
                 return false;
@@ -304,11 +304,13 @@ bool IndexerTrack::NeedsToBeIndexed(
 
 static int stringToInt(const std::string& str, const int defaultValue) {
     try {
-        return std::stoi(str, 0, 10);
+        if (str.size()) {
+            return std::stoi(str, 0, 10);
+        }
     }
     catch (...) {
-        return defaultValue;
     }
+    return defaultValue;
 }
 
 static int64_t writeToTracksTable(
@@ -357,6 +359,8 @@ static int64_t writeToTracksTable(
 
     db::Statement stmt(query.c_str(), dbConnection);
 
+    auto time = track.GetInt64("filetime");
+
     stmt.BindInt32(0, stringToInt(track.GetString("track"), 1));
     stmt.BindInt32(1, stringToInt(track.GetString("disc"), 1));
     stmt.BindText(2, track.GetString("bpm"));
@@ -364,7 +368,7 @@ static int64_t writeToTracksTable(
     stmt.BindInt32(4, track.GetInt32("filesize"));
     stmt.BindText(5, track.GetString("title"));
     stmt.BindText(6, track.GetString("filename"));
-    stmt.BindInt32(7, track.GetInt32("filetime"));
+    stmt.BindInt64(7, track.GetInt64("filetime"));
     stmt.BindInt64(8, track.GetInt64("path_id"));
     stmt.BindText(9, track.GetString("external_id"));
 

@@ -171,9 +171,9 @@ void OpenMptIndexerSource::UpdateMetadata(
 {
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
-    int modifiedTime = fs::getLastModifiedTime(fn);
+    int64_t modifiedTime = fs::getLastModifiedTime(fn);
     const std::string firstExternalId = indexer::createExternalId(PLUGIN_NAME, fn, 0);
-    int modifiedDbTime = indexer->GetLastModifiedTime(this, firstExternalId.c_str());
+    int64_t modifiedDbTime = indexer->GetLastModifiedTime(this, firstExternalId.c_str());
     if (modifiedDbTime < 0 || modifiedTime != modifiedDbTime) {
         fn = fs::canonicalizePath(fn);
         char* fileBytes = nullptr;

@@ -146,7 +146,12 @@ static TagLib::FileRef resolveOggType(const char* uri) {
 }
 
 static bool isValidYear(const std::string& year) {
-    return std::stoi(year) > 0;
+    try {
+        return year.size() && std::stoi(year) > 0;
+    }
+    catch (...) {
+    }
+    return false;
 }
 
 static float toReplayGainFloat(const std::string& input) {
