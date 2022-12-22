@@ -15,3 +15,4 @@ endif()
 
 message(STATUS "[taglibmetadatareader] using ${LIBTAG}")
 target_link_libraries(taglibreader ${LIBTAG} ${LIBZ})
+add_vendor_includes(taglibreader)
