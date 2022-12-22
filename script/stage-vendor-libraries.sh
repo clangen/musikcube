@@ -1,13 +1,8 @@
 #!/bin/bash
 
 rm -rf bin/lib/ 2> /dev/null
-
+rm bin/plugins/lib 2> /dev/null
 mkdir -p bin/lib/
-mkdir -p bin/plugins/
-pushd bin/plugins
-rm lib 2> /dev/null
-ln -s ../lib/
-popd
 
 PLATFORM=$(uname)
 
@@ -45,7 +40,7 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/bin/lib/libmp3lame.so.0 ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.so.12 ./bin/lib
     cp vendor/bin/lib/libopenmpt.so.0 ./bin/lib
-    cp vendor/bin/lib/libtag.so.1.19.0 ./bin/lib
+    cp vendor/bin/lib/libtag.so.1 ./bin/lib
 
     SYSTEM_ROOT=""
     SYSTEM_TYPE="x86_64-linux-gnu"
