@@ -43,6 +43,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <functional>
+#include <chrono>
+#include <filesystem>
 #include "String.h"
 
 #ifdef WIN32
@@ -69,21 +71,9 @@ namespace musik { namespace core { namespace sdk { namespace fs {
     }
 
     template <typename String=std::string>
-    static int getLastModifiedTime(const String& fn) {
-    #ifdef WIN32
-        /* todo */
-        struct _stat result = { 0 };
-        std::wstring fn16 = musik::core::sdk::str::u8to16(fn.c_str());
-        if (_wstat(fn16.c_str(), &result) == 0) {
-            return (int)result.st_mtime;
-        }
-    #else
-        struct stat result = { 0 };
-        if (stat(fn.c_str(), &result) == 0) {
-            return result.st_mtime;
-        }
-    #endif
-        return -1;
+    static int64_t getLastModifiedTime(const String& fn) {
+        return (int64_t) std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::filesystem::last_write_time(std::filesystem::u8path(fn)).time_since_epoch()).count();
     }
 
     template <typename String=std::string>

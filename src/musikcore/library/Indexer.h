@@ -90,7 +90,7 @@ namespace musik { namespace core {
             bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
             int RemoveAll(musik::core::sdk::IIndexerSource* source) override;
             void CommitProgress(musik::core::sdk::IIndexerSource* source, unsigned updatedTracks) override;
-            int GetLastModifiedTime(musik::core::sdk::IIndexerSource* source, const char* id) override;
+            int64_t GetLastModifiedTime(musik::core::sdk::IIndexerSource* source, const char* id) override;
 
             bool Save(
                 musik::core::sdk::IIndexerSource* source,

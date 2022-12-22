@@ -1078,13 +1078,13 @@ void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {
     }
 }
 
-int Indexer::GetLastModifiedTime(IIndexerSource* source, const char* externalId) {
+int64_t Indexer::GetLastModifiedTime(IIndexerSource* source, const char* externalId) {
     if (source && externalId && strlen(externalId)) {
         db::Statement stmt("SELECT filetime FROM tracks t where source_id=? AND external_id=?", dbConnection);
         stmt.BindInt32(0, source->SourceId());
         stmt.BindText(1, externalId);
         if (stmt.Step() == db::Row) {
-            return stmt.ColumnInt32(0);
+            return stmt.ColumnInt64(0);
         }
     }
 

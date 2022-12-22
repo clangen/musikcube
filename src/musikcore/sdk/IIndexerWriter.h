@@ -48,7 +48,7 @@ namespace musik { namespace core { namespace sdk {
             virtual bool RemoveByUri(IIndexerSource* source, const char* uri) = 0;
             virtual bool RemoveByExternalId(IIndexerSource* source, const char* id) = 0;
             virtual int RemoveAll(IIndexerSource* source) = 0;
-            virtual int GetLastModifiedTime(IIndexerSource* source, const char* externalId) = 0;
+            virtual int64_t GetLastModifiedTime(IIndexerSource* source, const char* externalId) = 0;
     };
 
 } } }
