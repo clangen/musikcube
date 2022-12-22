@@ -485,21 +485,21 @@ cd vendor
 
 stage_prebuilt_libraries
 fetch_packages
-#build_openssl
-#build_curl
-#build_libmicrohttpd
-#build_ffmpeg
-#build_lame
-#build_libopenmpt
+build_openssl
+build_curl
+build_libmicrohttpd
+build_ffmpeg
+build_lame
+build_libopenmpt
 build_taglib
-#delete_unused_libraries
-#relink_dynamic_libraries
+delete_unused_libraries
+relink_dynamic_libraries
 
-# cd ..
-# if [[ $CROSSCOMPILE == "rpi" ]]; then
-#   mv vendor vendor-${CROSSCOMPILE}
-# else
-#   mv vendor vendor-$(uname -m)
-# fi
+cd ..
+if [[ $CROSSCOMPILE == "rpi" ]]; then
+  mv vendor vendor-${CROSSCOMPILE}
+else
+  mv vendor vendor-$(uname -m)
+fi
 
 printf "\n\ndone!\n\n"
