@@ -33,6 +33,7 @@ LIBMICROHTTPD_VERSION="0.9.75"
 FFMPEG_VERSION="5.1.2"
 LAME_VERSION="3.100"
 LIBOPENMPT_VERSION="0.6.6"
+TAGLIB_VERSION="1.13"
 OUTDIR="$(pwd)/vendor/bin"
 LIBDIR="$OUTDIR/lib"
 
@@ -57,6 +58,7 @@ if [[ $CROSSCOMPILE == "rpi" ]]; then
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
+    TAGLIB_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain.cmake"
     PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
@@ -93,8 +95,9 @@ function fetch_packages() {
     copy_or_download https://curl.se/download curl-${CURL_VERSION}.tar.gz
     copy_or_download https://ftp.gnu.org/gnu/libmicrohttpd libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
     copy_or_download https://ffmpeg.org/releases ffmpeg-${FFMPEG_VERSION}.tar.bz2
-    copy_or_download https://downloads.sourceforge.net/project/lame/lame/3.100 lame-${LAME_VERSION}.tar.gz
+    copy_or_download https://downloads.sourceforge.net/project/lame/lame/${LAME_VERSION} lame-${LAME_VERSION}.tar.gz
     copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
+    copy_or_download https://github.com/taglib/taglib/releases/download/v${TAGLIB_VERSION} taglib-${TAGLIB_VERSION}.tar.gz
 }
 
 #
@@ -413,6 +416,24 @@ function build_libopenmpt() {
 }
 
 #
+# taglib
+#
+
+function build_taglib() {
+    rm -rf taglib-${TAGLIB_VERSION}
+    tar xvfz taglib-${TAGLIB_VERSION}.tar.gz
+    cd taglib-${TAGLIB_VERSION}
+    cmake \
+        -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
+        ${TAGLIB_COMPILER_TOOLCHAIN} \
+        -DBUILD_SHARED_LIBS=1 \
+        . || exit $?
+    make ${JOBS} || exit $?
+    make install
+    cd ..
+}
+
+#
 # macOS dylib rpaths
 #
 
@@ -457,27 +478,28 @@ function delete_unused_libraries() {
     cd ../../
 }
 
-clean
+#clean
 
 mkdir vendor
 cd vendor
 
 stage_prebuilt_libraries
 fetch_packages
-build_openssl
-build_curl
-build_libmicrohttpd
-build_ffmpeg
-build_lame
-build_libopenmpt
-delete_unused_libraries
-relink_dynamic_libraries
+#build_openssl
+#build_curl
+#build_libmicrohttpd
+#build_ffmpeg
+#build_lame
+#build_libopenmpt
+build_taglib
+#delete_unused_libraries
+#relink_dynamic_libraries
 
-cd ..
-if [[ $CROSSCOMPILE == "rpi" ]]; then
-  mv vendor vendor-${CROSSCOMPILE}
-else
-  mv vendor vendor-$(uname -m)
-fi
+# cd ..
+# if [[ $CROSSCOMPILE == "rpi" ]]; then
+#   mv vendor vendor-${CROSSCOMPILE}
+# else
+#   mv vendor vendor-$(uname -m)
+# fi
 
 printf "\n\ndone!\n\n"
