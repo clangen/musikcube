@@ -24,7 +24,6 @@ include(ConfigureBsdPaths)
 include(AddDarwinSystemLibs)
 include(AddLinuxSystemLibs)
 include(ConfigureCurses)
-include(ConfigureTaglib)
 include(ConfigureCompilerFlags)
 include(FindVendorLibrary)
 

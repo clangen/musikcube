@@ -41,15 +41,10 @@ if (${GENERATE_DEB} MATCHES "true" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
     endif()
 
     set(DEPENDENCIES "libmicrohttpd${DEB_MICROHTTPD_VERSION}, libcurl${DEB_LIBCURL_VERSION}, libogg0, libvorbis0a, libvorbisfile3, libncursesw${DEB_NCURSES_VERSION}, libasound2, libpulse0, pulseaudio, libmp3lame0, libev4, libopenmpt0, libssl1.1")
-    set(DEPENDENCIES "${DEPENDENCIES}, libavcodec-extra, libavutil${DEB_AVUTIL_VERSION}, libavformat${DEB_AVFORMAT_VERSION}, libswresample${DEB_SWRESAMPLE_VERSION}")
-
-    if (${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
-      set(DEPENDENCIES "${DEPENDENCIES}, libtag1v5")
-    endif()
+    set(DEPENDENCIES "${DEPENDENCIES}, libtag1v5, libavcodec-extra, libavutil${DEB_AVUTIL_VERSION}, libavformat${DEB_AVFORMAT_VERSION}, libswresample${DEB_SWRESAMPLE_VERSION}")
 
     set(CPACK_PACKAGE_FILE_NAME "musikcube_${musikcube_VERSION}_${DEB_PLATFORM}_${DEB_DISTRO}_${DEB_ARCHITECTURE}")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS ${DEPENDENCIES})
-
     set(CPACK_RPM_PACKAGE_REQUIRES "libogg, libvorbis, ffmpeg-libs, ncurses, zlib, alsa-lib, pulseaudio-libs, openssl, libcurl, libmicrohttpd, lame, libev, taglib, libopenmpt")
   endif()
 
