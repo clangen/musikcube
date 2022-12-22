@@ -42,7 +42,7 @@
 #include <sstream>
 #include <set>
 #include <map>
-#include <gme.h>
+#include <gme/gme.h>
 
 using namespace musik::core::sdk;
 
@@ -156,7 +156,7 @@ void GmeIndexerSource::UpdateMetadata(
     if (modifiedDbTime < 0 || modifiedTime != modifiedDbTime) {
         fn = fs::canonicalizePath(fn);
 
-        gme_t* data = nullptr;
+        Music_Emu* data = nullptr;
         gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
         if (err) {
             debug->Error(PLUGIN_NAME, str::Format("error opening %s", fn.c_str()).c_str());

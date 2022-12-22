@@ -127,10 +127,7 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                     auto fadeLength = prefs->GetDouble(
                         KEY_TRACK_FADE_OUT_LENGTH, DEFAULT_FADE_OUT_LENGTH);
 
-                    gme_set_fade(
-                        this->gme,
-                        (int)((this->length - fadeLength) * 1000.0),
-                        (int)(fadeLength * 1000.0));
+                    gme_set_fade(this->gme, (int)((this->length - fadeLength) * 1000.0));
                 }
                 else {
                     this->length = audioLength;
