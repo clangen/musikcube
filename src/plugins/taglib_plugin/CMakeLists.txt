@@ -7,7 +7,9 @@ add_library(taglibreader SHARED ${taglibreader_SOURCES})
 
 find_library(LIBZ z)
 
-if (NOT ${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
+if (${BUILD_STANDALONE} MATCHES "true")
+  find_vendor_library(LIBTAG tag)
+elseif (NOT ${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
   message(STATUS "[taglibmetadatareader] using bundled taglib = true")
   message(STATUS "[taglibmetadatareader] CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
 
