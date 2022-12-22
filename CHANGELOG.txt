@@ -1,8 +1,12 @@
 0.99.1
 
-* fixed OpenBSD compile
+* fixed indexer issues related to last modified file time; some code was
+  using 32-bit integers for timestamp comparison, leading to incorrect
+  re-indexing
+* fixed issues when searching for metadata with accented characters
 * fixed issue with FfmpegDecoder that was preventing .wma files (and possibly
   other formats) from playing properly.
+* fixed OpenBSD compile
 
 --------------------------------------------------------------------------------
 
