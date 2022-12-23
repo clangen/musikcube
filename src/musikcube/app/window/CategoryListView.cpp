@@ -153,7 +153,8 @@ int64_t CategoryListView::GetSelectedId() {
     if (index != NO_SELECTION && this->metadata && index < this->metadata->Count()) {
         return this->metadata->At(index)->GetId();
     }
-    return this->selectAfterQuery == -1LL || this->metadata->Count() == 0 ? -1LL : this->selectAfterQuery;
+    const bool isEmpty = this->metadata && this->metadata->Count();
+    return isEmpty || this->selectAfterQuery == -1LL == 0 ? -1LL : this->selectAfterQuery;
 }
 
 std::string CategoryListView::GetSelectedValue() {
