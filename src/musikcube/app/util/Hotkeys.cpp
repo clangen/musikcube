@@ -171,15 +171,13 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateHotkeys, "?" },
     { Id::NavigateJumpToPlaying, "x" },
 
-#ifdef __APPLE__
-    /* M-up, M-down don't seem to work on iTerm2, and the delete
-    key doesn't exist on most macbooks. ugly special mappings here. */
+    /* M-up and M-down would be preferred, but it seems that these are
+    common hotkeys for many terminal emulators, so use CTL instead */
     { Id::PlayQueueMoveUp, "CTL_UP" },
     { Id::PlayQueueMoveDown, "CTL_DOWN" },
+#ifdef __APPLE__
     { Id::PlayQueueDelete, "KEY_BACKSPACE" },
 #else
-    { Id::PlayQueueMoveUp, "M-up" },
-    { Id::PlayQueueMoveDown, "M-down" },
     { Id::PlayQueueDelete, "KEY_DC" },
 #endif
     { Id::PlayQueuePlaylistLoad, "M-l" },
