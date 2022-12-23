@@ -3,11 +3,14 @@
 * fixed indexer issues related to last modified file time; some code was
   using 32-bit integers for timestamp comparison, leading to incorrect
   re-indexing
+* fixed some issues related to saving modified playlists
 * fixed issues when searching for metadata with accented characters
 * fixed issue with FfmpegDecoder that was preventing .wma files (and possibly
   other formats) from playing properly.
 * updated to taglib 1.13. vendor the library by default on unix platforms,
   and use pre-compiled version on windows. (also: remove source bundle)
+* updated some default key bindings to be more cross-terminal-emulator
+  compatible
 * cleaned up vendoring for libopenmpt and libgme
 * fixed OpenBSD compile
 
