@@ -39,6 +39,7 @@ const libraries = [
   'libtag.1.19.0.dylib',
   'libvorbis.0.dylib',
   'libvorbisenc.2.dylib',
+  'libgme.0.6.3.dylib',
 ];
 
 /* after updating libraries, re-establish symlinks */
@@ -58,6 +59,7 @@ const symlinks = [
   ['libtag.1.19.0.dylib', 'libtag.dylib'],
   ['libvorbis.0.dylib', 'libvorbis.dylib'],
   ['libvorbisenc.2.dylib', 'libvorbisenc.dylib'],
+  ['libgme.0.6.3.dylib', 'libgme.dylib'],
 ];
 
 const path = process.argv[2];
