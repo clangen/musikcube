@@ -364,7 +364,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>./include/;./include/sqlite;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -385,7 +385,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>./include/;./include/sqlite;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -406,7 +406,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>./include/;./include/sqlite;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINCON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINCON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
