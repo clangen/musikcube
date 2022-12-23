@@ -34,6 +34,7 @@ FFMPEG_VERSION="5.1.2"
 LAME_VERSION="3.100"
 LIBOPENMPT_VERSION="0.6.6"
 TAGLIB_VERSION="1.13"
+GME_VERSION="0.6.3"
 OUTDIR="$(pwd)/vendor/bin"
 LIBDIR="$OUTDIR/lib"
 
@@ -58,7 +59,7 @@ if [[ $CROSSCOMPILE == "rpi" ]]; then
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
-    TAGLIB_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain.cmake"
+    CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain.cmake"
     PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
@@ -98,6 +99,7 @@ function fetch_packages() {
     copy_or_download https://downloads.sourceforge.net/project/lame/lame/${LAME_VERSION} lame-${LAME_VERSION}.tar.gz
     copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
     copy_or_download https://github.com/taglib/taglib/releases/download/v${TAGLIB_VERSION} taglib-${TAGLIB_VERSION}.tar.gz
+    copy_or_download https://bitbucket.org/mpyne/game-music-emu/downloads game-music-emu-${GME_VERSION}.tar.gz
 }
 
 #
@@ -416,6 +418,25 @@ function build_libopenmpt() {
 }
 
 #
+# gme
+#
+
+function build_gme() {
+    rm -rf game-music-emu-${GME_VERSION}
+    tar xvfz game-music-emu-${GME_VERSION}.tar.gz
+    cd game-music-emu-${GME_VERSION}
+    cmake \
+        -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
+        ${CMAKE_COMPILER_TOOLCHAIN} \
+        -DENABLE_UBSAN=OFF \
+        -DBUILD_SHARED_LIBS=1 \
+        . || exit $?
+    make ${JOBS} || exit $?
+    make install
+    cd ..
+}
+
+#
 # taglib
 #
 
@@ -425,7 +446,7 @@ function build_taglib() {
     cd taglib-${TAGLIB_VERSION}
     cmake \
         -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
-        ${TAGLIB_COMPILER_TOOLCHAIN} \
+        ${CMAKE_COMPILER_TOOLCHAIN} \
         -DBUILD_SHARED_LIBS=1 \
         . || exit $?
     make ${JOBS} || exit $?
@@ -478,7 +499,7 @@ function delete_unused_libraries() {
     cd ../../
 }
 
-#clean
+clean
 
 mkdir vendor
 cd vendor
@@ -491,6 +512,7 @@ build_libmicrohttpd
 build_ffmpeg
 build_lame
 build_libopenmpt
+build_gme
 build_taglib
 delete_unused_libraries
 relink_dynamic_libraries

@@ -41,6 +41,7 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/bin/lib/libmp3lame.so.0 ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.so.12 ./bin/lib
     cp vendor/bin/lib/libopenmpt.so.0 ./bin/lib
+    cp vendor/bin/lib/libgme.so.0 ./bin/lib
     cp vendor/bin/lib/libtag.so.1 ./bin/lib
 
     SYSTEM_ROOT=""
