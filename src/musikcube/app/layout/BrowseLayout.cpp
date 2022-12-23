@@ -416,7 +416,10 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         this->Layout();
         return true;
     }
-    else if (Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key)) {
+    else if (
+        this->categoryList->GetFieldName() != musik::core::sdk::category::Playlist &&
+        Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key))
+    {
         this->ShowTrackSortOverlay();
         return true;
     }
