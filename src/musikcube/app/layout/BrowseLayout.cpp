@@ -99,7 +99,7 @@ static inline std::string getModifiedText() {
     try {
         return u8fmt(
             _TSTR("browse_playlist_modified"),
-            Hotkeys::Get(Hotkeys::PlayQueuePlaylistSave).c_str());
+            Hotkeys::Get(Hotkeys::BrowsePlaylistsSave).c_str());
     }
     catch (...) {
         return _TSTR("browse_playlist_modified");
