@@ -114,6 +114,10 @@ bzip2 $OUTNAME.tar
 cd ../../
 
 if [[ $OS == "Linux" ]]; then
+  # hack so the pre-install script doesn't re-run, clobbering binaries that
+  # have had their rpaths updated and symbols stripped.
+  # https://stackoverflow.com/a/57531164
+  perl -i.bak -0pe "s|Unix Makefiles|Ninja|" CPackConfig.cmake
   cpack
   mv *.deb dist/$VERSION/
   mv *.rpm dist/$VERSION/

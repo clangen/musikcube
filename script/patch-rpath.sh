@@ -5,6 +5,10 @@ PLATFORM=$(uname)
 if [[ "$PLATFORM" == 'Linux' ]]; then
     echo "[patch-rpath] patch Linux .so files..."
 
+    chmod -x ./bin/lib/*
+    chmod -x ./bin/plugins/*
+    chmod -x ./bin/*.so
+
     # update the RPATH so libraries in libs/ can discover each other,
     # and plugins can discover themselves, and libs/ (but not the
     # other way around)
@@ -21,7 +25,8 @@ if [[ "$PLATFORM" == 'Linux' ]]; then
         patchelf --set-rpath "\$ORIGIN:\$ORIGIN/../lib" "$f"
     done
 
-    chmod -x ./bin/lib/*
+    patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/musikcube
+    patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/musikcubed
 fi
 
 if [[ "$PLATFORM" == 'Darwin' ]]; then
