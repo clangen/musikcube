@@ -11,6 +11,7 @@
   and use pre-compiled version on windows. (also: remove source bundle)
 * updated some default key bindings to be more cross-terminal-emulator
   compatible
+* merged upstream PDCurses changes
 * cleaned up vendoring for libopenmpt and libgme
 * fixed OpenBSD compile
 
