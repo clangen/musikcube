@@ -5,15 +5,20 @@ set (gmedecoder_SOURCES
   GmeIndexerSource.cpp
 )
 
+add_definitions(-DHAVE_STDINT_H)
 add_library(gmedecoder SHARED ${gmedecoder_SOURCES})
 
 if (${BUILD_STANDALONE} MATCHES "true")
-    add_vendor_includes(gmedecoder)
-    find_vendor_library(GME gme)
+  add_vendor_includes(gmedecoder)
+  find_vendor_library(GME gme)
+  target_link_libraries(gmedecoder ${GME})
 else()
-    find_library(GME NAMES gme)
+  find_library(GME NAMES gme)
+  if ("${GME}" STREQUAL "GME-NOTFOUND")
+    disable_plugin(gmedecoder)
+  else()
+    target_link_libraries(gmedecoder ${GME})
+  endif()
 endif()
 
 message(STATUS "[gmedecoder] using ${GME}")
-add_definitions(-DHAVE_STDINT_H)
-target_link_libraries(gmedecoder ${GME})
