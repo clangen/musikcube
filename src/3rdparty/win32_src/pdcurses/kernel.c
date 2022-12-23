@@ -115,10 +115,10 @@ static int _restore_mode(int i)
 {
     if (ctty[i].been_set == TRUE)
     {
-        void *atrtab = SP->atrtab;
+        void *opaque = SP->opaque;
 
         memcpy(SP, &(ctty[i].saved), sizeof(SCREEN));
-        SP->atrtab = atrtab;
+        SP->opaque = opaque;
 
         if (ctty[i].saved.raw_out)
             raw();

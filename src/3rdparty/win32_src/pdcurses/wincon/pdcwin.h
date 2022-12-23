@@ -1,14 +1,15 @@
 /* PDCurses */
 
-#ifndef __PDC_WIN_H__
-#define __PDC_WIN_H__
-
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 # define _CRT_SECURE_NO_DEPRECATE 1   /* kill nonsense warnings */
 #endif
 
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 # define _CRT_SECURE_NO_DEPRECATE 1   /* kill nonsense warnings */
+#endif
+
+#if defined( PDC_FORCE_UTF8)
+   #define PDC_WIDE
 #endif
 
 #if defined(PDC_WIDE) && !defined(UNICODE)
@@ -32,5 +33,3 @@ extern short pdc_oldf, pdc_oldb, pdc_oldu;
 extern bool pdc_conemu, pdc_wt, pdc_ansi;
 
 extern void PDC_blink_text(void);
-
-#endif

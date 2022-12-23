@@ -84,12 +84,12 @@ void    PDC_scr_free(void);
 int     PDC_scr_open(void);
 void    PDC_set_keyboard_binary(bool);
 void    PDC_transform_line(int, int, int, const chtype *);
-void    PDC_free_platform_dependent_memory( void);
 const char *PDC_sysname(void);
 
 /* Internal cross-module functions */
 
 int     PDC_init_atrtab(void);
+void    PDC_free_atrtab(void);
 WINDOW *PDC_makelines(WINDOW *);
 WINDOW *PDC_makenew(int, int, int, int);
 int     PDC_mouse_in_slk(int, int);
@@ -137,5 +137,24 @@ PDCEX int PDC_wcwidth( const int32_t ucs);
 
 #define _is_altcharset( ch)  (((ch) & (A_ALTCHARSET | (A_CHARTEXT ^ 0x7f))) == A_ALTCHARSET)
 
+#if PDC_COLOR_BITS < 15
+    typedef int16_t hash_idx_t;
+#else
+    typedef int32_t hash_idx_t;
+#endif
+
+struct _opaque_screen_t
+{
+   struct _pdc_pair *pairs;
+   int pairs_allocated;
+   int first_col;
+   bool default_colors;
+   hash_idx_t *pair_hash_tbl;
+   int pair_hash_tbl_size, pair_hash_tbl_used;
+   int n_windows;
+   WINDOW **window_list;
+   unsigned trace_flags;
+   bool want_trace_fflush;
+};
 
 #endif /* __CURSES_INTERNALS__ */

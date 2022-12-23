@@ -74,12 +74,17 @@ int wgetnstr(WINDOW *win, char *str, int n)
 {
 #ifdef PDC_WIDE
     wchar_t wstr[MAXLINE + 1];
+    wint_t wintstr[MAXLINE + 1];
+    int i;
 
     if (n < 0 || n > MAXLINE)
         n = MAXLINE;
 
-    if (wgetn_wstr(win, (wint_t *)wstr, n) == ERR)
+    if (wgetn_wstr(win, wintstr, n) == ERR)
         return ERR;
+    for (i = 0; i < n; ++i) {
+        wstr[i] = (wchar_t)wintstr[i];
+    }
 
     return (int)PDC_wcstombs(str, wstr, n);
 #else

@@ -6,13 +6,6 @@ and/or the Plan9 platform,  all of which have full color capability.
 It will presumably never be useful for the DOS or OS/2 platforms.
 See 'pdccolor.txt' for a rationale of how this works. */
 
-#ifdef NO_STDINT_H
-   #define uint64_t unsigned long long
-   #define uint32_t unsigned long
-   #define uint16_t unsigned short
-#else
-   #include <stdint.h>
-#endif
    #include <stdlib.h>
    #include <assert.h>
 

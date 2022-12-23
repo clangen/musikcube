@@ -227,10 +227,10 @@ static void _copy(void)
         return;
 
 #ifdef PDC_WIDE
-    wtmp = malloc((len + 1) * sizeof(wchar_t));
+    wtmp = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
     len *= 3;
 #endif
-    tmp = malloc(len + 1);
+    tmp = (char *)malloc(len + 1);
 
     for (j = y_start, pos = 0; j <= y_end; j++)
     {
@@ -278,13 +278,13 @@ static int _paste(void)
         return -1;
 
 #ifdef PDC_WIDE
-    wpaste = malloc(len * sizeof(wchar_t));
+    wpaste = (wchar_t *)malloc(len * sizeof(wchar_t));
     len = (long)PDC_mbstowcs(wpaste, paste, len);
 #endif
     newmax = len + SP->c_ungind;
     if (newmax > SP->c_ungmax)
     {
-        SP->c_ungch = realloc(SP->c_ungch, newmax * sizeof(int));
+        SP->c_ungch = (int *)realloc(SP->c_ungch, newmax * sizeof(int));
         if (!SP->c_ungch)
             return -1;
         SP->c_ungmax = newmax;
@@ -406,6 +406,60 @@ static int _mouse_key(void)
     return key;
 }
 
+/* ftime() is consided obsolete.  But it's all we have for
+millisecond precision on older compilers/systems.  We'll
+use gettimeofday() when available.        */
+
+#if defined(__TURBOC__) || defined(__EMX__) || defined(__DJGPP__) || \
+    defined( __DMC__) || defined(__WATCOMC__) || defined(_MSC_VER)
+#include <sys/timeb.h>
+
+long PDC_millisecs( void)
+{
+    struct timeb t;
+
+    ftime( &t);
+    return( (long)t.time * 1000L + (long)t.millitm);
+}
+#else
+#include <sys/time.h>
+
+long PDC_millisecs( void)
+{
+    struct timeval t;
+
+    gettimeofday( &t, NULL);
+    return( t.tv_sec * 1000 + t.tv_usec / 1000);
+}
+#endif
+
+/* On many systems,  checking for a key hit is quite slow.  If
+PDC_check_key( ) returns FALSE,  we can safely stop checking for
+a key hit for a millisecond.  This ensures we won't call it more
+than 1000 times per second.
+
+On DOS,  it appears that checking the time is so slow that we're
+better off (by a small margin) not using this scheme.  */
+
+static bool _fast_check_key( void)
+{
+#if defined( __DMC__) && !defined( _WIN32)
+    return( PDC_check_key( ));
+#else
+    static long prev_millisecond;
+    const long curr_ms = PDC_millisecs( );
+    bool rval;
+
+    if( prev_millisecond == curr_ms)
+        return( FALSE);
+    rval = PDC_check_key( );
+    if( !rval)
+        prev_millisecond = curr_ms;
+    return( rval);
+#endif
+}
+
+
 bool PDC_is_function_key( const int key)
 {
    return( key >= KEY_MIN && key < KEY_MAX);
@@ -466,7 +520,7 @@ int wgetch(WINDOW *win)
     {
         /* is there a keystroke ready? */
 
-        while( !PDC_check_key())
+        while( !_fast_check_key())
         {
             /* if not, handle timeout() and halfdelay() */
             int nap_time = 50;
@@ -486,26 +540,36 @@ int wgetch(WINDOW *win)
 
         key = PDC_get_key();
 
-        /* copy or paste? */
+        /* loop back if we did not get a key yet */
 
-#ifndef _WIN32
-        if (SP->key_modifiers & PDC_KEY_MODIFIER_SHIFT)
-#endif
-        {
-            if (PDC_function_key[FUNCTION_KEY_COPY] == key)
-            {
-                _copy();
-                continue;
-            }
-            else if (PDC_function_key[FUNCTION_KEY_PASTE] == key)
-                key = _paste();
-        }
+        if (key == -1)
+            continue;
 
         /* filter mouse events; translate mouse clicks in the slk
-           area to function keys */
+           area to function keys (especially copy + pase) */
 
         if( key == KEY_MOUSE)
+        {
             key = _mouse_key();
+        }
+        else
+        {
+
+            /* copy or paste? */
+#ifndef _WIN32
+            if (SP->key_modifiers & PDC_KEY_MODIFIER_SHIFT)
+#endif
+            {
+                if (PDC_function_key[FUNCTION_KEY_COPY] == key)
+                {
+                    _copy();
+                    continue;
+                }
+                else if (PDC_function_key[FUNCTION_KEY_PASTE] == key)
+                    key = _paste();
+            }
+
+        }
 
         /* filter special keys if not in keypad mode */
 

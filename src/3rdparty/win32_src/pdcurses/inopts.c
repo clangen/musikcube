@@ -1,4 +1,4 @@
-/* PDCurses */
+/* PDCursesMod */
 
 #include <curspriv.h>
 #include <assert.h>
@@ -28,6 +28,7 @@ inopts
     void qiflush(void);
     void timeout(int delay);
     void wtimeout(WINDOW *win, int delay);
+    int wgetdelay(const WINDOW *win);
     int typeahead(int fildes);
     bool PDC_getcbreak(void);
     bool PDC_getecho(void);
@@ -36,6 +37,8 @@ inopts
     int nocrmode(void);
 
     bool is_keypad(const WINDOW *win);
+    bool is_nodelay(const WINDOW *win);
+    bool is_notimeout(const WINDOW *win);
 
 ### Description
 
@@ -89,6 +92,8 @@ inopts
    delay is given; i.e., 1-99 will wait 50ms, 100-149 will wait 100ms,
    etc.
 
+   wgetdelay() returns the delay timeout as set in wtimeout().
+
    intrflush(), notimeout(), noqiflush(), qiflush() and typeahead() do
    nothing in PDCurses, but are included for compatibility with other
    curses implementations.
@@ -98,10 +103,16 @@ inopts
 
    is_keypad() reports whether the specified window is in keypad mode.
 
+   is_nodelay() reports whether the specified window is in nodelay mode.
+
 ### Return Value
 
-   All functions except is_keypad() and the void functions return OK on
-   success and ERR on error.
+   All functions that return integers return OK on success and ERR on
+   error.  is_keypad() and is_nodelay() return TRUE or FALSE.
+
+   is_notimeout() is provided for compatibility with other curses
+   implementations.  It has no real meaning in PDCursesMod and will
+   always return FALSE.
 
 ### Portability
                              X/Open  ncurses  NetBSD
@@ -125,10 +136,13 @@ inopts
     qiflush                     Y       Y       Y
     timeout                     Y       Y       Y
     wtimeout                    Y       Y       Y
+    wgetdelay                   -       Y       -
     typeahead                   Y       Y       Y
     crmode                      Y       Y       Y
     nocrmode                    Y       Y       Y
     is_keypad                   -       Y       Y
+    is_nodelay                  -       Y       -
+    is_notimeout                -       Y       -
 
 **man-end****************************************************************/
 
@@ -298,6 +312,17 @@ int notimeout(WINDOW *win, bool flag)
     return OK;
 }
 
+int wgetdelay(const WINDOW *win)
+{
+    PDC_LOG(("wgetdelay() - called\n"));
+
+    assert( win);
+    if (!win)
+        return 0;
+
+    return win->_delayms;
+}
+
 int raw(void)
 {
     PDC_LOG(("raw() - called\n"));
@@ -409,4 +434,25 @@ bool is_keypad(const WINDOW *win)
         return FALSE;
 
     return win->_use_keypad;
+}
+
+bool is_nodelay(const WINDOW *win)
+{
+    PDC_LOG(("is_nodelay() - called\n"));
+
+    assert( win);
+    if (!win)
+        return FALSE;
+
+    return win->_nodelay;
+}
+
+bool is_notimeout(const WINDOW *win)
+{
+    PDC_LOG(("is_notimeout() - called - returning FALSE...\n"));
+
+    assert( win);
+    INTENTIONALLY_UNUSED_PARAMETER( win);
+
+    return FALSE;
 }

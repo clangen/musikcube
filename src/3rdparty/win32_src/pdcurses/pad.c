@@ -74,6 +74,8 @@ pad
 
 **man-end****************************************************************/
 
+void PDC_add_window_to_list( WINDOW *win);
+
 #include <string.h>
 
 /* save values for pechochar() */
@@ -104,6 +106,7 @@ WINDOW *newpad(int nlines, int ncols)
     win->_smincol = 0;
     win->_smaxrow = min(LINES, nlines) - 1;
     win->_smaxcol = min(COLS, ncols) - 1;
+    PDC_add_window_to_list( win);
 
     return win;
 }
@@ -160,6 +163,7 @@ WINDOW *subpad(WINDOW *orig, int nlines, int ncols, int begy, int begx)
     win->_smincol = 0;
     win->_smaxrow = min(LINES, nlines) - 1;
     win->_smaxcol = min(COLS, ncols) - 1;
+    PDC_add_window_to_list( win);
 
     return win;
 }

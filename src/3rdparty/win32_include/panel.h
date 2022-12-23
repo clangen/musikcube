@@ -14,24 +14,7 @@ extern "C"
 {
 #endif
 
-typedef struct panelobs
-{
-    struct panelobs *above;
-    struct panel *pan;
-} PANELOBS;
-
-typedef struct panel
-{
-    WINDOW *win;
-    int wstarty;
-    int wendy;
-    int wstartx;
-    int wendx;
-    struct panel *below;
-    struct panel *above;
-    const void *user;
-    struct panelobs *obscure;
-} PANEL;
+typedef struct panel PANEL;
 
 PDCEX int     bottom_panel(PANEL *pan);
 PDCEX int     del_panel(PANEL *pan);

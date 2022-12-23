@@ -718,7 +718,3 @@ void PDC_set_resize_limits( const int new_min_lines, const int new_max_lines,
     INTENTIONALLY_UNUSED_PARAMETER( new_min_cols);
     INTENTIONALLY_UNUSED_PARAMETER( new_max_cols);
 }
-
-void PDC_free_platform_dependent_memory( void)
-{
-}

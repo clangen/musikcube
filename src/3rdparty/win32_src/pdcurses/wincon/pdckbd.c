@@ -470,7 +470,7 @@ static int _process_key_event(void)
 #ifdef PDC_WIDE
         KEV.uChar.UnicodeChar;
 #else
-        KEV.uChar.AsciiChar;
+        (unsigned char)KEV.uChar.AsciiChar;
 #endif
     WORD vk = KEV.wVirtualKeyCode;
     DWORD state = KEV.dwControlKeyState;

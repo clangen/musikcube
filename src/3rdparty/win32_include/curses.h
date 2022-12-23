@@ -39,10 +39,10 @@ Defined by this header:
          /* the 'endwin_*' #defines below should be updated.             */
 #define PDC_VER_MAJOR    4
 #define PDC_VER_MINOR    3
-#define PDC_VER_CHANGE   4
+#define PDC_VER_CHANGE   5
 #define PDC_VER_YEAR   2022
-#define PDC_VER_MONTH    07
-#define PDC_VER_DAY      29
+#define PDC_VER_MONTH    12
+#define PDC_VER_DAY      15
 
 #define PDC_STRINGIZE( x) #x
 #define PDC_stringize( x) PDC_STRINGIZE( x)
@@ -97,6 +97,9 @@ extern "C"
    #define int16_t  short
 #else
    #include <stdint.h>
+   #ifdef __DMC__
+      #define uint64_t unsigned long long
+   #endif
 #endif
 
 /*----------------------------------------------------------------------
@@ -349,6 +352,11 @@ typedef struct
  *
  */
 
+/* Avoid using the WINDOW or SCREEN structs directly -- doing so
+   makes your code PDCurses*-only and may result in future binary
+   incompatibility;  use the corresponding functions if possible.
+   These structs may eventually be made private. */
+
 typedef struct _win       /* definition of a window */
 {
     int   _cury;          /* current pseudo-cursor */
@@ -380,8 +388,7 @@ typedef struct _win       /* definition of a window */
     int   _smincol, _smaxcol;    /* saved position used only for pads */
 } WINDOW;
 
-/* Avoid using the SCREEN struct directly -- use the corresponding
-   functions if possible. This struct may eventually be made private. */
+/* See above warning against directly accessing SCREEN elements. */
 
 typedef struct
 {
@@ -439,7 +446,7 @@ typedef struct
     int  *c_ungch;        /* array of ungotten chars */
     int   c_ungind;       /* ungetch() push index */
     int   c_ungmax;       /* allocated size of ungetch() buffer */
-    void *atrtab;         /* table of color pairs */
+    struct _opaque_screen_t *opaque;    /* internal library variables */
 } SCREEN;
 
 /*----------------------------------------------------------------------
@@ -1701,12 +1708,25 @@ PDCEX  const char *curses_version(void);
 PDCEX  int     find_pair(int, int);
 PDCEX  int     free_pair( int);
 PDCEX  bool    has_key(int);
+PDCEX  bool    is_cleared(const WINDOW *);
+PDCEX  bool    is_idcok(const WINDOW *);
+PDCEX  bool    is_idlok(const WINDOW *);
+PDCEX  bool    is_immedok(const WINDOW *);
 PDCEX  bool    is_keypad(const WINDOW *);
 PDCEX  bool    is_leaveok(const WINDOW *);
+PDCEX  bool    is_leaveok(const WINDOW *);
+PDCEX  bool    is_nodelay(const WINDOW *);
+PDCEX  bool    is_notimeout(const WINDOW *);
 PDCEX  bool    is_pad(const WINDOW *);
 PDCEX  void    reset_color_pairs( void);
+PDCEX  bool    is_scrollok(const WINDOW *);
+PDCEX  bool    is_subwin(const WINDOW *);
+PDCEX  bool    is_syncok(const WINDOW *);
 PDCEX  int     set_tabsize(int);
 PDCEX  int     use_default_colors(void);
+PDCEX  int     wgetdelay(const WINDOW *);
+PDCEX  WINDOW *wgetparent(const WINDOW *);
+PDCEX  int     wgetscrreg(const WINDOW *, int *, int *);
 PDCEX  int     wresize(WINDOW *, int, int);
 
 PDCEX  bool    has_mouse(void);
@@ -1765,7 +1785,6 @@ PDCEX  void    PDC_set_resize_limits( const int new_min_lines,
                                const int new_max_lines,
                                const int new_min_cols,
                                const int new_max_cols);
-PDCEX  void    PDC_free_memory_allocations( void);
 
 #define FUNCTION_KEY_SHUT_DOWN        0
 #define FUNCTION_KEY_PASTE            1
@@ -1780,7 +1799,7 @@ PDCEX int     PDC_set_function_key( const unsigned function,
                               const int new_key);
 PDCEX int     PDC_get_function_key( const unsigned function);
 
-PDCEX void    PDC_set_window_resized_callback(void (*callback)());
+PDCEX void    PDC_set_window_resized_callback(void (*callback)(void));
 
 PDCEX int     PDC_set_preferred_fontface( const wchar_t* fontface);
 PDCEX void    PDC_set_color_intensify_enabled( bool enabled);

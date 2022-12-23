@@ -1,4 +1,4 @@
-/* PDCurses */
+/* PDCursesMod */
 
 #include <curspriv.h>
 #include <assert.h>
@@ -28,11 +28,8 @@ slk
 
     int slk_wset(int labnum, const wchar_t *label, int justify);
 
-    int PDC_mouse_in_slk(int y, int x);
-    void PDC_slk_free(void);
-    void PDC_slk_initialize(void);
-
-    wchar_t *slk_wlabel(int labnum)
+    wchar_t *slk_wlabel(int labnum);
+    attr_t slk_attr( void);            (ncurses extension)
 
 ### Description
 
@@ -54,12 +51,12 @@ slk
    2 lines used
    55      5-5 format (pdcurses format)
 
-   In PDCurses,  one can alternatively set fmt as a series of hex
+   In PDCursesMod,  one can alternatively set fmt as a series of hex
    digits specifying the format.  For example,  0x414 would result
    in 4-1-4 format; 0x21b3 would result in 2-1-11-3 format;  and
    so on.  Also,  negating fmt results in the index line being added.
 
-   Also,  in PDCurses,  one can call slk_init() at any time
+   Also,  in PDCursesMod,  one can call slk_init() at any time
    _after_ initscr(),  to reset the label format.  If you do this,
    you'll need to reset the label text and call slk_refresh().  However,
    you can't toggle the index line or turn SLK on or off after initscr()
@@ -89,10 +86,8 @@ slk
     slk_attr_on                 Y       Y       Y
     slk_attr_set                Y       Y       Y
     slk_attr_off                Y       Y       Y
+    slk_attr                    -       Y       -
     slk_wset                    Y       Y       Y
-    PDC_mouse_in_slk            -       -       -
-    PDC_slk_free                -       -       -
-    PDC_slk_initialize          -       -       -
     slk_wlabel                  -       -       -
 
 **man-end****************************************************************/
@@ -157,7 +152,7 @@ int slk_init(int fmt)
                fmt, labels, slk));
     if( slk)
         free( slk);
-    slk = calloc(labels, sizeof(struct SLK));
+    slk = (struct SLK *)calloc(labels, sizeof(struct SLK));
     PDC_LOG(( "New slk: %p; SP = %p\n", slk, SP));
 
     if (!slk)
@@ -435,6 +430,18 @@ int slk_attrset(const chtype attrs)
     _redraw();
 
     return rc;
+}
+
+attr_t slk_attr( void)
+{
+    PDC_LOG(("slk_attrset() - called\n"));
+
+    assert( SP);
+    if (!SP)
+        return ERR;
+    assert( SP->slk_winptr);
+
+    return( SP->slk_winptr->_attrs & (A_ATTRIBUTES & ~A_COLOR));
 }
 
 int extended_slk_color( int pair)

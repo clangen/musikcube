@@ -130,9 +130,30 @@ panel
 #include <panel.h>
 #include <stdlib.h>
 
-PANEL *_bottom_panel = (PANEL *)0;
-PANEL *_top_panel = (PANEL *)0;
-PANEL _stdscr_pseudo_panel;
+typedef struct panelobs PANELOBS;
+
+struct panelobs
+{
+    struct panelobs *above;
+    struct panel *pan;
+};
+
+struct panel
+{
+    WINDOW *win;
+    int wstarty;
+    int wendy;
+    int wstartx;
+    int wendx;
+    struct panel *below;
+    struct panel *above;
+    const void *user;
+    struct panelobs *obscure;
+};
+
+static PANEL *_bottom_panel = (PANEL *)0;
+static PANEL *_top_panel = (PANEL *)0;
+static PANEL _stdscr_pseudo_panel;
 
 #ifdef PANEL_DEBUG
 

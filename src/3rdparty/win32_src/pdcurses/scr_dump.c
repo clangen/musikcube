@@ -66,25 +66,28 @@ scr_dump
 
 static void _stuff_chtype_into_eight_bytes( char *buff, const chtype c)
 {
-   uint64_t x;
    const chtype text = c & A_CHARTEXT;
    const chtype color_pair = PAIR_NUMBER( c);
    const chtype attribs = (c >> PDC_CHARTEXT_BITS) & (((chtype)1 << PDC_ATTRIBUTE_BITS) - 1);
+   const uint32_t x = (uint32_t)text | ((uint32_t)attribs << 21);
+   const uint32_t y = ((uint32_t)attribs >> 11) | ((uint32_t)color_pair << 1);
 
-   x = (uint64_t)text | ((uint64_t)attribs << 21) | ((uint64_t)color_pair << 33);
-   memcpy( buff, &x, 8);
+   memcpy( buff, &x, 4);
+   memcpy( buff + 4, &y, 4);
          /* Should reverse these eight bytes on big-Endian machines */
 }
 
 static chtype _get_chtype_from_eight_bytes( const char *buff)
 {
-   uint64_t c, x, text, color_pair, attribs;
+   uint32_t x, y;
+   chtype c, text, color_pair, attribs;
 
          /* Should reverse these eight bytes on big-Endian machines */
-   memcpy( &x, buff, 8);
-   text = x & 0x1ffff;
-   attribs = (x >> 21) & 0xfff;
-   color_pair = (x >> 33) & 0xfffff;
+   memcpy( &x, buff, 4);
+   memcpy( &y, buff + 4, 4);
+   text = (chtype)x & A_CHARTEXT;
+   attribs = (chtype)( ((x >> 21) & 0xfff) | ((y & 1) << 11));
+   color_pair = (chtype)(y >> 1) & 0xfffff;
    c = text | (attribs << PDC_CHARTEXT_BITS) | COLOR_PAIR( color_pair);
    return( (chtype)c);
 }
@@ -152,6 +155,12 @@ int putwin(WINDOW *win, FILE *filep)
          }
     return OK;
 }
+
+void PDC_add_window_to_list( WINDOW *win);
+
+#ifdef _MSC_VER
+   #pragma warning( disable: 4701)  /* suppress spurious warnings */
+#endif                         /* about 'uninitialised' variables */
 
 WINDOW *getwin(FILE *filep)
 {
@@ -246,9 +255,14 @@ WINDOW *getwin(FILE *filep)
     }
 
     touchwin(win);
+    PDC_add_window_to_list( win);
 
     return win;
 }
+
+#ifdef _MSC_VER
+   #pragma warning( default: 4701)
+#endif
 
 int scr_dump(const char *filename)
 {

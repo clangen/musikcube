@@ -1,4 +1,4 @@
-/* PDCurses */
+/* PDCursesMod */
 
 #include <curspriv.h>
 #include <assert.h>
@@ -17,11 +17,17 @@ outopts
     int leaveok(WINDOW *win, bool bf);
     int setscrreg(int top, int bot);
     int wsetscrreg(WINDOW *win, int top, int bot);
+    int wgetscrreg(const WINDOW *win, int *top, int *bot);
     int scrollok(WINDOW *win, bool bf);
 
     int raw_output(bool bf);
 
+    bool is_cleared(const WINDOW *win);
+    bool is_idlok(const WINDOW *win);
+    bool is_idcok(const WINDOW *win);
+    bool is_immedok(const WINDOW *win);
     bool is_leaveok(const WINDOW *win);
+    bool is_scrollok(const WINDOW *win);
 
 ### Description
 
@@ -43,19 +49,35 @@ outopts
    will cause all lines in the scrolling region to scroll up one line.
    setscrreg() is the stdscr version.
 
-   idlok() and idcok() do nothing in PDCurses, but are provided for
-   compatibility with other curses implementations.
+   wgetscrreg() gets the top and bottom margins as set in wsetscrreg().
+
+   idlok(), idcok(), is_idlok() and is_idcok() do nothing in PDCursesMod,
+   but are provided for compatibility with other curses implementations.
 
    raw_output() enables the output of raw characters using the standard
    *add* and *ins* curses functions (that is, it disables translation of
    control characters).
 
+   is_cleared() reports whether the specified window causes clear at next
+   refresh.
+
+   is_immedok() reports whether the specified window is in immedok mode.
+
    is_leaveok() reports whether the specified window is in leaveok mode.
+
+   is_scrollok() reports whether the specified window allows scrolling.
 
 ### Return Value
 
-   All functions except is_leaveok() return OK on success and ERR on
+   All functions returning integers return OK on success and ERR on
    error.
+
+   is_cleared(), is_immedok(), is_leaveok() and is_scrollok() are
+   booleans and return TRUE or FALSE.
+
+   is_idlok() and is_idcok() are provided for compatibility with other
+   curses implementations.  They have no real meaning in PDCursesMod and
+   will always return FALSE.
 
 ### Portability
                              X/Open  ncurses  NetBSD
@@ -66,8 +88,14 @@ outopts
     leaveok                     Y       Y       Y
     setscrreg                   Y       Y       Y
     wsetscrreg                  Y       Y       Y
+    wgetscrreg                  -       Y       -
     scrollok                    Y       Y       Y
+    is_cleared                  -       Y       -
+    is_idlok                    -       Y       -
+    is_idcok                    -       Y       -
+    is_immedok                  -       Y       -
     is_leaveok                  -       Y       Y
+    is_scrollok                 -       Y       -
     raw_output                  -       -       -
 
 **man-end****************************************************************/
@@ -148,6 +176,22 @@ int wsetscrreg(WINDOW *win, int top, int bottom)
         return ERR;
 }
 
+int wgetscrreg(const WINDOW *win, int *top, int *bot)
+{
+    PDC_LOG(("wgetscrreg() - called\n"));
+
+    assert( win);
+    assert( top);
+    assert( bot);
+    if (!win || !top || !bot)
+        return ERR;
+
+    *top = win->_tmarg;
+    *bot = win->_bmarg;
+
+    return OK;
+}
+
 int scrollok(WINDOW *win, bool bf)
 {
     PDC_LOG(("scrollok() - called\n"));
@@ -161,17 +205,46 @@ int scrollok(WINDOW *win, bool bf)
     return OK;
 }
 
-int raw_output(bool bf)
+bool is_cleared(const WINDOW *win)
 {
-    PDC_LOG(("raw_output() - called\n"));
+    PDC_LOG(("is_cleared() - called\n"));
 
-    assert( SP);
-    if (!SP)
-        return ERR;
+    assert( win);
+    if (!win)
+        return FALSE;
 
-    SP->raw_out = bf;
+    return win->_clear;
+}
 
-    return OK;
+bool is_idlok(const WINDOW *win)
+{
+    PDC_LOG(("is_idlok() - called\n"));
+
+    INTENTIONALLY_UNUSED_PARAMETER( win);
+    assert( win);
+
+    return FALSE;
+}
+
+bool is_idcok(const WINDOW *win)
+{
+    PDC_LOG(("is_idcok() - called\n"));
+
+    INTENTIONALLY_UNUSED_PARAMETER( win);
+    assert( win);
+
+    return FALSE;
+}
+
+bool is_immedok(const WINDOW *win)
+{
+    PDC_LOG(("is_immedok() - called\n"));
+
+    assert( win);
+    if (!win)
+        return FALSE;
+
+    return win->_immed;
 }
 
 bool is_leaveok(const WINDOW *win)
@@ -183,4 +256,28 @@ bool is_leaveok(const WINDOW *win)
         return FALSE;
 
     return win->_leaveit;
+}
+
+bool is_scrollok(const WINDOW *win)
+{
+    PDC_LOG(("is_scrollok() - called\n"));
+
+    assert( win);
+    if (!win)
+        return FALSE;
+
+    return win->_scroll;
+}
+
+int raw_output(bool bf)
+{
+    PDC_LOG(("raw_output() - called\n"));
+
+    assert( SP);
+    if (!SP)
+        return ERR;
+
+    SP->raw_out = bf;
+
+    return OK;
 }
