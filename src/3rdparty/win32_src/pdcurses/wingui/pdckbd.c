@@ -22,13 +22,13 @@ bool PDC_check_key(void)
     MSG msg;
     extern HWND PDC_hWnd;
 
-    while( PeekMessage(&msg, PDC_hWnd, 0, 0, PM_REMOVE) )
+    while( PeekMessage(&msg, PDC_hWnd, WM_KEYFIRST, WM_KEYLAST, PM_REMOVE) )
     {
        TranslateMessage(&msg);
        DispatchMessage(&msg);
     }
 
-    Sleep(1); /* otherwise the CPU is pegged */
+    PDC_napms(1);
 
     if( PDC_key_queue_low != PDC_key_queue_high)
         return TRUE;
