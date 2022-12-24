@@ -85,8 +85,6 @@ constexpr int kFilterPadding = 1;
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
 
-static std::set<std::string> kEditKeys;
-
 static std::map <std::string, std::string> FIELD_TO_TITLE {
     std::make_pair(constants::Track::ARTIST, "browse_title_artists"),
     std::make_pair(constants::Track::ALBUM, "browse_title_albums"),
@@ -123,12 +121,6 @@ BrowseLayout::BrowseLayout(
 : LayoutBase()
 , playlistModified(false)
 , playback(playback) {
-    kEditKeys = {
-        Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
-        Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
-        Hotkeys::Get(Hotkeys::PlayQueueDelete)
-    };
-
     this->library = library;
     this->library->Indexer()->Progress.connect(this, &BrowseLayout::OnIndexerProgress);
     this->library->Indexer()->Finished.connect(this, &BrowseLayout::OnIndexerProgress);
@@ -427,7 +419,7 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         this->categoryList->Requery();
         return true;
     }
-    else if (ProcessPlaylistOperation(key)) {
+    else if (this->ProcessPlaylistOperation(key)) {
         return true;
     }
     else if (this->ProcessEditOperation(key)) {
@@ -460,19 +452,19 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
                     std::make_shared<TrackList>(tracks)));
             return true;
         }
-        else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsRename, key)) {
-            const auto id = this->categoryList->GetSelectedId();
-            if (id != -1) {
-                PlayQueueOverlays::ShowRenamePlaylistOverlay(
-                    library, id, this->categoryList->GetSelectedValue(),
-                    [this, id](auto query) {
-                        this->categoryList->Requery(this->categoryList->GetFilter(), id);
-                    });
+        else if (this->GetFocus() == this->categoryList) {
+            if (Hotkeys::Is(Hotkeys::BrowsePlaylistsRename, key)) {
+                const auto id = this->categoryList->GetSelectedId();
+                if (id != -1) {
+                    PlayQueueOverlays::ShowRenamePlaylistOverlay(
+                        library, id, this->categoryList->GetSelectedValue(),
+                        [this, id](auto query) {
+                            this->categoryList->Requery(this->categoryList->GetFilter(), id);
+                        });
+                }
+                return true;
             }
-            return true;
-        }
-        else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsDelete, key)) {
-            if (this->GetFocus() == this->categoryList) {
+            else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsDelete, key)) {
                 const auto id = this->categoryList->GetSelectedId();
                 if (id != -1) {
                     PlayQueueOverlays::ShowConfirmDeletePlaylistOverlay(
@@ -481,8 +473,8 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
                             this->categoryList->Requery();
                         });
                 }
+                return true;
             }
-            return true;
         }
     }
 
@@ -490,7 +482,16 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
 }
 
 bool BrowseLayout::ProcessEditOperation(const std::string& key) {
-    if (this->GetFocus() != this->trackList || kEditKeys.find(key) == kEditKeys.end()) {
+    /* we can't cache these statically, unfortunately, because the user
+    can change them at runtime. */
+    std::set<std::string> editKeys;
+        editKeys = {
+            Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
+            Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
+            Hotkeys::Get(Hotkeys::PlayQueueDelete)
+        };
+
+    if (this->GetFocus() != this->trackList || editKeys.find(key) == editKeys.end()) {
         return false;
     }
 
@@ -499,7 +500,7 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
     }
 
     std::shared_ptr<TrackList> tracks = this->trackList->GetTrackList();
-    if (tracks && kEditKeys.find(key) != kEditKeys.end()) {
+    if (tracks && editKeys.find(key) != editKeys.end()) {
         const size_t selected = this->trackList->GetSelectedTrackIndex();
         size_t to = -1;
         bool modified = this->playlistModified;
