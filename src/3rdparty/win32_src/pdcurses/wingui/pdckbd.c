@@ -28,6 +28,8 @@ bool PDC_check_key(void)
        DispatchMessage(&msg);
     }
 
+    Sleep(1); /* otherwise the CPU is pegged */
+
     if( PDC_key_queue_low != PDC_key_queue_high)
         return TRUE;
     return FALSE;
