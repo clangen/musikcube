@@ -12,6 +12,8 @@
 * updated some default key bindings to be more cross-terminal-emulator
   compatible
 * merged upstream PDCurses changes
+* updated ru_RU localization (@adem4ik)
+* fixed Windows startup crash that was affecting some users
 * cleaned up vendoring for libopenmpt and libgme
 * fixed OpenBSD compile
 
