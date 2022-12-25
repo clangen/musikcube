@@ -54,6 +54,8 @@
     #include <shellapi.h>
 #elif __APPLE__
     #include <mach-o/dyld.h>
+#elif __HAIKU__
+    #include <kernel/image.h>
 #else
     #include <sys/types.h>
     #include <unistd.h>
@@ -133,12 +135,25 @@ namespace musik { namespace core {
                 fs::path command = fs::absolute(fs::path(fs::u8path(argv[0])));
                 realpath(command.u8string().c_str(), pathbuf);
                 delete[] argv;
+            #elif defined __HAIKU__
+                image_info ii;
+                int32_t c = 0;
+                while (get_next_image_info(0, &c, &ii) == B_OK) {
+                    if (ii.type == B_APP_IMAGE) {
+                        if (strlen(ii.name)) {
+                            std::string fn(ii.name);
+                            result = u8path(fn).parent_path().u8string();
+                        }
+                    }
+                }
             #else
                 std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
                 readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
             #endif
 
-            result.assign(pathbuf);
+            if (!result.size() && strlen(pathbuf)) {
+                result.assign(pathbuf);
+            }
             size_t last = result.find_last_of("/");
             result = result.substr(0, last); /* remove filename component */
         #endif

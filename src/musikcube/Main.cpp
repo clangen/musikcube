@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
 
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
 
-    std::vector<debug::IBackend*> debuggerBackends = { 
+    std::vector<debug::IBackend*> debuggerBackends = {
         new debug::SimpleFileBackend(), consoleLogger
     };
 
