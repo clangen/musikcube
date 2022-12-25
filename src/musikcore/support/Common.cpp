@@ -142,7 +142,7 @@ namespace musik { namespace core {
                     if (ii.type == B_APP_IMAGE) {
                         if (strlen(ii.name)) {
                             std::string fn(ii.name);
-                            result = u8path(fn).parent_path().u8string();
+                            result = fs::u8path(fn).parent_path().u8string();
                         }
                     }
                 }
