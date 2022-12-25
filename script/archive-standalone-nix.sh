@@ -21,8 +21,10 @@ fi
 
 ARCH=$(uname -m)
 DEB_ARCH=$ARCH
+VENDOR=$ARCH
 if [[ -n $CROSSCOMPILE ]]; then
   FRIENDLY_OS_NAME="linux_${CROSSCOMPILE}"
+  VENDOR=${CROSSCOMPILE}
   ARCH="armhf"
   DEB_ARCH="armhf"
 elif [[ $ARCH == "x86_64" ]]; then
@@ -54,7 +56,7 @@ if [[ $CROSSCOMPILE == "rpi" ]]; then
 fi
 
 rm vendor
-ln -s ../vendor-$ARCH/ ./vendor
+ln -s ../vendor-$VENDOR/ ./vendor
 printf "\nsetup symlink:\n"
 ls -ald vendor
 
