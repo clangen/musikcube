@@ -22,7 +22,8 @@ fi
 ARCH=$(uname -m)
 DEB_ARCH=$ARCH
 if [[ -n $CROSSCOMPILE ]]; then
-  ARCH=$CROSSCOMPILE
+  FRIENDLY_OS_NAME="linux_${CROSSCOMPILE}"
+  ARCH="armhf"
   DEB_ARCH="armhf"
 elif [[ $ARCH == "x86_64" ]]; then
   DEB_ARCH="amd64"
