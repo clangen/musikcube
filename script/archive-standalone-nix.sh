@@ -29,7 +29,7 @@ elif [[ $ARCH == "x86_64" ]]; then
 fi
 
 OS_ARCH="${FRIENDLY_OS_NAME}_${ARCH}"
-OUTNAME="musikcube_standalone_${OS_ARCH}_$VERSION"
+OUTNAME="musikcube_${OS_ARCH}_$VERSION"
 OUTDIR="dist/$VERSION/$OUTNAME"
 SCRIPTDIR=`dirname "$0"`
 CMAKE_TOOLCHAIN=""

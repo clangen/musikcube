@@ -1,6 +1,6 @@
 if (${GENERATE_DEB} MATCHES "true" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
   if (${BUILD_STANDALONE} MATCHES "true")
-    set(CPACK_PACKAGE_FILE_NAME "musikcube_standalone_${musikcube_VERSION}_${DEB_ARCHITECTURE}")
+    set(CPACK_PACKAGE_FILE_NAME "musikcube_${musikcube_VERSION}_${DEB_ARCHITECTURE}")
   else()
     set(DEB_MICROHTTPD_VERSION "10")
     set(DEB_LIBCURL_VERSION "3")
