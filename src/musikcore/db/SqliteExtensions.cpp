@@ -81,12 +81,12 @@ static std::unordered_map<u32, const char*> charToAccentsInsensitive = {
     { (u32)'n', u8"NnñńņňŊÑŃŅŇŉŋ" },
     { (u32)'o', u8"OoòóôõöùúûüōŏőÒÓÔÕÖŌŎŐ" },
     { (u32)'r', u8"RrŕŗřŔŖŘ" },
-    { (u32)'s', u8"Ssśŝşšſß" },
+    { (u32)'s', u8"SsśŝşšſŚŜŞŠßŚŜŞŠß" },
     { (u32)'t', u8"TtţťŧŢŤŦ" },
     { (u32)'u', u8"UuũūŭůűųÙÚÛÜŨŪŬŮŰŲ" },
     { (u32)'w', u8"WwŵŴ" },
     { (u32)'y', u8"YyýÿŷÝŶŸ" },
-    { (u32)'z', u8"ZzŹŻŽ" },
+    { (u32)'z', u8"ZzŹŻŽ" }
 };
 
 static std::unordered_map<u32, const char*> charToAccentsSensitive = {
@@ -103,7 +103,7 @@ static std::unordered_map<u32, const char*> charToAccentsSensitive = {
     { (u32)'N', u8"NÑŃŅŇŉŋ" },
     { (u32)'O', u8"OÒÓÔÕÖŌŎŐ" },
     { (u32)'R', u8"RŔŖŘ" },
-    { (u32)'S', u8"Sß" },
+    { (u32)'S', u8"SŚŜŞŠßŚŜŞŠß" },
     { (u32)'T', u8"TŢŤŦ" },
     { (u32)'U', u8"UÙÚÛÜŨŪŬŮŰŲ" },
     { (u32)'W', u8"WŴ" },
