@@ -1,5 +1,4 @@
-const INPUT = 
-`
+const INPUT = `
     /* A */
     { (u32)0xc0  /* À */ , (u32)'A' },
     { (u32)0xc1  /* Á */ , (u32)'A' },
@@ -217,24 +216,23 @@ const INPUT =
     { (u32)0x17a /* ź */ , (u32)'z' },
     { (u32)0x17c /* ż */ , (u32)'z' },
     { (u32)0x17e /* ž */ , (u32)'z' },
-`
+`;
 
 let result = {};
 let current = { ch: '', values: [] };
 
-INPUT.split("\n").forEach(line => {
-  if (line.startsWith("    /* ")) {
+INPUT.split('\n').forEach((line) => {
+  if (line.startsWith('    /* ')) {
     if (current.ch) {
       const existing = result[current.ch] || [];
       result[current.ch] = [...existing, ...current.values];
     }
-    ch = line.split("/* ")[1].split(" ")[0];
+    ch = line.split('/* ')[1].split(' ')[0];
     const existing = result[ch] || [];
-    current = { ch, values: existing }; 
-  }
-  else if (line.startsWith("    { (u32)0x")) {
-    const parts = line.split("    { (u32)0x");
-    const ch = parts[1].split("/* ")[1].split(" */")[0];
+    current = { ch, values: existing };
+  } else if (line.startsWith('    { (u32)0x')) {
+    const parts = line.split('    { (u32)0x');
+    const ch = parts[1].split('/* ')[1].split(' */')[0];
     current.values.push(ch);
   }
 });
@@ -242,9 +240,9 @@ INPUT.split("\n").forEach(line => {
 console.log('-------- case sensitive mapping --------');
 
 const sensitive = [];
-Object.keys(result).forEach(k => {
+Object.keys(result).forEach((k) => {
   const values = `"${k}${result[k].join('')}"`;
-  const line = `    { (u32)'${k}', u8${values} },`
+  const line = `    { (u32)'${k}', u8${values} },`;
   sensitive.push(line);
 });
 
@@ -253,7 +251,7 @@ console.log(sensitive.join('\n'));
 console.log('---------- case insensitive mapping ----------');
 
 const insensitive = [];
-Object.keys(result).forEach(k => {
+Object.keys(result).forEach((k) => {
   const l = k.toLowerCase();
   const u = k.toUpperCase();
   const lower = `${(result[l] || []).join('')}`;
@@ -262,5 +260,4 @@ Object.keys(result).forEach(k => {
   insensitive.push(line);
 });
 
-console.log(insensitive.join("\n"));
-
+console.log(insensitive.join('\n'));
