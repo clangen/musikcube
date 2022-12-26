@@ -391,16 +391,16 @@ template<typename T>
 void TaglibMetadataReader::ReadBasicData(const T* tag, const char* uri, ITagStore *target) {
     if (tag) {
         if (!tag->title().isEmpty()) {
-            this->SetTagValue("title", tag->title(), target);
+            this->SetTagValue("title", tag->title().to8Bit(true), target);
         }
         else {
             this->SetTagValue("title", uri, target);
         }
 
-        this->SetTagValue("album", tag->album(), target);
-        this->SetTagValue("artist", tag->artist(), target);
-        this->SetTagValue("genre", tag->genre(), target);
-        this->SetTagValue("comment", tag->comment(), target);
+        this->SetTagValue("album", tag->album().to8Bit(true), target);
+        this->SetTagValue("artist", tag->artist().to8Bit(true), target);
+        this->SetTagValue("genre", tag->genre().to8Bit(true), target);
+        this->SetTagValue("comment", tag->comment().to8Bit(true), target);
 
         if (tag->track()) {
             this->SetTagValue("track", tag->track(), target);
@@ -489,10 +489,10 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
             TagLib::ID3v2::FrameListMap allTags = id3v2->frameListMap();
 
             if (!id3v2->title().isEmpty()) {
-                this->SetTagValue("title", id3v2->title(), track);
+                this->SetTagValue("title", id3v2->title().to8Bit(true), track);
             }
 
-            this->SetTagValue("album", id3v2->album(), track);
+            this->SetTagValue("album", id3v2->album().to8Bit(true), track);
 
             /* year */
 
