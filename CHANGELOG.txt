@@ -1,3 +1,9 @@
+0.99.2
+
+* fixed an issue when scanning tags that could result in corrupted metadata.
+
+--------------------------------------------------------------------------------
+
 0.99.1
 
 * fixed indexer issues related to last modified file time; some code was
