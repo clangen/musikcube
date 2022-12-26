@@ -359,7 +359,7 @@ std::string TaglibMetadataReader::ExtractValueForKey(
     if (map.contains(inputKey.c_str())) {
         TagLib::StringList value = map[inputKey.c_str()].toStringList();
         if (value.size()) {
-            return value[0].to8Bit();
+            return value[0].to8Bit(true);
         }
     }
     return defaultValue;
@@ -375,7 +375,7 @@ void TaglibMetadataReader::ExtractValueForKey(
     if (map.contains(inputKey.c_str())) {
         TagLib::StringList value = map[inputKey.c_str()];
         if (value.size()) {
-            this->SetTagValue(outputKey.c_str(), value[0], target);
+            this->SetTagValue(outputKey.c_str(), value[0].to8Bit(true), target);
         }
     }
 }
@@ -424,7 +424,7 @@ std::string TaglibMetadataReader::ExtractValueForKey(
     if (map.contains(inputKey.c_str())) {
         TagLib::StringList value = map[inputKey.c_str()];
         if (value.size()) {
-            return value[0].to8Bit();
+            return value[0].to8Bit(true);
         }
     }
     return defaultValue;
@@ -498,21 +498,21 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
 
             if (!track->Contains("year") && !allTags["TYER"].isEmpty()) { /* ID3v2.3*/
                 auto year = allTags["TYER"].front()->toString().substr(0, 4);
-                if (isValidYear(year.to8Bit())) {
+                if (isValidYear(year.to8Bit(true))) {
                     this->SetTagValue("year", year, track);
                 }
             }
 
             if (!track->Contains("year") && !allTags["TDRC"].isEmpty()) { /* ID3v2.4*/
                 auto year = allTags["TDRC"].front()->toString().substr(0, 4);
-                if (isValidYear(year.to8Bit())) {
+                if (isValidYear(year.to8Bit(true))) {
                     this->SetTagValue("year", year, track);
                 }
             }
 
             if (!track->Contains("year") && !allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
                 auto year = allTags["TCOP"].front()->toString().substr(0, 4);
-                if (isValidYear(year.to8Bit())) {
+                if (isValidYear(year.to8Bit(true))) {
                     this->SetTagValue("year", year, track);
                 }
             }
@@ -532,16 +532,16 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
                         auto values = utif->fieldList();
                         if (values.size() > 0) {
                             if (name == "REPLAYGAIN_TRACK_GAIN") {
-                                replayGain.trackGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                                replayGain.trackGain = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
                             }
                             else if (name == "REPLAYGAIN_TRACK_PEAK") {
-                                replayGain.trackPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                                replayGain.trackPeak = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
                             }
                             else if (name == "REPLAYGAIN_ALBUM_GAIN") {
-                                replayGain.albumGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                                replayGain.albumGain = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
                             }
                             else if (name == "REPLAYGAIN_ALBUM_PEAK") {
-                                replayGain.albumPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                                replayGain.albumPeak = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
                             }
                         }
                     }
