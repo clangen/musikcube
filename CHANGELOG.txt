@@ -1,3 +1,11 @@
+0.99.3
+
+* fixed a bug on Windows builds where certain accented characters would not be
+  correctly parsed when input via keyboard.
+* updated accented character mappings for improved fuzzy search.
+
+--------------------------------------------------------------------------------
+
 0.99.2
 
 * fixed an issue when scanning tags that could result in corrupted metadata.
