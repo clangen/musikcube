@@ -38,6 +38,7 @@
 
 #include <musikcore/sdk/IOutput.h>
 #include <portaudio.h>
+#include <mutex>
 
 using namespace musik::core::sdk;
 
@@ -71,6 +72,8 @@ class PortAudioOut : public IOutput {
             StatePlaying
         };
 
+        std::recursive_mutex mutex;
+        PaStream* paStream { nullptr };
         IDeviceList* deviceList { nullptr };
         State state;
         double volume;

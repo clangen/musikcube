@@ -54,7 +54,6 @@ using namespace musik::core::sdk;
 #define PREF_DEFAULT_DEVICE "default_device"
 #define TAG "PortAudioOut"
 
-static int kDefaultSampleRate = 48000;
 static IPreferences* prefs = nullptr;
 static IDebug* debug = nullptr;
 
@@ -68,11 +67,10 @@ extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
 
 extern "C" DLLEXPORT musik::core::sdk::ISchema* GetSchema() {
     auto schema = new TSchema<>();
-    schema->AddInt(PREF_DEFAULT_SAMPLE_RATE, kDefaultSampleRate, 4096, 192000);
     return schema;
 }
 
-static void logPaError(const std::string& method, PaError error) {
+static void logPaError(const std::string method, PaError error) {
     std::string err = method + "() return code: " + std::to_string(error);
     if (error != 0) {
         ::debug->Warning(TAG, err.c_str());
@@ -84,11 +82,13 @@ static void logPaError(const std::string& method, PaError error) {
 
 class PortAudioDevice : public IDevice {
     public:
-        PortAudioDevice(const std::string& name) { this->name = name; }
+        PortAudioDevice(PaDeviceIndex index, const std::string name) { this->index = index; this->name = name; }
         virtual void Release() override { delete this; }
         virtual const char* Name() const override { return name.c_str(); }
         virtual const char* Id() const override { return name.c_str(); }
+        PaDeviceIndex Index() const { return index; }
     private:
+        PaDeviceIndex index;
         std::string name;
 };
 
@@ -97,7 +97,7 @@ class PortAudioDeviceList : public musik::core::sdk::IDeviceList {
         virtual void Release() override { delete this; }
         virtual size_t Count() const override { return devices.size(); }
         virtual const IDevice* At(size_t index) const override { return &devices.at(index); }
-        void Add(const std::string& name) { devices.push_back(PortAudioDevice(name)); }
+        void Add(PaDeviceIndex index, const std::string name) { devices.push_back(PortAudioDevice(index, name)); }
     private:
         std::vector<PortAudioDevice> devices;
 };
@@ -109,6 +109,7 @@ PortAudioOut::PortAudioOut() {
 }
 
 PortAudioOut::~PortAudioOut() {
+    this->Stop();
     logPaError("Pa_Terminate", Pa_Terminate());
     if (this->deviceList) {
         this->deviceList->Release();
@@ -121,10 +122,18 @@ void PortAudioOut::Release() {
 }
 
 void PortAudioOut::Pause() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    if (this->paStream) {
+        logPaError("Pa_StopStream", Pa_StopStream(this->paStream));
+    }
     this->state = StatePaused;
 }
 
 void PortAudioOut::Resume() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    if (this->paStream) {
+        logPaError("Pa_StopStream", Pa_StartStream(this->paStream));
+    }
     this->state = StatePlaying;
 }
 
@@ -137,14 +146,24 @@ double PortAudioOut::GetVolume() {
 }
 
 void PortAudioOut::Stop() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    if (this->paStream) {
+        logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
+        logPaError("Pa_CloseStream", Pa_CloseStream(this->paStream));
+        this->paStream = nullptr;
+    }
     this->state = StateStopped;
 }
 
 void PortAudioOut::Drain() {
-
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    if (this->paStream) {
+        logPaError("Pa_StopStream", Pa_StopStream(this->paStream));
+    }
 }
 
 IDeviceList* PortAudioOut::GetDeviceList() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     PortAudioDeviceList* result = new PortAudioDeviceList();
     PaDeviceIndex count = Pa_GetDeviceCount();
     for (PaDeviceIndex i = 0; i < count; i++) {
@@ -153,7 +172,7 @@ IDeviceList* PortAudioOut::GetDeviceList() {
             if (deviceInfo->name) {
                 const std::string name(deviceInfo->name);
                 if (name != "default") {
-                    result->Add(deviceInfo->name);
+                    result->Add(i, deviceInfo->name);
                 }
             }
         }
@@ -167,36 +186,80 @@ bool PortAudioOut::SetDefaultDevice(const char* deviceId) {
 }
 
 IDevice* PortAudioOut::GetDefaultDevice() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     if (!this->deviceList) {
         this->deviceList = this->GetDeviceList();
     }
     const std::string defaultDeviceName =
         getPreferenceString<std::string>(::prefs, PREF_DEFAULT_DEVICE, "default");
     for (int i = 0; i < this->deviceList->Count(); i++) {
-        auto device = this->deviceList->At(i);
+        auto device = static_cast<const PortAudioDevice*>(this->deviceList->At(i));
         if (device->Name() == defaultDeviceName) {
-            return new PortAudioDevice(defaultDeviceName);
+            return new PortAudioDevice(device->Index(), defaultDeviceName);
         }
     }
-    return new PortAudioDevice("default");
+    return new PortAudioDevice(Pa_GetDefaultOutputDevice(), "default");
 }
 
 OutputState PortAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+
     if (this->state == StatePaused) {
         return OutputState::InvalidState;
     }
 
-    /* order of operations matters, otherwise overflow. */
-    int micros = ((buffer->Samples() * 1000) / buffer->SampleRate() * 1000) / buffer->Channels();
-    usleep((long)((float) micros));
-    provider->OnBufferProcessed(buffer);
-    return OutputState::BufferWritten;
+    if (!this->paStream) {
+        auto device = static_cast<PortAudioDevice*>(this->GetDefaultDevice());
+        if (device) {
+            PaStreamParameters params = { 0 };
+            params.device = device->Index();
+            params.channelCount = buffer->Channels();
+            params.sampleFormat = paFloat32;
+            params.suggestedLatency = Pa_GetDeviceInfo(device->Index())->defaultHighOutputLatency;
+            params.hostApiSpecificStreamInfo = nullptr;
+            PaError result = Pa_OpenStream(
+                &this->paStream,
+                nullptr,
+                &params,
+                buffer->SampleRate(),
+                buffer->Samples() / buffer->Channels(),
+                0 /* stream flags */,
+                nullptr /* buffer callback; nullptr = blocking */,
+                nullptr /* callback context */);
+            logPaError("Pa_OpenStream", result);
+            if (result != paNoError) {
+                return OutputState::InvalidState;
+            }
+            result = Pa_StartStream(this->paStream);
+            logPaError("Pa_StartStream", result);
+            device->Release();
+        }
+    }
+
+    if (this->paStream) {
+        auto const frameCount = buffer->Samples() / buffer->Channels();
+        PaError result = Pa_WriteStream(
+            this->paStream, buffer->BufferPointer(), frameCount);
+        if (result == paNoError) {
+            provider->OnBufferProcessed(buffer);
+            return OutputState::BufferWritten;
+        }
+    }
+
+    return OutputState::BufferFull;
 }
 
 double PortAudioOut::Latency() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    if (this->paStream) {
+        const PaStreamInfo* info = Pa_GetStreamInfo(this->paStream);
+        if (info) {
+            return info->outputLatency;
+        }
+    }
     return 0.0;
 }
 
 int PortAudioOut::GetDefaultSampleRate() {
-    return kDefaultSampleRate;
+    return -1;
 }
