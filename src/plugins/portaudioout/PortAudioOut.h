@@ -71,6 +71,7 @@ class PortAudioOut : public IOutput {
             StatePlaying
         };
 
+        IDeviceList* deviceList { nullptr };
         State state;
         double volume;
 };

@@ -51,17 +51,12 @@ using namespace musik::core::sdk;
 #endif
 
 #define PREF_DEFAULT_SAMPLE_RATE "default_sample_rate"
+#define PREF_DEFAULT_DEVICE "default_device"
 #define TAG "PortAudioOut"
 
-static int defaultSampleRate = 48000;
+static int kDefaultSampleRate = 48000;
 static IPreferences* prefs = nullptr;
 static IDebug* debug = nullptr;
-
-static void reloadMultiplier() {
-    if (::prefs) {
-        ::defaultSampleRate = prefs->GetInt(PREF_DEFAULT_SAMPLE_RATE, defaultSampleRate);
-    }
-}
 
 extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
     ::debug = debug;
@@ -73,7 +68,7 @@ extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
 
 extern "C" DLLEXPORT musik::core::sdk::ISchema* GetSchema() {
     auto schema = new TSchema<>();
-    schema->AddInt(PREF_DEFAULT_SAMPLE_RATE, defaultSampleRate, 4096, 192000);
+    schema->AddInt(PREF_DEFAULT_SAMPLE_RATE, kDefaultSampleRate, 4096, 192000);
     return schema;
 }
 
@@ -87,6 +82,26 @@ static void logPaError(const std::string& method, PaError error) {
     }
 }
 
+class PortAudioDevice : public IDevice {
+    public:
+        PortAudioDevice(const std::string& name) { this->name = name; }
+        virtual void Release() override { delete this; }
+        virtual const char* Name() const override { return name.c_str(); }
+        virtual const char* Id() const override { return name.c_str(); }
+    private:
+        std::string name;
+};
+
+class PortAudioDeviceList : public musik::core::sdk::IDeviceList {
+    public:
+        virtual void Release() override { delete this; }
+        virtual size_t Count() const override { return devices.size(); }
+        virtual const IDevice* At(size_t index) const override { return &devices.at(index); }
+        void Add(const std::string& name) { devices.push_back(PortAudioDevice(name)); }
+    private:
+        std::vector<PortAudioDevice> devices;
+};
+
 PortAudioOut::PortAudioOut() {
     this->volume = 1.0f;
     this->state = StateStopped;
@@ -95,6 +110,10 @@ PortAudioOut::PortAudioOut() {
 
 PortAudioOut::~PortAudioOut() {
     logPaError("Pa_Terminate", Pa_Terminate());
+    if (this->deviceList) {
+        this->deviceList->Release();
+        this->deviceList = nullptr;
+    }
 }
 
 void PortAudioOut::Release() {
@@ -106,7 +125,6 @@ void PortAudioOut::Pause() {
 }
 
 void PortAudioOut::Resume() {
-    reloadMultiplier();
     this->state = StatePlaying;
 }
 
@@ -127,15 +145,40 @@ void PortAudioOut::Drain() {
 }
 
 IDeviceList* PortAudioOut::GetDeviceList() {
-    return nullptr;
+    PortAudioDeviceList* result = new PortAudioDeviceList();
+    PaDeviceIndex count = Pa_GetDeviceCount();
+    for (PaDeviceIndex i = 0; i < count; i++) {
+        const PaDeviceInfo* deviceInfo = Pa_GetDeviceInfo(i);
+        if (deviceInfo && deviceInfo->maxOutputChannels > 0) {
+            if (deviceInfo->name) {
+                const std::string name(deviceInfo->name);
+                if (name != "default") {
+                    result->Add(deviceInfo->name);
+                }
+            }
+        }
+    }
+    return result;
 }
 
 bool PortAudioOut::SetDefaultDevice(const char* deviceId) {
-    return false;
+    ::prefs->SetString(PREF_DEFAULT_DEVICE, deviceId ? deviceId : "");
+    return true;
 }
 
 IDevice* PortAudioOut::GetDefaultDevice() {
-    return nullptr;
+    if (!this->deviceList) {
+        this->deviceList = this->GetDeviceList();
+    }
+    const std::string defaultDeviceName =
+        getPreferenceString<std::string>(::prefs, PREF_DEFAULT_DEVICE, "default");
+    for (int i = 0; i < this->deviceList->Count(); i++) {
+        auto device = this->deviceList->At(i);
+        if (device->Name() == defaultDeviceName) {
+            return new PortAudioDevice(defaultDeviceName);
+        }
+    }
+    return new PortAudioDevice("default");
 }
 
 OutputState PortAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
@@ -155,5 +198,5 @@ double PortAudioOut::Latency() {
 }
 
 int PortAudioOut::GetDefaultSampleRate() {
-    return defaultSampleRate;
+    return kDefaultSampleRate;
 }
