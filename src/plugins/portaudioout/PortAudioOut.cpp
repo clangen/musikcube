@@ -213,8 +213,11 @@ void PortAudioOut::Release() {
 
 void PortAudioOut::Pause() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    this->state = StatePaused;
-    this->bufferEvent.notify_all();
+    if (this->paStream) {
+        logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
+        this->state = StatePaused;
+        this->bufferEvent.notify_all();
+    }
 }
 
 void PortAudioOut::Resume() {
@@ -237,6 +240,9 @@ void PortAudioOut::Stop() {
     decltype(this->buffers) swap;
     {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+        if (this->paStream) {
+            logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
+        }
         this->state = StateStopped;
         this->buffers.swap(swap);
     }
