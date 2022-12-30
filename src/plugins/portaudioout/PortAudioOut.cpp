@@ -39,6 +39,8 @@
 #include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/IDebug.h>
 
+#include <cmath>
+
 using namespace musik::core::sdk;
 
 #ifdef WIN32
@@ -237,9 +239,25 @@ OutputState PortAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     }
 
     if (this->paStream) {
-        auto const frameCount = buffer->Samples() / buffer->Channels();
+        auto audio = buffer->BufferPointer();
+        auto const samples = buffer->Samples();
+        auto const frameCount = samples / buffer->Channels();
+
+        if (volume != 1.0f) {
+            float gain = 0.0;
+            if (volume > 0) {
+                float dB = 20.0 * std::log(volume/1.0);
+                gain = std::pow(10.0, dB / 20.0);
+            }
+            for (size_t i = 0; i < samples; i++) {
+                (*audio) *= gain;
+                ++audio;
+            }
+        }
+
         PaError result = Pa_WriteStream(
             this->paStream, buffer->BufferPointer(), frameCount);
+
         if (result == paNoError) {
             provider->OnBufferProcessed(buffer);
             return OutputState::BufferWritten;
