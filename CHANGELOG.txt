@@ -1,3 +1,10 @@
+0.99.4
+
+* added `PortAudio` output driver
+* added support for Haiku OS
+
+--------------------------------------------------------------------------------
+
 0.99.3
 
 * fixed a bug on Windows builds where certain accented characters would not be
