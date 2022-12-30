@@ -111,7 +111,7 @@ int portAudioStreamCallback(
             if (self->state == PortAudioOut::StatePaused ||
                 self->state == PortAudioOut::StateStopped)
             {
-                return paComplete;
+                return paAbort;
             }
 
             auto context = self->buffers.front();
