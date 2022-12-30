@@ -102,5 +102,5 @@ class AlsaOut : public musik::core::sdk::IOutput {
         std::condition_variable_any threadEvent;
         std::mutex mutex;
 
-        std::list<std::shared_ptr<BufferContext> > buffers;
+        std::list<std::shared_ptr<BufferContext>> buffers;
 };

@@ -38,7 +38,10 @@
 
 #include <musikcore/sdk/IOutput.h>
 #include <portaudio.h>
+#include <deque>
 #include <mutex>
+#include <memory>
+#include <condition_variable>
 
 using namespace musik::core::sdk;
 
@@ -65,16 +68,40 @@ class PortAudioOut : public IOutput {
         IDevice* GetDefaultDevice() override;
         int GetDefaultSampleRate() override;
 
+    friend int portAudioStreamCallback(
+        const void *input,
+        void *output,
+        unsigned long frameCount,
+        const PaStreamCallbackTimeInfo *timeInfo,
+        PaStreamCallbackFlags statusFlags,
+        void *userData);
+
     private:
         enum State {
             StateStopped,
             StatePaused,
-            StatePlaying
+            StatePlaying,
+            StateDraining,
+        };
+
+        struct BufferContext {
+            BufferContext(IBuffer* buffer, IBufferProvider* provider) {
+                this->buffer = buffer;
+                this->provider = provider;
+                this->remainingFrameCount = buffer->Samples() / buffer->Channels();
+            }
+            IBuffer* buffer { nullptr };
+            IBufferProvider* provider { nullptr };
+            unsigned long framesWritten { 0 };
+            unsigned long remainingFrameCount { 0 };
+            float gain { -1.0 };
         };
 
         std::recursive_mutex mutex;
+        std::condition_variable_any bufferEvent;
         PaStream* paStream { nullptr };
         IDeviceList* deviceList { nullptr };
+        std::deque<std::shared_ptr<BufferContext>> buffers;
         State state;
         double volume;
 };
