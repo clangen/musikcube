@@ -5,9 +5,8 @@ set (openmptdecoder_SOURCES
   OpenMptIndexerSource.cpp
   Utility.cpp)
 
-add_library(openmptdecoder SHARED ${openmptdecoder_SOURCES})
-
 if (${BUILD_STANDALONE} MATCHES "true")
+  add_library(openmptdecoder SHARED ${openmptdecoder_SOURCES})
   target_include_directories(openmptdecoder BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
   find_vendor_library(LIBOPENMPT openmpt)
   target_link_libraries(openmptdecoder ${LIBOPENMPT})
@@ -18,6 +17,7 @@ else()
   if ("${LIBOPENMPT}" STREQUAL "LIBOPENMPT-NOTFOUND")
     disable_plugin(openmptdecoder)
   else()
+    add_library(openmptdecoder SHARED ${openmptdecoder_SOURCES})
     target_link_libraries(openmptdecoder ${LIBOPENMPT} ${LIBMPG123} ${LIBZ})
   endif()
 endif()
