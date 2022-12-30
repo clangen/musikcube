@@ -84,6 +84,20 @@ class PortAudioOut : public IOutput {
             StateDraining,
         };
 
+        struct FormatContext {
+            bool IsSame(IBuffer* buffer) {
+                return
+                    this->sampleRate == buffer->SampleRate() &&
+                    this->channels == buffer->Channels();
+            }
+            void From(IBuffer* buffer) {
+                this->sampleRate = buffer->SampleRate();
+                this->channels = buffer->Channels();
+            }
+            long sampleRate { 0 };
+            long channels { 0 };
+        };
+
         struct BufferContext {
             BufferContext(IBuffer* buffer, IBufferProvider* provider) {
                 this->buffer = buffer;
@@ -102,6 +116,7 @@ class PortAudioOut : public IOutput {
         PaStream* paStream { nullptr };
         IDeviceList* deviceList { nullptr };
         std::deque<std::shared_ptr<BufferContext>> buffers;
+        FormatContext formatContext;
         State state;
         double volume;
 };

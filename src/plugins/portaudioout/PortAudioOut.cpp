@@ -242,6 +242,8 @@ void PortAudioOut::Stop() {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
         if (this->paStream) {
             logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
+            logPaError("Pa_AbortStream", Pa_CloseStream(this->paStream));
+            this->paStream = nullptr;
         }
         this->state = StateStopped;
         this->buffers.swap(swap);
@@ -311,6 +313,11 @@ OutputState PortAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         if (this->buffers.size() >= MAX_BUFFER_COUNT) {
             int retryMs = buffer->SampleRate() / buffer->Samples();
             return static_cast<OutputState>(retryMs);
+        }
+
+        if (!this->formatContext.IsSame(buffer)) {
+            this->Stop();
+            this->formatContext.From(buffer);
         }
 
         if (!this->paStream) {
