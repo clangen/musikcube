@@ -295,7 +295,7 @@
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -337,7 +337,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;musikcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;musikcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -379,7 +379,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -418,7 +418,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <SubSystem>Console</SubSystem>
       <ImportLibrary>
       </ImportLibrary>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1-x64.lib;libcrypto-1_1-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -458,7 +458,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <SubSystem>Console</SubSystem>
       <ImportLibrary>
       </ImportLibrary>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;musikcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;musikcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -498,7 +498,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <SubSystem>Console</SubSystem>
       <ImportLibrary>
       </ImportLibrary>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -545,7 +545,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -593,7 +593,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;musikcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;musikcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -641,7 +641,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -687,7 +687,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       </EnableCOMDATFolding>
       <ImportLibrary>
       </ImportLibrary>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -734,7 +734,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       </EnableCOMDATFolding>
       <ImportLibrary>
       </ImportLibrary>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;musikcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;musikcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -781,7 +781,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       </EnableCOMDATFolding>
       <ImportLibrary>
       </ImportLibrary>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -806,6 +806,16 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">
+      <Project>{b2165720-b4b2-4f4b-8888-8c390c3cb4db}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\musikcore\musikcore.vcxproj">
+      <Project>{b2165720-b4b2-4f4b-9634-8c390c3cb4db}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
