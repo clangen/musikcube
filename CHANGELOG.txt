@@ -1,7 +1,8 @@
 0.99.4
 
-* added `PortAudio` output driver
-* added support for Haiku OS
+* added `dark mode` awareness to Windows build.
+* added `PortAudio` output driver.
+* added support for Haiku OS.
 
 --------------------------------------------------------------------------------
 

@@ -53,6 +53,7 @@ namespace cursespp {
         bool AlreadyRunning();
         void ShowOtherInstance(const std::string& title);
         void ConfigureDpiAwareness();
+        void ConfigureThemeAwareness();
         int RegisterFont(const std::string& filename);
         int UnregisterFont(const std::string& filename);
     }

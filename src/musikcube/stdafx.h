@@ -72,6 +72,8 @@ asio's streambuf. include it up front so work around this */
 #include <sigslot/sigslot.h>
 #pragma warning(pop)
 
+#include <winrt/Windows.UI.ViewManagement.h>
+
 #include <musikcore/config.h>
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/audio/Buffer.h>

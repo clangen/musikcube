@@ -308,6 +308,7 @@ void App::InitCurses() {
         PDC_set_default_menu_visibility(0);
         PDC_set_window_resized_callback(&pdcWinguiResizeCallback);
         PDC_set_title(this->appTitle.c_str());
+        win32::ConfigureThemeAwareness();
         win32::InterceptWndProc();
         win32::SetAppTitle(this->appTitle);
         if (this->iconId) {

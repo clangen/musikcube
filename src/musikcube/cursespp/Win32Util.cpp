@@ -40,6 +40,8 @@
 
 #ifdef WIN32
 
+using namespace winrt::Windows::UI::ViewManagement;
+
 #define WM_TRAYICON (WM_USER + 2000)
 #define WM_SHOW_OTHER_INSTANCE (WM_USER + 2001)
 
@@ -175,6 +177,12 @@ static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
         resetMutex();
     }
 
+    if (msg == WM_SETTINGCHANGE) {
+        if (lparam && !lstrcmp(LPCTSTR(lparam), L"ImmersiveColorSet")) {
+            cursespp::win32::ConfigureThemeAwareness();
+        }
+    }
+
     return DefSubclassProc(hwnd, msg, wparam, lparam);
 }
 
@@ -270,6 +278,27 @@ namespace cursespp {
                 }
 
                 FreeLibrary(shcoreDll);
+            }
+        }
+
+        void ConfigureThemeAwareness() {
+            typedef HRESULT(__stdcall* DwmSetWindowAttributeProc)(HWND, DWORD, LPCVOID, DWORD);
+            static const DWORD DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+
+            HMODULE dwmapiDll = LoadLibrary(L"dwmapi.dll");
+            if (dwmapiDll) {
+                DwmSetWindowAttributeProc dwmSetWindowAttribute =
+                    (DwmSetWindowAttributeProc) GetProcAddress(dwmapiDll, "DwmSetWindowAttribute");
+
+                if (dwmSetWindowAttribute) {
+                    const auto settings = UISettings();
+                    const auto foreground = settings.GetColorValue(UIColorType::Foreground);
+                    BOOL isDarkMode = (((5 * foreground.G) + (2 * foreground.R) + foreground.B) > (8 * 128));
+                    HWND mainHwnd = GetMainWindow();
+                    dwmSetWindowAttribute(mainHwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &isDarkMode, sizeof(isDarkMode));
+                }
+
+                FreeLibrary(dwmapiDll);
             }
         }
 
