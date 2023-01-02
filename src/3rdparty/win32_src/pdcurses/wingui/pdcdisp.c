@@ -283,6 +283,11 @@ static LOGFONT PDC_get_logical_font( const int font_idx)
 
     LOGFONT lf;
 
+    if ( PDC_font_size < 0)
+    {
+        PDC_font_size = scale_font_for_current_dpi( 12); /* default 12 points */
+    }
+
     memset(&lf, 0, sizeof(LOGFONT));        /* Clear out structure. */
     lf.lfHeight = -PDC_font_size;
 #ifdef PDC_WIDE

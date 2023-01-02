@@ -1204,6 +1204,21 @@ void PDC_set_window_resized_callback(resize_callback_fnptr callback) {
     resize_callback = callback;
 }
 
+/* Under Wine,  it appears that the code to force the window size to be
+an integral number of columns and rows doesn't work.  This is because
+WM_SIZING messages aren't sent.  This appeared to be fixed as of Wine
+1.7.18, and Wine-specific code was removed at that point.  The bug
+recrudesced in Wine 7.0.1.
+
+   Therefore,  _in Wine only_,  attempting to resize the window to be
+an exact number of rows/columns results in cascading resize attempts.
+So we check on initialization to see if we're in Wine;  if we are,
+resizes are skipped. */
+
+typedef const char *(CDECL *wine_version_func)(void);
+
+static wine_version_func wine_version;
+
 static void HandleSize( const WPARAM wParam, const LPARAM lParam)
 {
     static WPARAM prev_wParam = (WPARAM)-99;
@@ -1254,6 +1269,8 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
             }
         }
     }
+    else if( wine_version)
+        return;
 
     add_resize_key = 1;
     if( wParam == SIZE_RESTORED &&
@@ -2235,7 +2252,24 @@ INLINE int set_up_window( void)
 
 int PDC_scr_open(void)
 {
+    const HMODULE hntdll = GetModuleHandle( _T("ntdll.dll"));
+    const HMODULE shcoredll = GetModuleHandle(_T("Shcore.dll"));
+
     PDC_LOG(("PDC_scr_open() - called\n"));
+
+    if( hntdll)
+        wine_version = (wine_version_func)GetProcAddress(hntdll, "wine_get_version");
+
+    if ( shcoredll) {
+        typedef HRESULT *(CDECL *set_process_dpi_awareness_t)(int);
+        static set_process_dpi_awareness_t set_process_dpi_awareness_func;
+        static int ADJUST_DPI_PER_MONITOR = 2;
+        set_process_dpi_awareness_func = (set_process_dpi_awareness_t)GetProcAddress(shcoredll, "SetProcessDpiAwareness");
+        if ( set_process_dpi_awareness_func) {
+            set_process_dpi_awareness_func(ADJUST_DPI_PER_MONITOR);
+        }
+    }
+
     COLORS = N_COLORS;  /* should give this a try and see if it works! */
     if (!SP || PDC_init_palette( ))
         return ERR;

@@ -156,7 +156,7 @@ WINDOW *initscr(void)
 
     if (SP && SP->alive)
         return NULL;
-    SP = calloc(1, sizeof(SCREEN));
+    SP = (SCREEN *)calloc(1, sizeof(SCREEN));
     assert( SP);
     if (!SP)
         return NULL;
@@ -274,13 +274,13 @@ WINDOW *initscr(void)
 
     longname( );
 
-    SP->c_buffer = malloc(_INBUFSIZ * sizeof(int));
+    SP->c_buffer = (int *)malloc(_INBUFSIZ * sizeof(int));
     if (!SP->c_buffer)
         return NULL;
     SP->c_pindex = 0;
     SP->c_gindex = 1;
 
-    SP->c_ungch = malloc(NUNGETCH * sizeof(int));
+    SP->c_ungch = (int *)malloc(NUNGETCH * sizeof(int));
     if (!SP->c_ungch)
         return NULL;
     SP->c_ungind = 0;
@@ -334,13 +334,13 @@ SCREEN *newterm(const char *type, FILE *outfd, FILE *infd)
     return initscr() ? SP : NULL;
 }
 
-SCREEN *set_term(SCREEN *new)
+SCREEN *set_term(SCREEN *new_scr)
 {
     PDC_LOG(("set_term() - called\n"));
 
     /* We only support one screen */
 
-    return (new == SP) ? SP : NULL;
+    return (new_scr == SP) ? SP : NULL;
 }
 
 void delscreen(SCREEN *sp)
@@ -367,6 +367,9 @@ void delscreen(SCREEN *sp)
         optr->window_list[i]->_parent = NULL;
     while( optr->n_windows)
         delwin( optr->window_list[0]);
+                    /* With all windows deleted,  the window  */
+                    /* list should be empty. */
+    assert( !optr->window_list);
 
     PDC_free_atrtab( );
     stdscr = (WINDOW *)NULL;
