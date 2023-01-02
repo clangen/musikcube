@@ -299,7 +299,9 @@ int main(int argc, char** argv) {
         library->Indexer()->Shutdown();
     }
 
+    LibraryFactory::Instance().Shutdown();
     plugin::Shutdown();
+    debug::Shutdown();
 
     remove(getLockfileFn().c_str());
 }

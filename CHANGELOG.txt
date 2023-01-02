@@ -1,5 +1,6 @@
 0.99.4
 
+* fixed bug where `musikcubed` could crash while stopping.
 * added `dark mode` awareness to Windows build.
 * added `PortAudio` output driver.
 * added support for Haiku OS.
