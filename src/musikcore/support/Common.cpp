@@ -137,7 +137,7 @@ namespace musik { namespace core {
                 delete[] argv;
             #elif defined __HAIKU__
                 image_info ii;
-                int32_t c = 0;
+                int32 c = 0;
                 while (get_next_image_info(0, &c, &ii) == B_OK) {
                     if (ii.type == B_APP_IMAGE) {
                         if (strlen(ii.name)) {
