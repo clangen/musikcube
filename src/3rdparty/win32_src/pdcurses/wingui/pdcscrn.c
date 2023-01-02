@@ -2261,7 +2261,7 @@ int PDC_scr_open(void)
         wine_version = (wine_version_func)GetProcAddress(hntdll, "wine_get_version");
 
     if ( shcoredll) {
-        typedef HRESULT *(CDECL *set_process_dpi_awareness_t)(int);
+        typedef HRESULT(__stdcall *set_process_dpi_awareness_t)(int);
         static set_process_dpi_awareness_t set_process_dpi_awareness_func;
         static int ADJUST_DPI_PER_MONITOR = 2;
         set_process_dpi_awareness_func = (set_process_dpi_awareness_t)GetProcAddress(shcoredll, "SetProcessDpiAwareness");
