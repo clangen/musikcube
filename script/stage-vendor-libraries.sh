@@ -7,7 +7,7 @@ mkdir -p bin/lib/
 PLATFORM=$(uname)
 
 if [[ "$PLATFORM" == 'Darwin' ]]; then
-    echo "[stage-static-vendor-libraries] staging macOS .dylib files..."
+    echo "[stage-vendor-libraries] staging macOS .dylib files..."
 
     cp vendor/bin/lib/libavcodec-musikcube.59.dylib ./bin/lib
     cp vendor/bin/lib/libavformat-musikcube.59.dylib ./bin/lib
@@ -27,10 +27,10 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libtag.1.19.0.dylib ./bin/lib
 
     mkdir -p ./bin/share/terminfo
-    cp -rfp $(brew --prefix)/Cellar/ncurses/6.3/share/terminfo/* ./bin/share/terminfo
+    cp -rfp $(brew --prefix)/Cellar/ncurses/6.4/share/terminfo/* ./bin/share/terminfo
 
 elif [[ "$PLATFORM" == 'Linux' ]]; then
-    echo "[stage-static-vendor-libraries] staging Linux .so files..."
+    echo "[stage-vendor-libraries] staging Linux .so files..."
 
     cp vendor/bin/lib/libavcodec-musikcube.so.59 ./bin/lib
     cp vendor/bin/lib/libavformat-musikcube.so.59 ./bin/lib
