@@ -52,6 +52,10 @@ const validLibraries = mac
       'libstdc++.so.6',
       'libz.so.1',
       'linux-vdso.so.1',
+      'libportaudio.so.2',
+      'libasound.so.2',
+      'libjack.so.0',
+      'libdb-5.3.so',
     ]);
 
 let errors = 0;
