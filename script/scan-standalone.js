@@ -36,6 +36,8 @@ const validLibraries = mac
       '/usr/lib/libobjc.A.dylib',
       '/usr/lib/libSystem.B.dylib',
       '/usr/lib/libz.1.dylib',
+      '/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib',
+      '/usr/local/lib/libportaudio.2.dylib',
     ])
   : new Set([
       '/lib/ld-linux-armhf.so.3',
