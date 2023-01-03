@@ -270,24 +270,18 @@ static int PDC_fontface_exists( const TCHAR* fontface)
 
 static LOGFONT PDC_get_logical_font( const int font_idx)
 {
-    if ( PDC_font_size < 0)
-    {
-        PDC_font_size = scale_font_for_current_dpi( 15); /* default 15 points */
-    }
-
     /* see if the user has overridden the default fontface. */
     if ( wcslen( PDC_font_name) == 0 && PDC_fontface_exists(PDC_preferred_fontface))
     {
         wcsncpy( PDC_font_name, PDC_preferred_fontface, sizeof(PDC_font_name));
     }
 
-    LOGFONT lf;
-
     if ( PDC_font_size < 0)
     {
         PDC_font_size = scale_font_for_current_dpi( 12); /* default 12 points */
     }
 
+    LOGFONT lf;
     memset(&lf, 0, sizeof(LOGFONT));        /* Clear out structure. */
     lf.lfHeight = -PDC_font_size;
 #ifdef PDC_WIDE
