@@ -331,13 +331,23 @@ namespace cursespp {
                     kn = std::string("M-") + std::string(keyname((int)next));
                 }
             }
-        #ifdef WIN32
+#ifdef WIN32
             /* transform alt->meta for uniform handling */
             else if (kn.find("ALT_") == 0) {
                 std::transform(kn.begin(), kn.end(), kn.begin(), tolower);
                 kn.replace(0, 4, "M-");
             }
-        #endif
+#endif
+#if defined WIN32 && defined _UNICODE
+            else if (kn.find("KEY_") == std::string::npos &&
+                    kn.find("CTL_") == std::string::npos &&
+                    kn.find("^") != 0)
+            {
+                /* on Windows if _UNICODE is defined then ch will contain a UTF16
+                encoded character; transform it to UTF8. */
+                kn = u16to8(std::wstring(1, (wchar_t) ch));
+            }
+#else
             /* multi-byte UTF8 character */
             else if (ch >= 194 && ch <= 223) {
                 kn = "";
@@ -357,18 +367,9 @@ namespace cursespp {
                 kn += (char) getch();
                 kn += (char) getch();
             }
+#endif
 
             kn = Normalize(kn);
-
-#ifdef WIN32
-            /* seems like on Windows using PDCurses, if a non-English keyboard
-            is selected (like Russian) we receive a UTF16 character, not an
-            encoded UTF8 character. in this case, let's convert it to a UTF8
-            string and return that. */
-            if (kn == "UNKNOWN KEY" && ch > 244) {
-                kn = u16to8(std::wstring(1, (wchar_t)ch));
-            }
-#endif
 
             // std::cerr << "keyname: " << kn << std::endl;
             // std::cerr << "ch: " << ch << std::endl;
