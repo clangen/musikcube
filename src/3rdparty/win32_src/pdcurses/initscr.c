@@ -326,12 +326,16 @@ bool isendwin(void)
 
 SCREEN *newterm(const char *type, FILE *outfd, FILE *infd)
 {
-    PDC_LOG(("newterm() - called\n"));
+    WINDOW *win;
 
+    PDC_LOG(("newterm() - called\n"));
     INTENTIONALLY_UNUSED_PARAMETER( type);
-    INTENTIONALLY_UNUSED_PARAMETER( outfd);
-    INTENTIONALLY_UNUSED_PARAMETER( infd);
-    return initscr() ? SP : NULL;
+    win = initscr( );
+    if( win && outfd != stdout)
+        SP->opaque->output_fd = outfd;
+    if( win && infd != stdin)
+        SP->opaque->input_fd = infd;
+    return win ? SP : NULL;
 }
 
 SCREEN *set_term(SCREEN *new_scr)

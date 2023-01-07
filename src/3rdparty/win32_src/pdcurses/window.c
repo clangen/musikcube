@@ -354,9 +354,9 @@ WINDOW *subwin(WINDOW *orig, int nlines, int ncols, int begy, int begx)
     k = begx - orig->_begx;
 
     if (!nlines)
-        nlines = orig->_maxy - 1 - j;
+        nlines = orig->_maxy - j;
     if (!ncols)
-        ncols  = orig->_maxx - 1 - k;
+        ncols  = orig->_maxx - k;
 
     win = PDC_makenew(nlines, ncols, begy, begx);
     if (!win)

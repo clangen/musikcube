@@ -11,7 +11,7 @@
 # define _CRT_SECURE_NO_DEPRECATE 1   /* kill nonsense warnings */
 #endif
 
-#if defined( PDC_FORCE_UTF8)
+#if defined( PDC_FORCE_UTF8) && !defined( PDC_WIDE)
    #define PDC_WIDE
 #endif
 

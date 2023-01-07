@@ -292,7 +292,7 @@ static void _clear_preceding_char( WINDOW *win, const int ch)
 
 int wgetn_wstr(WINDOW *win, wint_t *wstr, int n)
 {
-    int ch, i, num, x, chars;
+    int i, num, x, chars;
     wint_t *p;
     bool stop, oldecho, oldcbreak, oldnodelay;
 
@@ -322,7 +322,9 @@ int wgetn_wstr(WINDOW *win, wint_t *wstr, int n)
 
     while (!stop)
     {
-        ch = wgetch(win);
+        wint_t ch;
+
+        wget_wch( win, &ch);
 
         switch (ch)
         {
@@ -394,7 +396,7 @@ int wgetn_wstr(WINDOW *win, wint_t *wstr, int n)
             {
                 if( ch < KEY_MIN || ch >= KEY_MAX)
                 {
-                    *p++ = (wint_t)ch;
+                    *p++ = ch;
                     if (oldecho)
                         waddch(win, ch);
                     chars++;

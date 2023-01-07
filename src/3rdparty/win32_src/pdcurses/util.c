@@ -411,7 +411,7 @@ int PDC_mbtowc(wchar_t *pwc, const char *s, size_t n)
                   && IS_CONTINUATION_BYTE( string[3]))
         {
             key = ((key & 0x07) << 18) | ((string[1] & 0x3f) << 12) |
-                  ((string[2] & 0x3f) << 6) | (string[2] & 0x3f);
+                  ((string[2] & 0x3f) << 6) | (string[3] & 0x3f);
             if( key <= 0x10ffff)
                 i = 4;     /* four-byte sequence : U+10000 to U+10FFFF */
         }

@@ -30,6 +30,7 @@ slk
 
     wchar_t *slk_wlabel(int labnum);
     attr_t slk_attr( void);            (ncurses extension)
+    int extended_slk_color( int pair); (ncurses extension)
 
 ### Description
 
@@ -66,6 +67,10 @@ slk
    slk_refresh(), slk_noutrefresh() and slk_touch() are analogous to
    refresh(), noutrefresh() and touch().
 
+   slk_color() is analogous to color_set(),  and is similarly limited
+   to 16-bit color pairs.  extended_slk_color() allows the ability to
+   access color pairs beyond 64K.
+
 ### Return Value
 
    All functions return OK on success and ERR on error.
@@ -89,6 +94,7 @@ slk
     slk_attr                    -       Y       -
     slk_wset                    Y       Y       Y
     slk_wlabel                  -       -       -
+    extended_slk_color          -       Y       -
 
 **man-end****************************************************************/
 
@@ -437,9 +443,9 @@ attr_t slk_attr( void)
     PDC_LOG(("slk_attrset() - called\n"));
 
     assert( SP);
-    if (!SP)
-        return ERR;
     assert( SP->slk_winptr);
+    if (!SP || !SP->slk_winptr)
+        return A_REVERSE;           /* default attribute for SLK */
 
     return( SP->slk_winptr->_attrs & (A_ATTRIBUTES & ~A_COLOR));
 }

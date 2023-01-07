@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -38,7 +39,7 @@ keyname
 
 char *keyname(int key)
 {
-    static char _keyname[14];
+    static char _keyname[16];
 
     /* Key names must be in exactly the same order as in curses.h */
 
@@ -116,8 +117,15 @@ char *keyname(int key)
 
     PDC_LOG(("keyname() - called: key %d\n", key));
 
-    strcpy(_keyname, ((key >= 0) && (key < 0x80)) ? unctrl((chtype)key) :
-           has_key(key) ? key_names[key - KEY_MIN] : "UNKNOWN KEY");
+    if( key >= 0 && key < 0x80)
+        strcpy( _keyname, unctrl( (chtype)key));
+    else if( has_key(key))
+    {
+        assert( strlen( key_names[key - KEY_MIN]) < sizeof( _keyname));
+        strcpy( _keyname, key_names[key - KEY_MIN]);
+    }
+    else
+        strcpy( _keyname, "UNKNOWN KEY");
 
     return _keyname;
 }

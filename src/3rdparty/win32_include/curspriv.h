@@ -155,6 +155,7 @@ struct _opaque_screen_t
    WINDOW **window_list;
    unsigned trace_flags;
    bool want_trace_fflush;
+   FILE *output_fd, *input_fd;
 };
 
 #endif /* __CURSES_INTERNALS__ */
