@@ -131,6 +131,16 @@ add_plugin("src/plugins/stockencoders" "stockencoders")
 # dsps
 add_plugin("src/plugins/supereqdsp" "supereqdsp")
 
+add_custom_target(postbuild ALL DEPENDS musikcube musikcubed)
+add_custom_command(
+  TARGET postbuild
+  POST_BUILD
+  COMMAND
+  "${CMAKE_CURRENT_SOURCE_DIR}/script/post-build.sh"
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_SYSTEM_NAME}
+  ${CMAKE_BUILD_TYPE}
+  ${BUILD_STANDALONE})
+
 include(InstallFiles)
 include(GeneratePackage)
-include(PostBuild)
