@@ -82,16 +82,16 @@ namespace musik {
                     EXPORT virtual void error(const std::string& tag, const std::string& string) override;
             };
 
-            static void Start(std::vector<IBackend*> backends = { new SimpleFileBackend() });
-            static void Shutdown();
+            static EXPORT void Start(std::vector<IBackend*> backends = { new SimpleFileBackend() });
+            static EXPORT void Shutdown();
 
-            static void verbose(const std::string& tag, const std::string& string) noexcept;
-            static void v(const std::string& tag, const std::string& string) noexcept;
-            static void info(const std::string& tag, const std::string& string) noexcept;
-            static void i(const std::string& tag, const std::string& string) noexcept;
-            static void warning(const std::string& tag, const std::string& string) noexcept;
-            static void w(const std::string& tag, const std::string& string) noexcept;
-            static void error(const std::string& tag, const std::string& string) noexcept;
-            static void e(const std::string& tag, const std::string& string) noexcept;
+            static EXPORT void verbose(const std::string& tag, const std::string& string) noexcept;
+            static EXPORT void v(const std::string& tag, const std::string& string) noexcept;
+            static EXPORT void info(const std::string& tag, const std::string& string) noexcept;
+            static EXPORT void i(const std::string& tag, const std::string& string) noexcept;
+            static EXPORT void warning(const std::string& tag, const std::string& string) noexcept;
+            static EXPORT void w(const std::string& tag, const std::string& string) noexcept;
+            static EXPORT void error(const std::string& tag, const std::string& string) noexcept;
+            static EXPORT void e(const std::string& tag, const std::string& string) noexcept;
     };
 }

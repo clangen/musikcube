@@ -74,8 +74,8 @@ namespace musik { namespace core { namespace net {
 
             sigslot::signal3<PiggyWebSocketClient*, State, State> StateChanged;
 
-            static std::shared_ptr<PiggyWebSocketClient> Instance(MessageQueue* messageQueue);
-            static void Shutdown();
+            static EXPORT std::shared_ptr<PiggyWebSocketClient> Instance(MessageQueue* messageQueue);
+            static EXPORT void Shutdown();
 
             EXPORT PiggyWebSocketClient(const PiggyWebSocketClient&) = delete;
             EXPORT virtual ~PiggyWebSocketClient();

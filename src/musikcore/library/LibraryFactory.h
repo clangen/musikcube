@@ -55,9 +55,9 @@ namespace musik { namespace core {
 
             EXPORT ~LibraryFactory();
 
-            static void Initialize(IMessageQueue& messageQueue);
-            static LibraryFactory& Instance();
-            static void Shutdown();
+            static EXPORT void Initialize(IMessageQueue& messageQueue);
+            static EXPORT LibraryFactory& Instance();
+            static EXPORT void Shutdown();
 
             EXPORT ILibraryPtr DefaultLocalLibrary();
             EXPORT ILibraryPtr DefaultRemoteLibrary();

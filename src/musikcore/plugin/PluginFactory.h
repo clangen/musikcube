@@ -55,18 +55,18 @@ namespace musik { namespace core {
 
     class PluginFactory {
         public:
-            static PluginFactory& Instance();
+            static EXPORT PluginFactory& Instance();
 
             template <typename T>
             struct ReleaseDeleter {
-                EXPORT void operator()(T* t) {
+                void operator()(T* t) {
                     t->Release();
                 }
             };
 
             template <typename T>
             struct NullDeleter {
-                EXPORT void operator()(T* t) {
+                void operator()(T* t) {
                 }
             };
 
@@ -134,7 +134,7 @@ namespace musik { namespace core {
                 }
             }
 
-            std::shared_ptr<musik::core::sdk::IPlugin> QueryGuid(const std::string& guid) {
+            EXPORT std::shared_ptr<musik::core::sdk::IPlugin> QueryGuid(const std::string& guid) {
                 using T = musik::core::sdk::IPlugin;
                 std::shared_ptr<T> result;
                 using Deleter = PluginFactory::ReleaseDeleter<T>;

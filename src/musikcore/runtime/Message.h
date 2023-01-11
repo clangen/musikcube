@@ -47,7 +47,7 @@ namespace musik { namespace core { namespace runtime {
                 int64_t data2);
 
         public:
-            static IMessagePtr Create(
+            static EXPORT IMessagePtr Create(
                 IMessageTarget* target,
                 int messageType,
                 int64_t data1 = 0LL,
