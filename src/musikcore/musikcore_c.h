@@ -40,14 +40,14 @@
 #include <stdbool.h>
 #include <string.h>
 
-#ifndef mcsdk_export
 #ifdef WIN32
-#define mcsdk_export extern "C" __declspec(dllexport)
+    #ifdef EXPORT_SYMBOLS
+        #define mcsdk_export extern "C" __declspec(dllexport)
+    #else
+        #define mcsdk_export __declspec(dllimport)
+    #endif
 #else
-#define mcsdk_export extern "C"
-#endif
-#else
-#define mcsdk_export extern
+    #define mcsdk_export extern "C"
 #endif
 
 /*
