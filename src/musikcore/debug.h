@@ -45,41 +45,41 @@ namespace musik {
         public:
             class IBackend {
                 public:
-                    virtual ~IBackend() { }
-                    virtual void verbose(const std::string& tag, const std::string& string) = 0;
-                    virtual void info(const std::string& tag, const std::string& string) = 0;
-                    virtual void warning(const std::string& tag, const std::string& string) = 0;
-                    virtual void error(const std::string& tag, const std::string& string) = 0;
+                    EXPORT virtual ~IBackend() { }
+                    EXPORT virtual void verbose(const std::string& tag, const std::string& string) = 0;
+                    EXPORT virtual void info(const std::string& tag, const std::string& string) = 0;
+                    EXPORT virtual void warning(const std::string& tag, const std::string& string) = 0;
+                    EXPORT virtual void error(const std::string& tag, const std::string& string) = 0;
             };
 
             class FileBackend : public IBackend {
                 public:
-                    FileBackend(const std::string& fn);
-                    FileBackend(FileBackend&& fn);
-                    virtual ~FileBackend() override;
-                    virtual void verbose(const std::string& tag, const std::string& string) override;
-                    virtual void info(const std::string& tag, const std::string& string) override;
-                    virtual void warning(const std::string& tag, const std::string& string) override;
-                    virtual void error(const std::string& tag, const std::string& string) override;
+                    EXPORT FileBackend(const std::string& fn);
+                    EXPORT FileBackend(FileBackend&& fn);
+                    EXPORT virtual ~FileBackend() override;
+                    EXPORT virtual void verbose(const std::string& tag, const std::string& string) override;
+                    EXPORT virtual void info(const std::string& tag, const std::string& string) override;
+                    EXPORT virtual void warning(const std::string& tag, const std::string& string) override;
+                    EXPORT virtual void error(const std::string& tag, const std::string& string) override;
                 private:
                     std::ofstream out;
             };
 
             class SimpleFileBackend: public FileBackend {
                 public:
-                    SimpleFileBackend();
-                    SimpleFileBackend(const std::string& fn) = delete;
-                    SimpleFileBackend(FileBackend&& fn) = delete;
+                    EXPORT SimpleFileBackend();
+                    EXPORT SimpleFileBackend(const std::string& fn) = delete;
+                    EXPORT SimpleFileBackend(FileBackend&& fn) = delete;
             };
 
             class ConsoleBackend : public IBackend {
                 public:
-                    ConsoleBackend();
-                    virtual ~ConsoleBackend() override;
-                    virtual void verbose(const std::string& tag, const std::string& string) override;
-                    virtual void info(const std::string& tag, const std::string& string) override;
-                    virtual void warning(const std::string& tag, const std::string& string) override;
-                    virtual void error(const std::string& tag, const std::string& string) override;
+                    EXPORT ConsoleBackend();
+                    EXPORT virtual ~ConsoleBackend() override;
+                    EXPORT virtual void verbose(const std::string& tag, const std::string& string) override;
+                    EXPORT virtual void info(const std::string& tag, const std::string& string) override;
+                    EXPORT virtual void warning(const std::string& tag, const std::string& string) override;
+                    EXPORT virtual void error(const std::string& tag, const std::string& string) override;
             };
 
             static void Start(std::vector<IBackend*> backends = { new SimpleFileBackend() });

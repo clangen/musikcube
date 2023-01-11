@@ -65,40 +65,40 @@ namespace musik { namespace core {
         public musik::core::sdk::IIndexerNotifier
     {
         public:
-            Indexer(
+            EXPORT Indexer(
                 const std::string& libraryPath,
                 const std::string& dbFilename);
 
-            Indexer(const Indexer&) = delete;
+            EXPORT Indexer(const Indexer&) = delete;
 
-            virtual ~Indexer();
+            EXPORT virtual ~Indexer();
 
             /* IIndexer */
-            void AddPath(const std::string& path) override;
-            void RemovePath(const std::string& path) override;
-            void GetPaths(std::vector<std::string>& paths) override;
-            void Schedule(SyncType type) override;
-            void Shutdown() override;
+            EXPORT void AddPath(const std::string& path) override;
+            EXPORT void RemovePath(const std::string& path) override;
+            EXPORT void GetPaths(std::vector<std::string>& paths) override;
+            EXPORT void Schedule(SyncType type) override;
+            EXPORT void Shutdown() override;
 
-            State GetState() noexcept override {
+            EXPORT State GetState() noexcept override {
                 return this->state;
             }
 
             /* IIndexerWriter */
-            musik::core::sdk::ITagStore* CreateWriter() override;
-            bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri) override;
-            bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
-            int RemoveAll(musik::core::sdk::IIndexerSource* source) override;
-            void CommitProgress(musik::core::sdk::IIndexerSource* source, unsigned updatedTracks) override;
-            int64_t GetLastModifiedTime(musik::core::sdk::IIndexerSource* source, const char* id) override;
+            EXPORT musik::core::sdk::ITagStore* CreateWriter() override;
+            EXPORT bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri) override;
+            EXPORT bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
+            EXPORT int RemoveAll(musik::core::sdk::IIndexerSource* source) override;
+            EXPORT void CommitProgress(musik::core::sdk::IIndexerSource* source, unsigned updatedTracks) override;
+            EXPORT int64_t GetLastModifiedTime(musik::core::sdk::IIndexerSource* source, const char* id) override;
 
-            bool Save(
+            EXPORT bool Save(
                 musik::core::sdk::IIndexerSource* source,
                 musik::core::sdk::ITagStore* store,
                 const char* externalId = "") override;
 
             /* IIndexerNotifier */
-            void ScheduleRescan(musik::core::sdk::IIndexerSource* source) override;
+            EXPORT void ScheduleRescan(musik::core::sdk::IIndexerSource* source) override;
 
         private:
             struct AddRemoveContext {

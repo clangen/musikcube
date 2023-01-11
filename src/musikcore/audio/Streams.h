@@ -47,15 +47,15 @@
 namespace musik { namespace core { namespace audio {
 
     namespace streams {
-        std::shared_ptr<musik::core::sdk::IDecoder>
+        EXPORT std::shared_ptr<musik::core::sdk::IDecoder>
             GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
 
-        musik::core::sdk::IDecoder*
+        EXPORT musik::core::sdk::IDecoder*
             GetDecoderForDataStream(musik::core::sdk::IDataStream* stream);
 
-        musik::core::sdk::IEncoder* GetEncoderForType(const char* type);
+        EXPORT musik::core::sdk::IEncoder* GetEncoderForType(const char* type);
 
-        std::vector<std::shared_ptr<musik::core::sdk::IDSP > > GetDspPlugins();
+        EXPORT std::vector<std::shared_ptr<musik::core::sdk::IDSP > > GetDspPlugins();
     };
 
 } } }

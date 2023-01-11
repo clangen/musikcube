@@ -55,35 +55,35 @@ namespace musik { namespace core { namespace audio {
         public sigslot::has_slots<>
     {
         public:
-            CrossfadeTransport();
-            virtual ~CrossfadeTransport();
+            EXPORT CrossfadeTransport();
+            EXPORT virtual ~CrossfadeTransport();
 
-            void StopImmediately();
+            EXPORT void StopImmediately();
 
-            void Start(const std::string& uri, Gain gain, StartMode mode) override;
-            void PrepareNextTrack(const std::string& uri, Gain gain) override;
+            EXPORT void Start(const std::string& uri, Gain gain, StartMode mode) override;
+            EXPORT void PrepareNextTrack(const std::string& uri, Gain gain) override;
 
-            std::string Uri() override;
+            EXPORT std::string Uri() override;
 
-            void Stop() override;
-            bool Pause() override;
-            bool Resume() override;
+            EXPORT void Stop() override;
+            EXPORT bool Pause() override;
+            EXPORT bool Resume() override;
 
-            double Position() override;
-            void SetPosition(double seconds) override;
+            EXPORT double Position() override;
+            EXPORT void SetPosition(double seconds) override;
 
-            double Volume() noexcept override;
-            void SetVolume(double volume) override;
+            EXPORT double Volume() noexcept override;
+            EXPORT void SetVolume(double volume) override;
 
-            bool IsMuted() noexcept override;
-            void SetMuted(bool muted) override;
+            EXPORT bool IsMuted() noexcept override;
+            EXPORT void SetMuted(bool muted) override;
 
-            double GetDuration() override;
+            EXPORT double GetDuration() override;
 
-            void ReloadOutput() override;
+            EXPORT void ReloadOutput() override;
 
-            musik::core::sdk::PlaybackState GetPlaybackState() override;
-            musik::core::sdk::StreamState GetStreamState() override;
+            EXPORT musik::core::sdk::PlaybackState GetPlaybackState() override;
+            EXPORT musik::core::sdk::StreamState GetStreamState() override;
 
         private:
             using Lock = std::unique_lock<std::recursive_mutex>;

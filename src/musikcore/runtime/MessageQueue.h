@@ -52,22 +52,22 @@ namespace musik { namespace core { namespace runtime {
             MessageQueue& operator=(const MessageQueue&) = delete;
             MessageQueue& operator=(const MessageQueue&&) = delete;
 
-            MessageQueue() noexcept;
+            EXPORT MessageQueue() noexcept;
 
-            void Post(IMessagePtr message, int64_t delayMs = 0) override;
-            void Broadcast(IMessagePtr message, int64_t messageMs = 0) override;
-            int Remove(IMessageTarget *target, int type = -1) override;
-            bool Contains(IMessageTarget *target, int type = -1) override;
-            void Debounce(IMessagePtr message, int64_t delayMs = 0) override;
-            void Register(IMessageTarget* target) override;
-            void Unregister(IMessageTarget* target) override;
-            void RegisterForBroadcasts(IMessageTargetPtr target) override;
-            void UnregisterForBroadcasts(IMessageTarget *target) override;
-            void WaitAndDispatch(int64_t timeoutMillis = -1) override;
-            void Dispatch() override;
+            EXPORT void Post(IMessagePtr message, int64_t delayMs = 0) override;
+            EXPORT void Broadcast(IMessagePtr message, int64_t messageMs = 0) override;
+            EXPORT int Remove(IMessageTarget *target, int type = -1) override;
+            EXPORT bool Contains(IMessageTarget *target, int type = -1) override;
+            EXPORT void Debounce(IMessagePtr message, int64_t delayMs = 0) override;
+            EXPORT void Register(IMessageTarget* target) override;
+            EXPORT void Unregister(IMessageTarget* target) override;
+            EXPORT void RegisterForBroadcasts(IMessageTargetPtr target) override;
+            EXPORT void UnregisterForBroadcasts(IMessageTarget *target) override;
+            EXPORT void WaitAndDispatch(int64_t timeoutMillis = -1) override;
+            EXPORT void Dispatch() override;
 
         protected:
-            int64_t GetNextMessageTime() noexcept {
+            EXPORT int64_t GetNextMessageTime() noexcept {
                 return nextMessageTime.load();
             }
 

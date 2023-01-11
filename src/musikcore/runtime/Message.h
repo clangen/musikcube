@@ -40,7 +40,7 @@ namespace musik { namespace core { namespace runtime {
 
     class Message : public IMessage {
         protected:
-            Message(
+            EXPORT Message(
                 IMessageTarget* target,
                 int messageType,
                 int64_t data1,
@@ -53,13 +53,13 @@ namespace musik { namespace core { namespace runtime {
                 int64_t data1 = 0LL,
                 int64_t data2 = 0LL);
 
-            virtual ~Message() {
+            EXPORT virtual ~Message() {
             }
 
-            virtual IMessageTarget* Target();
-            virtual int Type();
-            virtual int64_t UserData1();
-            virtual int64_t UserData2();
+            EXPORT virtual IMessageTarget* Target();
+            EXPORT virtual int Type();
+            EXPORT virtual int64_t UserData1();
+            EXPORT virtual int64_t UserData2();
 
         private:
             IMessageTarget* target;

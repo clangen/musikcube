@@ -50,25 +50,25 @@ namespace musik { namespace core { namespace audio {
                 NoDelete = 2
             };
 
-            Buffer(Flags flags = NoFlags) noexcept;
-            Buffer(float* buffer, int samples) noexcept;
+            EXPORT Buffer(Flags flags = NoFlags) noexcept;
+            EXPORT Buffer(float* buffer, int samples) noexcept;
 
-            virtual ~Buffer();
+            EXPORT virtual ~Buffer();
 
-            long SampleRate() const noexcept override;
-            void SetSampleRate(long sampleRate) noexcept override;
-            int Channels() const noexcept override;
-            void SetChannels(int channels) noexcept override;
-            float* BufferPointer() const noexcept override;
-            long Samples() const noexcept override;
-            void SetSamples(long samples) override;
-            long Bytes() const noexcept override;
-            void Release() noexcept override { delete this; }
+            EXPORT long SampleRate() const noexcept override;
+            EXPORT void SetSampleRate(long sampleRate) noexcept override;
+            EXPORT int Channels() const noexcept override;
+            EXPORT void SetChannels(int channels) noexcept override;
+            EXPORT float* BufferPointer() const noexcept override;
+            EXPORT long Samples() const noexcept override;
+            EXPORT void SetSamples(long samples) override;
+            EXPORT long Bytes() const noexcept override;
+            EXPORT void Release() noexcept override { delete this; }
 
-            double Position() const noexcept;
-            void SetPosition(double position) noexcept;
-            void Copy(float const* buffer, long samples, long offset = 0);
-            void CopyFormat(Buffer* fromBuffer) noexcept;
+            EXPORT double Position() const noexcept;
+            EXPORT void SetPosition(double position) noexcept;
+            EXPORT void Copy(float const* buffer, long samples, long offset = 0);
+            EXPORT void CopyFormat(Buffer* fromBuffer) noexcept;
 
         private:
             void ResizeBuffer();

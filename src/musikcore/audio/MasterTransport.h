@@ -46,35 +46,35 @@ namespace musik { namespace core { namespace audio {
         public:
             using Type = musik::core::sdk::TransportType;
 
-            MasterTransport() noexcept;
+            EXPORT MasterTransport() noexcept;
 
-            void Start(const std::string& uri, Gain gain, StartMode mode) override;
-            void PrepareNextTrack(const std::string& uri, Gain gain) override;
+            EXPORT void Start(const std::string& uri, Gain gain, StartMode mode) override;
+            EXPORT void PrepareNextTrack(const std::string& uri, Gain gain) override;
 
-            std::string Uri() override;
+            EXPORT std::string Uri() override;
 
-            void Stop() override;
-            bool Pause() override;
-            bool Resume() override;
+            EXPORT void Stop() override;
+            EXPORT bool Pause() override;
+            EXPORT bool Resume() override;
 
-            double Position() override;
-            void SetPosition(double seconds) override;
+            EXPORT double Position() override;
+            EXPORT void SetPosition(double seconds) override;
 
-            double Volume() override;
-            void SetVolume(double volume) override;
+            EXPORT double Volume() override;
+            EXPORT void SetVolume(double volume) override;
 
-            double GetDuration() override;
+            EXPORT double GetDuration() override;
 
-            bool IsMuted() override;
-            void SetMuted(bool muted) override;
+            EXPORT bool IsMuted() override;
+            EXPORT void SetMuted(bool muted) override;
 
-            void ReloadOutput() override;
+            EXPORT void ReloadOutput() override;
 
-            musik::core::sdk::PlaybackState GetPlaybackState() override;
-            musik::core::sdk::StreamState GetStreamState() override;
+            EXPORT musik::core::sdk::PlaybackState GetPlaybackState() override;
+            EXPORT musik::core::sdk::StreamState GetStreamState() override;
 
-            void SwitchTo(Type type);
-            Type GetType() noexcept;
+            EXPORT void SwitchTo(Type type);
+            EXPORT Type GetType() noexcept;
 
         private:
             void OnStreamEvent(musik::core::sdk::StreamState type, std::string url);

@@ -59,12 +59,12 @@ namespace musik { namespace core {
                 Sources = 3
             };
 
-            virtual ~IIndexer() { }
-            virtual void AddPath(const std::string& path) = 0;
-            virtual void RemovePath(const std::string& path) = 0;
-            virtual void GetPaths(std::vector<std::string>& paths) = 0;
-            virtual void Schedule(SyncType type) = 0;
-            virtual void Shutdown() = 0;
-            virtual State GetState() = 0;
+            EXPORT virtual ~IIndexer() { }
+            EXPORT virtual void AddPath(const std::string& path) = 0;
+            EXPORT virtual void RemovePath(const std::string& path) = 0;
+            EXPORT virtual void GetPaths(std::vector<std::string>& paths) = 0;
+            EXPORT virtual void Schedule(SyncType type) = 0;
+            EXPORT virtual void Shutdown() = 0;
+            EXPORT virtual State GetState() = 0;
     };
 } }

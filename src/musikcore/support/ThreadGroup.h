@@ -50,8 +50,8 @@ namespace musik { namespace core {
         ThreadGroup(ThreadGroup const&);
         ThreadGroup& operator=(ThreadGroup const&);
     public:
-        ThreadGroup() {}
-        ~ThreadGroup()
+        EXPORT ThreadGroup() {}
+        EXPORT ~ThreadGroup()
         {
             for (std::list<std::thread*>::iterator it = threads.begin(), end = threads.end();
                 it != end;
@@ -61,7 +61,7 @@ namespace musik { namespace core {
             }
         }
 
-        bool is_this_thread_in()
+        EXPORT bool is_this_thread_in()
         {
             std::thread::id id = std::this_thread::get_id();
             std::shared_lock<std::shared_mutex> guard(m);
@@ -75,7 +75,7 @@ namespace musik { namespace core {
             return false;
         }
 
-        bool is_thread_in(std::thread* thrd)
+        EXPORT bool is_thread_in(std::thread* thrd)
         {
             if (thrd)
             {
@@ -97,7 +97,7 @@ namespace musik { namespace core {
         }
 
         template<typename F>
-        std::thread* create_thread(F threadfunc)
+        EXPORT std::thread* create_thread(F threadfunc)
         {
             std::lock_guard<std::shared_mutex> guard(m);
             std::unique_ptr<std::thread> new_thread(new std::thread(threadfunc));
@@ -105,7 +105,7 @@ namespace musik { namespace core {
             return new_thread.release();
         }
 
-        void add_thread(std::thread* thrd)
+        EXPORT void add_thread(std::thread* thrd)
         {
             if (thrd)
             {
@@ -114,7 +114,7 @@ namespace musik { namespace core {
             }
         }
 
-        void remove_thread(std::thread* thrd)
+        EXPORT void remove_thread(std::thread* thrd)
         {
             std::lock_guard<std::shared_mutex> guard(m);
             std::list<std::thread*>::iterator const it = std::find(threads.begin(), threads.end(), thrd);
@@ -124,7 +124,7 @@ namespace musik { namespace core {
             }
         }
 
-        void join_all()
+        EXPORT void join_all()
         {
             std::shared_lock<std::shared_mutex> guard(m);
 
@@ -137,7 +137,7 @@ namespace musik { namespace core {
             }
         }
 
-        size_t size() const
+        EXPORT size_t size() const
         {
             std::shared_lock<std::shared_mutex> guard(m);
             return threads.size();

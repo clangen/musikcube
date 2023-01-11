@@ -68,7 +68,7 @@ namespace musik { namespace core {
 
             class IResourceLocator {
                 public:
-                    virtual std::string GetTrackUri(
+                    EXPORT virtual std::string GetTrackUri(
                         musik::core::sdk::ITrack* track,
                         const std::string& defaultUri = "") = 0;
             };
@@ -76,20 +76,20 @@ namespace musik { namespace core {
             sigslot::signal1<musik::core::db::IQuery*> QueryCompleted;
             sigslot::signal1<ConnectionState> ConnectionStateChanged;
 
-            virtual ~ILibrary() { }
+            EXPORT virtual ~ILibrary() { }
 
-            virtual int Enqueue(QueryPtr query, Callback cb = Callback()) = 0;
-            virtual int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
-            virtual IIndexer *Indexer() = 0;
-            virtual int Id() = 0;
-            virtual const std::string& Name() = 0;
-            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
-            virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
-            virtual IResourceLocator& GetResourceLocator() = 0;
-            virtual bool IsConfigured() = 0;
-            virtual ConnectionState GetConnectionState() const = 0;
-            virtual Type GetType() const = 0;
-            virtual void Close() = 0;
+            EXPORT virtual int Enqueue(QueryPtr query, Callback cb = Callback()) = 0;
+            EXPORT virtual int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
+            EXPORT virtual IIndexer *Indexer() = 0;
+            EXPORT virtual int Id() = 0;
+            EXPORT virtual const std::string& Name() = 0;
+            EXPORT virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
+            EXPORT virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
+            EXPORT virtual IResourceLocator& GetResourceLocator() = 0;
+            EXPORT virtual bool IsConfigured() = 0;
+            EXPORT virtual ConnectionState GetConnectionState() const = 0;
+            EXPORT virtual Type GetType() const = 0;
+            EXPORT virtual void Close() = 0;
     };
 
     typedef std::shared_ptr<ILibrary> ILibraryPtr;

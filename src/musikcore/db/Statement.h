@@ -47,26 +47,26 @@ namespace musik { namespace core { namespace db {
         public:
             DELETE_CLASS_DEFAULTS(Statement)
 
-            Statement(const char* sql, Connection &connection) noexcept;
-            virtual ~Statement() noexcept;
+            EXPORT Statement(const char* sql, Connection &connection) noexcept;
+            EXPORT virtual ~Statement() noexcept;
 
-            void BindInt32(int position, int bindInt) noexcept;
-            void BindInt64(int position, int64_t bindInt) noexcept;
-            void BindFloat(int position, float bindFloat) noexcept;
-            void BindText(int position, const std::string& bindText);
-            void BindNull(int position) noexcept;
+            EXPORT void BindInt32(int position, int bindInt) noexcept;
+            EXPORT void BindInt64(int position, int64_t bindInt) noexcept;
+            EXPORT void BindFloat(int position, float bindFloat) noexcept;
+            EXPORT void BindText(int position, const std::string& bindText);
+            EXPORT void BindNull(int position) noexcept;
 
-            const int ColumnInt32(int column) noexcept;
-            const int64_t ColumnInt64(int column) noexcept;
-            const float ColumnFloat(int column) noexcept;
-            const char* ColumnText(int column) noexcept;
-            const bool IsNull(int column) noexcept;
+            EXPORT const int ColumnInt32(int column) noexcept;
+            EXPORT const int64_t ColumnInt64(int column) noexcept;
+            EXPORT const float ColumnFloat(int column) noexcept;
+            EXPORT const char* ColumnText(int column) noexcept;
+            EXPORT const bool IsNull(int column) noexcept;
 
-            int Step();
+            EXPORT int Step();
 
-            void Reset() noexcept;
-            void Unbind() noexcept;
-            void ResetAndUnbind() noexcept;
+            EXPORT void Reset() noexcept;
+            EXPORT void Unbind() noexcept;
+            EXPORT void ResetAndUnbind() noexcept;
 
         private:
             friend class Connection;

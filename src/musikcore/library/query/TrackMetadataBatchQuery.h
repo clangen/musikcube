@@ -44,33 +44,33 @@ namespace musik { namespace core { namespace library { namespace query {
 
 class TrackMetadataBatchQuery: public QueryBase {
     public:
-        static const std::string kQueryName;
+        EXPORT static const std::string kQueryName;
 
         using IdToTrackMap = std::unordered_map<int64_t, TrackPtr>;
 
         DELETE_CLASS_DEFAULTS(TrackMetadataBatchQuery)
 
-        TrackMetadataBatchQuery(
+        EXPORT TrackMetadataBatchQuery(
             std::unordered_set<int64_t> trackIds,
             musik::core::ILibraryPtr library);
 
-        const IdToTrackMap& Result() noexcept {
+        EXPORT const IdToTrackMap& Result() noexcept {
             return this->result;
         }
 
         /* IQuery */
-        std::string Name() override { return kQueryName; }
+        EXPORT std::string Name() override { return kQueryName; }
 
         /* ISerializableQuery */
-        std::string SerializeQuery() override;
-        std::string SerializeResult() override;
-        void DeserializeResult(const std::string& data) override;
-        static std::shared_ptr<TrackMetadataBatchQuery> DeserializeQuery(
+        EXPORT std::string SerializeQuery() override;
+        EXPORT std::string SerializeResult() override;
+        EXPORT void DeserializeResult(const std::string& data) override;
+        EXPORT static std::shared_ptr<TrackMetadataBatchQuery> DeserializeQuery(
             musik::core::ILibraryPtr library, const std::string& data);
 
     protected:
         /* QueryBase */
-        bool OnRun(musik::core::db::Connection& db) override;
+        EXPORT bool OnRun(musik::core::db::Connection& db) override;
 
     private:
         musik::core::ILibraryPtr library;

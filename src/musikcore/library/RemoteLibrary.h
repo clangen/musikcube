@@ -64,39 +64,39 @@ namespace musik { namespace core { namespace library {
 
             static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue);
 
-            RemoteLibrary(std::string name, int id, MessageQueue* messageQueue);
-            RemoteLibrary(const RemoteLibrary&) = delete;
-            virtual ~RemoteLibrary();
+            EXPORT RemoteLibrary(std::string name, int id, MessageQueue* messageQueue);
+            EXPORT RemoteLibrary(const RemoteLibrary&) = delete;
+            EXPORT virtual ~RemoteLibrary();
 
             /* ILibrary */
-            int Enqueue(QueryPtr query, Callback = Callback()) override;
-            int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback = Callback()) override;
-            musik::core::IIndexer *Indexer() override;
-            int Id() override;
-            const std::string& Name() override;
-            void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
-            musik::core::runtime::IMessageQueue& GetMessageQueue() noexcept override { return *messageQueue; }
-            ILibrary::IResourceLocator& GetResourceLocator() noexcept override { return *this; }
-            bool IsConfigured() override;
-            ConnectionState GetConnectionState() const override { return this->connectionState; }
-            Type GetType() const noexcept override { return Type::Remote; }
-            void Close() override;
+            EXPORT int Enqueue(QueryPtr query, Callback = Callback()) override;
+            EXPORT int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback = Callback()) override;
+            EXPORT musik::core::IIndexer *Indexer() override;
+            EXPORT int Id() override;
+            EXPORT const std::string& Name() override;
+            EXPORT void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
+            EXPORT musik::core::runtime::IMessageQueue& GetMessageQueue() noexcept override { return *messageQueue; }
+            EXPORT ILibrary::IResourceLocator& GetResourceLocator() noexcept override { return *this; }
+            EXPORT bool IsConfigured() override;
+            EXPORT ConnectionState GetConnectionState() const override { return this->connectionState; }
+            EXPORT Type GetType() const noexcept override { return Type::Remote; }
+            EXPORT void Close() override;
 
             /* IMessageTarget */
-            void ProcessMessage(musik::core::runtime::IMessage &message) override;
+            EXPORT void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* WebSocketClient::Listener */
-            void OnClientInvalidPassword(Client* client) override;
-            void OnClientStateChanged(Client* client, State newState, State oldState) override;
-            void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) override;
-            void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError reason) override;
+            EXPORT void OnClientInvalidPassword(Client* client) override;
+            EXPORT void OnClientStateChanged(Client* client, State newState, State oldState) override;
+            EXPORT void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) override;
+            EXPORT void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError reason) override;
 
             /* IResourceLocator */
-            std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
+            EXPORT std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
 
             /* RemoteLibrary */
-            void ReloadConnectionFromPreferences();
-            const musik::core::net::WebSocketClient& WebSocketClient() const;
+            EXPORT void ReloadConnectionFromPreferences();
+            EXPORT const musik::core::net::WebSocketClient& WebSocketClient() const;
 
         private:
             class QueryCompletedMessage;

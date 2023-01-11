@@ -42,31 +42,31 @@ namespace musik { namespace core { namespace library { namespace query {
 
 class TrackMetadataQuery : public QueryBase {
     public:
-        static const std::string kQueryName;
+        EXPORT static const std::string kQueryName;
 
         enum class Type: int { Full = 0, IdsOnly = 1 };
 
         DELETE_CLASS_DEFAULTS(TrackMetadataQuery)
 
-        TrackMetadataQuery(
+        EXPORT TrackMetadataQuery(
             musik::core::TrackPtr target,
             musik::core::ILibraryPtr library,
             Type type = Type::Full) noexcept;
 
-        TrackPtr Result() {
+        EXPORT TrackPtr Result() {
             return this->result;
         }
 
         /* IQuery */
-        std::string Name() override {
+        EXPORT std::string Name() override {
             return kQueryName;
         }
 
         /* ISerializableQuery */
-        std::string SerializeQuery() override;
-        std::string SerializeResult() override;
-        void DeserializeResult(const std::string& data) override;
-        static std::shared_ptr<TrackMetadataQuery> DeserializeQuery(
+        EXPORT std::string SerializeQuery() override;
+        EXPORT std::string SerializeResult() override;
+        EXPORT void DeserializeResult(const std::string& data) override;
+        EXPORT static std::shared_ptr<TrackMetadataQuery> DeserializeQuery(
             musik::core::ILibraryPtr library, const std::string& data);
 
     protected:

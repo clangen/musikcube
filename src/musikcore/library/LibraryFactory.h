@@ -53,20 +53,20 @@ namespace musik { namespace core {
 
             LibrariesUpdatedEvent LibrariesUpdated;
 
-            ~LibraryFactory();
+            EXPORT ~LibraryFactory();
 
             static void Initialize(IMessageQueue& messageQueue);
             static LibraryFactory& Instance();
             static void Shutdown();
 
-            ILibraryPtr DefaultLocalLibrary();
-            ILibraryPtr DefaultRemoteLibrary();
-            ILibraryPtr DefaultLibrary(ILibrary::Type type);
+            EXPORT ILibraryPtr DefaultLocalLibrary();
+            EXPORT ILibraryPtr DefaultRemoteLibrary();
+            EXPORT ILibraryPtr DefaultLibrary(ILibrary::Type type);
 
-            LibraryVector Libraries();
-            ILibraryPtr CreateLibrary(const std::string& name, ILibrary::Type type);
+            EXPORT LibraryVector Libraries();
+            EXPORT ILibraryPtr CreateLibrary(const std::string& name, ILibrary::Type type);
 
-            ILibraryPtr GetLibrary(int identifier);
+            EXPORT ILibraryPtr GetLibrary(int identifier);
 
         private:
             LibraryFactory();

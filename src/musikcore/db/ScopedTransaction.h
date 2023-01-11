@@ -45,11 +45,11 @@ namespace musik { namespace core { namespace db {
         public:
             DELETE_CLASS_DEFAULTS(ScopedTransaction)
 
-            ScopedTransaction(Connection &connection);
-            ~ScopedTransaction();
+            EXPORT ScopedTransaction(Connection &connection);
+            EXPORT ~ScopedTransaction();
 
-            void Cancel() noexcept;
-            void CommitAndRestart();
+            EXPORT void Cancel() noexcept;
+            EXPORT void CommitAndRestart();
 
         private:
             inline void Begin();

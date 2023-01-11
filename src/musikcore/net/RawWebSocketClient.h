@@ -74,20 +74,20 @@ namespace musik { namespace core { namespace net {
                 TLS = 1
             };
 
-            RawWebSocketClient(asio::io_service& io);
-            RawWebSocketClient(const RawWebSocketClient&) = delete;
-            ~RawWebSocketClient();
+            EXPORT RawWebSocketClient(asio::io_service& io);
+            EXPORT RawWebSocketClient(const RawWebSocketClient&) = delete;
+            EXPORT ~RawWebSocketClient();
 
-            void SetMode(Mode mode);
-            void SetOpenHandler(OpenHandler openHandler);
-            void SetFailHandler(FailHandler failHandler);
-            void SetMessageHandler(MessageHandler messageHandler);
-            void SetCloseHandler(CloseHandler closeHandler);
-            void SetSendMessageErrorHandler(SendMessageErrorHandler errorHandler);
-            void Send(Connection connection, const std::string& message);
-            void SetPongTimeout(long timeoutMs);
-            void Connect(const std::string& uri);
-            void Run();
+            EXPORT void SetMode(Mode mode);
+            EXPORT void SetOpenHandler(OpenHandler openHandler);
+            EXPORT void SetFailHandler(FailHandler failHandler);
+            EXPORT void SetMessageHandler(MessageHandler messageHandler);
+            EXPORT void SetCloseHandler(CloseHandler closeHandler);
+            EXPORT void SetSendMessageErrorHandler(SendMessageErrorHandler errorHandler);
+            EXPORT void Send(Connection connection, const std::string& message);
+            EXPORT void SetPongTimeout(long timeoutMs);
+            EXPORT void Connect(const std::string& uri);
+            EXPORT void Run();
 
         private:
 

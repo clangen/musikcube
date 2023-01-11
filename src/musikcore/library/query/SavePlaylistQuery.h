@@ -44,45 +44,45 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class SavePlaylistQuery : public musik::core::library::query::QueryBase {
         public:
-            static const std::string kQueryName;
+            EXPORT static const std::string kQueryName;
 
-            static std::shared_ptr<SavePlaylistQuery> Save(
+            EXPORT static std::shared_ptr<SavePlaylistQuery> Save(
                 musik::core::ILibraryPtr library,
                 const std::string& playlistName,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
-            static std::shared_ptr<SavePlaylistQuery> Save(
+            EXPORT static std::shared_ptr<SavePlaylistQuery> Save(
                 musik::core::ILibraryPtr library,
                 const std::string& playlistName,
                 musik::core::sdk::ITrackList* tracks);
 
-            static std::shared_ptr<SavePlaylistQuery> Save(
+            EXPORT static std::shared_ptr<SavePlaylistQuery> Save(
                 musik::core::ILibraryPtr library,
                 const std::string& playlistName,
                 const std::string& categoryType,
                 int64_t categoryId);
 
-            static std::shared_ptr<SavePlaylistQuery> Replace(
+            EXPORT static std::shared_ptr<SavePlaylistQuery> Replace(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
-            static std::shared_ptr<SavePlaylistQuery> Replace(
+            EXPORT static std::shared_ptr<SavePlaylistQuery> Replace(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 musik::core::sdk::ITrackList* tracks);
 
-            static std::shared_ptr<SavePlaylistQuery> Rename(
+            EXPORT static std::shared_ptr<SavePlaylistQuery> Rename(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 const std::string& playlistName);
 
-            static std::shared_ptr<SavePlaylistQuery> Append(
+            EXPORT static std::shared_ptr<SavePlaylistQuery> Append(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
-            static std::shared_ptr<SavePlaylistQuery> Append(
+            EXPORT static std::shared_ptr<SavePlaylistQuery> Append(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 const std::string& categoryType,
@@ -90,21 +90,21 @@ namespace musik { namespace core { namespace library { namespace query {
 
             DELETE_CLASS_DEFAULTS(SavePlaylistQuery)
 
-            int64_t GetPlaylistId() const noexcept;
+            EXPORT int64_t GetPlaylistId() const noexcept;
 
             /* IQuery */
-            std::string Name() override { return kQueryName; }
+            EXPORT std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
-            std::string SerializeQuery() override;
-            std::string SerializeResult() override;
-            void DeserializeResult(const std::string& data) override;
-            static std::shared_ptr<SavePlaylistQuery> DeserializeQuery(
+            EXPORT std::string SerializeQuery() override;
+            EXPORT std::string SerializeResult() override;
+            EXPORT void DeserializeResult(const std::string& data) override;
+            EXPORT static std::shared_ptr<SavePlaylistQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             /* QueryBase */
-            bool OnRun(musik::core::db::Connection &db) override;
+            EXPORT bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             SavePlaylistQuery(

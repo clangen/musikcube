@@ -216,40 +216,42 @@ namespace musik { namespace core { namespace library { namespace query {
 
         using Predicate = std::pair<std::string, int64_t>;
         using PredicateList = std::vector<Predicate>;
-        struct Argument { virtual void Bind(musik::core::db::Statement& stmt, int pos) const = 0; };
+        struct Argument { 
+            EXPORT virtual void Bind(musik::core::db::Statement& stmt, int pos) const = 0;
+        };
         using ArgumentList = std::vector<std::shared_ptr<Argument>>;
 
         /* functions */
 
-        extern PropertyType GetPropertyType(const std::string& key);
+        extern EXPORT PropertyType GetPropertyType(const std::string& key);
 
-        extern std::shared_ptr<Argument> IdArgument(int64_t);
-        extern std::shared_ptr<Argument> StringArgument(const std::string);
+        extern EXPORT std::shared_ptr<Argument> IdArgument(int64_t);
+        extern EXPORT std::shared_ptr<Argument> StringArgument(const std::string);
 
-        extern size_t Hash(const PredicateList& input);
+        extern EXPORT size_t Hash(const PredicateList& input);
 
-        extern void ReplaceAll(
+        extern EXPORT void ReplaceAll(
             std::string& input,
             const std::string& find,
             const std::string& replace);
 
-        extern void SplitPredicates(
+        extern EXPORT void SplitPredicates(
             const PredicateList& input,
             PredicateList& regular,
             PredicateList& extended);
 
-        extern std::string JoinRegular(
+        extern EXPORT std::string JoinRegular(
             const PredicateList& pred,
             ArgumentList& args,
             const std::string& prefix = "");
 
-        extern std::string InnerJoinExtended(
+        extern EXPORT std::string InnerJoinExtended(
             const PredicateList& pred, ArgumentList& args);
 
-        extern std::string JoinExtended(
+        extern EXPORT std::string JoinExtended(
             const PredicateList& pred, ArgumentList& args);
 
-        extern void Apply(
+        extern EXPORT void Apply(
             musik::core::db::Statement& stmt,
             const ArgumentList& args);
     }

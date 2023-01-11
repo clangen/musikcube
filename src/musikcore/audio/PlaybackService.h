@@ -68,67 +68,67 @@ namespace musik { namespace core { namespace audio {
             sigslot::signal0<> VolumeChanged;
             sigslot::signal1<double> TimeChanged;
 
-            PlaybackService(
+            EXPORT PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
                 musik::core::ILibraryPtr library,
                 std::shared_ptr<musik::core::audio::ITransport> transport);
 
-            PlaybackService(
+            EXPORT PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
                 musik::core::ILibraryPtr library);
 
-            virtual ~PlaybackService();
+            EXPORT virtual ~PlaybackService();
 
             /* IMessageTarget */
-            void ProcessMessage(musik::core::runtime::IMessage &message) override;
+            EXPORT void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* IPlaybackService */
-            void Play(size_t index) override;
-            bool Next() override;
-            bool Previous() override;
-            void Stop()  override { transport->Stop(); }
-            musik::core::sdk::RepeatMode GetRepeatMode()  override { return this->repeatMode; }
-            void SetRepeatMode(musik::core::sdk::RepeatMode mode) override;
-            void ToggleRepeatMode() override;
-            musik::core::sdk::PlaybackState GetPlaybackState() override;
-            bool IsShuffled() override;
-            void ToggleShuffle() override;
-            size_t GetIndex() noexcept override;
-            size_t Count() override;
-            double GetVolume() override;
-            void SetVolume(double vol) override;
-            void PauseOrResume() override;
-            bool IsMuted() override;
-            void ToggleMute() override;
-            double GetPosition() override;
-            void SetPosition(double seconds) override;
-            double GetDuration() override;
-            musik::core::sdk::ITrack* GetTrack(size_t index) override;
-            musik::core::sdk::ITrack* GetPlayingTrack() override;
-            void CopyFrom(const musik::core::sdk::ITrackList* source) override;
-            void Play(const musik::core::sdk::ITrackList* source, size_t index) override;
-            musik::core::sdk::ITrackListEditor* EditPlaylist() override;
-            musik::core::sdk::TimeChangeMode GetTimeChangeMode() noexcept override;
-            void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) noexcept override;
-            void ReloadOutput() override;
-            musik::core::sdk::ITrackList* Clone() override;
+            EXPORT void Play(size_t index) override;
+            EXPORT bool Next() override;
+            EXPORT bool Previous() override;
+            EXPORT void Stop()  override { transport->Stop(); }
+            EXPORT musik::core::sdk::RepeatMode GetRepeatMode()  override { return this->repeatMode; }
+            EXPORT void SetRepeatMode(musik::core::sdk::RepeatMode mode) override;
+            EXPORT void ToggleRepeatMode() override;
+            EXPORT musik::core::sdk::PlaybackState GetPlaybackState() override;
+            EXPORT bool IsShuffled() override;
+            EXPORT void ToggleShuffle() override;
+            EXPORT size_t GetIndex() noexcept override;
+            EXPORT size_t Count() override;
+            EXPORT double GetVolume() override;
+            EXPORT void SetVolume(double vol) override;
+            EXPORT void PauseOrResume() override;
+            EXPORT bool IsMuted() override;
+            EXPORT void ToggleMute() override;
+            EXPORT double GetPosition() override;
+            EXPORT void SetPosition(double seconds) override;
+            EXPORT double GetDuration() override;
+            EXPORT musik::core::sdk::ITrack* GetTrack(size_t index) override;
+            EXPORT musik::core::sdk::ITrack* GetPlayingTrack() override;
+            EXPORT void CopyFrom(const musik::core::sdk::ITrackList* source) override;
+            EXPORT void Play(const musik::core::sdk::ITrackList* source, size_t index) override;
+            EXPORT musik::core::sdk::ITrackListEditor* EditPlaylist() override;
+            EXPORT musik::core::sdk::TimeChangeMode GetTimeChangeMode() noexcept override;
+            EXPORT void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) noexcept override;
+            EXPORT void ReloadOutput() override;
+            EXPORT musik::core::sdk::ITrackList* Clone() override;
 
             /* TODO: include in SDK? */
-            virtual bool HotSwap(const TrackList& source, size_t index = 0);
+            EXPORT virtual bool HotSwap(const TrackList& source, size_t index = 0);
 
             /* app-specific implementation. similar to some SDK methods, but use
             concrete data types with known optimizations */
-            void Play(const musik::core::TrackList& tracks, size_t index);
-            void Prepare(size_t index, double position = 0.0f);
-            void CopyTo(musik::core::TrackList& target);
-            void CopyFrom(const musik::core::TrackList& source);
-            musik::core::TrackPtr GetPlaying();
+            EXPORT void Play(const musik::core::TrackList& tracks, size_t index);
+            EXPORT void Prepare(size_t index, double position = 0.0f);
+            EXPORT void CopyTo(musik::core::TrackList& target);
+            EXPORT void CopyFrom(const musik::core::TrackList& source);
+            EXPORT musik::core::TrackPtr GetPlaying();
 
-            musik::core::audio::ITransport& GetTransport() noexcept {
+            EXPORT musik::core::audio::ITransport& GetTransport() noexcept {
                 return *this->transport.get();
             }
 
-            std::shared_ptr<const musik::core::TrackList> GetTrackList() noexcept {
+            EXPORT std::shared_ptr<const musik::core::TrackList> GetTrackList() noexcept {
                 return std::shared_ptr<const musik::core::TrackList>(
                     &this->playlist, [](const musik::core::TrackList*) {});
             }
@@ -140,18 +140,18 @@ namespace musik { namespace core { namespace audio {
                 public:
                     using IEditor = std::shared_ptr<musik::core::sdk::ITrackListEditor>;
 
-                    Editor(Editor&& other);
-                    virtual ~Editor();
+                    EXPORT Editor(Editor&& other);
+                    EXPORT virtual ~Editor();
 
                     /* ITrackListEditor */
-                    bool Insert(int64_t id, size_t index) override;
-                    bool Swap(size_t index1, size_t index2) override;
-                    bool Move(size_t from, size_t to) override;
-                    bool Delete(size_t index) override;
-                    void Add(const int64_t id) override;
-                    void Clear() override;
-                    void Shuffle() override;
-                    void Release() noexcept override;
+                    EXPORT bool Insert(int64_t id, size_t index) override;
+                    EXPORT bool Swap(size_t index1, size_t index2) override;
+                    EXPORT bool Move(size_t from, size_t to) override;
+                    EXPORT bool Delete(size_t index) override;
+                    EXPORT void Add(const int64_t id) override;
+                    EXPORT void Clear() override;
+                    EXPORT void Shuffle() override;
+                    EXPORT void Release() noexcept override;
 
                 private:
                     friend class PlaybackService;
@@ -174,7 +174,7 @@ namespace musik { namespace core { namespace audio {
                     bool edited;
             };
 
-            Editor Edit();
+            EXPORT Editor Edit();
 
         private:
             void OnStreamEvent(musik::core::sdk::StreamState eventType, std::string uri);

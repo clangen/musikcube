@@ -49,60 +49,60 @@ namespace musik { namespace core { namespace library { namespace query {
 
     namespace serialization {
 
-        nlohmann::json PredicateListToJson(
+        EXPORT nlohmann::json PredicateListToJson(
             const musik::core::library::query::category::PredicateList& input);
 
-        void PredicateListFromJson(
+        EXPORT void PredicateListFromJson(
             const nlohmann::json& input,
             musik::core::library::query::category::PredicateList& output);
 
-        nlohmann::json MetadataMapListToJson(
+        EXPORT nlohmann::json MetadataMapListToJson(
             const musik::core::MetadataMapList& input);
 
-        void MetadataMapListFromJson(
+        EXPORT void MetadataMapListFromJson(
             const nlohmann::json& input,
             musik::core::MetadataMapList& output);
 
-        nlohmann::json ValueListToJson(
+        EXPORT nlohmann::json ValueListToJson(
             const musik::core::library::query::SdkValueList& input);
 
-        void ValueListFromJson(
+        EXPORT void ValueListFromJson(
             const nlohmann::json& input,
             musik::core::library::query::SdkValueList& output);
 
-        nlohmann::json TrackToJson(
+        EXPORT nlohmann::json TrackToJson(
             const musik::core::TrackPtr input,
             bool onlyIds = false);
 
-        void TrackFromJson(
+        EXPORT void TrackFromJson(
             const nlohmann::json& input,
             musik::core::TrackPtr output,
             bool onlyIds);
 
-        nlohmann::json TrackListToJson(
+        EXPORT nlohmann::json TrackListToJson(
             const musik::core::TrackList& input,
             bool onlyIds);
 
-        void TrackListFromJson(
+        EXPORT void TrackListFromJson(
             const nlohmann::json& input,
             musik::core::TrackList& output,
             musik::core::ILibraryPtr library,
             bool onlyIds);
 
-        nlohmann::json ITrackListToJsonIdList(
+        EXPORT nlohmann::json ITrackListToJsonIdList(
             const musik::core::sdk::ITrackList& input);
 
         template <typename SetType, typename DataType>
-        void JsonArrayToSet(const nlohmann::json& input, SetType& output) {
+        EXPORT void JsonArrayToSet(const nlohmann::json& input, SetType& output) {
             for (auto& value : input) {
                 output.insert(value.get<DataType>());
             }
         }
 
-        nlohmann::json DurationMapToJsonMap(
+        EXPORT nlohmann::json DurationMapToJsonMap(
             const std::map<size_t, size_t>& input);
 
-        void JsonMapToDuration(
+        EXPORT void JsonMapToDuration(
             const nlohmann::json& input,
             std::map<size_t, size_t>& output);
     }

@@ -47,53 +47,53 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class CategoryTrackListQuery : public TrackListQueryBase {
         public:
-            static const std::string kQueryName;
+            EXPORT static const std::string kQueryName;
 
             DELETE_CLASS_DEFAULTS(CategoryTrackListQuery)
 
-            CategoryTrackListQuery(
+            EXPORT CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
-            CategoryTrackListQuery(
+            EXPORT CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& column,
                 int64_t id,
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
-            CategoryTrackListQuery(
+            EXPORT CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const category::Predicate predicate,
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
-            CategoryTrackListQuery(
+            EXPORT CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const category::PredicateList predicates,
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
             /* IQuery */
-            std::string Name() override { return kQueryName; }
+            EXPORT std::string Name() override { return kQueryName; }
 
             /* TrackListQueryBase */
-            Result GetResult() noexcept override;
-            Headers GetHeaders() noexcept override;
-            Durations GetDurations() noexcept override;
-            size_t GetQueryHash() noexcept override;
+            EXPORT Result GetResult() noexcept override;
+            EXPORT Headers GetHeaders() noexcept override;
+            EXPORT Durations GetDurations() noexcept override;
+            EXPORT size_t GetQueryHash() noexcept override;
 
             /* ISerializableQuery */
-            std::string SerializeQuery() override;
-            std::string SerializeResult() override;
-            void DeserializeResult(const std::string& data) override;
-            static std::shared_ptr<CategoryTrackListQuery> DeserializeQuery(
+            EXPORT std::string SerializeQuery() override;
+            EXPORT std::string SerializeResult() override;
+            EXPORT void DeserializeResult(const std::string& data) override;
+            EXPORT static std::shared_ptr<CategoryTrackListQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             /* QueryBase */
-            bool OnRun(musik::core::db::Connection &db) override;
+            EXPORT bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             enum class Type: int { Playlist = 0, Regular = 1 };

@@ -56,7 +56,7 @@ namespace musik { namespace core { namespace audio {
             enum class DestroyMode: int { Drain = 0, NoDrain = 1 };
 
             struct Gain {
-                Gain() noexcept {
+                EXPORT Gain() noexcept {
                     this->preamp = this->gain = this->peak = 1.0f;
                     this->peakValid = false;
                 }
@@ -67,43 +67,43 @@ namespace musik { namespace core { namespace audio {
             };
 
             struct EventListener {
-                virtual ~EventListener() { }
-                virtual void OnPlayerBuffered(Player* player) { }
-                virtual void OnPlayerStarted(Player* player) { }
-                virtual void OnPlayerAlmostEnded(Player* player) { }
-                virtual void OnPlayerFinished(Player* player) { }
-                virtual void OnPlayerOpenFailed(Player* player) { }
-                virtual void OnPlayerDestroying(Player* player) { }
-                virtual void OnPlayerMixPoint(Player* player, int id, double time) { }
+                EXPORT virtual ~EventListener() { }
+                EXPORT virtual void OnPlayerBuffered(Player* player) { }
+                EXPORT virtual void OnPlayerStarted(Player* player) { }
+                EXPORT virtual void OnPlayerAlmostEnded(Player* player) { }
+                EXPORT virtual void OnPlayerFinished(Player* player) { }
+                EXPORT virtual void OnPlayerOpenFailed(Player* player) { }
+                EXPORT virtual void OnPlayerDestroying(Player* player) { }
+                EXPORT virtual void OnPlayerMixPoint(Player* player, int id, double time) { }
             };
 
-            static Player* Create(
+            EXPORT static Player* Create(
                 const std::string &url,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 DestroyMode destroyMode,
                 EventListener *listener,
                 Gain gain = Gain());
 
-            virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
+            EXPORT virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
-            void Detach(EventListener *listener);
-            void Attach(EventListener *listener);
+            EXPORT void Detach(EventListener *listener);
+            EXPORT void Attach(EventListener *listener);
 
-            void Play();
-            void Destroy();
-            void Destroy(DestroyMode mode);
+            EXPORT void Play();
+            EXPORT void Destroy();
+            EXPORT void Destroy(DestroyMode mode);
 
-            double GetPosition();
-            void SetPosition(double seconds);
-            double GetDuration();
+            EXPORT double GetPosition();
+            EXPORT void SetPosition(double seconds);
+            EXPORT double GetDuration();
 
-            void AddMixPoint(int id, double time);
+            EXPORT void AddMixPoint(int id, double time);
 
-            bool HasCapability(musik::core::sdk::Capability capability);
+            EXPORT bool HasCapability(musik::core::sdk::Capability capability);
 
-            std::string GetUrl() const { return this->url; }
+            EXPORT std::string GetUrl() const { return this->url; }
 
-            musik::core::sdk::StreamState GetStreamState() noexcept { return this->streamState; }
+            EXPORT musik::core::sdk::StreamState GetStreamState() noexcept { return this->streamState; }
 
         private:
             friend void playerThreadLoop(Player* player);

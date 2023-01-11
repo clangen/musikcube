@@ -54,32 +54,32 @@ namespace musik { namespace core { namespace audio {
             sigslot::signal0<> VolumeChanged;
             sigslot::signal1<double> TimeChanged;
 
-            virtual ~ITransport() { }
+            EXPORT virtual ~ITransport() { }
 
-            virtual void Start(const std::string& uri, Gain gain, StartMode mode) = 0;
-            virtual void PrepareNextTrack(const std::string& uri, Gain gain) = 0;
+            EXPORT virtual void Start(const std::string& uri, Gain gain, StartMode mode) = 0;
+            EXPORT virtual void PrepareNextTrack(const std::string& uri, Gain gain) = 0;
 
-            virtual std::string Uri() = 0;
+            EXPORT virtual std::string Uri() = 0;
 
-            virtual void Stop() = 0;
-            virtual bool Pause() = 0;
-            virtual bool Resume() = 0;
+            EXPORT virtual void Stop() = 0;
+            EXPORT virtual bool Pause() = 0;
+            EXPORT virtual bool Resume() = 0;
 
-            virtual double Position() = 0;
-            virtual void SetPosition(double seconds) = 0;
+            EXPORT virtual double Position() = 0;
+            EXPORT virtual void SetPosition(double seconds) = 0;
 
-            virtual double Volume() = 0;
-            virtual void SetVolume(double volume) = 0;
+            EXPORT virtual double Volume() = 0;
+            EXPORT virtual void SetVolume(double volume) = 0;
 
-            virtual double GetDuration() = 0;
+            EXPORT virtual double GetDuration() = 0;
 
-            virtual bool IsMuted() = 0;
-            virtual void SetMuted(bool muted) = 0;
+            EXPORT virtual bool IsMuted() = 0;
+            EXPORT virtual void SetMuted(bool muted) = 0;
 
-            virtual void ReloadOutput() = 0;
+            EXPORT virtual void ReloadOutput() = 0;
 
-            virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
-            virtual musik::core::sdk::StreamState GetStreamState() = 0;
+            EXPORT virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
+            EXPORT virtual musik::core::sdk::StreamState GetStreamState() = 0;
     };
 
 } } }

@@ -42,6 +42,14 @@
 #include <musikcore/support/NarrowCast.h>
 #include <musikcore/support/DeleteDefaults.h>
 
+#ifndef mcsdk_export
+    #ifdef WIN32
+        #define EXPORT __declspec(dllexport)
+    #else
+        #define EXPORT
+    #endif
+#endif
+
 #ifdef WIN32
     #ifndef WINVER
         #define WINVER 0x0601

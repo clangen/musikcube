@@ -52,25 +52,25 @@ namespace musik { namespace core { namespace library {
         public:
             sigslot::signal2<ILibraryPtr, ILibraryPtr> LibraryChanged;
 
-            MasterLibrary();
-            virtual ~MasterLibrary();
+            EXPORT MasterLibrary();
+            EXPORT virtual ~MasterLibrary();
 
-            int Enqueue(QueryPtr query, Callback cb = Callback()) override;
-            int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) override;
-            musik::core::IIndexer *Indexer() override;
-            int Id() override;
-            const std::string& Name() override;
-            void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
-            musik::core::runtime::IMessageQueue& GetMessageQueue() override;
-            IResourceLocator& GetResourceLocator() override;
-            bool IsConfigured() override;
-            ConnectionState GetConnectionState() const override;
-            Type GetType() const override;
-            void Close() override;
+            EXPORT int Enqueue(QueryPtr query, Callback cb = Callback()) override;
+            EXPORT int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) override;
+            EXPORT musik::core::IIndexer *Indexer() override;
+            EXPORT int Id() override;
+            EXPORT const std::string& Name() override;
+            EXPORT void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
+            EXPORT musik::core::runtime::IMessageQueue& GetMessageQueue() override;
+            EXPORT IResourceLocator& GetResourceLocator() override;
+            EXPORT bool IsConfigured() override;
+            EXPORT ConnectionState GetConnectionState() const override;
+            EXPORT Type GetType() const override;
+            EXPORT void Close() override;
 
-            ILibraryPtr Wrapped() const noexcept { return this->wrappedLibrary; }
+            EXPORT ILibraryPtr Wrapped() const noexcept { return this->wrappedLibrary; }
 
-            void LoadDefaultLibrary();
+            EXPORT void LoadDefaultLibrary();
 
         private:
 

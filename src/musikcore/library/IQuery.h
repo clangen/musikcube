@@ -56,24 +56,24 @@ namespace musik { namespace core { namespace db {
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(IQuery)
 
-            virtual ~IQuery() { }
+            EXPORT virtual ~IQuery() { }
 
-            virtual int GetStatus() = 0;
-            virtual int GetId() = 0;
-            virtual int GetOptions() = 0;
-            virtual std::string Name() = 0;
+            EXPORT virtual int GetStatus() = 0;
+            EXPORT virtual int GetId() = 0;
+            EXPORT virtual int GetOptions() = 0;
+            EXPORT virtual std::string Name() = 0;
     };
 
     class ISerializableQuery: public IQuery {
         public:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(ISerializableQuery)
 
-            virtual ~ISerializableQuery() { }
+            EXPORT virtual ~ISerializableQuery() { }
 
-            virtual std::string SerializeQuery() = 0;
-            virtual std::string SerializeResult() = 0;
-            virtual void DeserializeResult(const std::string& data) = 0;
-            virtual void Invalidate() = 0;
+            EXPORT virtual std::string SerializeQuery() = 0;
+            EXPORT virtual std::string SerializeResult() = 0;
+            EXPORT virtual void DeserializeResult(const std::string& data) = 0;
+            EXPORT virtual void Invalidate() = 0;
     };
 
 } } }

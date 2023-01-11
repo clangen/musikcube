@@ -41,15 +41,15 @@
 
 namespace musik { namespace core { namespace plugin {
 
-    void Init();
+    EXPORT void Init();
 
-    void Start(
+    EXPORT void Start(
         musik::core::runtime::IMessageQueue* messageQueue,
         musik::core::sdk::IPlaybackService* playback,
         musik::core::ILibraryPtr library);
 
-    musik::core::sdk::IEnvironment& Environment();
+    EXPORT musik::core::sdk::IEnvironment& Environment();
 
-    void Shutdown();
+    EXPORT void Shutdown();
 
 } } }

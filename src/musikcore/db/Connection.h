@@ -57,19 +57,19 @@ namespace musik { namespace core { namespace db {
         public:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Connection)
 
-            Connection() noexcept;
-            ~Connection();
+            EXPORT Connection() noexcept;
+            EXPORT ~Connection();
 
-            int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);
-            int Close() noexcept;
-            int Execute(const char* sql);
+            EXPORT int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);
+            EXPORT int Close() noexcept;
+            EXPORT int Execute(const char* sql);
 
-            int64_t LastInsertedId() noexcept;
+            EXPORT int64_t LastInsertedId() noexcept;
 
-            int LastModifiedRowCount() noexcept;
+            EXPORT int LastModifiedRowCount() noexcept;
 
-            void Interrupt();
-            void Checkpoint() noexcept;
+            EXPORT void Interrupt();
+            EXPORT void Checkpoint() noexcept;
 
         private:
             void Initialize(unsigned int cache);

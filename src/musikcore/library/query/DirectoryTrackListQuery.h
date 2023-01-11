@@ -41,34 +41,34 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class DirectoryTrackListQuery : public TrackListQueryBase {
         public:
-            static const std::string kQueryName;
+            EXPORT static const std::string kQueryName;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DirectoryTrackListQuery)
 
-            DirectoryTrackListQuery(
+            EXPORT DirectoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& directory,
                 const std::string& filter = "");
 
             /* IQuery */
-            std::string Name() override { return kQueryName; }
+            EXPORT std::string Name() override { return kQueryName; }
 
             /* TrackListQueryBase */
-            Result GetResult() noexcept override { return this->result; }
-            Headers GetHeaders() noexcept override { return this->headers; }
-            size_t GetQueryHash() noexcept override { return this->hash; }
-            Durations GetDurations() noexcept override { return this->durations; }
+            EXPORT Result GetResult() noexcept override { return this->result; }
+            EXPORT Headers GetHeaders() noexcept override { return this->headers; }
+            EXPORT size_t GetQueryHash() noexcept override { return this->hash; }
+            EXPORT Durations GetDurations() noexcept override { return this->durations; }
 
             /* ISerializableQuery */
-            std::string SerializeQuery() override;
-            std::string SerializeResult() override;
-            void DeserializeResult(const std::string& data) override;
-            static std::shared_ptr<DirectoryTrackListQuery> DeserializeQuery(
+            EXPORT std::string SerializeQuery() override;
+            EXPORT std::string SerializeResult() override;
+            EXPORT void DeserializeResult(const std::string& data) override;
+            EXPORT static std::shared_ptr<DirectoryTrackListQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             /* QueryBase */
-            bool OnRun(musik::core::db::Connection &db) override;
+            EXPORT bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             musik::core::ILibraryPtr library;

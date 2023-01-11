@@ -44,12 +44,12 @@ namespace musik {
         public:
             using Client = std::shared_ptr<musik::core::net::PiggyWebSocketClient>;
 
-            PiggyDebugBackend(Client client);
-            virtual ~PiggyDebugBackend() override;
-            virtual void verbose(const std::string& tag, const std::string& string) override;
-            virtual void info(const std::string& tag, const std::string& string) override;
-            virtual void warning(const std::string& tag, const std::string& string) override;
-            virtual void error(const std::string& tag, const std::string& string) override;
+            EXPORT PiggyDebugBackend(Client client);
+            EXPORT virtual ~PiggyDebugBackend() override;
+            EXPORT virtual void verbose(const std::string& tag, const std::string& string) override;
+            EXPORT virtual void info(const std::string& tag, const std::string& string) override;
+            EXPORT virtual void warning(const std::string& tag, const std::string& string) override;
+            EXPORT virtual void error(const std::string& tag, const std::string& string) override;
 
         private:
             Client client;

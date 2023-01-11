@@ -77,21 +77,21 @@ namespace musik { namespace core { namespace net {
             static std::shared_ptr<PiggyWebSocketClient> Instance(MessageQueue* messageQueue);
             static void Shutdown();
 
-            PiggyWebSocketClient(const PiggyWebSocketClient&) = delete;
-            virtual ~PiggyWebSocketClient();
+            EXPORT PiggyWebSocketClient(const PiggyWebSocketClient&) = delete;
+            EXPORT virtual ~PiggyWebSocketClient();
 
-            void Connect(const std::string& host, unsigned short port = 8347, bool useTls = false);
-            void Reconnect();
-            void Disconnect();
+            EXPORT void Connect(const std::string& host, unsigned short port = 8347, bool useTls = false);
+            EXPORT void Reconnect();
+            EXPORT void Disconnect();
 
-            void EnqueueMessage(Message message);
+            EXPORT void EnqueueMessage(Message message);
 
-            State ConnectionState() const;
-            ConnectionError LastConnectionError() const;
-            std::string Uri() const;
+            EXPORT State ConnectionState() const;
+            EXPORT ConnectionError LastConnectionError() const;
+            EXPORT std::string Uri() const;
 
-            void SetMessageQueue(MessageQueue* messageQueue);
-            void ProcessMessage(musik::core::runtime::IMessage& message) override;
+            EXPORT void SetMessageQueue(MessageQueue* messageQueue);
+            EXPORT void ProcessMessage(musik::core::runtime::IMessage& message) override;
 
         protected:
             PiggyWebSocketClient(MessageQueue* messageQueue);

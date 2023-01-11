@@ -59,18 +59,18 @@ namespace musik { namespace core {
 
             template <typename T>
             struct ReleaseDeleter {
-                void operator()(T* t) {
+                EXPORT void operator()(T* t) {
                     t->Release();
                 }
             };
 
             template <typename T>
             struct NullDeleter {
-                void operator()(T* t) {
+                EXPORT void operator()(T* t) {
                 }
             };
 
-            template <class T, class D> void QueryInterface(
+            template <class T, class D> EXPORT void QueryInterface(
                 const std::string& functionName,
                 std::function<void(musik::core::sdk::IPlugin*, std::shared_ptr<T>, const std::string&)> handler)
             {
@@ -97,7 +97,7 @@ namespace musik { namespace core {
                 }
             }
 
-            template <class T, class D> std::vector<std::shared_ptr<T> > QueryInterface(const std::string& functionName) {
+            template <class T, class D> std::vector<std::shared_ptr<T>> EXPORT QueryInterface(const std::string& functionName) {
                 std::vector<std::shared_ptr<T> > plugins;
 
                 QueryInterface<T, D>(
@@ -113,7 +113,7 @@ namespace musik { namespace core {
                 return plugins;
             }
 
-            template <class T> void QueryFunction(
+            template <class T> EXPORT void QueryFunction(
                 const std::string& functionName,
                 std::function<void(musik::core::sdk::IPlugin*, T)> handler)
             {

@@ -47,7 +47,7 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             using Shared = std::shared_ptr<SdkValue>;
 
-            SdkValue(
+            EXPORT SdkValue(
                 const std::string& displayValue,
                 int64_t id,
                 const std::string& type)
@@ -57,27 +57,27 @@ namespace musik { namespace core { namespace library { namespace query {
                 this->type = type;
             }
 
-            virtual int64_t GetId() {
+            EXPORT virtual int64_t GetId() {
                 return this->id;
             }
 
-            virtual musik::core::sdk::IResource::Class GetClass() {
+            EXPORT virtual musik::core::sdk::IResource::Class GetClass() {
                 return musik::core::sdk::IResource::Class::Value;
             }
 
-            virtual const char* GetType() {
+            EXPORT virtual const char* GetType() {
                 return this->type.c_str();
             }
 
-            virtual size_t GetValue(char* dst, size_t size) {
+            EXPORT virtual size_t GetValue(char* dst, size_t size) {
                 return musik::core::CopyString(this->displayValue, dst, size);
             }
 
-            std::string ToString() {
+            EXPORT std::string ToString() {
                 return this->displayValue;
             }
 
-            virtual void Release() {
+            EXPORT virtual void Release() {
             }
 
         private:
@@ -91,55 +91,55 @@ namespace musik { namespace core { namespace library { namespace query {
             using SharedValueList = std::shared_ptr<std::vector<SdkValue::Shared>>;
             using Shared = std::shared_ptr<SdkValueList>;
 
-            SdkValueList() {
+            EXPORT SdkValueList() {
                 values.reset(new std::vector<SdkValue::Shared>());
             }
 
-            SdkValueList(const SdkValueList& other) {
+            EXPORT SdkValueList(const SdkValueList& other) {
                 this->values = other.values;
             }
 
-            SdkValueList(std::shared_ptr<SdkValueList>& other) {
+            EXPORT SdkValueList(std::shared_ptr<SdkValueList>& other) {
                 this->values = other->values;
             }
 
-            SdkValueList(SharedValueList values) {
+            EXPORT SdkValueList(SharedValueList values) {
                 this->values = values;
             }
 
-            virtual void Release() {
+            EXPORT virtual void Release() {
                 delete this;
             }
 
-            virtual size_t Count() {
+            EXPORT virtual size_t Count() {
                 return this->values->size();
             }
 
-            virtual musik::core::sdk::IValue* GetAt(size_t index) {
+            EXPORT virtual musik::core::sdk::IValue* GetAt(size_t index) {
                 return this->values->at(index).get();
             }
 
-            SdkValue::Shared At(size_t index) {
+            EXPORT SdkValue::Shared At(size_t index) {
                 return this->values->at(index);
             }
 
-            SdkValue::Shared operator[](size_t index) {
+            EXPORT SdkValue::Shared operator[](size_t index) {
                 return this->values->at(index);
             }
 
-            void Add(std::shared_ptr<SdkValue> value) {
+            EXPORT void Add(std::shared_ptr<SdkValue> value) {
                 this->values->push_back(value);
             }
 
-            void Clear() {
+            EXPORT void Clear() {
                 this->values->clear();
             }
 
-            void Sort(std::function<bool(const SdkValue::Shared&, const SdkValue::Shared&)> compare) {
+            EXPORT void Sort(std::function<bool(const SdkValue::Shared&, const SdkValue::Shared&)> compare) {
                 std::sort(values->begin(), values->end(), compare);
             }
 
-            Shared Filter(std::function<bool(const SdkValue::Shared&)> keep) const {
+            EXPORT Shared Filter(std::function<bool(const SdkValue::Shared&)> keep) const {
                 Shared result = std::make_shared<SdkValueList>();
                 for (size_t i = 0; i < values->size(); i++) {
                     SdkValue::Shared value = values->at(i);
@@ -151,7 +151,7 @@ namespace musik { namespace core { namespace library { namespace query {
             }
 
             template <typename T>
-            std::vector<T> Map(std::function<T(const SdkValue::Shared&)> fun) const {
+            EXPORT std::vector<T> Map(std::function<T(const SdkValue::Shared&)> fun) const {
                 std::vector<T> result;
                 for (size_t i = 0; i < values->size(); i++) {
                     result.push_back(fun(values->at(i)));
@@ -159,7 +159,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 return result;
             }
 
-            void Each(std::function<void(const SdkValue::Shared&)> fun) const {
+            EXPORT void Each(std::function<void(const SdkValue::Shared&)> fun) const {
                 for (size_t i = 0; i < values->size(); i++) {
                     fun(values->at(i));
                 }
@@ -171,30 +171,30 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class SdkTrackList : public musik::core::sdk::ITrackList {
         public:
-            SdkTrackList(std::shared_ptr<musik::core::TrackList> wrapped) {
+            EXPORT SdkTrackList(std::shared_ptr<musik::core::TrackList> wrapped) {
                 this->wrapped = wrapped;
             }
 
-            virtual ~SdkTrackList() {
+            EXPORT virtual ~SdkTrackList() {
             }
 
-            virtual void Release() override {
+            EXPORT virtual void Release() override {
                 delete this;
             }
 
-            virtual size_t Count() const override {
+            EXPORT virtual size_t Count() const override {
                 return this->wrapped->Count();
             }
 
-            virtual int64_t GetId(size_t index) const override {
+            EXPORT virtual int64_t GetId(size_t index) const override {
                 return this->wrapped->GetId(index);
             }
 
-            virtual int IndexOf(int64_t id) const override {
+            EXPORT virtual int IndexOf(int64_t id) const override {
                 return this->wrapped->IndexOf(id);
             }
 
-            virtual musik::core::sdk::ITrack* GetTrack(size_t index) const override {
+            EXPORT virtual musik::core::sdk::ITrack* GetTrack(size_t index) const override {
                 return this->wrapped->GetTrack(index);
             }
 

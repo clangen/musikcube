@@ -40,19 +40,19 @@
 namespace musik {
     namespace core {
         namespace playback {
-            void VolumeUp(musik::core::audio::ITransport& transport);
-            void VolumeDown(musik::core::audio::ITransport& transport);
-            void SeekForward(musik::core::sdk::IPlaybackService& playback);
-            void SeekBack(musik::core::sdk::IPlaybackService& playback);
-            void SeekForwardProportional(musik::core::sdk::IPlaybackService& playback);
-            void SeekBackProportional(musik::core::sdk::IPlaybackService& playback);
-            void PauseOrResume(musik::core::audio::ITransport& transport);
+            EXPORT void VolumeUp(musik::core::audio::ITransport& transport);
+            EXPORT void VolumeDown(musik::core::audio::ITransport& transport);
+            EXPORT void SeekForward(musik::core::sdk::IPlaybackService& playback);
+            EXPORT void SeekBack(musik::core::sdk::IPlaybackService& playback);
+            EXPORT void SeekForwardProportional(musik::core::sdk::IPlaybackService& playback);
+            EXPORT void SeekBackProportional(musik::core::sdk::IPlaybackService& playback);
+            EXPORT void PauseOrResume(musik::core::audio::ITransport& transport);
 
-            void LoadPlaybackContext(
+            EXPORT void LoadPlaybackContext(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
 
-            void SavePlaybackContext(
+            EXPORT void SavePlaybackContext(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
         }

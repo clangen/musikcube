@@ -64,31 +64,31 @@ namespace musik { namespace core { namespace library {
 
             static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue);
 
-            LocalLibrary(const LocalLibrary&) = delete;
-            virtual ~LocalLibrary();
+            EXPORT LocalLibrary(const LocalLibrary&) = delete;
+            EXPORT virtual ~LocalLibrary();
 
             /* ILibrary */
-            int Enqueue(QueryPtr query, Callback cb = Callback()) override;
-            int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) override;
-            IIndexer *Indexer() override;
-            int Id() override;
-            const std::string& Name() override;
-            void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
-            MessageQueue& GetMessageQueue() override { return *messageQueue; }
-            IResourceLocator& GetResourceLocator() override;
-            bool IsConfigured() override;
-            ConnectionState GetConnectionState() const override { return ConnectionState::Connected; }
-            Type GetType() const override { return Type::Local; }
-            void Close() override;
+            EXPORT int Enqueue(QueryPtr query, Callback cb = Callback()) override;
+            EXPORT int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) override;
+            EXPORT IIndexer *Indexer() override;
+            EXPORT int Id() override;
+            EXPORT const std::string& Name() override;
+            EXPORT void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
+            EXPORT MessageQueue& GetMessageQueue() override { return *messageQueue; }
+            EXPORT IResourceLocator& GetResourceLocator() override;
+            EXPORT bool IsConfigured() override;
+            EXPORT ConnectionState GetConnectionState() const override { return ConnectionState::Connected; }
+            EXPORT Type GetType() const override { return Type::Local; }
+            EXPORT void Close() override;
 
             /* IMessageTarget */
-            void ProcessMessage(musik::core::runtime::IMessage &message) override;
+            EXPORT void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* implementation specific */
-            db::Connection& GetConnection() { return this->db; }
-            std::string GetLibraryDirectory();
-            std::string GetDatabaseFilename();
-            static void CreateDatabase(db::Connection &db);
+            EXPORT db::Connection& GetConnection() { return this->db; }
+            EXPORT std::string GetLibraryDirectory();
+            EXPORT std::string GetDatabaseFilename();
+            EXPORT static void CreateDatabase(db::Connection &db);
 
             /* indexes */
             static void DropIndexes(db::Connection &db);

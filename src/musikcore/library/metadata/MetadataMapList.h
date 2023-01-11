@@ -46,20 +46,20 @@ namespace musik { namespace core {
         public std::enable_shared_from_this<MetadataMapList>
     {
         public:
-            MetadataMapList();
-            virtual ~MetadataMapList();
+            EXPORT MetadataMapList();
+            EXPORT virtual ~MetadataMapList();
 
             /* IMapList */
-            virtual void Release();
-            virtual size_t Count() const;
-            virtual musik::core::sdk::IMap* GetAt(size_t index) const;
+            EXPORT virtual void Release();
+            EXPORT virtual size_t Count() const;
+            EXPORT virtual musik::core::sdk::IMap* GetAt(size_t index) const;
 
             /* implementation specific */
-            void Clear();
-            void Add(MetadataMapPtr entry);
+            EXPORT void Clear();
+            EXPORT void Add(MetadataMapPtr entry);
 
-            musik::core::sdk::IMapList* GetSdkValue();
-            MetadataMapPtr GetSharedAt(size_t index) const;
+            EXPORT musik::core::sdk::IMapList* GetSdkValue();
+            EXPORT MetadataMapPtr GetSharedAt(size_t index) const;
 
         private:
             std::vector<MetadataMapPtr> entries;

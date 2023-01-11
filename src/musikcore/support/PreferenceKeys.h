@@ -39,55 +39,55 @@
 namespace musik { namespace core { namespace prefs {
 
     namespace components {
-        extern const std::string Settings;
-        extern const std::string Libraries;
-        extern const std::string Playback;
-        extern const std::string Plugins;
-        extern const std::string Session;
+        EXPORT extern const std::string Settings;
+        EXPORT extern const std::string Libraries;
+        EXPORT extern const std::string Playback;
+        EXPORT extern const std::string Plugins;
+        EXPORT extern const std::string Session;
     }
 
     namespace keys {
-        extern const std::string AutoSyncIntervalMillis;
-        extern const std::string RemoveMissingFiles;
-        extern const std::string SyncOnStartup;
-        extern const std::string ResumePlaybackOnStartup;
-        extern const std::string Volume;
-        extern const std::string RepeatMode;
-        extern const std::string TimeChangeMode;
-        extern const std::string OutputPlugin;
-        extern const std::string Transport;
-        extern const std::string Locale;
-        extern const std::string IndexerLogEnabled;
-        extern const std::string IndexerThreadCount;
-        extern const std::string IndexerTransactionInterval;
-        extern const std::string ReplayGainMode;
-        extern const std::string PreampDecibels;
-        extern const std::string SaveSessionOnExit;
-        extern const std::string LastPlayQueueIndex;
-        extern const std::string LastPlayQueueTime;
-        extern const std::string LastFmToken;
-        extern const std::string LastFmSessionId;
-        extern const std::string LastFmUsername;
-        extern const std::string DisableAlbumArtistFallback;
-        extern const std::string AuddioApiToken;
-        extern const std::string LibraryType;
-        extern const std::string PlaybackTrackQueryTimeoutMs;
-        extern const std::string RemoteLibraryHostname;
-        extern const std::string RemoteLibraryWssPort;
-        extern const std::string RemoteLibraryHttpPort;
-        extern const std::string RemoteLibraryPassword;
-        extern const std::string RemoteLibraryViewed;
-        extern const std::string RemoteLibraryLatencyTimeoutMs;
-        extern const std::string RemoteLibraryWssTls;
-        extern const std::string RemoteLibraryHttpTls;
-        extern const std::string RemoteLibraryTlsWarningSuppressed;
-        extern const std::string RemoteLibraryTranscoderEnabled;
-        extern const std::string RemoteLibraryTranscoderFormat;
-        extern const std::string RemoteLibraryTranscoderBitrate;
-        extern const std::string RemoteLibraryIgnoreVersionMismatch;
-        extern const std::string AsyncTrackListQueries;
-        extern const std::string PiggyEnabled;
-        extern const std::string PiggyHostname;
+        EXPORT extern const std::string AutoSyncIntervalMillis;
+        EXPORT extern const std::string RemoveMissingFiles;
+        EXPORT extern const std::string SyncOnStartup;
+        EXPORT extern const std::string ResumePlaybackOnStartup;
+        EXPORT extern const std::string Volume;
+        EXPORT extern const std::string RepeatMode;
+        EXPORT extern const std::string TimeChangeMode;
+        EXPORT extern const std::string OutputPlugin;
+        EXPORT extern const std::string Transport;
+        EXPORT extern const std::string Locale;
+        EXPORT extern const std::string IndexerLogEnabled;
+        EXPORT extern const std::string IndexerThreadCount;
+        EXPORT extern const std::string IndexerTransactionInterval;
+        EXPORT extern const std::string ReplayGainMode;
+        EXPORT extern const std::string PreampDecibels;
+        EXPORT extern const std::string SaveSessionOnExit;
+        EXPORT extern const std::string LastPlayQueueIndex;
+        EXPORT extern const std::string LastPlayQueueTime;
+        EXPORT extern const std::string LastFmToken;
+        EXPORT extern const std::string LastFmSessionId;
+        EXPORT extern const std::string LastFmUsername;
+        EXPORT extern const std::string DisableAlbumArtistFallback;
+        EXPORT extern const std::string AuddioApiToken;
+        EXPORT extern const std::string LibraryType;
+        EXPORT extern const std::string PlaybackTrackQueryTimeoutMs;
+        EXPORT extern const std::string RemoteLibraryHostname;
+        EXPORT extern const std::string RemoteLibraryWssPort;
+        EXPORT extern const std::string RemoteLibraryHttpPort;
+        EXPORT extern const std::string RemoteLibraryPassword;
+        EXPORT extern const std::string RemoteLibraryViewed;
+        EXPORT extern const std::string RemoteLibraryLatencyTimeoutMs;
+        EXPORT extern const std::string RemoteLibraryWssTls;
+        EXPORT extern const std::string RemoteLibraryHttpTls;
+        EXPORT extern const std::string RemoteLibraryTlsWarningSuppressed;
+        EXPORT extern const std::string RemoteLibraryTranscoderEnabled;
+        EXPORT extern const std::string RemoteLibraryTranscoderFormat;
+        EXPORT extern const std::string RemoteLibraryTranscoderBitrate;
+        EXPORT extern const std::string RemoteLibraryIgnoreVersionMismatch;
+        EXPORT extern const std::string AsyncTrackListQueries;
+        EXPORT extern const std::string PiggyEnabled;
+        EXPORT extern const std::string PiggyHostname;
     }
 
 } } }

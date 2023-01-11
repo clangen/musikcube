@@ -56,48 +56,48 @@ namespace musik { namespace core {
                 ModeAutoSave
             };
 
-            static void LoadPluginPreferences();
-            static void SavePluginPreferences();
+            static EXPORT void LoadPluginPreferences();
+            static EXPORT void SavePluginPreferences();
 
-            static musik::core::sdk::IPreferences* Unmanaged(const std::string& name);
+            static EXPORT musik::core::sdk::IPreferences* Unmanaged(const std::string& name);
 
-            static std::shared_ptr<Preferences>
+            static EXPORT std::shared_ptr<Preferences>
                 ForPlugin(const std::string& pluginName);
 
-            static std::shared_ptr<Preferences>
+            static EXPORT std::shared_ptr<Preferences>
                 ForComponent(const std::string& c, Mode mode = ModeAutoSave);
 
-            ~Preferences();
+            EXPORT ~Preferences();
 
             /* IPreferences (for plugin use) */
-            virtual void Release() override;
+            EXPORT virtual void Release() override;
 
-            bool GetBool(const char* key, bool defaultValue = false) override;
-            int GetInt(const char* key, int defaultValue = 0) override;
-            double GetDouble(const char* key, double defaultValue = 0.0f) override;
-            int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "") override;
+            EXPORT bool GetBool(const char* key, bool defaultValue = false) override;
+            EXPORT int GetInt(const char* key, int defaultValue = 0) override;
+            EXPORT double GetDouble(const char* key, double defaultValue = 0.0f) override;
+            EXPORT int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "") override;
 
-            void SetBool(const char* key, bool value) override;
-            void SetInt(const char* key, int value) override;
-            void SetDouble(const char* key, double value) override;
-            void SetString(const char* key, const char* value) override;
+            EXPORT void SetBool(const char* key, bool value) override;
+            EXPORT void SetInt(const char* key, int value) override;
+            EXPORT void SetDouble(const char* key, double value) override;
+            EXPORT void SetString(const char* key, const char* value) override;
 
-            void Save() override;
+            EXPORT void Save() override;
 
             /* easier interface for internal use */
-            bool GetBool(const std::string& key, bool defaultValue = false);
-            int GetInt(const std::string& key, int defaultValue = 0);
-            double GetDouble(const std::string& key, double defaultValue = 0.0f);
-            std::string GetString(const std::string& key, const std::string& defaultValue = "");
+            EXPORT bool GetBool(const std::string& key, bool defaultValue = false);
+            EXPORT int GetInt(const std::string& key, int defaultValue = 0);
+            EXPORT double GetDouble(const std::string& key, double defaultValue = 0.0f);
+            EXPORT std::string GetString(const std::string& key, const std::string& defaultValue = "");
 
-            void SetBool(const std::string& key, bool value);
-            void SetInt(const std::string& key, int value);
-            void SetDouble(const std::string& key, double value);
-            void SetString(const std::string& key, const char* value);
+            EXPORT void SetBool(const std::string& key, bool value);
+            EXPORT void SetInt(const std::string& key, int value);
+            EXPORT void SetDouble(const std::string& key, double value);
+            EXPORT void SetString(const std::string& key, const char* value);
 
-            void GetKeys(std::vector<std::string>& target);
-            bool HasKey(const std::string& key);
-            void Remove(const std::string& key);
+            EXPORT void GetKeys(std::vector<std::string>& target);
+            EXPORT bool HasKey(const std::string& key);
+            EXPORT void Remove(const std::string& key);
 
         private:
             Preferences(const std::string& component, Mode mode);

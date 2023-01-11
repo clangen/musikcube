@@ -44,44 +44,44 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class AlbumListQuery : public musik::core::library::query::QueryBase {
         public:
-            static const std::string kQueryName;
+            EXPORT static const std::string kQueryName;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(AlbumListQuery)
 
-            AlbumListQuery(
+            EXPORT AlbumListQuery(
                 const std::string& filter = "");
 
-            AlbumListQuery(
+            EXPORT AlbumListQuery(
                 const std::string& fieldIdName,
                 int64_t fieldIdValue,
                 const std::string& filter = "");
 
-            AlbumListQuery(
+            EXPORT AlbumListQuery(
                 const category::Predicate predicate,
                 const std::string& filter = "");
 
-            AlbumListQuery(
+            EXPORT AlbumListQuery(
                 const category::PredicateList predicates,
                 const std::string& filter = "");
 
-            virtual ~AlbumListQuery();
+            EXPORT virtual ~AlbumListQuery();
 
             /* IQuery */
-            std::string Name() override { return kQueryName; }
-            musik::core::MetadataMapListPtr GetResult() noexcept;
+            EXPORT std::string Name() override { return kQueryName; }
+            EXPORT musik::core::MetadataMapListPtr GetResult() noexcept;
 
             /* ISerializableQuery */
-            std::string SerializeQuery() override;
-            std::string SerializeResult() override;
-            void DeserializeResult(const std::string& data) override;
-            static std::shared_ptr<AlbumListQuery> DeserializeQuery(const std::string& data);
+            EXPORT std::string SerializeQuery() override;
+            EXPORT std::string SerializeResult() override;
+            EXPORT void DeserializeResult(const std::string& data) override;
+            EXPORT static std::shared_ptr<AlbumListQuery> DeserializeQuery(const std::string& data);
 
             /* AlbumListQuery */
-            musik::core::sdk::IMapList* GetSdkResult();
+            EXPORT musik::core::sdk::IMapList* GetSdkResult();
 
         protected:
             /* QueryBase */
-            bool OnRun(musik::core::db::Connection &db) override;
+            EXPORT bool OnRun(musik::core::db::Connection &db) override;
 
             std::string filter;
             category::PredicateList regular, extended;

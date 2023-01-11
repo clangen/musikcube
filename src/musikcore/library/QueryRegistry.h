@@ -42,10 +42,10 @@
 namespace musik { namespace core { namespace library {
 
     namespace QueryRegistry {
-        std::shared_ptr<musik::core::db::ISerializableQuery> CreateLocalQueryFor(
+        EXPORT std::shared_ptr<musik::core::db::ISerializableQuery> CreateLocalQueryFor(
             const std::string& name, const std::string& data, musik::core::ILibraryPtr library);
 
-        bool IsLocalOnlyQuery(const std::string& queryName);
+        EXPORT bool IsLocalOnlyQuery(const std::string& queryName);
     }
 
 } } }

@@ -40,14 +40,13 @@
 
 namespace musik { namespace core { namespace audio { namespace vis {
 
-    musik::core::sdk::ISpectrumVisualizer* SpectrumVisualizer();
-    musik::core::sdk::IPcmVisualizer* PcmVisualizer();
-
-    std::shared_ptr<musik::core::sdk::IVisualizer> GetVisualizer(size_t index);
-    size_t VisualizerCount();
-    void SetSelectedVisualizer(std::shared_ptr<musik::core::sdk::IVisualizer> visualizer);
-    std::shared_ptr<musik::core::sdk::IVisualizer> SelectedVisualizer();
-    void HideSelectedVisualizer();
-    void Shutdown();
+    EXPORT musik::core::sdk::ISpectrumVisualizer* SpectrumVisualizer();
+    EXPORT musik::core::sdk::IPcmVisualizer* PcmVisualizer();
+    EXPORT std::shared_ptr<musik::core::sdk::IVisualizer> GetVisualizer(size_t index);
+    EXPORT size_t VisualizerCount();
+    EXPORT void SetSelectedVisualizer(std::shared_ptr<musik::core::sdk::IVisualizer> visualizer);
+    EXPORT std::shared_ptr<musik::core::sdk::IVisualizer> SelectedVisualizer();
+    EXPORT void HideSelectedVisualizer();
+    EXPORT void Shutdown();
 
 } } } }

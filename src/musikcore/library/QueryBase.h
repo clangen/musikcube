@@ -55,14 +55,14 @@ namespace musik { namespace core { namespace library { namespace query {
                 Regex = 2
             };
 
-            QueryBase() noexcept
+            EXPORT QueryBase() noexcept
             : status(IQuery::Idle)
             , options(0)
             , queryId(nextId())
             , cancel(false) {
             }
 
-            bool Run(musik::core::db::Connection &db) {
+            EXPORT bool Run(musik::core::db::Connection &db) {
                 this->SetStatus(Running);
                 try {
                     if (this->IsCanceled()) {
@@ -81,60 +81,60 @@ namespace musik { namespace core { namespace library { namespace query {
                 return false;
             }
 
-            virtual void Cancel() noexcept {
+            EXPORT virtual void Cancel() noexcept {
                 this->cancel = true;
             }
 
-            virtual bool IsCanceled() noexcept {
+            EXPORT virtual bool IsCanceled() noexcept {
                 return cancel;
             }
 
             /* IQuery */
 
-            int GetStatus() override {
+            EXPORT int GetStatus() override {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 return this->status;
             }
 
-            int GetId() noexcept override {
+            EXPORT int GetId() noexcept override {
                 return this->queryId;
             }
 
-            int GetOptions() override {
+            EXPORT int GetOptions() override {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 return this->options;
             }
 
             /* ISerializableQuery */
 
-            std::string SerializeQuery() override {
+            EXPORT std::string SerializeQuery() override {
                 throw std::runtime_error("not implemented");
             }
 
-            std::string SerializeResult() override {
+            EXPORT std::string SerializeResult() override {
                 throw std::runtime_error("not implemented");
             }
 
-            void DeserializeResult(const std::string& data) override {
+            EXPORT void DeserializeResult(const std::string& data) override {
                 throw std::runtime_error("not implemented");
             }
 
-            void Invalidate() override {
+            EXPORT void Invalidate() override {
                 this->SetStatus(IQuery::Failed);
             }
 
         protected:
-            void SetStatus(int status) {
+            EXPORT void SetStatus(int status) {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 this->status = status;
             }
 
-            void SetOptions(int options) {
+            EXPORT void SetOptions(int options) {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 this->options = options;
             }
 
-            virtual bool OnRun(musik::core::db::Connection& db) = 0;
+            EXPORT virtual bool OnRun(musik::core::db::Connection& db) = 0;
 
         private:
             static int nextId() noexcept {

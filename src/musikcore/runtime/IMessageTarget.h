@@ -40,8 +40,8 @@ namespace musik { namespace core { namespace runtime {
 
     class IMessageTarget {
         public:
-            virtual ~IMessageTarget() { }
-            virtual void ProcessMessage(IMessage &message) = 0;
+            EXPORT virtual ~IMessageTarget() { }
+            EXPORT virtual void ProcessMessage(IMessage &message) = 0;
     };
 
     typedef std::shared_ptr<IMessageTarget> IMessageTargetPtr;

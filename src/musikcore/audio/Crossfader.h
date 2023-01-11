@@ -58,21 +58,21 @@ namespace musik { namespace core { namespace audio {
 
             sigslot::signal0<> Emptied;
 
-            Crossfader(ITransport& transport);
-            virtual ~Crossfader();
+            EXPORT Crossfader(ITransport& transport);
+            EXPORT virtual ~Crossfader();
 
-            void Fade(
+            EXPORT void Fade(
                 Player* player,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 Direction direction,
                 long durationMs);
 
-            void Cancel(Player* player, Direction direction);
-            bool Contains(Player* player);
-            void Pause();
-            void Resume();
-            void Stop();
-            void Drain();
+            EXPORT void Cancel(Player* player, Direction direction);
+            EXPORT bool Contains(Player* player);
+            EXPORT void Pause();
+            EXPORT void Resume();
+            EXPORT void Stop();
+            EXPORT void Drain();
 
         private:
             void ThreadLoop();

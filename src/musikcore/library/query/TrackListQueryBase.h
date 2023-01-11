@@ -54,23 +54,23 @@ namespace musik { namespace core { namespace library { namespace query {
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackListQueryBase)
 
-            TrackListQueryBase() {
+            EXPORT TrackListQueryBase() {
                 this->limit = -1;
                 this->offset = 0;
             }
 
             /* virtual methods we define */
-            virtual Result GetResult() = 0;
-            virtual Headers GetHeaders() = 0;
-            virtual Durations GetDurations() = 0;
-            virtual size_t GetQueryHash() = 0;
+            EXPORT virtual Result GetResult() = 0;
+            EXPORT virtual Headers GetHeaders() = 0;
+            EXPORT virtual Durations GetDurations() = 0;
+            EXPORT virtual size_t GetQueryHash() = 0;
 
-            virtual void SetLimitAndOffset(int limit, int offset = 0) noexcept {
+            EXPORT virtual void SetLimitAndOffset(int limit, int offset = 0) noexcept {
                 this->limit = limit;
                 this->offset = offset;
             }
 
-            virtual musik::core::sdk::ITrackList* GetSdkResult() {
+            EXPORT virtual musik::core::sdk::ITrackList* GetSdkResult() {
                 return new WrappedTrackList(GetResult());
             }
 

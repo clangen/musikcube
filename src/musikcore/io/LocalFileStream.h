@@ -47,25 +47,25 @@ namespace musik { namespace core { namespace io {
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(LocalFileStream)
 
-            LocalFileStream() noexcept;
-            virtual ~LocalFileStream() noexcept;
+            EXPORT LocalFileStream() noexcept;
+            EXPORT virtual ~LocalFileStream() noexcept;
 
-            bool Open(const char *filename, OpenFlags flags) override;
-            bool Close() noexcept override;
-            void Interrupt() noexcept override;
-            void Release() noexcept override;
-            bool Readable() noexcept override { return (flags & OpenFlags::Read) != 0; }
-            bool Writable() noexcept override { return (flags & OpenFlags::Write) != 0; }
-            PositionType Read(void* buffer, PositionType readBytes) noexcept override;
-            PositionType Write(void* buffer, PositionType writeBytes) noexcept override;
-            bool SetPosition(PositionType position) noexcept override;
-            PositionType Position() noexcept override;
-            bool Eof() noexcept override;
-            long Length() noexcept override;
-            bool Seekable() noexcept override;
-            const char* Type() noexcept override;
-            const char* Uri() noexcept override;
-            bool CanPrefetch() noexcept override { return true; }
+            EXPORT bool Open(const char *filename, OpenFlags flags) override;
+            EXPORT bool Close() noexcept override;
+            EXPORT void Interrupt() noexcept override;
+            EXPORT void Release() noexcept override;
+            EXPORT bool Readable() noexcept override { return (flags & OpenFlags::Read) != 0; }
+            EXPORT bool Writable() noexcept override { return (flags & OpenFlags::Write) != 0; }
+            EXPORT PositionType Read(void* buffer, PositionType readBytes) noexcept override;
+            EXPORT PositionType Write(void* buffer, PositionType writeBytes) noexcept override;
+            EXPORT bool SetPosition(PositionType position) noexcept override;
+            EXPORT PositionType Position() noexcept override;
+            EXPORT bool Eof() noexcept override;
+            EXPORT long Length() noexcept override;
+            EXPORT bool Seekable() noexcept override;
+            EXPORT const char* Type() noexcept override;
+            EXPORT const char* Uri() noexcept override;
+            EXPORT bool CanPrefetch() noexcept override { return true; }
 
         private:
             OpenFlags flags { OpenFlags::None };

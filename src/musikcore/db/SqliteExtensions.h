@@ -43,7 +43,7 @@ namespace musik { namespace core { namespace db {
 
     namespace SqliteExtensions {
 
-        int Register(sqlite3* db);
+        EXPORT int Register(sqlite3* db);
 
     }
 

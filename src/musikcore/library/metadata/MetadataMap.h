@@ -47,34 +47,34 @@ namespace musik { namespace core {
         public std::enable_shared_from_this<MetadataMap>
     {
         public:
-            MetadataMap(
+            EXPORT MetadataMap(
                 int64_t id,
                 const std::string& value,
                 const std::string& type);
 
-            virtual ~MetadataMap();
+            EXPORT virtual ~MetadataMap();
 
             /* IResource */
-            virtual int64_t GetId();
-            virtual musik::core::sdk::IResource::Class GetClass();
-            virtual const char* GetType();
+            EXPORT virtual int64_t GetId();
+            EXPORT virtual musik::core::sdk::IResource::Class GetClass();
+            EXPORT virtual const char* GetType();
 
             /* IValue */
-            virtual size_t GetValue(char* dst, size_t size);
+            EXPORT virtual size_t GetValue(char* dst, size_t size);
 
             /* IMap */
-            virtual void Release();
-            virtual int GetString(const char* key, char* dst, int size);
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
+            EXPORT virtual void Release();
+            EXPORT virtual int GetString(const char* key, char* dst, int size);
+            EXPORT virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
+            EXPORT virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
+            EXPORT virtual double GetDouble(const char* key, double defaultValue = 0.0f);
 
             /* implementation specific */
-            void Set(const char* key, const std::string& value);
-            std::string Get(const char* key);
-            std::string GetTypeValue();
-            musik::core::sdk::IMap* GetSdkValue();
-            void Each(std::function<void(const std::string&, const std::string&)> callback);
+            EXPORT void Set(const char* key, const std::string& value);
+            EXPORT std::string Get(const char* key);
+            EXPORT std::string GetTypeValue();
+            EXPORT musik::core::sdk::IMap* GetSdkValue();
+            EXPORT void Each(std::function<void(const std::string&, const std::string&)> callback);
 
         private:
             int64_t id;

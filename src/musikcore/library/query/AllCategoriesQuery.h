@@ -43,29 +43,29 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class AllCategoriesQuery : public musik::core::library::query::QueryBase {
         public:
-            static const std::string kQueryName;
+            EXPORT static const std::string kQueryName;
 
             using Result = SdkValueList::Shared;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(AllCategoriesQuery)
 
-            AllCategoriesQuery();
+            EXPORT AllCategoriesQuery();
 
-            virtual Result GetResult() noexcept;
-            musik::core::sdk::IValueList* GetSdkResult();
+            EXPORT virtual Result GetResult() noexcept;
+            EXPORT musik::core::sdk::IValueList* GetSdkResult();
 
             /* IQuery */
-            std::string Name() override { return kQueryName; }
+            EXPORT std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
-            std::string SerializeQuery() override;
-            std::string SerializeResult() override;
-            void DeserializeResult(const std::string& data) override;
-            static std::shared_ptr<AllCategoriesQuery> DeserializeQuery(const std::string& data);
+            EXPORT std::string SerializeQuery() override;
+            EXPORT std::string SerializeResult() override;
+            EXPORT void DeserializeResult(const std::string& data) override;
+            EXPORT static std::shared_ptr<AllCategoriesQuery> DeserializeQuery(const std::string& data);
 
         protected:
             /* QueryBase */
-            bool OnRun(musik::core::db::Connection &db) override;
+            EXPORT bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             Result result;

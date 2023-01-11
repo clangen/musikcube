@@ -49,23 +49,23 @@ namespace musik { namespace core { namespace i18n {
         public:
             sigslot::signal1<std::string> LocaleChanged;
 
-            ~Locale();
+            EXPORT ~Locale();
 
-            static Locale& Instance() {
+            EXPORT static Locale& Instance() {
                 static Locale instance;
                 return instance;
             }
 
-            void Initialize(const std::string& localePath);
+            EXPORT void Initialize(const std::string& localePath);
 
-            std::vector<std::string> GetLocales();
-            std::string GetSelectedLocale();
-            bool SetSelectedLocale(const std::string& locale);
+            EXPORT std::vector<std::string> GetLocales();
+            EXPORT std::string GetSelectedLocale();
+            EXPORT bool SetSelectedLocale(const std::string& locale);
 
-            std::string Translate(const std::string& key);
-            std::string Translate(const char* key);
+            EXPORT std::string Translate(const std::string& key);
+            EXPORT std::string Translate(const char* key);
 
-            int Dimension(const char* key, int defaultValue);
+            EXPORT int Dimension(const char* key, int defaultValue);
 
         private:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Locale)

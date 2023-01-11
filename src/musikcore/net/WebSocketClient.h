@@ -81,39 +81,39 @@ namespace musik { namespace core { namespace net {
                     using Client = WebSocketClient;
                     using State = Client::State;
                     using QueryError = Client::QueryError;
-                    virtual void OnClientInvalidPassword(Client* client) = 0;
-                    virtual void OnClientStateChanged(Client* client, State newState, State oldState) = 0;
-                    virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) = 0;
-                    virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, QueryError result) = 0;
+                    EXPORT virtual void OnClientInvalidPassword(Client* client) = 0;
+                    EXPORT virtual void OnClientStateChanged(Client* client, State newState, State oldState) = 0;
+                    EXPORT virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) = 0;
+                    EXPORT virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, QueryError result) = 0;
             };
 
-            WebSocketClient(
+            EXPORT WebSocketClient(
                 musik::core::runtime::IMessageQueue* messageQueue,
                 Listener* listener);
 
-            WebSocketClient(const WebSocketClient&) = delete;
-            virtual ~WebSocketClient();
+            EXPORT WebSocketClient(const WebSocketClient&) = delete;
+            EXPORT virtual ~WebSocketClient();
 
-            void Connect(
+            EXPORT void Connect(
                 const std::string& host,
                 unsigned short port,
                 const std::string& password,
                 bool useTls);
 
-            void Reconnect();
-            void Disconnect();
+            EXPORT void Reconnect();
+            EXPORT void Disconnect();
 
-            State ConnectionState() const;
-            ConnectionError LastConnectionError() const;
-            std::string LastServerVersion() const;
-            std::string Uri() const;
+            EXPORT State ConnectionState() const;
+            EXPORT ConnectionError LastConnectionError() const;
+            EXPORT std::string LastServerVersion() const;
+            EXPORT std::string Uri() const;
 
-            std::string EnqueueQuery(Query query);
+            EXPORT std::string EnqueueQuery(Query query);
 
-            void SetMessageQueue(musik::core::runtime::IMessageQueue* messageQueue);
+            EXPORT void SetMessageQueue(musik::core::runtime::IMessageQueue* messageQueue);
 
             /* IMessageTarget */
-            void ProcessMessage(musik::core::runtime::IMessage& message) override;
+            EXPORT void ProcessMessage(musik::core::runtime::IMessage& message) override;
 
         private:
             void SetState(State state);

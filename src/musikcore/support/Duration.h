@@ -38,10 +38,10 @@
 
 namespace musik { namespace core { namespace duration {
 
-    std::string Duration(const std::string& str);
-    std::string Duration(int seconds);
-    std::string Duration(size_t seconds);
-    std::string Duration(double seconds);
-    std::string DurationWithHours(size_t seconds);
+    EXPORT std::string Duration(const std::string& str);
+    EXPORT std::string Duration(int seconds);
+    EXPORT std::string Duration(size_t seconds);
+    EXPORT std::string Duration(double seconds);
+    EXPORT std::string DurationWithHours(size_t seconds);
 
 } } }

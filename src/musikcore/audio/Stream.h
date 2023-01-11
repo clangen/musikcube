@@ -56,12 +56,12 @@ namespace musik { namespace core { namespace audio {
         using StreamFlags = musik::core::sdk::StreamFlags;
 
         public:
-            static IStreamPtr Create(
+            EXPORT static IStreamPtr Create(
                 int samplesPerChannel = 2048,
                 double bufferLengthSeconds = 5,
                 StreamFlags options = StreamFlags::None);
 
-            static IStream* CreateUnmanaged(
+            EXPORT static IStream* CreateUnmanaged(
                 int samplesPerChannel = 2048,
                 double bufferLengthSeconds = 5,
                 StreamFlags options = StreamFlags::None);
@@ -73,17 +73,17 @@ namespace musik { namespace core { namespace audio {
                 StreamFlags options);
 
         public:
-            virtual ~Stream();
+            EXPORT virtual ~Stream();
 
-            IBuffer* GetNextProcessedOutputBuffer() override;
-            void OnBufferProcessedByPlayer(IBuffer* buffer) override;
-            double SetPosition(double seconds) override;
-            double GetDuration() override;
-            bool OpenStream(std::string uri, musik::core::sdk::IOutput* output) override;
-            void Interrupt() override;
-            int GetCapabilities() override;
-            bool Eof() override { return this->done; }
-            void Release() override { delete this; }
+            EXPORT IBuffer* GetNextProcessedOutputBuffer() override;
+            EXPORT void OnBufferProcessedByPlayer(IBuffer* buffer) override;
+            EXPORT double SetPosition(double seconds) override;
+            EXPORT double GetDuration() override;
+            EXPORT bool OpenStream(std::string uri, musik::core::sdk::IOutput* output) override;
+            EXPORT void Interrupt() override;
+            EXPORT int GetCapabilities() override;
+            EXPORT bool Eof() override { return this->done; }
+            EXPORT void Release() override { delete this; }
 
         private:
             bool GetNextBufferFromDecoder();
