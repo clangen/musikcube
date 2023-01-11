@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup Condition="'$(ProjectName)'=='musikcube'">
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>$(TargetDir)\musikcube-cmd.exe</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

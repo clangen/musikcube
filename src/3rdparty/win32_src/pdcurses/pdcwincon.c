@@ -1,4 +1,4 @@
-#ifdef PDCURSES_WINCON
+#if defined PDCURSES_WINCON
     #include "wincon/pdcclip.c"
     #include "wincon/pdcdisp.c"
     #include "wincon/pdcgetsc.c"

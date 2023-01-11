@@ -1,4 +1,4 @@
-#ifdef PDCURSES_WINGUI
+#if !defined PDCURSES_WINCON
     #include "wingui/pdcclip.c"
     #include "wingui/pdcdisp.c"
     #include "wingui/pdcgetsc.c"

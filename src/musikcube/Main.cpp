@@ -78,7 +78,7 @@ using namespace cursespp;
 
 namespace keys = musik::cube::prefs::keys;
 
-#if defined(WIN32) && defined(PDCURSES_WINGUI)
+#if defined(WIN32) && !defined(PDCURSES_WINCON)
 int _main(int argc, wchar_t* argv[]);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
