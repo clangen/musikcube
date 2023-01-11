@@ -55,39 +55,39 @@ namespace musik { namespace core {
         public:
             mutable sigslot::signal3<const TrackList*, size_t, size_t> WindowCached;
 
-            TrackList(ILibraryPtr library);
-            TrackList(TrackList* other);
-            TrackList(std::shared_ptr<TrackList> other);
-            TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount);
+            EXPORT TrackList(ILibraryPtr library);
+            EXPORT TrackList(TrackList* other);
+            EXPORT TrackList(std::shared_ptr<TrackList> other);
+            EXPORT TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount);
 
             /* ITrackList */
-            size_t Count() const noexcept override;
-            int64_t GetId(size_t index) const override;
-            int IndexOf(int64_t id) const override;
-            musik::core::sdk::ITrack* GetTrack(size_t index) const override;
-            void Release() noexcept override { /* not used now */ }
+            EXPORT size_t Count() const noexcept override;
+            EXPORT int64_t GetId(size_t index) const override;
+            EXPORT int IndexOf(int64_t id) const override;
+            EXPORT musik::core::sdk::ITrack* GetTrack(size_t index) const override;
+            EXPORT void Release() noexcept override { /* not used now */ }
 
             /* TrackListEditor passes through to us */
-            void Add(const int64_t id);
-            bool Insert(int64_t id, size_t index);
-            bool Swap(size_t index1, size_t index2);
-            bool Move(size_t from, size_t to);
-            bool Delete(size_t index);
-            void Clear() noexcept;
-            void Shuffle();
+            EXPORT void Add(const int64_t id);
+            EXPORT bool Insert(int64_t id, size_t index);
+            EXPORT bool Swap(size_t index1, size_t index2);
+            EXPORT bool Move(size_t from, size_t to);
+            EXPORT bool Delete(size_t index);
+            EXPORT void Clear() noexcept;
+            EXPORT void Shuffle();
 
             /* implementation specific */
-            TrackPtr Get(size_t index, bool async = false) const;
-            TrackPtr GetWithTimeout(size_t index, size_t timeoutMs) const;
-            void ClearCache() noexcept;
-            void Swap(TrackList& list) noexcept;
-            void CopyFrom(const TrackList& from);
-            void CopyTo(TrackList& to);
-            void CacheWindow(size_t from, size_t to, bool async) const;
-            void SetCacheWindowSize(size_t size);
-            const std::vector<int64_t> GetIds() const { return ids; };
+            EXPORT TrackPtr Get(size_t index, bool async = false) const;
+            EXPORT TrackPtr GetWithTimeout(size_t index, size_t timeoutMs) const;
+            EXPORT void ClearCache() noexcept;
+            EXPORT void Swap(TrackList& list) noexcept;
+            EXPORT void CopyFrom(const TrackList& from);
+            EXPORT void CopyTo(TrackList& to);
+            EXPORT void CacheWindow(size_t from, size_t to, bool async) const;
+            EXPORT void SetCacheWindowSize(size_t size);
+            EXPORT const std::vector<int64_t> GetIds() const { return ids; };
 
-            musik::core::sdk::ITrackList* GetSdkValue();
+            EXPORT musik::core::sdk::ITrackList* GetSdkValue();
 
         private:
             struct QueryWindow {

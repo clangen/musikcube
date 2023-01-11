@@ -71,7 +71,7 @@ namespace musik { namespace core { namespace audio {
             EXPORT void CopyFormat(Buffer* fromBuffer) noexcept;
 
         private:
-            void ResizeBuffer();
+            EXPORT void ResizeBuffer();
 
             float *buffer;
             long samples;

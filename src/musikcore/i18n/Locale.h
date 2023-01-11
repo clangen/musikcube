@@ -70,7 +70,7 @@ namespace musik { namespace core { namespace i18n {
         private:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Locale)
 
-            Locale() noexcept;
+            EXPORT Locale() noexcept;
 
             std::vector<std::string> locales;
             std::shared_ptr<musik::core::Preferences> prefs;

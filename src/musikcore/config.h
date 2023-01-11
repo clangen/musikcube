@@ -42,9 +42,13 @@
 #include <musikcore/support/NarrowCast.h>
 #include <musikcore/support/DeleteDefaults.h>
 
-#ifndef mcsdk_export
+#ifndef EXPORT
     #ifdef WIN32
-        #define EXPORT __declspec(dllexport)
+        #ifdef EXPORT_SYMBOLS
+            #define EXPORT __declspec(dllexport)
+        #else
+            #define EXPORT __declspec(dllimport)
+        #endif
     #else
         #define EXPORT
     #endif

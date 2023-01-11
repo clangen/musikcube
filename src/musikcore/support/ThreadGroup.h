@@ -97,7 +97,7 @@ namespace musik { namespace core {
         }
 
         template<typename F>
-        EXPORT std::thread* create_thread(F threadfunc)
+        std::thread* create_thread(F threadfunc)
         {
             std::lock_guard<std::shared_mutex> guard(m);
             std::unique_ptr<std::thread> new_thread(new std::thread(threadfunc));

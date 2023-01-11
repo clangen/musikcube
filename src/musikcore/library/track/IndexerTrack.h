@@ -44,45 +44,45 @@ namespace musik { namespace core {
 
     class IndexerTrack: public Track {
         public:
-            IndexerTrack(int64_t trackId);
-            virtual ~IndexerTrack();
+            EXPORT IndexerTrack(int64_t trackId);
+            EXPORT virtual ~IndexerTrack();
 
             /* ITagStore */
-            void SetValue(const char* metakey, const char* value) override;
-            void ClearValue(const char* metakey) override;
-            bool Contains(const char* metakey) override;
-            void SetThumbnail(const char *data, long size) override;
-            bool ContainsThumbnail() override;
-            void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
+            EXPORT void SetValue(const char* metakey, const char* value) override;
+            EXPORT void ClearValue(const char* metakey) override;
+            EXPORT bool Contains(const char* metakey) override;
+            EXPORT void SetThumbnail(const char *data, long size) override;
+            EXPORT bool ContainsThumbnail() override;
+            EXPORT void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
 
             /* ITrack */
-            std::string GetString(const char* metakey) override;
-            int GetString(const char* key, char* dst, int size) override;
-            long long GetInt64(const char* key, long long defaultValue = 0LL) override;
-            int GetInt32(const char* key, unsigned int defaultValue = 0) override;
-            double GetDouble(const char* key, double defaultValue = 0.0f) override;
-            std::string Uri() override;
-            int Uri(char* dst, int size) override;
-            musik::core::sdk::ReplayGain GetReplayGain() override;
-            musik::core::sdk::MetadataState GetMetadataState() override;
+            EXPORT std::string GetString(const char* metakey) override;
+            EXPORT int GetString(const char* key, char* dst, int size) override;
+            EXPORT long long GetInt64(const char* key, long long defaultValue = 0LL) override;
+            EXPORT int GetInt32(const char* key, unsigned int defaultValue = 0) override;
+            EXPORT double GetDouble(const char* key, double defaultValue = 0.0f) override;
+            EXPORT std::string Uri() override;
+            EXPORT int Uri(char* dst, int size) override;
+            EXPORT musik::core::sdk::ReplayGain GetReplayGain() override;
+            EXPORT musik::core::sdk::MetadataState GetMetadataState() override;
 
-            MetadataIteratorRange GetValues(const char* metakey) override;
-            MetadataIteratorRange GetAllValues() override;
-            TrackPtr Copy() override;
-            int64_t GetId() override;
-            void SetId(int64_t trackId) noexcept override { this->trackId = trackId; }
-            void SetMetadataState(musik::core::sdk::MetadataState state)  override;
+            EXPORT MetadataIteratorRange GetValues(const char* metakey) override;
+            EXPORT MetadataIteratorRange GetAllValues() override;
+            EXPORT TrackPtr Copy() override;
+            EXPORT int64_t GetId() override;
+            EXPORT void SetId(int64_t trackId) noexcept override { this->trackId = trackId; }
+            EXPORT void SetMetadataState(musik::core::sdk::MetadataState state)  override;
 
-            bool NeedsToBeIndexed(
+            EXPORT bool NeedsToBeIndexed(
                 const std::filesystem::path &file,
                 db::Connection &dbConnection);
 
-            bool Save(
+            EXPORT bool Save(
                 db::Connection &dbConnection,
                 std::string libraryDirectory);
 
-            static void OnIndexerStarted(db::Connection &dbConnection);
-            static void OnIndexerFinished(db::Connection &dbConnection);
+            static EXPORT void OnIndexerStarted(db::Connection &dbConnection);
+            static EXPORT void OnIndexerFinished(db::Connection &dbConnection);
 
         protected:
             friend class Indexer;
@@ -94,8 +94,8 @@ namespace musik { namespace core {
         private:
             class InternalMetadata {
                 public:
-                    InternalMetadata();
-                    ~InternalMetadata();
+                    EXPORT InternalMetadata();
+                    EXPORT ~InternalMetadata();
 
                     Track::MetadataMap metadata;
                     std::shared_ptr<musik::core::sdk::ReplayGain> replayGain;

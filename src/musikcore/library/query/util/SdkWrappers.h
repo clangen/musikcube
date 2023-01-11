@@ -151,7 +151,7 @@ namespace musik { namespace core { namespace library { namespace query {
             }
 
             template <typename T>
-            EXPORT std::vector<T> Map(std::function<T(const SdkValue::Shared&)> fun) const {
+            std::vector<T> Map(std::function<T(const SdkValue::Shared&)> fun) const {
                 std::vector<T> result;
                 for (size_t i = 0; i < values->size(); i++) {
                     result.push_back(fun(values->at(i)));

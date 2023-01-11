@@ -45,40 +45,40 @@ namespace musik { namespace core {
 
     class LibraryTrack: public Track {
         public:
-            LibraryTrack() noexcept;
-            LibraryTrack(int64_t id, int libraryId);
-            LibraryTrack(int64_t id, musik::core::ILibraryPtr library);
-            virtual ~LibraryTrack();
+            EXPORT LibraryTrack() noexcept;
+            EXPORT LibraryTrack(int64_t id, int libraryId);
+            EXPORT LibraryTrack(int64_t id, musik::core::ILibraryPtr library);
+            EXPORT virtual ~LibraryTrack();
 
-            int LibraryId() noexcept override;
+            EXPORT int LibraryId() noexcept override;
 
-            int64_t GetId() noexcept override;
-            void SetId(int64_t id) noexcept override { this->id = id; }
+            EXPORT int64_t GetId() noexcept override;
+            EXPORT void SetId(int64_t id) noexcept override { this->id = id; }
 
-            std::string GetString(const char* metakey) override;
-            std::string Uri() override;
+            EXPORT std::string GetString(const char* metakey) override;
+            EXPORT std::string Uri() override;
 
             /* ITagStore */
-            void SetValue(const char* metakey, const char* value) override;
-            void ClearValue(const char* metakey) override;
-            bool Contains(const char* metakey) override;
-            void SetThumbnail(const char* data, long size) override;
-            bool ContainsThumbnail() override;
-            void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
+            EXPORT void SetValue(const char* metakey, const char* value) override;
+            EXPORT void ClearValue(const char* metakey) override;
+            EXPORT bool Contains(const char* metakey) override;
+            EXPORT void SetThumbnail(const char* data, long size) override;
+            EXPORT bool ContainsThumbnail() override;
+            EXPORT void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
 
             /* ITrack */
-            long long GetInt64(const char* key, long long defaultValue = 0LL) override;
-            int GetInt32(const char* key, unsigned int defaultValue = 0) override;
-            double GetDouble(const char* key, double defaultValue = 0.0f) override;
-            int GetString(const char* key, char* dst, int size) override;
-            int Uri(char* dst, int size) override;
-            musik::core::sdk::ReplayGain GetReplayGain() noexcept override;
-            musik::core::sdk::MetadataState GetMetadataState() noexcept override;
-            void SetMetadataState(musik::core::sdk::MetadataState state) noexcept override;
+            EXPORT long long GetInt64(const char* key, long long defaultValue = 0LL) override;
+            EXPORT int GetInt32(const char* key, unsigned int defaultValue = 0) override;
+            EXPORT double GetDouble(const char* key, double defaultValue = 0.0f) override;
+            EXPORT int GetString(const char* key, char* dst, int size) override;
+            EXPORT int Uri(char* dst, int size) override;
+            EXPORT musik::core::sdk::ReplayGain GetReplayGain() noexcept override;
+            EXPORT musik::core::sdk::MetadataState GetMetadataState() noexcept override;
+            EXPORT void SetMetadataState(musik::core::sdk::MetadataState state) noexcept override;
 
-            MetadataIteratorRange GetValues(const char* metakey) override;
-            MetadataIteratorRange GetAllValues() noexcept override;
-            TrackPtr Copy() override;
+            EXPORT MetadataIteratorRange GetValues(const char* metakey) override;
+            EXPORT MetadataIteratorRange GetAllValues() noexcept override;
+            EXPORT TrackPtr Copy() override;
 
         private:
             int64_t id;

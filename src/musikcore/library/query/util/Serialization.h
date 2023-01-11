@@ -93,7 +93,7 @@ namespace musik { namespace core { namespace library { namespace query {
             const musik::core::sdk::ITrackList& input);
 
         template <typename SetType, typename DataType>
-        EXPORT void JsonArrayToSet(const nlohmann::json& input, SetType& output) {
+        void JsonArrayToSet(const nlohmann::json& input, SetType& output) {
             for (auto& value : input) {
                 output.insert(value.get<DataType>());
             }

@@ -75,12 +75,12 @@ namespace musik { namespace core { namespace audio {
             EXPORT void Drain();
 
         private:
-            void ThreadLoop();
+            EXPORT void ThreadLoop();
 
-            virtual void ProcessMessage(
+            EXPORT virtual void ProcessMessage(
                 musik::core::runtime::IMessage &message);
 
-            virtual void OnPlayerDestroying(musik::core::audio::Player* player);
+            EXPORT virtual void OnPlayerDestroying(musik::core::audio::Player* player);
 
             struct FadeContext {
                 std::shared_ptr<musik::core::sdk::IOutput> output;

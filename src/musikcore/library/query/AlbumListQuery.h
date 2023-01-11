@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class AlbumListQuery : public musik::core::library::query::QueryBase {
         public:
-            EXPORT static const std::string kQueryName;
+            static EXPORT const std::string kQueryName;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(AlbumListQuery)
 
