@@ -1,3 +1,14 @@
+0.99.5
+
+* fixed unicode character parsing in musikcube-cmd.exe
+* merged upstream PDCursesMod changes
+* update essential build shell scripts to use `sh` instead of `bash` to improve
+  portability
+* added new `post-install.sh` script, removed some legacy CMake code
+* simplified Visual Studio project configurations and improved build time
+
+--------------------------------------------------------------------------------
+
 0.99.4
 
 * fixed bug where `musikcubed` could crash while stopping.
