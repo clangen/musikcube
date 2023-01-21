@@ -1,6 +1,5 @@
-#!/bin/bash
+#!/bin/sh
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 CMAKE_CURRENT_SOURCE_DIR=$1
 CMAKE_SYSTEM_NAME=$2
 CMAKE_BUILD_TYPE=$3
@@ -9,15 +8,15 @@ DISABLE_STRIP=$5
 
 echo "[post-build] started..."
 
-if [[ "$BUILD_TYPE" == 'Release' ]]; then
-    echo "[post-build] BUILD_TYPE=${BUILD_TYPE}, stripping binaries"
-    $SCRIPT_DIR/strip-binaries.sh $DIR
+if [ "$CMAKE_BUILD_TYPE" = 'Release' ]; then
+    echo "[post-build] BUILD_TYPE=${CMAKE_BUILD_TYPE}, stripping binaries"
+    $CMAKE_CURRENT_SOURCE_DIR/script/strip-nix.sh $DIR
 else
-    echo "[post-build] BUILD_TYPE=${BUILD_TYPE}, not stripping"
+    echo "[post-build] BUILD_TYPE=${CMAKE_BUILD_TYPE}, not stripping"
 fi
 
 echo "[post-build] patching library rpath entries..."
-$SCRIPT_DIR/patch-rpath.sh $DIR
+$CMAKE_CURRENT_SOURCE_DIR/script/patch-rpath.sh $CMAKE_CURRENT_SOURCE_DIR
 
 echo "[post-build] staging static assets..."
 mkdir -p "$CMAKE_CURRENT_SOURCE_DIR/bin/themes"

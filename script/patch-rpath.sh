@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
 PLATFORM=$(uname)
 
-if [[ "$PLATFORM" == 'Linux' ]]; then
-    echo "[patch-rpath] patch Linux .so files..."
+if [ "$PLATFORM" = 'Linux' ]; then
+    echo "[patch-rpath] patching Linux .so files..."
 
     chmod -x ./bin/lib/*
     chmod -x ./bin/plugins/*
@@ -29,8 +29,8 @@ if [[ "$PLATFORM" == 'Linux' ]]; then
     patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/musikcubed
 fi
 
-if [[ "$PLATFORM" == 'Darwin' ]]; then
-    echo "[patch-rpath] patch macOS binaries..."
+if [ "$PLATFORM" = 'Darwin' ]; then
+    echo "[patch-rpath] patching macOS binaries..."
 
     install_name_tool -add_rpath "@executable_path/" bin/musikcube
     install_name_tool -add_rpath "@executable_path/lib" bin/musikcube
