@@ -10,7 +10,7 @@ echo "[post-build] started..."
 
 if [ "$CMAKE_BUILD_TYPE" = 'Release' ]; then
     echo "[post-build] BUILD_TYPE=${CMAKE_BUILD_TYPE}, stripping binaries"
-    $CMAKE_CURRENT_SOURCE_DIR/script/strip-nix.sh $DIR
+    $CMAKE_CURRENT_SOURCE_DIR/script/strip-nix.sh $CMAKE_CURRENT_SOURCE_DIR
 else
     echo "[post-build] BUILD_TYPE=${CMAKE_BUILD_TYPE}, not stripping"
 fi
