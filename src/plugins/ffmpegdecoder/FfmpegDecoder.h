@@ -93,10 +93,8 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         AVFrame* decodedFrame;
         AVFrame* resampledFrame;
         SwrContext* resampler;
-        unsigned char* buffer;
         int preferredSampleRate { -1 };
         bool disableInvalidPacketDetection { false };
-        int bufferSize;
         int rate, channels;
         int streamId;
         int preferredFrameSize;

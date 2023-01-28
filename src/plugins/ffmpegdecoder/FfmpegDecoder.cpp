@@ -151,17 +151,12 @@ FfmpegDecoder::FfmpegDecoder() {
     this->decodedFrame = nullptr;
     this->resampledFrame = nullptr;
     this->resampler = nullptr;
-    this->bufferSize = AV_INPUT_BUFFER_PADDING_SIZE + BUFFER_SIZE;
-    this->buffer = new unsigned char[this->bufferSize];
     this->outputFifo = nullptr;
     this->preferredSampleRate = -1;
 }
 
 FfmpegDecoder::~FfmpegDecoder() {
     this->Reset();
-
-    delete[] this->buffer;
-    this->buffer = nullptr;
 
     if (this->decodedFrame) {
         av_frame_free(&this->decodedFrame);
@@ -233,6 +228,7 @@ double FfmpegDecoder::GetDuration() {
 
 void FfmpegDecoder::Reset() {
     if (this->ioContext) {
+        av_free(this->ioContext->buffer);
         av_free(this->ioContext);
         this->ioContext = nullptr;
     }
@@ -295,9 +291,12 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
 
         this->stream = stream;
 
+        const int ioContextBufferSize = AV_INPUT_BUFFER_PADDING_SIZE + BUFFER_SIZE;
+        unsigned char* ioContextBuffer = (unsigned char*) av_malloc(ioContextBufferSize);
+
         this->ioContext = avio_alloc_context(
-            this->buffer,
-            (int) this->bufferSize,
+            ioContextBuffer,
+            ioContextBufferSize,
             0,
             this,
             readCallback,

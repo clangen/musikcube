@@ -1,5 +1,7 @@
 0.99.5
 
+* fixed a bug in `ffmpegdecoder` that could cause the app to crash when
+  releasing a stream.
 * fixed unicode character parsing in musikcube-cmd.exe
 * merged upstream PDCursesMod changes
 * update essential build shell scripts to use `sh` instead of `bash` to improve
