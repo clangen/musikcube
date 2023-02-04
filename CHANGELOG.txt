@@ -2,6 +2,8 @@
 
 * fixed a bug in `ffmpegdecoder` that could cause the app to crash when
   releasing a stream.
+* fixed `milkdrop2` plugin to work on 64-bit machines, and include it by default
+  for both win32 and win64 releases.
 * fixed unicode character parsing in musikcube-cmd.exe
 * merged upstream PDCursesMod changes
 * update essential build shell scripts to use `sh` instead of `bash` to improve

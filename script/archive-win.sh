@@ -11,69 +11,46 @@ fi
 # 32-bit
 #
 
-VANILLA="dist/musikcube_win32_$VERSION"
-MILKDROP="dist/musikcube_win32_with_milkdrop2_$VERSION"
-
-rm -rf "$VANILLA"
-rm -rf "$MILKDROP"
-
-mkdir -p "$VANILLA/plugins"
-mkdir -p "$VANILLA/themes"
-mkdir -p "$VANILLA/locales"
-mkdir -p "$VANILLA/fonts"
-cp bin32/release/musikcube.exe "$VANILLA"
-cp bin32/release/musikcube-cmd.exe "$VANILLA"
-cp bin32/release/*.dll "$VANILLA"
-cp bin32/release/plugins/*.dll "$VANILLA/plugins"
-cp bin32/release/themes/*.json "$VANILLA/themes"
-cp bin32/release/locales/*.json "$VANILLA/locales"
-cp bin32/release/fonts/*.ttf "$VANILLA/fonts"
-rm "$VANILLA/plugins/vis_milk2.dll"
-rm "$VANILLA/musikcore.dll"
-pushd $VANILLA
+WIN32="dist/musikcube_win32_$VERSION"
+rm -rf "$WIN32"
+mkdir -p "$WIN32/plugins"
+mkdir -p "$WIN32/themes"
+mkdir -p "$WIN32/locales"
+mkdir -p "$WIN32/fonts"
+cp bin32/release/musikcube.exe "$WIN32"
+cp bin32/release/musikcube-cmd.exe "$WIN32"
+cp bin32/release/*.dll "$WIN32"
+cp bin32/release/plugins/*.dll "$WIN32/plugins"
+cp bin32/release/themes/*.json "$WIN32/themes"
+cp bin32/release/locales/*.json "$WIN32/locales"
+cp bin32/release/fonts/*.ttf "$WIN32/fonts"
+cp -rfp bin32/release/plugins/Milkdrop2 "$WIN32/plugins"
+rm "$WIN32/musikcore.dll"
+pushd $WIN32
 7z a -tzip "musikcube_win32_$VERSION.zip" ./* -mx=9
 mv "musikcube_win32_$VERSION.zip" ..
-popd
-
-mkdir -p "$MILKDROP/plugins"
-mkdir -p "$MILKDROP/themes"
-mkdir -p "$MILKDROP/locales"
-mkdir -p "$MILKDROP/fonts"
-cp bin32/release/musikcube.exe "$MILKDROP"
-cp bin32/release/musikcube-cmd.exe "$MILKDROP"
-cp bin32/release/*.dll "$MILKDROP"
-cp bin32/release/plugins/*.dll "$MILKDROP/plugins"
-cp bin32/release/themes/*.json "$MILKDROP/themes"
-cp bin32/release/locales/*.json "$MILKDROP/locales"
-cp bin32/release/fonts/*.ttf "$MILKDROP/fonts"
-cp -rfp bin32/release/plugins/Milkdrop2 "$MILKDROP/plugins"
-rm "$MILKDROP/musikcore.dll"
-pushd $MILKDROP
-7z a -tzip "musikcube_win32_with_milkdrop2_$VERSION.zip" ./* -mx=9
-mv "musikcube_win32_with_milkdrop2_$VERSION.zip" ..
 popd
 
 #
 # 64-bit
 #
 
-VANILLA="dist/musikcube_win64_$VERSION"
-
-rm -rf "$VANILLA"
-
-mkdir -p "$VANILLA/plugins"
-mkdir -p "$VANILLA/themes"
-mkdir -p "$VANILLA/locales"
-mkdir -p "$VANILLA/fonts"
-cp bin64/release/musikcube.exe "$VANILLA"
-cp bin64/release/musikcube-cmd.exe "$VANILLA"
-cp bin64/release/*.dll "$VANILLA"
-cp bin64/release/plugins/*.dll "$VANILLA/plugins"
-cp bin64/release/themes/*.json "$VANILLA/themes"
-cp bin64/release/locales/*.json "$VANILLA/locales"
-cp bin64/release/fonts/*.ttf "$VANILLA/fonts"
-rm "$VANILLA/musikcore.dll"
-pushd $VANILLA
+WIN64="dist/musikcube_win64_$VERSION"
+rm -rf "$WIN64"
+mkdir -p "$WIN64/plugins"
+mkdir -p "$WIN64/themes"
+mkdir -p "$WIN64/locales"
+mkdir -p "$WIN64/fonts"
+cp bin64/release/musikcube.exe "$WIN64"
+cp bin64/release/musikcube-cmd.exe "$WIN64"
+cp bin64/release/*.dll "$WIN64"
+cp bin64/release/plugins/*.dll "$WIN64/plugins"
+cp bin64/release/themes/*.json "$WIN64/themes"
+cp bin64/release/locales/*.json "$WIN64/locales"
+cp bin64/release/fonts/*.ttf "$WIN64/fonts"
+cp -rfp bin64/release/plugins/Milkdrop2 "$WIN64/plugins"
+rm "$WIN64/musikcore.dll"
+pushd $WIN64
 7z a -tzip "musikcube_win64_$VERSION.zip" ./* -mx=9
 mv "musikcube_win64_$VERSION.zip" ..
 popd
