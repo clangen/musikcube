@@ -129,6 +129,7 @@ target_precompile_headers(musikcore
     "$<$<COMPILE_LANGUAGE:CXX>:sdk/IVisualizer.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:sdk/ReplayGain.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:sdk/String.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:sdk/version.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Auddio.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Common.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/DeleteDefaults.h>"
@@ -140,6 +141,5 @@ target_precompile_headers(musikcore
     "$<$<COMPILE_LANGUAGE:CXX>:support/PreferenceKeys.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Preferences.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:utfutil.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:version.h>"
 )
 
