@@ -38,15 +38,15 @@
 
 class SndioPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { delete this; }
-        virtual const char* Name() { return "Sndio IOutput"; }
-        virtual const char* Version() { return "0.1.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "13903ab8-b387-4de9-86e3-14ba22057dcd"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { delete this; }
+        const char* Name() override { return "Sndio IOutput"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "13903ab8-b387-4de9-86e3-14ba22057dcd"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" musik::core::sdk::IPlugin* GetPlugin() {

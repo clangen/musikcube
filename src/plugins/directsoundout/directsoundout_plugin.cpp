@@ -39,15 +39,15 @@
 
 class DirectSoundPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { delete this; }
-        virtual const char* Name() { return "DirectSound IOutput"; };
-        virtual const char* Version() { return "0.5.0"; }
-        virtual const char* Author() { return "clangen"; };
-        virtual const char* Guid() { return "731ad687-c52d-47b0-90b4-5483399640b5"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { delete this; }
+        const char* Name() override { return "DirectSound IOutput"; };
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; };
+        const char* Guid() override { return "731ad687-c52d-47b0-90b4-5483399640b5"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {

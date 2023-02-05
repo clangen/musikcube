@@ -59,28 +59,28 @@ IPreferences* prefs = nullptr;
 
 class GmePlugin: public IPlugin {
     public:
-        virtual void Release() { delete this; };
-        virtual const char* Name() { return PLUGIN_NAME; }
-        virtual const char* Version() { return "0.1.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "2c4eee19-6585-4984-a631-b52ff7d6d564"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { delete this; };
+        const char* Name() override { return PLUGIN_NAME; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "2c4eee19-6585-4984-a631-b52ff7d6d564"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 class GmeDecoderFactory: public IDecoderFactory {
     public:
-        virtual IDecoder* CreateDecoder() override {
+        IDecoder* CreateDecoder() override {
             return new GmeDecoder();
         }
 
-        virtual void Release() override {
+        void Release() override {
             delete this;
         }
 
-        virtual bool CanHandle(const char* type) const override {
+        bool CanHandle(const char* type) const override {
             return canHandle(std::string(type));
         }
 };
@@ -89,12 +89,12 @@ class GmeDataStreamFactory: public IDataStreamFactory{
     public:
         using OpenFlags = musik::core::sdk::OpenFlags;
 
-        virtual bool CanRead(const char *uri) override {
+        bool CanRead(const char *uri) override {
             std::string str = uri;
             return str.find("gme://") == 0 && canHandle(str);
         }
 
-        virtual IDataStream* Open(const char *uri, OpenFlags flags) override {
+        IDataStream* Open(const char *uri, OpenFlags flags) override {
             auto result = new GmeDataStream();
             if (result->Open(uri, flags)) {
                 return result;
@@ -103,7 +103,7 @@ class GmeDataStreamFactory: public IDataStreamFactory{
             return nullptr;
         }
 
-        virtual void Release() override {
+        void Release() override {
             delete this;
         }
 };

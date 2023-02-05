@@ -158,40 +158,40 @@ class MMShellHook:
     public musik::core::sdk::IPlugin,
     public musik::core::sdk::IPlaybackRemote {
         public:
-            virtual void Release() {
+            void Release() override {
             }
 
-            virtual const char* Name() {
+            const char* Name() override {
                 return "win32globalhotkeys";
             }
 
-            virtual const char* Version() {
-                return "0.3.0";
+            const char* Version() override {
+                return MUSIKCUBE_VERSION_WITH_COMMIT_HASH;
             }
 
-            virtual const char* Author() {
+            const char* Author() override {
                 return "clangen";
             }
 
-            virtual const char* Guid() {
+            const char* Guid() override {
                 return "e2678930-ecd4-43b8-85e0-e41d634445b2";
             }
 
-            virtual bool Configurable() {
+            bool Configurable() override {
                 return false;
             }
 
-            virtual void Configure() {
+            void Configure() override {
             }
 
-            virtual void Reload() {
+            void Reload() override {
             }
 
-            virtual int SdkVersion() {
+            int SdkVersion() override {
                 return musik::core::sdk::SdkVersion;
             }
 
-            virtual void SetPlaybackService(musik::core::sdk::IPlaybackService* playback) {
+            void SetPlaybackService(musik::core::sdk::IPlaybackService* playback) override {
                 ::playback = playback;
                 if (playback) {
                     installHook();
@@ -201,28 +201,22 @@ class MMShellHook:
                 }
             }
 
-            virtual void OnTrackChanged(musik::core::sdk::ITrack* track) {
-
+            void OnTrackChanged(musik::core::sdk::ITrack* track) override {
             }
 
-            virtual void OnPlaybackStateChanged(musik::core::sdk::PlaybackState state) {
-
+            void OnPlaybackStateChanged(musik::core::sdk::PlaybackState state) override {
             }
 
-            virtual void OnPlaybackTimeChanged(double time) {
-
+            void OnPlaybackTimeChanged(double time) override {
             }
 
-            virtual void OnVolumeChanged(double volume) {
-
+            void OnVolumeChanged(double volume) override {
             }
 
-            virtual void OnModeChanged(musik::core::sdk::RepeatMode repeatMode, bool shuffled) {
-
+            void OnModeChanged(musik::core::sdk::RepeatMode repeatMode, bool shuffled) override {
             }
 
-            virtual void OnPlayQueueChanged() {
-
+            void OnPlayQueueChanged() override {
             }
 };
 

@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "version.h"
 #include <stdint.h>
 #include <stddef.h>
 

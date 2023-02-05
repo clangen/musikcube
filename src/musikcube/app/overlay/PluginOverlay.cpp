@@ -66,6 +66,7 @@ static const std::string checked = "[x]";
 struct PluginInfo {
     IPlugin* plugin;
     std::string fn;
+    std::string version;
     bool enabled;
 };
 
@@ -143,7 +144,7 @@ class PluginListAdapter : public ScrollAdapterBase {
             std::string display =
                 " " +
                 (info->enabled ? checked : unchecked) + " " +
-                info->plugin->Name() + " (" + info->fn + ")";
+                info->plugin->Name() + " (" + info->fn + ") [v" + info->version + "]";
 
             SinglePtr result = SinglePtr(new SingleLineEntry(text::Ellipsize(display, this->GetWidth())));
 
@@ -177,6 +178,7 @@ class PluginListAdapter : public ScrollAdapterBase {
                     PluginInfoPtr info(new PluginInfo());
                     info->plugin = raw;
                     info->fn = std::fs::path(std::fs::u8path(fn)).filename().u8string();
+                    info->version = plugin->Version();
                     info->enabled = prefs->GetBool(info->fn, true);
                     plugins.push_back(info);
                 });

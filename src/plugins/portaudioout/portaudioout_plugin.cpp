@@ -43,7 +43,7 @@ class PortAudioPlugin : public musik::core::sdk::IPlugin {
     public:
         void Release() noexcept override { delete this; }
         const char* Name() override  { return "PortAudio IOutput"; }
-        const char* Version() override  { return "0.1.0"; }
+        const char* Version() override  { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
         const char* Author() override  { return "clangen"; }
         const char* Guid() override { return "521934a5-2263-41a4-9852-937d0b63f196"; }
         bool Configurable() override { return false; }

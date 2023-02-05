@@ -43,7 +43,7 @@
 
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/version.h>
+#include <musikcore/sdk/version.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
@@ -88,7 +88,7 @@ static inline std::string formattedVersion(short major, short minor, short patch
 
 static inline std::string getUserAgent() {
     return u8fmt("musikcube %s (%s)",
-        formattedVersion(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH).c_str(),
+        formattedVersion(MUSIKCUBE_VERSION_MAJOR, MUSIKCUBE_VERSION_MINOR, MUSIKCUBE_VERSION_PATCH).c_str(),
         PLATFORM.c_str());
 }
 
@@ -127,7 +127,7 @@ bool UpdateCheck::Run(Callback callback) {
                 this->updateUrl = platform[URL].get<std::string>();
                 this->latestVersion = formattedVersion(major, minor, patch);
 
-                const int64_t current = versionCode(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+                const int64_t current = versionCode(MUSIKCUBE_VERSION_MAJOR, MUSIKCUBE_VERSION_MINOR, MUSIKCUBE_VERSION_PATCH);
                 const int64_t latest = versionCode(major, minor, patch);
                 needsUpdate = latest > current;
             }

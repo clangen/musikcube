@@ -41,15 +41,15 @@
 
 class SuperEqPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { delete this; }
-        virtual const char* Name() { return "SuperEq IDSP"; }
-        virtual const char* Version() { return "0.1.0"; }
-        virtual const char* Author() { return "Naoki Shibata, Alexey Yakovenko, clangen"; }
-        virtual const char* Guid() { return "6f0ed53b-0f13-4220-9b0a-ca496b6421cc"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { SuperEqDsp::NotifyChanged(); }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { delete this; }
+        const char* Name() override { return "SuperEq IDSP"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "Naoki Shibata, Alexey Yakovenko, clangen"; }
+        const char* Guid() override { return "6f0ed53b-0f13-4220-9b0a-ca496b6421cc"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { SuperEqDsp::NotifyChanged(); }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 #ifdef WIN32

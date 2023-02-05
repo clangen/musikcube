@@ -37,7 +37,7 @@
 #include "PluginFactory.h"
 
 #include <musikcore/debug.h>
-#include <musikcore/version.h>
+#include <musikcore/sdk/version.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/io/DataStreamFactory.h>
@@ -353,7 +353,7 @@ static class Environment: public IEnvironment {
         }
 
         const char* GetAppVersion() override {
-            return VERSION;
+            return MUSIKCUBE_VERSION;
         }
 
 } environment;

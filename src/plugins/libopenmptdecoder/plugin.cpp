@@ -64,28 +64,28 @@ IPreferences* prefs = nullptr;
 
 class OpenMptPlugin: public IPlugin {
     public:
-        virtual void Release() { delete this; };
-        virtual const char* Name() { return "libopenmpt IDecoder"; }
-        virtual const char* Version() { return "0.1.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "c367f42f-389a-4378-966c-1f96dad6a66a"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { delete this; };
+        const char* Name() override { return "libopenmpt IDecoder"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "c367f42f-389a-4378-966c-1f96dad6a66a"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 class OpenMptDecoderFactory: public IDecoderFactory {
     public:
-        virtual IDecoder* CreateDecoder() override {
+        IDecoder* CreateDecoder() override {
             return new OpenMptDecoder();
         }
 
-        virtual void Release() override {
+        void Release() override {
             delete this;
         }
 
-        virtual bool CanHandle(const char* type) const override {
+        bool CanHandle(const char* type) const override {
             return isFileTypeSupported(type);
         }
 };
@@ -94,7 +94,7 @@ class OpenMptDataStreamFactory : public IDataStreamFactory {
     public:
         using OpenFlags = musik::core::sdk::OpenFlags;
 
-        virtual bool CanRead(const char *uri) override {
+        bool CanRead(const char *uri) override {
             std::string fn;
             int track;
             if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), fn, track)) {
@@ -105,7 +105,7 @@ class OpenMptDataStreamFactory : public IDataStreamFactory {
             return false;
         }
 
-        virtual IDataStream* Open(const char *uri, OpenFlags flags) override {
+        IDataStream* Open(const char *uri, OpenFlags flags) override {
             auto result = new OpenMptDataStream();
             if (result->Open(uri, flags)) {
                 return result;
@@ -114,7 +114,7 @@ class OpenMptDataStreamFactory : public IDataStreamFactory {
             return nullptr;
         }
 
-        virtual void Release() override {
+        void Release() override {
             delete this;
         }
 };

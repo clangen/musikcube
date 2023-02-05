@@ -51,15 +51,15 @@
 
 static class HttpDataStreamPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { };
-        virtual const char* Name() { return "HTTP IDataStream"; }
-        virtual const char* Version() { return "0.1.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "b153adad-ee98-4331-ad32-4ff7f34828cd"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { };
+        const char* Name() override { return "HTTP IDataStream"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "b153adad-ee98-4331-ad32-4ff7f34828cd"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 } plugin;
 
 extern "C" DLLEXPORT IPlugin* GetPlugin() {

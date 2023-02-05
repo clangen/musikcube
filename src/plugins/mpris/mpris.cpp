@@ -35,16 +35,16 @@ static std::string GetThumbnailPath(ITrack* track)
 
 static class MPRISPlugin : public IPlugin {
     public:
-        MPRISPlugin() { }
-        void Release() { }
-        const char* Name() { return "MPRIS interface"; }
-        const char* Version() { return "0.1.0"; }
-        const char* Author() { return "brunosmmm"; }
-        const char* Guid() { return "457df67f-f489-415f-975e-282f470b1c10"; }
-        bool Configurable() { return false; }
-        void Configure() { }
-        void Reload() { }
-        int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        MPRISPlugin() override { }
+        void Release() override { }
+        const char* Name() override { return "MPRIS interface"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "brunosmmm"; }
+        const char* Guid() override { return "457df67f-f489-415f-975e-282f470b1c10"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 } plugin;
 
 extern "C" void SetEnvironment(IEnvironment* environment) {

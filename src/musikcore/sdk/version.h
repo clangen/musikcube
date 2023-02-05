@@ -36,11 +36,12 @@
 
 #include <string>
 
-#define VERSION_MAJOR 0
-#define VERSION_MINOR 99
-#define VERSION_PATCH 5
-#define VERSION_COMMIT_HASH "#0ead12be"
-#define VERSION "0.99.5"
+#define MUSIKCUBE_VERSION_MAJOR 0
+#define MUSIKCUBE_VERSION_MINOR 99
+#define MUSIKCUBE_VERSION_PATCH 5
+#define MUSIKCUBE_VERSION "0.99.5"
+#define MUSIKCUBE_VERSION_COMMIT_HASH "#4a823dee"
+#define MUSIKCUBE_VERSION_WITH_COMMIT_HASH "0.99.5-#4a823dee"
 
 namespace musik {
     namespace cube {
@@ -60,9 +61,9 @@ namespace musik {
 #endif
             return
                 "musikcube " +
-                std::to_string(VERSION_MAJOR) + "." +
-                std::to_string(VERSION_MINOR) + "." +
-                std::to_string(VERSION_PATCH) +
+                std::to_string(MUSIKCUBE_VERSION_MAJOR) + "." +
+                std::to_string(MUSIKCUBE_VERSION_MINOR) + "." +
+                std::to_string(MUSIKCUBE_VERSION_PATCH) +
                 "(" + PLATFORM + ")";
         }
     }

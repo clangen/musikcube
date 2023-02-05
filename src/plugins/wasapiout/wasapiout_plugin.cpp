@@ -40,15 +40,15 @@
 
 class WasapiPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { delete this; }
-        virtual const char* Name() { return "Wasapi IOutput"; }
-        virtual const char* Version() { return "0.5.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "871cb3c2-0002-49cd-9410-5207cb3cfd4a"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { delete this; }
+        const char* Name() override { return "Wasapi IOutput"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "871cb3c2-0002-49cd-9410-5207cb3cfd4a"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {

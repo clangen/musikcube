@@ -39,15 +39,15 @@
 
 class WaveOutPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { delete this; }
-        virtual const char* Name() { return "WaveOut IOutput"; }
-        virtual const char* Version() { return "0.7.0"; }
-        virtual const char* Author() { return "Bj\xC3\xB6rn Olievier, clangen"; }
-        virtual const char* Guid() { return "bec5bf30-0208-4db0-af0a-2722d9de8421"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { delete this; }
+        const char* Name() override { return "WaveOut IOutput"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "Bj\xC3\xB6rn Olievier, clangen"; }
+        const char* Guid() override { return "bec5bf30-0208-4db0-af0a-2722d9de8421"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {

@@ -67,15 +67,15 @@ extern "C" {
 class FfmpegPlugin : public musik::core::sdk::IPlugin {
     public:
         FfmpegPlugin() { }
-        virtual void Release() { };
-        virtual const char* Name() { return "ffmpeg IDecoder"; }
-        virtual const char* Version() { return "0.7.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { };
+        const char* Name() override { return "ffmpeg IDecoder"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 } plugin;
 
 class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
@@ -128,14 +128,14 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
         ~FfmpegDecoderFactory() {
         }
 
-        virtual void Release() {
+        void Release() override {
         }
 
-        virtual musik::core::sdk::IDecoder* CreateDecoder() {
+        musik::core::sdk::IDecoder* CreateDecoder() override {
             return new FfmpegDecoder();
         }
 
-        virtual bool CanHandle(const char* type) const {
+        bool CanHandle(const char* type) const override {
             std::string str(type);
             std::transform(str.begin(), str.end(), str.begin(), tolower);
 

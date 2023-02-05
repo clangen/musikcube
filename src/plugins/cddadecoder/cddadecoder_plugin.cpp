@@ -52,7 +52,7 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved) {
 class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
     void Release() noexcept override { delete this; };
     const char* Name() override { return PLUGIN_NAME; }
-    const char* Version() override { return "0.5.0"; }
+    const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
     const char* Author() override { return "Björn Olievier, clangen"; }
     const char* Guid() override { return "0862b76d-67cd-4e54-b5d1-6a2c8e5101a4"; }
     bool Configurable() noexcept override { return false; }

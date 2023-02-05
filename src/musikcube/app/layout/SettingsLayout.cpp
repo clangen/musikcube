@@ -49,7 +49,7 @@
 #include <musikcore/audio/Outputs.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/sdk/ISchema.h>
-#include <musikcore/version.h>
+#include <musikcore/sdk/version.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -662,7 +662,7 @@ void SettingsLayout::LoadPreferences() {
             piggyStatus = " (..)";
         }
     }
-    std::string version = u8fmt("%s %s%s", VERSION, VERSION_COMMIT_HASH, piggyStatus.c_str());
+    std::string version = u8fmt("%s %s%s", MUSIKCUBE_VERSION, MUSIKCUBE_VERSION_COMMIT_HASH, piggyStatus.c_str());
     this->appVersion->SetText(u8fmt(_TSTR("console_version"), version.c_str()));
 
     this->Layout();

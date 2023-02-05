@@ -151,7 +151,7 @@ static class Plugin : public IPlugin {
     public:
         virtual void Release() { }
         virtual const char* Name() { return "musikcube Server (wss, http)"; }
-        virtual const char* Version() { return "0.7.0"; }
+        virtual const char* Version() { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
         virtual const char* Author() { return "clangen"; }
         virtual const char* Guid() { return "9fc897a3-dfd5-4524-a0fc-b02f46aea4a9"; }
         virtual bool Configurable() { return false; }

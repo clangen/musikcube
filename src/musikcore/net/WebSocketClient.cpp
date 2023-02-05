@@ -39,7 +39,7 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/Message.h>
-#include <musikcore/version.h>
+#include <musikcore/sdk/version.h>
 
 #pragma warning(push, 0)
 #include <nlohmann/json.hpp>
@@ -116,8 +116,8 @@ static inline bool isVersionCompatible(const std::string& str) {
     auto parts = str::Split(str, ".");
     return
         parts.size() == 3 &&
-        parts[0] == std::to_string(VERSION_MAJOR) &&
-        parts[1] == std::to_string(VERSION_MINOR);
+        parts[0] == std::to_string(MUSIKCUBE_VERSION_MAJOR) &&
+        parts[1] == std::to_string(MUSIKCUBE_VERSION_MINOR);
 }
 
 WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener)

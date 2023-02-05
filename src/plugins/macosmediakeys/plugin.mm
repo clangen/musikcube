@@ -60,15 +60,15 @@ struct IKeyProcessor {
 
 static class Plugin: public IPlugin {
     public:
-        virtual void Release() override { }
-        virtual const char* Name() override { return "MediaKeys IPlaybackRemote"; }
-        virtual const char* Version() override { return "0.1.0"; }
-        virtual const char* Author() override { return "clangen"; }
-        virtual const char* Guid() override { return "e850a2eb-5aaa-4322-b63e-bf1c1593805b"; }
-        virtual bool Configurable() override { return false; }
-        virtual void Configure() override { }
-        virtual void Reload() override { }
-        virtual int SdkVersion() override { return musik::core::sdk::SdkVersion; }
+        void Release() override { }
+        const char* Name() override { return "MediaKeys IPlaybackRemote"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "e850a2eb-5aaa-4322-b63e-bf1c1593805b"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 } plugin;
 
 class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
@@ -85,7 +85,7 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
             }
         }
 
-        virtual void Release() override {
+        void Release() override {
             this->Unregister();
             delete this;
         }
@@ -99,12 +99,12 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
             }
         }
 
-        virtual void SetPlaybackService(IPlaybackService* playback) override {
+        void SetPlaybackService(IPlaybackService* playback) override {
             std::unique_lock<decltype(mutex)> lock(mutex);
             this->playback = playback;
         }
 
-        virtual void ProcessKeyCode(int keyCode) override {
+        void ProcessKeyCode(int keyCode) override {
             std::unique_lock<decltype(mutex)> lock(mutex);
             if (this->playback) {
                 switch (keyCode) {
@@ -131,12 +131,12 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
             }
         }
 
-        virtual void OnTrackChanged(ITrack* track) override { }
-        virtual void OnPlaybackStateChanged(PlaybackState state) override { }
-        virtual void OnPlaybackTimeChanged(double time) override { }
-        virtual void OnVolumeChanged(double volume) override { }
-        virtual void OnModeChanged(RepeatMode repeatMode, bool shuffled) override { }
-        virtual void OnPlayQueueChanged() override { }
+        void OnTrackChanged(ITrack* track) override { }
+        void OnPlaybackStateChanged(PlaybackState state) override { }
+        void OnPlaybackTimeChanged(double time) override { }
+        void OnVolumeChanged(double volume) override { }
+        void OnModeChanged(RepeatMode repeatMode, bool shuffled) override { }
+        void OnPlayQueueChanged() override { }
 
     private:
         std::mutex mutex;

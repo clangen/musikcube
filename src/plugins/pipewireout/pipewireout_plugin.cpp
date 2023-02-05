@@ -43,7 +43,7 @@ class PipeWirePlugin : public musik::core::sdk::IPlugin {
     public:
         void Release() noexcept override { delete this; }
         const char* Name() override  { return "PipeWire IOutput"; }
-        const char* Version() override  { return "0.1.0"; }
+        const char* Version() override  { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
         const char* Author() override  { return "clangen"; }
         const char* Guid() override { return "ab79e0f2-53d8-4774-ad00-266a30c50427"; }
         bool Configurable() override { return false; }

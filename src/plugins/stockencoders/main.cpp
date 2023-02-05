@@ -80,18 +80,16 @@ static std::set<std::string> supportedFormats = {
 
 static class Plugin : public IPlugin {
     public:
-        Plugin() {
-        }
-
-        virtual void Release() { }
-        virtual const char* Name() { return "Stock Encoders (lame + ffmpeg)"; }
-        virtual const char* Version() { return "0.7.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "d4d13803-a285-4481-ad1e-106131e0d523"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        Plugin() { }
+        void Release() override { }
+        const char* Name() override { return "Stock Encoders (lame + ffmpeg)"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "d4d13803-a285-4481-ad1e-106131e0d523"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 } plugin;
 
 static class EncoderFactory: public IEncoderFactory {
@@ -102,10 +100,10 @@ static class EncoderFactory: public IEncoderFactory {
 #endif
         }
 
-        virtual void Release() override {
+        void Release() override {
         }
 
-        virtual IEncoder* CreateEncoder(const char* type) override {
+        IEncoder* CreateEncoder(const char* type) override {
             auto lowerType = toLower(type);
             if (isMp3(lowerType)) {
                 return new LameEncoder();
@@ -116,7 +114,7 @@ static class EncoderFactory: public IEncoderFactory {
             return nullptr;
         }
 
-        virtual bool CanHandle(const char* type) const override {
+        bool CanHandle(const char* type) const override {
             return supportedFormats.find(toLower(type)) != supportedFormats.end();
         }
 

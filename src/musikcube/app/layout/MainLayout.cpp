@@ -41,7 +41,7 @@
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Auddio.h>
 #include <musikcore/library/RemoteLibrary.h>
-#include <musikcore/version.h>
+#include <musikcore/sdk/version.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
@@ -198,7 +198,7 @@ bool MainLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "M-`") {
-        std::string version = u8fmt("%s %s", VERSION, VERSION_COMMIT_HASH);
+        std::string version = u8fmt("%s %s", MUSIKCUBE_VERSION, MUSIKCUBE_VERSION_COMMIT_HASH);
         ToastOverlay::Show(u8fmt(_TSTR("console_version"), version.c_str()), -1);
         return true;
     }

@@ -203,29 +203,29 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
 
 class VisualizerPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { delete this; }
-        virtual const char* Name() { return "GdiVis"; }
-        virtual const char* Version() { return "0.2.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "4b0f37f7-96fe-438c-acf2-bbdd53ce1ddf"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() override { delete this; }
+        const char* Name() override { return "GdiVis"; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "4b0f37f7-96fe-438c-acf2-bbdd53ce1ddf"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
     public:
-        virtual const char* Name() {
+        const char* Name() override {
             return "GdiVis";
         }
 
-        virtual void Release() {
+        void Release() override {
             this->Hide();
             delete this;
         }
 
-        virtual void Write(float *spectrum, int size) {
+        void Write(float *spectrum, int size) override {
             std::unique_lock<std::mutex> lock(pcmMutex);
 
             if (::spectrumSize != size) {
@@ -239,7 +239,7 @@ class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
             memcpy(::spectrumIn, spectrum, size * sizeof(float));
         }
 
-        virtual void Show() {
+        void Show() override {
             if (!Visible()) {
                 quit.store(false);
                 thread.store(true);
@@ -248,7 +248,7 @@ class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
             }
         }
 
-        virtual void Hide() {
+        void Hide() override {
             if (Visible()) {
                 quit.store(true);
 
@@ -259,7 +259,7 @@ class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
             }
         }
 
-        virtual bool Visible() {
+        bool Visible() override {
             return thread.load();
         }
 };

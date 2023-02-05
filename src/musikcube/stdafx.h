@@ -203,7 +203,7 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/utfutil.h>
-#include <musikcore/version.h>
+#include <musikcore/sdk/version.h>
 
 #include <cursespp/cursespp/App.h>
 #include <cursespp/cursespp/AppLayout.h>
