@@ -35,7 +35,7 @@ static std::string GetThumbnailPath(ITrack* track)
 
 static class MPRISPlugin : public IPlugin {
     public:
-        MPRISPlugin() override { }
+        MPRISPlugin() { }
         void Release() override { }
         const char* Name() override { return "MPRIS interface"; }
         const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
