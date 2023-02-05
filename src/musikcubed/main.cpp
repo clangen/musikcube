@@ -21,7 +21,7 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Common.h>
 
-#include "../musikcore/version.h"
+#include "../musikcore/sdk/version.h"
 
 using namespace musik;
 using namespace musik::core;
