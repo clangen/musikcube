@@ -245,14 +245,14 @@
     "transport_stopped": "playback is stopped",
     "transport_volume": "vol",
     "unknown_category_value": "[unknown #%d]",
-    "update_check_dialog_message": "musikcube version %s is now available for download. a changelog and binaries are available at:\n\n%s",
-    "update_check_dialog_title": "new version available!",
-    "update_check_no_updates_message": "no updates found at this time.",
-    "update_check_no_updates_title": "update check",
+    "update_check_dialog_message": "версія musikcube %s доступна для завантаження. журнал змін та бінарники доступні на:\n\n%s",
+    "update_check_dialog_title": "доступна нова версія!",
+    "update_check_no_updates_message": "оновлень не знайдено.",
+    "update_check_no_updates_title": "перевірка оновлень",
     "validator_dialog_number_parse_bounded_error": "please enter a number between {{minimum}} and {{maximum}} to continue.",
-    "validator_dialog_number_parse_error": "please enter a number to continue.",
-    "validator_dialog_title": "validation error",
-    "visualizer_overlay_no_visualizers_message": "no visualizers found!",
-    "visualizer_overlay_title": "visualizers"
+    "validator_dialog_number_parse_error": "введіть номер щоб продовжити.",
+    "validator_dialog_title": "помилка перевірки",
+    "visualizer_overlay_no_visualizers_message": "не знайдено візуалізаторів!",
+    "visualizer_overlay_title": "візуалізатор"
   }
 }
