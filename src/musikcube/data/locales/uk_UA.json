@@ -21,7 +21,7 @@
     "browse_categories_title": "виберіть теку",
     "browse_no_paths_overlay_error_message": "ви не обрали жодну папку з метаданними.\n\nви маєте додати хочаб одну директорію у вікні налаштувань перед тим як ви зможете шукати за директорією .",
     "browse_no_paths_overlay_error_title": "ні один шлях не обраний",
-    "browse_no_subdirectories_toast": " Тут немає більше суб-директорій.\n\натисніть '%s' щоб увімкнути обране.",
+    "browse_no_subdirectories_toast": " Тут немає більше суб-директорій.\n\nнатисніть '%s' щоб увімкнути обране.",
     "browse_pick_path_last_directory": "остання тека",
     "browse_pick_path_overlay_title": "виберіть директорію з музикою",
     "browse_playlist_modified": "грайлист змінено. натисніть '%s' щоб зберегти.",
