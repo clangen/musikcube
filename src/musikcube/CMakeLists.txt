@@ -87,7 +87,7 @@ endif()
 target_include_directories(musikcube BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 
 # figure out if we have a "w" suffix or not...
-if (${NCURSES_DISABLE_LIB_SUFFIXES} MATCHES "true")
+if (${DISABLE_WIDE_NCURSES_LIB_SUFFIXES} MATCHES "true")
     message(STATUS "[ncurses] using library names *WITHOUT* 'w' prefix")
     set(CURSES_LIBRARY_NAME ncurses)
     set(PANEL_LIBRARY_NAME panel)
