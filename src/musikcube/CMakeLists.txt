@@ -86,8 +86,13 @@ endif()
 
 target_include_directories(musikcube BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 
+if (NOT DEFINED ENABLE_MACOS_SYSTEM_NCURSES)
+  message(STATUS "[ncurses] ENABLE_MACOS_SYSTEM_NCURSES is not defined, setting to false")
+  set(ENABLE_MACOS_SYSTEM_NCURSES "false")
+endif()
+
 # figure out if we have a "w" suffix or not...
-if (${DISABLE_WIDE_NCURSES_LIB_SUFFIXES} MATCHES "true")
+if ((${DISABLE_WIDE_NCURSES_LIB_SUFFIXES} MATCHES "true") OR ((APPLE) AND (${ENABLE_MACOS_SYSTEM_NCURSES} MATCHES "true")))
     message(STATUS "[ncurses] using library names *WITHOUT* 'w' prefix")
     set(CURSES_LIBRARY_NAME ncurses)
     set(PANEL_LIBRARY_NAME panel)
@@ -98,7 +103,7 @@ else()
 endif()
 
 if (APPLE)
-    if ((NOT DEFINED ENV{NIX_CC}) AND (NOT ${DISABLE_STATIC_NCURSES} MATCHES "true"))
+    if ((NOT DEFINED ENV{NIX_CC}) AND (NOT ${ENABLE_MACOS_SYSTEM_NCURSES} MATCHES "true"))
         message(STATUS "[ncurses] detected Darwin, linking statically")
         set(CURSES_LIBRARY_NAME "lib${CURSES_LIBRARY_NAME}.a")
         set(PANEL_LIBRARY_NAME "lib${PANEL_LIBRARY_NAME}.a")
