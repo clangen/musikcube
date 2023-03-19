@@ -98,7 +98,7 @@ else()
 endif()
 
 if (APPLE)
-    if (NOT DEFINED ENV{NIX_CC})
+    if ((NOT DEFINED ENV{NIX_CC}) AND (NOT ${DISABLE_STATIC_NCURSES} MATCHES "true"))
         message(STATUS "[ncurses] detected Darwin, linking statically")
         set(CURSES_LIBRARY_NAME "lib${CURSES_LIBRARY_NAME}.a")
         set(PANEL_LIBRARY_NAME "lib${PANEL_LIBRARY_NAME}.a")
