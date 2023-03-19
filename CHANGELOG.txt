@@ -1,3 +1,9 @@
+0.99.6
+
+* added some homebrew workarounds to the build process.
+
+--------------------------------------------------------------------------------
+
 0.99.5
 
 * fixed a bug in `ffmpegdecoder` that could cause the app to crash when
