@@ -24,9 +24,9 @@ if (!mac) {
 /* these are the libraries we'll scan, and update linked libraries from
 absolute paths to "@rpath/filename" */
 const libraries = [
-  'libavcodec-musikcube.59.dylib',
-  'libavformat-musikcube.59.dylib',
-  'libavutil-musikcube.57.dylib',
+  'libavcodec-musikcube.60.dylib',
+  'libavformat-musikcube.60.dylib',
+  'libavutil-musikcube.58.dylib',
   'libcrypto.1.1.dylib',
   'libcurl.4.dylib',
   'libmicrohttpd.12.dylib',
@@ -44,9 +44,9 @@ const libraries = [
 
 /* after updating libraries, re-establish symlinks */
 const symlinks = [
-  ['libavcodec-musikcube.59.dylib', 'libavcodec-musikcube.dylib'],
-  ['libavformat-musikcube.59.dylib', 'libavformat-musikcube.dylib'],
-  ['libavutil-musikcube.57.dylib', 'libavutil-musikcube.dylib'],
+  ['libavcodec-musikcube.60.dylib', 'libavcodec-musikcube.dylib'],
+  ['libavformat-musikcube.60.dylib', 'libavformat-musikcube.dylib'],
+  ['libavutil-musikcube.58.dylib', 'libavutil-musikcube.dylib'],
   ['libcrypto.1.1.dylib', 'libcrypto.dylib'],
   ['libcurl.4.dylib', 'libcurl.dylib'],
   ['libmicrohttpd.12.dylib', 'libmicrohttpd.dylib'],
