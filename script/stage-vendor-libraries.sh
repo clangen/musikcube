@@ -32,9 +32,9 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
 elif [[ "$PLATFORM" == 'Linux' ]]; then
     echo "[stage-vendor-libraries] staging Linux .so files..."
 
-    cp vendor/bin/lib/libavcodec-musikcube.so.59 ./bin/lib
-    cp vendor/bin/lib/libavformat-musikcube.so.59 ./bin/lib
-    cp vendor/bin/lib/libavutil-musikcube.so.57 ./bin/lib
+    cp vendor/bin/lib/libavcodec-musikcube.so.60 ./bin/lib
+    cp vendor/bin/lib/libavformat-musikcube.so.60 ./bin/lib
+    cp vendor/bin/lib/libavutil-musikcube.so.58 ./bin/lib
     cp vendor/bin/lib/libswresample-musikcube.so.4 ./bin/lib
     cp vendor/bin/lib/libcrypto.so.1.1 ./bin/lib
     cp vendor/bin/lib/libssl.so.1.1 ./bin/lib
