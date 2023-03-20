@@ -6,7 +6,7 @@ set (stockencoders_SOURCES
 add_library(stockencoders SHARED ${stockencoders_SOURCES})
 
 if (${BUILD_STANDALONE} MATCHES "true")
-  add_vendor_includes(stockencoders)
+  include_directories(BEFORE ${VENDOR_INCLUDE_DIRECTORIES})
   find_vendor_library(AVCODEC avcodec-musikcube)
   find_vendor_library(AVUTIL avutil-musikcube)
   find_vendor_library(AVFORMAT avformat-musikcube)
