@@ -31,11 +31,11 @@ fi
 
 if [ "$PLATFORM" = 'Darwin' ]; then
     echo "[patch-rpath] patching macOS binaries..."
-
-    install_name_tool -add_rpath "@executable_path/" bin/musikcube
-    install_name_tool -add_rpath "@executable_path/lib" bin/musikcube
-    install_name_tool -add_rpath "@executable_path/" bin/musikcubed
-    install_name_tool -add_rpath "@executable_path/lib" bin/musikcubed
+    SOURCE_DIR=$1
+    install_name_tool -add_rpath "@executable_path/"    $SOURCE_DIR/bin/musikcube
+    install_name_tool -add_rpath "@executable_path/lib" $SOURCE_DIR/bin/musikcube
+    install_name_tool -add_rpath "@executable_path/"    $SOURCE_DIR/bin/musikcubed
+    install_name_tool -add_rpath "@executable_path/lib" $SOURCE_DIR/bin/musikcubed
 fi
 
 exit 0
