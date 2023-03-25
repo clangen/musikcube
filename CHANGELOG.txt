@@ -1,3 +1,15 @@
+0.99.8
+
+* TODO
+
+--------------------------------------------------------------------------------
+
+0.99.7
+
+* added some homebrew workarounds to the build process.
+
+--------------------------------------------------------------------------------
+
 0.99.6
 
 * added some homebrew workarounds to the build process.
