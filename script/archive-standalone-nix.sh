@@ -76,7 +76,7 @@ else
   make ${JOBS} || exit $?
 fi
 
-./script/patch-rpath.sh || exit $?
+./script/patch-rpath.sh $(pwd) || exit $?
 
 rm -rf dist/$VERSION/*${OS_ARCH}_$VERSION* 2> /dev/null
 
