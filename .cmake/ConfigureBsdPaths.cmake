@@ -24,7 +24,4 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR
     "${BSD_PATH_PREFIX}/lib"
     "${BSD_PATH_PREFIX}/opt/openssl/lib"
     "${BSD_PATH_PREFIX}/opt/ncurses/lib")
-
-  include_directories("${BSD_PATH_PREFIX}/include")
-  link_directories("${BSD_PATH_PREFIX}/lib")
 endif ()

@@ -5,7 +5,7 @@ set (ffmpegdecoder_SOURCES
 add_library(ffmpegdecoder SHARED ${ffmpegdecoder_SOURCES})
 
 if (${BUILD_STANDALONE} MATCHES "true")
-    include_directories(BEFORE ${VENDOR_INCLUDE_DIRECTORIES})
+    include_directories(AFTER ${VENDOR_INCLUDE_DIRECTORIES})
     message(STATUS "[ffmpegdecoder] using include dirs: ${VENDOR_INCLUDE_DIRECTORIES}")
     find_vendor_library(AVCODEC avcodec-musikcube)
     find_vendor_library(AVUTIL avutil-musikcube)
