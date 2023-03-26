@@ -110,16 +110,19 @@ function build_openssl() {
     tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
     cd openssl-${OPENSSL_VERSION}
     perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX} || exit $?
-    make
+    make -j8
     make install_sw
     cd ..
+    # for some reason on Linux the libraries are installed to `../bin/lib64` instead of `../bin/lib` like
+    # all other libraries... move things into `lib` as appropriate.
     if [ -d "bin/lib64" ]; then
+        mkdir bin/lib/
         mv bin/lib64/pkgconfig/* bin/lib/pkgconfig/
         mv bin/lib64/* bin/lib/
         rm -rf bin/lib64
         perl -i.bak -0pe "s|lib64|lib|" bin/lib/pkgconfig/libcrypto.pc
         perl -i.bak -0pe "s|lib64|lib|" bin/lib/pkgconfig/libssl.pc
-        perl -i.bak -0pe "s|lib64|lib|" bin/lib/pkgconfig/open.pc
+        perl -i.bak -0pe "s|lib64|lib|" bin/lib/pkgconfig/openssl.pc
     fi
 }
 
