@@ -39,6 +39,10 @@
 #include <random>
 #include <map>
 
+#if LIBAVUTIL_VERSION_MAJOR >= 58
+#define USE_FFMPEG6_CHANNEL_LAYOUT
+#endif
+
 using namespace musik::core::sdk;
 
 static const int IO_CONTEXT_BUFFER_SIZE = 4096;
@@ -272,8 +276,13 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
         return false;
     }
 
-    this->outputContext->channels = (int) channels;
+#ifdef USE_FFMPEG6_CHANNEL_LAYOUT
+    this->outputContext->ch_layout.nb_channels = (int)channels;
+    this->outputContext->ch_layout.order = AV_CHANNEL_ORDER_NATIVE;
+#else
+    this->outputContext->channels = (int)channels;
     this->outputContext->channel_layout = resolveChannelLayout(channels);
+#endif
     this->outputContext->sample_rate = resolveSampleRate(this->outputCodec, (int) rate);
     this->outputContext->sample_fmt = resolveSampleFormat(this->outputCodec);
     this->outputContext->bit_rate = (int64_t) bitrate * 1000;
@@ -314,6 +323,18 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 
     /* resampler context that will be used to convert the input audio
     sample format to the one recommended by the encoder */
+#ifdef USE_FFMPEG6_CHANNEL_LAYOUT
+    swr_alloc_set_opts2(
+        &this->resampler,
+        &this->outputContext->ch_layout,
+        this->outputContext->sample_fmt,
+        this->outputContext->sample_rate,
+        &this->outputContext->ch_layout,
+        AV_SAMPLE_FMT_FLT,
+        (int)rate,
+        0,
+        nullptr);
+#else
     this->resampler = swr_alloc_set_opts(
         nullptr,
         this->outputContext->channel_layout,
@@ -324,6 +345,8 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
         (int)rate,
         0,
         nullptr);
+#endif
+
 
     error = swr_init(this->resampler);
 
@@ -620,9 +643,13 @@ AVFrame* FfmpegEncoder::ReallocFrame(
         }
         original = av_frame_alloc();
         original->nb_samples = samplesPerChannel;
-        original->channel_layout = this->outputContext->channel_layout;
         original->format = format;
         original->sample_rate = sampleRate;
+#ifdef USE_FFMPEG6_CHANNEL_LAYOUT
+        original->ch_layout = this->outputContext->ch_layout;
+#else
+        original->channel_layout = this->outputContext->channel_layout;
+#endif
         int error = av_frame_get_buffer(original, 0);
         if (error < 0) {
             logAvError("av_frame_get_buffer", error);
