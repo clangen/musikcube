@@ -128,7 +128,7 @@
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>Dwmapi.lib;windowsapp.lib;pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;Winmm.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dwmapi.lib;windowsapp.lib;pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;Winmm.lib;libcurl.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -173,7 +173,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>
       </ImportLibrary>
-      <AdditionalDependencies>Dwmapi.lib;windowsapp.lib;pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;Winmm.lib;libcurl.lib;libssl-1_1-x64.lib;libcrypto-1_1-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dwmapi.lib;windowsapp.lib;pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;Winmm.lib;libcurl.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -226,7 +226,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>Dwmapi.lib;windowsapp.lib;pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;Winmm.lib;libcurl.lib;libssl-1_1.lib;libcrypto-1_1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dwmapi.lib;windowsapp.lib;pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;Winmm.lib;libcurl.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -278,7 +278,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
       </EnableCOMDATFolding>
       <ImportLibrary>
       </ImportLibrary>
-      <AdditionalDependencies>Dwmapi.lib;windowsapp.lib;pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;Winmm.lib;libcurl.lib;libssl-1_1-x64.lib;libcrypto-1_1-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Dwmapi.lib;windowsapp.lib;pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;Winmm.lib;libcurl.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
