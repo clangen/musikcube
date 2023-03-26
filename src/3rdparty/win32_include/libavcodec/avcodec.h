@@ -43,7 +43,13 @@
 #include "codec_id.h"
 #include "defs.h"
 #include "packet.h"
+#include "version_major.h"
+#ifndef HAVE_AV_CONFIG_H
+/* When included as part of the ffmpeg build, only include the major version
+ * to avoid unnecessary rebuilds. When included externally, keep including
+ * the full version information. */
 #include "version.h"
+#endif
 
 /**
  * @defgroup libavc libavcodec
@@ -226,6 +232,58 @@ typedef struct RcOverride{
  */
 #define AV_CODEC_FLAG_DROPCHANGED     (1 <<  5)
 /**
+ * Request the encoder to output reconstructed frames, i.e.\ frames that would
+ * be produced by decoding the encoded bistream. These frames may be retrieved
+ * by calling avcodec_receive_frame() immediately after a successful call to
+ * avcodec_receive_packet().
+ *
+ * Should only be used with encoders flagged with the
+ * @ref AV_CODEC_CAP_ENCODER_RECON_FRAME capability.
+ */
+#define AV_CODEC_FLAG_RECON_FRAME     (1 <<  6)
+/**
+ * @par decoding
+ * Request the decoder to propagate each packets AVPacket.opaque and
+ * AVPacket.opaque_ref to its corresponding output AVFrame.
+ *
+ * @par encoding:
+ * Request the encoder to propagate each frame's AVFrame.opaque and
+ * AVFrame.opaque_ref values to its corresponding output AVPacket.
+ *
+ * @par
+ * May only be set on encoders that have the
+ * @ref AV_CODEC_CAP_ENCODER_REORDERED_OPAQUE capability flag.
+ *
+ * @note
+ * While in typical cases one input frame produces exactly one output packet
+ * (perhaps after a delay), in general the mapping of frames to packets is
+ * M-to-N, so
+ * - Any number of input frames may be associated with any given output packet.
+ *   This includes zero - e.g. some encoders may output packets that carry only
+ *   metadata about the whole stream.
+ * - A given input frame may be associated with any number of output packets.
+ *   Again this includes zero - e.g. some encoders may drop frames under certain
+ *   conditions.
+ * .
+ * This implies that when using this flag, the caller must NOT assume that
+ * - a given input frame's opaques will necessarily appear on some output packet;
+ * - every output packet will have some non-NULL opaque value.
+ * .
+ * When an output packet contains multiple frames, the opaque values will be
+ * taken from the first of those.
+ *
+ * @note
+ * The converse holds for decoders, with frames and packets switched.
+ */
+#define AV_CODEC_FLAG_COPY_OPAQUE     (1 <<  7)
+/**
+ * Signal to the encoder that the values of AVFrame.duration are valid and
+ * should be used (typically for transferring them to output packets).
+ *
+ * If this flag is not set, frame durations are ignored.
+ */
+#define AV_CODEC_FLAG_FRAME_DURATION  (1 <<  8)
+/**
  * Use internal 2pass ratecontrol in first pass mode.
  */
 #define AV_CODEC_FLAG_PASS1           (1 <<  9)
@@ -245,15 +303,6 @@ typedef struct RcOverride{
  * error[?] variables will be set during encoding.
  */
 #define AV_CODEC_FLAG_PSNR            (1 << 15)
-#if FF_API_FLAG_TRUNCATED
-/**
- * Input bitstream might be truncated at a random location
- * instead of only at frame boundaries.
- *
- * @deprecated use codec parsers for packetizing input
- */
-#define AV_CODEC_FLAG_TRUNCATED       (1 << 16)
-#endif
 /**
  * Use interlaced DCT.
  */
@@ -295,11 +344,6 @@ typedef struct RcOverride{
 #define AV_CODEC_FLAG2_LOCAL_HEADER   (1 <<  3)
 
 /**
- * timecode is in drop frame format. DEPRECATED!!!!
- */
-#define AV_CODEC_FLAG2_DROP_FRAME_TIMECODE (1 << 13)
-
-/**
  * Input bitstream might be truncated at a packet boundaries
  * instead of only at frame boundaries.
  */
@@ -325,13 +369,12 @@ typedef struct RcOverride{
  * Do not reset ASS ReadOrder field on flush (subtitles decoding)
  */
 #define AV_CODEC_FLAG2_RO_FLUSH_NOOP  (1 << 30)
-
-/* Unsupported options :
- *              Syntax Arithmetic coding (SAC)
- *              Reference Picture Selection
- *              Independent Segment Decoding */
-/* /Fx */
-/* codec capabilities */
+/**
+ * Generate/parse ICC profiles on encode/decode, as appropriate for the type of
+ * file. No effect on codecs which cannot contain embedded ICC profiles, or
+ * when compiled without support for lcms2.
+ */
+#define AV_CODEC_FLAG2_ICC_PROFILES   (1U << 31)
 
 /* Exported side data.
    These flags can be passed in AVCodecContext.export_side_data before initialization.
@@ -500,8 +543,7 @@ typedef struct AVCodecContext {
      * (fixed_vop_rate == 0 implies that it is different from the framerate)
      *
      * - encoding: MUST be set by user.
-     * - decoding: the use of this field for decoding is deprecated.
-     *             Use framerate instead.
+     * - decoding: unused.
      */
     AVRational time_base;
 
@@ -990,7 +1032,15 @@ typedef struct AVCodecContext {
 
     /* audio only */
     int sample_rate; ///< samples per second
-    int channels;    ///< number of audio channels
+
+#if FF_API_OLD_CHANNEL_LAYOUT
+    /**
+     * number of audio channels
+     * @deprecated use ch_layout.nb_channels
+     */
+    attribute_deprecated
+    int channels;
+#endif
 
     /**
      * audio sample format
@@ -1011,6 +1061,7 @@ typedef struct AVCodecContext {
      */
     int frame_size;
 
+#if FF_API_AVCTX_FRAME_NUMBER
     /**
      * Frame counter, set by libavcodec.
      *
@@ -1019,8 +1070,11 @@ typedef struct AVCodecContext {
      *
      *   @note the counter is not incremented if encoding/decoding resulted in
      *   an error.
+     *   @deprecated use frame_num instead
      */
+    attribute_deprecated
     int frame_number;
+#endif
 
     /**
      * number of bytes per packet if constant and known or 0
@@ -1035,19 +1089,25 @@ typedef struct AVCodecContext {
      */
     int cutoff;
 
+#if FF_API_OLD_CHANNEL_LAYOUT
     /**
      * Audio channel layout.
      * - encoding: set by user.
      * - decoding: set by user, may be overwritten by libavcodec.
+     * @deprecated use ch_layout
      */
+    attribute_deprecated
     uint64_t channel_layout;
 
     /**
      * Request decoder to use this channel layout if it can (0 for default)
      * - encoding: unused
      * - decoding: Set by user.
+     * @deprecated use "downmix" codec private option
      */
+    attribute_deprecated
     uint64_t request_channel_layout;
+#endif
 
     /**
      * Type of service that the audio stream conveys.
@@ -1276,13 +1336,9 @@ typedef struct AVCodecContext {
      * unofficial and experimental (that is, they always try to decode things
      * when they can) unless they are explicitly asked to behave stupidly
      * (=strictly conform to the specs)
+     * This may only be set to one of the FF_COMPLIANCE_* values in defs.h.
      */
     int strict_std_compliance;
-#define FF_COMPLIANCE_VERY_STRICT   2 ///< Strictly conform to an older more strict version of the spec or reference software.
-#define FF_COMPLIANCE_STRICT        1 ///< Strictly conform to all the things in the spec no matter what consequences.
-#define FF_COMPLIANCE_NORMAL        0
-#define FF_COMPLIANCE_UNOFFICIAL   -1 ///< Allow unofficial extensions
-#define FF_COMPLIANCE_EXPERIMENTAL -2 ///< Allow nonstandardized experimental things.
 
     /**
      * error concealment flags
@@ -1318,28 +1374,14 @@ typedef struct AVCodecContext {
 
     /**
      * Error recognition; may misdetect some more or less valid parts as errors.
+     * This is a bitfield of the AV_EF_* values defined in defs.h.
+     *
      * - encoding: Set by user.
      * - decoding: Set by user.
      */
     int err_recognition;
 
-/**
- * Verify checksums embedded in the bitstream (could be of either encoded or
- * decoded data, depending on the codec) and print an error message on mismatch.
- * If AV_EF_EXPLODE is also set, a mismatching checksum will result in the
- * decoder returning an error.
- */
-#define AV_EF_CRCCHECK  (1<<0)
-#define AV_EF_BITSTREAM (1<<1)          ///< detect bitstream specification deviations
-#define AV_EF_BUFFER    (1<<2)          ///< detect improper bitstream length
-#define AV_EF_EXPLODE   (1<<3)          ///< abort decoding on minor error detection
-
-#define AV_EF_IGNORE_ERR (1<<15)        ///< ignore errors and continue
-#define AV_EF_CAREFUL    (1<<16)        ///< consider things that violate the spec, are fast to calculate and have not been seen in the wild as errors
-#define AV_EF_COMPLIANT  (1<<17)        ///< consider all spec non compliances as errors
-#define AV_EF_AGGRESSIVE (1<<18)        ///< consider things that a sane encoder should not do as an error
-
-
+#if FF_API_REORDERED_OPAQUE
     /**
      * opaque 64-bit number (generally a PTS) that will be reordered and
      * output in AVFrame.reordered_opaque
@@ -1348,8 +1390,12 @@ typedef struct AVCodecContext {
      *             supported by encoders with the
      *             AV_CODEC_CAP_ENCODER_REORDERED_OPAQUE capability.
      * - decoding: Set by user.
+     *
+     * @deprecated Use AV_CODEC_FLAG_COPY_OPAQUE instead
      */
+    attribute_deprecated
     int64_t reordered_opaque;
+#endif
 
     /**
      * Hardware accelerator in use
@@ -1359,13 +1405,26 @@ typedef struct AVCodecContext {
     const struct AVHWAccel *hwaccel;
 
     /**
-     * Hardware accelerator context.
-     * For some hardware accelerators, a global context needs to be
-     * provided by the user. In that case, this holds display-dependent
-     * data FFmpeg cannot instantiate itself. Please refer to the
-     * FFmpeg HW accelerator documentation to know how to fill this.
-     * - encoding: unused
-     * - decoding: Set by user
+     * Legacy hardware accelerator context.
+     *
+     * For some hardware acceleration methods, the caller may use this field to
+     * signal hwaccel-specific data to the codec. The struct pointed to by this
+     * pointer is hwaccel-dependent and defined in the respective header. Please
+     * refer to the FFmpeg HW accelerator documentation to know how to fill
+     * this.
+     *
+     * In most cases this field is optional - the necessary information may also
+     * be provided to libavcodec through @ref hw_frames_ctx or @ref
+     * hw_device_ctx (see avcodec_get_hw_config()). However, in some cases it
+     * may be the only method of signalling some (optional) information.
+     *
+     * The struct and its contents are owned by the caller.
+     *
+     * - encoding: May be set by the caller before avcodec_open2(). Must remain
+     *             valid until avcodec_free_context().
+     * - decoding: May be set by the caller in the get_format() callback.
+     *             Must remain valid until the next get_format() call,
+     *             or avcodec_free_context() (whichever comes first).
      */
     void *hwaccel_context;
 
@@ -1407,7 +1466,10 @@ typedef struct AVCodecContext {
 #define FF_IDCT_SIMPLEARMV6   17
 #define FF_IDCT_FAAN          20
 #define FF_IDCT_SIMPLENEON    22
-#define FF_IDCT_NONE          24 /* Used by XvMC to extract IDCT coefficients with FF_IDCT_PERM_NONE */
+#if FF_API_IDCT_NONE
+// formerly used by xvmc
+#define FF_IDCT_NONE          24
+#endif
 #define FF_IDCT_SIMPLEAUTO    128
 
     /**
@@ -1458,27 +1520,6 @@ typedef struct AVCodecContext {
      */
     int active_thread_type;
 
-#if FF_API_THREAD_SAFE_CALLBACKS
-    /**
-     * Set by the client if its custom get_buffer() callback can be called
-     * synchronously from another thread, which allows faster multithreaded decoding.
-     * draw_horiz_band() will be called from other threads regardless of this setting.
-     * Ignored if the default get_buffer() is used.
-     * - encoding: Set by user.
-     * - decoding: Set by user.
-     *
-     * @deprecated the custom get_buffer2() callback should always be
-     *   thread-safe. Thread-unsafe get_buffer2() implementations will be
-     *   invalid starting with LIBAVCODEC_VERSION_MAJOR=60; in other words,
-     *   libavcodec will behave as if this field was always set to 1.
-     *   Callers that want to be forward compatible with future libavcodec
-     *   versions should wrap access to this field in
-     *     #if LIBAVCODEC_VERSION_MAJOR < 60
-     */
-    attribute_deprecated
-    int thread_safe_callbacks;
-#endif
-
     /**
      * The codec may call this to execute several independent things.
      * It will return only after finishing all tasks.
@@ -1495,7 +1536,6 @@ typedef struct AVCodecContext {
      * It will return only after finishing all tasks.
      * The user may replace this with some multithreaded implementation,
      * the default implementation will execute the parts serially.
-     * Also see avcodec_thread_init and e.g. the --enable-pthread configure option.
      * @param c context passed also to func
      * @param count the number of things to execute
      * @param arg2 argument passed unchanged to func
@@ -1780,17 +1820,6 @@ typedef struct AVCodecContext {
      */
     int seek_preroll;
 
-#if FF_API_DEBUG_MV
-    /**
-     * @deprecated unused
-     */
-    attribute_deprecated
-    int debug_mv;
-#define FF_DEBUG_VIS_MV_P_FOR  0x00000001 //visualize forward predicted MVs of P frames
-#define FF_DEBUG_VIS_MV_B_FOR  0x00000002 //visualize forward predicted MVs of B frames
-#define FF_DEBUG_VIS_MV_B_BACK 0x00000004 //visualize backward predicted MVs of B frames
-#endif
-
     /**
      * custom intra quantization matrix
      * - encoding: Set by user, can be NULL.
@@ -1856,15 +1885,6 @@ typedef struct AVCodecContext {
      *             This field should be set before avcodec_open2() is called.
      */
     AVBufferRef *hw_frames_ctx;
-
-#if FF_API_SUB_TEXT_FORMAT
-    /**
-     * @deprecated unused
-     */
-    attribute_deprecated
-    int sub_text_format;
-#define FF_SUB_TEXT_FMT_ASS              0
-#endif
 
     /**
      * Audio only. The amount of padding (in samples) appended by the encoder to
@@ -2024,9 +2044,26 @@ typedef struct AVCodecContext {
      * - decoding: unused
      */
     int (*get_encode_buffer)(struct AVCodecContext *s, AVPacket *pkt, int flags);
-} AVCodecContext;
 
-struct MpegEncContext;
+    /**
+     * Audio channel layout.
+     * - encoding: must be set by the caller, to one of AVCodec.ch_layouts.
+     * - decoding: may be set by the caller if known e.g. from the container.
+     *             The decoder can then override during decoding as needed.
+     */
+    AVChannelLayout ch_layout;
+
+    /**
+     * Frame counter, set by libavcodec.
+     *
+     * - decoding: total number of frames returned from the decoder so far.
+     * - encoding: total number of frames passed to the encoder so far.
+     *
+     *   @note the counter is not incremented if encoding/decoding resulted in
+     *   an error.
+     */
+    int64_t frame_num;
+} AVCodecContext;
 
 /**
  * @defgroup lavc_hwaccel AVHWAccel
@@ -2119,7 +2156,6 @@ typedef struct AVHWAccel {
      *
      * Meaningful slice information (codec specific) is guaranteed to
      * be parsed at this point. This function is mandatory.
-     * The only exception is XvMC, that works on MB level.
      *
      * @param avctx the codec context
      * @param buf the slice data buffer base
@@ -2147,17 +2183,6 @@ typedef struct AVHWAccel {
      * AVCodecContext.release_buffer().
      */
     int frame_priv_data_size;
-
-    /**
-     * Called for every Macroblock in a slice.
-     *
-     * XvMC uses it to replace the ff_mpv_reconstruct_mb().
-     * Instead of decoding to raw picture, MB parameters are
-     * stored in an array provided by the video driver.
-     *
-     * @param s the mpeg context
-     */
-    void (*decode_mb)(struct MpegEncContext *s);
 
     /**
      * Initialize the hwaccel private data.
@@ -2233,6 +2258,22 @@ typedef struct AVHWAccel {
  *          while indicating success.
  */
 #define AV_HWACCEL_FLAG_ALLOW_PROFILE_MISMATCH (1 << 2)
+
+/**
+ * Some hardware decoders (namely nvdec) can either output direct decoder
+ * surfaces, or make an on-device copy and return said copy.
+ * There is a hard limit on how many decoder surfaces there can be, and it
+ * cannot be accurately guessed ahead of time.
+ * For some processing chains, this can be okay, but others will run into the
+ * limit and in turn produce very confusing errors that require fine tuning of
+ * more or less obscure options by the user, or in extreme cases cannot be
+ * resolved at all without inserting an avfilter that forces a copy.
+ *
+ * Thus, the hwaccel will by default make a copy for safety and resilience.
+ * If a users really wants to minimize the amount of copies, they can set this
+ * flag and ensure their processing chain does not exhaust the surface pool.
+ */
+#define AV_HWACCEL_FLAG_UNSAFE_OUTPUT (1 << 3)
 
 /**
  * @}
@@ -2339,14 +2380,6 @@ void avcodec_free_context(AVCodecContext **avctx);
  */
 const AVClass *avcodec_get_class(void);
 
-#if FF_API_GET_FRAME_CLASS
-/**
- * @deprecated This function should not be used.
- */
-attribute_deprecated
-const AVClass *avcodec_get_frame_class(void);
-#endif
-
 /**
  * Get the AVClass for AVSubtitleRect. It can be used in combination with
  * AV_OPT_SEARCH_FAKE_OBJ for examining options.
@@ -2383,8 +2416,6 @@ int avcodec_parameters_to_context(AVCodecContext *codec,
  * The functions avcodec_find_decoder_by_name(), avcodec_find_encoder_by_name(),
  * avcodec_find_decoder() and avcodec_find_encoder() provide an easy way for
  * retrieving a codec.
- *
- * @warning This function is not thread safe!
  *
  * @note Always call this function before using decoding routines (such as
  * @ref avcodec_receive_frame()).
@@ -2479,6 +2510,7 @@ void avcodec_align_dimensions(AVCodecContext *s, int *width, int *height);
 void avcodec_align_dimensions2(AVCodecContext *s, int *width, int *height,
                                int linesize_align[AV_NUM_DATA_POINTERS]);
 
+#ifdef FF_API_AVCODEC_CHROMA_POS
 /**
  * Converts AVChromaLocation to swscale x/y chroma position.
  *
@@ -2487,7 +2519,9 @@ void avcodec_align_dimensions2(AVCodecContext *s, int *width, int *height,
  *
  * @param xpos  horizontal chroma sample position
  * @param ypos  vertical   chroma sample position
+ * @deprecated Use av_chroma_location_enum_to_pos() instead.
  */
+ attribute_deprecated
 int avcodec_enum_to_chroma_pos(int *xpos, int *ypos, enum AVChromaLocation pos);
 
 /**
@@ -2498,8 +2532,11 @@ int avcodec_enum_to_chroma_pos(int *xpos, int *ypos, enum AVChromaLocation pos);
  *
  * @param xpos  horizontal chroma sample position
  * @param ypos  vertical   chroma sample position
+ * @deprecated Use av_chroma_location_pos_to_enum() instead.
  */
+ attribute_deprecated
 enum AVChromaLocation avcodec_chroma_pos_to_enum(int xpos, int ypos);
+#endif
 
 /**
  * Decode a subtitle message.
@@ -2529,8 +2566,7 @@ enum AVChromaLocation avcodec_chroma_pos_to_enum(int xpos, int ypos);
  * @param[in] avpkt The input AVPacket containing the input buffer.
  */
 int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
-                            int *got_sub_ptr,
-                            AVPacket *avpkt);
+                             int *got_sub_ptr, const AVPacket *avpkt);
 
 /**
  * Supply raw packet data as input to a decoder.
@@ -2566,40 +2602,41 @@ int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
  *                  still has frames buffered, it will return them after sending
  *                  a flush packet.
  *
- * @return 0 on success, otherwise negative error code:
- *      AVERROR(EAGAIN):   input is not accepted in the current state - user
- *                         must read output with avcodec_receive_frame() (once
- *                         all output is read, the packet should be resent, and
- *                         the call will not fail with EAGAIN).
- *      AVERROR_EOF:       the decoder has been flushed, and no new packets can
- *                         be sent to it (also returned if more than 1 flush
- *                         packet is sent)
- *      AVERROR(EINVAL):   codec not opened, it is an encoder, or requires flush
- *      AVERROR(ENOMEM):   failed to add packet to internal queue, or similar
- *      other errors: legitimate decoding errors
+ * @retval 0                 success
+ * @retval AVERROR(EAGAIN)   input is not accepted in the current state - user
+ *                           must read output with avcodec_receive_frame() (once
+ *                           all output is read, the packet should be resent,
+ *                           and the call will not fail with EAGAIN).
+ * @retval AVERROR_EOF       the decoder has been flushed, and no new packets can be
+ *                           sent to it (also returned if more than 1 flush
+ *                           packet is sent)
+ * @retval AVERROR(EINVAL)   codec not opened, it is an encoder, or requires flush
+ * @retval AVERROR(ENOMEM)   failed to add packet to internal queue, or similar
+ * @retval "another negative error code" legitimate decoding errors
  */
 int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
 
 /**
- * Return decoded output data from a decoder.
+ * Return decoded output data from a decoder or encoder (when the
+ * AV_CODEC_FLAG_RECON_FRAME flag is used).
  *
  * @param avctx codec context
  * @param frame This will be set to a reference-counted video or audio
  *              frame (depending on the decoder type) allocated by the
- *              decoder. Note that the function will always call
+ *              codec. Note that the function will always call
  *              av_frame_unref(frame) before doing anything else.
  *
- * @return
- *      0:                 success, a frame was returned
- *      AVERROR(EAGAIN):   output is not available in this state - user must try
- *                         to send new input
- *      AVERROR_EOF:       the decoder has been fully flushed, and there will be
- *                         no more output frames
- *      AVERROR(EINVAL):   codec not opened, or it is an encoder
- *      AVERROR_INPUT_CHANGED:   current decoded frame has changed parameters
- *                               with respect to first decoded frame. Applicable
- *                               when flag AV_CODEC_FLAG_DROPCHANGED is set.
- *      other negative values: legitimate decoding errors
+ * @retval 0                success, a frame was returned
+ * @retval AVERROR(EAGAIN)  output is not available in this state - user must
+ *                          try to send new input
+ * @retval AVERROR_EOF      the codec has been fully flushed, and there will be
+ *                          no more output frames
+ * @retval AVERROR(EINVAL)  codec not opened, or it is an encoder without the
+ *                          AV_CODEC_FLAG_RECON_FRAME flag enabled
+ * @retval AVERROR_INPUT_CHANGED current decoded frame has changed parameters with
+ *                          respect to first decoded frame. Applicable when flag
+ *                          AV_CODEC_FLAG_DROPCHANGED is set.
+ * @retval "other negative error code" legitimate decoding errors
  */
 int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame);
 
@@ -2626,16 +2663,16 @@ int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame);
  *                  If it is not set, frame->nb_samples must be equal to
  *                  avctx->frame_size for all frames except the last.
  *                  The final frame may be smaller than avctx->frame_size.
- * @return 0 on success, otherwise negative error code:
- *      AVERROR(EAGAIN):   input is not accepted in the current state - user
- *                         must read output with avcodec_receive_packet() (once
- *                         all output is read, the packet should be resent, and
- *                         the call will not fail with EAGAIN).
- *      AVERROR_EOF:       the encoder has been flushed, and no new frames can
- *                         be sent to it
- *      AVERROR(EINVAL):   codec not opened, it is a decoder, or requires flush
- *      AVERROR(ENOMEM):   failed to add packet to internal queue, or similar
- *      other errors: legitimate encoding errors
+ * @retval 0                 success
+ * @retval AVERROR(EAGAIN)   input is not accepted in the current state - user must
+ *                           read output with avcodec_receive_packet() (once all
+ *                           output is read, the packet should be resent, and the
+ *                           call will not fail with EAGAIN).
+ * @retval AVERROR_EOF       the encoder has been flushed, and no new frames can
+ *                           be sent to it
+ * @retval AVERROR(EINVAL)   codec not opened, it is a decoder, or requires flush
+ * @retval AVERROR(ENOMEM)   failed to add packet to internal queue, or similar
+ * @retval "another negative error code" legitimate encoding errors
  */
 int avcodec_send_frame(AVCodecContext *avctx, const AVFrame *frame);
 
@@ -2646,13 +2683,13 @@ int avcodec_send_frame(AVCodecContext *avctx, const AVFrame *frame);
  * @param avpkt This will be set to a reference-counted packet allocated by the
  *              encoder. Note that the function will always call
  *              av_packet_unref(avpkt) before doing anything else.
- * @return 0 on success, otherwise negative error code:
- *      AVERROR(EAGAIN):   output is not available in the current state - user
- *                         must try to send input
- *      AVERROR_EOF:       the encoder has been fully flushed, and there will be
- *                         no more output packets
- *      AVERROR(EINVAL):   codec not opened, or it is a decoder
- *      other errors: legitimate encoding errors
+ * @retval 0               success
+ * @retval AVERROR(EAGAIN) output is not available in the current state - user must
+ *                         try to send input
+ * @retval AVERROR_EOF     the encoder has been fully flushed, and there will be no
+ *                         more output packets
+ * @retval AVERROR(EINVAL) codec not opened, or it is a decoder
+ * @retval "another negative error code" legitimate encoding errors
  */
 int avcodec_receive_packet(AVCodecContext *avctx, AVPacket *avpkt);
 
@@ -2766,10 +2803,10 @@ int avcodec_get_hw_frames_parameters(AVCodecContext *avctx,
  */
 
 enum AVPictureStructure {
-    AV_PICTURE_STRUCTURE_UNKNOWN,      //< unknown
-    AV_PICTURE_STRUCTURE_TOP_FIELD,    //< coded as top field
-    AV_PICTURE_STRUCTURE_BOTTOM_FIELD, //< coded as bottom field
-    AV_PICTURE_STRUCTURE_FRAME,        //< coded as frame
+    AV_PICTURE_STRUCTURE_UNKNOWN,      ///< unknown
+    AV_PICTURE_STRUCTURE_TOP_FIELD,    ///< coded as top field
+    AV_PICTURE_STRUCTURE_BOTTOM_FIELD, ///< coded as bottom field
+    AV_PICTURE_STRUCTURE_FRAME,        ///< coded as frame
 };
 
 typedef struct AVCodecParserContext {
