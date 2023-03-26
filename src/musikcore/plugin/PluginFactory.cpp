@@ -101,12 +101,10 @@ void PluginFactory::LoadPlugins() {
         fs::directory_iterator end;
         for (fs::directory_iterator file(dir); file != end; file++) {
             if (fs::is_regular_file(file->status())){
-                std::string filename(fs::path(file->path()).make_preferred().u8string());
-
+                std::string filename = fs::canonical(fs::path(file->path()).make_preferred()).u8string();
                 std::shared_ptr<Descriptor> descriptor(new Descriptor());
                 descriptor->filename = filename;
                 descriptor->key = fs::path(fs::u8path(filename)).filename().u8string();
-
 #ifdef WIN32
                 /* if the file ends with ".dll", we'll try to load it*/
                 if (filename.substr(filename.size() - 4) == ".dll") {

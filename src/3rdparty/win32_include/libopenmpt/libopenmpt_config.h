@@ -10,6 +10,8 @@
 #ifndef LIBOPENMPT_CONFIG_H
 #define LIBOPENMPT_CONFIG_H
 
+/* clang-format off */
+
 /*! \defgroup libopenmpt libopenmpt */
 
 /*! \addtogroup libopenmpt
@@ -21,6 +23,14 @@
 #undef LIBOPENMPT_API
 #define LIBOPENMPT_CXX_API
 #undef LIBOPENMPT_CXX_API
+
+/*!
+  @}
+*/
+
+/*! \addtogroup libopenmpt_c
+  @{
+*/
 
 /*! \brief Defined if libopenmpt/libopenmpt_stream_callbacks_buffer.h exists. */
 #define LIBOPENMPT_STREAM_CALLBACKS_BUFFER
@@ -51,6 +61,14 @@
  */
 #define LIBOPENMPT_STREAM_CALLBACKS_FILE
 
+/*!
+  @}
+*/
+
+/*! \addtogroup libopenmpt
+  @{
+*/
+
 #if defined(__DOXYGEN__)
 
 #define LIBOPENMPT_API_HELPER_EXPORT
@@ -62,8 +80,8 @@
 
 #define LIBOPENMPT_API_HELPER_EXPORT __declspec(dllexport)
 #define LIBOPENMPT_API_HELPER_IMPORT __declspec(dllimport)
-#define LIBOPENMPT_API_HELPER_PUBLIC
-#define LIBOPENMPT_API_HELPER_LOCAL
+#define LIBOPENMPT_API_HELPER_PUBLIC 
+#define LIBOPENMPT_API_HELPER_LOCAL  
 
 #elif defined(__EMSCRIPTEN__)
 
@@ -90,15 +108,15 @@
 
 #define LIBOPENMPT_API_HELPER_EXPORT __declspec(dllexport)
 #define LIBOPENMPT_API_HELPER_IMPORT __declspec(dllimport)
-#define LIBOPENMPT_API_HELPER_PUBLIC
-#define LIBOPENMPT_API_HELPER_LOCAL
+#define LIBOPENMPT_API_HELPER_PUBLIC 
+#define LIBOPENMPT_API_HELPER_LOCAL  
 
 #else
 
-#define LIBOPENMPT_API_HELPER_EXPORT
-#define LIBOPENMPT_API_HELPER_IMPORT
-#define LIBOPENMPT_API_HELPER_PUBLIC
-#define LIBOPENMPT_API_HELPER_LOCAL
+#define LIBOPENMPT_API_HELPER_EXPORT 
+#define LIBOPENMPT_API_HELPER_IMPORT 
+#define LIBOPENMPT_API_HELPER_PUBLIC 
+#define LIBOPENMPT_API_HELPER_LOCAL  
 
 #endif
 
@@ -126,7 +144,7 @@
 
 /* Only the C API is supported for emscripten. Disable the C++ API. */
 #undef LIBOPENMPT_CXX_API
-#define LIBOPENMPT_CXX_API LIBOPENMPT_API_HELPER_LOCAL
+#define LIBOPENMPT_CXX_API LIBOPENMPT_API_HELPER_LOCAL 
 #endif
 
 #endif
@@ -148,6 +166,8 @@
 #else
 #define LIBOPENMPT_DEPRECATED
 #endif
+#else
+#define LIBOPENMPT_DEPRECATED
 #endif
 
 #ifndef __cplusplus
@@ -157,6 +177,8 @@ LIBOPENMPT_DEPRECATED static const int LIBOPENMPT_DEPRECATED_STRING_CONSTANT = 0
 #else
 #define LIBOPENMPT_DEPRECATED_STRING( str ) str
 #endif
+#else
+#define LIBOPENMPT_DEPRECATED_STRING( str ) str
 #endif
 
 
@@ -175,6 +197,8 @@ LIBOPENMPT_DEPRECATED static const int LIBOPENMPT_DEPRECATED_STRING_CONSTANT = 0
 
 #endif
 
+
+/* clang-format on */
 
 #include "libopenmpt_version.h"
 

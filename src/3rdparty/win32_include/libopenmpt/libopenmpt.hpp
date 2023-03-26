@@ -103,7 +103,7 @@
  * threads for internal use.
  * - You must ensure to only ever access a particular libopenmpt object via
  * non-const member functions from a single thread at a time.
- * - You may access a particular libopenmpt objects concurrently from different
+ * - You may access a particular libopenmpt object concurrently from different
  * threads when using only const member functions from all threads.
  * - Consecutive accesses can happen from different threads.
  * - Different objects can be accessed concurrently from different threads.
@@ -127,11 +127,11 @@
 
 /*! \defgroup libopenmpt_cpp libopenmpt C++ */
 
+namespace openmpt {
+
 /*! \addtogroup libopenmpt_cpp
   @{
 */
-
-namespace openmpt {
 
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -272,17 +272,29 @@ LIBOPENMPT_ATTR_DEPRECATED LIBOPENMPT_CXX_API double could_open_propability( std
 */
 LIBOPENMPT_CXX_API std::size_t probe_file_header_get_recommended_size();
 
-//! Probe for module formats in openmpt::probe_file_header(). \since 0.3.0
-static const std::uint64_t probe_file_header_flags_modules    = 0x1ul;
+//! Probe for module formats in openmpt::probe_file_header(). \since 0.3.0 \deprecated Please use openmpt::probe_file_header_flags_modules2.
+static const std::uint64_t probe_file_header_flags_modules    LIBOPENMPT_ATTR_DEPRECATED = 0x1ull;
 
-//! Probe for module-specific container formats in openmpt::probe_file_header(). \since 0.3.0
-static const std::uint64_t probe_file_header_flags_containers = 0x2ul;
+//! Probe for module-specific container formats in openmpt::probe_file_header(). \since 0.3.0 \deprecated Please use openmpt::probe_file_header_flags_containers2.
+static const std::uint64_t probe_file_header_flags_containers LIBOPENMPT_ATTR_DEPRECATED = 0x2ull;
 
-//! Probe for the default set of formats in openmpt::probe_file_header(). \since 0.3.0
-static const std::uint64_t probe_file_header_flags_default    = probe_file_header_flags_modules | probe_file_header_flags_containers;
+//! Probe for the default set of formats in openmpt::probe_file_header(). \since 0.3.0 \deprecated Please use openmpt::probe_file_header_flags_default2.
+static const std::uint64_t probe_file_header_flags_default    LIBOPENMPT_ATTR_DEPRECATED = 0x1ull | 0x2ull;
 
-//! Probe for no formats in openmpt::probe_file_header(). \since 0.3.0
-static const std::uint64_t probe_file_header_flags_none       = 0x0ul;
+//! Probe for no formats in openmpt::probe_file_header(). \since 0.3.0 \deprecated Please use openmpt::probe_file_header_flags_none2.
+static const std::uint64_t probe_file_header_flags_none       LIBOPENMPT_ATTR_DEPRECATED = 0x0ull;
+
+//! Possible values for openmpt::probe_file_header() flags parameter. \since 0.6.0
+enum probe_file_header_flags : std::uint64_t {
+	//! Probe for module formats in openmpt::probe_file_header(). \since 0.6.0
+	probe_file_header_flags_modules2    = 0x1ull,
+	//! Probe for module-specific container formats in openmpt::probe_file_header(). \since 0.6.0
+	probe_file_header_flags_containers2 = 0x2ull,
+	//! Probe for the default set of formats in openmpt::probe_file_header(). \since 0.6.0
+	probe_file_header_flags_default2    = probe_file_header_flags_modules2 | probe_file_header_flags_containers2,
+	//! Probe for no formats in openmpt::probe_file_header(). \since 0.6.0
+	probe_file_header_flags_none2       = 0x0ull
+};
 
 //! Possible return values for openmpt::probe_file_header(). \since 0.3.0
 enum probe_file_header_result {
@@ -293,7 +305,7 @@ enum probe_file_header_result {
 
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param data Beginning of the file data.
   \param size Size of the beginning of the file data.
   \param filesize Full size of the file data on disk.
@@ -309,7 +321,7 @@ enum probe_file_header_result {
 LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::byte * data, std::size_t size, std::uint64_t filesize );
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param data Beginning of the file data.
   \param size Size of the beginning of the file data.
   \param filesize Full size of the file data on disk.
@@ -326,7 +338,7 @@ LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::uint8_
 
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param data Beginning of the file data.
   \param size Size of the beginning of the file data.
   \remarks It is recommended to use the overload of this function that also takes the filesize as parameter if at all possile. libopenmpt can provide more accurate answers if the filesize is known.
@@ -342,7 +354,7 @@ LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::uint8_
 LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::byte * data, std::size_t size );
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param data Beginning of the file data.
   \param size Size of the beginning of the file data.
   \remarks It is recommended to use the overload of this function that also takes the filesize as parameter if at all possile. libopenmpt can provide more accurate answers if the filesize is known.
@@ -359,7 +371,7 @@ LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::uint8_
 
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param stream Input stream to scan.
   \remarks stream is left in an unspecified state when this function returns.
   \remarks openmpt::could_open_probability() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt::probe_file_header() though, if possible.
@@ -599,6 +611,7 @@ public:
 	//! Get approximate song duration
 	/*!
 	  \return Approximate duration of current sub-song in seconds.
+	  \remarks The function may return infinity if the pattern data is too complex to evaluate.
 	*/
 	double get_duration_seconds() const;
 
@@ -750,7 +763,7 @@ public:
 	/*!
 	  \param samplerate Sample rate to render output. Should be in [8000,192000], but this is not enforced.
 	  \param count Number of audio frames to render per channel.
-	  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved suad surround output in the order (L,R,RL,RR).
+	  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved quad surround output in the order (L,R,RL,RR).
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
@@ -776,7 +789,7 @@ public:
 	/*!
 	  \param samplerate Sample rate to render output. Should be in [8000,192000], but this is not enforced.
 	  \param count Number of audio frames to render per channel.
-	  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved suad surround output in the order (L,R,RL,RR).
+	  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved quad surround output in the order (L,R,RL,RR).
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
@@ -797,7 +810,7 @@ public:
 	/*!
 	  \param key Metadata item key to query. Use openmpt::module::get_metadata_keys to check for available keys.
 	           Possible keys are:
-	           - type: Module format extension (e.g. it)
+	           - type: Module format extension (e.g. it) or another similar identifier for modules formats that typically do not use a file extension
 	           - type_long: Format name associated with the module format (e.g. Impulse Tracker)
 	           - originaltype: Module format extension (e.g. it) of the original module in case the actual type is a converted format (e.g. mo3 or gdm)
 	           - originaltype_long: Format name associated with the module format (e.g. Impulse Tracker) of the original module in case the actual type is a converted format (e.g. mo3 or gdm)
@@ -1119,7 +1132,7 @@ public:
 	  \param value The value that should be set.
 	  \throws openmpt::exception Throws an exception derived from openmpt::exception in case the value is not sensible (e.g. negative tempo factor) or under the circumstances outlined in openmpt::module::get_ctls.
 	  \sa openmpt::module::get_ctls
-	  \deprecated Please use openmpt::module::ctl_set_bool(), openmpt::module::ctl_set_int(), openmpt::module::ctl_set_float(), or openmpt::module::ctl_set_string().
+	  \deprecated Please use openmpt::module::ctl_set_boolean(), openmpt::module::ctl_set_integer(), openmpt::module::ctl_set_floatingpoint(), or openmpt::module::ctl_set_text().
 	*/
 	LIBOPENMPT_ATTR_DEPRECATED void ctl_set( const std::string & ctl, const std::string & value );
 	//! Set ctl boolean value
@@ -1163,10 +1176,10 @@ public:
 
 }; // class module
 
-} // namespace openmpt
-
 /*!
   @}
 */
+
+} // namespace openmpt
 
 #endif // LIBOPENMPT_HPP

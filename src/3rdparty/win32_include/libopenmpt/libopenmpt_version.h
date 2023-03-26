@@ -10,6 +10,8 @@
 #ifndef LIBOPENMPT_VERSION_H
 #define LIBOPENMPT_VERSION_H
 
+/* clang-format off */
+
 /*! \addtogroup libopenmpt
   @{
 */
@@ -17,9 +19,9 @@
 /*! \brief libopenmpt major version number */
 #define OPENMPT_API_VERSION_MAJOR 0
 /*! \brief libopenmpt minor version number */
-#define OPENMPT_API_VERSION_MINOR 5
+#define OPENMPT_API_VERSION_MINOR 6
 /*! \brief libopenmpt patch version number */
-#define OPENMPT_API_VERSION_PATCH 0
+#define OPENMPT_API_VERSION_PATCH 9
 /*! \brief libopenmpt pre-release tag */
 #define OPENMPT_API_VERSION_PREREL ""
 /*! \brief libopenmpt pre-release flag */
@@ -71,5 +73,7 @@
 /*!
   @}
 */
+
+/* clang-format on */
 
 #endif /* LIBOPENMPT_VERSION_H */

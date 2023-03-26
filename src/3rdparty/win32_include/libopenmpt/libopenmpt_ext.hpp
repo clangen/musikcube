@@ -26,11 +26,11 @@
 
 /*! \defgroup libopenmpt_ext_cpp libopenmpt_ext C++ */
 
+namespace openmpt {
+
 /*! \addtogroup libopenmpt_ext_cpp
   @{
 */
-
-namespace openmpt {
 
 class module_ext_impl;
 
@@ -77,7 +77,15 @@ public:
 
 }; // class module_ext
 
+/*!
+  @}
+*/
+
 namespace ext {
+
+/*! \addtogroup libopenmpt_ext_cpp
+  @{
+*/
 
 #define LIBOPENMPT_DECLARE_EXT_CXX_INTERFACE(name) \
 	static const char name ## _id [] = # name ; \
@@ -194,6 +202,7 @@ class interactive {
 	//! Gets the current module pitch factor
 	/*!
 	  \return The current pitch factor.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the pitch is outside the specified range.
 	  \sa openmpt::ext::interactive::set_pitch_factor
 	*/
 	virtual double get_pitch_factor( ) const = 0;
@@ -278,16 +287,101 @@ class interactive {
 	  \return The channel on which the note is played. This can pe be passed to openmpt::ext::interactive::stop_note to stop the note.
 	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the instrument or note is outside the specified range.
 	  \sa openmpt::ext::interactive::stop_note
+	  \sa openmpt::ext::interactive2::note_off
+	  \sa openmpt::ext::interactive2::note_fade
 	*/
 	virtual std::int32_t play_note( std::int32_t instrument, std::int32_t note, double volume, double panning ) = 0;
 
 	//! Stop the note playing on the specified channel
 	/*!
-	  \param channel The channel on which the note should be stopped.
+	  \param channel The channel on which the note should be stopped. This is the value returned by a previous play_note call.
 	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the channel index is invalid.
 	  \sa openmpt::ext::interactive::play_note
+	  \sa openmpt::ext::interactive2::note_off
+	  \sa openmpt::ext::interactive2::note_fade
 	*/
 	virtual void stop_note( std::int32_t channel ) = 0;
+
+}; // class interactive
+
+
+#ifndef LIBOPENMPT_EXT_INTERFACE_INTERACTIVE2
+#define LIBOPENMPT_EXT_INTERFACE_INTERACTIVE2
+#endif
+
+LIBOPENMPT_DECLARE_EXT_CXX_INTERFACE(interactive2)
+
+class interactive2 {
+
+	LIBOPENMPT_EXT_CXX_INTERFACE(interactive2)
+
+	//! Sends a key-off command for the note playing on the specified channel
+	/*!
+	  \param channel The channel on which the key-off event should be triggered. This is the value returned by a previous play_note call.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the channel index is invalid.
+	  \remarks This method releases envelopes and sample sustain loops. If the sample has no sustain loop, or if the module does not use instruments, it does nothing.
+	  \sa openmpt::ext::interactive::play_note
+	  \sa openmpt::ext::interactive::stop_note
+	  \sa openmpt::ext::interactive2::note_fade
+	  \since 0.6.0
+	*/
+	virtual void note_off(int32_t channel ) = 0;
+
+	//! Sends a note fade command for the note playing on the specified channel
+	/*!
+	  \param channel The channel on which the note should be faded. This is the value returned by a previous play_note call.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the channel index is invalid.
+	  \remarks This method uses the instrument's fade-out value. If the module does not use instruments, or the instrument's fade-out value is 0, it does nothing.
+	  \sa openmpt::ext::interactive::play_note
+	  \sa openmpt::ext::interactive::stop_note
+	  \sa openmpt::ext::interactive2::note_off
+	  \since 0.6.0
+	*/
+	virtual void note_fade(int32_t channel) = 0;
+
+	//! Set the current panning position for a channel
+	/*!
+	  \param channel The channel whose panning will be changed, in range [0, openmpt::module::get_num_channels()[
+	  \param panning The panning position to set on the channel, in range [-1.0, 1.0], 0.0 is center.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the channel index is invalid.
+	  \remarks This command affects subsequent notes played on the same channel, and may itself be overridden by subsequent panning commands encountered in the module itself.
+	  \sa openmpt::ext::interactive2::get_channel_panning
+	  \since 0.6.0
+	*/
+	virtual void set_channel_panning(int32_t channel, double panning ) = 0;
+
+	//! Get the current panning position for a channel
+	/*!
+	  \param channel The channel whose panning should be retrieved, in range [0, openmpt::module::get_num_channels()[
+	  \return The current channel panning, in range [-1.0, 1.0], 0.0 is center.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the channel is outside the specified range.
+	  \sa openmpt::ext::interactive2::set_channel_panning
+	  \since 0.6.0
+	*/
+	virtual double get_channel_panning( int32_t channel ) = 0;
+	
+	//! Set the finetune for the currently playing note on a channel
+	/*!
+	  \param channel The channel whose finetune will be changed, in range [0, openmpt::module::get_num_channels()[
+	  \param finetune The finetune to set on the channel, in range [-1.0, 1.0], 0.0 is center.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the channel index is invalid.
+	  \remarks The finetune range depends on the pitch wheel depth of the instrument playing on the current channel; for sample-based modules, the depth of this command is fixed to +/-1 semitone.
+	  \remarks This command does not affect subsequent notes played on the same channel, but may itself be overridden by subsequent finetune commands encountered in the module itself.
+	  \sa openmpt::ext::interactive2::get_note_finetune
+	  \since 0.6.0
+	*/
+	virtual void set_note_finetune(int32_t channel, double finetune ) = 0;
+
+	//! Get the finetune for the currently playing note on a channel
+	/*!
+	  \param channel The channel whose finetune should be retrieved, in range [0, openmpt::module::get_num_channels()[
+	  \return The current channel finetune, in range [-1.0, 1.0], 0.0 is center.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the channel is outside the specified range.
+	  \remarks The finetune range depends on the pitch wheel depth of the instrument playing on the current channel; for sample-based modules, the depth of this command is fixed to +/-1 semitone.
+	  \sa openmpt::ext::interactive2::set_note_finetune
+	  \since 0.6.0
+	*/
+	virtual double get_note_finetune( int32_t channel ) = 0;
 
 }; // class interactive
 
@@ -299,12 +393,12 @@ class interactive {
 #undef LIBOPENMPT_DECLARE_EXT_CXX_INTERFACE
 #undef LIBOPENMPT_EXT_CXX_INTERFACE
 
-} // namespace ext
-
-} // namespace openmpt
-
 /*!
   @}
 */
+
+} // namespace ext
+
+} // namespace openmpt
 
 #endif // LIBOPENMPT_EXT_HPP

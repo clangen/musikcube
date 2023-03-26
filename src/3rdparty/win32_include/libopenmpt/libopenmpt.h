@@ -559,14 +559,14 @@ LIBOPENMPT_API double openmpt_could_open_probability2( openmpt_stream_callbacks 
 LIBOPENMPT_API size_t openmpt_probe_file_header_get_recommended_size(void);
 
 /*! Probe for module formats in openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize(). \since 0.3.0 */
-#define OPENMPT_PROBE_FILE_HEADER_FLAGS_MODULES    0x1ul
+#define OPENMPT_PROBE_FILE_HEADER_FLAGS_MODULES    0x1ull
 /*! Probe for module-specific container formats in openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize(). \since 0.3.0 */
-#define OPENMPT_PROBE_FILE_HEADER_FLAGS_CONTAINERS 0x2ul
+#define OPENMPT_PROBE_FILE_HEADER_FLAGS_CONTAINERS 0x2ull
 
 /*! Probe for the default set of formats in openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize(). \since 0.3.0 */
 #define OPENMPT_PROBE_FILE_HEADER_FLAGS_DEFAULT    ( OPENMPT_PROBE_FILE_HEADER_FLAGS_MODULES | OPENMPT_PROBE_FILE_HEADER_FLAGS_CONTAINERS )
 /*! Probe for no formats in openmpt_probe_file_header() or openmpt_probe_file_header_without_filesize(). \since 0.3.0 */
-#define OPENMPT_PROBE_FILE_HEADER_FLAGS_NONE       0x0ul
+#define OPENMPT_PROBE_FILE_HEADER_FLAGS_NONE       0x0ull
 
 /*! Possible return values fo openmpt_probe_file_header() and openmpt_probe_file_header_without_filesize(). \since 0.3.0 */
 #define OPENMPT_PROBE_FILE_HEADER_RESULT_SUCCESS      1
@@ -901,6 +901,7 @@ LIBOPENMPT_API int32_t openmpt_module_get_repeat_count( openmpt_module * mod );
  *
  * \param mod The module handle to work on.
  * \return Approximate duration of current sub-song in seconds.
+ * \remarks The function may return infinity if the pattern data is too complex to evaluate.
  */
 LIBOPENMPT_API double openmpt_module_get_duration_seconds( openmpt_module * mod );
 
@@ -1071,7 +1072,7 @@ LIBOPENMPT_API size_t openmpt_module_read_interleaved_stereo( openmpt_module * m
  * \param mod The module handle to work on.
  * \param samplerate Sample rate to render output. Should be in [8000,192000], but this is not enforced.
  * \param count Number of audio frames to render per channel.
- * \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved suad surround output in the order (L,R,RL,RR).
+ * \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved quad surround output in the order (L,R,RL,RR).
  * \return The number of frames actually rendered.
  * \retval 0 The end of song has been reached.
  * \remarks The output buffers are only written to up to the returned number of elements.
@@ -1099,7 +1100,7 @@ LIBOPENMPT_API size_t openmpt_module_read_interleaved_float_stereo( openmpt_modu
  * \param mod The module handle to work on.
  * \param samplerate Sample rate to render output. Should be in [8000,192000], but this is not enforced.
  * \param count Number of audio frames to render per channel.
- * \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved suad surround output in the order (L,R,RL,RR).
+ * \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved quad surround output in the order (L,R,RL,RR).
  * \return The number of frames actually rendered.
  * \retval 0 The end of song has been reached.
  * \remarks The output buffers are only written to up to the returned number of elements.
@@ -1122,7 +1123,7 @@ LIBOPENMPT_API const char * openmpt_module_get_metadata_keys( openmpt_module * m
  * \param mod The module handle to work on.
  * \param key Metadata item key to query. Use openmpt_module_get_metadata_keys to check for available keys.
  *          Possible keys are:
- *          - type: Module format extension (e.g. it)
+ *          - type: Module format extension (e.g. it) or another similar identifier for modules formats that typically do not use a file extension
  *          - type_long: Format name associated with the module format (e.g. Impulse Tracker)
  *          - originaltype: Module format extension (e.g. it) of the original module in case the actual type is a converted format (e.g. mo3 or gdm)
  *          - originaltype_long: Format name associated with the module format (e.g. Impulse Tracker) of the original module in case the actual type is a converted format (e.g. mo3 or gdm)
