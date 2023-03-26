@@ -27,7 +27,7 @@ RPATH="@rpath"
 OS=$(uname)
 ARCH=$(uname -m)
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-OPENSSL_VERSION="1.1.1t"
+OPENSSL_VERSION="3.1.0"
 CURL_VERSION="7.88.1"
 LIBMICROHTTPD_VERSION="0.9.76"
 FFMPEG_VERSION="6.0"
@@ -500,7 +500,6 @@ function delete_unused_libraries() {
 }
 
 clean
-
 mkdir vendor
 cd vendor
 

@@ -17,8 +17,8 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libogg.0.dylib ./bin/lib
     cp vendor/bin/lib/libvorbis.0.dylib ./bin/lib
     cp vendor/bin/lib/libvorbisenc.2.dylib ./bin/lib
-    cp vendor/bin/lib/libcrypto.1.1.dylib ./bin/lib
-    cp vendor/bin/lib/libssl.1.1.dylib ./bin/lib
+    cp vendor/bin/lib/libcrypto.3.dylib ./bin/lib
+    cp vendor/bin/lib/libssl.3.dylib ./bin/lib
     cp vendor/bin/lib/libcurl.4.dylib ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.12.dylib ./bin/lib
     cp vendor/bin/lib/libmp3lame.0.dylib ./bin/lib
@@ -36,8 +36,8 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/bin/lib/libavformat-musikcube.so.60 ./bin/lib
     cp vendor/bin/lib/libavutil-musikcube.so.58 ./bin/lib
     cp vendor/bin/lib/libswresample-musikcube.so.4 ./bin/lib
-    cp vendor/bin/lib/libcrypto.so.1.1 ./bin/lib
-    cp vendor/bin/lib/libssl.so.1.1 ./bin/lib
+    cp vendor/bin/lib/libcrypto.so.3 ./bin/lib
+    cp vendor/bin/lib/libssl.so.3 ./bin/lib
     cp vendor/bin/lib/libcurl.so.4 ./bin/lib
     cp vendor/bin/lib/libmp3lame.so.0 ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.so.12 ./bin/lib
