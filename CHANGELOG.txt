@@ -1,6 +1,6 @@
 0.99.8
 
-* TODO
+* added uk_UA localization (@dinolaz)
 * update dependencies across all platforms:
   - ffmpeg@6.0
   - openssl@3.1.0
