@@ -9,6 +9,7 @@
   - libopenmpt@0.6.9
   - asio@1.27.0
 * update to PDCursesMod@4.3.6 for Windows builds
+* disable update check for `homebrew` builds
 
 --------------------------------------------------------------------------------
 

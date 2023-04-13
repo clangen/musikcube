@@ -351,6 +351,7 @@ void MainLayout::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
 }
 
 void MainLayout::RunUpdateCheck() {
+#ifndef DISABLE_UPDATE_CHECK
     if (!prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true)) {
         return;
     }
@@ -360,4 +361,5 @@ void MainLayout::RunUpdateCheck() {
             UpdateCheck::ShowUpgradeAvailableOverlay(version, url);
         }
     });
+#endif
 }

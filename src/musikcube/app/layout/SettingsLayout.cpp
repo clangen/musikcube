@@ -105,7 +105,9 @@ static const std::string arrow = "> ";
 
 static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     auto schema = std::make_shared<TSchema<>>();
+#ifndef DISABLE_UPDATE_CHECK
     schema->AddBool(cube::prefs::keys::AutoUpdateCheck, false);
+#endif
 #ifdef ENABLE_MINIMIZE_TO_TRAY
     schema->AddBool(cube::prefs::keys::MinimizeToTray, false);
     schema->AddBool(cube::prefs::keys::StartMinimized, false);
@@ -310,6 +312,7 @@ void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnUpdateDropdownActivate(cursespp::TextLabel* label) {
+#ifndef DISABLE_UPDATE_CHECK
     updateCheck.Run([this](bool updateRequired, std::string version, std::string url) {
         if (updateRequired) {
             UpdateCheck::ShowUpgradeAvailableOverlay(version, url, false);
@@ -318,6 +321,7 @@ void SettingsLayout::OnUpdateDropdownActivate(cursespp::TextLabel* label) {
             UpdateCheck::ShowNoUpgradeFoundOverlay();
         }
     });
+#endif
 }
 
 void SettingsLayout::OnThemeDropdownActivate(cursespp::TextLabel* label) {
@@ -386,8 +390,9 @@ void SettingsLayout::OnLayout() {
     this->saveSessionCheckbox->MoveAndResize(column2, y++, columnCx, kLabelHeight);
     this->pluginsDropdown->MoveAndResize(column2, y++, columnCx, kLabelHeight);
     this->advancedDropdown->MoveAndResize(column2, y++, columnCx, kLabelHeight);
+#ifndef DISABLE_UPDATE_CHECK
     this->updateDropdown->MoveAndResize(column2, y++, columnCx, kLabelHeight);
-
+#endif
     this->appVersion->MoveAndResize(0, cy - 1, cx, kLabelHeight);
 }
 
@@ -445,9 +450,11 @@ void SettingsLayout::InitializeWindows() {
         this->serverDropdown->Activated.connect(this, &SettingsLayout::OnServerDropdownActivate);
     }
 
+#ifndef DISABLE_UPDATE_CHECK
     this->updateDropdown = std::make_shared<TextLabel>();
     this->updateDropdown->SetText(arrow + _TSTR("settings_check_for_updates"));
     this->updateDropdown->Activated.connect(this, &SettingsLayout::OnUpdateDropdownActivate);
+#endif
 
     this->advancedDropdown = std::make_shared<TextLabel>();
     this->advancedDropdown->SetText(arrow + _TSTR("settings_advanced_settings"));
@@ -496,7 +503,9 @@ void SettingsLayout::InitializeWindows() {
     this->saveSessionCheckbox->SetFocusOrder(order++);
     this->pluginsDropdown->SetFocusOrder(order++);
     this->advancedDropdown->SetFocusOrder(order++);
+#ifndef DISABLE_UPDATE_CHECK
     this->updateDropdown->SetFocusOrder(order++);
+#endif
 
     this->AddWindow(this->libraryTypeDropdown);
     this->AddWindow(this->localLibraryLayout);
@@ -528,7 +537,9 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->saveSessionCheckbox);
     this->AddWindow(this->pluginsDropdown);
     this->AddWindow(this->advancedDropdown);
+#ifndef DISABLE_UPDATE_CHECK
     this->AddWindow(this->updateDropdown);
+#endif
     this->AddWindow(this->appVersion);
 }
 
