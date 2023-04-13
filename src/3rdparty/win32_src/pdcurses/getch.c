@@ -228,7 +228,7 @@ static void _copy(void)
 
 #ifdef PDC_WIDE
     wtmp = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
-    len *= 3;
+    len *= 4;
 #endif
     tmp = (char *)malloc(len + 1);
 
@@ -467,11 +467,11 @@ bool PDC_is_function_key( const int key)
 
 #define WAIT_FOREVER    -1
 
-int wgetch(WINDOW *win)
+static int _raw_wgetch(WINDOW *win)
 {
     int key = ERR, remaining_millisecs;
 
-    PDC_LOG(("wgetch() - called\n"));
+    PDC_LOG(("_raw_wgetch() - called\n"));
 
     assert( SP);
     assert( win);
@@ -701,6 +701,45 @@ int PDC_return_key_modifiers(bool flag)
     return PDC_modifiers_set();
 }
 
+int wgetch(WINDOW *win)
+{
+#ifndef PDC_WIDE
+    return( _raw_wgetch( win));
+#else
+    static unsigned char buffered[8];
+    static size_t n_buff = 0;
+    int rval;
+
+    if( n_buff)
+    {
+        size_t i;
+        rval = buffered[0];
+        n_buff--;
+        for( i = 0; i < n_buff; i++)
+            buffered[i] = buffered[i + 1];
+    }
+    else
+    {
+        rval = _raw_wgetch(win);
+        if( rval != ERR && (rval < 0 || rval > 127)
+                  && !PDC_is_function_key( rval))
+        {
+            wchar_t c = (wchar_t)rval;
+
+            n_buff = PDC_wcstombs( (char *)buffered, &c, 1);
+            if( (int)n_buff <= 0)
+            {
+                n_buff = 0;
+                rval = ERR;
+            }
+            else     /* successfully converted to multi-byte string */
+                rval = wgetch( win);
+        }
+    }
+    return( rval);
+#endif
+}
+
 #ifdef PDC_WIDE
 int wget_wch(WINDOW *win, wint_t *wch)
 {
@@ -712,7 +751,7 @@ int wget_wch(WINDOW *win, wint_t *wch)
     if (!wch)
         return ERR;
 
-    key = wgetch(win);
+    key = _raw_wgetch(win);
 
     if (key == ERR)
         return ERR;

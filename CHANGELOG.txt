@@ -7,6 +7,7 @@
   - libcurl@8.0.1
   - libmicrohttpd@0.9.76
   - libopenmpt@0.6.9
+* update to PDCursesMod@4.3.6 for Windows builds
 
 --------------------------------------------------------------------------------
 

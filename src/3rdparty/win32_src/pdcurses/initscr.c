@@ -148,11 +148,12 @@ MOUSE_STATUS Mouse_status;
 extern RIPPEDOFFLINE linesripped[5];
 extern char linesrippedoff;
 
-WINDOW *initscr(void)
+SCREEN *newterm(const char *type, FILE *outfd, FILE *infd)
 {
     int i;
 
-    PDC_LOG(("initscr() - called\n"));
+    PDC_LOG(("newterm() - called\n"));
+    INTENTIONALLY_UNUSED_PARAMETER( type);
 
     if (SP && SP->alive)
         return NULL;
@@ -285,8 +286,16 @@ WINDOW *initscr(void)
         return NULL;
     SP->c_ungind = 0;
     SP->c_ungmax = NUNGETCH;
+    SP->opaque->output_fd = outfd;
+    SP->opaque->input_fd = infd;
 
-    return stdscr;
+    return SP;
+}
+
+WINDOW *initscr(void)
+{
+    PDC_LOG(("initscr() - called\n"));
+    return( newterm( NULL, NULL, NULL) ? stdscr : NULL);
 }
 
 #ifdef XCURSES
@@ -322,20 +331,6 @@ bool isendwin(void)
 
     assert( SP);
     return SP ? !(SP->alive) : FALSE;
-}
-
-SCREEN *newterm(const char *type, FILE *outfd, FILE *infd)
-{
-    WINDOW *win;
-
-    PDC_LOG(("newterm() - called\n"));
-    INTENTIONALLY_UNUSED_PARAMETER( type);
-    win = initscr( );
-    if( win && outfd != stdout)
-        SP->opaque->output_fd = outfd;
-    if( win && infd != stdin)
-        SP->opaque->input_fd = infd;
-    return win ? SP : NULL;
 }
 
 SCREEN *set_term(SCREEN *new_scr)

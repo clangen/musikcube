@@ -204,7 +204,7 @@ function address at runtime. if the method isn't available, that means we're on
 and older operating system, so we just return the original value */
 static LONG scale_font_for_current_dpi( LONG size)
 {
-    typedef LONG(__stdcall *GetDpiForSystemProc)();
+    typedef LONG(STDAPICALLTYPE *GetDpiForSystemProc)();
     HMODULE user32Dll = LoadLibrary( _T("User32.dll"));
 
     if ( user32Dll)

@@ -151,6 +151,7 @@ WINDOW *PDC_makenew(int nlines, int ncols, int begy, int begx)
     PDC_LOG(("PDC_makenew() - called: lines %d cols %d begy %d begx %d\n",
              nlines, ncols, begy, begx));
 
+    assert( nlines > 0 && ncols > 0);
     /* allocate the window structure itself */
 
     win = (WINDOW *)calloc(1, sizeof(WINDOW));
@@ -257,6 +258,10 @@ WINDOW *newwin(int nlines, int ncols, int begy, int begx)
     if (!ncols)
         ncols  = COLS  - begx;
 
+    assert( nlines > 0 && ncols > 0);
+    if( nlines <= 0 || ncols <= 0)
+        return (WINDOW *)NULL;
+
     assert( SP);
     if (!SP || begy + nlines > SP->lines || begx + ncols > SP->cols)
         return (WINDOW *)NULL;
@@ -358,6 +363,9 @@ WINDOW *subwin(WINDOW *orig, int nlines, int ncols, int begy, int begx)
     if (!ncols)
         ncols  = orig->_maxx - k;
 
+    assert( nlines > 0 && ncols > 0);
+    if( nlines <= 0 || ncols <= 0)
+        return (WINDOW *)NULL;
     win = PDC_makenew(nlines, ncols, begy, begx);
     if (!win)
         return (WINDOW *)NULL;
@@ -497,7 +505,8 @@ WINDOW *resize_window(WINDOW *win, int nlines, int ncols)
 
     assert( SP);
     assert( win);
-    if (!win || !SP)
+    assert( nlines >= 0 && ncols >= 0);
+    if (!win || !SP || nlines < 0 || ncols < 0)
         return (WINDOW *)NULL;
 
     if (win->_flags & _SUBPAD)
