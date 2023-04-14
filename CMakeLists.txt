@@ -71,6 +71,13 @@ add_definitions(
   -D_WEBSOCKETPP_CPP11_RANDOM_DEVICE_
   -DASIO_STANDALONE)
 
+# disable update check for environments that we know will provided hosted,
+# prebuilt binaries.
+if (DEFINED ENV{HOMEBREW_PREFIX})
+  message(STATUS "[build] detected homebrew, disabling update check functionality.")
+  add_definitions(-DDISABLE_UPDATE_CHECK)
+endif()
+
 if (${BUILD_STANDALONE} MATCHES "true")
   find_vendor_library(LIBCURL curl)
   find_vendor_library(LIBSSL ssl)

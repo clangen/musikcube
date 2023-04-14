@@ -1,13 +1,16 @@
 0.99.8
 
-* TODO
+* added uk_UA localization (@dinolaz)
 * update dependencies across all platforms:
   - ffmpeg@6.0
   - openssl@3.1.0
   - libcurl@8.0.1
   - libmicrohttpd@0.9.76
   - libopenmpt@0.6.9
+  - asio@1.27.0
 * update to PDCursesMod@4.3.6 for Windows builds
+* update `musikdroid` to use Android Studio `Flamingo` and update dependencies
+* disable update check for `homebrew` builds
 
 --------------------------------------------------------------------------------
 
