@@ -95,7 +95,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>./include/;./include/sqlite/;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>$(ExternalCompilerOptions);WIN32;PDC_FORCE_UTF8;PDC_WIDE;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>$(ExternalCompilerOptions);PDC_DISABLE_MULTIBYTE;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
@@ -114,7 +114,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>./include/;./include/sqlite/;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>$(ExternalCompilerOptions);WIN32;PDC_FORCE_UTF8;PDC_WIDE;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>$(ExternalCompilerOptions);PDC_DISABLE_MULTIBYTE;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_DEBUG;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
@@ -136,7 +136,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>./include/;./include/sqlite;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>$(ExternalCompilerOptions);NDEBUG;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>$(ExternalCompilerOptions);PDC_DISABLE_MULTIBYTE;NDEBUG;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -158,7 +158,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>./include/;./include/sqlite;./win32_include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>$(ExternalCompilerOptions);NDEBUG;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>$(ExternalCompilerOptions);PDC_DISABLE_MULTIBYTE;NDEBUG;WIN32;PDC_FORCE_UTF8;PDC_WIDE;_CRT_SECURE_NO_DEPRECATE;SQLITE_THREADSAFE;PDCURSES_WINGUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>

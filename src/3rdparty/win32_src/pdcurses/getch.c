@@ -703,7 +703,7 @@ int PDC_return_key_modifiers(bool flag)
 
 int wgetch(WINDOW *win)
 {
-#ifndef PDC_WIDE
+#if !defined(PDC_WIDE) || defined(PDC_DISABLE_MULTIBYTE)
     return( _raw_wgetch( win));
 #else
     static unsigned char buffered[8];
