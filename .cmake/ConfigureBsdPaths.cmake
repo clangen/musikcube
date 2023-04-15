@@ -7,6 +7,9 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR
       COMMAND awk "{print $2}"
       OUTPUT_STRIP_TRAILING_WHITESPACE
       OUTPUT_VARIABLE BSD_PATH_PREFIX)
+  else()
+    include_directories("${BSD_PATH_PREFIX}/include")
+    link_directories("${BSD_PATH_PREFIX}/lib")
   endif()
 
   message(STATUS "[configure-bsd-paths] resolved BSD_PATH_PREFIX to: '${BSD_PATH_PREFIX}'")
@@ -24,4 +27,4 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR
     "${BSD_PATH_PREFIX}/lib"
     "${BSD_PATH_PREFIX}/opt/openssl/lib"
     "${BSD_PATH_PREFIX}/opt/ncurses/lib")
-endif ()
+endif()
