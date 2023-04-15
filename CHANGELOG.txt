@@ -1,6 +1,7 @@
 0.99.9
 
 * fixed non-latin character parsing in Windows builds
+* fixed compile for BSD systems
 
 --------------------------------------------------------------------------------
 
