@@ -113,7 +113,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcurl.lib;libssl.lib;libcrypto.lib</AdditionalDependencies>
+      <AdditionalDependencies>Shell32.lib;libcurl.lib;libssl.lib;libcrypto.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -137,7 +137,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcurl.lib;libssl.lib;libcrypto.lib</AdditionalDependencies>
+      <AdditionalDependencies>Shell32.lib;libcurl.lib;libssl.lib;libcrypto.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -164,7 +164,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcurl.lib;libssl.lib;libcrypto.lib</AdditionalDependencies>
+      <AdditionalDependencies>Shell32.lib;libcurl.lib;libssl.lib;libcrypto.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -191,7 +191,7 @@
       <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libcurl.lib;libssl.lib;libcrypto.lib</AdditionalDependencies>
+      <AdditionalDependencies>Shell32.lib;libcurl.lib;libssl.lib;libcrypto.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
