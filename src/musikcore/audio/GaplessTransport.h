@@ -95,7 +95,7 @@ namespace musik { namespace core { namespace audio {
 
             void OnPlayerStarted(Player* player) override;
             void OnPlayerBuffered(Player* player) override;
-            void OnPlayerAlmostEnded(Player* player) override;
+            void OnPlayerStreamEof(Player* player) override;
             void OnPlayerFinished(Player* player) override;
             void OnPlayerOpenFailed(Player* player) override;
             void OnPlayerDestroying(Player* player) override;

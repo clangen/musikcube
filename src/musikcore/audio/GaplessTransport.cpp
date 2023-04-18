@@ -301,7 +301,7 @@ void GaplessTransport::OnPlayerStarted(Player* player) {
     this->SetPlaybackState(PlaybackState::Playing);
 }
 
-void GaplessTransport::OnPlayerAlmostEnded(Player* player) {
+void GaplessTransport::OnPlayerStreamEof(Player* player) {
     this->SetNextCanStart(true);
 
     {

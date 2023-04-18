@@ -422,7 +422,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         if (!player->Exited()) {
             for (Listener* l : player->Listeners()) {
                 player->streamState = StreamState::AlmostDone;
-                l->OnPlayerAlmostEnded(player);
+                l->OnPlayerStreamEof(player);
             }
         }
     }
