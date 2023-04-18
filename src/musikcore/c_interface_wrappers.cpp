@@ -1035,11 +1035,11 @@ class mcsdk_audio_player_callback_proxy: public Player::EventListener {
                 }
             }
         }
-        virtual void OnPlayerAlmostEnded(Player *player) {
+        virtual void OnPlayerStreamEof(Player *player) {
             std::unique_lock<std::mutex> lock(this->context->event_mutex);
             for (auto c : callbacks) {
-                if (c->on_almost_ended) {
-                    c->on_almost_ended(mcsdk_audio_player { context });
+                if (c->on_stream_eof) {
+                    c->on_stream_eof(mcsdk_audio_player { context });
                 }
             }
         }
@@ -1055,18 +1055,18 @@ class mcsdk_audio_player_callback_proxy: public Player::EventListener {
             std::unique_lock<std::mutex> lock(this->context->event_mutex);
             for (auto c : callbacks) {
                 if (c->on_error) {
-                    c->on_error(mcsdk_audio_player { context });
+                    c->on_error(mcsdk_audio_player { context }, mcsdk_playback_error_open_failed);
                 }
             }
         }
         virtual void OnPlayerDestroying(Player *player) {
             std::unique_lock<std::mutex> lock(this->context->event_mutex);
+            this->context->player_finished = true;
             for (auto c : callbacks) {
                 if (c->on_destroying) {
                     c->on_destroying(mcsdk_audio_player { context });
                 }
             }
-            this->context->player_finished = true;
             this->context->finished_condition.notify_all();
         }
         virtual void OnPlayerMixPoint(Player *player, int id, double time) {

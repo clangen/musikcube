@@ -90,6 +90,11 @@ typedef enum mcsdk_audio_output_code {
     mcsdk_audio_output_error_buffer_written = -1
 } mcsdk_audio_output_code;
 
+typedef enum mcsdk_playback_error_code {
+    mcsdk_playback_error_unknown = -1,
+    mcsdk_playback_error_open_failed = 0,
+} mcsdk_playback_error_code;
+
 typedef enum mcsdk_time_change_mode {
     mcsdk_time_change_mode_seek = 0,
     mcsdk_time_change_mode_scrub = 1
@@ -261,9 +266,9 @@ mcsdk_define_handle(mcsdk_db_transaction);
 typedef struct mcsdk_audio_player_callbacks {
     void (*on_prepared)(mcsdk_audio_player p);
     void (*on_started)(mcsdk_audio_player p);
-    void (*on_almost_ended)(mcsdk_audio_player p);
+    void (*on_stream_eof)(mcsdk_audio_player p);
     void (*on_finished)(mcsdk_audio_player p);
-    void (*on_error)(mcsdk_audio_player p);
+    void (*on_error)(mcsdk_audio_player p, mcsdk_playback_error_code ec);
     void (*on_destroying)(mcsdk_audio_player p);
     void (*on_mixpoint)(mcsdk_audio_player p, int id, double time);
 } mcsdk_audio_player_callbacks;
