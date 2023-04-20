@@ -1,7 +1,8 @@
-0.99.9
+3.0.0
 
 * fixed non-latin character parsing in Windows builds
 * fixed compile for BSD systems
+* fixed a couple minor bugs in the C API
 
 --------------------------------------------------------------------------------
 
