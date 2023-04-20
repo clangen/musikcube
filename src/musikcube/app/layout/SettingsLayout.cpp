@@ -168,26 +168,12 @@ SettingsLayout::SettingsLayout(
 , indexer(library->Indexer())
 , playback(playback) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
-    this->piggyClient = PiggyWebSocketClient::Instance(&MessageQueue());
-    this->piggyClient->StateChanged.connect(this, &SettingsLayout::OnPiggyClientStateChange);
     this->UpdateServerAvailability();
     this->InitializeWindows();
 }
 
 SettingsLayout::~SettingsLayout() {
     updateCheck.Cancel();
-}
-
-void SettingsLayout::OnPiggyClientStateChange(
-    PiggyWebSocketClient* client,
-    PiggyWebSocketClient::State newState,
-    PiggyWebSocketClient::State oldState)
-{
-    /* trigger a redraw on the main thread */
-    using State = PiggyWebSocketClient::State;
-    if (newState == State::Connected || newState == State::Disconnected) {
-        this->Post(core::message::EnvironmentUpdated);
-    }
 }
 
 void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
@@ -587,13 +573,6 @@ void SettingsLayout::OnRemovedFromParent(IWindow* parent) {
     MessageQueue().UnregisterForBroadcasts(this);
 }
 
-void SettingsLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
-    LayoutBase::ProcessMessage(message);
-    if (message.Type() == core::message::EnvironmentUpdated) {
-        this->LoadPreferences();
-    }
-}
-
 void SettingsLayout::LoadPreferences() {
     this->syncOnStartupCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SyncOnStartup, true));
     this->removeCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
@@ -664,16 +643,7 @@ void SettingsLayout::LoadPreferences() {
     this->remoteLibraryLayout->LoadPreferences();
 
     /* version, status */
-    std::string piggyStatus = "";
-    if (this->piggyAvailable) {
-        if (this->piggyClient->ConnectionState() == PiggyWebSocketClient::State::Connected) {
-            piggyStatus = " (oo)";
-        }
-        else {
-            piggyStatus = " (..)";
-        }
-    }
-    std::string version = u8fmt("%s %s%s", MUSIKCUBE_VERSION, MUSIKCUBE_VERSION_COMMIT_HASH, piggyStatus.c_str());
+    std::string version = u8fmt("%s %s", MUSIKCUBE_VERSION, MUSIKCUBE_VERSION_COMMIT_HASH);
     this->appVersion->SetText(u8fmt(_TSTR("console_version"), version.c_str()));
 
     this->Layout();
@@ -681,5 +651,4 @@ void SettingsLayout::LoadPreferences() {
 
 void SettingsLayout::UpdateServerAvailability() {
     this->serverAvailable = !!ServerOverlay::FindServerPlugin().get();
-    this->piggyAvailable = this->prefs->GetBool(core::prefs::keys::PiggyEnabled, false);
 }
