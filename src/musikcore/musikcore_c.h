@@ -455,7 +455,7 @@ mcsdk_export mcsdk_track_list_editor mcsdk_svc_playback_edit_playlist(mcsdk_svc_
 mcsdk_export mcsdk_time_change_mode mcsdk_svc_playback_get_time_change_mode(mcsdk_svc_playback pb);
 mcsdk_export void mcsdk_svc_playback_set_time_change_mode(mcsdk_svc_playback pb, mcsdk_time_change_mode mode);
 mcsdk_export void mcsdk_svc_playback_reload_output(mcsdk_svc_playback pb);
-mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb);
+mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone_track_list(mcsdk_svc_playback pb);
 
 /*
  * IPreferences

@@ -498,7 +498,7 @@ mcsdk_export void mcsdk_svc_playback_reload_output(mcsdk_svc_playback pb) {
     PLAYBACK(pb)->ReloadOutput();
 }
 
-mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb) {
+mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone_track_list(mcsdk_svc_playback pb) {
     return mcsdk_track_list { PLAYBACK(pb)->Clone() };
 }
 
