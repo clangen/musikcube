@@ -38,9 +38,7 @@ binaries are available in the [releases](https://github.com/clangen/musikcube/re
 
 while macos binaries are provided, you can also install via homebrew as follows:
 
-- `brew tap clangen/musikcube`
 - `brew install musikcube`
-- `musikcube`
 
 on freebsd musikcube can be installed as follows:
 
