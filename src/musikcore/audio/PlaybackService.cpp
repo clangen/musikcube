@@ -78,6 +78,7 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_RELOAD_OUTPUT 1010
 #define MESSAGE_LOAD_PLAYBACK_CONTEXT 1011
 #define MESSAGE_MARK_TRACK_PLAYED 1012
+#define MESSAGE_NEXT_TRACK_EDITED 1013
 
 class StreamMessage: public Message {
     public:
@@ -391,6 +392,21 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
 
         this->PlaybackStateChanged(static_cast<PlaybackState>(eventType));
+    }
+    else if (type == MESSAGE_NEXT_TRACK_EDITED) {
+        if (transport->GetPlaybackState() != PlaybackState::Stopped) {
+            const size_t updatedIndex = static_cast<size_t>(message.UserData1());
+
+            if (updatedIndex != NO_POSITION) {
+                this->index = updatedIndex;
+                this->nextIndex = NO_POSITION; /* force recalc */
+            }
+
+            /* the user may be moving things around aggressively; we wait a few seconds
+            before actually scheduling the next track lookup to avoid a bunch of unnecessary
+            I/O (note: the I/O may be over the network in some cases) */
+            this->messageQueue.Debounce(Message::Create(this, MESSAGE_PREPARE_NEXT_TRACK, updatedIndex), 2500);
+        }
     }
     else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport->GetPlaybackState() != PlaybackState::Stopped) {
@@ -1000,7 +1016,7 @@ PlaybackService::Editor::~Editor() {
             }
 
             this->queue.Post(Message::Create(
-                &this->playback, MESSAGE_PREPARE_NEXT_TRACK, this->playIndex, 0));
+                &this->playback, MESSAGE_NEXT_TRACK_EDITED, this->playIndex));
         }
 
         this->playback.messageQueue.Post(Message::Create(
