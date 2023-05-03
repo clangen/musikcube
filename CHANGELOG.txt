@@ -1,3 +1,9 @@
+3.0.1
+
+* fixed a bug where re-arranging the play queue may cause unnecessary i/o
+
+--------------------------------------------------------------------------------
+
 3.0.0
 
 * fixed non-latin character parsing in Windows builds
