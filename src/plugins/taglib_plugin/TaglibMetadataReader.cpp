@@ -375,7 +375,7 @@ void TaglibMetadataReader::ExtractValueForKey(
     if (map.contains(inputKey.c_str())) {
         TagLib::StringList value = map[inputKey.c_str()];
         if (value.size()) {
-            this->SetTagValue(outputKey.c_str(), value[0].to8Bit(true), target);
+            this->SetTagValue(outputKey.c_str(), value[0], target);
         }
     }
 }
