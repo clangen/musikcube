@@ -4,6 +4,7 @@
   being double encoded.
 * fixed a bug where re-arranging the play queue may cause unnecessary i/o.
 * fixed bug where `rpm` architecture was incorrect for `armhf` builds.
+* updated `asio` to 1.28.0
 
 --------------------------------------------------------------------------------
 
