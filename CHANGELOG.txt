@@ -3,6 +3,7 @@
 * fixed a bug where album artist (and potentially other) metadata values were
   being double encoded.
 * fixed a bug where re-arranging the play queue may cause unnecessary i/o.
+* fixed bug where `rpm` architecture was incorrect for `armhf` builds.
 
 --------------------------------------------------------------------------------
 
