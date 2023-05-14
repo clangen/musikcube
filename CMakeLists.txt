@@ -1,6 +1,6 @@
 #cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .
 #cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr .
-#cmake -DGENERATE_DEB=true -DDEB_ARCHITECTURE=i386|amd64|armhf -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=eoan -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+#cmake -DGENERATE_DEB=true -DPACKAGE_ARCHITECTURE=i386|amd64|armhf -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=eoan -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
 #cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true .
 
 cmake_minimum_required(VERSION 3.0)
@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.0)
 project(musikcube)
 set (musikcube_VERSION_MAJOR 3)
 set (musikcube_VERSION_MINOR 0)
-set (musikcube_VERSION_PATCH 0)
+set (musikcube_VERSION_PATCH 1)
 set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 set (LIBRARY_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin/plugins)
 set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
