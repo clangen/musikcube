@@ -254,7 +254,7 @@ App::App(const std::string& title) {
     if (!isLangUtf8()) {
         std::cout << "\n\nThis application requires a UTF-8 compatible LANG environment "
         "variable to be set in the controlling terminal. Setting to C.UTF-8. Depending on "
-        "your environment, you may see corrupted output. If that'st he case, try to set "
+        "your environment, you may see corrupted output. If that's the case, try to set "
         "LANG=C.UTF-8 before starting musikcube.\n\n\n\n";
         setenv("LANG", "C.UTF-8", 1);
     }
