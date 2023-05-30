@@ -2,9 +2,9 @@ set (mpris_SOURCES
   mpris.cpp
   dbus.cpp)
 
-if (USE_ELOGIND MATCHES "true")
+if (USE_ELOGIND)
   set(SDBUS "libelogind >= 239.3")
-elseif (USE_BASU MATCHES "true")
+elseif (USE_BASU)
   set(SDBUS "basu")
 else()
   set(SDBUS "libsystemd")
