@@ -1,7 +1,7 @@
 #pragma once
 
 extern "C" {
-    #include <systemd/sd-bus.h>
+    #include SDBUS_HEADER
 }
 
 extern const sd_bus_vtable musikcube_mp_table[];

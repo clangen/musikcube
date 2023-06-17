@@ -8,7 +8,7 @@
 #include <memory>
 
 extern "C" {
-    #include <systemd/sd-bus.h>
+    #include SDBUS_HEADER
 }
 
 using namespace musik::core::sdk;
