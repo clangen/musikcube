@@ -14,6 +14,12 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR
 
   message(STATUS "[configure-bsd-paths] resolved BSD_PATH_PREFIX to: '${BSD_PATH_PREFIX}'")
 
+  if (CMAKE_SYSTEM_NAME MATCHES "Darwin" AND NOT(${BUILD_STANDALONE} MATCHES "true"))
+    message(STATUS "[configure-bsd-paths] standalone *not* detected, adding Homebrew ${BSD_PATH_PREFIX} to include/lib dirs")
+    include_directories("${BSD_PATH_PREFIX}/include")
+    link_directories("${BSD_PATH_PREFIX}/lib")
+  endif()
+
   list(
     APPEND
     VENDOR_INCLUDE_DIRECTORIES
