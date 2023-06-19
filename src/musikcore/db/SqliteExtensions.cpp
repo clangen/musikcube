@@ -36,6 +36,7 @@
 
 #pragma warning(push, 0)
 #include <sqlite/sqlite3.h>
+#include <utf8/utf8.h>
 #include <musikcore/db/SqliteExtensions.h>
 #pragma warning(pop)
 
@@ -646,6 +647,52 @@ u32 sqlite3Utf8Read(
     return it != accentToChar.end() ? it->second : c;
 }
 
+static inline int utf8bytes(u32 c) {
+    if (c < 0x80) { return 1; }
+    else if (c < 0x800) { return 2; }
+    else if (c < 0x10000) { return 3; }
+    return 4;
+}
+
+static inline void utf8fill(u32 c, uint8_t bytes[5]) {
+    memset((void*) bytes, 0, sizeof(uint8_t) * 5);
+    if (c < 0x80) {
+        bytes[0] = static_cast<uint8_t>(c); 
+    }
+    else if (c < 0x800) {
+        bytes[0] = static_cast<uint8_t>((c >> 6)   | 0xc0);
+        bytes[1] = static_cast<uint8_t>((c & 0x3f) | 0x80);
+    }
+    else if (c < 0x10000) {
+        bytes[0] = static_cast<uint8_t>((c >> 12)         | 0xe0);
+        bytes[1] = static_cast<uint8_t>(((c >> 6) & 0x3f) | 0x80);
+        bytes[2] = static_cast<uint8_t>((c & 0x3f)        | 0x80);
+    }
+    else {                                // four octets
+        bytes[0] = static_cast<uint8_t>((c >> 18)         | 0xf0);
+        bytes[1] = static_cast<uint8_t>(((c >> 12) & 0x3f)| 0x80);
+        bytes[2] = static_cast<uint8_t>(((c >> 6) & 0x3f) | 0x80);
+        bytes[3] = static_cast<uint8_t>((c & 0x3f)        | 0x80);
+    }
+}
+
+static int utf8strcspn(const char* str1, const char* str2) {
+    uint8_t bytes[5];
+    std::string needles(str2);
+    std::string::const_iterator begin = needles.begin();
+    std::string::const_iterator it = begin;
+    u32 str1len = strlen(str1);
+    const char* foundPos;
+    while (it != needles.end()) {
+        u32 c = utf8::unchecked::next(it);
+        utf8fill(c, bytes);
+        if ((foundPos = strstr(str1, (const char*) bytes)) != nullptr) {
+            return foundPos - str1;
+        }
+    }
+    return str1len;
+}
+
 /*
 ** Compare two UTF-8 strings for equality where the first string is
 ** a GLOB or LIKE expression.  Return values:
@@ -736,40 +783,58 @@ static int patternCompare(
             ** c but in the other case and search the input string for either
             ** c or cx.
             */
-            if (c <= 0x80) {
-                std::unordered_map<u32, const char*>& charToAccentsMap = charToAccentsInsensitive;
-                char zStop[3];
-                int bMatch;
-                if (noCase) {
-                    zStop[0] = sqlite3Toupper(c);
-                    zStop[1] = sqlite3Tolower(c);
-                    zStop[2] = 0;
-                }
-                else {
-                    charToAccentsMap = charToAccentsSensitive;
-                    zStop[0] = c;
-                    zStop[1] = 0;
+            std::unordered_map<u32, const char*>& charToAccentsMap = charToAccentsInsensitive;
+            char zStop[3];
+            int bMatch;
+            bool bIsAscii = (c <= 0x80);
+            u32 nByteCount = utf8bytes(c);
+
+            if (bIsAscii || noCase) {
+                if (bIsAscii) {
+                    if (noCase) {
+                        zStop[0] = sqlite3Toupper(c);
+                        zStop[1] = sqlite3Tolower(c);
+                        zStop[2] = 0;
+                    }
+                    else {
+                        charToAccentsMap = charToAccentsSensitive;
+                        zStop[0] = c;
+                        zStop[1] = 0;
+                    }
                 }
                 while (1) {
-                    /* see if we have a mapping from input character to a list of their
-                    respective accented characters; if we do, use that mapping*/
                     auto it = charToAccentsMap.find(c);
-                    if (it != charToAccentsMap.end()) {
-                        const char* stop = it->second;
-                        zString += strcspn((const char*)zString, it->second);
+                    /* if we are doing a case insensitive search on a non-ascii character (utf8), then
+                    use our special utf8strscpn to search */
+                    if (!bIsAscii && noCase) {
+                        if (it != charToAccentsMap.end()) {
+                            zString += utf8strcspn((const char*)zString, it->second);
+                        }
                     }
-                    /* otherwise we fall back to the default sqlite implementation that
-                    does simple ascii matching */
+                    /* otherwise, we're searching for a regular ascii character... */
                     else {
-                        zString += strcspn((const char*)zString, zStop);
+                        /* see if we have a mapping from input character to a list of their
+                        respective accented characters; if we do, use that mapping */
+                        if (it != charToAccentsMap.end()) {
+                            const char* stop = it->second;
+                            zString += strcspn((const char*)zString, it->second);
+                        }
+                        /* otherwise we fall back to the default sqlite implementation that
+                        does simple ascii matching */
+                        else {
+                            zString += strcspn((const char*)zString, zStop);
+                        }
                     }
                     if (zString[0] == 0) break;
-                    zString++;
+                    zString += nByteCount;
                     bMatch = patternCompare(zPattern, zString, pInfo, matchOther);
                     if (bMatch != SQLITE_NOMATCH) return bMatch;
                 }
             }
-            else {
+
+            /* if we fall through to here, and the character we're looking for is utf8 sequence,
+            go ahead and do a regular pattern compare. */
+            if (!bIsAscii) {
                 int bMatch;
                 while ((c2 = Utf8Read(zString)) != 0) {
                     if (c2 != c) continue;
@@ -777,6 +842,7 @@ static int patternCompare(
                     if (bMatch != SQLITE_NOMATCH) return bMatch;
                 }
             }
+
             return SQLITE_NOWILDCARDMATCH;
         }
         if (c == matchOther) {
@@ -822,8 +888,20 @@ static int patternCompare(
         }
         c2 = Utf8Read(zString);
         if (c == c2) continue;
-        if (noCase && sqlite3Tolower(c) == sqlite3Tolower(c2) && c < 0x80 && c2 < 0x80) {
-            continue;
+        if (noCase) {
+            /* standard sqlite check */
+            if (sqlite3Tolower(c) == sqlite3Tolower(c2) && c < 0x80 && c2 < 0x80) {
+                continue;
+            }
+            /* check against our internal mappings */
+            auto it = charToAccentsInsensitive.find(c);
+            if (it != charToAccentsInsensitive.end()) {
+                uint8_t bytes[5];
+                utf8fill(c2, bytes);
+                if (utf8strcspn((const char*) bytes, it->second) < strlen((const char*) bytes)) {
+                    continue;
+                }
+            }
         }
         if (c == matchOne && zPattern != zEscaped && c2 != 0) continue;
         return SQLITE_NOMATCH;
