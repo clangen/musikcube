@@ -20,6 +20,12 @@
     <Filter Include="src\openssl">
       <UniqueIdentifier>{ac39b793-9ca0-43de-8a2e-71272dfe0709}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\sqlean">
+      <UniqueIdentifier>{f5ea6705-67c7-4e4c-8782-bf30852f0f7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sqlean\unicode">
+      <UniqueIdentifier>{9ad4cc3b-d6b4-4160-93e4-0b2ce9f94130}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\sqlite\sqlite3.c">
@@ -162,6 +168,9 @@
     </ClCompile>
     <ClCompile Include="win32_src\pdcurses\pdcwingui.c">
       <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sqlean\unicode\extension.c">
+      <Filter>src\sqlean\unicode</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -440,6 +449,9 @@
     </ClInclude>
     <ClInclude Include="include\md5.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sqlean\unicode\extension.h">
+      <Filter>src\sqlean\unicode</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

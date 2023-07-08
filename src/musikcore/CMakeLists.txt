@@ -67,6 +67,7 @@ set(CORE_SOURCES
   ./support/Playback.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp
+  ../3rdparty/src/sqlean/unicode/extension.c
   ../3rdparty/src/sqlite/sqlite3.c
   ../3rdparty/src/kiss_fft.c
   ../3rdparty/src/kiss_fftr.c
