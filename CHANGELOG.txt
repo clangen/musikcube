@@ -1,3 +1,10 @@
+3.0.2
+
+* add sqlean/unicode sqlite extension (and remove custom mapping logic) for
+  improved non-Latin, case-insensitive unicode filter/search.
+
+--------------------------------------------------------------------------------
+
 3.0.1
 
 * fixed a bug where album artist (and potentially other) metadata values were
