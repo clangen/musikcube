@@ -129,32 +129,37 @@ static void regexpFunc(sqlite3_context* context, int nArg, sqlite3_value** apArg
     sqlite3_result_int(context, std::regex_search(matchAgainst, *regex, kMatchFlags) ? 1 : 0);
 }
 
+static int regex_init(sqlite3* db) {
+    static const struct Scalar {
+        const char* zName; /* Function name */
+        unsigned char nArg; /* Number of arguments */
+        unsigned int enc; /* Optimal text encoding */
+        void (*xFunc)(sqlite3_context*, int, sqlite3_value**);
+    } scalars[] = {
+        {"regexp", 2, SQLITE_ANY | SQLITE_DETERMINISTIC | SQLITE_INNOCUOUS, regexpFunc},
+    };
+    int rc = SQLITE_OK;
+    for (int i = 0; rc == SQLITE_OK && i < (int)(sizeof(scalars) / sizeof(scalars[0])); i++) {
+        const struct Scalar* p = &scalars[i];
+        rc = sqlite3_create_function(
+            db,
+            p->zName,
+            p->nArg,
+            p->enc,
+            nullptr,
+            p->xFunc,
+            0,
+            0);
+    }
+    return rc;
+}
+
 namespace musik { namespace core { namespace db {
 
     namespace SqliteExtensions {
 
         int Register(sqlite3* db) {
-            static const struct Scalar {
-                const char* zName; /* Function name */
-                unsigned char nArg; /* Number of arguments */
-                unsigned int enc; /* Optimal text encoding */
-                void (*xFunc)(sqlite3_context*, int, sqlite3_value**);
-            } scalars[] = {
-                {"regexp", 2, SQLITE_ANY | SQLITE_DETERMINISTIC| SQLITE_INNOCUOUS, regexpFunc},
-            };
-            int rc = SQLITE_OK;
-            for (int i = 0; rc == SQLITE_OK && i < (int)(sizeof(scalars) / sizeof(scalars[0])); i++) {
-                const struct Scalar* p = &scalars[i];
-                rc = sqlite3_create_function(
-                    db,
-                    p->zName,
-                    p->nArg,
-                    p->enc,
-                    nullptr,
-                    p->xFunc,
-                    0,
-                    0);
-            }
+            int rc = regex_init(db);
             if (rc != SQLITE_OK) {
                 return rc;
             }
