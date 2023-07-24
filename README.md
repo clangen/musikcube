@@ -44,6 +44,10 @@ on freebsd musikcube can be installed as follows:
 
 - `pkg install musikcube`
 
+on openbsd musikcube can be installed as follows:
+
+- `pkg_add install musikcube`
+
 on windows, you can install via chocolatey:
 
 - `choco install musikcube`
