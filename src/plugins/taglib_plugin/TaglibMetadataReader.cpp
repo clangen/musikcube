@@ -62,6 +62,7 @@
 
 #include <vector>
 #include <string>
+#include <set>
 #include <iostream>
 #include <functional>
 #include <cctype>
@@ -69,6 +70,29 @@
 #include <string.h>
 
 using namespace musik::core::sdk;
+
+static std::set<std::string> SUPPORTED_FORMATS = {
+    "aac",
+    "aif",
+    "aiff",
+    "alac",
+    "ape",
+    "flac",
+    "m4a",
+    "mp3",
+    "mpc",
+    "ogg",
+    "opus",
+    "wav",
+    "wave",
+    "wma",
+    "wv",
+};
+
+static std::set<std::string> ID3V2_FORMATS = {
+    "mp3",
+    "aac"
+};
 
 #ifdef WIN32
 static inline std::wstring utf8to16(const char* utf8) {
@@ -184,24 +208,8 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
     if (extension && strlen(extension)) {
         std::string withoutLeadingDot = std::string(extension[0] == '.' ? &extension[1] : extension);
         std::string ext = str::ToLowerCopy(withoutLeadingDot);
-        return
-            ext.compare("opus") == 0 ||
-            ext.compare("wv") == 0 ||
-            ext.compare("wma") == 0 ||
-            ext.compare("ape") == 0 ||
-            ext.compare("mpc") == 0 ||
-            ext.compare("aac") == 0 ||
-            ext.compare("alac") == 0 ||
-            ext.compare("wav") == 0 ||
-            ext.compare("wave") == 0 ||
-            ext.compare("aif") == 0 ||
-            ext.compare("aiff") == 0 ||
-            ext.compare("mp3") == 0 ||
-            ext.compare("ogg") == 0 ||
-            ext.compare("m4a") == 0 ||
-            ext.compare("flac") == 0;
+        return SUPPORTED_FORMATS.find(ext) != SUPPORTED_FORMATS.end();
     }
-
     return false;
 }
 
@@ -225,9 +233,14 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
 
     /* ID3v2 is a trainwreck, so it requires special processing */
     if (extension.size()) {
-        if (str::ToLowerCopy(extension) == "mp3") {
+        if (ID3V2_FORMATS.find(str::ToLowerCopy(extension)) != ID3V2_FORMATS.end()) {
             this->ReadID3V2(uri, track);
         }
+    }
+
+    /* always use the filename as the title if we can't resolve one */
+    if (!track->Contains("title")) {
+        this->SetTagValue("title", uri, track);
     }
 
     return true;
@@ -250,88 +263,83 @@ bool TaglibMetadataReader::ReadGeneric(
         file = resolveOggType(uri);
     }
 
-    if (file.isNull()) {
-        this->SetTagValue("title", uri, target);
-    }
-    else {
-        TagLib::Tag *tag = file.tag();
-        if (tag) {
-            this->ReadBasicData(file.tag(), uri, target);
+    TagLib::Tag *tag = file.tag();
+    if (tag) {
+        this->ReadBasicData(file.tag(), uri, target);
 
-            /* wav files can have metadata in the RIFF header, or, in some cases,
-            with an embedded id3v2 tag */
-            auto wavFile = dynamic_cast<TagLib::RIFF::WAV::File*>(file.file());
-            if (wavFile) {
-                if (wavFile->hasInfoTag()) {
-                    this->ReadBasicData(wavFile->InfoTag(), uri, target);
-                }
-                if (wavFile->hasID3v2Tag()) {
-                    this->ReadID3V2(wavFile->ID3v2Tag(), target);
-                }
+        /* wav files can have metadata in the RIFF header, or, in some cases,
+        with an embedded id3v2 tag */
+        auto wavFile = dynamic_cast<TagLib::RIFF::WAV::File*>(file.file());
+        if (wavFile) {
+            if (wavFile->hasInfoTag()) {
+                this->ReadBasicData(wavFile->InfoTag(), uri, target);
             }
-
-            /* aif files are similar to wav files, but for some reason taglib
-            doesn't seem to expose non-id3v2 tags */
-            const auto aifFile = dynamic_cast<TagLib::RIFF::AIFF::File*>(file.file());
-            if (aifFile) {
-                if (aifFile->hasID3v2Tag()) {
-                    this->ReadID3V2(aifFile->tag(), target);
-                }
+            if (wavFile->hasID3v2Tag()) {
+                this->ReadID3V2(wavFile->ID3v2Tag(), target);
             }
-
-            /* taglib hides certain properties (like album artist) in the XiphComment's
-            field list. if we're dealing with a straight-up Xiph tag, process it now */
-            const auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
-            if (xiphTag) {
-                processAlbumArt(xiphTag->pictureList(), target);
-                this->ReadFromMap(xiphTag->fieldListMap(), target);
-                this->ExtractReplayGain(xiphTag->fieldListMap(), target);
-            }
-
-            /* if this isn't a xiph tag, the file format may have some other custom
-            properties. let's see if we can pull them out here... */
-            if (!xiphTag) {
-                bool handled = false;
-
-                /* flac files may have more than one type of tag embedded. see if there's
-                see if there's a xiph comment buried deep. */
-                auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
-                if (flacFile) {
-                    processAlbumArt(flacFile->pictureList(), target);
-                    if (flacFile->hasXiphComment()) {
-                        this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
-                        this->ExtractReplayGain(flacFile->xiphComment()->fieldListMap(), target);
-                        handled = true;
-                    }
-                }
-
-                /* similarly, mp4 buries disc number and album artist. however, taglib does
-                NOT exposed a map with normalized keys, so we have to do special property
-                handling here... */
-                if (!handled) {
-                    const auto mp4File = dynamic_cast<TagLib::MP4::File*>(file.file());
-                    if (mp4File && mp4File->hasMP4Tag()) {
-                        auto mp4TagMap = static_cast<TagLib::MP4::Tag*>(tag)->itemListMap();
-                        this->ExtractValueForKey(mp4TagMap, "aART", "album_artist", target);
-                        this->ExtractValueForKey(mp4TagMap, "disk", "disc", target);
-                        this->ExtractReplayGain(mp4TagMap, target);
-                        handled = true;
-                    }
-                }
-
-                if (!handled) {
-                    const auto wvFile = dynamic_cast<TagLib::WavPack::File*>(file.file());
-                    if (wvFile && wvFile->hasAPETag()) {
-                        this->ReadFromMap(wvFile->properties(), target);
-                        this->ExtractReplayGain(wvFile->properties(), target);
-                        handled = true;
-                    }
-                }
-            }
-
-            TagLib::AudioProperties *audio = file.audioProperties();
-            this->SetAudioProperties(audio, target);
         }
+
+        /* aif files are similar to wav files, but for some reason taglib
+        doesn't seem to expose non-id3v2 tags */
+        const auto aifFile = dynamic_cast<TagLib::RIFF::AIFF::File*>(file.file());
+        if (aifFile) {
+            if (aifFile->hasID3v2Tag()) {
+                this->ReadID3V2(aifFile->tag(), target);
+            }
+        }
+
+        /* taglib hides certain properties (like album artist) in the XiphComment's
+        field list. if we're dealing with a straight-up Xiph tag, process it now */
+        const auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
+        if (xiphTag) {
+            processAlbumArt(xiphTag->pictureList(), target);
+            this->ReadFromMap(xiphTag->fieldListMap(), target);
+            this->ExtractReplayGain(xiphTag->fieldListMap(), target);
+        }
+
+        /* if this isn't a xiph tag, the file format may have some other custom
+        properties. let's see if we can pull them out here... */
+        if (!xiphTag) {
+            bool handled = false;
+
+            /* flac files may have more than one type of tag embedded. see if there's
+            see if there's a xiph comment buried deep. */
+            auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
+            if (flacFile) {
+                processAlbumArt(flacFile->pictureList(), target);
+                if (flacFile->hasXiphComment()) {
+                    this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
+                    this->ExtractReplayGain(flacFile->xiphComment()->fieldListMap(), target);
+                    handled = true;
+                }
+            }
+
+            /* similarly, mp4 buries disc number and album artist. however, taglib does
+            NOT exposed a map with normalized keys, so we have to do special property
+            handling here... */
+            if (!handled) {
+                const auto mp4File = dynamic_cast<TagLib::MP4::File*>(file.file());
+                if (mp4File && mp4File->hasMP4Tag()) {
+                    auto mp4TagMap = static_cast<TagLib::MP4::Tag*>(tag)->itemListMap();
+                    this->ExtractValueForKey(mp4TagMap, "aART", "album_artist", target);
+                    this->ExtractValueForKey(mp4TagMap, "disk", "disc", target);
+                    this->ExtractReplayGain(mp4TagMap, target);
+                    handled = true;
+                }
+            }
+
+            if (!handled) {
+                const auto wvFile = dynamic_cast<TagLib::WavPack::File*>(file.file());
+                if (wvFile && wvFile->hasAPETag()) {
+                    this->ReadFromMap(wvFile->properties(), target);
+                    this->ExtractReplayGain(wvFile->properties(), target);
+                    handled = true;
+                }
+            }
+        }
+
+        TagLib::AudioProperties *audio = file.audioProperties();
+        this->SetAudioProperties(audio, target);
     }
 
     return true;
@@ -385,18 +393,13 @@ void TaglibMetadataReader::ReadFromMap(const T& map, ITagStore *target) {
     ExtractValueForKey(map, "DISCNUMBER", "disc", target);
     ExtractValueForKey(map, "ALBUM ARTIST", "album_artist", target);
     ExtractValueForKey(map, "ALBUMARTIST", "album_artist", target);
+    ExtractValueForKey(map, "RATING", "rating", target);
 }
 
 template<typename T>
 void TaglibMetadataReader::ReadBasicData(const T* tag, const char* uri, ITagStore *target) {
     if (tag) {
-        if (!tag->title().isEmpty()) {
-            this->SetTagValue("title", tag->title(), target);
-        }
-        else {
-            this->SetTagValue("title", uri, target);
-        }
-
+        this->SetTagValue("title", tag->title(), target);
         this->SetTagValue("album", tag->album(), target);
         this->SetTagValue("artist", tag->artist(), target);
         this->SetTagValue("genre", tag->genre(), target);
@@ -526,7 +529,7 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
 
                 for (auto current : txxx) {
                     using UTIF = TagLib::ID3v2::UserTextIdentificationFrame;
-                    UTIF* utif = dynamic_cast<UTIF*>(current);
+                    const UTIF* utif = dynamic_cast<UTIF*>(current);
                     if (utif) {
                         auto name = utif->description().upper();
                         auto values = utif->fieldList();
@@ -567,6 +570,9 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
                 this->SetTagValue("disc", "1", track);
                 this->SetTagValue("totaldiscs", "1", track);
             }
+
+            const int rating = this->ExtractRatingFromPopularimeter(allTags["POPM"]);
+            this->SetTagValue("rating", rating, track);
 
             this->SetTagValues("bpm", allTags["TBPM"], track);
             this->SetSlashSeparatedValues("composer", allTags["TCOM"], track);
@@ -724,7 +730,6 @@ void TaglibMetadataReader::SetTagValues(
 {
     if (!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
-
         for ( ; value != frame.end(); ++value) {
             TagLib::String tagString = (*value)->toString();
             if(!tagString.isEmpty()) {
@@ -780,4 +785,36 @@ void TaglibMetadataReader::SetAudioProperties(
             this->SetTagValue("channels", std::to_string(channels), track);
         }
     }
+}
+
+int TaglibMetadataReader::ExtractRatingFromPopularimeter(const TagLib::ID3v2::FrameList& frame) {
+    /* the value of this tag is: 'some_str_identifier rating=[0-255] counter=[n]' */
+    if (!frame.isEmpty()) {
+        TagLib::ID3v2::FrameList::ConstIterator it = frame.begin();
+        for (; it != frame.end(); ++it) {
+            const TagLib::String rawTagValue = (*it)->toString();
+            if (!rawTagValue.isEmpty()) {
+                std::string utf8TagValue(rawTagValue.to8Bit(true));
+                const auto utf8TagValueParts = str::Split(utf8TagValue, " ");
+                if (utf8TagValueParts.size() > 2 && utf8TagValueParts.at(1).find_first_of("rating=") == 0) {
+                    const auto ratingParts = str::Split(utf8TagValueParts.at(1), "=");
+                    if (ratingParts.size() == 2) {
+                        const auto utf8Rating = ratingParts.at(1);
+                        try {
+                            const auto intRating = std::atoi(utf8Rating.c_str());
+                            if (intRating > 205) { return 5; }
+                            if (intRating > 154) { return 4; }
+                            if (intRating > 103) { return 3; }
+                            if (intRating > 52) { return 5; }
+                            if (intRating > 1) { return 1; }
+                        }
+                        catch (...) {
+                            /* invalid rating, couldn't be parsed as an int. */
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
 }

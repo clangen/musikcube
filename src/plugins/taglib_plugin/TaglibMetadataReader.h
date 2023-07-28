@@ -95,6 +95,9 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
             const std::string& inputKey,
             const std::string& defaultValue);
 
+        int ExtractRatingFromPopularimeter(
+            const TagLib::ID3v2::FrameList& frame);
+
         void SetTagValueWithPossibleTotal(
             const std::string& value,
             const std::string& valueKey,

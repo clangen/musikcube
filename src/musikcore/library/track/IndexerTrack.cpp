@@ -156,7 +156,7 @@ double IndexerTrack::GetDouble(const char* key, double defaultValue) {
 }
 
 void IndexerTrack::SetValue(const char* metakey, const char* value) {
-    if (metakey && value) {
+    if (metakey && value && strlen(value)) {
         this->internalMetadata->metadata.insert(
             std::pair<std::string, std::string>(metakey,value));
     }
@@ -345,35 +345,35 @@ static int64_t writeToTracksTable(
         query =
             "UPDATE tracks "
             "SET track=?, disc=?, bpm=?, duration=?, filesize=?, "
-            "    title=?, filename=?, filetime=?, path_id=?, "
+            "    title=?, rating=?, filename=?, filetime=?, path_id=?, "
             "    date_updated=julianday('now'), external_id=? "
             "WHERE id=?";
     }
     else {
         query =
             "INSERT INTO tracks "
-            "(track, disc, bpm, duration, filesize, title, filename, "
+            "(track, disc, bpm, duration, filesize, title, rating, filename, "
             " filetime, path_id, external_id, date_added, date_updated) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, julianday('now'), julianday('now'))";
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, julianday('now'), julianday('now'))";
     }
 
     db::Statement stmt(query.c_str(), dbConnection);
 
-    auto time = track.GetInt64("filetime");
-
-    stmt.BindInt32(0, stringToInt(track.GetString("track"), 1));
-    stmt.BindInt32(1, stringToInt(track.GetString("disc"), 1));
-    stmt.BindText(2, track.GetString("bpm"));
-    stmt.BindInt32(3, track.GetInt32("duration"));
-    stmt.BindInt32(4, track.GetInt32("filesize"));
-    stmt.BindText(5, track.GetString("title"));
-    stmt.BindText(6, track.GetString("filename"));
-    stmt.BindInt64(7, track.GetInt64("filetime"));
-    stmt.BindInt64(8, track.GetInt64("path_id"));
-    stmt.BindText(9, track.GetString("external_id"));
+    int bindPos = 0;
+    stmt.BindInt32(bindPos++, stringToInt(track.GetString("track"), 1));
+    stmt.BindInt32(bindPos++, stringToInt(track.GetString("disc"), 1));
+    stmt.BindText(bindPos++, track.GetString("bpm"));
+    stmt.BindInt32(bindPos++, track.GetInt32("duration"));
+    stmt.BindInt32(bindPos++, track.GetInt32("filesize"));
+    stmt.BindText(bindPos++, track.GetString("title"));
+    stmt.BindInt32(bindPos++, stringToInt(track.GetString("rating"), 0));
+    stmt.BindText(bindPos++, track.GetString("filename"));
+    stmt.BindInt64(bindPos++, track.GetInt64("filetime"));
+    stmt.BindInt64(bindPos++, track.GetInt64("path_id"));
+    stmt.BindText(bindPos++, track.GetString("external_id"));
 
     if (id != 0) {
-        stmt.BindInt64(10, id);
+        stmt.BindInt64(bindPos++, id);
     }
 
     if (stmt.Step() == db::Done) {
@@ -397,23 +397,24 @@ static void removeRelation(
 }
 
 static void removeKnownFields(Track::MetadataMap& metadata) {
-    metadata.erase("track");
-    metadata.erase("disc");
-    metadata.erase("bpm");
-    metadata.erase("duration");
-    metadata.erase("title");
-    metadata.erase("filename");
-    metadata.erase("filetime");
-    metadata.erase("filesize");
-    metadata.erase("title");
-    metadata.erase("path");
-    metadata.erase("extension");
-    metadata.erase("genre");
-    metadata.erase("artist");
     metadata.erase("album_artist");
     metadata.erase("album");
-    metadata.erase("source_id");
+    metadata.erase("artist");
+    metadata.erase("bpm");
+    metadata.erase("disc");
+    metadata.erase("duration");
+    metadata.erase("extension");
     metadata.erase("external_id");
+    metadata.erase("filename");
+    metadata.erase("filesize");
+    metadata.erase("filetime");
+    metadata.erase("genre");
+    metadata.erase("path");
+    metadata.erase("rating");
+    metadata.erase("source_id");
+    metadata.erase("title");
+    metadata.erase("title");
+    metadata.erase("track");
     metadata.erase("visible");
 }
 
