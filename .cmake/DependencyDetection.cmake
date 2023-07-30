@@ -11,7 +11,7 @@ macro(find_header header_name)
         message(STATUS "[dependency-detection] ${BoldBlue}'${header_name}' resolved to '${TEMP}'${ColorReset}")
     endif()
     unset(TEMP)
-endmacro(find_library_and_header)
+endmacro(find_header)
 
 macro(find_library_and_header target_var library_name header_name)
     find_library(${target_var} NAMES ${library_name} NO_CACHE)
