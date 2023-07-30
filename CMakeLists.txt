@@ -89,8 +89,8 @@ else()
   find_library(LIBCRYPTO NAMES crypto PATHS ${VENDOR_LINK_DIRECTORIES})
 endif()
 
-find_library(LIBZ NAMES z)
-find_library(PTHREAD NAMES pthread)
+find_library_and_header(LIBZ z zlib.h)
+find_library_and_header(PTHREAD pthread pthread.h)
 
 set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ} ${PTHREAD})
 

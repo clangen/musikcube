@@ -20,7 +20,7 @@ else()
     find_library(LIBGNUTLS NAMES gnutls)
     set(EXTRA_LIBS "${LIBGNUTLS}")
   endif()
-  find_library(LIBMICROHTTPD NAMES microhttpd)
+  find_library_and_header(LIBMICROHTTPD microhttpd microhttpd.h)
 endif()
 
 find_library(LIBZ NAMES z)
