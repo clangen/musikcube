@@ -27,7 +27,7 @@ include(AddDarwinSystemLibs)
 include(AddLinuxSystemLibs)
 include(ConfigureCurses)
 include(ConfigureCompilerFlags)
-include(FindVendorLibrary)
+include(DependencyDetection)
 
 if (NOT DEFINED ENV{HOMEBREW_PREFIX} AND NOT ${BUILD_STANDALONE} MATCHES "true")
   find_program(CCACHE_FOUND ccache)
@@ -52,13 +52,17 @@ message(STATUS "[vendor-link-directories] ${VENDOR_LINK_DIRECTORIES}")
 message(STATUS "[vendor-include-directories] ${VENDOR_INCLUDE_DIRECTORIES}")
 message(STATUS "[os-system-libs] ${DEFAULT_OS_SYSTEM_LIBS}")
 
-include_directories(
+list(
+  APPEND
+  PROJECT_INCLUDE_DIRECTORIES
   "${musikcube_SOURCE_DIR}/src"
   "${musikcube_SOURCE_DIR}/src/musikcore"
   "${musikcube_SOURCE_DIR}/src/musikcube"
   "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
   "${musikcube_SOURCE_DIR}/src/3rdparty/include"
   "${musikcube_SOURCE_DIR}/src/3rdparty/asio/asio/include")
+
+include_directories(${PROJECT_INCLUDE_DIRECTORIES})
 
 link_directories("${musikcube_SOURCE_DIR}/bin/plugins")
 
