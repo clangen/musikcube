@@ -7,6 +7,8 @@
 * fixed a bug where we may incorrectly use the track's filename/uri instead of
   title field during indexing.
 * fixed 64-bit RPM architecture value (was `amd64`, but should be `x86_64`)
+* updated musikdroid to latest version of Android Studio and external
+  dependencies (anecdotally improving Opus playback reliability)
 
 --------------------------------------------------------------------------------
 
