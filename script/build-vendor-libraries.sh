@@ -49,9 +49,9 @@ if [[ $OS == "Darwin" ]]; then
 fi
 
 # update cross-compile vars, if specified.
-if [[ $CROSSCOMPILE == "rpi" ]]; then
+if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
     OPENSSL_VERSION="1.1.1n"
-    ARM_ROOT="/build/rpi/sysroot"
+    ARM_ROOT="/build/${CROSSCOMPILE}/sysroot"
     export CPPFLAGS="-I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
     export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L${ARM_ROOT}/lib/arm-linux-gnueabihf/"
@@ -520,7 +520,7 @@ delete_unused_libraries
 relink_dynamic_libraries
 
 cd ..
-if [[ $CROSSCOMPILE == "rpi" ]]; then
+if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
   mv vendor vendor-${CROSSCOMPILE}
 else
   mv vendor vendor-$(uname -m)
