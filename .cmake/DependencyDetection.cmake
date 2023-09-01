@@ -4,6 +4,7 @@ macro(find_vendor_library target_var library_name)
 endmacro(find_vendor_library)
 
 macro(find_header header_name)
+    set(TEMP "")
     find_path(TEMP ${header_name} HINTS ${PROJECT_INCLUDE_DIRECTORIES} REQUIRED NO_CACHE)
     if (${TEMP} MATCHES "TEMP-NOTFOUND")
         message(STATUS "[dependency-detection] ${BoldRed}'${header_name}' COULD NOT BE FOUND!${ColorReset}")

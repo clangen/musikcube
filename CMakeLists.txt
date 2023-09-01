@@ -48,10 +48,6 @@ else()
   message(STATUS "[cross-compile] not enabled!")
 endif()
 
-message(STATUS "[vendor-link-directories] ${VENDOR_LINK_DIRECTORIES}")
-message(STATUS "[vendor-include-directories] ${VENDOR_INCLUDE_DIRECTORIES}")
-message(STATUS "[os-system-libs] ${DEFAULT_OS_SYSTEM_LIBS}")
-
 list(
   APPEND
   PROJECT_INCLUDE_DIRECTORIES
@@ -65,6 +61,11 @@ list(
 include_directories(${PROJECT_INCLUDE_DIRECTORIES})
 
 link_directories("${musikcube_SOURCE_DIR}/bin/plugins")
+
+message(STATUS "[vendor-link-directories] ${VENDOR_LINK_DIRECTORIES}")
+message(STATUS "[vendor-include-directories] ${VENDOR_INCLUDE_DIRECTORIES}")
+message(STATUS "[os-system-libs] ${DEFAULT_OS_SYSTEM_LIBS}")
+message(STATUS "[project-include-directories] ${PROJECT_INCLUDE_DIRECTORIES}")
 
 # these are used to (1) disable the standalone ASIO from trying to use
 # boost, and (2) instruct websocketpp to use standalone (not boost) ASIO
