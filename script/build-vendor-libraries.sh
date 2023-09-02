@@ -56,29 +56,31 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     OPENSSL_VERSION="1.1.1n"
     ARM_SYSTEM_ROOT="${BUILD_ROOT}/${CROSSCOMPILE}/sysroot"
     ARM_ARCH_LIBRARY_PATH="${ARM_SYSTEM_ROOT}/lib/arm-linux-gnueabihf" # always "hf"
-    ARM_PKG_CONFIG_PATH="${ARM_SYSTEM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/" # always "hf"
+    ARM_ARCH_INCLUDE_PATH="${ARM_SYSTEM_ROOT}/usr/lib/arm-linux-gnueabihf" # always "hf"
+    ARM_ARCH_PKG_CONFIG_PATH="${ARM_SYSTEM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/" # always "hf"
     ARM_TOOLCHAIN_NAME="arm-linux-gnueabihf"
     CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
 
     if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
         printf "\n\ndetected armv6, adjusting compiler flags accordingly...\n"
         ARMV6_COMPILER_FLAGS="-march=armv6 -marm"
-        ARM_TOOLCHAIN_NAME="arm-linux-gnueabi"
+        ARM_TOOLCHAIN_NAME="armv6-rpi-linux-gnueabihf-gcc"
         CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
         export CPPFLAGS="$CPPFLAGS $ARMV6_COMPILER_FLAGS"
         export CXXFLAGS="$CXXFLAGS $ARMV6_COMPILER_FLAGS"
         export CFLAGS="$CFLAGS $ARMV6_COMPILER_FLAGS"
     fi
 
-    export CPPFLAGS="$CPPFLAGS -I${ARM_SYSTEM_ROOT}/usr/include"
-    export CXXFLAGS="$CXXFLAGS -I${ARM_SYSTEM_ROOT}/usr/include"
+    export CPPFLAGS="$CPPFLAGS -I${ARM_SYSTEM_ROOT}/usr/include -I${ARM_ARCH_INCLUDE_PATH}"
+    export CXXFLAGS="$CXXFLAGS -I${ARM_SYSTEM_ROOT}/usr/include -I${ARM_ARCH_INCLUDE_PATH}"
+    export CFLAGS="$CFLAGS -I${ARM_ARCH_INCLUDE_PATH}"
     export LDFLAGS="$LDFLAGS --sysroot=${ARM_SYSTEM_ROOT} -L${ARM_ARCH_LIBRARY_PATH}/"
+    export PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_ARCH_PKG_CONFIG_PATH}"
 
     OPENSSL_TYPE="linux-generic32"
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${ARM_TOOLCHAIN_NAME}-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=${ARM_TOOLCHAIN_NAME} --with-sysroot=${ARM_SYSTEM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=${ARM_TOOLCHAIN_NAME}-"
-    PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_PKG_CONFIG_PATH}"
 
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
