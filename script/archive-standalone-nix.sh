@@ -19,19 +19,23 @@ if [[ $OS == "Darwin" ]]; then
   JOBS="-j$(sysctl -n hw.ncpu)"
 fi
 
-ARCH=$(uname -m)
-DEB_ARCH=$ARCH
-VENDOR=$ARCH
-if [[ -n $CROSSCOMPILE ]]; then
-  FRIENDLY_OS_NAME="linux_${CROSSCOMPILE}"
+FRIENDLY_ARCH_NAME=$(uname -m)
+DEB_ARCH=$FRIENDLY_ARCH_NAME
+VENDOR=$FRIENDLY_ARCH_NAME
+if [[ $CROSSCOMPILE == rpi-* ]]; then
+  FRIENDLY_OS_NAME="linux_rpi"
   VENDOR=${CROSSCOMPILE}
-  ARCH="armhf"
+  FRIENDLY_ARCH_NAME="armv7a"
   DEB_ARCH="armhf"
-elif [[ $ARCH == "x86_64" ]]; then
+  if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
+    FRIENDLY_ARCH_NAME="armv6"
+    DEB_ARCH="arm"
+  fi
+elif [[ $FRIENDLY_ARCH_NAME == "x86_64" ]]; then
   DEB_ARCH="amd64"
 fi
 
-OS_ARCH="${FRIENDLY_OS_NAME}_${ARCH}"
+OS_ARCH="${FRIENDLY_OS_NAME}_${FRIENDLY_ARCH_NAME}"
 OUTNAME="musikcube_${OS_ARCH}_$VERSION"
 OUTDIR="dist/$VERSION/$OUTNAME"
 SCRIPTDIR=`dirname "$0"`
