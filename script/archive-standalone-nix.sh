@@ -78,7 +78,7 @@ else
   ${SCRIPTDIR}/clean-nix.sh
   rm -rf bin/ 2> /dev/null
   ./script/stage-vendor-libraries.sh || exit $?
-  cmake ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true -DENABLE_PCH=true ${OS_SPECIFIC_BUILD_FLAGS} . || exit $?
+  cmake ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DBUILD_STANDALONE=true -DENABLE_PCH=true ${OS_SPECIFIC_BUILD_FLAGS} . || exit $?
   make ${JOBS} || exit $?
 fi
 
