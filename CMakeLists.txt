@@ -3,7 +3,7 @@
 #cmake -DGENERATE_DEB=true -DPACKAGE_ARCHITECTURE=i386|amd64|armhf -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=eoan -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
 #cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true .
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 project(musikcube)
 set (musikcube_VERSION_MAJOR 3)
