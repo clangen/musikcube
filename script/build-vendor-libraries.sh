@@ -56,10 +56,6 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     ARM_TOOLCHAIN_NAME="arm-linux-gnueabihf"
     CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
 
-    export CPPFLAGS="$CPPFLAGS -I${ARM_SYSTEM_ROOT}/usr/include"
-    export CXXFLAGS="$CXXFLAGS -I${ARM_SYSTEM_ROOT}/usr/include"
-    export LDFLAGS="$LDFLAGS --sysroot=${ARM_SYSTEM_ROOT} -L${ARM_SYSTEM_ROOT}/lib/${ARM_TOOLCHAIN_NAME}/"
-
     if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
         printf "\n\ndetected armv6, adjusting compiler flags accordingly...\n"
         ARMV6_COMPILER_FLAGS="-march=armv6 -marm"
@@ -69,6 +65,10 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
         export CXXFLAGS="$CXXFLAGS $ARMV6_COMPILER_FLAGS"
         export CFLAGS="$CFLAGS $ARMV6_COMPILER_FLAGS"
     fi
+
+    export CPPFLAGS="$CPPFLAGS -I${ARM_SYSTEM_ROOT}/usr/include"
+    export CXXFLAGS="$CXXFLAGS -I${ARM_SYSTEM_ROOT}/usr/include"
+    export LDFLAGS="$LDFLAGS --sysroot=${ARM_SYSTEM_ROOT} -L${ARM_SYSTEM_ROOT}/lib/${ARM_TOOLCHAIN_NAME}/"
 
     OPENSSL_TYPE="linux-generic32"
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${ARM_TOOLCHAIN_NAME}-"
