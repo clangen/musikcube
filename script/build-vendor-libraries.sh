@@ -53,9 +53,8 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     # for rpi we'll default to armv7a, but perform overrides for armv6 below.
     OPENSSL_VERSION="1.1.1n"
     ARM_SYSTEM_ROOT="/build/${CROSSCOMPILE}/sysroot"
-    ARM_SYSTEM_ROOT_LIBRARY_PATH="${ARM_SYSTEM_ROOT}/lib/arm-linux-gnueabihf" # always "hf"
+    ARM_ARCH_LIBRARY_PATH="${ARM_SYSTEM_ROOT}/lib/arm-linux-gnueabihf" # always "hf"
     ARM_PKG_CONFIG_PATH="${ARM_SYSTEM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/" # always "hf"
-
     ARM_TOOLCHAIN_NAME="arm-linux-gnueabihf"
     CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
 
@@ -71,7 +70,7 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
 
     export CPPFLAGS="$CPPFLAGS -I${ARM_SYSTEM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_SYSTEM_ROOT}/usr/include"
-    export LDFLAGS="$LDFLAGS --sysroot=${ARM_SYSTEM_ROOT} -L${ARM_SYSTEM_ROOT_LIBRARY_PATH}/"
+    export LDFLAGS="$LDFLAGS --sysroot=${ARM_SYSTEM_ROOT} -L${ARM_ARCH_LIBRARY_PATH}/"
 
     OPENSSL_TYPE="linux-generic32"
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${ARM_TOOLCHAIN_NAME}-"
