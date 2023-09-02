@@ -45,14 +45,14 @@ fi
 OS_SPECIFIC_BUILD_FLAGS=""
 if [[ $OS == "Linux" ]]; then
   OS_SPECIFIC_BUILD_FLAGS="-DGENERATE_DEB=true -DPACKAGE_ARCHITECTURE=${DEB_ARCH} -DCMAKE_INSTALL_PREFIX=/usr"
-  if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
+  if [[ $CROSSCOMPILE == rpi-* ]]; then
     # for now we don't support pipewire when cross compiling...
     OS_SPECIFIC_BUILD_FLAGS="$OS_SPECIFIC_BUILD_FLAGS -DENABLE_PIPEWIRE=false"
   fi
 fi
 
-if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
-  CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain.cmake"
+if [[ $CROSSCOMPILE == rpi-* ]]; then
+  CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain.cmake -DRASPBERRY_PI_TYPE=${CROSSCOMPILE}"
 fi
 
 rm vendor
@@ -95,7 +95,7 @@ cp bin/locales/*.json $OUTDIR/locales
 cp bin/themes/*.json $OUTDIR/themes
 cp -rfp bin/share/terminfo/* $OUTDIR/share/terminfo/
 
-if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
+if [[ $CROSSCOMPILE == rpi-* ]]; then
   printf "\n\n\n     ***** CROSSCOMPILE DETECTED, **NOT** SCANNING DEPENDENCIES! *****\n\n\n"
   sleep 1
 else

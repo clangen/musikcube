@@ -49,7 +49,7 @@ if [[ $OS == "Darwin" ]]; then
 fi
 
 # update cross-compile vars, if specified.
-if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
+if [[ $CROSSCOMPILE == rpi-* ]]; then
     OPENSSL_VERSION="1.1.1n"
     ARM_ROOT="/build/${CROSSCOMPILE}/sysroot"
     export CPPFLAGS="-I${ARM_ROOT}/usr/include"
@@ -520,7 +520,7 @@ delete_unused_libraries
 relink_dynamic_libraries
 
 cd ..
-if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
+if [[ $CROSSCOMPILE == rpi-* ]]; then
   mv vendor vendor-${CROSSCOMPILE}
 else
   mv vendor vendor-$(uname -m)

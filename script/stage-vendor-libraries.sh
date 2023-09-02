@@ -47,7 +47,7 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
 
     SYSTEM_ROOT=""
     SYSTEM_TYPE="x86_64-linux-gnu"
-    if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
+    if [[ $CROSSCOMPILE == rpi-* ]]; then
         SYSTEM_ROOT="/build/${CROSSCOMPILE}/sysroot"
         SYSTEM_TYPE="arm-linux-gnueabihf"
     fi
