@@ -48,21 +48,23 @@ if [[ $OS == "Darwin" ]]; then
     OPENSSL_TYPE="darwin64-${ARCH}-cc"
 fi
 
+BUILD_ROOT="/build"
+
 # update cross-compile vars, if specified.
 if [[ $CROSSCOMPILE == rpi-* ]]; then
     # for rpi we'll default to armv7a, but perform overrides for armv6 below.
     OPENSSL_VERSION="1.1.1n"
-    ARM_SYSTEM_ROOT="/build/${CROSSCOMPILE}/sysroot"
+    ARM_SYSTEM_ROOT="${BUILD_ROOT}/${CROSSCOMPILE}/sysroot"
     ARM_ARCH_LIBRARY_PATH="${ARM_SYSTEM_ROOT}/lib/arm-linux-gnueabihf" # always "hf"
     ARM_PKG_CONFIG_PATH="${ARM_SYSTEM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/" # always "hf"
     ARM_TOOLCHAIN_NAME="arm-linux-gnueabihf"
-    CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
+    CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
 
     if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
         printf "\n\ndetected armv6, adjusting compiler flags accordingly...\n"
         ARMV6_COMPILER_FLAGS="-march=armv6 -marm"
         ARM_TOOLCHAIN_NAME="arm-linux-gnueabi"
-        CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
+        CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
         export CPPFLAGS="$CPPFLAGS $ARMV6_COMPILER_FLAGS"
         export CXXFLAGS="$CXXFLAGS $ARMV6_COMPILER_FLAGS"
         export CFLAGS="$CFLAGS $ARMV6_COMPILER_FLAGS"
