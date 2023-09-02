@@ -50,6 +50,7 @@ fi
 
 # update cross-compile vars, if specified.
 if [[ $CROSSCOMPILE == rpi-* ]]; then
+    # for rpi we'll default to armv7a, but perform overrides for armv6 below.
     OPENSSL_VERSION="1.1.1n"
     ARM_ROOT="/build/${CROSSCOMPILE}/sysroot"
     export CPPFLAGS="-I${ARM_ROOT}/usr/include"
@@ -59,8 +60,17 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
-    CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain.cmake"
+    CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
     PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
+
+    if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
+        printf "\n\ndetected armv6, adjusting compiler flags accordingly...\n"
+        export CPPFLAGS="$CPPFLAGS -march=armv6 -marm"
+        export CXXFLAGS="$CXXFLAGS -march=armv6 -marm"
+        export CFLAGS="$CFLAGS -march=armv6 -marm"
+        CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
+    fi
+
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
     printf "  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"

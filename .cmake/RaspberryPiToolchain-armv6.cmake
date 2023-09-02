@@ -6,6 +6,9 @@ set(CROSS_COMPILE_PKG_CONFIG_PATH "${CROSS_COMPILE_SYSROOT}/usr/lib/arm-linux-gn
 
 set(CMAKE_SYSROOT ${CROSS_COMPILE_SYSROOT})
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv6 -marm")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=armv6 -marm")
+
 set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
 
