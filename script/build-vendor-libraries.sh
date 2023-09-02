@@ -56,7 +56,7 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     OPENSSL_VERSION="1.1.1n"
     ARM_SYSTEM_ROOT="${BUILD_ROOT}/${CROSSCOMPILE}/sysroot"
     ARM_ARCH_LIBRARY_PATH="${ARM_SYSTEM_ROOT}/lib/arm-linux-gnueabihf" # always "hf"
-    ARM_ARCH_INCLUDE_PATH="${ARM_SYSTEM_ROOT}/usr/lib/arm-linux-gnueabihf" # always "hf"
+    ARM_ARCH_INCLUDE_PATH="${ARM_SYSTEM_ROOT}/usr/include/arm-linux-gnueabihf" # always "hf"
     ARM_ARCH_PKG_CONFIG_PATH="${ARM_SYSTEM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/" # always "hf"
     ARM_TOOLCHAIN_NAME="arm-linux-gnueabihf"
     CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
