@@ -51,8 +51,10 @@ if [[ $OS == "Linux" ]]; then
   fi
 fi
 
-if [[ $CROSSCOMPILE == rpi-* ]]; then
-  CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain.cmake -DRASPBERRY_PI_TYPE=${CROSSCOMPILE}"
+if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
+  CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain-armv7a.cmake"
+elif [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
+  CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain-armv6.cmake"
 fi
 
 rm vendor
