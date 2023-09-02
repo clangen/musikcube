@@ -53,7 +53,9 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     # for rpi we'll default to armv7a, but perform overrides for armv6 below.
     OPENSSL_VERSION="1.1.1n"
     ARM_SYSTEM_ROOT="/build/${CROSSCOMPILE}/sysroot"
-    ARM_SYSTEM_ROOT_LIBRARY_PATH="${ARM_SYSTEM_ROOT}/lib/arm-linux-gnueabihf" # always "hf", even on arm6 systems
+    ARM_SYSTEM_ROOT_LIBRARY_PATH="${ARM_SYSTEM_ROOT}/lib/arm-linux-gnueabihf" # always "hf"
+    ARM_PKG_CONFIG_PATH="${ARM_SYSTEM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/" # always "hf"
+
     ARM_TOOLCHAIN_NAME="arm-linux-gnueabihf"
     CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
 
@@ -75,7 +77,7 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${ARM_TOOLCHAIN_NAME}-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=${ARM_TOOLCHAIN_NAME} --with-sysroot=${ARM_SYSTEM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=${ARM_TOOLCHAIN_NAME}-"
-    PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_SYSTEM_ROOT}/usr/lib/${ARM_TOOLCHAIN_NAME}/pkgconfig/"
+    PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_PKG_CONFIG_PATH}"
 
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
