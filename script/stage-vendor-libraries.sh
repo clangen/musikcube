@@ -50,7 +50,7 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     SYSTEM_ROOT=""
     SYSTEM_TYPE="x86_64-linux-gnu"
     if [[ $CROSSCOMPILE == rpi-* ]]; then
-        XTOOLS_ARCH="armv8-rpi-linux-gnueabihf"
+        XTOOLS_ARCH="armv8-rpi3-linux-gnueabihf"
         if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
             XTOOLS_ARCH="armv6-rpi-linux-gnueabihf"
         fi
