@@ -59,11 +59,6 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
 
     XTOOLS_TOOLCHAIN_NAME="armv8-rpi3-linux-gnueabihf"
 
-    # DEB_COMPILER_FLAGS="-I${BUILD_ROOT}/armhf-deb/usr/include/"
-    # DEB_LINKER_FLAGS="-L${BUILD_ROOT}/armhf-deb/usr/lib/ -L${BUILD_ROOT}/armhf-deb/usr/lib/arm-linux-gnueabihf"
-    # DEB_PKG_CONFIG_PATH="${BUILD_ROOT}/armhf-deb/usr/lib/arm-linux-gnueabihf/pkgconfig"
-    VENDOR_PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/"
-
     if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
         XTOOLS_TOOLCHAIN_NAME="armv6-rpi-linux-gnueabihf"
     fi
@@ -74,12 +69,10 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     XTOOLS_LINKER_FLAGS="--sysroot=${XTOOLS_SYSROOT}"
     XTOOLS_BIN_PATH="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/bin"
     XTOOLS_PKG_CONFIG_PATH="${XTOOLS_SYSROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
+    VENDOR_PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/"
 
     export PATH="${XTOOLS_BIN_PATH}:$PATH"
-    export CPPFLAGS="$CPPFLAGS ${DEB_COMPILER_FLAGS}"
-    export CXXFLAGS="$CXXFLAGS ${DEB_COMPILER_FLAGS}"
-    export CFLAGS="$CFLAGS ${DEB_COMPILER_FLAGS}"
-    export LDFLAGS="$LDFLAGS ${XTOOLS_LINKER_FLAGS} ${DEB_LINKER_FLAGS}"
+    export LDFLAGS="$LDFLAGS ${XTOOLS_LINKER_FLAGS}"
     export PKG_CONFIG_PATH="${VENDOR_PKG_CONFIG_PATH}:${XTOOLS_PKG_CONFIG_PATH}"
 
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
