@@ -81,6 +81,7 @@ const downloadAndExtract = async (downloadUrls) => {
 
 const rmDebs = async () => {
     try {
+        console.log('Cleaning up downloads');
         await exec('rm *.deb');
     }
     catch (e) {
@@ -98,8 +99,10 @@ const main = async () => {
     for (let i = 0; i < EXCLUDE.length; i++) {
         deduped.delete(EXCLUDE[i]);
     }
+    console.log('Dependency list:', Array.from(deduped).sort());
     const downloadUrls = await getPackageDownloadUrls(Array.from(deduped));
     await downloadAndExtract(downloadUrls);
+    console.log('Download URLs:', downloadUrls);
     await rmDebs();
     await exec('tar cvf sysroot.tar .');
 };
