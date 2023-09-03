@@ -27,7 +27,7 @@ const EXCLUDE = [
     'libc6',
     'libcrypt1',
     'libgcc-s1',
-    'libgcc-1',
+    'libgcc1',
     'linux-libc-dev',
 ];
 
