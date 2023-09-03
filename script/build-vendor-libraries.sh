@@ -55,38 +55,39 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     # cross-compile toolchains found here: https://github.com/tttapa/docker-arm-cross-toolchain
 
     OPENSSL_VERSION="1.1.1n"
+    OPENSSL_TYPE="linux-generic32"
 
-    CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
     XTOOLS_TOOLCHAIN_NAME="armv8-rpi3-linux-gnueabihf"
 
-    DEB_COMPILER_FLAGS="-I${BUILD_ROOT}/armhf-deb/usr/include/"
-    DEB_LINKER_FLAGS="-L${BUILD_ROOT}/armhf-deb/usr/lib/ -L${BUILD_ROOT}/armhf-deb/usr/lib/arm-linux-gnueabihf"
-    DEB_PKG_CONFIG_PATH="${BUILD_ROOT}/armhf-deb/usr/lib/arm-linux-gnueabihf/pkgconfig"
+    # DEB_COMPILER_FLAGS="-I${BUILD_ROOT}/armhf-deb/usr/include/"
+    # DEB_LINKER_FLAGS="-L${BUILD_ROOT}/armhf-deb/usr/lib/ -L${BUILD_ROOT}/armhf-deb/usr/lib/arm-linux-gnueabihf"
+    # DEB_PKG_CONFIG_PATH="${BUILD_ROOT}/armhf-deb/usr/lib/arm-linux-gnueabihf/pkgconfig"
     VENDOR_PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/"
 
     if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
-        printf "\n\ndetected armv6, adjusting compiler flags accordingly...\n"
         XTOOLS_TOOLCHAIN_NAME="armv6-rpi-linux-gnueabihf"
-        CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
     fi
+
+    CMAKE_COMPILER_TOOLCHAIN="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/${XTOOLS_TOOLCHAIN_NAME}.toolchain.cmake"
 
     XTOOLS_SYSROOT="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/${XTOOLS_TOOLCHAIN_NAME}/sysroot/"
     XTOOLS_LINKER_FLAGS="--sysroot=${XTOOLS_SYSROOT}"
     XTOOLS_BIN_PATH="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/bin"
+    XTOOLS_PKG_CONFIG_PATH="${XTOOLS_SYSROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
 
     export PATH="${XTOOLS_BIN_PATH}:$PATH"
     export CPPFLAGS="$CPPFLAGS ${DEB_COMPILER_FLAGS}"
     export CXXFLAGS="$CXXFLAGS ${DEB_COMPILER_FLAGS}"
     export CFLAGS="$CFLAGS ${DEB_COMPILER_FLAGS}"
     export LDFLAGS="$LDFLAGS ${XTOOLS_LINKER_FLAGS} ${DEB_LINKER_FLAGS}"
-    export PKG_CONFIG_PATH="${VENDOR_PKG_CONFIG_PATH}:${DEB_PKG_CONFIG_PATH}"
+    export PKG_CONFIG_PATH="${VENDOR_PKG_CONFIG_PATH}:${XTOOLS_PKG_CONFIG_PATH}"
 
-    OPENSSL_TYPE="linux-generic32"
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=${XTOOLS_TOOLCHAIN_NAME} --with-sysroot=${XTOOLS_SYSROOT}"
-    FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
+    FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --enable-cross-compile --sysroot=${XTOOLS_SYSROOT} --cross-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
 
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
+    printf "  toolchain=${XTOOLS_TOOLCHAIN_NAME}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
     printf "  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
     printf "  FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n  PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n\n"
@@ -218,11 +219,11 @@ function build_ffmpeg() {
     # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
     rm -rf ffmpeg-${FFMPEG_VERSION}
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
+    export CFLAGS="$CFLAGS -I${XTOOLS_SYSROOT}/usr/include/opus"
     cd ffmpeg-${FFMPEG_VERSION}
-    ./configure \
+    PKG_CONFIG_PATH=${XTOOLS_PKG_CONFIG_PATH} ./configure \
         --prefix=${OUTDIR} \
         --pkg-config="pkg-config" \
-        --pkg-config-flags="--with-path=${PKG_CONFIG_PATH}" \
         --enable-rpath \
         --disable-asm \
         --enable-pic \
@@ -456,8 +457,9 @@ function build_gme() {
     tar xvfz game-music-emu-${GME_VERSION}.tar.gz
     cd game-music-emu-${GME_VERSION}
     cmake \
+        --toolchain ${CMAKE_COMPILER_TOOLCHAIN} \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
-        ${CMAKE_COMPILER_TOOLCHAIN} \
         -DENABLE_UBSAN=OFF \
         -DBUILD_SHARED_LIBS=1 \
         . || exit $?
@@ -475,8 +477,9 @@ function build_taglib() {
     tar xvfz taglib-${TAGLIB_VERSION}.tar.gz
     cd taglib-${TAGLIB_VERSION}
     cmake \
+        --toolchain ${CMAKE_COMPILER_TOOLCHAIN} \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
-        ${CMAKE_COMPILER_TOOLCHAIN} \
         -DBUILD_SHARED_LIBS=1 \
         . || exit $?
     make ${JOBS} || exit $?
@@ -532,7 +535,6 @@ function delete_unused_libraries() {
 clean
 mkdir vendor
 cd vendor
-
 stage_prebuilt_libraries
 fetch_packages
 build_openssl
