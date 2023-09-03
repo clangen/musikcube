@@ -9,11 +9,14 @@ const fs = require('fs');
  * app itself.
  */
 const PACKAGE_NAMES = [
-    'libopus0',
+    'libncurses-dev',
+    'libncursesw6',
     'libopus-dev',
+    'libopus0',
+    'libtinfo6',
+    'libvorbis-dev',
     'libvorbis0a',
     'libvorbisenc2',
-    'libvorbis-dev',
 ];
 
 const EXCLUDE = [
