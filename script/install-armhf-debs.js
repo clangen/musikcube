@@ -40,7 +40,8 @@ const getPackageDependencies = async (packageName) => {
     const rawOutput = (await exec(`apt-cache depends --recurse --no-recommends --no-suggests --no-conflicts --no-breaks --no-replaces --no-enhances ${packageName}`)).stdout.split('\n');
     const packages = rawOutput
         .filter(e => e.indexOf('Depends:') >= 0)
-        .map(e => e.replace('Depends:', '').trim());
+        .map(e => e.replace('Depends:', '').trim())
+        .filter(e => !(e.startsWith('Pre ') || e.startsWith('<') || e.startsWith('|')));
     return packages;
 };
 
@@ -81,7 +82,7 @@ const downloadAndExtract = async (downloadUrls) => {
 
 const rmDebs = async () => {
     try {
-        console.log('Cleaning up downloads');
+        console.log('cleaning up downloads');
         await exec('rm *.deb');
     }
     catch (e) {
@@ -99,10 +100,10 @@ const main = async () => {
     for (let i = 0; i < EXCLUDE.length; i++) {
         deduped.delete(EXCLUDE[i]);
     }
-    console.log('Dependency list:', Array.from(deduped).sort());
+    console.log('dependency list:', Array.from(deduped).sort());
     const downloadUrls = await getPackageDownloadUrls(Array.from(deduped));
     await downloadAndExtract(downloadUrls);
-    console.log('Download URLs:', downloadUrls);
+    console.log('download urls:', downloadUrls);
     await rmDebs();
     await exec('tar cvf sysroot.tar .');
 };
