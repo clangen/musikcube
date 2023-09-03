@@ -20,11 +20,14 @@ const PACKAGE_NAMES = [
 ];
 
 const EXCLUDE = [
-    'libc6',
-    'libgcc-s1',
-    'libcrypt1',
+    'gcc-8-base',
     'gcc-10-base',
     'gcc-13-base',
+    'libc-dev-bin',
+    'libc6',
+    'libcrypt1',
+    'libgcc-s1',
+    'linux-libc-dev',
 ];
 
 const CLEANUP_FILES = [
@@ -100,7 +103,7 @@ const main = async () => {
     for (let i = 0; i < EXCLUDE.length; i++) {
         deduped.delete(EXCLUDE[i]);
     }
-    console.log('dependency list:', Array.from(deduped).sort());
+    console.log('resolved transitive dependencies:', Array.from(deduped).sort());
     const downloadUrls = await getPackageDownloadUrls(Array.from(deduped));
     await downloadAndExtract(downloadUrls);
     console.log('download urls:', downloadUrls);
