@@ -6,7 +6,8 @@ const EXCLUDE = [
     'libc6',
     'libgcc-s1',
     'libcrypt1',
-    'gcc-13-base', ,
+    'gcc-10-base',
+    'gcc-13-base',
 ];
 
 const PACKAGE_NAMES = [
@@ -84,7 +85,7 @@ const main = async () => {
     for (let i = 0; i < PACKAGE_NAMES.length; i++) {
         dependencies = [...dependencies, ...(await getPackageDependencies(PACKAGE_NAMES[i]))];
     }
-    const deduped = new Set(dependencies);
+    const deduped = new Set([...PACKAGE_NAMES, dependencies]);
     for (let i = 0; i < EXCLUDE.length; i++) {
         deduped.delete(EXCLUDE[i]);
     }
