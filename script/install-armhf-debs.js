@@ -15,6 +15,7 @@ const PACKAGE_NAMES = [
     'libncursesw6',
     'libopus-dev',
     'libopus0',
+    'libsystemd-dev',
     'libtinfo6',
     'libvorbis-dev',
     'libvorbis0a',
