@@ -9,6 +9,8 @@ const fs = require('fs');
  * app itself.
  */
 const PACKAGE_NAMES = [
+    'libev-dev',
+    'libev4',
     'libncurses-dev',
     'libncursesw6',
     'libopus-dev',
