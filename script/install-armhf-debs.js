@@ -105,8 +105,8 @@ const main = async () => {
     }
     console.log('resolved transitive dependencies:', Array.from(deduped).sort());
     const downloadUrls = await getPackageDownloadUrls(Array.from(deduped));
-    await downloadAndExtract(downloadUrls);
     console.log('download urls:', downloadUrls);
+    await downloadAndExtract(downloadUrls);
     await rmDebs();
     await exec('tar cvf sysroot.tar .');
 };
