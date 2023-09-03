@@ -20,7 +20,7 @@ const PACKAGE_NAMES = [
 const CLEANUP_FILES = [
     'control.tar.xz',
     'control.tar.zst',
-    'data.tar.tar.xz',
+    'data.tar.xz',
     'data.tar.zst',
     'debian-binary',
 ];
@@ -38,13 +38,13 @@ const getPackageDownloadUrls = async (packages) => {
     const rawOutput = (await exec(`apt download --print-uris ${packages.join(' ')}`)).stdout.split('\n');
     const downloadUrls = rawOutput
         .filter(e => e.trim().length > 0)
-        .map(e => e.split(' ')[0].trim().replaceAll('\'', ''));
+        .map(e => e.split(' ')[0].trim().replace(/'/g, ''));
     return downloadUrls;
 };
 
 const downloadAndExtract = async (downloadUrls) => {
     for (let i = 0; i < downloadUrls.length; i++) {
-        const fn = downloadUrls[i].split('/').pop();
+        const fn = decodeURIComponent(downloadUrls[i].split('/').pop());
         if (!fs.existsSync(fn)) {
             console.log('downloading', downloadUrls[i]);
             await exec(`wget ${downloadUrls[i]}`);
@@ -63,7 +63,7 @@ const downloadAndExtract = async (downloadUrls) => {
         }
         for (let j = 0; j < CLEANUP_FILES.length; j++) {
             if (fs.existsSync(CLEANUP_FILES[j])) {
-                fs.rmSync(CLEANUP_FILES[j]);
+                await exec(`rm ${CLEANUP_FILES[j]}`);
             }
         }
     }
