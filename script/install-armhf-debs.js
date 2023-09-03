@@ -2,20 +2,26 @@ const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const fs = require('fs');
 
-const EXCLUDE = [
-    'libc6',
-    'libgcc-s1',
-    'libcrypt1',
-    'gcc-10-base',
-    'gcc-13-base',
-];
-
+/**
+ * This script will download and extract all transitive dependencies
+ * for the packages specified by PACKAGE_NAMES. This is used to populate
+ * a cross-compile sysroot with the libraries required to compile the
+ * app itself.
+ */
 const PACKAGE_NAMES = [
     'libopus0',
     'libopus-dev',
     'libvorbis0a',
     'libvorbisenc2',
     'libvorbis-dev',
+];
+
+const EXCLUDE = [
+    'libc6',
+    'libgcc-s1',
+    'libcrypt1',
+    'gcc-10-base',
+    'gcc-13-base',
 ];
 
 const CLEANUP_FILES = [
@@ -85,7 +91,7 @@ const main = async () => {
     for (let i = 0; i < PACKAGE_NAMES.length; i++) {
         dependencies = [...dependencies, ...(await getPackageDependencies(PACKAGE_NAMES[i]))];
     }
-    const deduped = new Set([...PACKAGE_NAMES, dependencies]);
+    const deduped = new Set([...PACKAGE_NAMES, ...dependencies]);
     for (let i = 0; i < EXCLUDE.length; i++) {
         deduped.delete(EXCLUDE[i]);
     }
