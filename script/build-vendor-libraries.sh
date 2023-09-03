@@ -52,7 +52,10 @@ BUILD_ROOT="/build"
 
 # update cross-compile vars, if specified.
 if [[ $CROSSCOMPILE == rpi-* ]]; then
-    # cross-compile toolchains found here: https://github.com/tttapa/docker-arm-cross-toolchain
+    # cross-compile toolchains found here: https://github.com/tttapa/docker-arm-cross-toolchain. note
+    # that the toolchain uses a newer version of libstdc++ than supported by our oldest platform,
+    # so we link with "-static-libstdc++".
+    # see: https://github.com/tttapa/docker-arm-cross-toolchain/issues/5#issuecomment-1665744288
 
     OPENSSL_VERSION="1.1.1n"
     OPENSSL_TYPE="linux-generic32"
@@ -73,6 +76,7 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
 
     export PATH="${XTOOLS_BIN_PATH}:$PATH"
     export LDFLAGS="$LDFLAGS ${XTOOLS_LINKER_FLAGS}"
+    export CXXFLAGS="$CXXFLAGS -static-libstdc++"
     export PKG_CONFIG_PATH="${VENDOR_PKG_CONFIG_PATH}:${XTOOLS_PKG_CONFIG_PATH}"
 
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
