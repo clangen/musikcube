@@ -27,6 +27,7 @@ const EXCLUDE = [
     'libc6',
     'libcrypt1',
     'libgcc-s1',
+    'libgcc-1',
     'linux-libc-dev',
 ];
 
@@ -59,11 +60,8 @@ const getPackageDownloadUrls = async (packages) => {
 const downloadAndExtract = async (downloadUrls) => {
     for (let i = 0; i < downloadUrls.length; i++) {
         const fn = decodeURIComponent(downloadUrls[i].split('/').pop());
-        if (!fs.existsSync(fn)) {
-            console.log('downloading', downloadUrls[i]);
-            await exec(`wget ${downloadUrls[i]}`);
-        }
-        console.log('extracting', downloadUrls[i]);
+        console.log('processing', downloadUrls[i]);
+        await exec(`wget ${downloadUrls[i]}`);
         await exec(`ar x ./${fn}`);
         if (fs.existsSync('data.tar.zst')) {
             await exec(`tar --use-compress-program=unzstd -xvf data.tar.zst`);
