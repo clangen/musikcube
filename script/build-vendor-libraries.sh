@@ -482,7 +482,7 @@ function build_libopenmpt() {
         make ${JOBS} || exit $?
         make install
         cd ..
-    elif
+    else
         set_makefile_env_vars
         rm -rf libopenmpt-0.7.0+release/
         tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.makefile.tar.gz
