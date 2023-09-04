@@ -22,6 +22,11 @@ const PACKAGE_NAMES = [
   'zlib1g-dev',
 ];
 
+/**
+ * These are packages that are either provided by the cross-compiler
+ * tools, or otherwise introduce conflicts while building and linking.
+ * If any of the packages depend on these, we explicitly ignore them.
+ */
 const EXCLUDE = [
   'debconf',
   'dpkg',
@@ -43,6 +48,11 @@ const EXCLUDE = [
   'linux-libc-dev',
 ];
 
+/**
+ * A list of files known to be provided by deb archives that we don't
+ * want or need; we'll delete these after we're done downloading and
+ * extracting files.
+ */
 const CLEANUP_FILES = [
   'control.tar.gz',
   'control.tar.bz2',
@@ -55,6 +65,10 @@ const CLEANUP_FILES = [
   'debian-binary',
 ];
 
+/**
+ * Uses `apt-cache` to resolve a list of package dependencies for
+ * the specified package.
+ */
 const getPackageDependencies = async (packageName) => {
   const rawOutput = (
     await exec(
@@ -70,6 +84,10 @@ const getPackageDependencies = async (packageName) => {
   return packages;
 };
 
+/**
+ * Uses `apt download` to get a list of download URLs from
+ * the specified list of packages.
+ */
 const getPackageDownloadUrls = async (packages) => {
   const rawOutput = (
     await exec(`apt download --print-uris ${packages.join(' ')}`)
@@ -80,6 +98,9 @@ const getPackageDownloadUrls = async (packages) => {
   return downloadUrls;
 };
 
+/**
+ * Downloads and extracts a list of deb URLs
+ */
 const downloadAndExtract = async (downloadUrls) => {
   for (let i = 0; i < downloadUrls.length; i++) {
     const fn = decodeURIComponent(downloadUrls[i].split('/').pop());
@@ -106,6 +127,12 @@ const downloadAndExtract = async (downloadUrls) => {
   }
 };
 
+/**
+ * Finds all symlinks with absolute paths in our generated
+ * sysroot, and converts them to relative paths. This ensures
+ * the sysroot is "relocatable" and can be used with
+ * crosscompile toolchains.
+ */
 const convertAbsoluteToRelativeSymlinks = async () => {
   const root = process.cwd();
   const symlinks = (await exec('find . -type l')).stdout
@@ -126,6 +153,9 @@ const convertAbsoluteToRelativeSymlinks = async () => {
   }
 };
 
+/**
+ * Delete any debs we downloaded
+ */
 const rmDebs = async () => {
   try {
     console.log('cleaning up downloads');
