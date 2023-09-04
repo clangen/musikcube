@@ -111,8 +111,7 @@ function configure_crosscompile_if_necessary() {
 }
 
 function print_build_configuration() {
-    printf "\n\n"
-    printf "build configuration:\n"
+    show_banner "build configuration"
     printf "  - XTOOLS_TOOLCHAIN_NAME=${XTOOLS_TOOLCHAIN_NAME}\n"
     printf "  - CMAKE_COMPILER_TOOLCHAIN=${CMAKE_COMPILER_TOOLCHAIN}\n"
     printf "  - CFLAGS=${CFLAGS}\n"
@@ -123,7 +122,6 @@ function print_build_configuration() {
     printf "  - OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
     printf "  - FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n"
     printf "  - PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n"
-    printf "\n\n"
     sleep 3
 }
 
@@ -157,12 +155,21 @@ function fetch_packages() {
     copy_or_download https://bitbucket.org/mpyne/game-music-emu/downloads game-music-emu-${GME_VERSION}.tar.gz
 }
 
+function show_banner {
+    printf "\n\n********************************************************************************\n"
+    printf "*\n"
+    printf "* $1\n"
+    printf "*\n"
+    printf "********************************************************************************\n\n"
+}
+
 #
 # openssl
 #
 
 function build_openssl() {
-    tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
+    show_banner "building openssl..."
+    tar xvfz openssl-${OPENSSL_VERSION}.tar.gz > /dev/null
     cd openssl-${OPENSSL_VERSION}
     perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX} || exit $?
     make -j8
@@ -186,8 +193,9 @@ function build_openssl() {
 #
 
 function build_curl() {
+    show_banner "building libcurl..."
     rm -rf curl-${CURL_VERSION}
-    tar xvfz curl-${CURL_VERSION}.tar.gz
+    tar xvfz curl-${CURL_VERSION}.tar.gz > /dev/null
     cd curl-${CURL_VERSION}
     ./configure --enable-shared \
         --with-pic \
@@ -230,8 +238,9 @@ function build_curl() {
 #
 
 function build_libmicrohttpd() {
+    show_banner "building libmicrohttpd..."
     rm -rf libmicrohttpd-${LIBMICROHTTPD_VERSION}
-    tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
+    tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz > /dev/null
     cd libmicrohttpd-${LIBMICROHTTPD_VERSION}
     ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=${OUTDIR} ${GENERIC_CONFIGURE_FLAGS}
     make -j8 || exit $?
@@ -244,10 +253,16 @@ function build_libmicrohttpd() {
 #
 
 function build_ffmpeg() {
+    show_banner "building ffmpeg..."
     # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
     rm -rf ffmpeg-${FFMPEG_VERSION}
-    tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
+    tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2 > /dev/null
+
+    OLD_LDFLAGS=$LDFLAGS
+    OLD_CFLAGS=$CFLAGS
+    export LDFLAGS="$LDFLAGS -lm"
     export CFLAGS="$CFLAGS -I${XTOOLS_SYSROOT}/usr/include/opus"
+
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
         --prefix=${OUTDIR} \
@@ -426,6 +441,10 @@ function build_ffmpeg() {
         --build-suffix=-musikcube || exit $?
     make ${JOBS} || exit $?
     make install
+
+    export LDFLAGS=$OLD_LDFLAGS
+    export CFLAGS=$OLD_CFLAGS
+
     cd ..
 }
 
@@ -434,8 +453,9 @@ function build_ffmpeg() {
 #
 
 function build_lame() {
+    show_banner "building lame..."
     rm -rf lame-${LAME_VERSION}
-    tar xvfz lame-${LAME_VERSION}.tar.gz
+    tar xvfz lame-${LAME_VERSION}.tar.gz > /dev/null
     cd lame-${LAME_VERSION}
     # https://sourceforge.net/p/lame/mailman/message/36081038/
     perl -i.bak -0pe "s|lame_init_old\n||" include/libmp3lame.sym
@@ -450,11 +470,12 @@ function build_lame() {
 #
 
 function build_libopenmpt() {
+    show_banner "building libopenmpt..."
     # macOS needs to use the autotools version, but Linux uses the Makefile
     # version for cross-compile support.
     if [[ $OS == "Darwin" ]]; then
         rm -rf libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
-        tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
+        tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz > /dev/null
         cd libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
         ./configure \
             --disable-dependency-tracking \
@@ -480,7 +501,7 @@ function build_libopenmpt() {
     else
         set_makefile_env_vars
         rm -rf libopenmpt-0.7.0+release/
-        tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.makefile.tar.gz
+        tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.makefile.tar.gz > /dev/null
         cd libopenmpt-${LIBOPENMPT_VERSION}+release
         OPENMPT_OPTIONS="EXAMPLES=0 NO_FLAC=1 NO_MINIMP3=1 NO_MINIZ=1 NO_MPG123=1 NO_OGG=1 NO_PORTAUDIO=1 NO_PORTAUDIOCPP=1 NO_PULSEAUDIO=1 NO_SDL2=1 NO_SNDFILE=1 NO_STBVORBIS=1 NO_VORBIS=1 NO_VORBISFILE=1 OPENMPT123=0 SHARED_LIB=1 STATIC_LIB=0 TEST=0 PREFIX=${OUTDIR}"
         make ${OPENMPT_OPTIONS} ${JOBS} VERBOSE=1 || exit $?
@@ -495,8 +516,9 @@ function build_libopenmpt() {
 #
 
 function build_gme() {
+    show_banner "building gme (game-music-emu)..."
     rm -rf game-music-emu-${GME_VERSION}
-    tar xvfz game-music-emu-${GME_VERSION}.tar.gz
+    tar xvfz game-music-emu-${GME_VERSION}.tar.gz > /dev/null
     cd game-music-emu-${GME_VERSION}
     cmake \
         ${CMAKE_COMPILER_TOOLCHAIN} \
@@ -515,8 +537,9 @@ function build_gme() {
 #
 
 function build_taglib() {
+    show_banner "building taglib..."
     rm -rf taglib-${TAGLIB_VERSION}
-    tar xvfz taglib-${TAGLIB_VERSION}.tar.gz
+    tar xvfz taglib-${TAGLIB_VERSION}.tar.gz > /dev/null
     cd taglib-${TAGLIB_VERSION}
     cmake \
         ${CMAKE_COMPILER_TOOLCHAIN} \
@@ -586,11 +609,11 @@ function main() {
     stage_prebuilt_libraries
     fetch_packages
 
+    build_ffmpeg
     build_openssl
     build_curl
     build_libopenmpt
     build_libmicrohttpd
-    build_ffmpeg
     build_lame
     build_gme
     build_taglib

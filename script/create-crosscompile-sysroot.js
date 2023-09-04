@@ -104,7 +104,10 @@ const getPackageDownloadUrls = async (packages) => {
 const downloadAndExtract = async (downloadUrls) => {
   for (let i = 0; i < downloadUrls.length; i++) {
     const fn = decodeURIComponent(downloadUrls[i].split('/').pop());
-    console.log(`processing [${i+1}/${downloadUrls.length}]`, downloadUrls[i]);
+    console.log(
+      `processing [${i + 1}/${downloadUrls.length}]`,
+      downloadUrls[i]
+    );
     await exec(`wget ${downloadUrls[i]}`);
     await exec(`ar x ./${fn}`);
     if (fs.existsSync('data.tar.zst')) {
@@ -169,7 +172,10 @@ const main = async () => {
   await rmDebs();
   let dependencies = [];
   for (let i = 0; i < PACKAGE_NAMES.length; i++) {
-    console.log(`scanning [${i + 1}/${PACKAGE_NAMES.length}]`, PACKAGE_NAMES[i]);
+    console.log(
+      `scanning [${i + 1}/${PACKAGE_NAMES.length}]`,
+      PACKAGE_NAMES[i]
+    );
     dependencies = [
       ...dependencies,
       ...(await getPackageDependencies(PACKAGE_NAMES[i])),
@@ -184,7 +190,7 @@ const main = async () => {
   await downloadAndExtract(downloadUrls);
   await convertAbsoluteToRelativeSymlinks();
   await rmDebs();
-  await exec("tar cvf sysroot.tar --transform 's,^,sysroot/,' .", { maxBuffer: 1024 * 1024 * 8 }); /* 8mb */
+  await exec('tar cvf sysroot.tar .', { maxBuffer: 1024 * 1024 * 8 }); /* 8mb */
 };
 
 main();
