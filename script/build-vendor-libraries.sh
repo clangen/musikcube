@@ -61,12 +61,12 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     OPENSSL_TYPE="linux-generic32"
 
     XTOOLS_TOOLCHAIN_NAME="armv8-rpi3-linux-gnueabihf"
+    CMAKE_COMPILER_TOOLCHAIN="${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
 
     if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
         XTOOLS_TOOLCHAIN_NAME="armv6-rpi-linux-gnueabihf"
+        CMAKE_COMPILER_TOOLCHAIN="${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
     fi
-
-    CMAKE_COMPILER_TOOLCHAIN="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/${XTOOLS_TOOLCHAIN_NAME}.toolchain.cmake"
 
     XTOOLS_SYSROOT="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/${XTOOLS_TOOLCHAIN_NAME}/sysroot/"
     XTOOLS_LINKER_FLAGS="--sysroot=${XTOOLS_SYSROOT}"
@@ -84,11 +84,16 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --enable-cross-compile --sysroot=${XTOOLS_SYSROOT} --cross-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
 
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
-    printf "  toolchain=${XTOOLS_TOOLCHAIN_NAME}\n"
-    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
-    printf "  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
-    printf "  FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n  PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n\n"
-
+    printf "  - XTOOLS_TOOLCHAIN_NAME=${XTOOLS_TOOLCHAIN_NAME}\n"
+    printf "  - CMAKE_COMPILER_TOOLCHAIN=${CMAKE_COMPILER_TOOLCHAIN}\n"
+    printf "  - CFLAGS=${CFLAGS}\n"
+    printf "  - CXXFLAGS=${CXXFLAGS}\n"
+    printf "  - LDFLAGS=${LDFLAGS}\n"
+    printf "  - GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
+    printf "  - OPENSSL_TYPE=${OPENSSL_TYPE}\n"
+    printf "  - OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
+    printf "  - FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n"
+    printf "  - PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n\n"
     sleep 3
 fi
 
