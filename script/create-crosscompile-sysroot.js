@@ -35,8 +35,12 @@ const EXCLUDE = [
 ];
 
 const CLEANUP_FILES = [
+  'control.tar.gz',
+  'control.tar.bz2',
   'control.tar.xz',
   'control.tar.zst',
+  'data.tar.gz',
+  'data.tar.bz2',
   'data.tar.xz',
   'data.tar.zst',
   'debian-binary',
@@ -78,6 +82,10 @@ const downloadAndExtract = async (downloadUrls) => {
       await exec(`tar --use-compress-program=unzstd -xvf data.tar.zst`);
     } else if (fs.existsSync('data.tar.xz')) {
       await exec(`tar -xvf data.tar.xz`);
+    } else if (fs.existsSync('data.tar.gz')) {
+      await exec(`tar -xvtz data.tar.gz`);
+    } else if (fs.existsSync('data.tar.bz2')) {
+      await exec(`tar -xvfj data.tar.bz2`);
     } else {
       console.error('unknown file type');
       process.exit(-1);
@@ -101,7 +109,9 @@ const convertAbsoluteToRelativeSymlinks = async () => {
       const absoluteTo = path.join(root, dest);
       const absoluteFrom = path.join(root, symlinks[i]);
       const relative = path.relative(path.dirname(absoluteFrom), absoluteTo);
-      console.log(`relinking\n * fn:   ${absoluteFrom}\n * from: ${absoluteTo}\n * to:   ${relative}`);
+      console.log(
+        `relinking\n * fn:   ${absoluteFrom}\n * from: ${absoluteTo}\n * to:   ${relative}`
+      );
       fs.unlinkSync(symlinks[i]);
       fs.symlinkSync(relative, symlinks[i]);
     }
