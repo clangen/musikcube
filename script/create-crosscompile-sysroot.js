@@ -83,7 +83,7 @@ const downloadAndExtract = async (downloadUrls) => {
     } else if (fs.existsSync('data.tar.xz')) {
       await exec(`tar -xvf data.tar.xz`);
     } else if (fs.existsSync('data.tar.gz')) {
-      await exec(`tar -xvtz data.tar.gz`);
+      await exec(`tar -xvfz data.tar.gz`);
     } else if (fs.existsSync('data.tar.bz2')) {
       await exec(`tar -xvfj data.tar.bz2`);
     } else {
