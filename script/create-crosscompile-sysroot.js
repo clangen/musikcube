@@ -10,17 +10,15 @@ const path = require('path');
  * app itself.
  */
 const PACKAGE_NAMES = [
+  'libasound2-dev',
   'libev-dev',
-  'libev4',
   'libncurses-dev',
-  'libncursesw6',
   'libopus-dev',
-  'libopus0',
+  'libportaudio-dev',
+  'libpulse-dev',
+  'libsndio-dev',
   'libsystemd-dev',
-  'libtinfo6',
   'libvorbis-dev',
-  'libvorbis0a',
-  'libvorbisenc2',
   'zlib1g-dev',
 ];
 
