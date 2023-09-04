@@ -1,7 +1,6 @@
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const fs = require('fs');
-const path = require('path');
 
 const TOOLCHAINS = ['armv6-rpi-linux-gnueabihf', 'armv8-rpi3-linux-gnueabihf'];
 
@@ -32,5 +31,12 @@ main = async () => {
     await install(TOOLCHAINS[i]);
   }
 };
+
+if (!fs.existsSync('./sysroot.tar')) {
+  console.error(
+    '[ERROR]: sysroot.tar not found in the current directory, process will not continue'
+  );
+  process.exit(1);
+}
 
 main();
