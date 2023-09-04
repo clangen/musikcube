@@ -455,15 +455,44 @@ function build_lame() {
 #
 
 function build_libopenmpt() {
-    set_makefile_env_vars
-    rm -rf libopenmpt-0.7.0+release/
-    tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.makefile.tar.gz
-    cd libopenmpt-${LIBOPENMPT_VERSION}+release
-    OPENMPT_OPTIONS="EXAMPLES=0 NO_FLAC=1 NO_MINIMP3=1 NO_MINIZ=1 NO_MPG123=1 NO_OGG=1 NO_PORTAUDIO=1 NO_PORTAUDIOCPP=1 NO_PULSEAUDIO=1 NO_SDL2=1 NO_SNDFILE=1 NO_STBVORBIS=1 NO_VORBIS=1 NO_VORBISFILE=1 OPENMPT123=0 SHARED_LIB=1 STATIC_LIB=0 TEST=0 PREFIX=${OUTDIR}"
-    make ${OPENMPT_OPTIONS} ${JOBS} VERBOSE=1 || exit $?
-    make ${OPENMPT_OPTIONS} install
-    unset_makefile_env_vars
-    cd ..
+    # macOS needs to use the autotools version, but Linux uses the Makefile
+    # version for cross-compile support.
+    if [[ $OS == "Darwin" ]]; then
+        rm -rf libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
+        tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
+        cd libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
+        ./configure \
+            --disable-dependency-tracking \
+            --enable-shared \
+            --disable-openmpt123 \
+            --disable-examples \
+            --disable-tests \
+            --disable-doxygen-doc \
+            --disable-doxygen-html \
+            --without-mpg123 \
+            --without-ogg \
+            --without-vorbis \
+            --without-vorbisfile \
+            --without-portaudio \
+            --without-portaudiocpp \
+            --without-sndfile \
+            --without-flac \
+            ${GENERIC_CONFIGURE_FLAGS} \
+            --prefix=${OUTDIR} || exit $?
+        make ${JOBS} || exit $?
+        make install
+        cd ..
+    elif
+        set_makefile_env_vars
+        rm -rf libopenmpt-0.7.0+release/
+        tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.makefile.tar.gz
+        cd libopenmpt-${LIBOPENMPT_VERSION}+release
+        OPENMPT_OPTIONS="EXAMPLES=0 NO_FLAC=1 NO_MINIMP3=1 NO_MINIZ=1 NO_MPG123=1 NO_OGG=1 NO_PORTAUDIO=1 NO_PORTAUDIOCPP=1 NO_PULSEAUDIO=1 NO_SDL2=1 NO_SNDFILE=1 NO_STBVORBIS=1 NO_VORBIS=1 NO_VORBISFILE=1 OPENMPT123=0 SHARED_LIB=1 STATIC_LIB=0 TEST=0 PREFIX=${OUTDIR}"
+        make ${OPENMPT_OPTIONS} ${JOBS} VERBOSE=1 || exit $?
+        make ${OPENMPT_OPTIONS} install
+        unset_makefile_env_vars
+        cd ..
+    fi
 }
 
 #
