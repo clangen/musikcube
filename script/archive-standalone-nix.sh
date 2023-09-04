@@ -19,18 +19,21 @@ if [[ $OS == "Darwin" ]]; then
   JOBS="-j$(sysctl -n hw.ncpu)"
 fi
 
+STRIP="strip"
 FRIENDLY_ARCH_NAME=$(uname -m)
 DEB_ARCH=$FRIENDLY_ARCH_NAME
 VENDOR=$FRIENDLY_ARCH_NAME
 if [[ $CROSSCOMPILE == rpi-* ]]; then
   FRIENDLY_OS_NAME="linux_rpi"
+  XTOOLS_NAME="x-tools-armv8-rpi3"
   VENDOR=${CROSSCOMPILE}
   FRIENDLY_ARCH_NAME="armv7a"
   DEB_ARCH="armhf"
   if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
+    XTOOLS_NAME="armv6-rpi-linux-gnueabihf"
     FRIENDLY_ARCH_NAME="armv6"
-    DEB_ARCH="arm"
   fi
+  STRIP="/build/x-tools/${XTOOLS_NAME}/${XTOOLS_NAME}/bin/strip"
 elif [[ $FRIENDLY_ARCH_NAME == "x86_64" ]]; then
   DEB_ARCH="amd64"
 fi
@@ -48,7 +51,7 @@ fi
 
 OS_SPECIFIC_BUILD_FLAGS=""
 if [[ $OS == "Linux" ]]; then
-  OS_SPECIFIC_BUILD_FLAGS="-DGENERATE_DEB=true -DPACKAGE_ARCHITECTURE=${DEB_ARCH} -DCMAKE_INSTALL_PREFIX=/usr"
+  OS_SPECIFIC_BUILD_FLAGS="-DGENERATE_DEB=true -DPACKAGE_ARCHITECTURE=${DEB_ARCH} -DFRIENDLY_ARCHITECTURE_NAME=${FRIENDLY_OS_NAME} -DCMAKE_INSTALL_PREFIX=/usr"
   if [[ $CROSSCOMPILE == rpi-* ]]; then
     # for now we don't support pipewire when cross compiling...
     OS_SPECIFIC_BUILD_FLAGS="$OS_SPECIFIC_BUILD_FLAGS -DENABLE_PIPEWIRE=false"
@@ -84,14 +87,21 @@ fi
 
 ./script/patch-rpath.sh $(pwd) || exit $?
 
-rm -rf dist/$VERSION/*${OS_ARCH}_$VERSION* 2> /dev/null
+printf "stripping binaries..."
+$STRIP bin/musikcube
+$STRIP bin/musikcubed
+$STRIP bin/libmusikcore.${DLL_EXT}
+$STRIP bin/lib/*
+$STRIP bin/libmusikcore.${DLL_EXT}
+$STRIP bin/plugins/*.${DLL_EXT}
 
+printf "staging binaries..."
+rm -rf dist/$VERSION/*${OS_ARCH}_$VERSION* 2> /dev/null
 mkdir -p $OUTDIR/lib
 mkdir -p $OUTDIR/plugins
 mkdir -p $OUTDIR/locales
 mkdir -p $OUTDIR/themes
 mkdir -p $OUTDIR/share/terminfo
-
 cp bin/musikcube $OUTDIR
 cp bin/musikcubed $OUTDIR
 cp bin/libmusikcore.${DLL_EXT} $OUTDIR
@@ -109,13 +119,6 @@ else
   sleep 1
   node ./script/scan-standalone dist/$VERSION/$OUTNAME || exit $?
 fi
-
-strip $OUTDIR/musikcube
-strip $OUTDIR/musikcubed
-strip $OUTDIR/libmusikcore.${DLL_EXT}
-strip $OUTDIR/lib/*
-strip $OUTDIR/libmusikcore.${DLL_EXT}
-strip $OUTDIR/plugins/*.${DLL_EXT}
 
 cd dist/$VERSION/
 tar cvf $OUTNAME.tar $OUTNAME
