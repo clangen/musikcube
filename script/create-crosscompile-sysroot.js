@@ -140,9 +140,8 @@ const main = async () => {
   for (let i = 0; i < EXCLUDE.length; i++) {
     deduped.delete(EXCLUDE[i]);
   }
-  console.log('resolved transitive dependencies:', Array.from(deduped).sort());
+  console.log(`resolved ${deduped.size} transitive dependencies`);
   const downloadUrls = await getPackageDownloadUrls(Array.from(deduped));
-  console.log('download urls:', downloadUrls);
   await downloadAndExtract(downloadUrls);
   await convertAbsoluteToRelativeSymlinks();
   await rmDebs();
