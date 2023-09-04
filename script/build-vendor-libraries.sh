@@ -85,7 +85,7 @@ function configure_crosscompile_if_necessary() {
         OPENSSL_TYPE="linux-generic32"
 
         XTOOLS_TOOLCHAIN_NAME="armv8-rpi3-linux-gnueabihf"
-        CMAKE_COMPILER_TOOLCHAIN="--toolchain ${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
+        CMAKE_COMPILER_TOOLCHAIN="--toolchain ${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv8.cmake"
 
         if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
             XTOOLS_TOOLCHAIN_NAME="armv6-rpi-linux-gnueabihf"

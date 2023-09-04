@@ -27,7 +27,7 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
   FRIENDLY_OS_NAME="linux_rpi"
   XTOOLS_NAME="armv8-rpi3-linux-gnueabihf"
   VENDOR=${CROSSCOMPILE}
-  FRIENDLY_ARCH_NAME="armv7a"
+  FRIENDLY_ARCH_NAME="armv8"
   DEB_ARCH="armhf"
   if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
     XTOOLS_NAME="armv6-rpi-linux-gnueabihf"
@@ -58,8 +58,8 @@ if [[ $OS == "Linux" ]]; then
   fi
 fi
 
-if [[ $CROSSCOMPILE == "rpi-armv7a" ]]; then
-  CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain-armv7a.cmake"
+if [[ $CROSSCOMPILE == "rpi-armv8" ]]; then
+  CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain-armv8.cmake"
 elif [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
   CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain-armv6.cmake"
 fi
