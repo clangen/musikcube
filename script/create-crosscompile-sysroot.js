@@ -146,7 +146,7 @@ const main = async () => {
   await downloadAndExtract(downloadUrls);
   await convertAbsoluteToRelativeSymlinks();
   await rmDebs();
-  await exec('tar cvf sysroot.tar .');
+  await exec('tar cvf sysroot.tar .', { maxBuffer: 1024 * 1024 * 8 }); /* 8mb */
 };
 
 main();
