@@ -139,7 +139,7 @@ const main = async () => {
   await rmDebs();
   let dependencies = [];
   for (let i = 0; i < PACKAGE_NAMES.length; i++) {
-    console.log(`scanning [${i + 1}/${PACKAGE_NAMES.length}]`, packageName);
+    console.log(`scanning [${i + 1}/${PACKAGE_NAMES.length}]`, PACKAGE_NAMES[i]);
     dependencies = [
       ...dependencies,
       ...(await getPackageDependencies(PACKAGE_NAMES[i])),
