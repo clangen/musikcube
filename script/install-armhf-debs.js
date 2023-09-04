@@ -93,18 +93,19 @@ const downloadAndExtract = async (downloadUrls) => {
 };
 
 const convertAbsoluteToRelativeSymlinks = async () => {
-  const root = __dirname;
+  const root = process.cwd();
   const symlinks = (await exec('find . -type l')).stdout
     .split('\n')
     .filter((e) => e.length > 0);
   for (let i = 0; i < symlinks.length; i++) {
     const dest = fs.readlinkSync(symlinks[i]);
     if (dest[0] === '/') {
-      const absolute = path.join(root, dest);
-      const relative = path.relative(symlinks[i], absolute);
-      console.log(`relinking\n * from: ${absolute}\n * to: ${relative}`);
-      // fs.unlinkSync(symslinks[i]);
-      // fs.link(relative, symlinks[i]);
+      const absoluteTo = path.join(root, dest);
+      const absoluteFrom = path.join(root, symlinks[i]);
+      const relative = path.relative(path.dirname(absoluteFrom), absoluteTo);
+      console.log(`relinking\n * fn:   ${absoluteFrom}\n * from: ${absoluteTo}\n * to:   ${relative}`);
+      fs.unlinkSync(symlinks[i]);
+      fs.symlinkSync(relative, symlinks[i]);
     }
   }
 };
