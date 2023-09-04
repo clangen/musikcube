@@ -86,11 +86,11 @@ function configure_crosscompile_if_necessary() {
         OPENSSL_TYPE="linux-generic32"
 
         XTOOLS_TOOLCHAIN_NAME="armv8-rpi3-linux-gnueabihf"
-        CMAKE_COMPILER_TOOLCHAIN="${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
+        CMAKE_COMPILER_TOOLCHAIN="--toolchain ${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv7a.cmake"
 
         if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
             XTOOLS_TOOLCHAIN_NAME="armv6-rpi-linux-gnueabihf"
-            CMAKE_COMPILER_TOOLCHAIN="${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
+            CMAKE_COMPILER_TOOLCHAIN="--toolchain ${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
         fi
 
         XTOOLS_SYSROOT="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/${XTOOLS_TOOLCHAIN_NAME}/sysroot/"
@@ -475,7 +475,7 @@ function build_gme() {
     tar xvfz game-music-emu-${GME_VERSION}.tar.gz
     cd game-music-emu-${GME_VERSION}
     cmake \
-        --toolchain ${CMAKE_COMPILER_TOOLCHAIN} \
+        ${CMAKE_COMPILER_TOOLCHAIN} \
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
         -DENABLE_UBSAN=OFF \
@@ -495,7 +495,7 @@ function build_taglib() {
     tar xvfz taglib-${TAGLIB_VERSION}.tar.gz
     cd taglib-${TAGLIB_VERSION}
     cmake \
-        --toolchain ${CMAKE_COMPILER_TOOLCHAIN} \
+        ${CMAKE_COMPILER_TOOLCHAIN} \
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
         -DBUILD_SHARED_LIBS=1 \
