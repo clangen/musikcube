@@ -127,11 +127,6 @@ function print_build_configuration() {
     sleep 3
 }
 
-function clean() {
-    rm -rf vendor
-    mkdir vendor
-}
-
 #
 # download deps
 #
@@ -580,9 +575,10 @@ function delete_unused_libraries() {
 }
 
 function main() {
-    clean
+    rm -rf vendor
     mkdir vendor
     cd vendor
+    touch ".config-${ARCH}-${CROSSCOMPILE}"
 
     configure_crosscompile_if_necessary
     print_build_configuration
