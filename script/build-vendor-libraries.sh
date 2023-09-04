@@ -158,6 +158,7 @@ function fetch_packages() {
     copy_or_download https://ffmpeg.org/releases ffmpeg-${FFMPEG_VERSION}.tar.bz2
     copy_or_download https://downloads.sourceforge.net/project/lame/lame/${LAME_VERSION} lame-${LAME_VERSION}.tar.gz
     copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.makefile.tar.gz
+    copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
     copy_or_download https://github.com/taglib/taglib/releases/download/v${TAGLIB_VERSION} taglib-${TAGLIB_VERSION}.tar.gz
     copy_or_download https://bitbucket.org/mpyne/game-music-emu/downloads game-music-emu-${GME_VERSION}.tar.gz
 }
