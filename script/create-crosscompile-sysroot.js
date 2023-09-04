@@ -14,11 +14,11 @@ const PACKAGE_NAMES = [
   'libev-dev',
   'libncurses-dev',
   'libopus-dev',
-  'libportaudio-dev',
   'libpulse-dev',
   'libsndio-dev',
   'libsystemd-dev',
   'libvorbis-dev',
+  'portaudio19-dev',
   'zlib1g-dev',
 ];
 
