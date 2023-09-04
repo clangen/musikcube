@@ -23,14 +23,23 @@ const PACKAGE_NAMES = [
 ];
 
 const EXCLUDE = [
-  'gcc-8-base',
+  'debconf',
+  'dpkg',
   'gcc-10-base',
   'gcc-13-base',
+  'gcc-8-base',
+  'install-info',
   'libc-dev-bin',
+  'libc6-dev',
   'libc6',
   'libcrypt1',
+  'libdebian-installer4',
+  'libdpkg-perl',
   'libgcc-s1',
   'libgcc1',
+  'libselinux1-dev',
+  'libselinux1',
+  'libstdc++6',
   'linux-libc-dev',
 ];
 
