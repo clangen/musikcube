@@ -27,9 +27,9 @@ RPATH="@rpath"
 OS=$(uname)
 ARCH=$(uname -m)
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-OPENSSL_VERSION="3.1.0"
-CURL_VERSION="8.0.1"
-LIBMICROHTTPD_VERSION="0.9.76"
+OPENSSL_VERSION="3.1.2"
+CURL_VERSION="8.2.1"
+LIBMICROHTTPD_VERSION="0.9.77"
 FFMPEG_VERSION="6.0"
 LAME_VERSION="3.100"
 LIBOPENMPT_VERSION="0.7.1"
@@ -82,7 +82,6 @@ function configure_crosscompile_if_necessary() {
         # so we link with "-static-libstdc++".
         # see: https://github.com/tttapa/docker-arm-cross-toolchain/issues/5#issuecomment-1665744288
 
-        OPENSSL_VERSION="1.1.1n"
         OPENSSL_TYPE="linux-generic32"
 
         XTOOLS_TOOLCHAIN_NAME="armv8-rpi3-linux-gnueabihf"

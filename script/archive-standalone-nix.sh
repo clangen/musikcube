@@ -25,7 +25,7 @@ DEB_ARCH=$FRIENDLY_ARCH_NAME
 VENDOR=$FRIENDLY_ARCH_NAME
 if [[ $CROSSCOMPILE == rpi-* ]]; then
   FRIENDLY_OS_NAME="linux_rpi"
-  XTOOLS_NAME="x-tools-armv8-rpi3"
+  XTOOLS_NAME="armv8-rpi3-linux-gnueabihf"
   VENDOR=${CROSSCOMPILE}
   FRIENDLY_ARCH_NAME="armv7a"
   DEB_ARCH="armhf"
