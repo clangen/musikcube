@@ -1,8 +1,9 @@
 # Prerequisites
 
 Cross compiling depends on:
-  * A working "standalone" build environment
-  * A working Raspberry Pi "Buster" environment (either via `chroot` or on a physical device)
+
+- A working "standalone" build environment ([see here](build-standalone-unix.md))
+- A working Raspberry Pi `Buster` environment, either via `chroot` ([see here](rpi-buster-chroot.md)) or on a physical device
 
 # Gather dependencies from a Raspbian install
 
@@ -13,7 +14,7 @@ To obtain these dependencies we need to boot into the chroot environment and exe
 1. Enter the `chroot` environment (or boot your device)
 2. `apt-get update`
 3. `sudo apt-get dist-upgrade`
-2. `cd /build/sysroot`
+4. `cd /build/sysroot`
 5. `node /build/musikcube/script/create-crosscompile-sysroot.js`
 
 After this process completes you will be left with a file called `sysroot.tar`.
