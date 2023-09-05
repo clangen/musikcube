@@ -9,6 +9,11 @@
 * fixed 64-bit RPM architecture value (was `amd64`, but should be `x86_64`)
 * updated musikdroid to latest version of Android Studio and external
   dependencies (anecdotally improving Opus playback reliability)
+* updated to openssl@3.1.2, libcurl@8.2.1, libmicrohttpd@0.9.77 and
+  libopenmpt@0.7.1 on unix platforms
+* re-wrote raspberry-pi/arm cross-compiling functionality to be more generic and
+  use more well-maintained toolkits.
+* added `armv6` builds for Raspberry Pi Zero (and other similar devices)
 
 --------------------------------------------------------------------------------
 
