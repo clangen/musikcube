@@ -27,12 +27,12 @@ RPATH="@rpath"
 OS=$(uname)
 ARCH=$(uname -m)
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-OPENSSL_VERSION="3.1.0"
-CURL_VERSION="8.0.1"
-LIBMICROHTTPD_VERSION="0.9.76"
+OPENSSL_VERSION="3.1.2"
+CURL_VERSION="8.2.1"
+LIBMICROHTTPD_VERSION="0.9.77"
 FFMPEG_VERSION="6.0"
 LAME_VERSION="3.100"
-LIBOPENMPT_VERSION="0.6.9"
+LIBOPENMPT_VERSION="0.7.1"
 TAGLIB_VERSION="1.13"
 GME_VERSION="0.6.3"
 OUTDIR="$(pwd)/vendor/bin"
@@ -48,29 +48,81 @@ if [[ $OS == "Darwin" ]]; then
     OPENSSL_TYPE="darwin64-${ARCH}-cc"
 fi
 
-# update cross-compile vars, if specified.
-if [[ $CROSSCOMPILE == "rpi" ]]; then
-    OPENSSL_VERSION="1.1.1n"
-    ARM_ROOT="/build/rpi/sysroot"
-    export CPPFLAGS="-I${ARM_ROOT}/usr/include"
-    export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
-    export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L${ARM_ROOT}/lib/arm-linux-gnueabihf/"
-    OPENSSL_TYPE="linux-generic32"
-    OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
-    GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
-    FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
-    CMAKE_COMPILER_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=/build/musikcube/.cmake/RaspberryPiToolchain.cmake"
-    PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
-    printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
-    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
-    printf "  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
-    printf "  FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n  PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n\n"
-    sleep 3
-fi
+BUILD_ROOT="/build"
 
-function clean() {
-    rm -rf vendor
-    mkdir vendor
+function set_makefile_env_vars() {
+    if [[ -n $CROSSCOMPILE ]]; then
+        printf "updating AR, CC, CXX, LD for Makefile cross-compile\n"
+        OLD_AR=$AR
+        OLD_CC=$CC
+        OLD_CXX=$CXX
+        OLD_LD=$LD
+        export AR="${XTOOLS_TOOLCHAIN_NAME}-ar"
+        export CC="${XTOOLS_TOOLCHAIN_NAME}-gcc"
+        export CXX="${XTOOLS_TOOLCHAIN_NAME}-g++"
+        export LD="${XTOOLS_TOOLCHAIN_NAME}-ld"
+    fi
+}
+
+function unset_makefile_env_vars() {
+    if [[ -n $CROSSCOMPILE ]]; then
+        printf "restoring AR, CC, CXX, LDD for autotools/cmake cross-compile\n"
+        AR=$OLD_AR
+        CC=$OLD_CC
+        CXX=$OLD_CXX
+        LD=$OLD_LD
+    fi
+}
+
+function configure_crosscompile_if_necessary() {
+    # update cross-compile vars, if specified.
+    if [[ $CROSSCOMPILE == rpi-* ]]; then
+        # cross-compile toolchains found here: https://github.com/tttapa/docker-arm-cross-toolchain. note
+        # that the toolchain uses a newer version of libstdc++ than supported by our oldest platform,
+        # so we link with "-static-libstdc++".
+        # see: https://github.com/tttapa/docker-arm-cross-toolchain/issues/5#issuecomment-1665744288
+
+        OPENSSL_TYPE="linux-generic32"
+
+        XTOOLS_TOOLCHAIN_NAME="armv8-rpi3-linux-gnueabihf"
+        CMAKE_COMPILER_TOOLCHAIN="--toolchain ${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv8.cmake"
+
+        if [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
+            XTOOLS_TOOLCHAIN_NAME="armv6-rpi-linux-gnueabihf"
+            CMAKE_COMPILER_TOOLCHAIN="--toolchain ${BUILD_ROOT}/musikcube/.cmake/RaspberryPiToolchain-armv6.cmake"
+        fi
+
+        XTOOLS_SYSROOT="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/${XTOOLS_TOOLCHAIN_NAME}/sysroot/"
+        XTOOLS_LDFLAGS="--sysroot=${XTOOLS_SYSROOT}"
+        XTOOLS_BIN_PATH="${BUILD_ROOT}/x-tools/${XTOOLS_TOOLCHAIN_NAME}/bin"
+        XTOOLS_PKG_CONFIG_PATH="${XTOOLS_SYSROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
+        VENDOR_PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/"
+
+        # in general these are all we need for autotools
+        export PATH="${XTOOLS_BIN_PATH}:$PATH"
+        export LDFLAGS="$LDFLAGS ${XTOOLS_LDFLAGS}"
+        export CXXFLAGS="$CXXFLAGS -static-libstdc++"
+        export PKG_CONFIG_PATH="${VENDOR_PKG_CONFIG_PATH}:${XTOOLS_PKG_CONFIG_PATH}"
+
+        OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
+        GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=${XTOOLS_TOOLCHAIN_NAME} --with-sysroot=${XTOOLS_SYSROOT}"
+        FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --enable-cross-compile --sysroot=${XTOOLS_SYSROOT} --cross-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
+    fi
+}
+
+function print_build_configuration() {
+    show_banner "build configuration"
+    printf "  - XTOOLS_TOOLCHAIN_NAME=${XTOOLS_TOOLCHAIN_NAME}\n"
+    printf "  - CMAKE_COMPILER_TOOLCHAIN=${CMAKE_COMPILER_TOOLCHAIN}\n"
+    printf "  - CFLAGS=${CFLAGS}\n"
+    printf "  - CXXFLAGS=${CXXFLAGS}\n"
+    printf "  - LDFLAGS=${LDFLAGS}\n"
+    printf "  - GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
+    printf "  - OPENSSL_TYPE=${OPENSSL_TYPE}\n"
+    printf "  - OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
+    printf "  - FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n"
+    printf "  - PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n"
+    sleep 3
 }
 
 #
@@ -97,9 +149,18 @@ function fetch_packages() {
     copy_or_download https://ftp.gnu.org/gnu/libmicrohttpd libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
     copy_or_download https://ffmpeg.org/releases ffmpeg-${FFMPEG_VERSION}.tar.bz2
     copy_or_download https://downloads.sourceforge.net/project/lame/lame/${LAME_VERSION} lame-${LAME_VERSION}.tar.gz
+    copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.makefile.tar.gz
     copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
     copy_or_download https://github.com/taglib/taglib/releases/download/v${TAGLIB_VERSION} taglib-${TAGLIB_VERSION}.tar.gz
     copy_or_download https://bitbucket.org/mpyne/game-music-emu/downloads game-music-emu-${GME_VERSION}.tar.gz
+}
+
+function show_banner {
+    printf "\n\n********************************************************************************\n"
+    printf "*\n"
+    printf "* $1\n"
+    printf "*\n"
+    printf "********************************************************************************\n\n"
 }
 
 #
@@ -107,7 +168,8 @@ function fetch_packages() {
 #
 
 function build_openssl() {
-    tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
+    show_banner "building openssl..."
+    tar xvfz openssl-${OPENSSL_VERSION}.tar.gz > /dev/null
     cd openssl-${OPENSSL_VERSION}
     perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX} || exit $?
     make -j8
@@ -131,8 +193,9 @@ function build_openssl() {
 #
 
 function build_curl() {
+    show_banner "building libcurl..."
     rm -rf curl-${CURL_VERSION}
-    tar xvfz curl-${CURL_VERSION}.tar.gz
+    tar xvfz curl-${CURL_VERSION}.tar.gz > /dev/null
     cd curl-${CURL_VERSION}
     ./configure --enable-shared \
         --with-pic \
@@ -175,8 +238,9 @@ function build_curl() {
 #
 
 function build_libmicrohttpd() {
+    show_banner "building libmicrohttpd..."
     rm -rf libmicrohttpd-${LIBMICROHTTPD_VERSION}
-    tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
+    tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz > /dev/null
     cd libmicrohttpd-${LIBMICROHTTPD_VERSION}
     ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=${OUTDIR} ${GENERIC_CONFIGURE_FLAGS}
     make -j8 || exit $?
@@ -189,9 +253,16 @@ function build_libmicrohttpd() {
 #
 
 function build_ffmpeg() {
+    show_banner "building ffmpeg..."
     # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
     rm -rf ffmpeg-${FFMPEG_VERSION}
-    tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
+    tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2 > /dev/null
+
+    OLD_LDFLAGS=$LDFLAGS
+    OLD_CFLAGS=$CFLAGS
+    export LDFLAGS="$LDFLAGS -lm"
+    export CFLAGS="$CFLAGS -I${XTOOLS_SYSROOT}/usr/include/opus"
+
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
         --prefix=${OUTDIR} \
@@ -370,6 +441,10 @@ function build_ffmpeg() {
         --build-suffix=-musikcube || exit $?
     make ${JOBS} || exit $?
     make install
+
+    export LDFLAGS=$OLD_LDFLAGS
+    export CFLAGS=$OLD_CFLAGS
+
     cd ..
 }
 
@@ -378,8 +453,9 @@ function build_ffmpeg() {
 #
 
 function build_lame() {
+    show_banner "building lame..."
     rm -rf lame-${LAME_VERSION}
-    tar xvfz lame-${LAME_VERSION}.tar.gz
+    tar xvfz lame-${LAME_VERSION}.tar.gz > /dev/null
     cd lame-${LAME_VERSION}
     # https://sourceforge.net/p/lame/mailman/message/36081038/
     perl -i.bak -0pe "s|lame_init_old\n||" include/libmp3lame.sym
@@ -394,30 +470,45 @@ function build_lame() {
 #
 
 function build_libopenmpt() {
-    rm -rf libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
-    tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
-    cd libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
-    ./configure \
-        --disable-dependency-tracking \
-        --enable-shared \
-        --disable-openmpt123 \
-        --disable-examples \
-        --disable-tests \
-        --disable-doxygen-doc \
-        --disable-doxygen-html \
-        --without-mpg123 \
-        --without-ogg \
-        --without-vorbis \
-        --without-vorbisfile \
-        --without-portaudio \
-        --without-portaudiocpp \
-        --without-sndfile \
-        --without-flac \
-         ${GENERIC_CONFIGURE_FLAGS} \
-        --prefix=${OUTDIR} || exit $?
-    make ${JOBS} || exit $?
-    make install
-    cd ..
+    show_banner "building libopenmpt..."
+    # macOS needs to use the autotools version, but Linux uses the Makefile
+    # version for cross-compile support.
+    if [[ $OS == "Darwin" ]]; then
+        rm -rf libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
+        tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz > /dev/null
+        cd libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
+        ./configure \
+            --disable-dependency-tracking \
+            --enable-shared \
+            --disable-openmpt123 \
+            --disable-examples \
+            --disable-tests \
+            --disable-doxygen-doc \
+            --disable-doxygen-html \
+            --without-mpg123 \
+            --without-ogg \
+            --without-vorbis \
+            --without-vorbisfile \
+            --without-portaudio \
+            --without-portaudiocpp \
+            --without-sndfile \
+            --without-flac \
+            ${GENERIC_CONFIGURE_FLAGS} \
+            --prefix=${OUTDIR} || exit $?
+        make ${JOBS} || exit $?
+        make install
+        cd ..
+    else
+        set_makefile_env_vars
+        rm -rf libopenmpt-0.7.0+release/
+        tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.makefile.tar.gz > /dev/null
+        cd libopenmpt-${LIBOPENMPT_VERSION}+release
+        OPENMPT_OPTIONS="EXAMPLES=0 NO_FLAC=1 NO_MINIMP3=1 NO_MINIZ=1 NO_MPG123=1 NO_OGG=1 NO_PORTAUDIO=1 NO_PORTAUDIOCPP=1 NO_PULSEAUDIO=1 NO_SDL2=1 NO_SNDFILE=1 NO_STBVORBIS=1 NO_VORBIS=1 NO_VORBISFILE=1 OPENMPT123=0 SHARED_LIB=1 STATIC_LIB=0 TEST=0 PREFIX=${OUTDIR}"
+        make ${OPENMPT_OPTIONS} ${JOBS} VERBOSE=1 || exit $?
+        make ${OPENMPT_OPTIONS} install
+        unset_makefile_env_vars
+        cd ..
+    fi
 }
 
 #
@@ -425,12 +516,14 @@ function build_libopenmpt() {
 #
 
 function build_gme() {
+    show_banner "building gme (game-music-emu)..."
     rm -rf game-music-emu-${GME_VERSION}
-    tar xvfz game-music-emu-${GME_VERSION}.tar.gz
+    tar xvfz game-music-emu-${GME_VERSION}.tar.gz > /dev/null
     cd game-music-emu-${GME_VERSION}
     cmake \
-        -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
         ${CMAKE_COMPILER_TOOLCHAIN} \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
         -DENABLE_UBSAN=OFF \
         -DBUILD_SHARED_LIBS=1 \
         . || exit $?
@@ -444,12 +537,14 @@ function build_gme() {
 #
 
 function build_taglib() {
+    show_banner "building taglib..."
     rm -rf taglib-${TAGLIB_VERSION}
-    tar xvfz taglib-${TAGLIB_VERSION}.tar.gz
+    tar xvfz taglib-${TAGLIB_VERSION}.tar.gz > /dev/null
     cd taglib-${TAGLIB_VERSION}
     cmake \
-        -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
         ${CMAKE_COMPILER_TOOLCHAIN} \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+        -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
         -DBUILD_SHARED_LIBS=1 \
         . || exit $?
     make ${JOBS} || exit $?
@@ -502,28 +597,39 @@ function delete_unused_libraries() {
     cd ../../
 }
 
-clean
-mkdir vendor
-cd vendor
+function main() {
+    rm -rf vendor
+    mkdir vendor
+    cd vendor
+    touch ".config-${ARCH}-${CROSSCOMPILE}"
 
-stage_prebuilt_libraries
-fetch_packages
-build_openssl
-build_curl
-build_libmicrohttpd
-build_ffmpeg
-build_lame
-build_libopenmpt
-build_gme
-build_taglib
-delete_unused_libraries
-relink_dynamic_libraries
+    configure_crosscompile_if_necessary
+    print_build_configuration
 
-cd ..
-if [[ $CROSSCOMPILE == "rpi" ]]; then
-  mv vendor vendor-${CROSSCOMPILE}
-else
-  mv vendor vendor-$(uname -m)
-fi
+    stage_prebuilt_libraries
+    fetch_packages
+
+    build_ffmpeg
+    build_openssl
+    build_curl
+    build_libopenmpt
+    build_libmicrohttpd
+    build_lame
+    build_gme
+    build_taglib
+
+    delete_unused_libraries
+    relink_dynamic_libraries
+
+    cd ..
+
+    if [[ $CROSSCOMPILE == rpi-* ]]; then
+        mv vendor vendor-${CROSSCOMPILE}
+    else
+        mv vendor vendor-$(uname -m)
+    fi
+}
+
+main
 
 printf "\n\ndone!\n\n"

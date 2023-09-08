@@ -10,53 +10,54 @@ const filetype = mac ? '.dylib' : '.so';
 const ignoredLibraries = mac
   ? new Set([])
   : new Set([
-      'libalsaout.so',
-      'libmpris.so',
-      'libpipewireout.so',
-      'libpulseout.so',
-      'libsndioout.so',
-    ]);
+    'libalsaout.so',
+    'libmpris.so',
+    'libpipewireout.so',
+    'libpulseout.so',
+    'libsndioout.so',
+  ]);
 
 /* we assume these dependencies will always be available on the user's
 target machine. */
 const validLibraries = mac
   ? new Set([
-      '/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit',
-      '/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices',
-      '/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox',
-      '/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon',
-      '/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio',
-      '/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation',
-      '/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics',
-      '/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia',
-      '/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo',
-      '/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation',
-      '/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration',
-      '/usr/lib/libc++.1.dylib',
-      '/usr/lib/libobjc.A.dylib',
-      '/usr/lib/libSystem.B.dylib',
-      '/usr/lib/libz.1.dylib',
-      '/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib',
-      '/usr/local/opt/portaudio/lib/libportaudio.2.dylib',
-    ])
+    '/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit',
+    '/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices',
+    '/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox',
+    '/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon',
+    '/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio',
+    '/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation',
+    '/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics',
+    '/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia',
+    '/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo',
+    '/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation',
+    '/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration',
+    '/usr/lib/libc++.1.dylib',
+    '/usr/lib/libobjc.A.dylib',
+    '/usr/lib/libSystem.B.dylib',
+    '/usr/lib/libz.1.dylib',
+    '/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib',
+    '/usr/local/opt/portaudio/lib/libportaudio.2.dylib',
+  ])
   : new Set([
-      '/lib/ld-linux-armhf.so.3',
-      '/lib64/ld-linux-x86-64.so.2',
-      '/usr/lib/arm-linux-gnueabihf/libarmmem-${PLATFORM}.so',
-      'libc.so.6',
-      'libdl.so.2',
-      'libgcc_s.so.1',
-      'libm.so.6',
-      'libpthread.so.0',
-      'librt.so.1',
-      'libstdc++.so.6',
-      'libz.so.1',
-      'linux-vdso.so.1',
-      'libportaudio.so.2',
-      'libasound.so.2',
-      'libjack.so.0',
-      'libdb-5.3.so',
-    ]);
+    '/lib/ld-linux-armhf.so.3',
+    '/lib64/ld-linux-x86-64.so.2',
+    '/usr/lib/arm-linux-gnueabihf/libarmmem-${PLATFORM}.so',
+    '/usr/lib/arm-linux-gnueabi/libarmmem-${PLATFORM}.so',
+    'libc.so.6',
+    'libdl.so.2',
+    'libgcc_s.so.1',
+    'libm.so.6',
+    'libpthread.so.0',
+    'librt.so.1',
+    'libstdc++.so.6',
+    'libz.so.1',
+    'linux-vdso.so.1',
+    'libportaudio.so.2',
+    'libasound.so.2',
+    'libjack.so.0',
+    'libdb-5.3.so',
+  ]);
 
 let errors = 0;
 

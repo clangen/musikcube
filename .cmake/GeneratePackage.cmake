@@ -57,12 +57,14 @@ if (${GENERATE_DEB} MATCHES "true" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
 
   set(CPACK_DEBIAN_PACKAGE_MAINTAINER "casey langen")
   set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${PACKAGE_ARCHITECTURE})
+  set(CPACK_DEBIAN_FILE_NAME "musikcube_${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}_${FRIENDLY_ARCHITECTURE_NAME}.deb")
 
   set(CPACK_RPM_PACKAGE_LICENSE "BSD-3-Clause")
   set(CPACK_RPM_PACKAGE_URL "https://www.musikcube.com")
   set(CPACK_RPM_PACKAGE_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
   set(CPACK_RPM_REQUIRES_EXCLUDE_FROM "^/.*$")
-  if (${PACKAGE_ARCHITECTURE} MATCHES "amd64")
+  set(CPACK_RPM_FILE_NAME "musikcube_${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}_${FRIENDLY_ARCHITECTURE_NAME}.rpm")
+if (${PACKAGE_ARCHITECTURE} MATCHES "amd64")
     # debs use `amd64`, but rpm uses `x86_64`. both seem to agree on other architecture values.
     message(STATUS "[GeneratePackage] ${BoldYellow}set RPM architecture to x86_64${ColorReset}")
     set(CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")

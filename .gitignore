@@ -20,6 +20,7 @@ dist
 bin
 bin32
 bin64
+compile_commands.json
 ipch
 build
 local-circle-ci.yml
