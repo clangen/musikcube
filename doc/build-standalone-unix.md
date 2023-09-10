@@ -5,10 +5,10 @@ By default when you build `musikcube` it's almost exclusively tied to your Linux
 It turns out that building a single C++ app once that works across many Linux distributions and versions can be very challenging, especially when there are external dependencies involved. The difficulties have been documented and discussed countless times and include, but are not limited to:
 
 1. Incompatible `GLIBC`/`GLIBCXX` versions
-3. Incompatible versions of required dependencies
-4. Incompatible locations of required dependencies (e.g. `/lib` vs `/usr/lib` vs `/usr/local/lib`)
-5. Incompatible filenames for required depdencies (eg `libfoo.so.3` vs `libfoo.so`)
-6. General unavailability of required dependencies (i.e. "dependency `foo` doesn't exist in `Ubuntu`'s `apt`")
+2. Incompatible versions of required dependencies
+3. Incompatible locations of required dependencies (e.g. `/lib` vs `/usr/lib` vs `/usr/local/lib`)
+4. Incompatible filenames for required depdencies (eg `libfoo.so.3` vs `libfoo.so`)
+5. General unavailability of required dependencies (i.e. "dependency `foo` doesn't exist in `Ubuntu`'s `apt`")
 
 In an ideal world we wouldn't have to worry about these problems, and `musikcube` would be available via all major Linux distribution package management systems. In practice, however, it's not. It can take tremendous time and effort to get packages accepted upstream by maintainers. For example, see the [DebianMentorsFaq](https://wiki.debian.org/DebianMentorsFaq).
 
@@ -31,13 +31,15 @@ It's probably easiest to just install a `docker` image and use that, but an inst
 ## Install dependencies
 
 ### From `apt-get`:
+
 - `sudo apt update`
 - `sudo apt dist-upgrade`
-- `sudo apt install build-essential g++ gcc git libasound2-dev libev-dev libncurses-dev libopus-dev libopus-dev libopus0 libpulse-dev libsndio-dev libssl-dev libsystemd-dev libvorbis-dev libvorbis-dev libvorbis0a libvorbisenc2 portaudio19-dev rpm wget zlib1g-dev`
+- `sudo apt install build-essential g++ gcc git libasound2-dev libev-dev libncurses-dev libopus-dev libopus-dev libopus0 libpulse-dev libsndio-dev libssl-dev libsystemd-dev libvorbis-dev libvorbis-dev libvorbis0a libvorbisenc2 portaudio19-dev rpm wget zlib1g-dev libdbus-1-dev libudev-dev libglib2.0-dev patchelf`
 
 ### Compile from source:
 
 Install the following from source, as the distro-provided packages are too old:
+
 - `cmake` v3.27.4+
 - `pipewire` v0.3.x (optional -- only if you want to use `pipewire`)
 
