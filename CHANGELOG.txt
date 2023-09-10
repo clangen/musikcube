@@ -14,6 +14,7 @@
 * re-wrote raspberry-pi/arm cross-compiling functionality to be more generic and
   use more well-maintained toolkits.
 * added `armv6` builds for Raspberry Pi Zero (and other similar devices)
+* added `x86` Linux builds
 
 --------------------------------------------------------------------------------
 
