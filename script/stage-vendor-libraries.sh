@@ -22,7 +22,7 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libcurl.4.dylib ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.12.dylib ./bin/lib
     cp vendor/bin/lib/libmp3lame.0.dylib ./bin/lib
-    cp vendor/bin/lib/libopenmpt.4.dylib ./bin/lib
+    cp vendor/bin/lib/libopenmpt.0.dylib ./bin/lib
     cp vendor/bin/lib/libgme.0.6.3.dylib ./bin/lib
     cp vendor/bin/lib/libtag.1.19.0.dylib ./bin/lib
 
