@@ -41,6 +41,8 @@ LIBDIR="$OUTDIR/lib"
 JOBS="-j8"
 if [[ $OS == "Darwin" ]]; then
     JOBS="-j$(sysctl -n hw.ncpu)"
+elif nproc &> /dev/null; then
+    JOBS="-j$(nproc)"
 fi
 
 OPENSSL_TYPE="linux-${ARCH}"

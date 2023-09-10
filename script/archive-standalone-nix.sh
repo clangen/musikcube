@@ -12,6 +12,11 @@ fi
 OS=$(uname)
 
 JOBS="-j8"
+if [[ $OS == "Darwin" ]]; then
+    JOBS="-j$(sysctl -n hw.ncpu)"
+elif nproc &> /dev/null; then
+    JOBS="-j$(nproc)"
+fi
 
 FRIENDLY_OS_NAME="linux"
 if [[ $OS == "Darwin" ]]; then
