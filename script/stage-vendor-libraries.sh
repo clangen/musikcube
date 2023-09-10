@@ -56,6 +56,8 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
         fi
         SYSTEM_ROOT="/build/x-tools/${XTOOLS_ARCH}/${XTOOLS_ARCH}/sysroot"
         SYSTEM_TYPE="arm-linux-gnueabihf"
+    elif [[ $CROSSCOMPILE == "x86" ]]; then
+        SYSTEM_TYPE="i386-linux-gnu"
     fi
 
     cp $SYSTEM_ROOT/lib/$SYSTEM_TYPE/libncursesw.so.6 ./bin/lib

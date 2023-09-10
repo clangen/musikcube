@@ -108,6 +108,23 @@ function configure_crosscompile_if_necessary() {
         GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=${XTOOLS_TOOLCHAIN_NAME} --with-sysroot=${XTOOLS_SYSROOT}"
         FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --enable-cross-compile --sysroot=${XTOOLS_SYSROOT} --cross-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
     fi
+
+    if [[ $CROSSCOMPILE == "x86" ]]; then
+        OPENSSL_TYPE="linux-x86"
+        CFLAGS="$CFLAGS -I/usr/include/i386-linux-gnu/"
+        CXXFLAGS="$CXXFLAGS -I/usr/include/i386-linux-gnu/"
+
+        # X86_LOCAL_SYSROOT="${BUILD_ROOT}/x86-sysroot"
+        # X86_GLOBAL_SYSROOT="/usr/i686-linux-gnu/"
+        # OPENSSL_TYPE="linux-x86"
+        # VENDOR_PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/"
+        # SYSROOT_PKG_CONFIG_PATH="${X86_LOCAL_SYSROOT}/usr/lib/i386-linux-gnu/pkgconfig"
+        # CFLAGS="$CFLAGS -m32 -I${X86_GLOBAL_SYSROOT}/include/ --sysroot=${X86_LOCAL_SYSROOT}"
+        # CXXFLAGS="$CXXFLAGS -m32 -I${X86_GLOBAL_SYSROOT}/include/ --sysroot=${X86_LOCAL_SYSROOT}"
+        # LDFLAGS="$LDFLAGS -m32 -L${X86_GLOBAL_SYSROOT}/lib/ --sysroot=${X86_LOCAL_SYSROOT}"
+        # GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=x86"
+        # export PKG_CONFIG_PATH="${VENDOR_PKG_CONFIG_PATH}:${SYSROOT_PKG_CONFIG_PATH}"
+    fi
 }
 
 function print_build_configuration() {

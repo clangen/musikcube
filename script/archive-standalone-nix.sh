@@ -34,6 +34,10 @@ if [[ $CROSSCOMPILE == rpi-* ]]; then
     FRIENDLY_ARCH_NAME="armv6"
   fi
   STRIP="/build/x-tools/${XTOOLS_NAME}/${XTOOLS_NAME}/bin/strip"
+elif [[ $CROSSCOMPILE == "x86" ]]; then
+  VENDOR=${CROSSCOMPILE}
+  FRIENDLY_ARCH_NAME="x86"
+  DEB_ARCH="x86"
 elif [[ $FRIENDLY_ARCH_NAME == "x86_64" ]]; then
   DEB_ARCH="amd64"
 fi
@@ -112,7 +116,7 @@ cp bin/themes/*.json $OUTDIR/themes
 cp -rfp bin/share/terminfo/* $OUTDIR/share/terminfo/
 
 if [[ $CROSSCOMPILE == rpi-* ]]; then
-  printf "\n\n\n     ***** CROSSCOMPILE DETECTED, **NOT** SCANNING DEPENDENCIES! *****\n\n\n"
+  printf "\n\n\n     ***** RPI CROSSCOMPILE DETECTED, **NOT** SCANNING DEPENDENCIES! *****\n\n\n"
   sleep 1
 else
   printf "\n\n\n     ***** SCANNING DEPENDENCIES *****\n\n\n"
