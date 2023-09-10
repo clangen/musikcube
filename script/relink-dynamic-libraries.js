@@ -10,7 +10,6 @@ during app build-time. */
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const fs = require('fs');
-const rm = promisify(fs.rm);
 const unlink = promisify(fs.unlink);
 const symlink = promisify(fs.symlink);
 
@@ -111,7 +110,7 @@ const rebuildSymlinks = async () => {
     const [src, dst] = symlinks[i];
     console.log('removing symlink:', `${path}/${dst}`);
     try {
-      await rm(`${path}/${dst}`);
+      await exec(`rm ${path}/${dst}`);
     } catch (e) {}
     try {
       await unlink(`${path}/${dst}`);

@@ -108,6 +108,12 @@ function configure_crosscompile_if_necessary() {
         GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=${XTOOLS_TOOLCHAIN_NAME} --with-sysroot=${XTOOLS_SYSROOT}"
         FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --enable-cross-compile --sysroot=${XTOOLS_SYSROOT} --cross-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
     fi
+
+    if [[ $CROSSCOMPILE == "x86" ]]; then
+        OPENSSL_TYPE="linux-x86"
+        CFLAGS="$CFLAGS -I/usr/include/i386-linux-gnu/"
+        CXXFLAGS="$CXXFLAGS -I/usr/include/i386-linux-gnu/"
+    fi
 }
 
 function print_build_configuration() {
