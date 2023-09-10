@@ -110,9 +110,16 @@ function configure_crosscompile_if_necessary() {
     fi
 
     if [[ $CROSSCOMPILE == "x86" ]]; then
+        X86_LOCAL_SYSROOT="${BUILD_ROOT}/x86-sysroot"
+        #X86_GLOBAL_SYSROOT="/usr/i686-linux-gnu/"
         OPENSSL_TYPE="linux-x86"
-        CFLAGS="$CFLAGS -I/usr/include/i386-linux-gnu/"
-        CXXFLAGS="$CXXFLAGS -I/usr/include/i386-linux-gnu/"
+        VENDOR_PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/"
+        SYSROOT_PKG_CONFIG_PATH="${X86_LOCAL_SYSROOT}/usr/lib/i386-linux-gnu/pkgconfig"
+        CFLAGS="$CFLAGS -m32 -I${X86_GLOBAL_SYSROOT}/include/ --sysroot=${X86_LOCAL_SYSROOT}"
+        CXXFLAGS="$CXXFLAGS -m32 -I${X86_GLOBAL_SYSROOT}/include/ --sysroot=${X86_LOCAL_SYSROOT}"
+        LDFLAGS="$LDFLAGS -m32 -L${X86_GLOBAL_SYSROOT}/lib/ --sysroot=${X86_LOCAL_SYSROOT} -L/usr/lib/gcc/i686-linux-gnu/8"
+        GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=x86"
+        export PKG_CONFIG_PATH="${VENDOR_PKG_CONFIG_PATH}:${SYSROOT_PKG_CONFIG_PATH}"
     fi
 }
 
@@ -267,7 +274,7 @@ function build_ffmpeg() {
     OLD_LDFLAGS=$LDFLAGS
     OLD_CFLAGS=$CFLAGS
     export LDFLAGS="$LDFLAGS -lm"
-    export CFLAGS="$CFLAGS -I${XTOOLS_SYSROOT}/usr/include/opus"
+    export CFLAGS="$CFLAGS -I${XTOOLS_SYSROOT}/usr/include/opus -I${X86_LOCAL_SYSROOT}/usr/include/opus"
 
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
@@ -615,14 +622,14 @@ function main() {
     stage_prebuilt_libraries
     fetch_packages
 
-    build_ffmpeg
-    build_openssl
-    build_curl
-    build_libopenmpt
-    build_libmicrohttpd
-    build_lame
+    # build_ffmpeg
+    # build_openssl
+    # build_curl
+    # build_libopenmpt
+    # build_libmicrohttpd
+    # build_lame
     build_gme
-    build_taglib
+    # build_taglib
 
     delete_unused_libraries
     relink_dynamic_libraries
