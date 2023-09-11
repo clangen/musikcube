@@ -38,8 +38,8 @@ if [[ -z "${KEYCHAIN_PROFILE}" ]]; then
 fi
 
 ARCH=$(uname -m)
-DIR="./dist/${VERSION}/musikcube_macos_${ARCH}_${VERSION}"
-ARCHIVE="./dist/${VERSION}/musikcube_macos_${ARCH}_${VERSION}.zip"
+DIR="./dist/${VERSION}/musikcube_${VERSION}_macos_${ARCH}"
+ARCHIVE="./dist/${VERSION}/musikcube_${VERSION}_macos_${ARCH}.zip"
 
 pushd $DIR
 codesign --remove-signature musikcube musikcubed libmusikcore.dylib
