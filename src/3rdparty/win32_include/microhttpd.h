@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2006-2021 Christian Grothoff (and other contributing authors)
-     Copyright (C) 2014-2021 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -96,7 +96,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097600
+#define MHD_VERSION 0x00097700
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
@@ -121,7 +121,7 @@ extern "C"
 #include <sys/socket.h>
 #else  /* _WIN32 && ! __CYGWIN__ */
 #include <ws2tcpip.h>
-#if defined(_MSC_FULL_VER) && ! defined (_SSIZE_T_DEFINED)
+#if defined(_MSC_FULL_VER) && ! defined(_SSIZE_T_DEFINED)
 #define _SSIZE_T_DEFINED
 typedef intptr_t ssize_t;
 #endif /* !_SSIZE_T_DEFINED */
@@ -190,7 +190,7 @@ enum MHD_Result
 #ifndef _MHD_EXTERN
 #if defined(_WIN32) && defined(MHD_W32LIB)
 #define _MHD_EXTERN extern
-#elif defined (_WIN32) && defined(MHD_W32DLL)
+#elif defined(_WIN32) && defined(MHD_W32DLL)
 /* Define MHD_W32DLL when using MHD as W32 .DLL to speed up linker a little */
 #define _MHD_EXTERN __declspec(dllimport)
 #else
@@ -236,7 +236,7 @@ typedef SOCKET MHD_socket;
 #define _MHD_DEPR_MACRO(msg) \
   __pragma(message (__FILE__ "(" _MHD_STRMACRO ( __LINE__) "): warning: " msg))
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO (msg)
-#elif defined(__clang__) || defined (__GNUC_PATCHLEVEL__)
+#elif defined(__clang__) || defined(__GNUC_PATCHLEVEL__)
 /* clang or GCC since 3.0 */
 #define _MHD_GCC_PRAG(x) _Pragma(#x)
 #if (defined(__clang__) && \
@@ -279,12 +279,12 @@ typedef SOCKET MHD_socket;
 #elif defined(_MSC_FULL_VER) && _MSC_VER + 0 >= 1310
 /* VS .NET 2003 deprecation does not support custom messages */
 #define _MHD_DEPR_FUNC(msg) __declspec(deprecated)
-#elif (__GNUC__ + 0 >= 5) || (defined (__clang__) && \
+#elif (__GNUC__ + 0 >= 5) || (defined(__clang__) && \
   (__clang_major__ + 0 > 2 || \
    (__clang_major__ + 0 == 2 && __clang_minor__ >=  9)))
 /* GCC >= 5.0 or clang >= 2.9 */
 #define _MHD_DEPR_FUNC(msg) __attribute__((deprecated (msg)))
-#elif defined (__clang__) || __GNUC__ + 0 > 3 || \
+#elif defined(__clang__) || __GNUC__ + 0 > 3 || \
   (__GNUC__ + 0 == 3 && __GNUC_MINOR__ + 0 >= 1)
 /* 3.1 <= GCC < 5.0 or clang < 2.9 */
 /* old GCC-style deprecation does not support custom messages */
@@ -4428,6 +4428,18 @@ MHD_get_version (void);
 
 
 /**
+ * Obtain the version of this library as a binary value.
+ *
+ * @return version binary value, e.g. "0x00090900" (#MHD_VERSION of
+ *         compiled MHD binary)
+ * @note Available since #MHD_VERSION 0x00097602
+ * @ingroup specialized
+ */
+_MHD_EXTERN uint32_t
+MHD_get_version_bin (void);
+
+
+/**
  * Types of information about MHD features,
  * used by #MHD_is_feature_supported().
  */
@@ -4464,7 +4476,7 @@ enum MHD_FEATURE
   /**
    * Get whether IPv6 without IPv4 is supported. If not supported
    * then IPv4 is always enabled in IPv6 sockets and
-   * flag #MHD_USE_DUAL_STACK if always used when #MHD_USE_IPv6 is
+   * flag #MHD_USE_DUAL_STACK is always used when #MHD_USE_IPv6 is
    * specified.
    */
   MHD_FEATURE_IPv6_ONLY = 5,
