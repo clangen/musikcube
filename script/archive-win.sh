@@ -9,10 +9,10 @@ fi
 
 function archive {
   ARCH=$1
-  FILENAME="musikcube_win${ARCH}_${VERSION}"
+  FILENAME="musikcube_${VERSION}_win${ARCH}"
   echo "Processing $FILENAME..."
   SRC_DIR="bin$ARCH"
-  DST_DIR="dist/$FILENAME"
+  DST_DIR="dist/$VERSION/$FILENAME"
   rm -rf "$DST_DIR"
   mkdir -p "$DST_DIR/plugins"
   mkdir -p "$DST_DIR/themes"
