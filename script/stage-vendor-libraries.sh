@@ -70,6 +70,11 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp $SYSTEM_ROOT/usr/lib/$SYSTEM_TYPE/libvorbisenc.so.2 ./bin/lib
 
     mkdir -p ./bin/share/terminfo
-    cp -rfp /lib/terminfo/* ./bin/share/terminfo
+
+    if [[ -d "/lib/terminfo/" ]]; then
+        cp -rfp /lib/terminfo/* ./bin/share/terminfo # debian buster
+    else
+        cp -rfp /usr/share/terminfo/* ./bin/share/terminfo # ubuntu mantic
+    fi
 
 fi
