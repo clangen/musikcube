@@ -34,7 +34,7 @@ It's probably easiest to just install a `docker` image and use that, but an inst
 
 - `sudo apt update`
 - `sudo apt dist-upgrade`
-- `sudo apt install build-essential g++ gcc git libasound2-dev libev-dev libncurses-dev libopus-dev libopus-dev libopus0 libpulse-dev libsndio-dev libssl-dev libsystemd-dev libvorbis-dev libvorbis-dev libvorbis0a libvorbisenc2 portaudio19-dev rpm wget zlib1g-dev libdbus-1-dev libudev-dev libglib2.0-dev patchelf libstdc++6-i386-cross`
+- `sudo apt install build-essential g++ gcc git libasound2-dev libev-dev libncurses-dev libopus-dev libopus-dev libopus0 libpulse-dev libsndio-dev libssl-dev libsystemd-dev libvorbis-dev libvorbis-dev libvorbis0a libvorbisenc2 portaudio19-dev rpm wget zlib1g-dev libdbus-1-dev libudev-dev libglib2.0-dev patchelf libstdc++6-i386-cross nodejs`
 
 ### Compile from source:
 
