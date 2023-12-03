@@ -42,6 +42,7 @@ Install the following from source, as the distro-provided packages are too old:
 
 - `cmake` v3.27.4+
 - `pipewire` v0.3.x (optional -- only if you want to use `pipewire`)
+  - Note: `wireplumber`, a `pipewire` sub-project, requires a version of `glib-2.0` newer than what `Debian Buster` provides. That's fine because we just need the `pipewire` libraries. Just edit `meson_options.txt` and remove `'wireplumber'` from the `session-managers` option.
 
 ## Provision your build directory
 
