@@ -15,7 +15,7 @@ In an ideal world we wouldn't have to worry about these problems, and `musikcube
 So, for now, we've developed a process that allows us to compile "generic" binaries once per CPU architecture that should generally work across most modern Linux distributions without hassle. In short, we do the following:
 
 1. Compile using an operating system with versions of `GLIBC` and `GLIBCXX` that should work on any Linux distribution from 2018 to now. We currently use `Debian Buster`.
-2. Include modern versions of fundamental dependencies (`openssl`, `curl`, `ffmpeg` and others), compiled from source, ommitting any unused/extraneous functionality.
+2. Include modern versions of fundamental dependencies (`openssl`, `curl`, `ffmpeg` and others), compiled from source, omitting any unused/extraneous functionality.
 3. Ensure the app is "relocatable" on the filesystem; all libraries are loaded via relative paths so you can put the `musikcube` directory wherever you want and it'll still run. This is done by manually rewriting `rpath` values for shared libraries and executables where necessary.
 
 The rest of this document will describe how we produce these builds, which are what we distribute on our [Github project page](https://github.com/clangen/musikcube/releases) for all releases.
