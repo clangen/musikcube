@@ -77,6 +77,11 @@
     #include <sys/sysctl.h>
 #endif
 
+#ifdef __DragonFly__
+    #include <sys/types.h>
+    #include <sys/sysctl.h>
+#endif
+
 namespace fs = std::filesystem;
 
 static inline void silentDelete(const std::string fn) {
