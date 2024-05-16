@@ -49,8 +49,10 @@ namespace musik { namespace core { namespace lastfm {
     const std::string CreateAccountLinkUrl(const std::string& token);
     void CreateSession(const std::string& token, SessionCallback session);
     void Scrobble(musik::core::TrackPtr track);
+    void UpdateNowPlaying(musik::core::TrackPtr track);
 
     Session LoadSession();
     void SaveSession(const Session& session);
     void ClearSession();
 } } }
+

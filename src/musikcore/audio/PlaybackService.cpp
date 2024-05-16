@@ -79,6 +79,7 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_LOAD_PLAYBACK_CONTEXT 1011
 #define MESSAGE_MARK_TRACK_PLAYED 1012
 #define MESSAGE_NEXT_TRACK_EDITED 1013
+#define MESSAGE_MARK_TRACK_PLAYING 1014
 
 class StreamMessage: public Message {
     public:
@@ -312,6 +313,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         lastfm::Scrobble(this->playingTrack);
         this->MarkTrackAsPlayed(message.UserData1()); /* UserData1 is a trackId */
     }
+    else if (type == MESSAGE_MARK_TRACK_PLAYING) {
+        lastfm::UpdateNowPlaying(this->playingTrack);
+    }
     else if (type == MESSAGE_STREAM_EVENT) {
         StreamMessage* streamMessage = dynamic_cast<StreamMessage*>(&message);
         const StreamState eventType = static_cast<StreamState>(streamMessage->GetEventType());
@@ -517,6 +521,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
     this->playingTrack = track;
     this->TrackChanged(this->index, track);
     this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYED);
+    this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYING);
 
     if (track && this->transport->GetStreamState() == StreamState::Playing) {
         /* we consider a track to be played if (1) it enters the playing state and
@@ -525,11 +530,13 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
         const double duration = this->transport->GetDuration();
         if (duration > 0 && duration < 10.0) {
             lastfm::Scrobble(track);
+            lastfm::UpdateNowPlaying(track);
             this->MarkTrackAsPlayed(track->GetId());
         }
         else {
-            const int64_t delay = (int64_t)(duration * 0.25f) * 1000LL;
+            const int64_t delay = std::min((int64_t) (duration * 0.25f) * 1000LL, 20000LL);
             POST_DELAYED(this, MESSAGE_MARK_TRACK_PLAYED, track->GetId(), 0, delay);
+            POST_DELAYED(this, MESSAGE_MARK_TRACK_PLAYING, track->GetId(), 0, 2500LL);
         }
     }
 

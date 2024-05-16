@@ -59,7 +59,8 @@ static const std::string API_SECRET = "6dc09da925fe5c115b90320213c53b46";
 static const std::string URL_BASE = "http://ws.audioscrobbler.com/2.0/";
 static const std::string GET_TOKEN = "auth.getToken";
 static const std::string GET_SESSION = "auth.getSession";
-static const std::string UPDATE_NOW_PLAYING = "track.scrobble";
+static const std::string UPDATE_NOW_PLAYING = "track.updateNowPlaying";
+static const std::string UPDATE_RECENT = "track.scrobble";
 static const std::string ACCOUNT_LINK_URL_BASE = "http://www.last.fm/api/auth/?api_key=" + API_KEY + "&token=";
 
 using namespace musik;
@@ -222,7 +223,7 @@ namespace musik { namespace core { namespace lastfm {
         if (track) {
             auto session = LoadSession();
             if (session.valid) {
-                std::string postBody = gernateSignedUrlParams(UPDATE_NOW_PLAYING, {
+                std::string postBody = gernateSignedUrlParams(UPDATE_RECENT, {
                     { "track", track->GetString("title") },
                     { "album", track->GetString("album") },
                     { "artist", track->GetString("artist") },
@@ -238,8 +239,34 @@ namespace musik { namespace core { namespace lastfm {
                     .Method(LastFmClient::HttpMethod::Post)
                     .PostBody(postBody)
                     .Run();
+
+            }
+        }
+    }
+
+    void UpdateNowPlaying(musik::core::TrackPtr track) {
+        if (track) {
+            auto session = LoadSession();
+            if (session.valid) {
+                std::string postBody = gernateSignedUrlParams(UPDATE_NOW_PLAYING, {
+                    { "track", track->GetString("title") },
+                    { "album", track->GetString("album") },
+                    { "artist", track->GetString("artist") },
+                    { "albumArtist", track->GetString("album_artist") },
+                    { "trackNumber", track->GetString("track") },
+                    { "duration", track->GetString("duration") },
+                    { "sk", session.sessionId }
+                });
+
+                createClient()->Url(URL_BASE)
+                    .Mode(LastFmClient::Thread::Background)
+                    .Header("Content-Type", "application/x-www-form-urlencoded")
+                    .Method(LastFmClient::HttpMethod::Post)
+                    .PostBody(postBody)
+                    .Run();
             }
         }
     }
 
 } } }
+
