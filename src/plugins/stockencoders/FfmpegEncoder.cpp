@@ -417,7 +417,7 @@ void FfmpegEncoder::Cleanup() {
     }
     if (this->outputContext) {
         avcodec_flush_buffers(this->outputContext);
-        avcodec_close(this->outputContext);
+        avcodec_free_context(&this->outputContext);
         av_free(this->outputContext);
         this->outputContext = nullptr;
         this->outputCodec = nullptr;

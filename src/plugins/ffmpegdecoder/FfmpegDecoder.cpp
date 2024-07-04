@@ -171,6 +171,9 @@ FfmpegDecoder::FfmpegDecoder() {
     this->resampler = nullptr;
     this->outputFifo = nullptr;
     this->preferredSampleRate = -1;
+    this->rate = 0;
+    this->preferredFrameSize = 0;
+    this->channels = 0;
 }
 
 FfmpegDecoder::~FfmpegDecoder() {
