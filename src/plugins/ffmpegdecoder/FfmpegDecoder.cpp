@@ -84,6 +84,24 @@ static void logError(const std::string& message) {
     ::debug->Warning(TAG, message.c_str());
 }
 
+static AVChannelLayout resolveChannelLayout(size_t channelCount) {
+    AVChannelLayout result;
+    memset(&result, 0, sizeof(result));
+
+    result.nb_channels = channelCount;
+    switch (channelCount) {
+        case 1: result.u.mask = AV_CH_LAYOUT_MONO; break;
+        case 2: result.u.mask =  AV_CH_LAYOUT_STEREO; break;
+        case 3: result.u.mask =  AV_CH_LAYOUT_2POINT1; break;
+        case 4: result.u.mask =  AV_CH_LAYOUT_3POINT1; break;
+        case 5: result.u.mask =  AV_CH_LAYOUT_4POINT1; break;
+        case 6: result.u.mask =  AV_CH_LAYOUT_5POINT1; break;
+        default: result.u.mask =  AV_CH_LAYOUT_STEREO_DOWNMIX; break;
+    }
+
+    return result;
+}
+
 static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     FfmpegDecoder* decoder = static_cast<FfmpegDecoder*>(opaque);
     if (decoder && decoder->Stream()) {
@@ -95,7 +113,7 @@ static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     return AVERROR_EOF;
 }
 
-static int writeCallback(void* opaque, uint8_t* buffer, int bufferSize) {
+static int writeCallback(void* opaque, const uint8_t* buffer, int bufferSize) {
     return 0;
 }
 
@@ -265,18 +283,22 @@ bool FfmpegDecoder::InitializeResampler() {
 
     int outSampleRate = (int) RESOLVE_SAMPLE_RATE();
 
-    this->resampler = swr_alloc_set_opts(
-        this->resampler,
-        this->codecContext->channel_layout,
+    int error = swr_alloc_set_opts2(
+        &this->resampler,
+        &this->codecContext->ch_layout,
         AV_SAMPLE_FMT_FLT,
         outSampleRate,
-        this->codecContext->channel_layout,
+        &this->codecContext->ch_layout,
         this->codecContext->sample_fmt,
         this->codecContext->sample_rate,
         0,
         nullptr);
 
-    int error = 0;
+    if (error) {
+        logAvError("swr_alloc_set_opts2", error);
+        return false;
+    }
+
     if ((error = swr_init(this->resampler)) != 0) {
         logAvError("swr_init", error);
         return false;
@@ -364,9 +386,9 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                                 goto reset_and_fail;
                             }
 
-                            if (this->codecContext->channel_layout == 0) {
-                                this->codecContext->channel_layout =
-                                    av_get_default_channel_layout(this->codecContext->channels);
+                            if (this->codecContext->ch_layout.nb_channels == 0) {
+                                this->codecContext->ch_layout =
+                                    resolveChannelLayout(this->codecContext->ch_layout.nb_channels);
                             }
 
                             this->preferredFrameSize = this->codecContext->frame_size
@@ -380,7 +402,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
 
                         auto stream = this->formatContext->streams[this->streamId];
                         this->rate = stream->codecpar->sample_rate;
-                        this->channels = stream->codecpar->channels;
+                        this->channels = stream->codecpar->ch_layout.nb_channels;
                         this->duration = (double) this->formatContext->duration / (double) AV_TIME_BASE;
                         this->outputFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, channels, 1);
 
@@ -591,11 +613,11 @@ AVFrame* FfmpegDecoder::AllocFrame(AVFrame* original, AVSampleFormat format, int
         if (original || frameSizeChanged) {
             av_frame_free(&original);
         }
-        const int channelLayout = this->codecContext->channel_layout == 0
-            ? av_get_default_channel_layout(this->codecContext->channels)
-            : this->codecContext->channel_layout;
+        const AVChannelLayout channelLayout = this->codecContext->ch_layout.nb_channels == 0
+            ? resolveChannelLayout(this->codecContext->ch_layout.nb_channels)
+            : this->codecContext->ch_layout;
         original = av_frame_alloc();
-        original->channel_layout = channelLayout;
+        original->ch_layout = channelLayout;
         original->format = format;
         original->sample_rate = sampleRate;
         if (frameSizeChanged) {
