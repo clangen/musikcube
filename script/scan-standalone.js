@@ -29,6 +29,7 @@ const validLibraries = mac
     '/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation',
     '/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics',
     '/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia',
+    '/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices',
     '/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo',
     '/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation',
     '/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration',
