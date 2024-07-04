@@ -1,3 +1,16 @@
+3.0.3
+
+* target ffmpeg 7.0 api, update encoder and decoder accordingly
+* ensure taglib plugin is API compatible with taglib 2.0
+* updated dependencies:
+  - ffmpeg@7.0.1
+  - openssl@3.3.1
+  - libcurl@8.8.0
+  - libmicrohttpd@1.0.1
+  - libopenmpt@0.7.8
+
+--------------------------------------------------------------------------------
+
 3.0.2
 
 * added sqlean/unicode sqlite extension (and remove custom mapping logic) for
