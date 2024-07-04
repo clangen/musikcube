@@ -1,7 +1,7 @@
 /*
      This file is part of libmicrohttpd
      Copyright (C) 2006-2021 Christian Grothoff (and other contributing authors)
-     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2023 Evgeny Grin (Karlson2k)
 
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Lesser General Public
@@ -96,12 +96,12 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x00097700
+#define MHD_VERSION 0x01000100
 
 /* If generic headers don't work on your platform, include headers
-   which define 'va_list', 'size_t', 'ssize_t', 'intptr_t',
-   'uint16_t', 'uint32_t', 'uint64_t', 'off_t', 'struct sockaddr',
-   'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
+   which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
+   'uint8_t', 'uint16_t', 'int32_t', 'uint32_t', 'int64_t', 'uint64_t',
+   'struct sockaddr', 'socklen_t', 'fd_set' and "#define MHD_PLATFORM_H" before
    including "microhttpd.h". Then the following "standard"
    includes won't be used (which might be a good idea, especially
    on platforms where they do not exist).
@@ -167,12 +167,6 @@ enum MHD_Result
   MHD_YES = 1
 
 } _MHD_FIXED_ENUM;
-
-
-/**
- * MHD digest auth internal code for an invalid nonce.
- */
-#define MHD_INVALID_NONCE -1
 
 /**
  * Constant used to indicate unknown size (use when
@@ -330,41 +324,35 @@ _MHD_DEPR_MACRO ( \
 
 
 /**
- * Length of the binary output of the MD5 hash function.
- */
-#define  MHD_MD5_DIGEST_SIZE 16
-
-
-/**
  * @defgroup httpcode HTTP response codes.
  * These are the status codes defined for HTTP responses.
  * See: https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
- * Registry export date: 2021-12-19
+ * Registry export date: 2023-09-29
  * @{
  */
 
-/* 100 "Continue".            RFC-ietf-httpbis-semantics, Section 15.2.1. */
+/* 100 "Continue".            RFC9110, Section 15.2.1. */
 #define MHD_HTTP_CONTINUE                    100
-/* 101 "Switching Protocols". RFC-ietf-httpbis-semantics, Section 15.2.2. */
+/* 101 "Switching Protocols". RFC9110, Section 15.2.2. */
 #define MHD_HTTP_SWITCHING_PROTOCOLS         101
 /* 102 "Processing".          RFC2518. */
 #define MHD_HTTP_PROCESSING                  102
 /* 103 "Early Hints".         RFC8297. */
 #define MHD_HTTP_EARLY_HINTS                 103
 
-/* 200 "OK".                  RFC-ietf-httpbis-semantics, Section 15.3.1. */
+/* 200 "OK".                  RFC9110, Section 15.3.1. */
 #define MHD_HTTP_OK                          200
-/* 201 "Created".             RFC-ietf-httpbis-semantics, Section 15.3.2. */
+/* 201 "Created".             RFC9110, Section 15.3.2. */
 #define MHD_HTTP_CREATED                     201
-/* 202 "Accepted".            RFC-ietf-httpbis-semantics, Section 15.3.3. */
+/* 202 "Accepted".            RFC9110, Section 15.3.3. */
 #define MHD_HTTP_ACCEPTED                    202
-/* 203 "Non-Authoritative Information". RFC-ietf-httpbis-semantics, Section 15.3.4. */
+/* 203 "Non-Authoritative Information". RFC9110, Section 15.3.4. */
 #define MHD_HTTP_NON_AUTHORITATIVE_INFORMATION 203
-/* 204 "No Content".          RFC-ietf-httpbis-semantics, Section 15.3.5. */
+/* 204 "No Content".          RFC9110, Section 15.3.5. */
 #define MHD_HTTP_NO_CONTENT                  204
-/* 205 "Reset Content".       RFC-ietf-httpbis-semantics, Section 15.3.6. */
+/* 205 "Reset Content".       RFC9110, Section 15.3.6. */
 #define MHD_HTTP_RESET_CONTENT               205
-/* 206 "Partial Content".     RFC-ietf-httpbis-semantics, Section 15.3.7. */
+/* 206 "Partial Content".     RFC9110, Section 15.3.7. */
 #define MHD_HTTP_PARTIAL_CONTENT             206
 /* 207 "Multi-Status".        RFC4918. */
 #define MHD_HTTP_MULTI_STATUS                207
@@ -374,66 +362,66 @@ _MHD_DEPR_MACRO ( \
 /* 226 "IM Used".             RFC3229. */
 #define MHD_HTTP_IM_USED                     226
 
-/* 300 "Multiple Choices".    RFC-ietf-httpbis-semantics, Section 15.4.1. */
+/* 300 "Multiple Choices".    RFC9110, Section 15.4.1. */
 #define MHD_HTTP_MULTIPLE_CHOICES            300
-/* 301 "Moved Permanently".   RFC-ietf-httpbis-semantics, Section 15.4.2. */
+/* 301 "Moved Permanently".   RFC9110, Section 15.4.2. */
 #define MHD_HTTP_MOVED_PERMANENTLY           301
-/* 302 "Found".               RFC-ietf-httpbis-semantics, Section 15.4.3. */
+/* 302 "Found".               RFC9110, Section 15.4.3. */
 #define MHD_HTTP_FOUND                       302
-/* 303 "See Other".           RFC-ietf-httpbis-semantics, Section 15.4.4. */
+/* 303 "See Other".           RFC9110, Section 15.4.4. */
 #define MHD_HTTP_SEE_OTHER                   303
-/* 304 "Not Modified".        RFC-ietf-httpbis-semantics, Section 15.4.5. */
+/* 304 "Not Modified".        RFC9110, Section 15.4.5. */
 #define MHD_HTTP_NOT_MODIFIED                304
-/* 305 "Use Proxy".           RFC-ietf-httpbis-semantics, Section 15.4.6. */
+/* 305 "Use Proxy".           RFC9110, Section 15.4.6. */
 #define MHD_HTTP_USE_PROXY                   305
-/* 306 "Switch Proxy".        Not used! RFC-ietf-httpbis-semantics, Section 15.4.7. */
+/* 306 "Switch Proxy".        Not used! RFC9110, Section 15.4.7. */
 #define MHD_HTTP_SWITCH_PROXY                306
-/* 307 "Temporary Redirect".  RFC-ietf-httpbis-semantics, Section 15.4.8. */
+/* 307 "Temporary Redirect".  RFC9110, Section 15.4.8. */
 #define MHD_HTTP_TEMPORARY_REDIRECT          307
-/* 308 "Permanent Redirect".  RFC-ietf-httpbis-semantics, Section 15.4.9. */
+/* 308 "Permanent Redirect".  RFC9110, Section 15.4.9. */
 #define MHD_HTTP_PERMANENT_REDIRECT          308
 
-/* 400 "Bad Request".         RFC-ietf-httpbis-semantics, Section 15.5.1. */
+/* 400 "Bad Request".         RFC9110, Section 15.5.1. */
 #define MHD_HTTP_BAD_REQUEST                 400
-/* 401 "Unauthorized".        RFC-ietf-httpbis-semantics, Section 15.5.2. */
+/* 401 "Unauthorized".        RFC9110, Section 15.5.2. */
 #define MHD_HTTP_UNAUTHORIZED                401
-/* 402 "Payment Required".    RFC-ietf-httpbis-semantics, Section 15.5.3. */
+/* 402 "Payment Required".    RFC9110, Section 15.5.3. */
 #define MHD_HTTP_PAYMENT_REQUIRED            402
-/* 403 "Forbidden".           RFC-ietf-httpbis-semantics, Section 15.5.4. */
+/* 403 "Forbidden".           RFC9110, Section 15.5.4. */
 #define MHD_HTTP_FORBIDDEN                   403
-/* 404 "Not Found".           RFC-ietf-httpbis-semantics, Section 15.5.5. */
+/* 404 "Not Found".           RFC9110, Section 15.5.5. */
 #define MHD_HTTP_NOT_FOUND                   404
-/* 405 "Method Not Allowed".  RFC-ietf-httpbis-semantics, Section 15.5.6. */
+/* 405 "Method Not Allowed".  RFC9110, Section 15.5.6. */
 #define MHD_HTTP_METHOD_NOT_ALLOWED          405
-/* 406 "Not Acceptable".      RFC-ietf-httpbis-semantics, Section 15.5.7. */
+/* 406 "Not Acceptable".      RFC9110, Section 15.5.7. */
 #define MHD_HTTP_NOT_ACCEPTABLE              406
-/* 407 "Proxy Authentication Required". RFC-ietf-httpbis-semantics, Section 15.5.8. */
+/* 407 "Proxy Authentication Required". RFC9110, Section 15.5.8. */
 #define MHD_HTTP_PROXY_AUTHENTICATION_REQUIRED 407
-/* 408 "Request Timeout".     RFC-ietf-httpbis-semantics, Section 15.5.9. */
+/* 408 "Request Timeout".     RFC9110, Section 15.5.9. */
 #define MHD_HTTP_REQUEST_TIMEOUT             408
-/* 409 "Conflict".            RFC-ietf-httpbis-semantics, Section 15.5.10. */
+/* 409 "Conflict".            RFC9110, Section 15.5.10. */
 #define MHD_HTTP_CONFLICT                    409
-/* 410 "Gone".                RFC-ietf-httpbis-semantics, Section 15.5.11. */
+/* 410 "Gone".                RFC9110, Section 15.5.11. */
 #define MHD_HTTP_GONE                        410
-/* 411 "Length Required".     RFC-ietf-httpbis-semantics, Section 15.5.12. */
+/* 411 "Length Required".     RFC9110, Section 15.5.12. */
 #define MHD_HTTP_LENGTH_REQUIRED             411
-/* 412 "Precondition Failed". RFC-ietf-httpbis-semantics, Section 15.5.13. */
+/* 412 "Precondition Failed". RFC9110, Section 15.5.13. */
 #define MHD_HTTP_PRECONDITION_FAILED         412
-/* 413 "Content Too Large".   RFC-ietf-httpbis-semantics, Section 15.5.14. */
+/* 413 "Content Too Large".   RFC9110, Section 15.5.14. */
 #define MHD_HTTP_CONTENT_TOO_LARGE           413
-/* 414 "URI Too Long".        RFC-ietf-httpbis-semantics, Section 15.5.15. */
+/* 414 "URI Too Long".        RFC9110, Section 15.5.15. */
 #define MHD_HTTP_URI_TOO_LONG                414
-/* 415 "Unsupported Media Type". RFC-ietf-httpbis-semantics, Section 15.5.16. */
+/* 415 "Unsupported Media Type". RFC9110, Section 15.5.16. */
 #define MHD_HTTP_UNSUPPORTED_MEDIA_TYPE      415
-/* 416 "Range Not Satisfiable". RFC-ietf-httpbis-semantics, Section 15.5.17. */
+/* 416 "Range Not Satisfiable". RFC9110, Section 15.5.17. */
 #define MHD_HTTP_RANGE_NOT_SATISFIABLE       416
-/* 417 "Expectation Failed".  RFC-ietf-httpbis-semantics, Section 15.5.18. */
+/* 417 "Expectation Failed".  RFC9110, Section 15.5.18. */
 #define MHD_HTTP_EXPECTATION_FAILED          417
 
 
-/* 421 "Misdirected Request". RFC-ietf-httpbis-semantics, Section 15.5.20. */
+/* 421 "Misdirected Request". RFC9110, Section 15.5.20. */
 #define MHD_HTTP_MISDIRECTED_REQUEST         421
-/* 422 "Unprocessable Content". RFC-ietf-httpbis-semantics, Section 15.5.21. */
+/* 422 "Unprocessable Content". RFC9110, Section 15.5.21. */
 #define MHD_HTTP_UNPROCESSABLE_CONTENT       422
 /* 423 "Locked".              RFC4918. */
 #define MHD_HTTP_LOCKED                      423
@@ -441,7 +429,7 @@ _MHD_DEPR_MACRO ( \
 #define MHD_HTTP_FAILED_DEPENDENCY           424
 /* 425 "Too Early".           RFC8470. */
 #define MHD_HTTP_TOO_EARLY                   425
-/* 426 "Upgrade Required".    RFC-ietf-httpbis-semantics, Section 15.5.22. */
+/* 426 "Upgrade Required".    RFC9110, Section 15.5.22. */
 #define MHD_HTTP_UPGRADE_REQUIRED            426
 
 /* 428 "Precondition Required". RFC6585. */
@@ -455,17 +443,17 @@ _MHD_DEPR_MACRO ( \
 /* 451 "Unavailable For Legal Reasons". RFC7725. */
 #define MHD_HTTP_UNAVAILABLE_FOR_LEGAL_REASONS 451
 
-/* 500 "Internal Server Error". RFC-ietf-httpbis-semantics, Section 15.6.1. */
+/* 500 "Internal Server Error". RFC9110, Section 15.6.1. */
 #define MHD_HTTP_INTERNAL_SERVER_ERROR       500
-/* 501 "Not Implemented".     RFC-ietf-httpbis-semantics, Section 15.6.2. */
+/* 501 "Not Implemented".     RFC9110, Section 15.6.2. */
 #define MHD_HTTP_NOT_IMPLEMENTED             501
-/* 502 "Bad Gateway".         RFC-ietf-httpbis-semantics, Section 15.6.3. */
+/* 502 "Bad Gateway".         RFC9110, Section 15.6.3. */
 #define MHD_HTTP_BAD_GATEWAY                 502
-/* 503 "Service Unavailable". RFC-ietf-httpbis-semantics, Section 15.6.4. */
+/* 503 "Service Unavailable". RFC9110, Section 15.6.4. */
 #define MHD_HTTP_SERVICE_UNAVAILABLE         503
-/* 504 "Gateway Timeout".     RFC-ietf-httpbis-semantics, Section 15.6.5. */
+/* 504 "Gateway Timeout".     RFC9110, Section 15.6.5. */
 #define MHD_HTTP_GATEWAY_TIMEOUT             504
-/* 505 "HTTP Version Not Supported". RFC-ietf-httpbis-semantics, Section 15.6.6. */
+/* 505 "HTTP Version Not Supported". RFC9110, Section 15.6.6. */
 #define MHD_HTTP_HTTP_VERSION_NOT_SUPPORTED  505
 /* 506 "Variant Also Negotiates". RFC2295. */
 #define MHD_HTTP_VARIANT_ALSO_NEGOTIATES     506
@@ -474,7 +462,7 @@ _MHD_DEPR_MACRO ( \
 /* 508 "Loop Detected".       RFC5842. */
 #define MHD_HTTP_LOOP_DETECTED               508
 
-/* 510 "Not Extended".        RFC2774. */
+/* 510 "Not Extended".        (OBSOLETED) RFC2774; status-change-http-experiments-to-historic. */
 #define MHD_HTTP_NOT_EXTENDED                510
 /* 511 "Network Authentication Required". RFC6585. */
 #define MHD_HTTP_NETWORK_AUTHENTICATION_REQUIRED 511
@@ -492,52 +480,44 @@ _MHD_DEPR_MACRO ( \
 
 /* Deprecated names and codes */
 /** @deprecated */
-#define MHD_HTTP_METHOD_NOT_ACCEPTABLE \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE") \
-  406
+#define MHD_HTTP_METHOD_NOT_ACCEPTABLE _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE" \
+ ) 406
 
 /** @deprecated */
-#define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_CONTENT_TOO_LARGE") \
-  413
+#define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_CONTENT_TOO_LARGE"\
+ ) 413
 
 /** @deprecated */
-#define MHD_HTTP_PAYLOAD_TOO_LARGE \
-    _MHD_DEPR_IN_MACRO ( \
-      "Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated, use MHD_HTTP_CONTENT_TOO_LARGE") \
-  413
+#define MHD_HTTP_PAYLOAD_TOO_LARGE _MHD_DEPR_IN_MACRO (\
+  "Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated use MHD_HTTP_CONTENT_TOO_LARGE" \
+  ) 413
 
 /** @deprecated */
-#define MHD_HTTP_REQUEST_URI_TOO_LONG \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, use MHD_HTTP_URI_TOO_LONG") \
-  414
+#define MHD_HTTP_REQUEST_URI_TOO_LONG _MHD_DEPR_IN_MACRO (\
+  "Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, use MHD_HTTP_URI_TOO_LONG" \
+  ) 414
 
 /** @deprecated */
-#define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE") \
-  416
+#define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE" \
+ ) 416
 
 /** @deprecated */
-#define MHD_HTTP_UNPROCESSABLE_ENTITY \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, use MHD_HTTP_UNPROCESSABLE_CONTENT") \
-  422
+#define MHD_HTTP_UNPROCESSABLE_ENTITY _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, use MHD_HTTP_UNPROCESSABLE_CONTENT" \
+ ) 422
 
 /** @deprecated */
-#define MHD_HTTP_UNORDERED_COLLECTION \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_UNORDERED_COLLECTION is deprecated as it was removed from RFC") \
-  425
+#define MHD_HTTP_UNORDERED_COLLECTION _MHD_DEPR_IN_MACRO (\
+  "Value MHD_HTTP_UNORDERED_COLLECTION is deprecated as it was removed from RFC" \
+  ) 425
 
 /** @deprecated */
-#define MHD_HTTP_NO_RESPONSE \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_HTTP_NO_RESPONSE is deprecated as it is nginx internal code for logs only") \
-  444
+#define MHD_HTTP_NO_RESPONSE _MHD_DEPR_IN_MACRO (\
+ "Value MHD_HTTP_NO_RESPONSE is deprecated as it is nginx internal code for logs only"\
+ ) 444
 
 
 /** @} */ /* end of group httpcode */
@@ -564,283 +544,273 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 /**
  * Flag to be or-ed with MHD_HTTP status code for
  * SHOUTcast.  This will cause the response to begin
- * with the SHOUTcast "ICY" line instead of "HTTP".
+ * with the SHOUTcast "ICY" line instead of "HTTP/1.x".
  * @ingroup specialized
  */
 #define MHD_ICY_FLAG ((uint32_t) (((uint32_t) 1) << 31))
 
 /**
  * @defgroup headers HTTP headers
- * These are the standard headers found in HTTP requests and responses.
+ * The standard headers found in HTTP requests and responses.
  * See: https://www.iana.org/assignments/http-fields/http-fields.xhtml
- * Registry export date: 2021-12-19
+ * Registry export date: 2023-10-02
  * @{
  */
 
 /* Main HTTP headers. */
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.1 */
+/* Permanent.     RFC9110, Section 12.5.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_ACCEPT       "Accept"
-/* Deprecated.    RFC-ietf-httpbis-semantics-19, Section 12.5.2 */
+/* Deprecated.    RFC9110, Section 12.5.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_ACCEPT_CHARSET "Accept-Charset"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.3 */
+/* Permanent.     RFC9110, Section 12.5.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_ACCEPT_ENCODING "Accept-Encoding"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.4 */
+/* Permanent.     RFC9110, Section 12.5.4: HTTP Semantics */
 #define MHD_HTTP_HEADER_ACCEPT_LANGUAGE "Accept-Language"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 14.3 */
+/* Permanent.     RFC9110, Section 14.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_ACCEPT_RANGES "Accept-Ranges"
-/* Permanent.     RFC-ietf-httpbis-cache-19, Section 5.1 */
+/* Permanent.     RFC9111, Section 5.1: HTTP Caching */
 #define MHD_HTTP_HEADER_AGE          "Age"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.2.1 */
+/* Permanent.     RFC9110, Section 10.2.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_ALLOW        "Allow"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.6.3 */
+/* Permanent.     RFC9110, Section 11.6.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_AUTHENTICATION_INFO "Authentication-Info"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.6.2 */
+/* Permanent.     RFC9110, Section 11.6.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_AUTHORIZATION "Authorization"
-/* Permanent.     RFC-ietf-httpbis-cache-19, Section 5.2 */
+/* Permanent.     RFC9111, Section 5.2 */
 #define MHD_HTTP_HEADER_CACHE_CONTROL "Cache-Control"
-/* Permanent.     RFC-ietf-httpbis-cache-header-10 */
-#define MHD_HTTP_HEADER_CACHE_STATUS "Cache-Status"
-/* Permanent.     RFC-ietf-httpbis-messaging-19, Section 9.6 */
+/* Permanent.     RFC9112, Section 9.6: HTTP/1.1 */
 #define MHD_HTTP_HEADER_CLOSE        "Close"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.6.1 */
+/* Permanent.     RFC9110, Section 7.6.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_CONNECTION   "Connection"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.4 */
+/* Permanent.     RFC9110, Section 8.4: HTTP Semantics */
 #define MHD_HTTP_HEADER_CONTENT_ENCODING "Content-Encoding"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.5 */
+/* Permanent.     RFC9110, Section 8.5: HTTP Semantics */
 #define MHD_HTTP_HEADER_CONTENT_LANGUAGE "Content-Language"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.6 */
+/* Permanent.     RFC9110, Section 8.6: HTTP Semantics */
 #define MHD_HTTP_HEADER_CONTENT_LENGTH "Content-Length"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.7 */
+/* Permanent.     RFC9110, Section 8.7: HTTP Semantics */
 #define MHD_HTTP_HEADER_CONTENT_LOCATION "Content-Location"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 14.4 */
+/* Permanent.     RFC9110, Section 14.4: HTTP Semantics */
 #define MHD_HTTP_HEADER_CONTENT_RANGE "Content-Range"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.3 */
+/* Permanent.     RFC9110, Section 8.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_CONTENT_TYPE "Content-Type"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 6.6.1 */
+/* Permanent.     RFC9110, Section 6.6.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_DATE         "Date"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.8.3 */
+/* Permanent.     RFC9110, Section 8.8.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_ETAG         "ETag"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.1 */
+/* Permanent.     RFC9110, Section 10.1.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_EXPECT       "Expect"
-/* Permanent.     RFC-ietf-httpbis-expect-ct-08 */
-#define MHD_HTTP_HEADER_EXPECT_CT    "Expect-CT"
-/* Permanent.     RFC-ietf-httpbis-cache-19, Section 5.3 */
+/* Permanent.     RFC9111, Section 5.3: HTTP Caching */
 #define MHD_HTTP_HEADER_EXPIRES      "Expires"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.2 */
+/* Permanent.     RFC9110, Section 10.1.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_FROM         "From"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.2 */
+/* Permanent.     RFC9110, Section 7.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_HOST         "Host"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.1 */
+/* Permanent.     RFC9110, Section 13.1.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_IF_MATCH     "If-Match"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.3 */
+/* Permanent.     RFC9110, Section 13.1.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_IF_MODIFIED_SINCE "If-Modified-Since"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.2 */
+/* Permanent.     RFC9110, Section 13.1.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_IF_NONE_MATCH "If-None-Match"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.5 */
+/* Permanent.     RFC9110, Section 13.1.5: HTTP Semantics */
 #define MHD_HTTP_HEADER_IF_RANGE     "If-Range"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 13.1.4 */
+/* Permanent.     RFC9110, Section 13.1.4: HTTP Semantics */
 #define MHD_HTTP_HEADER_IF_UNMODIFIED_SINCE "If-Unmodified-Since"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 8.8.2 */
+/* Permanent.     RFC9110, Section 8.8.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_LAST_MODIFIED "Last-Modified"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.2.2 */
+/* Permanent.     RFC9110, Section 10.2.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_LOCATION     "Location"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.6.2 */
+/* Permanent.     RFC9110, Section 7.6.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_MAX_FORWARDS "Max-Forwards"
-/* Permanent.     RFC-ietf-httpbis-messaging-19, Appendix B.1 */
+/* Permanent.     RFC9112, Appendix B.1: HTTP/1.1 */
 #define MHD_HTTP_HEADER_MIME_VERSION "MIME-Version"
-/* Permanent.     RFC-ietf-httpbis-cache-19, Section 5.4 */
+/* Deprecated.    RFC9111, Section 5.4: HTTP Caching */
 #define MHD_HTTP_HEADER_PRAGMA       "Pragma"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.7.1 */
+/* Permanent.     RFC9110, Section 11.7.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_PROXY_AUTHENTICATE "Proxy-Authenticate"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.7.3 */
+/* Permanent.     RFC9110, Section 11.7.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_PROXY_AUTHENTICATION_INFO "Proxy-Authentication-Info"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.7.2 */
+/* Permanent.     RFC9110, Section 11.7.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_PROXY_AUTHORIZATION "Proxy-Authorization"
-/* Permanent.     RFC-ietf-httpbis-proxy-status-08 */
-#define MHD_HTTP_HEADER_PROXY_STATUS "Proxy-Status"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 14.2 */
+/* Permanent.     RFC9110, Section 14.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_RANGE        "Range"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.3 */
+/* Permanent.     RFC9110, Section 10.1.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_REFERER      "Referer"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.2.3 */
+/* Permanent.     RFC9110, Section 10.2.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_RETRY_AFTER  "Retry-After"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.2.4 */
+/* Permanent.     RFC9110, Section 10.2.4: HTTP Semantics */
 #define MHD_HTTP_HEADER_SERVER       "Server"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.4 */
+/* Permanent.     RFC9110, Section 10.1.4: HTTP Semantics */
 #define MHD_HTTP_HEADER_TE           "TE"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 6.6.2 */
+/* Permanent.     RFC9110, Section 6.6.2: HTTP Semantics */
 #define MHD_HTTP_HEADER_TRAILER      "Trailer"
-/* Permanent.     RFC-ietf-httpbis-messaging-19, Section 6.1 */
+/* Permanent.     RFC9112, Section 6.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_TRANSFER_ENCODING "Transfer-Encoding"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.8 */
+/* Permanent.     RFC9110, Section 7.8: HTTP Semantics */
 #define MHD_HTTP_HEADER_UPGRADE      "Upgrade"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 10.1.5 */
+/* Permanent.     RFC9110, Section 10.1.5: HTTP Semantics */
 #define MHD_HTTP_HEADER_USER_AGENT   "User-Agent"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.5 */
+/* Permanent.     RFC9110, Section 12.5.5: HTTP Semantics */
 #define MHD_HTTP_HEADER_VARY         "Vary"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 7.6.3 */
+/* Permanent.     RFC9110, Section 7.6.3: HTTP Semantics */
 #define MHD_HTTP_HEADER_VIA          "Via"
-/* Obsoleted.     RFC-ietf-httpbis-cache-19, Section 5.5 */
-#define MHD_HTTP_HEADER_WARNING      "Warning"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 11.6.1 */
+/* Permanent.     RFC9110, Section 11.6.1: HTTP Semantics */
 #define MHD_HTTP_HEADER_WWW_AUTHENTICATE "WWW-Authenticate"
-/* Permanent.     RFC-ietf-httpbis-semantics-19, Section 12.5.5 */
+/* Permanent.     RFC9110, Section 12.5.5: HTTP Semantics */
 #define MHD_HTTP_HEADER_ASTERISK     "*"
 
 /* Additional HTTP headers. */
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 3229: Delta encoding in HTTP */
 #define MHD_HTTP_HEADER_A_IM         "A-IM"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2324: Hyper Text Coffee Pot Control Protocol (HTCPCP/1.0) */
 #define MHD_HTTP_HEADER_ACCEPT_ADDITIONS "Accept-Additions"
-/* Permanent.     RFC8942, Section 3.1 */
+/* Permanent.     RFC 8942, Section 3.1: HTTP Client Hints */
 #define MHD_HTTP_HEADER_ACCEPT_CH    "Accept-CH"
-/* Permanent.     RFC7089 */
+/* Permanent.     RFC 7089: HTTP Framework for Time-Based Access to Resource States -- Memento */
 #define MHD_HTTP_HEADER_ACCEPT_DATETIME "Accept-Datetime"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2295: Transparent Content Negotiation in HTTP */
 #define MHD_HTTP_HEADER_ACCEPT_FEATURES "Accept-Features"
-/* Permanent.     https://www.w3.org/TR/ldp/ */
+/* Permanent.     RFC 5789: PATCH Method for HTTP */
+#define MHD_HTTP_HEADER_ACCEPT_PATCH "Accept-Patch"
+/* Permanent.     Linked Data Platform 1.0 */
 #define MHD_HTTP_HEADER_ACCEPT_POST  "Accept-Post"
-/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-allow-credentials */
+/* Permanent.     RFC-ietf-httpbis-message-signatures-19, Section 5.1: HTTP Message Signatures */
+#define MHD_HTTP_HEADER_ACCEPT_SIGNATURE "Accept-Signature"
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS \
   "Access-Control-Allow-Credentials"
-/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-allow-headers */
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_HEADERS \
   "Access-Control-Allow-Headers"
-/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-allow-methods */
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_METHODS \
   "Access-Control-Allow-Methods"
-/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-allow-origin */
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN \
   "Access-Control-Allow-Origin"
-/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-expose-headers */
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS \
   "Access-Control-Expose-Headers"
-/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-max-age */
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_MAX_AGE "Access-Control-Max-Age"
-/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-request-headers */
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_HEADERS \
   "Access-Control-Request-Headers"
-/* Permanent.     https://fetch.spec.whatwg.org/#http-access-control-request-method */
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_METHOD \
   "Access-Control-Request-Method"
-/* Permanent.     RFC7639, Section 2 */
+/* Permanent.     RFC 7639, Section 2: The ALPN HTTP Header Field */
 #define MHD_HTTP_HEADER_ALPN         "ALPN"
-/* Permanent.     RFC7838 */
+/* Permanent.     RFC 7838: HTTP Alternative Services */
 #define MHD_HTTP_HEADER_ALT_SVC      "Alt-Svc"
-/* Permanent.     RFC7838 */
+/* Permanent.     RFC 7838: HTTP Alternative Services */
 #define MHD_HTTP_HEADER_ALT_USED     "Alt-Used"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2295: Transparent Content Negotiation in HTTP */
 #define MHD_HTTP_HEADER_ALTERNATES   "Alternates"
-/* Permanent.     RFC4437 */
+/* Permanent.     RFC 4437: Web Distributed Authoring and Versioning (WebDAV) Redirect Reference Resources */
 #define MHD_HTTP_HEADER_APPLY_TO_REDIRECT_REF "Apply-To-Redirect-Ref"
-/* Permanent.     RFC8053, Section 4 */
+/* Permanent.     RFC 8053, Section 4: HTTP Authentication Extensions for Interactive Clients */
 #define MHD_HTTP_HEADER_AUTHENTICATION_CONTROL "Authentication-Control"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_C_EXT        "C-Ext"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_C_MAN        "C-Man"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_C_OPT        "C-Opt"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_C_PEP        "C-PEP"
-/* Permanent.     RFC8607, Section 5.1 */
+/* Permanent.     RFC9211: The Cache-Status HTTP Response Header Field */
+#define MHD_HTTP_HEADER_CACHE_STATUS "Cache-Status"
+/* Permanent.     RFC 8607, Section 5.1: Calendaring Extensions to WebDAV (CalDAV): Managed Attachments */
 #define MHD_HTTP_HEADER_CAL_MANAGED_ID "Cal-Managed-ID"
-/* Permanent.     RFC7809, Section 7.1 */
+/* Permanent.     RFC 7809, Section 7.1: Calendaring Extensions to WebDAV (CalDAV): Time Zones by Reference */
 #define MHD_HTTP_HEADER_CALDAV_TIMEZONES "CalDAV-Timezones"
-/* Permanent.     RFC8586 */
+/* Permanent.     RFC9297 */
+#define MHD_HTTP_HEADER_CAPSULE_PROTOCOL "Capsule-Protocol"
+/* Permanent.     RFC9213: Targeted HTTP Cache Control */
+#define MHD_HTTP_HEADER_CDN_CACHE_CONTROL "CDN-Cache-Control"
+/* Permanent.     RFC 8586: Loop Detection in Content Delivery Networks (CDNs) */
 #define MHD_HTTP_HEADER_CDN_LOOP     "CDN-Loop"
-/* Permanent.     RFC8739, Section 3.3 */
+/* Permanent.     RFC 8739, Section 3.3: Support for Short-Term, Automatically Renewed (STAR) Certificates in the Automated Certificate Management Environment (ACME) */
 #define MHD_HTTP_HEADER_CERT_NOT_AFTER "Cert-Not-After"
-/* Permanent.     RFC8739, Section 3.3 */
+/* Permanent.     RFC 8739, Section 3.3: Support for Short-Term, Automatically Renewed (STAR) Certificates in the Automated Certificate Management Environment (ACME) */
 #define MHD_HTTP_HEADER_CERT_NOT_BEFORE "Cert-Not-Before"
-/* Permanent.     RFC6266 */
+/* Permanent.     Clear Site Data */
+#define MHD_HTTP_HEADER_CLEAR_SITE_DATA "Clear-Site-Data"
+/* Permanent.     RFC9440, Section 2: Client-Cert HTTP Header Field */
+#define MHD_HTTP_HEADER_CLIENT_CERT  "Client-Cert"
+/* Permanent.     RFC9440, Section 2: Client-Cert HTTP Header Field */
+#define MHD_HTTP_HEADER_CLIENT_CERT_CHAIN "Client-Cert-Chain"
+/* Permanent.     RFC-ietf-httpbis-digest-headers-13, Section 2: Digest Fields */
+#define MHD_HTTP_HEADER_CONTENT_DIGEST "Content-Digest"
+/* Permanent.     RFC 6266: Use of the Content-Disposition Header Field in the Hypertext Transfer Protocol (HTTP) */
 #define MHD_HTTP_HEADER_CONTENT_DISPOSITION "Content-Disposition"
-/* Permanent.     RFC4229 */
+/* Permanent.     The HTTP Distribution and Replication Protocol */
 #define MHD_HTTP_HEADER_CONTENT_ID   "Content-ID"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_CONTENT_SCRIPT_TYPE "Content-Script-Type"
-/* Permanent.     https://www.w3.org/TR/CSP/#csp-header */
+/* Permanent.     Content Security Policy Level 3 */
 #define MHD_HTTP_HEADER_CONTENT_SECURITY_POLICY "Content-Security-Policy"
-/* Permanent.     https://www.w3.org/TR/CSP/#cspro-header */
+/* Permanent.     Content Security Policy Level 3 */
 #define MHD_HTTP_HEADER_CONTENT_SECURITY_POLICY_REPORT_ONLY \
   "Content-Security-Policy-Report-Only"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_CONTENT_STYLE_TYPE "Content-Style-Type"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_CONTENT_VERSION "Content-Version"
-/* Permanent.     RFC6265 */
+/* Permanent.     RFC 6265: HTTP State Management Mechanism */
 #define MHD_HTTP_HEADER_COOKIE       "Cookie"
-/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#cross-origin-embedder-policy */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_EMBEDDER_POLICY \
   "Cross-Origin-Embedder-Policy"
-/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#cross-origin-embedder-policy-report-only */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_EMBEDDER_POLICY_REPORT_ONLY \
   "Cross-Origin-Embedder-Policy-Report-Only"
-/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#cross-origin-opener-policy-2 */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_OPENER_POLICY "Cross-Origin-Opener-Policy"
-/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#cross-origin-opener-policy-report-only */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_OPENER_POLICY_REPORT_ONLY \
   "Cross-Origin-Opener-Policy-Report-Only"
-/* Permanent.     https://fetch.spec.whatwg.org/#cross-origin-resource-policy-header */
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_RESOURCE_POLICY \
   "Cross-Origin-Resource-Policy"
-/* Permanent.     RFC5323 */
+/* Permanent.     RFC 5323: Web Distributed Authoring and Versioning (WebDAV) SEARCH */
 #define MHD_HTTP_HEADER_DASL         "DASL"
-/* Permanent.     RFC4918 */
+/* Permanent.     RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) */
 #define MHD_HTTP_HEADER_DAV          "DAV"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_DEFAULT_STYLE "Default-Style"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 3229: Delta encoding in HTTP */
 #define MHD_HTTP_HEADER_DELTA_BASE   "Delta-Base"
-/* Permanent.     RFC4918 */
+/* Permanent.     RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) */
 #define MHD_HTTP_HEADER_DEPTH        "Depth"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_DERIVED_FROM "Derived-From"
-/* Permanent.     RFC4918 */
+/* Permanent.     RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) */
 #define MHD_HTTP_HEADER_DESTINATION  "Destination"
-/* Permanent.     RFC4229 */
+/* Permanent.     The HTTP Distribution and Replication Protocol */
 #define MHD_HTTP_HEADER_DIFFERENTIAL_ID "Differential-ID"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_DIGEST       "Digest"
-/* Permanent.     RFC8470 */
+/* Permanent.     RFC9449: OAuth 2.0 Demonstrating Proof of Possession (DPoP) */
+#define MHD_HTTP_HEADER_DPOP         "DPoP"
+/* Permanent.     RFC9449: OAuth 2.0 Demonstrating Proof of Possession (DPoP) */
+#define MHD_HTTP_HEADER_DPOP_NONCE   "DPoP-Nonce"
+/* Permanent.     RFC 8470: Using Early Data in HTTP */
 #define MHD_HTTP_HEADER_EARLY_DATA   "Early-Data"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_EXT          "Ext"
-/* Permanent.     RFC7239 */
+/* Permanent.     RFC9163: Expect-CT Extension for HTTP */
+#define MHD_HTTP_HEADER_EXPECT_CT    "Expect-CT"
+/* Permanent.     RFC 7239: Forwarded HTTP Extension */
 #define MHD_HTTP_HEADER_FORWARDED    "Forwarded"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_GETPROFILE   "GetProfile"
-/* Permanent.     RFC7486, Section 6.1.1 */
+/* Permanent.     RFC 7486, Section 6.1.1: HTTP Origin-Bound Authentication (HOBA) */
 #define MHD_HTTP_HEADER_HOBAREG      "Hobareg"
-/* Permanent.     RFC7540, Section 3.2.1 */
-#define MHD_HTTP_HEADER_HTTP2_SETTINGS "HTTP2-Settings"
-/* Permanent.     RFC4918 */
+/* Permanent.     RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) */
 #define MHD_HTTP_HEADER_IF           "If"
-/* Permanent.     RFC6638 */
+/* Permanent.      RFC 6338: Scheduling Extensions to CalDAV */
 #define MHD_HTTP_HEADER_IF_SCHEDULE_TAG_MATCH "If-Schedule-Tag-Match"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 3229: Delta encoding in HTTP */
 #define MHD_HTTP_HEADER_IM           "IM"
-/* Permanent.     RFC8473 */
+/* Permanent.     RFC 8473: Token Binding over HTTP */
 #define MHD_HTTP_HEADER_INCLUDE_REFERRED_TOKEN_BINDING_ID \
   "Include-Referred-Token-Binding-ID"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1 */
 #define MHD_HTTP_HEADER_KEEP_ALIVE   "Keep-Alive"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 3253: Versioning Extensions to WebDAV: (Web Distributed Authoring and Versioning) */
 #define MHD_HTTP_HEADER_LABEL        "Label"
-/* Permanent.     https://html.spec.whatwg.org/multipage/server-sent-events.html#last-event-id */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_LAST_EVENT_ID "Last-Event-ID"
-/* Permanent.     RFC8288 */
+/* Permanent.     RFC 8288: Web Linking */
 #define MHD_HTTP_HEADER_LINK         "Link"
-/* Permanent.     RFC4918 */
+/* Permanent.     RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) */
 #define MHD_HTTP_HEADER_LOCK_TOKEN   "Lock-Token"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_MAN          "Man"
-/* Permanent.     RFC7089 */
+/* Permanent.     RFC 7089: HTTP Framework for Time-Based Access to Resource States -- Memento */
 #define MHD_HTTP_HEADER_MEMENTO_DATETIME "Memento-Datetime"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2227: Simple Hit-Metering and Usage-Limiting for HTTP */
 #define MHD_HTTP_HEADER_METER        "Meter"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2295: Transparent Content Negotiation in HTTP */
 #define MHD_HTTP_HEADER_NEGOTIATE    "Negotiate"
+/* Permanent.     Network Error Logging */
+#define MHD_HTTP_HEADER_NEL          "NEL"
 /* Permanent.     OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_ODATA_ENTITYID "OData-EntityId"
 /* Permanent.     OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
@@ -849,145 +819,121 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_ODATA_MAXVERSION "OData-MaxVersion"
 /* Permanent.     OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_ODATA_VERSION "OData-Version"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_OPT          "Opt"
-/* Permanent.     RFC8053, Section 3 */
+/* Permanent.     RFC 8053, Section 3: HTTP Authentication Extensions for Interactive Clients */
 #define MHD_HTTP_HEADER_OPTIONAL_WWW_AUTHENTICATE "Optional-WWW-Authenticate"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 3648: Web Distributed Authoring and Versioning (WebDAV) Ordered Collections Protocol */
 #define MHD_HTTP_HEADER_ORDERING_TYPE "Ordering-Type"
-/* Permanent.     RFC6454 */
+/* Permanent.     RFC 6454: The Web Origin Concept */
 #define MHD_HTTP_HEADER_ORIGIN       "Origin"
-/* Permanent.     https://html.spec.whatwg.org/multipage/origin.html#origin-agent-cluster */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_ORIGIN_AGENT_CLUSTER "Origin-Agent-Cluster"
-/* Permanent.     RFC8613, Section 11.1 */
+/* Permanent.     RFC 8613, Section 11.1: Object Security for Constrained RESTful Environments (OSCORE) */
 #define MHD_HTTP_HEADER_OSCORE       "OSCORE"
 /* Permanent.     OASIS Project Specification 01; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_OSLC_CORE_VERSION "OSLC-Core-Version"
-/* Permanent.     RFC4918 */
+/* Permanent.     RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) */
 #define MHD_HTTP_HEADER_OVERWRITE    "Overwrite"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_P3P          "P3P"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PEP          "PEP"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PEP_INFO     "Pep-Info"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PICS_LABEL   "PICS-Label"
-/* Permanent.     https://html.spec.whatwg.org/multipage/links.html#ping-from */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_PING_FROM    "Ping-From"
-/* Permanent.     https://html.spec.whatwg.org/multipage/links.html#ping-to */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_PING_TO      "Ping-To"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 3648: Web Distributed Authoring and Versioning (WebDAV) Ordered Collections Protocol */
 #define MHD_HTTP_HEADER_POSITION     "Position"
-/* Permanent.     RFC7240 */
+/* Permanent.     RFC 7240: Prefer Header for HTTP */
 #define MHD_HTTP_HEADER_PREFER       "Prefer"
-/* Permanent.     RFC7240 */
+/* Permanent.     RFC 7240: Prefer Header for HTTP */
 #define MHD_HTTP_HEADER_PREFERENCE_APPLIED "Preference-Applied"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PROFILEOBJECT "ProfileObject"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PROTOCOL     "Protocol"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PROTOCOL_REQUEST "Protocol-Request"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PROXY_FEATURES "Proxy-Features"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PROXY_INSTRUCTION "Proxy-Instruction"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_PUBLIC       "Public"
-/* Permanent.     RFC7469 */
+/* Permanent.     RFC9218: Extensible Prioritization Scheme for HTTP */
+#define MHD_HTTP_HEADER_PRIORITY     "Priority"
+/* Permanent.     RFC9209: The Proxy-Status HTTP Response Header Field */
+#define MHD_HTTP_HEADER_PROXY_STATUS "Proxy-Status"
+/* Permanent.     RFC 7469: Public Key Pinning Extension for HTTP */
 #define MHD_HTTP_HEADER_PUBLIC_KEY_PINS "Public-Key-Pins"
-/* Permanent.     RFC7469 */
+/* Permanent.     RFC 7469: Public Key Pinning Extension for HTTP */
 #define MHD_HTTP_HEADER_PUBLIC_KEY_PINS_REPORT_ONLY \
   "Public-Key-Pins-Report-Only"
-/* Permanent.     RFC4437 */
+/* Permanent.     RFC 4437: Web Distributed Authoring and Versioning (WebDAV) Redirect Reference Resources */
 #define MHD_HTTP_HEADER_REDIRECT_REF "Redirect-Ref"
-/* Permanent.     https://html.spec.whatwg.org/multipage/browsing-the-web.html#refresh */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_REFRESH      "Refresh"
-/* Permanent.     RFC8555, Section 6.5.1 */
+/* Permanent.     RFC 8555, Section 6.5.1: Automatic Certificate Management Environment (ACME) */
 #define MHD_HTTP_HEADER_REPLAY_NONCE "Replay-Nonce"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_SAFE         "Safe"
-/* Permanent.     RFC6638 */
+/* Permanent.     RFC-ietf-httpbis-digest-headers-13, Section 3: Digest Fields */
+#define MHD_HTTP_HEADER_REPR_DIGEST  "Repr-Digest"
+/* Permanent.     RFC 6638: Scheduling Extensions to CalDAV */
 #define MHD_HTTP_HEADER_SCHEDULE_REPLY "Schedule-Reply"
-/* Permanent.     RFC6638 */
+/* Permanent.     RFC 6338: Scheduling Extensions to CalDAV */
 #define MHD_HTTP_HEADER_SCHEDULE_TAG "Schedule-Tag"
-/* Permanent.     RFC8473 */
+/* Permanent.     Fetch */
+#define MHD_HTTP_HEADER_SEC_PURPOSE  "Sec-Purpose"
+/* Permanent.     RFC 8473: Token Binding over HTTP */
 #define MHD_HTTP_HEADER_SEC_TOKEN_BINDING "Sec-Token-Binding"
-/* Permanent.     RFC6455 */
+/* Permanent.     RFC 6455: The WebSocket Protocol */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_ACCEPT "Sec-WebSocket-Accept"
-/* Permanent.     RFC6455 */
+/* Permanent.     RFC 6455: The WebSocket Protocol */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_EXTENSIONS "Sec-WebSocket-Extensions"
-/* Permanent.     RFC6455 */
+/* Permanent.     RFC 6455: The WebSocket Protocol */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_KEY "Sec-WebSocket-Key"
-/* Permanent.     RFC6455 */
+/* Permanent.     RFC 6455: The WebSocket Protocol */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_PROTOCOL "Sec-WebSocket-Protocol"
-/* Permanent.     RFC6455 */
+/* Permanent.     RFC 6455: The WebSocket Protocol */
 #define MHD_HTTP_HEADER_SEC_WEBSOCKET_VERSION "Sec-WebSocket-Version"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_SECURITY_SCHEME "Security-Scheme"
-/* Permanent.     https://www.w3.org/TR/server-timing/ */
+/* Permanent.     Server Timing */
 #define MHD_HTTP_HEADER_SERVER_TIMING "Server-Timing"
-/* Permanent.     RFC6265 */
+/* Permanent.     RFC 6265: HTTP State Management Mechanism */
 #define MHD_HTTP_HEADER_SET_COOKIE   "Set-Cookie"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_SETPROFILE   "SetProfile"
-/* Permanent.     RFC5023 */
+/* Permanent.     RFC-ietf-httpbis-message-signatures-19, Section 4.2: HTTP Message Signatures */
+#define MHD_HTTP_HEADER_SIGNATURE    "Signature"
+/* Permanent.     RFC-ietf-httpbis-message-signatures-19, Section 4.1: HTTP Message Signatures */
+#define MHD_HTTP_HEADER_SIGNATURE_INPUT "Signature-Input"
+/* Permanent.     RFC 5023: The Atom Publishing Protocol */
 #define MHD_HTTP_HEADER_SLUG         "SLUG"
-/* Permanent.     RFC4229 */
+/* Permanent.     Simple Object Access Protocol (SOAP) 1.1 */
 #define MHD_HTTP_HEADER_SOAPACTION   "SoapAction"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2518: HTTP Extensions for Distributed Authoring -- WEBDAV */
 #define MHD_HTTP_HEADER_STATUS_URI   "Status-URI"
-/* Permanent.     RFC6797 */
+/* Permanent.     RFC 6797: HTTP Strict Transport Security (HSTS) */
 #define MHD_HTTP_HEADER_STRICT_TRANSPORT_SECURITY "Strict-Transport-Security"
-/* Permanent.     RFC8594 */
+/* Permanent.     RFC 8594: The Sunset HTTP Header Field */
 #define MHD_HTTP_HEADER_SUNSET       "Sunset"
-/* Permanent.     RFC4229 */
+/* Permanent.     Edge Architecture Specification */
 #define MHD_HTTP_HEADER_SURROGATE_CAPABILITY "Surrogate-Capability"
-/* Permanent.     RFC4229 */
+/* Permanent.     Edge Architecture Specification */
 #define MHD_HTTP_HEADER_SURROGATE_CONTROL "Surrogate-Control"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2295: Transparent Content Negotiation in HTTP */
 #define MHD_HTTP_HEADER_TCN          "TCN"
-/* Permanent.     RFC4918 */
+/* Permanent.     RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) */
 #define MHD_HTTP_HEADER_TIMEOUT      "Timeout"
-/* Permanent.     RFC8030, Section 5.4 */
+/* Permanent.     RFC 8030, Section 5.4: Generic Event Delivery Using HTTP Push */
 #define MHD_HTTP_HEADER_TOPIC        "Topic"
-/* Permanent.     RFC8030, Section 5.2 */
+/* Permanent.     Trace Context */
+#define MHD_HTTP_HEADER_TRACEPARENT  "Traceparent"
+/* Permanent.     Trace Context */
+#define MHD_HTTP_HEADER_TRACESTATE   "Tracestate"
+/* Permanent.     RFC 8030, Section 5.2: Generic Event Delivery Using HTTP Push */
 #define MHD_HTTP_HEADER_TTL          "TTL"
-/* Permanent.     RFC8030, Section 5.3 */
+/* Permanent.     RFC 8030, Section 5.3: Generic Event Delivery Using HTTP Push */
 #define MHD_HTTP_HEADER_URGENCY      "Urgency"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_URI          "URI"
-/* Permanent.     RFC4229 */
+/* Permanent.     RFC 2295: Transparent Content Negotiation in HTTP */
 #define MHD_HTTP_HEADER_VARIANT_VARY "Variant-Vary"
-/* Permanent.     RFC4229 */
-#define MHD_HTTP_HEADER_WANT_DIGEST  "Want-Digest"
-/* Permanent.     https://fetch.spec.whatwg.org/#x-content-type-options-header */
+/* Permanent.     RFC-ietf-httpbis-digest-headers-13, Section 4: Digest Fields */
+#define MHD_HTTP_HEADER_WANT_CONTENT_DIGEST "Want-Content-Digest"
+/* Permanent.     RFC-ietf-httpbis-digest-headers-13, Section 4: Digest Fields */
+#define MHD_HTTP_HEADER_WANT_REPR_DIGEST "Want-Repr-Digest"
+/* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_X_CONTENT_TYPE_OPTIONS "X-Content-Type-Options"
-/* Permanent.     https://html.spec.whatwg.org/multipage/browsing-the-web.html#x-frame-options */
+/* Permanent.     HTML */
 #define MHD_HTTP_HEADER_X_FRAME_OPTIONS "X-Frame-Options"
-/* Provisional.   RFC5789 */
-#define MHD_HTTP_HEADER_ACCEPT_PATCH "Accept-Patch"
-/* Provisional.   https://github.com/ampproject/amphtml/blob/master/spec/amp-cache-transform.md */
+/* Provisional.   AMP-Cache-Transform HTTP request header */
 #define MHD_HTTP_HEADER_AMP_CACHE_TRANSFORM "AMP-Cache-Transform"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_COMPLIANCE   "Compliance"
-/* Provisional.   https://docs.oasis-open-projects.org/oslc-op/config/v1.0/psd01/config-resources.html#configcontext */
+/* Provisional.   OSLC Configuration Management Version 1.0. Part 3: Configuration Specification */
 #define MHD_HTTP_HEADER_CONFIGURATION_CONTEXT "Configuration-Context"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_CONTENT_TRANSFER_ENCODING "Content-Transfer-Encoding"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_COST         "Cost"
-/* Provisional.   RFC6017 */
+/* Provisional.   RFC 6017: Electronic Data Interchange - Internet Integration (EDIINT) Features Header Field */
 #define MHD_HTTP_HEADER_EDIINT_FEATURES "EDIINT-Features"
 /* Provisional.   OData Version 4.01 Part 1: Protocol; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_ISOLATION    "Isolation"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_MESSAGE_ID   "Message-ID"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_NON_COMPLIANCE "Non-Compliance"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_OPTIONAL     "Optional"
+/* Provisional.   Permissions Policy */
+#define MHD_HTTP_HEADER_PERMISSIONS_POLICY "Permissions-Policy"
 /* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_REPEATABILITY_CLIENT_ID "Repeatability-Client-ID"
 /* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
@@ -996,70 +942,143 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_REPEATABILITY_REQUEST_ID "Repeatability-Request-ID"
 /* Provisional.   Repeatable Requests Version 1.0; OASIS; Chet_Ensign */
 #define MHD_HTTP_HEADER_REPEATABILITY_RESULT "Repeatability-Result"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_RESOLUTION_HINT "Resolution-Hint"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_RESOLVER_LOCATION "Resolver-Location"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_SUBOK        "SubOK"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_SUBST        "Subst"
-/* Provisional.   https://www.w3.org/TR/resource-timing-1/#timing-allow-origin */
+/* Provisional.   Reporting API */
+#define MHD_HTTP_HEADER_REPORTING_ENDPOINTS "Reporting-Endpoints"
+/* Provisional.   Global Privacy Control (GPC) */
+#define MHD_HTTP_HEADER_SEC_GPC      "Sec-GPC"
+/* Provisional.   Resource Timing Level 1 */
 #define MHD_HTTP_HEADER_TIMING_ALLOW_ORIGIN "Timing-Allow-Origin"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_TITLE        "Title"
-/* Provisional.   https://www.w3.org/TR/trace-context/#traceparent-field */
-#define MHD_HTTP_HEADER_TRACEPARENT  "Traceparent"
-/* Provisional.   https://www.w3.org/TR/trace-context/#tracestate-field */
-#define MHD_HTTP_HEADER_TRACESTATE   "Tracestate"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_UA_COLOR     "UA-Color"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_UA_MEDIA     "UA-Media"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_UA_PIXELS    "UA-Pixels"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_UA_RESOLUTION "UA-Resolution"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_UA_WINDOWPIXELS "UA-Windowpixels"
-/* Provisional.   RFC4229 */
-#define MHD_HTTP_HEADER_VERSION      "Version"
-/* Provisional.   W3C Mobile Web Best Practices Working Group */
-#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT "X-Device-Accept"
-/* Provisional.   W3C Mobile Web Best Practices Working Group */
-#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_CHARSET "X-Device-Accept-Charset"
-/* Provisional.   W3C Mobile Web Best Practices Working Group */
-#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_ENCODING "X-Device-Accept-Encoding"
-/* Provisional.   W3C Mobile Web Best Practices Working Group */
-#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_LANGUAGE "X-Device-Accept-Language"
-/* Provisional.   W3C Mobile Web Best Practices Working Group */
-#define MHD_HTTP_HEADER_X_DEVICE_USER_AGENT "X-Device-User-Agent"
-/* Deprecated.    RFC4229 */
+/* Deprecated.    PEP - an Extension Mechanism for HTTP; status-change-http-experiments-to-historic */
 #define MHD_HTTP_HEADER_C_PEP_INFO   "C-PEP-Info"
-/* Deprecated.    RFC4229 */
+/* Deprecated.    White Paper: Joint Electronic Payment Initiative */
 #define MHD_HTTP_HEADER_PROTOCOL_INFO "Protocol-Info"
-/* Deprecated.    RFC4229 */
+/* Deprecated.    White Paper: Joint Electronic Payment Initiative */
 #define MHD_HTTP_HEADER_PROTOCOL_QUERY "Protocol-Query"
-/* Obsoleted.     https://www.w3.org/TR/2007/WD-access-control-20071126/#access-control0 */
+/* Obsoleted.     Access Control for Cross-site Requests */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL "Access-Control"
-/* Obsoleted.     RFC2068; RFC2616 */
+/* Obsoleted.     RFC 2774: An HTTP Extension Framework; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_C_EXT        "C-Ext"
+/* Obsoleted.     RFC 2774: An HTTP Extension Framework; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_C_MAN        "C-Man"
+/* Obsoleted.     RFC 2774: An HTTP Extension Framework; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_C_OPT        "C-Opt"
+/* Obsoleted.     PEP - an Extension Mechanism for HTTP; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_C_PEP        "C-PEP"
+/* Obsoleted.     RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1; RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1 */
 #define MHD_HTTP_HEADER_CONTENT_BASE "Content-Base"
-/* Obsoleted.     RFC2616, Section 14.15; RFC7231, Appendix B */
+/* Obsoleted.     RFC 2616, Section 14.15: Hypertext Transfer Protocol -- HTTP/1.1; RFC 7231, Appendix B: Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content */
 #define MHD_HTTP_HEADER_CONTENT_MD5  "Content-MD5"
-/* Obsoleted.     RFC2965; RFC6265 */
+/* Obsoleted.     HTML 4.01 Specification */
+#define MHD_HTTP_HEADER_CONTENT_SCRIPT_TYPE "Content-Script-Type"
+/* Obsoleted.     HTML 4.01 Specification */
+#define MHD_HTTP_HEADER_CONTENT_STYLE_TYPE "Content-Style-Type"
+/* Obsoleted.     RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1 */
+#define MHD_HTTP_HEADER_CONTENT_VERSION "Content-Version"
+/* Obsoleted.     RFC 2965: HTTP State Management Mechanism; RFC 6265: HTTP State Management Mechanism */
 #define MHD_HTTP_HEADER_COOKIE2      "Cookie2"
-/* Obsoleted.     https://www.w3.org/TR/2007/WD-access-control-20071126/#method-check */
+/* Obsoleted.     HTML 4.01 Specification */
+#define MHD_HTTP_HEADER_DEFAULT_STYLE "Default-Style"
+/* Obsoleted.     RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1 */
+#define MHD_HTTP_HEADER_DERIVED_FROM "Derived-From"
+/* Obsoleted.     RFC 3230: Instance Digests in HTTP; RFC-ietf-httpbis-digest-headers-13, Section 1.3: Digest Fields */
+#define MHD_HTTP_HEADER_DIGEST       "Digest"
+/* Obsoleted.     RFC 2774: An HTTP Extension Framework; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_EXT          "Ext"
+/* Obsoleted.     Implementation of OPS Over HTTP */
+#define MHD_HTTP_HEADER_GETPROFILE   "GetProfile"
+/* Obsoleted.     RFC 7540, Section 3.2.1: Hypertext Transfer Protocol Version 2 (HTTP/2) */
+#define MHD_HTTP_HEADER_HTTP2_SETTINGS "HTTP2-Settings"
+/* Obsoleted.     RFC 2774: An HTTP Extension Framework; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_MAN          "Man"
+/* Obsoleted.     Access Control for Cross-site Requests */
 #define MHD_HTTP_HEADER_METHOD_CHECK "Method-Check"
-/* Obsoleted.     https://www.w3.org/TR/2007/WD-access-control-20071126/#method-check-expires */
+/* Obsoleted.     Access Control for Cross-site Requests */
 #define MHD_HTTP_HEADER_METHOD_CHECK_EXPIRES "Method-Check-Expires"
-/* Obsoleted.     https://www.w3.org/TR/2007/WD-access-control-20071126/#referer-root */
+/* Obsoleted.     RFC 2774: An HTTP Extension Framework; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_OPT          "Opt"
+/* Obsoleted.     The Platform for Privacy Preferences 1.0 (P3P1.0) Specification */
+#define MHD_HTTP_HEADER_P3P          "P3P"
+/* Obsoleted.     PEP - an Extension Mechanism for HTTP */
+#define MHD_HTTP_HEADER_PEP          "PEP"
+/* Obsoleted.     PEP - an Extension Mechanism for HTTP */
+#define MHD_HTTP_HEADER_PEP_INFO     "Pep-Info"
+/* Obsoleted.     PICS Label Distribution Label Syntax and Communication Protocols */
+#define MHD_HTTP_HEADER_PICS_LABEL   "PICS-Label"
+/* Obsoleted.     Implementation of OPS Over HTTP */
+#define MHD_HTTP_HEADER_PROFILEOBJECT "ProfileObject"
+/* Obsoleted.     PICS Label Distribution Label Syntax and Communication Protocols */
+#define MHD_HTTP_HEADER_PROTOCOL     "Protocol"
+/* Obsoleted.     PICS Label Distribution Label Syntax and Communication Protocols */
+#define MHD_HTTP_HEADER_PROTOCOL_REQUEST "Protocol-Request"
+/* Obsoleted.     Notification for Proxy Caches */
+#define MHD_HTTP_HEADER_PROXY_FEATURES "Proxy-Features"
+/* Obsoleted.     Notification for Proxy Caches */
+#define MHD_HTTP_HEADER_PROXY_INSTRUCTION "Proxy-Instruction"
+/* Obsoleted.     RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1 */
+#define MHD_HTTP_HEADER_PUBLIC       "Public"
+/* Obsoleted.     Access Control for Cross-site Requests */
 #define MHD_HTTP_HEADER_REFERER_ROOT "Referer-Root"
-/* Obsoleted.     RFC2965; RFC6265 */
+/* Obsoleted.     RFC 2310: The Safe Response Header Field; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_SAFE         "Safe"
+/* Obsoleted.     RFC 2660: The Secure HyperText Transfer Protocol; status-change-http-experiments-to-historic */
+#define MHD_HTTP_HEADER_SECURITY_SCHEME "Security-Scheme"
+/* Obsoleted.     RFC 2965: HTTP State Management Mechanism; RFC 6265: HTTP State Management Mechanism */
 #define MHD_HTTP_HEADER_SET_COOKIE2  "Set-Cookie2"
+/* Obsoleted.     Implementation of OPS Over HTTP */
+#define MHD_HTTP_HEADER_SETPROFILE   "SetProfile"
+/* Obsoleted.     RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1 */
+#define MHD_HTTP_HEADER_URI          "URI"
+/* Obsoleted.     RFC 3230: Instance Digests in HTTP; RFC-ietf-httpbis-digest-headers-13, Section 1.3: Digest Fields */
+#define MHD_HTTP_HEADER_WANT_DIGEST  "Want-Digest"
+/* Obsoleted.     RFC9111, Section 5.5: HTTP Caching */
+#define MHD_HTTP_HEADER_WARNING      "Warning"
 
-/* Some provisional headers. */
-#define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN \
-  "Access-Control-Allow-Origin"
+/* Headers removed from the registry. Do not use! */
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_COMPLIANCE   "Compliance"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_CONTENT_TRANSFER_ENCODING "Content-Transfer-Encoding"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_COST         "Cost"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_MESSAGE_ID   "Message-ID"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_NON_COMPLIANCE "Non-Compliance"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_OPTIONAL     "Optional"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_RESOLUTION_HINT "Resolution-Hint"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_RESOLVER_LOCATION "Resolver-Location"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_SUBOK        "SubOK"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_SUBST        "Subst"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_TITLE        "Title"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_UA_COLOR     "UA-Color"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_UA_MEDIA     "UA-Media"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_UA_PIXELS    "UA-Pixels"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_UA_RESOLUTION "UA-Resolution"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_UA_WINDOWPIXELS "UA-Windowpixels"
+/* Obsoleted.     RFC4229 */
+#define MHD_HTTP_HEADER_VERSION      "Version"
+/* Obsoleted.     W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT "X-Device-Accept"
+/* Obsoleted.     W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_CHARSET "X-Device-Accept-Charset"
+/* Obsoleted.     W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_ENCODING "X-Device-Accept-Encoding"
+/* Obsoleted.     W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_ACCEPT_LANGUAGE "X-Device-Accept-Language"
+/* Obsoleted.     W3C Mobile Web Best Practices Working Group */
+#define MHD_HTTP_HEADER_X_DEVICE_USER_AGENT "X-Device-User-Agent"
+
 /** @} */ /* end of group headers */
 
 /**
@@ -1076,30 +1095,28 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 /**
  * @defgroup methods HTTP methods
  * HTTP methods (as strings).
- * See: http://www.iana.org/assignments/http-methods/http-methods.xml
- * Registry export date: 2021-12-19
+ * See: https://www.iana.org/assignments/http-methods/http-methods.xml
+ * Registry export date: 2023-10-02
  * @{
  */
 
 /* Main HTTP methods. */
-/* Not safe. Not idempotent. RFC-ietf-httpbis-semantics, Section 9.3.6. */
-#define MHD_HTTP_METHOD_CONNECT  "CONNECT"
-/* Not safe. Idempotent.     RFC-ietf-httpbis-semantics, Section 9.3.5. */
-#define MHD_HTTP_METHOD_DELETE   "DELETE"
-/* Safe.     Idempotent.     RFC-ietf-httpbis-semantics, Section 9.3.1. */
+/* Safe.     Idempotent.     RFC9110, Section 9.3.1. */
 #define MHD_HTTP_METHOD_GET      "GET"
-/* Safe.     Idempotent.     RFC-ietf-httpbis-semantics, Section 9.3.2. */
+/* Safe.     Idempotent.     RFC9110, Section 9.3.2. */
 #define MHD_HTTP_METHOD_HEAD     "HEAD"
-/* Safe.     Idempotent.     RFC-ietf-httpbis-semantics, Section 9.3.7. */
-#define MHD_HTTP_METHOD_OPTIONS  "OPTIONS"
-/* Not safe. Not idempotent. RFC-ietf-httpbis-semantics, Section 9.3.3. */
+/* Not safe. Not idempotent. RFC9110, Section 9.3.3. */
 #define MHD_HTTP_METHOD_POST     "POST"
-/* Not safe. Idempotent.     RFC-ietf-httpbis-semantics, Section 9.3.4. */
+/* Not safe. Idempotent.     RFC9110, Section 9.3.4. */
 #define MHD_HTTP_METHOD_PUT      "PUT"
-/* Safe.     Idempotent.     RFC-ietf-httpbis-semantics, Section 9.3.8. */
+/* Not safe. Idempotent.     RFC9110, Section 9.3.5. */
+#define MHD_HTTP_METHOD_DELETE   "DELETE"
+/* Not safe. Not idempotent. RFC9110, Section 9.3.6. */
+#define MHD_HTTP_METHOD_CONNECT  "CONNECT"
+/* Safe.     Idempotent.     RFC9110, Section 9.3.7. */
+#define MHD_HTTP_METHOD_OPTIONS  "OPTIONS"
+/* Safe.     Idempotent.     RFC9110, Section 9.3.8. */
 #define MHD_HTTP_METHOD_TRACE    "TRACE"
-/* Not safe. Not idempotent. RFC-ietf-httpbis-semantics, Section 18.2. */
-#define MHD_HTTP_METHOD_ASTERISK "*"
 
 /* Additional HTTP methods. */
 /* Not safe. Idempotent.     RFC3744, Section 8.1. */
@@ -1138,7 +1155,7 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_METHOD_ORDERPATCH     "ORDERPATCH"
 /* Not safe. Not idempotent. RFC5789, Section 2. */
 #define MHD_HTTP_METHOD_PATCH          "PATCH"
-/* Safe.     Idempotent.     RFC7540, Section 3.5. */
+/* Safe.     Idempotent.     RFC9113, Section 3.4. */
 #define MHD_HTTP_METHOD_PRI            "PRI"
 /* Safe.     Idempotent.     RFC4918, Section 9.1; RFC8144, Section 2.1. */
 #define MHD_HTTP_METHOD_PROPFIND       "PROPFIND"
@@ -1164,6 +1181,8 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_METHOD_UPDATEREDIRECTREF "UPDATEREDIRECTREF"
 /* Not safe. Idempotent.     RFC3253, Section 3.5. */
 #define MHD_HTTP_METHOD_VERSION_CONTROL "VERSION-CONTROL"
+/* Not safe. Not idempotent. RFC9110, Section 18.2. */
+#define MHD_HTTP_METHOD_ASTERISK       "*"
 
 /** @} */ /* end of group methods */
 
@@ -1257,6 +1276,11 @@ enum MHD_FLAG
   /**
    * Run using one thread per connection.
    * Must be used only with #MHD_USE_INTERNAL_POLLING_THREAD.
+   *
+   * If #MHD_USE_ITC is also not used, closed and expired connections may only
+   * be cleaned up internally when a new connection is received.
+   * Consider adding of #MHD_USE_ITC flag to have faster internal cleanups
+   * at very minor increase in system resources usage.
    */
   MHD_USE_THREAD_PER_CONNECTION = 4,
 
@@ -1292,18 +1316,17 @@ enum MHD_FLAG
 
   /**
    * Be pedantic about the protocol (as opposed to as tolerant as
-   * possible).  Specifically, at the moment, this flag causes MHD to
-   * reject HTTP 1.1 connections without a "Host" header.  This is
-   * required by the standard, but of course in violation of the "be
-   * as liberal as possible in what you accept" norm.  It is
-   * recommended to turn this ON if you are testing clients against
-   * MHD, and OFF in production.
+   * possible).
+   * This flag is equivalent to setting 1 as #MHD_OPTION_CLIENT_DISCIPLINE_LVL
+   * value.
+   * @sa #MHD_OPTION_CLIENT_DISCIPLINE_LVL
    */
   MHD_USE_PEDANTIC_CHECKS = 32,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_PEDANTIC_CHECKS \
   _MHD_DEPR_IN_MACRO ( \
-    "Flag MHD_USE_PEDANTIC_CHECKS is deprecated, use option MHD_OPTION_STRICT_FOR_CLIENT instead") \
+    "Flag MHD_USE_PEDANTIC_CHECKS is deprecated, " \
+    "use option MHD_OPTION_CLIENT_DISCIPLINE_LVL instead") \
   32
 #endif /* 0 */
 
@@ -1508,7 +1531,19 @@ enum MHD_FLAG
    * Flag set to enable TLS 1.3 early data.  This has
    * security implications, be VERY careful when using this.
    */
-  MHD_USE_INSECURE_TLS_EARLY_DATA = 1U << 18
+  MHD_USE_INSECURE_TLS_EARLY_DATA = 1U << 18,
+
+  /**
+   * Indicates that MHD daemon will be used by application in single-threaded
+   * mode only.  When this flag is set then application must call any MHD
+   * function only within a single thread.
+   * This flag turns off some internal thread-safety and allows MHD making
+   * some of the internal optimisations suitable only for single-threaded
+   * environment.
+   * Not compatible with #MHD_USE_INTERNAL_POLLING_THREAD.
+   * @note Available since #MHD_VERSION 0x00097707
+   */
+  MHD_USE_NO_THREAD_SAFETY = 1U << 19
 
 };
 
@@ -1547,6 +1582,71 @@ typedef int
                                     size_t *psk_size);
 
 /**
+ * Values for #MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE.
+ *
+ * These values can limit the scope of validity of MHD-generated nonces.
+ * Values can be combined with bitwise OR.
+ * Any value, except #MHD_DAUTH_BIND_NONCE_NONE, enforce function
+ * #MHD_digest_auth_check3() (and similar functions) to check nonce by
+ * re-generating it again with the same parameters, which is CPU-intensive
+ * operation.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DAuthBindNonce
+{
+  /**
+   * Generated nonces are valid for any request from any client until expired.
+   * This is default and recommended value.
+   * #MHD_digest_auth_check3() (and similar functions) would check only whether
+   * the nonce value that is used by client has been generated by MHD and not
+   * expired yet.
+   * It is recommended because RFC 7616 allows clients to use the same nonce
+   * for any request in the same "protection space".
+   * When checking client's authorisation requests CPU is loaded less if this
+   * value is used.
+   * This mode gives MHD maximum flexibility for nonces generation and can
+   * prevent possible nonce collisions (and corresponding log warning messages)
+   * when clients' requests are intensive.
+   * This value cannot be biwise-OR combined with other values.
+   */
+  MHD_DAUTH_BIND_NONCE_NONE = 0,
+
+  /**
+   * Generated nonces are valid only for the same realm.
+   */
+  MHD_DAUTH_BIND_NONCE_REALM = 1 << 0,
+
+  /**
+   * Generated nonces are valid only for the same URI (excluding parameters
+   * after '?' in URI) and request method (GET, POST etc).
+   * Not recommended unless "protection space" is limited to a single URI as
+   * RFC 7616 allows clients to re-use server-generated nonces for any URI
+   * in the same "protection space" which by default consists of all server
+   * URIs.
+   * Before #MHD_VERSION 0x00097701 this was default (and only supported)
+   * nonce bind type.
+   */
+  MHD_DAUTH_BIND_NONCE_URI = 1 << 1,
+
+  /**
+   * Generated nonces are valid only for the same URI including URI parameters
+   * and request method (GET, POST etc).
+   * This value implies #MHD_DAUTH_BIND_NONCE_URI.
+   * Not recommended for that same reasons as #MHD_DAUTH_BIND_NONCE_URI.
+   */
+  MHD_DAUTH_BIND_NONCE_URI_PARAMS = 1 << 2,
+
+  /**
+   * Generated nonces are valid only for the single client's IP.
+   * While it looks like security improvement, in practice the same client may
+   * jump from one IP to another (mobile or Wi-Fi handover, DHCP re-assignment,
+   * Multi-NAT, different proxy chain and other reasons), while IP address
+   * spoofing could be used relatively easily.
+   */
+  MHD_DAUTH_BIND_NONCE_CLIENT_IP = 1 << 3
+} _MHD_FLAGS_ENUM;
+
+/**
  * @brief MHD options.
  *
  * Passed in the varargs portion of #MHD_start_daemon.
@@ -1566,6 +1666,8 @@ enum MHD_OPTION
    * Values above 128k are unlikely to result in much benefit, as half
    * of the memory will be typically used for IO, and TCP buffers are
    * unlikely to support window sizes above 64k on most systems.
+   * Values below 64 bytes are completely unusable.
+   * Since #MHD_VERSION 0x00097710 silently ignored if followed by zero value.
    */
   MHD_OPTION_CONNECTION_MEMORY_LIMIT = 1,
 
@@ -1615,6 +1717,8 @@ enum MHD_OPTION
    * be followed by a `struct sockaddr *`.  If #MHD_USE_IPv6 is
    * specified, the `struct sockaddr*` should point to a `struct
    * sockaddr_in6`, otherwise to a `struct sockaddr_in`.
+   * Silently ignored if followed by NULL pointer.
+   * @deprecated Use #MHD_OPTION_SOCK_ADDR_LEN
    */
   MHD_OPTION_SOCK_ADDR = 6,
 
@@ -1629,12 +1733,12 @@ enum MHD_OPTION
    *     void * my_logger(void *cls, const char *uri, struct MHD_Connection *con)
    *
    * where the return value will be passed as
-   * (`* con_cls`) in calls to the #MHD_AccessHandlerCallback
+   * (`* req_cls`) in calls to the #MHD_AccessHandlerCallback
    * when this request is processed later; returning a
    * value of NULL has no special significance (however,
    * note that if you return non-NULL, you can no longer
    * rely on the first call to the access handler having
-   * `NULL == *con_cls` on entry;)
+   * `NULL == *req_cls` on entry;)
    * "cls" will be set to the second argument following
    * #MHD_OPTION_URI_LOG_CALLBACK.  Finally, uri will
    * be the 0-terminated URI of the request.
@@ -1674,8 +1778,15 @@ enum MHD_OPTION
   MHD_OPTION_HTTPS_CRED_TYPE = 10,
 
   /**
-   * Memory pointer to a `const char *` specifying the
-   * cipher algorithm (default: "NORMAL").
+   * Memory pointer to a `const char *` specifying the GnuTLS priorities string.
+   * If this options is not specified, then MHD will try the following strings:
+   * * "@LIBMICROHTTPD" (application-specific system-wide configuration)
+   * * "@SYSTEM"        (system-wide configuration)
+   * * default GnuTLS priorities string
+   * * "NORMAL"
+   * The first configuration accepted by GnuTLS will be used.
+   * For more details see GnuTLS documentation for "Application-specific
+   * priority strings".
    */
   MHD_OPTION_HTTPS_PRIORITIES = 11,
 
@@ -1684,6 +1795,8 @@ enum MHD_OPTION
    * option is used, MHD will not open its own listen socket(s). The
    * argument passed must be of type `MHD_socket` and refer to an
    * existing socket that has been bound to a port and is listening.
+   * If followed by MHD_INVALID_SOCKET value, MHD ignores this option
+   * and creates socket by itself.
    */
   MHD_OPTION_LISTEN_SOCKET = 12,
 
@@ -1705,10 +1818,9 @@ enum MHD_OPTION
   /**
    * Number (`unsigned int`) of threads in thread pool. Enable
    * thread pooling by setting this value to to something
-   * greater than 1. Currently, thread mode must be
-   * #MHD_USE_INTERNAL_POLLING_THREAD if thread pooling is enabled
-   * (#MHD_start_daemon returns NULL for an unsupported thread
-   * mode).
+   * greater than 1.
+   * Can be used only for daemons started with #MHD_USE_INTERNAL_POLLING_THREAD.
+   * Ignored if followed by zero value.
    */
   MHD_OPTION_THREAD_POOL_SIZE = 14,
 
@@ -1727,7 +1839,7 @@ enum MHD_OPTION
    *                           MHD_OPTION_END);
    *
    * For options that expect a single pointer argument, the
-   * second member of the `struct MHD_OptionItem` is ignored.
+   * 'value' member of the `struct MHD_OptionItem` is ignored.
    * For options that expect two pointer arguments, the first
    * argument must be cast to `intptr_t`.
    */
@@ -1758,11 +1870,15 @@ enum MHD_OPTION
   /**
    * Memory pointer for the random values to be used by the Digest
    * Auth module. This option should be followed by two arguments.
-   * First an integer of type  `size_t` which specifies the size
+   * First an integer of type `size_t` which specifies the size
    * of the buffer pointed to by the second argument in bytes.
+   * The recommended size is between 8 and 32. If size is four or less
+   * then security could be lowered. Sizes more then 32 (or, probably
+   * more than 16 - debatable) will not increase security.
    * Note that the application must ensure that the buffer of the
    * second argument remains allocated and unmodified while the
    * daemon is running.
+   * @sa #MHD_OPTION_DIGEST_AUTH_RANDOM_COPY
    */
   MHD_OPTION_DIGEST_AUTH_RANDOM = 17,
 
@@ -1770,6 +1886,11 @@ enum MHD_OPTION
    * Size of the internal array holding the map of the nonce and
    * the nonce counter. This option should be followed by an `unsigend int`
    * argument.
+   * The map size is 4 by default, which is enough to communicate with
+   * a single client at any given moment of time, but not enough to
+   * handle several clients simultaneously.
+   * If Digest Auth is not used, this option can be set to zero to minimise
+   * memory allocation.
    */
   MHD_OPTION_NONCE_NC_SIZE = 18,
 
@@ -1788,7 +1909,9 @@ enum MHD_OPTION
 
   /**
    * Increment to use for growing the read buffer (followed by a
-   * `size_t`). Must fit within #MHD_OPTION_CONNECTION_MEMORY_LIMIT.
+   * `size_t`).
+   * Must not be higher than 1/4 of #MHD_OPTION_CONNECTION_MEMORY_LIMIT.
+   * Since #MHD_VERSION 0x00097710 silently ignored if followed by zero value.
    */
   MHD_OPTION_CONNECTION_MEMORY_INCREMENT = 21,
 
@@ -1865,15 +1988,18 @@ enum MHD_OPTION
    * If set to 1 - be strict about the protocol.  Use -1 to be
    * as tolerant as possible.
    *
-   * Specifically, at the moment, at 1 this flag
-   * causes MHD to reject HTTP 1.1 connections without a "Host" header,
-   * and to disallow spaces in the URL or (at -1) in HTTP header key strings.
+   * The more flexible option #MHD_OPTION_CLIENT_DISCIPLINE_LVL is recommended
+   * instead of this option.
    *
-   * These are required by some versions of the standard, but of
-   * course in violation of the "be as liberal as possible in what you
-   * accept" norm.  It is recommended to set this to 1 if you are
-   * testing clients against MHD, and 0 in production.  This option
-   * should be followed by an `int` argument.
+   * The values mapping table:
+   * #MHD_OPTION_STRICT_FOR_CLIENT | #MHD_OPTION_CLIENT_DISCIPLINE_LVL
+   * -----------------------------:|:---------------------------------
+   * 1                             | 1
+   * 0                             | 0
+   * -1                            | -3
+   *
+   * This option should be followed by an `int` argument.
+   * @sa #MHD_OPTION_CLIENT_DISCIPLINE_LVL
    */
   MHD_OPTION_STRICT_FOR_CLIENT = 29,
 
@@ -1925,7 +2051,148 @@ enum MHD_OPTION
    * This option should be followed by an `int` argument.
    * @note Available since #MHD_VERSION 0x00097207
    */
-  MHD_OPTION_TLS_NO_ALPN = 34
+  MHD_OPTION_TLS_NO_ALPN = 34,
+
+  /**
+   * Memory pointer for the random values to be used by the Digest
+   * Auth module. This option should be followed by two arguments.
+   * First an integer of type `size_t` which specifies the size
+   * of the buffer pointed to by the second argument in bytes.
+   * The recommended size is between 8 and 32. If size is four or less
+   * then security could be lowered. Sizes more then 32 (or, probably
+   * more than 16 - debatable) will not increase security.
+   * An internal copy of the buffer will be made, the data do not
+   * need to be static.
+   * @sa #MHD_OPTION_DIGEST_AUTH_RANDOM
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_OPTION_DIGEST_AUTH_RANDOM_COPY = 35,
+
+  /**
+   * Allow to controls the scope of validity of MHD-generated nonces.
+   * This regulates how "nonces" are generated and how "nonces" are checked by
+   * #MHD_digest_auth_check3() and similar functions.
+   * This option should be followed by an 'unsigned int` argument with value
+   * formed as bitwise OR combination of #MHD_DAuthBindNonce values.
+   * When not specified, default value #MHD_DAUTH_BIND_NONCE_NONE is used.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE = 36,
+
+  /**
+   * Memory pointer to a `const char *` specifying the GnuTLS priorities to be
+   * appended to default priorities.
+   * This allow some specific options to be enabled/disabled, while leaving
+   * the rest of the settings to their defaults.
+   * The string does not have to start with a colon ':' character.
+   * See #MHD_OPTION_HTTPS_PRIORITIES description for details of automatic
+   * default priorities.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_OPTION_HTTPS_PRIORITIES_APPEND = 37,
+
+  /**
+   * Sets specified client discipline level (i.e. HTTP protocol parsing
+   * strictness level).
+   *
+   * The following basic values are supported:
+   *  0 - default MHD level, a balance between extra security and broader
+   *      compatibility, as allowed by RFCs for HTTP servers;
+   *  1 - more strict protocol interpretation, within the limits set by
+   *      RFCs for HTTP servers;
+   * -1 - more lenient protocol interpretation, within the limits set by
+   *      RFCs for HTTP servers.
+   * The following extended values could be used as well:
+   *  2 - stricter protocol interpretation, even stricter then allowed
+   *      by RFCs for HTTP servers, however it should be absolutely compatible
+   *      with clients following at least RFCs' "MUST" type of requirements
+   *      for HTTP clients;
+   *  3 - strictest protocol interpretation, even stricter then allowed
+   *      by RFCs for HTTP servers, however it should be absolutely compatible
+   *      with clients following RFCs' "SHOULD" and "MUST" types of requirements
+   *      for HTTP clients;
+   * -2 - more relaxed protocol interpretation, violating RFCs' "SHOULD" type
+   *      of requirements for HTTP servers;
+   * -3 - the most flexible protocol interpretation, beyond RFCs' "MUST" type of
+   *      requirements for HTTP server.
+   * Values higher than "3" or lower than "-3" are interpreted as "3" or "-3"
+   * respectively.
+   *
+   * Higher values are more secure, lower values are more compatible with
+   * various HTTP clients.
+   *
+   * The default value ("0") could be used in most cases.
+   * Value "1" is suitable for highly loaded public servers.
+   * Values "2" and "3" are generally recommended only for testing of HTTP
+   * clients against MHD.
+   * Value "2" may be used for security-centric application, however it is
+   * slight violation of RFCs' requirements.
+   * Negative values are not recommended for public servers.
+   * Values "-1" and "-2" could be used for servers in isolated environment.
+   * Value "-3" is not recommended unless it is absolutely necessary to
+   * communicate with some client(s) with badly broken HTTP implementation.
+   *
+   * This option should be followed by an `int` argument.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_OPTION_CLIENT_DISCIPLINE_LVL = 38,
+
+  /**
+   * Specifies value of FD_SETSIZE used by application.  Only For external
+   * polling modes (without MHD internal threads).
+   * Some platforms (FreeBSD, Solaris, W32 etc.) allow overriding of FD_SETSIZE
+   * value.  When polling by select() is used, MHD rejects sockets with numbers
+   * equal or higher than FD_SETSIZE.  If this option is used, MHD treats this
+   * value as a limitation for socket number instead of FD_SETSIZE value which
+   * was used for building MHD.
+   * When external polling is used with #MHD_get_fdset2() (or #MHD_get_fdset()
+   * macro) and #MHD_run_from_select() interfaces, it is recommended to always
+   * use this option.
+   * It is safe to use this option on platforms with fixed FD_SETSIZE (like
+   * GNU/Linux) if system value of FD_SETSIZE is used as the argument.
+   * Can be used only for daemons without #MHD_USE_INTERNAL_POLLING_THREAD, i.e.
+   * only when external sockets polling is used.
+   * On W32 it is silently ignored, as W32 does not limit the socket number in
+   * fd_sets.
+   * This option should be followed by a positive 'int' argument.
+   * @note Available since #MHD_VERSION 0x00097705
+   */
+  MHD_OPTION_APP_FD_SETSIZE = 39,
+
+  /**
+   * Bind daemon to the supplied 'struct sockaddr'.  This option should
+   * be followed by two parameters: 'socklen_t' the size of memory at the next
+   * pointer and the pointer 'const struct sockaddr *'.
+   * Note: the order of the arguments is not the same as for system bind() and
+   * other network functions.
+   * If #MHD_USE_IPv6 is specified, the 'struct sockaddr*' should
+   * point to a 'struct sockaddr_in6'.
+   * The socket domain (protocol family) is detected from provided
+   * 'struct sockaddr'. IP, IPv6 and UNIX sockets are supported (if supported
+   * by the platform). Other types may work occasionally.
+   * Silently ignored if followed by zero size and NULL pointer.
+   * @note Available since #MHD_VERSION 0x00097706
+   */
+  MHD_OPTION_SOCK_ADDR_LEN = 40
+  ,
+  /**
+   * Default nonce timeout value used for Digest Auth.
+   * This option should be followed by an 'unsigned int' argument.
+   * Silently ignored if followed by zero value.
+   * @see #MHD_digest_auth_check3(), MHD_digest_auth_check_digest3()
+   * @note Available since #MHD_VERSION 0x00097709
+   */
+  MHD_OPTION_DIGEST_AUTH_DEFAULT_NONCE_TIMEOUT = 41
+  ,
+  /**
+   * Default maximum nc (nonce count) value used for Digest Auth.
+   * This option should be followed by an 'uint32_t' argument.
+   * Silently ignored if followed by zero value.
+   * @see #MHD_digest_auth_check3(), MHD_digest_auth_check_digest3()
+   * @note Available since #MHD_VERSION 0x00097709
+   */
+  MHD_OPTION_DIGEST_AUTH_DEFAULT_MAX_NC = 42
+
 } _MHD_FIXED_ENUM;
 
 
@@ -2141,6 +2408,8 @@ union MHD_ConnectionInfo
 
   /**
    * Size of the client's HTTP header.
+   * It includes the request line, all request headers, the header section
+   * terminating empty line, with all CRLF (or LF) characters.
    */
   size_t header_size;
 
@@ -2252,10 +2521,10 @@ enum MHD_ConnectionInfoType
   /**
    * Returns the client-specific pointer to a `void *` that was (possibly)
    * set during a #MHD_NotifyConnectionCallback when the socket was
-   * first accepted.  Note that this is NOT the same as the "con_cls"
-   * argument of the #MHD_AccessHandlerCallback.  The "con_cls" is
-   * fresh for each HTTP request, while the "socket_context" is fresh
-   * for each socket.
+   * first accepted.
+   * Note that this is NOT the same as the "req_cls" argument of
+   * the #MHD_AccessHandlerCallback. The "req_cls" is fresh for each
+   * HTTP request, while the "socket_context" is fresh for each socket.
    */
   MHD_CONNECTION_INFO_SOCKET_CONTEXT,
 
@@ -2355,7 +2624,8 @@ enum MHD_DaemonInfoType
  * an error message and `abort()`.
  *
  * @param cls user specified value
- * @param file where the error occurred
+ * @param file where the error occurred, may be NULL if MHD was built without
+ *             messages support
  * @param line where the error occurred
  * @param reason error detail, may be NULL
  * @ingroup logging
@@ -2412,6 +2682,7 @@ typedef enum MHD_Result
  *
  * @param cls argument given together with the function
  *        pointer when the handler was registered with MHD
+ * @param connection the connection handle
  * @param url the requested url
  * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
  *        #MHD_HTTP_METHOD_PUT, etc.)
@@ -2427,7 +2698,7 @@ typedef enum MHD_Result
  * @param[in,out] upload_data_size set initially to the size of the
  *        @a upload_data provided; the method must update this
  *        value to the number of bytes NOT processed;
- * @param[in,out] con_cls pointer that the callback can set to some
+ * @param[in,out] req_cls pointer that the callback can set to some
  *        address and that will be preserved by MHD for future
  *        calls for this request; since the access handler may
  *        be called many times (i.e., for a PUT/POST operation
@@ -2436,7 +2707,7 @@ typedef enum MHD_Result
  *        If necessary, this state can be cleaned up in the
  *        global #MHD_RequestCompletedCallback (which
  *        can be set with the #MHD_OPTION_NOTIFY_COMPLETED).
- *        Initially, `*con_cls` will be NULL.
+ *        Initially, `*req_cls` will be NULL.
  * @return #MHD_YES if the connection was handled successfully,
  *         #MHD_NO if the socket must be closed due to a serious
  *         error while handling the request
@@ -2451,7 +2722,7 @@ typedef enum MHD_Result
                              const char *version,
                              const char *upload_data,
                              size_t *upload_data_size,
-                             void **con_cls);
+                             void **req_cls);
 
 
 /**
@@ -2460,7 +2731,7 @@ typedef enum MHD_Result
  *
  * @param cls client-defined closure
  * @param connection connection handle
- * @param con_cls value as set by the last call to
+ * @param req_cls value as set by the last call to
  *        the #MHD_AccessHandlerCallback
  * @param toe reason for request termination
  * @see #MHD_OPTION_NOTIFY_COMPLETED
@@ -2469,7 +2740,7 @@ typedef enum MHD_Result
 typedef void
 (*MHD_RequestCompletedCallback) (void *cls,
                                  struct MHD_Connection *connection,
-                                 void **con_cls,
+                                 void **req_cls,
                                  enum MHD_RequestTerminationCode toe);
 
 
@@ -2482,7 +2753,7 @@ typedef void
  * @param socket_context socket-specific pointer where the
  *                       client can associate some state specific
  *                       to the TCP connection; note that this is
- *                       different from the "con_cls" which is per
+ *                       different from the "req_cls" which is per
  *                       HTTP request.  The client can initialize
  *                       during #MHD_CONNECTION_NOTIFY_STARTED and
  *                       cleanup during #MHD_CONNECTION_NOTIFY_CLOSED
@@ -2621,7 +2892,8 @@ typedef void
  *
  * @param cls user-specified closure
  * @param kind type of the value, always #MHD_POSTDATA_KIND when called from MHD
- * @param key 0-terminated key for the value
+ * @param key 0-terminated key for the value, NULL if not known. This value
+ *            is never NULL for url-encoded POST data.
  * @param filename name of the uploaded file, NULL if not known
  * @param content_type mime-type of the data, NULL if not known
  * @param transfer_encoding encoding of the data, NULL if not known
@@ -2900,18 +3172,20 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * return #MHD_YES will break MHD processing logic and result in "hung"
  * connections with data pending in network buffers and other problems.
  *
- * It is important to always use this function when "external" polling is
- * used. If this function returns #MHD_YES then #MHD_run() (or
- * #MHD_run_from_select()) must be called right after return from polling
- * function, regardless of the states of MHD fds.
+ * It is important to always use this function (or #MHD_get_timeout64(),
+ * #MHD_get_timeout64s(), #MHD_get_timeout_i() functions) when "external"
+ * polling is used.
+ * If this function returns #MHD_YES then #MHD_run() (or #MHD_run_from_select())
+ * must be called right after return from polling function, regardless of
+ * the states of MHD FDs.
  *
  * In practice, if #MHD_YES is returned then #MHD_run() (or
  * #MHD_run_from_select()) must be called not later than @a timeout
- * millisecond even if not activity is detected on sockets by
- * sockets polling function.
+ * millisecond even if no activity is detected on sockets by sockets
+ * polling function.
  *
  * @param daemon daemon to query for timeout
- * @param timeout set to the timeout (in milliseconds)
+ * @param[out] timeout set to the timeout (in milliseconds)
  * @return #MHD_YES on success, #MHD_NO if timeouts are
  *         not used and no data processing is pending.
  * @ingroup event
@@ -2919,6 +3193,142 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
 _MHD_EXTERN enum MHD_Result
 MHD_get_timeout (struct MHD_Daemon *daemon,
                  MHD_UNSIGNED_LONG_LONG *timeout);
+
+
+/**
+ * Free the memory allocated by MHD.
+ *
+ * If any MHD function explicitly mentions that returned pointer must be
+ * freed by this function, then no other method must be used to free
+ * the memory.
+ *
+ * @param ptr the pointer to free.
+ * @sa #MHD_digest_auth_get_username(), #MHD_basic_auth_get_username_password3()
+ * @sa #MHD_basic_auth_get_username_password()
+ * @note Available since #MHD_VERSION 0x00095600
+ * @ingroup specialized
+ */
+_MHD_EXTERN void
+MHD_free (void *ptr);
+
+/**
+ * Obtain timeout value for external polling function for this daemon.
+ *
+ * This function set value to the amount of milliseconds for which polling
+ * function (`select()`, `poll()` or epoll) should at most block, not the
+ * timeout value set for connections.
+ *
+ * Any "external" sockets polling function must be called with the timeout
+ * value provided by this function. Smaller timeout values can be used for
+ * polling function if it is required for any reason, but using larger
+ * timeout value or no timeout (indefinite timeout) when this function
+ * return #MHD_YES will break MHD processing logic and result in "hung"
+ * connections with data pending in network buffers and other problems.
+ *
+ * It is important to always use this function (or #MHD_get_timeout(),
+ * #MHD_get_timeout64s(), #MHD_get_timeout_i() functions) when "external"
+ * polling is used.
+ * If this function returns #MHD_YES then #MHD_run() (or #MHD_run_from_select())
+ * must be called right after return from polling function, regardless of
+ * the states of MHD FDs.
+ *
+ * In practice, if #MHD_YES is returned then #MHD_run() (or
+ * #MHD_run_from_select()) must be called not later than @a timeout
+ * millisecond even if no activity is detected on sockets by sockets
+ * polling function.
+ *
+ * @param daemon daemon to query for timeout
+ * @param[out] timeout64 the pointer to the variable to be set to the
+ *                  timeout (in milliseconds)
+ * @return #MHD_YES if timeout value has been set,
+ *         #MHD_NO if timeouts are not used and no data processing is pending.
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_get_timeout64 (struct MHD_Daemon *daemon,
+                   uint64_t *timeout);
+
+
+/**
+ * Obtain timeout value for external polling function for this daemon.
+ *
+ * This function set value to the amount of milliseconds for which polling
+ * function (`select()`, `poll()` or epoll) should at most block, not the
+ * timeout value set for connections.
+ *
+ * Any "external" sockets polling function must be called with the timeout
+ * value provided by this function (if returned value is non-negative).
+ * Smaller timeout values can be used for polling function if it is required
+ * for any reason, but using larger timeout value or no timeout (indefinite
+ * timeout) when this function returns non-negative value will break MHD
+ * processing logic and result in "hung" connections with data pending in
+ * network buffers and other problems.
+ *
+ * It is important to always use this function (or #MHD_get_timeout(),
+ * #MHD_get_timeout64(), #MHD_get_timeout_i() functions) when "external"
+ * polling is used.
+ * If this function returns non-negative value then #MHD_run() (or
+ * #MHD_run_from_select()) must be called right after return from polling
+ * function, regardless of the states of MHD FDs.
+ *
+ * In practice, if zero or positive value is returned then #MHD_run() (or
+ * #MHD_run_from_select()) must be called not later than returned amount of
+ * millisecond even if no activity is detected on sockets by sockets
+ * polling function.
+ *
+ * @param daemon the daemon to query for timeout
+ * @return -1 if connections' timeouts are not set and no data processing
+ *         is pending, so external polling function may wait for sockets
+ *         activity for indefinite amount of time,
+ *         otherwise returned value is the the maximum amount of millisecond
+ *         that external polling function must wait for the activity of FDs.
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup event
+ */
+_MHD_EXTERN int64_t
+MHD_get_timeout64s (struct MHD_Daemon *daemon);
+
+
+/**
+ * Obtain timeout value for external polling function for this daemon.
+ *
+ * This function set value to the amount of milliseconds for which polling
+ * function (`select()`, `poll()` or epoll) should at most block, not the
+ * timeout value set for connections.
+ *
+ * Any "external" sockets polling function must be called with the timeout
+ * value provided by this function (if returned value is non-negative).
+ * Smaller timeout values can be used for polling function if it is required
+ * for any reason, but using larger timeout value or no timeout (indefinite
+ * timeout) when this function returns non-negative value will break MHD
+ * processing logic and result in "hung" connections with data pending in
+ * network buffers and other problems.
+ *
+ * It is important to always use this function (or #MHD_get_timeout(),
+ * #MHD_get_timeout64(), #MHD_get_timeout64s() functions) when "external"
+ * polling is used.
+ * If this function returns non-negative value then #MHD_run() (or
+ * #MHD_run_from_select()) must be called right after return from polling
+ * function, regardless of the states of MHD FDs.
+ *
+ * In practice, if zero or positive value is returned then #MHD_run() (or
+ * #MHD_run_from_select()) must be called not later than returned amount of
+ * millisecond even if no activity is detected on sockets by sockets
+ * polling function.
+ *
+ * @param daemon the daemon to query for timeout
+ * @return -1 if connections' timeouts are not set and no data processing
+ *         is pending, so external polling function may wait for sockets
+ *         activity for indefinite amount of time,
+ *         otherwise returned value is the the maximum amount of millisecond
+ *         (capped at INT_MAX) that external polling function must wait
+ *         for the activity of FDs.
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup event
+ */
+_MHD_EXTERN int
+MHD_get_timeout_i (struct MHD_Daemon *daemon);
 
 
 /**
@@ -3028,6 +3438,78 @@ MHD_run_from_select (struct MHD_Daemon *daemon,
                      const fd_set *except_fd_set);
 
 
+/**
+ * Run webserver operations. This method should be called by clients
+ * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
+ * client-controlled select method is used.
+ * This function specifies FD_SETSIZE used when provided fd_sets were
+ * created. It is important on platforms where FD_SETSIZE can be
+ * overridden.
+ *
+ * You can use this function instead of #MHD_run if you called
+ * 'select()' on the result from #MHD_get_fdset2().  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of #MHD_run() is more efficient as MHD will
+ * not have to call 'select()' again to determine which operations are
+ * ready.
+ *
+ * If #MHD_get_timeout() returned #MHD_YES, than this function must be
+ * called right after 'select()' returns regardless of detected activity
+ * on the daemon's FDs.
+ *
+ * This function cannot be used with daemon started with
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon the daemon to run select loop for
+ * @param read_fd_set the read set
+ * @param write_fd_set the write set
+ * @param except_fd_set the except set
+ * @param fd_setsize the value of FD_SETSIZE
+ * @return #MHD_NO on serious errors, #MHD_YES on success
+ * @sa #MHD_get_fdset2(), #MHD_OPTION_APP_FD_SETSIZE
+ * @ingroup event
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_run_from_select2 (struct MHD_Daemon *daemon,
+                      const fd_set *read_fd_set,
+                      const fd_set *write_fd_set,
+                      const fd_set *except_fd_set,
+                      unsigned int fd_setsize);
+
+
+/**
+ * Run webserver operations. This method should be called by clients
+ * in combination with #MHD_get_fdset and #MHD_get_timeout() if the
+ * client-controlled select method is used.
+ * This macro automatically substitutes current FD_SETSIZE value.
+ * It is important on platforms where FD_SETSIZE can be overridden.
+ *
+ * You can use this function instead of #MHD_run if you called
+ * 'select()' on the result from #MHD_get_fdset2().  File descriptors in
+ * the sets that are not controlled by MHD will be ignored.  Calling
+ * this function instead of #MHD_run() is more efficient as MHD will
+ * not have to call 'select()' again to determine which operations are
+ * ready.
+ *
+ * If #MHD_get_timeout() returned #MHD_YES, than this function must be
+ * called right after 'select()' returns regardless of detected activity
+ * on the daemon's FDs.
+ *
+ * This function cannot be used with daemon started with
+ * #MHD_USE_INTERNAL_POLLING_THREAD flag.
+ *
+ * @param daemon the daemon to run select loop for
+ * @param read_fd_set the read set
+ * @param write_fd_set the write set
+ * @param except_fd_set the except set
+ * @param fd_setsize the value of FD_SETSIZE
+ * @return #MHD_NO on serious errors, #MHD_YES on success
+ * @sa #MHD_get_fdset2(), #MHD_OPTION_APP_FD_SETSIZE
+ * @ingroup event
+ */
+#define MHD_run_from_select(d,r,w,e) \
+  MHD_run_from_select2((d),(r),(w),(e),(unsigned int)(FD_SETSIZE))
+
 /* **************** Connection handling functions ***************** */
 
 /**
@@ -3075,7 +3557,6 @@ MHD_get_connection_values_n (struct MHD_Connection *connection,
  * return them -- and the `struct MHD_PostProcessor` will also see
  * them).  This maybe required in certain situations (see Mantis
  * #1399) where (broken) HTTP implementations fail to supply values
-
  * needed by the post processor (or other parts of the application).
  *
  * This function MUST only be called from within the
@@ -3138,18 +3619,20 @@ MHD_set_connection_value_n (struct MHD_Connection *connection,
 
 
 /**
- * Sets the global error handler to a different implementation.  @a cb
- * will only be called in the case of typically fatal, serious
- * internal consistency issues.  These issues should only arise in the
- * case of serious memory corruption or similar problems with the
- * architecture.  While @a cb is allowed to return and MHD will then
- * try to continue, this is never safe.
+ * Sets the global error handler to a different implementation.
  *
- * The default implementation that is used if no panic function is set
- * simply prints an error message and calls `abort()`.  Alternative
- * implementations might call `exit()` or other similar functions.
+ * @a cb will only be called in the case of typically fatal, serious internal
+ * consistency issues or serious system failures like failed lock of mutex.
  *
- * @param cb new error handler
+ * These issues should only arise in the case of serious memory corruption or
+ * similar problems with the architecture, there is no safe way to continue
+ * even for closing of the application.
+ *
+ * The default implementation that is used if no panic function is set simply
+ * prints an error message and calls `abort()`.
+ * Alternative implementations might call `exit()` or other similar functions.
+ *
+ * @param cb new error handler or NULL to use default handler
  * @param cls passed to @a cb
  * @ingroup logging
  */
@@ -3159,8 +3642,8 @@ MHD_set_panic_func (MHD_PanicCallback cb, void *cls);
 
 /**
  * Process escape sequences ('%HH') Updates val in place; the
- * result should be UTF-8 encoded and cannot be larger than the input.
- * The result must also still be 0-terminated.
+ * result cannot be larger than the input.
+ * The result is still be 0-terminated.
  *
  * @param val value to unescape (modified in the process)
  * @return length of the resulting val (`strlen(val)` may be
@@ -3220,13 +3703,41 @@ MHD_lookup_connection_value_n (struct MHD_Connection *connection,
  *
  * For any active connection this function must be called
  * only by #MHD_AccessHandlerCallback callback.
- * For suspended connection this function can be called at any moment. Response
- * will be sent as soon as connection is resumed.
+ *
+ * For suspended connection this function can be called at any moment (this
+ * behaviour is deprecated and will be removed!). Response  will be sent
+ * as soon as connection is resumed.
+ *
+ * For single thread environment, when MHD is used in "external polling" mode
+ * (without MHD_USE_SELECT_INTERNALLY) this function can be called any
+ * time (this behaviour is deprecated and will be removed!).
+ *
+ * If HTTP specifications require use no body in reply, like @a status_code with
+ * value 1xx, the response body is automatically not sent even if it is present
+ * in the response. No "Content-Length" or "Transfer-Encoding" headers are
+ * generated and added.
+ *
+ * When the response is used to respond HEAD request or used with @a status_code
+ * #MHD_HTTP_NOT_MODIFIED, then response body is not sent, but "Content-Length"
+ * header is added automatically based the size of the body in the response.
+ * If body size it set to #MHD_SIZE_UNKNOWN or chunked encoding is enforced
+ * then "Transfer-Encoding: chunked" header (for HTTP/1.1 only) is added instead
+ * of "Content-Length" header. For example, if response with zero-size body is
+ * used for HEAD request, then "Content-Length: 0" is added automatically to
+ * reply headers.
+ * @sa #MHD_RF_HEAD_ONLY_RESPONSE
+ *
+ * In situations, where reply body is required, like answer for the GET request
+ * with @a status_code #MHD_HTTP_OK, headers "Content-Length" (for known body
+ * size) or "Transfer-Encoding: chunked" (for #MHD_SIZE_UNKNOWN with HTTP/1.1)
+ * are added automatically.
+ * In practice, the same response object can be used to respond to both HEAD and
+ * GET requests.
  *
  * @param connection the connection identifying the client
  * @param status_code HTTP status code (i.e. #MHD_HTTP_OK)
- * @param response response to transmit
- * @return #MHD_NO on error (i.e. reply already sent),
+ * @param response response to transmit, the NULL is tolerated
+ * @return #MHD_NO on error (reply already sent, response is NULL),
  *         #MHD_YES on success or if message has been queued
  * @ingroup response
  * @sa #MHD_AccessHandlerCallback
@@ -3344,6 +3855,8 @@ enum MHD_ResponseFlags
   /**
    * Disable sanity check preventing clients from manually
    * setting the HTTP content length option.
+   * Allow to set several "Content-Length" headers. These headers will
+   * be used even with replies without body.
    * @note Available since #MHD_VERSION 0x00096702
    */
   MHD_RF_INSANITY_HEADER_CONTENT_LENGTH = 1 << 2,
@@ -3354,7 +3867,24 @@ enum MHD_ResponseFlags
    * Disabled by default for HTTP/1.1 clients as per RFC.
    * @note Available since #MHD_VERSION 0x00097310
    */
-  MHD_RF_SEND_KEEP_ALIVE_HEADER = 1 << 3
+  MHD_RF_SEND_KEEP_ALIVE_HEADER = 1 << 3,
+
+  /**
+   * Enable special processing of the response as body-less (with undefined
+   * body size). No automatic "Content-Length" or "Transfer-Encoding: chunked"
+   * headers are added when the response is used with #MHD_HTTP_NOT_MODIFIED
+   * code or to respond to HEAD request.
+   * The flag also allow to set arbitrary "Content-Length" by
+   * MHD_add_response_header() function.
+   * This flag value can be used only with responses created without body
+   * (zero-size body).
+   * Responses with this flag enabled cannot be used in situations where
+   * reply body must be sent to the client.
+   * This flag is primarily intended to be used when automatic "Content-Length"
+   * header is undesirable in response to HEAD requests.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_RF_HEAD_ONLY_RESPONSE = 1 << 4
 } _MHD_FIXED_FLAGS_ENUM;
 
 
@@ -3385,8 +3915,13 @@ MHD_set_response_options (struct MHD_Response *response,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object.
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * If response object is used to answer HEAD request then the body of the
+ * response is not used, while all headers (including automatic headers) are
+ * used.
  *
  * @param size size of the data portion of the response, #MHD_SIZE_UNKNOWN for unknown
  * @param block_size preferred block size for querying crc (advisory only,
@@ -3408,8 +3943,13 @@ MHD_create_response_from_callback (uint64_t size,
 
 
 /**
- * Create a response object.  The response object can be extended with
- * header information and then be used any number of times.
+ * Create a response object.
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * If response object is used to answer HEAD request then the body of the
+ * response is not used, while all headers (including automatic headers) are
+ * used.
  *
  * @param size size of the @a data portion of the response
  * @param data the data itself
@@ -3421,8 +3961,8 @@ MHD_create_response_from_callback (uint64_t size,
  * @deprecated use #MHD_create_response_from_buffer instead
  * @ingroup response
  */
-_MHD_DEPR_FUNC (
-  "MHD_create_response_from_data() is deprecated, use MHD_create_response_from_buffer()") \
+_MHD_DEPR_FUNC ("MHD_create_response_from_data() is deprecated, " \
+                "use MHD_create_response_from_buffer()") \
   _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_data (size_t size,
                                void *data,
@@ -3450,6 +3990,12 @@ enum MHD_ResponseMemoryMode
    * Buffer is heap-allocated with `malloc()` (or equivalent) and
    * should be freed by MHD after processing the response has
    * concluded (response reference counter reaches zero).
+   * The more portable way to automatically free the buffer is function
+   * MHD_create_response_from_buffer_with_free_callback() with '&free' as
+   * crfc parameter as it does not require to use the same runtime library.
+   * @warning It is critical to make sure that the same C-runtime library
+   *          is used by both application and MHD (especially
+   *          important for W32).
    * @ingroup response
    */
   MHD_RESPMEM_MUST_FREE,
@@ -3487,6 +4033,59 @@ _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer (size_t size,
                                  void *buffer,
                                  enum MHD_ResponseMemoryMode mode);
+
+
+/**
+ * Create a response object with the content of provided statically allocated
+ * buffer used as the response body.
+ *
+ * The buffer must be valid for the lifetime of the response. The easiest way
+ * to achieve this is to use a statically allocated buffer.
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param size the size of the data in @a buffer, can be zero
+ * @param buffer the buffer with the data for the response body, can be NULL
+ *               if @a size is zero
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_static (size_t size,
+                                        const void *buffer);
+
+
+/**
+ * Create a response object with the content of provided temporal buffer
+ * used as the response body.
+ *
+ * An internal copy of the buffer will be made automatically, so buffer have
+ * to be valid only during the call of this function (as a typical example:
+ * buffer is a local (non-static) array).
+ *
+ * The response object can be extended with header information and then
+ * be used any number of times.
+ *
+ * If response object is used to answer HEAD request then the body
+ * of the response is not used, while all headers (including automatic
+ * headers) are used.
+ *
+ * @param size the size of the data in @a buffer, can be zero
+ * @param buffer the buffer with the data for the response body, can be NULL
+ *               if @a size is zero
+ * @return NULL on error (i.e. invalid arguments, out of memory)
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_from_buffer_copy (size_t size,
+                                      const void *buffer);
 
 
 /**
@@ -3532,11 +4131,12 @@ MHD_create_response_from_buffer_with_free_callback (size_t size,
  * @param crfc_cls an argument for @a crfc
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @note Available since #MHD_VERSION 0x00097302
+ * @note 'const' qualifier is used for @a buffer since #MHD_VERSION 0x00097701
  * @ingroup response
  */
 _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_buffer_with_free_callback_cls (size_t size,
-                                                        void *buffer,
+                                                        const void *buffer,
                                                         MHD_ContentReaderFreeCallback
                                                         crfc,
                                                         void *crfc_cls);
@@ -3635,8 +4235,8 @@ MHD_create_response_from_fd64 (uint64_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-_MHD_DEPR_FUNC (
-  "Function MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()") \
+_MHD_DEPR_FUNC ("Function MHD_create_response_from_fd_at_offset() is " \
+                "deprecated, use MHD_create_response_from_fd_at_offset64()") \
   _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
@@ -3707,6 +4307,25 @@ MHD_create_response_from_iovec (const struct MHD_IoVec *iov,
                                 unsigned int iovcnt,
                                 MHD_ContentReaderFreeCallback free_cb,
                                 void *cls);
+
+
+/**
+ * Create a response object with empty (zero size) body.
+ *
+ * The response object can be extended with header information and then be used
+ * any number of times.
+ *
+ * This function is a faster equivalent of #MHD_create_response_from_buffer call
+ * with zero size combined with call of #MHD_set_response_options.
+ *
+ * @param flags the flags for the new response object
+ * @return NULL on error (i.e. invalid arguments, out of memory),
+ *         the pointer to the created response object otherwise
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup response
+ */
+_MHD_EXTERN struct MHD_Response *
+MHD_create_response_empty (enum MHD_ResponseFlags flags);
 
 
 /**
@@ -3789,7 +4408,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
  * @param connection original HTTP connection handle,
  *                   giving the function a last chance
  *                   to inspect the original HTTP request
- * @param con_cls last value left in `con_cls` of the `MHD_AccessHandlerCallback`
+ * @param req_cls last value left in `req_cls` of the `MHD_AccessHandlerCallback`
  * @param extra_in if we happened to have read bytes after the
  *                 HTTP header already (because the client sent
  *                 more than the HTTP header of the request before
@@ -3814,7 +4433,7 @@ MHD_upgrade_action (struct MHD_UpgradeResponseHandle *urh,
 typedef void
 (*MHD_UpgradeHandler)(void *cls,
                       struct MHD_Connection *connection,
-                      void *con_cls,
+                      void *req_cls,
                       const char *extra_in,
                       size_t extra_in_size,
                       MHD_socket sock,
@@ -4057,8 +4676,1076 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 
 
 /**
+ * Length of the binary output of the MD5 hash function.
+ * @sa #MHD_digest_get_hash_size()
+ * @ingroup authentication
+ */
+#define MHD_MD5_DIGEST_SIZE 16
+
+/**
+ * Length of the binary output of the SHA-256 hash function.
+ * @sa #MHD_digest_get_hash_size()
+ * @ingroup authentication
+ */
+#define MHD_SHA256_DIGEST_SIZE 32
+
+/**
+ * Length of the binary output of the SHA-512/256 hash function.
+ * @warning While this value is the same as the #MHD_SHA256_DIGEST_SIZE,
+ *          the calculated digests for SHA-256 and SHA-512/256 are different.
+ * @sa #MHD_digest_get_hash_size()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+#define MHD_SHA512_256_DIGEST_SIZE 32
+
+/**
+ * Base type of hash calculation.
+ * Used as part of #MHD_DigestAuthAlgo3 values.
+ *
+ * @warning Not used directly by MHD API.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestBaseAlgo
+{
+  /**
+   * Invalid hash algorithm value
+   */
+  MHD_DIGEST_BASE_ALGO_INVALID = 0,
+
+  /**
+   * MD5 hash algorithm.
+   * As specified by RFC1321
+   */
+  MHD_DIGEST_BASE_ALGO_MD5 = (1 << 0),
+
+  /**
+   * SHA-256 hash algorithm.
+   * As specified by FIPS PUB 180-4
+   */
+  MHD_DIGEST_BASE_ALGO_SHA256 = (1 << 1),
+
+  /**
+   * SHA-512/256 hash algorithm.
+   * As specified by FIPS PUB 180-4
+   */
+  MHD_DIGEST_BASE_ALGO_SHA512_256 = (1 << 2)
+} _MHD_FIXED_FLAGS_ENUM;
+
+/**
+ * The flag indicating non-session algorithm types,
+ * like 'MD5', 'SHA-256' or 'SHA-512-256'.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+#define MHD_DIGEST_AUTH_ALGO3_NON_SESSION    (1 << 6)
+
+/**
+ * The flag indicating session algorithm types,
+ * like 'MD5-sess', 'SHA-256-sess' or 'SHA-512-256-sess'.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+#define MHD_DIGEST_AUTH_ALGO3_SESSION        (1 << 7)
+
+/**
+ * Digest algorithm identification
+ * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+ *          which uses other values!
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthAlgo3
+{
+  /**
+   * Unknown or wrong algorithm type.
+   * Used in struct MHD_DigestAuthInfo to indicate client value that
+   * cannot by identified.
+   */
+  MHD_DIGEST_AUTH_ALGO3_INVALID = 0,
+
+  /**
+   * The 'MD5' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_ALGO3_MD5 =
+    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
+  /**
+   * The 'MD5-sess' algorithm.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_ALGO3_MD5_SESSION =
+    MHD_DIGEST_BASE_ALGO_MD5 | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
+  /**
+   * The 'SHA-256' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA256 =
+    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
+  /**
+   * The 'SHA-256-sess' algorithm.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION =
+    MHD_DIGEST_BASE_ALGO_SHA256 | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
+  /**
+   * The 'SHA-512-256' (SHA-512/256) algorithm.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA512_256 =
+    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
+  /**
+   * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION =
+    MHD_DIGEST_BASE_ALGO_SHA512_256 | MHD_DIGEST_AUTH_ALGO3_SESSION
+};
+
+
+/**
+ * Get digest size for specified algorithm.
+ *
+ * The size of the digest specifies the size of the userhash, userdigest
+ * and other parameters which size depends on used hash algorithm.
+ * @param algo3 the algorithm to check
+ * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
+ *         #MHD_SHA256_DIGEST_SIZE/MHD_SHA512_256_DIGEST_SIZE)
+ *         or zero if the input value is not supported or not valid
+ * @sa #MHD_digest_auth_calc_userdigest()
+ * @sa #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_calc_userhash_hex()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN size_t
+MHD_digest_get_hash_size (enum MHD_DigestAuthAlgo3 algo3);
+
+/**
+ * Digest algorithm identification, allow multiple selection.
+ *
+ * #MHD_DigestAuthAlgo3 always can be casted to #MHD_DigestAuthMultiAlgo3, but
+ * not vice versa.
+ *
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthMultiAlgo3
+{
+  /**
+   * Unknown or wrong algorithm type.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_INVALID = MHD_DIGEST_AUTH_ALGO3_INVALID,
+
+  /**
+   * The 'MD5' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5 = MHD_DIGEST_AUTH_ALGO3_MD5,
+
+  /**
+   * The 'MD5-sess' algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5_SESSION = MHD_DIGEST_AUTH_ALGO3_MD5_SESSION,
+
+  /**
+   * The 'SHA-256' algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256 = MHD_DIGEST_AUTH_ALGO3_SHA256,
+
+  /**
+   * The 'SHA-256-sess' algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION,
+
+  /**
+   * The 'SHA-512-256' (SHA-512/256) algorithm, non-session version.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256 = MHD_DIGEST_AUTH_ALGO3_SHA512_256,
+
+  /**
+   * The 'SHA-512-256-sess' (SHA-512/256 session) algorithm.
+   * Not supported by MHD for authentication.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION,
+
+  /**
+   * SHA-256 or SHA-512/256 non-session algorithm, MHD will choose
+   * the preferred or the matching one.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_NON_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA256 | MHD_DIGEST_AUTH_ALGO3_SHA512_256,
+
+  /**
+   * Any non-session algorithm, MHD will choose the preferred or
+   * the matching one.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY_NON_SESSION =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION,
+
+  /**
+   * The SHA-256 or SHA-512/256 session algorithm.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_SESSION =
+    MHD_DIGEST_AUTH_ALGO3_SHA256_SESSION
+    | MHD_DIGEST_AUTH_ALGO3_SHA512_256_SESSION,
+
+  /**
+   * Any session algorithm.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY_SESSION =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_SESSION,
+
+  /**
+   * The MD5 algorithm, session or non-session.
+   * Currently supported as non-session only.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_MD5_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_MD5 | MHD_DIGEST_AUTH_MULT_ALGO3_MD5_SESSION,
+
+  /**
+   * The SHA-256 algorithm, session or non-session.
+   * Currently supported as non-session only.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_SHA256
+    | MHD_DIGEST_AUTH_MULT_ALGO3_SHA256_SESSION,
+
+  /**
+   * The SHA-512/256 algorithm, session or non-session.
+   * Currently supported as non-session only.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256
+    | MHD_DIGEST_AUTH_MULT_ALGO3_SHA512_256_SESSION,
+
+  /**
+   * The SHA-256 or SHA-512/256 algorithm, session or non-session.
+   * Currently supported as non-session only.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_ANY =
+    MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_NON_SESSION
+    | MHD_DIGEST_AUTH_MULT_ALGO3_SHA_ANY_SESSION,
+
+  /**
+   * Any algorithm, MHD will choose the preferred or the matching one.
+   */
+  MHD_DIGEST_AUTH_MULT_ALGO3_ANY =
+    (0x3F) | MHD_DIGEST_AUTH_ALGO3_NON_SESSION | MHD_DIGEST_AUTH_ALGO3_SESSION
+};
+
+
+/**
+ * Calculate "userhash", return it as binary data.
+ *
+ * The "userhash" is the hash of the string "username:realm".
+ *
+ * The "userhash" could be used to avoid sending username in cleartext in Digest
+ * Authorization client's header.
+ *
+ * Userhash is not designed to hide the username in local database or files,
+ * as username in cleartext is required for #MHD_digest_auth_check3() function
+ * to check the response, but it can be used to hide username in HTTP headers.
+ *
+ * This function could be used when the new username is added to the username
+ * database to save the "userhash" alongside with the username (preferably) or
+ * when loading list of the usernames to generate the userhash for every loaded
+ * username (this will cause delays at the start with the long lists).
+ *
+ * Once "userhash" is generated it could be used to identify users by clients
+ * with "userhash" support.
+ * Avoid repetitive usage of this function for the same username/realm
+ * combination as it will cause excessive CPU load; save and re-use the result
+ * instead.
+ *
+ * @param algo3 the algorithm for userhash calculations
+ * @param username the username
+ * @param realm the realm
+ * @param[out] userhash_bin the output buffer for userhash as binary data;
+ *                          if this function succeeds, then this buffer has
+ *                          #MHD_digest_get_hash_size(algo3) bytes of userhash
+ *                          upon return
+ * @param bin_buf_size the size of the @a userhash_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3) bytes long
+ * @return MHD_YES on success,
+ *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH)
+ * @sa #MHD_digest_auth_calc_userhash_hex()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo3 algo3,
+                               const char *username,
+                               const char *realm,
+                               void *userhash_bin,
+                               size_t bin_buf_size);
+
+
+/**
+ * Calculate "userhash", return it as hexadecimal string.
+ *
+ * The "userhash" is the hash of the string "username:realm".
+ *
+ * The "userhash" could be used to avoid sending username in cleartext in Digest
+ * Authorization client's header.
+ *
+ * Userhash is not designed to hide the username in local database or files,
+ * as username in cleartext is required for #MHD_digest_auth_check3() function
+ * to check the response, but it can be used to hide username in HTTP headers.
+ *
+ * This function could be used when the new username is added to the username
+ * database to save the "userhash" alongside with the username (preferably) or
+ * when loading list of the usernames to generate the userhash for every loaded
+ * username (this will cause delays at the start with the long lists).
+ *
+ * Once "userhash" is generated it could be used to identify users by clients
+ * with "userhash" support.
+ * Avoid repetitive usage of this function for the same username/realm
+ * combination as it will cause excessive CPU load; save and re-use the result
+ * instead.
+ *
+ * @param algo3 the algorithm for userhash calculations
+ * @param username the username
+ * @param realm the realm
+ * @param[out] userhash_hex the output buffer for userhash as hex string;
+ *                          if this function succeeds, then this buffer has
+ *                          #MHD_digest_get_hash_size(algo3)*2 chars long
+ *                          userhash zero-terminated string
+ * @param bin_buf_size the size of the @a userhash_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3)*2+1 chars long
+ * @return MHD_YES on success,
+ *         MHD_NO if @a bin_buf_size is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH).
+ * @sa #MHD_digest_auth_calc_userhash()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userhash_hex (enum MHD_DigestAuthAlgo3 algo3,
+                                   const char *username,
+                                   const char *realm,
+                                   char *userhash_hex,
+                                   size_t hex_buf_size);
+
+
+/**
+ * The type of username used by client in Digest Authorization header
+ *
+ * Values are sorted so simplified checks could be used.
+ * For example:
+ * * (value <= MHD_DIGEST_AUTH_UNAME_TYPE_INVALID) is true if no valid username
+ *   is provided by the client
+ * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH) is true if username is
+ *   provided in any form
+ * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD) is true if username is
+ *   provided in clear text (no userhash matching is needed)
+ *
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthUsernameType
+{
+  /**
+   * No username parameter in in Digest Authorization header.
+   * This should be treated as an error.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_MISSING = 0,
+
+  /**
+   * The 'username' parameter is used to specify the username.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = (1 << 2),
+
+  /**
+   * The username is specified by 'username*' parameter with
+   * the extended notation (see RFC 5987 #section-3.2.1).
+   * The only difference between standard and extended types is
+   * the way how username value is encoded in the header.
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = (1 << 3),
+
+  /**
+   * The username provided in form of 'userhash' as
+   * specified by RFC 7616 #section-3.4.4.
+   * @sa #MHD_digest_auth_calc_userhash_hex(), #MHD_digest_auth_calc_userhash()
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = (1 << 1),
+
+  /**
+   * The invalid combination of username parameters are used by client.
+   * Either:
+   * * both 'username' and 'username*' are used
+   * * 'username*' is used with 'userhash=true'
+   * * 'username*' used with invalid extended notation
+   * * 'username' is not hexadecimal string, while 'userhash' set to 'true'
+   */
+  MHD_DIGEST_AUTH_UNAME_TYPE_INVALID = (1 << 0)
+} _MHD_FIXED_ENUM;
+
+/**
+ * The QOP ('quality of protection') types.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthQOP
+{
+  /**
+   * Invalid/unknown QOP.
+   * Used in struct MHD_DigestAuthInfo to indicate client value that
+   * cannot by identified.
+   */
+  MHD_DIGEST_AUTH_QOP_INVALID = 0,
+
+  /**
+   * No QOP parameter.
+   * As described in old RFC 2069 original specification.
+   * This mode is not allowed by latest RFCs and should be used only to
+   * communicate with clients that do not support more modern modes (with QOP
+   * parameter).
+   * This mode is less secure than other modes and inefficient.
+   */
+  MHD_DIGEST_AUTH_QOP_NONE = 1 << 0,
+
+  /**
+   * The 'auth' QOP type.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1,
+
+  /**
+   * The 'auth-int' QOP type.
+   * Not supported by MHD for authentication.
+   */
+  MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
+} _MHD_FIXED_FLAGS_ENUM;
+
+/**
+ * The QOP ('quality of protection') types, multiple selection.
+ *
+ * #MHD_DigestAuthQOP always can be casted to #MHD_DigestAuthMultiQOP, but
+ * not vice versa.
+ *
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthMultiQOP
+{
+  /**
+   * Invalid/unknown QOP.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_INVALID = MHD_DIGEST_AUTH_QOP_INVALID,
+
+  /**
+   * No QOP parameter.
+   * As described in old RFC 2069 original specification.
+   * This mode is not allowed by latest RFCs and should be used only to
+   * communicate with clients that do not support more modern modes (with QOP
+   * parameter).
+   * This mode is less secure than other modes and inefficient.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_NONE = MHD_DIGEST_AUTH_QOP_NONE,
+
+  /**
+   * The 'auth' QOP type.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH = MHD_DIGEST_AUTH_QOP_AUTH,
+
+  /**
+   * The 'auth-int' QOP type.
+   * Not supported by MHD.
+   * Reserved value.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH_INT = MHD_DIGEST_AUTH_QOP_AUTH_INT,
+
+  /**
+   * The 'auth' QOP type OR the old RFC2069 (no QOP) type.
+   * In other words: any types except 'auth-int'.
+   * RFC2069-compatible mode is allowed, thus this value should be used only
+   * when it is really necessary.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_ANY_NON_INT =
+    MHD_DIGEST_AUTH_QOP_NONE | MHD_DIGEST_AUTH_QOP_AUTH,
+
+  /**
+   * Any 'auth' QOP type ('auth' or 'auth-int').
+   * Currently supported as 'auth' QOP type only.
+   */
+  MHD_DIGEST_AUTH_MULT_QOP_AUTH_ANY =
+    MHD_DIGEST_AUTH_QOP_AUTH | MHD_DIGEST_AUTH_QOP_AUTH_INT
+} _MHD_FIXED_ENUM;
+
+/**
+ * The invalid value of 'nc' parameter in client Digest Authorization header.
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+#define MHD_DIGEST_AUTH_INVALID_NC_VALUE        (0)
+
+/**
+ * Information from Digest Authorization client's header.
+ *
+ * All buffers pointed by any struct members are freed when #MHD_free() is
+ * called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+struct MHD_DigestAuthInfo
+{
+  /**
+   * The algorithm as defined by client.
+   * Set automatically to MD5 if not specified by client.
+   * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+   *          which uses other values!
+   */
+  enum MHD_DigestAuthAlgo3 algo3;
+
+  /**
+   * The type of username used by client.
+   */
+  enum MHD_DigestAuthUsernameType uname_type;
+
+  /**
+   * The username string.
+   * Used only if username type is standard or extended, always NULL otherwise.
+   * If extended notation is used, this string is pct-decoded string
+   * with charset and language tag removed (i.e. it is original username
+   * extracted from the extended notation).
+   * When userhash is used by the client, this member is NULL and
+   * @a userhash_hex and @a userhash_bin are set.
+   * The buffer pointed by the @a username becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *username;
+
+  /**
+   * The length of the @a username.
+   * When the @a username is NULL, this member is always zero.
+   */
+  size_t username_len;
+
+  /**
+   * The userhash string.
+   * Valid only if username type is userhash.
+   * This is unqoted string without decoding of the hexadecimal
+   * digits (as provided by the client).
+   * The buffer pointed by the @a userhash_hex becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   * @sa #MHD_digest_auth_calc_userhash_hex()
+   */
+  char *userhash_hex;
+
+  /**
+   * The length of the @a userhash_hex in characters.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) * 2 characters.
+   * When the @a userhash_hex is NULL, this member is always zero.
+   */
+  size_t userhash_hex_len;
+
+  /**
+   * The userhash decoded to binary form.
+   * Used only if username type is userhash, always NULL otherwise.
+   * When not NULL, this points to binary sequence @a userhash_hex_len /2 bytes
+   * long.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) bytes.
+   * The buffer pointed by the @a userhash_bin becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   * @warning This is a binary data, no zero termination.
+   * @warning To avoid buffer overruns, always check the size of the data before
+   *          use, because @a userhash_bin can point even to zero-sized
+   *          data.
+   * @sa #MHD_digest_auth_calc_userhash()
+   */
+  uint8_t *userhash_bin;
+
+  /**
+   * The 'opaque' parameter value, as specified by client.
+   * NULL if not specified by client.
+   * The buffer pointed by the @a opaque becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *opaque;
+
+  /**
+   * The length of the @a opaque.
+   * When the @a opaque is NULL, this member is always zero.
+   */
+  size_t opaque_len;
+
+  /**
+   * The 'realm' parameter value, as specified by client.
+   * NULL if not specified by client.
+   * The buffer pointed by the @a realm becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *realm;
+
+  /**
+   * The length of the @a realm.
+   * When the @a realm is NULL, this member is always zero.
+   */
+  size_t realm_len;
+
+  /**
+   * The 'qop' parameter value.
+   */
+  enum MHD_DigestAuthQOP qop;
+
+  /**
+   * The length of the 'cnonce' parameter value, including possible
+   * backslash-escape characters.
+   * 'cnonce' is used in hash calculation, which is CPU-intensive procedure.
+   * An application may want to reject too large cnonces to limit the CPU load.
+   * A few kilobytes is a reasonable limit, typically cnonce is just 32-160
+   * characters long.
+   */
+  size_t cnonce_len;
+
+  /**
+   * The nc parameter value.
+   * Can be used by application to limit the number of nonce re-uses. If @a nc
+   * is higher than application wants to allow, then "auth required" response
+   * with 'stale=true' could be used to force client to retry with the fresh
+   * 'nonce'.
+   * If not specified by client or does not have hexadecimal digits only, the
+   * value is #MHD_DIGEST_AUTH_INVALID_NC_VALUE.
+   */
+  uint32_t nc;
+};
+
+
+/**
+ * Get information about Digest Authorization client's header.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no valid Digest Authorization header is used in the request;
+ *         a pointer to the structure with information if the valid request
+ *         header found, free using #MHD_free().
+ * @sa #MHD_digest_auth_get_username3()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_DigestAuthInfo *
+MHD_digest_auth_get_request_info3 (struct MHD_Connection *connection);
+
+
+/**
+ * Information from Digest Authorization client's header.
+ *
+ * All buffers pointed by any struct members are freed when #MHD_free() is
+ * called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+struct MHD_DigestAuthUsernameInfo
+{
+  /**
+   * The algorithm as defined by client.
+   * Set automatically to MD5 if not specified by client.
+   * @warning Do not be confused with #MHD_DigestAuthAlgorithm,
+   *          which uses other values!
+   */
+  enum MHD_DigestAuthAlgo3 algo3;
+
+  /**
+   * The type of username used by client.
+   * The 'invalid' and 'missing' types are not used in this structure,
+   * instead NULL is returned by #MHD_digest_auth_get_username3().
+   */
+  enum MHD_DigestAuthUsernameType uname_type;
+
+  /**
+   * The username string.
+   * Used only if username type is standard or extended, always NULL otherwise.
+   * If extended notation is used, this string is pct-decoded string
+   * with charset and language tag removed (i.e. it is original username
+   * extracted from the extended notation).
+   * When userhash is used by the client, this member is NULL and
+   * @a userhash_hex and @a userhash_bin are set.
+   * The buffer pointed by the @a username becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *username;
+
+  /**
+   * The length of the @a username.
+   * When the @a username is NULL, this member is always zero.
+   */
+  size_t username_len;
+
+  /**
+   * The userhash string.
+   * Valid only if username type is userhash.
+   * This is unqoted string without decoding of the hexadecimal
+   * digits (as provided by the client).
+   * The buffer pointed by the @a userhash_hex becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   * @sa #MHD_digest_auth_calc_userhash_hex()
+   */
+  char *userhash_hex;
+
+  /**
+   * The length of the @a userhash_hex in characters.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) * 2 characters.
+   * When the @a userhash_hex is NULL, this member is always zero.
+   */
+  size_t userhash_hex_len;
+
+  /**
+   * The userhash decoded to binary form.
+   * Used only if username type is userhash, always NULL otherwise.
+   * When not NULL, this points to binary sequence @a userhash_hex_len /2 bytes
+   * long.
+   * The valid size should be #MHD_digest_get_hash_size(algo3) bytes.
+   * The buffer pointed by the @a userhash_bin becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   * @warning This is a binary data, no zero termination.
+   * @warning To avoid buffer overruns, always check the size of the data before
+   *          use, because @a userhash_bin can point even to zero-sized
+   *          data.
+   * @sa #MHD_digest_auth_calc_userhash()
+   */
+  uint8_t *userhash_bin;
+};
+
+
+/**
+ * Get the username from Digest Authorization client's header.
+ *
+ * @param connection The MHD connection structure
+ * @return NULL if no valid Digest Authorization header is used in the request,
+ *         or no username parameter is present in the header, or username is
+ *         provided incorrectly by client (see description for
+ *         #MHD_DIGEST_AUTH_UNAME_TYPE_INVALID);
+ *         a pointer structure with information if the valid request header
+ *         found, free using #MHD_free().
+ * @sa #MHD_digest_auth_get_request_info3() provides more complete information
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_DigestAuthUsernameInfo *
+MHD_digest_auth_get_username3 (struct MHD_Connection *connection);
+
+
+/**
+ * The result of digest authentication of the client.
+ *
+ * All error values are zero or negative.
+ *
+ * @note Available since #MHD_VERSION 0x00097701
+ */
+enum MHD_DigestAuthResult
+{
+  /**
+   * Authentication OK.
+   */
+  MHD_DAUTH_OK = 1,
+
+  /**
+   * General error, like "out of memory".
+   */
+  MHD_DAUTH_ERROR = 0,
+
+  /**
+   * No "Authorization" header or wrong format of the header.
+   * Also may be returned if required parameters in client Authorisation header
+   * are missing or broken (in invalid format).
+   */
+  MHD_DAUTH_WRONG_HEADER = -1,
+
+  /**
+   * Wrong 'username'.
+   */
+  MHD_DAUTH_WRONG_USERNAME = -2,
+
+  /**
+   * Wrong 'realm'.
+   */
+  MHD_DAUTH_WRONG_REALM = -3,
+
+  /**
+   * Wrong 'URI' (or URI parameters).
+   */
+  MHD_DAUTH_WRONG_URI = -4,
+
+  /**
+   * Wrong 'qop'.
+   */
+  MHD_DAUTH_WRONG_QOP = -5,
+
+  /**
+   * Wrong 'algorithm'.
+   */
+  MHD_DAUTH_WRONG_ALGO = -6,
+
+  /**
+   * Too large (>64 KiB) Authorization parameter value.
+   */
+  MHD_DAUTH_TOO_LARGE = -15,
+
+  /* The different form of naming is intentionally used for the results below,
+   * as they are more important */
+
+  /**
+   * The 'nonce' is too old. Suggest the client to retry with the same
+   * username and password to get the fresh 'nonce'.
+   * The validity of the 'nonce' may be not checked.
+   */
+  MHD_DAUTH_NONCE_STALE = -17,
+
+  /**
+   * The 'nonce' was generated by MHD for other conditions.
+   * This value is only returned if #MHD_OPTION_DIGEST_AUTH_NONCE_BIND_TYPE
+   * is set to anything other than #MHD_DAUTH_BIND_NONCE_NONE.
+   * The interpretation of this code could be different. For example, if
+   * #MHD_DAUTH_BIND_NONCE_URI is set and client just used the same 'nonce' for
+   * another URI, the code could be handled as #MHD_DAUTH_NONCE_STALE as
+   * RFCs allow nonces re-using for other URIs in the same "protection
+   * space". However, if only #MHD_DAUTH_BIND_NONCE_CLIENT_IP bit is set and
+   * it is know that clients have fixed IP addresses, this return code could
+   * be handled like #MHD_DAUTH_NONCE_WRONG.
+   */
+  MHD_DAUTH_NONCE_OTHER_COND = -18,
+
+  /**
+   * The 'nonce' is wrong. May indicate an attack attempt.
+   */
+  MHD_DAUTH_NONCE_WRONG = -33,
+
+  /**
+   * The 'response' is wrong. Typically it means that wrong password used.
+   * May indicate an attack attempt.
+   */
+  MHD_DAUTH_RESPONSE_WRONG = -34
+};
+
+
+/**
+ * Authenticates the authorization header sent by the client.
+ *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request a new nonce must
+ * be generated and client repeats all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm for authorization of the client
+ * @param username the username to be authenticated, must be in clear text
+ *                 even if userhash is used by the client
+ * @param password the password matching the @a username (and the @a realm)
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale;
+ *                      if zero is specified then daemon default value is used.
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               if zero is specified then daemon default value is used.
+ * @param mqop the QOP to use
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm used
+ *               by the client is not allowed by this parameter
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         the error code otherwise
+ * @note Available since #MHD_VERSION 0x00097708
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_DigestAuthResult
+MHD_digest_auth_check3 (struct MHD_Connection *connection,
+                        const char *realm,
+                        const char *username,
+                        const char *password,
+                        unsigned int nonce_timeout,
+                        uint32_t max_nc,
+                        enum MHD_DigestAuthMultiQOP mqop,
+                        enum MHD_DigestAuthMultiAlgo3 malgo3);
+
+
+/**
+ * Calculate userdigest, return it as a binary data.
+ *
+ * The "userdigest" is the hash of the "username:realm:password" string.
+ *
+ * The "userdigest" can be used to avoid storing the password in clear text
+ * in database/files
+ *
+ * This function is designed to improve security of stored credentials,
+ * the "userdigest" does not improve security of the authentication process.
+ *
+ * The results can be used to store username & userdigest pairs instead of
+ * username & password pairs. To further improve security, application may
+ * store username & userhash & userdigest triplets.
+ *
+ * @param algo3 the digest algorithm
+ * @param username the username
+ * @param realm the realm
+ * @param password the password
+ * @param[out] userdigest_bin the output buffer for userdigest;
+ *                            if this function succeeds, then this buffer has
+ *                            #MHD_digest_get_hash_size(algo3) bytes of
+ *                            userdigest upon return
+ * @param bin_buf_size the size of the @a userdigest_bin buffer, must be
+ *                     at least #MHD_digest_get_hash_size(algo3) bytes long
+ * @return MHD_YES on success,
+ *         MHD_NO if @a userdigest_bin is too small or if @a algo3 algorithm is
+ *         not supported (or external error has occurred,
+ *         see #MHD_FEATURE_EXTERN_HASH).
+ * @sa #MHD_digest_auth_check_digest3()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo3 algo3,
+                                 const char *username,
+                                 const char *realm,
+                                 const char *password,
+                                 void *userdigest_bin,
+                                 size_t bin_buf_size);
+
+
+/**
+ * Authenticates the authorization header sent by the client by using
+ * hash of "username:realm:password".
+ *
+ * If RFC2069 mode is allowed by setting bit #MHD_DIGEST_AUTH_QOP_NONE in
+ * @a mqop and the client uses this mode, then server generated nonces are
+ * used as one-time nonces because nonce-count is not supported in this old RFC.
+ * Communication in this mode is very inefficient, especially if the client
+ * requests several resources one-by-one as for every request a new nonce must
+ * be generated and client repeats all requests twice (first time to get a new
+ * nonce and second time to perform an authorised request).
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm for authorization of the client
+ * @param username the username to be authenticated, must be in clear text
+ *                 even if userhash is used by the client
+ * @param userdigest the precalculated binary hash of the string
+ *                   "username:realm:password",
+ *                   see #MHD_digest_auth_calc_userdigest()
+ * @param userdigest_size the size of the @a userdigest in bytes, must match the
+ *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
+ *                        #MHD_SHA256_DIGEST_SIZE, #MHD_SHA512_256_DIGEST_SIZE,
+ *                        #MHD_digest_get_hash_size())
+ * @param nonce_timeout the period of seconds since nonce generation, when
+ *                      the nonce is recognised as valid and not stale;
+ *                      if zero is specified then daemon default value is used.
+ * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
+ *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
+ *               returned;
+ *               if zero is specified then daemon default value is used.
+ * @param mqop the QOP to use
+ * @param malgo3 digest algorithms allowed to use, fail if algorithm used
+ *               by the client is not allowed by this parameter;
+ *               more than one base algorithms (MD5, SHA-256, SHA-512/256)
+ *               cannot be used at the same time for this function
+ *               as @a userdigest must match specified algorithm
+ * @return #MHD_DAUTH_OK if authenticated,
+ *         the error code otherwise
+ * @sa #MHD_digest_auth_calc_userdigest()
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_DigestAuthResult
+MHD_digest_auth_check_digest3 (struct MHD_Connection *connection,
+                               const char *realm,
+                               const char *username,
+                               const void *userdigest,
+                               size_t userdigest_size,
+                               unsigned int nonce_timeout,
+                               uint32_t max_nc,
+                               enum MHD_DigestAuthMultiQOP mqop,
+                               enum MHD_DigestAuthMultiAlgo3 malgo3);
+
+
+/**
+ * Queues a response to request authentication from the client
+ *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed (by #MHD_destroy_response()) after call of
+ * this function.
+ *
+ * If @a mqop allows both RFC 2069 (MHD_DIGEST_AUTH_QOP_NONE) and QOP with
+ * value, then response is formed like if MHD_DIGEST_AUTH_QOP_NONE bit was
+ * not set, because such response should be backward-compatible with RFC 2069.
+ *
+ * If @a mqop allows only MHD_DIGEST_AUTH_MULT_QOP_NONE, then the response is
+ * formed in strict accordance with RFC 2069 (no 'qop', no 'userhash', no
+ * 'charset'). For better compatibility with clients, it is recommended (but
+ * not required) to set @a domain to NULL in this mode.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param opaque the string for opaque value, can be NULL, but NULL is
+ *               not recommended for better compatibility with clients;
+ *               the recommended format is hex or Base64 encoded string
+ * @param domain the optional space-separated list of URIs for which the
+ *               same authorisation could be used, URIs can be in form
+ *               "path-absolute" (the path for the same host with initial slash)
+ *               or in form "absolute-URI" (the full path with protocol), in
+ *               any case client may assume that URI is in the same "protection
+ *               space" if it starts with any of values specified here;
+ *               could be NULL (clients typically assume that the same
+ *               credentials could be used for any URI on the same host);
+ *               this list provides information for the client only and does
+ *               not actually restrict anything on the server side
+ * @param response the reply to send; should contain the "access denied"
+ *                 body;
+ *                 note: this function sets the "WWW Authenticate" header and
+ *                 the caller should not set this header;
+ *                 the NULL is tolerated
+ * @param signal_stale if set to #MHD_YES then indication of stale nonce used in
+ *                     the client's request is signalled by adding 'stale=true'
+ *                     to the authentication header, this instructs the client
+ *                     to retry immediately with the new nonce and the same
+ *                     credentials, without asking user for the new password
+ * @param mqop the QOP to use
+ * @param malgo3 digest algorithm to use; if several algorithms are allowed
+ *               then MD5 is preferred (currently, may be changed in next
+ *               versions)
+ * @param userhash_support if set to non-zero value (#MHD_YES) then support of
+ *                         userhash is indicated, allowing client to provide
+ *                         hash("username:realm") instead of the username in
+ *                         clear text;
+ *                         note that clients are allowed to provide the username
+ *                         in cleartext even if this parameter set to non-zero;
+ *                         when userhash is used, application must be ready to
+ *                         identify users by provided userhash value instead of
+ *                         username; see #MHD_digest_auth_calc_userhash() and
+ *                         #MHD_digest_auth_calc_userhash_hex()
+ * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
+ *                    added, indicating for the client that UTF-8 encoding for
+ *                    the username is preferred
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_auth_required_response3 (struct MHD_Connection *connection,
+                                   const char *realm,
+                                   const char *opaque,
+                                   const char *domain,
+                                   struct MHD_Response *response,
+                                   int signal_stale,
+                                   enum MHD_DigestAuthMultiQOP mqop,
+                                   enum MHD_DigestAuthMultiAlgo3 algo,
+                                   int userhash_support,
+                                   int prefer_utf8);
+
+
+/**
  * Constant to indicate that the nonce of the provided
  * authentication code was wrong.
+ * Used as return code by #MHD_digest_auth_check(), #MHD_digest_auth_check2(),
+ * #MHD_digest_auth_check_digest(), #MHD_digest_auth_check_digest2().
  * @ingroup authentication
  */
 #define MHD_INVALID_NONCE -1
@@ -4067,9 +5754,16 @@ MHD_destroy_post_processor (struct MHD_PostProcessor *pp);
 /**
  * Get the username from the authorization header sent by the client
  *
+ * This function supports username in standard and extended notations.
+ * "userhash" is not supported by this function.
+ *
  * @param connection The MHD connection structure
- * @return NULL if no username could be found, a pointer
- *      to the username if found, free using #MHD_free().
+ * @return NULL if no username could be found, username provided as
+ *         "userhash", extended notation broken or memory allocation error
+ *         occurs;
+ *         a pointer to the username if found, free using #MHD_free().
+ * @warning Returned value must be freed by #MHD_free().
+ * @sa #MHD_digest_auth_get_username3()
  * @ingroup authentication
  */
 _MHD_EXTERN char *
@@ -4077,25 +5771,15 @@ MHD_digest_auth_get_username (struct MHD_Connection *connection);
 
 
 /**
- * Free the memory given by @a ptr. Calls "free(ptr)".  This function
- * should be used to free the username returned by
- * #MHD_digest_auth_get_username().
- * @note Available since #MHD_VERSION 0x00095600
- *
- * @param ptr pointer to free.
- */
-_MHD_EXTERN void
-MHD_free (void *ptr);
-
-
-/**
  * Which digest algorithm should MHD use for HTTP digest authentication?
+ * Used as parameter for #MHD_digest_auth_check2(),
+ * #MHD_digest_auth_check_digest2(), #MHD_queue_auth_fail_response2().
  */
 enum MHD_DigestAuthAlgorithm
 {
 
   /**
-   * MHD should pick (currently defaults to SHA-256).
+   * MHD should pick (currently defaults to MD5).
    */
   MHD_DIGEST_ALG_AUTO = 0,
 
@@ -4123,8 +5807,9 @@ enum MHD_DigestAuthAlgorithm
  *      invalid in seconds
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_digest_auth_check3()
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -4150,9 +5835,9 @@ MHD_digest_auth_check2 (struct MHD_Connection *connection,
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
+ * @deprecated use MHD_digest_auth_check3()
  * @ingroup authentication
- * @deprecated use MHD_digest_auth_check2()
  */
 _MHD_EXTERN int
 MHD_digest_auth_check (struct MHD_Connection *connection,
@@ -4176,8 +5861,9 @@ MHD_digest_auth_check (struct MHD_Connection *connection,
  *      invalid in seconds
  * @param algo digest algorithms allowed for verification
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_digest_auth_check_digest3()
  * @ingroup authentication
  */
 _MHD_EXTERN int
@@ -4204,10 +5890,10 @@ MHD_digest_auth_check_digest2 (struct MHD_Connection *connection,
  * @param nonce_timeout The amount of time for a nonce to be
  *      invalid in seconds
  * @return #MHD_YES if authenticated, #MHD_NO if not,
- *      #MHD_INVALID_NONCE if nonce is invalid
+ *         #MHD_INVALID_NONCE if nonce is invalid or stale
  * @note Available since #MHD_VERSION 0x00096000
+ * @deprecated use #MHD_digest_auth_check_digest3()
  * @ingroup authentication
- * @deprecated use #MHD_digest_auth_check_digest2()
  */
 _MHD_EXTERN int
 MHD_digest_auth_check_digest (struct MHD_Connection *connection,
@@ -4220,17 +5906,21 @@ MHD_digest_auth_check_digest (struct MHD_Connection *connection,
 /**
  * Queues a response to request authentication from the client
  *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed after call of this function.
+ *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
  * @param opaque string to user for opaque value
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
- *        header and that the caller should not do this
- * @param signal_stale #MHD_YES if the nonce is invalid to add
- *      'stale=true' to the authentication header
+ *        header and that the caller should not do this; the NULL is tolerated
+ * @param signal_stale #MHD_YES if the nonce is stale to add
+ *        'stale=true' to the authentication header
  * @param algo digest algorithm to use
  * @return #MHD_YES on success, #MHD_NO otherwise
  * @note Available since #MHD_VERSION 0x00096200
+ * @deprecated use MHD_queue_auth_required_response3()
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -4243,21 +5933,24 @@ MHD_queue_auth_fail_response2 (struct MHD_Connection *connection,
 
 
 /**
- * Queues a response to request authentication from the client
+ * Queues a response to request authentication from the client.
  * For now uses MD5 (for backwards-compatibility). Still, if you
- * need to be sure, use #MHD_queue_fail_auth_response2().
+ * need to be sure, use #MHD_queue_auth_fail_response2().
+ *
+ * This function modifies provided @a response. The @a response must not be
+ * reused and should be destroyed after call of this function.
  *
  * @param connection The MHD connection structure
- * @param realm The realm presented to the client
+ * @param realm the realm presented to the client
  * @param opaque string to user for opaque value
  * @param response reply to send; should contain the "access denied"
  *        body; note that this function will set the "WWW Authenticate"
- *        header and that the caller should not do this
- * @param signal_stale #MHD_YES if the nonce is invalid to add
- *      'stale=true' to the authentication header
+ *        header and that the caller should not do this; the NULL is tolerated
+ * @param signal_stale #MHD_YES if the nonce is stale to add
+ *        'stale=true' to the authentication header
  * @return #MHD_YES on success, #MHD_NO otherwise
+ * @deprecated use MHD_queue_auth_required_response3()
  * @ingroup authentication
- * @deprecated use MHD_queue_auth_fail_response2()
  */
 _MHD_EXTERN enum MHD_Result
 MHD_queue_auth_fail_response (struct MHD_Connection *connection,
@@ -4267,6 +5960,96 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
                               int signal_stale);
 
 
+/* ********************* Basic Authentication functions *************** */
+
+
+/**
+ * Information decoded from Basic Authentication client's header.
+ *
+ * The username and the password are technically allowed to have binary zeros,
+ * username_len and password_len could be used to detect such situations.
+ *
+ * The buffers pointed by username and password members are freed
+ * when #MHD_free() is called for pointer to this structure.
+ *
+ * Application may modify buffers as needed until #MHD_free() is called for
+ * pointer to this structure
+ */
+struct MHD_BasicAuthInfo
+{
+  /**
+   * The username, cannot be NULL.
+   * The buffer pointed by the @a username becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *username;
+
+  /**
+   * The length of the @a username, not including zero-termination
+   */
+  size_t username_len;
+
+  /**
+   * The password, may be NULL if password is not encoded by the client.
+   * The buffer pointed by the @a password becomes invalid when the pointer
+   * to the structure is freed by #MHD_free().
+   */
+  char *password;
+
+  /**
+   * The length of the @a password, not including zero-termination;
+   * when the @a password is NULL, the length is always zero.
+   */
+  size_t password_len;
+};
+
+/**
+ * Get the username and password from the Basic Authorisation header
+ * sent by the client
+ *
+ * @param connection the MHD connection structure
+ * @return NULL if no valid Basic Authentication header is present in
+ *         current request, or
+ *         pointer to structure with username and password, which must be
+ *         freed by #MHD_free().
+ * @note Available since #MHD_VERSION 0x00097701
+ * @ingroup authentication
+ */
+_MHD_EXTERN struct MHD_BasicAuthInfo *
+MHD_basic_auth_get_username_password3 (struct MHD_Connection *connection);
+
+/**
+ * Queues a response to request basic authentication from the client.
+ *
+ * The given response object is expected to include the payload for
+ * the response; the "WWW-Authenticate" header will be added and the
+ * response queued with the 'UNAUTHORIZED' status code.
+ *
+ * See RFC 7617#section-2 for details.
+ *
+ * The @a response is modified by this function. The modified response object
+ * can be used to respond subsequent requests by #MHD_queue_response()
+ * function with status code #MHD_HTTP_UNAUTHORIZED and must not be used again
+ * with MHD_queue_basic_auth_required_response3() function. The response could
+ * be destroyed right after call of this function.
+ *
+ * @param connection the MHD connection structure
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @param response the response object to modify and queue; the NULL
+ *                 is tolerated
+ * @return #MHD_YES on success, #MHD_NO otherwise
+ * @note Available since #MHD_VERSION 0x00097704
+ * @ingroup authentication
+ */
+_MHD_EXTERN enum MHD_Result
+MHD_queue_basic_auth_required_response3 (struct MHD_Connection *connection,
+                                         const char *realm,
+                                         int prefer_utf8,
+                                         struct MHD_Response *response);
+
 /**
  * Get the username and password from the basic authorization header sent by the client
  *
@@ -4274,6 +6057,7 @@ MHD_queue_auth_fail_response (struct MHD_Connection *connection,
  * @param[out] password a pointer for the password, free using #MHD_free().
  * @return NULL if no username could be found, a pointer
  *      to the username if found, free using #MHD_free().
+ * @deprecated use #MHD_basic_auth_get_username_password3()
  * @ingroup authentication
  */
 _MHD_EXTERN char *
@@ -4289,8 +6073,9 @@ MHD_basic_auth_get_username_password (struct MHD_Connection *connection,
  *
  * @param connection The MHD connection structure
  * @param realm the realm presented to the client
- * @param response response object to modify and queue
+ * @param response response object to modify and queue; the NULL is tolerated
  * @return #MHD_YES on success, #MHD_NO otherwise
+ * @deprecated use MHD_queue_basic_auth_required_response3()
  * @ingroup authentication
  */
 _MHD_EXTERN enum MHD_Result
@@ -4303,6 +6088,8 @@ MHD_queue_basic_auth_fail_response (struct MHD_Connection *connection,
 
 /**
  * Obtain information about the given connection.
+ * The returned pointer is invalidated with the next call of this function or
+ * when the connection is closed.
  *
  * @param connection what connection to get information about
  * @param info_type what information is desired?
@@ -4401,8 +6188,9 @@ union MHD_DaemonInfo
 
 
 /**
- * Obtain information about the given daemon
- * (not fully implemented!).
+ * Obtain information about the given daemon.
+ * The returned pointer is invalidated with the next call of this function or
+ * when the daemon is stopped.
  *
  * @param daemon what daemon to get information about
  * @param info_type what information is desired?
@@ -4432,7 +6220,7 @@ MHD_get_version (void);
  *
  * @return version binary value, e.g. "0x00090900" (#MHD_VERSION of
  *         compiled MHD binary)
- * @note Available since #MHD_VERSION 0x00097602
+ * @note Available since #MHD_VERSION 0x00097601
  * @ingroup specialized
  */
 _MHD_EXTERN uint32_t
@@ -4609,8 +6397,107 @@ enum MHD_FEATURE
    * Get whether option #MHD_OPTION_HTTPS_CERT_CALLBACK2 is
    * supported.
    */
-  MHD_FEATURE_HTTPS_CERT_CALLBACK2 = 23
-} _MHD_FIXED_ENUM;
+  MHD_FEATURE_HTTPS_CERT_CALLBACK2 = 23,
+
+  /**
+   * Get whether automatic parsing of HTTP Cookie header is supported.
+   * If disabled, no MHD_COOKIE_KIND will be generated by MHD.
+   * MHD versions before 0x00097701 always support cookie parsing.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_HTTPS_COOKIE_PARSING = 24,
+
+  /**
+   * Get whether the early version the Digest Authorization (RFC 2069) is
+   * supported (digest authorisation without QOP parameter).
+   * Since #MHD_VERSION 0x00097701 it is always supported if Digest Auth
+   * module is built.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_DIGEST_AUTH_RFC2069 = 25,
+
+  /**
+   * Get whether the MD5-based hashing algorithms are supported for Digest
+   * Authorization.
+   * Currently it is always supported if Digest Auth module is built
+   * unless manually disabled in a custom build.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_DIGEST_AUTH_MD5 = 26,
+
+  /**
+   * Get whether the SHA-256-based hashing algorithms are supported for Digest
+   * Authorization.
+   * It is always supported since #MHD_VERSION 0x00096200 if Digest Auth
+   * module is built unless manually disabled in a custom build.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_DIGEST_AUTH_SHA256 = 27,
+
+  /**
+   * Get whether the SHA-512/256-based hashing algorithms are supported
+   * for Digest Authorization.
+   * It it always supported since #MHD_VERSION 0x00097701 if Digest Auth
+   * module is built unless manually disabled in a custom build.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_DIGEST_AUTH_SHA512_256 = 28,
+
+  /**
+   * Get whether QOP with value 'auth-int' (authentication with integrity
+   * protection) is supported for Digest Authorization.
+   * Currently it is always not supported.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_DIGEST_AUTH_AUTH_INT = 29,
+
+  /**
+   * Get whether 'session' algorithms (like 'MD5-sess') are supported for Digest
+   * Authorization.
+   * Currently it is always not supported.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_DIGEST_AUTH_ALGO_SESSION = 30,
+
+  /**
+   * Get whether 'userhash' is supported for Digest Authorization.
+   * It is always supported since #MHD_VERSION 0x00097701 if Digest Auth
+   * module is built.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_DIGEST_AUTH_USERHASH = 31,
+
+  /**
+   * Get whether any of hashing algorithms is implemented by external
+   * function (like TLS library) and may fail due to external conditions,
+   * like "out-of-memory".
+   *
+   * If result is #MHD_YES then functions which use hash calculations
+   * like #MHD_digest_auth_calc_userhash(), #MHD_digest_auth_check3() and others
+   * potentially may fail even with valid input because of out-of-memory error
+   * or crypto accelerator device failure, however in practice such fails are
+   * unlikely.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_EXTERN_HASH = 32,
+
+  /**
+   * Get whether MHD was built with asserts enabled.
+   * For debug builds the error log is always enabled even if #MHD_USE_ERROR_LOG
+   * is not specified for daemon.
+   * @note Available since #MHD_VERSION 0x00097701
+   */
+  MHD_FEATURE_DEBUG_BUILD = 33,
+
+  /**
+   * Get whether MHD was build with support for overridable FD_SETSIZE.
+   * This feature should be always available when the relevant platform ability
+   * is detected.
+   * @sa #MHD_OPTION_APP_FD_SETSIZE
+   * @note Available since #MHD_VERSION 0x00097705
+   */
+  MHD_FEATURE_FLEXIBLE_FD_SETSIZE = 34
+};
 
 
 /**
