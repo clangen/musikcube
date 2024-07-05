@@ -6,7 +6,7 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
-@Database(entities = [GaplessTrack::class], version = 1)
+@Database(entities = [GaplessTrack::class], exportSchema = false, version = 1)
 abstract class GaplessDb: RoomDatabase() {
     abstract fun dao(): GaplessDao
 

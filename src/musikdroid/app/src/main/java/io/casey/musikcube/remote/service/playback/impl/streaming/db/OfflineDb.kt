@@ -16,7 +16,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import javax.inject.Inject
 
-@Database(entities = [OfflineTrack::class], version = 1)
+@Database(entities = [OfflineTrack::class], exportSchema = false, version = 1)
 abstract class OfflineDb : RoomDatabase() {
     @Inject lateinit var wss: WebSocketService
     @Inject lateinit var streamProxy: StreamProxy
