@@ -8,6 +8,7 @@
   - libcurl@8.8.0
   - libmicrohttpd@1.0.1
   - libopenmpt@0.7.8
+* update to Android Studio Koala, SDK 34 and related dependencies
 
 --------------------------------------------------------------------------------
 
