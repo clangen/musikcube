@@ -22,10 +22,10 @@ class Application : android.app.Application() {
         super.onCreate()
 
         val prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-        deviceId = prefs.getString(Prefs.Key.DEVICE_ID) ?: ""
-        if (deviceId.isBlank()) {
-            deviceId = UUID.randomUUID().toString()
-            prefs.edit().putString(Prefs.Key.DEVICE_ID, deviceId).apply()
+        Application.deviceId = prefs.getString(Prefs.Key.DEVICE_ID) ?: ""
+        if (Application.deviceId.isBlank()) {
+            Application.deviceId = UUID.randomUUID().toString()
+            prefs.edit().putString(Prefs.Key.DEVICE_ID, Application.deviceId).apply()
         }
 
         appComponent = DaggerAppComponent.builder()

@@ -12,7 +12,7 @@ import kotlin.math.min
 
 class IdListTrackListQueryFactory(private val idList: List<String>): ITrackListQueryFactory {
     @Inject
-    protected lateinit var metadataProxy: IMetadataProxy
+    lateinit var metadataProxy: IMetadataProxy
 
     init {
         DaggerDataComponent.builder()
