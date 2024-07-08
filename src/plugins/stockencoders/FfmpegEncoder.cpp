@@ -43,6 +43,10 @@
 #define USE_FFMPEG6_CHANNEL_LAYOUT
 #endif
 
+#if LIBAVUTIL_VERSION_MAJOR >= 59
+#define USE_FFMPEG7_CHANNEL_LAYOUT
+#endif
+
 using namespace musik::core::sdk;
 
 static const int IO_CONTEXT_BUFFER_SIZE = 4096;
@@ -145,10 +149,18 @@ static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     return 0;
 }
 
-static int writeCallback(void* opaque, const uint8_t* buffer, int bufferSize) {
+#ifdef USE_FFMPEG7_CHANNEL_LAYOUT
+    static int writeCallback(void* opaque, const uint8_t* buffer, int bufferSize) {
+#else
+    static int writeCallback(void* opaque, uint8_t* buffer, int bufferSize) {
+#endif
     FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
     if (encoder && encoder->Stream()) {
+#ifdef USE_FFMPEG7_CHANNEL_LAYOUT
         auto count = encoder->Stream()->Write((void *) buffer, (PositionType) bufferSize);
+#else
+        auto count = encoder->Stream()->Write(buffer, (PositionType) bufferSize);
+#endif
         return (count == bufferSize) ? count : AVERROR_EOF;
     }
     return 0;
