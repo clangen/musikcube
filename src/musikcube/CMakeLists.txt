@@ -92,7 +92,7 @@ if (NOT DEFINED ENABLE_MACOS_SYSTEM_NCURSES)
 endif()
 
 # figure out if we have a "w" suffix or not...
-if ((${DISABLE_WIDE_NCURSES_LIB_SUFFIXES} MATCHES "true") OR ((APPLE) AND (${ENABLE_MACOS_SYSTEM_NCURSES} MATCHES "true")))
+if ((${DISABLE_WIDE_NCURSES_LIB_SUFFIXES} MATCHES "true") OR ((APPLE) AND (${ENABLE_MACOS_SYSTEM_NCURSES} MATCHES "true")) OR (CMAKE_SYSTEM_NAME MATCHES "DragonFly"))
     message(STATUS "[ncurses] using library names *WITHOUT* 'w' prefix")
     set(CURSES_LIBRARY_NAME ncurses)
     set(PANEL_LIBRARY_NAME panel)

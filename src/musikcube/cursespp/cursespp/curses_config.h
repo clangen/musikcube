@@ -40,9 +40,12 @@
 #undef MOUSE_MOVED
 #endif
 
-#if defined(WIN32) || defined(NO_NCURSESW)
+#if defined(WIN32) || defined(NO_NCURSESW) && !defined(__DragonFly__)
     #include <curses.h>
     #include <panel.h>
+#elif defined(__DragonFly__)
+    #include <ncurses/curses.h>
+    #include <ncurses/panel.h>
 #else
     #include <ncursesw/curses.h>
     #include <ncursesw/panel.h>
