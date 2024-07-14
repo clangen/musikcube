@@ -1,3 +1,11 @@
+3.0.4
+
+* add ffmpeg 6.x backwards compatibility (@barracuda156)
+* improved LastFM support (@al1-ce)
+* fix build on DragonFly BSD (@alexax66)
+
+--------------------------------------------------------------------------------
+
 3.0.3
 
 * target ffmpeg 7.0 api, update encoder and decoder accordingly
