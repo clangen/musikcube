@@ -71,7 +71,9 @@ namespace musik { namespace core { namespace sdk {
 
     template <typename Prefs, typename Device, typename Output>
     bool setDefaultDevice(Prefs* prefs, Output* output, const char* key, const char* deviceId) {
-        if (!prefs || !deviceId || !strlen(deviceId)) {
+        if (!prefs) return false;
+
+        if (!deviceId || !strlen(deviceId)) {
             prefs->SetString(key, "");
             return true;
         }
