@@ -30,7 +30,7 @@ SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 OPENSSL_VERSION="3.5.2"
 CURL_VERSION="8.15.0"
 LIBMICROHTTPD_VERSION="1.0.2"
-FFMPEG_VERSION="7.0.1"
+FFMPEG_VERSION="8.0"
 LAME_VERSION="3.100"
 LIBOPENMPT_VERSION="0.8.2"
 TAGLIB_VERSION="2.1.1"
@@ -599,21 +599,21 @@ function delete_unused_libraries() {
     rm *.a 2> /dev/null
     rm *.la 2> /dev/null
     if [[ $OS == "Darwin" ]]; then
-      mv libavcodec-musikcube.60.3.100.dylib libavcodec-musikcube.60.dylib
+      mv libavcodec-musikcube.62.11.100.dylib libavcodec-musikcube.62.dylib
       rm libavcodec-musikcube.dylib
-      ln -s libavcodec-musikcube.60.dylib libavcodec-musikcube.dylib
+      ln -s libavcodec-musikcube.62.dylib libavcodec-musikcube.dylib
 
-      mv libavformat-musikcube.60.3.100.dylib libavformat-musikcube.60.dylib
+      mv libavformat-musikcube.62.3.100.dylib libavformat-musikcube.62.dylib
       rm libavformat-musikcube.dylib
-      ln -s libavformat-musikcube.60.dylib libavformat-musikcube.dylib
+      ln -s libavformat-musikcube.62.dylib libavformat-musikcube.dylib
 
-      mv libavutil-musikcube.58.2.100.dylib libavutil-musikcube.58.dylib
+      mv libavutil-musikcube.60.8.100.dylib libavutil-musikcube.60.dylib
       rm libavutil-musikcube.dylib
-      ln -s libavutil-musikcube.58.dylib libavutil-musikcube.dylib
+      ln -s libavutil-musikcube.60.dylib libavutil-musikcube.dylib
 
-      mv libswresample-musikcube.4.10.100.dylib libswresample-musikcube.4.dylib
+      mv libswresample-musikcube.6.1.100.dylib libswresample-musikcube.6.dylib
       rm libswresample-musikcube.dylib
-      ln -s libswresample-musikcube.4.dylib libswresample-musikcube.dylib
+      ln -s libswresample-musikcube.6.dylib libswresample-musikcube.dylib
     fi
     cd ../../
 }
