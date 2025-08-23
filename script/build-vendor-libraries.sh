@@ -27,13 +27,13 @@ RPATH="@rpath"
 OS=$(uname)
 ARCH=$(uname -m)
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-OPENSSL_VERSION="3.3.1"
-CURL_VERSION="8.8.0"
-LIBMICROHTTPD_VERSION="1.0.1"
+OPENSSL_VERSION="3.5.2"
+CURL_VERSION="8.15.0"
+LIBMICROHTTPD_VERSION="1.0.2"
 FFMPEG_VERSION="7.0.1"
 LAME_VERSION="3.100"
-LIBOPENMPT_VERSION="0.7.8"
-TAGLIB_VERSION="1.13"
+LIBOPENMPT_VERSION="0.8.2"
+TAGLIB_VERSION="2.1.1"
 GME_VERSION="0.6.3"
 OUTDIR="$(pwd)/vendor/bin"
 LIBDIR="$OUTDIR/lib"
@@ -245,6 +245,7 @@ function build_curl() {
         --without-brotli \
         --without-libidn2 \
         --without-nghttp2 \
+        --without-libpsl \
          ${GENERIC_CONFIGURE_FLAGS} \
         --prefix=${OUTDIR} || exit $?
     make ${JOBS} || exit $?
@@ -544,6 +545,7 @@ function build_gme() {
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
         -DENABLE_UBSAN=OFF \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DBUILD_SHARED_LIBS=1 \
         . || exit $?
     make ${JOBS} || exit $?
@@ -628,14 +630,14 @@ function main() {
     stage_prebuilt_libraries
     fetch_packages
 
-    build_ffmpeg
-    build_openssl
+    build_openssl # must come before curl
     build_curl
+    build_ffmpeg
     build_libopenmpt
     build_libmicrohttpd
     build_lame
-    build_gme
     build_taglib
+    build_gme
 
     delete_unused_libraries
     relink_dynamic_libraries
