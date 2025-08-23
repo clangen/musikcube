@@ -1,11 +1,13 @@
-/* this script is used to update all macOS dynamic libraries so they can discover
-each other in the app's sandboxed directory; it removes absolute paths and replaces
-them with @rpaths. it also ensures symlinks are setup properly. whenever we add
-a new third-party dependency we need to update the `libraries` and `symlinks`
-mapping so the script knows to process them.
-
-the result of the script will be later validated by the `scan-standalone.js` script
-during app build-time. */
+/**
+ * this script is used to update all macOS dynamic libraries so they can discover
+ * each other in the app's sandboxed directory; it removes absolute paths and replaces
+ * them with @rpaths. it also ensures symlinks are setup properly. whenever we add
+ * a new third-party dependency we need to update the `libraries` and `symlinks`
+ * mapping so the script knows to process them.
+ *
+ * the result of the script will be later validated by the `scan-standalone.js` script
+ * during app build-time.
+ */
 
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
