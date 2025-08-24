@@ -80,13 +80,18 @@
 #ifndef MHD_MICROHTTPD_H
 #define MHD_MICROHTTPD_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#if 0                           /* keep Emacsens' auto-indent happy */
-}
-#endif
-#endif
+#ifndef __cplusplus
+#  define MHD_C_DECLRATIONS_START_HERE_   /* Empty */
+#  define MHD_C_DECLRATIONS_FINISH_HERE_  /* Empty */
+#else  /* __cplusplus */
+/* *INDENT-OFF* */
+#  define MHD_C_DECLRATIONS_START_HERE_   extern "C" {
+#  define MHD_C_DECLRATIONS_FINISH_HERE_  }
+/* *INDENT-ON* */
+#endif /* __cplusplus */
+
+
+MHD_C_DECLRATIONS_START_HERE_
 
 
 /**
@@ -96,7 +101,7 @@ extern "C"
  * they are parsed as decimal numbers.
  * Example: 0x01093001 = 1.9.30-1.
  */
-#define MHD_VERSION 0x01000100
+#define MHD_VERSION 0x01000200
 
 /* If generic headers don't work on your platform, include headers
    which define 'va_list', 'size_t', 'ssize_t', 'intptr_t', 'off_t',
@@ -228,7 +233,8 @@ typedef SOCKET MHD_socket;
 #define _MHD_STRMACRO(a) _MHD_INSTRMACRO (a)
 /* deprecation message */
 #define _MHD_DEPR_MACRO(msg) \
-  __pragma(message (__FILE__ "(" _MHD_STRMACRO ( __LINE__) "): warning: " msg))
+        __pragma \
+        (message (__FILE__ "(" _MHD_STRMACRO ( __LINE__) "): warning: " msg))
 #define _MHD_DEPR_IN_MACRO(msg) _MHD_DEPR_MACRO (msg)
 #elif defined(__clang__) || defined(__GNUC_PATCHLEVEL__)
 /* clang or GCC since 3.0 */
@@ -480,44 +486,44 @@ _MHD_DEPR_MACRO ( \
 
 /* Deprecated names and codes */
 /** @deprecated */
-#define MHD_HTTP_METHOD_NOT_ACCEPTABLE _MHD_DEPR_IN_MACRO (\
- "Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE" \
- ) 406
+#define MHD_HTTP_METHOD_NOT_ACCEPTABLE _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_HTTP_METHOD_NOT_ACCEPTABLE is deprecated, use MHD_HTTP_NOT_ACCEPTABLE" \
+          ) 406
 
 /** @deprecated */
-#define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE _MHD_DEPR_IN_MACRO (\
- "Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_CONTENT_TOO_LARGE"\
- ) 413
+#define MHD_HTTP_REQUEST_ENTITY_TOO_LARGE _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_HTTP_REQUEST_ENTITY_TOO_LARGE is deprecated, use MHD_HTTP_CONTENT_TOO_LARGE" \
+          ) 413
 
 /** @deprecated */
-#define MHD_HTTP_PAYLOAD_TOO_LARGE _MHD_DEPR_IN_MACRO (\
-  "Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated use MHD_HTTP_CONTENT_TOO_LARGE" \
-  ) 413
+#define MHD_HTTP_PAYLOAD_TOO_LARGE _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_HTTP_PAYLOAD_TOO_LARGE is deprecated use MHD_HTTP_CONTENT_TOO_LARGE" \
+          ) 413
 
 /** @deprecated */
-#define MHD_HTTP_REQUEST_URI_TOO_LONG _MHD_DEPR_IN_MACRO (\
-  "Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, use MHD_HTTP_URI_TOO_LONG" \
-  ) 414
+#define MHD_HTTP_REQUEST_URI_TOO_LONG _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_HTTP_REQUEST_URI_TOO_LONG is deprecated, use MHD_HTTP_URI_TOO_LONG" \
+          ) 414
 
 /** @deprecated */
-#define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE _MHD_DEPR_IN_MACRO (\
- "Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE" \
- ) 416
+#define MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_HTTP_REQUESTED_RANGE_NOT_SATISFIABLE is deprecated, use MHD_HTTP_RANGE_NOT_SATISFIABLE" \
+          ) 416
 
 /** @deprecated */
-#define MHD_HTTP_UNPROCESSABLE_ENTITY _MHD_DEPR_IN_MACRO (\
- "Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, use MHD_HTTP_UNPROCESSABLE_CONTENT" \
- ) 422
+#define MHD_HTTP_UNPROCESSABLE_ENTITY _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_HTTP_UNPROCESSABLE_ENTITY is deprecated, use MHD_HTTP_UNPROCESSABLE_CONTENT" \
+          ) 422
 
 /** @deprecated */
-#define MHD_HTTP_UNORDERED_COLLECTION _MHD_DEPR_IN_MACRO (\
-  "Value MHD_HTTP_UNORDERED_COLLECTION is deprecated as it was removed from RFC" \
-  ) 425
+#define MHD_HTTP_UNORDERED_COLLECTION _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_HTTP_UNORDERED_COLLECTION is deprecated as it was removed from RFC" \
+          ) 425
 
 /** @deprecated */
-#define MHD_HTTP_NO_RESPONSE _MHD_DEPR_IN_MACRO (\
- "Value MHD_HTTP_NO_RESPONSE is deprecated as it is nginx internal code for logs only"\
- ) 444
+#define MHD_HTTP_NO_RESPONSE _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_HTTP_NO_RESPONSE is deprecated as it is nginx internal code for logs only" \
+          ) 444
 
 
 /** @} */ /* end of group httpcode */
@@ -678,27 +684,27 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_ACCEPT_SIGNATURE "Accept-Signature"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS \
-  "Access-Control-Allow-Credentials"
+        "Access-Control-Allow-Credentials"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_HEADERS \
-  "Access-Control-Allow-Headers"
+        "Access-Control-Allow-Headers"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_METHODS \
-  "Access-Control-Allow-Methods"
+        "Access-Control-Allow-Methods"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN \
-  "Access-Control-Allow-Origin"
+        "Access-Control-Allow-Origin"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS \
-  "Access-Control-Expose-Headers"
+        "Access-Control-Expose-Headers"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_MAX_AGE "Access-Control-Max-Age"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_HEADERS \
-  "Access-Control-Request-Headers"
+        "Access-Control-Request-Headers"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_ACCESS_CONTROL_REQUEST_METHOD \
-  "Access-Control-Request-Method"
+        "Access-Control-Request-Method"
 /* Permanent.     RFC 7639, Section 2: The ALPN HTTP Header Field */
 #define MHD_HTTP_HEADER_ALPN         "ALPN"
 /* Permanent.     RFC 7838: HTTP Alternative Services */
@@ -743,23 +749,23 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_CONTENT_SECURITY_POLICY "Content-Security-Policy"
 /* Permanent.     Content Security Policy Level 3 */
 #define MHD_HTTP_HEADER_CONTENT_SECURITY_POLICY_REPORT_ONLY \
-  "Content-Security-Policy-Report-Only"
+        "Content-Security-Policy-Report-Only"
 /* Permanent.     RFC 6265: HTTP State Management Mechanism */
 #define MHD_HTTP_HEADER_COOKIE       "Cookie"
 /* Permanent.     HTML */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_EMBEDDER_POLICY \
-  "Cross-Origin-Embedder-Policy"
+        "Cross-Origin-Embedder-Policy"
 /* Permanent.     HTML */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_EMBEDDER_POLICY_REPORT_ONLY \
-  "Cross-Origin-Embedder-Policy-Report-Only"
+        "Cross-Origin-Embedder-Policy-Report-Only"
 /* Permanent.     HTML */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_OPENER_POLICY "Cross-Origin-Opener-Policy"
 /* Permanent.     HTML */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_OPENER_POLICY_REPORT_ONLY \
-  "Cross-Origin-Opener-Policy-Report-Only"
+        "Cross-Origin-Opener-Policy-Report-Only"
 /* Permanent.     Fetch */
 #define MHD_HTTP_HEADER_CROSS_ORIGIN_RESOURCE_POLICY \
-  "Cross-Origin-Resource-Policy"
+        "Cross-Origin-Resource-Policy"
 /* Permanent.     RFC 5323: Web Distributed Authoring and Versioning (WebDAV) SEARCH */
 #define MHD_HTTP_HEADER_DASL         "DASL"
 /* Permanent.     RFC 4918: HTTP Extensions for Web Distributed Authoring and Versioning (WebDAV) */
@@ -792,7 +798,7 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_IM           "IM"
 /* Permanent.     RFC 8473: Token Binding over HTTP */
 #define MHD_HTTP_HEADER_INCLUDE_REFERRED_TOKEN_BINDING_ID \
-  "Include-Referred-Token-Binding-ID"
+        "Include-Referred-Token-Binding-ID"
 /* Permanent.     RFC 2068: Hypertext Transfer Protocol -- HTTP/1.1 */
 #define MHD_HTTP_HEADER_KEEP_ALIVE   "Keep-Alive"
 /* Permanent.     RFC 3253: Versioning Extensions to WebDAV: (Web Distributed Authoring and Versioning) */
@@ -851,7 +857,7 @@ MHD_get_reason_phrase_len_for (unsigned int code);
 #define MHD_HTTP_HEADER_PUBLIC_KEY_PINS "Public-Key-Pins"
 /* Permanent.     RFC 7469: Public Key Pinning Extension for HTTP */
 #define MHD_HTTP_HEADER_PUBLIC_KEY_PINS_REPORT_ONLY \
-  "Public-Key-Pins-Report-Only"
+        "Public-Key-Pins-Report-Only"
 /* Permanent.     RFC 4437: Web Distributed Authoring and Versioning (WebDAV) Redirect Reference Resources */
 #define MHD_HTTP_HEADER_REDIRECT_REF "Redirect-Ref"
 /* Permanent.     HTML */
@@ -1192,7 +1198,7 @@ MHD_get_reason_phrase_len_for (unsigned int code);
  * @{
  */
 #define MHD_HTTP_POST_ENCODING_FORM_URLENCODED \
-  "application/x-www-form-urlencoded"
+        "application/x-www-form-urlencoded"
 #define MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA "multipart/form-data"
 
 /** @} */ /* end of group postenc */
@@ -1269,8 +1275,8 @@ enum MHD_FLAG
 #if 0
   /* let's do this later once versions that define MHD_USE_TLS a more widely deployed. */
 #define MHD_USE_SSL \
-  _MHD_DEPR_IN_MACRO ("Value MHD_USE_SSL is deprecated, use MHD_USE_TLS") \
-  MHD_USE_TLS
+        _MHD_DEPR_IN_MACRO ("Value MHD_USE_SSL is deprecated, use MHD_USE_TLS") \
+        MHD_USE_TLS
 #endif
 
   /**
@@ -1300,9 +1306,9 @@ enum MHD_FLAG
   MHD_USE_SELECT_INTERNALLY = 8,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_SELECT_INTERNALLY \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_USE_SELECT_INTERNALLY is deprecated, use MHD_USE_INTERNAL_POLLING_THREAD instead") \
-  MHD_USE_INTERNAL_POLLING_THREAD
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_USE_SELECT_INTERNALLY is deprecated, use MHD_USE_INTERNAL_POLLING_THREAD instead") \
+        MHD_USE_INTERNAL_POLLING_THREAD
 #endif /* 0 */
 
   /**
@@ -1324,10 +1330,10 @@ enum MHD_FLAG
   MHD_USE_PEDANTIC_CHECKS = 32,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_PEDANTIC_CHECKS \
-  _MHD_DEPR_IN_MACRO ( \
-    "Flag MHD_USE_PEDANTIC_CHECKS is deprecated, " \
-    "use option MHD_OPTION_CLIENT_DISCIPLINE_LVL instead") \
-  32
+        _MHD_DEPR_IN_MACRO ( \
+          "Flag MHD_USE_PEDANTIC_CHECKS is deprecated, " \
+          "use option MHD_OPTION_CLIENT_DISCIPLINE_LVL instead") \
+        32
 #endif /* 0 */
 
   /**
@@ -1351,9 +1357,9 @@ enum MHD_FLAG
   MHD_USE_POLL_INTERNALLY = MHD_USE_POLL | MHD_USE_INTERNAL_POLLING_THREAD,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_POLL_INTERNALLY \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_USE_POLL_INTERNALLY is deprecated, use MHD_USE_POLL_INTERNAL_THREAD instead") \
-  MHD_USE_POLL_INTERNAL_THREAD
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_USE_POLL_INTERNALLY is deprecated, use MHD_USE_POLL_INTERNAL_THREAD instead") \
+        MHD_USE_POLL_INTERNAL_THREAD
 #endif /* 0 */
 
   /**
@@ -1368,9 +1374,9 @@ enum MHD_FLAG
   MHD_SUPPRESS_DATE_NO_CLOCK = 128,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_SUPPRESS_DATE_NO_CLOCK \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_SUPPRESS_DATE_NO_CLOCK is deprecated, use MHD_USE_SUPPRESS_DATE_NO_CLOCK instead") \
-  MHD_USE_SUPPRESS_DATE_NO_CLOCK
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_SUPPRESS_DATE_NO_CLOCK is deprecated, use MHD_USE_SUPPRESS_DATE_NO_CLOCK instead") \
+        MHD_USE_SUPPRESS_DATE_NO_CLOCK
 #endif /* 0 */
 
   /**
@@ -1395,9 +1401,9 @@ enum MHD_FLAG
   MHD_USE_EPOLL_LINUX_ONLY = 512,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_EPOLL_LINUX_ONLY \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_USE_EPOLL_LINUX_ONLY is deprecated, use MHD_USE_EPOLL") \
-  MHD_USE_EPOLL
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_USE_EPOLL_LINUX_ONLY is deprecated, use MHD_USE_EPOLL") \
+        MHD_USE_EPOLL
 #endif /* 0 */
 
   /**
@@ -1416,14 +1422,14 @@ enum MHD_FLAG
                                         | MHD_USE_INTERNAL_POLLING_THREAD,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_EPOLL_INTERNALLY \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_USE_EPOLL_INTERNALLY is deprecated, use MHD_USE_EPOLL_INTERNAL_THREAD") \
-  MHD_USE_EPOLL_INTERNAL_THREAD
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_USE_EPOLL_INTERNALLY is deprecated, use MHD_USE_EPOLL_INTERNAL_THREAD") \
+        MHD_USE_EPOLL_INTERNAL_THREAD
   /** @deprecated */
 #define MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY is deprecated, use MHD_USE_EPOLL_INTERNAL_THREAD") \
-  MHD_USE_EPOLL_INTERNAL_THREAD
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY is deprecated, use MHD_USE_EPOLL_INTERNAL_THREAD") \
+        MHD_USE_EPOLL_INTERNAL_THREAD
 #endif /* 0 */
 
   /**
@@ -1444,9 +1450,9 @@ enum MHD_FLAG
   MHD_USE_PIPE_FOR_SHUTDOWN = 1024,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_PIPE_FOR_SHUTDOWN \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_USE_PIPE_FOR_SHUTDOWN is deprecated, use MHD_USE_ITC") \
-  MHD_USE_ITC
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_USE_PIPE_FOR_SHUTDOWN is deprecated, use MHD_USE_ITC") \
+        MHD_USE_ITC
 #endif /* 0 */
 
   /**
@@ -1466,9 +1472,9 @@ enum MHD_FLAG
   MHD_USE_EPOLL_TURBO = 4096,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_EPOLL_TURBO \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_USE_EPOLL_TURBO is deprecated, use MHD_USE_TURBO") \
-  MHD_USE_TURBO
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_USE_EPOLL_TURBO is deprecated, use MHD_USE_TURBO") \
+        MHD_USE_TURBO
 #endif /* 0 */
 
   /**
@@ -1481,9 +1487,9 @@ enum MHD_FLAG
   MHD_USE_SUSPEND_RESUME = 8192 | MHD_USE_ITC,
 #if 0 /* Will be marked for real deprecation later. */
 #define MHD_USE_SUSPEND_RESUME \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_USE_SUSPEND_RESUME is deprecated, use MHD_ALLOW_SUSPEND_RESUME instead") \
-  MHD_ALLOW_SUSPEND_RESUME
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_USE_SUSPEND_RESUME is deprecated, use MHD_ALLOW_SUSPEND_RESUME instead") \
+        MHD_ALLOW_SUSPEND_RESUME
 #endif /* 0 */
 
   /**
@@ -2250,9 +2256,9 @@ enum MHD_ValueKind
    */
   MHD_RESPONSE_HEADER_KIND = 0,
 #define MHD_RESPONSE_HEADER_KIND \
-  _MHD_DEPR_IN_MACRO ( \
-    "Value MHD_RESPONSE_HEADER_KIND is deprecated and not used") \
-  MHD_RESPONSE_HEADER_KIND
+        _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_RESPONSE_HEADER_KIND is deprecated and not used") \
+        MHD_RESPONSE_HEADER_KIND
 
   /**
    * HTTP header (request/response).
@@ -3154,8 +3160,8 @@ MHD_get_fdset2 (struct MHD_Daemon *daemon,
  * @ingroup event
  */
 #define MHD_get_fdset(daemon,read_fd_set,write_fd_set,except_fd_set,max_fd) \
-  MHD_get_fdset2 ((daemon),(read_fd_set),(write_fd_set),(except_fd_set), \
-                  (max_fd),FD_SETSIZE)
+        MHD_get_fdset2 ((daemon),(read_fd_set),(write_fd_set),(except_fd_set), \
+                        (max_fd),FD_SETSIZE)
 
 
 /**
@@ -3508,7 +3514,7 @@ MHD_run_from_select2 (struct MHD_Daemon *daemon,
  * @ingroup event
  */
 #define MHD_run_from_select(d,r,w,e) \
-  MHD_run_from_select2((d),(r),(w),(e),(unsigned int)(FD_SETSIZE))
+        MHD_run_from_select2 ((d),(r),(w),(e),(unsigned int) (FD_SETSIZE))
 
 /* **************** Connection handling functions ***************** */
 
@@ -3961,8 +3967,9 @@ MHD_create_response_from_callback (uint64_t size,
  * @deprecated use #MHD_create_response_from_buffer instead
  * @ingroup response
  */
-_MHD_DEPR_FUNC ("MHD_create_response_from_data() is deprecated, " \
-                "use MHD_create_response_from_buffer()") \
+_MHD_DEPR_FUNC ( \
+  "MHD_create_response_from_data() is deprecated, use MHD_create_response_from_buffer()" \
+  ) \
   _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_data (size_t size,
                                void *data,
@@ -4235,8 +4242,9 @@ MHD_create_response_from_fd64 (uint64_t size,
  * @return NULL on error (i.e. invalid arguments, out of memory)
  * @ingroup response
  */
-_MHD_DEPR_FUNC ("Function MHD_create_response_from_fd_at_offset() is " \
-                "deprecated, use MHD_create_response_from_fd_at_offset64()") \
+_MHD_DEPR_FUNC ( \
+  "Function MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()" \
+  ) \
   _MHD_EXTERN struct MHD_Response *
 MHD_create_response_from_fd_at_offset (size_t size,
                                        int fd,
@@ -4246,9 +4254,9 @@ MHD_create_response_from_fd_at_offset (size_t size,
 /* Substitute MHD_create_response_from_fd_at_offset64() instead of MHD_create_response_from_fd_at_offset()
    to minimize potential problems with different off_t sizes */
 #define MHD_create_response_from_fd_at_offset(size,fd,offset) \
-  _MHD_DEPR_IN_MACRO ( \
-    "Usage of MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()") \
-  MHD_create_response_from_fd_at_offset64 ((size),(fd),(offset))
+        _MHD_DEPR_IN_MACRO ( \
+          "Usage of MHD_create_response_from_fd_at_offset() is deprecated, use MHD_create_response_from_fd_at_offset64()") \
+        MHD_create_response_from_fd_at_offset64 ((size),(fd),(offset))
 #endif /* !_MHD_NO_DEPR_IN_MACRO || _MHD_NO_DEPR_FUNC */
 
 
@@ -6403,9 +6411,9 @@ enum MHD_FEATURE
    * Get whether automatic parsing of HTTP Cookie header is supported.
    * If disabled, no MHD_COOKIE_KIND will be generated by MHD.
    * MHD versions before 0x00097701 always support cookie parsing.
-   * @note Available since #MHD_VERSION 0x00097701
+   * @note Available since #MHD_VERSION 0x01000200
    */
-  MHD_FEATURE_HTTPS_COOKIE_PARSING = 24,
+  MHD_FEATURE_COOKIE_PARSING = 24,
 
   /**
    * Get whether the early version the Digest Authorization (RFC 2069) is
@@ -6499,6 +6507,9 @@ enum MHD_FEATURE
   MHD_FEATURE_FLEXIBLE_FD_SETSIZE = 34
 };
 
+#define MHD_FEATURE_HTTPS_COOKIE_PARSING _MHD_DEPR_IN_MACRO ( \
+          "Value MHD_FEATURE_HTTPS_COOKIE_PARSING is deprecated, use MHD_FEATURE_COOKIE_PARSING" \
+          ) MHD_FEATURE_COOKIE_PARSING
 
 /**
  * Get information about supported MHD features.
@@ -6515,11 +6526,6 @@ _MHD_EXTERN enum MHD_Result
 MHD_is_feature_supported (enum MHD_FEATURE feature);
 
 
-#ifdef __cplusplus
-#if 0                           /* keep Emacsens' auto-indent happy */
-{
-#endif
-}
-#endif
+MHD_C_DECLRATIONS_FINISH_HERE_
 
 #endif
