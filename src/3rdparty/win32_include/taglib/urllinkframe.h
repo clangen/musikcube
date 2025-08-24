@@ -53,7 +53,10 @@ namespace TagLib {
       /*!
        * Destroys this UrlLinkFrame instance.
        */
-      virtual ~UrlLinkFrame();
+      ~UrlLinkFrame() override;
+
+      UrlLinkFrame(const UrlLinkFrame &) = delete;
+      UrlLinkFrame &operator=(const UrlLinkFrame &) = delete;
 
       /*!
        * Returns the URL.
@@ -67,13 +70,13 @@ namespace TagLib {
 
       // Reimplementations.
 
-      virtual void setText(const String &s);
-      virtual String toString() const;
-      PropertyMap asProperties() const;
+      void setText(const String &s) override;
+      String toString() const override;
+      PropertyMap asProperties() const override;
 
     protected:
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
       /*!
        * The constructor used by the FrameFactory.
@@ -81,11 +84,9 @@ namespace TagLib {
       UrlLinkFrame(const ByteVector &data, Header *h);
 
     private:
-      UrlLinkFrame(const UrlLinkFrame &);
-      UrlLinkFrame &operator=(const UrlLinkFrame &);
-
       class UrlLinkFramePrivate;
-      UrlLinkFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<UrlLinkFramePrivate> d;
     };
 
     //! ID3v2 User defined URL frame
@@ -117,11 +118,14 @@ namespace TagLib {
       /*!
        * Destroys this UserUrlLinkFrame instance.
        */
-      virtual ~UserUrlLinkFrame();
+      ~UserUrlLinkFrame() override;
+
+      UserUrlLinkFrame(const UserUrlLinkFrame &) = delete;
+      UserUrlLinkFrame &operator=(const UserUrlLinkFrame &) = delete;
 
       // Reimplementations.
 
-      virtual String toString() const;
+      String toString() const override;
 
       /*!
        * Returns the text encoding that will be used in rendering this frame.
@@ -154,23 +158,23 @@ namespace TagLib {
 
       /*!
        * Parses the UserUrlLinkFrame as PropertyMap. The description() is taken as key,
-       * and the URL as single value.
+       * and the URL as a single value.
        * - if description() is empty, the key will be "URL".
        * - otherwise, if description() is not a valid key (e.g. containing non-ASCII
        *   characters), the returned map will contain an entry "WXXX/<description>"
        *   in its unsupportedData() list.
        */
-      PropertyMap asProperties() const;
+      PropertyMap asProperties() const override;
 
       /*!
        * Searches for the user defined url frame with the description \a description
        * in \a tag.  This returns null if no matching frames were found.
        */
-      static UserUrlLinkFrame *find(Tag *tag, const String &description);
+      static UserUrlLinkFrame *find(const Tag *tag, const String &description);
 
     protected:
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
       /*!
        * The constructor used by the FrameFactory.
@@ -178,13 +182,11 @@ namespace TagLib {
       UserUrlLinkFrame(const ByteVector &data, Header *h);
 
     private:
-      UserUrlLinkFrame(const UserUrlLinkFrame &);
-      UserUrlLinkFrame &operator=(const UserUrlLinkFrame &);
-
       class UserUrlLinkFramePrivate;
-      UserUrlLinkFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<UserUrlLinkFramePrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

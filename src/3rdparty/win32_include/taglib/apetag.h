@@ -26,12 +26,12 @@
 #ifndef TAGLIB_APETAG_H
 #define TAGLIB_APETAG_H
 
-#include "tag.h"
 #include "tbytevector.h"
 #include "tmap.h"
 #include "tstring.h"
+#include "taglib.h"
 #include "taglib_export.h"
-
+#include "tag.h"
 #include "apeitem.h"
 
 namespace TagLib {
@@ -49,8 +49,7 @@ namespace TagLib {
      *
      * \see APE::Tag::itemListMap()
      */
-    typedef Map<const String, Item> ItemListMap;
-
+    using ItemListMap = Map<const String, Item>;
 
     //! An APE tag implementation
 
@@ -66,12 +65,15 @@ namespace TagLib {
        * Create an APE tag and parse the data in \a file with APE footer at
        * \a tagOffset.
        */
-      Tag(TagLib::File *file, long footerLocation);
+      Tag(TagLib::File *file, offset_t footerLocation);
 
       /*!
        * Destroys this Tag instance.
        */
-      virtual ~Tag();
+      ~Tag() override;
+
+      Tag(const Tag &) = delete;
+      Tag &operator=(const Tag &) = delete;
 
       /*!
        * Renders the in memory values to a ByteVector suitable for writing to
@@ -87,21 +89,21 @@ namespace TagLib {
 
       // Reimplementations.
 
-      virtual String title() const;
-      virtual String artist() const;
-      virtual String album() const;
-      virtual String comment() const;
-      virtual String genre() const;
-      virtual unsigned int year() const;
-      virtual unsigned int track() const;
+      String title() const override;
+      String artist() const override;
+      String album() const override;
+      String comment() const override;
+      String genre() const override;
+      unsigned int year() const override;
+      unsigned int track() const override;
 
-      virtual void setTitle(const String &s);
-      virtual void setArtist(const String &s);
-      virtual void setAlbum(const String &s);
-      virtual void setComment(const String &s);
-      virtual void setGenre(const String &s);
-      virtual void setYear(unsigned int i);
-      virtual void setTrack(unsigned int i);
+      void setTitle(const String &s) override;
+      void setArtist(const String &s) override;
+      void setAlbum(const String &s) override;
+      void setComment(const String &s) override;
+      void setGenre(const String &s) override;
+      void setYear(unsigned int i) override;
+      void setTrack(unsigned int i) override;
 
       /*!
        * Implements the unified tag dictionary interface -- export function.
@@ -115,11 +117,12 @@ namespace TagLib {
        *
        * The only conversion done by this export function is to rename the APE tags
        * TRACK to TRACKNUMBER, YEAR to DATE, and ALBUM ARTIST to ALBUMARTIST, respectively,
+       * (and a few other keys, see \ref p_propertymapping)
        * in order to be compliant with the names used in other formats.
        */
-      PropertyMap properties() const;
+      PropertyMap properties() const override;
 
-      void removeUnsupportedProperties(const StringList &properties);
+      void removeUnsupportedProperties(const StringList &properties) override;
 
       /*!
        * Implements the unified tag dictionary interface -- import function. The same
@@ -127,7 +130,11 @@ namespace TagLib {
        * specification requires keys to have between 2 and 16 printable ASCII characters
        * with the exception of the fixed strings "ID3", "TAG", "OGGS", and "MP+".
        */
-      PropertyMap setProperties(const PropertyMap &);
+      PropertyMap setProperties(const PropertyMap &) override;
+
+      StringList complexPropertyKeys() const override;
+      List<VariantMap> complexProperties(const String &key) const override;
+      bool setComplexProperties(const String &key, const List<VariantMap> &value) override;
 
       /*!
        * Check if the given String is a valid APE tag key.
@@ -160,7 +167,7 @@ namespace TagLib {
 
       /*!
        * Adds to the text item specified by \a key the data \a value.  If \a replace
-       * is true, then all of the other values on the same key will be removed
+       * is \c true, then all of the other values on the same key will be removed
        * first.  If a binary item exists for \a key it will be removed first.
        */
       void addValue(const String &key, const String &value, bool replace = true);
@@ -179,9 +186,9 @@ namespace TagLib {
       void setItem(const String &key, const Item &item);
 
       /*!
-       * Returns true if the tag does not contain any data.
+       * Returns \c true if the tag does not contain any data.
        */
-      bool isEmpty() const;
+      bool isEmpty() const override;
 
     protected:
 
@@ -196,13 +203,11 @@ namespace TagLib {
       void parse(const ByteVector &data);
 
     private:
-      Tag(const Tag &);
-      Tag &operator=(const Tag &);
-
       class TagPrivate;
-      TagPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<TagPrivate> d;
     };
-  }
-}
+  }  // namespace APE
+}  // namespace TagLib
 
 #endif

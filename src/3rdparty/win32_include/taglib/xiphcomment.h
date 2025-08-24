@@ -26,18 +26,18 @@
 #ifndef TAGLIB_VORBISCOMMENT_H
 #define TAGLIB_VORBISCOMMENT_H
 
-#include "tag.h"
 #include "tlist.h"
 #include "tmap.h"
 #include "tstring.h"
 #include "tstringlist.h"
 #include "tbytevector.h"
-#include "flacpicture.h"
 #include "taglib_export.h"
+#include "tag.h"
+#include "flacpicture.h"
 
 #ifdef _MSC_VER
 // Explained at end of tpropertymap.cpp
-extern template class TAGLIB_EXPORT TagLib::Map<TagLib::String, TagLib::StringList>;
+extern template class TagLib::Map<TagLib::String, TagLib::StringList>;
 #endif
 
 namespace TagLib {
@@ -50,7 +50,7 @@ namespace TagLib {
      *
      * \see XiphComment::fieldListMap()
      */
-    typedef Map<String, StringList> FieldListMap;
+    using FieldListMap = Map<String, StringList>;
 
     //! Ogg Vorbis comment implementation
 
@@ -83,25 +83,28 @@ namespace TagLib {
       /*!
        * Destroys this instance of the XiphComment.
        */
-      virtual ~XiphComment();
+      ~XiphComment() override;
 
-      virtual String title() const;
-      virtual String artist() const;
-      virtual String album() const;
-      virtual String comment() const;
-      virtual String genre() const;
-      virtual unsigned int year() const;
-      virtual unsigned int track() const;
+      XiphComment(const XiphComment &) = delete;
+      XiphComment &operator=(const XiphComment &) = delete;
 
-      virtual void setTitle(const String &s);
-      virtual void setArtist(const String &s);
-      virtual void setAlbum(const String &s);
-      virtual void setComment(const String &s);
-      virtual void setGenre(const String &s);
-      virtual void setYear(unsigned int i);
-      virtual void setTrack(unsigned int i);
+      String title() const override;
+      String artist() const override;
+      String album() const override;
+      String comment() const override;
+      String genre() const override;
+      unsigned int year() const override;
+      unsigned int track() const override;
 
-      virtual bool isEmpty() const;
+      void setTitle(const String &s) override;
+      void setArtist(const String &s) override;
+      void setAlbum(const String &s) override;
+      void setComment(const String &s) override;
+      void setGenre(const String &s) override;
+      void setYear(unsigned int i) override;
+      void setTrack(unsigned int i) override;
+
+      bool isEmpty() const override;
 
       /*!
        * Returns the number of fields present in the comment.
@@ -153,7 +156,7 @@ namespace TagLib {
        * comment is nothing more than a map from tag names to list of values,
        * as is the dict interface).
        */
-      PropertyMap properties() const;
+      PropertyMap properties() const override;
 
       /*!
        * Implements the unified property interface -- import function.
@@ -162,7 +165,11 @@ namespace TagLib {
        * containing '=' or '~') in which case the according values will
        * be contained in the returned PropertyMap.
        */
-      PropertyMap setProperties(const PropertyMap&);
+      PropertyMap setProperties(const PropertyMap&) override;
+
+      StringList complexPropertyKeys() const override;
+      List<VariantMap> complexProperties(const String &key) const override;
+      bool setComplexProperties(const String &key, const List<VariantMap> &value) override;
 
       /*!
        * Check if the given String is a valid Xiph comment key.
@@ -177,21 +184,12 @@ namespace TagLib {
 
       /*!
        * Add the field specified by \a key with the data \a value.  If \a replace
-       * is true, then all of the other fields with the same key will be removed
+       * is \c true, then all of the other fields with the same key will be removed
        * first.
        *
        * If the field value is empty, the field will be removed.
        */
       void addField(const String &key, const String &value, bool replace = true);
-
-      /*!
-       * Remove the field specified by \a key with the data \a value.  If
-       * \a value is null, all of the fields with the given key will be removed.
-       *
-       * \deprecated Using this method may lead to a linkage error.
-       */
-      // BIC: remove and merge with below
-      TAGLIB_DEPRECATED void removeField(const String &key, const String &value = String());
 
       /*!
        * Remove all the fields specified by \a key.
@@ -215,7 +213,7 @@ namespace TagLib {
       void removeAllFields();
 
       /*!
-       * Returns true if the field is contained within the comment.
+       * Returns \c true if the field is contained within the comment.
        *
        * \note This is safer than checking for membership in the FieldListMap.
        */
@@ -223,17 +221,12 @@ namespace TagLib {
 
       /*!
        * Renders the comment to a ByteVector suitable for inserting into a file.
-       */
-      ByteVector render() const; // BIC: remove and merge with below
-
-      /*!
-       * Renders the comment to a ByteVector suitable for inserting into a file.
        *
-       * If \a addFramingBit is true the standard Vorbis comment framing bit will
+       * If \a addFramingBit is \c true the standard Vorbis comment framing bit will
        * be appended.  However some formats (notably FLAC) do not work with this
        * in place.
        */
-      ByteVector render(bool addFramingBit) const;
+      ByteVector render(bool addFramingBit = true) const;
 
 
       /*!
@@ -242,8 +235,8 @@ namespace TagLib {
       List<FLAC::Picture *> pictureList();
 
       /*!
-       * Removes an picture. If \a del is true the picture's memory
-       * will be freed; if it is false, it must be deleted by the user.
+       * Removes a picture. If \a del is \c true the picture's memory
+       * will be freed; if it is \c false, it must be deleted by the user.
        */
       void removePicture(FLAC::Picture *picture, bool del = true);
 
@@ -268,13 +261,11 @@ namespace TagLib {
       void parse(const ByteVector &data);
 
     private:
-      XiphComment(const XiphComment &);
-      XiphComment &operator=(const XiphComment &);
-
       class XiphCommentPrivate;
-      XiphCommentPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<XiphCommentPrivate> d;
     };
-  }
-}
+  }  // namespace Ogg
+}  // namespace TagLib
 
 #endif

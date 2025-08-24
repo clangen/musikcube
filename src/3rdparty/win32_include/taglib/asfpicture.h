@@ -28,8 +28,8 @@
 
 #include "tstring.h"
 #include "tbytevector.h"
+#include "tpicturetype.h"
 #include "taglib_export.h"
-#include "attachedpictureframe.h"
 
 namespace TagLib
 {
@@ -39,9 +39,9 @@ namespace TagLib
     //! An ASF attached picture interface implementation
 
     /*!
-     * This is an implementation of ASF attached pictures interface.  Pictures may be
+     * This is an implementation of ASF attached pictures.  Pictures may be
      * included in attributes, one per WM/Picture attribute (but there may be multiple WM/Picture
-     * attribute in a single tag).  These pictures are usually in either JPEG or
+     * attributes in a single tag).  These pictures are usually in either JPEG or
      * PNG format.
      * \see Attribute::toPicture()
      * \see Attribute::Attribute(const Picture& picture)
@@ -49,53 +49,10 @@ namespace TagLib
     class TAGLIB_EXPORT Picture {
     public:
 
-      /*!
+      /*
        * This describes the function or content of the picture.
        */
-      enum Type {
-        //! A type not enumerated below
-        Other              = 0x00,
-        //! 32x32 PNG image that should be used as the file icon
-        FileIcon           = 0x01,
-        //! File icon of a different size or format
-        OtherFileIcon      = 0x02,
-        //! Front cover image of the album
-        FrontCover         = 0x03,
-        //! Back cover image of the album
-        BackCover          = 0x04,
-        //! Inside leaflet page of the album
-        LeafletPage        = 0x05,
-        //! Image from the album itself
-        Media              = 0x06,
-        //! Picture of the lead artist or soloist
-        LeadArtist         = 0x07,
-        //! Picture of the artist or performer
-        Artist             = 0x08,
-        //! Picture of the conductor
-        Conductor          = 0x09,
-        //! Picture of the band or orchestra
-        Band               = 0x0A,
-        //! Picture of the composer
-        Composer           = 0x0B,
-        //! Picture of the lyricist or text writer
-        Lyricist           = 0x0C,
-        //! Picture of the recording location or studio
-        RecordingLocation  = 0x0D,
-        //! Picture of the artists during recording
-        DuringRecording    = 0x0E,
-        //! Picture of the artists during performance
-        DuringPerformance  = 0x0F,
-        //! Picture from a movie or video related to the track
-        MovieScreenCapture = 0x10,
-        //! Picture of a large, coloured fish
-        ColouredFish       = 0x11,
-        //! Illustration related to the track
-        Illustration       = 0x12,
-        //! Logo of the band or performer
-        BandLogo           = 0x13,
-        //! Logo of the publisher (record company)
-        PublisherLogo      = 0x14
-      };
+      DECLARE_PICTURE_TYPE_ENUM(Type)
 
       /*!
        * Constructs an empty picture.
@@ -103,14 +60,14 @@ namespace TagLib
       Picture();
 
       /*!
-       * Construct an picture as a copy of \a other.
+       * Construct a picture as a copy of \a other.
        */
       Picture(const Picture& other);
 
       /*!
        * Destroys the picture.
        */
-      virtual ~Picture();
+      ~Picture();
 
       /*!
        * Copies the contents of \a other into this picture.
@@ -118,12 +75,12 @@ namespace TagLib
       Picture& operator=(const Picture& other);
 
       /*!
-       * Exchanges the content of the Picture by the content of \a other.
+       * Exchanges the content of the Picture with the content of \a other.
        */
-      void swap(Picture &other);
+      void swap(Picture &other) noexcept;
 
       /*!
-       * Returns true if Picture stores valid picture
+       * Returns \c true if Picture stores valid picture
        */
       bool isValid() const;
 
@@ -178,7 +135,7 @@ namespace TagLib
       /*!
        * Returns the image data as a ByteVector.
        *
-       * \note ByteVector has a data() method that returns a const char * which
+       * \note ByteVector has a data() method that returns a <tt>const char *</tt> which
        * should make it easy to export this data to external programs.
        *
        * \see setPicture()
@@ -214,9 +171,10 @@ namespace TagLib
 
       private:
         class PicturePrivate;
-        PicturePrivate *d;
+        TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+        std::shared_ptr<PicturePrivate> d;
       };
-  }
-}
+  }  // namespace ASF
+}  // namespace TagLib
 
 #endif // ASFPICTURE_H

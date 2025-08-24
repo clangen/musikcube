@@ -26,10 +26,9 @@
 #ifndef TAGLIB_TABLEOFCONTENTSFRAME
 #define TAGLIB_TABLEOFCONTENTSFRAME
 
+#include "tbytevectorlist.h"
 #include "id3v2tag.h"
 #include "id3v2frame.h"
-
-#include "tbytevectorlist.h"
 
 namespace TagLib {
 
@@ -65,18 +64,21 @@ namespace TagLib {
       /*!
        * Destroys the frame.
        */
-      ~TableOfContentsFrame();
+      ~TableOfContentsFrame() override;
+
+      TableOfContentsFrame(const TableOfContentsFrame &) = delete;
+      TableOfContentsFrame &operator=(const TableOfContentsFrame &) = delete;
 
       /*!
-       * Returns the elementID of the frame. Element ID
-       * is a null terminated string, however it's not human-readable.
+       * Returns the elementID of the frame.
+       * Element ID is not intended to be human readable.
        *
        * \see setElementID()
        */
       ByteVector elementID() const;
 
       /*!
-       * Returns true, if the frame is top-level (doesn't have
+       * Returns \c true, if the frame is top-level (doesn't have
        * any parent CTOC frame).
        *
        * \see setIsTopLevel()
@@ -84,7 +86,7 @@ namespace TagLib {
       bool isTopLevel() const;
 
       /*!
-       * Returns true, if the child elements list entries
+       * Returns \c true, if the child elements list entries
        * are ordered.
        *
        * \see setIsOrdered()
@@ -92,8 +94,8 @@ namespace TagLib {
       bool isOrdered() const;
 
       /*!
-       * Returns count of child elements of the frame. It always
-       * corresponds to size of child elements list.
+       * Returns the count of child elements of the frame. It always
+       * corresponds to the size of the child elements list.
        *
        * \see childElements()
        */
@@ -107,8 +109,7 @@ namespace TagLib {
       ByteVectorList childElements() const;
 
       /*!
-       * Sets the elementID of the frame to \a eID. If \a eID isn't
-       * null terminated, a null char is appended automatically.
+       * Sets the elementID of the frame to \a eID.
        *
        * \see elementID()
        */
@@ -138,7 +139,7 @@ namespace TagLib {
       void setChildElements(const ByteVectorList &l);
 
       /*!
-       * Adds \a cE to list of child elements of the frame.
+       * Adds \a cE to the list of child elements of the frame.
        *
        * \see childElements()
        */
@@ -152,7 +153,7 @@ namespace TagLib {
       void removeChildElement(const ByteVector &cE);
 
       /*!
-       * Returns a reference to the frame list map.  This is an FrameListMap of
+       * Returns a reference to the frame list map.  This is a FrameListMap of
        * all of the frames embedded in the CTOC frame.
        *
        * This is the most convenient structure for accessing the CTOC frame's
@@ -168,11 +169,11 @@ namespace TagLib {
       const FrameListMap &embeddedFrameListMap() const;
 
       /*!
-       * Returns a reference to the embedded frame list.  This is an FrameList
+       * Returns a reference to the embedded frame list.  This is a FrameList
        * of all of the frames embedded in the CTOC frame in the order that they
        * were parsed.
        *
-       * This can be useful if for example you want iterate over the CTOC frame's
+       * This can be useful if for example you want to iterate over the CTOC frame's
        * embedded frames in the order that they occur in the CTOC frame.
        *
        * \warning You should not modify this data structure directly, instead
@@ -203,8 +204,8 @@ namespace TagLib {
       void addEmbeddedFrame(Frame *frame);
 
       /*!
-       * Remove an embedded frame from the CTOC frame.  If \a del is true the frame's
-       * memory will be freed; if it is false, it must be deleted by the user.
+       * Remove an embedded frame from the CTOC frame.  If \a del is \c true the frame's
+       * memory will be freed; if it is \c false, it must be deleted by the user.
        *
        * \note Using this method will invalidate any pointers on the list
        * returned by embeddedFrameList()
@@ -220,9 +221,9 @@ namespace TagLib {
        */
       void removeEmbeddedFrames(const ByteVector &id);
 
-      virtual String toString() const;
+      String toString() const override;
 
-      PropertyMap asProperties() const;
+      PropertyMap asProperties() const override;
 
       /*!
        * CTOC frames each have a unique element ID. This searches for a CTOC
@@ -236,25 +237,24 @@ namespace TagLib {
       /*!
        * CTOC frames each contain a flag that indicates, if CTOC frame is top-level (there isn't
        * any frame, which contains this frame in its child elements list). Only a single frame
-       * within tag can be top-level. This searches for a top-level CTOC frame.
+       * within the tag can be top-level. This searches for a top-level CTOC frame.
        *
        * \see isTopLevel()
        */
       static TableOfContentsFrame *findTopLevel(const Tag *tag);
 
     protected:
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       TableOfContentsFrame(const ID3v2::Header *tagHeader, const ByteVector &data, Header *h);
-      TableOfContentsFrame(const TableOfContentsFrame &);
-      TableOfContentsFrame &operator=(const TableOfContentsFrame &);
 
       class TableOfContentsFramePrivate;
-      TableOfContentsFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<TableOfContentsFramePrivate> d;
     };
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 
 #endif

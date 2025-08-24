@@ -26,13 +26,10 @@
 #ifndef TAGLIB_MPCFILE_H
 #define TAGLIB_MPCFILE_H
 
-#include "taglib_export.h"
 #include "tfile.h"
+#include "taglib_export.h"
 #include "tag.h"
-
 #include "mpcproperties.h"
-
-#include "tlist.h"
 
 namespace TagLib {
 
@@ -44,7 +41,7 @@ namespace TagLib {
   //! An implementation of MPC metadata
 
   /*!
-   * This is implementation of MPC metadata.
+   * This is an implementation of MPC metadata.
    *
    * This supports ID3v1 and APE (v1 and v2) style comments as well as reading stream
    * properties from the file. ID3v2 tags are invalid in MPC-files, but will be skipped
@@ -84,7 +81,7 @@ namespace TagLib {
       };
 
       /*!
-       * Constructs an MPC file from \a file.  If \a readProperties is true the
+       * Constructs an MPC file from \a file.  If \a readProperties is \c true the
        * file's audio properties will also be read.
        *
        * \note In the current implementation, \a propertiesStyle is ignored.
@@ -93,7 +90,7 @@ namespace TagLib {
            Properties::ReadStyle propertiesStyle = Properties::Average);
 
       /*!
-       * Constructs an MPC file from \a stream.  If \a readProperties is true the
+       * Constructs an MPC file from \a stream.  If \a readProperties is \c true the
        * file's audio properties will also be read.
        *
        * \note TagLib will *not* take ownership of the stream, the caller is
@@ -107,55 +104,58 @@ namespace TagLib {
       /*!
        * Destroys this instance of the File.
        */
-      virtual ~File();
+      ~File() override;
+
+      File(const File &) = delete;
+      File &operator=(const File &) = delete;
 
       /*!
        * Returns the Tag for this file.  This will be an APE tag, an ID3v1 tag
        * or a combination of the two.
        */
-      virtual TagLib::Tag *tag() const;
+      TagLib::Tag *tag() const override;
 
       /*!
        * Implements the unified property interface -- export function.
        * If the file contains both an APE and an ID3v1 tag, only the APE
        * tag  will be converted to the PropertyMap.
        */
-      PropertyMap properties() const;
+      PropertyMap properties() const override;
 
-      void removeUnsupportedProperties(const StringList &properties);
+      void removeUnsupportedProperties(const StringList &properties) override;
 
       /*!
        * Implements the unified property interface -- import function.
        * Affects only the APEv2 tag which will be created if necessary.
        * If an ID3v1 tag exists, it will be updated as well.
        */
-      PropertyMap setProperties(const PropertyMap &);
+      PropertyMap setProperties(const PropertyMap &) override;
 
       /*!
        * Returns the MPC::Properties for this file.  If no audio properties
        * were read then this will return a null pointer.
        */
-      virtual Properties *audioProperties() const;
+      Properties *audioProperties() const override;
 
       /*!
        * Saves the file.
        *
-       * This returns true if the save was successful.
+       * This returns \c true if the save was successful.
        */
-      virtual bool save();
+      bool save() override;
 
       /*!
        * Returns a pointer to the ID3v1 tag of the file.
        *
-       * If \a create is false (the default) this returns a null pointer
-       * if there is no valid APE tag.  If \a create is true it will create
+       * If \a create is \c false (the default) this returns a null pointer
+       * if there is no valid APE tag.  If \a create is \c true it will create
        * an APE tag if one does not exist and returns a valid pointer.
        *
        * \note This may return a valid pointer regardless of whether or not the
        * file on disk has an ID3v1 tag.  Use hasID3v1Tag() to check if the file
        * on disk actually has an ID3v1 tag.
        *
-       * \note The Tag <b>is still</b> owned by the MPEG::File and should not be
+       * \note The Tag <b>is still</b> owned by the MPC::File and should not be
        * deleted by the user.  It will be deleted when the file (object) is
        * destroyed.
        *
@@ -166,16 +166,16 @@ namespace TagLib {
       /*!
        * Returns a pointer to the APE tag of the file.
        *
-       * If \a create is false (the default) this may return a null pointer
-       * if there is no valid APE tag.  If \a create is true it will create
+       * If \a create is \c false (the default) this may return a null pointer
+       * if there is no valid APE tag.  If \a create is \c true it will create
        * an APE tag if one does not exist and returns a valid pointer.  If
-       * there already be an ID3v1 tag, the new APE tag will be placed before it.
+       * there already is an ID3v1 tag, the new APE tag will be placed before it.
        *
        * \note This may return a valid pointer regardless of whether or not the
        * file on disk has an APE tag.  Use hasAPETag() to check if the file
        * on disk actually has an APE tag.
        *
-       * \note The Tag <b>is still</b> owned by the MPEG::File and should not be
+       * \note The Tag <b>is still</b> owned by the MPC::File and should not be
        * deleted by the user.  It will be deleted when the file (object) is
        * destroyed.
        *
@@ -193,12 +193,6 @@ namespace TagLib {
        * \note In order to make the removal permanent save() still needs to be called.
        */
       void strip(int tags = AllTags);
-
-      /*!
-       * \deprecated Use strip().
-       * \see strip
-       */
-      TAGLIB_DEPRECATED void remove(int tags = AllTags);
 
       /*!
        * Returns whether or not the file on disk actually has an ID3v1 tag.
@@ -224,15 +218,13 @@ namespace TagLib {
       static bool isSupported(IOStream *stream);
 
     private:
-      File(const File &);
-      File &operator=(const File &);
-
       void read(bool readProperties);
 
       class FilePrivate;
-      FilePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<FilePrivate> d;
     };
-  }
-}
+  }  // namespace MPC
+}  // namespace TagLib
 
 #endif

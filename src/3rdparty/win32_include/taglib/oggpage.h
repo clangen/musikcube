@@ -26,8 +26,9 @@
 #ifndef TAGLIB_OGGPAGE_H
 #define TAGLIB_OGGPAGE_H
 
-#include "taglib_export.h"
 #include "tbytevectorlist.h"
+#include "taglib.h"
+#include "taglib_export.h"
 
 namespace TagLib {
 
@@ -46,7 +47,7 @@ namespace TagLib {
      *
      * In most Xiph.org formats the comments are found in the first few packets,
      * this however is a reasonably complete implementation of Ogg pages that
-     * could potentially be useful for non-meta data purposes.
+     * could potentially be useful for non-metadata purposes.
      */
 
     class TAGLIB_EXPORT Page
@@ -55,14 +56,17 @@ namespace TagLib {
       /*!
        * Read an Ogg page from the \a file at the position \a pageOffset.
        */
-      Page(File *file, long pageOffset);
+      Page(File *file, offset_t pageOffset);
 
-      virtual ~Page();
+      ~Page();
+
+      Page(const Page &) = delete;
+      Page &operator=(const Page &) = delete;
 
       /*!
        * Returns the page's position within the file (in bytes).
        */
-      long fileOffset() const;
+      offset_t fileOffset() const;
 
       /*!
        * Returns a pointer to the header for this page.  This pointer will become
@@ -86,16 +90,6 @@ namespace TagLib {
       void setPageSequenceNumber(int sequenceNumber);
 
       /*!
-       * Returns a copy of the page with \a sequenceNumber set as sequence number.
-       *
-       * \see header()
-       * \see PageHeader::setPageSequenceNumber()
-       *
-       * \deprecated Always returns null.
-       */
-      TAGLIB_DEPRECATED Page *getCopyWithNewPageSequenceNumber(int sequenceNumber);
-
-      /*!
        * Returns the index of the first packet wholly or partially contained in
        * this page.
        *
@@ -112,7 +106,7 @@ namespace TagLib {
 
       /*!
        * When checking to see if a page contains a given packet this set of flags
-       * represents the possible values for that packets status in the page.
+       * represents the possible values for that packet's status in the page.
        *
        * \see containsPacket()
        */
@@ -181,7 +175,7 @@ namespace TagLib {
        * Pack \a packets into Ogg pages using the \a strategy for pagination.
        * The page number indicator inside of the rendered packets will start
        * with \a firstPage and be incremented for each page rendered.
-       * \a containsLastPacket should be set to true if \a packets contains the
+       * \a containsLastPacket should be set to \c true if \a packets contains the
        * last page in the stream and will set the appropriate flag in the last
        * rendered Ogg page's header.  \a streamSerialNumber should be set to
        * the serial number for this stream.
@@ -217,12 +211,10 @@ namespace TagLib {
            bool containsLastPacket = false);
 
     private:
-      Page(const Page &);
-      Page &operator=(const Page &);
-
       class PagePrivate;
-      PagePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<PagePrivate> d;
     };
-  }
-}
+  }  // namespace Ogg
+}  // namespace TagLib
 #endif

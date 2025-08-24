@@ -26,8 +26,8 @@
 #ifndef TAGLIB_DEBUGLISTENER_H
 #define TAGLIB_DEBUGLISTENER_H
 
-#include "taglib_export.h"
 #include "tstring.h"
+#include "taglib_export.h"
 
 namespace TagLib
 {
@@ -45,6 +45,8 @@ namespace TagLib
   public:
     DebugListener();
     virtual ~DebugListener();
+    DebugListener(const DebugListener &) = delete;
+    DebugListener &operator=(const DebugListener &) = delete;
 
     /*!
      * When overridden in a derived class, redirects \a msg to your preferred
@@ -53,15 +55,15 @@ namespace TagLib
     virtual void printMessage(const String &msg) = 0;
 
   private:
-    // Noncopyable
-    DebugListener(const DebugListener &);
-    DebugListener &operator=(const DebugListener &);
+    class DebugListenerPrivate;
+    TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+    std::unique_ptr<DebugListenerPrivate> d;
   };
 
   /*!
    * Sets the listener that decides how the debug messages are redirected.
    * If the parameter \a listener is null, the previous listener is released
-   * and default stderr listener is restored.
+   * and the default stderr listener is restored.
    *
    * \note The caller is responsible for deleting the previous listener
    * as needed after it is released.
@@ -69,6 +71,6 @@ namespace TagLib
    * \see DebugListener
    */
   TAGLIB_EXPORT void setDebugListener(DebugListener *listener);
-}
+}  // namespace TagLib
 
 #endif

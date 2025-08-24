@@ -26,16 +26,16 @@
 #ifndef TAGLIB_XINGHEADER_H
 #define TAGLIB_XINGHEADER_H
 
-#include "mpegheader.h"
+#include <memory>
+
 #include "taglib_export.h"
+#include "mpegheader.h"
 
 namespace TagLib {
 
   class ByteVector;
 
   namespace MPEG {
-
-    class File;
 
     //! An implementation of the Xing/VBRI headers
 
@@ -45,8 +45,8 @@ namespace TagLib {
      * to make it easy to compute the length and quality of a VBR stream.  Our
      * implementation is only concerned with the total size of the stream (so
      * that we can calculate the total playing time and the average bitrate).
-     * It uses <a href="http://home.pcisys.net/~melanson/codecs/mp3extensions.txt">
-     * this text</a> and the XMMS sources as references.
+     * It uses <a href="https://multimedia.cx/mp3extensions.txt">
+     * mp3extensions.txt</a> and the XMMS sources as references.
      */
 
     class TAGLIB_EXPORT XingHeader
@@ -74,7 +74,7 @@ namespace TagLib {
       };
 
       /*!
-       * Parses an Xing/VBRI header based on \a data which contains the entire
+       * Parses a Xing/VBRI header based on \a data which contains the entire
        * first MPEG frame.
        */
       XingHeader(const ByteVector &data);
@@ -82,10 +82,13 @@ namespace TagLib {
       /*!
        * Destroy this XingHeader instance.
        */
-      virtual ~XingHeader();
+      ~XingHeader();
+
+      XingHeader(const XingHeader &) = delete;
+      XingHeader &operator=(const XingHeader &) = delete;
 
       /*!
-       * Returns true if the data was parsed properly and if there is a valid
+       * Returns \c true if the data was parsed properly and if there is a valid
        * Xing/VBRI header present.
        */
       bool isValid() const;
@@ -105,25 +108,14 @@ namespace TagLib {
        */
       HeaderType type() const;
 
-      /*!
-       * Returns the offset for the start of this Xing header, given the
-       * version and channels of the frame
-       *
-       * \deprecated Always returns 0.
-       */
-      TAGLIB_DEPRECATED static int xingHeaderOffset(TagLib::MPEG::Header::Version v,
-                                                    TagLib::MPEG::Header::ChannelMode c);
-
     private:
-      XingHeader(const XingHeader &);
-      XingHeader &operator=(const XingHeader &);
-
       void parse(const ByteVector &data);
 
       class XingHeaderPrivate;
-      XingHeaderPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<XingHeaderPrivate> d;
     };
-  }
-}
+  }  // namespace MPEG
+}  // namespace TagLib
 
 #endif

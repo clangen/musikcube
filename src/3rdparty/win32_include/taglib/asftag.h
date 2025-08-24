@@ -26,18 +26,20 @@
 #ifndef TAGLIB_ASFTAG_H
 #define TAGLIB_ASFTAG_H
 
-#include "tag.h"
 #include "tlist.h"
 #include "tmap.h"
 #include "taglib_export.h"
+#include "tag.h"
 #include "asfattribute.h"
 
 namespace TagLib {
 
   namespace ASF {
 
-    typedef List<Attribute> AttributeList;
-    typedef Map<String, AttributeList> AttributeListMap;
+    using AttributeList = List<Attribute>;
+    using AttributeListMap = Map<String, AttributeList>;
+
+    //! An implementation of ASF (WMA) tags
 
     class TAGLIB_EXPORT Tag : public TagLib::Tag {
 
@@ -47,34 +49,37 @@ namespace TagLib {
 
       Tag();
 
-      virtual ~Tag();
+      ~Tag() override;
+
+      Tag(const Tag &) = delete;
+      Tag &operator=(const Tag &) = delete;
 
       /*!
        * Returns the track name.
        */
-      virtual String title() const;
+      String title() const override;
 
       /*!
        * Returns the artist name.
        */
-      virtual String artist() const;
+      String artist() const override;
 
       /*!
        * Returns the album name; if no album name is present in the tag
-       * String::null will be returned.
+       * an empty string will be returned.
        */
-      virtual String album() const;
+      String album() const override;
 
       /*!
        * Returns the track comment.
        */
-      virtual String comment() const;
+      String comment() const override;
 
       /*!
-       * Returns the genre name; if no genre is present in the tag String::null
+       * Returns the genre name; if no genre is present in the tag an empty string
        * will be returned.
        */
-      virtual String genre() const;
+      String genre() const override;
 
       /*!
        * Returns the rating.
@@ -82,77 +87,78 @@ namespace TagLib {
       virtual String rating() const;
 
       /*!
-       * Returns the genre name; if no genre is present in the tag String::null
-       * will be returned.
+       * Returns the copyright information; if no copyright information is
+       * present in the tag an empty string will be returned.
        */
       virtual String copyright() const;
 
       /*!
        * Returns the year; if there is no year set, this will return 0.
        */
-      virtual unsigned int year() const;
+      unsigned int year() const override;
 
       /*!
        * Returns the track number; if there is no track number set, this will
        * return 0.
        */
-      virtual unsigned int track() const;
+      unsigned int track() const override;
 
       /*!
-       * Sets the title to \a s.
+       * Sets the title to \a value.
        */
-      virtual void setTitle(const String &s);
+      void setTitle(const String &value) override;
 
       /*!
-       * Sets the artist to \a s.
+       * Sets the artist to \a value.
        */
-      virtual void setArtist(const String &s);
+      void setArtist(const String &value) override;
 
       /*!
-       * Sets the album to \a s.  If \a s is String::null then this value will be
+       * Sets the album to \a value.  If \a value is an empty string then this value will be
        * cleared.
        */
-      virtual void setAlbum(const String &s);
+      void setAlbum(const String &value) override;
 
       /*!
-       * Sets the comment to \a s.
+       * Sets the comment to \a value.
        */
-      virtual void setComment(const String &s);
+      void setComment(const String &value) override;
 
       /*!
-       * Sets the rating to \a s.
+       * Sets the rating to \a value.
        */
-      virtual void setRating(const String &s);
+      virtual void setRating(const String &value);
 
       /*!
-       * Sets the copyright to \a s.
+       * Sets the copyright to \a value.
        */
-      virtual void setCopyright(const String &s);
+      virtual void setCopyright(const String &value);
 
       /*!
-       * Sets the genre to \a s.
+       * Sets the genre to \a value.
        */
-      virtual void setGenre(const String &s);
+      void setGenre(const String &value) override;
 
       /*!
-       * Sets the year to \a i.  If \a s is 0 then this value will be cleared.
+       * Sets the year to \a value.  If \a value is 0 then this value will be cleared.
        */
-      virtual void setYear(unsigned int i);
+      void setYear(unsigned int value) override;
 
       /*!
-       * Sets the track to \a i.  If \a s is 0 then this value will be cleared.
+       * Sets the track to \a value.  If \a value is 0 then this value will be cleared.
        */
-      virtual void setTrack(unsigned int i);
+      void setTrack(unsigned int value) override;
 
       /*!
-       * Returns true if the tag does not contain any data.  This should be
+       * Returns \c true if the tag does not contain any data.  This should be
        * reimplemented in subclasses that provide more than the basic tagging
        * abilities in this class.
        */
-      virtual bool isEmpty() const;
+      bool isEmpty() const override;
 
       /*!
-       * \deprecated Use attributeListMap() const, contains(), removeItem(),
+       * \warning You should not modify this data structure directly, instead
+       * use attributeListMap() const, contains(), removeItem(),
        * attribute(), setAttribute(), addAttribute().
        */
       AttributeListMap &attributeListMap();
@@ -161,18 +167,17 @@ namespace TagLib {
        * Returns a reference to the item list map.  This is an AttributeListMap of
        * all of the items in the tag.
        */
-      // BIC: return by value
       const AttributeListMap &attributeListMap() const;
 
       /*!
-       * \return True if a value for \a attribute is currently set.
+       * \return \c true if a value for \a key is currently set.
        */
-      bool contains(const String &name) const;
+      bool contains(const String &key) const;
 
       /*!
        * Removes the \a key attribute from the tag
        */
-      void removeItem(const String &name);
+      void removeItem(const String &key);
 
       /*!
        * \return The list of values for the key \a name, or an empty list if no
@@ -181,8 +186,8 @@ namespace TagLib {
       AttributeList attribute(const String &name) const;
 
       /*!
-       * Sets the \a key attribute to the value of \a attribute. If an attribute
-       * with the \a key is already present, it will be replaced.
+       * Sets the \a name attribute to the value of \a attribute. If an attribute
+       * with the \a name is already present, it will be replaced.
        */
       void setAttribute(const String &name, const Attribute &attribute);
 
@@ -192,20 +197,25 @@ namespace TagLib {
       void setAttribute(const String &name, const AttributeList &values);
 
       /*!
-       * Sets the \a key attribute to the value of \a attribute. If an attribute
-       * with the \a key is already present, it will be added to the list.
+       * Sets the \a name attribute to the value of \a attribute. If an attribute
+       * with the \a name is already present, it will be added to the list.
        */
       void addAttribute(const String &name, const Attribute &attribute);
 
-      PropertyMap properties() const;
-      void removeUnsupportedProperties(const StringList& properties);
-      PropertyMap setProperties(const PropertyMap &properties);
+      PropertyMap properties() const override;
+      void removeUnsupportedProperties(const StringList &props) override;
+      PropertyMap setProperties(const PropertyMap &props) override;
+
+      StringList complexPropertyKeys() const override;
+      List<VariantMap> complexProperties(const String &key) const override;
+      bool setComplexProperties(const String &key, const List<VariantMap> &value) override;
 
     private:
 
       class TagPrivate;
-      TagPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<TagPrivate> d;
     };
-  }
-}
+  }  // namespace ASF
+}  // namespace TagLib
 #endif

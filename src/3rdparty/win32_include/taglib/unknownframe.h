@@ -26,8 +26,8 @@
 #ifndef TAGLIB_UNKNOWNFRAME_H
 #define TAGLIB_UNKNOWNFRAME_H
 
-#include "id3v2frame.h"
 #include "taglib_export.h"
+#include "id3v2frame.h"
 
 namespace TagLib {
 
@@ -37,7 +37,7 @@ namespace TagLib {
 
     /*!
      * This class represents a frame type not known (or more often simply
-     * unimplemented) in TagLib.  This is here provide a basic API for
+     * unimplemented) in TagLib.  This is here to provide a basic API for
      * manipulating the binary data of unknown frames and to provide a means
      * of rendering such \e unknown frames.
      *
@@ -52,9 +52,12 @@ namespace TagLib {
 
     public:
       UnknownFrame(const ByteVector &data);
-      virtual ~UnknownFrame();
+      ~UnknownFrame() override;
 
-      virtual String toString() const;
+      UnknownFrame(const UnknownFrame &) = delete;
+      UnknownFrame &operator=(const UnknownFrame &) = delete;
+
+      String toString() const override;
 
       /*!
        * Returns the field data (everything but the header) for this frame.
@@ -62,18 +65,17 @@ namespace TagLib {
       ByteVector data() const;
 
     protected:
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       UnknownFrame(const ByteVector &data, Header *h);
-      UnknownFrame(const UnknownFrame &);
-      UnknownFrame &operator=(const UnknownFrame &);
 
       class UnknownFramePrivate;
-      UnknownFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<UnknownFramePrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

@@ -26,10 +26,10 @@
 #ifndef TAGLIB_FILESTREAM_H
 #define TAGLIB_FILESTREAM_H
 
-#include "taglib_export.h"
-#include "taglib.h"
 #include "tbytevector.h"
 #include "tiostream.h"
+#include "taglib_export.h"
+#include "taglib.h"
 
 namespace TagLib {
 
@@ -37,53 +37,50 @@ namespace TagLib {
   class Tag;
   class AudioProperties;
 
-  //! A file class with some useful methods for tag manipulation
-
-  /*!
-   * This class is a basic file class with some methods that are particularly
-   * useful for tag editors.  It has methods to take advantage of
-   * ByteVector and a binary search method for finding patterns in a file.
-   */
+  //! I/O stream with data from a file.
 
   class TAGLIB_EXPORT FileStream : public IOStream
   {
   public:
     /*!
-     * Construct a File object and opens the \a file.  \a file should be a
-     * be a C-string in the local file system encoding.
+     * Construct a FileStream object and open the \a fileName.  \a fileName should be a
+     * C-string in the local file system encoding.
      */
-    FileStream(FileName file, bool openReadOnly = false);
+    FileStream(FileName fileName, bool openReadOnly = false);
 
     /*!
-     * Construct a File object and opens the \a file using file descriptor.
+     * Construct a FileStream object using an existing \a fileDescriptor.
      */
     FileStream(int fileDescriptor, bool openReadOnly = false);
 
     /*!
      * Destroys this FileStream instance.
      */
-    virtual ~FileStream();
+    ~FileStream() override;
+
+    FileStream(const FileStream &) = delete;
+    FileStream &operator=(const FileStream &) = delete;
 
     /*!
      * Returns the file name in the local file system encoding.
      */
-    FileName name() const;
+    FileName name() const override;
 
     /*!
      * Reads a block of size \a length at the current get pointer.
      */
-    ByteVector readBlock(unsigned long length);
+    ByteVector readBlock(size_t length) override;
 
     /*!
      * Attempts to write the block \a data at the current get pointer.  If the
-     * file is currently only opened read only -- i.e. readOnly() returns true --
+     * file is currently only opened read only -- i.e. readOnly() returns \c true --
      * this attempts to reopen the file in read/write mode.
      *
      * \note This should be used instead of using the streaming output operator
      * for a ByteVector.  And even this function is significantly slower than
      * doing output with a char[].
      */
-    void writeBlock(const ByteVector &data);
+    void writeBlock(const ByteVector &data) override;
 
     /*!
      * Insert \a data at position \a start in the file overwriting \a replace
@@ -92,7 +89,7 @@ namespace TagLib {
      * \note This method is slow since it requires rewriting all of the file
      * after the insertion point.
      */
-    void insert(const ByteVector &data, unsigned long start = 0, unsigned long replace = 0);
+    void insert(const ByteVector &data, offset_t start = 0, size_t replace = 0) override;
 
     /*!
      * Removes a block of the file starting a \a start and continuing for
@@ -101,18 +98,18 @@ namespace TagLib {
      * \note This method is slow since it involves rewriting all of the file
      * after the removed portion.
      */
-    void removeBlock(unsigned long start = 0, unsigned long length = 0);
+    void removeBlock(offset_t start = 0, size_t length = 0) override;
 
     /*!
-     * Returns true if the file is read only (or if the file can not be opened).
+     * Returns \c true if the file is read only (or if the file can not be opened).
      */
-    bool readOnly() const;
+    bool readOnly() const override;
 
     /*!
      * Since the file can currently only be opened as an argument to the
      * constructor (sort-of by design), this returns if that open succeeded.
      */
-    bool isOpen() const;
+    bool isOpen() const override;
 
     /*!
      * Move the I/O pointer to \a offset in the file from position \a p.  This
@@ -120,27 +117,27 @@ namespace TagLib {
      *
      * \see Position
      */
-    void seek(long offset, Position p = Beginning);
+    void seek(offset_t offset, Position p = Beginning) override;
 
     /*!
      * Reset the end-of-file and error flags on the file.
      */
-    void clear();
+    void clear() override;
 
     /*!
      * Returns the current offset within the file.
      */
-    long tell() const;
+    offset_t tell() const override;
 
     /*!
      * Returns the length of the file.
      */
-    long length();
+    offset_t length() override;
 
     /*!
      * Truncates the file to a \a length.
      */
-    void truncate(long length);
+    void truncate(offset_t length) override;
 
   protected:
 
@@ -151,9 +148,10 @@ namespace TagLib {
 
   private:
     class FileStreamPrivate;
-    FileStreamPrivate *d;
+    TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+    std::unique_ptr<FileStreamPrivate> d;
   };
 
-}
+}  // namespace TagLib
 
 #endif

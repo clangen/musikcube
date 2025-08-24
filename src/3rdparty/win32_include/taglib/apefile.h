@@ -48,7 +48,7 @@ namespace TagLib {
   //! An implementation of APE metadata
 
   /*!
-   * This is implementation of APE metadata.
+   * This is an implementation of APE metadata.
    *
    * This supports ID3v1 and APE (v1 and v2) style comments as well as reading stream
    * properties from the file.
@@ -84,7 +84,7 @@ namespace TagLib {
       };
 
       /*!
-       * Constructs an APE file from \a file.  If \a readProperties is true the
+       * Constructs an APE file from \a file.  If \a readProperties is \c true the
        * file's audio properties will also be read.
        *
        * \note In the current implementation, \a propertiesStyle is ignored.
@@ -93,7 +93,7 @@ namespace TagLib {
            Properties::ReadStyle propertiesStyle = Properties::Average);
 
       /*!
-       * Constructs an APE file from \a stream.  If \a readProperties is true the
+       * Constructs an APE file from \a stream.  If \a readProperties is \c true the
        * file's audio properties will also be read.
        *
        * \note TagLib will *not* take ownership of the stream, the caller is
@@ -107,39 +107,42 @@ namespace TagLib {
       /*!
        * Destroys this instance of the File.
        */
-      virtual ~File();
+      ~File() override;
+
+      File(const File &) = delete;
+      File &operator=(const File &) = delete;
 
       /*!
        * Returns the Tag for this file.  This will be an APE tag, an ID3v1 tag
        * or a combination of the two.
        */
-      virtual TagLib::Tag *tag() const;
+      TagLib::Tag *tag() const override;
 
       /*!
        * Implements the unified property interface -- export function.
        * If the file contains both an APE and an ID3v1 tag, only APE
        * will be converted to the PropertyMap.
        */
-      PropertyMap properties() const;
+      PropertyMap properties() const override;
 
       /*!
        * Removes unsupported properties. Forwards to the actual Tag's
        * removeUnsupportedProperties() function.
        */
-      void removeUnsupportedProperties(const StringList &properties);
+      void removeUnsupportedProperties(const StringList &properties) override;
 
       /*!
        * Implements the unified property interface -- import function.
        * Creates an APEv2 tag if necessary. A potentially existing ID3v1
        * tag will be updated as well.
        */
-      PropertyMap setProperties(const PropertyMap &);
+      PropertyMap setProperties(const PropertyMap &) override;
 
       /*!
        * Returns the APE::Properties for this file.  If no audio properties
        * were read then this will return a null pointer.
        */
-      virtual Properties *audioProperties() const;
+      Properties *audioProperties() const override;
 
       /*!
        * Saves the file.
@@ -147,20 +150,20 @@ namespace TagLib {
        * \note According to the official Monkey's Audio SDK, an APE file
        * can only have either ID3V1 or APE tags, so a parameter is used here.
        */
-      virtual bool save();
+      bool save() override;
 
       /*!
        * Returns a pointer to the ID3v1 tag of the file.
        *
-       * If \a create is false (the default) this may return a null pointer
-       * if there is no valid ID3v1 tag.  If \a create is true it will create
+       * If \a create is \c false (the default) this may return a null pointer
+       * if there is no valid ID3v1 tag.  If \a create is \c true it will create
        * an ID3v1 tag if one does not exist and returns a valid pointer.
        *
        * \note This may return a valid pointer regardless of whether or not the
        * file on disk has an ID3v1 tag.  Use hasID3v1Tag() to check if the file
        * on disk actually has an ID3v1 tag.
        *
-       * \note The Tag <b>is still</b> owned by the MPEG::File and should not be
+       * \note The Tag <b>is still</b> owned by the APE::File and should not be
        * deleted by the user.  It will be deleted when the file (object) is
        * destroyed.
        *
@@ -171,15 +174,15 @@ namespace TagLib {
       /*!
        * Returns a pointer to the APE tag of the file.
        *
-       * If \a create is false (the default) this may return a null pointer
-       * if there is no valid APE tag.  If \a create is true it will create
+       * If \a create is \c false (the default) this may return a null pointer
+       * if there is no valid APE tag.  If \a create is \c true it will create
        * an APE tag if one does not exist and returns a valid pointer.
        *
        * \note This may return a valid pointer regardless of whether or not the
        * file on disk has an APE tag.  Use hasAPETag() to check if the file
        * on disk actually has an APE tag.
        *
-       * \note The Tag <b>is still</b> owned by the MPEG::File and should not be
+       * \note The Tag <b>is still</b> owned by the APE::File and should not be
        * deleted by the user.  It will be deleted when the file (object) is
        * destroyed.
        *
@@ -221,15 +224,13 @@ namespace TagLib {
       static bool isSupported(IOStream *stream);
 
     private:
-      File(const File &);
-      File &operator=(const File &);
-
       void read(bool readProperties);
 
       class FilePrivate;
-      FilePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<FilePrivate> d;
     };
-  }
-}
+  }  // namespace APE
+}  // namespace TagLib
 
 #endif

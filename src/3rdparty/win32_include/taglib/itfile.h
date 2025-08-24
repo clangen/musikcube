@@ -23,20 +23,35 @@
 #define TAGLIB_ITFILE_H
 
 #include "tfile.h"
-#include "audioproperties.h"
 #include "taglib_export.h"
+#include "audioproperties.h"
 #include "modfilebase.h"
 #include "modtag.h"
 #include "itproperties.h"
 
 namespace TagLib {
 
+  //! An implementation of Impulse Tracker metadata
+
+  /*!
+   * This is an implementation of Impulse Tracker metadata.
+   */
+
   namespace IT {
+
+    //! An implementation of TagLib::File with IT specific methods
+
+    /*!
+     * This implements and provides an interface for IT files to the
+     * TagLib::Tag and TagLib::AudioProperties interfaces by way of implementing
+     * the abstract TagLib::File API as well as providing some additional
+     * information specific to IT files.
+     */
 
     class TAGLIB_EXPORT File : public Mod::FileBase {
       public:
         /*!
-         * Constructs a Impulse Tracker file from \a file.
+         * Constructs an Impulse Tracker file from \a file.
          *
          * \note In the current implementation, both \a readProperties and
          * \a propertiesStyle are ignored.  The audio properties are always
@@ -47,7 +62,7 @@ namespace TagLib {
              AudioProperties::Average);
 
         /*!
-         * Constructs a Impulse Tracker file from \a stream.
+         * Constructs an Impulse Tracker file from \a stream.
          *
          * \note In the current implementation, both \a readProperties and
          * \a propertiesStyle are ignored.  The audio properties are always
@@ -63,27 +78,18 @@ namespace TagLib {
         /*!
          * Destroys this instance of the File.
          */
-        virtual ~File();
+        ~File() override;
 
-        Mod::Tag *tag() const;
+        File(const File &) = delete;
+        File &operator=(const File &) = delete;
 
-        /*!
-         * Forwards to Mod::Tag::properties().
-         * BIC: will be removed once File::toDict() is made virtual
-         */
-        PropertyMap properties() const;
-
-        /*!
-         * Forwards to Mod::Tag::setProperties().
-         * BIC: will be removed once File::setProperties() is made virtual
-         */
-        PropertyMap setProperties(const PropertyMap &);
+        Mod::Tag *tag() const override;
 
         /*!
          * Returns the IT::Properties for this file. If no audio properties
          * were read then this will return a null pointer.
          */
-        IT::Properties *audioProperties() const;
+        IT::Properties *audioProperties() const override;
 
         /*!
          * Save the file.
@@ -91,19 +97,16 @@ namespace TagLib {
          *
          * \note Saving Impulse Tracker tags is not supported.
          */
-        bool save();
-
+        bool save() override;
 
       private:
-        File(const File &);
-        File &operator=(const File &);
-
         void read(bool readProperties);
 
         class FilePrivate;
-        FilePrivate *d;
+        TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+        std::unique_ptr<FilePrivate> d;
     };
-  }
-}
+  }  // namespace IT
+}  // namespace TagLib
 
 #endif

@@ -26,6 +26,7 @@
 #ifndef TAGLIB_AIFFPROPERTIES_H
 #define TAGLIB_AIFFPROPERTIES_H
 
+#include "tstring.h"
 #include "audioproperties.h"
 
 namespace TagLib {
@@ -48,14 +49,6 @@ namespace TagLib {
       public:
         /*!
          * Create an instance of AIFF::Properties with the data read from the
-         * ByteVector \a data.
-         *
-         * \deprecated Use Properties(File *, ReadStyle).
-         */
-        TAGLIB_DEPRECATED Properties(const ByteVector &data, ReadStyle style);
-
-        /*!
-         * Create an instance of AIFF::Properties with the data read from the
          * AIFF::File \a file.
          */
         Properties(File *file, ReadStyle style);
@@ -63,49 +56,32 @@ namespace TagLib {
         /*!
          * Destroys this AIFF::Properties instance.
          */
-        virtual ~Properties();
+        ~Properties() override;
 
-        /*!
-         * Returns the length of the file in seconds.  The length is rounded down to
-         * the nearest whole second.
-         *
-         * \note This method is just an alias of lengthInSeconds().
-         *
-         * \deprecated Use lengthInSeconds().
-         */
-        TAGLIB_DEPRECATED virtual int length() const;
-
-        /*!
-         * Returns the length of the file in seconds.  The length is rounded down to
-         * the nearest whole second.
-         *
-         * \see lengthInMilliseconds()
-         */
-        // BIC: make virtual
-        int lengthInSeconds() const;
+        Properties(const Properties &) = delete;
+        Properties &operator=(const Properties &) = delete;
 
         /*!
          * Returns the length of the file in milliseconds.
          *
          * \see lengthInSeconds()
          */
-        // BIC: make virtual
-        int lengthInMilliseconds() const;
+        int lengthInMilliseconds() const override;
 
         /*!
          * Returns the average bit rate of the file in kb/s.
          */
-        virtual int bitrate() const;
+        int bitrate() const override;
 
         /*!
          * Returns the sample rate in Hz.
          */
-        virtual int sampleRate() const;
+        int sampleRate() const override;
 
         /*!
          * Returns the number of audio channels.
          */
-        virtual int channels() const;
+        int channels() const override;
 
         /*!
          * Returns the number of bits per audio sample.
@@ -113,21 +89,12 @@ namespace TagLib {
         int bitsPerSample() const;
 
         /*!
-         * Returns the number of bits per audio sample.
-         *
-         * \note This method is just an alias of bitsPerSample().
-         *
-         * \deprecated Use bitsPerSample().
-         */
-        TAGLIB_DEPRECATED int sampleWidth() const;
-
-        /*!
          * Returns the number of sample frames
          */
         unsigned int sampleFrames() const;
 
         /*!
-         * Returns true if the file is in AIFF-C format, false if AIFF format.
+         * Returns \c true if the file is in AIFF-C format, \c false if AIFF format.
          */
         bool isAiffC() const;
 
@@ -151,16 +118,14 @@ namespace TagLib {
         String compressionName() const;
 
       private:
-        Properties(const Properties &);
-        Properties &operator=(const Properties &);
-
         void read(File *file);
 
         class PropertiesPrivate;
-        PropertiesPrivate *d;
+        TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+        std::unique_ptr<PropertiesPrivate> d;
       };
-    }
-  }
-}
+    }  // namespace AIFF
+  }  // namespace RIFF
+}  // namespace TagLib
 
 #endif

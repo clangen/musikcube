@@ -32,7 +32,6 @@
 
 #include "oggfile.h"
 #include "xiphcomment.h"
-
 #include "opusproperties.h"
 
 namespace TagLib {
@@ -56,7 +55,7 @@ namespace TagLib {
       {
       public:
         /*!
-         * Constructs an Opus file from \a file.  If \a readProperties is true the
+         * Constructs an Opus file from \a file.  If \a readProperties is \c true the
          * file's audio properties will also be read.
          *
          * \note In the current implementation, \a propertiesStyle is ignored.
@@ -65,7 +64,7 @@ namespace TagLib {
              Properties::ReadStyle propertiesStyle = Properties::Average);
 
         /*!
-         * Constructs an Opus file from \a stream.  If \a readProperties is true the
+         * Constructs an Opus file from \a stream.  If \a readProperties is \c true the
          * file's audio properties will also be read.
          *
          * \note TagLib will *not* take ownership of the stream, the caller is
@@ -79,39 +78,42 @@ namespace TagLib {
         /*!
          * Destroys this instance of the File.
          */
-        virtual ~File();
+        ~File() override;
+
+        File(const File &) = delete;
+        File &operator=(const File &) = delete;
 
         /*!
          * Returns the XiphComment for this file.  XiphComment implements the tag
          * interface, so this serves as the reimplementation of
          * TagLib::File::tag().
          */
-        virtual Ogg::XiphComment *tag() const;
+        Ogg::XiphComment *tag() const override;
 
         /*!
          * Implements the unified property interface -- export function.
          * This forwards directly to XiphComment::properties().
          */
-        PropertyMap properties() const;
+        PropertyMap properties() const override;
 
         /*!
          * Implements the unified tag dictionary interface -- import function.
          * Like properties(), this is a forwarder to the file's XiphComment.
          */
-        PropertyMap setProperties(const PropertyMap &);
+        PropertyMap setProperties(const PropertyMap &) override;
 
         /*!
          * Returns the Opus::Properties for this file.  If no audio properties
          * were read then this will return a null pointer.
          */
-        virtual Properties *audioProperties() const;
+        Properties *audioProperties() const override;
 
         /*!
          * Save the file.
          *
-         * This returns true if the save was successful.
+         * This returns \c true if the save was successful.
          */
-        virtual bool save();
+        bool save() override;
 
         /*!
          * Returns whether or not the given \a stream can be opened as an Opus
@@ -123,16 +125,14 @@ namespace TagLib {
         static bool isSupported(IOStream *stream);
 
       private:
-        File(const File &);
-        File &operator=(const File &);
-
         void read(bool readProperties);
 
         class FilePrivate;
-        FilePrivate *d;
+        TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+        std::unique_ptr<FilePrivate> d;
       };
-    }
-  }
-}
+    }  // namespace Opus
+  }  // namespace Ogg
+}  // namespace TagLib
 
 #endif

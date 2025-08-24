@@ -26,9 +26,10 @@
 #ifndef TAGLIB_ID3V1TAG_H
 #define TAGLIB_ID3V1TAG_H
 
-#include "tag.h"
 #include "tbytevector.h"
+#include "taglib.h"
 #include "taglib_export.h"
+#include "tag.h"
 
 namespace TagLib {
 
@@ -38,7 +39,7 @@ namespace TagLib {
 
   namespace ID3v1 {
 
-    //! A abstraction for the string to data encoding in ID3v1 tags.
+    //! An abstraction for the string to data encoding in ID3v1 tags.
 
     /*!
      * ID3v1 should in theory always contain ISO-8859-1 (Latin1) data.  In
@@ -59,10 +60,13 @@ namespace TagLib {
 
     class TAGLIB_EXPORT StringHandler
     {
-      TAGLIB_IGNORE_MISSING_DESTRUCTOR
     public:
-      // BIC: Add virtual destructor.
       StringHandler();
+
+      virtual ~StringHandler();
+
+      StringHandler(const StringHandler &) = delete;
+      StringHandler &operator=(const StringHandler &) = delete;
 
       /*!
        * Decode a string from \a data.  The default implementation assumes that
@@ -80,6 +84,11 @@ namespace TagLib {
        * ISO-8859-1.
        */
       virtual ByteVector render(const String &s) const;
+
+    private:
+      class StringHandlerPrivate;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<StringHandlerPrivate> d;
     };
 
     //! The main class in the ID3v1 implementation
@@ -114,12 +123,15 @@ namespace TagLib {
        * Create an ID3v1 tag and parse the data in \a file starting at
        * \a tagOffset.
        */
-      Tag(File *file, long tagOffset);
+      Tag(File *file, offset_t tagOffset);
 
       /*!
        * Destroys this Tag instance.
        */
-      virtual ~Tag();
+      ~Tag() override;
+
+      Tag(const Tag &) = delete;
+      Tag &operator=(const Tag &) = delete;
 
       /*!
        * Renders the in memory values to a ByteVector suitable for writing to
@@ -135,21 +147,21 @@ namespace TagLib {
 
       // Reimplementations.
 
-      virtual String title() const;
-      virtual String artist() const;
-      virtual String album() const;
-      virtual String comment() const;
-      virtual String genre() const;
-      virtual unsigned int year() const;
-      virtual unsigned int track() const;
+      String title() const override;
+      String artist() const override;
+      String album() const override;
+      String comment() const override;
+      String genre() const override;
+      unsigned int year() const override;
+      unsigned int track() const override;
 
-      virtual void setTitle(const String &s);
-      virtual void setArtist(const String &s);
-      virtual void setAlbum(const String &s);
-      virtual void setComment(const String &s);
-      virtual void setGenre(const String &s);
-      virtual void setYear(unsigned int i);
-      virtual void setTrack(unsigned int i);
+      void setTitle(const String &s) override;
+      void setArtist(const String &s) override;
+      void setAlbum(const String &s) override;
+      void setComment(const String &s) override;
+      void setGenre(const String &s) override;
+      void setYear(unsigned int i) override;
+      void setTrack(unsigned int i) override;
 
       /*!
        * Returns the genre in number.
@@ -185,18 +197,16 @@ namespace TagLib {
        */
       void read();
       /*!
-       * Pareses the body of the tag in \a data.
+       * Parses the body of the tag in \a data.
        */
       void parse(const ByteVector &data);
 
     private:
-      Tag(const Tag &);
-      Tag &operator=(const Tag &);
-
       class TagPrivate;
-      TagPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<TagPrivate> d;
     };
-  }
-}
+  }  // namespace ID3v1
+}  // namespace TagLib
 
 #endif

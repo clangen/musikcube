@@ -26,6 +26,9 @@
 #ifndef TAGLIB_AUDIOPROPERTIES_H
 #define TAGLIB_AUDIOPROPERTIES_H
 
+#include <memory>
+
+#include "taglib.h"
 #include "taglib_export.h"
 
 namespace TagLib {
@@ -34,7 +37,7 @@ namespace TagLib {
 
   /*!
    * The values here are common to most audio formats.  For more specific, codec
-   * dependent values, please see see the subclasses APIs.  This is meant to
+   * dependent values, please see the subclasses APIs.  This is meant to
    * compliment the TagLib::File and TagLib::Tag APIs in providing a simple
    * interface that is sufficient for most applications.
    */
@@ -64,10 +67,19 @@ namespace TagLib {
      */
     virtual ~AudioProperties();
 
+    AudioProperties(const AudioProperties &) = delete;
+    AudioProperties &operator=(const AudioProperties &) = delete;
+
     /*!
-     * Returns the length of the file in seconds.
-     */
-    virtual int length() const = 0;
+      * Returns the length of the file in seconds.  The length is rounded down to
+      * the nearest whole second.
+      *
+      * \note This method is just an alias of lengthInSeconds().
+      *
+      * \deprecated Use lengthInSeconds().
+      */
+    TAGLIB_DEPRECATED
+    virtual int length() const;
 
     /*!
      * Returns the length of the file in seconds.  The length is rounded down to
@@ -75,28 +87,26 @@ namespace TagLib {
      *
      * \see lengthInMilliseconds()
      */
-    // BIC: make virtual
-    int lengthInSeconds() const;
+    virtual int lengthInSeconds() const;
 
     /*!
      * Returns the length of the file in milliseconds.
      *
      * \see lengthInSeconds()
      */
-    // BIC: make virtual
-    int lengthInMilliseconds() const;
+    virtual int lengthInMilliseconds() const;
 
     /*!
      * Returns the most appropriate bit rate for the file in kb/s.  For constant
      * bitrate formats this is simply the bitrate of the file.  For variable
      * bitrate formats this is either the average or nominal bitrate.
      */
-    virtual int bitrate() const = 0;
+    virtual int bitrate() const;
 
     /*!
      * Returns the sample rate in Hz.
      */
-    virtual int sampleRate() const = 0;
+    virtual int sampleRate() const;
 
     /*!
      * Returns the number of audio channels.
@@ -115,13 +125,11 @@ namespace TagLib {
     AudioProperties(ReadStyle style);
 
   private:
-    AudioProperties(const AudioProperties &);
-    AudioProperties &operator=(const AudioProperties &);
-
     class AudioPropertiesPrivate;
-    AudioPropertiesPrivate *d;
+    TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+    std::unique_ptr<AudioPropertiesPrivate> d;
   };
 
-}
+}  // namespace TagLib
 
 #endif

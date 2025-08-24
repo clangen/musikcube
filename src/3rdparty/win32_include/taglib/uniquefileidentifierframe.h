@@ -59,7 +59,10 @@ namespace TagLib {
       /*!
        * Destroys the frame.
        */
-      ~UniqueFileIdentifierFrame();
+      ~UniqueFileIdentifierFrame() override;
+
+      UniqueFileIdentifierFrame(const UniqueFileIdentifierFrame &) = delete;
+      UniqueFileIdentifierFrame &operator=(const UniqueFileIdentifierFrame &) = delete;
 
       /*!
        * Returns the owner for the frame; essentially this is the key for
@@ -92,9 +95,9 @@ namespace TagLib {
        */
       void setIdentifier(const ByteVector &v);
 
-      virtual String toString() const;
+      String toString() const override;
 
-      PropertyMap asProperties() const;
+      PropertyMap asProperties() const override;
 
       /*!
        * UFID frames each have a unique owner. This searches for a UFID
@@ -105,19 +108,17 @@ namespace TagLib {
       static UniqueFileIdentifierFrame *findByOwner(const Tag *tag, const String &o);
 
     protected:
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
-      UniqueFileIdentifierFrame(const UniqueFileIdentifierFrame &);
-      UniqueFileIdentifierFrame &operator=(const UniqueFileIdentifierFrame &);
-
       UniqueFileIdentifierFrame(const ByteVector &data, Header *h);
 
       class UniqueFileIdentifierFramePrivate;
-      UniqueFileIdentifierFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<UniqueFileIdentifierFramePrivate> d;
     };
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 
 #endif

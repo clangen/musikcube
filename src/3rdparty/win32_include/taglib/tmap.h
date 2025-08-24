@@ -27,8 +27,9 @@
 #define TAGLIB_MAP_H
 
 #include <map>
-
-#include "taglib.h"
+#include <memory>
+#include <initializer_list>
+#include <utility>
 
 namespace TagLib {
 
@@ -53,11 +54,11 @@ namespace TagLib {
     // Not all the specializations of Map can use the class keyword
     // (when T is not actually a class type), so don't apply this
     // generally.
-    typedef typename std::map<class Key, class T>::iterator Iterator;
-    typedef typename std::map<class Key, class T>::const_iterator ConstIterator;
+    using Iterator = typename std::map<class Key, class T>::iterator;
+    using ConstIterator = typename std::map<class Key, class T>::const_iterator;
 #else
-    typedef typename std::map<Key, T>::iterator Iterator;
-    typedef typename std::map<Key, T>::const_iterator ConstIterator;
+    using Iterator = typename std::map<Key, T>::iterator;
+    using ConstIterator = typename std::map<Key, T>::const_iterator;
 #endif
 #endif
 
@@ -74,33 +75,50 @@ namespace TagLib {
     Map(const Map<Key, T> &m);
 
     /*!
+     * Constructs a Map with the contents of the braced initializer list.
+     */
+    Map(std::initializer_list<std::pair<const Key, T>> init);
+
+    /*!
      * Destroys this instance of the Map.
      */
-    virtual ~Map();
+    ~Map();
 
     /*!
      * Returns an STL style iterator to the beginning of the map.  See
-     * std::map::iterator for the semantics.
+     * \c std::map::iterator for the semantics.
      */
     Iterator begin();
 
     /*!
      * Returns an STL style iterator to the beginning of the map.  See
-     * std::map::const_iterator for the semantics.
+     * \c std::map::const_iterator for the semantics.
      */
     ConstIterator begin() const;
 
     /*!
+     * Returns an STL style iterator to the beginning of the map.  See
+     * \c std::map::const_iterator for the semantics.
+     */
+    ConstIterator cbegin() const;
+
+    /*!
      * Returns an STL style iterator to the end of the map.  See
-     * std::map::iterator for the semantics.
+     * \c std::map::iterator for the semantics.
      */
     Iterator end();
 
     /*!
      * Returns an STL style iterator to the end of the map.  See
-     * std::map::const_iterator for the semantics.
+     * \c std::map::const_iterator for the semantics.
      */
     ConstIterator end() const;
+
+    /*!
+     * Returns an STL style iterator to the end of the map.  See
+     * \c std::map::const_iterator for the semantics.
+     */
+    ConstIterator cend() const;
 
     /*!
      * Inserts \a value under \a key in the map.  If a value for \a key already
@@ -109,7 +127,7 @@ namespace TagLib {
     Map<Key, T> &insert(const Key &key, const T &value);
 
     /*!
-     * Removes all of the elements from elements from the map.  This however
+     * Removes all of the elements from the map.  This however
      * will not delete pointers if the mapped type is a pointer type.
      */
     Map<Key, T> &clear();
@@ -122,7 +140,7 @@ namespace TagLib {
     unsigned int size() const;
 
     /*!
-     * Returns true if the map is empty.
+     * Returns \c true if the map is empty.
      *
      * \see size()
      */
@@ -139,27 +157,31 @@ namespace TagLib {
     ConstIterator find(const Key &key) const;
 
     /*!
-     * Returns true if the map contains an instance of \a key.
+     * Returns \c true if the map contains an item for \a key.
      */
     bool contains(const Key &key) const;
 
     /*!
-     * Erase the item at \a it from the list.
+     * Erase the item at \a it from the map.
+     *
+     * \note This method cannot detach because \a it is tied to the internal
+     * map.  Do not make an implicitly shared copy of this map between
+     * getting the iterator and calling this method!
      */
     Map<Key, T> &erase(Iterator it);
 
     /*!
-     * Erase the item with \a key from the list.
+     * Erase the item with \a key from the map.
      */
     Map<Key, T> &erase(const Key &key);
 
     /*!
      * Returns the value associated with \a key.
      *
-     * If the map does not contain \a key, it returns defaultValue.
-     * If no defaultValue is specified, it returns a default-constructed value.
+     * If the map does not contain \a key, it returns \a defaultValue.
+     * If no \a defaultValue is specified, it returns a default-constructed value.
      */
-    const T value(const Key &key, const T &defaultValue = T()) const;
+    T value(const Key &key, const T &defaultValue = T()) const;
 
     /*!
      * Returns a reference to the value associated with \a key.
@@ -183,26 +205,42 @@ namespace TagLib {
     Map<Key, T> &operator=(const Map<Key, T> &m);
 
     /*!
-     * Exchanges the content of this map by the content of \a m.
+     * Replace the contents of the map with those of the braced initializer list
      */
-    void swap(Map<Key, T> &m);
+    Map<Key, T> &operator=(std::initializer_list<std::pair<const Key, T>> init);
+
+    /*!
+     * Exchanges the content of this map with the content of \a m.
+     */
+    void swap(Map<Key, T> &m) noexcept;
+
+    /*!
+     * Compares this map with \a m and returns \c true if all of the elements are
+     * the same.
+     */
+    bool operator==(const Map<Key, T> &m) const;
+
+    /*!
+     * Compares this map with \a m and returns \c true if the maps differ.
+     */
+    bool operator!=(const Map<Key, T> &m) const;
 
   protected:
-    /*
-     * If this List is being shared via implicit sharing, do a deep copy of the
+    /*!
+     * If this Map is being shared via implicit sharing, do a deep copy of the
      * data and separate from the shared members.  This should be called by all
-     * non-const subclass members.
+     * non-const subclass members without Iterator parameters.
      */
     void detach();
 
   private:
 #ifndef DO_NOT_DOCUMENT
     template <class KeyP, class TP> class MapPrivate;
-    MapPrivate<Key, T> *d;
+    std::shared_ptr<MapPrivate<Key, T>> d;
 #endif
   };
 
-}
+}  // namespace TagLib
 
 // Since GCC doesn't support the "export" keyword, we have to include the
 // implementation.

@@ -29,8 +29,9 @@
 #include "tag.h"
 
 namespace TagLib {
-
   namespace Mod {
+
+    //! A module file tag implementation
 
     /*!
      * Tags for module files (Mod, S3M, IT, XM).
@@ -48,77 +49,80 @@ namespace TagLib {
     {
     public:
       Tag();
-      virtual ~Tag();
+      ~Tag() override;
+
+      Tag(const Tag &) = delete;
+      Tag &operator=(const Tag &) = delete;
 
       /*!
        * Returns the track name; if no track name is present in the tag
-       * String::null will be returned.
+       * an empty string will be returned.
        */
-      virtual String title() const;
+      String title() const override;
 
       /*!
-       * Not supported by module files.  Therefore always returns String::null.
+       * Not supported by module files.  Therefore always returns an empty string.
        */
-      virtual String artist() const;
+      String artist() const override;
 
       /*!
-       * Not supported by module files.  Therefore always returns String::null.
+       * Not supported by module files.  Therefore always returns an empty string.
        */
-      virtual String album() const;
+      String album() const override;
 
       /*!
        * Returns the track comment derived from the instrument/sample/pattern
-       * names; if no comment is present in the tag String::null will be
+       * names; if no comment is present in the tag an empty string will be
        * returned.
        */
-      virtual String comment() const;
+      String comment() const override;
 
       /*!
-       * Not supported by module files.  Therefore always returns String::null.
+       * Not supported by module files.  Therefore always returns an empty string.
        */
-      virtual String genre() const;
-
-      /*!
-       * Not supported by module files.  Therefore always returns 0.
-       */
-      virtual unsigned int year() const;
+      String genre() const override;
 
       /*!
        * Not supported by module files.  Therefore always returns 0.
        */
-      virtual unsigned int track() const;
+      unsigned int year() const override;
+
+      /*!
+       * Not supported by module files.  Therefore always returns 0.
+       */
+      unsigned int track() const override;
 
       /*!
        * Returns the name of the tracker used to create/edit the module file.
        * Only XM files store this tag to the file as such, for other formats
        * (Mod, S3M, IT) this is derived from the file type or the flavour of
        * the file type.  Therefore only XM files might have an empty
-       * (String::null) tracker name.
+       * tracker name.
        */
       String trackerName() const;
 
       /*!
-       * Sets the title to \a title.  If \a title is String::null then this
+       * Sets the title to \a title.  If \a title is an empty string then this
        * value will be cleared.
        *
        * The length limits per file type are (1 character = 1 byte):
        * Mod 20 characters, S3M 27 characters, IT 25 characters and XM 20
        * characters.
        */
-      virtual void setTitle(const String &title);
+      void setTitle(const String &title) override;
 
       /*!
        * Not supported by module files and therefore ignored.
        */
-      virtual void setArtist(const String &artist);
+      void setArtist(const String &artist) override;
 
       /*!
        * Not supported by module files and therefore ignored.
        */
-      virtual void setAlbum(const String &album);
+      void setAlbum(const String &album) override;
 
       /*!
-       * Sets the comment to \a comment.  If \a comment is String::null then
+       * Sets the comment to \a comment.  If \a comment is an empty string then
        * this value will be cleared.
        *
        * Note that module file formats don't actually support a comment tag.
@@ -127,33 +131,33 @@ namespace TagLib {
        * module file is fixed to the number of instruments/patterns/samples.
        *
        * Also note that the instrument/pattern/sample name length is limited
-       * an thus the line length in comments are limited. Too big comments
+       * and thus the line length in comments are limited. Too big comments
        * will be truncated.
        *
        * The line length limits per file type are (1 character = 1 byte):
        * Mod 22 characters, S3M 27 characters, IT 25 characters and XM 22
        * characters.
        */
-      virtual void setComment(const String &comment);
+      void setComment(const String &comment) override;
 
       /*!
        * Not supported by module files and therefore ignored.
        */
-      virtual void setGenre(const String &genre);
+      void setGenre(const String &genre) override;
 
       /*!
        * Not supported by module files and therefore ignored.
        */
-      virtual void setYear(unsigned int year);
+      void setYear(unsigned int year) override;
 
       /*!
        * Not supported by module files and therefore ignored.
        */
-      virtual void setTrack(unsigned int track);
+      void setTrack(unsigned int track) override;
 
       /*!
        * Sets the tracker name to \a trackerName.  If \a trackerName is
-       * String::null then this value will be cleared.
+       * an empty string then this value will be cleared.
        *
        * Note that only XM files support this tag.  Setting the
        * tracker name for other module file formats will be ignored.
@@ -167,7 +171,7 @@ namespace TagLib {
        * Implements the unified property interface -- export function.
        * Since the module tag is very limited, the exported map is as well.
        */
-      PropertyMap properties() const;
+      PropertyMap properties() const override;
 
       /*!
        * Implements the unified property interface -- import function.
@@ -177,18 +181,13 @@ namespace TagLib {
        * all but the first will be contained in the returned map of unsupported
        * properties.
        */
-      PropertyMap setProperties(const PropertyMap &);
+      PropertyMap setProperties(const PropertyMap &) override;
 
     private:
-      Tag(const Tag &);
-      Tag &operator=(const Tag &);
-
       class TagPrivate;
-      TagPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<TagPrivate> d;
     };
-
-  }
-
-}
-
+  }  // namespace Mod
+}  // namespace TagLib
 #endif

@@ -30,6 +30,7 @@
 #ifndef TAGLIB_TRUEAUDIOFILE_H
 #define TAGLIB_TRUEAUDIOFILE_H
 
+#include "taglib.h"
 #include "tfile.h"
 #include "trueaudioproperties.h"
 
@@ -43,7 +44,7 @@ namespace TagLib {
   //! An implementation of TrueAudio metadata
 
   /*!
-   * This is implementation of TrueAudio metadata.
+   * This is an implementation of TrueAudio metadata.
    *
    * This supports ID3v1 and ID3v2 tags as well as reading stream
    * properties from the file.
@@ -79,51 +80,65 @@ namespace TagLib {
       };
 
       /*!
-       * Constructs a TrueAudio file from \a file.  If \a readProperties is true
+       * Constructs a TrueAudio file from \a file.  If \a readProperties is \c true
        * the file's audio properties will also be read.
+       *
+       * If this file contains an ID3v2 tag, the frames will be created using
+       * \a frameFactory (default if null).
        *
        * \note In the current implementation, \a propertiesStyle is ignored.
        */
       File(FileName file, bool readProperties = true,
-           Properties::ReadStyle propertiesStyle = Properties::Average);
+           Properties::ReadStyle propertiesStyle = Properties::Average,
+           ID3v2::FrameFactory *frameFactory = nullptr);
 
       /*!
-       * Constructs a TrueAudio file from \a file.  If \a readProperties is true
+       * Constructs a TrueAudio file from \a file.  If \a readProperties is \c true
        * the file's audio properties will also be read.
        *
-       * If this file contains and ID3v2 tag the frames will be created using
+       * If this file contains an ID3v2 tag, the frames will be created using
        * \a frameFactory.
        *
        * \note In the current implementation, \a propertiesStyle is ignored.
+       *
+       * \deprecated Use the constructor above.
        */
+      TAGLIB_DEPRECATED
       File(FileName file, ID3v2::FrameFactory *frameFactory,
            bool readProperties = true,
            Properties::ReadStyle propertiesStyle = Properties::Average);
 
       /*!
-       * Constructs a TrueAudio file from \a stream.  If \a readProperties is true
+       * Constructs a TrueAudio file from \a stream.  If \a readProperties is \c true
        * the file's audio properties will also be read.
        *
        * \note TagLib will *not* take ownership of the stream, the caller is
        * responsible for deleting it after the File object.
        *
-       * \note In the current implementation, \a propertiesStyle is ignored.
-       */
-      File(IOStream *stream, bool readProperties = true,
-           Properties::ReadStyle propertiesStyle = Properties::Average);
-
-      /*!
-       * Constructs a TrueAudio file from \a stream.  If \a readProperties is true
-       * the file's audio properties will also be read.
-       *
-       * \note TagLib will *not* take ownership of the stream, the caller is
-       * responsible for deleting it after the File object.
-       *
-       * If this file contains and ID3v2 tag the frames will be created using
+       * If this file contains an ID3v2 tag, the frames will be created using
        * \a frameFactory.
        *
        * \note In the current implementation, \a propertiesStyle is ignored.
        */
+      File(IOStream *stream, bool readProperties = true,
+           Properties::ReadStyle propertiesStyle = Properties::Average,
+           ID3v2::FrameFactory *frameFactory = nullptr);
+
+      /*!
+       * Constructs a TrueAudio file from \a stream.  If \a readProperties is \c true
+       * the file's audio properties will also be read.
+       *
+       * \note TagLib will *not* take ownership of the stream, the caller is
+       * responsible for deleting it after the File object.
+       *
+       * If this file contains an ID3v2 tag, the frames will be created using
+       * \a frameFactory.
+       *
+       * \note In the current implementation, \a propertiesStyle is ignored.
+       *
+       * \deprecated Use the constructor above.
+       */
+      TAGLIB_DEPRECATED
       File(IOStream *stream, ID3v2::FrameFactory *frameFactory,
            bool readProperties = true,
            Properties::ReadStyle propertiesStyle = Properties::Average);
@@ -131,60 +146,55 @@ namespace TagLib {
       /*!
        * Destroys this instance of the File.
        */
-      virtual ~File();
+      ~File() override;
+
+      File(const File &) = delete;
+      File &operator=(const File &) = delete;
 
       /*!
        * Returns the Tag for this file.
        */
-      virtual TagLib::Tag *tag() const;
+      TagLib::Tag *tag() const override;
 
       /*!
        * Implements the unified property interface -- export function.
        * If the file contains both ID3v1 and v2 tags, only ID3v2 will be
        * converted to the PropertyMap.
        */
-      PropertyMap properties() const;
+      PropertyMap properties() const override;
 
       /*!
        * Implements the unified property interface -- import function.
        * Creates in ID3v2 tag if necessary. If an ID3v1 tag exists, it will
        * be updated as well, within the limitations of ID3v1.
        */
-      PropertyMap setProperties(const PropertyMap &);
+      PropertyMap setProperties(const PropertyMap &) override;
 
-      void removeUnsupportedProperties(const StringList &properties);
+      void removeUnsupportedProperties(const StringList &unsupported) override;
 
       /*!
        * Returns the TrueAudio::Properties for this file.  If no audio properties
        * were read then this will return a null pointer.
        */
-      virtual Properties *audioProperties() const;
-
-      /*!
-       * Set the ID3v2::FrameFactory to something other than the default.
-       *
-       * \see ID3v2FrameFactory
-       * \deprecated This value should be passed in via the constructor.
-       */
-      TAGLIB_DEPRECATED void setID3v2FrameFactory(const ID3v2::FrameFactory *factory);
+      Properties *audioProperties() const override;
 
       /*!
        * Saves the file.
        */
-      virtual bool save();
+      bool save() override;
 
       /*!
        * Returns a pointer to the ID3v1 tag of the file.
        *
-       * If \a create is false (the default) this may return a null pointer
-       * if there is no valid ID3v1 tag.  If \a create is true it will create
+       * If \a create is \c false (the default) this may return a null pointer
+       * if there is no valid ID3v1 tag.  If \a create is \c true it will create
        * an ID3v1 tag if one does not exist and returns a valid pointer.
        *
        * \note This may return a valid pointer regardless of whether or not the
        * file on disk has an ID3v1 tag.  Use hasID3v1Tag() to check if the file
        * on disk actually has an ID3v1 tag.
        *
-       * \note The Tag <b>is still</b> owned by the MPEG::File and should not be
+       * \note The Tag <b>is still</b> owned by the TrueAudio::File and should not be
        * deleted by the user.  It will be deleted when the file (object) is
        * destroyed.
        *
@@ -195,15 +205,15 @@ namespace TagLib {
       /*!
        * Returns a pointer to the ID3v2 tag of the file.
        *
-       * If \a create is false (the default) this may return a null pointer
-       * if there is no valid ID3v2 tag.  If \a create is true it will create
+       * If \a create is \c false (the default) this may return a null pointer
+       * if there is no valid ID3v2 tag.  If \a create is \c true it will create
        * an ID3v2 tag if one does not exist and returns a valid pointer.
        *
        * \note This may return a valid pointer regardless of whether or not the
        * file on disk has an ID3v2 tag.  Use hasID3v2Tag() to check if the file
        * on disk actually has an ID3v2 tag.
        *
-       * \note The Tag <b>is still</b> owned by the MPEG::File and should not be
+       * \note The Tag <b>is still</b> owned by the TrueAudio::File and should not be
        * deleted by the user.  It will be deleted when the file (object) is
        * destroyed.
        *
@@ -245,15 +255,13 @@ namespace TagLib {
       static bool isSupported(IOStream *stream);
 
     private:
-      File(const File &);
-      File &operator=(const File &);
-
       void read(bool readProperties);
 
       class FilePrivate;
-      FilePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<FilePrivate> d;
     };
-  }
-}
+  }  // namespace TrueAudio
+}  // namespace TagLib
 
 #endif

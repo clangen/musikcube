@@ -1,4 +1,5 @@
 /***************************************************************************
+ *
     copyright            : (C) 2008 by Lukas Lalinsky
     email                : lalinsky@gmail.com
  ***************************************************************************/
@@ -26,8 +27,8 @@
 #ifndef TAGLIB_POPULARIMETERFRAME_H
 #define TAGLIB_POPULARIMETERFRAME_H
 
-#include "id3v2frame.h"
 #include "taglib_export.h"
+#include "id3v2frame.h"
 
 namespace TagLib {
 
@@ -58,14 +59,22 @@ namespace TagLib {
       /*!
        * Destroys this PopularimeterFrame instance.
        */
-      virtual ~PopularimeterFrame();
+      ~PopularimeterFrame() override;
+
+      PopularimeterFrame(const PopularimeterFrame &) = delete;
+      PopularimeterFrame &operator=(const PopularimeterFrame &) = delete;
 
       /*!
        * Returns the text of this popularimeter.
        *
        * \see text()
        */
-      virtual String toString() const;
+      String toString() const override;
+
+      /*!
+       * Returns email, rating and counter.
+       */
+      StringList toStringList() const override;
 
       /*!
        * Returns the email.
@@ -79,7 +88,7 @@ namespace TagLib {
        *
        * \see email()
        */
-      void setEmail(const String &email);
+      void setEmail(const String &s);
 
       /*!
        * Returns the rating.
@@ -93,7 +102,7 @@ namespace TagLib {
        *
        * \see rating()
        */
-      void setRating(int rating);
+      void setRating(int s);
 
       /*!
        * Returns the counter.
@@ -107,26 +116,25 @@ namespace TagLib {
        *
        * \see counter()
        */
-      void setCounter(unsigned int counter);
+      void setCounter(unsigned int s);
 
     protected:
       // Reimplementations.
 
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       /*!
        * The constructor used by the FrameFactory.
        */
       PopularimeterFrame(const ByteVector &data, Header *h);
-      PopularimeterFrame(const PopularimeterFrame &);
-      PopularimeterFrame &operator=(const PopularimeterFrame &);
 
       class PopularimeterFramePrivate;
-      PopularimeterFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<PopularimeterFramePrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

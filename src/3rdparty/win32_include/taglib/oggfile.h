@@ -23,12 +23,12 @@
  *   http://www.mozilla.org/MPL/                                           *
  ***************************************************************************/
 
-#include "taglib_export.h"
-#include "tfile.h"
-#include "tbytevectorlist.h"
-
 #ifndef TAGLIB_OGGFILE_H
 #define TAGLIB_OGGFILE_H
+
+#include "tfile.h"
+#include "tbytevectorlist.h"
+#include "taglib_export.h"
 
 namespace TagLib {
 
@@ -44,13 +44,16 @@ namespace TagLib {
      * This is an implementation of Ogg file page and packet rendering and is of
      * use to Ogg based formats.  While the API is small this handles the
      * non-trivial details of breaking up an Ogg stream into packets and makes
-     * these available (via subclassing) to the codec meta data implementations.
+     * these available (via subclassing) to the codec metadata implementations.
      */
 
     class TAGLIB_EXPORT File : public TagLib::File
     {
     public:
-      virtual ~File();
+      ~File() override;
+
+      File(const File &) = delete;
+      File &operator=(const File &) = delete;
 
       /*!
        * Returns the packet contents for the i-th packet (starting from zero)
@@ -78,7 +81,7 @@ namespace TagLib {
        */
       const PageHeader *lastPageHeader();
 
-      virtual bool save();
+      bool save() override;
 
     protected:
       /*!
@@ -103,9 +106,6 @@ namespace TagLib {
       File(IOStream *stream);
 
     private:
-      File(const File &);
-      File &operator=(const File &);
-
       /*!
        * Reads the pages from the beginning of the file until enough to compose
        * the requested packet.
@@ -118,10 +118,11 @@ namespace TagLib {
       void writePacket(unsigned int i, const ByteVector &packet);
 
       class FilePrivate;
-      FilePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<FilePrivate> d;
     };
 
-  }
-}
+  }  // namespace Ogg
+}  // namespace TagLib
 
 #endif

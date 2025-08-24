@@ -26,17 +26,17 @@
 #ifndef TAGLIB_LIST_H
 #define TAGLIB_LIST_H
 
-#include "taglib.h"
-
 #include <list>
+#include <initializer_list>
+#include <memory>
 
 namespace TagLib {
 
   //! A generic, implicitly shared list.
 
   /*!
-   * This is basic generic list that's somewhere between a std::list and a
-   * QValueList.  This class is implicitly shared.  For example:
+   * This is a basic generic list that's somewhere between a std::list and a
+   * QList.  This class is implicitly shared.  For example:
    *
    * \code
    *
@@ -44,7 +44,7 @@ namespace TagLib {
    *
    * \endcode
    *
-   * The above example is very cheap.  This also makes lists suitable for the
+   * The above example is very cheap.  This also makes lists suitable as
    * return types of functions.  The above example will just copy a pointer rather
    * than copying the data in the list.  When your \e shared list's data changes,
    * only \e then will the data be copied.
@@ -54,8 +54,8 @@ namespace TagLib {
   {
   public:
 #ifndef DO_NOT_DOCUMENT
-    typedef typename std::list<T>::iterator Iterator;
-    typedef typename std::list<T>::const_iterator ConstIterator;
+    using Iterator = typename std::list<T>::iterator;
+    using ConstIterator = typename std::list<T>::const_iterator;
 #endif
 
     /*!
@@ -71,43 +71,64 @@ namespace TagLib {
     List(const List<T> &l);
 
     /*!
-     * Destroys this List instance.  If auto deletion is enabled and this list
-     * contains a pointer type all of the members are also deleted.
+     * Construct a List with the contents of the braced initializer list.
      */
-    virtual ~List();
+    List(std::initializer_list<T> init);
+
+    /*!
+     * Destroys this List instance.  If auto deletion is enabled and this list
+     * contains a pointer type, all of the members are also deleted.
+     */
+    ~List();
 
     /*!
      * Returns an STL style iterator to the beginning of the list.  See
-     * std::list::const_iterator for the semantics.
+     * \c std::list::const_iterator for the semantics.
      */
     Iterator begin();
 
     /*!
      * Returns an STL style constant iterator to the beginning of the list.  See
-     * std::list::iterator for the semantics.
+     * \c std::list::iterator for the semantics.
      */
     ConstIterator begin() const;
 
     /*!
+     * Returns an STL style constant iterator to the beginning of the list.  See
+     * \c std::list::iterator for the semantics.
+     */
+    ConstIterator cbegin() const;
+
+    /*!
      * Returns an STL style iterator to the end of the list.  See
-     * std::list::iterator for the semantics.
+     * \c std::list::iterator for the semantics.
      */
     Iterator end();
 
     /*!
      * Returns an STL style constant iterator to the end of the list.  See
-     * std::list::const_iterator for the semantics.
+     * \c std::list::const_iterator for the semantics.
      */
     ConstIterator end() const;
 
     /*!
-     * Inserts a copy of \a value before \a it.
+     * Returns an STL style constant iterator to the end of the list.  See
+     * \c std::list::const_iterator for the semantics.
      */
-    Iterator insert(Iterator it, const T &value);
+    ConstIterator cend() const;
+
+    /*!
+     * Inserts a copy of \a item before \a it.
+     *
+     * \note This method cannot detach because \a it is tied to the internal
+     * list.  Do not make an implicitly shared copy of this list between
+     * getting the iterator and calling this method!
+     */
+    Iterator insert(Iterator it, const T &item);
 
     /*!
      * Inserts the \a value into the list.  This assumes that the list is
-     * currently sorted.  If \a unique is true then the value will not
+     * currently sorted.  If \a unique is \c true then the value will not
      * be inserted if it is already in the list.
      */
     List<T> &sortedInsert(const T &value, bool unique = false);
@@ -169,12 +190,21 @@ namespace TagLib {
     ConstIterator find(const T &value) const;
 
     /*!
-     * Returns true if the list contains \a value.
+     * Find the first occurrence of \a value.
+     */
+    ConstIterator cfind(const T &value) const;
+
+    /*!
+     * Returns \c true if the list contains \a value.
      */
     bool contains(const T &value) const;
 
     /*!
      * Erase the item at \a it from the list.
+     *
+     * \note This method cannot detach because \a it is tied to the internal
+     * list.  Do not make an implicitly shared copy of this list between
+     * getting the iterator and calling this method!
      */
     Iterator erase(Iterator it);
 
@@ -209,6 +239,11 @@ namespace TagLib {
     void setAutoDelete(bool autoDelete);
 
     /*!
+     * Returns \c true if auto-deletion is enabled.
+     */
+    bool autoDelete() const;
+
+    /*!
      * Returns a reference to item \a i in the list.
      *
      * \warning This method is slow.  Use iterators to loop through the list.
@@ -230,37 +265,57 @@ namespace TagLib {
     List<T> &operator=(const List<T> &l);
 
     /*!
-     * Exchanges the content of this list by the content of \a l.
+     * Replace the contents of the list with those of the braced initializer list.
+     *
+     * If auto deletion is enabled and the list contains a pointer type, the members are also deleted
      */
-    void swap(List<T> &l);
+    List<T> &operator=(std::initializer_list<T> init);
 
     /*!
-     * Compares this list with \a l and returns true if all of the elements are
+     * Exchanges the content of this list with the content of \a l.
+     */
+    void swap(List<T> &l) noexcept;
+
+    /*!
+     * Compares this list with \a l and returns \c true if all of the elements are
      * the same.
      */
     bool operator==(const List<T> &l) const;
 
     /*!
-     * Compares this list with \a l and returns true if the lists differ.
+     * Compares this list with \a l and returns \c true if the lists differ.
      */
     bool operator!=(const List<T> &l) const;
 
+    /*!
+     * Sorts this list in ascending order using operator< of T.
+     */
+    void sort();
+
+    /*!
+     * Sorts this list in ascending order using the comparison
+     * function object \a comp which returns \c true if the first argument is
+     * less than the second.
+     */
+    template<class Compare>
+    void sort(Compare&& comp);
+
   protected:
-    /*
+    /*!
      * If this List is being shared via implicit sharing, do a deep copy of the
      * data and separate from the shared members.  This should be called by all
-     * non-const subclass members.
+     * non-const subclass members without Iterator parameters.
      */
     void detach();
 
   private:
 #ifndef DO_NOT_DOCUMENT
     template <class TP> class ListPrivate;
-    ListPrivate<T> *d;
+    std::shared_ptr<ListPrivate<T>> d;
 #endif
   };
 
-}
+}  // namespace TagLib
 
 // Since GCC doesn't support the "export" keyword, we have to include the
 // implementation.
