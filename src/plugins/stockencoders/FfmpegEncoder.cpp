@@ -96,6 +96,7 @@ static void logError(const std::string& message) {
 }
 
 static AVSampleFormat resolveSampleFormat(AVCodecContext* context, AVCodecCompat *codec) {
+#if LIBAVCODEC_VERSION_MAJOR >= 61
     const void* configs = NULL;
     int count = 0;
 
@@ -120,9 +121,25 @@ static AVSampleFormat resolveSampleFormat(AVCodecContext* context, AVCodecCompat
     }
 
     return formats[0];
+#else
+    if (!codec->sample_fmts) {
+        return AV_SAMPLE_FMT_NONE;
+    }
+    const enum AVSampleFormat *p = codec->sample_fmts;
+    while (*p != AV_SAMPLE_FMT_NONE) {
+        /* input samples are always AV_SAMPLE_FMT_FLT, so we prefer
+        this sample format to minimize resampling */
+        if (*p == AV_SAMPLE_FMT_FLT) {
+            return *p;
+        }
+        p++;
+    }
+    return codec->sample_fmts[0];
+#endif
 }
 
 static int resolveSampleRate(AVCodecContext* context, AVCodecCompat* codec, int preferredSampleRate) {
+#if LIBAVCODEC_VERSION_MAJOR >= 61
     const void* configs = NULL;
     int count = 0;
 
@@ -149,6 +166,22 @@ static int resolveSampleRate(AVCodecContext* context, AVCodecCompat* codec, int 
     }
 
     return highestRate;
+#else
+    const int *p;
+    int highestRate = 0;
+    if (!codec->supported_samplerates) {
+        return DEFAULT_SAMPLE_RATE;
+    }
+    p = codec->supported_samplerates;
+    while (*p) {
+        if (*p == preferredSampleRate) {
+            return preferredSampleRate;
+        }
+        highestRate = FFMAX(*p, highestRate);
+        p++;
+    }
+    return highestRate;
+#endif
 }
 
 static int resolveChannelLayout(size_t channelCount) {
