@@ -74,7 +74,7 @@ namespace musik { namespace core { namespace net {
                 TLS = 1
             };
 
-            RawWebSocketClient(asio::io_service& io);
+            RawWebSocketClient(asio::io_context& io);
             RawWebSocketClient(const RawWebSocketClient&) = delete;
             ~RawWebSocketClient();
 

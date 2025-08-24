@@ -104,7 +104,7 @@ namespace musik { namespace core { namespace net {
             ClientPtr rawClient;
             Connection connection;
             std::string sessionId;
-            asio::io_service io;
+            asio::io_context io;
             std::unique_ptr<std::thread> thread;
             mutable std::recursive_mutex mutex;
             bool useTls{ false };

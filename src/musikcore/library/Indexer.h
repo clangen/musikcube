@@ -45,7 +45,7 @@
 
 #pragma warning(push, 0)
 #include <sigslot/sigslot.h>
-#include <asio/io_service.hpp>
+#include <asio/io_context.hpp>
 #pragma warning(pop)
 
 #include <filesystem>
@@ -122,7 +122,7 @@ namespace musik { namespace core {
 
             void ThreadLoop();
 
-            void Synchronize(const SyncContext& context, asio::io_service* io);
+            void Synchronize(const SyncContext& context, asio::io_context* io);
 
             void FinalizeSync(const SyncContext& context);
 
@@ -145,13 +145,13 @@ namespace musik { namespace core {
             void IncrementTracksScanned(int delta = 1);
 
             void SyncDirectory(
-                asio::io_service* io,
+                asio::io_context* io,
                 const std::string& syncRoot,
                 const std::string& currentPath,
                 int64_t pathId);
 
             void ReadMetadataFromFile(
-                asio::io_service* io,
+                asio::io_context* io,
                 const std::filesystem::path& path,
                 const std::string& pathId);
 

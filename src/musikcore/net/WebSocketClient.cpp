@@ -285,11 +285,7 @@ void WebSocketClient::Reconnect() {
 
     this->Disconnect();
 
-#if BOOST_VERSION < 106600
-    io.reset();
-#else
     io.restart();
-#endif
 
     auto const prefs = Preferences::ForComponent(core::prefs::components::Settings);
     auto const timeout = prefs->GetInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);

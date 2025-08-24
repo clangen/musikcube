@@ -181,11 +181,7 @@ void PiggyWebSocketClient::Reconnect() {
     this->Disconnect();
     this->uri = originalUri;
 
-#if BOOST_VERSION < 106600
-    io.reset();
-#else
     io.restart();
-#endif
 
     this->SetState(State::Connecting);
 
