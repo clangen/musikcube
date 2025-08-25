@@ -627,7 +627,7 @@ void Indexer::ThreadLoop() {
 
         if (threadCount > 1) {
             asio::io_context io;
-            asio::make_work_guard(io);
+            auto work = asio::make_work_guard(io); /* need to retain the reference */
 
             ThreadGroup threadGroup;
 
