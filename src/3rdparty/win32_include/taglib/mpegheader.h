@@ -26,6 +26,9 @@
 #ifndef TAGLIB_MPEGHEADER_H
 #define TAGLIB_MPEGHEADER_H
 
+#include <memory>
+
+#include "taglib.h"
 #include "taglib_export.h"
 
 namespace TagLib {
@@ -39,29 +42,25 @@ namespace TagLib {
 
     /*!
      * This is an implementation of MPEG Layer III headers.  The API follows more
-     * or less the binary format of these headers.  I've used
-     * <a href="http://www.mp3-tech.org/programmer/frame_header.html">this</a>
-     * document as a reference.
+     * or less the binary format of these headers.
+     *
+     * See these documents as a reference
+     * - <a href="http://www.mp3-tech.org/programmer/frame_header.html">
+     *   MPEG Audio Layer I/II/III frame header</a>
+     * - <a href="https://wiki.multimedia.cx/index.php/ADTS">ADTS</a>
      */
 
     class TAGLIB_EXPORT Header
     {
     public:
       /*!
-       * Parses an MPEG header based on \a data.
-       *
-       * \deprecated Use Header(File *, long, bool).
-       */
-      TAGLIB_DEPRECATED Header(const ByteVector &data);
-
-      /*!
        * Parses an MPEG header based on \a file and \a offset.
        *
-       * \note If \a checkLength is true, this requires the next MPEG frame to
+       * \note If \a checkLength is \c true, this requires the next MPEG frame to
        * check if the frame length is parsed and calculated correctly.  So it's
        * suitable for seeking for the first valid frame.
        */
-      Header(File *file, long offset, bool checkLength = true);
+      Header(File *file, offset_t offset, bool checkLength = true);
 
       /*!
        * Does a shallow copy of \a h.
@@ -71,10 +70,10 @@ namespace TagLib {
       /*!
        * Destroys this Header instance.
        */
-      virtual ~Header();
+      ~Header();
 
       /*!
-       * Returns true if the frame is at least an appropriate size and has
+       * Returns \c true if the frame is at least an appropriate size and has
        * legal values.
        */
       bool isValid() const;
@@ -88,7 +87,9 @@ namespace TagLib {
         //! MPEG Version 2
         Version2 = 1,
         //! MPEG Version 2.5
-        Version2_5 = 2
+        Version2_5 = 2,
+        //! MPEG Version 4
+        Version4 = 3
       };
 
       /*!
@@ -102,7 +103,7 @@ namespace TagLib {
       int layer() const;
 
       /*!
-       * Returns true if the MPEG protection bit is enabled.
+       * Returns \c true if the MPEG protection bit is enabled.
        */
       bool protectionEnabled() const;
 
@@ -117,7 +118,7 @@ namespace TagLib {
       int sampleRate() const;
 
       /*!
-       * Returns true if the frame is padded.
+       * Returns \c true if the frame is padded.
        */
       bool isPadded() const;
 
@@ -142,12 +143,48 @@ namespace TagLib {
       ChannelMode channelMode() const;
 
       /*!
-       * Returns true if the copyrighted bit is set.
+       * MPEG-4 channel configuration.
+       */
+      enum ChannelConfiguration {
+        //! Defined in audio object type (AOT) specific configuration
+        Custom = 0,
+        //! 1 channel: front-center
+        FrontCenter = 1,
+        //! 2 channels: front-left, front-right
+        FrontLeftRight = 2,
+        //! 3 channels: front-center, front-left, front-right
+        FrontCenterLeftRight = 3,
+        //! 4 channels: front-center, front-left, front-right, back-center
+        FrontCenterLeftRightBackCenter = 4,
+        //! 5 channels: front-center, front-left, front-right, back-left,
+        //! back-right
+        FrontCenterLeftRightBackLeftRight = 5,
+        //! 6 channels: front-center, front-left, front-right, back-left,
+        //! back-right, LFE-channel
+        FrontCenterLeftRightBackLeftRightLFE = 6,
+        //! 8 channels: front-center, front-left, front-right, side-left,
+        //! side-right, back-left, back-right, LFE-channel
+        FrontCenterLeftRightSideLeftRightBackLeftRightLFE = 7
+      };
+
+      /*!
+       * Returns the MPEG-4 channel configuration.
+       */
+      ChannelConfiguration channelConfiguration() const;
+
+      /*!
+       * Returns \c true if this is the header of an Audio Data Transport Stream
+       * (ADTS), usually AAC.
+       */
+      bool isADTS() const;
+
+      /*!
+       * Returns \c true if the copyrighted bit is set.
        */
       bool isCopyrighted() const;
 
       /*!
-       * Returns true if the "original" bit is set.
+       * Returns \c true if the "original" bit is set.
        */
       bool isOriginal() const;
 
@@ -167,12 +204,13 @@ namespace TagLib {
       Header &operator=(const Header &h);
 
     private:
-      void parse(File *file, long offset, bool checkLength);
+      void parse(File *file, offset_t offset, bool checkLength);
 
       class HeaderPrivate;
-      HeaderPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::shared_ptr<HeaderPrivate> d;
     };
-  }
-}
+  }  // namespace MPEG
+}  // namespace TagLib
 
 #endif

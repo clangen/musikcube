@@ -31,9 +31,7 @@
 #include "tstringlist.h"
 
 namespace TagLib {
-
   namespace APE {
-
     //! An implementation of APE-items
 
     /*!
@@ -59,19 +57,13 @@ namespace TagLib {
       Item();
 
       /*!
-       * Constructs a text item with \a key and \a value.
-       */
-      // BIC: Remove this, StringList has a constructor from a single string
-      Item(const String &key, const String &value);
-
-      /*!
        * Constructs a text item with \a key and \a values.
        */
       Item(const String &key, const StringList &values);
 
       /*!
        * Constructs an item with \a key and \a value.
-       * If \a binary is true a Binary item will be created, otherwise \a value will be interpreted as text
+       * If \a binary is \c true a Binary item will be created, otherwise \a value will be interpreted as text
        */
       Item(const String &key, const ByteVector &value, bool binary);
 
@@ -83,7 +75,7 @@ namespace TagLib {
       /*!
        * Destroys the item.
        */
-      virtual ~Item();
+      ~Item();
 
       /*!
        * Copies the contents of \a item into this item.
@@ -91,9 +83,9 @@ namespace TagLib {
       Item &operator=(const Item &item);
 
       /*!
-       * Exchanges the content of this item by the content of \a item.
+       * Exchanges the content of this item with the content of \a item.
        */
-      void swap(Item &item);
+      void swap(Item &item) noexcept;
 
       /*!
        * Returns the key.
@@ -112,11 +104,6 @@ namespace TagLib {
       */
       void setBinaryData(const ByteVector &value);
 
-#ifndef DO_NOT_DOCUMENT
-      /* Remove in next binary incompatible release */
-      ByteVector value() const;
-#endif
-
       /*!
        * Sets the key for the item to \a key.
        */
@@ -133,7 +120,7 @@ namespace TagLib {
        * Sets the text value of the item to the list of values in \a value and clears
        * any previous contents.
        *
-       * \see toStringList()
+       * \see values()
        */
       void setValues(const StringList &values);
 
@@ -147,7 +134,7 @@ namespace TagLib {
       /*!
        * Appends \a values to extend the current list of text values.
        *
-       * \see toStringList()
+       * \see values()
        */
       void appendValues(const StringList &values);
 
@@ -162,11 +149,6 @@ namespace TagLib {
        * an empty String.
        */
       String toString() const;
-
-#ifndef DO_NOT_DOCUMENT
-      /* Remove in next binary incompatible release */
-      StringList toStringList() const;
-#endif
 
       /*!
        * Returns the list of text values.  If the data type is not \a Text, always
@@ -190,16 +172,16 @@ namespace TagLib {
       void setReadOnly(bool readOnly);
 
       /*!
-       * Return true if the item is read-only.
+       * Return \c true if the item is read-only.
        */
       bool isReadOnly() const;
 
       /*!
-       * Sets the type of the item to \a type.
+       * Sets the type of the item to \a val.
        *
        * \see ItemTypes
        */
-      void setType(ItemTypes type);
+      void setType(ItemTypes val);
 
       /*!
        * Returns the type of the item.
@@ -207,18 +189,16 @@ namespace TagLib {
       ItemTypes type() const;
 
       /*!
-       * Returns if the item has any real content.
+       * Returns \c false if the item has any real content.
        */
       bool isEmpty() const;
 
     private:
       class ItemPrivate;
-      ItemPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<ItemPrivate> d;
     };
-  }
-
-}
+  }  // namespace APE
+}  // namespace TagLib
 
 #endif
-
-

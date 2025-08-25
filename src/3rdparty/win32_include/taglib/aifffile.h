@@ -37,7 +37,7 @@ namespace TagLib {
     //! An implementation of AIFF metadata
 
     /*!
-     * This is implementation of AIFF metadata.
+     * This is an implementation of AIFF metadata.
      *
      * This supports an ID3v2 tag as well as reading stream from the ID3 RIFF
      * chunk as well as properties from the file.
@@ -58,30 +58,41 @@ namespace TagLib {
       {
       public:
         /*!
-         * Constructs an AIFF file from \a file.  If \a readProperties is true the
+         * Constructs an AIFF file from \a file.  If \a readProperties is \c true the
          * file's audio properties will also be read.
          *
          * \note In the current implementation, \a propertiesStyle is ignored.
+         *
+         * If this file contains an ID3v2 tag, the frames will be created using
+         * \a frameFactory (default if null).
          */
         File(FileName file, bool readProperties = true,
-             Properties::ReadStyle propertiesStyle = Properties::Average);
+             Properties::ReadStyle propertiesStyle = Properties::Average,
+             ID3v2::FrameFactory *frameFactory = nullptr);
 
         /*!
-         * Constructs an AIFF file from \a stream.  If \a readProperties is true the
+         * Constructs an AIFF file from \a stream.  If \a readProperties is \c true the
          * file's audio properties will also be read.
          *
          * \note TagLib will *not* take ownership of the stream, the caller is
          * responsible for deleting it after the File object.
          *
          * \note In the current implementation, \a propertiesStyle is ignored.
+         *
+         * If this file contains an ID3v2 tag, the frames will be created using
+         * \a frameFactory (default if null).
          */
         File(IOStream *stream, bool readProperties = true,
-             Properties::ReadStyle propertiesStyle = Properties::Average);
+             Properties::ReadStyle propertiesStyle = Properties::Average,
+             ID3v2::FrameFactory *frameFactory = nullptr);
 
         /*!
          * Destroys this instance of the File.
          */
-        virtual ~File();
+        ~File() override;
+
+        File(const File &) = delete;
+        File &operator=(const File &) = delete;
 
         /*!
          * Returns the Tag for this file.
@@ -92,32 +103,32 @@ namespace TagLib {
          *
          * \see hasID3v2Tag()
          */
-        virtual ID3v2::Tag *tag() const;
+        ID3v2::Tag *tag() const override;
 
         /*!
          * Implements the unified property interface -- export function.
          * This method forwards to ID3v2::Tag::properties().
          */
-        PropertyMap properties() const;
+        PropertyMap properties() const override;
 
-        void removeUnsupportedProperties(const StringList &properties);
+        void removeUnsupportedProperties(const StringList &unsupported) override;
 
         /*!
          * Implements the unified property interface -- import function.
          * This method forwards to ID3v2::Tag::setProperties().
          */
-        PropertyMap setProperties(const PropertyMap &);
+        PropertyMap setProperties(const PropertyMap &) override;
 
         /*!
          * Returns the AIFF::Properties for this file.  If no audio properties
          * were read then this will return a null pointer.
          */
-        virtual Properties *audioProperties() const;
+        Properties *audioProperties() const override;
 
         /*!
          * Saves the file.
          */
-        virtual bool save();
+        bool save() override;
 
         /*!
          * Save using a specific ID3v2 version (e.g. v3)
@@ -140,18 +151,16 @@ namespace TagLib {
         static bool isSupported(IOStream *stream);
 
       private:
-        File(const File &);
-        File &operator=(const File &);
-
         void read(bool readProperties);
 
         friend class Properties;
 
         class FilePrivate;
-        FilePrivate *d;
+        TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+        std::unique_ptr<FilePrivate> d;
       };
-    }
-  }
-}
+    }  // namespace AIFF
+  }  // namespace RIFF
+}  // namespace TagLib
 
 #endif

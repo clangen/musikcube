@@ -26,9 +26,8 @@
 #ifndef TAGLIB_ID3V2EXTENDEDHEADER_H
 #define TAGLIB_ID3V2EXTENDEDHEADER_H
 
-#include "taglib_export.h"
 #include "tbytevector.h"
-#include "taglib.h"
+#include "taglib_export.h"
 
 namespace TagLib {
 
@@ -42,7 +41,8 @@ namespace TagLib {
      * the ID3v2 standard.  The API is based on the properties of ID3v2 extended
      * headers specified there.  If any of the terms used in this documentation
      * are unclear please check the specification in the linked section.
-     * (Structure, <a href="id3v2-structure.html#3.2">3.2</a>)
+     * (<a href="https://github.com/taglib/taglib/blob/master/taglib/mpeg/id3v2/id3v2.4.0-structure.txt">
+     * id3v2.4.0-structure.txt</a>, 3.2)
      */
 
     class TAGLIB_EXPORT ExtendedHeader
@@ -56,7 +56,10 @@ namespace TagLib {
       /*!
        * Destroys the extended header.
        */
-      virtual ~ExtendedHeader();
+      ~ExtendedHeader();
+
+      ExtendedHeader(const ExtendedHeader &) = delete;
+      ExtendedHeader &operator=(const ExtendedHeader &) = delete;
 
       /*!
        * Returns the size of the extended header.  This is variable for the
@@ -81,13 +84,11 @@ namespace TagLib {
       void parse(const ByteVector &data);
 
     private:
-      ExtendedHeader(const ExtendedHeader &);
-      ExtendedHeader &operator=(const ExtendedHeader &);
-
       class ExtendedHeaderPrivate;
-      ExtendedHeaderPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<ExtendedHeaderPrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

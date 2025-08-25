@@ -1,11 +1,13 @@
-/* this script is used to update all macOS dynamic libraries so they can discover
-each other in the app's sandboxed directory; it removes absolute paths and replaces
-them with @rpaths. it also ensures symlinks are setup properly. whenever we add
-a new third-party dependency we need to update the `libraries` and `symlinks`
-mapping so the script knows to process them.
-
-the result of the script will be later validated by the `scan-standalone.js` script
-during app build-time. */
+/**
+ * this script is used to update all macOS dynamic libraries so they can discover
+ * each other in the app's sandboxed directory; it removes absolute paths and replaces
+ * them with @rpaths. it also ensures symlinks are setup properly. whenever we add
+ * a new third-party dependency we need to update the `libraries` and `symlinks`
+ * mapping so the script knows to process them.
+ *
+ * the result of the script will be later validated by the `scan-standalone.js` script
+ * during app build-time.
+ */
 
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
@@ -23,9 +25,9 @@ if (!mac) {
 /* these are the libraries we'll scan, and update linked libraries from
 absolute paths to "@rpath/filename" */
 const libraries = [
-  'libavcodec-musikcube.61.dylib',
-  'libavformat-musikcube.61.dylib',
-  'libavutil-musikcube.59.dylib',
+  'libavcodec-musikcube.62.dylib',
+  'libavformat-musikcube.62.dylib',
+  'libavutil-musikcube.60.dylib',
   'libcrypto.3.dylib',
   'libcurl.4.dylib',
   'libmicrohttpd.12.dylib',
@@ -34,8 +36,8 @@ const libraries = [
   'libopenmpt.0.dylib',
   'libopus.0.dylib',
   'libssl.3.dylib',
-  'libswresample-musikcube.5.dylib',
-  'libtag.1.19.0.dylib',
+  'libswresample-musikcube.6.dylib',
+  'libtag.2.1.1.dylib',
   'libvorbis.0.dylib',
   'libvorbisenc.2.dylib',
   'libgme.0.6.3.dylib',
@@ -43,9 +45,9 @@ const libraries = [
 
 /* after updating libraries, re-establish symlinks */
 const symlinks = [
-  ['libavcodec-musikcube.61.dylib', 'libavcodec-musikcube.dylib'],
-  ['libavformat-musikcube.61.dylib', 'libavformat-musikcube.dylib'],
-  ['libavutil-musikcube.59.dylib', 'libavutil-musikcube.dylib'],
+  ['libavcodec-musikcube.62.dylib', 'libavcodec-musikcube.dylib'],
+  ['libavformat-musikcube.62.dylib', 'libavformat-musikcube.dylib'],
+  ['libavutil-musikcube.60.dylib', 'libavutil-musikcube.dylib'],
   ['libcrypto.3.dylib', 'libcrypto.dylib'],
   ['libcurl.4.dylib', 'libcurl.dylib'],
   ['libmicrohttpd.12.dylib', 'libmicrohttpd.dylib'],
@@ -54,8 +56,8 @@ const symlinks = [
   ['libopenmpt.0.dylib', 'libopenmpt.dylib'],
   ['libopus.0.dylib', 'libopus.dylib'],
   ['libssl.3.dylib', 'libssl.dylib'],
-  ['libswresample-musikcube.5.dylib', 'libswresample-musikcube.dylib'],
-  ['libtag.1.19.0.dylib', 'libtag.dylib'],
+  ['libswresample-musikcube.6.dylib', 'libswresample-musikcube.dylib'],
+  ['libtag.2.1.1.dylib', 'libtag.dylib'],
   ['libvorbis.0.dylib', 'libvorbis.dylib'],
   ['libvorbisenc.2.dylib', 'libvorbisenc.dylib'],
   ['libgme.0.6.3.dylib', 'libgme.dylib'],

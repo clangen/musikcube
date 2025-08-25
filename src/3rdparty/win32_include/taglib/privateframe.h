@@ -27,14 +27,14 @@
 #ifndef TAGLIB_PRIVATEFRAME_H
 #define TAGLIB_PRIVATEFRAME_H
 
-#include "id3v2frame.h"
 #include "taglib_export.h"
+#include "id3v2frame.h"
 
 namespace TagLib {
 
   namespace ID3v2 {
 
-    //! An implementation of ID3v2 privateframe
+    //! An implementation of ID3v2 private frame
 
     class TAGLIB_EXPORT PrivateFrame : public Frame
     {
@@ -56,14 +56,17 @@ namespace TagLib {
       /*!
        * Destroys this private frame instance.
        */
-      virtual ~PrivateFrame();
+      ~PrivateFrame() override;
+
+      PrivateFrame(const PrivateFrame &) = delete;
+      PrivateFrame &operator=(const PrivateFrame &) = delete;
 
       /*!
        * Returns the text of this private frame, currently just the owner.
        *
        * \see text()
        */
-      virtual String toString() const;
+      String toString() const override;
 
       /*!
        * \return The owner of the private frame.
@@ -72,7 +75,7 @@ namespace TagLib {
       String owner() const;
 
       /*!
-       *
+       * Returns the private data.
        */
       ByteVector data() const;
 
@@ -83,15 +86,15 @@ namespace TagLib {
       void setOwner(const String &s);
 
       /*!
-       *
+       * Sets the private \a data.
        */
-      void setData(const ByteVector &v);
+      void setData(const ByteVector &data);
 
     protected:
       // Reimplementations.
 
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       /*!
@@ -99,13 +102,11 @@ namespace TagLib {
        */
       PrivateFrame(const ByteVector &data, Header *h);
 
-      PrivateFrame(const PrivateFrame &);
-      PrivateFrame &operator=(const PrivateFrame &);
-
       class PrivateFramePrivate;
-      PrivateFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<PrivateFramePrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

@@ -267,7 +267,11 @@ void FfmpegDecoder::Reset() {
         // avcodec_flush_buffers(this->codecContext);
         auto stream = this->formatContext->streams[this->streamId];
         if (stream != nullptr) {
+#if LIBAVCODEC_VERSION_MAJOR >= 62
+            avcodec_free_context(&this->codecContext);
+#else
             avcodec_close(this->codecContext);
+#endif
         }
 
         this->codecContext = nullptr;

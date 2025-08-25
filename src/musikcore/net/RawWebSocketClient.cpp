@@ -56,7 +56,7 @@ static inline RawWebSocketClient::SslContext createSslContext() {
     return ctx;
 }
 
-RawWebSocketClient::RawWebSocketClient(asio::io_service& io) {
+RawWebSocketClient::RawWebSocketClient(asio::io_context& io) {
     websocketpp::lib::error_code ec;
 
     plainTextClient = std::make_unique<PlainTextClient>();

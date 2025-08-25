@@ -48,13 +48,13 @@ CURL_EXTERN void curl_easy_cleanup(CURL *curl);
  *
  * DESCRIPTION
  *
- * Request internal information from the curl session with this function.  The
- * third argument MUST be a pointer to a long, a pointer to a char * or a
- * pointer to a double (as the documentation describes elsewhere).  The data
- * pointed to will be filled in accordingly and can be relied upon only if the
- * function returns CURLE_OK.  This function is intended to get used *AFTER* a
- * performed transfer, all results from this function are undefined until the
- * transfer is completed.
+ * Request internal information from the curl session with this function.
+ * The third argument MUST be pointing to the specific type of the used option
+ * which is documented in each manpage of the option. The data pointed to
+ * will be filled in accordingly and can be relied upon only if the function
+ * returns CURLE_OK. This function is intended to get used *AFTER* a performed
+ * transfer, all results from this function are undefined until the transfer
+ * is completed.
  */
 CURL_EXTERN CURLcode curl_easy_getinfo(CURL *curl, CURLINFO info, ...);
 
@@ -78,7 +78,7 @@ CURL_EXTERN CURL *curl_easy_duphandle(CURL *curl);
  *
  * DESCRIPTION
  *
- * Re-initializes a CURL handle to the default values. This puts back the
+ * Re-initializes a curl handle to the default values. This puts back the
  * handle to the same state as it was in when it was just created.
  *
  * It does keep: live connections, the Session ID cache, the DNS cache and the

@@ -225,7 +225,7 @@ void Indexer::RemovePath(const std::string& path) {
     }
 }
 
-void Indexer::Synchronize(const SyncContext& context, asio::io_service* io) {
+void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
     LocalLibrary::CreateIndexes(this->dbConnection);
 
     IndexerTrack::OnIndexerStarted(this->dbConnection);
@@ -354,7 +354,7 @@ void Indexer::FinalizeSync(const SyncContext& context) {
 }
 
 void Indexer::ReadMetadataFromFile(
-    asio::io_service* io,
+    asio::io_context* io,
     const std::fs::path& file,
     const std::string& pathId)
 {
@@ -457,7 +457,7 @@ inline void Indexer::IncrementTracksScanned(int delta) {
 }
 
 void Indexer::SyncDirectory(
-    asio::io_service* io,
+    asio::io_context* io,
     const std::string &syncRoot,
     const std::string &currentPath,
     int64_t pathId)
@@ -490,7 +490,7 @@ void Indexer::SyncDirectory(
                     for (auto it : this->tagReaders) {
                         if (it->CanRead(extension.c_str())) {
                             if (io) {
-                                io->post(std::bind(
+                                asio::post(*io, std::bind(
                                     &Indexer::ReadMetadataFromFile,
                                     this,
                                     io,
@@ -626,8 +626,9 @@ void Indexer::ThreadLoop() {
             prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS);
 
         if (threadCount > 1) {
-            asio::io_service io;
-            asio::io_service::work work(io);
+            asio::io_context io;
+            auto work = asio::make_work_guard(io); /* need to retain the reference */
+
             ThreadGroup threadGroup;
 
             /* initialize the thread pool -- we'll use this to index tracks in parallel. */
@@ -641,7 +642,7 @@ void Indexer::ThreadLoop() {
 
             /* done with sync, remove all the threads in the pool to free resources. they'll
             be re-created later if we index again. */
-            io.post([&io]() {
+            asio::post(io, [&io]() {
                 if (!io.stopped()) {
                     musik::debug::info(TAG, "scan completed successfully");
                     io.stop();

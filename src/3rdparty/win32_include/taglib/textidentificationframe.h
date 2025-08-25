@@ -29,7 +29,6 @@
 #include "tstringlist.h"
 #include "tmap.h"
 #include "taglib_export.h"
-
 #include "id3v2frame.h"
 
 namespace TagLib {
@@ -37,7 +36,7 @@ namespace TagLib {
   namespace ID3v2 {
 
     class Tag;
-    typedef Map<String, String> KeyConversionMap;
+    using KeyConversionMap = Map<String, String>;
 
     //! An ID3v2 text identification frame implementation
 
@@ -60,7 +59,7 @@ namespace TagLib {
      *   <li><b>TDTG</b> Tagging time</li>
      *   <li><b>TENC</b> Encoded by</li>
      *   <li><b>TEXT</b> Lyricist/Text writer</li>
-     *   <li><b>TFLT</b> File type</li>
+     *   <li><b>TFLT</b> %File type</li>
      *   <li><b>TIPL</b> Involved people list</li>
      *   <li><b>TIT1</b> Content group description</li>
      *   <li><b>TIT2</b> Title/songname/content description</li>
@@ -75,7 +74,7 @@ namespace TagLib {
      *   <li><b>TOFN</b> Original filename</li>
      *   <li><b>TOLY</b> Original lyricist(s)/text writer(s)</li>
      *   <li><b>TOPE</b> Original artist(s)/performer(s)</li>
-     *   <li><b>TOWN</b> File owner/licensee</li>
+     *   <li><b>TOWN</b> %File owner/licensee</li>
      *   <li><b>TPE1</b> Lead performer(s)/Soloist(s)</li>
      *   <li><b>TPE2</b> Band/orchestra/accompaniment</li>
      *   <li><b>TPE3</b> Conductor/performer refinement</li>
@@ -142,7 +141,10 @@ namespace TagLib {
       /*!
        * Destroys this TextIdentificationFrame instance.
        */
-      virtual ~TextIdentificationFrame();
+      ~TextIdentificationFrame() override;
+
+      TextIdentificationFrame(const TextIdentificationFrame &) = delete;
+      TextIdentificationFrame &operator=(const TextIdentificationFrame &) = delete;
 
       /*!
        * Text identification frames are a list of string fields.
@@ -158,8 +160,9 @@ namespace TagLib {
 
       // Reimplementations.
 
-      virtual void setText(const String &s);
-      virtual String toString() const;
+      void setText(const String &s) override;
+      String toString() const override;
+      StringList toStringList() const override;
 
       /*!
        * Returns the text encoding that will be used in rendering this frame.
@@ -195,13 +198,13 @@ namespace TagLib {
        */
       static const KeyConversionMap &involvedPeopleMap();
 
-      PropertyMap asProperties() const;
+      PropertyMap asProperties() const override;
 
     protected:
       // Reimplementations.
 
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
       /*!
        * The constructor used by the FrameFactory.
@@ -209,9 +212,6 @@ namespace TagLib {
       TextIdentificationFrame(const ByteVector &data, Header *h);
 
     private:
-      TextIdentificationFrame(const TextIdentificationFrame &);
-      TextIdentificationFrame &operator=(const TextIdentificationFrame &);
-
       /*!
        * Parses the special structure of a TIPL frame
        * Only the whitelisted roles "ARRANGER", "ENGINEER", "PRODUCER",
@@ -223,7 +223,8 @@ namespace TagLib {
        */
       PropertyMap makeTMCLProperties() const;
       class TextIdentificationFramePrivate;
-      TextIdentificationFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<TextIdentificationFramePrivate> d;
     };
 
     /*!
@@ -258,7 +259,12 @@ namespace TagLib {
        */
       UserTextIdentificationFrame(const String &description, const StringList &values, String::Type encoding = String::UTF8);
 
-      virtual String toString() const;
+      ~UserTextIdentificationFrame() override;
+
+      UserTextIdentificationFrame(const UserTextIdentificationFrame &) = delete;
+      UserTextIdentificationFrame &operator=(const UserTextIdentificationFrame &) = delete;
+
+      String toString() const override;
 
       /*!
        * Returns the description for this frame.
@@ -272,8 +278,7 @@ namespace TagLib {
        */
       void setDescription(const String &s);
 
-      StringList fieldList() const;
-      void setText(const String &text);
+      void setText(const String &text) override;
       void setText(const StringList &fields);
 
       /*!
@@ -289,25 +294,34 @@ namespace TagLib {
        *   in the value list, in order to be compatible with TagLib which copies
        *   the description() into the fieldList().
        */
-      PropertyMap asProperties() const;
+      PropertyMap asProperties() const override;
 
       /*!
        * Searches for the user defined text frame with the description \a description
        * in \a tag.  This returns null if no matching frames were found.
        */
-      static UserTextIdentificationFrame *find(Tag *tag, const String &description);
+      static UserTextIdentificationFrame *find(const Tag *tag, const String &description);
+
+      /*!
+       * Returns an appropriate TXXX frame description for the given free-form tag key.
+       */
+      static String keyToTXXX(const String &);
+
+      /*!
+       * Returns a free-form tag name for the given ID3 frame description.
+       */
+      static String txxxToKey(const String &);
 
     private:
       UserTextIdentificationFrame(const ByteVector &data, Header *h);
-      UserTextIdentificationFrame(const TextIdentificationFrame &);
-      UserTextIdentificationFrame &operator=(const UserTextIdentificationFrame &);
 
       void checkFields();
 
       class UserTextIdentificationFramePrivate;
-      UserTextIdentificationFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<UserTextIdentificationFramePrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

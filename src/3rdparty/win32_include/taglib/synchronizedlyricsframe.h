@@ -26,8 +26,8 @@
 #ifndef TAGLIB_SYNCHRONIZEDLYRICSFRAME_H
 #define TAGLIB_SYNCHRONIZEDLYRICSFRAME_H
 
-#include "id3v2frame.h"
 #include "tlist.h"
+#include "id3v2frame.h"
 
 namespace TagLib {
 
@@ -85,7 +85,8 @@ namespace TagLib {
        * Single entry of time stamp and lyrics text.
        */
       struct SynchedText {
-        SynchedText(unsigned int ms, String str) : time(ms), text(str) {}
+        SynchedText(unsigned int ms, const String &str) :
+          time(ms), text(str) { }
         unsigned int time;
         String text;
       };
@@ -93,7 +94,7 @@ namespace TagLib {
       /*!
        * List of synchronized lyrics.
        */
-      typedef TagLib::List<SynchedText> SynchedTextList;
+      using SynchedTextList = TagLib::List<SynchedText>;
 
       /*!
        * Construct an empty synchronized lyrics frame that will use the text
@@ -109,14 +110,17 @@ namespace TagLib {
       /*!
        * Destroys this SynchronizedLyricsFrame instance.
        */
-      virtual ~SynchronizedLyricsFrame();
+      ~SynchronizedLyricsFrame() override;
+
+      SynchronizedLyricsFrame(const SynchronizedLyricsFrame &) = delete;
+      SynchronizedLyricsFrame &operator=(const SynchronizedLyricsFrame &) = delete;
 
       /*!
        * Returns the description of this synchronized lyrics frame.
        *
        * \see description()
        */
-      virtual String toString() const;
+      String toString() const override;
 
       /*!
        * Returns the text encoding that will be used in rendering this frame.
@@ -174,11 +178,11 @@ namespace TagLib {
       /*!
        * Set the language using the 3 byte language code from
        * <a href="http://en.wikipedia.org/wiki/ISO_639">ISO-639-2</a> to
-       * \a languageCode.
+       * \a languageEncoding.
        *
        * \see language()
        */
-      void setLanguage(const ByteVector &languageCode);
+      void setLanguage(const ByteVector &languageEncoding);
 
       /*!
        * Set the timestamp format.
@@ -211,21 +215,20 @@ namespace TagLib {
     protected:
       // Reimplementations.
 
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       /*!
        * The constructor used by the FrameFactory.
        */
       SynchronizedLyricsFrame(const ByteVector &data, Header *h);
-      SynchronizedLyricsFrame(const SynchronizedLyricsFrame &);
-      SynchronizedLyricsFrame &operator=(const SynchronizedLyricsFrame &);
 
       class SynchronizedLyricsFramePrivate;
-      SynchronizedLyricsFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<SynchronizedLyricsFramePrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

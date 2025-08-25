@@ -29,9 +29,8 @@
 #ifndef TAGLIB_GENERALENCAPSULATEDOBJECT_H
 #define TAGLIB_GENERALENCAPSULATEDOBJECT_H
 
-#include "id3v2frame.h"
-#include "id3v2header.h"
 #include "taglib_export.h"
+#include "id3v2frame.h"
 
 namespace TagLib {
 
@@ -42,7 +41,7 @@ namespace TagLib {
     /*!
      * This is an implementation of ID3v2 general encapsulated objects.
      * Arbitrary binary data may be included in tags, stored in GEOB frames.
-     * There may be multiple GEOB frames in a single tag.  Each GEOB it
+     * There may be multiple GEOB frames in a single tag.  Each GEOB is
      * labelled with a content description (which may be blank), a required
      * mime-type, and a file name (may be blank).  The content description
      * uniquely identifies the GEOB frame in the tag.
@@ -72,12 +71,20 @@ namespace TagLib {
       /*!
        * Destroys the GeneralEncapsulatedObjectFrame instance.
        */
-      virtual ~GeneralEncapsulatedObjectFrame();
+      ~GeneralEncapsulatedObjectFrame() override;
+
+      GeneralEncapsulatedObjectFrame(const GeneralEncapsulatedObjectFrame &) = delete;
+      GeneralEncapsulatedObjectFrame &operator=(const GeneralEncapsulatedObjectFrame &) = delete;
 
       /*!
        * Returns a string containing the description, file name and mime-type
        */
-      virtual String toString() const;
+      String toString() const override;
+
+      /*!
+       * Returns a string list containing the description, file name and mime-type.
+       */
+      StringList toStringList() const override;
 
       /*!
        * Returns the text encoding used for the description and file name.
@@ -143,7 +150,7 @@ namespace TagLib {
       /*!
        * Returns the object data as a ByteVector.
        *
-       * \note ByteVector has a data() method that returns a const char * which
+       * \note ByteVector has a data() method that returns a <tt>const char *</tt> which
        * should make it easy to export this data to external programs.
        *
        * \see setObject()
@@ -159,21 +166,20 @@ namespace TagLib {
        * \see mimeType()
        * \see setMimeType()
        */
-      void setObject(const ByteVector &object);
+      void setObject(const ByteVector &data);
 
     protected:
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       GeneralEncapsulatedObjectFrame(const ByteVector &data, Header *h);
-      GeneralEncapsulatedObjectFrame(const GeneralEncapsulatedObjectFrame &);
-      GeneralEncapsulatedObjectFrame &operator=(const GeneralEncapsulatedObjectFrame &);
 
       class GeneralEncapsulatedObjectFramePrivate;
-      GeneralEncapsulatedObjectFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<GeneralEncapsulatedObjectFramePrivate> d;
     };
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 
 #endif

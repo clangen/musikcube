@@ -1,3 +1,16 @@
+3.0.5
+
+* add support for ffmpeg 8.x (backwards compatible)
+* updated dependencies:
+  - ffmpeg@8.0
+  - openssl@3.5.2
+  - libcurl@8.15.0
+  - libmicrohttpd@1.0.2
+  - taglib@2.1.1
+  - asio@1.36.0
+
+--------------------------------------------------------------------------------
+
 3.0.4
 
 * add ffmpeg 6.x backwards compatibility (@barracuda156)

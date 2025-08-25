@@ -40,4 +40,19 @@
 #define TAGLIB_EXPORT
 #endif
 
+#if defined _MSC_VER && !defined TAGLIB_STATIC
+/*!
+ * Suppress MSVC C4251 warning for next statement.
+ * Unfortunately, MSVC exports everything (not only public members) when
+ * __declspec(dllexport) is set at the class level via TAGLIB_EXPORT, which
+ * leads to many "needs to have dll-interface to be used by clients" C4251
+ * warnings issued by MSVC, because the std::unique_ptr pimpls are
+ * exported too. This macro can be used before private STL fields to suppress
+ * such warnings.
+*/
+#define TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE _Pragma("warning(suppress: 4251)")
+#else
+#define TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+#endif
+
 #endif

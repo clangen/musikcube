@@ -50,21 +50,24 @@ namespace TagLib {
       explicit UnsynchronizedLyricsFrame(String::Type encoding = String::Latin1);
 
       /*!
-       * Construct a unsynchronized lyrics frame based on the data in \a data.
+       * Construct an unsynchronized lyrics frame based on the data in \a data.
        */
       explicit UnsynchronizedLyricsFrame(const ByteVector &data);
 
       /*!
        * Destroys this UnsynchronizedLyricsFrame instance.
        */
-      virtual ~UnsynchronizedLyricsFrame();
+      ~UnsynchronizedLyricsFrame() override;
+
+      UnsynchronizedLyricsFrame(const UnsynchronizedLyricsFrame &) = delete;
+      UnsynchronizedLyricsFrame &operator=(const UnsynchronizedLyricsFrame &) = delete;
 
       /*!
        * Returns the text of this unsynchronized lyrics frame.
        *
        * \see text()
        */
-      virtual String toString() const;
+      String toString() const override;
 
       /*!
        * Returns the language encoding as a 3 byte encoding as specified by
@@ -95,11 +98,11 @@ namespace TagLib {
       /*!
        * Set the language using the 3 byte language code from
        * <a href="http://en.wikipedia.org/wiki/ISO_639">ISO-639-2</a> to
-       * \a languageCode.
+       * \a languageEncoding.
        *
        * \see language()
        */
-      void setLanguage(const ByteVector &languageCode);
+      void setLanguage(const ByteVector &languageEncoding);
 
       /*!
        * Sets the description of the unsynchronized lyrics frame to \a s.
@@ -113,7 +116,7 @@ namespace TagLib {
        *
        * \see text()
        */
-      virtual void setText(const String &s);
+      void setText(const String &s) override;
 
       /*!
        * Returns the text encoding that will be used in rendering this frame.
@@ -145,12 +148,12 @@ namespace TagLib {
        * Note that currently the language() field is not supported by the PropertyMap
        * interface.
        */
-      PropertyMap asProperties() const;
+      PropertyMap asProperties() const override;
 
       /*!
        * LyricsFrames each have a unique description.  This searches for a lyrics
        * frame with the description \a d and returns a pointer to it.  If no
-       * frame is found that matches the given description null is returned.
+       * frame is found that matches the given description, null is returned.
        *
        * \see description()
        */
@@ -159,21 +162,20 @@ namespace TagLib {
     protected:
       // Reimplementations.
 
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       /*!
        * The constructor used by the FrameFactory.
        */
       UnsynchronizedLyricsFrame(const ByteVector &data, Header *h);
-      UnsynchronizedLyricsFrame(const UnsynchronizedLyricsFrame &);
-      UnsynchronizedLyricsFrame &operator=(const UnsynchronizedLyricsFrame &);
 
       class UnsynchronizedLyricsFramePrivate;
-      UnsynchronizedLyricsFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<UnsynchronizedLyricsFramePrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

@@ -95,7 +95,33 @@ static void logError(const std::string& message) {
     }
 }
 
-static AVSampleFormat resolveSampleFormat(AVCodecCompat *codec) {
+static AVSampleFormat resolveSampleFormat(AVCodecContext* context, AVCodecCompat *codec) {
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+    const void* configs = NULL;
+    int count = 0;
+
+    int result = avcodec_get_supported_config(
+        context,
+        codec,
+        AV_CODEC_CONFIG_SAMPLE_FORMAT,
+        0,
+        &configs,
+        &count);
+
+    if (result < 0 || count <= 0) {
+        return AV_SAMPLE_FMT_NONE;
+    }
+
+    const AVSampleFormat* formats = static_cast<const AVSampleFormat*>(configs);
+    for (int i = 0; i < count; i++) {
+        auto format = formats[i];
+        if (format == AV_SAMPLE_FMT_FLT) {
+            return format;
+        }
+    }
+
+    return formats[0];
+#else
     if (!codec->sample_fmts) {
         return AV_SAMPLE_FMT_NONE;
     }
@@ -109,9 +135,38 @@ static AVSampleFormat resolveSampleFormat(AVCodecCompat *codec) {
         p++;
     }
     return codec->sample_fmts[0];
+#endif
 }
 
-static int resolveSampleRate(AVCodecCompat* codec, int preferredSampleRate) {
+static int resolveSampleRate(AVCodecContext* context, AVCodecCompat* codec, int preferredSampleRate) {
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+    const void* configs = NULL;
+    int count = 0;
+
+    int result = avcodec_get_supported_config(
+        context,
+        codec,
+        AV_CODEC_CONFIG_SAMPLE_RATE,
+        0,
+        &configs,
+        &count);
+
+    if (result < 0 || count <= 0) {
+        return DEFAULT_SAMPLE_RATE;
+    }
+
+    int highestRate = 0;
+    const int* sampleRates = static_cast<const int*>(configs);
+    for (int i = 0; i < count; i++) {
+        auto currentRate = sampleRates[i];
+        if (currentRate == preferredSampleRate) {
+            return preferredSampleRate;
+        }
+        highestRate = FFMAX(currentRate, highestRate);
+    }
+
+    return highestRate;
+#else
     const int *p;
     int highestRate = 0;
     if (!codec->supported_samplerates) {
@@ -126,6 +181,7 @@ static int resolveSampleRate(AVCodecCompat* codec, int preferredSampleRate) {
         p++;
     }
     return highestRate;
+#endif
 }
 
 static int resolveChannelLayout(size_t channelCount) {
@@ -218,6 +274,8 @@ FfmpegEncoder::FfmpegEncoder(const std::string& format)
     this->globalTimestamp = 0LL;
     this->inputChannelCount = 0;
     this->inputSampleRate = 0;
+    this->readBufferSize = 0;
+    this->out = nullptr;
 
     std::transform(
         this->format.begin(),
@@ -295,8 +353,8 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     this->outputContext->channels = (int)channels;
     this->outputContext->channel_layout = resolveChannelLayout(channels);
 #endif
-    this->outputContext->sample_rate = resolveSampleRate(this->outputCodec, (int) rate);
-    this->outputContext->sample_fmt = resolveSampleFormat(this->outputCodec);
+    this->outputContext->sample_rate = resolveSampleRate(this->outputContext, this->outputCodec, (int) rate);
+    this->outputContext->sample_fmt = resolveSampleFormat(this->outputContext, this->outputCodec);
     this->outputContext->bit_rate = (int64_t) bitrate * 1000;
     this->outputContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 

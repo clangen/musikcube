@@ -26,9 +26,9 @@
 #ifndef TAGLIB_CHAPTERFRAME
 #define TAGLIB_CHAPTERFRAME
 
+#include "taglib_export.h"
 #include "id3v2tag.h"
 #include "id3v2frame.h"
-#include "taglib_export.h"
 
 namespace TagLib {
 
@@ -57,7 +57,7 @@ namespace TagLib {
        * \a startTime, end time \a endTime, start offset \a startOffset,
        * end offset \a endOffset and optionally a list of embedded frames,
        * whose ownership will then be taken over by this Frame, in
-       * \a embeddedFrames;
+       * \a embeddedFrames.
        *
        * All times are in milliseconds.
        */
@@ -69,7 +69,10 @@ namespace TagLib {
       /*!
        * Destroys the frame.
        */
-      virtual ~ChapterFrame();
+      ~ChapterFrame() override;
+
+      ChapterFrame(const ChapterFrame &) = delete;
+      ChapterFrame &operator=(const ChapterFrame &) = delete;
 
       /*!
        * Returns the element ID of the frame. Element ID
@@ -97,7 +100,7 @@ namespace TagLib {
        * Returns zero based byte offset (count of bytes from the beginning
        * of the audio file) of chapter's start.
        *
-       * \note If returned value is 0xFFFFFFFF, start time should be used instead.
+       * \note If the returned value is 0xFFFFFFFF, start time should be used instead.
        * \see setStartOffset()
        */
       unsigned int startOffset() const;
@@ -106,7 +109,7 @@ namespace TagLib {
        * Returns zero based byte offset (count of bytes from the beginning
        * of the audio file) of chapter's end.
        *
-       * \note If returned value is 0xFFFFFFFF, end time should be used instead.
+       * \note If the returned value is 0xFFFFFFFF, end time should be used instead.
        * \see setEndOffset()
        */
       unsigned int endOffset() const;
@@ -150,7 +153,7 @@ namespace TagLib {
       void setEndOffset(const unsigned int &eO);
 
       /*!
-       * Returns a reference to the frame list map.  This is an FrameListMap of
+       * Returns a reference to the frame list map.  This is a FrameListMap of
        * all of the frames embedded in the CHAP frame.
        *
        * This is the most convenient structure for accessing the CHAP frame's
@@ -166,11 +169,11 @@ namespace TagLib {
       const FrameListMap &embeddedFrameListMap() const;
 
       /*!
-       * Returns a reference to the embedded frame list.  This is an FrameList
+       * Returns a reference to the embedded frame list.  This is a FrameList
        * of all of the frames embedded in the CHAP frame in the order that they
        * were parsed.
        *
-       * This can be useful if for example you want iterate over the CHAP frame's
+       * This can be useful if for example you want to iterate over the CHAP frame's
        * embedded frames in the order that they occur in the CHAP frame.
        *
        * \warning You should not modify this data structure directly, instead
@@ -201,8 +204,8 @@ namespace TagLib {
       void addEmbeddedFrame(Frame *frame);
 
       /*!
-       * Remove an embedded frame from the CHAP frame.  If \a del is true the frame's
-       * memory will be freed; if it is false, it must be deleted by the user.
+       * Remove an embedded frame from the CHAP frame.  If \a del is \c true the frame's
+       * memory will be freed; if it is \c false, it must be deleted by the user.
        *
        * \note Using this method will invalidate any pointers on the list
        * returned by embeddedFrameList()
@@ -218,9 +221,9 @@ namespace TagLib {
        */
       void removeEmbeddedFrames(const ByteVector &id);
 
-      virtual String toString() const;
+      String toString() const override;
 
-      PropertyMap asProperties() const;
+      PropertyMap asProperties() const override;
 
       /*!
        * CHAP frames each have a unique element ID. This searches for a CHAP
@@ -232,18 +235,17 @@ namespace TagLib {
       static ChapterFrame *findByElementID(const Tag *tag, const ByteVector &eID);
 
     protected:
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       ChapterFrame(const ID3v2::Header *tagHeader, const ByteVector &data, Header *h);
-      ChapterFrame(const ChapterFrame &);
-      ChapterFrame &operator=(const ChapterFrame &);
 
       class ChapterFramePrivate;
-      ChapterFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<ChapterFramePrivate> d;
     };
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 
 #endif

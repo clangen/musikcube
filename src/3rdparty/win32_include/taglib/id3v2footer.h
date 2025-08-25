@@ -26,8 +26,8 @@
 #ifndef TAGLIB_ID3V2FOOTER_H
 #define TAGLIB_ID3V2FOOTER_H
 
-#include "taglib_export.h"
 #include "tbytevector.h"
+#include "taglib_export.h"
 
 namespace TagLib {
 
@@ -57,7 +57,10 @@ namespace TagLib {
       /*!
        * Destroys the footer.
        */
-      virtual ~Footer();
+      ~Footer();
+
+      Footer(const Footer &) = delete;
+      Footer &operator=(const Footer &) = delete;
 
       /*!
        * Returns the size of the footer.  Presently this is always 10 bytes.
@@ -70,13 +73,11 @@ namespace TagLib {
       ByteVector render(const Header *header) const;
 
     private:
-      Footer(const Footer &);
-      Footer &operator=(const Footer &);
-
       class FooterPrivate;
-      FooterPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<FooterPrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif

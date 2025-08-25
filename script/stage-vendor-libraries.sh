@@ -9,10 +9,10 @@ PLATFORM=$(uname)
 if [[ "$PLATFORM" == 'Darwin' ]]; then
     echo "[stage-vendor-libraries] staging macOS .dylib files..."
 
-    cp vendor/bin/lib/libavcodec-musikcube.61.dylib ./bin/lib
-    cp vendor/bin/lib/libavformat-musikcube.61.dylib ./bin/lib
-    cp vendor/bin/lib/libavutil-musikcube.59.dylib ./bin/lib
-    cp vendor/bin/lib/libswresample-musikcube.5.dylib ./bin/lib
+    cp vendor/bin/lib/libavcodec-musikcube.62.dylib ./bin/lib
+    cp vendor/bin/lib/libavformat-musikcube.62.dylib ./bin/lib
+    cp vendor/bin/lib/libavutil-musikcube.60.dylib ./bin/lib
+    cp vendor/bin/lib/libswresample-musikcube.6.dylib ./bin/lib
     cp vendor/bin/lib/libopus.0.dylib ./bin/lib
     cp vendor/bin/lib/libogg.0.dylib ./bin/lib
     cp vendor/bin/lib/libvorbis.0.dylib ./bin/lib
@@ -24,7 +24,7 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libmp3lame.0.dylib ./bin/lib
     cp vendor/bin/lib/libopenmpt.0.dylib ./bin/lib
     cp vendor/bin/lib/libgme.0.6.3.dylib ./bin/lib
-    cp vendor/bin/lib/libtag.1.19.0.dylib ./bin/lib
+    cp vendor/bin/lib/libtag.2.1.1.dylib ./bin/lib
 
     mkdir -p ./bin/share/terminfo
     cp -rfp $(brew --prefix)/Cellar/ncurses/6.5/share/terminfo/* ./bin/share/terminfo
@@ -32,20 +32,20 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
 elif [[ "$PLATFORM" == 'Linux' ]]; then
     echo "[stage-vendor-libraries] staging Linux .so files..."
 
-    cp vendor/bin/lib/libavcodec-musikcube.so.61 ./bin/lib
-    cp vendor/bin/lib/libavformat-musikcube.so.61 ./bin/lib
-    cp vendor/bin/lib/libavutil-musikcube.so.59 ./bin/lib
-    cp vendor/bin/lib/libswresample-musikcube.so.5 ./bin/lib
+    cp vendor/bin/lib/libavcodec-musikcube.so.62 ./bin/lib
+    cp vendor/bin/lib/libavformat-musikcube.so.62 ./bin/lib
+    cp vendor/bin/lib/libavutil-musikcube.so.60 ./bin/lib
+    cp vendor/bin/lib/libswresample-musikcube.so.6 ./bin/lib
     cp vendor/bin/lib/libcrypto.so.3 ./bin/lib 2> /dev/null
     cp vendor/bin/lib/libssl.so.3 ./bin/lib 2> /dev/null
     cp vendor/bin/lib/libcrypto.so.1.1 ./bin/lib 2> /dev/null
     cp vendor/bin/lib/libssl.so.1.1 ./bin/lib 2> /dev/null
-    cp vendor/bin/lib/libcurl.so.4 ./bin/lib
+    cp vendor/bin/lib/libcurl.so.5 ./bin/lib
     cp vendor/bin/lib/libmp3lame.so.0 ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.so.12 ./bin/lib
     cp vendor/bin/lib/libopenmpt.so.4 ./bin/lib
     cp vendor/bin/lib/libgme.so.0 ./bin/lib
-    cp vendor/bin/lib/libtag.so.1 ./bin/lib
+    cp vendor/bin/lib/libtag.so.2 ./bin/lib
 
     SYSTEM_ROOT=""
     SYSTEM_TYPE="x86_64-linux-gnu"

@@ -1,3 +1,16 @@
+/**
+ * We want to statically link as many dependencies as possible to "standalone"
+ * executables and plugins to make it as easy as possible to just extract and
+ * run the app and daemon without needing to install any additional packages.
+ *
+ * This script scans binaries produced by the build process to ensure there
+ * are no unexpected libraries being dynamically linked by using `ldd` on
+ * unix systems, and `otool` on mac.
+ *
+ * If dependencies undergo major version bumps, we often need to update the
+ * set of expected libraries that are used to perform the scan.
+ */
+
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const readdir = promisify(require('fs').readdir);

@@ -27,13 +27,13 @@ RPATH="@rpath"
 OS=$(uname)
 ARCH=$(uname -m)
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-OPENSSL_VERSION="3.3.1"
-CURL_VERSION="8.8.0"
-LIBMICROHTTPD_VERSION="1.0.1"
-FFMPEG_VERSION="7.0.1"
+OPENSSL_VERSION="3.5.2"
+CURL_VERSION="8.15.0"
+LIBMICROHTTPD_VERSION="1.0.2"
+FFMPEG_VERSION="8.0"
 LAME_VERSION="3.100"
-LIBOPENMPT_VERSION="0.7.8"
-TAGLIB_VERSION="1.13"
+LIBOPENMPT_VERSION="0.8.2"
+TAGLIB_VERSION="2.1.1"
 GME_VERSION="0.6.3"
 OUTDIR="$(pwd)/vendor/bin"
 LIBDIR="$OUTDIR/lib"
@@ -245,6 +245,7 @@ function build_curl() {
         --without-brotli \
         --without-libidn2 \
         --without-nghttp2 \
+        --without-libpsl \
          ${GENERIC_CONFIGURE_FLAGS} \
         --prefix=${OUTDIR} || exit $?
     make ${JOBS} || exit $?
@@ -544,6 +545,7 @@ function build_gme() {
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
         -DCMAKE_INSTALL_PREFIX=${OUTDIR} \
         -DENABLE_UBSAN=OFF \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
         -DBUILD_SHARED_LIBS=1 \
         . || exit $?
     make ${JOBS} || exit $?
@@ -597,21 +599,21 @@ function delete_unused_libraries() {
     rm *.a 2> /dev/null
     rm *.la 2> /dev/null
     if [[ $OS == "Darwin" ]]; then
-      mv libavcodec-musikcube.60.3.100.dylib libavcodec-musikcube.60.dylib
+      mv libavcodec-musikcube.62.11.100.dylib libavcodec-musikcube.62.dylib
       rm libavcodec-musikcube.dylib
-      ln -s libavcodec-musikcube.60.dylib libavcodec-musikcube.dylib
+      ln -s libavcodec-musikcube.62.dylib libavcodec-musikcube.dylib
 
-      mv libavformat-musikcube.60.3.100.dylib libavformat-musikcube.60.dylib
+      mv libavformat-musikcube.62.3.100.dylib libavformat-musikcube.62.dylib
       rm libavformat-musikcube.dylib
-      ln -s libavformat-musikcube.60.dylib libavformat-musikcube.dylib
+      ln -s libavformat-musikcube.62.dylib libavformat-musikcube.dylib
 
-      mv libavutil-musikcube.58.2.100.dylib libavutil-musikcube.58.dylib
+      mv libavutil-musikcube.60.8.100.dylib libavutil-musikcube.60.dylib
       rm libavutil-musikcube.dylib
-      ln -s libavutil-musikcube.58.dylib libavutil-musikcube.dylib
+      ln -s libavutil-musikcube.60.dylib libavutil-musikcube.dylib
 
-      mv libswresample-musikcube.4.10.100.dylib libswresample-musikcube.4.dylib
+      mv libswresample-musikcube.6.1.100.dylib libswresample-musikcube.6.dylib
       rm libswresample-musikcube.dylib
-      ln -s libswresample-musikcube.4.dylib libswresample-musikcube.dylib
+      ln -s libswresample-musikcube.6.dylib libswresample-musikcube.dylib
     fi
     cd ../../
 }
@@ -628,14 +630,14 @@ function main() {
     stage_prebuilt_libraries
     fetch_packages
 
-    build_ffmpeg
-    build_openssl
+    build_openssl # must come before curl
     build_curl
+    build_ffmpeg
     build_libopenmpt
     build_libmicrohttpd
     build_lame
-    build_gme
     build_taglib
+    build_gme
 
     delete_unused_libraries
     relink_dynamic_libraries

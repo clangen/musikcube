@@ -33,7 +33,7 @@
 namespace TagLib {
   namespace ID3v1 {
 
-    typedef Map<String, int> GenreMap;
+    using GenreMap = Map<String, int>;
 
     /*!
      * Returns the list of canonical ID3v1 genre names in the order that they
@@ -60,7 +60,7 @@ namespace TagLib {
      * will be returned.
      */
     int TAGLIB_EXPORT genreIndex(const String &name);
-  }
-}
+  }  // namespace ID3v1
+}  // namespace TagLib
 
 #endif

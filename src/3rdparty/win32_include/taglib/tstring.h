@@ -26,12 +26,10 @@
 #ifndef TAGLIB_STRING_H
 #define TAGLIB_STRING_H
 
-#include "taglib_export.h"
-#include "taglib.h"
-#include "tbytevector.h"
-
 #include <string>
-#include <iostream>
+
+#include "tbytevector.h"
+#include "taglib_export.h"
 
 /*!
  * \relates TagLib::String
@@ -45,7 +43,7 @@
 #if defined(QT_VERSION) && (QT_VERSION >= 0x040000)
 #define QStringToTString(s) TagLib::String(s.toUtf8().data(), TagLib::String::UTF8)
 #else
-#define QStringToTString(s) TagLib::String(s.utf8().data(), TagLib::String::UTF8)
+#define QStringToTString(s) TagLib::String((s).utf8().data(), TagLib::String::UTF8)
 #endif
 
 /*!
@@ -58,7 +56,7 @@
  *
  */
 
-#define TStringToQString(s) QString::fromUtf8(s.toCString(true))
+#define TStringToQString(s) QString::fromUtf8((s).toCString(true))
 
 namespace TagLib {
 
@@ -68,17 +66,17 @@ namespace TagLib {
 
   /*!
    * This is an implicitly shared \e wide string.  For storage it uses
-   * TagLib::wstring, but as this is an <i>implementation detail</i> this of
-   * course could change.  Strings are stored internally as UTF-16(without BOM/
-   * CPU byte order)
+   * std::wstring, but as this is an <i>implementation detail</i> this of
+   * course could change.  Strings are stored internally as UTF-16 (without
+   * BOM/CPU byte order)
    *
    * The use of implicit sharing means that copying a string is cheap, the only
    * \e cost comes into play when the copy is modified.  Prior to that the string
    * just has a pointer to the data of the \e parent String.  This also makes
    * this class suitable as a function return type.
    *
-   * In addition to adding implicit sharing, this class keeps track of four
-   * possible encodings, which are the four supported by the ID3v2 standard.
+   * In addition to adding implicit sharing, this class keeps track of
+   * possible encodings, which are those supported by the ID3v2 standard.
    */
 
   class TAGLIB_EXPORT String
@@ -86,17 +84,18 @@ namespace TagLib {
   public:
 
 #ifndef DO_NOT_DOCUMENT
-    typedef TagLib::wstring::iterator Iterator;
-    typedef TagLib::wstring::const_iterator ConstIterator;
+    using Iterator = std::wstring::iterator;
+    using ConstIterator = std::wstring::const_iterator;
 #endif
 
     /**
      * The four types of string encodings supported by the ID3v2 specification.
+     * (plus UTF16LE).
      * ID3v1 is assumed to be Latin1 and Ogg Vorbis comments use UTF8.
      */
     enum Type {
       /*!
-       * IS08859-1, or <i>Latin1</i> encoding.  8 bit characters.
+       * ISO-8859-1, or <i>Latin1</i> encoding.  8 bit characters.
        */
       Latin1 = 0,
       /*!
@@ -139,22 +138,24 @@ namespace TagLib {
     String(const std::string &s, Type t = Latin1);
 
     /*!
-     * Makes a deep copy of the data in \a s.
-     *
-     * /note If \a t is UTF16LE, the byte order of \a s will be swapped regardless
-     * of the CPU byte order.  If UTF16BE, it will not be swapped.  This behavior
-     * will be changed in TagLib2.0.
+     * Makes a deep copy of the data in \a s, which are in CPU byte order.
      */
-    String(const wstring &s, Type t = UTF16BE);
+    String(const std::wstring &s);
 
     /*!
-     * Makes a deep copy of the data in \a s.
-     *
-     * /note If \a t is UTF16LE, the byte order of \a s will be swapped regardless
-     * of the CPU byte order.  If UTF16BE, it will not be swapped.  This behavior
-     * will be changed in TagLib2.0.
+     * Makes a deep copy of the data in \a s, which are in byte order \a t.
      */
-    String(const wchar_t *s, Type t = UTF16BE);
+    String(const std::wstring &s, Type t);
+
+    /*!
+     * Makes a deep copy of the data in \a s, which are in CPU byte order.
+     */
+    String(const wchar_t *s);
+
+    /*!
+     * Makes a deep copy of the data in \a s, which are in byte order \a t.
+     */
+    String(const wchar_t *s, Type t);
 
     /*!
      * Makes a deep copy of the data in \a c.
@@ -185,28 +186,28 @@ namespace TagLib {
     /*!
      * Destroys this String instance.
      */
-    virtual ~String();
+    ~String();
 
     /*!
-     * Returns a deep copy of this String as an std::string.  The returned string
-     * is encoded in UTF8 if \a unicode is true, otherwise Latin1.
+     * Returns a deep copy of this String as an \c std::string.  The returned string
+     * is encoded in UTF8 if \a unicode is \c true, otherwise Latin1.
      *
      * \see toCString()
      */
     std::string to8Bit(bool unicode = false) const;
 
     /*!
-     * Returns a deep copy of this String as a wstring.  The returned string is
-     * encoded in UTF-16 (without BOM/CPU byte order), not UTF-32 even if wchar_t
+     * Returns a deep copy of this String as a \c wstring.  The returned string is
+     * encoded in UTF-16 (without BOM/CPU byte order), not UTF-32 even if \c wchar_t
      * is 32-bit wide.
      *
      * \see toCWString()
      */
-    wstring toWString() const;
+    std::wstring toWString() const;
 
     /*!
      * Creates and returns a standard C-style (null-terminated) version of this
-     * String.  The returned string is encoded in UTF8 if \a unicode is true,
+     * String.  The returned string is encoded in UTF8 if \a unicode is \c true,
      * otherwise Latin1.
      *
      * The returned string is still owned by this String and should not be deleted
@@ -227,7 +228,7 @@ namespace TagLib {
     /*!
      * Returns a standard C-style (null-terminated) wide character version of
      * this String.  The returned string is encoded in UTF-16 (without BOM/CPU byte
-     * order), not UTF-32 even if wchar_t is 32-bit wide.
+     * order), not UTF-32 even if \c wchar_t is 32-bit wide.
      *
      * The returned string is still owned by this String and should not be deleted
      * by the user.
@@ -253,6 +254,11 @@ namespace TagLib {
     ConstIterator begin() const;
 
     /*!
+     * Returns a const iterator pointing to the beginning of the string.
+     */
+    ConstIterator cbegin() const;
+
+    /*!
      * Returns an iterator pointing to the end of the string (the position
      * after the last character).
      */
@@ -263,6 +269,12 @@ namespace TagLib {
      * after the last character).
      */
     ConstIterator end() const;
+
+    /*!
+     * Returns a const iterator pointing to the end of the string (the position
+     * after the last character).
+     */
+    ConstIterator cend() const;
 
     /*!
      * Finds the first occurrence of pattern \a s in this string starting from
@@ -283,7 +295,7 @@ namespace TagLib {
     StringList split(const String &separator = " ") const;
 
     /*!
-     * Returns true if the strings starts with the substring \a s.
+     * Returns \c true if the string starts with the substring \a s.
      */
     bool startsWith(const String &s) const;
 
@@ -322,25 +334,9 @@ namespace TagLib {
     unsigned int length() const;
 
     /*!
-     * Returns true if the string is empty.
-     *
-     * \see isNull()
+     * Returns \c true if the string is empty.
      */
     bool isEmpty() const;
-
-    /*!
-     * Returns true if this string is null -- i.e. it is a copy of the
-     * String::null string.
-     *
-     * \note A string can be empty and not null.  So do not use this method to
-     * check if the string is empty.
-     *
-     * \see isEmpty()
-     *
-     * \deprecated Use isEmpty(), do not differentiate between null and empty.
-     */
-     // BIC: remove
-    TAGLIB_DEPRECATED bool isNull() const;
 
     /*!
      * Returns a ByteVector containing the string's data.  If \a t is Latin1 or
@@ -357,20 +353,11 @@ namespace TagLib {
     /*!
      * Convert the string to an integer.
      *
-     * Returns the integer if the conversion was successful or 0 if the
-     * string does not represent a number.
-     */
-    // BIC: merge with the method below
-    int toInt() const;
-
-    /*!
-     * Convert the string to an integer.
-     *
      * If the conversion was successful, it sets the value of \a *ok to
-     * true and returns the integer. Otherwise it sets \a *ok to false
+     * \c true and returns the integer. Otherwise it sets \a *ok to \c false
      * and the result is undefined.
      */
-    int toInt(bool *ok) const;
+    int toInt(bool *ok = nullptr) const;
 
     /*!
      * Returns a string with the leading and trailing whitespace stripped.
@@ -378,12 +365,12 @@ namespace TagLib {
     String stripWhiteSpace() const;
 
     /*!
-     * Returns true if the file only uses characters required by Latin1.
+     * Returns \c true if the file only uses characters required by Latin1.
      */
     bool isLatin1() const;
 
     /*!
-     * Returns true if the file only uses characters required by (7-bit) ASCII.
+     * Returns \c true if the file only uses characters required by (7-bit) ASCII.
      */
     bool isAscii() const;
 
@@ -391,6 +378,11 @@ namespace TagLib {
      * Converts the base-10 integer \a n to a string.
      */
     static String number(int n);
+
+    /*!
+     * Converts the base-10 integer \a n to a string.
+     */
+    static String fromLongLong(long long n);
 
     /*!
      * Returns a reference to the character at position \a i.
@@ -404,37 +396,37 @@ namespace TagLib {
 
     /*!
      * Compares each character of the String with each character of \a s and
-     * returns true if the strings match.
+     * returns \c true if the strings match.
      */
     bool operator==(const String &s) const;
 
     /*!
      * Compares each character of the String with each character of \a s and
-     * returns false if the strings match.
+     * returns \c false if the strings match.
      */
     bool operator!=(const String &s) const;
 
     /*!
      * Compares each character of the String with each character of \a s and
-     * returns true if the strings match.
+     * returns \c true if the strings match.
      */
     bool operator==(const char *s) const;
 
     /*!
      * Compares each character of the String with each character of \a s and
-     * returns false if the strings match.
+     * returns \c false if the strings match.
      */
     bool operator!=(const char *s) const;
 
     /*!
      * Compares each character of the String with each character of \a s and
-     * returns true if the strings match.
+     * returns \c true if the strings match.
      */
     bool operator==(const wchar_t *s) const;
 
     /*!
      * Compares each character of the String with each character of \a s and
-     * returns false if the strings match.
+     * returns \c false if the strings match.
      */
     bool operator!=(const wchar_t *s) const;
 
@@ -477,7 +469,7 @@ namespace TagLib {
     /*!
      * Performs a deep copy of the data in \a s.
      */
-    String &operator=(const wstring &s);
+    String &operator=(const std::wstring &s);
 
     /*!
      * Performs a deep copy of the data in \a s.
@@ -505,27 +497,16 @@ namespace TagLib {
     String &operator=(const ByteVector &v);
 
     /*!
-     * Exchanges the content of the String by the content of \a s.
+     * Exchanges the content of the String with the content of \a s.
      */
-    void swap(String &s);
+    void swap(String &s) noexcept;
 
     /*!
      * To be able to use this class in a Map, this operator needed to be
-     * implemented.  Returns true if \a s is less than this string in a byte-wise
+     * implemented.  Returns \c true if \a s is less than this string in a byte-wise
      * comparison.
      */
     bool operator<(const String &s) const;
-
-    /*!
-     * A null string provided for convenience.
-     *
-     * \warning Do not modify this variable.  It will mess up the internal state
-     * of TagLib.
-     *
-     * \deprecated Use String().
-     */
-     // BIC: remove
-    TAGLIB_DEPRECATED static String null;
 
   protected:
     /*!
@@ -536,38 +517,32 @@ namespace TagLib {
     void detach();
 
   private:
-    /*!
-     * \deprecated This variable is no longer used, but NEVER remove this. It
-     * may lead to a linkage error.
-     */
-     // BIC: remove
-    TAGLIB_DEPRECATED static const Type WCharByteOrder;
-
     class StringPrivate;
-    StringPrivate *d;
+    TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+    std::shared_ptr<StringPrivate> d;
   };
-}
+}  // namespace TagLib
 
 /*!
  * \relates TagLib::String
  *
  * Concatenates \a s1 and \a s2 and returns the result as a string.
  */
-TAGLIB_EXPORT const TagLib::String operator+(const TagLib::String &s1, const TagLib::String &s2);
+TAGLIB_EXPORT TagLib::String operator+(const TagLib::String &s1, const TagLib::String &s2);
 
 /*!
  * \relates TagLib::String
  *
  * Concatenates \a s1 and \a s2 and returns the result as a string.
  */
-TAGLIB_EXPORT const TagLib::String operator+(const char *s1, const TagLib::String &s2);
+TAGLIB_EXPORT TagLib::String operator+(const char *s1, const TagLib::String &s2);
 
 /*!
  * \relates TagLib::String
  *
  * Concatenates \a s1 and \a s2 and returns the result as a string.
  */
-TAGLIB_EXPORT const TagLib::String operator+(const TagLib::String &s1, const char *s2);
+TAGLIB_EXPORT TagLib::String operator+(const TagLib::String &s1, const char *s2);
 
 
 /*!

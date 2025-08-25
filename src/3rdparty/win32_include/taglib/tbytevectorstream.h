@@ -26,10 +26,10 @@
 #ifndef TAGLIB_BYTEVECTORSTREAM_H
 #define TAGLIB_BYTEVECTORSTREAM_H
 
-#include "taglib_export.h"
-#include "taglib.h"
 #include "tbytevector.h"
 #include "tiostream.h"
+#include "taglib_export.h"
+#include "taglib.h"
 
 namespace TagLib {
 
@@ -43,36 +43,36 @@ namespace TagLib {
   {
   public:
     /*!
-     * Construct a File object and opens the \a file.  \a file should be a
-     * be a C-string in the local file system encoding.
+     * Construct a ByteVectorStream from the bytes in \a data.
      */
     ByteVectorStream(const ByteVector &data);
 
     /*!
      * Destroys this ByteVectorStream instance.
      */
-    virtual ~ByteVectorStream();
+    ~ByteVectorStream() override;
+
+    ByteVectorStream(const ByteVectorStream &) = delete;
+    ByteVectorStream &operator=(const ByteVectorStream &) = delete;
 
     /*!
-     * Returns the file name in the local file system encoding.
+     * Returns an empty string.
      */
-    FileName name() const;
+    FileName name() const override;
 
     /*!
      * Reads a block of size \a length at the current get pointer.
      */
-    ByteVector readBlock(unsigned long length);
+    ByteVector readBlock(size_t length) override;
 
     /*!
-     * Attempts to write the block \a data at the current get pointer.  If the
-     * file is currently only opened read only -- i.e. readOnly() returns true --
-     * this attempts to reopen the file in read/write mode.
+     * Writes the block \a data at the current get pointer.
      *
      * \note This should be used instead of using the streaming output operator
      * for a ByteVector.  And even this function is significantly slower than
      * doing output with a char[].
      */
-    void writeBlock(const ByteVector &data);
+    void writeBlock(const ByteVector &data) override;
 
     /*!
      * Insert \a data at position \a start in the file overwriting \a replace
@@ -81,7 +81,7 @@ namespace TagLib {
      * \note This method is slow since it requires rewriting all of the file
      * after the insertion point.
      */
-    void insert(const ByteVector &data, unsigned long start = 0, unsigned long replace = 0);
+    void insert(const ByteVector &data, offset_t start = 0, size_t replace = 0) override;
 
     /*!
      * Removes a block of the file starting a \a start and continuing for
@@ -90,18 +90,17 @@ namespace TagLib {
      * \note This method is slow since it involves rewriting all of the file
      * after the removed portion.
      */
-    void removeBlock(unsigned long start = 0, unsigned long length = 0);
+    void removeBlock(offset_t start = 0, size_t length = 0) override;
 
     /*!
-     * Returns true if the file is read only (or if the file can not be opened).
+     * Returns \c false.
      */
-    bool readOnly() const;
+    bool readOnly() const override;
 
     /*!
-     * Since the file can currently only be opened as an argument to the
-     * constructor (sort-of by design), this returns if that open succeeded.
+     * Returns \c true.
      */
-    bool isOpen() const;
+    bool isOpen() const override;
 
     /*!
      * Move the I/O pointer to \a offset in the file from position \a p.  This
@@ -109,37 +108,36 @@ namespace TagLib {
      *
      * \see Position
      */
-    void seek(long offset, Position p = Beginning);
+    void seek(offset_t offset, Position p = Beginning) override;
 
     /*!
-     * Reset the end-of-file and error flags on the file.
+     * Does nothing.
      */
-    void clear();
+    void clear() override;
 
     /*!
      * Returns the current offset within the file.
      */
-    long tell() const;
+    offset_t tell() const override;
 
     /*!
      * Returns the length of the file.
      */
-    long length();
+    offset_t length() override;
 
     /*!
      * Truncates the file to a \a length.
      */
-    void truncate(long length);
+    void truncate(offset_t length) override;
 
     ByteVector *data();
 
-  protected:
-
   private:
     class ByteVectorStreamPrivate;
-    ByteVectorStreamPrivate *d;
+    TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+    std::unique_ptr<ByteVectorStreamPrivate> d;
   };
 
-}
+}  // namespace TagLib
 
 #endif

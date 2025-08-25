@@ -59,7 +59,10 @@ namespace TagLib {
       /*!
        * Destroys the footer.
        */
-      virtual ~Footer();
+      ~Footer();
+
+      Footer(const Footer &) = delete;
+      Footer &operator=(const Footer &) = delete;
 
       /*!
        * Returns the version number.  (Note: This is the 1000 or 2000.)
@@ -67,17 +70,17 @@ namespace TagLib {
       unsigned int version() const;
 
       /*!
-       * Returns true if a header is present in the tag.
+       * Returns \c true if a header is present in the tag.
        */
       bool headerPresent() const;
 
       /*!
-       * Returns true if a footer is present in the tag.
+       * Returns \c true if a footer is present in the tag.
        */
       bool footerPresent() const;
 
       /*!
-       * Returns true this is actually the header.
+       * Returns \c true if this is actually the header.
        */
       bool isHeader() const;
 
@@ -142,8 +145,8 @@ namespace TagLib {
       ByteVector renderFooter() const;
 
       /*!
-       * Renders the header corresponding to the footer. If headerPresent is
-       * set to false, it returns an empty ByteVector.
+       * Renders the header corresponding to the footer. If headerPresent() is
+       * \c false, it returns an empty ByteVector.
        */
       ByteVector renderHeader() const;
 
@@ -160,14 +163,12 @@ namespace TagLib {
       ByteVector render(bool isHeader) const;
 
     private:
-      Footer(const Footer &);
-      Footer &operator=(const Footer &);
-
       class FooterPrivate;
-      FooterPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<FooterPrivate> d;
     };
 
-  }
-}
+  }  // namespace APE
+}  // namespace TagLib
 
 #endif

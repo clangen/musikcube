@@ -36,6 +36,8 @@ namespace TagLib {
  * documentation.  The typedef below will make this work with the current code.
  * In the next BIC version of TagLib this will be really moved into the Ogg
  * namespace.
+ * Kept for source compatibility, the typedef in vorbisproperties.h was not
+ * correct in TagLib 1.
  */
 
 #ifdef DOXYGEN
@@ -65,49 +67,32 @@ namespace TagLib {
       /*!
        * Destroys this VorbisProperties instance.
        */
-      virtual ~Properties();
+      ~Properties() override;
 
-      /*!
-       * Returns the length of the file in seconds.  The length is rounded down to
-       * the nearest whole second.
-       *
-       * \note This method is just an alias of lengthInSeconds().
-       *
-       * \deprecated Use lengthInSeconds().
-       */
-      TAGLIB_DEPRECATED virtual int length() const;
-
-      /*!
-       * Returns the length of the file in seconds.  The length is rounded down to
-       * the nearest whole second.
-       *
-       * \see lengthInMilliseconds()
-       */
-      // BIC: make virtual
-      int lengthInSeconds() const;
+      Properties(const Properties &) = delete;
+      Properties &operator=(const Properties &) = delete;
 
       /*!
        * Returns the length of the file in milliseconds.
        *
        * \see lengthInSeconds()
        */
-      // BIC: make virtual
-      int lengthInMilliseconds() const;
+      int lengthInMilliseconds() const override;
 
       /*!
        * Returns the average bit rate of the file in kb/s.
        */
-      virtual int bitrate() const;
+      int bitrate() const override;
 
       /*!
        * Returns the sample rate in Hz.
        */
-      virtual int sampleRate() const;
+      int sampleRate() const override;
 
       /*!
        * Returns the number of audio channels.
        */
-      virtual int channels() const;
+      int channels() const override;
 
       /*!
        * Returns the Vorbis version, currently "0" (as specified by the spec).
@@ -133,28 +118,32 @@ namespace TagLib {
       int bitrateMinimum() const;
 
     private:
-      Properties(const Properties &);
-      Properties &operator=(const Properties &);
-
       void read(File *file);
 
       class PropertiesPrivate;
-      PropertiesPrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<PropertiesPrivate> d;
     };
-  }
+  }  // namespace Vorbis
 
 /*
  * To keep compatibility with the current version put Vorbis in the Ogg namespace
  * only in the docs and provide a typedef to make it work.  In the next BIC
  * version this will be removed and it will only exist in the Ogg namespace.
+ * Kept for source compatibility, the typedef in vorbisproperties.h was not
+ * correct in TagLib 1.
  */
 
 #ifdef DOXYGEN
   }
 #else
-  namespace Ogg { namespace Vorbis { typedef TagLib::AudioProperties AudioProperties; } }
+  namespace Ogg {
+    namespace Vorbis {
+      using Properties = TagLib::Vorbis::Properties;
+    } // namespace Vorbis
+  } // namespace Ogg
 #endif
 
-}
+}  // namespace TagLib
 
 #endif

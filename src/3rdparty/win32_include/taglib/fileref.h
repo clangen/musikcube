@@ -60,43 +60,29 @@ namespace TagLib {
   {
   public:
 
-  //! A class for pluggable file type resolution.
+    //! A class for pluggable file type resolution.
 
-  /*!
-   * This class is used to add extend TagLib's very basic file name based file
-   * type resolution.
-   *
-   * This can be accomplished with:
-   *
-   * \code
-   *
-   * class MyFileTypeResolver : FileTypeResolver
-   * {
-   *   TagLib::File *createFile(TagLib::FileName *fileName, bool, AudioProperties::ReadStyle) const
-   *   {
-   *     if(someCheckForAnMP3File(fileName))
-   *       return new TagLib::MPEG::File(fileName);
-   *     return 0;
-   *   }
-   * }
-   *
-   * FileRef::addFileTypeResolver(new MyFileTypeResolver);
-   *
-   * \endcode
-   *
-   * Naturally a less contrived example would be slightly more complex.  This
-   * can be used to plug in mime-type detection systems or to add new file types
-   * to TagLib.
-   */
+    /*!
+     * %File type resolver, better implement StreamTypeResolver in order to
+     * support both file and stream resolution.
+     */
 
     class TAGLIB_EXPORT FileTypeResolver
     {
-      TAGLIB_IGNORE_MISSING_DESTRUCTOR
     public:
+      FileTypeResolver();
+      /*!
+       * Destroys this FileTypeResolver instance.
+       */
+      virtual ~FileTypeResolver() = 0;
+
+      FileTypeResolver(const FileTypeResolver &) = delete;
+      FileTypeResolver &operator=(const FileTypeResolver &) = delete;
+
       /*!
        * This method must be overridden to provide an additional file type
        * resolver.  If the resolver is able to determine the file type it should
-       * return a valid File object; if not it should return 0.
+       * return a valid File object; if not it should return nullptr.
        *
        * \note The created file is then owned by the FileRef and should not be
        * deleted.  Deletion will happen automatically when the FileRef passes
@@ -106,16 +92,81 @@ namespace TagLib {
                                bool readAudioProperties = true,
                                AudioProperties::ReadStyle
                                audioPropertiesStyle = AudioProperties::Average) const = 0;
+    private:
+      class FileTypeResolverPrivate;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<FileTypeResolverPrivate> d;
     };
+
+    //! A class for pluggable stream type resolution.
+
+    /*!
+     * This class is used to extend TagLib's very basic file name based file
+     * type resolution.
+     *
+     * This can be accomplished with:
+     *
+     * \code
+     *
+     * class MyStreamTypeResolver : StreamTypeResolver
+     * {
+     *   TagLib::File *createFile(TagLib::FileName *fileName, bool readProps,
+     *                     AudioProperties::ReadStyle readStyle) const override
+     *   {
+     *     if(someCheckForAnMP3File(fileName))
+     *       return new TagLib::MPEG::File(fileName, readProps, readStyle);
+     *     return nullptr;
+     *   }
+     *
+     *   TagLib::File *createFileFromStream(TagLib::IOStream *s, bool readProps,
+     *                     AudioProperties::ReadStyle readStyle) const override
+     *   {
+     *     if(someCheckForAnMP3Stream(s))
+     *       return new TagLib::MPEG::File(s, readProps, readStyle);
+     *     return nullptr;
+     *   }
+     * }
+     *
+     * FileRef::addFileTypeResolver(new MyStreamTypeResolver);
+     *
+     * \endcode
+     *
+     * Naturally a less contrived example would be slightly more complex.  This
+     * can be used to plug in mime-type detection systems or to add new file types
+     * to TagLib.
+     */
 
     class TAGLIB_EXPORT StreamTypeResolver : public FileTypeResolver
     {
-      TAGLIB_IGNORE_MISSING_DESTRUCTOR
     public:
+      StreamTypeResolver();
+      /*!
+       * Destroys this StreamTypeResolver instance.
+       */
+      virtual ~StreamTypeResolver() override = 0; // virtual is needed by SWIG
+
+      StreamTypeResolver(const StreamTypeResolver &) = delete;
+      StreamTypeResolver &operator=(const StreamTypeResolver &) = delete;
+
+      /*!
+       * This method must be overridden to provide an additional stream type
+       * resolver.  If the resolver is able to determine the file type it should
+       * return a valid File object; if not it should return nullptr.
+       *
+       * \note The created file is then owned by the FileRef and should not be
+       * deleted.  Deletion will happen automatically when the FileRef passes
+       * out of scope.
+       *
+       * \see createFile()
+       */
       virtual File *createFileFromStream(IOStream *stream,
                                bool readAudioProperties = true,
                                AudioProperties::ReadStyle
                                audioPropertiesStyle = AudioProperties::Average) const = 0;
+    private:
+      class StreamTypeResolverPrivate;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<StreamTypeResolverPrivate> d;
     };
 
     /*!
@@ -124,9 +175,9 @@ namespace TagLib {
     FileRef();
 
     /*!
-     * Create a FileRef from \a fileName.  If \a readAudioProperties is true then
+     * Create a FileRef from \a fileName.  If \a readAudioProperties is \c true then
      * the audio properties will be read using \a audioPropertiesStyle.  If
-     * \a readAudioProperties is false then \a audioPropertiesStyle will be
+     * \a readAudioProperties is \c false then \a audioPropertiesStyle will be
      * ignored.
      *
      * Also see the note in the class documentation about why you may not want to
@@ -139,8 +190,8 @@ namespace TagLib {
 
     /*!
      * Construct a FileRef from an opened \a IOStream.  If \a readAudioProperties
-     * is true then the audio properties will be read using \a audioPropertiesStyle.
-     * If \a readAudioProperties is false then \a audioPropertiesStyle will be
+     * is \c true then the audio properties will be read using \a audioPropertiesStyle.
+     * If \a readAudioProperties is \c false then \a audioPropertiesStyle will be
      * ignored.
      *
      * Also see the note in the class documentation about why you may not want to
@@ -168,10 +219,10 @@ namespace TagLib {
     /*!
      * Destroys this FileRef instance.
      */
-    virtual ~FileRef();
+    ~FileRef();
 
     /*!
-     * Returns a pointer to represented file's tag.
+     * Returns a pointer to the represented file's tag.
      *
      * \warning This pointer will become invalid when this FileRef and all
      * copies pass out of scope.
@@ -184,8 +235,86 @@ namespace TagLib {
     Tag *tag() const;
 
     /*!
+     * Exports the tags of the file as dictionary mapping (human readable) tag
+     * names (uppercase Strings) to StringLists of tag values. Calls this
+     * method on the wrapped File instance.
+     * For each metadata object of the file that could not be parsed into the PropertyMap
+     * format, the returned map's unsupportedData() list will contain one entry identifying
+     * that object (e.g. the frame type for ID3v2 tags). Use removeUnsupportedProperties()
+     * to remove (a subset of) them.
+     * For files that contain more than one tag (e.g. an MP3 with both an ID3v1 and an ID3v2
+     * tag) only the most "modern" one will be exported (ID3v2 in this case).
+     */
+    PropertyMap properties() const;
+
+    /*!
+     * Removes unsupported properties, or a subset of them, from the file's metadata.
+     * The parameter \a properties must contain only entries from
+     * properties().unsupportedData().
+     */
+    void removeUnsupportedProperties(const StringList& properties);
+
+    /*!
+     * Sets the tags of the wrapped File to those specified in \a properties.
+     * If some value(s) could not be written to the specific metadata format,
+     * the returned PropertyMap will contain those value(s). Otherwise it will be empty,
+     * indicating that no problems occurred.
+     * With file types that support several tag formats (for instance, MP3 files can have
+     * ID3v1, ID3v2, and APEv2 tags), this function will create the most appropriate one
+     * (ID3v2 for MP3 files). Older formats will be updated as well, if they exist, but won't
+     * be taken into account for the return value of this function.
+     * See the documentation of the subclass implementations for detailed descriptions.
+     */
+    PropertyMap setProperties(const PropertyMap &properties);
+
+    /*!
+     * Get the keys of complex properties, i.e. properties which cannot be
+     * represented simply by a string.
+     * Because such properties might be expensive to fetch, there are separate
+     * operations to get the available keys - which is expected to be cheap -
+     * and getting and setting the property values.
+     * Calls the method on the wrapped File, which collects the keys from one
+     * or more of its tags.
+     */
+    StringList complexPropertyKeys() const;
+
+    /*!
+     * Get the complex properties for a given \a key.
+     * In order to be flexible for different metadata formats, the properties
+     * are represented as variant maps.  Despite this dynamic nature, some
+     * degree of standardization should be achieved between formats:
+     *
+     * - PICTURE
+     *   - data: ByteVector with picture data
+     *   - description: String with description
+     *   - pictureType: String with type as specified for ID3v2,
+     *     e.g. "Front Cover", "Back Cover", "Band"
+     *   - mimeType: String with image format, e.g. "image/jpeg"
+     *   - optionally more information found in the tag, such as
+     *     "width", "height", "numColors", "colorDepth" int values
+     *     in FLAC pictures
+     * - GENERALOBJECT
+     *   - data: ByteVector with object data
+     *   - description: String with description
+     *   - fileName: String with file name
+     *   - mimeType: String with MIME type
+     *   - this is currently only implemented for ID3v2 GEOB frames
+     *
+     * Calls the method on the wrapped File, which gets the properties from one
+     * or more of its tags.
+     */
+    List<VariantMap> complexProperties(const String &key) const;
+
+    /*!
+     * Set all complex properties for a given \a key using variant maps as
+     * \a value with the same format as returned by complexProperties().
+     * An empty list as \a value removes all complex properties for \a key.
+     */
+    bool setComplexProperties(const String &key, const List<VariantMap> &value);
+
+    /*!
      * Returns the audio properties for this FileRef.  If no audio properties
-     * were read then this will returns a null pointer.
+     * were read then this will return a null pointer.
      */
     AudioProperties *audioProperties() const;
 
@@ -207,7 +336,7 @@ namespace TagLib {
     File *file() const;
 
     /*!
-     * Saves the file.  Returns true on success.
+     * Saves the file.  Returns \c true on success.
      */
     bool save();
 
@@ -224,6 +353,11 @@ namespace TagLib {
      * \see FileTypeResolver
      */
     static const FileTypeResolver *addFileTypeResolver(const FileTypeResolver *resolver);
+
+    /*!
+     * Remove all resolvers added by addFileTypeResolver().
+     */
+    static void clearFileTypeResolvers();
 
     /*!
      * As is mentioned elsewhere in this class's documentation, the default file
@@ -244,7 +378,7 @@ namespace TagLib {
     static StringList defaultFileExtensions();
 
     /*!
-     * Returns true if the file (and as such other pointers) are null.
+     * Returns \c true if the file (and as such other pointers) are null.
      */
     bool isNull() const;
 
@@ -254,42 +388,28 @@ namespace TagLib {
     FileRef &operator=(const FileRef &ref);
 
     /*!
-     * Exchanges the content of the FileRef by the content of \a ref.
+     * Exchanges the content of the FileRef with the content of \a ref.
      */
-    void swap(FileRef &ref);
+    void swap(FileRef &ref) noexcept;
 
     /*!
-     * Returns true if this FileRef and \a ref point to the same File object.
+     * Returns \c true if this FileRef and \a ref point to the same File object.
      */
     bool operator==(const FileRef &ref) const;
 
     /*!
-     * Returns true if this FileRef and \a ref do not point to the same File
+     * Returns \c true if this FileRef and \a ref do not point to the same File
      * object.
      */
     bool operator!=(const FileRef &ref) const;
-
-    /*!
-     * A simple implementation of file type guessing.  If \a readAudioProperties
-     * is true then the audio properties will be read using
-     * \a audioPropertiesStyle.  If \a readAudioProperties is false then
-     * \a audioPropertiesStyle will be ignored.
-     *
-     * \note You generally shouldn't use this method, but instead the constructor
-     * directly.
-     *
-     * \deprecated Use FileRef(FileName, bool, AudioProperties::ReadStyle).
-     */
-    static File *create(FileName fileName,
-                        bool readAudioProperties = true,
-                        AudioProperties::ReadStyle audioPropertiesStyle = AudioProperties::Average);
 
   private:
     void parse(FileName fileName, bool readAudioProperties, AudioProperties::ReadStyle audioPropertiesStyle);
     void parse(IOStream *stream, bool readAudioProperties, AudioProperties::ReadStyle audioPropertiesStyle);
 
     class FileRefPrivate;
-    FileRefPrivate *d;
+    TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+    std::shared_ptr<FileRefPrivate> d;
   };
 
 } // namespace TagLib

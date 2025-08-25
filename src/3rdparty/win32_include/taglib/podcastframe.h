@@ -26,8 +26,8 @@
 #ifndef TAGLIB_PODCASTFRAME_H
 #define TAGLIB_PODCASTFRAME_H
 
-#include "id3v2frame.h"
 #include "taglib_export.h"
+#include "id3v2frame.h"
 
 namespace TagLib {
 
@@ -50,33 +50,35 @@ namespace TagLib {
       /*!
        * Destroys this PodcastFrame instance.
        */
-      virtual ~PodcastFrame();
+      ~PodcastFrame() override;
+
+      PodcastFrame(const PodcastFrame &) = delete;
+      PodcastFrame &operator=(const PodcastFrame &) = delete;
 
       /*!
-       * Returns a null string.
+       * Returns an empty string.
        */
-      virtual String toString() const;
+      String toString() const override;
 
-      PropertyMap asProperties() const;
+      PropertyMap asProperties() const override;
 
     protected:
       // Reimplementations.
 
-      virtual void parseFields(const ByteVector &data);
-      virtual ByteVector renderFields() const;
+      void parseFields(const ByteVector &data) override;
+      ByteVector renderFields() const override;
 
     private:
       /*!
        * The constructor used by the FrameFactory.
        */
       PodcastFrame(const ByteVector &data, Header *h);
-      PodcastFrame(const PodcastFrame &);
-      PodcastFrame &operator=(const PodcastFrame &);
 
       class PodcastFramePrivate;
-      PodcastFramePrivate *d;
+      TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+      std::unique_ptr<PodcastFramePrivate> d;
     };
 
-  }
-}
+  }  // namespace ID3v2
+}  // namespace TagLib
 #endif
