@@ -90,6 +90,9 @@ OpenMptDecoder::~OpenMptDecoder() {
 }
 
 bool OpenMptDecoder::Open(musik::core::sdk::IDataStream *stream) {
+    if (!stream) {
+        return false;
+    }
     auto mptStream = dynamic_cast<OpenMptDataStream*>(stream);
     if (mptStream) {
         this->stream = mptStream;
