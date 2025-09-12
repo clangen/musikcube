@@ -3,6 +3,8 @@ const exec = promisify(require('child_process').exec);
 const fs = require('fs');
 
 const TOOLCHAINS = ['armv6-rpi-linux-gnueabihf', 'armv8-rpi3-linux-gnueabihf'];
+const VERSION = '1.1.0';
+const GCC_VERSION = '14'
 
 const run = async (command) => {
   console.log('    > ', command);
@@ -10,10 +12,10 @@ const run = async (command) => {
 };
 
 const install = async (toolchain) => {
-  const archiveFn = `x-tools-${toolchain}.tar.xz`;
+  const archiveFn = `x-tools-${toolchain}-gcc${GCC_VERSION}.tar.xz`;
   const toolsRootDir = `x-tools/${toolchain}`;
   const sysrootDir = `${toolsRootDir}/${toolchain}/sysroot`;
-  const downloadUrl = `https://github.com/tttapa/docker-arm-cross-toolchain/releases/download/0.1.2/${archiveFn}`;
+  const downloadUrl = `https://github.com/tttapa/docker-arm-cross-toolchain/releases/download/${VERSION}/${archiveFn}`;
   console.log(' * downloading...');
   await run(`wget ${downloadUrl}`);
   console.log(' * extracting...');

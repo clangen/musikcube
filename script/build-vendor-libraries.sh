@@ -46,6 +46,7 @@ elif nproc &> /dev/null; then
 fi
 
 OPENSSL_TYPE="linux-${ARCH}"
+OPENSSL_EXTRA_LIBS=""
 if [[ $OS == "Darwin" ]]; then
     OPENSSL_TYPE="darwin64-${ARCH}-cc"
 fi
@@ -107,6 +108,7 @@ function configure_crosscompile_if_necessary() {
         export PKG_CONFIG_PATH="${VENDOR_PKG_CONFIG_PATH}:${XTOOLS_PKG_CONFIG_PATH}"
 
         OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
+        OPENSSL_EXTRA_LIBS="-latomic"
         GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=${XTOOLS_TOOLCHAIN_NAME} --with-sysroot=${XTOOLS_SYSROOT}"
         FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --enable-cross-compile --sysroot=${XTOOLS_SYSROOT} --cross-prefix=${XTOOLS_TOOLCHAIN_NAME}-"
     fi
@@ -138,6 +140,7 @@ function print_build_configuration() {
     printf "  - LDFLAGS=${LDFLAGS}\n"
     printf "  - GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
     printf "  - OPENSSL_TYPE=${OPENSSL_TYPE}\n"
+    printf "  - OPENSSL_EXTRA_LIBS=${OPENSSL_EXTRA_LIBS}\n"
     printf "  - OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
     printf "  - FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n"
     printf "  - PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n"
@@ -190,7 +193,7 @@ function build_openssl() {
     show_banner "building openssl..."
     tar xvfz openssl-${OPENSSL_VERSION}.tar.gz > /dev/null
     cd openssl-${OPENSSL_VERSION}
-    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX} || exit $?
+    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_EXTRA_LIBS} ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX} || exit $?
     make -j8
     make install_sw
     cd ..
@@ -245,6 +248,10 @@ function build_curl() {
         --without-brotli \
         --without-libidn2 \
         --without-nghttp2 \
+        --without-ngtcp2 \
+        --without-nghttp3 \
+        --without-quiche \
+        --without-msh3 \
         --without-libpsl \
          ${GENERIC_CONFIGURE_FLAGS} \
         --prefix=${OUTDIR} || exit $?
@@ -630,9 +637,9 @@ function main() {
     stage_prebuilt_libraries
     fetch_packages
 
+    build_ffmpeg
     build_openssl # must come before curl
     build_curl
-    build_ffmpeg
     build_libopenmpt
     build_libmicrohttpd
     build_lame
