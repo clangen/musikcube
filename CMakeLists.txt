@@ -143,6 +143,8 @@ add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder")
 add_plugin("src/plugins/stockencoders" "stockencoders")
 # dsps
 add_plugin("src/plugins/supereqdsp" "supereqdsp")
+# discord rich presence
+add_plugin("src/plugins/discordrichpresence" "discordrichpresence")
 
 add_custom_target(postbuild ALL DEPENDS musikcube musikcubed)
 add_custom_command(
