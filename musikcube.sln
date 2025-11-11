@@ -62,6 +62,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core_c_demo", "src\core_c_d
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libopenmptdecoder", "src\plugins\libopenmptdecoder\libopenmptdecoder.vcxproj", "{53BB539C-18F2-47EA-95E5-68A9591861F9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DiscordRichPresence", "src\plugins\discordrichpresence\discordrichpresence.vcxproj", "{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -222,6 +224,14 @@ Global
 		{53BB539C-18F2-47EA-95E5-68A9591861F9}.Release|Win32.Build.0 = Release|Win32
 		{53BB539C-18F2-47EA-95E5-68A9591861F9}.Release|x64.ActiveCfg = Release|x64
 		{53BB539C-18F2-47EA-95E5-68A9591861F9}.Release|x64.Build.0 = Release|x64
+		{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}.Debug|Win32.Build.0 = Debug|Win32
+		{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}.Debug|x64.ActiveCfg = Debug|x64
+		{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}.Debug|x64.Build.0 = Debug|x64
+		{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}.Release|Win32.ActiveCfg = Release|Win32
+		{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}.Release|Win32.Build.0 = Release|Win32
+		{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}.Release|x64.ActiveCfg = Release|x64
+		{A1B2C3D4-E5F6-4789-ABCD-1234567890AB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

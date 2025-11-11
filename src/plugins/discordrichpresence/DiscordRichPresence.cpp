@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "discord_game_sdk.h"
 #include <curl/curl.h>
+#include "discord_game_sdk/c/discord_game_sdk.h"
 #include <musikcore/sdk/version.h>
 
 struct IDiscordCore* core = NULL;
@@ -59,7 +59,7 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
     size_t total_size = size * nmemb;
     struct response_data *resp = (struct response_data *)userp;
 
-    char *ptr = realloc(resp->data, resp->size + total_size + 1);
+    char *ptr = (char *)realloc(resp->data, resp->size + total_size + 1);
     if (!ptr) return 0;
 
     resp->data = ptr;
@@ -79,7 +79,7 @@ char* upload_cover_image(const char* file_path) {
     struct curl_httppost *lastptr = NULL;
     struct response_data response = {0};
 
-    response.data = malloc(1); // initial allocation
+    response.data = (char *)malloc(1); // initial allocation
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
     curl = curl_easy_init();
@@ -95,7 +95,10 @@ char* upload_cover_image(const char* file_path) {
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_HTTPPOST, form);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "musikcube/%s", MUSIKCUBE_VERSION);
+    
+    // Build user agent string properly
+    std::string user_agent = "musikcube/" + musik::cube::userAgent();
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent.c_str());
 
     // For testing only — disable SSL verification (not recommended for production)
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -119,6 +122,13 @@ char* upload_cover_image(const char* file_path) {
     return response.data;  // Caller must free this
 }
 
+void keep_connection_alive() {
+    while (1) {
+        core->run_callbacks(core);
+        Sleep(1000);
+    }
+}
+
 int main() {
     init_discord();
     const char* cover_path = "./businrain.gif";
@@ -134,10 +144,7 @@ int main() {
     update_presence(track, artist, album, cover_url, duration_seconds);
 
     // Keep Discord connection alive
-    while (1) {
-        core->run_callbacks(core);
-        Sleep(1000);  // On Linux, use sleep(1)
-    }
+    keep_connection_alive();
 
     return 0;
 }
