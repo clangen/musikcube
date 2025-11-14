@@ -8,18 +8,15 @@
 
 struct IDiscordCore* core = NULL;
 
-void init_discord() {
+bool init_discord() {
     struct DiscordCreateParams params;
     DiscordCreateParamsSetDefault(&params);
-    params.client_id = 1424235979971235850; // 🔴 Replace with your actual Discord App ID
-    params.flags = DiscordCreateFlags_Default;
+    params.client_id = 1424235979971235850;
+    params.flags = DiscordCreateFlags_NoRequireDiscord;
 
     enum EDiscordResult result = DiscordCreate(DISCORD_VERSION, &params, &core);
-    if (result != DiscordResult_Ok) {
-        // printf("Failed to init Discord: %d\n", result);
-        exit(1);
-    }
-    // printf("Discord initialized successfully!\n");
+    if (result != DiscordResult_Ok) return false;
+    return true;
 }
 
 
@@ -35,17 +32,14 @@ void update_presence(const char* track, const char* artist, const char* album, c
     strcpy(activity.assets.large_image, cover_url);
     strcpy(activity.assets.large_text, album);
     strcpy(activity.assets.small_image, "icon");
-    strcpy(activity.assets.small_text, cover_url);
-    strcpy(activity.details, album);
+    strcpy(activity.assets.small_text, "musikcube");
+    strcpy(activity.details, track);
     snprintf(activity.state, sizeof(activity.state), "by %s", artist);
 
     activity.type = DiscordActivityType_Listening;
     activity.instance = false;
 
     activity_manager->update_activity(activity_manager, &activity, NULL, NULL);
-
-    // printf("Updated presence: %s by %s from %s\n", track, artist, album);
-    // printf("Cover URL: %s\n", cover_url);
 }
 
 // Struct to hold the server response
@@ -127,24 +121,4 @@ void keep_connection_alive() {
         core->run_callbacks(core);
         Sleep(1000);
     }
-}
-
-int main() {
-    init_discord();
-    const char* cover_path = "./businrain.gif";
-    const char* track = "Bohemian Rhapsody";
-    const char* artist = "Queen";
-    const char* album = "A Night at the Opera";
-    // const char* cover_url = "https://0x0.st/KuY6.png";// Example cover URL
-    int duration_seconds = 354; // 5:54
-
-    char* cover_url = upload_cover_image(cover_path);
-    printf("Uploaded cover URL: %s\n", cover_url);
-
-    update_presence(track, artist, album, cover_url, duration_seconds);
-
-    // Keep Discord connection alive
-    keep_connection_alive();
-
-    return 0;
 }
