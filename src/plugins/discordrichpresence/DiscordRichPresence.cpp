@@ -19,7 +19,6 @@ bool init_discord() {
     return true;
 }
 
-
 void update_presence(const char* track, const char* artist, const char* album, const char* cover_url, int duration_seconds) {
     struct IDiscordActivityManager* activity_manager = core->get_activity_manager(core);
     struct DiscordActivity activity;
@@ -94,7 +93,6 @@ char* upload_cover_image(const char* file_path) {
     std::string user_agent = "musikcube/" + musik::cube::userAgent();
     curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent.c_str());
 
-    // For testing only — disable SSL verification (not recommended for production)
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
@@ -108,7 +106,6 @@ char* upload_cover_image(const char* file_path) {
     curl_global_cleanup();
 
     if (res != CURLE_OK) {
-        fprintf(stderr, "Upload failed: %s\n", curl_easy_strerror(res));
         free(response.data);
         return NULL;
     }
@@ -116,9 +113,17 @@ char* upload_cover_image(const char* file_path) {
     return response.data;  // Caller must free this
 }
 
+void sleep(int milliseconds) {
+    #ifdef _WIN32
+        Sleep(milliseconds);
+    #else
+        usleep(milliseconds * 1000);
+    #endif
+}
+
 void keep_connection_alive() {
     while (1) {
         core->run_callbacks(core);
-        Sleep(1000);
+        sleep(1000);
     }
 }

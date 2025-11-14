@@ -6,11 +6,9 @@
 #include <musikcore/sdk/ITrack.h>
 #include <musikcore/sdk/IValue.h>
 #include <musikcore/sdk/IEnvironment.h>
-// #include <musikcore/audio/Player.h>
 
 #include <thread>
 #include <string>
-#include <windows.h>
 
 #include "DiscordRichPresence.h"
 
@@ -32,20 +30,6 @@ using namespace musik::core::sdk;
 
 static IDebug* debug = nullptr;
 static IEnvironment* environment = nullptr;
-static IPlaybackService* playbacks = nullptr;
-
-// template <typename MetadataT>
-// static std::string GetMetadataString(MetadataT* metadata, const std::string& key, const std::string& defaultValue = "missing metadata!") {
-//     if (!metadata) { return defaultValue; }
-//     metadata->GetString(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
-//     return std::string(threadLocalBuffer);
-// }
-
-// static std::string GetValueString(musik::core::sdk::IValue* value, const std::string& defaultValue = "missing metadata!") {
-//     if (!value) { return defaultValue; }
-//     value->GetValue(threadLocalBuffer, sizeof(threadLocalBuffer));
-//     return std::string(threadLocalBuffer);
-// }
 
 std::string getThumbnailPath(int albumId) {
     char pathBuffer[4096];
@@ -60,18 +44,6 @@ std::string getThumbnailPath(int albumId) {
     }
 }
 
-void change_presence_example() {
-    if (!environment || !debug) return;
-    const char* path = getThumbnailPath(3).c_str();
-    debug->Info(TAG, path);
-    const char* url = upload_cover_image(path);
-    debug->Info(TAG, url);
-    debug->Info(TAG, "hi there!");
-    Sleep(30000);
-    // update_presence("Don't Stop Believin'", "Journey", "Escape", "https://0x0.st/KSur.gif", 251);
-    update_presence("Don't Stop Believin'", "Journey", "Escape", url, 251);
-}
-
 class DiscordRichPresencePlugin : public IPlugin {
     public:
         DiscordRichPresencePlugin() {
@@ -80,15 +52,9 @@ class DiscordRichPresencePlugin : public IPlugin {
                 update_presence("unknown", "unknown", "unknown", "unknown", 0);
                 std::thread t1(keep_connection_alive);
                 t1.detach();
-                // const char* path = getThumbnailPath(1).c_str();
-                if (debug) {
-                    debug->Info(TAG, "Discord Rich Presence Plugin initialize :)");
-                    // debug->Info(TAG, getThumbnailPath(1).c_str());
-                }
-                // std::thread t2(change_presence_example);
-                // t2.detach();
+                if (debug) {debug->Info(TAG, "Discord Rich Presence Plugin initialize :)");}
             } else {
-                if (debug) debug->Info(TAG, "Discord Rich Presence Plugin failed to initialize :(");
+                if (debug) {debug->Info(TAG, "Discord Rich Presence Plugin failed to initialize :(");}
             }
         }
         void Release() override { };
@@ -104,60 +70,70 @@ class DiscordRichPresencePlugin : public IPlugin {
 
 class EventUpdater : public IPlaybackRemote {
     public:
-        void Release() override {
-            delete this;
-        }
-
-        void SetPlaybackService(IPlaybackService* playback) override {
-            this->playback = playback;
-        }
+        void Release() override { delete this; }
 
         void OnTrackChanged(ITrack* track) override {
-            currentTrack = track;
-            if (debug && track) {
-                char title[512];
-                char artist[512];
-                char album[512];
-                int thumbnail_id = track->GetInt32("thumbnail_id", -1);
-                int seconds = track->GetInt32("duration", 0);
+            char title[128];
+            char artist[128];
+            char album[128];
+            int thumbnail_id = track->GetInt32("thumbnail_id", 0);
+            int seconds = track->GetInt32("duration", 0);
 
-                track->GetString("title", title, sizeof(title));
-                track->GetString("artist", artist, sizeof(artist));
-                track->GetString("album", album, sizeof(album));
+            track->GetString("title", title, sizeof(title));
+            track->GetString("artist", artist, sizeof(artist));
+            track->GetString("album", album, sizeof(album));
 
-                debug->Info(TAG, ("Track changed: " + std::string(title) + " - " + std::string(artist) + " [" + std::string(album) + "] [" + std::to_string(thumbnail_id) + " " + std::to_string(seconds) + "]").c_str());
-                const char* path = getThumbnailPath(thumbnail_id).c_str();
-                const char* url = upload_cover_image(path);
-                update_presence(title, artist, album, url, seconds);
-            }
+            if (strcmp(title, this->title) == 0 || this->onCooldown) return;// prevent duplicate updates
+            strcpy_s(this->title, title);
+            std::thread t1([this, title = std::string(title), artist = std::string(artist), 
+                            album = std::string(album), thumbnailId = thumbnail_id, 
+                            durationSeconds = seconds]() {
+                this->ChangePresence(title.c_str(), artist.c_str(), album.c_str(), thumbnailId, durationSeconds);
+            });
+            t1.detach();
+            std::thread t2([this]() {
+                cooldown();
+            });
+            t2.detach();
         }
 
-        void OnPlaybackStateChanged(PlaybackState state) override {
-            currentState = state;
-        }
-
-        void OnPlaybackTimeChanged(double time) override {
-            debug->Info(TAG, ("Playback time changed: " + std::to_string(time)).c_str());
-        }
-
-        void OnModeChanged(RepeatMode repeatMode, bool shuffled) override {
-            currentMode = repeatMode;
-            IsShuffled = shuffled;
-        }
-
-
+        void OnPlaybackStateChanged(PlaybackState state) override { }
+        void SetPlaybackService(IPlaybackService* playback) override { }
+        void OnPlaybackTimeChanged(double time) override { }
+        void OnModeChanged(RepeatMode repeatMode, bool shuffled) override { }
         void OnVolumeChanged(double volume) override { }
         void OnPlayQueueChanged() override { }
 
     private:
-        IPlaybackService* playback = nullptr;
-        PlaybackState currentState = PlaybackState::Stopped;
-        ITrack* currentTrack = nullptr;
-        RepeatMode currentMode = RepeatMode::None;
-        bool IsShuffled = false;
+        // previous presence data to prevent duplicate updates
+        char title[128], url[128];
+        int thumbnailId;
+        bool onCooldown = false;
 
+        void ChangePresence(const char* title, const char* artist, const char* album, int thumbnailId, int durationSeconds) {
+            char* url = "unknown";
+            if (thumbnailId == this->thumbnailId) {//checking new thumbnail id against previous one to prevent duplicate uploads since different songs can have same album art
+                url = this->url;
+            } else {// uploading a new thumbnail is quite slow, so we only do it when the album changes
+                if (thumbnailId != 0) {// 0 means no thumbnail
+                    const char* path = getThumbnailPath(thumbnailId).c_str();
+                    if (strcmp(path, "unknown") != 0) {// valid path
+                        url = upload_cover_image(path);
+                    }
+                }
+            }
+            this->thumbnailId = thumbnailId;
+            strcpy_s(this->url, url);
+            update_presence(title, artist, album, url, durationSeconds);
+            debug->Info(TAG, ("Updated Discord Rich Presence: " + std::string(title) + " by " + std::string(artist)).c_str());
+        }
+
+        void cooldown() {// simple cooldown to prevent being rate limited by Discord or 0x0.st
+            this->onCooldown = true;
+            sleep(10000);
+            this->onCooldown = false;
+        }
 };
-
 
 extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
     ::debug = debug;
