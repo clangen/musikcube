@@ -1,22 +1,18 @@
-cmake_minimum_required(VERSION 3.10)
-project(discord)
-
-set(SRC
+set (discordrichpresence_SOURCES
     discord_plugin.cpp
+    DiscordRichPresence.cpp
 )
 
-add_library(discord SHARED ${SRC})
+add_library(discordrichpresence SHARED ${discordrichpresence_SOURCES})
 
-target_include_directories(discord PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/musikcore/include
-)
+find_vendor_library(DISCORDGAMESDK discord_game_sdk)
 
-target_link_libraries(discord
-    musikcore
-)
+if (${BUILD_STANDALONE} MATCHES "true")
+    find_vendor_library(LIBCURL curl)
+    include_directories(BEFORE ${VENDOR_INCLUDE_DIRECTORIES})
+else()
+    find_library(LIBCURL curl)
+endif()
 
-set_target_properties(discord PROPERTIES
-    PREFIX ""
-    OUTPUT_NAME "discord"
-)
+message(STATUS "[discordrichpresence] using ${LIBCURL} ${DISCORDGAMESDK}")
+target_link_libraries(discordrichpresence ${LIBCURL} ${DISCORDGAMESDK})
