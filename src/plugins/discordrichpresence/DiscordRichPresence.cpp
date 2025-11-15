@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <curl/curl.h>
-#include "discord_game_sdk/c/discord_game_sdk.h"
+#include <3rdparty/include/discord_game_sdk.h>
 #include <musikcore/sdk/version.h>
 
 struct IDiscordCore* core = NULL;

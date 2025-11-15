@@ -31,7 +31,7 @@ using namespace musik::core::sdk;
 static IDebug* debug = nullptr;
 static IEnvironment* environment = nullptr;
 
-std::string getThumbnailPath(int albumId) {
+std::string get_thumbnail_path(int albumId) {
     char pathBuffer[4096];
     if (environment) {
         environment->GetPath(PathType::Library, pathBuffer, sizeof(pathBuffer));
@@ -88,7 +88,7 @@ class EventUpdater : public IPlaybackRemote {
             std::thread t1([this, title = std::string(title), artist = std::string(artist), 
                             album = std::string(album), thumbnailId = thumbnail_id, 
                             durationSeconds = seconds]() {
-                this->ChangePresence(title.c_str(), artist.c_str(), album.c_str(), thumbnailId, durationSeconds);
+                this->change_presence(title.c_str(), artist.c_str(), album.c_str(), thumbnailId, durationSeconds);
             });
             t1.detach();
             std::thread t2([this]() {
@@ -110,13 +110,13 @@ class EventUpdater : public IPlaybackRemote {
         int thumbnailId;
         bool onCooldown = false;
 
-        void ChangePresence(const char* title, const char* artist, const char* album, int thumbnailId, int durationSeconds) {
+        void change_presence(const char* title, const char* artist, const char* album, int thumbnailId, int durationSeconds) {
             char* url = "unknown";
             if (thumbnailId == this->thumbnailId) {//checking new thumbnail id against previous one to prevent duplicate uploads since different songs can have same album art
                 url = this->url;
             } else {// uploading a new thumbnail is quite slow, so we only do it when the album changes
                 if (thumbnailId != 0) {// 0 means no thumbnail
-                    const char* path = getThumbnailPath(thumbnailId).c_str();
+                    const char* path = get_thumbnail_path(thumbnailId).c_str();
                     if (strcmp(path, "unknown") != 0) {// valid path
                         url = upload_cover_image(path);
                     }
