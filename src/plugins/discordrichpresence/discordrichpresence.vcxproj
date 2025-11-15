@@ -104,7 +104,7 @@
       <AdditionalDependencies>libcurl.lib;discord_game_sdk.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\discord_game_sdk\*" "$(TargetDir)..\"</Command>
+      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\discord_game_sdk\*" "$(TargetDir)..\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -124,7 +124,7 @@
       <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\discord_game_sdk\*" "$(TargetDir)..\"</Command>
+      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\discord_game_sdk\*" "$(TargetDir)..\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -155,7 +155,7 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\discord_game_sdk\*" "$(TargetDir)..\"</Command>
+      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\discord_game_sdk\*" "$(TargetDir)..\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -179,7 +179,7 @@
       <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\discord_game_sdk\*" "$(TargetDir)..\"</Command>
+      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\discord_game_sdk\*" "$(TargetDir)..\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
     <ItemGroup>

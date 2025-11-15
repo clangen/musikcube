@@ -15,8 +15,7 @@ bool init_discord() {
     params.flags = DiscordCreateFlags_NoRequireDiscord;
 
     enum EDiscordResult result = DiscordCreate(DISCORD_VERSION, &params, &core);
-    if (result != DiscordResult_Ok) return false;
-    return true;
+    return (bool)(result == DiscordResult_Ok);
 }
 
 void update_presence(const char* track, const char* artist, const char* album, const char* cover_url, int duration_seconds) {
@@ -33,7 +32,6 @@ void update_presence(const char* track, const char* artist, const char* album, c
     strcpy(activity.assets.small_image, "icon");
     strcpy(activity.assets.small_text, "musikcube");
     strcpy(activity.details, track);
-    snprintf(activity.state, sizeof(activity.state), "by %s", artist);
 
     activity.type = DiscordActivityType_Listening;
     activity.instance = false;
@@ -78,7 +76,7 @@ char* upload_cover_image(const char* file_path) {
     curl = curl_easy_init();
     if (!curl) {
         free(response.data);
-        return NULL;
+        return "unknown";
     }
 
     curl_formadd(&form, &lastptr,
@@ -107,7 +105,7 @@ char* upload_cover_image(const char* file_path) {
 
     if (res != CURLE_OK) {
         free(response.data);
-        return NULL;
+        return "unknown";
     }
 
     return response.data;  // Caller must free this

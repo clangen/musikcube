@@ -30,6 +30,7 @@ using namespace musik::core::sdk;
 
 static IDebug* debug = nullptr;
 static IEnvironment* environment = nullptr;
+bool opened = false;
 
 std::string get_thumbnail_path(int albumId) {
     char pathBuffer[4096];
@@ -47,7 +48,7 @@ std::string get_thumbnail_path(int albumId) {
 class DiscordRichPresencePlugin : public IPlugin {
     public:
         DiscordRichPresencePlugin() {
-            bool opened = init_discord();
+            opened = init_discord();
             if (opened) {
                 update_presence("unknown", "unknown", "unknown", "unknown", 0);
                 std::thread t1(keep_connection_alive);
@@ -73,6 +74,7 @@ class EventUpdater : public IPlaybackRemote {
         void Release() override { delete this; }
 
         void OnTrackChanged(ITrack* track) override {
+            if (this->onCooldown || !opened) return;
             char title[128];
             char artist[128];
             char album[128];
@@ -83,7 +85,7 @@ class EventUpdater : public IPlaybackRemote {
             track->GetString("artist", artist, sizeof(artist));
             track->GetString("album", album, sizeof(album));
 
-            if (strcmp(title, this->title) == 0 || this->onCooldown) return;// prevent duplicate updates
+            if (strcmp(title, this->title) == 0) return;// prevent duplicate updates
             strcpy_s(this->title, title);
             std::thread t1([this, title = std::string(title), artist = std::string(artist), 
                             album = std::string(album), thumbnailId = thumbnail_id, 
@@ -111,6 +113,7 @@ class EventUpdater : public IPlaybackRemote {
         bool onCooldown = false;
 
         void change_presence(const char* title, const char* artist, const char* album, int thumbnailId, int durationSeconds) {
+            if (!opened) return;
             char* url = "unknown";
             if (thumbnailId == this->thumbnailId) {//checking new thumbnail id against previous one to prevent duplicate uploads since different songs can have same album art
                 url = this->url;
@@ -122,9 +125,11 @@ class EventUpdater : public IPlaybackRemote {
                     }
                 }
             }
+            if (strcmp(url, "unknown") == 0) {debug->Warning(TAG, "potential thumbnail problem");}
             this->thumbnailId = thumbnailId;
             strcpy_s(this->url, url);
-            update_presence(title, artist, album, url, durationSeconds);
+            free(url);
+            update_presence(title, artist, album, this->url, durationSeconds);
             debug->Info(TAG, ("Updated Discord Rich Presence: " + std::string(title) + " by " + std::string(artist)).c_str());
         }
 
