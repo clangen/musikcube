@@ -75,9 +75,9 @@ class EventUpdater : public IPlaybackRemote {
 
         void OnTrackChanged(ITrack* track) override {
             if (this->onCooldown || !opened) return;
-            char title[128];
-            char artist[128];
-            char album[128];
+            char title[128] = {'\0'};
+            char artist[128] = {'\0'};
+            char album[128] = {'\0'};
             int thumbnail_id = track->GetInt32("thumbnail_id", 0);
             int seconds = track->GetInt32("duration", 0);
 
@@ -108,7 +108,7 @@ class EventUpdater : public IPlaybackRemote {
 
     private:
         // previous presence data to prevent duplicate updates
-        char title[128], url[128];
+        char title[128], url[128];// 128 is the max length for discord sdk can hold
         int thumbnailId;
         bool onCooldown = false;
 
@@ -121,15 +121,16 @@ class EventUpdater : public IPlaybackRemote {
                 if (thumbnailId != 0) {// 0 means no thumbnail
                     const char* path = get_thumbnail_path(thumbnailId).c_str();
                     if (strcmp(path, "unknown") != 0) {// valid path
-                        url = upload_cover_image(path);
+                        char* temp = upload_cover_image(path);
+                        url = temp;
+                        free(temp);
                     }
                 }
             }
             if (strcmp(url, "unknown") == 0) {debug->Warning(TAG, "potential thumbnail problem");}
             this->thumbnailId = thumbnailId;
             strcpy_s(this->url, url);
-            free(url);
-            update_presence(title, artist, album, this->url, durationSeconds);
+            update_presence(title, artist, album, url, durationSeconds);
             debug->Info(TAG, ("Updated Discord Rich Presence: " + std::string(title) + " by " + std::string(artist)).c_str());
         }
 

@@ -32,6 +32,7 @@ void update_presence(const char* track, const char* artist, const char* album, c
     strcpy(activity.assets.small_image, "icon");
     strcpy(activity.assets.small_text, "musikcube");
     strcpy(activity.details, track);
+    snprintf(activity.state, sizeof(activity.state), "by %s", artist);
 
     activity.type = DiscordActivityType_Listening;
     activity.instance = false;
