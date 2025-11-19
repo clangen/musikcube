@@ -48,6 +48,11 @@ std::string get_thumbnail_path(int albumId) {
 class DiscordRichPresencePlugin : public IPlugin {
     public:
         DiscordRichPresencePlugin() {
+            if (!has_internet_connection()) {
+                if (debug) {debug->Warning(TAG, "No internet connection detected");}
+                return;
+            }
+            
             opened = init_discord();
             if (opened) {
                 update_presence("unknown", "unknown", "unknown", "unknown", 0);
@@ -113,7 +118,7 @@ class EventUpdater : public IPlaybackRemote {
         bool onCooldown = false;
 
         void change_presence(const char* title, const char* artist, const char* album, int thumbnailId, int durationSeconds) {
-            if (!opened) return;
+            if (!opened || !has_internet_connection()) return;
             char* url = "unknown";
             if (thumbnailId == this->thumbnailId) {//checking new thumbnail id against previous one to prevent duplicate uploads since different songs can have same album art
                 url = this->url;

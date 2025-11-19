@@ -112,6 +112,22 @@ char* upload_cover_image(const char* file_path) {
     return response.data;  // Caller must free this
 }
 
+bool has_internet_connection() {
+    CURL *curl = curl_easy_init();
+    if (!curl) return false;
+
+    curl_easy_setopt(curl, CURLOPT_URL, "https://1.1.1.1");
+    curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+
+    CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    return (res == CURLE_OK);
+}
+
 void sleep(int milliseconds) {
     #ifdef _WIN32
         Sleep(milliseconds);
