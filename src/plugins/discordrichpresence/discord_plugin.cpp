@@ -80,7 +80,7 @@ class EventUpdater : public IPlaybackRemote {
         void Release() override { delete this; }
 
         void OnTrackChanged(ITrack* track) override {
-            if (this->onCooldown || !opened) return;
+            if (track == nullptr || this->onCooldown || !opened) return;
             char title[128] = {'\0'};
             char artist[128] = {'\0'};
             char album[128] = {'\0'};

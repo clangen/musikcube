@@ -143,7 +143,9 @@ void sleep(int milliseconds) {
 void keep_connection_alive() {
     while (1) {
         if (!accessing_core) {
+            accessing_core = true;
             core->run_callbacks(core);
+            accessing_core = false;
             sleep(1000);
         }
     }
