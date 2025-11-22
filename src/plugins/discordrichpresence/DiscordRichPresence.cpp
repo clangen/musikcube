@@ -7,6 +7,7 @@
 #include <musikcore/sdk/version.h>
 
 struct IDiscordCore* core = NULL;
+bool accessing_core = false;
 
 bool init_discord() {
     struct DiscordCreateParams params;
@@ -19,6 +20,8 @@ bool init_discord() {
 }
 
 void update_presence(const char* track, const char* artist, const char* album, const char* cover_url, int duration_seconds) {
+    if (accessing_core) return;
+    accessing_core = true;
     struct IDiscordActivityManager* activity_manager = core->get_activity_manager(core);
     struct DiscordActivity activity;
     
@@ -38,6 +41,7 @@ void update_presence(const char* track, const char* artist, const char* album, c
     activity.instance = false;
 
     activity_manager->update_activity(activity_manager, &activity, NULL, NULL);
+    accessing_core = false;
 }
 
 // Struct to hold the server response
@@ -138,7 +142,9 @@ void sleep(int milliseconds) {
 
 void keep_connection_alive() {
     while (1) {
-        core->run_callbacks(core);
-        sleep(1000);
+        if (!accessing_core) {
+            core->run_callbacks(core);
+            sleep(1000);
+        }
     }
 }
