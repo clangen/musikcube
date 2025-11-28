@@ -5,9 +5,10 @@
 #include <curl/curl.h>
 #include <3rdparty/include/discord_game_sdk.h>
 #include <musikcore/sdk/version.h>
+#include <mutex>
 
+std::mutex discord_mutex;
 struct IDiscordCore* core = NULL;
-bool accessing_core = false;
 
 bool init_discord() {
     struct DiscordCreateParams params;
@@ -20,8 +21,7 @@ bool init_discord() {
 }
 
 void update_presence(const char* track, const char* artist, const char* album, const char* cover_url, int duration_seconds) {
-    if (accessing_core) return;
-    accessing_core = true;
+    discord_mutex.lock();
     struct IDiscordActivityManager* activity_manager = core->get_activity_manager(core);
     struct DiscordActivity activity;
     
@@ -30,18 +30,23 @@ void update_presence(const char* track, const char* artist, const char* album, c
     time_t now = time(NULL);
     activity.timestamps.start = now;
     activity.timestamps.end = now + duration_seconds;
-    strcpy(activity.assets.large_image, cover_url);
-    strcpy(activity.assets.large_text, album);
-    strcpy(activity.assets.small_image, "icon");
-    strcpy(activity.assets.small_text, "musikcube");
-    strcpy(activity.details, track);
+    strncpy(activity.assets.large_image, cover_url, sizeof(activity.assets.large_image) - 1);
+    activity.assets.large_image[sizeof(activity.assets.large_image) - 1] = '\0';
+    strncpy(activity.assets.large_text, album, sizeof(activity.assets.large_text) - 1);
+    activity.assets.large_text[sizeof(activity.assets.large_text) - 1] = '\0';
+    strncpy(activity.assets.small_image, "icon", sizeof(activity.assets.small_image) - 1);
+    activity.assets.small_image[sizeof(activity.assets.small_image) - 1] = '\0';
+    strncpy(activity.assets.small_text, "musikcube", sizeof(activity.assets.small_text) - 1);
+    activity.assets.small_text[sizeof(activity.assets.small_text) - 1] = '\0';
+    strncpy(activity.details, track, sizeof(activity.details) - 1);
+    activity.details[sizeof(activity.details) - 1] = '\0';
     snprintf(activity.state, sizeof(activity.state), "by %s", artist);
 
     activity.type = DiscordActivityType_Listening;
     activity.instance = false;
 
     activity_manager->update_activity(activity_manager, &activity, NULL, NULL);
-    accessing_core = false;
+    discord_mutex.unlock();
 }
 
 // Struct to hold the server response
@@ -142,11 +147,9 @@ void sleep(int milliseconds) {
 
 void keep_connection_alive() {
     while (1) {
-        if (!accessing_core) {
-            accessing_core = true;
-            core->run_callbacks(core);
-            accessing_core = false;
-            sleep(1000);
-        }
+        discord_mutex.lock();        
+        core->run_callbacks(core);
+        discord_mutex.unlock();
+        sleep(1000);
     }
 }
