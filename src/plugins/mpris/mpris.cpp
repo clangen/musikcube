@@ -147,13 +147,16 @@ void MPRISRemote::MPRISLoop() {
             if (stop_processing || !bus) {
                 return;
             }
-            if (sd_bus_process(bus, nullptr) == 0) {
-                if (sd_bus_wait(bus, 0) < 0) {
-                    break;
-                }
+
+            while (sd_bus_process(bus, nullptr) > 0) {
+            }
+
+            if (sd_bus_wait(bus, 0) < 0) {
+                break;
             }
         }
-        usleep(500 * 1000);
+
+        usleep(1000);
     }
 }
 
