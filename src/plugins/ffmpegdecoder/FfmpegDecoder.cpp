@@ -89,12 +89,14 @@ static void logError(const std::string& message) {
 }
 
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
-static AVChannelLayout resolveChannelLayout(size_t channelCount) {
+static AVChannelLayout resolveChannelLayout(const AVChannelLayout& currentLayout) {
     AVChannelLayout result;
     memset(&result, 0, sizeof(result));
 
-    result.nb_channels = channelCount;
-    switch (channelCount) {
+    result.nb_channels = currentLayout.nb_channels;
+    result.order = currentLayout.order == AV_CHANNEL_ORDER_UNSPEC ? AV_CHANNEL_ORDER_NATIVE : currentLayout.order;
+
+    switch (result.nb_channels) {
         case 1: result.u.mask = AV_CH_LAYOUT_MONO; break;
         case 2: result.u.mask =  AV_CH_LAYOUT_STEREO; break;
         case 3: result.u.mask =  AV_CH_LAYOUT_2POINT1; break;
@@ -105,6 +107,10 @@ static AVChannelLayout resolveChannelLayout(size_t channelCount) {
     }
 
     return result;
+}
+
+static bool requiresChannelLayoutResolve(const AVChannelLayout& currentLayout) {
+    return currentLayout.nb_channels == 0 || currentLayout.order == AV_CHANNEL_ORDER_UNSPEC;
 }
 #endif
 
@@ -418,9 +424,9 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                             }
 
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
-                            if (this->codecContext->ch_layout.nb_channels == 0) {
+                            if (requiresChannelLayoutResolve(this->codecContext->ch_layout)) {
                                 this->codecContext->ch_layout =
-                                    resolveChannelLayout(this->codecContext->ch_layout.nb_channels);
+                                    resolveChannelLayout(this->codecContext->ch_layout);
 #else
                             if (this->codecContext->channel_layout == 0) {
                                 this->codecContext->channel_layout =
@@ -655,8 +661,8 @@ AVFrame* FfmpegDecoder::AllocFrame(AVFrame* original, AVSampleFormat format, int
             av_frame_free(&original);
         }
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
-        const AVChannelLayout channelLayout = this->codecContext->ch_layout.nb_channels == 0
-            ? resolveChannelLayout(this->codecContext->ch_layout.nb_channels)
+        const AVChannelLayout channelLayout = requiresChannelLayoutResolve(this->codecContext->ch_layout)
+            ? resolveChannelLayout(this->codecContext->ch_layout)
             : this->codecContext->ch_layout;
         original = av_frame_alloc();
         original->ch_layout = channelLayout;
