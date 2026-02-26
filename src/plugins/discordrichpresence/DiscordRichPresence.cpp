@@ -3,25 +3,27 @@
 #include <string.h>
 #include <time.h>
 #include <curl/curl.h>
-#include <3rdparty/include/discord_game_sdk.h>
+#include "discord_game_sdk/c/discord_game_sdk.h"
 #include <musikcore/sdk/version.h>
-#include <mutex>
 
-std::mutex discord_mutex;
 struct IDiscordCore* core = NULL;
 
-bool init_discord() {
+void init_discord() {
     struct DiscordCreateParams params;
     DiscordCreateParamsSetDefault(&params);
     params.client_id = 1424235979971235850;
-    params.flags = DiscordCreateFlags_NoRequireDiscord;
+    params.flags = DiscordCreateFlags_Default;
 
     enum EDiscordResult result = DiscordCreate(DISCORD_VERSION, &params, &core);
-    return (bool)(result == DiscordResult_Ok);
+    if (result != DiscordResult_Ok) {
+        // printf("Failed to init Discord: %d\n", result);
+        exit(1);
+    }
+    // printf("Discord initialized successfully!\n");
 }
 
+
 void update_presence(const char* track, const char* artist, const char* album, const char* cover_url, int duration_seconds) {
-    discord_mutex.lock();
     struct IDiscordActivityManager* activity_manager = core->get_activity_manager(core);
     struct DiscordActivity activity;
     
@@ -30,23 +32,20 @@ void update_presence(const char* track, const char* artist, const char* album, c
     time_t now = time(NULL);
     activity.timestamps.start = now;
     activity.timestamps.end = now + duration_seconds;
-    strncpy(activity.assets.large_image, cover_url, sizeof(activity.assets.large_image) - 1);
-    activity.assets.large_image[sizeof(activity.assets.large_image) - 1] = '\0';
-    strncpy(activity.assets.large_text, album, sizeof(activity.assets.large_text) - 1);
-    activity.assets.large_text[sizeof(activity.assets.large_text) - 1] = '\0';
-    strncpy(activity.assets.small_image, "icon", sizeof(activity.assets.small_image) - 1);
-    activity.assets.small_image[sizeof(activity.assets.small_image) - 1] = '\0';
-    strncpy(activity.assets.small_text, "musikcube", sizeof(activity.assets.small_text) - 1);
-    activity.assets.small_text[sizeof(activity.assets.small_text) - 1] = '\0';
-    strncpy(activity.details, track, sizeof(activity.details) - 1);
-    activity.details[sizeof(activity.details) - 1] = '\0';
+    strcpy(activity.assets.large_image, cover_url);
+    strcpy(activity.assets.large_text, album);
+    strcpy(activity.assets.small_image, "icon");
+    strcpy(activity.assets.small_text, cover_url);
+    strcpy(activity.details, album);
     snprintf(activity.state, sizeof(activity.state), "by %s", artist);
 
     activity.type = DiscordActivityType_Listening;
     activity.instance = false;
 
     activity_manager->update_activity(activity_manager, &activity, NULL, NULL);
-    discord_mutex.unlock();
+
+    // printf("Updated presence: %s by %s from %s\n", track, artist, album);
+    // printf("Cover URL: %s\n", cover_url);
 }
 
 // Struct to hold the server response
@@ -60,7 +59,7 @@ static size_t write_callback(void *contents, size_t size, size_t nmemb, void *us
     size_t total_size = size * nmemb;
     struct response_data *resp = (struct response_data *)userp;
 
-    char *ptr = (char *)realloc(resp->data, resp->size + total_size + 1);
+    char *ptr = realloc(resp->data, resp->size + total_size + 1);
     if (!ptr) return 0;
 
     resp->data = ptr;
@@ -80,13 +79,13 @@ char* upload_cover_image(const char* file_path) {
     struct curl_httppost *lastptr = NULL;
     struct response_data response = {0};
 
-    response.data = (char *)malloc(1); // initial allocation
+    response.data = malloc(1); // initial allocation
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
     curl = curl_easy_init();
     if (!curl) {
         free(response.data);
-        return "unknown";
+        return NULL;
     }
 
     curl_formadd(&form, &lastptr,
@@ -96,11 +95,9 @@ char* upload_cover_image(const char* file_path) {
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_HTTPPOST, form);
-    
-    // Build user agent string properly
-    std::string user_agent = "musikcube/" + musik::cube::userAgent();
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, user_agent.c_str());
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "musikcube/%s"+musik::cube::userAgent().c_str());
 
+    // For testing only — disable SSL verification (not recommended for production)
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
@@ -114,42 +111,37 @@ char* upload_cover_image(const char* file_path) {
     curl_global_cleanup();
 
     if (res != CURLE_OK) {
+        fprintf(stderr, "Upload failed: %s\n", curl_easy_strerror(res));
         free(response.data);
-        return "unknown";
+        return NULL;
     }
 
     return response.data;  // Caller must free this
 }
 
-bool has_internet_connection() {
-    CURL *curl = curl_easy_init();
-    if (!curl) return false;
-
-    curl_easy_setopt(curl, CURLOPT_URL, "https://1.1.1.1");
-    curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-
-    CURLcode res = curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-
-    return (res == CURLE_OK);
-}
-
-void sleep(int milliseconds) {
-    #ifdef _WIN32
-        Sleep(milliseconds);
-    #else
-        usleep(milliseconds * 1000);
-    #endif
-}
-
 void keep_connection_alive() {
     while (1) {
-        discord_mutex.lock();        
         core->run_callbacks(core);
-        discord_mutex.unlock();
-        sleep(1000);
+        Sleep(1000);
     }
+}
+
+int main() {
+    init_discord();
+    const char* cover_path = "./businrain.gif";
+    const char* track = "Bohemian Rhapsody";
+    const char* artist = "Queen";
+    const char* album = "A Night at the Opera";
+    // const char* cover_url = "https://0x0.st/KuY6.png";// Example cover URL
+    int duration_seconds = 354; // 5:54
+
+    char* cover_url = upload_cover_image(cover_path);
+    printf("Uploaded cover URL: %s\n", cover_url);
+
+    update_presence(track, artist, album, cover_url, duration_seconds);
+
+    // Keep Discord connection alive
+    keep_connection_alive();
+
+    return 0;
 }
