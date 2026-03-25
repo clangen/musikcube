@@ -344,6 +344,49 @@ bool FfmpegDecoder::InitializeResampler() {
     return true;
 }
 
+void FfmpegDecoder::GuessInputFormat(musik::core::sdk::IDataStream *stream) {
+
+    for (size_t m = 1; m <= 4; m++) {
+        size_t probe_size = PROBE_SIZE * m;
+
+        unsigned char* probe = new unsigned char[probe_size];
+        memset(probe, 0, probe_size);
+        int count = stream->Read(probe, probe_size - AVPROBE_PADDING_SIZE);
+        stream->SetPosition(0);
+
+        AVProbeData probeData = { 0 };
+        probeData.buf = probe;
+        probeData.buf_size = count;
+        probeData.filename = "";
+
+        int score = 0;
+
+        this->formatContext->iformat = av_probe_input_format3(&probeData, 1, &score);
+
+        std::string guessAttemptText =
+            std::string("av_probe_input_format3 attempt ") +
+            std::to_string(m)
+            + std::string(" resulted in ")
+            + std::string(this->formatContext->iformat ? this->formatContext->iformat->name : "nothing")
+            + std::string(" with a score of ")
+            + std::to_string(score);
+
+        delete[] probe;
+
+        ::debug->Info(TAG, guessAttemptText.c_str());
+
+        if (score >= AVPROBE_SCORE_MAX / 4) {
+            return;
+        }
+    }
+
+        std::string bailText =
+            std::string("couldn't reliably guess input format, using last detected: ")
+            + std::string(this->formatContext->iformat ? this->formatContext->iformat->name : "nothing");
+
+    ::debug->Warning(TAG, bailText.c_str());
+}
+
 bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
     if (stream->Seekable() && this->ioContext == nullptr) {
         ::debug->Info(TAG, "parsing data stream...");
@@ -368,17 +411,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
             this->formatContext->pb = this->ioContext;
             this->formatContext->flags = AVFMT_FLAG_CUSTOM_IO;
 
-            unsigned char probe[PROBE_SIZE];
-            memset(probe, 0, PROBE_SIZE);
-            int count = stream->Read(probe, PROBE_SIZE - AVPROBE_PADDING_SIZE);
-            stream->SetPosition(0);
-
-            AVProbeData probeData = { 0 };
-            probeData.buf = probe;
-            probeData.buf_size = count;
-            probeData.filename = "";
-
-            this->formatContext->iformat = av_probe_input_format(&probeData, 1);
+            this->GuessInputFormat(stream);
 
             if (this->formatContext->iformat) {
                 if (avformat_open_input(&this->formatContext, "", nullptr, nullptr) == 0) {
