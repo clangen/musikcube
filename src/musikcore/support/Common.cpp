@@ -237,8 +237,11 @@ namespace musik { namespace core {
             sPath.assign(sFile);
         }
      #else
-        char* szDir;
-        sPath.assign(getcwd((char*)szDir, (size_t) length));
+        char pathBuf[PATH_MAX] = {};
+        char* result = getcwd(pathBuf, sizeof(pathBuf));
+        if (result != nullptr) {
+            sPath.assign(pathBuf);
+        }
      #endif
 
         return sPath;

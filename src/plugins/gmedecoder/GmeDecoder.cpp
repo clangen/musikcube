@@ -66,16 +66,24 @@ GmeDecoder::~GmeDecoder() {
 }
 
 bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
+    if (!stream) {
+        return false;
+    }
     this->stream = dynamic_cast<GmeDataStream*>(stream);
 
     if (!this->stream) {
-        this->stream = new GmeDataStream(stream);
-        if (!this->stream->Parse(stream->Uri())) {
-            delete this->stream;
-            this->stream = nullptr;
+        try {
+            GmeDataStream* wrappedStream = new GmeDataStream(stream);
+            if (!wrappedStream->Parse(stream->Uri())) {
+                delete wrappedStream;
+                return false;
+            }
+            this->stream = wrappedStream;
+            this->isWrappedDataStream = true;
+        }
+        catch (const std::bad_alloc&) {
             return false;
         }
-        this->isWrappedDataStream = true;
     }
 
     auto dataLength = stream->Length();
