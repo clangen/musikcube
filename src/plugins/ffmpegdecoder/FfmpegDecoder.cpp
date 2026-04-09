@@ -345,6 +345,8 @@ bool FfmpegDecoder::InitializeResampler() {
 }
 
 void FfmpegDecoder::GuessInputFormat(musik::core::sdk::IDataStream *stream) {
+    this->formatContext->iformat = NULL;
+    int best_score = 0;
 
     for (size_t m = 1; m <= 4; m++) {
         size_t probe_size = PROBE_SIZE * m;
@@ -361,13 +363,13 @@ void FfmpegDecoder::GuessInputFormat(musik::core::sdk::IDataStream *stream) {
 
         int score = 0;
 
-        this->formatContext->iformat = av_probe_input_format3(&probeData, 1, &score);
+        auto iformat = av_probe_input_format3(&probeData, 1, &score);
 
         std::string guessAttemptText =
             std::string("av_probe_input_format3 attempt ") +
             std::to_string(m)
             + std::string(" resulted in ")
-            + std::string(this->formatContext->iformat ? this->formatContext->iformat->name : "nothing")
+            + std::string(iformat ? iformat->name : "nothing")
             + std::string(" with a score of ")
             + std::to_string(score);
 
@@ -375,13 +377,18 @@ void FfmpegDecoder::GuessInputFormat(musik::core::sdk::IDataStream *stream) {
 
         ::debug->Info(TAG, guessAttemptText.c_str());
 
+        if (this->formatContext->iformat == NULL || (score >= best_score && iformat != NULL)) {
+            best_score = score;
+            this->formatContext->iformat = iformat;
+        }
+
         if (score >= AVPROBE_SCORE_MAX / 4) {
             return;
         }
     }
 
         std::string bailText =
-            std::string("couldn't reliably guess input format, using last detected: ")
+            std::string("couldn't reliably guess input format, using best detected: ")
             + std::string(this->formatContext->iformat ? this->formatContext->iformat->name : "nothing");
 
     ::debug->Warning(TAG, bailText.c_str());
