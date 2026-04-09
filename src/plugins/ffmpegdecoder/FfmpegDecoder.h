@@ -84,6 +84,7 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         bool InitializeResampler();
         bool ReadSendAndReceivePacket(AVPacket* packet);
         void FlushAndFinalizeDecoder();
+        void GuessInputFormat(musik::core::sdk::IDataStream *stream);
 
         musik::core::sdk::IDataStream* stream;
         AVIOContext* ioContext;
