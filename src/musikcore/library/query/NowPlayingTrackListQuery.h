@@ -34,44 +34,65 @@
 
 #pragma once
 
+/** @file NowPlayingTrackListQuery.h
+ *  @brief Query that returns the current playback queue as a track list.
+ *  @details Snapshot of the tracks currently in the playback queue, used by
+ *      views that mirror the "now playing" queue. */
+
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/audio/PlaybackService.h>
 
 #include "TrackListQueryBase.h"
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Exposes the playback queue as a query result.
+     *  @details Copies the tracks from the given PlaybackService's playlist and
+     *      exposes them with headers and a query hash. */
     class NowPlayingTrackListQuery : public TrackListQueryBase {
         public:
-            static const std::string kQueryName;
+            static const std::string kQueryName; /**< Query type name. */
 
             DELETE_CLASS_DEFAULTS(NowPlayingTrackListQuery)
 
+            /** @brief Creates a now-playing track list query.
+             *  @param library The library used to resolve track metadata.
+             *  @param playback The playback service holding the queue. */
             NowPlayingTrackListQuery(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
 
             /* IQuery */
+            /** @return The query type name. */
             std::string Name() override { return kQueryName; }
 
             /* TrackListQueryBase */
+            /** @return The result track list (or nullptr). */
             Result GetResult() noexcept override;
+            /** @return The column headers for the result. */
             Headers GetHeaders() noexcept override;
+            /** @return A hash identifying this query's parameters. */
             size_t GetQueryHash() noexcept override;
+            /** @return An empty durations map (durations are not provided). */
             Durations GetDurations() noexcept override {
                 return std::make_shared<std::map<size_t, size_t>>();
             }
 
         protected:
             /* QueryBase */
+            /** @brief Runs the query against the database.
+             *  @param db The connection to run on.
+             *  @return true on success. */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
-            musik::core::ILibraryPtr library;
-            musik::core::audio::PlaybackService& playback;
-            Result result;
-            Headers headers;
-            size_t hash;
+            musik::core::ILibraryPtr library; /**< Library for track lookups. */
+            musik::core::audio::PlaybackService& playback; /**< Playback service holding the queue. */
+            Result result;   /**< Result track list. */
+            Headers headers; /**< Result column headers. */
+            size_t hash;     /**< Cached query hash. */
     };
 
 } } } }

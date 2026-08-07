@@ -32,17 +32,45 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IWindowGroup.h @brief Interface for objects that own an ordered collection of windows. */
 #pragma once
 
 #include <cursespp/IWindow.h>
 
 namespace cursespp {
+    /** @brief Contract for containers that hold a list of child windows.
+     *
+     *  @details IWindowGroup abstracts the storage of child windows inside a
+     *  parent. The children are kept in a linear order (the "z-order"), where
+     *  lower positions are drawn first and higher positions are on top. It is
+     *  implemented by layouts and other compound widgets that need to manage,
+     *  enumerate and reparent child windows.
+     */
     class IWindowGroup {
         public:
             virtual ~IWindowGroup() { }
+
+            /** @brief Adds a window to the end of the group.
+             *  @param window the window to add.
+             *  @return true if the window was added successfully.
+             */
             virtual bool AddWindow(IWindowPtr window) = 0;
+
+            /** @brief Removes a window from the group.
+             *  @param window the window to remove.
+             *  @return true if the window was found and removed.
+             */
             virtual bool RemoveWindow(IWindowPtr window) = 0;
+
+            /** @brief Returns the number of windows in the group.
+             *  @return the child window count.
+             */
             virtual size_t GetWindowCount() = 0;
+
+            /** @brief Returns the window at the given position.
+             *  @param position the zero-based index into the child list.
+             *  @return the window at that position.
+             */
             virtual IWindowPtr GetWindowAt(size_t position) = 0;
     };
 }

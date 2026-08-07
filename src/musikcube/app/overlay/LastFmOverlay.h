@@ -34,30 +34,62 @@
 
 #pragma once
 
+/**
+ * @file LastFmOverlay.h
+ * @brief Overlay that guides the user through Last.fm account linking.
+ * @details Shows a dialog that walks the user through obtaining an auth
+ *          token, opening the Last.fm website to approve it, and then
+ *          registering the session so scrobbling can start.
+ */
+
 #include <cursespp/DialogOverlay.h>
 
 namespace musik { namespace cube {
     /* in general we probably shouldn't subclass DialogOverlay because
     callers can mutate the title and body... but... meh. this is easy. */
+    /**
+     * @brief Last.fm account linking dialog.
+     * @details Displays the state machine of the linking process: unregistered,
+     *          obtaining token, waiting for the user to approve the link,
+     *          registering the session, and finally registered. On errors a
+     *          retry can be initiated from the dialog buttons.
+     */
     class LastFmOverlay : public cursespp::DialogOverlay {
         public:
+            /**
+             * @brief The current state of the linking flow.
+             */
             enum class State {
-                Unregistered = 0,
-                ObtainingToken = 1,
-                WaitingForUser = 2,
-                RegisteringSession = 3,
-                Registered = 4,
-                LinkError = 5,
-                RegisterError = 6
+                Unregistered = 0,      /**< the account is not linked */
+                ObtainingToken = 1,    /**< requesting an auth token */
+                WaitingForUser = 2,    /**< waiting for the user to approve */
+                RegisteringSession = 3,/**< exchanging the token for a session */
+                Registered = 4,        /**< the account is linked */
+                LinkError = 5,         /**< failed to obtain a token */
+                RegisterError = 6      /**< failed to register the session */
             };
 
+            /**
+             * @brief Starts the linking flow if it is not already in
+             *        progress, showing the overlay.
+             */
             static void Start();
 
+            /**
+             * @brief Destroys the overlay.
+             */
             virtual ~LastFmOverlay();
 
+            /**
+             * @brief Processes runtime messages that drive the state machine.
+             * @param message the message to process
+             */
             virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
         private:
+            /**
+             * @brief Creates the overlay in the unregistered state.
+             */
             LastFmOverlay();
 
             void LoadDefaultState();
@@ -70,7 +102,7 @@ namespace musik { namespace cube {
             void GetLinkToken();
             void CreateSession();
 
-            State state{ State::Unregistered };
-            std::string linkToken;
+            State state{ State::Unregistered }; /**< the current linking state */
+            std::string linkToken;              /**< the token returned by Last.fm */
     };
 } }

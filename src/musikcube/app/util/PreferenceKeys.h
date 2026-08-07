@@ -34,42 +34,57 @@
 
 #pragma once
 
+/**
+ * @file PreferenceKeys.h
+ * @brief Names and default values of the UI-layer preference keys.
+ * @details Declares the preference keys used by the application UI, grouped
+ *          into the keys namespace for names and the defaults namespace for
+ *          the small number of non-zero default values.
+ */
+
 #include <string>
 
 namespace musik { namespace cube { namespace prefs {
 
+    /**
+     * @brief Names of the preference keys used by the UI layer.
+     */
     namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string InheritBackgroundColor;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastBrowseFilterVisible;
-        extern const std::string LastBrowseFilter;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastCategoryFilterMatchType;
-        extern const std::string LastTrackFilter;
-        extern const std::string LastTrackFilterMatchType;
-        extern const std::string TrackSearchSortOrder;
-        extern const std::string CategoryTrackListSortOrder;
-        extern const std::string RatingPositiveChar;
-        extern const std::string RatingNegativeChar;
-        extern const std::string AutoHideCommandBar;
-        extern const std::string DisableRatingColumn;
-        extern const std::string DisableWindowTitleUpdates;
-        extern const std::string AppQuitKey;
+        extern const std::string DisableCustomColors;           /**< ignore custom color overrides */
+        extern const std::string UsePaletteColors;              /**< use terminal palette colors */
+        extern const std::string FirstRunSettingsDisplayed;     /**< the first run dialog was shown */
+        extern const std::string ColorTheme;                    /**< the active color theme name */
+        extern const std::string InheritBackgroundColor;        /**< inherit the terminal background */
+        extern const std::string MinimizeToTray;                /**< minimize to the system tray */
+        extern const std::string StartMinimized;                /**< start the app minimized */
+        extern const std::string AutoUpdateCheck;               /**< check for updates automatically */
+        extern const std::string LastAcknowledgedUpdateVersion; /**< last update version the user saw */
+        extern const std::string LastLibraryView;               /**< the last visited library view */
+        extern const std::string LastBrowseCategoryType;        /**< the last browse category type */
+        extern const std::string LastBrowseCategoryId;          /**< the last browse category id */
+        extern const std::string LastBrowseDirectoryRoot;       /**< the last browsed directory root */
+        extern const std::string LastBrowseFilterVisible;       /**< whether the browse filter was visible */
+        extern const std::string LastBrowseFilter;              /**< the last browse filter text */
+        extern const std::string LastCategoryFilter;            /**< the last category filter text */
+        extern const std::string LastCategoryFilterMatchType;   /**< the last category match type */
+        extern const std::string LastTrackFilter;               /**< the last track filter text */
+        extern const std::string LastTrackFilterMatchType;      /**< the last track match type */
+        extern const std::string TrackSearchSortOrder;          /**< the track search sort order */
+        extern const std::string CategoryTrackListSortOrder;    /**< the category track list sort order */
+        extern const std::string RatingPositiveChar;            /**< the character for a filled rating star */
+        extern const std::string RatingNegativeChar;            /**< the character for an empty rating star */
+        extern const std::string AutoHideCommandBar;            /**< auto-hide the command bar */
+        extern const std::string DisableRatingColumn;           /**< hide the rating column in lists */
+        extern const std::string DisableWindowTitleUpdates;     /**< do not update the terminal title */
+        extern const std::string AppQuitKey;                    /**< the key sequence that quits the app */
     }
 
+    /**
+     * @brief Default values for preference keys where the default differs
+     *        from the zero value.
+     */
     namespace defaults {
-        extern const bool DisableWindowTitleUpdates;
+        extern const bool DisableWindowTitleUpdates;            /**< default: keep window title updates enabled */
     }
 
 } } }

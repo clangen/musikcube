@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file TrackListQueryBase.h
+ *  @brief Base class for queries that return a track list.
+ *  @details Defines the result types (track list, column headers, durations) and
+ *      the serialization helpers shared by all track-list queries, plus the
+ *      SDK wrapper used to expose results to plugins. */
+
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/library/track/Track.h>
@@ -44,32 +50,48 @@
 #include <nlohmann/json.hpp>
 #pragma warning(pop)
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Common base for track-list returning queries.
+     *  @details Subclasses fill a Result track list, a Headers set describing
+     *      which columns are populated, and a Durations map. Provides limit/
+     *      offset pagination and JSON (de)serialization support. */
     class TrackListQueryBase : public musik::core::library::query::QueryBase {
         public:
-            typedef std::shared_ptr<musik::core::TrackList> Result;
-            typedef std::shared_ptr<std::set<size_t>> Headers;
-            typedef std::shared_ptr<std::map<size_t, size_t>> Durations;
+            typedef std::shared_ptr<musik::core::TrackList> Result; /**< Result track list. */
+            typedef std::shared_ptr<std::set<size_t>> Headers; /**< Populated column indices. */
+            typedef std::shared_ptr<std::map<size_t, size_t>> Durations; /**< index -> seconds map. */
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackListQueryBase)
 
+            /** @brief Creates a query with default pagination (no limit). */
             TrackListQueryBase() {
                 this->limit = -1;
                 this->offset = 0;
             }
 
             /* virtual methods we define */
+            /** @return The result track list. */
             virtual Result GetResult() = 0;
+            /** @return The populated column headers. */
             virtual Headers GetHeaders() = 0;
+            /** @return The track durations. */
             virtual Durations GetDurations() = 0;
+            /** @return A hash identifying this query's parameters. */
             virtual size_t GetQueryHash() = 0;
 
+            /** @brief Sets the result pagination.
+             *  @param limit Maximum results (-1 for all).
+             *  @param offset Result offset. */
             virtual void SetLimitAndOffset(int limit, int offset = 0) noexcept {
                 this->limit = limit;
                 this->offset = offset;
             }
 
+            /** @return The result wrapped as a raw SDK ITrackList.
+             *  @note The caller owns the returned object. */
             virtual musik::core::sdk::ITrackList* GetSdkResult() {
                 return new WrappedTrackList(GetResult());
             }
@@ -78,6 +100,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             /* for IMetadataProxy */
 
+            /** @return A SQL "LIMIT x OFFSET y" fragment, or empty when not paginating. */
             std::string GetLimitAndOffset() {
                 if (this->limit > 0 && this->offset >= 0) {
                     return u8fmt("LIMIT %d OFFSET %d", this->limit, this->offset);
@@ -87,6 +110,9 @@ namespace musik { namespace core { namespace library { namespace query {
 
             /* for ISerialization */
 
+            /** @brief Finalizes serialization with the current pagination.
+             *  @param output The JSON document being built.
+             *  @return The serialized JSON string. */
             const std::string FinalizeSerializedQueryWithLimitAndOffset(nlohmann::json &output) {
                 auto& options = output["options"];
                 options["limit"] = this->limit;
@@ -94,11 +120,15 @@ namespace musik { namespace core { namespace library { namespace query {
                 return output.dump();
             }
 
+            /** @brief Restores pagination from a deserialized query.
+             *  @param options The JSON options object. */
             void ExtractLimitAndOffsetFromDeserializedQuery(const nlohmann::json& options) {
                 this->limit = options.value("limit", -1);
                 this->offset = options.value("offset", 0);
             }
 
+            /** @brief Builds a JSON result containing headers, durations and the track list.
+             *  @return The initialized JSON document. */
             nlohmann::json InitializeSerializedResultWithHeadersAndTrackList() {
                 nlohmann::json output = {
                     { "result", {
@@ -110,6 +140,10 @@ namespace musik { namespace core { namespace library { namespace query {
                 return output;
             }
 
+            /** @brief Fills a query's result from a deserialized JSON result.
+             *  @param result The JSON result document.
+             *  @param library Library used to resolve source info.
+             *  @param query The query to populate. */
             void DeserializeTrackListAndHeaders(
                 nlohmann::json& result,
                 ILibraryPtr library,
@@ -121,10 +155,13 @@ namespace musik { namespace core { namespace library { namespace query {
             }
 
         private:
-            int limit, offset;
+            int limit, offset; /**< Pagination values. */
 
+            /** @brief Adapts an internal TrackList to the SDK ITrackList interface. */
             class WrappedTrackList : public musik::core::sdk::ITrackList {
                 public:
+                    /** @brief Wraps an internal track list.
+                     *  @param wrapped The track list to adapt. */
                     WrappedTrackList(Result wrapped) noexcept {
                         this->wrapped = wrapped;
                     }
@@ -132,28 +169,36 @@ namespace musik { namespace core { namespace library { namespace query {
                     virtual ~WrappedTrackList() {
                     }
 
+                    /** @brief Frees the wrapper (deletes this instance). */
                     void Release() noexcept override {
                         delete this;
                     }
 
+                    /** @return The number of tracks in the list. */
                     size_t Count() const override {
                         return this->wrapped->Count();
                     }
 
+                    /** @return The id of the track at the given index.
+                     *  @param index Zero-based index. */
                     int64_t GetId(size_t index) const override {
                         return this->wrapped->GetId(index);
                     }
 
+                    /** @return The index of the track with the given id, or -1.
+                     *  @param id The track id. */
                     int IndexOf(int64_t id) const override {
                         return this->wrapped->IndexOf(id);
                     }
 
+                    /** @return The track at the given index, or nullptr.
+                     *  @param index Zero-based index. */
                     musik::core::sdk::ITrack* GetTrack(size_t index) const override  {
                         return this->wrapped->GetTrack(index);
                     }
 
                 private:
-                    Result wrapped;
+                    Result wrapped; /**< Wrapped internal track list. */
             };
     };
 

@@ -34,10 +34,24 @@
 
 #pragma once
 
+/**
+ * @file WindowUtil.h
+ * @brief Small helpers shared by the window implementations.
+ * @details Provides free functions for common window-level checks such as
+ *          determining whether a mouse click landed on a window header.
+ */
+
 #include <cursespp/Window.h>
 
 namespace musik { namespace cube { namespace windowutil {
 
+    /**
+     * @brief Returns true if the mouse event was a click on the window's
+     *        header area.
+     * @param window the window to test
+     * @param mouseEvent the mouse event to inspect
+     * @return true if the header was clicked
+     */
     extern bool WasHeaderClicked(
         cursespp::Window* window,
         const cursespp::IMouseHandler::Event* mouseEvent) noexcept;

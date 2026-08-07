@@ -32,18 +32,36 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IAnalyzer.h @brief Defines the IAnalyzer interface for extracting metadata from PCM audio. */
 #pragma once
 
 #include "ITagStore.h"
 #include "IBuffer.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Analyzes decoded PCM audio to derive metadata, such as ReplayGain
+     *  values, which is written to an ITagStore. */
     class  IAnalyzer {
         public:
+            /** @brief Releases the analyzer; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Begins an analysis session.
+             *  @param target The tag store that analysis results are written to.
+             *  @return True if analysis can begin. */
             virtual bool Start(musik::core::sdk::ITagStore *target) = 0;
+
+            /** @brief Analyzes a single buffer of PCM audio.
+             *  @param target The tag store that analysis results are written to.
+             *  @param buffer The PCM audio data to analyze.
+             *  @return True if the buffer was processed successfully. */
             virtual bool Analyze(musik::core::sdk::ITagStore *target, IBuffer *buffer) = 0;
+
+            /** @brief Finishes the analysis session and commits any results.
+             *  @param target The tag store that analysis results are written to.
+             *  @return True if the session ended successfully. */
             virtual bool End(musik::core::sdk::ITagStore *target) = 0;
     };
 

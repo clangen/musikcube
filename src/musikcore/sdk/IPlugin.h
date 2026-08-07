@@ -32,20 +32,47 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IPlugin.h @brief Defines the IPlugin interface implemented by all musikcube plugins. */
 #pragma once
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief The base interface implemented by every plugin loaded by the
+     *  application, providing identity and lifecycle methods. */
     class IPlugin {
         public:
+            /** @brief Releases the plugin; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Returns the display name of the plugin.
+             *  @return The plugin name. */
             virtual const char* Name() = 0;
+
+            /** @brief Returns the version of the plugin.
+             *  @return The plugin version string. */
             virtual const char* Version() = 0;
+
+            /** @brief Returns the author of the plugin.
+             *  @return The author name. */
             virtual const char* Author() = 0;
+
+            /** @brief Returns the globally unique identifier of the plugin.
+             *  @return The plugin guid. */
             virtual const char* Guid() = 0;
+
+            /** @brief Returns whether the plugin exposes a configuration UI.
+             *  @return True if the plugin is configurable. */
             virtual bool Configurable() = 0;
+
+            /** @brief Launches the plugin's configuration UI. */
             virtual void Configure() = 0;
+
+            /** @brief Reloads the plugin's configuration from disk. */
             virtual void Reload() = 0;
+
+            /** @brief Returns the SDK version the plugin was built against.
+             *  @return The SDK version. */
             virtual int SdkVersion() = 0;
     };
 

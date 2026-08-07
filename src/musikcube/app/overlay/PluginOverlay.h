@@ -34,10 +34,25 @@
 
 #pragma once
 
+/**
+ * @file PluginOverlay.h
+ * @brief Overlay that lists the installed plugins.
+ * @details Shows a dialog with the currently installed plugin names so the
+ *          user can review what is loaded.
+ */
+
 namespace musik {
     namespace cube {
+        /**
+         * @brief Factory for the plugin list overlay.
+         * @details Provides a static entry point that shows the installed
+         *          plugin names. The class is not instantiable.
+         */
         class PluginOverlay {
             public:
+                /**
+                 * @brief Shows the installed plugins overlay.
+                 */
                 static void Show();
 
             private:

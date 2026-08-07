@@ -34,6 +34,13 @@
 
 #pragma once
 
+/** @file IQuery.h
+ *  @brief Abstract interfaces for library queries and serializable queries.
+ *  @details A query is a unit of work executed against a library, typically on
+ *      the library's query thread. Serializable queries additionally support
+ *      marshaling their input and result across a network connection (used by
+ *      the remote library). */
+
 #include <string>
 #include <vector>
 #include <sigslot/sigslot.h>
@@ -42,37 +49,56 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/support/DeleteDefaults.h>
 
+/** @namespace musik::core::db
+ *  @brief Library query framework: unit-of-work queries against a library. */
 namespace musik { namespace core { namespace db {
 
+    /** @brief Base interface for all library queries.
+     *  @details Queries are created by callers, queued on a library, and executed
+     *      asynchronously. The library drives their lifecycle and notifies callers
+     *      on completion. */
     class IQuery {
         public:
+            /** @brief Lifecycle status of a query. */
             typedef enum {
-                Idle = 1,
-                Running = 2,
-                Failed = 3,
-                Finished = 4,
-                Canceled = 5
+                Idle = 1,     /**< Created but not yet run. */
+                Running = 2,  /**< Currently executing. */
+                Failed = 3,   /**< Execution failed. */
+                Finished = 4, /**< Execution completed successfully. */
+                Canceled = 5  /**< Execution was cancelled. */
             } Status;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(IQuery)
 
             virtual ~IQuery() { }
 
+            /** @return The current status of the query. */
             virtual int GetStatus() = 0;
+            /** @return The unique id assigned to this query. */
             virtual int GetId() = 0;
+            /** @return The option flags associated with this query. */
             virtual int GetOptions() = 0;
+            /** @return A human-readable name for the query type. */
             virtual std::string Name() = 0;
     };
 
+    /** @brief A query whose input and result can be serialized.
+     *  @details Extends IQuery with methods to serialize the query description and
+     *      its result, and to deserialize a result received from a remote library. */
     class ISerializableQuery: public IQuery {
         public:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(ISerializableQuery)
 
             virtual ~ISerializableQuery() { }
 
+            /** @return A serialized representation of the query's parameters. */
             virtual std::string SerializeQuery() = 0;
+            /** @return A serialized representation of the query's result. */
             virtual std::string SerializeResult() = 0;
+            /** @brief Populates this query's result from serialized data.
+             *  @param data The serialized result. */
             virtual void DeserializeResult(const std::string& data) = 0;
+            /** @brief Marks the query's result as stale/invalid. */
             virtual void Invalidate() = 0;
     };
 

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,9 +36,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+/**
+ * @file Application.hpp
+ * @brief Singleton managing process-level Win32 application state.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. The
+ * Application object records the module handles and command line passed
+ * to WinMain, runs the main message loop, and owns the top-level window,
+ * the ApplicationThread marshalling helper and the tray icon manager.
+ */
 
-#include <win32cpp/Win32Config.hpp>
+#pragma once
 #include <win32cpp/Types.hpp>
 #include <win32cpp/TopLevelWindow.hpp>
 
@@ -61,6 +69,12 @@ class ApplicationThread;
 ///
 ///Access Application's sole instance by using the Application::Instance method.
 ///
+///\details
+///Wraps the raw HINSTANCE handles passed to WinMain, stores the command line
+///and window show command, and owns the main message pump (Run). It also
+///owns the process-wide ApplicationThread used to marshal cross-thread calls
+///and the TrayIconManager for system tray icons.
+///
 ///\see
 ///TopLevelWindow
 class Application : public EventHandler
@@ -74,38 +88,74 @@ public: // types
     class ApplicationAlreadyRunningException: public Exception { };
 
 public:
+    ///\brief Constructs the singleton application object.
     /*ctor*/            Application();
 
 public: // methods
+    ///\brief Stores the parameters received by WinMain and initializes the
+    ///application-level subsystems.
+    ///\param instance the current instance handle of the process
+    ///\param previousInstance the previously running instance handle (usually NULL)
+    ///\param commandLine the command line string passed to WinMain
+    ///\param showCommand how the initial window should be shown
+    ///\note Must be called exactly once, from WinMain.
     static void         Initialize(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR commandLine, int showCommand);
+
+    ///\brief Returns the sole Application instance.
+    ///\return reference to the process-wide singleton
     static Application& Instance();
 
+    ///\brief Displays the given window and runs the Win32 message loop.
+    ///\param mainWindow the main top-level window of the application
+    ///\note Blocks until the main window is closed.
     void                Run(TopLevelWindow& mainWindow);
+
+    ///\brief Returns the current main window of the application.
+    ///\return pointer to the main TopLevelWindow, or NULL if not set
     TopLevelWindow*     MainWindow();
+
+    ///\brief Returns the previously running instance handle.
+    ///\return the HINSTANCE passed as previousInstance to Initialize
     HINSTANCE           PreviousInstance() const;
+
+    ///\brief Returns the command line passed to WinMain.
+    ///\return the stored command line string
     const uistring&     CommandLine() const;
+
+    ///\brief Returns the show command used for the initial window.
+    ///\return the showCommand value passed to Initialize
     int                 ShowCommand() const;
+
+    ///\brief Posts a quit message to the message loop, terminating the app.
+    ///\note Does not force the loop to exit immediately.
     void                Terminate() const;
+
+    ///\brief Returns the application's tray icon manager.
+    ///\return pointer to the TrayIconManager, or NULL if not created
     TrayIconManager*    SysTrayManager() const;
+
+    ///\brief Returns the ApplicationThread used for cross-thread calls.
+    ///\return pointer to the thread marshalling helper
     ApplicationThread*  Thread();
 
 public: // operator overloads
+    ///\brief Implicit conversion to the current instance handle.
     operator HINSTANCE() const;
 
 private: // methods
     void                OnMainWindowDestroyed(Window* window);
 
 private: // instance data
-    HINSTANCE instance;
-    HINSTANCE previousInstance;
-    uistring commandLine;
-    int showCommand;
-    TopLevelWindow* mainWindow;
-    ApplicationThread* appThread;
-    TrayIconManager* trayIconManager;
+    HINSTANCE instance;             ///< the current instance handle
+    HINSTANCE previousInstance;     ///< the previous instance handle
+    uistring commandLine;           ///< the command line passed to WinMain
+    int showCommand;                ///< the initial window show command
+    TopLevelWindow* mainWindow;     ///< the main window (NULL until Run)
+    ApplicationThread* appThread;   ///< thread marshalling helper
+    TrayIconManager* trayIconManager; ///< system tray icon manager
 
 private: // class data
-    static Application sMainApplication;
+    static Application sMainApplication; ///< the single shared instance
 };
 
 //////////////////////////////////////////////////////////////////////////////

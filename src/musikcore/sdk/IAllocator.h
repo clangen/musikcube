@@ -32,10 +32,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IAllocator.h @brief Defines the IAllocator interface and a helper for safe cross-module memory management. */
 #pragma once
 
 #include <stdlib.h>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
     /* plugins, while running in the same process space, may use different
@@ -43,16 +45,32 @@ namespace musik { namespace core { namespace sdk {
     app should not be freed by a plugin, or vice versa. this simple interface
     allows plugins to pass an allocator to the main app so it can allocate and
     deallocate memory on the plugin's behalf. */
+    /** @brief An abstract memory allocator that lets a plugin own and manage
+     *  memory on behalf of the main application, avoiding cross-module
+     *  allocation/deallocation mismatches. */
     class IAllocator {
         public:
+            /** @brief Allocates a block of memory.
+             *  @param size The number of bytes to allocate.
+             *  @return A pointer to the newly allocated memory, or null on failure. */
             virtual void* Allocate(size_t size) = 0;
+
+            /** @brief Frees a block of memory previously allocated by this allocator.
+             *  @param data The pointer to free. */
             virtual void Free(void *) = 0;
     };
 
+    /** @brief A concrete IAllocator backed by the standard C malloc/free functions. */
     template <typename T>
     class PluginAllocator: public IAllocator {
         public:
+            /** @brief Allocates memory using malloc.
+             *  @param size The number of bytes to allocate.
+             *  @return A pointer to the allocated memory. */
             virtual void* Allocate(size_t size) { return malloc(size); }
+
+            /** @brief Frees memory using free.
+             *  @param data The pointer to free. */
             virtual void Free(void* data) { free(data); }
     };
 

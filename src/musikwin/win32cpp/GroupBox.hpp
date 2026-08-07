@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Casey Langen, André Wösten
+// The following are Copyright ï¿½ 2008, Casey Langen, Andrï¿½ Wï¿½sten
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file GroupBox.hpp
+ * @brief Captioned group box container.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. GroupBox wraps the
+ * Win32 BUTTON control in BS_GROUPBOX mode to draw a titled frame and hosts
+ * child controls inside it.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -47,21 +56,30 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief A group box container with a title.
+ *  @details Wraps the Win32 BUTTON control in BS_GROUPBOX mode, which draws
+ *           a bordered frame with a caption. Child controls are added via
+ *           the inherited Container interface and are clipped to the frame. */
 class GroupBox: public Container
 {
 public: // types
     typedef Container base;
 
 public: // constructors
+    /** @brief Constructs a group box with the given title.
+     *  @param caption the title text */
     /*ctor*/    GroupBox(const uichar* caption = _T(""));
 
 protected: // methods
+    /** @brief Creates the underlying HWND. */
     virtual HWND    Create(Window* parent);
+    /** @brief Fills the background of the group box. */
     virtual void    OnEraseBackground(HDC hdc);
+    /** @brief Ensures children are clipped to the frame. */
     virtual void    OnChildAdded(Window* newChild);
-    
+
 protected: // instance data
-    uistring caption;
+    uistring caption; /**< the group box title */
 };
 
 //////////////////////////////////////////////////////////////////////////////

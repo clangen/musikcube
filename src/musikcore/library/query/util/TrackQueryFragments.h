@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file TrackQueryFragments.h
+ *  @brief Shared SQL fragments and parsers for track metadata queries.
+ *  @details Defines the column list, table list and predicates used to load full
+ *      track metadata (including ReplayGain) from the local database, plus inline
+ *      helpers that parse statement results into Track objects. */
+
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/track/Track.h>
 #include <musikcore/db/Statement.h>
@@ -41,38 +47,54 @@
 #include <musikcore/sdk/ReplayGain.h>
 #include <memory>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @namespace musik::core::library::query::tracks
+     *  @brief SQL fragments and parsers shared by track metadata queries. */
     namespace tracks {
+        /** @brief SQL column list for full track metadata (joins albums, artists, genres, ReplayGain). */
         static const std::string kColumns = "t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.source_id, t.external_id, t.rating, replay_gain.album_gain, replay_gain.album_peak, replay_gain.track_gain, replay_gain.track_peak ";
+        /** @brief SQL table list used by track metadata queries. */
         static const std::string kTables = "tracks t, albums al, artists alar, artists ar, genres gn";
+        /** @brief SQL join fragment bringing in the ReplayGain table. */
         static const std::string kReplayGainJoin = "replay_gain ON t.id=replay_gain.track_id";
+        /** @brief SQL predicate joining the denormalized metadata tables. */
         static const std::string kPredicate = "t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id";
 
+        /** @brief Query loading full metadata for a single track by id. */
         static const std::string kAllMetadataQueryById =
             "SELECT DISTINCT " + kColumns + " " +
             "FROM " + kTables + " " +
             "LEFT JOIN " + kReplayGainJoin + " " +
             "WHERE t.id=? AND " + kPredicate;
 
+        /** @brief Query loading full metadata for multiple tracks by id. */
         static const std::string kAllMetadataQueryByIdBatch =
             "SELECT DISTINCT " + kColumns + " " +
             "FROM " + kTables + " " +
             "LEFT JOIN " + kReplayGainJoin + " " +
             "WHERE t.id IN ({{ids}}) AND " + kPredicate;
 
+        /** @brief Query loading full metadata for a single track by external id. */
         static const std::string kAllMetadataQueryByExternalId =
             "SELECT DISTINCT " + kColumns + " " +
             "FROM " + kTables + " " +
             "LEFT JOIN " + kReplayGainJoin + " " +
             "WHERE t.external_id=? AND " + kPredicate;
 
+        /** @brief Query loading only identifying fields for a track by id. */
         static const std::string kIdsOnlyQueryById =
             "SELECT DISTINCT external_id, source_id FROM tracks WHERE tracks.id=?";
 
+        /** @brief Query loading only identifying fields for a track by external id. */
         static const std::string kIdsOnlyQueryByExternalId =
             "SELECT DISTINCT external_id, source_id FROM tracks WHERE tracks.external_id=?";
 
+        /** @brief Parses a full-metadata result row into a Track.
+         *  @param result The track to populate.
+         *  @param trackQuery The statement positioned on the current row. */
         static inline void ParseFullTrackMetadata(
             musik::core::TrackPtr result,
             musik::core::db::Statement& trackQuery)
@@ -108,6 +130,9 @@ namespace musik { namespace core { namespace library { namespace query {
             result->SetMetadataState(musik::core::sdk::MetadataState::Loaded);
         }
 
+        /** @brief Parses an ids-only result row into a Track.
+         *  @param result The track to populate.
+         *  @param trackQuery The statement positioned on the current row. */
         static inline void ParseIdsOnlyTrackMetadata(
             musik::core::TrackPtr result,
             musik::core::db::Statement& trackQuery)

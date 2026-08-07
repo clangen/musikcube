@@ -32,17 +32,37 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IScrollable.h @brief Interface for windows that support scrolling. */
 #pragma once
 
 namespace cursespp {
+    /** @brief Contract for widgets that can scroll their content.
+     *
+     *  @details Implementors expose a scrollable viewport over a larger set of
+     *  content. Callers can jump to the top or bottom, scroll by an arbitrary
+     *  number of entries, or page up/down by one viewport. ScrollableWindow
+     *  implements this interface to provide arrow and page-key navigation over
+     *  an IScrollAdapter.
+     */
     class IScrollable {
         public:
             virtual ~IScrollable() { }
+
+            /** @brief Scrolls to the very beginning of the content. */
             virtual void ScrollToTop() = 0;
+            /** @brief Scrolls to the very end of the content. */
             virtual void ScrollToBottom() = 0;
+            /** @brief Scrolls upward by a number of entries.
+             *  @param delta the number of entries to scroll.
+             */
             virtual void ScrollUp(int delta = 1) = 0;
+            /** @brief Scrolls downward by a number of entries.
+             *  @param delta the number of entries to scroll.
+             */
             virtual void ScrollDown(int delta = 1) = 0;
+            /** @brief Scrolls up by one viewport page. */
             virtual void PageUp() = 0;
+            /** @brief Scrolls down by one viewport page. */
             virtual void PageDown() = 0;
     };
 }

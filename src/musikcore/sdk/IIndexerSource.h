@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IIndexerSource.h @brief Defines the IIndexerSource interface and helpers for external library scanning. */
 #pragma once
 
 #include "constants.h"
@@ -39,36 +40,66 @@
 #include "ITagStore.h"
 #include <string>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A source of library metadata, such as a plugin-provided music
+     *  database, that can be scanned and indexed by the application. */
     class IIndexerSource {
         public:
+            /** @brief Releases the source; callers must invoke this when done. */
             virtual void Release() = 0;
 
+            /** @brief Called before a scan pass begins. */
             virtual void OnBeforeScan() = 0;
 
+            /** @brief Called after a scan pass completes. */
             virtual void OnAfterScan() = 0;
 
+            /** @brief Performs a scan of the source's library data.
+             *  @param indexer The writer used to persist scan results.
+             *  @param indexerPaths The library paths that are being indexed.
+             *  @param indexerPathsCount The number of library paths.
+             *  @return The result of the scan pass. */
             virtual ScanResult Scan(
                 IIndexerWriter* indexer,
                 const char** indexerPaths,
                 unsigned indexerPathsCount) = 0;
 
+            /** @brief Scans a single track, reading its metadata.
+             *  @param indexer The writer used to persist scan results.
+             *  @param store The tag store to populate with the track's metadata.
+             *  @param externalId The external id of the track to scan. */
             virtual void ScanTrack(
                 IIndexerWriter* indexer,
                 ITagStore* store,
                 const char* externalId) = 0;
 
+            /** @brief Returns whether the source requires per-track scanning.
+             *  @return True if individual tracks must be scanned. */
             virtual bool NeedsTrackScan() = 0;
 
+            /** @brief Interrupts any in-progress scan. */
             virtual void Interrupt() = 0;
 
+            /** @brief Returns whether the source provides stable, persistent ids for its tracks.
+             *  @return True if track ids remain stable across rescans. */
             virtual bool HasStableIds() = 0;
 
+            /** @brief Returns the numeric id that identifies this source.
+             *  @return The source id. */
             virtual int SourceId() = 0;
     };
 
+    /** @brief Helpers for constructing and parsing external track ids. */
     namespace indexer {
+        /** @brief Parses an external id into its file and track number components.
+         *  @tparam String The string type.
+         *  @param prefix The id prefix, e.g. "spotify".
+         *  @param externalId The external id to parse.
+         *  @param fn On return, receives the file path portion of the id.
+         *  @param track On return, receives the track number portion of the id.
+         *  @return True if the id was successfully parsed. */
         template <typename String=std::string>
         static bool parseExternalId(const String& prefix, const String& externalId, String& fn, int& track) {
             if (externalId.find(String(prefix + "://")) == 0) {
@@ -88,11 +119,21 @@ namespace musik { namespace core { namespace sdk {
             return false;
         }
 
+        /** @brief Creates an external id from a prefix, file path, and track number.
+         *  @tparam String The string type.
+         *  @param prefix The id prefix, e.g. "spotify".
+         *  @param fn The file path portion of the id.
+         *  @param track The track number portion of the id.
+         *  @return The formatted external id. */
         template <typename String=std::string>
         static inline String createExternalId(const String& prefix, const String& fn, int track) {
             return prefix + "://" + std::to_string(track) + "/" + fn;
         }
 
+        /** @brief Returns whether the file referenced by an external id still exists.
+         *  @tparam String The string type.
+         *  @param externalId The external id to check.
+         *  @return True if the referenced file exists. */
         template <typename String=std::string>
         static inline bool externalIdExists(const String& externalId) {
             String fn;

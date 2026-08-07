@@ -34,12 +34,21 @@
 
 #pragma once
 
+/// @file shared.h
+/// @brief Shared declarations for the stock encoders plugin.
+/// @details Provides the DLL export macro and the environment accessor used by
+/// the stock encoder plugin entry point.
+
 #include <musikcore/sdk/IEnvironment.h>
 
 #ifdef WIN32
+/** @brief Export macro for shared library symbols on Windows. */
 #define DLLEXPORT __declspec(dllexport)
 #else
+/** @brief Export macro for shared library symbols on other platforms. */
 #define DLLEXPORT
 #endif
 
+/** @brief Returns the shared environment service.
+ *  @return The IEnvironment instance. */
 extern musik::core::sdk::IEnvironment* env();

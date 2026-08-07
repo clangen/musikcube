@@ -32,20 +32,39 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+///
+/// @file CddaDataStreamFactory.h
+/// @brief Factory that creates CddaDataStream instances for cdda:// URIs.
+/// @details Recognizes CDDA track URIs and produces the IDataStream used by
+/// the CddaDecoder to read raw audio sectors. Windows-only.
+///
+
 #include <musikcore/sdk/IDataStreamFactory.h>
 #include <musikcore/sdk/ITagReader.h>
 #include <string>
 
 using namespace musik::core::sdk;
 
+/** @brief Creates CDDA data streams.
+ *  @details Registers the "cdda://" URI scheme so the decoder SDK can resolve
+ *  audio-CD tracks to raw sector streams. */
 class CddaDataStreamFactory : public IDataStreamFactory {
     public:
+        /** @brief Open flags alias. */
         using OpenFlags = musik::core::sdk::OpenFlags;
 
         CddaDataStreamFactory();
         ~CddaDataStreamFactory();
 
+        /** @brief Returns whether this factory can open the given URI.
+         *  @param uri The URI to check.
+         *  @return True if the URI is a cdda:// track. */
         bool CanRead(const char *uri) override;
+        /** @brief Opens a stream for the given URI.
+         *  @param uri The cdda:// URI to open.
+         *  @param flags Open flags.
+         *  @return A new CddaDataStream, or null on failure. */
         IDataStream* Open(const char *uri, OpenFlags flags) override;
+        /** @brief Destroys the factory instance. */
         void Release() override;
 };

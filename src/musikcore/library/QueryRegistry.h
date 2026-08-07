@@ -34,17 +34,34 @@
 
 #pragma once
 
+/** @file QueryRegistry.h
+ *  @brief Registry mapping query names to local query implementations.
+ *  @details Used by the remote library path: a serialized query from the network
+ *      is turned back into a concrete local query instance by name. */
+
 #include <musikcore/library/IQuery.h>
 #include <musikcore/library/ILibrary.h>
 #include <string>
 #include <memory>
 
+/** @namespace musik::core::library
+ *  @brief Library implementations and the query framework that runs against them. */
 namespace musik { namespace core { namespace library {
 
+    /** @namespace musik::core::library::QueryRegistry
+     *  @brief Creates local query instances from serialized query descriptions. */
     namespace QueryRegistry {
+        /** @brief Recreates a local query from its serialized form.
+         *  @param name The query type name.
+         *  @param data The serialized query parameters.
+         *  @param library The library the query will run against.
+         *  @return A shared query instance, or nullptr if the name is unknown. */
         std::shared_ptr<musik::core::db::ISerializableQuery> CreateLocalQueryFor(
             const std::string& name, const std::string& data, musik::core::ILibraryPtr library);
 
+        /** @brief Checks whether a query should only run against the local library.
+         *  @param queryName The query type name.
+         *  @return true if the query cannot be executed remotely. */
         bool IsLocalOnlyQuery(const std::string& queryName);
     }
 

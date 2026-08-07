@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file GlobalHotkeys.h
+ * @brief Dispatcher for hotkeys handled at the application level.
+ * @details Owns the global (application-wide) hotkey bindings that control
+ *          navigation, playback and the play queue. Key sequences that are
+ *          not consumed by the focused window fall through to this class.
+ */
+
 #include <stdafx.h>
 
 #include <musikcore/audio/PlaybackService.h>
@@ -41,22 +49,43 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Application-level hotkey handler.
+         * @details Translates raw key sequences into actions such as volume
+         *          changes, seek, navigation and queue management by comparing
+         *          them against the configured hotkey bindings.
+         */
         class GlobalHotkeys {
             public:
                 DELETE_CLASS_DEFAULTS(GlobalHotkeys)
 
+                /**
+                 * @brief Creates the handler bound to the playback service and
+                 *        library.
+                 * @param playback the active playback service
+                 * @param library the active library
+                 */
                 GlobalHotkeys(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
+                /**
+                 * @brief Destroys the handler.
+                 * @note Non-virtual; do not use as a base class.
+                 */
                 ~GlobalHotkeys(); /* non-virtual; do not use as a base class */
 
+                /**
+                 * @brief Attempts to handle the given key sequence.
+                 * @param kn the key sequence that was pressed
+                 * @return true if the sequence was consumed by a hotkey
+                 */
                 bool Handle(const std::string& kn);
 
             private:
-                musik::core::audio::PlaybackService& playback;
-                musik::core::audio::ITransport& transport;
-                musik::core::ILibraryPtr library;
+                musik::core::audio::PlaybackService& playback; /**< the active playback service */
+                musik::core::audio::ITransport& transport;     /**< the transport driving playback */
+                musik::core::ILibraryPtr library;              /**< the active library */
         };
     }
 }

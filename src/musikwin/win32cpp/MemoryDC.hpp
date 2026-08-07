@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file MemoryDC.hpp
+ * @brief Off-screen memory device context for flicker-free drawing.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. MemoryDC creates
+ * an off-screen bitmap and device context; drawing happens on the buffer
+ * and its contents are blitted to the destination DC when the object is
+ * destroyed, eliminating flicker.
+ */
+
 #pragma once
 
 #include <win32cpp/Win32Config.hpp>
@@ -46,55 +56,53 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///A memory device context. MemoryDC is used internally by various classes,
-///including Window, for flicker free drawing.
-///
-///When performing graphics operations on a Window's DC, changes are drawn
-///directly to screen; this leads to flickering. MemoryDC creates an offscreen
-///buffer that "accumulates" changes, which are copied to a desination DC
-///when all drawing has finished.
-///
-///MemoryDC is constructed with an HDC and a Rect as parameters, and provides
-///an implicit HDC cast operator that returns a handle to the offscreen buffer.
-///This means that regular Win32 drawing routines, such as DrawLine, FillRect,
-///etc, can transparently use a MemoryDC as if it were a regular HDC.
-///
-///When a MemoryDC's destructor is called the contents of the offscren buffer
-///are automatically copied to to the HDC it was constructed with, resulting
-///in flicker-free drawing.
-///
-///\code
-///PAINTSTRUCT paintStruct;
-///HDC hdc = ::BeginPaint(this->Handle(), &paintStruct);
-///{
-///    MemoryDC memDC(hdc, paintStruct.rcPaint);
-///
-///    //...
-///    //draw to memDC as if you were drawing to hdc
-///    //...
-///
-///} // when the MemoryDC destructor is called, the contents will be copied to hdc
-///::EndPaint(this->Handle(), &paintStruct);
-///\endcode
-///
-///\see
-///RedrawLock
+/** @brief A memory device context.
+ *  @details Used internally by various classes, including Window, for
+ *           flicker free drawing. When performing graphics operations on a
+ *           Window's DC, changes are drawn directly to the screen, which
+ *           leads to flickering. MemoryDC creates an offscreen buffer that
+ *           "accumulates" changes, which are copied to a destination DC
+ *           when all drawing has finished.
+ *
+ *           MemoryDC is constructed with an HDC and a Rect as parameters,
+ *           and provides an implicit HDC cast operator that returns a
+ *           handle to the offscreen buffer. This means that regular Win32
+ *           drawing routines, such as DrawLine, FillRect, etc, can
+ *           transparently use a MemoryDC as if it were a regular HDC.
+ *
+ *           When a MemoryDC's destructor is called the contents of the
+ *           offscreen buffer are automatically copied to the HDC it was
+ *           constructed with, resulting in flicker-free drawing.
+ *  @code
+ *  PAINTSTRUCT paintStruct;
+ *  HDC hdc = ::BeginPaint(this->Handle(), &paintStruct);
+ *  {
+ *      MemoryDC memDC(hdc, paintStruct.rcPaint);
+ *      // draw to memDC as if you were drawing to hdc
+ *  } // contents are copied to hdc on destruction
+ *  ::EndPaint(this->Handle(), &paintStruct);
+ *  @endcode
+ *  @see RedrawLock */
 class MemoryDC
 {
 public: // constructors, destructor
+    /** @brief Creates an off-screen buffer for the given DC region.
+     *  @param hdc the destination device context
+     *  @param rect the region to buffer */
     /*ctor*/    MemoryDC(HDC hdc, const RECT& rect);
+    /** @brief Blits the off-screen buffer to the destination DC. */
     /*dtor*/    ~MemoryDC();
 
 public: // operators
+    /** @brief Returns a handle to the off-screen buffer. */
     operator    HDC();
 
 private: // instance data
-    HBITMAP memoryBitmap;
-    HDC memoryDC, screenDC;
-    HANDLE oldObject;
-    RECT clientRect;
-    bool rectIsValid;
+    HBITMAP memoryBitmap; /**< the off-screen bitmap */
+    HDC memoryDC, screenDC; /**< off-screen and destination DCs */
+    HANDLE oldObject;       /**< the previously selected bitmap */
+    RECT clientRect;        /**< the buffered region */
+    bool rectIsValid;       /**< whether the rect is valid */
 };
 
 //////////////////////////////////////////////////////////////////////////////

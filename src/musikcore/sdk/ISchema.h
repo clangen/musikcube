@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ISchema.h @brief Defines the ISchema interface and TSchema builder for typed plugin settings. */
 #pragma once
 
 #include <stddef.h>
@@ -42,59 +43,101 @@
 #include <string>
 #include <cstring>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A read-only description of a plugin's configuration settings,
+     *  used to drive generated configuration UIs. */
     class ISchema {
         public:
+            /** @brief The data type of a schema entry. */
             enum class Type {
+                /** @brief A boolean setting. */
                 Bool, Int, Double, String, Enum
             };
 
+            /** @brief A base entry describing a single setting. */
             struct Entry {
+                /** @brief The data type of the entry. */
                 Type type;
+                /** @brief The name of the entry. */
                 const char* name;
             };
 
+            /** @brief A boolean setting entry. */
             struct BoolEntry {
+                /** @brief The base entry data. */
                 Entry entry;
+                /** @brief The default value. */
                 bool defaultValue;
             };
 
+            /** @brief An integer setting entry. */
             struct IntEntry {
+                /** @brief The base entry data. */
                 Entry entry;
+                /** @brief The minimum allowed value. */
                 int minValue;
+                /** @brief The maximum allowed value. */
                 int maxValue;
+                /** @brief The default value. */
                 int defaultValue;
             };
 
+            /** @brief A double precision setting entry. */
             struct DoubleEntry {
+                /** @brief The base entry data. */
                 Entry entry;
+                /** @brief The minimum allowed value. */
                 double minValue;
+                /** @brief The maximum allowed value. */
                 double maxValue;
+                /** @brief The number of decimal places to display. */
                 int precision;
+                /** @brief The default value. */
                 double defaultValue;
             };
 
+            /** @brief A string setting entry. */
             struct StringEntry {
+                /** @brief The base entry data. */
                 Entry entry;
+                /** @brief The default value. */
                 const char* defaultValue;
             };
 
+            /** @brief An enumerated setting entry. */
             struct EnumEntry {
+                /** @brief The base entry data. */
                 Entry entry;
+                /** @brief The number of possible values. */
                 size_t count;
+                /** @brief The possible values. */
                 const char** values;
+                /** @brief The default value. */
                 const char* defaultValue;
             };
 
+            /** @brief Releases the schema; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Returns the number of entries in the schema.
+             *  @return The entry count. */
             virtual size_t Count() = 0;
+
+            /** @brief Returns the entry at the given index.
+             *  @param index The zero-based index.
+             *  @return The entry, or null if out of range. */
             virtual const Entry* At(size_t index) = 0;
     };
 
+    /** @brief A concrete, builder-style implementation of ISchema that owns the
+     *  memory of its entries and frees it when released.
+     *  @tparam T The ISchema-derived interface to implement. */
     template <typename T = ISchema>
     class TSchema: public ISchema {
         public:
+            /** @brief Destroys the schema, freeing all owned entry data. */
             virtual ~TSchema() {
                 for (auto it : this->entries) {
                     switch (it->type) {
@@ -120,18 +163,28 @@ namespace musik { namespace core { namespace sdk {
                 }
             }
 
+            /** @brief Releases the schema, deleting this instance. */
             virtual void Release() override {
                 delete this;
             }
 
+            /** @brief Returns the number of entries in the schema.
+             *  @return The entry count. */
             virtual size_t Count() override {
                 return entries.size();
             }
 
+            /** @brief Returns the entry at the given index.
+             *  @param index The zero-based index.
+             *  @return The entry, or null if out of range. */
             virtual const Entry* At(size_t index) override {
                 return entries[index];
             }
 
+            /** @brief Adds a boolean setting to the schema.
+             *  @param name The setting name.
+             *  @param defaultValue The default value.
+             *  @return This schema, for chaining. */
             TSchema& AddBool(const std::string& name, bool defaultValue) {
                 auto entry = new BoolEntry();
                 entry->entry.type = ISchema::Type::Bool;
@@ -141,6 +194,12 @@ namespace musik { namespace core { namespace sdk {
                 return *this;
             }
 
+            /** @brief Adds an integer setting to the schema.
+             *  @param name The setting name.
+             *  @param defaultValue The default value.
+             *  @param min The minimum allowed value.
+             *  @param max The maximum allowed value.
+             *  @return This schema, for chaining. */
             TSchema& AddInt(
                 const std::string& name,
                 int defaultValue,
@@ -157,6 +216,13 @@ namespace musik { namespace core { namespace sdk {
                 return *this;
             }
 
+            /** @brief Adds a double precision setting to the schema.
+             *  @param name The setting name.
+             *  @param defaultValue The default value.
+             *  @param precision The number of decimal places to display.
+             *  @param min The minimum allowed value.
+             *  @param max The maximum allowed value.
+             *  @return This schema, for chaining. */
             TSchema& AddDouble(
                 const std::string& name,
                 double defaultValue,
@@ -175,6 +241,10 @@ namespace musik { namespace core { namespace sdk {
                 return *this;
             }
 
+            /** @brief Adds a string setting to the schema.
+             *  @param name The setting name.
+             *  @param defaultValue The default value.
+             *  @return This schema, for chaining. */
             TSchema& AddString(const std::string& name, const std::string& defaultValue) {
                 auto entry = new StringEntry();
                 entry->entry.type = ISchema::Type::String;
@@ -184,6 +254,11 @@ namespace musik { namespace core { namespace sdk {
                 return *this;
             }
 
+            /** @brief Adds an enumerated setting to the schema.
+             *  @param name The setting name.
+             *  @param values The possible values.
+             *  @param defaultValue The default value.
+             *  @return This schema, for chaining. */
             TSchema& AddEnum(
                 const std::string& name,
                 const std::vector<std::string>&& values,
@@ -200,6 +275,9 @@ namespace musik { namespace core { namespace sdk {
             }
 
         private:
+            /** @brief Allocates a null-terminated copy of each value in the given vector.
+             *  @param values The source values.
+             *  @return A heap-allocated array of owned string pointers. */
             const char** AllocStringList(const std::vector<std::string>& values) {
                 const char** result = new const char*[values.size()];
                 for (size_t i = 0; i < values.size(); i++) {
@@ -208,6 +286,9 @@ namespace musik { namespace core { namespace sdk {
                 return result;
             }
 
+            /** @brief Frees a heap-allocated array of owned string pointers.
+             *  @param values The array to free.
+             *  @param count The number of elements in the array. */
             void FreeStringList(const char** values, size_t count) {
                 for (size_t i = 0; i < count; i++) {
                     FreeString(values[i]);
@@ -215,6 +296,9 @@ namespace musik { namespace core { namespace sdk {
                 delete[] values;
             }
 
+            /** @brief Allocates a null-terminated copy of the given string.
+             *  @param str The source string.
+             *  @return A heap-allocated owned string. */
             const char* AllocString(const std::string& str) {
                 char* result = new char[str.size() + 1];
 #ifdef WIN32
@@ -226,10 +310,13 @@ namespace musik { namespace core { namespace sdk {
                 return result;
             }
 
+            /** @brief Frees a heap-allocated owned string.
+             *  @param str The string to free. */
             void FreeString(const char* str) {
                 delete[] str;
             }
 
+            /** @brief The owned entries managed by this schema. */
             std::vector<Entry*> entries;
     };
 

@@ -32,14 +32,20 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IBufferProvider.h @brief Defines the IBufferProvider interface for receiving processed audio buffers. */
 #pragma once
 
 #include "IBuffer.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A callback receiver that is notified when an output plugin has
+     *  finished consuming a buffer. */
     class IBufferProvider {
         public:
+            /** @brief Called by an output after a buffer has been fully consumed.
+             *  @param buffer The buffer that was processed; ownership is returned to the caller. */
             virtual void OnBufferProcessed(IBuffer *buffer) = 0;
     };
 

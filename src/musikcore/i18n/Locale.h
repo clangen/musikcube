@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file Locale.h
+ *  @brief Internationalization support: loading and translating locale strings.
+ *  @details Locale is a singleton that loads JSON locale files from a directory,
+ *      resolves human-readable strings by key, and exposes translation helpers.
+ *      Locale data falls back to the default locale when a key is missing. */
+
 #include <musikcore/config.h>
 #include <musikcore/support/Preferences.h>
 #include <unordered_map>
@@ -43,41 +49,67 @@
 #include <nlohmann/json.hpp>
 #pragma warning(pop)
 
+/** @namespace musik::core::i18n
+ *  @brief Internationalization and locale-aware string translation. */
 namespace musik { namespace core { namespace i18n {
 
+    /** @brief Loads and translates application strings from JSON locale files.
+     *  @details Accessible via Instance(). Initialize() must be called once with
+     *      the directory containing the locale files. The currently selected
+     *      locale is persisted in preferences. */
     class Locale {
         public:
+            /** @brief Emitted when the selected locale changes. */
             sigslot::signal1<std::string> LocaleChanged;
 
             ~Locale();
 
+            /** @return The process-wide Locale singleton. */
             static Locale& Instance() {
                 static Locale instance;
                 return instance;
             }
 
+            /** @brief Loads the available locales from the given directory.
+             *  @param localePath Directory containing JSON locale files. */
             void Initialize(const std::string& localePath);
 
+            /** @return The names of all available locales. */
             std::vector<std::string> GetLocales();
+            /** @return The name of the currently selected locale. */
             std::string GetSelectedLocale();
+            /** @brief Selects and activates a locale.
+             *  @param locale The locale name to select.
+             *  @return true if the locale was selected successfully. */
             bool SetSelectedLocale(const std::string& locale);
 
+            /** @brief Translates the given key into the selected locale.
+             *  @param key The translation key.
+             *  @return The translated string, or the key itself if not found. */
             std::string Translate(const std::string& key);
+            /** @brief Translates the given key into the selected locale.
+             *  @param key The translation key (C string).
+             *  @return The translated string, or the key itself if not found. */
             std::string Translate(const char* key);
 
+            /** @brief Reads a dimension value from the locale data.
+             *  @param key The dimension key.
+             *  @param defaultValue Value returned when the key is missing.
+             *  @return The locale dimension value, or defaultValue. */
             int Dimension(const char* key, int defaultValue);
 
         private:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Locale)
 
+            /** @brief Creates the singleton (private). */
             Locale() noexcept;
 
-            std::vector<std::string> locales;
-            std::shared_ptr<musik::core::Preferences> prefs;
-            std::string selectedLocale;
-            std::string localePath;
-            nlohmann::json localeData;
-            nlohmann::json defaultLocaleData;
+            std::vector<std::string> locales; /**< Names of available locales. */
+            std::shared_ptr<musik::core::Preferences> prefs; /**< Preferences holding the selection. */
+            std::string selectedLocale; /**< Currently active locale name. */
+            std::string localePath;     /**< Directory holding locale files. */
+            nlohmann::json localeData;  /**< Loaded strings for the selected locale. */
+            nlohmann::json defaultLocaleData; /**< Fallback strings from the default locale. */
     };
 
     #define _TSTR(KEY) (musik::core::i18n::Locale::Instance().Translate(KEY))

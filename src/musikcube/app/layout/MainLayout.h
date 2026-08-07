@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file MainLayout.h
+ * @brief Root application layout for the terminal client.
+ * @details Owns the top-level views (library, console, settings, hotkeys,
+ *          lyrics, library-not-connected), a top banner, and application-wide
+ *          startup and shutdown logic.
+ */
+
 #include <cursespp/App.h>
 #include <cursespp/AppLayout.h>
 #include <cursespp/TextInput.h>
@@ -52,26 +60,61 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Root application layout.
+         * @details Creates and switches between the top-level layouts, renders
+         *          a top banner, reacts to library/indexer state changes and
+         *          performs the update check on startup.
+         */
         class MainLayout : public cursespp::AppLayout {
             public:
                 using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
 
                 DELETE_CLASS_DEFAULTS(MainLayout)
 
+                /**
+                 * @brief Creates the root layout.
+                 * @param app the owning application
+                 * @param logger the console logger for the console layout
+                 * @param playback the active playback service
+                 * @param library the master library
+                 */
                 MainLayout(
                     cursespp::App& app,
                     ConsoleLogger* logger,
                     musik::core::audio::PlaybackService& playback,
                     MasterLibraryPtr library);
 
+                /**
+                 * @brief Destroys the layout and its child views.
+                 */
                 virtual ~MainLayout();
 
+                /**
+                 * @brief Starts the application: connects the library, shows
+                 *        the initial layout and runs the update check.
+                 */
                 void Start();
+                /**
+                 * @brief Shuts the application down and releases resources.
+                 */
                 void Shutdown();
 
                 /* IWindow */
+                /**
+                 * @brief Handles keyboard input.
+                 * @param key the key sequence that was pressed
+                 * @return true if the event was consumed
+                 */
                 bool KeyPress(const std::string& key) override;
+                /**
+                 * @brief Positions and lays out the child windows.
+                 */
                 void OnLayout() override;
+                /**
+                 * @brief Processes runtime messages.
+                 * @param message the message to process
+                 */
                 void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             private:
@@ -94,19 +137,19 @@ namespace musik {
 
                 void RebindIndexerEventHandlers(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr);
 
-                std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<cursespp::TextLabel> topBanner;
-                std::shared_ptr<cursespp::LayoutBase> consoleLayout;
-                std::shared_ptr<cursespp::LayoutBase> libraryLayout;
-                std::shared_ptr<cursespp::LayoutBase> libraryNotConnectedLayout;
-                std::shared_ptr<cursespp::LayoutBase> settingsLayout;
-                std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;
-                std::shared_ptr<cursespp::LayoutBase> lyricsLayout;
-                musik::core::audio::PlaybackService& playback;
-                MasterLibraryPtr library;
-                bool shortcutsFocused;
-                int syncUpdateCount;
-                UpdateCheck updateCheck;
+                std::shared_ptr<musik::core::Preferences> prefs;        /**< persistent preferences */
+                std::shared_ptr<cursespp::TextLabel> topBanner;         /**< the banner shown at the top of the screen */
+                std::shared_ptr<cursespp::LayoutBase> consoleLayout;    /**< the console layout */
+                std::shared_ptr<cursespp::LayoutBase> libraryLayout;    /**< the library layout */
+                std::shared_ptr<cursespp::LayoutBase> libraryNotConnectedLayout; /**< the disconnected library layout */
+                std::shared_ptr<cursespp::LayoutBase> settingsLayout;   /**< the settings layout */
+                std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;    /**< the hotkeys layout */
+                std::shared_ptr<cursespp::LayoutBase> lyricsLayout;     /**< the lyrics layout */
+                musik::core::audio::PlaybackService& playback;          /**< the active playback service */
+                MasterLibraryPtr library;                               /**< the master library */
+                bool shortcutsFocused;                                  /**< true while the shortcuts window has focus */
+                int syncUpdateCount;                                    /**< indexer progress counter */
+                UpdateCheck updateCheck;                                /**< performs the startup update check */
         };
     }
 }

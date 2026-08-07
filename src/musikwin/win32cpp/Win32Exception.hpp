@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Win32Exception.hpp
+ * @brief Exception that captures a Win32 system error code.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Win32Exception
+ * records the GetLastError() code at construction time and renders it to a
+ * human readable string using FormatMessage().
+ */
+
 #pragma once
 
 #include <win32cpp/Win32Config.hpp>
@@ -48,24 +57,27 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief An Exception that represents an Win32 error.
+/** @brief An Exception that represents a Win32 error. */
 class Win32Exception : public Exception
 {
 public: // ctors
-    //\brief Default constructor. Calls ::GetLastError()
+    /** @brief Captures the current GetLastError() value. */
     /*ctor*/    Win32Exception()
     {
         this->errorCode = ::GetLastError();
     }
 
-    //\brief Constructor.
+    /** @brief Constructs the exception from an explicit error code.
+     *  @param errorCode the Win32 error code to store */
     /*ctor*/    Win32Exception(DWORD errorCode)
     {
         this->errorCode = errorCode;
     }
 
 public: // methods
-    //\brief Uses FormatMessage() to return a human readable exception string.
+    /** @brief Formats the stored error code into a readable string.
+     *  @return pointer to the formatted error message
+     *  @note The returned buffer is statically allocated. */
     virtual const char* Message()
     {
         static char resultPtr[4096];
@@ -83,13 +95,15 @@ public: // methods
         return resultPtr;
     }
 
+    /** @brief Returns the raw Win32 error code.
+     *  @return the stored error code */
     DWORD ErrorCode()
     {
         return this->errorCode;
     }
 
 private: // instance data
-    DWORD errorCode;
+    DWORD errorCode; /**< the captured Win32 error code */
 };
 
 //////////////////////////////////////////////////////////////////////////////

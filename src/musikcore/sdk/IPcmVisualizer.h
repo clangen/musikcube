@@ -32,16 +32,23 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IPcmVisualizer.h @brief Defines the IPcmVisualizer interface for visualizers that consume raw PCM audio. */
 #pragma once
 
 #include "IBuffer.h"
 #include "IVisualizer.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A visualizer that renders based on raw PCM audio buffers. */
     class IPcmVisualizer : public IVisualizer {
         public:
+            /** @brief Releases the visualizer; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Feeds a buffer of PCM audio to the visualizer.
+             *  @param target The buffer containing the audio data to visualize. */
             virtual void Write(IBuffer *target) = 0;
     };
 

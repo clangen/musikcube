@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file TopLevelWindow.hpp
+ * @brief Top-level application window with a frame.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. TopLevelWindow is
+ * a Container that is hosted directly by the operating system as a frame
+ * window with a title bar, menu and minimize/maximize/close boxes. It can
+ * house an arbitrary number of child windows.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -47,50 +57,65 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///A TopLevelWindow is a Window with a title bar, menu, and minimize, maximize,
-///close boxes,
-///
-///TopLevelWindows can house an arbitrary number of child windows.
-///
-///\see
-///Window, Container.
+/** @brief A Window with a title bar, menu, and minimize/maximize/close boxes.
+ *  @details TopLevelWindow is the base class for top-level frames. It can
+ *           house an arbitrary number of child windows, enforces a minimum
+ *           size, and supports modal display and closing.
+ *  @see Window, Container */
 class TopLevelWindow: public Container
 {
 private: // types
     typedef Container base;
-    class WindowAlreadyClosedException : public Exception { };
+    class WindowAlreadyClosedException : public Exception { }; /**< thrown when operating on a closed window */
 
 public: // ctor, dtor
+    /** @brief Constructs a top-level window with the given title.
+     *  @param windowTitle the text shown in the title bar */
     /*ctor*/    TopLevelWindow(const uichar* windowTitle);
+    /** @brief Destroys the window. */
     /*dtor*/    virtual ~TopLevelWindow();
 
 public: // methods
+    /** @brief Sets the minimum size of the window.
+     *  @param minSize the minimum width and height */
     void    SetMinimumSize(const Size& minSize);
+    /** @brief Returns the current minimum size.
+     *  @return the minimum size */
     Size    MinimumSize() const;
+    /** @brief Shows the window as a modal dialog.
+     *  @param parent the parent window that disables during the modal loop */
     void    ShowModal(TopLevelWindow* parent);
+    /** @brief Closes the window. */
     void    Close();
 
+    /** @brief Finds the top-level window ancestor of the given window.
+     *  @param window the window to search from
+     *  @return the top-level ancestor, or NULL */
     static TopLevelWindow* FindFromAncestor(Window* window);
 
 protected: // methods
+    /** @brief Creates the underlying HWND. */
     virtual HWND        Create(Window* parent);
+    /** @brief Processes window messages. */
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
     virtual void        OnRequestFocusNext();
     virtual void        OnRequestFocusPrev();
+    /** @brief Fills the background of the window. */
     virtual void        OnEraseBackground(HDC hdc);
+    /** @brief Paints the window. */
     virtual void        OnPaint();
+    /** @brief Handles focus changes. */
     virtual void        OnGainedFocus();
 
     static bool         RegisterWindowClass();
 
 private: // instance data
-    uistring windowTitle;
-    bool closed;
-    Size minSize;
-    TopLevelWindow* modalChild;
-    Window* parentWindow;
+    uistring windowTitle;    /**< title bar text */
+    bool closed;             /**< whether the window has been closed */
+    Size minSize;            /**< minimum window size */
+    TopLevelWindow* modalChild; /**< child shown modally */
+    Window* parentWindow;    /**< the window's parent */
 };
 
 //////////////////////////////////////////////////////////////////////////////

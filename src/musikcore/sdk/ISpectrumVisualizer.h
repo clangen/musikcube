@@ -32,16 +32,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ISpectrumVisualizer.h @brief Defines the ISpectrumVisualizer interface for frequency-domain visualizers. */
 #pragma once
 
 #include "IBuffer.h"
 #include "IVisualizer.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A visualizer that renders based on frequency spectrum data. */
     class ISpectrumVisualizer : public IVisualizer {
     public:
+        /** @brief Releases the visualizer; callers must invoke this when done. */
         virtual void Release() = 0;
+
+        /** @brief Feeds a frequency spectrum to the visualizer.
+         *  @param spectrum The array of magnitude values.
+         *  @param size The number of values in the array. */
         virtual void Write(float *spectrum, int size) = 0;
     };
 

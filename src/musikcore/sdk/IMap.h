@@ -32,17 +32,41 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IMap.h @brief Defines the IMap interface for reading typed values from a key/value resource. */
 #pragma once
 
 #include "IValue.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A typed, key/value resource that exposes values as strings,
+     *  integers, or doubles for a given key. */
     class IMap : public IValue {
         public:
+            /** @brief Retrieves a value as a string.
+             *  @param key The key to look up.
+             *  @param dst The destination buffer for the value.
+             *  @param size The capacity of the destination buffer.
+             *  @return The number of bytes written, or the required size if the buffer was too small. */
             virtual int GetString(const char* key, char* dst, int size) = 0;
+
+            /** @brief Retrieves a value as a 64-bit integer.
+             *  @param key The key to look up.
+             *  @param defaultValue The value to return if the key is missing.
+             *  @return The value, or the default. */
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
+
+            /** @brief Retrieves a value as a 32-bit integer.
+             *  @param key The key to look up.
+             *  @param defaultValue The value to return if the key is missing.
+             *  @return The value, or the default. */
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
+
+            /** @brief Retrieves a value as a double.
+             *  @param key The key to look up.
+             *  @param defaultValue The value to return if the key is missing.
+             *  @return The value, or the default. */
             virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
     };
 

@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file ServerOverlay.h
+ * @brief Overlay for configuring the local streaming server plugin.
+ * @details Lets the user enable the WebSocket, HTTP and sync transfer
+ *          endpoints, configure ports, an optional password and the
+ *          transcoding cache and max concurrent transfer settings.
+ */
+
 #include <functional>
 
 #include <musikcore/sdk/IPlugin.h>
@@ -47,6 +55,12 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Streaming server configuration overlay.
+         * @details Shows checkboxes and inputs for the server endpoints, ports
+         *          and transfer limits. Saving persists the values to
+         *          preferences and applies them to the plugin.
+         */
         class ServerOverlay:
             public cursespp::OverlayBase,
             public sigslot::has_slots<>
@@ -56,13 +70,34 @@ namespace musik {
             using Plugin = std::shared_ptr<musik::core::sdk::IPlugin>;
             using Prefs = std::shared_ptr<musik::core::Preferences>;
 
+            /**
+             * @brief Shows the server configuration overlay.
+             * @param callback invoked when the overlay is closed
+             */
             static void Show(Callback callback);
+            /**
+             * @brief Finds the installed streaming server plugin.
+             * @return the server plugin, or nullptr if not installed
+             */
             static std::shared_ptr<musik::core::sdk::IPlugin> FindServerPlugin();
 
+            /**
+             * @brief Positions and lays out the child views.
+             */
             virtual void Layout();
+            /**
+             * @brief Handles keyboard input.
+             * @param key the key sequence that was pressed
+             * @return true if the event was consumed
+             */
             virtual bool KeyPress(const std::string& key);
 
         private:
+            /**
+             * @brief Creates the overlay for the given plugin.
+             * @param callback invoked when the overlay is closed
+             * @param plugin the server plugin being configured
+             */
             ServerOverlay(Callback callback, Plugin plugin);
 
             void RecalculateSize();
@@ -70,18 +105,18 @@ namespace musik {
             bool Save();
             void Load();
 
-            Callback callback;
-            Plugin plugin;
-            Prefs prefs;
-            int width, height, x, y;
+            Callback callback;                                              /**< invoked when the overlay closes */
+            Plugin plugin;                                                  /**< the server plugin being configured */
+            Prefs prefs;                                                    /**< preferences used to persist the settings */
+            int width, height, x, y;                                        /**< cached overlay geometry */
 
-            std::shared_ptr<cursespp::TextLabel> titleLabel;
-            std::shared_ptr<cursespp::Checkbox> enableWssCb, enableHttpCb, enableSyncTransCb;
-            std::shared_ptr<cursespp::Checkbox> ipv6Cb;
-            std::shared_ptr<cursespp::TextLabel> wssPortLabel, httpPortLabel, pwLabel, transCacheLabel, maxTransLabel;
-            std::shared_ptr<cursespp::TextInput> wssPortInput, httpPortInput, pwInput, transCacheInput, maxTransInput;
+            std::shared_ptr<cursespp::TextLabel> titleLabel;                /**< the overlay title label */
+            std::shared_ptr<cursespp::Checkbox> enableWssCb, enableHttpCb, enableSyncTransCb; /**< endpoint enable checkboxes */
+            std::shared_ptr<cursespp::Checkbox> ipv6Cb;                     /**< IPv6 support checkbox */
+            std::shared_ptr<cursespp::TextLabel> wssPortLabel, httpPortLabel, pwLabel, transCacheLabel, maxTransLabel; /**< static labels */
+            std::shared_ptr<cursespp::TextInput> wssPortInput, httpPortInput, pwInput, transCacheInput, maxTransInput; /**< value inputs */
 
-            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
+            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;           /**< the shortcuts window */
         };
     }
 }

@@ -34,6 +34,13 @@
 
 #pragma once
 
+/** @file DeleteDefaults.h
+ *  @brief Macros that delete default class copy/move operations.
+ *  @details Provides convenient one-line macros for disabling the implicit copy
+ *      and assignment constructors of a class (with optional default constructor
+ *      variants), applied to most core classes. */
+
+/** @brief Deletes all default constructors, copy/move constructors and assignments. */
 #define DELETE_CLASS_DEFAULTS(ClassName) \
     ClassName() = delete; \
     ClassName(const ClassName&) = delete; \
@@ -41,6 +48,7 @@
     ClassName& operator=(const ClassName&) = delete; \
     ClassName& operator=(const ClassName&&) = delete;
 
+/** @brief Deletes copy/move operations but keeps a noexcept default constructor. */
 #define DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(ClassName) \
     ClassName() noexcept = default; \
     ClassName(const ClassName&) = delete; \
@@ -48,6 +56,7 @@
     ClassName& operator=(const ClassName&) = delete; \
     ClassName& operator=(const ClassName&&) = delete;
 
+/** @brief Deletes copy/move constructors and assignments. */
 #define DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(ClassName) \
     ClassName(const ClassName&) = delete; \
     ClassName(const ClassName&&) = delete; \

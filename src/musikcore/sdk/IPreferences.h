@@ -32,29 +32,77 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IPreferences.h @brief Defines the IPreferences interface for reading and writing persisted settings. */
 #pragma once
 
 #include <stddef.h>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A typed key/value store for plugin and application preferences,
+     *  with values persisted between application sessions. */
     class IPreferences {
         public:
+            /** @brief Releases the preferences; callers must invoke this when done. */
             virtual void Release() = 0;
 
+            /** @brief Retrieves a value as a boolean.
+             *  @param key The key to look up.
+             *  @param defaultValue The value to return if the key is missing.
+             *  @return The value, or the default. */
             virtual bool GetBool(const char* key, bool defaultValue = false) = 0;
+
+            /** @brief Retrieves a value as an integer.
+             *  @param key The key to look up.
+             *  @param defaultValue The value to return if the key is missing.
+             *  @return The value, or the default. */
             virtual int GetInt(const char* key, int defaultValue = 0) = 0;
+
+            /** @brief Retrieves a value as a double.
+             *  @param key The key to look up.
+             *  @param defaultValue The value to return if the key is missing.
+             *  @return The value, or the default. */
             virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
+
+            /** @brief Retrieves a value as a string.
+             *  @param key The key to look up.
+             *  @param dst The destination buffer for the value.
+             *  @param size The capacity of the destination buffer.
+             *  @param defaultValue The value to return if the key is missing.
+             *  @return The number of bytes written, or the required size if the buffer was too small. */
             virtual int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "") = 0;
 
+            /** @brief Stores a boolean value.
+             *  @param key The key to store.
+             *  @param value The value to store. */
             virtual void SetBool(const char* key, bool value) = 0;
+
+            /** @brief Stores an integer value.
+             *  @param key The key to store.
+             *  @param value The value to store. */
             virtual void SetInt(const char* key, int value) = 0;
+
+            /** @brief Stores a double value.
+             *  @param key The key to store.
+             *  @param value The value to store. */
             virtual void SetDouble(const char* key, double value) = 0;
+
+            /** @brief Stores a string value.
+             *  @param key The key to store.
+             *  @param value The value to store. */
             virtual void SetString(const char* key, const char* value) = 0;
 
+            /** @brief Persists any pending changes to disk. */
             virtual void Save() = 0;
     };
 
+    /** @brief Convenience helper that retrieves a preference string into a typed string.
+     *  @tparam String The string type of the result.
+     *  @param prefs The preferences object to read from.
+     *  @param key The key to look up.
+     *  @param defaultValue The value to return if the key is missing.
+     *  @return The stored value, or the default. */
     template <typename String>
     String getPreferenceString(IPreferences* prefs, const char* key, const char* defaultValue) {
         if (prefs) {

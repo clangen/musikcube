@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Daniel Önnerby
+// The following are Copyright ï¿½ 2007, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -34,6 +34,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Timer.hpp
+ * @brief Repeating timer bound to a window's message loop.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Timer wraps the
+ * Win32 SetTimer/KillTimer APIs; it fires the OnTimeout sigslot signal on
+ * the UI thread whenever the configured timeout elapses.
+ */
+
 #pragma once
 
 #include <win32cpp/Win32Config.hpp>
@@ -46,30 +55,47 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief A repeating timer that fires on the main thread.
+ *  @details Uses the Win32 SetTimer API on an associated window handle so
+ *           the timeout callback runs on the UI thread. The OnTimeout
+ *           signal is emitted each time the interval elapses.
+ *  @note The timer must be connected to a Window before Start() is called. */
 class Timer : public EventHandler
 {
 public: // types
+    /** @brief Signal fired each time the timer interval elapses. */
     typedef sigslot::signal0<> TimeoutEvent;
 
 public: // events
+    /** @brief Emitted each time the timer times out. */
     TimeoutEvent OnTimeout;
 
 public: // ctor, dtor
+    /** @brief Constructs a timer with the given interval.
+     *  @param timeout the interval in milliseconds */
     Timer(unsigned timeout);
+    /** @brief Stops and destroys the timer. */
     ~Timer();
 
 public: // methods
+    /** @brief Associates the timer with the given window.
+     *  @param window the window that owns the message loop */
     void ConnectToWindow(Window *window);
+    /** @brief Starts the timer.
+     *  @return true if the timer was started successfully */
     bool Start();
+    /** @brief Stops the timer.
+     *  @return true if the timer was stopped successfully */
     bool Stop();
 
 private: // methods
+    /** @brief Internal handler invoked when the Win32 timer fires. */
     void OnTimerTimeout(unsigned int timeoutId);
 
 private: // instance data
-    unsigned timerId;
-    unsigned timeout;
-    HWND wnd;
+    unsigned timerId; /**< Win32 timer identifier */
+    unsigned timeout; /**< interval in milliseconds */
+    HWND wnd;         /**< window owning the message loop */
 };
 
 //////////////////////////////////////////////////////////////////////////////

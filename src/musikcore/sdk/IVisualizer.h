@@ -32,18 +32,33 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IVisualizer.h @brief Defines the IVisualizer interface for audio visualization plugins. */
 #pragma once
 
 #include "IPlugin.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief An audio visualization plugin that can be shown and hidden within
+     *  the application's visualizer area. */
     class IVisualizer {
         public:
+            /** @brief Releases the visualizer; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Shows the visualizer. */
             virtual void Show() = 0;
+
+            /** @brief Hides the visualizer. */
             virtual void Hide() = 0;
+
+            /** @brief Returns whether the visualizer is currently visible.
+             *  @return True if visible. */
             virtual bool Visible() = 0;
+
+            /** @brief Returns the name of the visualizer.
+             *  @return The visualizer name. */
             virtual const char* Name() = 0;
     };
 

@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file SimpleScrollAdapter.h @brief A simple string-backed scroll adapter for lists. */
 #pragma once
 
 #include <cursespp/curses_config.h>
@@ -42,31 +43,70 @@
 #include <map>
 
 namespace cursespp {
+    /** @brief A ScrollAdapterBase whose entries are single-line strings.
+     *
+     *  @details SimpleScrollAdapter stores a deque of string-backed IEntry
+     *  objects and exposes them to a ScrollableWindow/ListWindow. It can cap
+     *  the number of kept entries (SetMaxEntries, default 500), track per-index
+     *  colors, and optionally participate in selection highlighting. When its
+     *  contents change it emits the Changed signal so owning windows can
+     *  invalidate and redraw. Lookup is O(n) by design (see the note in the
+     *  code); it is intended for small-to-medium lists such as search results
+     *  or command history.
+     */
     class SimpleScrollAdapter : public ScrollAdapterBase {
         public:
+            /** @brief Fired whenever the adapter's contents change. */
             sigslot::signal1<SimpleScrollAdapter*> Changed;
 
+            /** @brief Creates an empty adapter. */
             SimpleScrollAdapter();
+            /** @brief Destroys the adapter. */
             virtual ~SimpleScrollAdapter();
 
+            /** @brief Returns the number of stored entries.
+             *  @return the entry count.
+             */
             size_t GetEntryCount() override;
+            /** @brief Returns the entry at a given index.
+             *  @param window the requesting ScrollableWindow (may be unused).
+             *  @param index the entry index.
+             *  @return the EntryPtr at that index.
+             */
             EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
 
+            /** @brief Controls whether the entries can be highlighted as selected.
+             *  @param selectable true to mark entries as selectable.
+             */
             void SetSelectable(bool selectable);
+            /** @brief Appends a string entry.
+             *  @param entry the text of the new entry.
+             */
             void AddEntry(const std::string& entry);
+            /** @brief Returns the string stored at a given index.
+             *  @param index the entry index.
+             *  @return the entry's text.
+             */
             std::string StringAt(size_t index);
 
             /* virtual methods we define */
+            /** @brief Appends a pre-built entry.
+             *  @param entry the EntryPtr to append.
+             */
             virtual void AddEntry(EntryPtr entry);
+            /** @brief Caps the number of entries kept by the adapter.
+             *  @param size the maximum number of entries (default 500).
+             */
             virtual void SetMaxEntries(const size_t size = 500);
+            /** @brief Removes all entries. */
             virtual void Clear();
 
         private:
             typedef std::deque<EntryPtr> EntryList; /* TODO: this is O(n) lookup */
             typedef EntryList::iterator Iterator;
-            std::map<size_t, Color> indexToColor;
-            EntryList entries;
-            size_t maxEntries;
-            bool selectable;
+            std::map<size_t, Color> indexToColor;  /**< Optional per-index color overrides. */
+            EntryList entries;                     /**< The stored entries. */
+            size_t maxEntries;                     /**< The maximum number of kept entries. */
+            bool selectable;                       /**< Whether entries participate in selection. */
     };
 }

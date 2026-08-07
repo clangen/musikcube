@@ -34,43 +34,69 @@
 
 #pragma once
 
+/** @file DeletePlaylistQuery.h
+ *  @brief Query that deletes a playlist from the library.
+ *  @details Removes the playlist row and all of its track associations, then
+ *      broadcasts a mutation message so listeners can refresh. */
+
 #include <musikcore/support/DeleteDefaults.h>
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/db/Connection.h>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Deletes a playlist and its tracks.
+     *  @details On success the playlist is removed from the database and a
+     *      playlist mutation broadcast is sent. */
     class DeletePlaylistQuery : public musik::core::library::query::QueryBase {
         public:
-            static const std::string kQueryName;
+            static const std::string kQueryName; /**< Query type name. */
 
             DELETE_CLASS_DEFAULTS(DeletePlaylistQuery)
 
+            /** @brief Creates a delete-playlist query.
+             *  @param library The library to mutate.
+             *  @param playlistId The playlist to delete. */
             DeletePlaylistQuery(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId) noexcept;
 
             /* IQuery */
+            /** @return The query type name. */
             std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
+            /** @return The serialized query parameters. */
             std::string SerializeQuery() override;
+            /** @return The serialized result. */
             std::string SerializeResult() override;
+            /** @brief Populates the result from serialized data.
+             *  @param data The serialized result. */
             void DeserializeResult(const std::string& data) override;
+            /** @brief Recreates a query from serialized parameters.
+             *  @param library The library the query will run on.
+             *  @param data The serialized query.
+             *  @return The deserialized query. */
             static std::shared_ptr<DeletePlaylistQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             /* QueryBase */
+            /** @brief Runs the query against the database.
+             *  @param db The connection to run on.
+             *  @return true on success. */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
+            /** @brief Broadcasts a playlist mutation to listeners. */
             void SendPlaylistMutationBroadcast();
 
-            int64_t playlistId;
-            musik::core::ILibraryPtr library;
-            bool result{ false };
+            int64_t playlistId; /**< Playlist to delete. */
+            musik::core::ILibraryPtr library; /**< Library to mutate. */
+            bool result{ false }; /**< Whether the delete succeeded. */
     };
 
 } } } }

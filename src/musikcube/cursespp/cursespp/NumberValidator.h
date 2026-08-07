@@ -33,6 +33,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file NumberValidator.h @brief A templated numeric validator for input overlays. */
 #pragma once
 
 #include <cursespp/InputOverlay.h>
@@ -41,14 +42,37 @@
 
 namespace cursespp {
 
+    /** @brief An InputOverlay::IValidator that accepts only numeric input within a range.
+     *
+     *  @details NumberValidator parses the entered text with std::stod. If the
+     *  configured bounds are "bounded" (i.e. not the full numeric_limits<T>
+     *  extremes), the parsed value must fall within [minimum, maximum]. A
+     *  Formatter callback converts the boundary values into localized strings
+     *  used when building the error message.
+     *
+     *  @tparam T the numeric type being validated (e.g. int, double).
+     */
     template <typename T>
     struct NumberValidator : public InputOverlay::IValidator {
+        /** @brief Converts a numeric boundary value into a display string.
+         *  @param T the value to format.
+         *  @return the formatted string.
+         */
         using Formatter = std::function<std::string(T)>;
 
+        /** @brief Creates a validator with an optional range.
+         *  @param minimum the inclusive lower bound.
+         *  @param maximum the inclusive upper bound.
+         *  @param formatter callback used to format boundaries in error messages.
+         */
         NumberValidator(T minimum, T maximum, Formatter formatter)
             : minimum(minimum), maximum(maximum), formatter(formatter) {
         }
 
+        /** @brief Checks whether the input is a number within the configured range.
+         *  @param input the raw input string.
+         *  @return true if the input parses and satisfies the bounds.
+         */
         bool IsValid(const std::string& input) const override {
             try {
                 double result = std::stod(input);
@@ -62,6 +86,9 @@ namespace cursespp {
             return true;
         }
 
+        /** @brief Returns the localized error message for invalid input.
+         *  @return the error string, including bounds when the range is bounded.
+         */
         const std::string ErrorMessage() const override {
             if (bounded(minimum, maximum)) {
                 std::string result = _TSTR("validator_dialog_number_parse_bounded_error");
@@ -72,15 +99,19 @@ namespace cursespp {
             return _TSTR("validator_dialog_number_parse_error");
         }
 
+        /** @brief Returns whether the bounds are meaningful (not the extremes of T).
+         *  @param minimum the lower bound.
+         *  @param maximum the upper bound.
+         *  @return true if the range is bounded.
+         */
         static bool bounded(T minimum, T maximum) {
             return
                 minimum != std::numeric_limits<T>::min() &&
                 maximum != std::numeric_limits<T>::max();
         }
 
-
-        Formatter formatter;
-        T minimum, maximum;
+        Formatter formatter;   /**< Formats boundary values for error messages. */
+        T minimum, maximum;    /**< The inclusive validation range. */
     };
 
 }

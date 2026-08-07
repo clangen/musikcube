@@ -32,15 +32,20 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IEncoder.h @brief Defines the IEncoder base interface implemented by all audio encoders. */
 #pragma once
 
 #include "IBuffer.h"
 #include <stddef.h>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Base interface for audio encoders. Concrete encoders extend this
+     *  with either a blocking or streaming encode model. */
     class IEncoder {
         public:
+            /** @brief Releases the encoder; callers must invoke this when done. */
             virtual void Release() = 0;
      };
 

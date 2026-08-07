@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Trackbar.hpp
+ * @brief Slider control for selecting a value from a range.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Trackbar wraps the
+ * Win32 trackbar control (msctls_trackbar32), allowing the user to drag a
+ * thumb to choose a value between a minimum and maximum. Emits the
+ * TrackbarRepositionedEvent when the position changes.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -50,61 +60,98 @@ namespace win32cpp {
 
 class Trackbar; // forward declr
 
-/*! */
+/** @brief The orientation of a Trackbar. */
 enum TrackbarOrientation
 {
-    /*! */ VerticalTrack = TBS_VERT,
-    /*! */ HorizontalTrack = TBS_HORZ
+    /*! */ VerticalTrack = TBS_VERT,   /**< vertical slider */
+    /*! */ HorizontalTrack = TBS_HORZ  /**< horizontal slider */
 };
 
-///\brief 
-///Event used when position on trackbar is changed
-///\see
-///Trackbar
+/** @brief Signal emitted when the position on the trackbar changes.
+ *  @see Trackbar */
 typedef sigslot::signal1<Trackbar*> TrackbarRepositionedEvent;
 
-///\brief Trackbar allows the user to select a value from a range.
+/** @brief Trackbar allows the user to select a value from a range.
+ *  @details Wraps the Win32 trackbar control. The position can be read and
+ *           written, the value range can be configured, and the Repositioned
+ *           signal is emitted whenever the user moves the thumb. */
 class Trackbar: public Window
 {
 private: // typedefs
     typedef Window base;
 
 public: // events
-    ///\brief This event is emitted when the position of the slider is changed
+    /** @brief Emitted when the position of the slider is changed. */
     TrackbarRepositionedEvent   Repositioned;
 
 public: // constructors
+    /** @brief Constructs a trackbar with the given range.
+     *  @param minValue the minimum value
+     *  @param maxValue the maximum value
+     *  @param orientation the slider orientation */
 public:     /*ctor*/            Trackbar(
                                     short minValue = 0, short maxValue = 100,
                                     TrackbarOrientation orientation = HorizontalTrack);
 
 public: // methods
+    /** @brief Sets the value range.
+     *  @param minValue the minimum value
+     *  @param maxValue the maximum value */
     void    SetRange(short minValue, short maxValue);
+    /** @brief Returns the size of the value range.
+     *  @return maxValue - minValue */
     short   Range() { return this->maxValue - this->minValue; }
+    /** @brief Returns the minimum value.
+     *  @return the minimum */
     int     MinValue() const { return this->minValue; }
+    /** @brief Returns the maximum value.
+     *  @return the maximum */
     int     MaxValue() const { return this->maxValue; }
+    /** @brief Sets how often tick marks are drawn.
+     *  @param tickFrequency the tick frequency (0 to disable) */
     void    SetTickFrequency(short tickFrequency = 0);
+    /** @brief Returns the tick frequency.
+     *  @return the tick frequency */
     short   TickFrequency() const { return this->tickFrequency; }
+    /** @brief Sets the track (line) height.
+     *  @param trackHeight the height in pixels */
     void    SetTrackHeight(short trackHeight);
+    /** @brief Returns the track height.
+     *  @return the height in pixels */
     short   TrackHeight() { return this->trackHeight; }
+    /** @brief Sets the thumb (handle) height.
+     *  @param thumbHeight the height in pixels */
     void    SetThumbHeight(short thumbHeight);
+    /** @brief Returns the thumb height.
+     *  @return the height in pixels */
     short   ThumbHeight() { return this->thumbHeight; }
+    /** @brief Sets the current position.
+     *  @param position the new position value */
     void    SetPosition(short position);
+    /** @brief Returns the current position.
+     *  @return the position value */
     short   Position() const { return this->position; }
 
 protected: // methods
+    /** @brief Creates the underlying HWND. */
     virtual HWND        Create(Window* parent);
+    /** @brief Clears the background before painting. */
     virtual void        OnEraseBackground(HDC hdc);
+    /** @brief Paints the trackbar. */
     virtual void        OnPaint();
+    /** @brief Handles post-creation setup. */
     virtual void        OnCreated();
+    /** @brief Emits the Repositioned signal. */
     virtual void        OnRepositioned();
+    /** @brief Handles NM_CUSTOMDRAW notifications. */
     virtual LRESULT     OnCustomDraw(NMCUSTOMDRAW& customDraw);
+    /** @brief Processes window messages. */
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
 protected: // instance data
-    short minValue, maxValue, tickFrequency, position;
-    short trackHeight, thumbHeight;
-    TrackbarOrientation   orientation;
+    short minValue, maxValue, tickFrequency, position; /**< range and position values */
+    short trackHeight, thumbHeight;                    /**< visual dimensions */
+    TrackbarOrientation   orientation;                 /**< slider orientation */
 };
 
 //////////////////////////////////////////////////////////////////////////////

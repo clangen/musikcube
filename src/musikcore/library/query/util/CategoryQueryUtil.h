@@ -34,13 +34,23 @@
 
 #pragma once
 
+/** @file CategoryQueryUtil.h
+ *  @brief Shared SQL fragments and helpers for category-based queries.
+ *  @details Provides the SQL templates and predicate utilities used by queries
+ *      that filter tracks by category (album, artist, genre, directory, or
+ *      plugin-provided "extended" metadata). */
+
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/db/Connection.h>
 #include <memory>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @namespace musik::core::library::query::category
+     *  @brief SQL fragments and helpers for category-based track filtering. */
     namespace category {
         namespace constants = musik::core::library::constants;
 
@@ -50,9 +60,11 @@ namespace musik { namespace core { namespace library { namespace query {
         plugins to index arbitrary track metadata in a completely denormalized key/value
         store. these resource types are called "Extended" properties. */
 
+        /** @brief Distinguishes well-known ("Regular") vs plugin-defined ("Extended") properties. */
         enum class PropertyType: int { Regular, Extended };
 
         /* property name to foreign key id */
+        /** @brief Maps property names to their denormalized foreign key columns on tracks. */
         static std::map<std::string, std::string> PREDICATE_TO_COLUMN_MAP = {
             { constants::Track::ALBUM, "album_id" },
             { constants::Track::ARTIST, "visual_artist_id" },
@@ -62,6 +74,7 @@ namespace musik { namespace core { namespace library { namespace query {
         };
 
         /* resource type to a pair { <table_name>, <track_table_fk_name> } */
+        /** @brief Maps regular property types to their table and track foreign key column. */
         static std::map<std::string, std::pair<std::string, std::string>> REGULAR_PROPERTY_MAP = {
             { "album", { "albums", "album_id" } },
             { "artist", { "artists", "visual_artist_id" } },
@@ -70,12 +83,17 @@ namespace musik { namespace core { namespace library { namespace query {
             { "directory", { "directories", "directory_id" } }
         };
 
+        /** @brief SQL fragment constraining tracks to a regular property value. */
         static const std::string REGULAR_PREDICATE = " tracks.{{fk_id}}=? ";
+        /** @brief SQL fragment filtering regular properties by a text match. */
         static const std::string REGULAR_FILTER = " AND LOWER({{table}}.name) {{match_type}} ? ";
 
+        /** @brief SQL fragment constraining tracks to an extended (key/value) property value. */
         static const std::string EXTENDED_PREDICATE = " (key=? AND meta_value_id=?) ";
+        /** @brief SQL fragment filtering extended properties by a text match. */
         static const std::string EXTENDED_FILTER = " AND LOWER(extended_metadata.value) {{match_type}} ?";
 
+        /** @brief SQL join selecting tracks matching a set of extended predicates. */
         static const std::string EXTENDED_INNER_JOIN =
             "INNER JOIN ( "
             "  SELECT id AS track_id "
@@ -107,6 +125,7 @@ namespace musik { namespace core { namespace library { namespace query {
         //         albums.id = tracks.album_id AND
         //         tracks.visible = 1;
 
+        /** @brief SQL template listing regular property values (albums, artists, genres, ...). */
         static const std::string REGULAR_PROPERTY_QUERY =
             "SELECT DISTINCT {{table}}.id, {{table}}.name "
             "FROM {{table}}, tracks "
@@ -140,6 +159,7 @@ namespace musik { namespace core { namespace library { namespace query {
         //     WHERE
         //         extended_metadata.key = "year";
 
+        /** @brief SQL template listing extended (plugin-defined) property values. */
         static const std::string EXTENDED_PROPERTY_QUERY =
             "SELECT DISTINCT meta_value_id, value "
             "FROM extended_metadata "
@@ -169,11 +189,14 @@ namespace musik { namespace core { namespace library { namespace query {
         //         HAVING COUNT(track_id) = 2
         //     ) AS md ON tracks.id = md.track_id;
 
+        /** @brief SQL fragment filtering a track list by a free-text search across metadata. */
         static const std::string CATEGORY_TRACKLIST_FILTER =
             " AND (tracks.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
 
         /* note: al.name needs to be the second column selected to ensure proper grouping by
         album in the UI layer! */
+        /** @brief SQL template selecting tracks constrained by category predicates.
+         *  @note al.name must remain the second selected column for UI album grouping. */
         static const std::string CATEGORY_TRACKLIST_QUERY =
             "SELECT DISTINCT tracks.id, tracks.duration, al.name "
             "FROM tracks, albums al, artists ar, genres gn "
@@ -192,9 +215,11 @@ namespace musik { namespace core { namespace library { namespace query {
         LocalMetadataProxy to return album resources with thumbnail, artist,
         and other supplementary information. */
 
+        /** @brief SQL fragment filtering the album list by album or album artist name. */
         static const std::string ALBUM_LIST_FILTER =
             " AND (LOWER(album) LIKE ? OR LOWER(album_artist) LIKE ?) ";
 
+        /** @brief SQL template listing albums with artist and thumbnail information. */
         static const std::string ALBUM_LIST_QUERY =
             "SELECT DISTINCT "
             "  albums.id, "
@@ -214,41 +239,78 @@ namespace musik { namespace core { namespace library { namespace query {
 
         /* data types */
 
+        /** @brief A single category predicate: property name plus value id. */
         using Predicate = std::pair<std::string, int64_t>;
+        /** @brief A list of category predicates. */
         using PredicateList = std::vector<Predicate>;
+        /** @brief Abstract bound-parameter value; binds itself to a statement position.
+         *  @details Concrete subclasses represent ids and strings. */
         struct Argument { virtual void Bind(musik::core::db::Statement& stmt, int pos) const = 0; };
+        /** @brief A list of bound-parameter arguments. */
         using ArgumentList = std::vector<std::shared_ptr<Argument>>;
 
         /* functions */
 
+        /** @return Whether the given property name is Regular or Extended.
+         *  @param key The property name. */
         extern PropertyType GetPropertyType(const std::string& key);
 
+        /** @return A bindable argument for a 64-bit id.
+         *  @param id The id value. */
         extern std::shared_ptr<Argument> IdArgument(int64_t);
+        /** @return A bindable argument for a string value.
+         *  @param value The string value. */
         extern std::shared_ptr<Argument> StringArgument(const std::string);
 
+        /** @return A stable hash of a predicate list (used for query caching).
+         *  @param input The predicate list. */
         extern size_t Hash(const PredicateList& input);
 
+        /** @brief Replaces every occurrence of a substring within a string.
+         *  @param input The string to modify.
+         *  @param find The substring to find.
+         *  @param replace The replacement text. */
         extern void ReplaceAll(
             std::string& input,
             const std::string& find,
             const std::string& replace);
 
+        /** @brief Partitions predicates into regular and extended lists.
+         *  @param input The predicates to split.
+         *  @param regular Output list of regular predicates.
+         *  @param extended Output list of extended predicates. */
         extern void SplitPredicates(
             const PredicateList& input,
             PredicateList& regular,
             PredicateList& extended);
 
+        /** @brief Builds the SQL for a list of regular predicates.
+         *  @param pred The regular predicates.
+         *  @param args Output list of bind arguments.
+         *  @param prefix Optional alias prefix for the column.
+         *  @return The generated SQL fragment. */
         extern std::string JoinRegular(
             const PredicateList& pred,
             ArgumentList& args,
             const std::string& prefix = "");
 
+        /** @brief Builds the INNER JOIN SQL for a list of extended predicates.
+         *  @param pred The extended predicates.
+         *  @param args Output list of bind arguments.
+         *  @return The generated SQL fragment. */
         extern std::string InnerJoinExtended(
             const PredicateList& pred, ArgumentList& args);
 
+        /** @brief Builds the WHERE-clause SQL for a list of extended predicates.
+         *  @param pred The extended predicates.
+         *  @param args Output list of bind arguments.
+         *  @return The generated SQL fragment. */
         extern std::string JoinExtended(
             const PredicateList& pred, ArgumentList& args);
 
+        /** @brief Binds a list of arguments to a prepared statement.
+         *  @param stmt The statement to bind on.
+         *  @param args The arguments to bind. */
         extern void Apply(
             musik::core::db::Statement& stmt,
             const ArgumentList& args);

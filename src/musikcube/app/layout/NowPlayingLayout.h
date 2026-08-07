@@ -34,6 +34,13 @@
 
 #pragma once
 
+/**
+ * @file NowPlayingLayout.h
+ * @brief Layout that shows the currently playing track and the play queue.
+ * @details Displays the active playlist/queue in a track list and supports
+ *          editing the queue (removing, moving and clearing entries).
+ */
+
 #include <cursespp/Colors.h>
 #include <cursespp/LayoutBase.h>
 #include <app/window/CategoryListView.h>
@@ -47,6 +54,12 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Now playing and play queue layout.
+         * @details Renders the active play queue as a track list, highlighting
+         *          the current track and supporting queue edit operations such
+         *          as removing, moving and clearing entries.
+         */
         class NowPlayingLayout :
             public cursespp::LayoutBase,
             public sigslot::has_slots<>
@@ -54,16 +67,33 @@ namespace musik {
             public:
                 DELETE_CLASS_DEFAULTS(NowPlayingLayout)
 
+                /**
+                 * @brief Creates the layout.
+                 * @param playback the active playback service
+                 * @param library the library used to query tracks
+                 */
                 NowPlayingLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
                 /* IWindow */
+                /**
+                 * @brief Called when the layout becomes visible or hidden.
+                 * @param visible true if the layout became visible
+                 */
                 void OnVisibilityChanged(bool visible) override;
+                /**
+                 * @brief Handles keyboard input.
+                 * @param key the key sequence that was pressed
+                 * @return true if the event was consumed
+                 */
                 bool KeyPress(const std::string& key) override;
 
             protected:
                 /* LayoutBase */
+                /**
+                 * @brief Positions and lays out the child windows.
+                 */
                 void OnLayout() override;
 
             private:
@@ -76,12 +106,12 @@ namespace musik {
                 cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
                 void OnPlaylistSelected(int64_t playlistId);
 
-                musik::core::audio::PlaybackService& playback;
-                musik::core::ILibraryPtr library;
-                std::shared_ptr<TrackListView> trackListView;
-                std::shared_ptr<musik::core::Preferences> prefs;
-                int reselectIndex; /* sigh... */
-                int lastPlaylistQueryId;
+                musik::core::audio::PlaybackService& playback; /**< the active playback service */
+                musik::core::ILibraryPtr library;              /**< the library used to query tracks */
+                std::shared_ptr<TrackListView> trackListView;  /**< the track list window */
+                std::shared_ptr<musik::core::Preferences> prefs; /**< persistent preferences */
+                int reselectIndex; /* sigh... */               /**< index used to restore the selection */
+                int lastPlaylistQueryId;                       /**< id of the last playlist query */
         };
     }
 }

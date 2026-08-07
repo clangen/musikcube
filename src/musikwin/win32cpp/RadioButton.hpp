@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Casey Langen, André Wösten
+// The following are Copyright ï¿½ 2008, Casey Langen, Andrï¿½ Wï¿½sten
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file RadioButton.hpp
+ * @brief Standard radio button control.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. RadioButton wraps
+ * the Win32 BUTTON control in radio mode. Radio buttons are organised as a
+ * linked list to enforce group behaviour: only one button in the group may
+ * be checked at a time.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -49,55 +59,72 @@ namespace win32cpp {
 
 class RadioButton;
 
-///\brief
-///The type of event used when the RadioButton is pressed.
-///\see
-///RadioButton.
+/** @brief Signal type emitted when a RadioButton is pressed.
+ *  @see RadioButton */
 typedef sigslot::signal1<RadioButton*> RadioButtonPressedEvent;
 
-///\brief
-///A standard RadioButton.
-///They are organised as linked list to enforce the grouping behaviour
+/** @brief A standard RadioButton.
+ *  @details Radio buttons are organised as a linked list to enforce the
+ *           grouping behaviour: checking one button unchecks the others in
+ *           the same group. */
 class RadioButton : public Window
 {
 private: // types
     typedef Window base;
 
 public: // events
-    ///\brief This event is emitted when the user presses the RadioButton
+    /** @brief Emitted when the user presses the RadioButton. */
     RadioButtonPressedEvent  Pressed;
 
 public: // constructors
+    /** @brief Constructs a radio button, optionally attached to a group.
+     *  @param caption the text displayed next to the radio
+     *  @param attach a sibling radio button to form a group with
+     *  @param layoutFlags layout flags used for sizing */
     /*ctor*/            RadioButton(
         const uichar* caption = _T(""),
         RadioButton* attach = NULL,
         LayoutFlags layoutFlags = LayoutWrapWrap);
 
+    /** @brief Constructs a radio button.
+     *  @param caption the text displayed next to the radio
+     *  @param layoutFlags layout flags used for sizing */
     /*ctor*/            RadioButton(
         const uichar* caption,
         LayoutFlags layoutFlags = LayoutWrapWrap);
 
+    /** @brief Destroys the radio button. */
     /*dtor*/            ~RadioButton();
 
 protected: // methods
+    /** @brief Creates the underlying HWND. */
     virtual HWND        Create(Window* parent);
+    /** @brief Processes window messages, updating group state. */
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    /** @brief Emits the Pressed signal. */
     virtual void        OnPressed();
+    /** @brief Paints the radio button. */
     virtual void        PaintToHDC(HDC hdc, const Rect& rect);
 
 public:
+    /** @brief Checks this radio button, unchecking the rest of the group. */
     void                Check(void);
+    /** @brief Returns whether this radio button is checked.
+     *  @return true if checked */
     bool                IsChecked(void);
-    
+
+    /** @brief Returns the checked radio button in this group.
+     *  @return pointer to the checked button, or NULL */
     RadioButton*        GetCheckedInGroup(void);
 
-    // for testing
+    /** @brief Returns the caption text (used for testing).
+     *  @return the caption string */
     uistring            Caption(void) const { return caption; }
 
 protected: // instance data
-    RadioButton* prev; // previous item, NULL if group begin
-    RadioButton* next; // next item, NULL if group ends
-    uistring caption;
+    RadioButton* prev;  /**< previous button in the group, NULL if first */
+    RadioButton* next;  /**< next button in the group, NULL if last */
+    uistring caption;   /**< the radio button's caption text */
 };
 
 //////////////////////////////////////////////////////////////////////////////

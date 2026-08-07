@@ -32,16 +32,28 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IEncoderFactory.h @brief Defines the IEncoderFactory interface for creating encoders for supported formats. */
 #pragma once
 
 #include "IEncoder.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Creates IEncoder instances for supported output formats. */
     class  IEncoderFactory{
         public:
+            /** @brief Releases the factory; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Creates an encoder for the given output format.
+             *  @param type The encoder type, typically a file extension or mime type.
+             *  @return A newly created encoder, or null if unsupported. */
             virtual IEncoder* CreateEncoder(const char* type) = 0;
+
+            /** @brief Returns whether this factory can encode the given format.
+             *  @param type The encoder type to check.
+             *  @return True if the type is supported by this factory. */
             virtual bool CanHandle(const char* type) const = 0;
     };
 

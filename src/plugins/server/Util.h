@@ -34,6 +34,12 @@
 
 #pragma once
 
+/// @file Util.h
+/// @brief Small helpers shared by the streaming server modules.
+/// @details Provides template functions for looking up values in maps and
+/// reading metadata/preference strings through the thread-local buffer, plus
+/// URL encode/decode helpers and a UTF-8 to UTF-16 conversion for Windows.
+
 #include <string>
 #include <algorithm>
 #include <unordered_map>
@@ -46,11 +52,19 @@
 #endif
 
 #ifdef __APPLE__
+/** @brief Thread-local scratch buffer shared by the string helpers. */
 extern __thread char threadLocalBuffer[4096];
 #else
+/** @brief Thread-local scratch buffer shared by the string helpers. */
 extern thread_local char threadLocalBuffer[4096];
 #endif
 
+/** @brief Finds an iterator for the first map entry whose value matches.
+ *  @tparam K Map key type.
+ *  @tparam V Map value type.
+ *  @param map The map to search.
+ *  @param value The value to look up.
+ *  @return Const iterator to the matching entry, or map.end(). */
 template <typename K, typename V>
 typename std::unordered_map<K, V>::const_iterator
 static FindKeyByValue(const std::unordered_map<K, V>& map, const V& value) {
@@ -59,6 +73,11 @@ static FindKeyByValue(const std::unordered_map<K, V>& map, const V& value) {
     });
 }
 
+/** @brief Reads a string preference with a fallback default.
+ *  @param prefs The preferences service.
+ *  @param key The preference key.
+ *  @param defaultValue Value returned when the key is absent.
+ *  @return The preference value. */
 static std::string GetPreferenceString(
     musik::core::sdk::IPreferences* prefs,
     const std::string& key,
@@ -68,6 +87,12 @@ static std::string GetPreferenceString(
     return std::string(threadLocalBuffer);
 }
 
+/** @brief Reads a string from a metadata object.
+ *  @tparam MetadataT Metadata type exposing GetString.
+ *  @param metadata The metadata object.
+ *  @param key The metadata key.
+ *  @param defaultValue Value returned when the key is absent.
+ *  @return The metadata value. */
 template <typename MetadataT>
 static std::string GetMetadataString(
     MetadataT* metadata,
@@ -79,16 +104,32 @@ static std::string GetMetadataString(
     return std::string(threadLocalBuffer);
 }
 
+/** @brief Reads an int32 from a metadata object.
+ *  @tparam MetadataT Metadata type exposing GetInt32.
+ *  @param metadata The metadata object.
+ *  @param key The metadata key.
+ *  @param defaultValue Value returned when the key is absent.
+ *  @return The metadata value. */
 template <typename MetadataT>
 static int GetMetadataInt32(MetadataT* metadata, const std::string& key, int defaultValue = 0) {
     return !metadata ? defaultValue : metadata->GetInt32(key.c_str(), defaultValue);
 }
 
+/** @brief Reads an int64 from a metadata object.
+ *  @tparam MetadataT Metadata type exposing GetInt64.
+ *  @param metadata The metadata object.
+ *  @param key The metadata key.
+ *  @param defaultValue Value returned when the key is absent.
+ *  @return The metadata value. */
 template <typename MetadataT>
 static int64_t GetMetadataInt64(MetadataT* metadata, const std::string& key, int64_t defaultValue = 0LL) {
     return !metadata ? defaultValue : metadata->GetInt64(key.c_str(), defaultValue);
 }
 
+/** @brief Reads the value of an IValue as a string.
+ *  @param value The IValue to read.
+ *  @param defaultValue Value returned when value is null.
+ *  @return The value string. */
 static std::string GetValueString(
     musik::core::sdk::IValue* value,
     const std::string& defaultValue = "missing metadata!")
@@ -98,14 +139,28 @@ static std::string GetValueString(
     return std::string(threadLocalBuffer);
 }
 
+/** @brief Creates an IValue instance.
+ *  @param value The string value.
+ *  @param id The numeric id.
+ *  @param type The value type name.
+ *  @return A new IValue the caller must release. */
 extern musik::core::sdk::IValue* CreateValue(
     const std::string& value, int64_t id, const std::string& type);
 
+/** @brief URL-encodes a string.
+ *  @param s The string to encode.
+ *  @return The percent-encoded string. */
 extern std::string urlEncode(const std::string& s);
 
+/** @brief URL-decodes a string.
+ *  @param str The percent-encoded string.
+ *  @return The decoded string. */
 extern std::string urlDecode(const std::string& str);
 
 #ifdef WIN32
+/** @brief Converts a UTF-8 string to a UTF-16 wide string (Windows only).
+ *  @param utf8 The UTF-8 input string.
+ *  @return The UTF-16 string. */
 static inline std::wstring utf8to16(const char* utf8) {
     int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
     if (size <= 0) return L"";

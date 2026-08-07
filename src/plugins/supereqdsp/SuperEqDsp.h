@@ -34,23 +34,45 @@
 
 #pragma once
 
+/// @file SuperEqDsp.h
+/// @brief 31-band graphic equalizer DSP plugin.
+/// @details Wraps the SuperEQ FFT-based equalizer engine from the DeaDBeeF
+/// player. Processes PCM buffers through the equalizer when enabled and
+/// re-reads the equalizer settings whenever they change (e.g. from the
+/// equalizer overlay).
+
 #include <musikcore/sdk/IDSP.h>
 #include "supereq/Equ.h"
 
 using namespace musik::core::sdk;
 
+/** @brief 31-band graphic equalizer implemented with SuperEQ.
+ *  @details Holds a SuperEqState and applies the configured band gains to each
+ *  PCM buffer. The plugin-level NotifyChanged() signals the singleton that the
+ *  settings changed so the filter table is rebuilt lazily. */
 class SuperEqDsp : public IDSP {
     public:
+        /** @brief Constructs a DSP with the equalizer disabled. */
         SuperEqDsp();
+        /** @brief Destroys the DSP and frees the equalizer state. */
         ~SuperEqDsp();
 
+        /** @brief Destroys the DSP instance. */
         virtual void Release() override;
+        /** @brief Processes a PCM buffer through the equalizer.
+         *  @param buffer The buffer to process in place.
+         *  @return True if processing was performed. */
         virtual bool Process(IBuffer *buffer) override;
 
+        /** @brief Marks the equalizer settings as changed.
+         *  @details Instances pick up the change on their next Process call. */
         static void NotifyChanged();
 
     private:
+        /** @brief The SuperEQ processing state. */
         SuperEqState* supereq {nullptr};
+        /** @brief Timestamp of the last settings refresh. */
         int lastUpdated {0};
+        /** @brief Whether the equalizer is enabled. */
         bool enabled;
 };

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file ListView.hpp
+ * @brief Virtualized, owner-drawn list view control.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. ListView wraps the
+ * Win32 WC_LISTVIEW control with LVS_OWNERDATA so all data is virtualized:
+ * the control asks a ListView::Model to supply data on demand. It supports
+ * custom rendering via CellRenderer/RowRenderer objects, columns, multiple
+ * selection, striping, scrollbars and context menus.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -56,21 +67,19 @@ namespace win32cpp {
 // ListView
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///ScrollBar is an enumeration that describles the orientation of a scrollbar.
+/** @brief Specifies which scrollbars are affected by an operation.
+ *  @details Values map to the Win32 SB_* flags. */
 enum ScrollBar
 {
-    HorizontalScrollBar = SB_HORZ,  /*!< */
-    VerticalScrollBar = SB_VERT,    /*!< */
-    BothScrollBars = SB_BOTH        /*!< */
+    HorizontalScrollBar = SB_HORZ,  /*!< horizontal scrollbar */
+    VerticalScrollBar = SB_VERT,    /*!< vertical scrollbar */
+    BothScrollBars = SB_BOTH        /*!< both scrollbars */
 };
 
 
-///\brief
-///Defines the a ListView's default row height.
-///
-///\see
-///ListView::RowHeight, ListView::SetRowHeight
+/** @brief Defines a ListView's default row height.
+ *  @details Passing this to SetRowHeight restores the system default.
+ *  @see ListView::RowHeight, ListView::SetRowHeight */
 const int DefaultRowHeight = -1;
 
 ///\brief

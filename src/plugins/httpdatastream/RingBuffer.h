@@ -34,11 +34,25 @@
 
 #pragma once
 
+/// @file RingBuffer.h
+/// @brief Locked circular byte buffer used by the HTTP data stream plugin.
+/// @details Provides a fixed-capacity FIFO for downloaded chunks. Indices grow
+/// monotonically and are masked to the buffer size, so the ring supports
+/// arbitrary sized put/get operations without explicit wraparound bookkeeping.
+
 #include "config.h"
 #include <mutex>
 
+/** @brief Thread-safe fixed-capacity byte ring buffer.
+ *  @details A producer calls put() to append bytes and a consumer calls get()
+ *  to drain them. All operations are guarded by a recursive mutex. Read and
+ *  write offsets are absolute values mapped into the buffer with a bit mask,
+ *  which also allows setting the read offset relative to an absolute stream
+ *  position. */
 class RingBuffer {
     public:
+        /** @brief Constructs a ring buffer of the given capacity.
+         *  @param capacity Buffer size in bytes (should be a power of two). */
         RingBuffer(int capacity) {
             this->capacity = capacity;
             this->data = new char[capacity];
@@ -46,10 +60,14 @@ class RingBuffer {
             this->absoluteOffset = 0;
         }
 
+        /** @brief Destroys the ring buffer and frees its storage. */
         ~RingBuffer() {
             delete[] data;
         }
 
+        /** @brief Sets the read offset to an absolute stream position.
+         *  @param absolute The absolute byte offset to read from.
+         *  @return True if the offset falls within the buffered range. */
         bool setReadOffset(unsigned int absolute) {
             std::unique_lock<std::recursive_mutex> lock(mutex);
             if (absolute >= this->absoluteOffset && absolute <= this->absoluteOffset + size()) {
@@ -59,31 +77,43 @@ class RingBuffer {
             return false;
         }
 
+        /** @brief Returns the number of bytes currently buffered.
+         *  @return Bytes available to read. */
         unsigned int size() {
             std::unique_lock<std::recursive_mutex> lock(mutex);
             return write - read;
         }
 
+        /** @brief Returns the free space in the buffer.
+         *  @return Bytes that can still be written. */
         unsigned int avail() {
             std::unique_lock<std::recursive_mutex> lock(mutex);
             return capacity - size();
         }
 
+        /** @brief Returns whether the buffer is empty.
+         *  @return True if no data is buffered. */
         bool empty() {
             std::unique_lock<std::recursive_mutex> lock(mutex);
             return write == read;
         }
 
+        /** @brief Returns whether the buffer is full.
+         *  @return True if no space remains. */
         bool full() {
             std::unique_lock<std::recursive_mutex> lock(mutex);
             return size() == capacity;
         }
 
+        /** @brief Discards all buffered data. */
         void clear() {
             std::unique_lock<std::recursive_mutex> lock(mutex);
             this->read = this->write = 0;
         }
 
+        /** @brief Appends bytes to the buffer.
+         *  @param src Source bytes.
+         *  @param len Number of bytes to append. */
         void put(char* src, unsigned int len) {
             std::unique_lock<std::recursive_mutex> lock(mutex);
 
@@ -101,6 +131,10 @@ class RingBuffer {
             write += len;
         }
 
+        /** @brief Removes up to len bytes from the buffer.
+         *  @param dst Destination buffer.
+         *  @param len Maximum number of bytes to read.
+         *  @return Number of bytes actually read. */
         unsigned int get(char* dst, unsigned int len) {
             std::unique_lock<std::recursive_mutex> lock(mutex);
 
@@ -121,12 +155,19 @@ class RingBuffer {
         }
 
     private:
+        /** @brief Maps an absolute index into the buffer.
+         *  @param val Absolute index to wrap.
+         *  @return Index within the buffer storage. */
         unsigned int mask(int val) {
             return val & (capacity - 1);
         }
 
+        /** @brief Raw buffer storage. */
         char* data;
+        /** @brief Buffer capacity, read offset and write offset. */
         unsigned int capacity, read, write;
+        /** @brief Absolute stream offset of the first buffered byte. */
         unsigned int absoluteOffset;
+        /** @brief Guards all buffer operations. */
         std::recursive_mutex mutex;
 };

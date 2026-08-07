@@ -32,21 +32,52 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ITrackListEditor.h @brief Defines the ITrackListEditor interface for mutating a track list. */
 #pragma once
 
 #include <stddef.h>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A mutable editor over a track list, supporting insertion,
+     *  removal, reordering, and shuffling of tracks. */
     class ITrackListEditor {
         public:
+            /** @brief Inserts a track at the given index.
+             *  @param id The id of the track to insert.
+             *  @param index The zero-based index at which to insert.
+             *  @return True if the track was inserted. */
             virtual bool Insert(int64_t id, size_t index) = 0;
+
+            /** @brief Swaps the positions of two tracks.
+             *  @param index1 The index of the first track.
+             *  @param index2 The index of the second track.
+             *  @return True if the tracks were swapped. */
             virtual bool Swap(size_t index1, size_t index2) = 0;
+
+            /** @brief Moves a track from one position to another.
+             *  @param from The current index of the track.
+             *  @param to The destination index.
+             *  @return True if the track was moved. */
             virtual bool Move(size_t from, size_t to) = 0;
+
+            /** @brief Removes the track at the given index.
+             *  @param index The zero-based index of the track to remove.
+             *  @return True if the track was removed. */
             virtual bool Delete(size_t index) = 0;
+
+            /** @brief Appends a track to the end of the list.
+             *  @param id The id of the track to add. */
             virtual void Add(const int64_t id) = 0;
+
+            /** @brief Removes all tracks from the list. */
             virtual void Clear() = 0;
+
+            /** @brief Randomizes the order of the tracks in the list. */
             virtual void Shuffle() = 0;
+
+            /** @brief Releases the editor; callers must invoke this when done. */
             virtual void Release() = 0;
     };
 

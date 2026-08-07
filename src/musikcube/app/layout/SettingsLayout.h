@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file SettingsLayout.h
+ * @brief Top-level settings screen.
+ * @details Presents a list of settings categories (library, output, themes,
+ *          hotkeys, server, plugins and more) with dropdowns, checkboxes and
+ *          sub-layouts for local and remote library configuration.
+ */
+
 #include <cursespp/App.h>
 #include <cursespp/Checkbox.h>
 #include <cursespp/Colors.h>
@@ -61,6 +69,14 @@
 #include "RemoteLibrarySettingsLayout.h"
 
 namespace musik { namespace cube {
+    /**
+     * @brief Application settings layout.
+     * @details Hosts the full settings UI: dropdown rows that open selection
+     *          overlays (output driver/device, library type, theme, locale,
+     *          hotkeys, plugins, server, updates, Last.fm, transport) and
+     *          checkbox rows for toggles, plus the local/remote library
+     *          configuration sub-layouts.
+     */
     class SettingsLayout :
         public cursespp::ITopLevelLayout,
         public cursespp::LayoutBase,
@@ -71,20 +87,48 @@ namespace musik { namespace cube {
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(SettingsLayout)
 
+            /**
+             * @brief Creates the settings layout.
+             * @param app the owning application
+             * @param library the master library
+             * @param playback the active playback service
+             */
             SettingsLayout(
                 cursespp::App& app,
                 MasterLibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
 
+            /**
+             * @brief Destroys the layout and its child views.
+             */
             virtual ~SettingsLayout();
 
             /* IWindow */
+            /**
+             * @brief Called when the layout becomes visible or hidden.
+             * @param visible true if the layout became visible
+             */
             void OnVisibilityChanged(bool visible) override;
+            /**
+             * @brief Called when the layout is added to a parent window.
+             * @param parent the parent window
+             */
             void OnAddedToParent(IWindow* parent) override;
+            /**
+             * @brief Called when the layout is removed from a parent window.
+             * @param parent the former parent window
+             */
             void OnRemovedFromParent(IWindow* parent) override;
+            /**
+             * @brief Positions and lays out the child windows.
+             */
             void OnLayout() override;
 
             /* ITopLevelLayout */
+            /**
+             * @brief Attaches the shortcuts window shown at the bottom.
+             * @param w the shortcuts window
+             */
             void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
 
         private:
@@ -109,12 +153,12 @@ namespace musik { namespace cube {
             void OnLastFmDropdownActivate(cursespp::TextLabel* label);
             void OnAdvancedSettingsActivate(cursespp::TextLabel* label);
 
-            cursespp::App& app;
-            MasterLibraryPtr library;
-            musik::core::IIndexer* indexer;
-            musik::core::audio::PlaybackService& playback;
+            cursespp::App& app;                    /**< the owning application */
+            MasterLibraryPtr library;              /**< the master library */
+            musik::core::IIndexer* indexer;        /**< the library indexer, not owned */
+            musik::core::audio::PlaybackService& playback; /**< the active playback service */
 
-            std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<musik::core::Preferences> prefs; /**< persistent preferences */
 
             using Text = std::shared_ptr<cursespp::TextLabel>;
             Text libraryTypeDropdown;

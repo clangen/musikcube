@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Container.hpp
+ * @brief Abstract base class for windows that house child controls.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Container is a
+ * Window that owns zero or more child windows. Children are added with
+ * AddChild() and removed with RemoveChild(); a container takes ownership of
+ * its children. Derived classes impose limits on the number of children
+ * (e.g. Frame allows one, Splitter allows two).
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -47,51 +58,73 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///Container is a specialization of Window that can house one or more child controls.
-///
-///Use Container::AddChild and Container::RemoveChild to manage
-///children. Once a Window is added to a Container, the Container
-///takes ownership of it. <b>Do not, under any circumstances, call
-///delete on a Window that is a child of a Container!</b> If the caller
-///removes a child via Container::RemoveChild he is then responsible for
-///deleting it.
-///
-///A Window may only have one parent, and a WindowAlreadyHasParentException
-///will be thrown if this contract is violated.
-///
-///Some types of Containers can only hold a specific number of children,
-///and will throw a TooManyChildWindowsException if that number is 
-///exceeded. Frame, for example, only allows one child Window. Splitter
-///allows two. Be sure to read the documentation of classes derived
-///from Container for more information.
+/** @brief Container is a specialization of Window that can house child controls.
+ *  @details Use Container::AddChild and Container::RemoveChild to manage
+ *           children. Once a Window is added to a Container, the Container
+ *           takes ownership of it. <b>Do not, under any circumstances, call
+ *           delete on a Window that is a child of a Container!</b> If the
+ *           caller removes a child via Container::RemoveChild he is then
+ *           responsible for deleting it.
+ *
+ *           A Window may only have one parent, and a
+ *           WindowAlreadyHasParentException will be thrown if this contract
+ *           is violated.
+ *
+ *           Some types of Containers can only hold a specific number of
+ *           children, and will throw a TooManyChildWindowsException if that
+ *           number is exceeded. Frame, for example, only allows one child
+ *           Window. Splitter allows two. Be sure to read the documentation
+ *           of classes derived from Container for more information. */
 /*abstract*/ class Container: public Window
 {
 public: // types
-    class TooManyChildWindowsException { };
-    class WindowAlreadyHasParentException: public Exception { };
-    class WindowHasNoParentException: public Exception { };
-    class InvalidChildWindowException: public Exception { };
+    class TooManyChildWindowsException { };                             /**< too many children for this container */
+    class WindowAlreadyHasParentException: public Exception { };        /**< child already has a parent */
+    class WindowHasNoParentException: public Exception { };             /**< child has no parent */
+    class InvalidChildWindowException: public Exception { };            /**< container rejected the child */
 
 private: //types
     typedef Window base;
 
 public: // constructors, methods
+    /** @brief Constructs an empty container. */
     /*ctor*/ Container();
+    /** @brief Constructs a container with layout flags.
+     *  @param layoutFlags layout flags used for sizing */
     /*ctor*/ Container(LayoutFlags layoutFlags);
+    /** @brief Destroys the container and its children. */
     /*dtor*/ virtual ~Container();
 
+    /** @brief Adds a child window, taking ownership of it.
+     *  @tparam WindowType the concrete window type
+     *  @param window the window to add
+     *  @return the added window */
     template <typename WindowType>
     WindowType*     AddChild(WindowType* window);
 
+    /** @brief Removes a child window; the caller owns it afterwards.
+     *  @tparam WindowType the concrete window type
+     *  @param window the window to remove
+     *  @return the removed window */
     template <typename WindowType>
     WindowType*     RemoveChild(WindowType* window);
 
 protected: // methods
+    /** @brief Creates the underlying HWND. Pure virtual. */
     virtual HWND    Create(Window* parent) = 0;
+    /** @brief Adds a window to the child list.
+     *  @param window the window to add
+     *  @return true if accepted */
     virtual bool    AddChildWindow(Window* window);
+    /** @brief Removes a window from the child list.
+     *  @param window the window to remove
+     *  @return true if removed */
     virtual bool    RemoveChildWindow(Window* window);
+    /** @brief Hook invoked after a child is added.
+     *  @param newChild the added child */
     virtual void    OnChildAdded(Window* newChild) { /*for derived use*/ }
+    /** @brief Hook invoked after a child is removed.
+     *  @param oldChild the removed child */
     virtual void    OnChildRemoved(Window* oldChild) { /*for derived use*/ }
 
     virtual void    OnRequestFocusNext();
@@ -99,54 +132,48 @@ protected: // methods
     virtual void    OnChildWindowRequestFocusNext(Window* child);
     virtual void    OnChildWindowRequestFocusPrev(Window* child);
     virtual void    OnGainedFocus();
+    /** @brief Attempts to focus the last child.
+     *  @return true if focus was set */
     virtual bool    FocusLastChild();
+    /** @brief Attempts to focus the first child.
+     *  @return true if focus was set */
     virtual bool    FocusFirstChild();
+    /** @brief Focuses the previous focusable child.
+     *  @return true if focus moved */
     virtual bool    FocusPrevChild();
+    /** @brief Focuses the next focusable child.
+     *  @return true if focus moved */
     virtual bool    FocusNextChild();
 
 private: // methods
+    /** @brief Destroys all child windows. */
     void            DestroyChildren();
 
     WindowList::iterator FindChild(const Window* child);
     WindowList::reverse_iterator ReverseFindChild(const Window* child);
 
 protected: // instance data
-    WindowList childWindows;
-    Window* focusedWindow;
+    WindowList childWindows;    /**< the list of child windows */
+    Window* focusedWindow;      /**< the currently focused child */
 };
 
 //////////////////////////////////////////////////////////////////////////////
 // Container template methods
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///Add the specified Window as a child of the Container.
-///
-///This method is a templated to make adding children as painless as possible.
-///The return value is a pointer to the child that was just added. The user
-///can use this method as follows:
-///
-///\code
-///Label* myLabel = myContainer->AddChild(new Label(_T("Value: ")));
-///\endcode
-///
-///\param window
-///The Window to add.
-///
-///\returns
-///Returns the Window that was added.
-///
-///\throws WindowIsNullException
-///if window is NULL
-///
-///\throws WindowAlreadyHasParentException
-///if the Window already has a parent
-///
-///\throws WindowAlreadyHasParentException
-///if a class derived from Container doesn't like the child
-///
-///\see
-///Container::RemoveChild
+/** @brief Add the specified Window as a child of the Container.
+ *  @details This method is templated to make adding children as painless as
+ *           possible. The return value is a pointer to the child that was
+ *           just added. The user can use this method as follows:
+ *  @code
+ *  Label* myLabel = myContainer->AddChild(new Label(_T("Value: ")));
+ *  @endcode
+ *  @param window the Window to add
+ *  @return the Window that was added
+ *  @throws WindowIsNullException if window is NULL
+ *  @throws WindowAlreadyHasParentException if the Window already has a parent
+ *  @throws InvalidChildWindowException if a derived container rejects the child
+ *  @see Container::RemoveChild */
 template <typename WindowType>
 WindowType*     Container::AddChild(WindowType* window)
 {
@@ -179,34 +206,20 @@ WindowType*     Container::AddChild(WindowType* window)
     return window;
 }
 
-///\brief
-///Removes the specified Window from the Container.
-///
-///Whoever calls this method is responsible for deleting the Window
-///returned. This method is templated to make this as painless
-///as possible. The return value is a pointer to the window removed.
-///
-///\code
-///delete myContainer->RemoveChild(myLabel);
-///\endcode
-///
-///\param window
-///The Window to remove.
-///
-///\returns
-///Returns the Window that was removed.
-///
-///\throws WindowIsNullException
-///if window is NULL
-///
-///\throws WindowHasNoParentException
-///if the Window doesn't have a parent
-///
-///\throws InvalidChildWindowException
-///if a class derived from Container doesn't like the child
-///
-///\see
-///Container::AddChild
+/** @brief Removes the specified Window from the Container.
+ *  @details Whoever calls this method is responsible for deleting the
+ *           Window returned. This method is templated to make this as
+ *           painless as possible. The return value is a pointer to the
+ *           window removed.
+ *  @code
+ *  delete myContainer->RemoveChild(myLabel);
+ *  @endcode
+ *  @param window the Window to remove
+ *  @return the Window that was removed
+ *  @throws WindowIsNullException if window is NULL
+ *  @throws WindowHasNoParentException if the Window doesn't have a parent
+ *  @throws InvalidChildWindowException if a derived container rejects the child
+ *  @see Container::AddChild */
 template <typename WindowType>
 WindowType*     Container::RemoveChild(WindowType* window)
 {

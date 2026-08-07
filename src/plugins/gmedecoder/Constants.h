@@ -34,6 +34,13 @@
 
 #pragma once
 
+/// @file Constants.h
+/// @brief Shared constants, settings schema and helpers for the GME decoder.
+/// @details Declares the plugin name, the supported video-game music file
+/// extensions handled by the Game Music Emu library, the configurable settings
+/// (looping, track length, fade-out, M3U support) and small helpers used by
+/// the decoder and indexer source.
+
 #include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/String.h>
 #include <string>
@@ -53,30 +60,49 @@
 #define DLLEXPORT
 #endif
 
+/** @brief Display name of the GME decoder plugin. */
 static const char* PLUGIN_NAME = "GME IDecoder";
 
+/** @brief Prefix used for externally generated track ids. */
 static const std::string EXTERNAL_ID_PREFIX = "gme";
 
+/** @brief Setting key controlling whether tracks loop forever. */
 static const char* KEY_ALWAYS_LOOP_FOREVER = "always_loop_forever";
+/** @brief Default for always_loop_forever. */
 static const bool DEFAULT_ALWAYS_LOOP_FOREVER = false;
+/** @brief Setting key controlling whether the embedded track length is ignored. */
 static const char* KEY_IGNORE_EMBEDDED_TRACK_LENGTH = "ignore_embedded_track_length";
+/** @brief Default for ignore_embedded_track_length. */
 static const bool DEFAULT_IGNORE_EMBEDDED_TRACK_LENGTH = false;
+/** @brief Setting key for the default track length in seconds. */
 static const char* KEY_DEFAULT_TRACK_LENGTH = "default_track_length_secs";
+/** @brief Default track length (3 minutes). */
 static const double DEFAULT_TRACK_LENGTH = 60.0 * 3.0;
+/** @brief Setting key for the fade-out length in seconds. */
 static const char* KEY_TRACK_FADE_OUT_LENGTH = "track_fade_out_length_secs";
+/** @brief Default fade-out length (3 seconds). */
 static const double DEFAULT_FADE_OUT_LENGTH = 3.0;
+/** @brief Setting key enabling M3U playlist support. */
 static const char* KEY_ENABLE_M3U = "enable_m3u_support";
+/** @brief Default for enable_m3u_support. */
 static const bool DEFAULT_ENABLE_M3U = false;
+/** @brief Setting key for the minimum track length in seconds. */
 static const char* KEY_MINIMUM_TRACK_LENGTH = "minimum_track_length_secs";
+/** @brief Default minimum track length. */
 static const double DEFAULT_MINIMUM_TRACK_LENGTH = 0.0;
+/** @brief Setting key excluding tracks shorter than the minimum length. */
 static const char* KEY_EXCLUDE_SOUND_EFFECTS = "exclude_tracks_shorter_than_minimum_length";
+/** @brief Default for exclude_tracks_shorter_than_minimum_length. */
 static const bool DEFAULT_EXCLUDE_SOUND_EFFECTS = false;
 
+/** @brief File extensions supported by the GME decoder plugin. */
 static const std::set<std::string> FORMATS = {
     ".vgm", ".gym", ".spc", ".sap", ".nsfe",
     ".nsf", ".ay", ".gbs", ".hes", ".kss"
 };
 
+/** @brief Creates the settings schema registered with the settings system.
+ *  @return A newly allocated ISchema with all GME plugin settings. */
 static inline musik::core::sdk::ISchema* CreateSchema() {
     auto schema = new musik::core::sdk::TSchema<>();
     schema->AddBool(KEY_ALWAYS_LOOP_FOREVER, DEFAULT_ALWAYS_LOOP_FOREVER);
@@ -89,6 +115,9 @@ static inline musik::core::sdk::ISchema* CreateSchema() {
     return schema;
 }
 
+/** @brief Returns whether a filename has a supported GME extension.
+ *  @param fn The filename to check (compared case-insensitively).
+ *  @return True if the extension is in FORMATS. */
 static inline bool canHandle(std::string fn) {
     std::transform(fn.begin(), fn.end(), fn.begin(), ::tolower);
     for (auto& ext : FORMATS) {
@@ -101,6 +130,9 @@ static inline bool canHandle(std::string fn) {
     return false;
 }
 
+/** @brief Locates the companion M3U playlist for a chiptune file.
+ *  @param fn The chiptune file path.
+ *  @return The path of the M3U file if it exists, otherwise an empty string. */
 static std::string getM3uFor(const std::string& fn) {
     size_t lastDot = fn.find_last_of(".");
     if (lastDot != std::string::npos) {

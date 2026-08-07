@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -35,6 +35,15 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @file WindowPadding.hpp
+ * @brief Padding values applied around a child window.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. WindowPadding
+ * specifies the amount of space between a container (such as Frame) and
+ * the child control it hosts, in pixels on each of the four sides.
+ */
 
 #pragma once
 

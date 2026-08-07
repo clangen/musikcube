@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file Filesystem.h @brief Provides portable filesystem utility functions used by the SDK and plugins. */
 #pragma once
 
 #include <string>
@@ -58,8 +59,13 @@
 #include <sys/stat.h>
 #endif
 
+/** @namespace musik::core::sdk::fs @brief Cross-platform filesystem helper functions. */
 namespace musik { namespace core { namespace sdk { namespace fs {
 
+    /** @brief Returns whether a file exists and is accessible.
+     *  @tparam String The string type used for the path.
+     *  @param fn The path of the file to check.
+     *  @return True if the file exists and is readable. */
     template <typename String=std::string>
     static inline bool fileExists(const String& fn) {
     #ifdef WIN32
@@ -70,12 +76,20 @@ namespace musik { namespace core { namespace sdk { namespace fs {
     #endif
     }
 
+    /** @brief Returns the last modification time of a file, in milliseconds since the epoch.
+     *  @tparam String The string type used for the path.
+     *  @param fn The path of the file to query.
+     *  @return The modification timestamp in milliseconds. */
     template <typename String=std::string>
     static int64_t getLastModifiedTime(const String& fn) {
         return (int64_t) std::chrono::duration_cast<std::chrono::milliseconds>(
             std::filesystem::last_write_time(std::filesystem::u8path(fn)).time_since_epoch()).count();
     }
 
+    /** @brief Canonicalizes a path, resolving it to an absolute, normalized form.
+     *  @tparam String The string type used for the path.
+     *  @param path The path to canonicalize.
+     *  @return The canonical absolute path, or an empty string on failure. */
     template <typename String=std::string>
     static inline std::string canonicalizePath(const String& path) {
     #ifdef WIN32
@@ -101,6 +115,10 @@ namespace musik { namespace core { namespace sdk { namespace fs {
     #endif
     }
 
+    /** @brief Returns the file extension of a filename, without the leading dot.
+     *  @tparam String The string type used for the filename.
+     *  @param filename The filename to inspect.
+     *  @return The lowercase extension, or an empty string if none exists. */
     template <typename String=std::string>
     static inline std::string getFileExtension(const String& filename) {
         std::string::size_type lastDot = filename.find_last_of(".");
@@ -110,6 +128,10 @@ namespace musik { namespace core { namespace sdk { namespace fs {
         return "";
     }
 
+    /** @brief Returns the directory portion of a path, including the trailing separator.
+     *  @tparam String The string type used for the path.
+     *  @param filename The path to inspect.
+     *  @return The directory portion, or an empty string if none exists. */
     template <typename String=std::string>
     static inline std::string getDirectory(const String& filename) {
         std::string canonicalized = canonicalizePath(filename);
@@ -125,6 +147,11 @@ namespace musik { namespace core { namespace sdk { namespace fs {
         return "";
     }
 
+    /** @brief Recursively scans a directory tree, invoking a callback for each file found.
+     *  @tparam String The string type used for the path.
+     *  @param path The root directory to scan.
+     *  @param callback Invoked with the full path of each discovered file.
+     *  @param interrupt An optional predicate; when it returns true the scan halts. */
     template <typename String=std::string>
     void scanDirectory(
         const std::string& path,

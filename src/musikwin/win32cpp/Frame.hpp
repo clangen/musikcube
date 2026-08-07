@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Frame.hpp
+ * @brief Container that adds padding around a single child window.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Frame is a Panel
+ * that adds a WindowPadding border around exactly one child Window. If the
+ * child is resized the Frame resizes itself to accommodate it; if the Frame
+ * is resized the child is resized to fit the new client area.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -49,35 +59,47 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///Frame is a Container that adds a padding (border) to a single child Window.
-///
-///If the child is resized, Frame will automatically resize itself
-///to accomidate the child and respect the the specified WindowPadding.
-///If the Frame is resized, it will automatically resize the child window 
-///to fit its new ClientSize.
-///
-///Attempting to add more than 1 child Window to a Frame will result
-///in a TooManyChildWindowsException.
-///
-///\see
-///Container, Panel
+/** @brief Frame is a Container that adds a padding (border) to a single child.
+ *  @details If the child is resized, Frame will automatically resize itself
+ *           to accommodate the child and respect the specified
+ *           WindowPadding. If the Frame is resized, it will automatically
+ *           resize the child window to fit its new ClientSize.
+ *
+ *           Attempting to add more than 1 child Window to a Frame will
+ *           result in a TooManyChildWindowsException.
+ *  @see Container, Panel */
 class Frame: public Panel
 {
 private: //types
     typedef Panel base;
 
 public: // constructors
+    /** @brief Constructs a frame around the given child.
+     *  @param child the child window (may be NULL)
+     *  @param padding the padding in pixels on all sides */
     /*ctor*/    Frame(Window* child = NULL, int padding = 0);
+    /** @brief Constructs a frame around the given child.
+     *  @param child the child window (may be NULL)
+     *  @param padding the per-side padding */
     /*ctor*/    Frame(Window* child, const WindowPadding& padding);
 
 public: // methods
+    /** @brief Sets the per-side padding.
+     *  @param padding the new padding values */
     void SetPadding(const WindowPadding& padding);
+    /** @brief Sets a uniform padding.
+     *  @param padding the padding in pixels on all sides */
     void SetPadding(int padding);
+    /** @brief Returns the client size minus the padding.
+     *  @return the usable client size */
     virtual Size ClientSize() const;
 
 protected: // methods
+    /** @brief Resizes the frame to fit the child and padding. */
     void ResizeFromChild();
+    /** @brief Resizes the frame when the child changes size.
+     *  @param window the resized child
+     *  @param newSize the child's new size */
     void OnChildResized(Window* window, Size newSize);
 
     virtual bool AddChildWindow(Window* window);
@@ -89,9 +111,9 @@ protected: // methods
     static bool RegisterWindowClass();
 
 private: // instance data
-    WindowPadding padding;
-    Window* child;
-    bool isResizingHACK;
+    WindowPadding padding;  /**< space between frame and child */
+    Window* child;          /**< the single child window */
+    bool isResizingHACK;    /**< re-entrancy guard during resize */
 };
 
 //////////////////////////////////////////////////////////////////////////////

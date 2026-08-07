@@ -34,34 +34,56 @@
 
 #pragma once
 
+/** @file SetTrackRatingQuery.h
+ *  @brief Query that sets the user rating for a track.
+ *  @details Updates the rating column of the given track in the library. */
+
 #include <musikcore/library/QueryBase.h>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Sets a track's rating.
+     *  @details Ratings are 1-5 (0 clears the rating). */
     class SetTrackRatingQuery: public musik::core::library::query::QueryBase {
         public:
-            static const std::string kQueryName;
+            static const std::string kQueryName; /**< Query type name. */
 
             DELETE_CLASS_DEFAULTS(SetTrackRatingQuery)
 
+            /** @brief Creates a set-rating query.
+             *  @param trackId The track to update.
+             *  @param rating The new rating (0-5). */
             SetTrackRatingQuery(int64_t trackId, int rating) noexcept;
 
             /* IQuery */
+            /** @return The query type name. */
             std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
+            /** @return The serialized query parameters. */
             std::string SerializeQuery() override;
+            /** @return The serialized result. */
             std::string SerializeResult() override;
+            /** @brief Populates the result from serialized data.
+             *  @param data The serialized result. */
             void DeserializeResult(const std::string& data) override;
+            /** @brief Recreates a query from serialized parameters.
+             *  @param data The serialized query.
+             *  @return The deserialized query. */
             static std::shared_ptr<SetTrackRatingQuery> DeserializeQuery(const std::string& data);
 
         protected:
             /* QueryBase */
+            /** @brief Runs the query against the database.
+             *  @param db The connection to run on.
+             *  @return true on success. */
             bool OnRun(musik::core::db::Connection &db) override;
 
-            int64_t trackId;
-            int rating;
-            bool result{ false };
+            int64_t trackId; /**< Track to update. */
+            int rating;      /**< New rating. */
+            bool result{ false }; /**< Whether the update succeeded. */
     };
 
 } } } }

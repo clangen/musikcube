@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Button.hpp
+ * @brief Standard push-button control.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Button wraps the
+ * standard Win32 "BUTTON" control class and emits the ButtonPressedEvent
+ * signal when the user activates it. It is custom-painted by the library.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -49,35 +58,41 @@ namespace win32cpp {
 
 class Button;   // forward decl
 
-///\brief
-///The type of event used when a Button is pressed..
-///\see
-///Button.
+/** @brief Signal type emitted when a Button is pressed.
+ *  @see Button */
 typedef sigslot::signal1<Button*> ButtonPressedEvent;
 
-///\brief
-///A standard push-button. The Button::Pressed event is emitted when
-///the user activates the button.
+/** @brief A standard push-button.
+ *  @details The Button::Pressed event is emitted when the user activates
+ *           the button. Wraps the Win32 BUTTON control, intercepting
+ *           WM_LBUTTONUP to translate activation into the Pressed signal. */
 class Button: public Window
 {
 private: // types
     typedef Window base;
 
 public: // events
-    ///\brief This event is emitted when the user presses the Button
+    /** @brief Emitted when the user presses the Button. */
     ButtonPressedEvent  Pressed;
 
 public: // constructors
+    /** @brief Constructs a push button.
+     *  @param caption the text displayed on the button
+     *  @param layoutFlags layout flags used for sizing */
     /*ctor*/            Button(const uichar* caption = _T(""), LayoutFlags = LayoutWrapWrap);
 
 protected: // methods
+    /** @brief Creates the underlying HWND. */
     virtual HWND        Create(Window* parent);
+    /** @brief Processes window messages, detecting activation. */
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    /** @brief Emits the Pressed signal. */
     virtual void        OnPressed();
+    /** @brief Paints the button face and caption. */
     virtual void        PaintToHDC(HDC hdc, const Rect& rect);
 
 protected: // instance data
-    uistring caption;
+    uistring caption; /**< the button's caption text */
 };
 
 //////////////////////////////////////////////////////////////////////////////

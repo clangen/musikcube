@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file ConsoleLayout.h
+ * @brief Debug console layout that displays log output in a scrollable list.
+ * @details Renders the log messages produced by a ConsoleLogger in a
+ *          ListWindow, automatically following the newest entries and
+ *          supporting selection and activation of log lines.
+ */
+
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/ITopLevelLayout.h>
@@ -41,18 +49,45 @@
 
 namespace musik { namespace cube {
 
+    /**
+     * @brief Console log viewer layout.
+     * @details Shows log entries produced by a ConsoleLogger in a scrollable
+     *          list window and keeps the view pinned to the bottom while new
+     *          entries arrive. Also implements ITopLevelLayout so it can be
+     *          displayed as a top-level view.
+     */
     class ConsoleLayout:
         public cursespp::LayoutBase,
         public cursespp::ITopLevelLayout,
         public sigslot::has_slots<>
     {
         public:
+            /**
+             * @brief Creates the layout bound to the given logger.
+             * @param logger the logger whose output is displayed
+             */
             ConsoleLayout(ConsoleLogger* logger);
 
             /* IWindow */
+            /**
+             * @brief Positions and lays out the child windows.
+             */
             void OnLayout() override;
+            /**
+             * @brief Attaches the shortcuts window shown at the bottom.
+             * @param w the shortcuts window
+             */
             void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
+            /**
+             * @brief Handles keyboard input.
+             * @param kn the key sequence that was pressed
+             * @return true if the event was consumed
+             */
             bool KeyPress(const std::string& kn) override;
+            /**
+             * @brief Called when the layout becomes visible or hidden.
+             * @param visible true if the layout became visible
+             */
             void OnVisibilityChanged(bool visible) override;
 
         private:
@@ -60,11 +95,11 @@ namespace musik { namespace cube {
             void OnSelectionChanged(cursespp::ListWindow* window, size_t index, size_t prev);
             void OnItemActivated(cursespp::ListWindow* window, size_t index);
 
-            ConsoleLogger* logger;
-            ConsoleLogger::AdapterPtr adapter;
-            std::shared_ptr<cursespp::ListWindow> listView;
-            cursespp::ShortcutsWindow* shortcuts;
-            bool scrolledToBottom { true };
+            ConsoleLogger* logger;                        /**< the logger providing log entries */
+            ConsoleLogger::AdapterPtr adapter;            /**< the adapter feeding the list window */
+            std::shared_ptr<cursespp::ListWindow> listView; /**< the scrollable log list */
+            cursespp::ShortcutsWindow* shortcuts;         /**< the shortcuts window, not owned */
+            bool scrolledToBottom { true };               /**< true while the list follows new entries */
     };
 
 } }

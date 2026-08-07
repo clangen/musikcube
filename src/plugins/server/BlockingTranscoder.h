@@ -32,6 +32,14 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+///
+
+/// @file BlockingTranscoder.h
+/// @brief Offline audio transcoder used by the streaming server.
+/// @details Runs a blocking transcode of a URI into a temporary file, then
+/// atomically moves the result to its final cache location. Used for formats
+/// that cannot be transcoded on-demand in real time.
+
 #include <musikcore/sdk/IDataStream.h>
 #include <musikcore/sdk/IBlockingEncoder.h>
 #include <musikcore/sdk/DataBuffer.h>
@@ -42,10 +50,23 @@
 #include <string>
 #include <stdio.h>
 
+/** @brief Performs a blocking audio transcode into the server cache.
+ *  @details Opens the source URI through the context's stream factory, drives
+ *  an IBlockingEncoder to write the full transcoded result to a temporary
+ *  file, then renames it to the final filename. The number of active instances
+ *  is tracked so the server can limit concurrent transcodes. */
 class BlockingTranscoder {
     public:
+        /** @brief Position type alias. */
         using PositionType = musik::core::sdk::PositionType;
 
+        /** @brief Constructs a transcode task.
+         *  @param context Shared server context.
+         *  @param encoder The blocking encoder to use.
+         *  @param uri URI of the source track.
+         *  @param tempFilename Temporary output file.
+         *  @param finalFilename Final cached output file.
+         *  @param bitrate Target bitrate. */
         BlockingTranscoder(
             Context& context,
             musik::core::sdk::IBlockingEncoder* encoder,
@@ -54,21 +75,35 @@ class BlockingTranscoder {
             const std::string& finalFilename,
             int bitrate);
 
+        /** @brief Destroys the transcode task. */
         virtual ~BlockingTranscoder();
 
+        /** @brief Runs the transcode to completion.
+         *  @return True if the transcode succeeded. */
         bool Transcode();
+        /** @brief Requests that a running transcode be aborted. */
         void Interrupt();
 
+        /** @brief Returns the number of active transcode tasks.
+         *  @return Active task count. */
         static int GetActiveCount();
 
     private:
+        /** @brief Releases resources and removes partial output files. */
         void Cleanup();
 
+        /** @brief Shared server context. */
         Context& context;
+        /** @brief Input stream opened on the source URI. */
         musik::core::sdk::IDataStream* input;
+        /** @brief The blocking encoder being driven. */
         musik::core::sdk::IBlockingEncoder* encoder;
+        /** @brief Output stream for the temp file. */
         musik::core::sdk::IDataStream* output;
+        /** @brief Temporary and final cache file names. */
         std::string tempFilename, finalFilename;
+        /** @brief Target bitrate. */
         int bitrate;
+        /** @brief Whether the task was interrupted. */
         bool interrupted;
 };

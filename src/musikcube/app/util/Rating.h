@@ -34,15 +34,32 @@
 
 #pragma once
 
+/**
+ * @file Rating.h
+ * @brief Helpers for rendering track ratings.
+ * @details Provides the star characters used to render a rating value, a
+ *          function that converts a rating value to a string of stars, and a
+ *          function that re-reads the user-configurable rating characters.
+ */
+
 #include <string>
 #include <map>
 
 namespace musik { namespace cube {
 
-    const std::string kFilledStar = "\xE2\x98\x85";
-    const std::string kEmptyStar = "\xC2\xB7";
+    const std::string kFilledStar = "\xE2\x98\x85"; /**< the default filled star character */
+    const std::string kEmptyStar = "\xC2\xB7";      /**< the default empty star character */
 
+    /**
+     * @brief Converts a rating value to a string of star characters.
+     * @param value the rating, typically from 0 to 5
+     * @return a string of filled and empty stars
+     */
     extern const std::string getRatingString(int value);
+
+    /**
+     * @brief Re-reads the rating characters from preferences.
+     */
     extern void updateDefaultRatingSymbols();
 
 } }

@@ -34,6 +34,12 @@
 
 #pragma once
 
+/// @file WaveOutBuffer.h
+/// @brief Wraps a PCM buffer for playback through the waveOut API.
+/// @details A WaveOutBuffer associates an IBuffer with the WAVEHDR header
+/// needed to enqueue it to the waveOut device. When the device finishes
+/// playing the header, the buffer is released back to its provider.
+
 #include "config.h"
 #include <musikcore/sdk/IBuffer.h>
 #include <musikcore/sdk/IBufferProvider.h>
@@ -42,25 +48,48 @@ class WaveOut;
 
 using namespace musik::core::sdk;
 
+/** @brief Adapts a PCM buffer to a waveOut WAVEHDR.
+ *  @details Holds the wrapped IBuffer, its provider and the WAVEHDR structure
+ *  passed to waveOutWrite. WriteToOutput() enqueues the buffer to the device;
+ *  when the device reports completion the provider is notified. */
 class WaveOutBuffer {
     public:
+        /** @brief Constructs a buffer owned by the given output.
+         *  @param waveOut The owning WaveOut output. */
         WaveOutBuffer(WaveOut *waveOut);
+        /** @brief Destroys the buffer. */
         ~WaveOutBuffer();
 
+        /** @brief Associates a PCM buffer and its provider.
+         *  @param buffer The PCM buffer to play.
+         *  @param provider The provider owning the buffer. */
         void Set(IBuffer *buffer, IBufferProvider *provider);
+        /** @brief Clears the wrapped buffer and provider. */
         void Reset();
 
+        /** @brief Enqueues the buffer to the waveOut device.
+         *  @return True if the buffer was accepted by the device. */
         bool WriteToOutput();
 
+        /** @brief Returns the wrapped buffer's provider.
+         *  @return The provider, or null. */
         IBufferProvider* GetBufferProvider() const;
+        /** @brief Returns the wrapped PCM buffer.
+         *  @return The buffer, or null. */
         IBuffer* GetWrappedBuffer() const;
 
     private:
+        /** @brief Prepares the WAVEHDR for the wrapped buffer. */
         void Initialize();
 
+        /** @brief The owning WaveOut output. */
         WaveOut *waveOut;
+        /** @brief The wrapped PCM buffer. */
         IBuffer *buffer;
+        /** @brief The provider owning the buffer. */
         IBufferProvider *provider;
+        /** @brief The waveOut header describing the buffer. */
         WAVEHDR header;
+        /** @brief Whether the buffer is in a reset state. */
         bool reset;
 };

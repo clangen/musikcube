@@ -32,15 +32,34 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IDebug.h @brief Defines the IDebug interface for writing log messages at various severity levels. */
 #pragma once
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Provides access to the application's logging facility, allowing
+     *  plugins to emit diagnostic messages at different severity levels. */
     class IDebug {
         public:
+            /** @brief Writes a verbose (debug) level message.
+             *  @param tag The component or source identifier.
+             *  @param message The message text. */
             virtual void Verbose(const char* tag, const char* message) = 0;
+
+            /** @brief Writes an informational level message.
+             *  @param tag The component or source identifier.
+             *  @param message The message text. */
             virtual void Info(const char* tag, const char* message) = 0;
+
+            /** @brief Writes a warning level message.
+             *  @param tag The component or source identifier.
+             *  @param message The message text. */
             virtual void Warning(const char* tag, const char* message) = 0;
+
+            /** @brief Writes an error level message.
+             *  @param tag The component or source identifier.
+             *  @param message The message text. */
             virtual void Error(const char* tag, const char* message) = 0;
     };
 

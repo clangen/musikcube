@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file DirectoryLayout.h
+ * @brief Layout for browsing a local directory tree and playing its tracks.
+ * @details Presents the folder hierarchy in a directory list on the left and
+ *          the tracks of the selected directory on the right, updating the
+ *          title as the user navigates.
+ */
+
 #include <cursespp/Colors.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextLabel.h>
@@ -49,6 +57,12 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Directory browser layout.
+         * @details Two-pane layout; the left pane shows the folders below the
+         *          root directory, including a parent entry, and the right
+         *          pane lists the tracks in the currently selected folder.
+         */
         class DirectoryLayout :
             public cursespp::LayoutBase,
             public sigslot::has_slots<>
@@ -56,17 +70,47 @@ namespace musik {
             public:
                 DELETE_CLASS_DEFAULTS(DirectoryLayout)
 
+                /**
+                 * @brief Creates the layout with the given playback service
+                 *        and library.
+                 * @param playback the active playback service
+                 * @param library the library used to index and query tracks
+                 */
                 DirectoryLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
+                /**
+                 * @brief Sets the root directory to browse.
+                 * @param directory the absolute path of the root directory
+                 */
                 void SetDirectory(const std::string& directory);
+                /**
+                 * @brief Plays the tracks in the track list starting from the
+                 *        top.
+                 */
                 void PlayFromTop();
+                /**
+                 * @brief Returns the currently browsed root directory.
+                 * @return the absolute path of the root directory
+                 */
                 std::string GetDirectory();
 
                 /* IWindow */
+                /**
+                 * @brief Called when the layout becomes visible or hidden.
+                 * @param visible true if the layout became visible
+                 */
                 void OnVisibilityChanged(bool visible) override;
+                /**
+                 * @brief Positions and lays out the child windows.
+                 */
                 void OnLayout() override;
+                /**
+                 * @brief Handles keyboard input.
+                 * @param key the key sequence that was pressed
+                 * @return true if the event was consumed
+                 */
                 bool KeyPress(const std::string& key) override;
 
             private:
@@ -91,14 +135,14 @@ namespace musik {
 
                 void OnIndexerProgress(int count);
 
-                musik::core::audio::PlaybackService& playback;
-                musik::core::ILibraryPtr library;
-                std::string rootDirectory;
-                std::shared_ptr<DirectoryAdapter> adapter;
-                std::shared_ptr<cursespp::ListWindow> directoryList;
-                std::shared_ptr<TrackListView> trackList;
-                size_t queryHash;
-                bool hasSubdirectories;
+                musik::core::audio::PlaybackService& playback; /**< the active playback service */
+                musik::core::ILibraryPtr library;              /**< the library used to index tracks */
+                std::string rootDirectory;                     /**< the root directory being browsed */
+                std::shared_ptr<DirectoryAdapter> adapter;     /**< the adapter feeding the directory list */
+                std::shared_ptr<cursespp::ListWindow> directoryList; /**< the directory list window */
+                std::shared_ptr<TrackListView> trackList;      /**< the track list window */
+                size_t queryHash;                              /**< hash identifying the active track query */
+                bool hasSubdirectories;                        /**< true if the current folder has subfolders */
         };
     }
 }

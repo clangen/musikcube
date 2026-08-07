@@ -34,18 +34,33 @@
 
 #pragma once
 
+/** @file Messages.h
+ *  @brief Core runtime message type constants.
+ *  @details Defines the message type ids used by the core application. Custom
+ *      message types may start at the User value. */
+
+/** @namespace musik::core::message
+ *  @brief Runtime message type constants. */
 namespace musik {
     namespace core {
         namespace message {
+            /** @brief First reserved core message id. */
             static const int First = 512;
 
+            /** @brief A playlist's tracks were modified. */
             static const int PlaylistModified       = First + 1;
+            /** @brief A playlist was created. */
             static const int PlaylistCreated        = First + 2;
+            /** @brief A playlist was renamed. */
             static const int PlaylistRenamed        = First + 3;
+            /** @brief A playlist was deleted. */
             static const int PlaylistDeleted        = First + 4;
+            /** @brief The plugin environment was updated. */
             static const int EnvironmentUpdated     = First + 5;
+            /** @brief The equalizer settings were updated. */
             static const int EqualizerUpdated       = First + 6;
 
+            /** @brief First id available for custom (user-defined) messages. */
             static const int User                   = 4096;
         }
     }

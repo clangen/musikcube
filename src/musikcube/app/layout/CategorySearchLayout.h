@@ -34,6 +34,15 @@
 
 #pragma once
 
+/**
+ * @file CategorySearchLayout.h
+ * @brief Layout for searching the library by album, artist and genre.
+ * @details Provides a text input whose results are live-requeried against the
+ *          library, with results shown in three category lists (albums,
+ *          artists, genres). Emits SearchResultSelected when a result is
+ *          activated.
+ */
+
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
 #include <cursespp/TextLabel.h>
@@ -49,28 +58,71 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Library search layout.
+         * @details Contains a search input and three category result lists
+         *          (albums, artists, genres). Typing triggers live library
+         *          queries; activating a result emits SearchResultSelected.
+         */
         class CategorySearchLayout :
             public cursespp::LayoutBase,
             public sigslot::has_slots<>
         {
             public:
+                /**
+                 * @brief Emitted when a search result is activated.
+                 * @param layout this layout
+                 * @param fieldType the type of the activated field
+                 * @param fieldId the id of the activated field
+                 */
                 sigslot::signal3<CategorySearchLayout*, std::string, int64_t> SearchResultSelected;
 
                 DELETE_CLASS_DEFAULTS(CategorySearchLayout)
 
+                /**
+                 * @brief Creates the layout with the given playback service
+                 *        and library.
+                 * @param playback the active playback service
+                 * @param library the library to search
+                 */
                 CategorySearchLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
+                /**
+                 * @brief Destroys the layout and its child views.
+                 */
                 virtual ~CategorySearchLayout();
 
+                /**
+                 * @brief Moves keyboard focus to the search input.
+                 */
                 void FocusInput();
+                /**
+                 * @brief Restores the last search from the previous session.
+                 */
                 void LoadLastSession();
 
                 /* IWindow */
+                /**
+                 * @brief Called when the layout becomes visible or hidden.
+                 * @param visible true if the layout became visible
+                 */
                 void OnVisibilityChanged(bool visible) override;
+                /**
+                 * @brief Handles keyboard input.
+                 * @param key the key sequence that was pressed
+                 * @return true if the event was consumed
+                 */
                 bool KeyPress(const std::string& key) override;
+                /**
+                 * @brief Positions and lays out the child windows.
+                 */
                 void OnLayout() override;
+                /**
+                 * @brief Processes runtime messages.
+                 * @param message the message to process
+                 */
                 void ProcessMessage(musik::core::runtime::IMessage& message) override;
 
             private:
@@ -100,13 +152,13 @@ namespace musik {
                 void ToggleMatchType();
                 void SetMatchType(MatchType matchType);
 
-                musik::core::ILibraryPtr library;
-                MatchType matchType{ MatchType::Substring };
-                std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<CategoryListView> albums;
-                std::shared_ptr<CategoryListView> artists;
-                std::shared_ptr<CategoryListView> genres;
-                std::shared_ptr<cursespp::TextInput> input;
+                musik::core::ILibraryPtr library;                       /**< the library being searched */
+                MatchType matchType{ MatchType::Substring };            /**< the current query match type */
+                std::shared_ptr<musik::core::Preferences> prefs;        /**< persistent preferences for the layout */
+                std::shared_ptr<CategoryListView> albums;               /**< the album results list */
+                std::shared_ptr<CategoryListView> artists;              /**< the artist results list */
+                std::shared_ptr<CategoryListView> genres;               /**< the genre results list */
+                std::shared_ptr<cursespp::TextInput> input;             /**< the search input */
         };
     }
 }

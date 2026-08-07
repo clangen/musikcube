@@ -34,21 +34,40 @@
 
 #pragma once
 
+/** @file Outputs.h
+ *  @brief Accessors for the audio output devices registered by plugins.
+ *  @details Provides lookup of available IOutput devices, the currently selected
+ *      output, and helpers to change the selection. */
+
 #include <musikcore/config.h>
 #include <musikcore/sdk/IOutput.h>
 
+/** @namespace musik::core::audio::outputs
+ *  @brief Utilities for enumerating and selecting audio output devices. */
 namespace musik { namespace core { namespace audio { namespace outputs {
 
-    using IOutput = musik::core::sdk::IOutput;
+    using IOutput = musik::core::sdk::IOutput; /**< Output device alias. */
 
+    /** @return All registered output devices. */
     std::vector<std::shared_ptr<IOutput>> GetAllOutputs();
+    /** @return The number of registered output devices. */
     size_t GetOutputCount();
+    /** @return The unmanaged output at the given index.
+     *  @param index Zero-based output index. */
     IOutput* GetUnmanagedOutput(size_t index);
+    /** @return The unmanaged output with the given name, or nullptr.
+     *  @param name The output name to look up. */
     IOutput* GetUnmanagedOutput(const std::string& name);
+    /** @return The currently selected unmanaged output, or nullptr. */
     IOutput* GetUnmanagedSelectedOutput();
+    /** @return A shared pointer to the currently selected output. */
     std::shared_ptr<IOutput> SelectedOutput();
 
+    /** @brief Selects an output device by shared pointer.
+     *  @param output The output to select. */
     void SelectOutput(std::shared_ptr<IOutput> output);
+    /** @brief Selects an output device by raw pointer.
+     *  @param output The output to select. */
     void SelectOutput(IOutput* output);
 
 } } } }

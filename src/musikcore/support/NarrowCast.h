@@ -34,9 +34,19 @@
 
 #pragma once
 
+/** @file NarrowCast.h
+ *  @brief A checked numeric narrowing cast.
+ *  @details narrow_cast() converts a value to a narrower type and asserts (in
+ *      debug builds) that the round trip through the original type is lossless. */
+
 #include <cassert>
 
 /* https://stackoverflow.com/a/46229281 */
+/** @brief Converts a value to a narrower type, asserting no loss occurs.
+ *  @tparam To The destination type.
+ *  @tparam From The source type (deduced).
+ *  @param v The value to convert.
+ *  @return The narrowed value. */
 template<class To, class From>
 To narrow_cast(From v) {
     To r = static_cast<To>(v);

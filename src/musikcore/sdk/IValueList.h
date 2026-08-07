@@ -32,17 +32,28 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IValueList.h @brief Defines the IValueList interface, a read-only list of IValue resources. */
 #pragma once
 
 #include <stddef.h>
 #include "IValue.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A read-only, indexable collection of IValue resources. */
     class IValueList {
         public:
+            /** @brief Releases the list; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Returns the number of values in the list.
+             *  @return The value count. */
             virtual size_t Count() = 0;
+
+            /** @brief Returns the value at the given index.
+             *  @param index The zero-based index.
+             *  @return The value, or null if out of range. */
             virtual IValue* GetAt(size_t index) = 0;
     };
 

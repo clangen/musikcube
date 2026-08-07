@@ -34,6 +34,13 @@
 
 #pragma once
 
+/**
+ * @file HotkeysLayout.h
+ * @brief Layout that lists the keyboard hotkey mappings.
+ * @details Displays the configured hotkey bindings in a scrollable list and
+ *          lets the user activate an entry to reassign it.
+ */
+
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/ShortcutsWindow.h>
@@ -42,6 +49,11 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Hotkey list layout.
+         * @details Shows all hotkey bindings as a list of entries. Activating
+         *          an entry opens the flow to reassign that hotkey.
+         */
         class HotkeysLayout :
             public cursespp::LayoutBase,
             public cursespp::ITopLevelLayout,
@@ -50,21 +62,36 @@ namespace musik {
             public:
                 DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(HotkeysLayout)
 
+                /**
+                 * @brief Creates an empty hotkeys layout.
+                 */
                 HotkeysLayout();
 
                 /* ITopLevelLayout */
+                /**
+                 * @brief Attaches the shortcuts window shown at the bottom.
+                 * @param shortcuts the shortcuts window
+                 */
                 void SetShortcutsWindow(
                     cursespp::ShortcutsWindow* shortcuts) override;
 
                 /* IWindow */
+                /**
+                 * @brief Handles keyboard input.
+                 * @param kn the key sequence that was pressed
+                 * @return true if the event was consumed
+                 */
                 bool KeyPress(const std::string& kn) override;
+                /**
+                 * @brief Positions and lays out the child windows.
+                 */
                 void OnLayout() override;
 
             private:
                 void OnEntryActivated(cursespp::ListWindow* w, size_t index);
 
-                std::shared_ptr<cursespp::ListWindow> listWindow;
-                cursespp::ShortcutsWindow* shortcuts;
+                std::shared_ptr<cursespp::ListWindow> listWindow; /**< the hotkey list window */
+                cursespp::ShortcutsWindow* shortcuts;             /**< the shortcuts window, not owned */
         };
     }
 }

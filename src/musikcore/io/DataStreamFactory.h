@@ -33,30 +33,51 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+/** @file DataStreamFactory.h
+ *  @brief Opens data streams (files, URLs, ...) through registered factory plugins.
+ *  @details Maintains a list of IDataStreamFactory implementations registered by
+ *      plugins and routes OpenSharedDataStream()/OpenDataStream() to the first
+ *      factory able to handle the given URI. */
+
 #include <musikcore/config.h>
 #include <musikcore/sdk/IDataStream.h>
 #include <musikcore/sdk/IDataStreamFactory.h>
 #include <vector>
 
+/** @namespace musik::core::io
+ *  @brief Input/output helpers: data streams and stream factories. */
 namespace musik { namespace core { namespace io {
 
+    /** @brief Dispatches data-stream opens to registered factory plugins.
+     *  @details The first factory whose CanOpen() matches the URI is used. Factories
+     *      are registered by plugins at load time. */
     class DataStreamFactory {
         public:
-            using DataStreamPtr = std::shared_ptr<musik::core::sdk::IDataStream>;
-            using OpenFlags = musik::core::sdk::OpenFlags;
+            using DataStreamPtr = std::shared_ptr<musik::core::sdk::IDataStream>; /**< Shared stream alias. */
+            using OpenFlags = musik::core::sdk::OpenFlags; /**< Open flag alias. */
 
+            /** @brief Opens a shared data stream for the given URI.
+             *  @param uri The URI to open (file path, URL, etc.).
+             *  @param flags Read/write access flags.
+             *  @return A shared stream, or nullptr if no factory matched. */
             static DataStreamPtr OpenSharedDataStream(const char *uri, OpenFlags flags);
+            /** @brief Opens an unmanaged data stream for the given URI.
+             *  @param uri The URI to open (file path, URL, etc.).
+             *  @param flags Read/write access flags.
+             *  @return A raw stream (release with Release()), or nullptr. */
             static musik::core::sdk::IDataStream* OpenDataStream(const char* uri, OpenFlags flags);
 
         private:
-            typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector;
+            typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector; /**< Registered factories. */
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DataStreamFactory)
 
+            /** @brief Creates the factory (private). */
             DataStreamFactory();
+            /** @return The process-wide factory singleton. */
             static DataStreamFactory* Instance();
 
-            DataStreamFactoryVector dataStreamFactories;
+            DataStreamFactoryVector dataStreamFactories; /**< Registered IDataStreamFactory instances. */
     };
 
 } } }

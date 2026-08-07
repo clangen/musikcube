@@ -32,23 +32,40 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IResource.h @brief Defines the IResource interface, the base type for library query results. */
 #pragma once
 
 #include <stddef.h>
 #include "constants.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief The base type for resources returned by library queries, such as
+     *  values and maps, providing identity and class information. */
     class IResource {
         public:
+            /** @brief The concrete class of a resource. */
             enum class Class {
+                /** @brief A simple value resource. */
                 Value = 0,
+                /** @brief A key/value map resource. */
                 Map = 1
             };
 
+            /** @brief Returns the resource's internal id.
+             *  @return The resource id. */
             virtual int64_t GetId() = 0;
+
+            /** @brief Returns the class of the resource.
+             *  @return The resource class. */
             virtual Class GetClass() = 0;
+
+            /** @brief Returns the type string of the resource.
+             *  @return The resource type. */
             virtual const char* GetType() = 0;
+
+            /** @brief Releases the resource; callers must invoke this when done. */
             virtual void Release() = 0;
     };
 

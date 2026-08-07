@@ -32,21 +32,49 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ITagStore.h @brief Defines the ITagStore interface for storing track metadata and thumbnails. */
 #pragma once
 
 #include "ReplayGain.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A mutable collection of metadata tags and associated data for a
+     *  single track, used when reading and writing tags. */
     class ITagStore {
         public:
+            /** @brief Increments the reference count of the store. */
             virtual void Retain() = 0;
+
+            /** @brief Releases the store; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Sets a metadata value.
+             *  @param key The metadata key.
+             *  @param value The value to store. */
             virtual void SetValue(const char* key, const char* value) = 0;
+
+            /** @brief Removes a metadata value.
+             *  @param key The metadata key to clear. */
             virtual void ClearValue(const char* key) = 0;
+
+            /** @brief Returns whether the store contains the given key.
+             *  @param key The metadata key to check.
+             *  @return True if the key exists. */
             virtual bool Contains(const char* key) = 0;
+
+            /** @brief Sets the thumbnail image data for the track.
+             *  @param data The raw thumbnail data.
+             *  @param size The size of the thumbnail data, in bytes. */
             virtual void SetThumbnail(const char *data, long size) = 0;
+
+            /** @brief Returns whether the store contains thumbnail data.
+             *  @return True if a thumbnail is present. */
             virtual bool ContainsThumbnail() = 0;
+
+            /** @brief Sets the ReplayGain values for the track.
+             *  @param replayGain The ReplayGain values to store. */
             virtual void SetReplayGain(const ReplayGain& replayGain) = 0;
     };
 

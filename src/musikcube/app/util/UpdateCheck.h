@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file UpdateCheck.h
+ * @brief Background check for application updates.
+ * @details Queries the update server on a background thread, compares the
+ *          latest version with the installed version and either notifies the
+ *          user that an upgrade is available or that no upgrade was found.
+ */
+
 #include <thread>
 #include <mutex>
 #include <memory>
@@ -41,23 +49,53 @@
 #include <musikcore/sdk/HttpClient.h>
 
 namespace musik { namespace cube {
+    /**
+     * @brief Performs a single update check in the background.
+     * @details The check runs on a detached thread and marshals the result
+     *          back through the message queue. Results are delivered to the
+     *          callback supplied to Run().
+     */
     class UpdateCheck: private musik::core::runtime::IMessageTarget {
         public:
             /* args = updateRequired, version, url */
             using Callback = std::function<void(bool, std::string, std::string)>;
             using HttpClient = musik::core::sdk::HttpClient<std::stringstream>;
 
+            /**
+             * @brief Shows the "upgrade available" overlay.
+             * @param version the latest available version
+             * @param url the download or release page url
+             * @param silent if true, do not show the overlay if it has already
+             *        been acknowledged for this version
+             */
             static void ShowUpgradeAvailableOverlay(
                 const std::string& version, const std::string& url, bool silent = true);
 
+            /**
+             * @brief Shows the "no upgrade found" overlay.
+             */
             static void ShowNoUpgradeFoundOverlay();
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(UpdateCheck)
 
+            /**
+             * @brief Creates a new update check.
+             */
             UpdateCheck();
+            /**
+             * @brief Destroys the check and cancels any in-flight request.
+             */
             ~UpdateCheck();
 
+            /**
+             * @brief Starts the update check on a background thread.
+             * @param callback invoked with (updateRequired, version, url)
+             * @return true if the check was started
+             */
             bool Run(Callback callback);
+            /**
+             * @brief Cancels an in-flight check.
+             */
             void Cancel();
 
         private:
@@ -66,10 +104,10 @@ namespace musik { namespace cube {
             /* IMessageHandler */
             void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
-            std::recursive_mutex mutex;
-            Callback callback;
-            std::shared_ptr<HttpClient> httpClient;
-            std::string result, latestVersion, updateUrl;
+            std::recursive_mutex mutex;     /**< guards the shared result state */
+            Callback callback;              /**< invoked when the check completes */
+            std::shared_ptr<HttpClient> httpClient; /**< the HTTP client used to query the server */
+            std::string result, latestVersion, updateUrl; /**< last check results */
     };
 
 } }

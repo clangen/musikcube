@@ -32,17 +32,32 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IDataStreamFactory.h @brief Defines the IDataStreamFactory interface for creating IDataStream instances. */
 #pragma once
 
 #include "IDataStream.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
+
+    /** @brief Creates IDataStream instances for a particular URI scheme or
+     *  protocol, allowing the playback engine to open arbitrary sources. */
     class IDataStreamFactory{
         public:
             using OpenFlags = musik::core::sdk::OpenFlags;
 
+            /** @brief Returns whether this factory can create a stream for the given URI.
+             *  @param uri The URI to check.
+             *  @return True if the URI is supported by this factory. */
             virtual bool CanRead(const char *uri) = 0;
+
+            /** @brief Creates and opens a stream for the given URI.
+             *  @param uri The URI to open.
+             *  @param flags The access flags for the new stream.
+             *  @return The opened stream, or null on failure. */
             virtual IDataStream* Open(const char *uri, OpenFlags flags) = 0;
+
+            /** @brief Releases the factory; callers must invoke this when done. */
             virtual void Release() = 0;
     };
 

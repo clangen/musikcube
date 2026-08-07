@@ -34,24 +34,57 @@
 
 #pragma once
 
+/**
+ * @file PlaybackOverlays.h
+ * @brief Factory for overlays that configure playback hardware.
+ * @details Provides static helpers that show the output driver chooser, the
+ *          output device chooser, the transport type chooser and the replay
+ *          gain overlay.
+ */
+
 #include <functional>
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/sdk/IPlaybackService.h>
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Factory for playback-related configuration overlays.
+         * @details Each static method shows a modal overlay and invokes the
+         *          callback when the user finishes so the caller can reload
+         *          or refresh the relevant settings. Not instantiable.
+         */
         class PlaybackOverlays {
             public:
+                /**
+                 * @brief Shows the audio output driver chooser.
+                 * @param transportType the transport whose driver is changed
+                 * @param callback invoked when the overlay is closed
+                 */
                 static void ShowOutputDriverOverlay(
                     musik::core::audio::MasterTransport::Type transportType,
                     std::function<void()> callback);
 
+                /**
+                 * @brief Shows the output device chooser.
+                 * @param callback invoked when the overlay is closed
+                 */
                 static void ShowOutputDeviceOverlay(std::function<void()> callback);
 
+                /**
+                 * @brief Shows the transport type chooser.
+                 * @param transportType the currently active transport type
+                 * @param callback invoked with the newly selected transport
+                 *        type
+                 */
                 static void ShowTransportOverlay(
                     musik::core::audio::MasterTransport::Type transportType,
                     std::function<void(musik::core::audio::MasterTransport::Type)> callback);
 
+                /**
+                 * @brief Shows the replay gain mode chooser.
+                 * @param callback invoked when the overlay is closed
+                 */
                 static void ShowReplayGainOverlay(std::function<void()> callback);
 
             private:

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -35,6 +35,16 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @file Types.hpp
+ * @brief Core typedefs, macros and the shared EventHandler base for win32cpp.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. This header
+ * defines the UI character/string aliases (uichar, uistring), the byte
+ * typedef, the EventHandler base class used with sigslot, and the
+ * application-wide window messages used internally by the library.
+ */
 
 #pragma once
 

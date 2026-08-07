@@ -34,15 +34,29 @@
 
 #pragma once
 
+/** @file PersistedPlayQueueQuery.h
+ *  @brief Query that saves or restores the playback queue to/from the library.
+ *  @details Serializes the current playback queue into the database (so it can be
+ *      restored after a restart) or restores it from the database. */
+
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/audio/PlaybackService.h>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Persists or restores the playback queue.
+     *  @details Create with Save() to write the queue into the library, or with
+     *      Restore() to load it back into the PlaybackService. */
     class PersistedPlayQueueQuery : public musik::core::library::query::QueryBase {
         public:
-            static const std::string kQueryName;
+            static const std::string kQueryName; /**< Query type name. */
 
+            /** @brief Creates a query that saves the queue to the library.
+             *  @param library The library to write to.
+             *  @param playback The playback service whose queue is saved.
+             *  @return A new query (caller owns it). */
             static PersistedPlayQueueQuery* Save(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback)
@@ -50,6 +64,10 @@ namespace musik { namespace core { namespace library { namespace query {
                 return new PersistedPlayQueueQuery(library, playback, Type::Save);
             }
 
+            /** @brief Creates a query that restores the queue from the library.
+             *  @param library The library to read from.
+             *  @param playback The playback service to populate.
+             *  @return A new query (caller owns it). */
             static PersistedPlayQueueQuery* Restore(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback)
@@ -60,23 +78,32 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_CLASS_DEFAULTS(PersistedPlayQueueQuery)
 
             /* IQuery */
+            /** @return The query type name. */
             std::string Name() override { return kQueryName; }
 
         protected:
             /* QueryBase */
+            /** @brief Runs the query against the database.
+             *  @param db The connection to run on.
+             *  @return true on success. */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
+            /** @brief Whether this query saves or restores the queue. */
             enum class Type { Save, Restore };
 
+            /** @brief Constructs the query (use Save()/Restore()).
+             *  @param library The library to read or write.
+             *  @param playback The playback service.
+             *  @param type Save or Restore. */
             PersistedPlayQueueQuery(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback,
                 Type type) noexcept;
 
-            musik::core::ILibraryPtr library;
-            musik::core::audio::PlaybackService& playback;
-            Type type;
+            musik::core::ILibraryPtr library; /**< Library to read or write. */
+            musik::core::audio::PlaybackService& playback; /**< Playback service. */
+            Type type; /**< Save or Restore. */
     };
 
 } } } }

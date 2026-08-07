@@ -34,25 +34,49 @@
 
 #pragma once
 
+/** @file LastFm.h
+ *  @brief Last.fm scrobbling client.
+ *  @details Handles account linking (token + session creation) and scrobbling of
+ *      played tracks, plus persistence of the authenticated session. */
+
 #include <musikcore/library/track/Track.h>
 
+/** @namespace musik::core::lastfm
+ *  @brief Last.fm scrobbling and authentication helpers. */
 namespace musik { namespace core { namespace lastfm {
+    /** @brief An authenticated Last.fm session. */
     struct Session {
-        bool valid{ false };
-        std::string username, token, sessionId;
+        bool valid{ false }; /**< Whether the session is valid. */
+        std::string username, token, sessionId; /**< Account and session identifiers. */
     };
 
-    using TokenCallback = std::function<void(std::string)>;
-    using SessionCallback = std::function<void(Session)>;
+    using TokenCallback = std::function<void(std::string)>; /**< Callback receiving an auth token. */
+    using SessionCallback = std::function<void(Session)>; /**< Callback receiving a session. */
 
+    /** @brief Requests an account-link token.
+     *  @param callback Invoked with the token. */
     void CreateAccountLinkToken(TokenCallback callback);
+    /** @brief Builds the browser URL for linking the account.
+     *  @param token The account-link token.
+     *  @return The authorization URL. */
     const std::string CreateAccountLinkUrl(const std::string& token);
+    /** @brief Exchanges a token for an authenticated session.
+     *  @param token The account-link token.
+     *  @param session Callback invoked with the resulting session. */
     void CreateSession(const std::string& token, SessionCallback session);
+    /** @brief Scrobbles a track (recorded after it is fully played).
+     *  @param track The track to scrobble. */
     void Scrobble(musik::core::TrackPtr track);
+    /** @brief Reports the currently playing track.
+     *  @param track The track being played. */
     void UpdateNowPlaying(musik::core::TrackPtr track);
 
+    /** @return The persisted session, if any. */
     Session LoadSession();
+    /** @brief Persists a session.
+     *  @param session The session to save. */
     void SaveSession(const Session& session);
+    /** @brief Clears the persisted session. */
     void ClearSession();
 } } }
 

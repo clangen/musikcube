@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file FolderBrowseDialog.hpp
+ * @brief Modal folder selection dialog.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. FolderBrowseDialog
+ * wraps the Win32 SHBrowseForFolder API to prompt the user for a folder.
+ * The chosen path is available through Directory() after a successful Show().
+ */
+
 #pragma once
 
 #include <win32cpp/Win32Config.hpp>
@@ -47,24 +56,36 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief A folder selection dialog.
+ *  @details Wraps the Win32 SHBrowseForFolder common dialog. Show() blocks
+ *           until the dialog is closed; on success the selected directory
+ *           is available through Directory(). */
 class FolderBrowseDialog
 {
 public: // types
+    /** @brief The result of showing the dialog. */
     enum Result
     {
-        ResultOK = 0,
-        ResultCanceled
+        ResultOK = 0,       /*!< the user picked a folder */
+        ResultCanceled      /*!< the user cancelled the dialog */
     };
 
 public: // ctor
+    /** @brief Constructs the folder browse dialog. */
     FolderBrowseDialog();
 
 public: // methods
+    /** @brief Shows the modal dialog.
+     *  @param owner the owner window (may be NULL)
+     *  @param initialPath the initially selected folder (may be NULL)
+     *  @return ResultOK if the user selected a folder */
     Result Show(Window* owner = NULL, const uichar* initialPath = NULL);
+    /** @brief Returns the selected directory.
+     *  @return the path chosen by the user */
     uistring Directory();
 
 private: // instance data
-    uistring directory;
+    uistring directory; /**< the last selected directory */
 };
 
 //////////////////////////////////////////////////////////////////////////////

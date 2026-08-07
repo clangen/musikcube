@@ -34,37 +34,66 @@
 
 #pragma once
 
+/** @file IIndexer.h
+ *  @brief Abstract interface for the music library metadata indexer.
+ *  @details Defines the contract for indexing configured paths into a library's
+ *      database, including path management, scheduled syncs, progress reporting
+ *      and lifecycle state. */
+
 #include <string>
 #include <vector>
 #include <sigslot/sigslot.h>
 
+/** @namespace musik::core
+ *  @brief Core application services: libraries, indexing, playback and utilities. */
 namespace musik { namespace core {
+    /** @brief Indexes music files from configured paths into a library database.
+     *  @details Implementations scan configured directories, read tag metadata via
+     *      ITagReader plugins, and write tracks into the library. Signals report
+     *      indexing start, progress and completion. */
     class IIndexer {
         public:
+            /** @brief Emitted when an indexing pass begins. */
             sigslot::signal0<> Started;
+            /** @brief Emitted when indexing completes.
+             *  @details The argument is the number of tracks processed. */
             sigslot::signal1<int> Finished;
+            /** @brief Emitted periodically during indexing.
+             *  @details The argument is the number of tracks scanned so far. */
             sigslot::signal1<int> Progress;
 
+            /** @brief Lifecycle state of the indexer. */
             enum State {
-                StateIdle = 0,
-                StateIndexing = 1,
-                StateStopping = 2,
-                StateStopped = 3
+                StateIdle = 0,     /**< Not indexing. */
+                StateIndexing = 1, /**< Currently indexing. */
+                StateStopping = 2, /**< Indexing is stopping. */
+                StateStopped = 3   /**< Indexing has stopped. */
             };
 
+            /** @brief Scope of a requested synchronization. */
             enum class SyncType {
-                All = 0,
-                Local = 1,
-                Rebuild = 2,
-                Sources = 3
+                All = 0,     /**< Sync all sources. */
+                Local = 1,   /**< Sync local sources only. */
+                Rebuild = 2, /**< Rebuild the entire index. */
+                Sources = 3  /**< Sync sources whose paths have changed. */
             };
 
             virtual ~IIndexer() { }
+            /** @brief Adds a directory to be indexed.
+             *  @param path The directory path to add. */
             virtual void AddPath(const std::string& path) = 0;
+            /** @brief Removes a directory from the indexed paths.
+             *  @param path The directory path to remove. */
             virtual void RemovePath(const std::string& path) = 0;
+            /** @brief Retrieves the configured index paths.
+             *  @param paths Output vector receiving the paths. */
             virtual void GetPaths(std::vector<std::string>& paths) = 0;
+            /** @brief Schedules a synchronization of the given scope.
+             *  @param type The scope of the sync to run. */
             virtual void Schedule(SyncType type) = 0;
+            /** @brief Stops indexing and shuts the indexer down. */
             virtual void Shutdown() = 0;
+            /** @return The current indexer state. */
             virtual State GetState() = 0;
     };
 } }

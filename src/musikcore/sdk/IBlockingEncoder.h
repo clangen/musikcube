@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IBlockingEncoder.h @brief Defines the IBlockingEncoder interface for encoders that process entire PCM buffers synchronously. */
 #pragma once
 
 #include "IEncoder.h"
@@ -39,12 +40,27 @@
 #include "IDataStream.h"
 #include <stddef.h>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief An encoder that synchronously writes encoded output to a data
+     *  stream as PCM buffers are fed to it. */
     class IBlockingEncoder: public IEncoder {
         public:
+            /** @brief Prepares the encoder for writing.
+             *  @param out The data stream that encoded bytes are written to.
+             *  @param rate The input sample rate in Hz.
+             *  @param channels The number of input channels.
+             *  @param bitrate The target output bitrate in bits per second.
+             *  @return True if initialization succeeded. */
             virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) = 0;
+
+            /** @brief Encodes and writes a single buffer of PCM data.
+             *  @param pcm The PCM data to encode.
+             *  @return True if the buffer was successfully encoded. */
             virtual bool Encode(const IBuffer* pcm) = 0;
+
+            /** @brief Flushes any remaining encoded data and finalizes the output stream. */
             virtual void Finalize() = 0;
      };
 

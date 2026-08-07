@@ -32,14 +32,27 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ITopLevelLayout.h @brief Interface for layouts that host an application's root windows. */
 #pragma once
 
 #include <cursespp/ShortcutsWindow.h>
 
 namespace cursespp {
+    /** @brief Contract for top-level layouts that can own a ShortcutsWindow.
+     *
+     *  @details A top-level layout fills the entire application area and hosts
+     *  the primary content of a view. It optionally owns a ShortcutsWindow,
+     *  which renders the contextual key-binding legend at the bottom of the
+     *  screen. The layout is responsible for positioning the shortcuts bar and
+     *  for redrawing it whenever the shortcut set changes.
+     */
     class ITopLevelLayout {
         public:
             virtual ~ITopLevelLayout() { }
+
+            /** @brief Associates a ShortcutsWindow with this layout.
+             *  @param w the shortcuts window to display, or nullptr to detach it.
+             */
             virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w) = 0;
     };
 }

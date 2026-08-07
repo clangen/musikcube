@@ -34,6 +34,12 @@
 
 #pragma once
 
+/// @file Utility.h
+/// @brief Shared constants, helpers and settings schema for the libopenmpt plugin.
+/// @details Declares the plugin name, the external id prefix, the configurable
+/// default album/artist name templates and the helper functions shared by the
+/// decoder, indexer source and plugin entry point.
+
 #include <string>
 
 #include <musikcore/sdk/ISchema.h>
@@ -42,16 +48,40 @@
 #include <libopenmpt/libopenmpt.h>
 #pragma warning(pop)
 
+/** @brief Display name of the libopenmpt decoder plugin. */
 static const std::string PLUGIN_NAME = "libopenmpt";
+/** @brief Prefix used for externally generated track ids. */
 static const std::string EXTERNAL_ID_PREFIX = "libopenmpt";
 
+/** @brief Setting key for the default album name template. */
 static const char* KEY_DEFAULT_ALBUM_NAME = "default_album_name";
+/** @brief Default album name used when a module has no album tag. */
 static const char* DEFAULT_ALBUM_NAME = "[unknown %s album]";
+/** @brief Setting key for the default artist name template. */
 static const char* KEY_DEFAULT_ARTIST_NAME = "default_artist_name";
+/** @brief Default artist name used when a module has no artist tag. */
 static const char* DEFAULT_ARTIST_NAME = "[unknown %s artist]";
 
+/** @brief Returns whether the given stream type is handled by this plugin.
+ *  @param type The stream type to check.
+ *  @return True for supported tracker stream types. */
 extern bool isFileTypeSupported(const char* type);
+/** @brief Returns whether a filename has a supported tracker extension.
+ *  @param filename The filename to check.
+ *  @return True if the extension is supported. */
 extern bool isFileSupported(const std::string& filename);
+/** @brief Reads a file fully into an allocated byte array.
+ *  @param path The file path to read.
+ *  @param target Receives a newly allocated buffer (caller frees).
+ *  @param size Receives the number of bytes read.
+ *  @return True if the file was read successfully. */
 extern bool fileToByteArray(const std::string& path, char** target, int& size);
+/** @brief Reads a metadata value from an open module.
+ *  @param module The open module.
+ *  @param key The metadata key to look up.
+ *  @param defaultValue Value returned when the key is absent.
+ *  @return The metadata value or the default. */
 extern std::string readMetadataValue(openmpt_module* module, const char* key, const char* defaultValue = "");
+/** @brief Creates the settings schema registered with the settings system.
+ *  @return A newly allocated ISchema with all libopenmpt plugin settings. */
 extern musik::core::sdk::ISchema* createSchema();

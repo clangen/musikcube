@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file Stream.h
+ *  @brief IStream implementation that decodes a URI and applies DSP plugins.
+ *  @details Buffers decoded PCM from a decoder, runs it through a chain of DSP
+ *      plugins, and hands processed interleaved buffers to a Player. Buffers are
+ *      recycled through an internal pool to avoid re-allocation. */
+
 #include <musikcore/config.h>
 #include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/audio/Buffer.h>
@@ -47,26 +53,47 @@
 #include <deque>
 #include <list>
 
+/** @namespace musik::core::audio
+ *  @brief Audio pipeline types: buffers, players, transports and streams. */
 namespace musik { namespace core { namespace audio {
 
+    /** @brief Decodes and DSP-processes a URI, producing buffers for a Player.
+     *  @details Maintains a pool of recycled and filled buffers. Decoder output is
+     *      accumulated into fixed-size buffers, processed through the DSP chain and
+     *      handed to the player. Supports seeking, buffering, and capability
+     *      queries. */
     class Stream : public IStream {
-        using IDSP = musik::core::sdk::IDSP;
-        using IDecoder = musik::core::sdk::IDecoder;
-        using IBuffer = musik::core::sdk::IBuffer;
-        using StreamFlags = musik::core::sdk::StreamFlags;
+        using IDSP = musik::core::sdk::IDSP; /**< DSP plugin alias. */
+        using IDecoder = musik::core::sdk::IDecoder; /**< Decoder alias. */
+        using IBuffer = musik::core::sdk::IBuffer; /**< SDK buffer alias. */
+        using StreamFlags = musik::core::sdk::StreamFlags; /**< Stream option flags. */
 
         public:
+            /** @brief Creates a shared stream.
+             *  @param samplesPerChannel Samples per channel per output buffer.
+             *  @param bufferLengthSeconds Approximate buffered audio length.
+             *  @param options Stream option flags.
+             *  @return A shared IStream ready to be opened. */
             static IStreamPtr Create(
                 int samplesPerChannel = 2048,
                 double bufferLengthSeconds = 5,
                 StreamFlags options = StreamFlags::None);
 
+            /** @brief Creates an unmanaged (raw pointer) stream.
+             *  @param samplesPerChannel Samples per channel per output buffer.
+             *  @param bufferLengthSeconds Approximate buffered audio length.
+             *  @param options Stream option flags.
+             *  @return A raw IStream; release with Release(). */
             static IStream* CreateUnmanaged(
                 int samplesPerChannel = 2048,
                 double bufferLengthSeconds = 5,
                 StreamFlags options = StreamFlags::None);
 
         private:
+            /** @brief Constructs a stream (use the static factory methods).
+             *  @param samplesPerChannel Samples per channel per output buffer.
+             *  @param bufferLengthSeconds Approximate buffered audio length.
+             *  @param options Stream option flags. */
             Stream(
                 int samplesPerChannel,
                 double bufferLengthSeconds,
@@ -75,51 +102,71 @@ namespace musik { namespace core { namespace audio {
         public:
             virtual ~Stream();
 
+            /** @return The next fully processed output buffer.
+             *  @details Blocks or returns quickly depending on buffer availability;
+             *      returns nullptr when EOF is reached. */
             IBuffer* GetNextProcessedOutputBuffer() override;
+            /** @brief Returns a processed buffer to the pool.
+             *  @param buffer The buffer to recycle. */
             void OnBufferProcessedByPlayer(IBuffer* buffer) override;
+            /** @brief Seeks within the stream.
+             *  @param seconds The target position, in seconds.
+             *  @return The achieved position, in seconds. */
             double SetPosition(double seconds) override;
+            /** @return The total duration, in seconds. */
             double GetDuration() override;
+            /** @brief Opens the stream for the given URI.
+             *  @param uri The URI to open.
+             *  @param output The output device to format for.
+             *  @return true on success. */
             bool OpenStream(std::string uri, musik::core::sdk::IOutput* output) override;
+            /** @brief Interrupts the stream (used on stop). */
             void Interrupt() override;
+            /** @return Bitmask of supported sdk::Capability values. */
             int GetCapabilities() override;
+            /** @return true when the stream has reached EOF. */
             bool Eof() override { return this->done; }
+            /** @brief Frees the stream (deletes this instance). */
             void Release() override { delete this; }
 
         private:
+            /** @brief Decodes the next chunk from the decoder into internal buffers. */
             bool GetNextBufferFromDecoder();
+            /** @return A recycled (empty) buffer, or nullptr if none available. */
             Buffer* GetEmptyBuffer();
+            /** @brief Refills the internal buffer pool from the decoder. */
             void RefillInternalBuffers();
 
-            typedef std::deque<Buffer*> BufferList;
-            typedef std::shared_ptr<IDecoder> DecoderPtr;
-            typedef std::shared_ptr<IDSP> DspPtr;
-            typedef std::vector<DspPtr> Dsps;
+            typedef std::deque<Buffer*> BufferList; /**< FIFO buffer queue alias. */
+            typedef std::shared_ptr<IDecoder> DecoderPtr; /**< Decoder pointer alias. */
+            typedef std::shared_ptr<IDSP> DspPtr; /**< DSP pointer alias. */
+            typedef std::vector<DspPtr> Dsps; /**< DSP chain alias. */
 
-            long decoderSampleRate;
-            long decoderChannels;
-            std::string uri;
-            musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
+            long decoderSampleRate; /**< Sample rate reported by the decoder. */
+            long decoderChannels;   /**< Channel count reported by the decoder. */
+            std::string uri;        /**< Currently open URI. */
+            musik::core::io::DataStreamFactory::DataStreamPtr dataStream; /**< Underlying data stream. */
 
-            BufferList recycledBuffers;
-            BufferList filledBuffers;
+            BufferList recycledBuffers; /**< Buffers available for reuse. */
+            BufferList filledBuffers;   /**< Buffers ready for the player. */
 
-            Buffer* decoderBuffer;
-            long decoderSampleOffset;
-            long decoderSamplesRemain;
-            uint64_t decoderPosition;
+            Buffer* decoderBuffer;     /**< Scratch buffer for decoder output. */
+            long decoderSampleOffset;  /**< Offset into decoderBuffer. */
+            long decoderSamplesRemain; /**< Samples left in decoderBuffer. */
+            uint64_t decoderPosition;  /**< Absolute decoded sample position. */
 
-            musik::core::sdk::StreamFlags options;
-            int samplesPerChannel;
-            long samplesPerBuffer;
-            int bufferCount;
-            bool done;
-            double bufferLengthSeconds;
-            int capabilities;
+            musik::core::sdk::StreamFlags options; /**< Stream option flags. */
+            int samplesPerChannel;   /**< Samples per channel per buffer. */
+            long samplesPerBuffer;   /**< Total samples per buffer (frames * channels). */
+            int bufferCount;         /**< Number of buffers in the pool. */
+            bool done;               /**< true when EOF has been reached. */
+            double bufferLengthSeconds; /**< Target buffered audio length. */
+            int capabilities;        /**< Cached capability bitmask. */
 
-            float* rawBuffer;
+            float* rawBuffer; /**< Scratch storage for decoder output. */
 
-            DecoderPtr decoder;
-            Dsps dsps;
+            DecoderPtr decoder; /**< Active decoder. */
+            Dsps dsps;          /**< DSP plugin chain. */
     };
 
 } } }

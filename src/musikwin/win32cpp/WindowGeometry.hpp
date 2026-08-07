@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -35,6 +35,16 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @file WindowGeometry.hpp
+ * @brief Lightweight 2D geometry value types (Point, Size, Rect).
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. These small
+ * structs wrap the equivalent Win32 POINT/SIZE/RECT structures and are
+ * used throughout the library for positioning and sizing windows. Each
+ * type is implicitly convertible to and from its Win32 counterpart.
+ */
 
 #pragma once
 

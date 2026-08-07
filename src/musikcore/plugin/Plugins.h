@@ -34,22 +34,36 @@
 
 #pragma once
 
+/** @file Plugins.h
+ *  @brief Free functions that manage the plugin system lifecycle.
+ *  @details Initializes, starts and shuts down all loaded plugins, and exposes
+ *      the shared IEnvironment used to communicate with them. */
+
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/sdk/IEnvironment.h>
 #include <musikcore/sdk/IPlaybackService.h>
 #include <musikcore/runtime/IMessage.h>
 
+/** @namespace musik::core::plugin
+ *  @brief Plugin lifecycle and environment helpers. */
 namespace musik { namespace core { namespace plugin {
 
+    /** @brief Initializes the plugin system (called once at startup). */
     void Init();
 
+    /** @brief Starts all plugins with the application's core services.
+     *  @param messageQueue The queue plugins use for async messages.
+     *  @param playback The playback service passed to plugins.
+     *  @param library The primary library passed to plugins. */
     void Start(
         musik::core::runtime::IMessageQueue* messageQueue,
         musik::core::sdk::IPlaybackService* playback,
         musik::core::ILibraryPtr library);
 
+    /** @return The shared plugin environment. */
     musik::core::sdk::IEnvironment& Environment();
 
+    /** @brief Shuts down all plugins and releases their resources. */
     void Shutdown();
 
 } } }

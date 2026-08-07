@@ -32,16 +32,29 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ITagReader.h @brief Defines the ITagReader interface for reading metadata from audio files. */
 #pragma once
 
 #include "ITagStore.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Reads metadata from audio files and populates an ITagStore. */
     class ITagReader {
         public:
+            /** @brief Reads metadata from the file at the given URI.
+             *  @param uri The URI of the audio file to read.
+             *  @param target The tag store to populate with the read metadata.
+             *  @return True if the metadata was read successfully. */
             virtual bool Read(const char *uri, musik::core::sdk::ITagStore *target) = 0;
+
+            /** @brief Returns whether this reader can handle the given file extension.
+             *  @param extension The file extension to check.
+             *  @return True if the extension is supported. */
             virtual bool CanRead(const char *extension) = 0;
+
+            /** @brief Releases the reader; callers must invoke this when done. */
             virtual void Release() = 0;
     };
 

@@ -34,10 +34,25 @@
 
 #pragma once
 
+/**
+ * @file VisualizerOverlay.h
+ * @brief Overlay that displays the audio visualizer.
+ * @details Shows the currently active visualizer effect plugin in a modal
+ *          overlay.
+ */
+
 namespace musik {
     namespace cube {
+        /**
+         * @brief Factory for the audio visualizer overlay.
+         * @details Provides a static entry point that shows the visualizer
+         *          effect plugin. The class is not instantiable.
+         */
         class VisualizerOverlay {
             public:
+                /**
+                 * @brief Shows the visualizer overlay.
+                 */
                 static void Show();
 
             private:

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Daniel Önnerby
+// The following are Copyright ï¿½ 2007, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -34,9 +34,18 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+/**
+ * @file ApplicationThread.hpp
+ * @brief Thread-safe mechanism to invoke methods on the main thread.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. ApplicationThread
+ * marshals calls made from worker threads onto the main (UI) thread using
+ * an invisible message-only window and the sigslot library. Because the
+ * connection is dropped when the destination object is destroyed, a
+ * queued call is never delivered to a dead object.
+ */
 
-#include <win32cpp/Win32Config.hpp>
+#pragma once
 #include <win32cpp/Application.hpp>
 #include <win32cpp/Window.hpp>
 #include <sigslot/sigslot.h>
@@ -78,10 +87,14 @@ private: // types
     typedef std::list<CallClassPtr> CallVector;
 
 public: // ctor, dtor
+    ///\brief Constructs the thread marshaller.
     ApplicationThread();
+    ///\brief Destroys the marshaller and its helper window.
     ~ApplicationThread();
 
 public: // methods
+    ///\brief Determines whether the calling thread is the main UI thread.
+    ///\return true if the current thread owns the application's message loop
     static bool InMainThread();
 
 private: // methods
@@ -127,9 +140,11 @@ private: // "Call" classes
     {
     public:
         virtual ~CallClassBase() { };
+        ///\brief Invokes the wrapped member method. Pure virtual.
         virtual void Call() = 0;
     };
 
+    ///\brief Wraps a call to a member method taking no arguments.
     template<class DestinationType>
     class CallClass0 : public CallClassBase
     {
@@ -196,6 +211,10 @@ private: // "Call" classes
     };
 
 public: // "Call" invocation
+    ///\brief Queues a call to a member method with no arguments on the main thread.
+    ///\param destinationObject the object whose member method will be invoked
+    ///\param memberMethod pointer to the member method to call
+    ///\note If destinationObject is destroyed before the call runs, the call is dropped.
     template<class DestinationType>
     static void Call0(
         DestinationType* destinationObject,
@@ -207,6 +226,11 @@ public: // "Call" invocation
             memberMethod));
     };
 
+    ///\brief Queues a call to a member method taking one argument on the main thread.
+    ///\param destinationObject the object whose member method will be invoked
+    ///\param memberMethod pointer to the member method to call
+    ///\param arg1 the argument to pass (captured by reference)
+    ///\note If destinationObject is destroyed before the call runs, the call is dropped.
     template<class DestinationType,class Arg1Type>
     static void Call1(
         DestinationType* destinationObject,
@@ -220,6 +244,12 @@ public: // "Call" invocation
             arg1));
     };
 
+    ///\brief Queues a call to a member method taking two arguments on the main thread.
+    ///\param destinationObject the object whose member method will be invoked
+    ///\param memberMethod pointer to the member method to call
+    ///\param arg1 the first argument to pass (captured by reference)
+    ///\param arg2 the second argument to pass (captured by reference)
+    ///\note If destinationObject is destroyed before the call runs, the call is dropped.
     template<class DestinationType, class Arg1Type, class Arg2Type>
     static void Call2(
         DestinationType* destinationObject,

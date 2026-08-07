@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file DeviceContext.hpp
+ * @brief RAII wrapper around a Win32 window device context.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. DeviceContext
+ * obtains a device context for a window with GetDC() at construction and
+ * releases it with ReleaseDC() at destruction.
+ */
+
 #pragma once
 
 #include <win32cpp/Win32Config.hpp>
@@ -46,17 +55,25 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief RAII wrapper for a device context acquired from a window.
+ *  @details Calls GetDC() on construction and ReleaseDC() on destruction,
+ *           so the caller never has to manually release the HDC.
+ *  @see Window, MemoryDC */
 class DeviceContext
 {
 public: // constructors, methods
+    /** @brief Acquires a device context for the given window.
+     *  @param hwnd the window whose device context to obtain */
     /*ctor*/    DeviceContext(HWND hwnd);
+    /** @brief Releases the device context. */
     /*dtor*/    ~DeviceContext();
 
+    /** @brief Returns the underlying HDC. */
     operator HDC() { return this->hdc; }
 
 private: // instance data
-    HDC hdc;
-    HWND hwnd;
+    HDC hdc;   /**< the acquired device context */
+    HWND hwnd; /**< the window the DC was acquired from */
 };
 
 //////////////////////////////////////////////////////////////////////////////

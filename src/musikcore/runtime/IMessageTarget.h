@@ -34,16 +34,26 @@
 
 #pragma once
 
+/** @file IMessageTarget.h
+ *  @brief Abstract interface for objects that can receive runtime messages.
+ *  @details A message target registers with a queue and implements
+ *      ProcessMessage() to handle delivered messages. */
+
 #include "IMessage.h"
 
+/** @namespace musik::core::runtime
+ *  @brief Inter-thread message passing: messages, targets and queues. */
 namespace musik { namespace core { namespace runtime {
 
+    /** @brief Receives messages delivered by a message queue. */
     class IMessageTarget {
         public:
             virtual ~IMessageTarget() { }
+            /** @brief Handles a delivered message.
+             *  @param message The message to process. */
             virtual void ProcessMessage(IMessage &message) = 0;
     };
 
-    typedef std::shared_ptr<IMessageTarget> IMessageTargetPtr;
+    typedef std::shared_ptr<IMessageTarget> IMessageTargetPtr; /**< Shared target alias. */
 
 } } }

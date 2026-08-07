@@ -34,15 +34,25 @@
 
 #pragma once
 
+/** @file SqliteExtensions.h
+ *  @brief Registration of custom SQL functions and extensions for SQLite. */
+
 #include <musikcore/config.h>
 #include <map>
 
 struct sqlite3;
 
+/** @namespace musik::core::db
+ *  @brief SQLite database access layer: connections, statements and transactions. */
 namespace musik { namespace core { namespace db {
 
+    /** @namespace musik::core::db::SqliteExtensions
+     *  @brief Helpers to register custom functions with a SQLite connection. */
     namespace SqliteExtensions {
 
+        /** @brief Registers custom SQL functions on the given connection.
+         *  @param db The sqlite3 connection to extend.
+         *  @return ReturnCode-style result: SQLITE_OK (0) on success, else an error code. */
         int Register(sqlite3* db);
 
     }

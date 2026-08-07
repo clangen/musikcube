@@ -34,42 +34,56 @@
 
 #pragma once
 
+/**
+ * @file Messages.h
+ * @brief Application-specific message identifiers.
+ * @details Declares the runtime message ids used by the UI layer, offset
+ *          past the core user messages so the two ranges cannot collide.
+ *          The category sub-namespace maps the category types to small ids.
+ */
+
 #include <stdafx.h>
 #include <musikcore/support/Messages.h>
 
 namespace musik {
     namespace cube {
         namespace message {
+            /**
+             * @brief First application-specific message id.
+             */
             static const int First = musik::core::message::User + 1024;
 
+            /**
+             * @brief Category type ids carried in category messages.
+             */
             namespace category { /* User1 */
-                static const int Album = 0;
-                static const int AlbumArtist = 1;
-                static const int Artist = 2;
-                static const int Genre = 3;
+                static const int Album = 0;        /**< album category */
+                static const int AlbumArtist = 1;  /**< album artist category */
+                static const int Artist = 2;       /**< artist category */
+                static const int Genre = 3;        /**< genre category */
             }
 
-            static const int JumpToCategory         = First + 1;
-            static const int IndexerStarted         = First + 2;
-            static const int IndexerProgress        = First + 3;
-            static const int IndexerFinished        = First + 4;
-            static const int RequeryTrackList       = First + 5;
-            static const int RequeryCategoryList    = First + 6;
-            static const int RefreshTransport       = First + 7;
-            static const int TransportBuffering     = First + 8;
-            static const int RefreshLogs            = First + 9;
-            static const int UpdateCheckFinished    = First + 10;
-            static const int JumpToConsole          = First + 11;
-            static const int JumpToLibrary          = First + 12;
-            static const int JumpToSettings         = First + 13;
-            static const int JumpToLyrics           = First + 14;
-            static const int JumpToHotkeys          = First + 15;
-            static const int JumpToPlayQueue        = First + 16;
-            static const int SetLastFmState         = First + 17;
-            static const int UpdateEqualizer        = First + 18;
-            static const int DebugLog               = First + 19;
-            static const int LyricsLoaded           = First + 20;
-            static const int FocusBrowseFilter      = First + 21;
+            static const int JumpToCategory         = First + 1;  /**< jump to a library category */
+            static const int IndexerStarted         = First + 2;  /**< the indexer started */
+            static const int IndexerProgress        = First + 3;  /**< indexer progress update */
+            static const int IndexerFinished        = First + 4;  /**< the indexer finished */
+            static const int RequeryTrackList       = First + 5;  /**< requery the track list */
+            static const int RequeryCategoryList    = First + 6;  /**< requery the category list */
+            static const int RefreshTransport       = First + 7;  /**< refresh the transport display */
+            static const int TransportBuffering     = First + 8;  /**< transport buffering state changed */
+            static const int RefreshLogs            = First + 9;  /**< refresh the console log view */
+            static const int UpdateCheckFinished    = First + 10; /**< the update check completed */
+            static const int JumpToConsole          = First + 11; /**< navigate to the console */
+            static const int JumpToLibrary          = First + 12; /**< navigate to the library */
+            static const int JumpToSettings         = First + 13; /**< navigate to the settings */
+            static const int JumpToLyrics           = First + 14; /**< navigate to the lyrics */
+            static const int JumpToHotkeys          = First + 15; /**< navigate to the hotkeys */
+            static const int JumpToPlayQueue        = First + 16; /**< navigate to the play queue */
+            static const int SetLastFmState         = First + 17; /**< update the Last.fm state */
+            static const int UpdateEqualizer        = First + 18; /**< update the equalizer display */
+            static const int DebugLog               = First + 19; /**< a debug log entry was written */
+            static const int LyricsLoaded           = First + 20; /**< lyrics were loaded */
+            static const int FocusBrowseFilter      = First + 21; /**< focus the browse category filter */
 
         }
     }

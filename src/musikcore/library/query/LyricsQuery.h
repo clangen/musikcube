@@ -34,35 +34,59 @@
 
 #pragma once
 
+/** @file LyricsQuery.h
+ *  @brief Query that retrieves the lyrics for a track.
+ *  @details Looks up lyrics by the track's external id and returns the lyrics
+ *      text. Used by the lyrics view. */
+
 #include <musikcore/library/QueryBase.h>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Retrieves lyrics for a track.
+     *  @details The track is identified by its external id; the result is the
+     *      lyrics text (possibly empty). */
     class LyricsQuery: public musik::core::library::query::QueryBase {
         public:
-            static const std::string kQueryName;
+            static const std::string kQueryName; /**< Query type name. */
 
             DELETE_CLASS_DEFAULTS(LyricsQuery)
 
+            /** @brief Creates a lyrics query.
+             *  @param trackExternalId The track's external id. */
             LyricsQuery(const std::string& trackExternalId);
 
+            /** @return The retrieved lyrics text. */
             std::string GetResult();
 
             /* IQuery */
+            /** @return The query type name. */
             std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
+            /** @return The serialized query parameters. */
             std::string SerializeQuery() override;
+            /** @return The serialized result. */
             std::string SerializeResult() override;
+            /** @brief Populates the result from serialized data.
+             *  @param data The serialized result. */
             void DeserializeResult(const std::string& data) override;
+            /** @brief Recreates a query from serialized parameters.
+             *  @param data The serialized query.
+             *  @return The deserialized query. */
             static std::shared_ptr<LyricsQuery> DeserializeQuery(const std::string& data);
 
         protected:
             /* QueryBase */
+            /** @brief Runs the query against the database.
+             *  @param db The connection to run on.
+             *  @return true on success. */
             bool OnRun(musik::core::db::Connection &db) override;
 
-            std::string trackExternalId;
-            std::string result;
+            std::string trackExternalId; /**< Track external id. */
+            std::string result;          /**< Retrieved lyrics. */
     };
 
 } } } }

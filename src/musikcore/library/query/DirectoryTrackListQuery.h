@@ -34,49 +34,79 @@
 
 #pragma once
 
+/** @file DirectoryTrackListQuery.h
+ *  @brief Query that returns the tracks within a single directory.
+ *  @details Loads all tracks belonging to the given directory path, with an
+ *      optional text filter, ordered by album grouping. */
+
 #include <musikcore/library/query/TrackListQueryBase.h>
 #include "TrackListQueryBase.h"
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Lists the tracks in one directory.
+     *  @details The result includes headers (for UI column layout) and durations,
+     *      and is identified by a stable query hash. */
     class DirectoryTrackListQuery : public TrackListQueryBase {
         public:
-            static const std::string kQueryName;
+            static const std::string kQueryName; /**< Query type name. */
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DirectoryTrackListQuery)
 
+            /** @brief Creates a directory track list query.
+             *  @param library The library to query.
+             *  @param directory The directory path.
+             *  @param filter Optional text filter. */
             DirectoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& directory,
                 const std::string& filter = "");
 
             /* IQuery */
+            /** @return The query type name. */
             std::string Name() override { return kQueryName; }
 
             /* TrackListQueryBase */
+            /** @return The result track list (or nullptr). */
             Result GetResult() noexcept override { return this->result; }
+            /** @return The column headers for the result. */
             Headers GetHeaders() noexcept override { return this->headers; }
+            /** @return A hash identifying this query's parameters. */
             size_t GetQueryHash() noexcept override { return this->hash; }
+            /** @return The track durations, in seconds. */
             Durations GetDurations() noexcept override { return this->durations; }
 
             /* ISerializableQuery */
+            /** @return The serialized query parameters. */
             std::string SerializeQuery() override;
+            /** @return The serialized result. */
             std::string SerializeResult() override;
+            /** @brief Populates the result from serialized data.
+             *  @param data The serialized result. */
             void DeserializeResult(const std::string& data) override;
+            /** @brief Recreates a query from serialized parameters.
+             *  @param library The library the query will run on.
+             *  @param data The serialized query.
+             *  @return The deserialized query. */
             static std::shared_ptr<DirectoryTrackListQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             /* QueryBase */
+            /** @brief Runs the query against the database.
+             *  @param db The connection to run on.
+             *  @return true on success. */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
-            musik::core::ILibraryPtr library;
-            std::string directory, filter;
-            Result result;
-            Headers headers;
-            Durations durations;
-            size_t hash;
+            musik::core::ILibraryPtr library; /**< Library to query. */
+            std::string directory, filter; /**< Directory path and text filter. */
+            Result result;     /**< Result track list. */
+            Headers headers;   /**< Result column headers. */
+            Durations durations; /**< Result durations. */
+            size_t hash;       /**< Cached query hash. */
     };
 
 } } } }

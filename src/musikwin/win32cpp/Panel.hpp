@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Panel.hpp
+ * @brief Basic concrete Container implementation.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Panel is the most
+ * basic concrete implementation of Container; it offers no special layout
+ * behaviour and imposes no limit on the number of child controls.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -47,27 +56,28 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///Panel is the most basic concrete implementation of Container.
-///
-///Panel does not offer any special layout functionality, and has no
-///limitations as to the number of child controls that can be added.
-///Panel is the base class for most more advanced Container
-///implementations, including Splitter and BoxLayout.
-///
-///\see
-///BoxLayout, Splitter
+/** @brief Panel is the most basic concrete implementation of Container.
+ *  @details Panel does not offer any special layout functionality, and has
+ *           no limitations as to the number of child controls that can be
+ *           added. Panel is the base class for most more advanced Container
+ *           implementations, including Splitter and BoxLayout.
+ *  @see BoxLayout, Splitter */
 class Panel: public Container
 {
 public: // types
     typedef Container base;
 
 public: // constructors
+    /** @brief Constructs an empty panel. */
     /*ctor*/    Panel();
+    /** @brief Constructs a panel with layout flags.
+     *  @param layoutFlags layout flags used for sizing */
     /*ctor*/    Panel(LayoutFlags layoutFlags);
 
 protected: // methods
+    /** @brief Creates the underlying HWND. */
     virtual HWND        Create(Window* parent);
+    /** @brief Fills the background with the panel's background color. */
     virtual void        OnEraseBackground(HDC hdc);
 };
 

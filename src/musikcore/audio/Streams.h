@@ -34,6 +34,11 @@
 
 #pragma once
 
+/** @file Streams.h
+ *  @brief Factory helpers for decoders, encoders and DSP plugins.
+ *  @details Provides lookup functions that map a data stream or type name to the
+ *      matching SDK decoder/encoder/DSP implementation registered by plugins. */
+
 #include <musikcore/config.h>
 #include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/sdk/IDecoder.h>
@@ -44,17 +49,28 @@
 #include <memory>
 #include <vector>
 
+/** @namespace musik::core::audio
+ *  @brief Audio pipeline types: buffers, players, transports and streams. */
 namespace musik { namespace core { namespace audio {
 
+    /** @namespace musik::core::audio::streams
+     *  @brief Registry lookups for decoders, encoders and DSP plugins. */
     namespace streams {
+        /** @return A shared decoder capable of decoding the given data stream, or nullptr.
+         *  @param dataStream The data stream to inspect. */
         std::shared_ptr<musik::core::sdk::IDecoder>
             GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
 
+        /** @return A raw decoder capable of decoding the given stream, or nullptr.
+         *  @param stream The data stream to inspect. */
         musik::core::sdk::IDecoder*
             GetDecoderForDataStream(musik::core::sdk::IDataStream* stream);
 
+        /** @return An encoder for the given file type, or nullptr.
+         *  @param type The MIME/file type name (e.g. "wav", "mp3"). */
         musik::core::sdk::IEncoder* GetEncoderForType(const char* type);
 
+        /** @return All DSP plugin instances registered by plugins. */
         std::vector<std::shared_ptr<musik::core::sdk::IDSP > > GetDspPlugins();
     };
 
