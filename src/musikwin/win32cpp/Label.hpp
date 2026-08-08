@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Label.hpp
+ * @brief Simple text label control.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Label is a Window
+ * that draws only a caption. It can optionally resize itself to fit the
+ * caption's text when the font or caption changes.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -47,30 +56,40 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///A simple Window that draws only a caption.
+/** @brief A simple Window that draws only a caption. */
 class Label: public Window
 {
 private: // types
     typedef Window base;
 
 public: // constructors
+    /** @brief Constructs a label with the given text.
+     *  @param caption the text to display */
     /*ctor*/            Label(const uichar* caption = _T(""));
 
 public: // methods
+    /** @brief Resizes the label to fit its current caption. */
     void    ResizeFromCaption();
+    /** @brief Enables or disables auto-resizing on caption changes.
+     *  @param enable true to resize automatically */
     void    EnableAutoResizeFromCaption(bool enable = true);
+    /** @brief Returns whether auto-resizing is enabled.
+     *  @return true if auto-resize is enabled */
     bool    AutoResizeFromCaptionEnabled() const;
 
 protected: // methods
+    /** @brief Creates the underlying HWND. */
     virtual HWND        Create(Window* parent);
+    /** @brief Processes window messages. */
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    /** @brief Resizes the label when the font changes. */
     virtual void        OnFontChanged();
+    /** @brief Resizes the label when the caption changes. */
     virtual void        OnCaptionChanged();
 
 protected: // instance data
-    uistring caption;
-    bool autoResize;
+    uistring caption;   /**< the label's text */
+    bool autoResize;    /**< whether to auto-resize on text changes */
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Splitter.hpp
+ * @brief Resizable two-pane container.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Splitter is a
+ * Container with exactly two children that can be resized with the mouse.
+ * It supports anchoring one child so that it stays fixed while the other
+ * fills the remaining space.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -53,73 +63,100 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-/*! */
+/** @brief The orientation of the split. */
 enum SplitDirection
 {
-    /*! */ SplitRow,
-    /*! */ SplitColumn
+    /*! */ SplitRow,    /*!< split left/right (children side by side) */
+    /*! */ SplitColumn  /*!< split top/bottom (children stacked) */
 };
 
-/*! */
+/** @brief Which child is anchored when the splitter resizes. */
 enum AnchorDirection
 {
-    /*! */ AnchorTop,
-    /*! */ AnchorBottom,
-    /*! */ AnchorLeft,
-    /*! */ AnchorRight
+    /*! */ AnchorTop,    /*!< anchor the top child */
+    /*! */ AnchorBottom, /*!< anchor the bottom child */
+    /*! */ AnchorLeft,   /*!< anchor the left child */
+    /*! */ AnchorRight   /*!< anchor the right child */
 };
 
-///\brief Used to disable anchor constraints in Splitter
-///\see Splitter::SetAnchorConstraints
+/** @brief Used to disable anchor constraints in Splitter.
+ *  @see Splitter::SetAnchorConstraints */
 const int DisableConstraint = -1;
 
-///\brief A Container with two children that can be resized with the mouse.
-///
-///Splitter works with any two Window derived instances. Adding more
-///than two children will result in a TooManyChildWindowsException.
-///
-///Splitter will automatically expand its children
-///
-///\code
-///Button* button1 = new Button(_T("button1"));
-///Button* button2 = new Button(_T("button2"));
-///Splitter* splitter = new Splitter(SplitColumn, button1, button2);
-///Application::Instance().MainWindow()->AddChild(splitter);
-///splitter->Resize(400, 300);
-///\endcode
-///
-///Typically when a Splitter is resized it's preferable to keep one of the
-///children stationary or "anchored," while allowing the other to be resized
-///to fill the new space. The anchor can be set via Splitter::SetAnchor by
-///specifying a win32cpp::AnchorDirection.
+/** @brief A Container with two children that can be resized with the mouse.
+ *  @details Splitter works with any two Window derived instances. Adding
+ *           more than two children will result in a
+ *           TooManyChildWindowsException.
+ *
+ *           Typically when a Splitter is resized it's preferable to keep
+ *           one of the children stationary or "anchored," while allowing
+ *           the other to be resized to fill the new space. The anchor can
+ *           be set via Splitter::SetAnchor by specifying a
+ *           win32cpp::AnchorDirection. */
 class Splitter: public Panel, public ILayout
 {
 private: // types
     typedef Panel base;
 
 public: // constructors
+    /** @brief Constructs a splitter between two children.
+     *  @param direction the split orientation
+     *  @param child1 the first child (may be NULL)
+     *  @param child2 the second child (may be NULL)
+     *  @param layoutFlags layout flags used for sizing */
     /*ctor*/            Splitter(
                             SplitDirection direction,
                             Window* child1 = NULL,
                             Window* child2 = NULL,
                             LayoutFlags layoutFlags = LayoutWrapWrap);
 
+    /** @brief Constructs an empty splitter.
+     *  @param direction the split orientation
+     *  @param layoutFlags layout flags used for sizing */
     /*ctor*/            Splitter(
                             SplitDirection direction,
                             LayoutFlags layoutFlags = LayoutWrapWrap);
 
 public: // methods
+    /** @brief Returns whether the splitter can be resized.
+     *  @return true if the divider is draggable */
     bool                IsSizable();
+    /** @brief Enables or disables mouse resizing.
+     *  @param sizable true to allow dragging the divider */
     void                SetSizable(bool sizable);
+    /** @brief Sets the first child.
+     *  @param window the child to set
+     *  @return the child that was set */
     Window*             SetChild1(Window* window);
+    /** @brief Returns the first child.
+     *  @return the first child, or NULL */
     const Window*       Child1();
+    /** @brief Sets the second child.
+     *  @param window the child to set
+     *  @return the child that was set */
     Window*             SetChild2(Window* window);
+    /** @brief Returns the second child.
+     *  @return the second child, or NULL */
     const Window*       Child2();
+    /** @brief Returns the current anchor direction.
+     *  @return the anchor */
     AnchorDirection     Anchor();
+    /** @brief Sets which child stays fixed on resize.
+     *  @param newAnchor the anchor direction */
     void                SetAnchor(AnchorDirection newAnchor);
+    /** @brief Returns the anchor size constraints.
+     *  @param minSize receives the minimum anchor size
+     *  @param maxSize receives the maximum anchor size */
     void                AnchorConstraints(int& minSize, int& maxSize);
+    /** @brief Sets the anchor size constraints.
+     *  @param minSize minimum anchor size, or DisableConstraint
+     *  @param maxSize maximum anchor size, or DisableConstraint */
     void                SetAnchorConstraints(int minSize = DisableConstraint, int maxSize = DisableConstraint);
+    /** @brief Sets the size of the anchored child.
+     *  @param anchorSize the size in pixels */
     void                SetAnchorSize(int anchorSize);
+    /** @brief Sets the width of the divider (gripper).
+     *  @param pixels the gripper size in pixels */
     void                SetGripperSize(int pixels);
 
 protected: // methods
@@ -145,18 +182,18 @@ private:
     void                InitializeInstance(SplitDirection direction, Window* child1, Window* child2);
 
 private: // instance data
-    Window *child1, *child2;
-    Frame *child1Frame, *child2Frame;
-    int gripperSize, anchorSize;
-    int minAnchorSize, maxAnchorSize;
-    int sizeFromMouse;
-    bool isDragging, isSizable;
-    SplitDirection direction;
-    AnchorDirection anchor;
-    Rect splitRect;
+    Window *child1, *child2;        /**< the two children */
+    Frame *child1Frame, *child2Frame; /**< frames wrapping each child */
+    int gripperSize, anchorSize;    /**< divider width and anchored size */
+    int minAnchorSize, maxAnchorSize; /**< anchor constraints */
+    int sizeFromMouse;              /**< size captured when dragging began */
+    bool isDragging, isSizable;     /**< drag and resizability flags */
+    SplitDirection direction;       /**< split orientation */
+    AnchorDirection anchor;         /**< anchored child */
+    Rect splitRect;                 /**< current divider rectangle */
 
 private: // class data
-    static HCURSOR sHSizeCursor, sVSizeCursor, sArrowCursor;
+    static HCURSOR sHSizeCursor, sVSizeCursor, sArrowCursor; /**< shared cursors */
 };
 
 //////////////////////////////////////////////////////////////////////////////

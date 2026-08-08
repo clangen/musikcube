@@ -32,22 +32,48 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IPlaybackRemote.h @brief Defines the IPlaybackRemote interface for observing playback state. */
 #pragma once
 
 #include "IPlaybackService.h"
 #include "ITrack.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A receiver of playback state change notifications, allowing
+     *  plugins to observe and react to the current playback session. */
     class IPlaybackRemote {
         public:
+            /** @brief Releases the remote; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Associates the remote with a playback service.
+             *  @param playback The playback service to observe. */
             virtual void SetPlaybackService(IPlaybackService* playback) = 0;
+
+            /** @brief Called when the currently playing track changes.
+             *  @param track The newly playing track. */
             virtual void OnTrackChanged(ITrack* track) = 0;
+
+            /** @brief Called when the playback state changes.
+             *  @param state The new playback state. */
             virtual void OnPlaybackStateChanged(PlaybackState state) = 0;
+
+            /** @brief Called when the playback position changes.
+             *  @param time The new position, in seconds. */
             virtual void OnPlaybackTimeChanged(double time) = 0;
+
+            /** @brief Called when the output volume changes.
+             *  @param volume The new volume, from 0.0 to 1.0. */
             virtual void OnVolumeChanged(double volume) = 0;
+
+            /** @brief Called when the repeat or shuffle mode changes.
+             *  @param repeatMode The new repeat mode.
+             *  @param shuffled True if the queue is shuffled. */
             virtual void OnModeChanged(RepeatMode repeatMode, bool shuffled) = 0;
+
+            /** @brief Called when the play queue changes. */
             virtual void OnPlayQueueChanged() = 0;
     };
 

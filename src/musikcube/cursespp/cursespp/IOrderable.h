@@ -32,13 +32,25 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IOrderable.h @brief Interface for objects that participate in a z-order. */
 #pragma once
 
 namespace cursespp {
+    /** @brief Contract for objects that can be re-ordered within a stack.
+     *
+     *  @details Windows that overlap (e.g. dialog overlays on top of a main
+     *  layout) are stacked in z-order. Implementors of IOrderable can be moved
+     *  to the front or the back of that stack, which changes the order in
+     *  which they are drawn and receive input focus.
+     */
     class IOrderable {
         public:
             virtual ~IOrderable() { }
+
+            /** @brief Moves the object to the front of the z-order. */
             virtual void BringToTop() = 0;
+
+            /** @brief Moves the object to the back of the z-order. */
             virtual void SendToBottom() = 0;
     };
 }

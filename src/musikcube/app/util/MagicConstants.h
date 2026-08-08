@@ -34,21 +34,30 @@
 
 #pragma once
 
+/**
+ * @file MagicConstants.h
+ * @brief Shared constants that glue together otherwise disjoint UI features.
+ * @details Holds constants such as the pseudo-category type used to present
+ *          directory browsing as a library category even though directories
+ *          are not a category in the database.
+ */
+
 #include <string>
 
 namespace musik { namespace cube {
 
     /**
-     * MagicConstants is used to house shared constants that are typically used as markers
-     * to glue together otherwise disjoint features that may make sense to interoperate in
-     * and integrate in the UI layer. One example of this: present directory browsing as
-     * a category type, even though it's a category in the database.
+     * @brief Shared constants used as markers between features.
+     * @details Houses shared constants that are typically used as markers
+     *          to glue together otherwise disjoint features that may make sense to interoperate in
+     *          and integrate in the UI layer. One example of this: present directory browsing as
+     *          a category type, even though it's a category in the database.
      *
-     * We should strive for magic constants to be empty, but in some cases doing serious
-     * refactors of subsystems is prohibitively expensive and would not gain much.
+     *          We should strive for magic constants to be empty, but in some cases doing serious
+     *          refactors of subsystems is prohibitively expensive and would not gain much.
      */
     struct MagicConstants {
-        static const std::string DirectoryCategoryType;
+        static const std::string DirectoryCategoryType; /**< the category type marker for directories */
         private: MagicConstants(){}
     };
 

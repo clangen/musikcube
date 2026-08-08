@@ -34,20 +34,37 @@
 
 #pragma once
 
+/** @file Visualizer.h
+ *  @brief Registry and lifecycle for audio spectrum/PCM visualizers.
+ *  @details Exposes the built-in spectrum and PCM visualizers plus helpers to
+ *      enumerate, select and shut down visualizers. */
+
 #include <musikcore/config.h>
 #include <musikcore/sdk/ISpectrumVisualizer.h>
 #include <musikcore/sdk/IPcmVisualizer.h>
 
+/** @namespace musik::core::audio::vis
+ *  @brief Visualizer registry and selection helpers. */
 namespace musik { namespace core { namespace audio { namespace vis {
 
+    /** @return The built-in spectrum analyzer visualizer instance. */
     musik::core::sdk::ISpectrumVisualizer* SpectrumVisualizer();
+    /** @return The built-in PCM (waveform) visualizer instance. */
     musik::core::sdk::IPcmVisualizer* PcmVisualizer();
 
+    /** @return The visualizer at the given index.
+     *  @param index Zero-based visualizer index. */
     std::shared_ptr<musik::core::sdk::IVisualizer> GetVisualizer(size_t index);
+    /** @return The total number of registered visualizers. */
     size_t VisualizerCount();
+    /** @brief Selects the visualizer to render during playback.
+     *  @param visualizer The visualizer to select. */
     void SetSelectedVisualizer(std::shared_ptr<musik::core::sdk::IVisualizer> visualizer);
+    /** @return The currently selected visualizer, or nullptr. */
     std::shared_ptr<musik::core::sdk::IVisualizer> SelectedVisualizer();
+    /** @brief Deactivates the selected visualizer without changing the selection. */
     void HideSelectedVisualizer();
+    /** @brief Releases all visualizer resources (called on application shutdown). */
     void Shutdown();
 
 } } } }

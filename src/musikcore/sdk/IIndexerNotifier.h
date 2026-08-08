@@ -32,14 +32,20 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IIndexerNotifier.h @brief Defines the IIndexerNotifier interface for requesting library rescans. */
 #pragma once
 
 #include "IIndexerSource.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Allows an indexer source to request that the application schedule
+     *  a rescan of that source's library data. */
     class IIndexerNotifier {
         public:
+            /** @brief Requests a rescan of the given source.
+             *  @param source The source whose library data should be rescanned. */
             virtual void ScheduleRescan(IIndexerSource* source) = 0;
     };
 

@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file Serialization.h
+ *  @brief JSON serialization helpers for query results and inputs.
+ *  @details Converts query-related data structures (predicate lists, metadata map
+ *      lists, value lists, tracks and track lists) to and from JSON. Used by
+ *      serializable queries to marshal data across the remote library connection. */
+
 #pragma warning(push, 0)
 #include <nlohmann/json.hpp>
 #pragma warning(pop)
@@ -45,53 +51,100 @@
 #include <musikcore/library/track/TrackList.h>
 #include <musikcore/library/ILibrary.h>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @namespace musik::core::library::query::serialization
+     *  @brief JSON (de)serialization of query data structures. */
     namespace serialization {
 
+        /** @brief Serializes a predicate list to JSON.
+         *  @param input The predicates to serialize.
+         *  @return The JSON representation. */
         nlohmann::json PredicateListToJson(
             const musik::core::library::query::category::PredicateList& input);
 
+        /** @brief Deserializes a predicate list from JSON.
+         *  @param input The JSON representation.
+         *  @param output The deserialized predicate list. */
         void PredicateListFromJson(
             const nlohmann::json& input,
             musik::core::library::query::category::PredicateList& output);
 
+        /** @brief Serializes a metadata map list to JSON.
+         *  @param input The map list to serialize.
+         *  @return The JSON representation. */
         nlohmann::json MetadataMapListToJson(
             const musik::core::MetadataMapList& input);
 
+        /** @brief Deserializes a metadata map list from JSON.
+         *  @param input The JSON representation.
+         *  @param output The deserialized map list. */
         void MetadataMapListFromJson(
             const nlohmann::json& input,
             musik::core::MetadataMapList& output);
 
+        /** @brief Serializes an SDK value list to JSON.
+         *  @param input The value list to serialize.
+         *  @return The JSON representation. */
         nlohmann::json ValueListToJson(
             const musik::core::library::query::SdkValueList& input);
 
+        /** @brief Deserializes an SDK value list from JSON.
+         *  @param input The JSON representation.
+         *  @param output The deserialized value list. */
         void ValueListFromJson(
             const nlohmann::json& input,
             musik::core::library::query::SdkValueList& output);
 
+        /** @brief Serializes a track to JSON.
+         *  @param input The track to serialize.
+         *  @param onlyIds true to serialize only the identifying fields.
+         *  @return The JSON representation. */
         nlohmann::json TrackToJson(
             const musik::core::TrackPtr input,
             bool onlyIds = false);
 
+        /** @brief Deserializes a track from JSON.
+         *  @param input The JSON representation.
+         *  @param output The destination track.
+         *  @param onlyIds Whether the JSON contains only identifying fields. */
         void TrackFromJson(
             const nlohmann::json& input,
             musik::core::TrackPtr output,
             bool onlyIds);
 
+        /** @brief Serializes a track list to JSON.
+         *  @param input The track list to serialize.
+         *  @param onlyIds true to serialize only the identifying fields.
+         *  @return The JSON representation. */
         nlohmann::json TrackListToJson(
             const musik::core::TrackList& input,
             bool onlyIds);
 
+        /** @brief Deserializes a track list from JSON.
+         *  @param input The JSON representation.
+         *  @param output The destination track list.
+         *  @param library Library used to resolve source info for ids.
+         *  @param onlyIds Whether the JSON contains only identifying fields. */
         void TrackListFromJson(
             const nlohmann::json& input,
             musik::core::TrackList& output,
             musik::core::ILibraryPtr library,
             bool onlyIds);
 
+        /** @brief Serializes an SDK track list to a JSON array of track ids.
+         *  @param input The track list to serialize.
+         *  @return The JSON array of ids. */
         nlohmann::json ITrackListToJsonIdList(
             const musik::core::sdk::ITrackList& input);
 
+        /** @brief Fills a set from a JSON array.
+         *  @tparam SetType The set container type.
+         *  @tparam DataType The element type.
+         *  @param input The JSON array.
+         *  @param output The set to fill. */
         template <typename SetType, typename DataType>
         void JsonArrayToSet(const nlohmann::json& input, SetType& output) {
             for (auto& value : input) {
@@ -99,9 +152,15 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         }
 
+        /** @brief Serializes a duration map (index -> seconds) to JSON.
+         *  @param input The map to serialize.
+         *  @return The JSON representation. */
         nlohmann::json DurationMapToJsonMap(
             const std::map<size_t, size_t>& input);
 
+        /** @brief Deserializes a duration map from JSON.
+         *  @param input The JSON representation.
+         *  @param output The deserialized map. */
         void JsonMapToDuration(
             const nlohmann::json& input,
             std::map<size_t, size_t>& output);

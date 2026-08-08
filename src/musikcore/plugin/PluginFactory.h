@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file PluginFactory.h
+ *  @brief Loads plugin DLLs and queries their exported interfaces.
+ *  @details Discovers and loads plugin shared libraries, then exposes templated
+ *      helpers to resolve exported factory functions (e.g. "GetPlugin", or a
+ *      named interface function) from each loaded plugin. */
+
 #include <musikcore/config.h>
 #include <musikcore/sdk/IPlugin.h>
 #include <musikcore/sdk/IPreferences.h>
@@ -51,12 +57,21 @@
     #define STDCALL(fp) (* fp)()
 #endif
 
+/** @namespace musik::core
+ *  @brief Core application services: libraries, indexing, playback and utilities. */
 namespace musik { namespace core {
 
+    /** @brief Manages the lifecycle of loaded plugin shared libraries.
+     *  @details Holds a Descriptor for each loaded plugin (native handle, filename,
+     *      preferences key) and provides template helpers that iterate plugins and
+     *      call an exported function by name. */
     class PluginFactory {
         public:
+            /** @return The process-wide plugin factory singleton. */
             static PluginFactory& Instance();
 
+            /** @brief Deletes an interface via its Release() method.
+             *  @tparam T The interface type. */
             template <typename T>
             struct ReleaseDeleter {
                 void operator()(T* t) {
@@ -64,12 +79,18 @@ namespace musik { namespace core {
                 }
             };
 
+            /** @brief No-op deleter (for borrowed interfaces). */
             template <typename T>
             struct NullDeleter {
                 void operator()(T* t) {
                 }
             };
 
+            /** @brief Calls an exported interface function on every plugin.
+             *  @tparam T The interface type returned by the function.
+             *  @tparam D The deleter used for the shared pointer.
+             *  @param functionName The exported function name.
+             *  @param handler Called once per plugin that exports the function. */
             template <class T, class D> void QueryInterface(
                 const std::string& functionName,
                 std::function<void(musik::core::sdk::IPlugin*, std::shared_ptr<T>, const std::string&)> handler)
@@ -97,6 +118,11 @@ namespace musik { namespace core {
                 }
             }
 
+            /** @brief Collects an exported interface from every plugin.
+             *  @tparam T The interface type returned by the function.
+             *  @tparam D The deleter used for the shared pointer.
+             *  @param functionName The exported function name.
+             *  @return All interfaces returned by the plugins. */
             template <class T, class D> std::vector<std::shared_ptr<T> > QueryInterface(const std::string& functionName) {
                 std::vector<std::shared_ptr<T> > plugins;
 
@@ -113,6 +139,10 @@ namespace musik { namespace core {
                 return plugins;
             }
 
+            /** @brief Calls an exported plain function on every plugin.
+             *  @tparam T The function pointer type.
+             *  @param functionName The exported function name.
+             *  @param handler Called once per plugin that exports the function. */
             template <class T> void QueryFunction(
                 const std::string& functionName,
                 std::function<void(musik::core::sdk::IPlugin*, T)> handler)
@@ -134,6 +164,9 @@ namespace musik { namespace core {
                 }
             }
 
+            /** @brief Finds the plugin with the given GUID.
+             *  @param guid The plugin GUID to look up.
+             *  @return The matching plugin, or nullptr. */
             std::shared_ptr<musik::core::sdk::IPlugin> QueryGuid(const std::string& guid) {
                 using T = musik::core::sdk::IPlugin;
                 std::shared_ptr<T> result;
@@ -149,19 +182,22 @@ namespace musik { namespace core {
             }
 
         private:
+            /** @brief Metadata about one loaded plugin. */
             struct Descriptor {
-                musik::core::sdk::IPlugin* plugin;
-                void* nativeHandle;
-                std::string filename;
-                std::string key;
+                musik::core::sdk::IPlugin* plugin; /**< The plugin instance. */
+                void* nativeHandle; /**< OS module handle. */
+                std::string filename; /**< Plugin file name. */
+                std::string key;     /**< Preferences enable key. */
             };
 
+            /** @brief Creates the factory (private). */
             PluginFactory();
             ~PluginFactory();
+            /** @brief Discovers and loads all plugin libraries. */
             void LoadPlugins();
 
-            std::vector<std::shared_ptr<Descriptor> > plugins;
-            std::mutex mutex;
-            std::shared_ptr<musik::core::sdk::IPreferences> prefs;
+            std::vector<std::shared_ptr<Descriptor> > plugins; /**< Loaded plugin descriptors. */
+            std::mutex mutex; /**< Guards plugin iteration. */
+            std::shared_ptr<musik::core::sdk::IPreferences> prefs; /**< Preferences for plugin enablement. */
     };
 } }

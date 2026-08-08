@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file RemoteLibrarySettingsLayout.h
+ * @brief Layout for configuring the remote library server connection.
+ * @details Edits the HTTP/WebSocket server host, port and password, TLS
+ *          settings and transcoding options, and persists them to
+ *          preferences.
+ */
+
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextLabel.h>
 #include <cursespp/TextInput.h>
@@ -42,17 +50,39 @@
 #include <musikcore/support/Preferences.h>
 
 namespace musik { namespace cube {
+    /**
+     * @brief Remote library server settings layout.
+     * @details Provides inputs for the server host, ports and password,
+     *          toggles for TLS and transcoding, and dropdowns for the
+     *          transcoder format and bitrate. Changes are synced with
+     *          persistent preferences.
+     */
     class RemoteLibrarySettingsLayout: public cursespp::LayoutBase, public sigslot::has_slots<>  {
         public:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(RemoteLibrarySettingsLayout)
 
+            /**
+             * @brief Creates the settings layout.
+             */
             RemoteLibrarySettingsLayout();
+            /**
+             * @brief Destroys the layout and its child views.
+             */
             virtual ~RemoteLibrarySettingsLayout();
 
+            /**
+             * @brief Loads the persisted server settings.
+             */
             void LoadPreferences();
+            /**
+             * @brief Saves the current values to preferences.
+             */
             void SavePreferences();
 
             /* IWindow */
+            /**
+             * @brief Positions and lays out the child windows.
+             */
             void OnLayout() override;
 
         private:
@@ -63,12 +93,12 @@ namespace musik { namespace cube {
             void OnActivateTranscoderFormat(cursespp::TextLabel* tl);
             void OnActivateTranscoderBitrate(cursespp::TextLabel* tl);
 
-            musik::core::ILibraryPtr library;
+            musik::core::ILibraryPtr library; /**< the library whose server settings are edited */
 
-            std::shared_ptr<musik::core::Preferences> prefs;
-            std::shared_ptr<cursespp::TextLabel> httpPortLabel, wssPortLabel, hostLabel, pwLabel;
-            std::shared_ptr<cursespp::TextInput> httpPortInput, wssPortInput, hostInput, pwInput;
-            std::shared_ptr<cursespp::Checkbox> wssTlsCheckbox, httpTlsCheckbox, transcoderCheckbox;
-            std::shared_ptr<cursespp::TextLabel> transcoderFormatDropdown, transcoderBitrateDropdown;
+            std::shared_ptr<musik::core::Preferences> prefs; /**< persistent preferences */
+            std::shared_ptr<cursespp::TextLabel> httpPortLabel, wssPortLabel, hostLabel, pwLabel; /**< setting labels */
+            std::shared_ptr<cursespp::TextInput> httpPortInput, wssPortInput, hostInput, pwInput; /**< setting inputs */
+            std::shared_ptr<cursespp::Checkbox> wssTlsCheckbox, httpTlsCheckbox, transcoderCheckbox; /**< setting toggles */
+            std::shared_ptr<cursespp::TextLabel> transcoderFormatDropdown, transcoderBitrateDropdown; /**< transcoder dropdowns */
     };
 } }

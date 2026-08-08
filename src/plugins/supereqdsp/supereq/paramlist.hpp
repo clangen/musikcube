@@ -21,37 +21,60 @@
 #include <stdlib.h>
 #include <string.h>
 
+/// @file paramlist.hpp
+/// @brief Linked-list of equalizer band parameters for SuperEQ.
+/// @details Vendored from the DeaDBeeF player. Defines paramlistelm (one
+/// frequency band with a lower/upper bound and gain) and paramlist, a
+/// singly-linked list of bands sorted by frequency that feeds equ_makeTable.
+
+/** @brief A single equalizer band definition.
+ *  @details One element of a paramlist. A band is described by its lower and
+ *  upper frequency bounds and the gain applied across it. */
 class paramlistelm {
 public:
+	/** @brief Pointer to the next band in the list. */
 	class paramlistelm *next;
 
+	/** @brief Lower/upper frequency bounds, current and target gain. */
 	float lower,upper,gain,gain2;
+	/** @brief Position used to keep the sort stable. */
 	int sortindex;
 
+	/** @brief Constructs an empty band element. */
 	paramlistelm(void) {
 		lower = upper = gain = 0;
 		next = NULL;
 	};
 
+	/** @brief Deletes the remaining list. */
 	~paramlistelm() {
 		delete next;
 		next = NULL;
 	};
 };
 
+/** @brief Singly-linked list of equalizer bands.
+ *  @details Bands can be appended, removed, counted and sorted by their lower
+ *  frequency bound. The sorted list is passed to the equalizer to rebuild its
+ *  filter table. */
 class paramlist {
 public:
+	/** @brief Head of the band list. */
 	class paramlistelm *elm;
 
+	/** @brief Constructs an empty parameter list. */
 	paramlist(void) {
 		elm = NULL;
 	}
 
+	/** @brief Deletes the entire list. */
 	~paramlist() {
 		delete elm;
 		elm = NULL;
 	}
 
+	/** @brief Replaces this list with a copy of another.
+	 *  @param src The source list to copy. */
 	void copy(paramlist &src)
 	{
 		delete elm;
@@ -67,6 +90,8 @@ public:
 		}
 	}
 		
+	/** @brief Appends a new empty band to the list.
+	 *  @return Pointer to the newly appended element. */
 	paramlistelm *newelm(void)
 	{
 		paramlistelm **e;
@@ -76,6 +101,8 @@ public:
 		return *e;
 	}
 
+	/** @brief Returns the number of bands in the list.
+	 *  @return The element count. */
 	int getnelm(void)
 	{
 		int i;
@@ -86,6 +113,8 @@ public:
 		return i;
 	}
 	
+	/** @brief Removes a band from the list.
+	 *  @param p The element to remove. */
 	void delelm(paramlistelm *p)
 	{
 		paramlistelm **e;
@@ -96,6 +125,7 @@ public:
 		delete p;
 	}
 
+	/** @brief Sorts the bands by their lower frequency bound. */
 	void sortelm(void)
 	{
 		int i=0;

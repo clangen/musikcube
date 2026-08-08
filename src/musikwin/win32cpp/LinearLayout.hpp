@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file LinearLayout.hpp
+ * @brief Container that stacks children horizontally or vertically.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. LinearLayout
+ * arranges its children in a single row or column, honouring each child's
+ * layout width/height, alignment and weight. Children are positioned in the
+ * order they were added.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -49,38 +59,28 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief Specifies the orientation of a LinearLayout
+/** @brief Specifies the orientation of a LinearLayout. */
 enum LayoutOrientation
 {
-    VerticalLayout,    /*!< */
-    HorizontalLayout   /*!< */
+    VerticalLayout,    /*!< children stacked top-to-bottom */
+    HorizontalLayout   /*!< children stacked left-to-right */
 };
 
-///\brief A Container that is used to stack controls horizontally or
-///vertically.
-///
-///Children are added to and removed from a LinearLayout using
-///Container::AddChild and Container::RemoveChild, respectively. The order
-///in which the children are arranged is determined by the order in
-///which they are added to the Container. First in, first out.
-///
-///The orientation (VerticalLayout or HorizontalLayout) is determined at
-///construction time by specifying a win32cpp::LinearLayoutOrientation.
-///
-///If a child is resized, LinearLayout will adjust itself accordingly.
-///
-///\code
-/// // create a new Horizontal LinearLayout with 4 buttons.
-/// LinearLayout* layout = new LinearLayout(LinearColumnLayout);
-/// layout->AddChild(new Button(_T("Prev")));
-/// layout->AddChild(new Button(_T("Play")));
-/// layout->AddChild(new Button(_T("Stop")));
-/// layout->AddChild(new Button(_T("Next")));
-///\endcode
-///
-///Children are positioned and sized according to their LayoutWidth(),
-///LayoutHeight(), LayoutAlignment(), and LayoutWeight() properties.
-///\endcode
+/** @brief A Container that stacks controls horizontally or vertically.
+ *  @details Children are added to and removed from a LinearLayout using
+ *           Container::AddChild and Container::RemoveChild, respectively.
+ *           The order in which the children are arranged is determined by
+ *           the order in which they are added to the Container (first in,
+ *           first out).
+ *
+ *           The orientation (VerticalLayout or HorizontalLayout) is
+ *           determined at construction time by specifying a
+ *           win32cpp::LinearLayoutOrientation.
+ *
+ *           If a child is resized, LinearLayout will adjust itself
+ *           accordingly. Children are positioned and sized according to
+ *           their LayoutWidth(), LayoutHeight(), LayoutAlignment(), and
+ *           LayoutWeight() properties. */
 class LinearLayout: public Panel, public ILayout
 {
 private: // types
@@ -88,19 +88,28 @@ private: // types
     typedef std::map<Window*, Size> ChildSizeMap;
 
 public: // constructors
+    /** @brief Constructs a linear layout with the given orientation.
+     *  @param orientation whether to stack children vertically or horizontally
+     *  @param layoutFlags layout flags used for sizing */
     /*ctor*/    LinearLayout(
                     LayoutOrientation orientation,
                     LayoutFlags layoutFlags = LayoutWrapWrap);
 
 public: // methods
+    /** @brief Sets the spacing between children.
+     *  @param spacing the spacing in pixels */
     void SetSpacing(int spacing);
+    /** @brief Returns the spacing between children.
+     *  @return the spacing in pixels */
     int Spacing() const;
 
 public: // ILayout
+    /** @brief Re-positions and sizes all children. */
     virtual void Layout();
 
 protected: // methods
     static bool RegisterWindowClass();
+    /** @brief Creates the underlying HWND. */
     virtual HWND Create(Window* parent);
 
     virtual void OnResized(const Size& newSize);
@@ -113,10 +122,10 @@ protected: // methods
     Point AlignChildInRect(LayoutAlignFlag alignment, Size childSize, Rect alignmentRect);
 
 private: // instance data
-    LayoutOrientation orientation;
-    int spacing;
-    ChildSizeMap childSizeMap;
-    bool childIsResizing, isResizing;
+    LayoutOrientation orientation; /**< stacking direction */
+    int spacing;                   /**< gap between children in pixels */
+    ChildSizeMap childSizeMap;     /**< cached child sizes */
+    bool childIsResizing, isResizing; /**< re-entrancy guards */
 };
 
 /////////////////////////////////////////////////////////////////////////////

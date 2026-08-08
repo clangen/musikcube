@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file Playback.h
+ * @brief Playback convenience helpers for track list views.
+ * @details Provides free functions that start playback from the current
+ *          selection or from the top of a track list, and that hot swap the
+ *          queue so it plays in place starting from the selection.
+ */
+
 #include <stdafx.h>
 
 #include <musikcore/audio/PlaybackService.h>
@@ -44,15 +52,34 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Helpers that start playback from a track list.
+         */
         namespace playback {
+            /**
+             * @brief Plays the selected track in the given list.
+             * @param trackList the track list view
+             * @param playback the active playback service
+             */
             void PlaySelected(
                 musik::cube::TrackListView& trackList,
                 musik::core::audio::PlaybackService& playback);
 
+            /**
+             * @brief Plays all tracks in the list starting from the top.
+             * @param trackList the track list view
+             * @param playback the active playback service
+             */
             void PlayFromTop(
                 musik::cube::TrackListView& trackList,
                 musik::core::audio::PlaybackService& playback);
 
+            /**
+             * @brief Hot swaps the queue to play from the selection in place.
+             * @param trackList the track list view
+             * @param playback the active playback service
+             * @return true if the queue was swapped
+             */
             bool HotSwap(
                 musik::cube::TrackListView& trackList,
                 musik::core::audio::PlaybackService& playback);

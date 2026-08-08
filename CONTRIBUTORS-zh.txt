@@ -1,0 +1,9 @@
+musikcube 团队由以下成员组成：
+
+  * Casey Langen
+  * Daniel Önnerby
+  * Gunnar Roth
+  * Rajiv Makhijani
+  * Björn Olievier
+  * Julian Cromarty
+  * André Wösten

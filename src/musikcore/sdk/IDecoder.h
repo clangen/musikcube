@@ -32,21 +32,47 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IDecoder.h @brief Defines the IDecoder interface for decoding audio streams into PCM buffers. */
 #pragma once
 
 #include "IDataStream.h"
 #include "IBuffer.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Decodes audio from an IDataStream into interleaved float PCM
+     *  buffers for the playback pipeline. */
     class IDecoder {
         public:
+            /** @brief Releases the decoder; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Seeks to an absolute position in the stream.
+             *  @param seconds The target position, in seconds.
+             *  @return The actual position reached, in seconds. */
             virtual double SetPosition(double seconds) = 0;
+
+            /** @brief Decodes the next chunk of audio into the given buffer.
+             *  @param buffer The buffer to fill with decoded PCM data.
+             *  @return True if a buffer was produced. */
             virtual bool GetBuffer(IBuffer *buffer) = 0;
+
+            /** @brief Returns the total duration of the stream.
+             *  @return The duration in seconds, or a negative value if unknown. */
             virtual double GetDuration() = 0;
+
+            /** @brief Opens the given stream for decoding.
+             *  @param stream The stream to decode.
+             *  @return True if the stream was opened successfully. */
             virtual bool Open(IDataStream *stream) = 0;
+
+            /** @brief Indicates whether all audio in the stream has been decoded.
+             *  @return True when the stream is fully consumed. */
             virtual bool Exhausted() = 0;
+
+            /** @brief Requests the decoder to output audio at a preferred rate.
+             *  @param rate The preferred sample rate in Hz. */
             virtual void SetPreferredSampleRate(int rate) = 0;
     };
 

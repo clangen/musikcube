@@ -32,18 +32,40 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+///
+
+/// @file HttpDataStreamFactory.h
+/// @brief Factory that creates HttpDataStream instances for remote URLs.
+/// @details Recognizes http:// and https:// URIs (plus the remote-track host
+/// prefix) and produces the IDataStream used by the decoder to stream audio
+/// over the network.
+
 #include <musikcore/sdk/IDataStreamFactory.h>
 
 using namespace musik::core::sdk;
 
+/** @brief Creates HTTP data streams.
+ *  @details Registers the "http"/"https" URI schemes so remote audio tracks are
+ *  routed to the HttpDataStream implementation. */
 class HttpDataStreamFactory : public IDataStreamFactory {
     public:
+        /** @brief Open flags alias. */
         using OpenFlags = musik::core::sdk::OpenFlags;
 
+        /** @brief Constructs the factory. */
         HttpDataStreamFactory();
+        /** @brief Destroys the factory. */
         ~HttpDataStreamFactory();
 
+        /** @brief Returns whether this factory can open the given URI.
+         *  @param uri The URI to check.
+         *  @return True for http/https URIs. */
         virtual bool CanRead(const char *uri);
+        /** @brief Opens a stream for the given URI.
+         *  @param uri The http/https URI to open.
+         *  @param flags Open flags.
+         *  @return A new HttpDataStream, or null on failure. */
         virtual IDataStream* Open(const char *uri, OpenFlags flags);
+        /** @brief Destroys the factory instance. */
         virtual void Release();
 };

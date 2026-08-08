@@ -34,128 +34,149 @@
 
 #pragma once
 
+/** @file LocalLibraryConstants.h
+ *  @brief Column and table name constants for the local library database schema.
+ *  @details Groups constant strings describing the SQLite schema used by the
+ *      local library: table names and their column names for tracks, genres,
+ *      artists, albums, paths, thumbnails, playlists and normalized metadata. */
+
+/** @namespace musik::core::library::constants
+ *  @brief Constant names for the local library database schema. */
 namespace musik { namespace core { namespace library { namespace constants {
 
+    /** @brief Constants for the tracks table and its columns. */
     namespace Track {
         /* DB fields */
-        static const char* TABLE_NAME = "tracks";
-        static const char* ID = "id";
-        static const char* TRACK_NUM = "track";
-        static const char* DISC_NUM = "disc";
-        static const char* BPM = "bpm";
-        static const char* DURATION = "duration";
-        static const char* FILESIZE = "filesize";
-        static const char* YEAR = "year";
-        static const char* TITLE = "title";
-        static const char* FILENAME = "filename";
-        static const char* FILETIME = "filetime";
-        static const char* THUMBNAIL_ID = "thumbnail_id";
-        static const char* GENRE_ID = "visual_genre_id";
-        static const char* ARTIST_ID = "visual_artist_id";
-        static const char* ALBUM_ARTIST_ID = "album_artist_id";
-        static const char* ALBUM_ID = "album_id";
-        static const char* PATH_ID = "path_id";
-        static const char* SOURCE_ID = "source_id";
-        static const char* EXTERNAL_ID = "external_id";
-        static const char* RATING = "rating";
-        static const char* LAST_PLAYED = "last_played";
-        static const char* PLAY_COUNT = "play_count";
-        static const char* DATE_ADDED = "date_added";
-        static const char* DATE_UPDATED = "date_updated";
+        static const char* TABLE_NAME = "tracks";      /**< Table name. */
+        static const char* ID = "id";                  /**< Primary key. */
+        static const char* TRACK_NUM = "track";        /**< Track number. */
+        static const char* DISC_NUM = "disc";          /**< Disc number. */
+        static const char* BPM = "bpm";                /**< Beats per minute. */
+        static const char* DURATION = "duration";      /**< Duration, in seconds. */
+        static const char* FILESIZE = "filesize";      /**< File size, in bytes. */
+        static const char* YEAR = "year";              /**< Release year. */
+        static const char* TITLE = "title";            /**< Track title. */
+        static const char* FILENAME = "filename";      /**< File name on disk. */
+        static const char* FILETIME = "filetime";      /**< File modification time. */
+        static const char* THUMBNAIL_ID = "thumbnail_id"; /**< Foreign key to thumbnails. */
+        static const char* GENRE_ID = "visual_genre_id"; /**< Denormalized genre id. */
+        static const char* ARTIST_ID = "visual_artist_id"; /**< Denormalized artist id. */
+        static const char* ALBUM_ARTIST_ID = "album_artist_id"; /**< Denormalized album artist id. */
+        static const char* ALBUM_ID = "album_id";      /**< Denormalized album id. */
+        static const char* PATH_ID = "path_id";        /**< Foreign key to paths. */
+        static const char* SOURCE_ID = "source_id";    /**< Id of the indexer source. */
+        static const char* EXTERNAL_ID = "external_id";/**< Id assigned by the source. */
+        static const char* RATING = "rating";          /**< User rating (1-5). */
+        static const char* LAST_PLAYED = "last_played";/**< Timestamp of last play. */
+        static const char* PLAY_COUNT = "play_count";  /**< Number of plays. */
+        static const char* DATE_ADDED = "date_added";  /**< Timestamp of insertion. */
+        static const char* DATE_UPDATED = "date_updated"; /**< Timestamp of last update. */
 
         /* used in Track instances where foreign key IDs have been
         replaced with actual values... */
-        static const char* GENRE = "genre";
-        static const char* ARTIST = "artist";
-        static const char* ALBUM = "album";
-        static const char* ALBUM_ARTIST = "album_artist";
-        static const char* DIRECTORY = "directory";
+        static const char* GENRE = "genre";         /**< Genre name (denormalized). */
+        static const char* ARTIST = "artist";       /**< Artist name (denormalized). */
+        static const char* ALBUM = "album";         /**< Album name (denormalized). */
+        static const char* ALBUM_ARTIST = "album_artist"; /**< Album artist name (denormalized). */
+        static const char* DIRECTORY = "directory"; /**< Containing directory path. */
     }
 
+    /** @brief Constants for the genres table. */
     namespace Genres {
-        static const char* TABLE_NAME = "genres";
-        static const char* ID = "id";
-        static const char* NAME = "name";
-        static const char* AGGREGATED = "aggregated";
-        static const char* SORT_ORDER = "sort_order";
+        static const char* TABLE_NAME = "genres";   /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* NAME = "name";           /**< Genre name. */
+        static const char* AGGREGATED = "aggregated"; /**< Whether the row is a summary. */
+        static const char* SORT_ORDER = "sort_order"; /**< Display sort order. */
     }
 
+    /** @brief Constants for the track_genres association table. */
     namespace TrackGenres {
-        static const char* TABLE_NAME = "track_genres";
-        static const char* ID = "id";
-        static const char* TRACK_ID = "track_id";
-        static const char* GENRE_ID = "genre_id";
+        static const char* TABLE_NAME = "track_genres"; /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* TRACK_ID = "track_id";   /**< Foreign key to tracks. */
+        static const char* GENRE_ID = "genre_id";   /**< Foreign key to genres. */
     }
 
+    /** @brief Constants for the artists table. */
     namespace Artists {
-        static const char* TABLE_NAME = "artists";
-        static const char* ID = "id";
-        static const char* NAME = "name";
-        static const char* AGGREGATED = "aggregated";
-        static const char* SORT_ORDER = "sort_order";
+        static const char* TABLE_NAME = "artists";  /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* NAME = "name";           /**< Artist name. */
+        static const char* AGGREGATED = "aggregated"; /**< Whether the row is a summary. */
+        static const char* SORT_ORDER = "sort_order"; /**< Display sort order. */
     }
 
+    /** @brief Constants for the artist_genres association table. */
     namespace ArtistGenres {
-        static const char* TABLE_NAME = "artist_genres";
-        static const char* ID = "id";
-        static const char* TRACK_ID = "track_id";
-        static const char* GENRE_ID = "artist_id";
+        static const char* TABLE_NAME = "artist_genres"; /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* TRACK_ID = "track_id";   /**< Foreign key to tracks. */
+        static const char* GENRE_ID = "artist_id";  /**< Foreign key to artists. */
     }
 
+    /** @brief Constants for the albums table. */
     namespace Albums {
-        static const char* TABLE_NAME = "albums";
-        static const char* ID = "id";
-        static const char* NAME = "name";
-        static const char* THUMBNAIL_ID = "thumbnail_id";
-        static const char* SORT_ORDER = "sort_order";
+        static const char* TABLE_NAME = "albums";   /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* NAME = "name";           /**< Album name. */
+        static const char* THUMBNAIL_ID = "thumbnail_id"; /**< Foreign key to thumbnails. */
+        static const char* SORT_ORDER = "sort_order"; /**< Display sort order. */
     }
 
+    /** @brief Constants for the normalized metadata keys table. */
     namespace NormalizedKeys {
-        static const char* TABLE_NAME = "meta_keys";
-        static const char* ID = "id";
-        static const char* NAME = "name";
+        static const char* TABLE_NAME = "meta_keys";/**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* NAME = "name";           /**< Metadata key name. */
     }
 
+    /** @brief Constants for the normalized metadata values table. */
     namespace NormalizedValues {
-        static const char* TABLE_NAME = "meta_values";
-        static const char* ID = "id";
-        static const char* KEY_ID = "meta_key_id";
-        static const char* SORT_ORDER = "sort_order";
-        static const char* CONTENT = "content";
+        static const char* TABLE_NAME = "meta_values"; /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* KEY_ID = "meta_key_id";  /**< Foreign key to meta_keys. */
+        static const char* SORT_ORDER = "sort_order"; /**< Display sort order. */
+        static const char* CONTENT = "content";     /**< Metadata value text. */
     }
 
+    /** @brief Constants for the track_meta association table. */
     namespace ExtendedTrackMetadata {
-        static const char* TABLE_NAME = "track_meta";
-        static const char* ID = "id";
-        static const char* TRACK_ID = "track_id";
-        static const char* VALUE_ID = "meta_value_id";
+        static const char* TABLE_NAME = "track_meta"; /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* TRACK_ID = "track_id";   /**< Foreign key to tracks. */
+        static const char* VALUE_ID = "meta_value_id"; /**< Foreign key to meta_values. */
     }
 
+    /** @brief Constants for the paths table. */
     namespace Paths {
-        static const char* TABLE_NAME = "paths";
-        static const char* ID = "id";
-        static const char* PATH = "path";
+        static const char* TABLE_NAME = "paths";    /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* PATH = "path";           /**< Directory path. */
     }
 
+    /** @brief Constants for the thumbnails table. */
     namespace Thumbnails {
-        static const char* TABLE_NAME = "thumbnails";
-        static const char* ID = "id";
-        static const char* FILENAME = "filename";
-        static const char* FILESIZE = "filesize";
-        static const char* CHECKSUM = "checksum";
+        static const char* TABLE_NAME = "thumbnails"; /**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* FILENAME = "filename";   /**< Thumbnail file name. */
+        static const char* FILESIZE = "filesize";   /**< Thumbnail file size. */
+        static const char* CHECKSUM = "checksum";   /**< Content checksum. */
     }
 
+    /** @brief Constants for the playlists table. */
     namespace Playlists {
-        static const char* TABLE_NAME = "playlists";
-        static const char* ID = "id";
-        static const char* NAME = "name";
+        static const char* TABLE_NAME = "playlists";/**< Table name. */
+        static const char* ID = "id";               /**< Primary key. */
+        static const char* NAME = "name";           /**< Playlist name. */
     }
 
+    /** @brief Constants for the playlist_tracks association table. */
     namespace PlaylistTracks {
-        static const char* TABLE_NAME = "playlist_tracks";
-        static const char* TRACK_ID = "track_id";
-        static const char* PLAYLIST_ID = "playlist_id";
-        static const char* SORT_ORDER = "sort_order";
+        static const char* TABLE_NAME = "playlist_tracks"; /**< Table name. */
+        static const char* TRACK_ID = "track_id";   /**< Foreign key to tracks. */
+        static const char* PLAYLIST_ID = "playlist_id"; /**< Foreign key to playlists. */
+        static const char* SORT_ORDER = "sort_order"; /**< Position within the playlist. */
     }
 
 } } } }

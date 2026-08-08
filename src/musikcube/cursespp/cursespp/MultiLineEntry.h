@@ -32,26 +32,54 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file MultiLineEntry.h @brief An IScrollAdapter entry that wraps text across multiple lines. */
 #pragma once
 
 #include <cursespp/IScrollAdapter.h>
 #include <vector>
 
 namespace cursespp {
+    /** @brief A scroll adapter entry that word-wraps a single string into multiple lines.
+     *
+     *  @details MultiLineEntry takes a long string and breaks it into display
+     *  lines at the width imposed by SetWidth(). It implements
+     *  IScrollAdapter::IEntry so a ScrollableWindow can render each wrapped
+     *  line individually. All lines share the same Color attributes. Re-setting
+     *  the width re-computes the wrapped lines, so the owning window should
+     *  re-query GetLineCount() after a resize.
+     */
     class MultiLineEntry : public IScrollAdapter::IEntry {
         public:
+            /** @brief Creates a wrapped entry.
+             *  @param value the full text to display.
+             *  @param attrs the Color attributes for all lines.
+             */
             MultiLineEntry(const std::string& value, Color attrs = Color::Default);
 
+            /** @brief Returns the number of wrapped lines.
+             *  @return the line count.
+             */
             size_t GetLineCount() override;
+            /** @brief Returns the text of a wrapped line.
+             *  @param line the zero-based line index.
+             *  @return the line's text.
+             */
             std::string GetLine(size_t line) override;
+            /** @brief Sets the display width and re-wraps the text.
+             *  @param width the width in terminal cells.
+             */
             void SetWidth(size_t width) override;
+            /** @brief Returns the attributes for a line.
+             *  @param line the zero-based line index.
+             *  @return the Color for that line.
+             */
             Color GetAttrs(size_t line) override;
 
         private:
-            std::string value;
-            std::vector<std::string> lines;
-            size_t charCount;
-            Color attrs;
-            size_t width;
+            std::string value;                 /**< The full unwrapped text. */
+            std::vector<std::string> lines;    /**< The wrapped display lines. */
+            size_t charCount;                  /**< Number of characters in the source text. */
+            Color attrs;                       /**< Shared attributes for all lines. */
+            size_t width;                      /**< The display width in cells. */
     };
 }

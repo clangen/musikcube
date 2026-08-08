@@ -34,25 +34,47 @@
 
 #pragma once
 
+/** @file PiggyDebugBackend.h
+ *  @brief Debug backend that forwards log output to the Piggy service.
+ *  @details Implements musik::debug::IBackend so that log messages are relayed
+ *      over the Piggy WebSocket connection. */
+
 #include <memory>
 #include <musikcore/debug.h>
 #include <musikcore/net/PiggyWebSocketClient.h>
 
 namespace musik {
 
+    /** @brief Forwards application log output to the Piggy service.
+     *  @details Each log call wraps the message and sends it through the given
+     *      PiggyWebSocketClient. */
     class PiggyDebugBackend : public musik::debug::IBackend {
         public:
-            using Client = std::shared_ptr<musik::core::net::PiggyWebSocketClient>;
+            using Client = std::shared_ptr<musik::core::net::PiggyWebSocketClient>; /**< Client alias. */
 
+            /** @brief Creates a debug backend bound to a Piggy client.
+             *  @param client The client used to send log messages. */
             PiggyDebugBackend(Client client);
             virtual ~PiggyDebugBackend() override;
+            /** @brief Forwards a verbose-level log message.
+             *  @param tag The logging tag.
+             *  @param string The log text. */
             virtual void verbose(const std::string& tag, const std::string& string) override;
+            /** @brief Forwards an info-level log message.
+             *  @param tag The logging tag.
+             *  @param string The log text. */
             virtual void info(const std::string& tag, const std::string& string) override;
+            /** @brief Forwards a warning-level log message.
+             *  @param tag The logging tag.
+             *  @param string The log text. */
             virtual void warning(const std::string& tag, const std::string& string) override;
+            /** @brief Forwards an error-level log message.
+             *  @param tag The logging tag.
+             *  @param string The log text. */
             virtual void error(const std::string& tag, const std::string& string) override;
 
         private:
-            Client client;
+            Client client; /**< Piggy client used to relay messages. */
     };
 
 }

@@ -34,21 +34,45 @@
 
 #pragma once
 
+/**
+ * @file TrackRowRenderers.h
+ * @brief Renderers that format a track row for list views.
+ * @details Defines the renderer function type and the built-in row formats
+ *          used by the album sort and now playing track lists.
+ */
+
 #include <musikcore/library/track/Track.h>
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Namespace holding the track row renderer registry.
+         */
         namespace TrackRowRenderers {
+            /**
+             * @brief The built-in renderer styles.
+             */
             enum class Type {
-                AlbumSort,
-                NowPlaying,
+                AlbumSort,   /**< album/artist/title with track numbers */
+                NowPlaying,  /**< compact format for the now playing list */
             };
 
+            /**
+             * @brief How the track number is derived.
+             */
             enum class TrackNumType {
-                Metadata,
-                Sequential,
+                Metadata,    /**< use the metadata track number */
+                Sequential,  /**< use the sequential index in the list */
             };
 
+            /**
+             * @brief Function that renders a track into a display string.
+             * @param metadata the track to render
+             * @param index the index of the track in the list
+             * @param width the available display width
+             * @param type how the track number is derived
+             * @return the formatted row string
+             */
             using Renderer = std::function<std::string(
                 musik::core::TrackPtr /*metadata*/,
                 size_t /*index*/,
@@ -56,6 +80,11 @@ namespace musik {
                 TrackNumType /*type*/
             )>;
 
+            /**
+             * @brief Returns the renderer for the given style.
+             * @param type the renderer style
+             * @return the renderer function
+             */
             extern const Renderer Get(Type type);
         }
     }

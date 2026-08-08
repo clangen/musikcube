@@ -32,13 +32,26 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IDisplayable.h @brief Interface for objects that can be shown or hidden. */
 #pragma once
 
 namespace cursespp {
+    /** @brief Contract for objects that have a visible and a hidden state.
+     *
+     *  @details Implementors are responsible for tracking their own visibility.
+     *  In the curses world hiding a window usually means it is skipped during
+     *  the redraw pass (and its backing WINDOW may be erased) while showing it
+     *  makes it participate in layout and drawing again. Derived containers
+     *  typically propagate the state change to their children.
+     */
     class IDisplayable {
         public:
             virtual ~IDisplayable() { }
+
+            /** @brief Makes the object visible. */
             virtual void Show() = 0;
+
+            /** @brief Makes the object invisible. */
             virtual void Hide() = 0;
     };
 }

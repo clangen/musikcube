@@ -34,24 +34,52 @@
 
 #pragma once
 
+/** @file Playback.h
+ *  @brief Playback convenience helpers.
+ *  @details Provides common playback operations (volume, seek, pause) against a
+ *      transport or playback service, plus helpers to persist and restore the
+ *      playback queue. */
+
 #include <musikcore/audio/ITransport.h>
 #include <musikcore/audio/PlaybackService.h>
 
+/** @namespace musik::core::playback
+ *  @brief High-level playback convenience functions. */
 namespace musik {
     namespace core {
         namespace playback {
+            /** @brief Increases the transport volume by one step.
+             *  @param transport The transport to control. */
             void VolumeUp(musik::core::audio::ITransport& transport);
+            /** @brief Decreases the transport volume by one step.
+             *  @param transport The transport to control. */
             void VolumeDown(musik::core::audio::ITransport& transport);
+            /** @brief Seeks forward by a fixed amount.
+             *  @param playback The playback service to control. */
             void SeekForward(musik::core::sdk::IPlaybackService& playback);
+            /** @brief Seeks backward by a fixed amount.
+             *  @param playback The playback service to control. */
             void SeekBack(musik::core::sdk::IPlaybackService& playback);
+            /** @brief Seeks forward proportionally to the track length.
+             *  @param playback The playback service to control. */
             void SeekForwardProportional(musik::core::sdk::IPlaybackService& playback);
+            /** @brief Seeks backward proportionally to the track length.
+             *  @param playback The playback service to control. */
             void SeekBackProportional(musik::core::sdk::IPlaybackService& playback);
+            /** @brief Toggles between playing and paused.
+             *  @param transport The transport to control. */
             void PauseOrResume(musik::core::audio::ITransport& transport);
 
+            /** @brief Restores the saved playback queue.
+             *  @param library The library to read from.
+             *  @param playback The playback service to populate. */
             void LoadPlaybackContext(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
 
+            /** @brief Persists the current playback queue.
+             *  @param library The library to write to.
+             *  @param playback The playback service to save. */
             void SavePlaybackContext(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);

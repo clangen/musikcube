@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file RawWebSocketClient.h
+ *  @brief Thin wrapper around a websocketpp ASIO websocket client.
+ *  @details Provides plain-text and TLS websocket clients with simple handler
+ *      callbacks for open, fail, message, close and send errors. Higher-level
+ *      clients build on this class. */
+
 #include <musikcore/config.h>
 
 #ifdef timeout
@@ -51,50 +57,78 @@
 #include <functional>
 #include <system_error>
 
+/** @namespace musik::core::net
+ *  @brief Network clients: WebSocket connections to remote services. */
 namespace musik { namespace core { namespace net {
 
+    /** @brief Low-level websocketpp client wrapper.
+     *  @details Selects between a plain-text and a TLS websocketpp client. Callers
+     *      install handler callbacks and drive the event loop with Run(). */
     class RawWebSocketClient {
         public:
-            using PlainTextClient = websocketpp::client<websocketpp::config::asio_client>;
-            using PlainTextClientPtr = std::unique_ptr<PlainTextClient>;
-            using TlsClient = websocketpp::client<websocketpp::config::asio_tls_client>;
-            using TlsClientPtr = std::unique_ptr<TlsClient>;
-            using SslContext = std::shared_ptr<asio::ssl::context>;
-            using Message = websocketpp::config::asio_client::message_type::ptr;
-            using Connection = websocketpp::connection_hdl;
+            using PlainTextClient = websocketpp::client<websocketpp::config::asio_client>; /**< Plain-text client type. */
+            using PlainTextClientPtr = std::unique_ptr<PlainTextClient>; /**< Plain-text client alias. */
+            using TlsClient = websocketpp::client<websocketpp::config::asio_tls_client>; /**< TLS client type. */
+            using TlsClientPtr = std::unique_ptr<TlsClient>; /**< TLS client alias. */
+            using SslContext = std::shared_ptr<asio::ssl::context>; /**< SSL context alias. */
+            using Message = websocketpp::config::asio_client::message_type::ptr; /**< Incoming message alias. */
+            using Connection = websocketpp::connection_hdl; /**< Connection handle alias. */
 
-            using OpenHandler = std::function<void(Connection)>;
-            using FailHandler = std::function<void(Connection)>;
-            using MessageHandler = std::function<void(Connection, Message)>;
-            using CloseHandler = std::function<void(Connection)>;
-            using SendMessageErrorHandler = std::function<void(std::error_code)>;
+            using OpenHandler = std::function<void(Connection)>; /**< Called when a connection opens. */
+            using FailHandler = std::function<void(Connection)>; /**< Called when a connection fails. */
+            using MessageHandler = std::function<void(Connection, Message)>; /**< Called on incoming messages. */
+            using CloseHandler = std::function<void(Connection)>; /**< Called when a connection closes. */
+            using SendMessageErrorHandler = std::function<void(std::error_code)>; /**< Called on send errors. */
 
+            /** @brief The transport mode of the client. */
             enum class Mode: int {
-                PlainText = 0,
-                TLS = 1
+                PlainText = 0, /**< Unencrypted websocket. */
+                TLS = 1        /**< TLS-encrypted websocket. */
             };
 
+            /** @brief Creates a raw websocket client bound to an io_context.
+             *  @param io The asio io_context the client runs on. */
             RawWebSocketClient(asio::io_context& io);
             RawWebSocketClient(const RawWebSocketClient&) = delete;
             ~RawWebSocketClient();
 
+            /** @brief Selects the transport mode.
+             *  @param mode PlainText or TLS. */
             void SetMode(Mode mode);
+            /** @brief Installs the open handler.
+             *  @param openHandler The handler. */
             void SetOpenHandler(OpenHandler openHandler);
+            /** @brief Installs the fail handler.
+             *  @param failHandler The handler. */
             void SetFailHandler(FailHandler failHandler);
+            /** @brief Installs the message handler.
+             *  @param messageHandler The handler. */
             void SetMessageHandler(MessageHandler messageHandler);
+            /** @brief Installs the close handler.
+             *  @param closeHandler The handler. */
             void SetCloseHandler(CloseHandler closeHandler);
+            /** @brief Installs the send-error handler.
+             *  @param errorHandler The handler. */
             void SetSendMessageErrorHandler(SendMessageErrorHandler errorHandler);
+            /** @brief Sends a text message over a connection.
+             *  @param connection The connection handle.
+             *  @param message The message text. */
             void Send(Connection connection, const std::string& message);
+            /** @brief Sets the pong timeout used for keepalives.
+             *  @param timeoutMs Timeout in milliseconds. */
             void SetPongTimeout(long timeoutMs);
+            /** @brief Opens a connection to the given URI.
+             *  @param uri The websocket URI (ws:// or wss://). */
             void Connect(const std::string& uri);
+            /** @brief Runs the asio event loop (blocks the calling thread). */
             void Run();
 
         private:
 
-            Mode mode;
-            TlsClientPtr tlsClient;
-            PlainTextClientPtr plainTextClient;
-            SendMessageErrorHandler sendMessageErrorHandler;
+            Mode mode; /**< Transport mode. */
+            TlsClientPtr tlsClient; /**< TLS client instance. */
+            PlainTextClientPtr plainTextClient; /**< Plain-text client instance. */
+            SendMessageErrorHandler sendMessageErrorHandler; /**< Send error callback. */
     };
 
 } } }

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file RedrawLock.hpp
+ * @brief RAII helper that suspends repainting of a window.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. RedrawLock sends
+ * WM_SETREDRAW to a window on construction to stop repainting, and re-enables
+ * redraw (with an invalidate) on destruction. Multiple nested locks are
+ * tracked with a reference count so the window is not repainted until all
+ * locks are gone.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -55,44 +66,37 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///Use RedrawLock to stop the specified Window from being redrawn.
-///Redrawing is automatically enabled on the Window when the RedrawLock's
-///destructor is called.
-///
-///RedrawLock uses the the WM_SETREDRAW message, see. For more information
-///see http://msdn2.microsoft.com/en-us/library/ms534853.aspx
-///
-///\code
-///Splitter* mySplitter = ...;
-///{
-///    RedrawLock redrawLock(mySplitter)
-///
-///     //...
-///     //perform operations to mySplitter
-///     //...
-///
-///} // mySplitter will be redrawn when redrawLock's destructor is called
-///
-///\endcode
-///
-///RedrawLock is safe against locking the same Window multiple times, recursively.
-///The Window will not be redrawn until all locks have been destructed.
+/** @brief Stops the specified Window from being redrawn until destruction.
+ *  @details Redrawing is automatically re-enabled when the RedrawLock's
+ *           destructor is called. Uses the WM_SETREDRAW message (see
+ *           http://msdn2.microsoft.com/en-us/library/ms534853.aspx).
+ *  @code
+ *  Splitter* mySplitter = ...;
+ *  {
+ *      RedrawLock redrawLock(mySplitter)
+ *      // perform operations to mySplitter
+ *  } // mySplitter will be redrawn when redrawLock's destructor is called
+ *  @endcode
+ *  @note Safe against locking the same Window multiple times, recursively.
+ *        The Window will not be redrawn until all locks have been destructed. */
 struct RedrawLock
 {
 private: // types
-    typedef std::map<HWND, unsigned> LockList;
+    typedef std::map<HWND, unsigned> LockList; /**< per-window lock count */
     typedef LockList::iterator Iterator;
 
 public: // constructors, destructors
+    /** @brief Locks the given window against repainting.
+     *  @param window the window to suspend redraw on */
     /*ctor*/    RedrawLock(Window* window);
+    /** @brief Unlocks the window and schedules a repaint. */
     /*dtor*/    ~RedrawLock();
 
 private: // instance data
-    HWND hwnd;
+    HWND hwnd; /**< the locked window handle */
 
 private: // class data
-    static LockList sLockList;
+    static LockList sLockList; /**< global lock reference counts */
 };
 
 //////////////////////////////////////////////////////////////////////////////

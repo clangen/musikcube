@@ -32,19 +32,38 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ITrackList.h @brief Defines the ITrackList interface, a read-only collection of tracks. */
 #pragma once
 
 #include <stddef.h>
 #include "ITrack.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A read-only, indexable collection of tracks. */
     class ITrackList {
         public:
+            /** @brief Releases the list; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Returns the number of tracks in the list.
+             *  @return The track count. */
             virtual size_t Count() const = 0;
+
+            /** @brief Returns the id of the track at the given index.
+             *  @param index The zero-based index.
+             *  @return The track id. */
             virtual int64_t GetId(size_t index) const = 0;
+
+            /** @brief Returns the index of the track with the given id.
+             *  @param id The track id to find.
+             *  @return The index, or -1 if not found. */
             virtual int IndexOf(int64_t id) const = 0;
+
+            /** @brief Returns the track at the given index.
+             *  @param index The zero-based index.
+             *  @return The track, or null if out of range. */
             virtual ITrack* GetTrack(size_t index) const = 0;
     };
 

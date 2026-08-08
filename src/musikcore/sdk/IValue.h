@@ -32,15 +32,22 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IValue.h @brief Defines the IValue interface for simple string-valued resources. */
 #pragma once
 
 #include "IResource.h"
 #include <stddef.h>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A simple resource whose value is a single string. */
     class IValue : public IResource {
         public:
+            /** @brief Retrieves the string value of the resource.
+             *  @param dst The destination buffer for the value.
+             *  @param size The capacity of the destination buffer.
+             *  @return The number of bytes written, or the required size if the buffer was too small. */
             virtual size_t GetValue(char* dst, size_t size) = 0;
     };
 

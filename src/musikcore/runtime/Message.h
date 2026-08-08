@@ -34,12 +34,27 @@
 
 #pragma once
 
+/** @file Message.h
+ *  @brief Concrete IMessage implementation.
+ *  @details Stores the target, type and two user-data values. Use Create() to
+ *      allocate messages; the destructor releases them. */
+
 #include "IMessage.h"
 
+/** @namespace musik::core::runtime
+ *  @brief Inter-thread message passing: messages, targets and queues. */
 namespace musik { namespace core { namespace runtime {
 
+    /** @brief A concrete runtime message.
+     *  @details Created via the static Create() factory. Holds a target pointer
+     *      (not owned), a type code and two int64 user-data values. */
     class Message : public IMessage {
         protected:
+            /** @brief Constructs a message (use Create()).
+             *  @param target The destination target.
+             *  @param messageType The message type.
+             *  @param data1 First user-data value.
+             *  @param data2 Second user-data value. */
             Message(
                 IMessageTarget* target,
                 int messageType,
@@ -47,6 +62,12 @@ namespace musik { namespace core { namespace runtime {
                 int64_t data2);
 
         public:
+            /** @brief Allocates a new message.
+             *  @param target The destination target.
+             *  @param messageType The message type.
+             *  @param data1 First user-data value.
+             *  @param data2 Second user-data value.
+             *  @return A shared message. */
             static IMessagePtr Create(
                 IMessageTarget* target,
                 int messageType,
@@ -56,15 +77,19 @@ namespace musik { namespace core { namespace runtime {
             virtual ~Message() {
             }
 
+            /** @return The destination target. */
             virtual IMessageTarget* Target();
+            /** @return The message type. */
             virtual int Type();
+            /** @return The first user-data value. */
             virtual int64_t UserData1();
+            /** @return The second user-data value. */
             virtual int64_t UserData2();
 
         private:
-            IMessageTarget* target;
-            int messageType;
-            int64_t data1, data2;
+            IMessageTarget* target; /**< Destination target. */
+            int messageType;        /**< Message type. */
+            int64_t data1, data2;   /**< User-data values. */
     };
 
 } } }

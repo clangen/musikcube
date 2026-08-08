@@ -38,6 +38,12 @@
 
 #pragma once
 
+/// @file MemoryDC.h
+/// @brief Off-screen GDI device context for flicker-free drawing.
+/// @details Part of the win32cpp library (Casey Langen). MemoryDC accumulates
+/// drawing operations in an off-screen bitmap that is copied to a target HDC
+/// on destruction, eliminating flicker. Used by the GDI visualizer plugin.
+
 #include <Windows.h>
 
 //////////////////////////////////////////////////////////////////////////////
@@ -83,17 +89,28 @@ namespace win32cpp {
 class MemoryDC
 {
 public: // constructors, destructor
+    /** @brief Creates an off-screen buffer for the given rect.
+     *  @param hdc The target device context.
+     *  @param rect The region to buffer. */
     /*ctor*/    MemoryDC(HDC hdc, const RECT& rect);
+    /** @brief Copies the off-screen buffer to the target DC. */
     /*dtor*/    ~MemoryDC();
 
 public: // operators
+    /** @brief Returns a handle to the off-screen buffer.
+     *  @return The memory HDC. */
     operator    HDC();
 
 private: // instance data
+    /** @brief The off-screen bitmap. */
     HBITMAP memoryBitmap;
+    /** @brief Memory and screen device contexts. */
     HDC memoryDC, screenDC;
+    /** @brief Previously selected object to restore. */
     HANDLE oldObject;
+    /** @brief The buffered client rectangle. */
     RECT clientRect;
+    /** @brief Whether the client rect is valid. */
     bool rectIsValid;
 };
 

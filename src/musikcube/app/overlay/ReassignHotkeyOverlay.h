@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file ReassignHotkeyOverlay.h
+ * @brief Overlay that lets the user reassign a keyboard hotkey.
+ * @details Shows the name of the hotkey being changed and a text input that
+ *          captures the new key sequence. When the user confirms, the
+ *          binding is saved and the callback is invoked with the new key.
+ */
+
 #include <functional>
 
 #include <cursespp/TextInput.h>
@@ -44,6 +52,11 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Hotkey reassignment overlay.
+         * @details Displays the hotkey being edited, captures the new key
+         *          sequence and stores it through the Hotkeys helpers.
+         */
         class ReassignHotkeyOverlay:
             public cursespp::OverlayBase,
             public sigslot::has_slots<>
@@ -51,23 +64,41 @@ namespace musik {
         public:
             using Callback = std::function<void(std::string)>;
 
+            /**
+             * @brief Shows the reassignment overlay for the given hotkey.
+             * @param id the hotkey to reassign
+             * @param callback invoked with the new key sequence
+             */
             static void Show(Hotkeys::Id id, Callback callback);
 
+            /**
+             * @brief Positions and lays out the child views.
+             */
             virtual void Layout();
+            /**
+             * @brief Handles keyboard input.
+             * @param key the key sequence that was pressed
+             * @return true if the event was consumed
+             */
             virtual bool KeyPress(const std::string& key);
 
         private:
+            /**
+             * @brief Creates the overlay for the given hotkey.
+             * @param id the hotkey to reassign
+             * @param callback invoked with the new key sequence
+             */
             ReassignHotkeyOverlay(Hotkeys::Id id, Callback callback);
 
             void RecalculateSize();
             void InitViews();
 
-            Hotkeys::Id id;
-            Callback callback;
-            int width, height, x, y;
-            std::shared_ptr<cursespp::TextLabel> titleLabel, hotkeyLabel;
-            std::shared_ptr<cursespp::TextInput> hotkeyInput;
-            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
+            Hotkeys::Id id;                                                 /**< the hotkey being reassigned */
+            Callback callback;                                              /**< invoked when the overlay closes */
+            int width, height, x, y;                                        /**< cached overlay geometry */
+            std::shared_ptr<cursespp::TextLabel> titleLabel, hotkeyLabel;   /**< static labels */
+            std::shared_ptr<cursespp::TextInput> hotkeyInput;               /**< the new key sequence input */
+            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;           /**< the shortcuts window */
         };
     }
 }

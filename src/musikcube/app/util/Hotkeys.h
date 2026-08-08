@@ -34,119 +34,180 @@
 
 #pragma once
 
+/**
+ * @file Hotkeys.h
+ * @brief Definition and management of the keyboard hotkey bindings.
+ * @details Declares the identifier for every configurable hotkey and provides
+ *          static helpers to query, set, reset, back up and name the
+ *          bindings. Defaults, custom overrides and navigation keys are all
+ *          exposed through this interface.
+ */
+
 #include <stdafx.h>
 
 #include <cursespp/INavigationKeys.h>
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Central registry for user-configurable hotkeys.
+         * @details All bindings are persisted as preferences. Custom bindings
+         *          take precedence over the built-in defaults. This class is
+         *          only used through its static members.
+         */
         class Hotkeys {
             public:
+                /**
+                 * @brief The identifier for each configurable hotkey.
+                 */
                 enum Id {
                     /* selection */
-                    Up = 0,
-                    Down,
-                    Left,
-                    Right,
-                    PageUp,
-                    PageDown,
-                    Home,
-                    End,
+                    Up = 0,               /**< move the selection up */
+                    Down,                 /**< move the selection down */
+                    Left,                 /**< move the selection left */
+                    Right,                /**< move the selection right */
+                    PageUp,               /**< page the selection up */
+                    PageDown,             /**< page the selection down */
+                    Home,                 /**< jump to the first item */
+                    End,                  /**< jump to the last item */
 
                     /* navigation */
-                    NavigateLibrary,
-                    NavigateLibraryBrowse,
-                    NavigateLibraryBrowseArtists,
-                    NavigateLibraryBrowseAlbums,
-                    NavigateLibraryBrowseGenres,
-                    NavigateLibraryBrowseAlbumArtists,
-                    NavigateLibraryBrowsePlaylists,
-                    NavigateLibraryBrowseChooseCategory,
-                    NavigateLibraryBrowseDirectories,
-                    NavigateLibraryFilter,
-                    NavigateLibraryTracks,
-                    NavigateLibraryPlayQueue,
-                    NavigateConsole,
-                    NavigateLyrics,
-                    NavigateHotkeys,
-                    NavigateJumpToPlaying,
-                    NavigateSettings,
+                    NavigateLibrary,                /**< open the library */
+                    NavigateLibraryBrowse,          /**< open the library browse view */
+                    NavigateLibraryBrowseArtists,   /**< browse artists */
+                    NavigateLibraryBrowseAlbums,    /**< browse albums */
+                    NavigateLibraryBrowseGenres,    /**< browse genres */
+                    NavigateLibraryBrowseAlbumArtists, /**< browse album artists */
+                    NavigateLibraryBrowsePlaylists, /**< browse playlists */
+                    NavigateLibraryBrowseChooseCategory, /**< choose a category */
+                    NavigateLibraryBrowseDirectories,   /**< browse directories */
+                    NavigateLibraryFilter,          /**< focus the category filter */
+                    NavigateLibraryTracks,          /**< open the tracks view */
+                    NavigateLibraryPlayQueue,       /**< open the play queue */
+                    NavigateConsole,                /**< open the console */
+                    NavigateLyrics,                 /**< open the lyrics view */
+                    NavigateHotkeys,                /**< open the hotkeys view */
+                    NavigateJumpToPlaying,          /**< jump to the playing track */
+                    NavigateSettings,               /**< open the settings view */
 
                     /* views */
-                    ViewRefresh,
-                    ToggleVisualizer,
-                    ShowEqualizer,
+                    ViewRefresh,        /**< refresh the current view */
+                    ToggleVisualizer,   /**< toggle the visualizer overlay */
+                    ShowEqualizer,      /**< show the equalizer overlay */
 
                     /* playback */
-                    ToggleMute,
-                    TogglePause,
-                    Next,
-                    Previous,
-                    VolumeUp,
-                    VolumeDown,
-                    SeekForward,
-                    SeekForwardProportional,
-                    SeekBackProportional,
-                    SeekBack,
-                    ToggleRepeat,
-                    ToggleShuffle,
-                    Stop,
+                    ToggleMute,                 /**< toggle mute */
+                    TogglePause,                /**< toggle pause */
+                    Next,                       /**< play the next track */
+                    Previous,                   /**< play the previous track */
+                    VolumeUp,                   /**< increase the volume */
+                    VolumeDown,                 /**< decrease the volume */
+                    SeekForward,                /**< seek forward */
+                    SeekForwardProportional,    /**< seek forward by a fixed ratio */
+                    SeekBackProportional,       /**< seek backward by a fixed ratio */
+                    SeekBack,                   /**< seek backward */
+                    ToggleRepeat,               /**< toggle repeat mode */
+                    ToggleShuffle,              /**< toggle shuffle */
+                    Stop,                       /**< stop playback */
 
                     /* play queue */
-                    PlayQueueMoveUp,
-                    PlayQueueMoveDown,
-                    PlayQueueDelete,
-                    PlayQueuePlaylistLoad,
-                    PlayQueuePlaylistSave,
-                    PlayQueuePlaylistRename,
-                    PlayQueuePlaylistDelete,
-                    PlayQueueHotSwap,
-                    PlayQueueClear,
+                    PlayQueueMoveUp,        /**< move the selected track up */
+                    PlayQueueMoveDown,      /**< move the selected track down */
+                    PlayQueueDelete,        /**< delete the selected track */
+                    PlayQueuePlaylistLoad,  /**< load a playlist */
+                    PlayQueuePlaylistSave,  /**< save the queue as a playlist */
+                    PlayQueuePlaylistRename,/**< rename a playlist */
+                    PlayQueuePlaylistDelete,/**< delete a playlist */
+                    PlayQueueHotSwap,       /**< play from the selection in place */
+                    PlayQueueClear,         /**< clear the queue */
 
                     /* browse */
-                    BrowseCategoryFilter,
+                    BrowseCategoryFilter,   /**< toggle the browse category filter */
 
                     /* browse -> playlists */
-                    BrowsePlaylistsNew,
-                    BrowsePlaylistsSave,
-                    BrowsePlaylistsRename,
-                    BrowsePlaylistsDelete,
+                    BrowsePlaylistsNew,     /**< create a new playlist */
+                    BrowsePlaylistsSave,    /**< save the browse playlist */
+                    BrowsePlaylistsRename,  /**< rename the browse playlist */
+                    BrowsePlaylistsDelete,  /**< delete the browse playlist */
 
                     /* tracklist items */
-                    TrackListRateTrack,
-                    TrackListChangeSortOrder,
-                    TrackListNextGroup,
-                    TrackListPreviousGroup,
-                    TrackListPlayFromTop,
+                    TrackListRateTrack,         /**< rate the selected track */
+                    TrackListChangeSortOrder,   /**< change the track sort order */
+                    TrackListNextGroup,         /**< jump to the next group */
+                    TrackListPreviousGroup,     /**< jump to the previous group */
+                    TrackListPlayFromTop,       /**< play from the top of the list */
 
                     /* search input */
-                    SearchInputToggleMatchType,
+                    SearchInputToggleMatchType, /**< toggle the search match type */
 
                     /* lyrics */
-                    LyricsRetry,
+                    LyricsRetry,        /**< retry the lyrics lookup */
 
                     /* indexer */
-                    RescanMetadata,
+                    RescanMetadata,     /**< rescan track metadata */
 
                     /* hotkeys */
-                    HotkeysResetToDefault,
-                    HotkeysBackup,
+                    HotkeysResetToDefault,  /**< reset all hotkeys to default */
+                    HotkeysBackup,          /**< back up the hotkey configuration */
 
                     /* general */
-                    ContextMenu,
+                    ContextMenu,        /**< open the context menu */
 
                     /* :3 */
-                    COUNT
+                    COUNT               /**< the number of hotkey ids */
                 };
 
+                /**
+                 * @brief Checks whether a key sequence maps to the given id.
+                 * @param id the hotkey to test
+                 * @param kn the key sequence
+                 * @return true if the sequence matches the hotkey
+                 */
                 static bool Is(Id id, const std::string& kn);
+                /**
+                 * @brief Returns the effective binding for the given id.
+                 * @param id the hotkey
+                 * @return the key sequence, custom if set, otherwise default
+                 */
                 static std::string Get(Id id);
+                /**
+                 * @brief Overrides the binding for the given id.
+                 * @param id the hotkey
+                 * @param kn the new key sequence
+                 */
                 static void Set(Id id, const std::string& kn);
+                /**
+                 * @brief Clears all custom bindings.
+                 */
                 static void Reset();
+                /**
+                 * @brief Finds the id currently bound to a key sequence.
+                 * @param kn the key sequence to look up
+                 * @return the name of the bound hotkey, or empty
+                 */
                 static std::string Existing(const std::string& kn);
+                /**
+                 * @brief Returns the localized display name of a hotkey.
+                 * @param id the hotkey
+                 * @return the display name
+                 */
                 static std::string Name(Id id);
+                /**
+                 * @brief Returns the built-in default binding of a hotkey.
+                 * @param id the hotkey
+                 * @return the default key sequence
+                 */
                 static std::string Default(Id id);
+                /**
+                 * @brief Returns the user overridden binding of a hotkey.
+                 * @param id the hotkey
+                 * @return the custom key sequence, or empty if not overridden
+                 */
                 static std::string Custom(Id id);
+                /**
+                 * @brief Returns the navigation keys derived from the bindings.
+                 * @return the navigation keys implementation
+                 */
                 static std::shared_ptr<cursespp::INavigationKeys> NavigationKeys();
 
             private:

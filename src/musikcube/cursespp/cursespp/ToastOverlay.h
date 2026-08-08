@@ -32,43 +32,75 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ToastOverlay.h @brief A transient notification overlay that auto-dismisses. */
 #pragma once
 
 #include <cursespp/OverlayBase.h>
 #include <vector>
 
 namespace cursespp {
+    /** @brief A modal overlay that shows a transient message and dismisses itself.
+     *
+     *  @details ToastOverlay displays a small framed box with a word-wrapped
+     *  message. It is shown for a fixed duration (default 3 seconds); while
+     *  visible it consumes all input. A runtime timer message triggers the
+     *  auto-dismissal when the duration elapses. It is created and shown
+     *  exclusively through the static Show() factory.
+     */
     class ToastOverlay:
         public OverlayBase,
         public sigslot::has_slots<>
     {
         public:
+            /** @brief Shows a transient message overlay.
+             *  @param text the message to display.
+             *  @param durationMs how long the toast remains visible (ms).
+             */
             static void Show(const std::string& text, int durationMs = 3000);
 
+            /** @brief Destroys the toast. */
             virtual ~ToastOverlay();
 
+            /** @brief Non-copyable. */
             ToastOverlay(const ToastOverlay& other) = delete;
+            /** @brief Non-assignable. */
             ToastOverlay& operator=(const ToastOverlay& other) = delete;
 
             /* IWindow */
+            /** @brief Arranges the toast and its contents. */
             void Layout() override;
+            /** @brief Consumes all keys so the toast is modal while visible.
+             *  @param key the normalized key string.
+             *  @return always true (keys are swallowed).
+             */
             bool KeyPress(const std::string& key) override;
+            /** @brief Handles the timer message that triggers auto-dismissal.
+             *  @param message the incoming runtime message.
+             */
             void ProcessMessage(musik::core::runtime::IMessage& message) override;
+            /** @brief Renders the toast contents. */
             void OnRedraw() override;
 
         protected:
+            /** @brief Starts the dismissal timer when the toast becomes visible.
+             *  @param visible the new visible state.
+             */
             void OnVisibilityChanged(bool visible) override;
 
         private:
+            /** @brief Creates a toast with a fixed duration.
+             *  @param text the message to display.
+             *  @param durationMs how long the toast stays visible (ms).
+             */
             ToastOverlay(const std::string& text, long durationMs);
 
             void RecalculateSize();
 
-            bool ticking;
-            std::string title;
-            std::vector<std::string> titleLines;
-            int durationMs;
-            int x, y;
-            int width, height;
+            bool ticking;                /**< Whether the dismissal timer is running. */
+            std::string title;           /**< The toast message text. */
+            std::vector<std::string> titleLines; /**< Word-wrapped message lines. */
+            int durationMs;              /**< The display duration in milliseconds. */
+            int x, y;                    /**< The toast position. */
+            int width, height;           /**< The toast dimensions. */
     };
 }

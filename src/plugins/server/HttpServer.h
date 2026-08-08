@@ -34,6 +34,12 @@
 
 #pragma once
 
+/// @file HttpServer.h
+/// @brief HTTP server exposing audio and thumbnails to remote clients.
+/// @details Built on GNU libmicrohttpd. Serves transcoded audio streams (via
+/// the TranscodingAudioDataStream / cache) and track thumbnails over HTTP so
+/// clients can stream tracks and fetch artwork.
+
 extern "C" {
     #pragma warning(push, 0)
     #include <microhttpd.h>
@@ -49,16 +55,31 @@ extern "C" {
 #define MHD_Result int
 #endif
 
+/** @brief HTTP server for remote audio and thumbnail streaming.
+ *  @details Starts a libmicrohttpd daemon on the configured port. Requests
+ *  under the "audio" fragment stream transcoded audio for a track, requests
+ *  under "thumbnail" serve album artwork. The server shuts down cleanly when
+ *  Stop() is called and Wait() blocks until it exits. */
 class HttpServer {
     public:
+        /** @brief Constructs a server bound to the shared context.
+         *  @param context Shared server context. */
         HttpServer(Context& context);
+        /** @brief Destroys the server, stopping it if running. */
         ~HttpServer();
 
+        /** @brief Starts the HTTP daemon.
+         *  @return True if the server started. */
         bool Start();
+        /** @brief Stops the HTTP daemon.
+         *  @return True if the server was stopped. */
         bool Stop();
+        /** @brief Blocks until the server thread exits. */
         void Wait();
 
     private:
+        /** @brief libmicrohttpd callback handling incoming requests.
+         *  @return MHD_Result indicating how the request was handled. */
         static MHD_Result HandleRequest(
             void *cls,
             struct MHD_Connection *connection,
@@ -69,26 +90,45 @@ class HttpServer {
             size_t *upload_data_size,
             void **con_cls);
 
+        /** @brief libmicrohttpd callback unescaping URL components.
+         *  @return The length of the unescaped string. */
         static size_t HandleUnescape(
             void * cls,
             struct MHD_Connection *c,
             char *s);
 
+        /** @brief Serves a transcoded audio track.
+         *  @param server The server instance.
+         *  @param response Receives the created response.
+         *  @param connection The connection.
+         *  @param pathParts Path components of the request.
+         *  @return The HTTP response code. */
         static int HandleAudioTrackRequest(
             HttpServer* server,
             MHD_Response*& response,
             MHD_Connection* connection,
             std::vector<std::string>& pathParts);
 
+        /** @brief Serves a track thumbnail image.
+         *  @param server The server instance.
+         *  @param response Receives the created response.
+         *  @param connection The connection.
+         *  @param pathParts Path components of the request.
+         *  @return The HTTP response code. */
         static int HandleThumbnailRequest(
             HttpServer* server,
             MHD_Response*& response,
             MHD_Connection* connection,
             std::vector<std::string>& pathParts);
 
+        /** @brief The libmicrohttpd daemon handle. */
         struct MHD_Daemon *httpServer;
+        /** @brief Shared server context. */
         Context& context;
+        /** @brief Whether the server is running. */
         volatile bool running;
+        /** @brief Signals the thread when the server stops. */
         std::condition_variable exitCondition;
+        /** @brief Guards the exit condition. */
         std::mutex exitMutex;
 };

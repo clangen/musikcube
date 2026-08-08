@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file TextLabel.h @brief A non-editable, focusable label window. */
 #pragma once
 
 #include <cursespp/curses_config.h>
@@ -42,38 +43,87 @@
 #include <sigslot/sigslot.h>
 
 namespace cursespp {
+    /** @brief A Window that renders a single line of read-only text.
+     *
+     *  @details TextLabel displays a static string with configurable
+     *  alignment and bold styling. Because it implements IKeyHandler it can
+     *  participate in focus navigation; when focused, pressing Enter/Space
+     *  emits the Activated signal. It relies on the toolkit's deferred redraw
+     *  cycle -- call SetText() and let the framework repaint.
+     */
     class TextLabel:
         public cursespp::Window,
         public cursespp::IKeyHandler
     {
         public:
+            /** @brief Fired when the label is activated via Enter/Space while focused. */
             sigslot::signal1<TextLabel*> Activated;
 
+            /** @brief Creates an empty left-aligned label. */
             TextLabel();
+            /** @brief Creates a left-aligned label with the given text.
+             *  @param value the label text.
+             */
             TextLabel(const std::string& value);
+            /** @brief Creates a label with the given text and alignment.
+             *  @param value the label text.
+             *  @param alignment the text alignment.
+             */
             TextLabel(const std::string& value, const text::TextAlign alignment);
 
+            /** @brief Destroys the label. */
             virtual ~TextLabel();
 
             /* IWindow */
+            /** @brief Renders the label text. */
             void OnRedraw() override;
+            /** @brief Activates the label on Enter/Space.
+             *  @param key the normalized key string.
+             *  @return true if the key was consumed.
+             */
             bool KeyPress(const std::string& key) override;
+            /** @brief Activates the label when clicked.
+             *  @param event the translated mouse event.
+             *  @return true if the event was consumed.
+             */
             bool ProcessMouseEvent(const IMouseHandler::Event& event) override;
 
             /* virtual methods we define */
+            /** @brief Sets whether the label text is rendered in bold.
+             *  @param bold true to use bold attributes.
+             */
             virtual void SetBold(bool bold);
+            /** @brief Returns whether the label is rendered in bold.
+             *  @return true if bold.
+             */
             virtual bool IsBold() noexcept { return this->bold; }
+            /** @brief Returns the display width of the label text.
+             *  @return the width in terminal cells.
+             */
             virtual size_t Length() { return u8cols(this->buffer); }
+            /** @brief Replaces the label text (keeping the current alignment).
+             *  @param value the new text.
+             */
             virtual void SetText(const std::string& value);
+            /** @brief Replaces the label text and its alignment.
+             *  @param value the new text.
+             *  @param alignment the new alignment.
+             */
             virtual void SetText(const std::string& value, const text::TextAlign alignment);
+            /** @brief Returns the current label text.
+             *  @return the text string.
+             */
             virtual std::string GetText() { return this->buffer; }
+            /** @brief Sets the text alignment.
+             *  @param alignment the new TextAlign.
+             */
             virtual void SetAlignment(const text::TextAlign alignment);
 
         private:
             void ApplyDefaultStyle();
 
-            std::string buffer;
-            text::TextAlign alignment;
-            bool bold;
+            std::string buffer;          /**< The rendered text. */
+            text::TextAlign alignment;   /**< The current text alignment. */
+            bool bold;                   /**< Whether the text is rendered bold. */
     };
 }

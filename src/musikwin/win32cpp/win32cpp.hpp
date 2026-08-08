@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -35,6 +35,16 @@
 // POSSIBILITY OF SUCH DAMAGE. 
 //
 //////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @file win32cpp.hpp
+ * @brief Umbrella header that includes the whole win32cpp library.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Including this
+ * single header pulls in all of the library's classes, from the Application
+ * singleton and Window hierarchy to controls, layouts, menus and support
+ * types. Win32Config.hpp is always included first.
+ */
 
 #pragma once
 
@@ -72,8 +82,7 @@
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///namespace root
+/** @brief Root namespace of the win32cpp library. */
 namespace win32cpp {
 }
 

@@ -32,13 +32,26 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file Scrollbar.h @brief Static helper that renders a scrollbar for a ListWindow. */
 #pragma once
 
 #include <cursespp/ListWindow.h>
 
 namespace cursespp {
+    /** @brief Utility class for drawing a proportional scrollbar into a window.
+     *
+     *  @details Scrollbar has no instance state; its static Draw() method
+     *  renders a vertical scrollbar track into the right edge of the given
+     *  ListWindow (or into a caller-provided target Window) based on the
+     *  window's current scroll position and the total entry count. The scroll
+     *  thumb position is proportional to the visible range.
+     */
     class Scrollbar {
         public:
+            /** @brief Draws the scrollbar.
+             *  @param window the ListWindow whose scroll state drives the thumb.
+             *  @param target the Window to draw into; defaults to the list itself.
+             */
             static void Draw(ListWindow* window, Window* target = nullptr);
     };
 }

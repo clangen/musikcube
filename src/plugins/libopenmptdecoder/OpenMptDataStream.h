@@ -34,42 +34,106 @@
 
 #pragma once
 
+/// @file OpenMptDataStream.h
+/// @brief IDataStream adapter used by the libopenmpt decoder.
+/// @details Wraps an existing IDataStream and parses module URIs of the form
+/// "openmpt://file#<track>" or a plain file path. It forwards all IDataStream
+/// operations to the wrapped stream while exposing the selected sub-track number
+/// and the underlying filename to the decoder.
+
 #include <musikcore/sdk/IDataStream.h>
 #include <string>
 
+/** @brief IDataStream adapter for OpenMPT module files.
+ *  @details A module archive can contain several sub-tracks. The URI fragment
+ *  selects which track to play; this class keeps that number and the resolved
+ *  filename available to the OpenMptDecoder while delegating byte-level I/O to
+ *  the wrapped stream. */
 class OpenMptDataStream: public musik::core::sdk::IDataStream {
     public:
+        /** @brief Position type alias. */
         using PositionType = musik::core::sdk::PositionType;
+        /** @brief Open flags alias. */
         using OpenFlags = musik::core::sdk::OpenFlags;
 
+        /** @brief Constructs an empty wrapper with no underlying stream. */
         OpenMptDataStream();
+        /** @brief Wraps an existing stream.
+         *  @param stream The stream to wrap and delegate to. */
         OpenMptDataStream(musik::core::sdk::IDataStream* stream);
+        /** @brief Destroys the wrapper. */
         virtual ~OpenMptDataStream();
 
+        /** @brief Opens a module URI, parsing the track number if present.
+         *  @param uri The openmpt:// URI or file path to open.
+         *  @param flags Open flags.
+         *  @return True if the URI was parsed and the stream opened. */
         virtual bool Open(const char *uri, OpenFlags flags) override;
+        /** @brief Closes the wrapped stream.
+         *  @return True on success. */
         virtual bool Close() override;
+        /** @brief Interrupts any blocking operation on the wrapped stream. */
         virtual void Interrupt() override;
+        /** @brief Destroys the wrapper, releasing the wrapped stream. */
         virtual void Release() override;
+        /** @brief Returns whether the stream can be read.
+         *  @return Always returns true. */
         virtual bool Readable() override { return true; }
+        /** @brief Returns whether the stream can be written.
+         *  @return Always returns false. */
         virtual bool Writable() override { return false; }
+        /** @brief Reads bytes from the wrapped stream.
+         *  @param buffer Destination buffer.
+         *  @param readBytes Number of bytes to read.
+         *  @return Number of bytes read, or 0 at end of stream. */
         virtual PositionType Read(void *buffer, PositionType readBytes) override;
+        /** @brief Writing is not supported.
+         *  @return Always returns 0. */
         virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
+        /** @brief Seeks to a byte offset in the wrapped stream.
+         *  @param position Target byte offset.
+         *  @return True if the seek succeeded. */
         virtual bool SetPosition(PositionType position) override;
+        /** @brief Returns the current byte offset.
+         *  @return Current position in bytes. */
         virtual PositionType Position() override;
+        /** @brief Returns whether the stream supports seeking.
+         *  @return True if the wrapped stream is seekable. */
         virtual bool Seekable() override;
+        /** @brief Returns whether end of stream has been reached.
+         *  @return True at end of stream. */
         virtual bool Eof() override;
+        /** @brief Returns the stream length in bytes.
+         *  @return Length in bytes, or -1 if unknown. */
         virtual long Length() override;
+        /** @brief Returns the stream type.
+         *  @return The stream type string. */
         virtual const char* Type() override;
+        /** @brief Returns the stream URI.
+         *  @return The URI this stream was opened with. */
         virtual const char* Uri() override;
+        /** @brief Returns whether the stream can be prefetched.
+         *  @return True if prefetching is supported. */
         virtual bool CanPrefetch() override;
 
+        /** @brief Parses a module URI into filename and track number.
+         *  @param uri The URI to parse.
+         *  @return True if the URI was understood. */
         bool Parse(const char* uri);
+        /** @brief Returns the selected sub-track number.
+         *  @return Zero-based track number. */
         int GetTrackNumber() { return this->trackNumber; }
+        /** @brief Returns the resolved module filename.
+         *  @return The underlying file path. */
         std::string GetFilename() { return this->filename; }
 
     private:
+        /** @brief Zero-based sub-track number selected by the URI. */
         int trackNumber { 0 };
+        /** @brief Resolved path of the module file. */
         std::string filename;
+        /** @brief The wrapped underlying data stream. */
         musik::core::sdk::IDataStream* stream { nullptr };
+        /** @brief Whether this wrapper owns and releases the stream. */
         bool releaseStream{ true };
 };

@@ -34,22 +34,59 @@
 
 #pragma once
 
+/**
+ * @file SettingsOverlays.h
+ * @brief Collection of one-off settings and startup dialog overlays.
+ * @details Provides free functions that show the locale chooser, the library
+ *          type chooser, the first run dialog, the TLS warning dialog and
+ *          the transcoder bitrate and format choosers.
+ */
+
 #include <functional>
 
 namespace musik { namespace cube {
 
+    /**
+     * @brief Overlay helpers used by the settings flow.
+     * @details All functions are free functions inside this namespace. The
+     *          Check-prefixed functions conditionally show a dialog and do
+     *          not take a callback.
+     */
     namespace SettingsOverlays {
 
+        /**
+         * @brief Shows the locale selection overlay.
+         * @param callback invoked when the overlay is closed
+         */
         void ShowLocaleOverlay(std::function<void()> callback);
 
+        /**
+         * @brief Shows the library type selection overlay.
+         * @param callback invoked when the overlay is closed
+         */
         void ShowLibraryTypeOverlay(std::function<void()> callback);
 
+        /**
+         * @brief Shows the first run dialog if it has not been displayed yet.
+         */
         void CheckShowFirstRunDialog();
 
+        /**
+         * @brief Shows the TLS warning dialog if it has not been dismissed
+         *        yet.
+         */
         void CheckShowTlsWarningDialog();
 
+        /**
+         * @brief Shows the transcoder bitrate selection overlay.
+         * @param callback invoked when the overlay is closed
+         */
         void ShowTranscoderBitrateOverlay(std::function<void()> callback);
 
+        /**
+         * @brief Shows the transcoder output format selection overlay.
+         * @param callback invoked when the overlay is closed
+         */
         void ShowTranscoderFormatOverlay(std::function<void()> callback);
 
     }

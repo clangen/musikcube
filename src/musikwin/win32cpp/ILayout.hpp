@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file ILayout.hpp
+ * @brief Interface implemented by layout-managed containers.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. ILayout defines a
+ * single pure virtual Layout() method used by containers such as
+ * LinearLayout and Splitter to arrange their child windows.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -44,9 +53,14 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief Interface for objects that can lay out their children.
+ *  @details Classes that arrange child windows (LinearLayout, Splitter,
+ *           TabView) implement Layout(), which is invoked when children or
+ *           the container's size change. */
 class ILayout
 {
 public: // methods
+    /** @brief Positions and sizes all child windows. Pure virtual. */
     virtual void Layout() = 0;
 };
 

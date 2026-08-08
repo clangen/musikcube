@@ -34,41 +34,64 @@
 
 #pragma once
 
+/** @file AllCategoriesQuery.h
+ *  @brief Query that returns the list of available category types.
+ *  @details Returns the set of category types the library supports (albums,
+ *      artists, genres, directories, etc.) as an SdkValueList, used to build the
+ *      "browse by" navigation. */
+
 #include <musikcore/support/DeleteDefaults.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/query/util/SdkWrappers.h>
 #include <musikcore/sdk/IValueList.h>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Enumerates all category types available in the library. */
     class AllCategoriesQuery : public musik::core::library::query::QueryBase {
         public:
-            static const std::string kQueryName;
+            static const std::string kQueryName; /**< Query type name. */
 
-            using Result = SdkValueList::Shared;
+            using Result = SdkValueList::Shared; /**< Result alias. */
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(AllCategoriesQuery)
 
+            /** @brief Creates a query that lists all categories. */
             AllCategoriesQuery();
 
+            /** @return The list of category types (or nullptr). */
             virtual Result GetResult() noexcept;
+            /** @return The result as a raw SDK IValueList (borrowed). */
             musik::core::sdk::IValueList* GetSdkResult();
 
             /* IQuery */
+            /** @return The query type name. */
             std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
+            /** @return The serialized query parameters. */
             std::string SerializeQuery() override;
+            /** @return The serialized result. */
             std::string SerializeResult() override;
+            /** @brief Populates the result from serialized data.
+             *  @param data The serialized result. */
             void DeserializeResult(const std::string& data) override;
+            /** @brief Recreates a query from serialized parameters.
+             *  @param data The serialized query.
+             *  @return The deserialized query. */
             static std::shared_ptr<AllCategoriesQuery> DeserializeQuery(const std::string& data);
 
         protected:
             /* QueryBase */
+            /** @brief Runs the query against the database.
+             *  @param db The connection to run on.
+             *  @return true on success. */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
-            Result result;
+            Result result; /**< Query result. */
     };
 
 } } } }

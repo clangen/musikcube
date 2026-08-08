@@ -34,11 +34,25 @@
 
 #pragma once
 
+/** @file Auddio.h
+ *  @brief Client helpers for the Auddio lyrics/music recognition service.
+ *  @details Exposes whether the service is available and a function to asynchronously
+ *      look up lyrics for a track. */
+
 #include <functional>
 #include <musikcore/library/track/Track.h>
 
+/** @namespace musik::core::auddio
+ *  @brief Auddio service client: lyrics lookup. */
 namespace musik { namespace core { namespace auddio {
+    /** @brief Callback invoked with the lookup result.
+     *  @param track The track that was looked up.
+     *  @param lyrics The returned lyrics text. */
     using LyricsCallback = std::function<void(musik::core::TrackPtr track, std::string)>;
+    /** @return true if the Auddio service is configured and available. */
     extern bool Available();
+    /** @brief Asynchronously looks up lyrics for a track.
+     *  @param track The track to look up.
+     *  @param callback Invoked with the result. */
     extern void FindLyrics(musik::core::TrackPtr track, LyricsCallback callback);
 } } }

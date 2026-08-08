@@ -34,6 +34,13 @@
 
 #pragma once
 
+/**
+ * @file LibraryNotConnectedLayout.h
+ * @brief Layout shown while the music library is not connected.
+ * @details Displays a status message, connection error details and help text
+ *          to guide the user while the library is unavailable.
+ */
+
 #include <cursespp/LayoutBase.h>
 #include <musikcore/library/MasterLibrary.h>
 #include <cursespp/ITopLevelLayout.h>
@@ -42,6 +49,11 @@
 
 namespace musik { namespace cube {
 
+    /**
+     * @brief Layout displayed when the library cannot be connected.
+     * @details Reacts to library connection state changes and renders a
+     *          message, the connection error and contextual help text.
+     */
     class LibraryNotConnectedLayout:
         public cursespp::LayoutBase,
         public cursespp::ITopLevelLayout,
@@ -52,25 +64,49 @@ namespace musik { namespace cube {
 
             DELETE_CLASS_DEFAULTS(LibraryNotConnectedLayout)
 
+            /**
+             * @brief Creates the layout bound to the given master library.
+             * @param library the master library whose state is monitored
+             */
             LibraryNotConnectedLayout(MasterLibraryPtr library);
 
             /* IWindow */
+            /**
+             * @brief Positions and lays out the child windows.
+             */
             void OnLayout() override;
+            /**
+             * @brief Handles keyboard input.
+             * @param kn the key sequence that was pressed
+             * @return true if the event was consumed
+             */
             bool KeyPress(const std::string& kn) override;
+            /**
+             * @brief Attaches the shortcuts window shown at the bottom.
+             * @param w the shortcuts window
+             */
             void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
+            /**
+             * @brief Called when the layout becomes visible or hidden.
+             * @param visible true if the layout became visible
+             */
             void OnVisibilityChanged(bool visible) override;
 
         protected:
+            /**
+             * @brief Called when the library connection state changes.
+             * @param state the new connection state
+             */
             void OnLibraryStateChanged(musik::core::ILibrary::ConnectionState state);
 
         private:
             void UpdateErrorText();
 
-            MasterLibraryPtr library;
-            std::shared_ptr<cursespp::TextLabel> messageText;
-            std::shared_ptr<cursespp::TextLabel> errorText;
-            std::shared_ptr<cursespp::TextLabel> helpText;
-            cursespp::ShortcutsWindow* shortcuts{ nullptr };
+            MasterLibraryPtr library;                         /**< the master library being monitored */
+            std::shared_ptr<cursespp::TextLabel> messageText; /**< the status message label */
+            std::shared_ptr<cursespp::TextLabel> errorText;   /**< the error details label */
+            std::shared_ptr<cursespp::TextLabel> helpText;    /**< the help text label */
+            cursespp::ShortcutsWindow* shortcuts{ nullptr };  /**< the shortcuts window, not owned */
     };
 
 } }

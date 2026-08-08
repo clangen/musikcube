@@ -32,12 +32,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+///
+/// @file CddaIndexerSource.h
+/// @brief Indexer source that exposes audio-CD tracks to the library indexer.
+/// @details During a scan the mounted audio discs are enumerated and each audio
+/// track is added to the index with a stable "cdda://" external id. Windows-only.
+///
+
 #include <musikcore/sdk/IIndexerSource.h>
 #include "CddaDataModel.h"
 
 #include <functional>
 #include <set>
 
+/** @brief Indexes audio-CD tracks into the musikcube library.
+ *  @details Implements IIndexerSource by walking the current set of mounted
+ *  audio discs. Because the disc contents change, it listens for
+ *  insertion/removal events and refreshes its track list accordingly.
+ */
 class CddaIndexerSource :
     public musik::core::sdk::IIndexerSource,
     public CddaDataModel::EventListener
@@ -47,32 +59,56 @@ class CddaIndexerSource :
         ~CddaIndexerSource();
 
         /* IIndexerSource */
+        /** @brief Destroys the source. */
         void Release() override;
+        /** @brief Prepares the source for a scan. */
         void OnBeforeScan() override;
+        /** @brief Cleans up after a scan completes. */
         void OnAfterScan() override;
+        /** @brief Returns the stable source id.
+         *  @return The source id. */
         int SourceId() override;
 
+        /** @brief Scans for audio discs and writes their tracks to the index.
+         *  @param indexer The indexer writer to add tracks to.
+         *  @param indexerPaths Paths the indexer is configured to scan.
+         *  @param indexerPathsCount Number of indexer paths.
+         *  @return The scan result. */
         musik::core::sdk::ScanResult Scan(
             musik::core::sdk::IIndexerWriter* indexer,
             const char** indexerPaths,
             unsigned indexerPathsCount) override;
 
+        /** @brief Adds metadata for a single indexed track.
+         *  @param indexer The indexer writer.
+         *  @param tagStore The tag store receiving track metadata.
+         *  @param externalId The cdda:// external id of the track. */
         void ScanTrack(
             musik::core::sdk::IIndexerWriter* indexer,
             musik::core::sdk::ITagStore* tagStore,
             const char* externalId) override;
 
+        /** @brief Interrupts a running scan. */
         void Interrupt() override;
+        /** @brief Track ids are stable across scans.
+         *  @return Always returns true. */
         bool HasStableIds() noexcept override { return true; }
+        /** @brief A track metadata pass is required.
+         *  @return Always returns true. */
         bool NeedsTrackScan() noexcept override { return true; }
 
         /* CddaDataModel::EventListener */
+        /** @brief Refreshes the track list when a disc is inserted/removed. */
         void OnAudioDiscInsertedOrRemoved() override;
 
     private:
+        /** @brief Re-enumerates the mounted audio discs. */
         void RefreshModel();
 
+        /** @brief Reference to the CDDA data model singleton. */
         CddaDataModel& model;
+        /** @brief Set of known disc ids to detect changes. */
         std::set<std::string> discIds;
+        /** @brief Currently mounted audio discs. */
         std::vector<CddaDataModel::AudioDiscPtr> discs;
 };

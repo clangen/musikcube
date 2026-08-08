@@ -34,13 +34,39 @@
 
 #pragma once
 
+/**
+ * @file ColorThemeOverlay.h
+ * @brief Overlay dialogs for selecting and configuring the color theme.
+ * @details Lets the user pick a color theme from the list of installed
+ *          themes, and shows a warning about 256 color support when the
+ *          terminal does not provide enough colors.
+ */
+
 #include <functional>
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Factory for the color theme selection overlays.
+         * @details Provides static entry points that show the theme picker
+         *          and the 256 color support dialog. The class itself is not
+         *          instantiable.
+         */
         class ColorThemeOverlay {
             public:
+                /**
+                 * @brief Shows the color theme chooser overlay.
+                 * @param callback invoked when the overlay is closed so the
+                 *        caller can refresh affected views
+                 */
                 static void Show(std::function<void()> callback);
+
+                /**
+                 * @brief Shows an informational overlay about 256 color
+                 *        support.
+                 * @param enabled true if 256 colors are already enabled
+                 * @param callback invoked when the overlay is closed
+                 */
                 static void Show256ColorsInfo(bool enabled, std::function<void()> callback);
 
             private:

@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file String.h @brief Provides portable string utility functions used by the SDK and plugins. */
 #pragma once
 
 #include <string>
@@ -44,9 +45,14 @@
 #include <Windows.h>
 #endif
 
+/** @namespace musik::core::sdk::str @brief String manipulation and encoding conversion helpers. */
 namespace musik { namespace core { namespace sdk { namespace str {
 
     #ifdef WIN32
+        /** @brief Converts a UTF-16 wide-character string to a UTF-8 byte string.
+         *  @tparam String The output string type.
+         *  @param utf16 The null-terminated UTF-16 string to convert.
+         *  @return The converted UTF-8 string, or an empty string on failure. */
         template <typename String = std::string>
         static inline String u16to8(const wchar_t* utf16) {
             if (!utf16) return "";
@@ -59,6 +65,10 @@ namespace musik { namespace core { namespace sdk { namespace str {
             return utf8str;
         }
 
+        /** @brief Converts a UTF-8 byte string to a UTF-16 wide-character string.
+         *  @tparam Wstring The output wide-string type.
+         *  @param utf8 The null-terminated UTF-8 string to convert.
+         *  @return The converted UTF-16 string, or an empty string on failure. */
         template <typename Wstring = std::wstring>
         static inline Wstring u8to16(const char* utf8) {
             int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
@@ -71,6 +81,11 @@ namespace musik { namespace core { namespace sdk { namespace str {
         }
     #endif
 
+    /** @brief Formats a string using printf-style format specifiers.
+     *  @tparam Args The variadic argument types.
+     *  @param format The printf-style format string.
+     *  @param args The values to substitute into the format string.
+     *  @return The formatted string. */
     template<typename... Args>
     static std::string Format(const std::string& format, Args ... args) {
         /* https://stackoverflow.com/a/26221725 */
@@ -80,10 +95,17 @@ namespace musik { namespace core { namespace sdk { namespace str {
         return std::string(buf.get(), buf.get() + size - 1); /* omit the '\0' */
     }
 
+    /** @brief Returns whether a character is whitespace.
+     *  @param c The character to inspect.
+     *  @return True if the character is a whitespace character. */
     static inline bool IsSpace(const char c) {
         return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f';
     }
 
+    /** @brief Trims leading and trailing whitespace from a string.
+     *  @tparam String The string type.
+     *  @param str The string to trim.
+     *  @return A trimmed copy of the string. */
     template<typename String = std::string>
     static String Trim(const String& str) {
         if (str.size()) {
@@ -112,11 +134,21 @@ namespace musik { namespace core { namespace sdk { namespace str {
         return str;
     }
 
+    /** @brief Trims leading and trailing whitespace from a null-terminated C string.
+     *  @tparam String The string type used for the result.
+     *  @param str The C string to trim.
+     *  @return A trimmed copy of the string. */
     template<typename String = std::string>
     static String Trim(const char* str) {
         return Trim(String(str));
     }
 
+    /** @brief Splits a string on a delimiter, trimming each resulting token.
+     *  @tparam String The input string type.
+     *  @tparam Result The output container type.
+     *  @param in The string to split.
+     *  @param delim The delimiter to split on.
+     *  @return A container of trimmed tokens. */
     template<typename String = std::string, typename Result = std::vector<String>>
     static Result Split(const String& in, const String& delim) {
         Result result;
@@ -129,11 +161,22 @@ namespace musik { namespace core { namespace sdk { namespace str {
         return result;
     }
 
+    /** @brief Splits a string on a null-terminated C-string delimiter, trimming each resulting token.
+     *  @tparam String The input string type.
+     *  @tparam Result The output container type.
+     *  @param in The string to split.
+     *  @param delim The delimiter to split on.
+     *  @return A container of trimmed tokens. */
     template<typename String = std::string, typename Result = std::vector<String>>
     static Result Split(const String& in, const char* delim) {
         return Split(in, String(delim));
     }
 
+    /** @brief Replaces all occurrences of a substring in place.
+     *  @tparam String The string type.
+     *  @param input The string to modify in place.
+     *  @param find The substring to search for.
+     *  @param replace The replacement substring. */
     template<typename String = std::string>
     static void ReplaceAll(String& input, const String& find, const String& replace) {
         size_t pos = input.find(find);
@@ -143,11 +186,22 @@ namespace musik { namespace core { namespace sdk { namespace str {
         }
     }
 
+    /** @brief Replaces all occurrences of a C-string substring in place.
+     *  @tparam String The string type.
+     *  @param input The string to modify in place.
+     *  @param find The substring to search for.
+     *  @param replace The replacement substring. */
     template<typename String = std::string>
     static void ReplaceAll(String& input, const char* find, const char* replace) {
         ReplaceAll(input, String(find), String(replace));
     }
 
+    /** @brief Returns a copy of a string with all occurrences of a substring replaced.
+     *  @tparam String The string type.
+     *  @param input The string to process.
+     *  @param find The substring to search for.
+     *  @param replace The replacement substring.
+     *  @return The modified copy of the string. */
     template<typename String = std::string>
     static String ReplaceAllCopy(const String& input, const String& find, const String& replace) {
         String copy = input;
@@ -155,11 +209,21 @@ namespace musik { namespace core { namespace sdk { namespace str {
         return copy;
     }
 
+    /** @brief Returns a copy of a string with all occurrences of a C-string substring replaced.
+     *  @tparam String The string type.
+     *  @param input The string to process.
+     *  @param find The substring to search for.
+     *  @param replace The replacement substring.
+     *  @return The modified copy of the string. */
     template<typename String = std::string>
     static String ReplaceAllCopy(const String& input, const char* find, const char* replace) {
         return ReplaceAllCopy(input, String(find), String(replace));
     }
 
+    /** @brief Returns a lowercase copy of a string.
+     *  @tparam String The string type.
+     *  @param input The string to process.
+     *  @return A lowercase copy of the string. */
     template<typename String = std::string>
     static String ToLowerCopy(const String& input) {
         String copy = input;

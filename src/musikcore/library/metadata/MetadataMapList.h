@@ -34,37 +34,59 @@
 
 #pragma once
 
+/** @file MetadataMapList.h
+ *  @brief IMapList implementation holding a list of MetadataMap entries.
+ *  @details Stores MetadataMapPtr entries in a vector and exposes them through the
+ *      SDK IMapList interface, used to return collections of metadata to plugins
+ *      and remote clients. */
+
 #include <musikcore/sdk/IMapList.h>
 #include "MetadataMap.h"
 #include <vector>
 #include <memory>
 
+/** @namespace musik::core
+ *  @brief Core application services: libraries, indexing, playback and utilities. */
 namespace musik { namespace core {
 
+    /** @brief An ordered collection of metadata maps.
+     *  @details Supports appending MetadataMapPtr entries, clearing the list, and
+     *      reading entries by index either as shared pointers or as SDK pointers. */
     class MetadataMapList :
         public musik::core::sdk::IMapList,
         public std::enable_shared_from_this<MetadataMapList>
     {
         public:
+            /** @brief Creates an empty metadata map list. */
             MetadataMapList();
             virtual ~MetadataMapList();
 
             /* IMapList */
+            /** @brief Frees the list (deletes this instance). */
             virtual void Release();
+            /** @return The number of entries in the list. */
             virtual size_t Count() const;
+            /** @return The entry at the given index, or nullptr.
+             *  @param index Zero-based index. */
             virtual musik::core::sdk::IMap* GetAt(size_t index) const;
 
             /* implementation specific */
+            /** @brief Removes all entries from the list. */
             void Clear();
+            /** @brief Appends an entry to the list.
+             *  @param entry The map to add. */
             void Add(MetadataMapPtr entry);
 
+            /** @return A raw SDK IMapList pointer (borrowed). */
             musik::core::sdk::IMapList* GetSdkValue();
+            /** @return The shared entry at the given index, or nullptr.
+             *  @param index Zero-based index. */
             MetadataMapPtr GetSharedAt(size_t index) const;
 
         private:
-            std::vector<MetadataMapPtr> entries;
+            std::vector<MetadataMapPtr> entries; /**< Ordered list of entries. */
     };
 
-    using MetadataMapListPtr = std::shared_ptr<MetadataMapList>;
+    using MetadataMapListPtr = std::shared_ptr<MetadataMapList>; /**< Shared list alias. */
 
 } }

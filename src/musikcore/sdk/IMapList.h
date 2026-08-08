@@ -32,17 +32,28 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IMapList.h @brief Defines the IMapList interface, a read-only list of IMap resources. */
 #pragma once
 
 #include "IMap.h"
 #include <stddef.h>
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A read-only, indexable collection of IMap resources. */
     class IMapList {
         public:
+            /** @brief Releases the list; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Returns the number of maps in the list.
+             *  @return The map count. */
             virtual size_t Count() const = 0;
+
+            /** @brief Returns the map at the given index.
+             *  @param index The zero-based index into the list.
+             *  @return The map, or null if the index is out of range. */
             virtual IMap* GetAt(size_t index) const = 0;
     };
 

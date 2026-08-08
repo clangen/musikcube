@@ -18,6 +18,13 @@
   along with PulseAudio; if not, see <http://www.gnu.org/licenses/>.
 ***/
 
+/// @file pulse_blocking_stream.h
+/// @brief Simplified blocking PulseAudio client API.
+/// @details Vendored from PulseAudio. Provides a minimal pa_blocking object
+/// that wraps a PulseAudio playback/record stream with synchronous, blocking
+/// write/read/drain operations. Used by the PulseOut plugin to play audio
+/// without an event loop.
+
 #pragma once
 
 #include <sys/types.h>

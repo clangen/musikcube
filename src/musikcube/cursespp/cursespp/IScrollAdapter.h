@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IScrollAdapter.h @brief Interface providing content to scrollable windows. */
 #pragma once
 
 #include <string>
@@ -41,10 +42,21 @@
 namespace cursespp {
     class ScrollableWindow;
 
+    /** @brief Contract decoupling a ScrollableWindow from its data model.
+     *
+     *  @details An IScrollAdapter supplies the entries that a ScrollableWindow
+     *  renders. The window informs the adapter of its display size, queries the
+     *  total entry count, requests individual entries for focus/hit-testing,
+     *  and asks the adapter to DrawPage() when the viewport needs repainting.
+     *  This lets one scrollable window display very different data sources
+     *  (plain strings, wrapped text, custom models) without changing the
+     *  window itself.
+     */
     class IScrollAdapter {
         public:
             virtual ~IScrollAdapter() { }
 
+            /** @brief Describes the current viewport state of the scrollable window. */
             struct ScrollPosition {
                 ScrollPosition() {
                     firstVisibleEntryIndex = 0;
@@ -54,29 +66,63 @@ namespace cursespp {
                     totalEntries = 0;
                 }
 
-                size_t firstVisibleEntryIndex;
-                size_t visibleEntryCount;
-                size_t lineCount;
-                size_t totalEntries;
-                size_t logicalIndex;
+                size_t firstVisibleEntryIndex;  /**< Index of the first entry visible at the top. */
+                size_t visibleEntryCount;       /**< Number of entries currently visible. */
+                size_t lineCount;               /**< Number of display lines in the viewport. */
+                size_t totalEntries;            /**< Total number of entries in the data set. */
+                size_t logicalIndex;            /**< The logical (focus) index within the viewport. */
             };
 
+            /** @brief A single entry rendered by the scrollable window. */
             class IEntry {
                 public:
                     virtual ~IEntry() { }
+                    /** @brief Returns the number of display lines this entry occupies.
+                     *  @return the line count.
+                     */
                     virtual size_t GetLineCount() = 0;
+                    /** @brief Returns the text of a display line.
+                     *  @param line the zero-based line index.
+                     *  @return the line's text.
+                     */
                     virtual std::string GetLine(size_t line) = 0;
+                    /** @brief Sets the display width used for wrapping/truncation.
+                     *  @param width the width in terminal cells.
+                     */
                     virtual void SetWidth(size_t width) = 0;
+                    /** @brief Returns the color attributes of a display line.
+                     *  @param line the zero-based line index.
+                     *  @return the Color for that line.
+                     */
                     virtual Color GetAttrs(size_t line) = 0;
             };
 
+            /** @brief Shared-pointer alias for an entry. */
             typedef std::shared_ptr<IEntry> EntryPtr;
 
+            /** @brief Informs the adapter of the window's display size.
+             *  @param width the width in terminal cells.
+             *  @param height the height in terminal cells.
+             */
             virtual void SetDisplaySize(size_t width, size_t height) = 0;
+            /** @brief Returns the total number of entries.
+             *  @return the entry count.
+             */
             virtual size_t GetEntryCount() = 0;
+            /** @brief Returns the entry at a given index.
+             *  @param window the requesting ScrollableWindow.
+             *  @param index the entry index.
+             *  @return the EntryPtr at that index.
+             */
             virtual EntryPtr GetEntry(ScrollableWindow* window, size_t index) = 0;
+            /** @brief Draws the visible page starting at the given index.
+             *  @param window the ScrollableWindow to draw into.
+             *  @param index the index of the first visible entry.
+             *  @param result receives the computed ScrollPosition.
+             */
             virtual void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition& result) = 0;
     };
 
+    /** @brief Shared-pointer alias for an IScrollAdapter. */
     typedef std::shared_ptr<IScrollAdapter> IScrollAdapterPtr;
 }

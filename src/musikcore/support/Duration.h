@@ -34,14 +34,36 @@
 
 #pragma once
 
+/** @file Duration.h
+ *  @brief Human-readable duration formatting helpers.
+ *  @details Formats track durations in seconds as "m:ss" or "h:mm:ss" strings,
+ *      handling several input types. */
+
 #include <string>
 
+/** @namespace musik::core::duration
+ *  @brief Duration formatting helpers. */
 namespace musik { namespace core { namespace duration {
 
+    /** @brief Formats a duration string (assumed to be numeric seconds).
+     *  @param str The duration as a string.
+     *  @return The formatted "m:ss" string. */
     std::string Duration(const std::string& str);
+    /** @brief Formats a duration.
+     *  @param seconds Duration in seconds.
+     *  @return The formatted "m:ss" string. */
     std::string Duration(int seconds);
+    /** @brief Formats a duration.
+     *  @param seconds Duration in seconds.
+     *  @return The formatted "m:ss" string. */
     std::string Duration(size_t seconds);
+    /** @brief Formats a duration.
+     *  @param seconds Duration in seconds.
+     *  @return The formatted "m:ss" string. */
     std::string Duration(double seconds);
+    /** @brief Formats a duration, always including hours.
+     *  @param seconds Duration in seconds.
+     *  @return The formatted "h:mm:ss" string. */
     std::string DurationWithHours(size_t seconds);
 
 } } }

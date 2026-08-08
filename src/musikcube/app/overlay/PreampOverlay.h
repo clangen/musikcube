@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file PreampOverlay.h
+ * @brief Overlay for configuring the preamp gain and replay gain mode.
+ * @details Lets the user set the global preamp value and pick the replay
+ *          gain mode. The values are persisted to preferences and applied
+ *          to the playback service.
+ */
+
 #include <functional>
 
 #include <musikcore/sdk/IPlugin.h>
@@ -48,6 +56,12 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Preamp and replay gain configuration overlay.
+         * @details Shows a title, the current preamp value and a dropdown for
+         *          the replay gain mode. Pressing enter saves the settings
+         *          and invokes the callback. Implements OverlayBase.
+         */
         class PreampOverlay:
             public cursespp::OverlayBase,
             public sigslot::has_slots<>
@@ -55,16 +69,38 @@ namespace musik {
         public:
             using Callback = std::function<void()>;
 
+            /**
+             * @brief Shows the preamp overlay for the given playback service.
+             * @param playback the playback service to configure
+             * @param callback invoked when the overlay is closed
+             */
             static void Show(
                 musik::core::sdk::IPlaybackService& playback,
                 Callback callback);
 
+            /**
+             * @brief Positions and lays out the child views.
+             */
             virtual void Layout();
+            /**
+             * @brief Handles keyboard input.
+             * @param key the key sequence that was pressed
+             * @return true if the event was consumed
+             */
             virtual bool KeyPress(const std::string& key);
 
+            /**
+             * @brief Opens the replay gain mode chooser.
+             * @param label the replay gain dropdown label
+             */
             void OnReplayGainPressed(cursespp::TextLabel* label);
 
         private:
+            /**
+             * @brief Creates the overlay bound to the given playback service.
+             * @param playback the playback service to configure
+             * @param callback invoked when the overlay is closed
+             */
             PreampOverlay(
                 musik::core::sdk::IPlaybackService& playback,
                 Callback callback);
@@ -74,14 +110,14 @@ namespace musik {
             bool Save();
             void Load();
 
-            Callback callback;
-            int width, height, x, y;
+            Callback callback;                                              /**< invoked when the overlay closes */
+            int width, height, x, y;                                        /**< cached overlay geometry */
 
-            musik::core::sdk::IPlaybackService& playback;
-            std::shared_ptr<musik::core::Preferences> prefs;
-            std::shared_ptr<cursespp::TextLabel> titleLabel, preampLabel, replayGainDropdown;
-            std::shared_ptr<cursespp::TextInput> preampInput;
-            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
+            musik::core::sdk::IPlaybackService& playback;                   /**< the playback service being configured */
+            std::shared_ptr<musik::core::Preferences> prefs;                /**< preferences used to persist the settings */
+            std::shared_ptr<cursespp::TextLabel> titleLabel, preampLabel, replayGainDropdown; /**< static labels */
+            std::shared_ptr<cursespp::TextInput> preampInput;               /**< the preamp value input */
+            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;           /**< the shortcuts window */
         };
     }
 }

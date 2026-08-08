@@ -32,14 +32,23 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ReplayGain.h @brief Defines the ReplayGain struct, holding gain and peak values. */
 #pragma once
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Stores ReplayGain metadata for a track or album.
+     *  @details Gain values are expressed in decibels relative to the standard
+     *  loudness reference, and peak values are normalized to a maximum of 1.0. */
     struct ReplayGain {
+        /** @brief The track gain adjustment, in dB. */
         float trackGain;
+        /** @brief The track peak sample amplitude. */
         float trackPeak;
+        /** @brief The album gain adjustment, in dB. */
         float albumGain;
+        /** @brief The album peak sample amplitude. */
         float albumPeak;
     };
 

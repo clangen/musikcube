@@ -36,21 +36,38 @@
 
 #pragma once
 
+/** @file ThreadGroup.h
+ *  @brief A thread group that tracks and joins owned threads.
+ *  @details Copied from Boost's ThreadGroup: manages a list of threads, supports
+ *      membership queries, and joins all threads on destruction or join_all().
+ *      Threads are deleted (not detached) by the group. */
+
 #include <list>
 #include <thread>
 #include <shared_mutex>
 #include <mutex>
 #include <memory>
 
+/** @namespace musik::core
+ *  @brief Core application services: libraries, indexing, playback and utilities. */
 namespace musik { namespace core {
 
+    /** @brief Owns a collection of threads and joins them together.
+     *  @details Threads added to the group are owned by it; the destructor deletes
+     *      any not yet joined. All operations are guarded by a shared mutex. */
     class ThreadGroup
     {
     private:
+        /** @brief Non-copyable.
+         *  @param other The group to copy (deleted). */
         ThreadGroup(ThreadGroup const&);
+        /** @brief Non-assignable.
+         *  @param other The group to assign (deleted). */
         ThreadGroup& operator=(ThreadGroup const&);
     public:
+        /** @brief Creates an empty thread group. */
         ThreadGroup() {}
+        /** @brief Deletes any threads not joined by the destructor. */
         ~ThreadGroup()
         {
             for (std::list<std::thread*>::iterator it = threads.begin(), end = threads.end();
@@ -61,6 +78,7 @@ namespace musik { namespace core {
             }
         }
 
+        /** @return true if the calling thread belongs to the group. */
         bool is_this_thread_in()
         {
             std::thread::id id = std::this_thread::get_id();
@@ -75,6 +93,8 @@ namespace musik { namespace core {
             return false;
         }
 
+        /** @return true if the given thread belongs to the group.
+         *  @param thrd The thread to check. */
         bool is_thread_in(std::thread* thrd)
         {
             if (thrd)
@@ -96,6 +116,10 @@ namespace musik { namespace core {
             }
         }
 
+        /** @brief Creates and adds a new thread to the group.
+         *  @tparam F The callable type.
+         *  @param threadfunc The thread function.
+         *  @return The created thread (owned by the group). */
         template<typename F>
         std::thread* create_thread(F threadfunc)
         {
@@ -105,6 +129,8 @@ namespace musik { namespace core {
             return new_thread.release();
         }
 
+        /** @brief Adds an existing thread to the group.
+         *  @param thrd The thread to add. */
         void add_thread(std::thread* thrd)
         {
             if (thrd)
@@ -114,6 +140,8 @@ namespace musik { namespace core {
             }
         }
 
+        /** @brief Removes a thread from the group without joining it.
+         *  @param thrd The thread to remove. */
         void remove_thread(std::thread* thrd)
         {
             std::lock_guard<std::shared_mutex> guard(m);
@@ -124,6 +152,7 @@ namespace musik { namespace core {
             }
         }
 
+        /** @brief Joins every joinable thread in the group. */
         void join_all()
         {
             std::shared_lock<std::shared_mutex> guard(m);
@@ -137,6 +166,7 @@ namespace musik { namespace core {
             }
         }
 
+        /** @return The number of threads in the group. */
         size_t size() const
         {
             std::shared_lock<std::shared_mutex> guard(m);
@@ -144,8 +174,8 @@ namespace musik { namespace core {
         }
 
     private:
-        std::list<std::thread*> threads;
-        mutable std::shared_mutex m;
+        std::list<std::thread*> threads; /**< Owned threads. */
+        mutable std::shared_mutex m; /**< Guards the thread list. */
     };
 
 } }

@@ -34,21 +34,53 @@
 
 #pragma once
 
+/**
+ * @file BrowseOverlays.h
+ * @brief Factory for overlay dialogs used by the browse and directory
+ *        layouts.
+ * @details Provides static helpers that show the category chooser, the
+ *          directory chooser and the indexer progress overlay.
+ */
+
 #include <musikcore/library/ILibrary.h>
 #include <functional>
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Factory for overlay dialogs used by the browse and directory
+         *        layouts.
+         * @details Provides static helpers that show the category chooser, the
+         *          directory chooser and the indexer progress overlay.
+         */
         class BrowseOverlays {
             public:
+                /**
+                 * @brief Shows a dialog that lets the user choose a library
+                 *        category to navigate to.
+                 * @param library the library that owns the categories
+                 * @param callback invoked with the selected category type and
+                 *        name when the user confirms
+                 */
                 static void ShowCategoryChooser(
                     musik::core::ILibraryPtr library,
                     std::function<void(std::string, std::string)> callback);
 
+                /**
+                 * @brief Shows a dialog that lets the user choose a local
+                 *        directory to browse.
+                 * @param library the library used to index the directory
+                 * @param callback invoked with the selected directory path
+                 */
                 static void ShowDirectoryChooser(
                     musik::core::ILibraryPtr library,
                     std::function<void(std::string)> callback);
 
+                /**
+                 * @brief Shows the indexer progress overlay for the given
+                 *        library.
+                 * @param library the library whose indexer progress is shown
+                 */
                 static void ShowIndexer(musik::core::ILibraryPtr library);
         };
     }

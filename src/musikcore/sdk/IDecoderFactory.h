@@ -32,16 +32,27 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IDecoderFactory.h @brief Defines the IDecoderFactory interface for creating decoders for supported formats. */
 #pragma once
 
 #include "IDecoder.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Creates IDecoder instances for supported audio formats. */
     class  IDecoderFactory{
         public:
+            /** @brief Creates a new decoder instance.
+             *  @return A newly created decoder, or null on failure. */
             virtual IDecoder* CreateDecoder() = 0;
+
+            /** @brief Releases the factory; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Returns whether this factory can decode the given format.
+             *  @param type The format type to check, typically a file extension.
+             *  @return True if the format is supported by this factory. */
             virtual bool CanHandle(const char* type) const = 0;
     };
 

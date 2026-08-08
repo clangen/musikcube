@@ -34,60 +34,70 @@
 
 #pragma once
 
+/** @file PreferenceKeys.h
+ *  @brief Well-known preference component and key names.
+ *  @details Names of the preference components (files) and the keys used within
+ *      them. Centralizing these avoids string literals scattered across the code
+ *      base. */
+
 #include <string>
 
+/** @namespace musik::core::prefs
+ *  @brief Preference component and key name constants. */
 namespace musik { namespace core { namespace prefs {
 
+    /** @brief Names of the preference components (files). */
     namespace components {
-        extern const std::string Settings;
-        extern const std::string Libraries;
-        extern const std::string Playback;
-        extern const std::string Plugins;
-        extern const std::string Session;
+        extern const std::string Settings;   /**< General application settings. */
+        extern const std::string Libraries;  /**< Library configuration. */
+        extern const std::string Playback;   /**< Playback settings. */
+        extern const std::string Plugins;    /**< Plugin settings. */
+        extern const std::string Session;    /**< Session-scoped (transient) settings. */
     }
 
+    /** @brief Preference key names within a component. */
     namespace keys {
-        extern const std::string AutoSyncIntervalMillis;
-        extern const std::string RemoveMissingFiles;
-        extern const std::string SyncOnStartup;
-        extern const std::string ResumePlaybackOnStartup;
-        extern const std::string Volume;
-        extern const std::string RepeatMode;
-        extern const std::string TimeChangeMode;
-        extern const std::string OutputPlugin;
-        extern const std::string Transport;
-        extern const std::string Locale;
-        extern const std::string IndexerLogEnabled;
-        extern const std::string IndexerThreadCount;
-        extern const std::string IndexerTransactionInterval;
-        extern const std::string ReplayGainMode;
-        extern const std::string PreampDecibels;
-        extern const std::string SaveSessionOnExit;
-        extern const std::string LastPlayQueueIndex;
-        extern const std::string LastPlayQueueTime;
-        extern const std::string LastFmToken;
-        extern const std::string LastFmSessionId;
-        extern const std::string LastFmUsername;
-        extern const std::string DisableAlbumArtistFallback;
-        extern const std::string AuddioApiToken;
-        extern const std::string LibraryType;
-        extern const std::string PlaybackTrackQueryTimeoutMs;
-        extern const std::string RemoteLibraryHostname;
-        extern const std::string RemoteLibraryWssPort;
-        extern const std::string RemoteLibraryHttpPort;
-        extern const std::string RemoteLibraryPassword;
-        extern const std::string RemoteLibraryViewed;
-        extern const std::string RemoteLibraryLatencyTimeoutMs;
-        extern const std::string RemoteLibraryWssTls;
-        extern const std::string RemoteLibraryHttpTls;
-        extern const std::string RemoteLibraryTlsWarningSuppressed;
-        extern const std::string RemoteLibraryTranscoderEnabled;
-        extern const std::string RemoteLibraryTranscoderFormat;
-        extern const std::string RemoteLibraryTranscoderBitrate;
-        extern const std::string RemoteLibraryIgnoreVersionMismatch;
-        extern const std::string AsyncTrackListQueries;
-        extern const std::string PiggyEnabled;
-        extern const std::string PiggyHostname;
+        extern const std::string AutoSyncIntervalMillis;     /**< Indexer auto-sync interval. */
+        extern const std::string RemoveMissingFiles;         /**< Remove missing files during sync. */
+        extern const std::string SyncOnStartup;              /**< Sync the library on startup. */
+        extern const std::string ResumePlaybackOnStartup;    /**< Resume the last queue on startup. */
+        extern const std::string Volume;                     /**< Last volume level. */
+        extern const std::string RepeatMode;                 /**< Last repeat mode. */
+        extern const std::string TimeChangeMode;             /**< Last time-change mode. */
+        extern const std::string OutputPlugin;               /**< Selected output plugin. */
+        extern const std::string Transport;                  /**< Selected transport type. */
+        extern const std::string Locale;                     /**< Selected locale. */
+        extern const std::string IndexerLogEnabled;          /**< Whether indexer logging is on. */
+        extern const std::string IndexerThreadCount;         /**< Indexer worker thread count. */
+        extern const std::string IndexerTransactionInterval; /**< Indexer transaction batch interval. */
+        extern const std::string ReplayGainMode;             /**< ReplayGain processing mode. */
+        extern const std::string PreampDecibels;             /**< ReplayGain preamp in decibels. */
+        extern const std::string SaveSessionOnExit;          /**< Persist session on exit. */
+        extern const std::string LastPlayQueueIndex;         /**< Last queue index (resume). */
+        extern const std::string LastPlayQueueTime;          /**< Last queue position (resume). */
+        extern const std::string LastFmToken;                /**< Last.fm auth token. */
+        extern const std::string LastFmSessionId;            /**< Last.fm session id. */
+        extern const std::string LastFmUsername;             /**< Last.fm username. */
+        extern const std::string DisableAlbumArtistFallback; /**< Disable album-artist fallback. */
+        extern const std::string AuddioApiToken;             /**< Auddio API token. */
+        extern const std::string LibraryType;                /**< Primary library type. */
+        extern const std::string PlaybackTrackQueryTimeoutMs;/**< Track query timeout for playback. */
+        extern const std::string RemoteLibraryHostname;      /**< Remote library host. */
+        extern const std::string RemoteLibraryWssPort;       /**< Remote library WSS port. */
+        extern const std::string RemoteLibraryHttpPort;      /**< Remote library HTTP port. */
+        extern const std::string RemoteLibraryPassword;      /**< Remote library password. */
+        extern const std::string RemoteLibraryViewed;        /**< Whether the remote library was viewed. */
+        extern const std::string RemoteLibraryLatencyTimeoutMs; /**< Remote query latency timeout. */
+        extern const std::string RemoteLibraryWssTls;        /**< Use TLS for the WSS connection. */
+        extern const std::string RemoteLibraryHttpTls;       /**< Use TLS for the HTTP connection. */
+        extern const std::string RemoteLibraryTlsWarningSuppressed; /**< Whether TLS warnings are suppressed. */
+        extern const std::string RemoteLibraryTranscoderEnabled;   /**< Enable server-side transcoding. */
+        extern const std::string RemoteLibraryTranscoderFormat;    /**< Transcode output format. */
+        extern const std::string RemoteLibraryTranscoderBitrate;   /**< Transcode bitrate. */
+        extern const std::string RemoteLibraryIgnoreVersionMismatch; /**< Ignore server version mismatch. */
+        extern const std::string AsyncTrackListQueries;      /**< Run track-list queries asynchronously. */
+        extern const std::string PiggyEnabled;               /**< Whether the Piggy service is enabled. */
+        extern const std::string PiggyHostname;              /**< Piggy service host. */
     }
 
 } } }

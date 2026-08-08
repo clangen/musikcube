@@ -34,6 +34,13 @@
 
 #pragma once
 
+/**
+ * @file TrackOverlays.h
+ * @brief Factory for overlays that act on a single track.
+ * @details Provides static helpers that show the track sort order chooser
+ *          and the track rating chooser.
+ */
+
 #include <musikcore/library/query/util/TrackSort.h>
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/library/track/Track.h>
@@ -42,15 +49,32 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Factory for track-related configuration overlays.
+         * @details Each static method shows a modal overlay and invokes the
+         *          callback with the user's selection. Not instantiable.
+         */
         class TrackOverlays {
             public:
                 using TrackSortType = musik::core::library::query::TrackSortType;
 
+                /**
+                 * @brief Shows the track sort order chooser.
+                 * @param currentSortType the currently selected sort type
+                 * @param availableSortTypes the sort types that may be chosen
+                 * @param callback invoked with the newly selected sort type
+                 */
                 static void ShowTrackSearchSortOverlay(
                     TrackSortType currentSortType,
                     const std::map<TrackSortType, std::string>& availableSortTypes,
                     std::function<void(TrackSortType)> callback);
 
+                /**
+                 * @brief Shows the track rating chooser.
+                 * @param track the track being rated
+                 * @param library the library that owns the track
+                 * @param callback invoked with true if the rating changed
+                 */
                 static void ShowRateTrackOverlay(
                     musik::core::TrackPtr track,
                     musik::core::ILibraryPtr library,

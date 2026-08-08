@@ -34,22 +34,37 @@
 
 #pragma once
 
+/** @file IMessage.h
+ *  @brief Abstract interface for runtime messages.
+ *  @details A message targets an IMessageTarget and carries an int type plus two
+ *      int64 user data values. Messages are posted to a queue and dispatched to
+ *      their target. */
+
 #include <musikcore/config.h>
 #include <memory>
 
+/** @namespace musik::core::runtime
+ *  @brief Inter-thread message passing: messages, targets and queues. */
 namespace musik { namespace core { namespace runtime {
 
     class IMessageTarget;
 
+    /** @brief A unit of inter-thread communication.
+     *  @details Delivered to its target by a message queue. The type identifies the
+     *      kind of message; the two user-data slots carry payload. */
     class IMessage {
         public:
             virtual ~IMessage() { }
+            /** @return The target that should process this message. */
             virtual IMessageTarget* Target() = 0;
+            /** @return The message type identifier. */
             virtual int Type() = 0;
+            /** @return The first user-data value. */
             virtual int64_t UserData1() = 0;
+            /** @return The second user-data value. */
             virtual int64_t UserData2() = 0;
     };
 
-    typedef std::shared_ptr<IMessage> IMessagePtr;
+    typedef std::shared_ptr<IMessage> IMessagePtr; /**< Shared message alias. */
 
 } } }

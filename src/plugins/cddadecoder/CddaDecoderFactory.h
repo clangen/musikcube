@@ -34,15 +34,27 @@
 
 #pragma once
 
+/// @file CddaDecoderFactory.h
+/// @brief Factory that creates CddaDecoder instances.
+/// @details Registers the "cdda" stream type so audio-CD tracks are routed to
+/// the CDDA decoder plugin. Windows-only.
+
 #include <musikcore/sdk/IDecoderFactory.h>
 
 using namespace musik::core::sdk;
 
+/** @brief Creates CDDA decoder instances. */
 class CddaDecoderFactory : public IDecoderFactory {
 public:
     CddaDecoderFactory();
     ~CddaDecoderFactory();
+    /** @brief Creates a new decoder instance.
+     *  @return A new CddaDecoder the caller must release. */
     IDecoder* CreateDecoder() override;
+    /** @brief Destroys the factory. */
     void Release() override;
+    /** @brief Returns whether this factory handles the given type.
+     *  @param type The stream type to check.
+     *  @return True for the "cdda" type. */
     bool CanHandle(const char* type) const override;
 };

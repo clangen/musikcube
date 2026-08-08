@@ -34,27 +34,55 @@
 
 #pragma once
 
+/// @file CddaDecoder.h
+/// @brief Decoder that plays raw audio-CD PCM from a CddaDataStream.
+/// @details Reads 16-bit stereo PCM directly from the sectors of an audio CD
+/// and exposes it through the decoder SDK without any resampling. Windows-only.
+
 #include <musikcore/sdk/IDecoder.h>
 #include "CddaDataStream.h"
 
 using namespace musik::core::sdk;
 
+/** @brief Decodes raw audio-CD tracks.
+ *  @details The input is a CddaDataStream opened on a specific track. PCM is
+ *  passed through untouched at the native CD sample rate (44100 Hz). */
 class CddaDecoder : public IDecoder {
     public:
         CddaDecoder();
         ~CddaDecoder();
 
+        /** @brief Opens the decoder against a CDDA data stream.
+         *  @param data The CddaDataStream for the track to play.
+         *  @return True if the decoder opened successfully. */
         bool Open(IDataStream* data) override;
+        /** @brief Destroys the decoder. */
         void Release() override;
+        /** @brief Seeks to a position in the track.
+         *  @param seconds Target position in seconds.
+         *  @return The actual position reached, in seconds. */
         double SetPosition(double seconds) override;
+        /** @brief Returns the total duration of the track.
+         *  @return Duration in seconds. */
         double GetDuration() override;
+        /** @brief Fills a buffer with the next block of raw PCM.
+         *  @param buffer The buffer to fill.
+         *  @return True if data was written. */
         bool GetBuffer(IBuffer *buffer) override;
+        /** @brief Returns whether the track has been fully read.
+         *  @return True when exhausted. */
         bool Exhausted() noexcept override { return this->exhausted; }
+        /** @brief The output rate is fixed to the CD sample rate.
+         *  @param rate Requested rate (ignored). */
         void SetPreferredSampleRate(int rate) override { }
 
     private:
+        /** @brief The CDDA stream being decoded. */
         CddaDataStream* data;
+        /** @brief Track duration in seconds. */
         double duration;
+        /** @brief Scratch buffer for raw sector reads. */
         BYTE* buffer;
+        /** @brief True once the track is fully consumed. */
         bool exhausted;
 };

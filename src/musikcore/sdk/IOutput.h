@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IOutput.h @brief Defines the IOutput interface implemented by audio output plugins. */
 #pragma once
 
 #include "constants.h"
@@ -41,23 +42,65 @@
 #include "IBufferProvider.h"
 #include "IDevice.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief An audio output plugin that plays decoded PCM buffers on a
+     *  physical or virtual audio device. */
     class IOutput {
         public:
+            /** @brief Releases the output; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Pauses playback. */
             virtual void Pause() = 0;
+
+            /** @brief Resumes playback after a pause. */
             virtual void Resume() = 0;
+
+            /** @brief Sets the output volume.
+             *  @param volume The volume, from 0.0 to 1.0. */
             virtual void SetVolume(double volume) = 0;
+
+            /** @brief Returns the current output volume.
+             *  @return The volume, from 0.0 to 1.0. */
             virtual double GetVolume() = 0;
+
+            /** @brief Stops playback and releases buffered audio. */
             virtual void Stop() = 0;
+
+            /** @brief Submits a buffer of audio for playback.
+             *  @param buffer The PCM audio buffer to play.
+             *  @param provider The callback to invoke once the buffer has been consumed.
+             *  @return The result of submitting the buffer. */
             virtual OutputState Play(IBuffer *buffer, IBufferProvider *provider) = 0;
+
+            /** @brief Blocks until all queued audio has finished playing. */
             virtual void Drain() = 0;
+
+            /** @brief Returns the output's latency, in milliseconds.
+             *  @return The latency in milliseconds. */
             virtual double Latency() = 0;
+
+            /** @brief Returns the name of the output plugin.
+             *  @return The plugin name. */
             virtual const char* Name() = 0;
+
+            /** @brief Returns the default sample rate used by the output.
+             *  @return The sample rate in Hz. */
             virtual int GetDefaultSampleRate() = 0;
+
+            /** @brief Returns the list of devices exposed by this output.
+             *  @return The device list. */
             virtual IDeviceList* GetDeviceList() = 0;
+
+            /** @brief Sets the default device by id.
+             *  @param deviceId The id of the device to use.
+             *  @return True if the device was selected. */
             virtual bool SetDefaultDevice(const char* deviceId) = 0;
+
+            /** @brief Returns the default device.
+             *  @return The default device. */
             virtual IDevice* GetDefaultDevice() = 0;
     };
 

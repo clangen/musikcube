@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file VirtualWindow.hpp
+ * @brief Panel that wraps an existing native HWND.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. VirtualWindow is a
+ * Panel that takes ownership of a real Win32 window handle and treats it as
+ * the panel's native window, allowing a foreign HWND to be managed through
+ * the win32cpp Container/Panel machinery. A WindowPadding can be applied.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -48,16 +58,29 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief A Panel that wraps an existing native Win32 window handle.
+ *  @details Adopts a real HWND and manages it through the Panel/Container
+ *           infrastructure. Child windows are hosted inside the wrapped
+ *           window with an optional padding.
+ *  @see Panel */
 class VirtualWindow: public Panel
 {
 private: //types
     typedef Panel base;
 
 public: // constructors
+    /** @brief Wraps the given native window handle.
+     *  @param handle the HWND to adopt
+     *  @param padding the padding around the content
+     *  @param flags layout flags used for sizing */
     /*ctor*/    VirtualWindow(HWND handle, int padding = 0, LayoutFlags flags = LayoutWrapWrap);
 
 public: // methods
+    /** @brief Sets the per-side padding.
+     *  @param padding the new padding values */
     void    SetPadding(const WindowPadding& padding);
+    /** @brief Sets a uniform padding.
+     *  @param padding the padding in pixels on all sides */
     void    SetPadding(int padding);
 
 protected: // methods
@@ -71,8 +94,8 @@ protected: // methods
     static bool     RegisterWindowClass();
 
 private: // instance data
-    WindowPadding padding;
-    HWND realHWND;
+    WindowPadding padding; /**< space between content and the wrapped window */
+    HWND realHWND;         /**< the adopted native window handle */
 };
 
 //////////////////////////////////////////////////////////////////////////////

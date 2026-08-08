@@ -1,3 +1,12 @@
+/**
+ * @file pch.h
+ * @brief Precompiled header for the musicwin application.
+ *
+ * Aggregates the win32cpp header files and common standard library
+ * headers so that translation units compile against the prebuilt
+ * header cache, reducing compile times.
+ */
+
 #pragma once
 
 #include <memory>

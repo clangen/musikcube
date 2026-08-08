@@ -34,6 +34,14 @@
 
 #pragma once
 
+/**
+ * @file TrackSearchLayout.h
+ * @brief Layout for searching the library for tracks.
+ * @details Provides a text input that live-queries the library for matching
+ *          tracks, with results shown in a track list that supports playing
+ *          and queueing.
+ */
+
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
 
@@ -47,6 +55,12 @@
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Track search layout.
+         * @details Contains a search input and a track list. Typing triggers
+         *          live library queries; results can be played or queued, and
+         *          the match type and sort order can be changed.
+         */
         class TrackSearchLayout :
             public cursespp::LayoutBase,
             public sigslot::has_slots<>
@@ -54,20 +68,55 @@ namespace musik {
             public:
                 DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackSearchLayout)
 
+                /**
+                 * @brief Creates the layout with the given playback service
+                 *        and library.
+                 * @param playback the active playback service
+                 * @param library the library to search
+                 */
                 TrackSearchLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
+                /**
+                 * @brief Destroys the layout and its child views.
+                 */
                 virtual ~TrackSearchLayout();
 
+                /**
+                 * @brief Plays the tracks in the result list starting from the
+                 *        top.
+                 */
                 void PlayFromTop();
+                /**
+                 * @brief Moves keyboard focus to the search input.
+                 */
                 void FocusInput();
+                /**
+                 * @brief Restores the last search from the previous session.
+                 */
                 void LoadLastSession();
 
                 /* IWindow */
+                /**
+                 * @brief Called when the layout becomes visible or hidden.
+                 * @param visible true if the layout became visible
+                 */
                 void OnVisibilityChanged(bool visible) override;
+                /**
+                 * @brief Handles keyboard input.
+                 * @param key the key sequence that was pressed
+                 * @return true if the event was consumed
+                 */
                 bool KeyPress(const std::string& key) override;
+                /**
+                 * @brief Processes runtime messages.
+                 * @param message the message to process
+                 */
                 void ProcessMessage(musik::core::runtime::IMessage &message) override;
+                /**
+                 * @brief Positions and lays out the child windows.
+                 */
                 void OnLayout() override;
 
             private:
@@ -94,12 +143,12 @@ namespace musik {
                 void SetMatchType(MatchType matchType);
                 void ShowTrackSortOverlay();
 
-                musik::core::audio::PlaybackService& playback;
-                musik::core::ILibraryPtr library;
-                MatchType matchType{ MatchType::Substring };
-                std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<TrackListView> trackList;
-                std::shared_ptr<cursespp::TextInput> input;
+                musik::core::audio::PlaybackService& playback; /**< the active playback service */
+                musik::core::ILibraryPtr library;              /**< the library being searched */
+                MatchType matchType{ MatchType::Substring };   /**< the current query match type */
+                std::shared_ptr<musik::core::Preferences> prefs; /**< persistent preferences */
+                std::shared_ptr<TrackListView> trackList;      /**< the results track list */
+                std::shared_ptr<cursespp::TextInput> input;    /**< the search input */
         };
     }
 }

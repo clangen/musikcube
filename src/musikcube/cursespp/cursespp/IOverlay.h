@@ -32,14 +32,27 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IOverlay.h @brief Interface for layouts that can live in the overlay stack. */
 #pragma once
 
 namespace cursespp {
     class OverlayStack;
 
+    /** @brief Contract for overlays that are managed by an OverlayStack.
+     *
+     *  @details Objects implementing IOverlay are modal layouts that can be
+     *  pushed onto and removed from the application's OverlayStack. While on
+     *  the stack they are drawn on top of the main layout and receive input.
+     *  The stack assigns itself to the overlay via SetOverlayStack() so the
+     *  overlay can remove itself when dismissed.
+     */
     class IOverlay {
         public:
             virtual ~IOverlay() { }
+
+            /** @brief Associates the overlay with the stack that manages it.
+             *  @param stack the owning OverlayStack.
+             */
             virtual void SetOverlayStack(OverlayStack* stack) = 0;
     };
 }

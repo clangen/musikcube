@@ -32,17 +32,31 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file Screen.h @brief Static accessors for the terminal screen dimensions. */
 #pragma once
 
 #include <cursespp/curses_config.h>
 
 namespace cursespp {
+    /** @brief Provides read-only access to the terminal's current dimensions.
+     *
+     *  @details Screen queries the curses screen (via COLS/LINES or the curses
+     *  size functions) to report the current terminal size in cells. The values
+     *  reflect the size after the most recent resize event. The class is not
+     *  instantiable; use the static methods directly.
+     */
     class Screen {
         private:
             Screen();
 
         public:
+            /** @brief Returns the terminal width.
+             *  @return the width in terminal cells.
+             */
             static int GetWidth();
+            /** @brief Returns the terminal height.
+             *  @return the height in terminal cells.
+             */
             static int GetHeight();
     };
 }

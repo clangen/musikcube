@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file Connection.h
+ *  @brief RAII wrapper around a single sqlite3 database connection.
+ *  @details Provides thread-safe open/close/execute operations, prepares and steps
+ *      SQL statements, tracks an active transaction counter and supports WAL
+ *      checkpointing and long-running query interruption. */
+
 #include <musikcore/config.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/db/ScopedTransaction.h>
@@ -44,44 +50,74 @@
 struct sqlite3;
 struct sqlite3_stmt;
 
+/** @namespace musik::core::db
+ *  @brief SQLite database access layer: connections, statements and transactions. */
 namespace musik { namespace core { namespace db {
 
+    /** @brief Result codes returned by connection and statement operations. */
     typedef enum {
-        Okay = 0,
-        Row = 100,
-        Done = 101,
-        Error = 1
+        Okay = 0,  /**< Operation completed successfully. */
+        Row = 100, /**< A data row is available from the statement. */
+        Done = 101,/**< The statement has finished iterating its rows. */
+        Error = 1  /**< An error occurred. */
     } ReturnCode;
 
+    /** @brief Wraps an sqlite3 connection with reference-counted lifecycle.
+     *  @details Each open database is represented by one shared sqlite3 handle.
+     *      The handle stays alive as long as Statements and ScopedTransactions
+     *      referencing it exist. All operations are serialized through an internal
+     *      mutex. */
     class Connection {
         public:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Connection)
 
+            /** @brief Creates an unopened connection. */
             Connection() noexcept;
+            /** @brief Closes the connection if it is still open. */
             ~Connection();
 
+            /** @brief Opens (or reuses) the database at the given path.
+             *  @param database Path to the SQLite database file, or ":memory:".
+             *  @param options sqlite3 open flags (0 for defaults).
+             *  @param cache Size of the page cache, in KiB (0 for defaults).
+             *  @return ReturnCode::Okay on success, or an error code. */
             int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);
+            /** @brief Closes the connection.
+             *  @return ReturnCode::Okay on success, or an error code. */
             int Close() noexcept;
+            /** @brief Executes one or more SQL statements without results.
+             *  @param sql The SQL to execute.
+             *  @return ReturnCode::Okay on success, or an error code. */
             int Execute(const char* sql);
 
+            /** @return The row id of the most recent successful insert on this connection. */
             int64_t LastInsertedId() noexcept;
 
+            /** @return The number of rows modified by the last statement. */
             int LastModifiedRowCount() noexcept;
 
+            /** @brief Requests cancellation of a long-running query on another thread. */
             void Interrupt();
+            /** @brief Runs a WAL checkpoint to flush committed pages to the database file. */
             void Checkpoint() noexcept;
 
         private:
+            /** @brief Initializes the connection with the given page cache size. */
             void Initialize(unsigned int cache);
+            /** @brief Tracks references to the underlying sqlite3 handle.
+             *  @param init true to acquire a reference, false to release one. */
             void UpdateReferenceCount(bool init);
+            /** @brief Steps a prepared statement and maps sqlite3 results to ReturnCode.
+             *  @param stmt The prepared statement to step.
+             *  @return A ReturnCode value. */
             int StepStatement(sqlite3_stmt *stmt) noexcept;
 
             friend class Statement;
             friend class ScopedTransaction;
 
-            int transactionCounter;
-            sqlite3 *connection;
-            std::mutex mutex;
+            int transactionCounter; /**< Nesting depth of active transactions. */
+            sqlite3 *connection;    /**< Underlying sqlite3 handle. */
+            std::mutex mutex;       /**< Serializes all connection access. */
     };
 
 } } }

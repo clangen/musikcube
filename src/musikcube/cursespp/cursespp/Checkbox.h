@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file Checkbox.h @brief A toggleable text label rendered as a checkbox. */
 #pragma once
 
 #include <cursespp/curses_config.h>
@@ -40,29 +41,67 @@
 #include <sigslot/sigslot.h>
 
 namespace cursespp {
+    /** @brief A TextLabel that can be toggled between checked and unchecked.
+     *
+     *  @details Checkbox renders a labeled toggle. The displayed text is
+     *  prefixed with a checkbox glyph that reflects the current state. Pressing
+     *  Enter/Space or clicking it flips the state and emits CheckChanged. The
+     *  original label text is kept separately so it can be re-rendered when the
+     *  checked state changes.
+     */
     class Checkbox: public cursespp::TextLabel {
         public:
+            /** @brief Fired with the checkbox and its new state when toggled. */
             sigslot::signal2<Checkbox*, bool> CheckChanged;
 
+            /** @brief Creates an unchecked checkbox with empty text. */
             Checkbox();
+            /** @brief Creates an unchecked checkbox with the given label.
+             *  @param value the label text.
+             */
             Checkbox(const std::string& value);
+            /** @brief Creates an unchecked checkbox with the given label and alignment.
+             *  @param value the label text.
+             *  @param alignment the text alignment.
+             */
             Checkbox(const std::string& value, const text::TextAlign alignment);
 
+            /** @brief Destroys the checkbox. */
             virtual ~Checkbox();
 
+            /** @brief Sets the checked state.
+             *  @param checked true to check the box.
+             */
             virtual void SetChecked(bool checked);
+            /** @brief Returns the current checked state.
+             *  @return true if checked.
+             */
             virtual bool IsChecked() { return this->checked; }
 
             /* TextLabel */
+            /** @brief Sets the label text (kept separate from the checkbox glyph).
+             *  @param value the label text.
+             */
             virtual void SetText(const std::string& value) override;
+            /** @brief Returns the label text.
+             *  @return the label string.
+             */
             virtual std::string GetText() override;
 
             /* Window */
+            /** @brief Toggles the checkbox on Enter/Space.
+             *  @param key the normalized key string.
+             *  @return true if the key was consumed.
+             */
             bool KeyPress(const std::string& key) override;
+            /** @brief Toggles the checkbox when clicked.
+             *  @param event the translated mouse event.
+             *  @return true if the event was consumed.
+             */
             bool ProcessMouseEvent(const IMouseHandler::Event& event) override;
 
         private:
-            bool checked;
-            std::string originalText;
+            bool checked;                 /**< Whether the box is currently checked. */
+            std::string originalText;     /**< The raw label text before glyph decoration. */
     };
 }

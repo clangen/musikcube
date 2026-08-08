@@ -34,6 +34,13 @@
 
 #pragma once
 
+/**
+ * @file LocalLibrarySettingsLayout.h
+ * @brief Layout for configuring which local folders are indexed.
+ * @details Lets the user browse the file system, add or remove indexed
+ *          directories and toggle whether dot files are shown.
+ */
+
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -41,17 +48,40 @@
 #include <app/model/DirectoryAdapter.h>
 
 namespace musik { namespace cube {
+    /**
+     * @brief Local library folder settings layout.
+     * @details Provides a file browser to drill into directories, lists the
+     *          currently indexed paths, and supports adding, removing and
+     *          toggling dot file visibility.
+     */
     class LocalLibrarySettingsLayout: public cursespp::LayoutBase {
         public:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(LocalLibrarySettingsLayout)
 
+            /**
+             * @brief Creates the settings layout.
+             */
             LocalLibrarySettingsLayout();
 
+            /**
+             * @brief Toggles whether dot files are shown in the browser.
+             */
             void ToggleShowDotFiles();
+            /**
+             * @brief Loads the persisted folder and preference settings.
+             */
             void LoadPreferences();
 
             /* IWindow */
+            /**
+             * @brief Handles keyboard input.
+             * @param key the key sequence that was pressed
+             * @return true if the event was consumed
+             */
             bool KeyPress(const std::string& key) override;
+            /**
+             * @brief Positions and lays out the child windows.
+             */
             void OnLayout() override;
 
         private:
@@ -66,12 +96,11 @@ namespace musik { namespace cube {
                 size_t line,
                 cursespp::IScrollAdapter::EntryPtr entry);
 
-            musik::core::ILibraryPtr library;
-            musik::core::IIndexer* indexer;
-
-            std::shared_ptr<cursespp::ListWindow> browseList;
-            std::shared_ptr<cursespp::ListWindow> addedPathsList;
-            std::shared_ptr<cursespp::SimpleScrollAdapter> addedPathsAdapter;
-            std::shared_ptr<DirectoryAdapter> browseAdapter;
+            musik::core::ILibraryPtr library;             /**< the library whose index is configured */
+            musik::core::IIndexer* indexer;               /**< the library indexer, not owned */
+            std::shared_ptr<cursespp::ListWindow> browseList;      /**< the file browser list */
+            std::shared_ptr<cursespp::ListWindow> addedPathsList;  /**< the list of indexed paths */
+            std::shared_ptr<cursespp::SimpleScrollAdapter> addedPathsAdapter; /**< the adapter for indexed paths */
+            std::shared_ptr<DirectoryAdapter> browseAdapter;       /**< the adapter for the file browser */
     };
 } }

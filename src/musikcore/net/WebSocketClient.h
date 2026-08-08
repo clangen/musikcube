@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file WebSocketClient.h
+ *  @brief WebSocket client that runs serializable library queries remotely.
+ *  @details Connects to a musikcube server, authenticates with a password, and
+ *      sends serialized ISerializableQuery objects. Responses are matched back to
+ *      the query by message id and reported to a Listener. */
+
 #include <musikcore/config.h>
 #include <musikcore/net/RawWebSocketClient.h>
 #include <musikcore/library/IQuery.h>
@@ -43,50 +49,78 @@
 #include <atomic>
 #include <memory>
 
+/** @namespace musik::core::net
+ *  @brief Network clients: WebSocket connections to remote services. */
 namespace musik { namespace core { namespace net {
 
+    /** @brief Executes library queries against a remote server over WebSocket.
+     *  @details Maintains a background thread, authenticates with the configured
+     *      password, and tracks in-flight queries by message id. All listener
+     *      callbacks are marshaled onto the bound message queue's thread. */
     class WebSocketClient: public musik::core::runtime::IMessageTarget {
         public:
-            using ClientPtr = std::unique_ptr<RawWebSocketClient>;
-            using ClientMessage = websocketpp::config::asio_client::message_type::ptr;
-            using Connection = websocketpp::connection_hdl;
-            using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
+            using ClientPtr = std::unique_ptr<RawWebSocketClient>; /**< Raw client alias. */
+            using ClientMessage = websocketpp::config::asio_client::message_type::ptr; /**< Incoming message alias. */
+            using Connection = websocketpp::connection_hdl; /**< Connection handle alias. */
+            using Query = std::shared_ptr<musik::core::db::ISerializableQuery>; /**< Serializable query alias. */
 
+            /** @brief Connection lifecycle state. */
             enum class State: int {
-                Disconnected = 0,
-                Connecting = 1,
-                Authenticating = 2,
-                Connected = 3,
-                Disconnecting = 4,
+                Disconnected = 0, /**< Not connected. */
+                Connecting = 1,   /**< Connecting. */
+                Authenticating = 2, /**< Authenticating with the server. */
+                Connected = 3,    /**< Connected and ready. */
+                Disconnecting = 4,/**< Disconnecting. */
             };
 
+            /** @brief Reasons a remote query may fail. */
             enum class QueryError: int {
-                QueryFailed = 1,
-                Disconnected = 2,
-                AuthFailed = 3,
-                QueryNotFound = 4,
-                ParseFailed = 5,
+                QueryFailed = 1,   /**< Server reported a query failure. */
+                Disconnected = 2,  /**< Disconnected before a response. */
+                AuthFailed = 3,    /**< Authentication failed. */
+                QueryNotFound = 4, /**< Server could not find the query. */
+                ParseFailed = 5,   /**< Response could not be parsed. */
             };
 
+            /** @brief Reasons the connection may have failed. */
             enum class ConnectionError : int {
-                None = 0,
-                InvalidPassword = 1,
-                IncompatibleVersion = 2,
-                ConnectionFailed = 3,
-                ClosedByServer = 4,
+                None = 0,             /**< No error. */
+                InvalidPassword = 1,  /**< Password was rejected. */
+                IncompatibleVersion = 2, /**< Server version mismatch. */
+                ConnectionFailed = 3, /**< Could not connect. */
+                ClosedByServer = 4,   /**< Closed by the remote end. */
             };
 
+            /** @brief Callback interface for websocket client events. */
             class Listener {
                 public:
-                    using Client = WebSocketClient;
-                    using State = Client::State;
-                    using QueryError = Client::QueryError;
+                    using Client = WebSocketClient; /**< Client alias. */
+                    using State = Client::State; /**< State alias. */
+                    using QueryError = Client::QueryError; /**< Query error alias. */
+                    /** @brief Called when the server rejects the password.
+                     *  @param client The client. */
                     virtual void OnClientInvalidPassword(Client* client) = 0;
+                    /** @brief Called when the connection state changes.
+                     *  @param client The client.
+                     *  @param newState The new state.
+                     *  @param oldState The previous state. */
                     virtual void OnClientStateChanged(Client* client, State newState, State oldState) = 0;
+                    /** @brief Called when a remote query succeeds.
+                     *  @param client The client.
+                     *  @param messageId The request message id.
+                     *  @param query The query that completed. */
                     virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) = 0;
+                    /** @brief Called when a remote query fails.
+                     *  @param client The client.
+                     *  @param messageId The request message id.
+                     *  @param query The query that failed.
+                     *  @param result The failure reason. */
                     virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, QueryError result) = 0;
             };
 
+            /** @brief Creates a websocket client.
+             *  @param messageQueue The queue used for listener callbacks.
+             *  @param listener The listener for client events. */
             WebSocketClient(
                 musik::core::runtime::IMessageQueue* messageQueue,
                 Listener* listener);
@@ -94,47 +128,71 @@ namespace musik { namespace core { namespace net {
             WebSocketClient(const WebSocketClient&) = delete;
             virtual ~WebSocketClient();
 
+            /** @brief Connects to a server and authenticates.
+             *  @param host The server host.
+             *  @param port The server port.
+             *  @param password The authentication password.
+             *  @param useTls Whether to use TLS. */
             void Connect(
                 const std::string& host,
                 unsigned short port,
                 const std::string& password,
                 bool useTls);
 
+            /** @brief Reconnects using the last connection parameters. */
             void Reconnect();
+            /** @brief Disconnects from the server. */
             void Disconnect();
 
+            /** @return The current connection state. */
             State ConnectionState() const;
+            /** @return The last connection error, if any. */
             ConnectionError LastConnectionError() const;
+            /** @return The version string reported by the last connected server. */
             std::string LastServerVersion() const;
+            /** @return The URI of the current/last connection. */
             std::string Uri() const;
 
+            /** @brief Serializes and sends a query to the server.
+             *  @param query The query to run.
+             *  @return The message id assigned to the query. */
             std::string EnqueueQuery(Query query);
 
+            /** @brief Binds the message queue used for listener callbacks.
+             *  @param messageQueue The queue to use. */
             void SetMessageQueue(musik::core::runtime::IMessageQueue* messageQueue);
 
             /* IMessageTarget */
+            /** @brief Handles runtime messages.
+             *  @param message The incoming message. */
             void ProcessMessage(musik::core::runtime::IMessage& message) override;
 
         private:
+            /** @brief Updates and broadcasts the connection state.
+             *  @param state The new state. */
             void SetState(State state);
+            /** @brief Fails all queries awaiting a response. */
             void InvalidatePendingQueries();
+            /** @brief Flushes queued queries over the connection. */
             void SendPendingQueries();
+            /** @brief Records a disconnect and its cause.
+             *  @param errorCode The failure reason. */
             void SetDisconnected(ConnectionError errorCode);
 
-            ClientPtr rawClient;
-            Connection connection;
-            asio::io_context io;
-            std::unique_ptr<std::thread> thread;
-            mutable std::recursive_mutex mutex;
-            bool useTls{ false };
-            std::string uri, password;
-            std::unordered_map<std::string, Query> messageIdToQuery;
-            std::atomic<bool> quit{ false };
-            ConnectionError connectionError{ ConnectionError::None };
-            std::string serverVersion;
-            State state{ State::Disconnected };
-            Listener* listener{ nullptr };
-            musik::core::runtime::IMessageQueue* messageQueue;
+            ClientPtr rawClient; /**< Underlying raw websocket client. */
+            Connection connection; /**< Active connection handle. */
+            asio::io_context io; /**< Connection io_context. */
+            std::unique_ptr<std::thread> thread; /**< Connection thread. */
+            mutable std::recursive_mutex mutex; /**< Guards connection state. */
+            bool useTls{ false }; /**< Whether TLS is in use. */
+            std::string uri, password; /**< Connection URI and password. */
+            std::unordered_map<std::string, Query> messageIdToQuery; /**< In-flight queries by message id. */
+            std::atomic<bool> quit{ false }; /**< Signals thread shutdown. */
+            ConnectionError connectionError{ ConnectionError::None }; /**< Last connection error. */
+            std::string serverVersion; /**< Server version string. */
+            State state{ State::Disconnected }; /**< Current state. */
+            Listener* listener{ nullptr }; /**< Event listener. */
+            musik::core::runtime::IMessageQueue* messageQueue; /**< Queue used for callbacks. */
     };
 
 } } }

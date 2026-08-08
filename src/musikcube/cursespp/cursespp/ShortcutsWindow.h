@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ShortcutsWindow.h @brief A window that renders a row of key-binding shortcuts. */
 #pragma once
 
 #include <cursespp/IKeyHandler.h>
@@ -40,33 +41,72 @@
 #include <functional>
 
 namespace cursespp {
+    /** @brief A Window that displays a row of contextual key shortcuts ("command bar").
+     *
+     *  @details ShortcutsWindow renders a set of (key, description) pairs along
+     *  a single row, typically at the bottom of the screen as a contextual
+     *  legend. One entry may be marked active and highlighted. The window is
+     *  also an IKeyHandler: when focused, pressing one of the listed keys
+     *  triggers the ChangedCallback. It owns a Text helper to render the row
+     *  with the configured alignment (left, center or right).
+     */
     class ShortcutsWindow:
         public cursespp::Window,
         public cursespp::IKeyHandler
     {
         public:
+            /** @brief Callback fired when one of the listed shortcut keys is pressed.
+             *  @param key the normalized key string that was activated.
+             */
             using ChangedCallback = std::function<void (std::string /* key */)>;
 
+            /** @brief Creates an empty shortcuts window. */
             ShortcutsWindow();
+            /** @brief Destroys the window. */
             virtual ~ShortcutsWindow();
 
+            /** @brief Sets the horizontal alignment of the rendered shortcuts.
+             *  @param alignment the text::TextAlign to use.
+             */
             void SetAlignment(text::TextAlign alignment);
 
+            /** @brief Adds a shortcut entry.
+             *  @param key the normalized key string (e.g. "F2").
+             *  @param description the human-readable label.
+             *  @param attrs optional curses attributes, or -1 for defaults.
+             */
             void AddShortcut(
                 const std::string& key,
                 const std::string& description,
                 int64_t attrs = -1);
 
+            /** @brief Registers the callback invoked when a shortcut is activated.
+             *  @param callback the ChangedCallback to invoke.
+             */
             void SetChangedCallback(ChangedCallback callback);
 
+            /** @brief Removes all shortcuts. */
             void RemoveAll();
+            /** @brief Marks the given shortcut as the active/highlighted entry.
+             *  @param key the key string to highlight.
+             */
             void SetActive(const std::string& key);
 
+            /** @brief Handles a key press and activates a matching shortcut.
+             *  @param key the normalized key string.
+             *  @return true if the key matched a shortcut.
+             */
             bool KeyPress(const std::string& key) override;
+            /** @brief Handles a click on a shortcut entry.
+             *  @param mouseEvent the translated mouse event.
+             *  @return true if the event was consumed.
+             */
             bool ProcessMouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
         protected:
+            /** @brief Renders the shortcut row. */
             void OnRedraw() override;
+            /** @brief Marks the row dirty when focus changes. */
             void OnFocusChanged(bool focused) override;
 
         private:
@@ -74,7 +114,7 @@ namespace cursespp {
             int getActiveIndex();
 
             struct Position {
-                int offset{ 0 }, width{ 0 };
+                int offset{ 0 }, width{ 0 };   /**< Screen offset and width of an entry. */
             };
 
             struct Entry {
@@ -84,17 +124,17 @@ namespace cursespp {
                     this->attrs = attrs;
                 }
 
-                Position position;
-                std::string key;
-                std::string description;
-                int64_t attrs;
+                Position position;      /**< Cached geometry of the entry. */
+                std::string key;        /**< The normalized key string. */
+                std::string description; /**< The human-readable label. */
+                int64_t attrs;          /**< Curses attributes for the entry. */
             };
 
             using EntryList = std::vector<std::shared_ptr<Entry>>;
 
-            ChangedCallback changedCallback;
-            EntryList entries;
-            std::string activeKey, originalKey;
-            text::TextAlign alignment;
+            ChangedCallback changedCallback;  /**< Callback fired when a shortcut is activated. */
+            EntryList entries;                /**< The ordered list of shortcuts. */
+            std::string activeKey, originalKey; /**< Currently highlighted key and its original binding. */
+            text::TextAlign alignment;        /**< Horizontal alignment of the row. */
     };
 }

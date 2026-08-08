@@ -34,27 +34,37 @@
 
 #pragma once
 
+/** @file TrackSort.h
+ *  @brief Sort options and SQL ordering fragments for track lists.
+ *  @details Defines the TrackSortType enumeration and lookup tables mapping each
+ *      sort type to a UI display key, an SQL ORDER BY fragment, and (for search
+ *      queries) a predicate separating ranked results from unranked ones. */
+
 #include <map>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief The sort orders supported for track lists. */
     enum class TrackSortType : int {
-        Album = 0,
-        Title = 1,
-        Artist = 2,
-        DateAddedAsc = 3,
-        DateAddedDesc = 4,
-        DateUpdatedAsc = 5,
-        DateUpdatedDesc = 6,
-        LastPlayedAsc = 7,
-        LastPlayedDesc = 8,
-        RatingAsc = 9,
-        RatingDesc = 10,
-        PlayCountAsc = 11,
-        PlayCountDesc = 12,
-        Genre = 13,
+        Album = 0,          /**< Sort by album, then disc, track. */
+        Title = 1,          /**< Sort by title. */
+        Artist = 2,         /**< Sort by artist, then album. */
+        DateAddedAsc = 3,   /**< Sort by date added, ascending. */
+        DateAddedDesc = 4,  /**< Sort by date added, descending. */
+        DateUpdatedAsc = 5, /**< Sort by date updated, ascending. */
+        DateUpdatedDesc = 6,/**< Sort by date updated, descending. */
+        LastPlayedAsc = 7,  /**< Sort by last played, ascending. */
+        LastPlayedDesc = 8, /**< Sort by last played, descending. */
+        RatingAsc = 9,      /**< Sort by rating, ascending. */
+        RatingDesc = 10,    /**< Sort by rating, descending. */
+        PlayCountAsc = 11,  /**< Sort by play count, ascending. */
+        PlayCountDesc = 12, /**< Sort by play count, descending. */
+        Genre = 13,         /**< Sort by genre, then album. */
     };
 
+    /** @brief Maps each sort type to its locale display key. */
     static const std::map<TrackSortType, std::string> kTrackListOrderByToDisplayKey = {
         { TrackSortType::Title, "track_list_sort_title" },
         { TrackSortType::Album, "track_list_sort_album" },
@@ -72,6 +82,7 @@ namespace musik { namespace core { namespace library { namespace query {
         { TrackSortType::Genre, "track_list_sort_genre" },
     };
 
+    /** @brief Maps each sort type to its SQL ORDER BY fragment. */
     static const std::map<TrackSortType, std::string> kTrackListSortOrderBy = {
         { TrackSortType::Title, "tracks.title, ar.name, al.name" },
         { TrackSortType::Album, "al.name, disc, track, ar.name" },
@@ -89,6 +100,9 @@ namespace musik { namespace core { namespace library { namespace query {
         { TrackSortType::Genre, "gn.name, al.name, disc, track, ar.name" },
     };
 
+    /** @brief For search queries, predicates isolating ranked (non-null) results.
+     *  @details Sorts with these predicates place tracks with data ahead of those
+     *      without it, so search results are grouped predictably. */
     static const std::map<TrackSortType, std::string> kTrackSearchSortOrderByPredicate {
         { TrackSortType::LastPlayedAsc, "tracks.last_played IS NOT NULL" },
         { TrackSortType::LastPlayedDesc, "tracks.last_played IS NOT NULL" },
@@ -98,6 +112,7 @@ namespace musik { namespace core { namespace library { namespace query {
         { TrackSortType::PlayCountDesc, "tracks.play_count IS NOT NULL AND tracks.play_count > 0" },
     };
 
+    /** @brief Sort types whose results should be grouped by album in the UI. */
     static const std::set<TrackSortType> kTrackSortTypeWithAlbumGrouping = {
         TrackSortType::Album,
         TrackSortType::Artist,

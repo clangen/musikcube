@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Casey Langen, André Wösten
+// The following are Copyright ï¿½ 2008, Casey Langen, Andrï¿½ Wï¿½sten
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file CheckBox.hpp
+ * @brief Standard check box control.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. CheckBox wraps the
+ * Win32 BUTTON control in its BS_AUTOCHECKBOX (or custom) mode and exposes
+ * checked, unchecked and indeterminate states through the CheckboxPressedEvent
+ * signal and helper methods.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -49,47 +59,67 @@ namespace win32cpp {
 
 class CheckBox;
 
-///\brief
-///The type of event used when the CheckBox is pressed..
-///\see
-///CheckBox.
+/** @brief Signal type emitted when a CheckBox is pressed.
+ *  @param sender the CheckBox that was pressed
+ *  @param state the new check state (Win32 BST_* value)
+ *  @see CheckBox */
 typedef sigslot::signal2<CheckBox*, int> CheckboxPressedEvent;
 
-///\brief
-///A standard CheckBox.
+/** @brief A standard CheckBox.
+ *  @details Wraps the Win32 BUTTON control configured with a check-box
+ *           style. Supports the three check states: checked, unchecked and
+ *           indeterminate. */
 class CheckBox : public Window
 {
 private: // types
     typedef Window base;
 
 public: // events
-    ///\brief This event is emitted when the user presses the CheckBox
+    /** @brief Emitted when the user presses the CheckBox. */
     CheckboxPressedEvent  Pressed;
 
 public: // constructors
+    /** @brief Constructs a check box.
+     *  @param caption the text displayed next to the box
+     *  @param layoutFlags layout flags used for sizing
+     *  @param style the Win32 button style (defaults to BS_AUTOCHECKBOX) */
     /*ctor*/            CheckBox(
         const uichar* caption = _T(""),
         LayoutFlags layoutFlags = LayoutWrapWrap,
         int style = BS_AUTOCHECKBOX);
 
 protected: // methods
+    /** @brief Creates the underlying HWND. */
     virtual HWND        Create(Window* parent);
+    /** @brief Processes window messages, tracking state changes. */
     virtual LRESULT     WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+    /** @brief Emits the Pressed signal with the new state.
+     *  @param state the new check state (Win32 BST_* value) */
     virtual void        OnPressed(int state);
+    /** @brief Paints the check box. */
     virtual void        PaintToHDC(HDC hdc, const Rect& rect);
 
 public:
+    /** @brief Returns whether the check box is checked.
+     *  @return true if checked */
     virtual bool        IsChecked(void) const;
+    /** @brief Returns whether the check box is unchecked.
+     *  @return true if unchecked */
     virtual bool        IsUnchecked(void) const;
+    /** @brief Returns whether the check box is indeterminate.
+     *  @return true if indeterminate */
     virtual bool        IsIndeterminate(void) const;
+    /** @brief Sets the check box to the checked state. */
     virtual void        Check(void);
+    /** @brief Sets the check box to the unchecked state. */
     virtual void        Uncheck(void);
+    /** @brief Sets the check box to the indeterminate state. */
     virtual void        SetIndeterminate(void);
 
 protected: // instance data
-    int state;
-    int style;
-    uistring caption;
+    int state;     /**< current check state (BST_* value) */
+    int style;     /**< Win32 button style */
+    uistring caption; /**< the check box's caption text */
 };
 
 //////////////////////////////////////////////////////////////////////////////

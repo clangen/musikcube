@@ -34,20 +34,49 @@
 
 #pragma once
 
+/**
+ * @file HotkeysAdapter.h
+ * @brief Scroll adapter that lists the configured hotkey bindings.
+ * @details Provides the list of hotkey mapping entries to a ListWindow for
+ *          the hotkeys layout.
+ */
+
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/ScrollableWindow.h>
 
 namespace musik {
     namespace cube {
+        /**
+         * @brief Scroll adapter for the hotkey bindings list.
+         * @details Feeds the configured hotkey mappings to a ListWindow; each
+         *          entry renders a hotkey action and its bound key sequence.
+         */
         class HotkeysAdapter : public cursespp::ScrollAdapterBase {
             public:
+                /** @brief sentinel index used when no entry is selected */
                 static const size_t NO_INDEX = (size_t)-1;
 
+                /**
+                 * @brief Creates an empty adapter.
+                 */
                 HotkeysAdapter();
+                /**
+                 * @brief Destroys the adapter.
+                 */
                 virtual ~HotkeysAdapter();
 
                 /* ScrollAdapterBase */
+                /**
+                 * @brief Returns the number of hotkey bindings.
+                 * @return the entry count
+                 */
                 size_t GetEntryCount() override;
+                /**
+                 * @brief Returns the hotkey entry at the given index.
+                 * @param window the scrollable window requesting the entry
+                 * @param index the entry index
+                 * @return the entry, or an empty entry
+                 */
                 EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
         };
     }

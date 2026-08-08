@@ -32,21 +32,36 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file ITrack.h @brief Defines the ITrack interface for accessing track metadata and playback data. */
 #pragma once
 
 #include "IMap.h"
 #include "ReplayGain.h"
 #include "constants.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief Represents a single track in the library, exposing its metadata
+     *  as key/value pairs as well as playback-relevant data. */
     class ITrack: public IMap {
         public:
+            /** @brief Increments the reference count of the track. */
             virtual void Retain() = 0;
+
+            /** @brief Retrieves the URI of the track.
+             *  @param dst The destination buffer for the URI.
+             *  @param size The capacity of the destination buffer.
+             *  @return The number of bytes written, or the required size if the buffer was too small. */
             virtual int Uri(char* dst, int size) = 0;
 
             /* sdk v19 */
+            /** @brief Returns the ReplayGain values of the track.
+             *  @return The ReplayGain values. */
             virtual ReplayGain GetReplayGain() = 0;
+
+            /** @brief Returns the metadata loading state of the track.
+             *  @return The metadata state. */
             virtual MetadataState GetMetadataState() = 0;
     };
 

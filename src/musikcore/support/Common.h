@@ -34,22 +34,61 @@
 
 #pragma once
 
+/** @file Common.h
+ *  @brief Common filesystem and string utility functions.
+ *  @details Provides platform-abstracted access to the user's home, application,
+ *      data and plugin directories, plus small helpers for paths, files and
+ *      string copies. */
+
 #include <string>
 #include <vector>
 #include <musikcore/config.h>
 
+/** @namespace musik::core
+ *  @brief Core application services: libraries, indexing, playback and utilities. */
 namespace musik { namespace core {
 
+    /** @return The user's home directory. */
     std::string GetHomeDirectory();
+    /** @return The directory containing the application executable. */
     std::string GetApplicationDirectory();
+    /** @return The application data directory.
+     *  @param create true to create the directory if missing. */
     std::string GetDataDirectory(bool create = true);
+    /** @return A path under the data directory.
+     *  @param sFile The file name or relative path. */
     std::string GetPath(const std::string &sFile);
+    /** @return The directory where plugins are installed. */
     std::string GetPluginDirectory();
+    /** @brief Normalizes a path's separators and trailing slash.
+     *  @param path The path to normalize.
+     *  @return The normalized path. */
     std::string NormalizeDir(std::string path);
+    /** @brief Opens a file with the default OS handler.
+     *  @param path The file path to open. */
     void OpenFile(const std::string& path);
+    /** @brief Copies a file.
+     *  @param from The source path.
+     *  @param to The destination path.
+     *  @return true on success. */
     bool CopyFile(const std::string& from, const std::string& to);
+    /** @brief Computes a checksum over a byte buffer.
+     *  @param data The buffer.
+     *  @param bytes Buffer length.
+     *  @return The checksum. */
     int64_t Checksum(char *data,unsigned int bytes);
+    /** @brief Copies a string into a fixed-size buffer (null-terminated).
+     *  @param src The source string.
+     *  @param dst The destination buffer.
+     *  @param size Capacity of dst.
+     *  @return The number of bytes copied. */
     size_t CopyString(const std::string& src, char* dst, size_t size);
+    /** @brief Reads a file into a byte array.
+     *  @param path The file path.
+     *  @param target Output buffer (must be freed by the caller).
+     *  @param size Output size, in bytes.
+     *  @param nullTerminate Whether to add a trailing null byte.
+     *  @return true on success. */
     bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
 
 } }

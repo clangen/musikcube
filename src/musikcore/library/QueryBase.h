@@ -34,6 +34,12 @@
 
 #pragma once
 
+/** @file QueryBase.h
+ *  @brief Common base class for all local library queries.
+ *  @details Provides the shared lifecycle (id assignment, status tracking,
+ *      cancellation, options) used by concrete query classes. Derived classes
+ *      implement OnRun() to perform their actual work against a Connection. */
+
 #include <musikcore/config.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/db/Connection.h>
@@ -43,18 +49,26 @@
 #include <mutex>
 #include <atomic>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Base class implementing shared query mechanics.
+     *  @details Tracks status (IQuery::Status), a globally unique id, an option
+     *      bitmask and a cancel flag. Run() drives the lifecycle around the pure
+     *      virtual OnRun(). */
     class QueryBase:
         public musik::core::db::ISerializableQuery,
         public sigslot::has_slots<>
     {
         public:
+            /** @brief How string filters are matched against track text. */
             enum class MatchType : int {
-                Substring = 1,
-                Regex = 2
+                Substring = 1, /**< Case-insensitive substring match. */
+                Regex = 2      /**< Regular expression match. */
             };
 
+            /** @brief Creates a query with a fresh unique id. */
             QueryBase() noexcept
             : status(IQuery::Idle)
             , options(0)
@@ -62,6 +76,9 @@ namespace musik { namespace core { namespace library { namespace query {
             , cancel(false) {
             }
 
+            /** @brief Executes the query against the given connection.
+             *  @param db The database connection to run on.
+             *  @return true if the query finished successfully (or was cancelled). */
             bool Run(musik::core::db::Connection &db) {
                 this->SetStatus(Running);
                 try {
@@ -81,25 +98,31 @@ namespace musik { namespace core { namespace library { namespace query {
                 return false;
             }
 
+            /** @brief Requests cancellation of the query.
+             *  @note The query is checked for cancellation before OnRun(). */
             virtual void Cancel() noexcept {
                 this->cancel = true;
             }
 
+            /** @return true if the query has been cancelled. */
             virtual bool IsCanceled() noexcept {
                 return cancel;
             }
 
             /* IQuery */
 
+            /** @return The current query status. */
             int GetStatus() override {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 return this->status;
             }
 
+            /** @return The unique id assigned to this query. */
             int GetId() noexcept override {
                 return this->queryId;
             }
 
+            /** @return The option flags associated with this query. */
             int GetOptions() override {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 return this->options;
@@ -107,46 +130,61 @@ namespace musik { namespace core { namespace library { namespace query {
 
             /* ISerializableQuery */
 
+            /** @brief Default implementation throws; overridden by network queries.
+             *  @return Never returns. */
             std::string SerializeQuery() override {
                 throw std::runtime_error("not implemented");
             }
 
+            /** @brief Default implementation throws; overridden by network queries.
+             *  @return Never returns. */
             std::string SerializeResult() override {
                 throw std::runtime_error("not implemented");
             }
 
+            /** @brief Default implementation throws; overridden by network queries.
+             *  @param data The serialized result. */
             void DeserializeResult(const std::string& data) override {
                 throw std::runtime_error("not implemented");
             }
 
+            /** @brief Marks the query as failed (used when data becomes stale). */
             void Invalidate() override {
                 this->SetStatus(IQuery::Failed);
             }
 
         protected:
+            /** @brief Sets the current status.
+             *  @param status The new IQuery::Status value. */
             void SetStatus(int status) {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 this->status = status;
             }
 
+            /** @brief Sets the option flags.
+             *  @param options The new option bitmask. */
             void SetOptions(int options) {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 this->options = options;
             }
 
+            /** @brief Performs the query's actual work.
+             *  @param db The database connection to run against.
+             *  @return true on success. */
             virtual bool OnRun(musik::core::db::Connection& db) = 0;
 
         private:
+            /** @return The next globally unique query id. */
             static int nextId() noexcept {
                 static std::atomic<int> next(0);
                 return ++next;
             }
 
-            unsigned int status;
-            unsigned int queryId;
-            unsigned int options;
-            volatile bool cancel;
-            std::mutex stateMutex;
+            unsigned int status;     /**< Current IQuery::Status. */
+            unsigned int queryId;    /**< Unique query id. */
+            unsigned int options;    /**< Option flags. */
+            volatile bool cancel;    /**< Cancellation flag. */
+            std::mutex stateMutex;   /**< Guards status and options. */
     };
 
 } } } }

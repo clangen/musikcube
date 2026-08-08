@@ -34,34 +34,57 @@
 
 #pragma once
 
+/** @file MarkTrackPlayedQuery.h
+ *  @brief Query that records that a track has been played.
+ *  @details Updates the track's last-played timestamp and increments its play
+ *      count, used for recently-played sorting and statistics. */
+
 #include <musikcore/library/QueryBase.h>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+    /** @brief Marks a track as played in the library.
+     *  @details On success the play count and last-played timestamp are updated
+     *      in the tracks table. */
     class MarkTrackPlayedQuery: public QueryBase {
         public:
-            static const std::string kQueryName;
+            static const std::string kQueryName; /**< Query type name. */
 
             DELETE_CLASS_DEFAULTS(MarkTrackPlayedQuery)
 
+            /** @brief Creates a mark-played query.
+             *  @param trackId The id of the track to mark. */
             MarkTrackPlayedQuery(const int64_t trackId) noexcept;
 
             /* IQuery */
+            /** @return The query type name. */
             std::string Name() override { return "MarkTrackPlayedQuery"; }
 
             /* ISerializableQuery */
+            /** @return The serialized query parameters. */
             std::string SerializeQuery() override;
+            /** @return The serialized result. */
             std::string SerializeResult() override;
+            /** @brief Populates the result from serialized data.
+             *  @param data The serialized result. */
             void DeserializeResult(const std::string& data) override;
+            /** @brief Recreates a query from serialized parameters.
+             *  @param data The serialized query.
+             *  @return The deserialized query. */
             static std::shared_ptr<MarkTrackPlayedQuery> DeserializeQuery(const std::string& data);
 
         protected:
             /* QueryBase */
+            /** @brief Runs the query against the database.
+             *  @param db The connection to run on.
+             *  @return true on success. */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
-            int64_t trackId;
-            bool result{ false };
+            int64_t trackId; /**< Track to mark as played. */
+            bool result{ false }; /**< Whether the update succeeded. */
     };
 
 } } } }

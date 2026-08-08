@@ -32,6 +32,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file MainController.h
+ * @brief Controller for the musicwin application's main window.
+ *
+ * Bridges the Win32 UI (view) with the musikcore playback service and
+ * library. It wires user interactions (transport buttons, search box,
+ * track list) to the underlying services and processes asynchronous
+ * messages delivered through the Win32 message queue by implementing
+ * musik::core::runtime::IMessageTarget.
+ */
+
 #pragma once
 
 #include <app/view/MainWindow.h>
@@ -47,47 +58,67 @@
 #include <win32cpp/ListView.hpp>
 
 namespace musik { namespace win {
+    /** @brief Controller for the main window.
+     *  @details Owns the track list model/query and connects the view's
+     *           event callbacks to the playback service and library. */
     class MainController :
         public sigslot::has_slots<>,
         public musik::core::runtime::IMessageTarget
     {
         public:
+            /** @brief Constructs the controller and wires up the view.
+             *  @param mainWindow the main window this controller operates on
+             *  @param playback the playback service used for transport control
+             *  @param library the library used to query tracks */
             MainController(
                 MainWindow& mainWindow,
                 musik::core::audio::PlaybackService& playback,
                 musik::core::ILibraryPtr library);
 
+            /** @brief Destroys the controller, releasing the view widgets. */
             virtual ~MainController();
 
+            /** @brief Handles a message dispatched to this controller.
+             *  @param message the message to process
+             *  @note Dispatches playback state changes and library query
+             *        completion notifications. */
             virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
         private:
+            /** @brief Adapts a TrackList into the data source for the ListView. */
             class TrackListModel;
 
+            /** @brief Re-lays-out child controls when the main window resizes. */
             void OnMainWindowResized(win32cpp::Window* window, win32cpp::Size size);
+            /** @brief Starts playback of the row's track when activated. */
             void OnTrackListRowActivated(win32cpp::ListView* list, int index);
+            /** @brief Refreshes the model when a library query completes. */
             void OnLibraryQueryCompleted(musik::core::db::IQuery* query);
+            /** @brief Updates the query when the search text changes. */
             void OnSearchEditChanged(win32cpp::EditView* editView);
+            /** @brief Routes transport button clicks to the playback service. */
             void OnTransportButtonClicked(win32cpp::Button* button);
+            /** @brief Updates the UI to reflect the current playback state. */
             void OnPlaybackStateChanged(int state);
 
+            /** @brief Positions all child widgets inside the main window. */
             void Layout();
 
-            musik::core::audio::PlaybackService& playback;
-            musik::core::ILibraryPtr library;
+            musik::core::audio::PlaybackService& playback; /**< playback service for transport control */
+            musik::core::ILibraryPtr library;             /**< library used to resolve tracks */
 
-            MainWindow& mainWindow;
+            MainWindow& mainWindow;                       /**< the main window being controlled */
 
-            std::shared_ptr<musik::core::db::local::TrackListQueryBase> trackListQuery;
-            std::shared_ptr<TrackListModel> trackListModel;
-            std::shared_ptr<musik::core::TrackList> trackList;
+            std::shared_ptr<musik::core::db::local::TrackListQueryBase> trackListQuery; /**< active library query for the track list */
+            std::shared_ptr<TrackListModel> trackListModel;                             /**< model backing the ListView */
+            std::shared_ptr<musik::core::TrackList> trackList;                          /**< latest query result */
 
-            win32cpp::ListView* trackListView;
-            win32cpp::EditView* editView;
-            win32cpp::Button* prevButton;
-            win32cpp::Button* nextButton;
-            win32cpp::Button* pauseButton;
+            win32cpp::ListView* trackListView; /**< list control showing the track library */
+            win32cpp::EditView* editView;      /**< search box filtering the track list */
+            win32cpp::Button* prevButton;      /**< previous-track transport button */
+            win32cpp::Button* nextButton;      /**< next-track transport button */
+            win32cpp::Button* pauseButton;     /**< play/pause transport button */
 
-            bool trackListDirty;
+            bool trackListDirty; /**< true when the track list needs a refresh */
     };
 } }

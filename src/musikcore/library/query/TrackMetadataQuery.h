@@ -34,49 +34,78 @@
 
 #pragma once
 
+/** @file TrackMetadataQuery.h
+ *  @brief Query that loads metadata for a single track.
+ *  @details Populates a Track from the library, either with full metadata (all
+ *      columns plus ReplayGain) or with ids only (external id / source id). */
+
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/ILibrary.h>
 
+/** @namespace musik::core::library::query
+ *  @brief Query classes and helpers executed against a library. */
 namespace musik { namespace core { namespace library { namespace query {
 
+/** @brief Loads a single track's metadata into a Track object.
+ *  @details The target Track's id/external id selects the row. Type::Full loads
+ *      all metadata; Type::IdsOnly loads just the identifying fields (used for
+ *      lightweight lookups). */
 class TrackMetadataQuery : public QueryBase {
     public:
-        static const std::string kQueryName;
+        static const std::string kQueryName; /**< Query type name. */
 
+        /** @brief How much metadata to load. */
         enum class Type: int { Full = 0, IdsOnly = 1 };
 
         DELETE_CLASS_DEFAULTS(TrackMetadataQuery)
 
+        /** @brief Creates a track metadata query.
+         *  @param target The Track to populate (result is stored back into it).
+         *  @param library The library to query.
+         *  @param type Full or IdsOnly. */
         TrackMetadataQuery(
             musik::core::TrackPtr target,
             musik::core::ILibraryPtr library,
             Type type = Type::Full) noexcept;
 
+        /** @return The populated track (same object passed to the constructor). */
         TrackPtr Result() {
             return this->result;
         }
 
         /* IQuery */
+        /** @return The query type name. */
         std::string Name() override {
             return kQueryName;
         }
 
         /* ISerializableQuery */
+        /** @return The serialized query parameters. */
         std::string SerializeQuery() override;
+        /** @return The serialized result. */
         std::string SerializeResult() override;
+        /** @brief Populates the result from serialized data.
+         *  @param data The serialized result. */
         void DeserializeResult(const std::string& data) override;
+        /** @brief Recreates a query from serialized parameters.
+         *  @param library The library the query will run on.
+         *  @param data The serialized query.
+         *  @return The deserialized query. */
         static std::shared_ptr<TrackMetadataQuery> DeserializeQuery(
             musik::core::ILibraryPtr library, const std::string& data);
 
     protected:
         /* QueryBase */
+        /** @brief Runs the query against the database.
+         *  @param db The connection to run on.
+         *  @return true on success. */
         bool OnRun(musik::core::db::Connection& db) override;
 
     private:
-        Type type;
-        musik::core::ILibraryPtr library;
-        musik::core::TrackPtr result;
+        Type type; /**< Full or IdsOnly. */
+        musik::core::ILibraryPtr library; /**< Library to query. */
+        musik::core::TrackPtr result; /**< Populated track. */
 };
 
 } } } }

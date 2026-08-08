@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Exception.hpp
+ * @brief Base exception types used throughout win32cpp.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Exception is the
+ * common base class for every exception thrown by the library; it stores a
+ * human readable message and exposes it through Message().
+ */
+
 #pragma once
 
 #include <string>
@@ -46,26 +55,30 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///The base class for all exceptions thrown by win32cpp.
+/** @brief Base class for all exceptions thrown by win32cpp. */
 class Exception
 {
 public: // constructors
+    /** @brief Constructs an exception with an empty message. */
     /*ctor*/            Exception();
+    /** @brief Constructs an exception with the given message.
+     *  @param message the human readable error message */
     /*ctor*/            Exception(const char* message);
+    /** @brief Destroys the exception. */
     /*dtor*/ virtual    ~Exception();
 
 public: // methods
+    /** @brief Returns the exception's error message.
+     *  @return pointer to a null-terminated message string */
     virtual const char* Message();
 
 private: // instance data
-    std::string         message;
+    std::string         message; /**< the stored error message */
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-///\brief
-///Thrown when a method is not yet implemented.
+/** @brief Thrown when a method is not yet implemented. */
 class NotImplementedException: public Exception { };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Image.hpp
+ * @brief Image container backed by boost::gil.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Image loads an
+ * image from disk using boost::gil and can draw it to a Win32 device
+ * context. Images are shared through ImageRef smart pointers.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -55,20 +64,17 @@ namespace win32cpp {
 
 class Image;
 
-///
-///\brief A shared pointer to a Font object
-///
+/** @brief Shared pointer to an Image object. */
 typedef boost::shared_ptr<Image> ImageRef;
 
-///\brief
-///Image provides a light-weight wrapper around an image. It is backed
-///by boost::gil.
-///
-///\see
-///ImageRef
+/** @brief Provides a light-weight wrapper around an image.
+ *  @details Backed by boost::gil; loads supported image formats from disk
+ *           and renders them to a device context.
+ *  @see ImageRef */
 class Image
 {
 public: // types
+    /** @brief Thrown when an image cannot be loaded. */
     class InvalidFontWeightException: public Exception { };
 
 private: // types
@@ -82,19 +88,27 @@ private: // types
         SupportedFormats> ImageType;
 
 private: // constructors
+    /** @brief Constructs an empty image. */
     /*ctor*/    Image();
 
 public: // creation methods
+    /** @brief Loads an image from a file.
+     *  @param filename path of the image file
+     *  @return a shared pointer to the loaded image */
     static ImageRef Create(const uistring& filename);
 
 public: // destructor
+    /** @brief Destroys the image. */
     /*dtor*/    ~Image();
 
 public: // methods
+    /** @brief Draws the image at the given location.
+     *  @param hdc the target device context
+     *  @param point the top-left position to draw at */
     void        DrawToHDC(HDC hdc, const Point& point);
 
 private: // instance data
-    ImageType image;
+    ImageType image; /**< the underlying gil image */
 };
 
 //////////////////////////////////////////////////////////////////////////////

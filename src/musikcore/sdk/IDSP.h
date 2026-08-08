@@ -32,15 +32,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IDSP.h @brief Defines the IDSP interface for audio digital signal processing effects. */
 #pragma once
 
 #include "IBuffer.h"
 
+/** @namespace musik::core::sdk @brief Core SDK interfaces shared between the musikcube application and its plugins. */
 namespace musik { namespace core { namespace sdk {
 
+    /** @brief A digital signal processing effect applied to decoded audio
+     *  buffers in the playback pipeline. */
     class IDSP {
         public:
+            /** @brief Releases the DSP instance; callers must invoke this when done. */
             virtual void Release() = 0;
+
+            /** @brief Processes a buffer of audio data in place.
+             *  @param buffer The audio buffer to process; contents may be modified.
+             *  @return True if the buffer was successfully processed. */
             virtual bool Process(IBuffer* buffer) = 0;
     };
 

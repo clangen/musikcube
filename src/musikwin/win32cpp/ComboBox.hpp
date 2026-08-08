@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Casey Langen, André Wösten
+// The following are Copyright ï¿½ 2008, Casey Langen, Andrï¿½ Wï¿½sten
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file ComboBox.hpp
+ * @brief Combo box control backed by a data Model.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. ComboBox wraps the
+ * Win32 combobox control (CBS_DROPDOWNLIST or CBS_SIMPLE). Like ListView,
+ * it uses a ComboBox::Model to supply items on demand and emits the
+ * SelectionChangedEvent signal when the user picks a different entry.
+ */
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////////////
@@ -56,82 +66,127 @@ namespace win32cpp {
 // ComboBox
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief A combo box whose items come from a ComboBox::Model.
+ *  @details Wraps the Win32 combobox control. The Model supplies the item
+ *           count and per-item strings, optional images and indentation.
+ *           When the selection changes, the SelectionChangedEvent signal
+ *           is emitted.
+ *  @see ComboBox::Model */
 class ComboBox : public Window
 {
 public:
+    /** @brief The presentation style of the combo box. */
     enum DisplayType {
-        DisplayType_Simple          = CBS_SIMPLE,
-        DisplayType_DropDownList    = CBS_DROPDOWNLIST
+        DisplayType_Simple          = CBS_SIMPLE,      /*!< list and edit always visible */
+        DisplayType_DropDownList    = CBS_DROPDOWNLIST /*!< drop-down list */
     };
 
-    static const LPCWSTR BoxType_Standard;
-    static const LPCWSTR BoxType_Extended;
+    static const LPCWSTR BoxType_Standard;  /**< standard box type string */
+    static const LPCWSTR BoxType_Extended;  /**< extended box type string */
 
     class Model;
 
-    typedef std::shared_ptr<Model>    ModelRef;
-    typedef sigslot::signal1<ComboBox*> SelectionChangedEvent;
+    typedef std::shared_ptr<Model>    ModelRef;        /**< shared pointer to a Model */
+    typedef sigslot::signal1<ComboBox*> SelectionChangedEvent; /**< signal emitted on selection change */
 
+    /** @brief Constructs a combo box.
+     *  @param displayType the presentation style
+     *  @param boxType the Win32 box type string */
     ComboBox(
         DisplayType displayType = DisplayType_DropDownList,
         LPCWSTR boxType = BoxType_Extended
     );
+    /** @brief Destroys the combo box. */
     ~ComboBox();
 
+    /** @brief Sets the model that supplies the items.
+     *  @param model the model to use */
     void                SetModel(ModelRef model);
+    /** @brief Returns the index of the selected item.
+     *  @return the selected index */
     int                 Selected();
+    /** @brief Selects the item at the given index.
+     *  @param index the index to select */
     void                Select(int index);
+    /** @brief Retrieves combo box information.
+     *  @param pcbi the COMBOBOXINFO structure to fill
+     *  @return true on success */
     bool                Info(PCOMBOBOXINFO pcbi);
 
 protected:
-    ModelRef            model;
-    static ModelRef     sNullModel;
+    ModelRef            model;      /**< the model backing the combo box */
+    static ModelRef     sNullModel; /**< shared empty model */
 
+    /** @brief Creates the underlying HWND. */
     virtual HWND        Create(Window* parent);
+    /** @brief Refreshes the control when the model's data changes. */
     virtual void        OnDataChanged();
 
 private:
     typedef Window base;
     class NullModel;
-    DisplayType displayType;
-    LPCWSTR boxType;
+    DisplayType displayType; /**< presentation style */
+    LPCWSTR boxType;         /**< Win32 box type string */
 };
 
 //////////////////////////////////////////////////////////////////////////////
 // ComboBox::Model
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief Supplies items to a ComboBox.
+ *  @details Subclass and override ItemToString() to provide item text;
+ *           ItemToImageListIndex(), ItemToIndent() and ItemToExtendedData()
+ *           can be overridden to supply optional per-item attributes. */
 class ComboBox::Model
 {
 private:
-    int itemCount;
+    int itemCount; /**< number of items in the model */
 public:
+    /** @brief Signal emitted when the model's data changes. */
     typedef sigslot::signal0<> DataChangedEvent;
 
-    DataChangedEvent DataChanged;
+    DataChangedEvent DataChanged; /**< emitted when items change */
 
+    /** @brief Constructs a model with the given item count.
+     *  @param itemCount the initial number of items */
     Model(int itemCount = 0) :
       itemCount(itemCount)
     {
     }
 
+    /** @brief Returns the number of items.
+     *  @return the item count */
     virtual int ItemCount()
     {
         return this->itemCount;
     }
 
+    /** @brief Returns the image list used by the combo box.
+     *  @return an ImageList, or NULL if no images are used */
     virtual ImageList*  ImageList()
     {
         return NULL;
     }
 
+    /** @brief Maps an item index to an image list index.
+     *  @param index the item index
+     *  @return the image index, or -1 for no image */
     virtual int ItemToImageListIndex(int index)
     {
         return -1;
     }
 
+    /** @brief Returns the string to display for the given item.
+     *  @param index the item index
+     *  @return the item's text */
     virtual uistring    ItemToString(int index) = 0;
+    /** @brief Returns the indentation level of the given item.
+     *  @param index the item index
+     *  @return the indent level */
     virtual int         ItemToIndent(int index) = 0;
+    /** @brief Returns the extended data of the given item.
+     *  @param index the item index
+     *  @return the item's extended (LPARAM) data */
     virtual LPARAM      ItemToExtendedData(int index) = 0;
 };
 
@@ -139,6 +194,7 @@ public:
 // ComboBox::NullModel
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief Empty model used when no ComboBox::Model is assigned. */
 class ComboBox::NullModel : public ComboBox::Model
 {
 public:

@@ -32,14 +32,29 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/** @file IKeyHandler.h @brief Interface for objects that consume raw keyboard input. */
 #pragma once
 
 #include <string>
 
 namespace cursespp {
+    /** @brief Contract for objects that can receive and process keyboard input.
+     *
+     *  @details Objects implementing IKeyHandler receive a normalized string
+     *  representation of each keystroke (e.g. "a", "ENTER", "ESC", "F5").
+     *  The toolkit translates the platform-specific curses key codes into
+     *  these strings before dispatching them, so handlers do not need to deal
+     *  with raw int constants. This is the mechanism through which windows and
+     *  layouts react to user input.
+     */
     class IKeyHandler {
         public:
             virtual ~IKeyHandler() { }
+
+            /** @brief Invoked whenever a key is pressed while this handler is active.
+             *  @param key the normalized string representation of the key.
+             *  @return true if the key was consumed, false to let the event bubble up.
+             */
             virtual bool KeyPress(const std::string& key) = 0;
     };
 }

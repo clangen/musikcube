@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Utility.hpp
+ * @brief Small free-standing helper functions for string conversion.
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Provides
+ * escaping, hexadecimal parsing and ANSI/wide string conversion helpers
+ * used across the library.
+ */
+
 #pragma once
 
 #include <win32cpp/Types.hpp>
@@ -46,9 +55,25 @@ namespace win32cpp {
 
 //////////////////////////////////////////////////////////////////////////////
 
+/** @brief Escapes Win32 control characters (e.g. \\t, \\n) in a string.
+ *  @param string the input string to escape
+ *  @return a copy of the input with special characters escaped
+ *  @note The escaped form is what is stored in INI-style config files. */
 uistring Escape(uistring string);
+
+/** @brief Parses a hexadecimal string into an integer.
+ *  @param value the hexadecimal string to parse (e.g. "FF")
+ *  @return the parsed value, or 0 on failure */
 int HexToInt(const uichar* value);
+
+/** @brief Converts a narrow ANSI string to a wide string.
+ *  @param str the narrow string to widen
+ *  @return the wide-string equivalent */
 uistring WidenString(const char* str);
+
+/** @brief Converts a wide string to a narrow ANSI string.
+ *  @param str the wide string to shrink
+ *  @return the narrow-string equivalent */
 std::string ShrinkString(const uistring& str);
 
 //////////////////////////////////////////////////////////////////////////////

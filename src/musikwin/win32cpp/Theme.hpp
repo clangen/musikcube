@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2007, Casey Langen
+// The following are Copyright ï¿½ 2007, Casey Langen
 //
 // Sources and Binaries of: win32cpp
 //
@@ -36,6 +36,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @file Theme.hpp
+ * @brief Wrapper for Windows visual styles (UxTheme.dll).
+ *
+ * Part of the win32cpp native Win32 GUI wrapper library. Theme loads the
+ * UxTheme API functions dynamically at runtime and lets controls draw with
+ * the current visual style (XP+). It only implements the subset of the
+ * UxTheme API used by the library.
+ */
+
 #pragma once
 
 #include <boost/shared_ptr.hpp>
@@ -49,39 +59,56 @@ namespace win32cpp {
 //////////////////////////////////////////////////////////////////////////////
 
 class Theme;
+/** @brief Shared pointer to a Theme object. */
 typedef boost::shared_ptr<Theme> ThemeRef;
 
-///\brief
-///A class that wraps Theme (UXTHEME.DLL) handling for XP+ systems
+/** @brief Wraps Theme (UXTHEME.DLL) handling for XP+ systems.
+ *  @details Dynamically loads the UxTheme functions via GetProcAddress so
+ *           the library works on systems without visual styles enabled. */
 class Theme : public boost::noncopyable
 {
 public: // types
 
 private: // types
-    typedef HRESULT (__stdcall *PFNCLOSETHEMEDATA)(HTHEME hTheme);
-    typedef HRESULT (__stdcall *PFNDRAWTHEMEBACKGROUND)(HTHEME hTheme, HDC hdc, int iPartId, int iStateId, const RECT *pRect,  const RECT *pClipRect);
-    typedef HTHEME (__stdcall *PFNOPENTHEMEDATA)(HWND hwnd, LPCWSTR pszClassList);
-    typedef HRESULT (__stdcall *PFNDRAWTHEMETEXT)(HTHEME hTheme, HDC hdc, int iPartId, int iStateId, LPCWSTR pszText, int iCharCount, DWORD dwTextFlags, DWORD dwTextFlags2, const RECT *pRect);
+    typedef HRESULT (__stdcall *PFNCLOSETHEMEDATA)(HTHEME hTheme); /**< CloseThemeData signature */
+    typedef HRESULT (__stdcall *PFNDRAWTHEMEBACKGROUND)(HTHEME hTheme, HDC hdc, int iPartId, int iStateId, const RECT *pRect,  const RECT *pClipRect); /**< DrawThemeBackground signature */
+    typedef HTHEME (__stdcall *PFNOPENTHEMEDATA)(HWND hwnd, LPCWSTR pszClassList); /**< OpenThemeData signature */
+    typedef HRESULT (__stdcall *PFNDRAWTHEMETEXT)(HTHEME hTheme, HDC hdc, int iPartId, int iStateId, LPCWSTR pszText, int iCharCount, DWORD dwTextFlags, DWORD dwTextFlags2, const RECT *pRect); /**< DrawThemeText signature */
 
 public:
+    /** @brief Opens a theme for the given window and class.
+     *  @param handle the window handle
+     *  @param className the theme class list (e.g. L"BUTTON")
+     *  @return a shared Theme, or empty if themes are unavailable */
     static ThemeRef Create(HWND handle, const std::wstring& className);
 
 public: // destructor
+    /** @brief Closes the theme and releases the loaded DLL. */
     /*dtor*/    ~Theme();
 
 private: // constructors
+    /** @brief Loads UxTheme and opens the theme.
+     *  @param handle the window handle
+     *  @param className the theme class list */
     /*ctor*/    Theme(HWND handle, const std::wstring& className);
 
 public: // methods
+    /** @brief Draws the theme background for a part and state.
+     *  @param hdc the target device context
+     *  @param iPartId the theme part identifier
+     *  @param iStateId the part state identifier
+     *  @param pRect the bounding rectangle
+     *  @param pClipRect optional clipping rectangle
+     *  @return S_OK on success, otherwise an HRESULT error */
     HRESULT DrawThemeBackground(HDC hdc, int iPartId, int iStateId, const RECT* pRect, const RECT* pClipRect);
 
 private: // instance data
-    HMODULE dll;
-    HTHEME theme;
-    PFNOPENTHEMEDATA OpenThemeDataProc;
-    PFNCLOSETHEMEDATA CloseThemeDataProc;
-    PFNDRAWTHEMEBACKGROUND DrawThemeBackgroundProc;
-    PFNDRAWTHEMETEXT DrawThemeTextProc;
+    HMODULE dll;            /**< loaded UxTheme.dll module */
+    HTHEME theme;           /**< opened theme handle */
+    PFNOPENTHEMEDATA OpenThemeDataProc;        /**< imported OpenThemeData */
+    PFNCLOSETHEMEDATA CloseThemeDataProc;      /**< imported CloseThemeData */
+    PFNDRAWTHEMEBACKGROUND DrawThemeBackgroundProc; /**< imported DrawThemeBackground */
+    PFNDRAWTHEMETEXT DrawThemeTextProc;         /**< imported DrawThemeText */
 };
 
 //////////////////////////////////////////////////////////////////////////////
