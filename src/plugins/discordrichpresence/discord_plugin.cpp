@@ -18,6 +18,7 @@
 #include <curl/curl.h>
 #include "../../3rdparty/win32_include/discord_game_sdk/discord_game_sdk.h"
 #include <musikcore/sdk/version.h>
+#include <mutex>
 
 #ifdef WIN32
     #define DLLEXPORT __declspec(dllexport)
@@ -94,15 +95,18 @@ void log_error(const char* message, ...) {
 
 // ===================== DISCORD SDK FUNCTIONS =====================
 
+std::mutex discord_mutex;
 struct IDiscordCore* core = NULL;
 
 bool init_discord() {
+    discord_mutex.lock();
     struct DiscordCreateParams params;
     DiscordCreateParamsSetDefault(&params);
     params.client_id = 1424235979971235850;
     params.flags = DiscordCreateFlags_Default;
 
     enum EDiscordResult result = DiscordCreate(DISCORD_VERSION, &params, &core);
+    discord_mutex.unlock();
     if (result != DiscordResult_Ok) {
         return false;
     }
@@ -110,6 +114,7 @@ bool init_discord() {
 }
 
 void update_presence(const char* track, const char* artist, const char* album, const char* cover_url, int duration_seconds) {
+    discord_mutex.lock();
     struct IDiscordActivityManager* activity_manager = core->get_activity_manager(core);
     struct DiscordActivity activity;
     
@@ -147,7 +152,19 @@ void update_presence(const char* track, const char* artist, const char* album, c
     activity.instance = false;
 
     activity_manager->update_activity(activity_manager, &activity, NULL, NULL);
+    discord_mutex.unlock();
 }
+
+void keep_connection_alive() {
+    while (1) {
+        discord_mutex.lock();
+        core->run_callbacks(core);
+        discord_mutex.unlock();
+        Sleep(1000);
+    }
+}
+
+// ===================== LIBCURL UPLOAD FUNCTIONS =====================
 
 struct response_data {
     char *data;
@@ -302,13 +319,6 @@ char* upload_cover_image(const char* file_path) {
 
     curl_global_cleanup();
     return NULL;
-}
-
-void keep_connection_alive() {
-    while (1) {
-        core->run_callbacks(core);
-        Sleep(1000);
-    }
 }
 
 // ===================== MUSIKCUBE PLUGIN FUNCTIONS =====================
