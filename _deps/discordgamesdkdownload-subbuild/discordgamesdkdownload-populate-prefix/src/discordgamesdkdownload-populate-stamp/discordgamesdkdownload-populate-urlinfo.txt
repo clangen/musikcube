@@ -1,0 +1,12 @@
+# This is a generated file and its contents are an internal implementation detail.
+# The download step will be re-executed if anything in this file changes.
+# No other meaning or use of this file is supported.
+
+method=url
+command=C:/Program Files/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/herew/Documents/GitHub/musikcube/_deps/discordgamesdkdownload-subbuild/discordgamesdkdownload-populate-prefix/src/discordgamesdkdownload-populate-stamp/download-discordgamesdkdownload-populate.cmake;COMMAND;C:/Program Files/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/herew/Documents/GitHub/musikcube/_deps/discordgamesdkdownload-subbuild/discordgamesdkdownload-populate-prefix/src/discordgamesdkdownload-populate-stamp/verify-discordgamesdkdownload-populate.cmake;COMMAND;C:/Program Files/CMake/bin/cmake.exe;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;C:/Users/herew/Documents/GitHub/musikcube/_deps/discordgamesdkdownload-subbuild/discordgamesdkdownload-populate-prefix/src/discordgamesdkdownload-populate-stamp/extract-discordgamesdkdownload-populate.cmake
+source_dir=C:/Users/herew/Documents/GitHub/musikcube/_deps/discordgamesdkdownload-src
+work_dir=C:/Users/herew/Documents/GitHub/musikcube/_deps
+url(s)=https://dl-game-sdk.discordapp.net/3.2.1/discord_game_sdk.zip
+hash=
+      no_extract=
+
