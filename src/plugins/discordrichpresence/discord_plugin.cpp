@@ -383,6 +383,25 @@ class EventUpdater : public IPlaybackRemote {
             track->GetString("artist", artist, sizeof(artist));
             track->GetString("album", album, sizeof(album));
 
+            if (strlen(title) == 0) {
+                strcpy_s(title, sizeof(title), "unknown");
+            }
+            if (strlen(artist) == 0) {
+                strcpy_s(artist, sizeof(artist), "unknown");
+            }
+            if (strlen(album) == 0) {
+                strcpy_s(album, sizeof(album), "unknown");
+            }
+
+            if (thumbnail_id == 0 || strcmp(artist, "unknown") == 0 || strcmp(album, "unknown") == 0) {// removes file path from title and leave only the file name
+                std::string titleStr(title);
+                size_t lastSlash = titleStr.find_last_of("/\\");
+                if (lastSlash != std::string::npos) {
+                    titleStr = titleStr.substr(lastSlash + 1);
+                }
+                strcpy_s(title, sizeof(title), titleStr.c_str());
+            }
+
             if (hasCurrentTrack &&
                 this->durationSeconds == seconds &&
                 strcmp(this->title, title) == 0 &&
@@ -429,12 +448,16 @@ class EventUpdater : public IPlaybackRemote {
 
         void ChangePresence(int thumbnail_id) {
             if (thumbnail_id != this->thumbnailId) {// helps reduce spam
-                std::string path = getThumbnailPath(thumbnail_id);
-                char* url = upload_cover_image(path.c_str());
-                if (!url) {url = (char*)"unknown";}
+                if (thumbnail_id > 0) {// some tracks don't have a thumbnail 
+                    std::string path = getThumbnailPath(thumbnail_id);
+                    char* url = upload_cover_image(path.c_str());
+                    if (!url) {url = (char*)"unknown";}
+                    strcpy_s(this->url, sizeof(this->url), url);
+                    free(url);
+                } else {
+                    strcpy_s(this->url, sizeof(this->url), "unknown");                    
+                }
                 this->thumbnailId = thumbnail_id;
-                strcpy_s(this->url, sizeof(this->url), url);
-                free(url);
             } else {
                 log_debug("Reusing cached cover image URL");
             }
