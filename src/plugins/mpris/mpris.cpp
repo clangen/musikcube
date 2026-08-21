@@ -30,7 +30,7 @@ static std::string GetMetadataString(ITrack* track, const char* key)
 static std::string GetThumbnailPath(ITrack* track)
 {
     int64_t thumbnailId = track->GetInt64(track::ThumbnailId);
-    return thumbnailPath + std::to_string(thumbnailId) + ".jpg";
+    return "file://" + thumbnailPath + std::to_string(thumbnailId) + ".jpg";
 }
 
 static class MPRISPlugin : public IPlugin {
