@@ -236,6 +236,7 @@
     <ClInclude Include="include\sigslot\sigslot.h" />
     <ClInclude Include="include\wcwidth.h" />
     <ClInclude Include="include\_kiss_fft_guts.h" />
+    <ClInclude Include="include\discord_game_sdk.h" />
     <ClInclude Include="win32_include\curl\curl.h" />
     <ClInclude Include="win32_include\curl\curlbuild.h" />
     <ClInclude Include="win32_include\curl\curlrules.h" />
@@ -320,6 +321,7 @@
     <ClInclude Include="win32_include\tls.h" />
     <ClInclude Include="win32_include\zconf.h" />
     <ClInclude Include="win32_include\zlib.h" />
+    <ClInclude Include="win32_include\discord_game_sdk\discord_game_sdk.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
