@@ -103,7 +103,7 @@ bool init_discord() {
     struct DiscordCreateParams params;
     DiscordCreateParamsSetDefault(&params);
     params.client_id = 1424235979971235850;
-    params.flags = DiscordCreateFlags_Default;
+    params.flags = DiscordCreateFlags_NoRequireDiscord;
 
     enum EDiscordResult result = DiscordCreate(DISCORD_VERSION, &params, &core);
     discord_mutex.unlock();
@@ -336,10 +336,12 @@ std::string getThumbnailPath(int albumId) {
     }
 }
 
+bool opened = false;
+
 class DiscordRichPresencePlugin : public IPlugin {
     public:
         DiscordRichPresencePlugin() {
-            bool opened = init_discord();
+            opened = init_discord();
             if (opened) {
                 update_presence("unknown", "unknown", "unknown", "unknown", 0);
                 std::thread t1(keep_connection_alive);
@@ -367,6 +369,9 @@ class EventUpdater : public IPlaybackRemote {
         }
 
         void OnTrackChanged(ITrack* track) override {
+            if (!opened) {
+                return;
+            }
             if (!track) {
                 currentTrack = nullptr;
                 hasCurrentTrack = false;
@@ -451,11 +456,14 @@ class EventUpdater : public IPlaybackRemote {
                 if (thumbnail_id > 0) {// some tracks don't have a thumbnail 
                     std::string path = getThumbnailPath(thumbnail_id);
                     char* url = upload_cover_image(path.c_str());
-                    if (!url) {url = (char*)"unknown";}
-                    strcpy_s(this->url, sizeof(this->url), url);
-                    free(url);
+                    if (url) {
+                        strcpy_s(this->url, sizeof(this->url), url);
+                        free(url);
+                    } else {
+                        strcpy_s(this->url, sizeof(this->url), "unknown");
+                    }
                 } else {
-                    strcpy_s(this->url, sizeof(this->url), "unknown");                    
+                    strcpy_s(this->url, sizeof(this->url), "unknown");
                 }
                 this->thumbnailId = thumbnail_id;
             } else {
