@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <MusikcubeRoot>$(MSBuildThisFileDirectory)</MusikcubeRoot>
+    <MusikcubeVendorDir>$(MusikcubeRoot)vendor\</MusikcubeVendorDir>
+  </PropertyGroup>
+</Project>

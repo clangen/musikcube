@@ -8,7 +8,7 @@ check out the [installation guide](https://github.com/clangen/musikcube/wiki/ins
 
 be sure to also read through a [the user guide](https://github.com/clangen/musikcube/wiki/user-guide), which describes app's navigation paradigm and lists all the default keyboard shortcuts.
 
-if you want to build it from source, [the instructions are here](https://github.com/clangen/musikcube/wiki/building).
+build from source using the [Windows build instructions](doc/build-windows.md) or the [build wiki](https://github.com/clangen/musikcube/wiki/building).
 
 # screenshots
 
@@ -60,7 +60,7 @@ musikcube runs well on a raspberry pi, connected to your home stereo. [see here 
 
 # compiling
 
-if you'd like to compile the project yourself, you can check out the [build instructions](https://github.com/clangen/musikcube/wiki/building).
+see the [Windows x64 build instructions](doc/build-windows.md), [standalone Unix build instructions](doc/build-standalone-unix.md), and [build wiki](https://github.com/clangen/musikcube/wiki/building).
 
 # keyboard shortcuts
 

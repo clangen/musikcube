@@ -58,9 +58,9 @@ repositories {
 }
 
 dependencies {
-    implementation files('../../3rdparty/bin/android/aar/android-taskrunner-0.5.aar')
-    implementation files('../../3rdparty/bin/android/aar/exoplayer-extension-flac-release-v2.aar')
-    implementation files('../../3rdparty/bin/android/aar/videocache-2.8.0-clangen-5.aar')
+    implementation files('libs/android-taskrunner-0.5.aar')
+    implementation files('libs/exoplayer-extension-flac-release-v2.aar')
+    implementation files('libs/videocache-2.8.0-clangen-5.aar')
 
     androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0-alpha4', {
         exclude group: 'com.android.support', module: 'support-annotations'

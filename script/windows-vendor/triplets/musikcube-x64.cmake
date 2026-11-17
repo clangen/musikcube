@@ -1,0 +1,10 @@
+set(VCPKG_TARGET_ARCHITECTURE x64)
+set(VCPKG_CRT_LINKAGE static)
+set(VCPKG_LIBRARY_LINKAGE static)
+
+if(PORT MATCHES "^(curl|openssl|mp3lame|libopenmpt)$")
+    set(VCPKG_LIBRARY_LINKAGE dynamic)
+endif()
+if(NOT PORT MATCHES "^(libgme|taglib|zlib|libmicrohttpd|utfcpp)$")
+    set(VCPKG_BUILD_TYPE release)
+endif()

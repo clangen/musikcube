@@ -33,5 +33,4 @@ function archive {
   popd
 }
 
-archive "32"
 archive "64"
