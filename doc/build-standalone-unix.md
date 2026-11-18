@@ -34,7 +34,7 @@ It's probably easiest to just install a `docker` image and use that, but an inst
 
 - `sudo apt update`
 - `sudo apt dist-upgrade`
-- `sudo apt install build-essential g++ gcc git libasound2-dev libev-dev libncurses-dev libopus-dev libopus-dev libopus0 libpulse-dev libsndio-dev libssl-dev libsystemd-dev libvorbis-dev libvorbis-dev libvorbis0a libvorbisenc2 portaudio19-dev rpm wget zlib1g-dev libdbus-1-dev libudev-dev libglib2.0-dev patchelf libstdc++6-i386-cross`
+- `sudo apt install build-essential g++ gcc git libasound2-dev libev-dev libncurses-dev libpulse-dev libsndio-dev libssl-dev libsystemd-dev portaudio19-dev rpm wget pkg-config zlib1g-dev libdbus-1-dev libudev-dev libglib2.0-dev patchelf libstdc++6-i386-cross`
 
 Install a Node.js runtime that runs on Buster, such as Node.js 16. The vendor script requires Node.js 14.14 or later.
 
@@ -55,12 +55,16 @@ A couple build steps assume that you'll be building from the `/build` directory.
 
 ## Compile third-party dependencies
 
-As mentioned above, a number of larger third-party dependencies are compiled from source, stripping unused functionality to ensure they are as small and efficient as possible. Doing this manually is really annoying, so it's all been automated behind a script.
+The vendor script builds third-party dependencies from source with only the features musikcube needs. FFmpeg links Ogg, Vorbis, and Opus statically.
 
 - `cd /build`
 - `node ./musikcube/script/build-vendor-libraries.js`
 
+Pass `--verbose` to stream build command output. By default, the script shows progress and prints recent command output on failure.
+
 This process may take a while, but when it completes you'll be left with a `/build/vendor-${arch}` directory that will contain all build artifacts. The `musikcube` app compile will reference this directory during its build process.
+
+Before publishing the vendor directory, the builder checks the shared libraries for unexpected dependencies using `readelf` on Linux and `otool` on macOS. To rerun the check on an existing build, use `node ./musikcube/script/scan-standalone.js --vendor ./vendor-<arch>/bin/lib`.
 
 ## Compile `musikcube`
 

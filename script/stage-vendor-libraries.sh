@@ -15,10 +15,6 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libavformat-musikcube.62.dylib ./bin/lib
     cp vendor/bin/lib/libavutil-musikcube.60.dylib ./bin/lib
     cp vendor/bin/lib/libswresample-musikcube.6.dylib ./bin/lib
-    cp vendor/bin/lib/libopus.0.dylib ./bin/lib
-    cp vendor/bin/lib/libogg.0.dylib ./bin/lib
-    cp vendor/bin/lib/libvorbis.0.dylib ./bin/lib
-    cp vendor/bin/lib/libvorbisenc.2.dylib ./bin/lib
     cp vendor/bin/lib/libcrypto.3.dylib ./bin/lib
     cp vendor/bin/lib/libssl.3.dylib ./bin/lib
     cp vendor/bin/lib/libcurl.4.dylib ./bin/lib
@@ -83,7 +79,7 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
         fi
     }
 
-    for name in libncursesw.so.6 libpanelw.so.6 libogg.so.0 libopus.so.0 libvorbis.so.0 libvorbisenc.so.2; do
+    for name in libncursesw.so.6 libpanelw.so.6; do
         stage_system_library "$name" required
     done
     # Some distributions fold tinfo into ncurses or link libev statically.

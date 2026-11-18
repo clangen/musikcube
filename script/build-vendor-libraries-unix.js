@@ -1,9 +1,22 @@
 // Build and stage the Unix dependencies used by archive-standalone-nix.sh.
 const { spawnSync } = require('child_process');
 const {
-  chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync,
-  realpathSync, renameSync, rmSync, symlinkSync, writeFileSync,
+  closeSync,
+  copyFileSync,
+  existsSync,
+  fstatSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readSync,
+  readdirSync,
+  realpathSync,
+  renameSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
 } = require('fs');
+const { tmpdir } = require('os');
 const { basename, join } = require('path');
 
 const versions = {
@@ -11,6 +24,9 @@ const versions = {
   curl: '8.23.0',
   libmicrohttpd: '1.0.5',
   ffmpeg: '8.0.3',
+  ogg: '1.3.6',
+  vorbis: '1.3.7',
+  opus: '1.6.1',
   lame: '4.0',
   libopenmpt: '0.8.10',
   taglib: '2.3.2',
@@ -22,24 +38,44 @@ const cross = process.env.CROSSCOMPILE || '';
 const rpi = cross.startsWith('rpi-');
 const buildRoot = '/build';
 const cache = '/tmp/musikcube_build_wget_cache';
+const verbose = process.argv.includes('--verbose', 2);
 
 function run(program, args, { capture = false, ...options } = {}) {
-  const result = spawnSync(program, args, {
-    encoding: 'utf8',
-    stdio: capture ? ['ignore', 'pipe', 'inherit'] : 'inherit',
-    ...options,
-  });
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`${program} ${args.join(' ')} failed (${result.signal || result.status})`);
+  const logDir = !capture && !verbose ? mkdtempSync(join(tmpdir(), 'musikcube-build-log-')) : null;
+  let log;
+
+  try {
+    if (logDir) log = openSync(join(logDir, 'output'), 'w+');
+
+    const stdio = capture ? ['ignore', 'pipe', 'inherit']
+      : logDir ? ['inherit', log, log] : 'inherit';
+    const result = spawnSync(program, args, { encoding: 'utf8', stdio, ...options });
+
+    if (result.error) throw result.error;
+    if (result.status !== 0) {
+      if (logDir) {
+        const size = fstatSync(log).size;
+        const tail = Buffer.alloc(Math.min(size, 64 * 1024));
+        const bytesRead = readSync(log, tail, 0, tail.length, size - tail.length);
+        if (bytesRead) console.error(tail.toString('utf8', 0, bytesRead).trimEnd());
+      }
+
+      throw new Error(`${program} ${args.join(' ')} failed (${result.signal || result.status})`);
+    }
+
+    return capture ? result.stdout.trim() : undefined;
+  } finally {
+    if (log !== undefined) closeSync(log);
+    if (logDir) rmSync(logDir, { recursive: true, force: true });
   }
-  return capture ? result.stdout.trim() : undefined;
 }
 
 function configuration(lib) {
   const arch = run('uname', ['-m'], { capture: true });
   const env = { ...process.env, CFLAGS: '-fPIC', CXXFLAGS: '-fPIC -std=c++17' };
+
   let jobs = '-j8';
+
   if (mac) {
     jobs = '-j' + run('sysctl', ['-n', 'hw.ncpu'], { capture: true });
   } else {
@@ -48,7 +84,12 @@ function configuration(lib) {
   }
 
   const config = {
-    arch, env, jobs, sysroot: '', configure: [], cmake: [], ffmpeg: [],
+    arch,
+    env,
+    jobs,
+    configure: [],
+    cmake: [],
+    ffmpeg: [],
     openssl: [mac ? `darwin64-${arch}-cc` : `linux-${arch}`],
     makefileEnv: env,
   };
@@ -60,6 +101,7 @@ function configuration(lib) {
     const tools = join(buildRoot, 'x-tools', toolchain);
     const sysroot = join(tools, toolchain, 'sysroot');
     const arm = armv6 ? 'armv6' : 'armv8';
+
     env.PATH = join(tools, 'bin') + ':' + env.PATH;
     env.LDFLAGS = [env.LDFLAGS, `--sysroot=${sysroot}/`].filter(Boolean).join(' ');
     env.CXXFLAGS += ' -static-libstdc++';
@@ -67,15 +109,29 @@ function configuration(lib) {
       join(sysroot, 'usr/lib/arm-linux-gnueabihf/pkgconfig');
 
     Object.assign(config, {
-      sysroot,
-      cmake: ['--toolchain', join(buildRoot, 'musikcube', '.cmake', `RaspberryPiToolchain-${arm}.cmake`)],
+      cmake: [
+        '--toolchain',
+        join(buildRoot, 'musikcube', '.cmake', `RaspberryPiToolchain-${arm}.cmake`)
+      ],
       openssl: ['-latomic', 'linux-generic32', `--cross-compile-prefix=${toolchain}-`],
-      configure: ['--build=x86_64-pc-linux-gnu', `--host=${toolchain}`, `--with-sysroot=${sysroot}/`],
-      ffmpeg: [`--arch=${arch}`, '--target-os=linux', '--enable-cross-compile',
-        `--sysroot=${sysroot}/`, `--cross-prefix=${toolchain}-`],
+      configure: [
+        '--build=x86_64-pc-linux-gnu',
+        `--host=${toolchain}`,
+        `--with-sysroot=${sysroot}/`
+      ],
+      ffmpeg: [
+        `--arch=${arch}`,
+        '--target-os=linux',
+        '--enable-cross-compile',
+        `--sysroot=${sysroot}/`,
+        `--cross-prefix=${toolchain}-`
+      ],
       makefileEnv: {
-        ...env, AR: `${toolchain}-ar`, CC: `${toolchain}-gcc`,
-        CXX: `${toolchain}-g++`, LD: `${toolchain}-ld`,
+        ...env,
+        AR: `${toolchain}-ar`,
+        CC: `${toolchain}-gcc`,
+        CXX: `${toolchain}-g++`,
+        LD: `${toolchain}-ld`,
       },
     });
   }
@@ -110,45 +166,82 @@ function fetchPackages(work) {
   const curl = 'curl-' + versions.curl;
   const libmicrohttpd = 'libmicrohttpd-' + versions.libmicrohttpd;
   const ffmpeg = 'ffmpeg-' + versions.ffmpeg;
+  const ogg = 'libogg-' + versions.ogg;
+  const vorbis = 'libvorbis-' + versions.vorbis;
+  const opus = 'opus-' + versions.opus;
   const lame = 'lame-' + versions.lame;
   const libopenmpt = 'libopenmpt-' + versions.libopenmpt + '+release';
   const taglib = 'taglib-' + versions.taglib;
   const gme = 'game-music-emu-' + versions.gme;
 
   const packages = {
-    openssl: [openssl, openssl + '.tar.gz', `https://github.com/openssl/openssl/releases/download/${openssl}/${openssl}.tar.gz`],
-    curl: [curl, curl + '.tar.gz', `https://curl.se/download/${curl}.tar.gz`],
-    libmicrohttpd: [libmicrohttpd, libmicrohttpd + '.tar.gz', `https://ftp.gnu.org/gnu/libmicrohttpd/${libmicrohttpd}.tar.gz`],
-    ffmpeg: [ffmpeg, ffmpeg + '.tar.bz2', `https://ffmpeg.org/releases/${ffmpeg}.tar.bz2`],
-    lame: [lame, lame + '.tar.gz', `https://downloads.sourceforge.net/project/lame/lame/${versions.lame}/${lame}.tar.gz`],
-    libopenmpt: [mac ? libopenmpt + '.autotools' : libopenmpt,
+    openssl: [
+      openssl,
+      openssl + '.tar.gz',
+      `https://github.com/openssl/openssl/releases/download/${openssl}/${openssl}.tar.gz`
+    ],
+    curl: [
+      curl,
+      curl + '.tar.gz',
+      `https://curl.se/download/${curl}.tar.gz`
+    ],
+    libmicrohttpd: [
+      libmicrohttpd,
+      libmicrohttpd + '.tar.gz',
+      `https://ftp.gnu.org/gnu/libmicrohttpd/${libmicrohttpd}.tar.gz`
+    ],
+    ffmpeg: [
+      ffmpeg,
+      ffmpeg + '.tar.bz2',
+      `https://ffmpeg.org/releases/${ffmpeg}.tar.bz2`
+    ],
+    ogg: [
+      ogg,
+      ogg + '.tar.gz',
+      `https://downloads.xiph.org/releases/ogg/${ogg}.tar.gz`
+    ],
+    vorbis: [
+      vorbis,
+      vorbis + '.tar.gz',
+      `https://downloads.xiph.org/releases/vorbis/${vorbis}.tar.gz`
+    ],
+    opus: [
+      opus,
+      opus + '.tar.gz',
+      `https://downloads.xiph.org/releases/opus/${opus}.tar.gz`
+    ],
+    lame: [
+      lame,
+      lame + '.tar.gz',
+      `https://downloads.sourceforge.net/project/lame/lame/${versions.lame}/${lame}.tar.gz`
+    ],
+    libopenmpt: [
+      mac ? libopenmpt + '.autotools' : libopenmpt,
       libopenmpt + (mac ? '.autotools' : '.makefile') + '.tar.gz',
-      `https://lib.openmpt.org/files/libopenmpt/src/${libopenmpt}.${mac ? 'autotools' : 'makefile'}.tar.gz`],
-    taglib: [taglib, taglib + '.tar.gz', `https://github.com/taglib/taglib/releases/download/v${versions.taglib}/${taglib}.tar.gz`],
-    gme: [gme, gme + '.tar.gz', `https://codeload.github.com/libgme/game-music-emu/tar.gz/refs/tags/${versions.gme}`],
+      `https://lib.openmpt.org/files/libopenmpt/src/${libopenmpt}.${mac ? 'autotools' : 'makefile'}.tar.gz`
+    ],
+    taglib: [
+      taglib,
+      taglib + '.tar.gz',
+      `https://github.com/taglib/taglib/releases/download/v${versions.taglib}/${taglib}.tar.gz`
+    ],
+    gme: [
+      gme,
+      gme + '.tar.gz',
+      `https://codeload.github.com/libgme/game-music-emu/tar.gz/refs/tags/${versions.gme}`
+    ],
   };
 
   const sources = {};
+
   for (const [name, [directory, file, url]] of Object.entries(packages)) {
     const archive = download(url, file);
     copyFileSync(archive, join(work, file));
     run('tar', [file.endsWith('.bz2') ? '-xjf' : '-xzf', file], { cwd: work });
     sources[name] = join(work, directory);
   }
-  return sources;
-}
 
-function stageMacLibraries(lib) {
-  const brew = run('brew', ['--prefix'], { capture: true });
-  mkdirSync(lib, { recursive: true });
-  for (const file of [
-    'opus/lib/libopus.0.dylib', 'libogg/lib/libogg.0.dylib',
-    'libvorbis/lib/libvorbis.0.dylib', 'libvorbis/lib/libvorbisenc.2.dylib',
-  ]) {
-    const staged = join(lib, basename(file));
-    copyFileSync(join(brew, 'opt', file), staged);
-    chmodSync(staged, 0o755);
-  }
+  return sources;
 }
 
 function cleanLibraries(lib) {
@@ -398,31 +491,87 @@ const libopenmptOptions = [
   '--without-flac',
 ];
 
+function buildFfmpeg(sources, out, config) {
+  const { env, jobs } = config;
+  const codecPrefix = join(out, '..', '..', 'ffmpeg-codecs');
+  const codecLib = join(codecPrefix, 'lib');
+
+  /* Restrict codec discovery to the static build, including when cross-compiling. */
+  const codecEnv = {
+    ...env,
+    PKG_CONFIG_PATH: '',
+    PKG_CONFIG_LIBDIR: join(codecLib, 'pkgconfig'),
+    PKG_CONFIG_SYSROOT_DIR: '',
+  };
+
+  for (const [name, options, cflags] of [
+    ['ogg', [], ''],
+    /* Vorbis enables fast math by default, which can introduce glibc vector-math calls. */
+    ['vorbis', ['--with-ogg=' + codecPrefix], ' -fno-fast-math'],
+    ['opus', ['--disable-doc', '--disable-extra-programs'], ' -O2'],
+  ]) {
+    console.log('Building static ' + name);
+    const build = { cwd: sources[name], env: { ...codecEnv, CFLAGS: env.CFLAGS + cflags } };
+    run('./configure', [
+      '--prefix=' + codecPrefix,
+      '--libdir=' + codecLib,
+      '--disable-shared',
+      '--enable-static',
+      '--with-pic',
+      ...options,
+      ...config.configure
+    ], build);
+    run('make', [jobs], build);
+    run('make', ['install'], build);
+  }
+
+  console.log('Building FFmpeg');
+  const ffmpegEnv = {
+    ...codecEnv,
+    LDFLAGS: [env.LDFLAGS, '-lm'].filter(Boolean).join(' '),
+  };
+  const build = { cwd: sources.ffmpeg, env: ffmpegEnv };
+  run('./configure', [
+    '--prefix=' + out,
+    '--pkg-config=pkg-config',
+    '--pkg-config-flags=--static',
+    '--extra-ldflags=-L' + codecLib,
+    ...ffmpegOptions,
+    ...config.ffmpeg,
+    '--build-suffix=-musikcube'
+  ], build);
+  run('make', [jobs], build);
+  run('make', ['install'], build);
+}
+
 function buildLibraries(sources, out, config) {
   const { env, jobs } = config;
   const prefix = '--prefix=' + out;
-  const ffmpegEnv = {
-    ...env,
-    LDFLAGS: [env.LDFLAGS, '-lm'].filter(Boolean).join(' '),
-    CFLAGS: env.CFLAGS + ` -I${config.sysroot}/usr/include/opus`,
-  };
 
-  console.log('Building FFmpeg');
-  run('./configure', [prefix, '--pkg-config=pkg-config', ...ffmpegOptions,
-    ...config.ffmpeg, '--build-suffix=-musikcube'], { cwd: sources.ffmpeg, env: ffmpegEnv });
-  run('make', [jobs], { cwd: sources.ffmpeg, env: ffmpegEnv });
-  run('make', ['install'], { cwd: sources.ffmpeg, env: ffmpegEnv });
+  buildFfmpeg(sources, out, config);
 
   // curl uses the OpenSSL installation from this build.
   console.log('Building OpenSSL');
-  run('perl', ['./Configure', prefix, '--libdir=lib', 'no-ssl3', 'no-ssl3-method',
-    'no-zlib', ...config.openssl], { cwd: sources.openssl, env });
+  run('perl', [
+    './Configure',
+    prefix,
+    '--libdir=lib',
+    'no-ssl3',
+    'no-ssl3-method',
+    'no-zlib',
+    ...config.openssl
+  ], { cwd: sources.openssl, env });
   run('make', ['-j8'], { cwd: sources.openssl, env });
   run('make', ['install_sw'], { cwd: sources.openssl, env });
 
   console.log('Building curl');
-  run('./configure', ['--enable-shared', '--with-openssl=' + out,
-    ...curlOptions, ...config.configure, prefix], { cwd: sources.curl, env });
+  run('./configure', [
+    '--enable-shared',
+    '--with-openssl=' + out,
+    ...curlOptions,
+    ...config.configure,
+    prefix
+  ], { cwd: sources.curl, env });
   run('make', [jobs], { cwd: sources.curl, env });
   run('make', ['install'], { cwd: sources.curl, env });
 
@@ -433,11 +582,25 @@ function buildLibraries(sources, out, config) {
     run('make', ['install'], { cwd: sources.libopenmpt, env });
   } else {
     const options = [
-      'EXAMPLES=0', 'NO_FLAC=1', 'NO_MINIMP3=1', 'NO_MINIZ=1', 'NO_MPG123=1',
-      'NO_OGG=1', 'NO_PORTAUDIO=1', 'NO_PORTAUDIOCPP=1', 'NO_PULSEAUDIO=1',
-      'NO_SDL2=1', 'NO_SNDFILE=1', 'NO_STBVORBIS=1', 'NO_VORBIS=1',
-      'NO_VORBISFILE=1', 'OPENMPT123=0', 'SHARED_LIB=1', 'STATIC_LIB=0',
-      'TEST=0', 'PREFIX=' + out,
+      'EXAMPLES=0',
+      'NO_FLAC=1',
+      'NO_MINIMP3=1',
+      'NO_MINIZ=1',
+      'NO_MPG123=1',
+      'NO_OGG=1',
+      'NO_PORTAUDIO=1',
+      'NO_PORTAUDIOCPP=1',
+      'NO_PULSEAUDIO=1',
+      'NO_SDL2=1',
+      'NO_SNDFILE=1',
+      'NO_STBVORBIS=1',
+      'NO_VORBIS=1',
+      'NO_VORBISFILE=1',
+      'OPENMPT123=0',
+      'SHARED_LIB=1',
+      'STATIC_LIB=0',
+      'TEST=0',
+      'PREFIX=' + out,
     ];
     const make = { cwd: sources.libopenmpt, env: config.makefileEnv };
     run('make', [...options, jobs, 'VERBOSE=1'], make);
@@ -445,14 +608,27 @@ function buildLibraries(sources, out, config) {
   }
 
   console.log('Building libmicrohttpd');
-  run('./configure', ['--enable-shared', '--with-pic', '--enable-https=no',
-    '--disable-curl', prefix, ...config.configure], { cwd: sources.libmicrohttpd, env });
+  run('./configure', [
+    '--enable-shared',
+    '--with-pic',
+    '--enable-https=no',
+    '--disable-curl',
+    prefix,
+    ...config.configure
+  ], { cwd: sources.libmicrohttpd, env });
   run('make', ['-j8'], { cwd: sources.libmicrohttpd, env });
   run('make', ['install'], { cwd: sources.libmicrohttpd, env });
 
   console.log('Building LAME');
-  run('./configure', ['--disable-dependency-tracking', '--disable-debug', '--enable-nasm',
-    '--disable-frontend', '--disable-decoder', prefix, ...config.configure], { cwd: sources.lame, env });
+  run('./configure', [
+    '--disable-dependency-tracking',
+    '--disable-debug',
+    '--enable-nasm',
+    '--disable-frontend',
+    '--disable-decoder',
+    prefix,
+    ...config.configure
+  ], { cwd: sources.lame, env });
   run('make', [jobs], { cwd: sources.lame, env });
   run('make', ['install'], { cwd: sources.lame, env });
 
@@ -460,41 +636,54 @@ function buildLibraries(sources, out, config) {
     console.log('Building ' + name);
     const options = name === 'gme' ? ['-DGME_ENABLE_UBSAN=OFF', '-DGME_BUILD_SHARED=ON',
       '-DCMAKE_POLICY_VERSION_MINIMUM=3.5'] : [];
-    run('cmake', [...config.cmake, '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
-      '-DCMAKE_INSTALL_PREFIX=' + out, '-DBUILD_SHARED_LIBS=1', ...options, '.'],
-    { cwd: sources[name], env });
+    run('cmake', [
+      ...config.cmake,
+      '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+      '-DCMAKE_INSTALL_PREFIX=' + out,
+      '-DBUILD_SHARED_LIBS=1',
+      ...options,
+      '.'
+    ], { cwd: sources[name], env });
     run('cmake', ['--build', '.', '--parallel', jobs.slice(2)], { cwd: sources[name], env });
     run('cmake', ['--install', '.'], { cwd: sources[name], env });
   }
 }
 
 function main() {
-  const args = process.argv.slice(2);
+  const args = process.argv.slice(2).filter((arg) => arg !== '--verbose');
+
   if (args.includes('--help') || args.includes('-h')) {
-    console.log('Usage: node script/build-vendor-libraries.js\n' +
-      'Run from the standalone build directory. Set CROSSCOMPILE as needed.');
+    console.log('Usage: node script/build-vendor-libraries.js [--verbose]\n' +
+      'Run from the standalone build directory. Set CROSSCOMPILE as needed.\n' +
+      '  --verbose  Stream build command output');
     return;
   }
+
   if (args.length) throw new Error('Unknown Unix vendor build argument: ' + args[0]);
   if (!mac && process.platform !== 'linux') throw new Error('Unix vendor builds require Linux or macOS.');
 
   const work = mkdtempSync(join(process.cwd(), '.vendor-build-'));
+
   try {
     const vendor = join(work, 'vendor');
     const out = join(vendor, 'bin');
     const lib = join(out, 'lib');
     const config = configuration(lib);
     const destination = join(process.cwd(), 'vendor-' + (rpi ? cross : config.arch));
+
     mkdirSync(vendor);
     writeFileSync(join(vendor, `.config-${config.arch}-${cross}`), '');
 
     console.log(`Building vendors for ${cross || config.arch} (${config.jobs})`);
     console.log(`CFLAGS=${config.env.CFLAGS}\nCXXFLAGS=${config.env.CXXFLAGS}\nLDFLAGS=${config.env.LDFLAGS || ''}`);
-    if (mac) stageMacLibraries(lib);
+
     const sources = fetchPackages(vendor);
     buildLibraries(sources, out, config);
     cleanLibraries(lib);
     run(process.execPath, [join(__dirname, 'relink-dynamic-libraries.js'), 'bin/lib'], { cwd: vendor });
+
+    console.log('Checking vendor library dependencies');
+    run(process.execPath, [join(__dirname, 'scan-standalone.js'), '--vendor', 'bin/lib'], { cwd: vendor });
 
     const previous = join(work, 'previous');
     const replacing = existsSync(destination);
@@ -505,6 +694,7 @@ function main() {
       if (replacing) renameSync(previous, destination);
       throw error;
     }
+
     console.log('Vendor libraries installed in ' + destination);
   } finally {
     rmSync(work, { recursive: true, force: true });

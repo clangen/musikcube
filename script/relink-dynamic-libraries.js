@@ -32,14 +32,10 @@ const libraries = [
   'libcurl.4.dylib',
   'libmicrohttpd.12.dylib',
   'libmp3lame.0.dylib',
-  'libogg.0.dylib',
   'libopenmpt.0.dylib',
-  'libopus.0.dylib',
   'libssl.3.dylib',
   'libswresample-musikcube.6.dylib',
   'libtag.2.3.2.dylib',
-  'libvorbis.0.dylib',
-  'libvorbisenc.2.dylib',
   'libgme.0.6.4.dylib',
 ];
 
@@ -52,14 +48,10 @@ const symlinks = [
   ['libcurl.4.dylib', 'libcurl.dylib'],
   ['libmicrohttpd.12.dylib', 'libmicrohttpd.dylib'],
   ['libmp3lame.0.dylib', 'libmp3lame.dylib'],
-  ['libogg.0.dylib', 'libogg.dylib'],
   ['libopenmpt.0.dylib', 'libopenmpt.dylib'],
-  ['libopus.0.dylib', 'libopus.dylib'],
   ['libssl.3.dylib', 'libssl.dylib'],
   ['libswresample-musikcube.6.dylib', 'libswresample-musikcube.dylib'],
   ['libtag.2.3.2.dylib', 'libtag.dylib'],
-  ['libvorbis.0.dylib', 'libvorbis.dylib'],
-  ['libvorbisenc.2.dylib', 'libvorbisenc.dylib'],
   ['libgme.0.6.4.dylib', 'libgme.dylib'],
 ];
 
