@@ -1,12 +1,13 @@
 // Load the x64 MSVC environment, build packages with vcpkg, and build FFmpeg in portable MSYS2.
 // Keep tools, downloads, source trees, and staging directories under vendor/.build/.
 // Audit staged binaries, then publish headers to vendor/include/ and libraries to vendor/win64/{lib,dll}/.
+// --clean-work removes vendor/.build/ after publishing.
 
 const { spawnSync } = require('node:child_process');
 const { createHash } = require('node:crypto');
 const {
   copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync,
-  readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync,
+  readFileSync, readdirSync, realpathSync, renameSync, rmSync, unlinkSync, writeFileSync,
 } = require('node:fs');
 const { delimiter, dirname, extname, join, resolve } = require('node:path');
 const { parseArgs } = require('node:util');
@@ -328,6 +329,22 @@ function publishBundle(stage) {
   console.log('Windows vendor libraries staged under ' + vendor + '.');
 }
 
+function cleanWorkDirectory() {
+  const expected = join(realpathSync(join(script, '..')), 'vendor', '.build');
+  const target = realpathSync(work);
+  if (target !== expected) {
+    throw new Error('Bundle published. Refusing to remove a redirected work directory: ' + target);
+  }
+
+  try {
+    rmSync(target, { recursive: true, maxRetries: 3, retryDelay: 200 });
+  } catch (error) {
+    throw new Error('Bundle published, but cleanup failed: ' + error.message);
+  }
+
+  console.log('Removed build tools, downloads, and caches from ' + target + '.');
+}
+
 function main() {
   const { values } = parseArgs({
     options: {
@@ -336,6 +353,7 @@ function main() {
       'ffmpeg-install': { type: 'string' },
       preflight: { type: 'boolean' },
       'audit-directory': { type: 'string' },
+      'clean-work': { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
     },
   });
@@ -348,6 +366,7 @@ function main() {
       '  --ffmpeg-install <path>  Stage a completed FFmpeg installation',
       '  --preflight              Check tools without downloading or building',
       '  --audit-directory <path> Check an existing set of Windows binaries',
+      '  --clean-work             Remove vendor/.build/ after publishing',
     ].join('\n'));
     return;
   }
@@ -394,6 +413,8 @@ function main() {
   const stage = stageBundle(installed, ffmpeg, library, tools.dumpbin);
   if (library !== 'static') auditImports(tools.dumpbin, stage.dll);
   publishBundle(stage);
+
+  if (values['clean-work']) cleanWorkDirectory();
 }
 
 try {

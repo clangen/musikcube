@@ -14,6 +14,8 @@ For an existing checkout, run `git submodule update --init --recursive` before b
 
 The Node script uses only built-in modules. Run it with `--preflight` to check the tools or `--help` to see the available options.
 
+Pass `--clean-work` to remove `vendor/.build/` after the script publishes the headers, libraries, and DLLs. This also removes cached downloads and portable build tools. A later vendor rebuild will download them again.
+
 ### Generate the Visual Studio solution with CMake
 
 Use CMake 3.21 or later from an x64 Developer PowerShell for Visual Studio. The `windows-x64` preset generates a Visual Studio 2022 solution with the v143 toolset.
