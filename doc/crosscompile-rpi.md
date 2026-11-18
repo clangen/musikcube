@@ -36,7 +36,7 @@ This will download the cross-compile tools to the current directory, extract the
 In order to facilite easy, efficient distribution of musikcube binaries, we compile various dependencies ourselves, omitting unused features and ensuring the entire package is "relocatable," meaning users can run them from anywhere (i.e. they don't need to be installed to `/usr/` or `/usr/local/` to work properly).
 
 1. `cd /build`
-2. `CROSSCOMPILE=rpi-armv6 node ./musikcube/script/build-vendor-libraries.js`
+2. `node ./musikcube/script/build-vendor-libraries.js --compiler rpi-armv6`
 
 When this has finished, you'll be left with a `vendor-rpi-armv6` directory that the main app compile will reference.
 

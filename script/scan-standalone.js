@@ -92,10 +92,11 @@ const validLibraries = mac
 let errors = 0;
 
 const vendorMode = process.argv[2] === '--vendor';
-const packagePath = process.argv[vendorMode ? 3 : 2];
+const [packagePath, glibcFlag, glibcMax, ...extra] = process.argv.slice(vendorMode ? 3 : 2);
 
-if (!packagePath) {
-  console.log('\n\nusage: node scan-standalone.js [--vendor] <path>\n\n');
+if (!packagePath || extra.length ||
+    (glibcFlag && (mac || glibcFlag !== '--glibc-max' || !/^\d+\.\d+(\.\d+)?$/.test(glibcMax)))) {
+  console.log('\n\nusage: node scan-standalone.js [--vendor] <path> [--glibc-max <version>]\n\n');
   process.exit(1);
 }
 
@@ -117,6 +118,24 @@ const within = (root, path) => {
 const neededLinux = async (file) => {
   const { stdout } = await execFile('readelf', ['-d', file], { env });
   return [...stdout.matchAll(/\(NEEDED\).*?\[([^\]]+)\]/g)].map(([, name]) => name);
+};
+
+const glibcProblems = async (file) => {
+  if (!glibcMax) return [];
+
+  const { stdout } = await execFile('readelf', ['--version-info', file], { env });
+  const needs = stdout.split('Version needs section')[1] || '';
+  const limit = glibcMax.split('.').map(Number);
+  const problems = new Set();
+  for (const [, version] of needs.matchAll(/Name: GLIBC_(\S+)/g)) {
+    if (/^\d+\.\d+(\.\d+)?$/.test(version)) {
+      const parts = version.split('.').map(Number);
+      const difference = parts.findIndex((part, index) => part !== (limit[index] || 0));
+      if (difference < 0 || parts[difference] < (limit[difference] || 0)) continue;
+    }
+    problems.add(`GLIBC_${version} (target glibc ${glibcMax})`);
+  }
+  return [...problems];
 };
 
 const neededMac = async (file) => {
@@ -199,13 +218,13 @@ const scanVendor = async () => {
       if (name.startsWith('@loader_path/')) return !aliases.has(resolve(dirname(file), name.slice(13)));
       return true;
     });
-    report(relative(directory, file), problems);
+    report(relative(directory, file), [...problems, ...await glibcProblems(file)]);
   }
 };
 
 const ldd = async (fn) => {
   const problems = mac ? await lddMac(fn) : await lddLinux(fn);
-  report(fn, problems);
+  report(fn, [...problems, ...await glibcProblems(join(root, fn))]);
 };
 
 const report = (fn, problems) => {

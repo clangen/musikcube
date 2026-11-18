@@ -60,11 +60,19 @@ The vendor script builds third-party dependencies from source with only the feat
 - `cd /build`
 - `node ./musikcube/script/build-vendor-libraries.js`
 
+Choose a compiler when prompted, or pass `--compiler default` to use the native compiler without a prompt.
+
 Pass `--verbose` to stream build command output. By default, the script shows progress and prints recent command output on failure.
 
 This process may take a while, but when it completes you'll be left with a `/build/vendor-${arch}` directory that will contain all build artifacts. The `musikcube` app compile will reference this directory during its build process.
 
 Before publishing the vendor directory, the builder checks the shared libraries for unexpected dependencies using `readelf` on Linux and `otool` on macOS. To rerun the check on an existing build, use `node ./musikcube/script/scan-standalone.js --vendor ./vendor-<arch>/bin/lib`.
+
+### Build the Linux x86-64 vendor libraries with Zig
+
+From the build root, run `node ./musikcube/script/build-vendor-libraries.js --compiler zig`. This targets glibc 2.28 and publishes to `vendor-x86_64-zig-glibc2.28`. The application build still uses the regular vendor directory.
+
+The builder stages the pinned Zig release automatically. To stage it separately, run `node ./musikcube/script/stage-zig-toolchain.js .` from the build root. The script prints the directory containing the compiler wrappers. The toolchain, downloads, caches, and temporary files live in `.vendor-cache` under that root.
 
 ## Compile `musikcube`
 

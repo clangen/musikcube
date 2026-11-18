@@ -44,5 +44,6 @@ src/musikcube/musikcube
 src/musikcubed/musikcubed
 taglib-prefix
 vendor
+.vendor-cache/
 /musikcube.sln
 /musikcube.slnx

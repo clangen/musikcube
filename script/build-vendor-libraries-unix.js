@@ -8,6 +8,7 @@ const {
   mkdirSync,
   mkdtempSync,
   openSync,
+  readFileSync,
   readSync,
   readdirSync,
   realpathSync,
@@ -16,8 +17,9 @@ const {
   symlinkSync,
   writeFileSync,
 } = require('fs');
-const { tmpdir } = require('os');
 const { basename, join } = require('path');
+const { createInterface } = require('readline');
+const { glibcVersion, stage: stageZigToolchain } = require('./stage-zig-toolchain');
 
 const versions = {
   openssl: '3.5.9',
@@ -34,14 +36,14 @@ const versions = {
 };
 
 const mac = process.platform === 'darwin';
-const cross = process.env.CROSSCOMPILE || '';
-const rpi = cross.startsWith('rpi-');
 const buildRoot = '/build';
-const cache = '/tmp/musikcube_build_wget_cache';
+const buildDirectory = process.cwd();
+const cache = join(buildDirectory, '.vendor-cache', 'downloads');
+const scratch = join(buildDirectory, '.vendor-cache', 'tmp');
 const verbose = process.argv.includes('--verbose', 2);
 
 function run(program, args, { capture = false, ...options } = {}) {
-  const logDir = !capture && !verbose ? mkdtempSync(join(tmpdir(), 'musikcube-build-log-')) : null;
+  const logDir = !capture && !verbose ? mkdtempSync(join(scratch, 'build-log-')) : null;
   let log;
 
   try {
@@ -49,7 +51,12 @@ function run(program, args, { capture = false, ...options } = {}) {
 
     const stdio = capture ? ['ignore', 'pipe', 'inherit']
       : logDir ? ['inherit', log, log] : 'inherit';
-    const result = spawnSync(program, args, { encoding: 'utf8', stdio, ...options });
+    const result = spawnSync(program, args, {
+      encoding: 'utf8',
+      stdio,
+      env: { ...process.env, TMPDIR: scratch },
+      ...options,
+    });
 
     if (result.error) throw result.error;
     if (result.status !== 0) {
@@ -70,9 +77,141 @@ function run(program, args, { capture = false, ...options } = {}) {
   }
 }
 
-function configuration(lib) {
+async function configureZig(config, out) {
+  if (mac || process.arch !== 'x64') {
+    throw new Error('--compiler zig currently requires Linux x86-64.');
+  }
+
+  console.log('Staging Zig toolchain');
+  const toolchain = await stageZigToolchain(buildDirectory);
+  const { wrappers } = toolchain;
+  const { env } = config;
+  env.CC = join(wrappers, 'cc');
+  env.CXX = join(wrappers, 'c++');
+  env.AR = join(wrappers, 'ar');
+  env.RANLIB = join(wrappers, 'ranlib');
+  delete env.LD;
+
+  /* Build zlib against the same glibc baseline as its consumers. */
+  const zlib = join(out, '..', '..', 'zig-zlib');
+  const zlibSource = 'zlib-1.4';
+  const marker = `zig-glibc${glibcVersion}`;
+  Object.assign(config, {
+    marker,
+    toolchain,
+    variant: config.arch + '-' + marker,
+    zlib,
+    packages: { zlib: [zlibSource, zlibSource + '.tar.gz', `https://zlib.net/${zlibSource}.tar.gz`] },
+    buildPrerequisites(sources) {
+      const build = { cwd: sources.zlib, env: { ...env, CFLAGS: env.CFLAGS + ' -O2' } };
+      console.log('Building static zlib');
+      run('./configure', ['--static', '--prefix=' + zlib], build);
+      run('make', [config.jobs], build);
+      run('make', ['install'], build);
+    },
+    curl: ['--with-zlib=' + zlib],
+    /* FFmpeg selects its compiler and archiver through configure flags. */
+    ffmpeg: [
+      '--cc=' + env.CC,
+      '--cxx=' + env.CXX,
+      '--ld=' + env.CC,
+      '--ar=' + env.AR,
+      '--ranlib=' + env.RANLIB,
+    ],
+    cmake: [
+      '-DCMAKE_AR=' + env.AR,
+      '-DCMAKE_RANLIB=' + env.RANLIB,
+      '-DZLIB_ROOT=' + zlib,
+      '-DZLIB_USE_STATIC_LIBS=ON',
+    ],
+    openmpt: ['CONFIG=clang', 'CC=' + env.CC, 'CXX=' + env.CXX, 'LD=' + env.CXX, 'AR=' + env.AR],
+    makefileEnv: {
+      ...env,
+      CPPFLAGS: [env.CPPFLAGS, '-I' + join(zlib, 'include')].filter(Boolean).join(' '),
+      LDFLAGS: [env.LDFLAGS, '-L' + join(zlib, 'lib')].filter(Boolean).join(' '),
+      PKG_CONFIG_PATH: '',
+      PKG_CONFIG_LIBDIR: join(zlib, 'lib', 'pkgconfig'),
+      PKG_CONFIG_SYSROOT_DIR: '',
+    },
+    audit: ['--glibc-max', glibcVersion],
+  });
+}
+
+function configureRpi(config, out, arm, toolchain) {
+  // The toolchain's libstdc++ is newer than the oldest target system's.
+  const { arch, env } = config;
+  const tools = join(buildRoot, 'x-tools', toolchain);
+  const sysroot = join(tools, toolchain, 'sysroot');
+  const marker = 'rpi-' + arm;
+
+  env.PATH = join(tools, 'bin') + ':' + env.PATH;
+  env.LDFLAGS = [env.LDFLAGS, `--sysroot=${sysroot}/`].filter(Boolean).join(' ');
+  env.CXXFLAGS += ' -static-libstdc++';
+  env.PKG_CONFIG_PATH = join(out, 'lib', 'pkgconfig') + ':' +
+    join(sysroot, 'usr/lib/arm-linux-gnueabihf/pkgconfig');
+
+  Object.assign(config, {
+    marker,
+    variant: marker,
+    cmake: [
+      '--toolchain',
+      join(buildRoot, 'musikcube', '.cmake', `RaspberryPiToolchain-${arm}.cmake`)
+    ],
+    openssl: ['-latomic', 'linux-generic32', `--cross-compile-prefix=${toolchain}-`],
+    configure: [
+      '--build=x86_64-pc-linux-gnu',
+      `--host=${toolchain}`,
+      `--with-sysroot=${sysroot}/`
+    ],
+    ffmpeg: [
+      `--arch=${arch}`,
+      '--target-os=linux',
+      '--enable-cross-compile',
+      `--sysroot=${sysroot}/`,
+      `--cross-prefix=${toolchain}-`
+    ],
+    makefileEnv: {
+      ...env,
+      AR: `${toolchain}-ar`,
+      CC: `${toolchain}-gcc`,
+      CXX: `${toolchain}-g++`,
+      LD: `${toolchain}-ld`,
+    },
+  });
+}
+
+function configureX86(config) {
+  config.marker = 'x86';
+  config.openssl = ['linux-x86'];
+  config.env.CFLAGS += ' -I/usr/include/i386-linux-gnu/';
+  config.env.CXXFLAGS += ' -I/usr/include/i386-linux-gnu/';
+}
+
+const compilers = new Map([
+  ['default', () => {}],
+  ['zig', configureZig],
+  ['rpi-armv6', (config, out) => configureRpi(config, out, 'armv6', 'armv6-rpi-linux-gnueabihf')],
+  ['rpi-armv8', (config, out) => configureRpi(config, out, 'armv8', 'armv8-rpi3-linux-gnueabihf')],
+  ['x86', configureX86],
+]);
+
+function promptCompiler() {
+  const suggested = process.env.CROSSCOMPILE || 'default';
+  const input = createInterface({ input: process.stdin, output: process.stdout });
+  const names = [...compilers.keys()].join(', ');
+
+  return new Promise((resolve) => {
+    input.once('close', () => resolve(suggested));
+    input.question(`Compiler (${names}) [${suggested}]: `, (answer) => {
+      resolve(answer.trim() || suggested);
+      input.close();
+    });
+  });
+}
+
+async function configuration(out, compiler) {
   const arch = run('uname', ['-m'], { capture: true });
-  const env = { ...process.env, CFLAGS: '-fPIC', CXXFLAGS: '-fPIC -std=c++17' };
+  const env = { ...process.env, TMPDIR: scratch, CFLAGS: '-fPIC', CXXFLAGS: '-fPIC -std=c++17' };
 
   let jobs = '-j8';
 
@@ -87,68 +226,54 @@ function configuration(lib) {
     arch,
     env,
     jobs,
+    compiler,
+    marker: '',
+    variant: arch,
+    packages: {},
+    buildPrerequisites: () => {},
     configure: [],
+    curl: [],
     cmake: [],
     ffmpeg: [],
+    openmpt: [],
+    audit: [],
     openssl: [mac ? `darwin64-${arch}-cc` : `linux-${arch}`],
     makefileEnv: env,
   };
 
-  if (rpi) {
-    // The toolchain's libstdc++ is newer than the oldest target system's.
-    const armv6 = cross === 'rpi-armv6';
-    const toolchain = armv6 ? 'armv6-rpi-linux-gnueabihf' : 'armv8-rpi3-linux-gnueabihf';
-    const tools = join(buildRoot, 'x-tools', toolchain);
-    const sysroot = join(tools, toolchain, 'sysroot');
-    const arm = armv6 ? 'armv6' : 'armv8';
-
-    env.PATH = join(tools, 'bin') + ':' + env.PATH;
-    env.LDFLAGS = [env.LDFLAGS, `--sysroot=${sysroot}/`].filter(Boolean).join(' ');
-    env.CXXFLAGS += ' -static-libstdc++';
-    env.PKG_CONFIG_PATH = join(lib, 'pkgconfig') + ':' +
-      join(sysroot, 'usr/lib/arm-linux-gnueabihf/pkgconfig');
-
-    Object.assign(config, {
-      cmake: [
-        '--toolchain',
-        join(buildRoot, 'musikcube', '.cmake', `RaspberryPiToolchain-${arm}.cmake`)
-      ],
-      openssl: ['-latomic', 'linux-generic32', `--cross-compile-prefix=${toolchain}-`],
-      configure: [
-        '--build=x86_64-pc-linux-gnu',
-        `--host=${toolchain}`,
-        `--with-sysroot=${sysroot}/`
-      ],
-      ffmpeg: [
-        `--arch=${arch}`,
-        '--target-os=linux',
-        '--enable-cross-compile',
-        `--sysroot=${sysroot}/`,
-        `--cross-prefix=${toolchain}-`
-      ],
-      makefileEnv: {
-        ...env,
-        AR: `${toolchain}-ar`,
-        CC: `${toolchain}-gcc`,
-        CXX: `${toolchain}-g++`,
-        LD: `${toolchain}-ld`,
-      },
-    });
-  }
-
-  if (cross === 'x86') {
-    config.openssl = ['linux-x86'];
-    env.CFLAGS += ' -I/usr/include/i386-linux-gnu/';
-    env.CXXFLAGS += ' -I/usr/include/i386-linux-gnu/';
-  }
+  await compilers.get(compiler)(config, out);
 
   return config;
+}
+
+function printConfiguration(config) {
+  const { env, makefileEnv, packages, ...options } = config;
+  /* Report build settings without dumping unrelated inherited variables. */
+  const tools = ['CC', 'CXX', 'CPP', 'LD', 'AR', 'RANLIB', 'NM', 'STRIP', 'PKG_CONFIG'];
+  const flags = ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'LIBS', 'ARFLAGS'];
+  const variables = [
+    'CPATH', 'C_INCLUDE_PATH', 'CPLUS_INCLUDE_PATH', 'LIBRARY_PATH', 'LD_LIBRARY_PATH',
+    'PKG_CONFIG_PATH', 'PKG_CONFIG_LIBDIR', 'PKG_CONFIG_SYSROOT_DIR',
+    'CMAKE_TOOLCHAIN_FILE', 'CMAKE_PREFIX_PATH', 'PATH', 'TMPDIR',
+  ];
+  const environment = Object.fromEntries([
+    ...tools.map((name) => [name, env[name] ?? '(build system default)']),
+    ...flags.map((name) => [name, env[name] ?? '']),
+    ...variables.filter((name) => env[name] !== undefined).map((name) => [name, env[name]]),
+  ]);
+  const makefileEnvironmentOverrides = Object.fromEntries(
+    Object.entries(makefileEnv).filter(([name, value]) => value !== env[name])
+  );
+
+  console.log('Build configuration');
+  console.log(JSON.stringify({ environment, makefileEnvironmentOverrides, ...options }, null, 2));
 }
 
 function download(url, file) {
   const archive = join(cache, file);
   if (existsSync(archive)) return archive;
 
+  console.log('Downloading ' + file);
   mkdirSync(cache, { recursive: true });
   const temp = mkdtempSync(join(cache, 'download-'));
   const pending = join(temp, file);
@@ -161,7 +286,7 @@ function download(url, file) {
   return archive;
 }
 
-function fetchPackages(work) {
+function fetchPackages(work, extraPackages) {
   const openssl = 'openssl-' + versions.openssl;
   const curl = 'curl-' + versions.curl;
   const libmicrohttpd = 'libmicrohttpd-' + versions.libmicrohttpd;
@@ -230,12 +355,14 @@ function fetchPackages(work) {
       gme + '.tar.gz',
       `https://codeload.github.com/libgme/game-music-emu/tar.gz/refs/tags/${versions.gme}`
     ],
+    ...extraPackages,
   };
 
   const sources = {};
 
   for (const [name, [directory, file, url]] of Object.entries(packages)) {
     const archive = download(url, file);
+    console.log('Extracting ' + file);
     copyFileSync(archive, join(work, file));
     run('tar', [file.endsWith('.bz2') ? '-xjf' : '-xzf', file], { cwd: work });
     sources[name] = join(work, directory);
@@ -473,7 +600,7 @@ const curlOptions = [
   '--without-libpsl',
 ];
 
-const libopenmptOptions = [
+const libopenmptConfigureOptions = [
   '--disable-dependency-tracking',
   '--enable-shared',
   '--disable-openmpt123',
@@ -489,6 +616,27 @@ const libopenmptOptions = [
   '--without-portaudiocpp',
   '--without-sndfile',
   '--without-flac',
+];
+
+const libopenmptMakeOptions = [
+  'EXAMPLES=0',
+  'NO_FLAC=1',
+  'NO_MINIMP3=1',
+  'NO_MINIZ=1',
+  'NO_MPG123=1',
+  'NO_OGG=1',
+  'NO_PORTAUDIO=1',
+  'NO_PORTAUDIOCPP=1',
+  'NO_PULSEAUDIO=1',
+  'NO_SDL2=1',
+  'NO_SNDFILE=1',
+  'NO_STBVORBIS=1',
+  'NO_VORBIS=1',
+  'NO_VORBISFILE=1',
+  'OPENMPT123=0',
+  'SHARED_LIB=1',
+  'STATIC_LIB=0',
+  'TEST=0',
 ];
 
 function buildFfmpeg(sources, out, config) {
@@ -526,6 +674,12 @@ function buildFfmpeg(sources, out, config) {
   }
 
   console.log('Building FFmpeg');
+  /* Zig's old glibc stubs can expose sysctl even when the headers omit it. */
+  const configurePath = join(sources.ffmpeg, 'configure');
+  const configureScript = readFileSync(configurePath, 'utf8');
+  const fixedConfigure = configureScript.replace(/^check_func +sysctl$/m, 'check_func_headers sys/sysctl.h sysctl');
+  if (fixedConfigure !== configureScript) writeFileSync(configurePath, fixedConfigure);
+
   const ffmpegEnv = {
     ...codecEnv,
     LDFLAGS: [env.LDFLAGS, '-lm'].filter(Boolean).join(' '),
@@ -550,6 +704,8 @@ function buildLibraries(sources, out, config) {
 
   buildFfmpeg(sources, out, config);
 
+  config.buildPrerequisites(sources);
+
   // curl uses the OpenSSL installation from this build.
   console.log('Building OpenSSL');
   run('perl', [
@@ -568,6 +724,7 @@ function buildLibraries(sources, out, config) {
   run('./configure', [
     '--enable-shared',
     '--with-openssl=' + out,
+    ...config.curl,
     ...curlOptions,
     ...config.configure,
     prefix
@@ -577,31 +734,11 @@ function buildLibraries(sources, out, config) {
 
   console.log('Building libopenmpt');
   if (mac) {
-    run('./configure', [...libopenmptOptions, ...config.configure, prefix], { cwd: sources.libopenmpt, env });
+    run('./configure', [...libopenmptConfigureOptions, ...config.configure, prefix], { cwd: sources.libopenmpt, env });
     run('make', [jobs], { cwd: sources.libopenmpt, env });
     run('make', ['install'], { cwd: sources.libopenmpt, env });
   } else {
-    const options = [
-      'EXAMPLES=0',
-      'NO_FLAC=1',
-      'NO_MINIMP3=1',
-      'NO_MINIZ=1',
-      'NO_MPG123=1',
-      'NO_OGG=1',
-      'NO_PORTAUDIO=1',
-      'NO_PORTAUDIOCPP=1',
-      'NO_PULSEAUDIO=1',
-      'NO_SDL2=1',
-      'NO_SNDFILE=1',
-      'NO_STBVORBIS=1',
-      'NO_VORBIS=1',
-      'NO_VORBISFILE=1',
-      'OPENMPT123=0',
-      'SHARED_LIB=1',
-      'STATIC_LIB=0',
-      'TEST=0',
-      'PREFIX=' + out,
-    ];
+    const options = [...libopenmptMakeOptions, 'PREFIX=' + out, ...config.openmpt];
     const make = { cwd: sources.libopenmpt, env: config.makefileEnv };
     run('make', [...options, jobs, 'VERBOSE=1'], make);
     run('make', [...options, 'install'], make);
@@ -649,41 +786,62 @@ function buildLibraries(sources, out, config) {
   }
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2).filter((arg) => arg !== '--verbose');
 
   if (args.includes('--help') || args.includes('-h')) {
-    console.log('Usage: node script/build-vendor-libraries.js [--verbose]\n' +
-      'Run from the standalone build directory. Set CROSSCOMPILE as needed.\n' +
-      '  --verbose  Stream build command output');
+    console.log('Usage: node script/build-vendor-libraries.js [--verbose] [--compiler <name>]\n' +
+      'Run from the standalone build directory.\n' +
+      '  --verbose   Stream build command output\n' +
+      `  --compiler  ${[...compilers.keys()].join(', ')}\n` +
+      `              zig targets Linux x86-64 with glibc ${glibcVersion}\n` +
+      '              Prompts when omitted. The suggested choice is CROSSCOMPILE or default.');
     return;
+  }
+
+  const compilerIndex = args.findIndex((arg) => arg === '--compiler' || arg.startsWith('--compiler='));
+  let compiler;
+  if (compilerIndex !== -1) {
+    const [flag] = args.splice(compilerIndex, 1);
+    compiler = flag === '--compiler' ? args.splice(compilerIndex, 1)[0] : flag.slice('--compiler='.length);
+    if (!compiler || compiler.startsWith('--')) throw new Error('--compiler requires a name.');
   }
 
   if (args.length) throw new Error('Unknown Unix vendor build argument: ' + args[0]);
   if (!mac && process.platform !== 'linux') throw new Error('Unix vendor builds require Linux or macOS.');
 
-  const work = mkdtempSync(join(process.cwd(), '.vendor-build-'));
+  compiler = compiler ?? await promptCompiler();
+  if (!compilers.has(compiler)) {
+    throw new Error(`Unknown compiler "${compiler}". Choose from ${[...compilers.keys()].join(', ')}.`);
+  }
+  mkdirSync(scratch, { recursive: true });
+  const work = mkdtempSync(join(buildDirectory, '.vendor-build-'));
 
   try {
     const vendor = join(work, 'vendor');
     const out = join(vendor, 'bin');
     const lib = join(out, 'lib');
-    const config = configuration(lib);
-    const destination = join(process.cwd(), 'vendor-' + (rpi ? cross : config.arch));
+    const config = await configuration(out, compiler);
+    const destination = join(buildDirectory, 'vendor-' + config.variant);
 
     mkdirSync(vendor);
-    writeFileSync(join(vendor, `.config-${config.arch}-${cross}`), '');
+    writeFileSync(join(vendor, `.config-${config.arch}-${config.marker}`), '');
 
-    console.log(`Building vendors for ${cross || config.arch} (${config.jobs})`);
-    console.log(`CFLAGS=${config.env.CFLAGS}\nCXXFLAGS=${config.env.CXXFLAGS}\nLDFLAGS=${config.env.LDFLAGS || ''}`);
+    console.log(`Building vendors for ${config.variant} (${config.jobs})`);
+    printConfiguration(config);
 
-    const sources = fetchPackages(vendor);
+    const sources = fetchPackages(vendor, config.packages);
     buildLibraries(sources, out, config);
     cleanLibraries(lib);
     run(process.execPath, [join(__dirname, 'relink-dynamic-libraries.js'), 'bin/lib'], { cwd: vendor });
 
     console.log('Checking vendor library dependencies');
-    run(process.execPath, [join(__dirname, 'scan-standalone.js'), '--vendor', 'bin/lib'], { cwd: vendor });
+    run(process.execPath, [
+      join(__dirname, 'scan-standalone.js'),
+      '--vendor',
+      'bin/lib',
+      ...config.audit,
+    ], { cwd: vendor });
 
     const previous = join(work, 'previous');
     const replacing = existsSync(destination);
@@ -701,9 +859,7 @@ function main() {
   }
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error) => {
   console.error(error.message);
   process.exitCode = 1;
-}
+});
