@@ -5,7 +5,16 @@
 
 cmake_minimum_required(VERSION 3.5)
 
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+endif()
 project(musikcube)
+
+if(WIN32)
+  include("${CMAKE_CURRENT_SOURCE_DIR}/.cmake/BuildWindows.cmake")
+  return()
+endif()
+
 set (musikcube_VERSION_MAJOR 3)
 set (musikcube_VERSION_MINOR 0)
 set (musikcube_VERSION_PATCH 5)

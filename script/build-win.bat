@@ -2,14 +2,19 @@
 set start=%time%
 @echo on
 
-SET scriptdir=%~dp0
-
-call %scriptdir%\clean-win.bat
+SET "scriptdir=%~dp0"
+pushd "%scriptdir%.."
+node "%scriptdir%generate-windows-solution.js" || (popd & exit /b 1)
+call "%scriptdir%clean-win.bat" || (popd & exit /b 1)
 
 echo "*** BUILDING x64 ***"
-MSBuild.exe ../milkdrop2-musikcube/milkdrop2-musikcube.sln /m /nologo /verbosity:minimal /p:Configuration=Release /p:Platform=x64
-MSBuild.exe musikcube.sln /m /nologo /verbosity:minimal /p:Configuration=Release /p:Platform=x64
-MSBuild.exe musikcube.sln /target:musikcube /m /nologo /verbosity:minimal /p:ExternalCompilerOptions=PDCURSES_WINCON /p:Configuration=Release /p:Platform=x64 /p:ForceImportAfterCppTargets=%scriptdir%\windows-cmd.props
+cmake --build --preset windows-release --parallel || (popd & exit /b 1)
+
+if exist "..\milkdrop2-musikcube\milkdrop2-musikcube.sln" (
+  MSBuild.exe ..\milkdrop2-musikcube\milkdrop2-musikcube.sln /m /nologo /verbosity:minimal /p:Configuration=Release /p:Platform=x64 || (popd & exit /b 1)
+)
+
+popd
 
 echo "*** DONE ***"
 @echo off

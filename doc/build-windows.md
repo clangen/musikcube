@@ -12,15 +12,25 @@ node .\script\build-vendor-libraries.js
 
 For an existing checkout, run `git submodule update --init --recursive` before building. The vendor script downloads pinned sources and portable build tools, so the first run needs internet access. It uses MSVC to compile the libraries and a repo-local MSYS2 shell for FFmpeg's build. It installs no system-wide tools. Sources, caches, headers, libraries, and runtime DLLs are stored under the ignored `vendor\` directory.
 
-The Node script uses only built-in modules. Run it with `--preflight` to check the tools or `--help` to see the available options. `script/build-vendor-libraries.ps1` is also available if you prefer the PowerShell entry point.
+The Node script uses only built-in modules. Run it with `--preflight` to check the tools or `--help` to see the available options.
 
-Open `musikcube.sln`, select **x64**, and build either configuration. Or use an x64 Developer PowerShell for Visual Studio.
+### Generate the Visual Studio solution with CMake
+
+Use CMake 3.21 or later from an x64 Developer PowerShell for Visual Studio. The `windows-x64` preset generates a Visual Studio 2022 solution with the v143 toolset.
 
 ```powershell
-msbuild .\musikcube.sln /t:Build /p:Configuration=Release /p:Platform=x64
-msbuild .\musikcube.sln /t:Build /p:Configuration=Debug /p:Platform=x64
+node .\script\generate-windows-solution.js
+cmake --build --preset windows-release
+cmake --build --preset windows-debug
 ```
 
-Run `bin64\Release\musikcube.exe` or `bin64\Debug\musikcube.exe`. The projects copy the vendor DLLs beside the executable during the build. Both configurations use the same shared dependency DLLs. The static libraries used by plugins are built for the corresponding Release or Debug CRT.
+Open the generated `musikcube.sln` at the checkout root to build and debug from Visual Studio. Rerun the generator after adding or removing a CMake target. The GUI and console executables, plugins, and runtime files are in `bin64\Release` and `bin64\Debug`.
 
-After changing dependency versions or build flags, rerun the vendor script and rebuild into a clean output directory so obsolete DLLs from a previous build cannot remain beside the executable. Keep version pins in sync between the Node and PowerShell entry points. FFmpeg's codec and format options are shared in `script/windows-vendor/ffmpeg-options.txt`.
+```powershell
+node .\script\build-vendor-libraries.js --audit-directory .\bin64\Release
+node .\script\build-vendor-libraries.js --audit-directory .\bin64\Debug
+```
+
+Both configurations use the same shared dependency DLLs. The static libraries used by plugins are built for the corresponding Release or Debug CRT.
+
+After changing dependency versions or build flags, rerun the vendor script, run `script\clean-win.bat` to clear the old build and staged DLLs, and rebuild. FFmpeg's codec and format options are in `script/windows-vendor/ffmpeg-options.txt`.
