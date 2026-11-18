@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/sdk/Filesystem.h>
 
 #include "PluginOverlay.h"
 
@@ -177,7 +178,7 @@ class PluginListAdapter : public ScrollAdapterBase {
                 [&plugins, prefs](IPlugin* raw, Plugin plugin, const std::string& fn) {
                     PluginInfoPtr info(new PluginInfo());
                     info->plugin = raw;
-                    info->fn = std::fs::path(std::fs::u8path(fn)).filename().u8string();
+                    info->fn = musik::core::sdk::fs::pathToUtf8(std::fs::u8path(fn).filename());
                     info->version = plugin->Version();
                     info->enabled = prefs->GetBool(info->fn, true);
                     plugins.push_back(info);

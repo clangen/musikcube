@@ -1,6 +1,6 @@
 # Building musikcube on Windows
 
-Install Git, Node.js, and Visual Studio 2022 with the Desktop development with C++ workload, including the x64 compiler and a Windows SDK. Keep the checkout path free of spaces for the FFmpeg build. The supported Visual Studio configurations are **Debug x64** and **Release x64**.
+Install Git, Node.js, and Visual Studio 2026 with the Desktop development with C++ workload, including the x64 compiler and a Windows SDK. Keep the checkout path free of spaces for the FFmpeg build. The supported Visual Studio configurations are **Debug x64** and **Release x64**.
 
 Clone with submodules so the Asio sources are available. From the checkout root, run the vendor build once before building the solution.
 
@@ -18,7 +18,9 @@ Pass `--clean-work` to remove `vendor/.build/` after the script publishes the he
 
 ### Generate the Visual Studio solution with CMake
 
-Use CMake 3.21 or later from an x64 Developer PowerShell for Visual Studio. The `windows-x64` preset generates a Visual Studio 2022 solution with the v143 toolset.
+Use CMake 4.2 or later from an x64 Developer PowerShell for Visual Studio 2026. The `windows-x64` preset generates a Visual Studio 2026 solution with the v145 toolset.
+
+If you previously configured with Visual Studio 2022, move `build/windows-x64` aside before generating the solution so CMake creates a fresh cache.
 
 ```powershell
 node .\script\generate-windows-solution.js
@@ -26,7 +28,7 @@ cmake --build --preset windows-release
 cmake --build --preset windows-debug
 ```
 
-Open the generated `musikcube.sln` at the checkout root to build and debug from Visual Studio. Rerun the generator after adding or removing a CMake target. The GUI and console executables, plugins, and runtime files are in `bin64\Release` and `bin64\Debug`.
+Open the generated `musikcube.slnx` (or `musikcube.sln`, depending on your CMake version) at the checkout root to build and debug from Visual Studio. Rerun the generator after adding or removing a CMake target. The GUI and console executables, plugins, and runtime files are in `bin64\Release` and `bin64\Debug`.
 
 ```powershell
 node .\script\build-vendor-libraries.js --audit-directory .\bin64\Release

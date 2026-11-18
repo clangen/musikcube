@@ -60,6 +60,11 @@
 
 namespace musik { namespace core { namespace sdk { namespace fs {
 
+    static inline std::string pathToUtf8(const std::filesystem::path& path) {
+        const auto utf8 = path.u8string();
+        return std::string(reinterpret_cast<const char*>(utf8.data()), utf8.size());
+    }
+
     template <typename String=std::string>
     static inline bool fileExists(const String& fn) {
     #ifdef WIN32

@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/sdk/Filesystem.h>
 #include <nlohmann/json.hpp>
 #include <cursespp/Colors.h>
 #include <musikcore/support/Common.h>
@@ -580,8 +581,8 @@ static void indexThemes(const std::string& directory) {
         for (fs::directory_iterator file(colorPath); file != end; file++) {
             const fs::path& p = file->path();
 
-            if (p.has_extension() && p.extension().u8string() == ".json") {
-                std::string fn = p.filename().u8string();
+            if (p.has_extension() && p.extension() == ".json") {
+                std::string fn = musik::core::sdk::fs::pathToUtf8(p.filename());
                 Theme theme;
                 if (theme.LoadFromFile(directory + "/" + fn)) {
                    ::themes.push_back(theme);

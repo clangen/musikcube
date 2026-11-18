@@ -39,6 +39,7 @@
 #include <shellapi.h>
 
 #ifdef WIN32
+#include <winrt/Windows.UI.ViewManagement.h>
 
 using namespace winrt::Windows::UI::ViewManagement;
 

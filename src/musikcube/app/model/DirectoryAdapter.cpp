@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/sdk/Filesystem.h>
 
 #include <musikcore/support/Common.h>
 #include <cursespp/Text.h>
@@ -44,6 +45,7 @@
 #include <filesystem>
 
 namespace fs = std::filesystem;
+using musik::core::sdk::fs::pathToUtf8;
 
 using namespace musik::cube;
 using namespace cursespp;
@@ -69,7 +71,7 @@ static void buildDriveList(std::vector<std::string>& target) {
 }
 
 static bool shouldBuildDriveList(const fs::path& dir) {
-    return dir.u8string().size() == 0;
+    return dir.empty();
 }
 #endif
 
@@ -81,7 +83,7 @@ static bool hasSubdirectories(fs::path p, bool showDotfiles) {
         while (file != end) {
             try {
                 if (fs::is_directory(file->status())) {
-                    if (showDotfiles || file->path().filename().u8string().at(0) != '.') {
+                    if (showDotfiles || pathToUtf8(file->path().filename()).at(0) != '.') {
                         return true;
                     }
                 }
@@ -113,9 +115,9 @@ static void buildDirectoryList(
         while (file != end) {
             try {
                 if (is_directory(file->status())) {
-                    std::string leaf = file->path().filename().u8string();
+                    std::string leaf = pathToUtf8(file->path().filename());
                     if (showDotfiles || leaf.at(0) != '.') {
-                        target.push_back(file->path().u8string());
+                        target.push_back(pathToUtf8(file->path()));
                     }
                 }
             }
@@ -141,7 +143,7 @@ static void buildDirectoryList(
 }
 
 static std::string pathToString(fs::path path) {
-    return musik::core::NormalizeDir(path.u8string());
+    return musik::core::NormalizeDir(pathToUtf8(path));
 }
 
 static fs::path stringToPath(const std::string& path) {
@@ -235,7 +237,7 @@ std::string DirectoryAdapter::GetFullPathAt(size_t index) {
         return "";
     }
     if (this->IsCurrentDirectory(index)) {
-        return this->dir.u8string();
+        return pathToUtf8(this->dir);
     }
     index -= this->GetHeaderCount();
     return pathToString(fs::u8path(this->subdirs.at(index)));
@@ -248,7 +250,7 @@ std::string DirectoryAdapter::GetLeafAt(size_t index) {
     if (this->IsCurrentDirectory(index)) {
         return ".";
     }
-    return fs::u8path(this->subdirs.at(index)).u8string();
+    return pathToUtf8(fs::u8path(this->subdirs.at(index)));
 }
 
 size_t DirectoryAdapter::IndexOf(const std::string& leaf) {
@@ -281,14 +283,14 @@ std::string DirectoryAdapter::GetParentPath() {
     if (dir.has_parent_path() &&
         pathToString(this->dir) != pathToString(this->rootDir))
     {
-        return pathToString(dir.parent_path().u8string());
+        return pathToString(pathToUtf8(dir.parent_path()));
     }
 
     return "";
 }
 
 std::string DirectoryAdapter::GetCurrentPath() {
-    return pathToString(dir.u8string());
+    return pathToString(pathToUtf8(dir));
 }
 
 void DirectoryAdapter::Refresh() {
@@ -346,17 +348,17 @@ IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* 
     }
     else if (this->ShowCurrentDirectory()) {
         if (IsCurrentDirectory(index)) {
-            const auto dir = u8fmt("[%s]", + this->rootDir.parent_path().filename().u8string().c_str());
+            const auto dir = u8fmt("[%s]", pathToUtf8(this->rootDir.parent_path().filename()).c_str());
             return IScrollAdapter::EntryPtr(new SingleLineEntry(dir));
         }
     }
     index -= this->GetHeaderCount();
     auto path = fs::u8path(this->subdirs[index]);
-    auto pathString = path.filename().u8string();
+    auto pathString = pathToUtf8(path.filename());
     /* windows root drives are 'x:\', so they don't have a filename leaf. if
     we resolve an empty string, just use the whole path */
     if (!pathString.size()) {
-        pathString = path.u8string();
+        pathString = pathToUtf8(path);
     }
     auto text = text::Ellipsize(pathString, this->GetWidth());
     return IScrollAdapter::EntryPtr(new SingleLineEntry(text));
