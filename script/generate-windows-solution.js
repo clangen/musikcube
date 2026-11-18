@@ -1,4 +1,4 @@
-// Generate the x64 projects under build/ and write a root solution that points to them.
+/* Generate the x64 projects under build/ and write a root solution that points to them. */
 
 const { spawnSync } = require('node:child_process');
 const { existsSync, readFileSync, writeFileSync } = require('node:fs');
@@ -18,6 +18,7 @@ if (result.error) {
 }
 if (result.status !== 0) process.exit(result.status ?? 1);
 
+/* Use the solution format emitted by the installed CMake generator. */
 const filename = ['musikcube.slnx', 'musikcube.sln'].find(name => existsSync(join(build, name)));
 if (!filename) {
   console.error('CMake did not generate a musikcube solution in ' + build);
@@ -28,7 +29,7 @@ const generated = readFileSync(join(build, filename), 'utf8');
 const project = filename.endsWith('.slnx')
   ? /(<Project Path="|<BuildDependency Project=")([^"]+\.vcxproj)"/gi
   : /^(Project\("[^"]+"\) = "[^"]+", ")([^"]+\.vcxproj)"/gim;
-// SLNX dependencies refer to projects by path, so rebase those references too.
+/* SLNX dependencies refer to projects by path, so rebase those references too. */
 const solution = generated.replace(project, (_, prefix, path) =>
   prefix + relative(root, resolve(build, path)) + '"',
 );

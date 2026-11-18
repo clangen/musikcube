@@ -37,7 +37,7 @@ node .\script\build-vendor-libraries.js --audit-directory .\bin64\Debug
 
 Both configurations use the same shared dependency DLLs. The static libraries used by plugins are built for the corresponding Release or Debug CRT.
 
-After changing dependency versions or build flags, rerun the vendor script, run `script\clean-win.bat` to clear the old build and staged DLLs, and rebuild. FFmpeg's codec and format options are in `script/windows-vendor/ffmpeg-options.txt`.
+After changing dependency versions or build flags, rerun the vendor script, run `script\clean-win.bat` to clear the old build and staged DLLs, and rebuild. FFmpeg's codec and format options are in `script/vendor-packages/windows/ffmpeg-options.txt`.
 
 ### Package a Release build with MilkDrop
 

@@ -52,6 +52,7 @@ async function stage(root) {
     mkdirSync(directory, { recursive: true });
   }
 
+  /* Check the archive before installing Zig into the shared cache. */
   if (!existsSync(zig)) {
     const pending = mkdtempSync(join(tmp, 'zig-'));
     try {
@@ -75,6 +76,7 @@ async function stage(root) {
     }
   }
 
+  /* Put the target and cache settings in the wrappers used by downstream builds. */
   mkdirSync(wrappers, { recursive: true });
   const commands = {
     cc: `cc -target ${target} -mcpu=baseline`,

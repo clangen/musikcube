@@ -14,7 +14,7 @@ In an ideal world we wouldn't have to worry about these problems, and `musikcube
 
 So, for now, we've developed a process that allows us to compile "generic" binaries once per CPU architecture that should generally work across most modern Linux distributions without hassle. In short, we do the following:
 
-1. Compile using an operating system with versions of `GLIBC` and `GLIBCXX` that should work on any Linux distribution from 2018 to now. We currently use `Debian Buster`.
+1. Target glibc 2.28 for native Linux x86-64 builds. Zig supplies the glibc target and builds the dependency sysroot from source.
 2. Include modern versions of fundamental dependencies (`openssl`, `curl`, `ffmpeg` and others), compiled from source, omitting any unused/extraneous functionality.
 3. Ensure the app is "relocatable" on the filesystem; all libraries are loaded via relative paths so you can put the `musikcube` directory wherever you want and it'll still run. This is done by manually rewriting `rpath` values for shared libraries and executables where necessary.
 
@@ -24,7 +24,11 @@ Regular build instructions can be found on the [Github project page, here](https
 
 # Instructions
 
-## Install `Debian Buster`
+## Build host
+
+Native Linux x86-64 builds can run on a current Linux host. Install Node.js, CMake, Make, Perl, Git, wget, pkg-config, tar with gzip, bzip2 and xz support, binutils, patchelf, and RPM packaging tools.
+
+### Debian Buster setup for the legacy toolchain
 
 It's probably easiest to just install a `docker` image and use that, but an install straight to physical hardware (or a virtual machine) will work just fine.
 
@@ -70,7 +74,7 @@ Before publishing the vendor directory, the builder checks the shared libraries 
 
 ### Build the Linux x86-64 vendor libraries with Zig
 
-From the build root, run `node ./musikcube/script/build-vendor-libraries.js --compiler zig`. This targets glibc 2.28 and publishes to `vendor-x86_64-zig-glibc2.28`. The application build still uses the regular vendor directory.
+From the build root, run `node ./musikcube/script/build-vendor-libraries.js --compiler zig`. This targets glibc 2.28 and builds ncurses, panel, tinfo, libev, and zlib from source into `vendor-x86_64-zig-glibc2.28/sysroot`. The standalone app links the vendored curses and libev archives statically and bundles the terminfo database. Pinned Debian packages provide the build inputs for ALSA, PipeWire, PortAudio, PulseAudio, sndio, and MPRIS. These plugins use the target system’s shared libraries at runtime. Use `--sysroot /path/to/sysroot` to stage a prepared sysroot with a different set of optional plugin dependencies.
 
 The builder stages the pinned Zig release automatically. To stage it separately, run `node ./musikcube/script/stage-zig-toolchain.js .` from the build root. The script prints the directory containing the compiler wrappers. The toolchain, downloads, caches, and temporary files live in `.vendor-cache` under that root.
 
@@ -81,8 +85,12 @@ Use a C++20-capable compiler for the application build.
 Now that we have all required dependencies available it's time to compile the app itself. As mentioned above we want the resulting binary to be relocatable on the filesystem, so some special pre- and post-processing must happen. Specifically: we need to gather copies of all dependencies and rewrite their `rpaths` if necessary. We also need to collect and include resource files like themes and localization files, then create `.deb`, `.rpm`, and `.tar.bz2` archives for distribution. As in the previous step all of this complexity has been hidden behind a script.
 
 - `cd /build/musikcube`
-- `./script/archive-standalone-nix.sh x.y.z`
+- `node ./script/archive-standalone-unix.js x.y.z`
   - `x.y.z` is the version of `musikcube` we'd like to appear in the filename. You can use anything you want, e.g. `0.0.0`
   - The build process will automatically discover and use the `/build/vendor-${arch}` directory created in the previous step.
 
 After the script has completed you should have a set of "relocatable" binaries in `/build/musikcube/dist/x.y.z/` that will work on most Linux distributions released in 2018 or later.
+
+### Native Linux x86-64 standalone builds
+
+From the checkout, run `node ./script/archive-standalone-unix.js x.y.z`. The script automatically uses Zig and the sysroot staged in the Zig vendor directory. Use `--sysroot /path/to/sysroot` to override the staged copy. The script audits the Zig vendor libraries before building and checks the packaged ELF files against glibc 2.28.

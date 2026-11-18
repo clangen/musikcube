@@ -116,6 +116,7 @@ const rebuildSymlinks = async () => {
 
 const main = async () => {
   try {
+    /* Rewrite dylib paths before restoring the versioned symlinks. */
     await Promise.allSettled(libraries.map((library) => relink(library)));
     await rebuildSymlinks();
   } catch (e) {

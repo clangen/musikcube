@@ -108,7 +108,10 @@ else()
 endif()
 
 find_library_and_header(LIBZ z zlib.h)
-find_library_and_header(PTHREAD pthread pthread.h)
+
+if (NOT DEFINED PTHREAD)
+  find_library_and_header(PTHREAD pthread pthread.h)
+endif()
 
 set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ} ${PTHREAD})
 

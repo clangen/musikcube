@@ -124,7 +124,7 @@ find_library(LIBPANEL NAMES ${PANEL_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIE
 
 message(STATUS "[musikcube] using libncurses at: " ${LIBNCURSES})
 message(STATUS "[musikcube] using libpanel at: " ${LIBPANEL})
-target_link_libraries(musikcube ${musikcube_LINK_LIBS} ${LIBNCURSES} ${LIBPANEL} ${LIBTINFO} musikcore)
+target_link_libraries(musikcube ${musikcube_LINK_LIBS} ${LIBPANEL} ${LIBNCURSES} ${LIBTINFO} musikcore)
 
 if (ENABLE_PCH MATCHES "true")
     message(STATUS "[musikcube] enabling precompiled headers")

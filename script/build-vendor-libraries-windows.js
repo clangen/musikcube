@@ -13,7 +13,7 @@ const { delimiter, dirname, extname, join, resolve } = require('node:path');
 const { parseArgs } = require('node:util');
 
 const script = __dirname;
-const support = join(script, 'windows-vendor');
+const support = join(script, 'vendor-packages', 'windows');
 const vendor = join(script, '..', 'vendor');
 const work = join(vendor, '.build');
 const triplet = 'musikcube-x64';
@@ -378,6 +378,7 @@ function main() {
     throw new Error('Unknown library: ' + values.library);
   }
 
+  /* Audit and preflight can exit before provisioning build tools. */
   const tools = findVisualStudio();
   if (values['audit-directory']) {
     auditImports(tools.dumpbin, resolve(values['audit-directory']));
@@ -403,6 +404,7 @@ function main() {
   const env = loadMsvcEnvironment(tools);
   if (needsFfmpeg && !reuse) provisionMsys2(msys, portable);
 
+  /* Build the selected packages and any codecs FFmpeg needs. */
   const packages = library === 'all' ? [...Object.values(sharedPackages), ...staticPackages]
     : library === 'static' ? [...staticPackages] : sharedPackages[library] ? [sharedPackages[library]] : [];
   if (needsFfmpeg && !reuse) packages.push('opus', 'libvorbis');
@@ -410,6 +412,7 @@ function main() {
   const installed = packages.length ? buildPackages(packages, env) : null;
   const ffmpeg = needsFfmpeg ? reuse ?? buildFfmpeg(msys, installed, tools, env) : null;
 
+  /* Audit the staged DLLs before publishing the vendor bundle. */
   const stage = stageBundle(installed, ffmpeg, library, tools.dumpbin);
   if (library !== 'static') auditImports(tools.dumpbin, stage.dll);
   publishBundle(stage);

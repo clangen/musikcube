@@ -36,6 +36,16 @@ const ignoredLibraries = mac
     'libsndioout.so',
   ]);
 
+/* Direct host dependencies of optional Linux plugins in the Zig archive. */
+const optionalPluginLibraries = new Map([
+  ['libalsaout.so', 'libasound.so.2'],
+  ['libmpris.so', 'libsystemd.so.0'],
+  ['libpipewireout.so', 'libpipewire-0.3.so.0'],
+  ['libportaudioout.so', 'libportaudio.so.2'],
+  ['libpulseout.so', 'libpulse.so.0'],
+  ['libsndioout.so', 'libsndio.so.7.0'],
+]);
+
 /* ELF interpreter names used by supported Linux architectures. */
 const linuxLoaders = [
   'ld-linux-x86-64.so.2',
@@ -106,7 +116,7 @@ const ls = async (leaf) => {
   const output = await readdir(`${root}/${leaf}`);
   const files = output
     .filter((fn) => fn.indexOf(filetype) !== -1)
-    .filter((fn) => !ignoredLibraries.has(fn));
+    .filter((fn) => glibcMax || !ignoredLibraries.has(fn));
   return files;
 };
 
@@ -223,7 +233,12 @@ const scanVendor = async () => {
 };
 
 const ldd = async (fn) => {
-  const problems = mac ? await lddMac(fn) : await lddLinux(fn);
+  /* Optional plugins use the host's stack, but still need the target glibc ABI. */
+  const optionalLibrary = glibcMax && optionalPluginLibraries.get(basename(fn));
+  const problems = optionalLibrary
+    ? (await neededLinux(join(root, fn))).filter((name) =>
+      name !== optionalLibrary && !linuxRuntimeLibraries.includes(name))
+    : ignoredLibraries.has(basename(fn)) ? [] : mac ? await lddMac(fn) : await lddLinux(fn);
   report(fn, [...problems, ...await glibcProblems(join(root, fn))]);
 };
 
@@ -243,6 +258,7 @@ const lddDir = async (leaf) => {
 };
 
 const main = async () => {
+  /* Scan raw vendor libraries or the staged app and its plugins. */
   if (vendorMode) {
     await scanVendor();
   } else {

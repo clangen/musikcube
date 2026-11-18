@@ -45,4 +45,4 @@ When this has finished, you'll be left with a `vendor-rpi-armv6` directory that 
 Now that we have all of our dependencies available it's time to compile the main app.
 
 1. `cd /build/musikcube`
-2. `CROSSCOMPILE=rpi-armv6 ./script/archive-standalone-nix.sh 3.0.2`
+2. `CROSSCOMPILE=rpi-armv6 node ./script/archive-standalone-unix.js 3.0.2`
