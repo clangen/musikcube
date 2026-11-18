@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "Transcoder.h"
+#include "musikcore/sdk/Filesystem.h"
 #include "BlockingTranscoder.h"
 #include "TranscodingAudioDataStream.h"
 #include "Constants.h"
@@ -46,10 +47,17 @@
 #include <functional>
 #include <chrono>
 
+using musik::core::sdk::fs::pathToUtf8;
+
 namespace fs = std::filesystem;
 
 using namespace std::chrono;
-using namespace musik::core::sdk;
+using musik::core::sdk::IBlockingEncoder;
+using musik::core::sdk::IDataStream;
+using musik::core::sdk::IEncoder;
+using musik::core::sdk::IStreamingEncoder;
+using musik::core::sdk::OpenFlags;
+using musik::core::sdk::PathType;
 
 std::mutex transcoderMutex;
 std::condition_variable waitForTranscode;
@@ -121,7 +129,7 @@ static void iterateTranscodeCache(Context& context, std::function<void(fs::path)
 
 void Transcoder::RemoveTempTranscodeFiles(Context& context) {
     iterateTranscodeCache(context, [](fs::path p) {
-        if (p.extension().u8string() == ".tmp") {
+        if (pathToUtf8(p.extension()) == ".tmp") {
             std::error_code ec;
             fs::remove(p, ec);
         }

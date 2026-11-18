@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "HttpServer.h"
+#include "musikcore/sdk/Filesystem.h"
 #include "Constants.h"
 #include "Util.h"
 #include "Transcoder.h"
@@ -64,6 +65,8 @@
 
 static const char* ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH = "MUSIKCUBE_DISABLE_HTTP_SERVER_AUTH";
 static const char* TAG = "HttpServer";
+
+using musik::core::sdk::fs::pathToUtf8;
 
 namespace std {
     namespace fs = std::filesystem;
@@ -104,7 +107,7 @@ struct Range {
 static std::string contentType(const std::string& fn) {
     try {
         std::fs::path p(std::fs::u8path(fn));
-        std::string ext = str::ToLowerCopy(str::Trim(p.extension().u8string()));
+        std::string ext = str::ToLowerCopy(str::Trim(pathToUtf8(p.extension())));
         auto it = CONTENT_TYPE_MAP.find(ext);
         if (it != CONTENT_TYPE_MAP.end()) {
             return it->second;
@@ -119,7 +122,7 @@ static std::string contentType(const std::string& fn) {
 static std::string fileExtension(const std::string& fn) {
     try {
         std::fs::path p(std::fs::u8path(fn));
-        std::string ext = str::ToLowerCopy(str::Trim(p.extension().u8string()));
+        std::string ext = str::ToLowerCopy(str::Trim(pathToUtf8(p.extension())));
         if (ext.size()) {
             return ext[0] == '.' ? ext.substr(1) : ext;
         }

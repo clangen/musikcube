@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include "musikcore/sdk/Filesystem.h"
 
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/config.h>
@@ -48,6 +49,8 @@
 
 static const std::string TAG = "LocalLibrary";
 static bool scheduleSyncDueToDbUpgrade = false;
+
+using musik::core::sdk::fs::pathToUtf8;
 
 namespace fs = std::filesystem;
 
@@ -176,7 +179,7 @@ std::string LocalLibrary::GetLibraryDirectory() {
         fs::create_directories(dir);
     }
 
-    directory = dir.u8string();
+    directory = pathToUtf8(dir);
 
     return directory;
 }

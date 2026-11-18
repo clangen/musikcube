@@ -68,6 +68,8 @@ Before publishing the vendor directory, the builder checks the shared libraries 
 
 ## Compile `musikcube`
 
+Use a C++20-capable compiler for the application build.
+
 Now that we have all required dependencies available it's time to compile the app itself. As mentioned above we want the resulting binary to be relocatable on the filesystem, so some special pre- and post-processing must happen. Specifically: we need to gather copies of all dependencies and rewrite their `rpaths` if necessary. We also need to collect and include resource files like themes and localization files, then create `.deb`, `.rpm`, and `.tar.bz2` archives for distribution. As in the previous step all of this complexity has been hidden behind a script.
 
 - `cd /build/musikcube`

@@ -3,7 +3,7 @@
 #cmake -DGENERATE_DEB=true -DPACKAGE_ARCHITECTURE=i386|amd64|armhf -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=eoan -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
 #cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true .
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 
 if(POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW)
@@ -14,6 +14,10 @@ if(WIN32)
   include("${CMAKE_CURRENT_SOURCE_DIR}/.cmake/BuildWindows.cmake")
   return()
 endif()
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set (musikcube_VERSION_MAJOR 3)
 set (musikcube_VERSION_MINOR 0)

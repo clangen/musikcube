@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include "musikcore/sdk/Filesystem.h"
 
 #include <musikcore/debug.h>
 #include <musikcore/io/LocalFileStream.h>
@@ -44,6 +45,8 @@
 #include <filesystem>
 
 static const std::string TAG = "LocalFileStream";
+
+using musik::core::sdk::fs::pathToUtf8;
 
 using namespace musik::core::io;
 using namespace musik::core::sdk;
@@ -107,7 +110,7 @@ bool LocalFileStream::Open(const char *filename, OpenFlags flags) {
             }
         }
 
-        this->extension = file.extension().u8string();
+        this->extension = pathToUtf8(file.extension());
 #ifdef WIN32
         std::wstring u16fn = u8to16(this->uri);
         std::wstring u16flags = u8to16(openFlags);

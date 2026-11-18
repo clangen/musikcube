@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include "musikcore/sdk/Filesystem.h"
 
 #include <musikcore/debug.h>
 #include <musikcore/library/Indexer.h>
@@ -72,6 +73,8 @@ constexpr int DEFAULT_MAX_THREADS = 2;
 constexpr int DEFAULT_MAX_THREADS = 4;
 #endif
 
+using musik::core::sdk::fs::pathToUtf8;
+
 namespace std {
     namespace fs = std::filesystem;
 }
@@ -108,7 +111,7 @@ static void closeLogFile() noexcept {
 }
 
 static std::string normalizePath(const std::string& path) {
-    return std::fs::path(std::fs::u8path(path)).make_preferred().u8string();
+    return pathToUtf8(std::fs::path(std::fs::u8path(path)).make_preferred());
 }
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
@@ -368,7 +371,7 @@ void Indexer::ReadMetadataFromFile(
         return;
     }
 
-    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, file.u8string().c_str()); }
+    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, pathToUtf8(file).c_str()); }
 
     musik::core::IndexerTrack track(0);
 
@@ -388,7 +391,7 @@ void Indexer::ReadMetadataFromFile(
             try {
                 if ((*it)->CanRead(track.GetString("extension").c_str())) {
                     APPEND_LOG("can read")
-                    if ((*it)->Read(file.u8string().c_str(), &store)) {
+                    if ((*it)->Read(pathToUtf8(file).c_str(), &store)) {
                         APPEND_LOG("did read")
                         saveToDb = true;
                         break;
@@ -482,11 +485,11 @@ void Indexer::SyncDirectory(
             }
             if (is_directory(file->status())) {
                 /* recursion here */
-                this->SyncDirectory(io, syncRoot, file->path().u8string(), pathId);
+                this->SyncDirectory(io, syncRoot, pathToUtf8(file->path()), pathId);
             }
             else {
                 try {
-                    std::string extension = file->path().extension().u8string();
+                    std::string extension = pathToUtf8(file->path().extension());
                     for (auto it : this->tagReaders) {
                         if (it->CanRead(extension.c_str())) {
                             if (io) {

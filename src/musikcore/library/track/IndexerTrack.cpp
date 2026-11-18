@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include "musikcore/sdk/Filesystem.h"
 
 #include <musikcore/library/track/IndexerTrack.h>
 
@@ -46,6 +47,8 @@
 
 #include <unordered_map>
 #include <chrono>
+
+using musik::core::sdk::fs::pathToUtf8;
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -262,12 +265,13 @@ bool IndexerTrack::NeedsToBeIndexed(
     db::Connection &dbConnection)
 {
     try {
-        this->SetValue("path", file.u8string().c_str());
-        this->SetValue("filename", file.u8string().c_str());
+        const auto path = pathToUtf8(file);
+        this->SetValue("path", path.c_str());
+        this->SetValue("filename", path.c_str());
 
-        size_t lastDot = file.filename().u8string().find_last_of(".");
+        size_t lastDot = pathToUtf8(file.filename()).find_last_of(".");
         if (lastDot != std::string::npos) {
-            this->SetValue("extension", file.filename().u8string().substr(lastDot + 1).c_str());
+            this->SetValue("extension", pathToUtf8(file.filename()).substr(lastDot + 1).c_str());
         }
 
         const size_t fileSize = (size_t) std::filesystem::file_size(file);
@@ -766,7 +770,7 @@ int64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
 void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename) {
     try {
         std::string dir = NormalizeDir(
-            std::filesystem::path(std::filesystem::u8path(filename)).parent_path().u8string());
+            pathToUtf8(std::filesystem::path(std::filesystem::u8path(filename)).parent_path()));
 
         int64_t dirId = -1;
         if (metadataIdCache.find("directoryId-" + dir) != metadataIdCache.end()) {

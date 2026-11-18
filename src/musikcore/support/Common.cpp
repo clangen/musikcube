@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include "musikcore/sdk/Filesystem.h"
 #include <musikcore/support/Common.h>
 #include <musikcore/config.h>
 
@@ -81,6 +82,8 @@
     #include <sys/types.h>
     #include <sys/sysctl.h>
 #endif
+
+using musik::core::sdk::fs::pathToUtf8;
 
 namespace fs = std::filesystem;
 
@@ -138,7 +141,7 @@ namespace musik { namespace core {
                 if (sysctl(mib, 4, argv, &len, nullptr, 0) < 0) abort();
 
                 fs::path command = fs::absolute(fs::path(fs::u8path(argv[0])));
-                realpath(command.u8string().c_str(), pathbuf);
+                realpath(pathToUtf8(command).c_str(), pathbuf);
                 delete[] argv;
             #elif defined __HAIKU__
                 image_info ii;
@@ -147,7 +150,7 @@ namespace musik { namespace core {
                     if (ii.type == B_APP_IMAGE) {
                         if (strlen(ii.name)) {
                             std::string fn(ii.name);
-                            result = fs::u8path(fn).u8string();
+                            result = pathToUtf8(fs::u8path(fn));
                         }
                     }
                 }
@@ -313,7 +316,7 @@ namespace musik { namespace core {
     }
 
     std::string NormalizeDir(std::string path) {
-        path = fs::path(fs::u8path(path)).make_preferred().u8string();
+        path = pathToUtf8(fs::path(fs::u8path(path)).make_preferred());
 
         std::string sep(1, fs::path::preferred_separator);
         if (path.size() && path.substr(path.size() - 1, 1) != sep) {

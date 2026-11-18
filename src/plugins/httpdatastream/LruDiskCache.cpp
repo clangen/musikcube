@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "config.h"
+#include "musikcore/sdk/Filesystem.h"
 
 #include "LruDiskCache.h"
 
@@ -45,8 +46,10 @@
 const std::string PREFIX = "musikcube";
 const std::string TEMP_EXTENSION = ".tmp";
 
+using musik::core::sdk::fs::pathToUtf8;
+
 namespace fs = std::filesystem;
-using namespace musik::core::sdk;
+namespace str = musik::core::sdk::str;
 
 using Lock = std::unique_lock<std::recursive_mutex>;
 
@@ -60,7 +63,7 @@ static std::string finalFilename(const std::string& root, size_t id, std::string
 }
 
 static bool isTemp(const fs::path& path) {
-    return path.extension().u8string() == TEMP_EXTENSION;
+    return pathToUtf8(path.extension()) == TEMP_EXTENSION;
 }
 
 static bool isTemp(const std::string& path) {
@@ -91,7 +94,7 @@ static bool rm(const std::string& path) {
 }
 
 static bool rm(const fs::path& p) {
-    return rm(p.u8string());
+    return rm(pathToUtf8(p));
 }
 
 LruDiskCache::LruDiskCache()
@@ -149,13 +152,13 @@ void LruDiskCache::Purge() {
 }
 
 LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
-    std::string fn = path.stem().u8string() + path.extension().u8string();
+    std::string fn = pathToUtf8(path.stem()) + pathToUtf8(path.extension());
     std::vector<std::string> parts = str::Split(fn, "_");
     if (parts.size() == 3 && parts[0] == PREFIX) {
         try {
             auto entry = std::shared_ptr<Entry>(new Entry());
             entry->id = std::stoull(parts[1].c_str());
-            entry->path = path.u8string();
+            entry->path = pathToUtf8(path);
             entry->type = parts[2];
             entry->time = fs::last_write_time(path);
             str::ReplaceAll(entry->type, "-", "/");
@@ -308,7 +311,7 @@ void LruDiskCache::Touch(size_t id) {
         auto e = (*it);
         fs::path p(e->path);
         if (fs::exists(p)) {
-            e->time = touch(p.u8string());
+            e->time = touch(pathToUtf8(p));
             this->SortAndPrune();
             return;
         }

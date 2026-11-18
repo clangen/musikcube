@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include "musikcore/sdk/Filesystem.h"
 
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Common.h>
@@ -44,6 +45,8 @@
 #define KEY_STRINGS "strings"
 #define KEY_DIMENSIONS "dimensions"
 #define DEFAULT_LOCALE "en_US"
+
+using musik::core::sdk::fs::pathToUtf8;
 
 using namespace musik::core::i18n;
 using namespace musik::core;
@@ -91,8 +94,8 @@ void Locale::Initialize(const std::string& localePath) {
         fs::directory_iterator end;
         for (fs::directory_iterator it(locales); it != end; it++) {
             const fs::path& p = it->path();
-            if (p.has_extension() && p.extension().u8string() == ".json") {
-                std::string fn = p.filename().u8string();
+            if (p.has_extension() && pathToUtf8(p.extension()) == ".json") {
+                std::string fn = pathToUtf8(p.filename());
                 fn = fn.substr(0, fn.rfind("."));
                 this->locales.push_back(fn);
             }

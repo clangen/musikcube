@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include "musikcore/sdk/Filesystem.h"
 
 #include <musikcore/sdk/constants.h>
 #include <musikcore/plugin/PluginFactory.h>
@@ -47,6 +48,8 @@
 
 static const std::string TAG = "PluginFactory";
 static std::mutex instanceMutex;
+
+using musik::core::sdk::fs::pathToUtf8;
 
 namespace fs = std::filesystem;
 
@@ -101,10 +104,10 @@ void PluginFactory::LoadPlugins() {
         fs::directory_iterator end;
         for (fs::directory_iterator file(dir); file != end; file++) {
             if (fs::is_regular_file(file->status())){
-                std::string filename = fs::canonical(fs::path(file->path()).make_preferred()).u8string();
+                std::string filename = pathToUtf8(fs::canonical(fs::path(file->path()).make_preferred()));
                 std::shared_ptr<Descriptor> descriptor(new Descriptor());
                 descriptor->filename = filename;
-                descriptor->key = fs::path(fs::u8path(filename)).filename().u8string();
+                descriptor->key = pathToUtf8(fs::path(fs::u8path(filename)).filename());
 #ifdef WIN32
                 /* if the file ends with ".dll", we'll try to load it*/
                 if (filename.substr(filename.size() - 4) == ".dll") {
