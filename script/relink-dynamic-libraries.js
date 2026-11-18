@@ -37,10 +37,10 @@ const libraries = [
   'libopus.0.dylib',
   'libssl.3.dylib',
   'libswresample-musikcube.6.dylib',
-  'libtag.2.1.1.dylib',
+  'libtag.2.3.2.dylib',
   'libvorbis.0.dylib',
   'libvorbisenc.2.dylib',
-  'libgme.0.6.3.dylib',
+  'libgme.0.6.4.dylib',
 ];
 
 /* after updating libraries, re-establish symlinks */
@@ -57,10 +57,10 @@ const symlinks = [
   ['libopus.0.dylib', 'libopus.dylib'],
   ['libssl.3.dylib', 'libssl.dylib'],
   ['libswresample-musikcube.6.dylib', 'libswresample-musikcube.dylib'],
-  ['libtag.2.1.1.dylib', 'libtag.dylib'],
+  ['libtag.2.3.2.dylib', 'libtag.dylib'],
   ['libvorbis.0.dylib', 'libvorbis.dylib'],
   ['libvorbisenc.2.dylib', 'libvorbisenc.dylib'],
-  ['libgme.0.6.3.dylib', 'libgme.dylib'],
+  ['libgme.0.6.4.dylib', 'libgme.dylib'],
 ];
 
 const path = process.argv[2];

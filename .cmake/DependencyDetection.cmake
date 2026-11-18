@@ -1,5 +1,8 @@
 macro(find_vendor_library target_var library_name)
-    find_library(${target_var} NAMES ${library_name} PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH NO_CACHE)
+    unset(${target_var} CACHE)
+    unset(${target_var})
+    find_library(${target_var} NAMES ${library_name} PATHS ${VENDOR_LINK_DIRECTORIES}
+        NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH NO_CACHE REQUIRED)
     message(STATUS "[dependency-detection] ${BoldBlue}'${library_name}' library resolved to '${${target_var}}'${ColorReset}")
 endmacro(find_vendor_library)
 

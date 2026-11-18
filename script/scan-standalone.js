@@ -12,7 +12,14 @@
  */
 
 const { promisify } = require('util');
-const exec = promisify(require('child_process').exec);
+const execFile = promisify(require('child_process').execFile);
+const { basename, isAbsolute, join, relative, resolve, sep } = require('path');
+const { realpath } = require('fs').promises;
+const env = { ...process.env, LC_ALL: 'C' };
+// Inspect the package's own lookup paths.
+delete env.LD_LIBRARY_PATH;
+delete env.LD_PRELOAD;
+delete env.LD_AUDIT;
 const readdir = promisify(require('fs').readdir);
 
 const mac = process.platform === 'darwin';
@@ -75,39 +82,62 @@ const validLibraries = mac
 
 let errors = 0;
 
-const path = process.argv[2];
+const packagePath = process.argv[2];
 
-if (!path) {
+if (!packagePath) {
   console.log('\n\nusage: node scan-standalone.js <path>\n\n');
   process.exit(1);
 }
 
+const root = resolve(packagePath);
+
 const ls = async (leaf) => {
-  const output = await readdir(`${path}/${leaf}`);
+  const output = await readdir(`${root}/${leaf}`);
   const files = output
     .filter((fn) => fn.indexOf(filetype) !== -1)
     .filter((fn) => !ignoredLibraries.has(fn));
   return files;
 };
 
+const linuxLoaders = new Set([
+  'ld-linux-x86-64.so.2',
+  'ld-linux.so.2',
+  'ld-linux-armhf.so.3',
+  'ld-linux-aarch64.so.1',
+]);
+
 const lddLinux = async (fn) => {
-  const output = await exec(`ldd ${path}/${fn}`);
-  const problems = output.stdout
-    .split('\n')
-    .map((line) => line.trim())
-    /* libraries resolved properly will exist in the current path; exclude */
-    .filter((line) => !!line && line.indexOf(path) === -1)
-    .filter((line) => line !== 'statically linked')
-    /* libraries are formatted as "<name> [=> <path>] <(offset)>". if there's
-    a fat arrow, just grab everything to the left of it. then, if there's
-    still an offset, strip that as well */
-    .map((line) => line.split(' => ')[0].split(' ')[0].trim())
-    .filter((line) => !validLibraries.has(line));
-  return problems;
+  const file = join(root, fn);
+  const packageRoot = await realpath(root);
+  const { stdout: dynamic } = await execFile('readelf', ['-d', file], { env });
+  const { stdout } = await execFile('ldd', [file], { env });
+  const resolved = new Map();
+  const problems = new Set();
+
+  for (const line of stdout.split('\n')) {
+    const dependency = line.trim().match(/^(\S+) => (.+?)(?: \(0x[\da-f]+\))?$/i);
+    if (!dependency) continue;
+    const [, name, location] = dependency;
+    if (location === 'not found') problems.add(`${name} (not found)`);
+    else resolved.set(name, location);
+  }
+
+  // Each shipped library is checked separately. The target system supplies
+  // dependencies of system libraries such as PortAudio and its audio backends.
+  for (const [, name] of dynamic.matchAll(/\(NEEDED\).*?\[([^\]]+)\]/g)) {
+    if (linuxLoaders.has(name) || validLibraries.has(name) || problems.has(`${name} (not found)`)) continue;
+    const location = resolved.get(name);
+    if (name === basename(name) && location && isAbsolute(location)) {
+      const bundled = relative(packageRoot, await realpath(location));
+      if (bundled && bundled !== '..' && !bundled.startsWith('..' + sep) && !isAbsolute(bundled)) continue;
+    }
+    problems.add(location ? `${name} (resolved to ${location})` : name);
+  }
+  return [...problems];
 };
 
 const lddMac = async (fn) => {
-  const output = await exec(`otool -L ${path}/${fn}`);
+  const output = await execFile('otool', ['-L', join(root, fn)]);
   const problems = output.stdout
     .split('\n')
     .map((line) => line.trim())
@@ -136,7 +166,7 @@ const ldd = async (fn) => {
 
 const lddDir = async (leaf) => {
   const files = await ls(leaf);
-  await Promise.allSettled(files.map((fn) => ldd(`${leaf}/${fn}`)));
+  for (const fn of files) await ldd(`${leaf}/${fn}`);
 };
 
 const main = async () => {
@@ -156,4 +186,7 @@ const main = async () => {
   console.log('\neverything looks good!\n');
 };
 
-main();
+main().catch((error) => {
+  console.error(error.message);
+  process.exitCode = 1;
+});

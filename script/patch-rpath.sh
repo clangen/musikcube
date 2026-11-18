@@ -16,17 +16,18 @@ if [ "$PLATFORM" = 'Linux' ]; then
     FILES="./bin/lib/*"
     for f in $FILES
     do
-        patchelf --set-rpath "\$ORIGIN" "$f"
+        patchelf --set-rpath "\$ORIGIN" "$f" || exit $?
     done
 
     FILES="./bin/plugins/*.so"
     for f in $FILES
     do
-        patchelf --set-rpath "\$ORIGIN:\$ORIGIN/../lib" "$f"
+        patchelf --set-rpath "\$ORIGIN:\$ORIGIN/../lib" "$f" || exit $?
     done
 
-    patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/musikcube
-    patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/musikcubed
+    patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/musikcube || exit $?
+    patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/musikcubed || exit $?
+    patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/libmusikcore.so || exit $?
 fi
 
 if [ "$PLATFORM" = 'Darwin' ]; then

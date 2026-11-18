@@ -73,8 +73,16 @@ elif [[ $CROSSCOMPILE == "rpi-armv6" ]]; then
   CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain-armv6.cmake"
 fi
 
-rm vendor
-ln -s ../vendor-$VENDOR/ ./vendor
+VENDOR_DIR="../vendor-$VENDOR"
+if [[ ! -d "$VENDOR_DIR/bin/lib" ]]; then
+  printf 'Vendor libraries missing from %s. Run build-vendor-libraries.js first.\n' "$VENDOR_DIR" >&2
+  exit 1
+fi
+if [[ -e vendor && ! -L vendor ]]; then
+  printf 'Expected vendor to be a symlink. Move the existing path aside before packaging.\n' >&2
+  exit 1
+fi
+ln -sfn "$VENDOR_DIR/" ./vendor || exit $?
 printf "\nsetup symlink:\n"
 ls -ald vendor
 
@@ -114,7 +122,7 @@ mkdir -p $OUTDIR/share/terminfo
 cp bin/musikcube $OUTDIR
 cp bin/musikcubed $OUTDIR
 cp bin/libmusikcore.${DLL_EXT} $OUTDIR
-cp bin/lib/* $OUTDIR/lib
+cp bin/lib/* "$OUTDIR/lib" || exit $?
 cp bin/plugins/*.${DLL_EXT} $OUTDIR/plugins
 cp bin/locales/*.json $OUTDIR/locales
 cp bin/themes/*.json $OUTDIR/themes
