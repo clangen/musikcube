@@ -38,3 +38,9 @@ node .\script\build-vendor-libraries.js --audit-directory .\bin64\Debug
 Both configurations use the same shared dependency DLLs. The static libraries used by plugins are built for the corresponding Release or Debug CRT.
 
 After changing dependency versions or build flags, rerun the vendor script, run `script\clean-win.bat` to clear the old build and staged DLLs, and rebuild. FFmpeg's codec and format options are in `script/windows-vendor/ffmpeg-options.txt`.
+
+### Package a Release build with MilkDrop
+
+For the optional MilkDrop visualizer, clone the plugin into `../milkdrop2-musikcube` next to the musikcube checkout and use a revision that supports Visual Studio 2026. After building the vendor libraries, run `script\build-win.bat` from the VS 2026 Developer PowerShell. It builds Release x64 and, when the sibling solution is present, restores MilkDrop's D3DX dependency and builds the plugin.
+
+From the checkout root, run `bash script/archive-win.sh <version>` in a shell with Bash and 7-Zip available. The ZIP includes the staged MilkDrop plugin, resources, and DirectX runtime DLLs.
