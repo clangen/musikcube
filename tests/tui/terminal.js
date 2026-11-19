@@ -1,5 +1,7 @@
 const { spawn } = require('node:child_process');
 const { EventEmitter } = require('node:events');
+const fs = require('node:fs');
+const { join } = require('node:path');
 const { Screen } = require('./screen');
 
 class Terminal {
@@ -7,9 +9,10 @@ class Terminal {
     this.screen = new Screen(rows, columns);
     this.events = new EventEmitter();
     this.transcript = Buffer.alloc(0);
+    this.pidFile = join(runtime, '.tui-pid');
 
     /* Keep stdin open for keystrokes and return the PTY child's exit status. */
-    const command = `stty rows ${rows} cols ${columns} && exec ./musikcube`;
+    const command = `stty rows ${rows} cols ${columns} && echo $$ > .tui-pid && exec ./musikcube`;
     const args = process.platform === 'darwin'
       ? ['-q', '/dev/null', '/bin/sh', '-c', command]
       : ['--quiet', '--flush', '--return', '--command', command, '/dev/null'];
@@ -46,6 +49,24 @@ class Terminal {
 
   send(keys) {
     this.child.stdin.write(keys);
+  }
+
+  processStats() {
+    if (process.platform !== 'linux') return undefined;
+    const pid = fs.readFileSync(this.pidFile, 'utf8').trim();
+    const status = fs.readFileSync(`/proc/${pid}/status`, 'utf8');
+    const peak = status.match(/^VmHWM:\s+(\d+) kB$/m);
+    if (!peak) throw new Error('Could not measure peak resident memory');
+
+    /* The command field may contain spaces or parentheses. Fields 14 and 15 follow it. */
+    const stat = fs.readFileSync(`/proc/${pid}/stat`, 'utf8');
+    const fields = stat.slice(stat.lastIndexOf(')') + 2).trim().split(/\s+/);
+    const userTicks = Number(fields[14 - 3]);
+    const systemTicks = Number(fields[15 - 3]);
+    if (!Number.isSafeInteger(userTicks) || !Number.isSafeInteger(systemTicks)) {
+      throw new Error('Could not measure process CPU time');
+    }
+    return { peakRssKiB: Number(peak[1]), cpuTicks: userTicks + systemTicks };
   }
 
   expect(text, { absent } = {}) {

@@ -823,6 +823,63 @@ ABI CTest suite.
 
 Use `--screenshots <dir>` to save SVGs of the initial, filtered, and scrolled
 views. For an out-of-tree build, pass `--build-dir` and, if needed, `--bin-dir`.
+Use `--runs 20` to reuse one fixture across fresh app launches and report
+median and p95. Pass `--tracks 30000` to check how the baseline scales.
+
+Build the ABI0-only pilot with `BUILD_TESTING` enabled to compare both search
+views against the same fixture.
+
+```sh
+cmake --build . --target musikcube_abi_search_pilot
+node tests/tui/track-search.js --compare --runs 20
+```
+
+To compare two pilot builds, save the control executable and its matching
+`libmusikcore-abi0` shared library together before rebuilding. Pass the
+directory containing both files to `--pilot-control`.
+
+```sh
+node tests/tui/track-search.js --pilot-control build/search-control --runs 20
+```
+
+Both variants use the same fixture and alternate launch order. The driver
+keeps the track-search actions and assertions. Other TUI benchmarks can
+reuse `tests/tui/terminal.js` for the PTY and process samples, and
+`tests/tui/benchmark.js` for repeated runs and median/p95 reporting.
+
+The comparison widens the search to 100 results, advances past the first
+viewport, returns to it, and jumps to the end. On Linux, the runner also
+reads the application's peak RSS before exit. It excludes the fixture
+indexer and PTY runner. On Linux it also records user plus system CPU time
+across all application threads, both from first screen to last result and
+from process start to last result. These samples exclude teardown and are
+quantized to the kernel's process accounting tick. The standalone pilot
+starts less application state than the production TUI. Its process RSS,
+CPU time, and render latency include that difference.
+
+The pilot defaults to three cached viewports, one read in flight, and
+prefetching one viewport in the direction of travel. Use
+`--cache-pages <count>` and `--prefetch-pages <count>` with `--compare`
+to test another policy. A prefetch distance of zero fetches only on demand.
+The distance must be smaller than the cache size. For direct pilot launches,
+set `MUSIKCUBE_SEARCH_CACHE_PAGES` and `MUSIKCUBE_SEARCH_PREFETCH_PAGES`.
+The benchmark verifies whether Page Down hits the prefetch and times it
+after the adjacent page is ready when prefetching is enabled.
+
+The first Linux x86-64 Release run used 20 launches per variant. Each pair
+shared its seeded database. Times are keystroke to visible result, and the
+filter includes the 300 ms debounce. Values are median / p95.
+
+| Tracks | Variant | Open (ms) | Filter (ms) | Next window (ms) | Peak RSS (KiB) |
+|---:|---|---:|---:|---:|---:|
+| 10,000 | Legacy | 79.1 / 79.4 | 376.8 / 377.0 | 0.1 / 0.1 | 29,336 / 29,520 |
+| 10,000 | ABI0 pilot | 6.8 / 7.1 | 306.6 / 306.9 | 0.6 / 0.7 | 9,190 / 9,336 |
+| 30,000 | Legacy | 83.8 / 84.6 | 377.0 / 378.0 | 0.1 / 0.1 | 31,354 / 31,464 |
+| 30,000 | ABI0 pilot | 15.6 / 16.3 | 315.4 / 316.4 | 0.6 / 0.8 | 10,564 / 10,648 |
+
+With default prefetch enabled, a later 20-launch comparison at 10,000
+tracks measured search-scenario CPU at 30 / 30 ms for legacy and
+10 / 20 ms for the pilot (median / p95). The accounting tick was 10 ms.
 
 ## CI and developer workflows
 

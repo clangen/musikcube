@@ -568,8 +568,10 @@ recorded before the experimental shared façade is introduced.
   accessors.
 - [x] **LIB-004** Implement async query submission and per-request completion callbacks.
 - [x] **LIB-005** Implement owned page transfer to the completion callback.
-- [ ] **LIB-006** Define track identity/list handles without eager metadata.
-- [ ] **LIB-007** Implement async visible-range/cache-window requests.
+- [x] **LIB-006** Define track identity/list handles without eager metadata.
+  Exercised by `musikcore.abi.query` and `musikcore.abi.indexed_query`.
+- [x] **LIB-007** Implement async visible-range/cache-window requests.
+  Exercised by the same ABI tests, including removal during paging.
 - [ ] **LIB-008** Implement metadata state and invalidation events.
 - [ ] **LIB-009** Implement batch track-list edits with defined atomicity.
 - [ ] **LIB-010** Add C contract tests for paging, ordering, Unicode, long
@@ -582,10 +584,49 @@ recorded before the experimental shared façade is introduced.
 - [x] **CPP-002** Add C++ wrapper tests that use no private core headers.
 - [x] **MIG-001** Select one musikcube search/list vertical slice for the pilot.
   Start with the track-search results view in `TrackSearchLayout`.
-- [ ] **MIG-002** Migrate that slice through the C++ wrapper in an ABI0-only
-  migration executable.
+- [x] **MIG-002** Migrate that slice through the C++ wrapper in an ABI0-only
+  migration executable. Exercised by `node tests/tui/track-search.js --compare`.
 - [ ] **PERF-001** Add baseline and ABI0 benchmarks for query, initial display,
   and rapid scrolling.
+
+#### Track Search migration
+
+The pilot resolves a selected row through a move-only `TrackRef`. The
+reference owns local library identity and can outlive the search result.
+Resolving a hidden or removed track fails with `MC_ERROR_NOT_FOUND`.
+The next playback slice needs two distinct operations: act on one track by
+identity, and play from a result position in snapshot order.
+
+1. Add an async C operation that opens a search result with a stable row
+   order, a count, and track identities. Specify the current search modes,
+   supported sort orders, and album grouping in the contract. The handle
+   owns the result order so a later database update cannot shift page
+   offsets. Keep the existing title-query API available for callers that
+   only need an ad hoc page.
+2. Add async metadata reads by visible range on that result. Return owned
+   pages with the requested fields, and preserve row positions when a track
+   disappears. Batch metadata reads by ID within a read transaction. A
+   refresh opens a new result. Metadata already returned in a page stays
+   valid until its owner releases it.
+3. Add header-only move-only wrappers for the search result and page. In the
+   ABI0-only pilot, cache the current viewport and up to one viewport on
+   either side. Show loading rows on misses and keep navigation responsive.
+   Keep one window request in flight and retain the latest requested range.
+   Cancel obsolete work when the search changes and discard stale
+   completions using a search generation. Use the context wakeup hook to
+   schedule dispatch on the UI thread.
+4. Test scrolling across cold and warm windows, jumping to a distant row,
+   rapid filter changes, and index updates during paging. Verify search
+   parity against the legacy view before wiring it into production. Move
+   playback and menu actions to track identities once their ABI operations
+   exist. Keep remote-library support on the legacy path until the ABI can
+   provide equivalent search and window semantics for remote results.
+5. Benchmark both implementations on the same seeded database. Measure
+   search submission to the first usable window and cold-window scrolling
+   separately from the keystroke-to-render scenario. Include a broad query
+   that crosses several cache windows and report median and p95. Use the
+   same debounce, visible rows, result ordering, and projected fields in
+   the before/after comparison.
 
 #### Phase 5 gate
 
