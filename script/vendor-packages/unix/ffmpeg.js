@@ -215,6 +215,18 @@ const codecBuilds = (prefix) => [
   ['opus', ['--disable-doc', '--disable-extra-programs'], ''],
 ];
 
+function patchVorbisConfigure(source) {
+  if (process.platform !== 'darwin') return;
+
+  /* libvorbis replaces the caller's CFLAGS on Darwin and adds this obsolete
+   * linker option. It was accepted by older Apple linkers, but was removed
+   * from the linker shipped with current Command Line Tools. */
+  const configure = join(source, 'configure');
+  const script = readFileSync(configure, 'utf8');
+  const fixed = script.replaceAll(' -force_cpusubtype_ALL', '');
+  if (fixed !== script) writeFileSync(configure, fixed);
+}
+
 exports.build = function({ sources, out, config, run }) {
   const { env, jobs } = config;
   const codecPrefix = join(out, '..', '..', 'ffmpeg-codecs');
@@ -231,6 +243,7 @@ exports.build = function({ sources, out, config, run }) {
   /* Build the codec archives before configuring FFmpeg. */
   for (const [name, options, cflags] of codecBuilds(codecPrefix)) {
     console.log('Building static ' + name);
+    if (name === 'vorbis') patchVorbisConfigure(sources[name]);
     const build = { cwd: sources[name], env: { ...codecEnv, CFLAGS: env.CFLAGS + cflags } };
     run('./configure', [
       '--prefix=' + codecPrefix,

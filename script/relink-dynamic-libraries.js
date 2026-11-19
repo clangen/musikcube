@@ -55,6 +55,22 @@ const symlinks = [
   ['libgme.0.6.4.dylib', 'libgme.dylib'],
 ];
 
+/* These libraries are installed outside the primary runtime set, but still
+ * need local dependencies rewritten before the vendor audit. */
+const auxiliaryLibraries = [
+  'libtag_c.2.3.2.dylib',
+  'engines-3/capi.dylib',
+  'engines-3/loader_attic.dylib',
+  'engines-3/padlock.dylib',
+  'ossl-modules/legacy.dylib',
+];
+
+/* Dependencies can use either a real filename or one of its ABI aliases. */
+const localLibraryNames = new Set([
+  ...libraries,
+  ...symlinks.map(([, alias]) => alias),
+]);
+
 const path = process.argv[2];
 
 if (!path) {
@@ -83,7 +99,10 @@ const relink = async (fn) => {
     .map((line) => line.split(' (compatibility')[0].trim())
     /* grab the filename from the path, and see if it's one we want to
     re-link relatively */
-    .filter((line) => libraries.indexOf(line.split('/').pop()) !== -1);
+    .filter((line) => {
+      const leaf = line.split('/').pop();
+      return localLibraryNames.has(leaf) || fs.existsSync(`${path}/${leaf}`);
+    });
   await run(`install_name_tool -id "@rpath/${fn}" ${path}/${fn}`);
   for (let i = 0; i < relink.length; i++) {
     const entry = relink[i];
@@ -117,7 +136,7 @@ const rebuildSymlinks = async () => {
 const main = async () => {
   try {
     /* Rewrite dylib paths before restoring the versioned symlinks. */
-    await Promise.allSettled(libraries.map((library) => relink(library)));
+    await Promise.all([...libraries, ...auxiliaryLibraries].map((library) => relink(library)));
     await rebuildSymlinks();
   } catch (e) {
     console.log(`\n\n  failed to relink dynamic libraries!\n\n`);

@@ -75,6 +75,8 @@ function buildArchiveConfiguration(root) {
     osArch: platform + '_' + arch,
     extension: linux ? '.so' : '.dylib',
     strip: config.rpi ? join(config.rpi.tools, 'bin/strip') : 'strip',
+    stripArguments: mac ? ['-x'] : [],
+    codesign: mac,
     generatePackages: linux,
     packageCmake: [],
   });

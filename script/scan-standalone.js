@@ -65,6 +65,9 @@ const macRuntimeLibraries = [
   '/usr/lib/libc++.1.dylib', '/usr/lib/libSystem.B.dylib', '/usr/lib/libz.1.dylib',
   '/usr/lib/libiconv.2.dylib', '/usr/lib/libresolv.9.dylib', '/usr/lib/libobjc.A.dylib',
   '/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation',
+  '/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia',
+  '/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices',
+  '/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo',
   '/System/Library/Frameworks/Security.framework/Versions/A/Security',
   '/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration',
 ];

@@ -41,6 +41,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <cstdlib>
 #include <memory>
 #include <iostream>
 #include <time.h>
@@ -54,6 +55,7 @@ static std::thread* thread = nullptr;
 static log_queue* queue = nullptr;
 static std::recursive_mutex mutex;
 static volatile bool cancel = true;
+static bool shutdownRegistered = false;
 
 enum class debug_level {
     verbose = 0,
@@ -169,6 +171,12 @@ void musik::debug::Start(std::vector<musik::debug::IBackend*> backends) {
 
     if (queue || thread) {
         return;
+    }
+
+    /* Libraries such as ncurses can call exit() during initialization. Ensure
+     * the logging thread and its backends are stopped before static teardown. */
+    if (!shutdownRegistered && std::atexit(&musik::debug::Shutdown) == 0) {
+        shutdownRegistered = true;
     }
 
     for (auto backend : backends) {

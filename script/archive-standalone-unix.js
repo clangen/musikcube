@@ -64,15 +64,14 @@ function buildApp(config, clean) {
 }
 
 function stageArchive(config, output) {
-  const { extension, strip } = config;
+  const { extension, strip, stripArguments } = config;
   const bin = join(source, 'bin');
   const files = ['musikcube', 'musikcubed', 'libmusikcore' + extension];
-  const lib = readdirSync(join(bin, 'lib')).map((file) => join('lib', file));
+  const lib = readdirSync(join(bin, 'lib'))
+    .filter((file) => lstatSync(join(bin, 'lib', file)).isFile())
+    .map((file) => join('lib', file));
   const plugins = readdirSync(join(bin, 'plugins'))
     .filter((file) => file.endsWith(extension)).map((file) => join('plugins', file));
-
-  console.log('Stripping and staging binaries');
-  run(strip, [...files, ...lib, ...plugins].map((file) => join(bin, file)), config.env);
 
   rmSync(output, { recursive: true, force: true });
   for (const directory of ['lib', 'plugins', 'locales', 'themes', 'share/terminfo']) {
@@ -87,6 +86,14 @@ function stageArchive(config, output) {
     copyFileSync(join(bin, file), join(output, file));
   }
   run('cp', ['-Rp', join(bin, 'share/terminfo') + '/.', join(output, 'share/terminfo')], config.env);
+
+  console.log('Stripping staged binaries');
+  const binaries = [...files.slice(0, 3), ...lib, ...plugins].map((file) => join(output, file));
+  run(strip, [...stripArguments, ...binaries], config.env);
+  if (config.codesign) {
+    console.log('Signing staged binaries');
+    for (const file of binaries) run('codesign', ['--force', '--sign=-', file], config.env);
+  }
 }
 
 function createPackages(output, env) {

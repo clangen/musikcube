@@ -56,6 +56,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <locale.h>
+#include <term.h>
 #endif
 
 using namespace cursespp;
@@ -286,6 +287,13 @@ App::~App() {
 }
 
 void App::InitCurses() {
+#ifndef WIN32
+    int termError = 0;
+    if (setupterm(nullptr, fileno(stdout), &termError) == ERR) {
+        setenv("TERM", "xterm-256color", 1);
+    }
+#endif
+
     initscr();
     nonl();
     cbreak();

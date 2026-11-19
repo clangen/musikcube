@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
     LibraryFactory::Initialize(Window::MessageQueue());
     auto library = std::make_shared<library::MasterLibrary>();
 
-#ifdef BUILD_STANDALONE
+#if defined(BUILD_STANDALONE) && !defined(__APPLE__)
     /* when we build a standalone binary we make sure to also package the terminfo used
     by the version of ncurses we compile against. if the target system has ncurses5, the
     terminfo format will not be compatible and the app will not run */
