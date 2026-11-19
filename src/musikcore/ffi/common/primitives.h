@@ -22,6 +22,11 @@ namespace musik { namespace core { namespace ffi {
         return offset <= struct_size && width <= struct_size - offset;
     }
 
+    template <typename Struct, typename T>
+    T read_option(const Struct *options, T Struct::*field, size_t offset) {
+        return options && has_field(options->struct_size, offset, sizeof(T)) ? options->*field : T{};
+    }
+
 } } }
 
 #endif

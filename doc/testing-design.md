@@ -406,6 +406,22 @@ empty or populated state and owns its transactions.
 
 ### Media fixtures
 
+To generate a database with the production indexer and tag readers, run
+`node script/seed-test-library.js [configured-build-directory]`. The script
+creates two tagged WAV files, indexes them in a fresh config root under
+the selected build directory, and prints the resulting `musik.db` path.
+Use the database's parent directory as the ABI0 context data directory.
+
+Run `node script/seed-test-library.js --tracks 10000` for a larger fixture.
+It generates 100 artists with 10 albums per artist and 10 numbered tracks
+per album, distributed across five genres.
+The fixtures also embed ten extended tag keys, with a mix of missing values,
+repeated values across tracks, and tracks with more than one composer.
+
+When Node.js is available, `musikcore.abi.indexed_query` seeds the two-track
+fixture before querying it through ABI0. Run it with
+`node script/run-tests.js -- -R '^musikcore\.abi\.indexed_query$'`.
+
 Fixtures should be small, deterministic, and redistributable. Prefer generating
 simple PCM WAV data during the test. Commit compact binary fixtures only when
 the container, tag, corruption, or codec bytes are what the test validates.

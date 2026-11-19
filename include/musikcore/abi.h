@@ -33,7 +33,7 @@ extern "C" {
     ((((uint32_t)(major) & UINT32_C(0xffff)) << 16) | ((uint32_t)(minor) & UINT32_C(0xffff)))
 #define MC_ABI_VERSION_MAJOR(version) ((uint16_t)((uint32_t)(version) >> 16))
 #define MC_ABI_VERSION_MINOR(version) ((uint16_t)(version))
-#define MC_ABI_VERSION MC_ABI_VERSION_ENCODE(0, 2)
+#define MC_ABI_VERSION MC_ABI_VERSION_ENCODE(0, 3)
 
 MC_API uint32_t MC_CALL mc_abi_version(void);
 
@@ -51,7 +51,8 @@ enum {
     MC_ERROR_BUFFER_TOO_SMALL = 9
 };
 
-/* Borrowed UTF-8. The length excludes any terminator. */
+/* Non-owning UTF-8 view. Keep the backing storage alive while using it. */
+/* Copy the bytes for longer use. The view itself needs no cleanup. */
 typedef struct mc_string_view {
     /* Borrowed UTF-8 storage. May be null for an empty view. */
     const char *data;
@@ -107,7 +108,7 @@ typedef struct mc_error mc_error;
 
 /* Returns MC_ERROR_INVALID_ARGUMENT for a null handle. */
 MC_API mc_result MC_CALL mc_error_get_code(const mc_error *error);
-/* Borrowed until destruction. A null handle returns an empty view. */
+/* Borrows from the error for its lifetime. A null handle returns an empty view. */
 MC_API mc_string_view MC_CALL mc_error_get_message(const mc_error *error);
 /* Consumes the handle and clears the caller's slot. Null is accepted. */
 MC_API void MC_CALL mc_error_destroy(mc_error **error);

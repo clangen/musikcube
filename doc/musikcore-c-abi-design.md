@@ -173,8 +173,8 @@ The ABI uses an independent major and minor version, rather than the musikcube
 application version.
 
 - Encode the major version in the upper 16 bits and the minor version in the
-  lower 16 bits. The experimental ABI is 0.2. Version 0.1 introduced context
-  creation, and 0.2 adds request dispatch and wakeups.
+  lower 16 bits. Version 0.1 introduced context creation, 0.2 added request
+  dispatch and wakeups, and 0.3 adds the first track query.
 - A major version change permits incompatible changes.
 - A minor version may only add functions, enum values where documented, or
   fields at the end of extensible structures.
@@ -450,6 +450,22 @@ published. The two queues have no shared delivery order.
 Queries return immutable result pages rather than requiring many calls through
 live track objects. A query specifies the desired metadata fields and paging
 parameters:
+
+ABI0 reads `musik.db` from an explicit context data directory using a read-only
+SQLite connection. Pages contain visible tracks in ascending ID order. Search
+matches a literal case-sensitive title substring. Request up to 64 field
+names in result order. An empty field list requests `title`. Core fields
+use their existing metadata names and take precedence over tags of the same
+name. Other keys are looked up in the normalized tag tables. Track selection
+and tag lookup share a single read transaction. The default page holds up to
+100 rows, and callers can request up to 1000.
+
+ABI0 exposes values as UTF-8 text, including numbers. The page exposes field
+names and a value count for each row and field. `mc_track_page_get_string`
+returns the first value for common single-value reads.
+`mc_track_page_get_string_at` reads additional tag values in stored sort order,
+with value ID breaking ties. Missing values return a null view. A present
+empty string has non-null data and zero length.
 
 ```c
 typedef struct mc_track_query {

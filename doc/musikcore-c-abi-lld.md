@@ -568,8 +568,8 @@ recorded before the experimental shared façade is introduced.
 - [ ] **LIB-002** Implement immutable page arena storage.
 - [ ] **LIB-003** Implement row identity, string, numeric, and missing-value
   accessors.
-- [ ] **LIB-004** Implement async query submission and per-request completion callbacks.
-- [ ] **LIB-005** Implement owned page transfer to the completion callback.
+- [x] **LIB-004** Implement async query submission and per-request completion callbacks.
+- [x] **LIB-005** Implement owned page transfer to the completion callback.
 - [ ] **LIB-006** Define track identity/list handles without eager metadata.
 - [ ] **LIB-007** Implement async visible-range/cache-window requests.
 - [ ] **LIB-008** Implement metadata state and invalidation events.

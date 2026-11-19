@@ -158,14 +158,13 @@ namespace {
             (directory.data && !std::memchr(directory.data, '\0', directory.length));
     }
 
-    template <typename T>
-    T option(const mc_context_options *options, T mc_context_options::*field, size_t offset) {
-        using musik::core::ffi::has_field;
-        return options && has_field(options->struct_size, offset, sizeof(T)) ? options->*field : T{};
-    }
 }
 
 namespace musik { namespace core { namespace ffi {
+
+    const std::string &context_data_directory(const mc_context &context) {
+        return context.data_directory;
+    }
 
     mc_result submit_request(mc_context *context, std::function<mc_result()> work,
         RequestCompletion completion, void *user_data, mc_request_id *out_request) {
@@ -181,7 +180,7 @@ namespace musik { namespace core { namespace ffi {
             /* Reserve the completion slot before publishing the request ID. */
             if (!context->worker.joinable()) context->worker = std::thread(run_worker, std::ref(*context));
             const auto id = context->next_request;
-            context->requests.push_back({ id, std::move(work), completion, user_data,
+            context->requests.push_back({ id, std::move(work), std::move(completion), user_data,
                 RequestState::queued, MC_OK });
 
             *out_request = id;
@@ -197,6 +196,7 @@ mc_result MC_CALL mc_context_create(
     const mc_context_options *options, mc_context **out_context, mc_error **out_error) {
     using musik::core::ffi::exception_barrier;
     using musik::core::ffi::fail;
+    using musik::core::ffi::read_option;
 
     return exception_barrier(out_error, [&]() -> mc_result {
         /* Clear the output before any validation can fail. */
@@ -208,21 +208,21 @@ mc_result MC_CALL mc_context_create(
             return fail(MC_ERROR_INVALID_ARGUMENT, "Context options are too small", out_error);
         }
 
-        const auto version = option(options, &mc_context_options::requested_abi_version,
+        const auto version = read_option(options, &mc_context_options::requested_abi_version,
             offsetof(mc_context_options, requested_abi_version));
         if (version && (MC_ABI_VERSION_MAJOR(version) != MC_ABI_VERSION_MAJOR(MC_ABI_VERSION) ||
             MC_ABI_VERSION_MINOR(version) > MC_ABI_VERSION_MINOR(MC_ABI_VERSION))) {
             return fail(MC_ERROR_UNSUPPORTED, "Unsupported ABI version", out_error);
         }
 
-        if (option(options, &mc_context_options::flags, offsetof(mc_context_options, flags))) {
+        if (read_option(options, &mc_context_options::flags, offsetof(mc_context_options, flags))) {
             return fail(MC_ERROR_UNSUPPORTED, "Unsupported context flags", out_error);
         }
 
         /* Default omitted roots and check that supplied paths can be copied. */
-        const auto data = option(options, &mc_context_options::data_directory,
+        const auto data = read_option(options, &mc_context_options::data_directory,
             offsetof(mc_context_options, data_directory));
-        const auto plugins = option(options, &mc_context_options::plugin_directory,
+        const auto plugins = read_option(options, &mc_context_options::plugin_directory,
             offsetof(mc_context_options, plugin_directory));
         if (!valid_directory(data) || !valid_directory(plugins)) {
             return fail(MC_ERROR_INVALID_ARGUMENT, "Invalid directory view", out_error);
@@ -237,8 +237,8 @@ mc_result MC_CALL mc_context_create(
         std::unique_ptr<mc_context> context(new mc_context{
             std::string(data.length ? data.data : "", data.length),
             std::string(plugins.length ? plugins.data : "", plugins.length),
-            option(options, &mc_context_options::wakeup, offsetof(mc_context_options, wakeup)),
-            option(options, &mc_context_options::wakeup_user_data, offsetof(mc_context_options, wakeup_user_data))
+            read_option(options, &mc_context_options::wakeup, offsetof(mc_context_options, wakeup)),
+            read_option(options, &mc_context_options::wakeup_user_data, offsetof(mc_context_options, wakeup_user_data))
         });
         if (context_active.exchange(true)) {
             return fail(MC_ERROR_BUSY, "A context is already active", out_error);

@@ -1,10 +1,23 @@
 set(MUSIKCORE_ABI0_OUTPUT_DIR "${PROJECT_BINARY_DIR}/bin/abi0" PARENT_SCOPE)
 set(output_dir "${PROJECT_BINARY_DIR}/bin/abi0")
 
-add_library(musikcore_abi0 SHARED common/version.cpp common/string.cpp common/error.cpp consumer/context.cpp)
+add_library(musikcore_abi0_sqlite STATIC "${PROJECT_SOURCE_DIR}/src/3rdparty/src/sqlite/sqlite3.c")
+target_include_directories(musikcore_abi0_sqlite PUBLIC "${PROJECT_SOURCE_DIR}/src/3rdparty/include/sqlite")
+target_compile_definitions(musikcore_abi0_sqlite PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
+target_link_libraries(musikcore_abi0_sqlite PRIVATE Threads::Threads)
+set_target_properties(musikcore_abi0_sqlite PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  C_VISIBILITY_PRESET hidden
+  ARCHIVE_OUTPUT_DIRECTORY "${output_dir}"
+)
+
+add_library(musikcore_abi0 SHARED
+  common/version.cpp common/string.cpp common/error.cpp
+  consumer/context.cpp consumer/library.cpp
+)
 target_include_directories(musikcore_abi0 PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_compile_definitions(musikcore_abi0 PRIVATE MC_BUILDING_SHARED INTERFACE MC_USING_SHARED)
-target_link_libraries(musikcore_abi0 PRIVATE Threads::Threads)
+target_link_libraries(musikcore_abi0 PRIVATE Threads::Threads musikcore_abi0_sqlite)
 set_target_properties(musikcore_abi0 PROPERTIES
   OUTPUT_NAME musikcore-abi0
   ARCHIVE_OUTPUT_DIRECTORY "${output_dir}"

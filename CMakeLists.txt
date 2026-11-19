@@ -20,6 +20,7 @@ endif()
 
 if(WIN32)
   include("${CMAKE_CURRENT_SOURCE_DIR}/.cmake/BuildWindows.cmake")
+  add_subdirectory(tests/fixtures EXCLUDE_FROM_ALL)
   return()
 endif()
 
@@ -167,6 +168,8 @@ add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder")
 add_plugin("src/plugins/stockencoders" "stockencoders")
 # dsps
 add_plugin("src/plugins/supereqdsp" "supereqdsp")
+
+add_subdirectory(tests/fixtures EXCLUDE_FROM_ALL)
 
 add_custom_target(postbuild ALL DEPENDS musikcube musikcubed)
 add_custom_command(

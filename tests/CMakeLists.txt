@@ -64,4 +64,21 @@ set_target_properties(musikcore_abi_dispatch_test PROPERTIES
 add_test(NAME musikcore.abi.dispatch COMMAND musikcore_abi_dispatch_test)
 set_tests_properties(musikcore.abi.dispatch PROPERTIES LABELS "contract;abi" TIMEOUT 20)
 
-add_custom_target(musikcube_tests DEPENDS musikcore_abi_header_test musikcore_abi0_c_test musikcore_abi_dispatch_test)
+add_executable(musikcore_abi_query_test abi/query.c abi/query-support.cpp)
+target_link_libraries(musikcore_abi_query_test PRIVATE musikcore_abi0 musikcore_abi0_sqlite Threads::Threads)
+set_target_properties(musikcore_abi_query_test PROPERTIES
+  C_STANDARD 11
+  C_STANDARD_REQUIRED ON
+  C_EXTENSIONS OFF
+  CXX_STANDARD 11
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
+  RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}"
+)
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/query-fixture")
+add_test(NAME musikcore.abi.query COMMAND musikcore_abi_query_test
+  "${CMAKE_CURRENT_BINARY_DIR}/bin/query-fixture")
+set_tests_properties(musikcore.abi.query PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+
+add_custom_target(musikcube_tests DEPENDS
+  musikcore_abi_header_test musikcore_abi0_c_test musikcore_abi_dispatch_test musikcore_abi_query_test)
