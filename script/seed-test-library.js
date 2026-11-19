@@ -128,12 +128,13 @@ function main() {
     options: {
       tracks: { type: 'string', default: '2' },
       indexer: { type: 'string' },
+      'fixture-dir': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
     },
     allowPositionals: true,
   });
   if (values.help) {
-    console.log('Usage: node script/seed-test-library.js [--tracks <count>] [--indexer <executable>] [configured-build-directory]');
+    console.log('Usage: node script/seed-test-library.js [--tracks <count>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
     return;
   }
   if (extra.length) throw new Error('Expected a single configured build directory.');
@@ -149,7 +150,7 @@ function main() {
   }
 
   /* Give the legacy indexer a fresh config root and deterministic local media. */
-  const fixtures = join(build, 'tests', 'bin', 'library-fixtures');
+  const fixtures = values['fixture-dir'] ? resolve(values['fixture-dir']) : join(build, 'tests', 'bin', 'library-fixtures');
   mkdirSync(fixtures, { recursive: true });
   const root = mkdtempSync(join(fixtures, 'library-'));
   const media = join(root, 'media');

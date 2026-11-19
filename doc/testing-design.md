@@ -800,6 +800,30 @@ each failure point.
 Fault injection belongs at explicit seams. It should not rely on global random
 failure rates that make failures difficult to reproduce.
 
+## Headless track search
+
+From the repository root, build the Unix app and fixture indexer, then run
+the PTY scenario with Node.js and the system `script` utility. The harness
+uses util-linux `script` on Linux and BSD `script` on macOS.
+
+```sh
+cmake --build . --target musikcube musikcube_seed_library
+node tests/tui/track-search.js
+```
+
+The scenario indexes 10,000 tracks under the build tree alongside the staged
+executables and indexing plugins. It opens Track Search, filters by album,
+scrolls to a result below the initial viewport, then quits through the normal
+key binding. It removes the fixture and staged runtime on completion.
+
+The runner reports fixture generation and indexing separately from keystroke
+latency. Filter latency includes the app's debounce interval. The scenario
+uses the existing track search implementation and runs separately from the
+ABI CTest suite.
+
+Use `--screenshots <dir>` to save SVGs of the initial, filtered, and scrolled
+views. For an out-of-tree build, pass `--build-dir` and, if needed, `--bin-dir`.
+
 ## CI and developer workflows
 
 The test commands should remain CI-provider independent. An initial matrix is:
