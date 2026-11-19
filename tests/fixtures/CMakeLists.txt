@@ -26,6 +26,7 @@ if(BUILD_TESTING)
       "-DBUILD_DIR=${PROJECT_BINARY_DIR}"
       "-DINDEXER=$<TARGET_FILE:musikcube_seed_library>"
       "-DQUERY_TEST=$<TARGET_FILE:musikcore_abi_query_test>"
+      "-DCPP_TEST=$<TARGET_FILE:musikcore_abi_cpp_test>"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/check-indexed-library.cmake")
     set_tests_properties(musikcore.abi.indexed_query PROPERTIES LABELS "integration;abi" TIMEOUT 90)
   endif()

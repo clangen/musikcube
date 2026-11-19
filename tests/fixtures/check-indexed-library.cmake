@@ -14,3 +14,7 @@ execute_process(COMMAND "${QUERY_TEST}" --indexed "${directory}" RESULT_VARIABLE
 if(NOT status STREQUAL "0")
   message(FATAL_ERROR "Indexed library query failed (${status})")
 endif()
+execute_process(COMMAND "${CPP_TEST}" "${directory}" RESULT_VARIABLE status)
+if(NOT status STREQUAL "0")
+  message(FATAL_ERROR "C++ wrapper query failed (${status})")
+endif()

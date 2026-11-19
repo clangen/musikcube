@@ -18,6 +18,9 @@ add_library(musikcore_abi0 SHARED
 target_include_directories(musikcore_abi0 PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_compile_definitions(musikcore_abi0 PRIVATE MC_BUILDING_SHARED INTERFACE MC_USING_SHARED)
 target_link_libraries(musikcore_abi0 PRIVATE Threads::Threads musikcore_abi0_sqlite)
+add_library(musikcore_cpp_abi0 INTERFACE)
+target_link_libraries(musikcore_cpp_abi0 INTERFACE musikcore_abi0)
+target_compile_features(musikcore_cpp_abi0 INTERFACE cxx_std_17)
 set_target_properties(musikcore_abi0 PROPERTIES
   OUTPUT_NAME musikcore-abi0
   ARCHIVE_OUTPUT_DIRECTORY "${output_dir}"

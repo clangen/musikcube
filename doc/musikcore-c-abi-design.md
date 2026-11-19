@@ -645,6 +645,11 @@ The wrapper is strictly header-only. Its implementations live in public
 headers and link against the C ABI. Only the C ABI is promised to be binary
 stable.
 
+`musikcore.hpp` includes the C++ subsystem headers. `context.hpp` owns the
+context and exposes dispatch, cancellation, and shutdown. `library.hpp`
+provides track queries and owns returned pages. The caller keeps captured
+callback state valid through shutdown, which drains pending callbacks.
+
 ## C SDK
 
 ### Purpose

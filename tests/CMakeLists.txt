@@ -82,3 +82,11 @@ set_tests_properties(musikcore.abi.query PROPERTIES LABELS "contract;abi" TIMEOU
 
 add_custom_target(musikcube_tests DEPENDS
   musikcore_abi_header_test musikcore_abi0_c_test musikcore_abi_dispatch_test musikcore_abi_query_test)
+
+add_executable(musikcore_abi_cpp_test abi/cpp-wrapper.cpp abi/query-support.cpp)
+target_link_libraries(musikcore_abi_cpp_test PRIVATE musikcore_cpp_abi0 Threads::Threads)
+set_target_properties(musikcore_abi_cpp_test PROPERTIES
+  CXX_EXTENSIONS OFF
+  RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}"
+)
+add_dependencies(musikcube_tests musikcore_abi_cpp_test)

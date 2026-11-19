@@ -23,6 +23,11 @@ extern "C" int query_test_wait_for_wakeup(unsigned count) {
     return changed.wait_for(lock, std::chrono::seconds(5), [count] { return wakeups >= count; });
 }
 
+extern "C" unsigned query_test_wakeup_count() {
+    std::lock_guard<std::mutex> lock(mutex);
+    return wakeups;
+}
+
 extern "C" void query_test_release_wakeup(void) {
     std::lock_guard<std::mutex> lock(mutex);
     released = true;

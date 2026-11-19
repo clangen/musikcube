@@ -578,8 +578,10 @@ recorded before the experimental shared façade is introduced.
 - [ ] **LIB-012** Add scrolling/cache pressure tests without sleeps.
 - [ ] **CPP-001** Create initial RAII C++ context, event, request, page, and list
   wrappers.
-- [ ] **CPP-002** Add C++ wrapper tests that use no private core headers.
-- [ ] **MIG-001** Select one musikcube search/list vertical slice for the pilot.
+  Context, query submission, and page ownership are implemented.
+- [x] **CPP-002** Add C++ wrapper tests that use no private core headers.
+- [x] **MIG-001** Select one musikcube search/list vertical slice for the pilot.
+  Start with the track-search results view in `TrackSearchLayout`.
 - [ ] **MIG-002** Migrate that slice through the C++ wrapper in an ABI0-only
   migration executable.
 - [ ] **PERF-001** Add baseline and ABI0 benchmarks for query, initial display,
