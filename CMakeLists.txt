@@ -10,6 +10,7 @@ if(POLICY CMP0091)
 endif()
 project(musikcube)
 
+find_package(Threads REQUIRED)
 add_subdirectory(src/musikcore/ffi EXCLUDE_FROM_ALL)
 
 include(CTest)

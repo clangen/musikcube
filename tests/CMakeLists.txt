@@ -45,4 +45,23 @@ if(UNIX)
   set_tests_properties(musikcore.abi.exports PROPERTIES LABELS "contract;abi")
 endif()
 
-add_custom_target(musikcube_tests DEPENDS musikcore_abi_header_test musikcore_abi0_c_test)
+add_executable(musikcore_abi_dispatch_test
+  abi/dispatch.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer/context.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp"
+)
+target_include_directories(musikcore_abi_dispatch_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/include"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer"
+)
+target_link_libraries(musikcore_abi_dispatch_test PRIVATE Threads::Threads)
+set_target_properties(musikcore_abi_dispatch_test PROPERTIES
+  CXX_STANDARD 11
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+)
+add_test(NAME musikcore.abi.dispatch COMMAND musikcore_abi_dispatch_test)
+set_tests_properties(musikcore.abi.dispatch PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+
+add_custom_target(musikcube_tests DEPENDS musikcore_abi_header_test musikcore_abi0_c_test musikcore_abi_dispatch_test)

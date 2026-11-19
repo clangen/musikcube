@@ -8,6 +8,8 @@ static_assert(std::is_standard_layout<mc_string_view>::value, "string layout");
 static_assert(std::is_standard_layout<mc_byte_view>::value, "byte layout");
 static_assert(std::is_standard_layout<mc_audio_format>::value, "audio format layout");
 static_assert(std::is_standard_layout<mc_audio_buffer_view>::value, "audio buffer view layout");
+constexpr mc_audio_buffer_view default_audio_buffer = MC_AUDIO_BUFFER_VIEW_DEFAULT;
+static_assert(default_audio_buffer.format.struct_size == sizeof(mc_audio_format), "nested format size");
 
 extern "C" mc_result MC_CALL check_string_view(mc_string_view view) {
     using musik::core::ffi::copy_bytes;

@@ -22,7 +22,7 @@ static int check_context_lifecycle(void) {
     options = defaults;
     options.requested_abi_version = MC_ABI_VERSION_ENCODE(1, 0);
     if (mc_context_create(&options, &context, NULL) != MC_ERROR_UNSUPPORTED || context) goto cleanup;
-    options.requested_abi_version = MC_ABI_VERSION_ENCODE(0, 2);
+    options.requested_abi_version = MC_ABI_VERSION_ENCODE(0, MC_ABI_VERSION_MINOR(MC_ABI_VERSION) + 1);
     if (mc_context_create(&options, &context, NULL) != MC_ERROR_UNSUPPORTED || context) goto cleanup;
 
     options.requested_abi_version = MC_ABI_VERSION;
@@ -39,6 +39,9 @@ static int check_context_lifecycle(void) {
     if (context) goto cleanup;
 
     if (mc_context_create(NULL, &context, &error) != MC_OK || !context || error) goto cleanup;
+    if (mc_context_dispatch(context) != MC_OK ||
+        mc_request_cancel(context, 1) != MC_ERROR_NOT_FOUND ||
+        mc_context_shutdown(context) != MC_OK) goto cleanup;
     mc_context_destroy(&context);
     mc_context_destroy(&context);
     mc_context_destroy(NULL);

@@ -96,8 +96,8 @@ directions:
 - The public API lets applications call musikcore.
 - The C SDK lets musikcore call plugin-provided implementations.
 
-The public API favors commands, immutable snapshots, async requests, and an
-event queue. The SDK favors explicitly versioned function tables because the
+The public API favors commands, immutable snapshots, async requests with per-request callbacks,
+and a queue for unsolicited notifications. The SDK favors explicitly versioned function tables because the
 host must invoke providers directly, including in audio paths.
 
 Their private implementation is grouped under `src/musikcore/ffi`, with
@@ -123,10 +123,11 @@ runtimes without requiring a common heap.
 Database queries, metadata loading, indexing, and other potentially blocking
 work do not become synchronous merely because they cross a C API.
 
-The canonical application mechanism is a context event queue with request IDs,
-completion events, cancellation, explicit payload ownership, and defined
-ordering. Language wrappers translate this into futures, tasks, channels,
-signals, or async streams.
+Each accepted request has one terminal callback delivered by nonblocking
+dispatch on a host-selected thread. Request IDs support cancellation. An
+optional wakeup hook posts work to sleeping host loops. Unsolicited
+notifications use a separate queue. Shutdown settles outstanding callbacks
+before the host releases its state.
 
 ### Tests define observable behavior
 
@@ -254,7 +255,7 @@ The application-facing runtime owns:
 
 - Context creation and shutdown.
 - Request IDs and cancellation.
-- Event queue and payload transfer.
+- Request dispatch, wakeups, and notification polling.
 - Library queries and metadata pages.
 - Track lists and async cache windows.
 - Playback and queue commands and snapshots.
@@ -420,7 +421,7 @@ Review public operations by use case rather than internal class parity.
 
 Risk: C wrappers make track retrieval synchronous and degrade scrolling.
 
-Mitigation: make cache windows and completion events part of the first metadata
+Mitigation: make cache windows and completion callbacks part of the first metadata
 slice; benchmark the migrated list view before expanding migration.
 
 ### Plugin unload and callback races

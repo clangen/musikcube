@@ -54,6 +54,17 @@ static int check_errors(void) {
 int main(void) {
     const char data[] = { 'm', 'c' };
     const mc_string_view view = { data, sizeof(data) };
+    const mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
+    const mc_audio_buffer_view buffer = MC_AUDIO_BUFFER_VIEW_DEFAULT;
+    if (format.struct_size != sizeof(format) || format.sample_rate || format.channels ||
+        format.sample_format || format.channel_layout || buffer.struct_size != sizeof(buffer) ||
+        buffer.data || buffer.frame_count || buffer.frame_capacity ||
+        buffer.format.struct_size != sizeof(buffer.format) || buffer.format.sample_rate ||
+        buffer.format.channels || buffer.format.sample_format || buffer.format.channel_layout) {
+        fputs("audio defaults failed\n", stderr);
+        return 1;
+    }
+
     if (mc_abi_version() != MC_ABI_VERSION) {
         fputs("ABI version mismatch\n", stderr);
         return 1;

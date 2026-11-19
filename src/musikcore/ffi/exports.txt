@@ -1,6 +1,9 @@
 mc_abi_version
 mc_context_create
+mc_context_dispatch
 mc_context_destroy
+mc_context_shutdown
 mc_error_destroy
 mc_error_get_code
 mc_error_get_message
+mc_request_cancel

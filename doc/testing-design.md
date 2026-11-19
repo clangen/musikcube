@@ -458,7 +458,7 @@ the internal implementation.
 - Defined multiple-context behavior.
 - Destruction with no outstanding work.
 - Destruction or async shutdown with queued events and requests in flight.
-- A blocked event waiter wakes during shutdown.
+- Shutdown delivers pending terminal callbacks before returning.
 - No accesses occur after the context is destroyed.
 
 ### Ownership and errors
@@ -482,17 +482,20 @@ the internal implementation.
 - Page-owned views remain stable until page destruction.
 - Async calls copy or retain input views before returning.
 
-### Async requests and events
+### Async requests and dispatch
 
-- Accepted requests receive exactly one terminal completion.
-- Request IDs are nonzero and not reused while observable.
-- Cancellation before start, during execution, and racing with completion.
-- Event ordering within one request.
-- State-event ordering relative to command completion.
-- Coalescing applies only to documented event types.
-- Queue capacity and backpressure preserve terminal events.
-- Only one active event consumer is accepted if that is the contract.
-- Event payload take-or-destroy behavior has no leak or double release.
+- Accepted requests receive exactly one terminal callback with the original
+  user data. Rejected requests receive no callback.
+- Callbacks run inline on the selected dispatcher thread, including shutdown
+  callbacks. Nested and concurrent dispatch return busy.
+- Cancellation before start, during execution, and racing with completion
+  produces one terminal outcome.
+- Callbacks may submit or cancel work outside internal locks.
+- Wakeups can be coalesced. Enqueue racing with a drain cannot strand work.
+- Queue pressure preserves accepted completions and lossless notifications.
+- Shutdown settles accepted requests and waits for in-flight wakeups.
+- Successful callbacks own their payloads. Error views are borrowed for the
+  callback. Polled notifications have explicit destruction.
 
 ### Library queries and metadata pages
 
@@ -511,7 +514,7 @@ the internal implementation.
 - Visible-range metadata requests complete asynchronously.
 - Cache-window requests do not block the calling thread on database work.
 - Loading, loaded, missing, and failed states are observable.
-- Overlapping and rapidly changing ranges produce coherent completion events.
+- Overlapping and rapidly changing ranges produce coherent completion callbacks.
 - Batched edits preserve order and are atomic where promised.
 - Invalid indices and duplicate IDs follow documented behavior.
 
@@ -765,7 +768,7 @@ Repeated lifecycle and concurrency tests should cover:
 - Rapid query start/cancel loops.
 - Queue edits while playback state changes.
 - Plugin instance creation during attempted shutdown.
-- Event queue pressure with coalescible and terminal events.
+- Queue pressure with coalescible notifications and terminal callbacks.
 - Repeated map/unmap/recycle audio-buffer transitions.
 
 Stress tests are labeled `slow` and run nightly or before releases. Fast,
@@ -908,7 +911,6 @@ and SDK feature contract-first.
 - Should test-only fake providers be statically registered for component tests,
   or always loaded as dynamic plugins?
 - Which C compiler versions form the public-header compatibility matrix?
-- Should one active event consumer per context be enforced by the ABI?
 - What is the required fast-suite runtime for local and merge-gate use?
 - Which existing media formats require committed binary fixtures?
 - Which CI provider and artifact retention policy should be used?

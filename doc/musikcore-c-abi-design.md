@@ -173,7 +173,8 @@ The ABI uses an independent major and minor version, rather than the musikcube
 application version.
 
 - Encode the major version in the upper 16 bits and the minor version in the
-  lower 16 bits. The initial experimental version is 0.1.
+  lower 16 bits. The experimental ABI is 0.2. Version 0.1 introduced context
+  creation, and 0.2 adds request dispatch and wakeups.
 - A major version change permits incompatible changes.
 - A minor version may only add functions, enum values where documented, or
   fields at the end of extensible structures.
@@ -194,6 +195,10 @@ table begins with a `uint32_t struct_size`. Callers zero-initialize the
 structure and set `struct_size` to its size in bytes. Implementations read
 only fields that fit entirely within the supplied size. Newly added fields
 must have safe zero defaults.
+
+Document every public struct field where it is declared. Provide an
+`MC_*_DEFAULT` initializer for every public size-tagged struct, including
+the sizes of any nested size-tagged structs.
 
 Opaque library-owned objects do not expose layouts and therefore do not need a
 size field.
@@ -225,8 +230,9 @@ translated into `mc_result` values at the boundary.
 
 Detailed failures are represented by an optional owned `mc_error` handle.
 Error objects are created only on failure and expose a code, UTF-8 message, and
-optional plugin or subsystem identifier. Async completion events carry their
-own error object; they do not depend on thread-local state.
+optional plugin or subsystem identifier. Async callbacks borrow the error
+handle for the duration of the callback. Errors do not depend on thread-local
+state.
 
 ```c
 MC_API mc_result MC_CALL mc_error_get_code(const mc_error *error);
@@ -322,7 +328,7 @@ delivers an event or invokes a provider function.
 
 Destruction specifies whether it waits for in-flight work. Where waiting would
 be dangerous, shutdown is a separate async operation followed by destruction
-after a terminal event.
+after the terminal callback.
 
 ## Public C API
 
@@ -339,12 +345,16 @@ versions.
 The public entry point is an owned context:
 
 ```c
+typedef void (MC_CALL *mc_wakeup_fn)(void *user_data);
+
 typedef struct mc_context_options {
     uint32_t struct_size;
     uint32_t requested_abi_version;
     mc_string_view data_directory;
     mc_string_view plugin_directory;
     uint32_t flags;
+    mc_wakeup_fn wakeup;
+    void *wakeup_user_data;
 } mc_context_options;
 
 MC_API mc_result MC_CALL mc_context_create(
@@ -369,53 +379,71 @@ major and specify a minor no newer than the library's. Directory views are
 copied during creation. The first lifecycle slice stores these roots for
 later runtime initialization.
 
-### Async operations and events
+### Async requests and dispatch
 
-Async operations return a request ID immediately:
+Accepted operations return a nonzero request ID and deliver one terminal
+callback with the supplied `user_data`. Rejected submissions return an error
+immediately and have no callback. Inputs are copied or retained before
+submission returns. The caller keeps `user_data` valid until the callback
+returns.
 
 ```c
 typedef uint64_t mc_request_id;
 
-MC_API mc_result mc_request_cancel(
-    mc_context *context,
-    mc_request_id request);
+MC_API mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id request);
+MC_API mc_result MC_CALL mc_context_dispatch(mc_context *context);
+MC_API mc_result MC_CALL mc_context_shutdown(mc_context *context);
 ```
 
-The canonical completion mechanism is a context event queue rather than a
-callback from an arbitrary internal thread:
+`mc_context_dispatch` never waits for work to become ready. The first dispatch
+or notification poll establishes the dispatcher thread. Dispatch invokes ready
+completion callbacks inline. Worker threads enqueue results.
+Callbacks run outside internal locks and may submit or cancel requests.
+Nested dispatch and dispatch from another thread return `MC_ERROR_BUSY`. Shutdown and
+destruction must be called outside a callback, on the dispatcher thread once
+one is established.
+
+Cancellation is best effort. If cancellation wins the race to a terminal
+outcome, the callback receives `MC_ERROR_CANCELLED`. The worker may still
+finish its work after cancellation. If a terminal result was already selected
+or the request ID is unknown, cancellation returns `MC_ERROR_NOT_FOUND`.
+Admission reserves space for each accepted request's
+terminal completion. Queue pressure can reject new submissions before they
+become accepted.
+
+A periodic host loop can call dispatch on each tick. A sleeping host loop
+can supply a wakeup function in the context options. The hook may run on
+a worker thread, outside internal locks. It must signal or post work to the
+host loop and return promptly. It must not call the context API. The host
+loop then runs dispatch and drains notifications on the dispatcher thread.
+Wakeups may be coalesced, but work arriving as the dispatcher drains its
+queue must either be observed by that drain or trigger another wakeup.
+
+Shutdown stops admission, cancels or settles accepted work, and delivers all
+remaining terminal callbacks on the dispatcher thread before returning. It
+also stops wakeups and waits for any in-flight wakeup hook to return. Before
+destroying the context or releasing host wakeup state, the host cancels or
+drains dispatch tasks it already posted. Destruction of a live context
+performs shutdown first. Queued notifications that the host did not consume
+are released during destruction.
+
+### Notifications
+
+The context queues unsolicited playback, library, and indexer notifications.
+The dispatcher thread polls them separately from per-request completions:
 
 ```c
-MC_API mc_result mc_context_next_event(
-    mc_context *context,
-    uint32_t timeout_ms,
-    mc_event **out_event);
-
-MC_API mc_event_type mc_event_get_type(const mc_event *event);
-MC_API mc_request_id mc_event_get_request_id(const mc_event *event);
-MC_API void mc_event_destroy(mc_event **event);
+MC_API mc_result MC_CALL mc_context_poll_event(mc_context *context, mc_event **out_event);
+MC_API mc_event_type MC_CALL mc_event_get_type(const mc_event *event);
+MC_API void MC_CALL mc_event_destroy(mc_event **event);
 ```
 
-Calling `mc_context_next_event` delivers events on the caller's thread. A
-language wrapper can run an event-pump thread and translate events into native
-futures, tasks, channels, signals, or async streams.
-
-The initial contract permits one active event consumer per context. Other
-documented thread-safe API calls may execute concurrently with that consumer.
-Context shutdown wakes a blocked event consumer before releasing its resources.
-Inputs to accepted async operations are copied or retained before the initiating
-function returns; callers do not need to keep query string views alive.
-
-The event contract must define:
-
-- Exactly one terminal completion event for each accepted async request.
-- Best-effort cancellation and how cancellation races with completion.
-- Which progress and state events may be coalesced.
-- Queue capacity and backpressure behavior.
-- Ordering within a request and between playback state events.
-- Context destruction behavior when events remain queued.
-
-An optional wakeup handle or scheduler hook may be added for native event-loop
-integration, but must not replace the portable queue API.
+An empty queue returns `MC_OK` with a null event. A delivered event is owned
+by the caller. Destroying it releases any payload the caller has not taken.
+State transitions and terminal indexer outcomes are lossless. Documented
+progress or invalidation notifications may be coalesced. A mutation is
+committed before either its completion or its change notification is
+published. The two queues have no shared delivery order.
 
 ### Library queries and metadata snapshots
 
@@ -434,24 +462,20 @@ typedef struct mc_track_query {
     uint32_t flags;
 } mc_track_query;
 
-MC_API mc_result mc_library_query_tracks_async(
+typedef void (MC_CALL *mc_track_query_completion_fn)(
+    mc_result result, mc_track_page *page, const mc_error *error, void *user_data);
+
+MC_API mc_result MC_CALL mc_library_query_tracks_async(
     mc_context *context,
     const mc_track_query *query,
+    mc_track_query_completion_fn completion,
+    void *user_data,
     mc_request_id *out_request);
 ```
 
-The completion event initially owns an `mc_track_page`. The consumer explicitly
-takes ownership; destroying an event without taking the page destroys the page
-as well:
-
-```c
-MC_API mc_result mc_event_take_track_page(
-    mc_event *event,
-    mc_track_page **out_page);
-```
-
-The same take-or-destroy convention applies to detailed async errors and other
-owned event payloads. A page stores all requested strings in page-owned storage:
+On success, the callback takes ownership of the page and destroys it with
+`mc_track_page_destroy`. On failure, the page is null and the error, if
+present, is borrowed until the callback returns. A page stores all requested strings in page-owned storage:
 
 ```c
 MC_API size_t mc_track_page_get_count(const mc_track_page *page);
@@ -488,7 +512,7 @@ The API must support the behavior currently required by musikcube:
 - Retrieve IDs without loading metadata.
 - Request an async metadata page around a visible range.
 - Set a suggested cache window size.
-- Receive completion or invalidation events.
+- Receive completion callbacks and invalidation notifications.
 - Observe loading, loaded, missing, and failed metadata states.
 - Edit a list through a transactional editor or batch operation.
 
@@ -584,7 +608,7 @@ separate stability guarantees.
 
 `musikcore.hpp` provides move-only or reference-counted RAII types, translates
 error results into an explicit C++ result type or documented exceptions, and
-maps the event queue to the application's preferred dispatch mechanism.
+maps request callbacks and notifications to the application's event loop.
 
 The wrapper should provide `std::string`, `std::string_view`, spans, and scoped
 ownership without accessing internal musikcore C++ classes. musikcube should
@@ -899,8 +923,8 @@ evolve independently; only the generated C function tables are ABI stable.
 
 ## Events versus callbacks
 
-The public API uses a context event queue because application runtimes often
-require callbacks to be delivered on a runtime-owned thread.
+The public API delivers request completions through per-request callbacks on
+the host dispatcher. The notification queue carries unsolicited changes.
 
 The plugin SDK uses function tables because the core must invoke provider
 implementations directly, including in performance-sensitive paths. Provider
@@ -982,7 +1006,7 @@ will expose assumptions hidden by the C++ adapters.
 
 - Add `abi.h`, result codes, errors, strings, sized structures, and visibility
   rules.
-- Implement context creation, shutdown, version negotiation, and event queues.
+- Implement context creation, shutdown, version negotiation, and dispatch.
 - Establish shared-library ABI naming and export checks on all platforms.
 
 ### Phase 2: library queries and a musikcube vertical slice

@@ -33,7 +33,7 @@ extern "C" {
     ((((uint32_t)(major) & UINT32_C(0xffff)) << 16) | ((uint32_t)(minor) & UINT32_C(0xffff)))
 #define MC_ABI_VERSION_MAJOR(version) ((uint16_t)((uint32_t)(version) >> 16))
 #define MC_ABI_VERSION_MINOR(version) ((uint16_t)(version))
-#define MC_ABI_VERSION MC_ABI_VERSION_ENCODE(0, 1)
+#define MC_ABI_VERSION MC_ABI_VERSION_ENCODE(0, 2)
 
 MC_API uint32_t MC_CALL mc_abi_version(void);
 
@@ -53,13 +53,17 @@ enum {
 
 /* Borrowed UTF-8. The length excludes any terminator. */
 typedef struct mc_string_view {
+    /* Borrowed UTF-8 storage. May be null for an empty view. */
     const char *data;
+    /* Byte count, excluding any terminating NUL. */
     size_t length;
 } mc_string_view;
 
 /* Borrowed bytes. */
 typedef struct mc_byte_view {
+    /* Borrowed byte storage. May be null for an empty view. */
     const uint8_t *data;
+    /* Number of readable bytes. */
     size_t length;
 } mc_byte_view;
 
@@ -69,21 +73,35 @@ enum {
 };
 
 typedef struct mc_audio_format {
+    /* Size of this struct in bytes. */
     uint32_t struct_size;
+    /* Sample frames per second. Zero means unset. */
     uint32_t sample_rate;
+    /* Samples per interleaved frame. Zero means unset. */
     uint32_t channels;
+    /* Encoding of each sample. Zero means unset. */
     mc_sample_format sample_format;
+    /* Channel layout identifier. Zero means unspecified. */
     uint32_t channel_layout;
 } mc_audio_format;
 
+#define MC_AUDIO_FORMAT_DEFAULT { sizeof(mc_audio_format), 0, 0, 0, 0 }
+
 /* Borrows interleaved PCM storage from the owner of the view. */
 typedef struct mc_audio_buffer_view {
+    /* Size of this struct in bytes. */
     uint32_t struct_size;
+    /* Borrowed PCM storage. Null for the default empty view. */
     void *data;
+    /* Number of populated frames. */
     size_t frame_count;
+    /* Number of frames the storage can hold. */
     size_t frame_capacity;
+    /* Format of the interleaved PCM frames. */
     mc_audio_format format;
 } mc_audio_buffer_view;
+
+#define MC_AUDIO_BUFFER_VIEW_DEFAULT { sizeof(mc_audio_buffer_view), NULL, 0, 0, MC_AUDIO_FORMAT_DEFAULT }
 
 typedef struct mc_error mc_error;
 

@@ -15,7 +15,8 @@
 
 - Reuse existing helpers and follow the surrounding code's conventions. Introduce an abstraction when it simplifies real callers.
 - Write nested C++ namespace declarations on one line, such as `namespace musik { namespace core { namespace audio {`. Indent the body once and close with `} } }` on one line.
-- Let the code explain what it does. Reserve comments for longer blocks, especially those with branches, where they can mark a phase or explain why a decision was made. Keep comments terse and technical.
+- Let the code explain what it does. As you write or revise longer functions, add terse, technical comments at phase boundaries and branching handoffs to make the flow easy to follow. Explain decisions where the reason is otherwise unclear.
+- Use blank lines to separate distinct steps in a function. Keep closely related statements together and give transitions between phases room to stand out.
 - Use `/* comment */` where the language supports block comments. Use `//` only when necessary and the language's native syntax where block comments are unavailable.
 - Keep platform and compiler differences near setup. Pass the resulting options into shared build and application code.
 - Make ownership, cleanup, and error handling explicit at resource and thread boundaries.
@@ -34,4 +35,5 @@
 
 - Follow [the C ABI design](doc/musikcore-c-abi-design.md), [the high-level migration plan](doc/musikcore-c-abi-hld.md), [the task checklist](doc/musikcore-c-abi-lld.md), and [the testing design](doc/testing-design.md) when working on ABI modernization.
 - Keep the application API and plugin SDK as separate contracts. Specify ownership and lifetime at the ABI boundary.
+- Document every field in public ABI structs, including units, ownership, and default values where applicable. Provide an `MC_*_DEFAULT` initializer for every public struct with a `struct_size` field.
 - When completing an ABI task, update its checklist entry and the named test in the same change. Mark a gate complete only after its acceptance criteria pass on the named platforms or the task plan records an exception.

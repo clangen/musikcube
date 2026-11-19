@@ -4,6 +4,7 @@ set(output_dir "${PROJECT_BINARY_DIR}/bin/abi0")
 add_library(musikcore_abi0 SHARED common/version.cpp common/string.cpp common/error.cpp consumer/context.cpp)
 target_include_directories(musikcore_abi0 PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_compile_definitions(musikcore_abi0 PRIVATE MC_BUILDING_SHARED INTERFACE MC_USING_SHARED)
+target_link_libraries(musikcore_abi0 PRIVATE Threads::Threads)
 set_target_properties(musikcore_abi0 PROPERTIES
   OUTPUT_NAME musikcore-abi0
   ARCHIVE_OUTPUT_DIRECTORY "${output_dir}"

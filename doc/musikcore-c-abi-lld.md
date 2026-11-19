@@ -201,7 +201,7 @@ A packaging test compares actual exports with the allowlist.
 - Runtime/global initialization reference.
 - Library/database instance.
 - Plugin registry.
-- Event queue.
+- Completion and notification queues.
 - Async request registry.
 - Playback and indexer services.
 - Context-scoped preferences and paths.
@@ -220,13 +220,15 @@ constructing -> running -> shutting_down -> stopped -> destroyed
 ```
 
 Creation publishes the handle only after all required services initialize.
-Shutdown stops accepting requests, cancels or drains in-flight work, emits
-terminal events, wakes the event consumer, releases providers, and then permits
-destruction.
+Shutdown stops admission and wakeups, waits for running hooks, settles
+in-flight requests, and dispatches their terminal callbacks on the host
+dispatcher before returning. The host drains or cancels any posted dispatch
+tasks before destruction.
 
 ### Request registry
 
-Each accepted async operation receives a nonzero `mc_request_id` and one state:
+Each accepted operation records its callback, user data, and nonzero
+`mc_request_id`, and reserves a terminal completion slot:
 
 ```text
 accepted -> queued -> running -> completed
@@ -236,35 +238,35 @@ accepted -> queued -> running -> completed
 
 Rules:
 
-- Exactly one terminal event is observable per accepted request.
-- Cancellation is best effort and never creates a second terminal event.
+- Exactly one terminal callback runs per accepted request.
+- Cancellation races with completion to select one terminal outcome.
 - Request IDs are not reused while their completion can remain queued.
 - Input strings and slices are copied or retained before the initiating call
   returns.
 - Context shutdown transitions every accepted request to a terminal outcome.
 
-### Event queue
+### Dispatch and notifications
 
-The first ABI supports one active consumer per context. Producers may be
-concurrent.
+Concurrent producers queue ready completions and unsolicited notifications.
+One host-selected thread calls nonblocking dispatch and polls notifications.
+Select terminal results while holding the queue lock, then release the lock
+before invoking callbacks or the wakeup hook. Reject nested or concurrent
+dispatch. Callbacks may submit or cancel requests.
 
-Events are divided into:
+Reserve capacity for terminal completions at admission. State transitions and
+terminal indexer notifications are lossless. Coalesce documented progress and
+invalidation notifications. Dequeueing a notification transfers ownership.
 
-- Lossless terminal events.
-- Lossless state transitions.
-- Coalescible progress or invalidation events.
-
-The queue must not invoke application code. `mc_context_next_event` transfers
-an owned event to the caller. Event payloads use explicit `take` functions;
-destroying the event releases any payload not taken.
-
-Shutdown wakes a blocked consumer and produces a documented stopped or closed
-result after queued terminal events are handled.
+Coalesce wakeups while a drain is pending. Coordinate rearming with enqueue
+under the same synchronization so a producer racing with the last drain
+cannot leave work stranded. The hook only signals the host, which dispatches
+on its selected thread. Shutdown and destruction run outside callbacks on
+that thread once established.
 
 ### Error objects
 
 `mc_error` is core-owned. Synchronous public functions optionally return it on
-failure. Async events initially own async errors.
+failure. The request owns its error until the terminal callback returns.
 
 Plugins create detailed errors through `mc_host_api::create_error`; they never
 allocate an `mc_error` directly.
@@ -407,7 +409,8 @@ never sleeps.
 - [x] **DEC-003** Decide whether initial multiple-context creation returns
   `MC_ERROR_BUSY` or supports isolated contexts.
   ABI0 returns `MC_ERROR_BUSY` while one context is active.
-- [ ] **DEC-004** Confirm one active event consumer per context for ABI v1.
+- [x] **DEC-004** Use one host-selected dispatcher per context.
+  Request completions use callbacks. Unsolicited notifications are polled.
 - [ ] **DEC-005** Decide whether public and provider ABI versions advance
   together through v1.
 - [ ] **DEC-006** Select and pin the internal C++ unit-test framework.
@@ -515,13 +518,13 @@ recorded before the experimental shared façade is introduced.
 - [x] **API-003** Define `mc_context_options` with explicit data and plugin
   roots.
 - [x] **API-004** Implement transactional `mc_context_create`.
-- [ ] **API-005** Implement context shutdown states and
+- [x] **API-005** Implement context shutdown states and
   `mc_context_destroy`.
-- [ ] **API-006** Implement the request ID generator and registry.
-- [ ] **API-007** Implement the single-consumer event queue.
-- [ ] **API-008** Implement owned event objects and take-or-destroy payloads.
-- [ ] **API-009** Implement cancellation and exactly-once terminal completion.
-- [ ] **API-010** Wake blocked event consumers during shutdown.
+- [x] **API-006** Implement the request ID generator and registry.
+- [ ] **API-007** Implement caller-thread completion dispatch and notification polling.
+- [ ] **API-008** Implement completion payload ownership and owned notifications.
+- [x] **API-009** Implement cancellation and exactly-once terminal completion.
+- [x] **API-010** Implement wakeup coalescing and dispatcher-thread shutdown draining.
 - [x] **API-011** Reject unsupported second contexts according to DEC-003.
 - [ ] **API-012** Add C contract tests for version, context, errors, events,
   cancellation, and teardown.
@@ -531,7 +534,8 @@ recorded before the experimental shared façade is introduced.
 #### Phase 3 gate
 
 - [ ] **GATE-300** The C contract executable creates an ABI0 context, completes
-  and cancels synthetic requests, consumes events, and shuts down without leaks
+  and cancels synthetic requests through callbacks, consumes notifications,
+  and shuts down without leaks
   or arbitrary sleeps.
 
 ### Phase 4: C SDK walking skeleton
@@ -564,8 +568,8 @@ recorded before the experimental shared façade is introduced.
 - [ ] **LIB-002** Implement immutable page arena storage.
 - [ ] **LIB-003** Implement row identity, string, numeric, and missing-value
   accessors.
-- [ ] **LIB-004** Implement async query submission and completion events.
-- [ ] **LIB-005** Implement page payload transfer from events.
+- [ ] **LIB-004** Implement async query submission and per-request completion callbacks.
+- [ ] **LIB-005** Implement owned page transfer to the completion callback.
 - [ ] **LIB-006** Define track identity/list handles without eager metadata.
 - [ ] **LIB-007** Implement async visible-range/cache-window requests.
 - [ ] **LIB-008** Implement metadata state and invalidation events.
