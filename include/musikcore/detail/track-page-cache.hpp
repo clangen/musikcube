@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <map>
 
-namespace musik { namespace core { namespace library {
+namespace musik { namespace core { namespace client { namespace detail {
 
     /* Owns projected pages. Neither copyable nor movable. */
     class TrackPageCache {
@@ -47,4 +47,4 @@ namespace musik { namespace core { namespace library {
         std::map<size_t, client::TrackPage> pages;
     };
 
-} } }
+} } } }

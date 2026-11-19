@@ -51,6 +51,7 @@
 namespace musik { namespace core { namespace client {
     class Context;
     class Library;
+    class TrackResultWindow;
 } } }
 
 namespace musik {
@@ -93,6 +94,8 @@ namespace musik {
                 void ClearPages();
                 void SetViewport(size_t first, size_t last, size_t height);
                 void LoadPage();
+                void UpdatePagePolling();
+                void HandlePageStatus(mc_result status);
                 musik::core::TrackPtr DisplayTrack(size_t row);
                 void OnIndexerFinished(int);
 
@@ -118,11 +121,9 @@ namespace musik {
                 std::shared_ptr<cursespp::TextInput> input;
                 RequestGeneration localSearchGeneration;
                 mc_request_id localSearchRequest = 0;
-                RequestGeneration pageGeneration;
-                struct PageCache;
-                std::unique_ptr<PageCache> pageCache;
                 std::shared_ptr<musik::core::client::Context> apiContext;
                 std::shared_ptr<const musik::core::client::Library> apiLibrary;
+                std::unique_ptr<musik::core::client::TrackResultWindow> resultWindow;
         };
     }
 }

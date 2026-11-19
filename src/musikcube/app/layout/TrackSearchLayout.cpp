@@ -40,8 +40,7 @@
 
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/track/LibraryTrack.h>
-#include <musikcore/library/track/TrackPageCache.h>
-#include <musikcore/library.hpp>
+#include <musikcore/track-result-window.hpp>
 #include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Hotkeys.h>
@@ -69,24 +68,7 @@ namespace components = musik::core::prefs::components;
 constexpr int kSearchHeight = 3;
 constexpr int kRequeryIntervalMs = 300;
 constexpr int kSearchPagePollIntervalMs = 2;
-
-/* Owns the search snapshot and its bounded window. Neither copyable nor movable. */
-struct TrackSearchLayout::PageCache {
-    explicit PageCache(client::TrackResult result) : result(std::move(result)) {}
-    PageCache(const PageCache&) = delete;
-    PageCache& operator=(const PageCache&) = delete;
-
-    client::TrackResult result;
-    TrackPageCache pages;
-    size_t pageSize = 1;
-    size_t firstRow = 0;
-    size_t lastRow = 0;
-    bool forward = true;
-    bool viewportKnown = false;
-    mc_request_id request = 0;
-    size_t pending = 0;
-    std::optional<size_t> failed;
-};
+constexpr int kSearchPageRetryMs = 25;
 
 static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
     const auto sort = (TrackSortType) prefs->GetInt(
@@ -181,7 +163,7 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
     else {
         this->CancelLocalSearch();
         this->ClearPages();
-        this->pageCache.reset();
+        this->resultWindow.reset();
         this->SaveSession();
         this->input->SetText("");
         this->trackList->Reset();
@@ -222,10 +204,18 @@ void TrackSearchLayout::Requery() {
                 }
 
                 this->ClearPages();
-                this->pageCache = std::make_unique<PageCache>(std::move(result));
+                this->resultWindow = std::make_unique<client::TrackResultWindow>(*this->apiContext,
+                    std::move(result), std::vector<std::string>{ MC_TRACK_FIELD_ID, MC_TRACK_FIELD_TITLE,
+                        MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION,
+                        MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING },
+                    [this](size_t offset, size_t count, mc_result status) {
+                        this->UpdatePagePolling();
+                        if (this->resultWindow->IntersectsViewport(offset, count)) this->trackList->Redraw();
+                        this->HandlePageStatus(status);
+                    });
                 this->trackList->SetQueryResult(TrackListView::RowSource{
-                    this->pageCache->result.Size(),
-                    [this](size_t row) { return this->pageCache->result.Id(row); },
+                    this->resultWindow->Result().Size(),
+                    [this](size_t row) { return this->resultWindow->Result().Id(row); },
                     [this](size_t row) { return this->DisplayTrack(row); },
                     [this](size_t first, size_t last, size_t height) { this->SetViewport(first, last, height); },
                     [this] { this->ClearPages(); this->Post(message::LoadTrackSearchPage); },
@@ -251,97 +241,49 @@ void TrackSearchLayout::CancelLocalSearch() {
 }
 
 void TrackSearchLayout::ClearPages() {
-    this->pageGeneration.Invalidate();
-    if (!this->pageCache) return;
-    auto& cache = *this->pageCache;
-    App::Instance().SetInputPollInterval(0);
-    if (cache.request) this->apiContext->Cancel(cache.request);
-    cache.request = 0;
-    cache.pages.Clear();
-    cache.failed.reset();
+    if (this->resultWindow) this->resultWindow->Clear();
+    this->UpdatePagePolling();
 }
 
 void TrackSearchLayout::SetViewport(size_t first, size_t last, size_t height) {
-    auto& cache = *this->pageCache;
-    if (cache.pageSize != height) {
-        this->ClearPages();
-        cache.pageSize = height;
-        cache.viewportKnown = false;
-    }
-    if (!cache.viewportKnown || cache.firstRow != first || cache.lastRow != last) {
-        if (first != cache.firstRow) cache.forward = first > cache.firstRow;
-        cache.firstRow = first;
-        cache.lastRow = last;
-        cache.viewportKnown = true;
-        cache.failed.reset();
+    const auto update = this->resultWindow->SetViewport(first, last, height);
+    if (update == client::TrackResultWindow::ViewportUpdate::Changed) {
         App::Instance().SetInputPollInterval(kSearchPagePollIntervalMs);
         this->Post(message::LoadTrackSearchPage);
     }
 }
 
 void TrackSearchLayout::LoadPage() {
-    if (!this->pageCache || !this->IsVisible()) return;
-    auto& cache = *this->pageCache;
-    if (!cache.request) App::Instance().SetInputPollInterval(0);
-    const auto count = cache.result.Size();
-    if (!cache.viewportKnown || cache.firstRow >= count) return;
+    if (!this->resultWindow || !this->IsVisible()) return;
 
-    const auto size = cache.pageSize;
-    const auto first = (cache.firstRow / size) * size;
-    const auto last = (std::min(cache.lastRow, count - 1) / size) * size;
-    auto next = first;
-    while (next <= last && cache.pages.Find(next)) next += size;
+    const auto status = this->resultWindow->Load();
+    this->UpdatePagePolling();
+    this->HandlePageStatus(status);
+}
 
-    /* Serve missing visible rows before fetching one page in the scroll direction. */
-    if (cache.request) {
-        if (next <= last && (cache.pending < first || cache.pending > last)) {
-            this->apiContext->Cancel(cache.request);
-        }
-        return;
+void TrackSearchLayout::HandlePageStatus(mc_result status) {
+    if (status == MC_ERROR_BUSY) {
+        this->Debounce(message::LoadTrackSearchPage, 0, 0, kSearchPageRetryMs);
+    } else if (status != MC_OK && status != MC_ERROR_CANCELLED) {
+        musik::debug::error("TrackSearchLayout", client::Error(status).what());
     }
-    if (next > last) {
-        if (!cache.forward && first == 0) return;
-        next = cache.forward ? last + size : first - size;
-    }
-    if (next >= count || cache.pages.Find(next) || cache.failed == next) return;
+}
 
-    const auto generation = this->pageGeneration.Capture();
-    cache.pending = next;
-    App::Instance().SetInputPollInterval(kSearchPagePollIntervalMs);
-    cache.request = client::ReadTracks(*this->apiContext, cache.result, client::TrackRange{
-        next, size, { MC_TRACK_FIELD_ID, MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST,
-            MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING } },
-        [this, generation, next](mc_result status, client::TrackPage page, std::string_view) {
-            if (!generation.IsCurrent()) return;
-            auto& cache = *this->pageCache;
-            cache.request = 0;
-            if (status == MC_OK) {
-                const auto firstPage = (cache.firstRow / cache.pageSize) * cache.pageSize;
-                const auto lastPage = (cache.lastRow / cache.pageSize) * cache.pageSize;
-                if (cache.pages.Store(next, std::move(page), firstPage, lastPage) &&
-                    firstPage <= next && next <= lastPage) {
-                    this->trackList->Redraw();
-                }
-            } else if (status != MC_ERROR_CANCELLED) {
-                cache.failed = next;
-            }
-            this->LoadPage();
-        });
+void TrackSearchLayout::UpdatePagePolling() {
+    App::Instance().SetInputPollInterval(this->resultWindow && this->resultWindow->Pending()
+        ? kSearchPagePollIntervalMs : 0);
 }
 
 TrackPtr TrackSearchLayout::DisplayTrack(size_t row) {
-    const auto& cache = *this->pageCache;
-    auto track = std::make_shared<LibraryTrack>(cache.result.Id(row), this->library);
-    const auto offset = (row / cache.pageSize) * cache.pageSize;
-    const auto* page = cache.pages.Find(offset);
-    if (!page) return track;
+    const auto& window = *this->resultWindow;
+    auto track = std::make_shared<LibraryTrack>(window.Result().Id(row), this->library);
 
-    /* Adapt only the rendered row. The page remains the sole display cache. */
-    const auto metadata = page->Track(row - offset);
-    if (metadata.Value(MC_TRACK_FIELD_ID).data()) {
+    /* Adapt only the rendered row. The window owns its display metadata. */
+    const auto metadata = window.CachedRow(row);
+    if (metadata && metadata->Value(MC_TRACK_FIELD_ID).data()) {
         for (const auto* key : { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM,
                  MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING }) {
-            track->SetValue(key, metadata.Value(key).data());
+            track->SetValue(key, metadata->Value(key).data());
         }
         track->SetMetadataState(musik::core::sdk::MetadataState::Loaded);
     }

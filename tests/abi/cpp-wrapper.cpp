@@ -180,6 +180,7 @@ namespace {
         auto library = openLibrary(directory);
         if (!library) return false;
         options.wakeup = query_test_wakeup;
+        options.track_query_max_limit = 2;
         Context context(options);
         auto wakes = query_test_wakeup_count();
         const auto dispatch = [&] {
@@ -220,7 +221,70 @@ namespace {
             page.Track(0).TrackNumber() != 2 || page.Track(1).Title() != "Morning Light") return false;
 
         ReadTracks(context, tracks, TrackRange{ 2, 1, {} }, receive_page);
-        return dispatch() && page && page.Size() == 0;
+        if (!dispatch() || !page || page.Size()) return false;
+
+        using Update = TrackResultWindow::ViewportUpdate;
+        TrackResultWindow bounded(context, std::move(tracks), { MC_TRACK_FIELD_TITLE }, {},
+            TrackResultWindow::Options{ 1, 0 });
+        if (bounded.SetViewport(0, 0, 1) != Update::Changed ||
+            bounded.SetViewport(0, 1, 1) != Update::ExceedsCapacity ||
+            bounded.SetViewport(0, 0, 0) != Update::InvalidRange ||
+            bounded.SetViewport(0, 0, 1) != Update::Unchanged) return false;
+
+        OpenTrackSearch(context, *library, TrackSearch{ "Light|Flight", MC_TRACK_SEARCH_REGEX, MC_TRACK_SEARCH_TITLE },
+            receive_tracks);
+        if (!dispatch() || tracks.Size() != 2) return false;
+
+        unsigned changes = 0;
+        mc_result latest = MC_ERROR_INTERNAL;
+        TrackResultWindow window(context, std::move(tracks), { MC_TRACK_FIELD_TITLE },
+            [&](size_t, size_t, mc_result status) {
+                ++changes;
+                latest = status;
+            });
+        if (window.SetViewport(0, 0, 1) != Update::Changed || window.Load() != MC_OK || !window.Pending() ||
+            !dispatch() || !window.Pending() || changes != 1 || latest != MC_OK) return false;
+        const auto visible = window.CachedRow(0);
+        if (!visible || visible->Title() != "Evening Flight") return false;
+
+        /* Release a page already queued for dispatch after invalidating the window. */
+        if (!query_test_wait_for_wakeup(++wakes)) return false;
+        window.Clear();
+        if (context.Dispatch() != MC_OK || changes != 1 || window.Pending() ||
+            window.CachedRow(0) || window.CachedRow(1)) return false;
+
+        if (window.SetViewport(1, 1, 1) != Update::Changed || window.Load() != MC_OK || !dispatch() ||
+            !window.CachedRow(1) || window.CachedRow(1)->Title() != "Morning Light") return false;
+        if (window.Pending() && !dispatch()) return false;
+
+        /* Rejected submission has no callback and must leave the window idle. */
+        const auto before = changes;
+        if (window.SetViewport(0, 1, 3) != Update::Changed || window.Load() != MC_ERROR_INVALID_ARGUMENT ||
+            window.Pending() || changes != before) return false;
+
+        /* Undispatched requests fill the context even if their worker has finished. */
+        if (window.SetViewport(0, 1, 2) != Update::Changed) return false;
+        std::vector<mc_request_id> queued;
+        try {
+            constexpr size_t queueCapacity = 64;
+            for (size_t i = 0; i < queueCapacity; ++i) {
+                queued.push_back(QueryTracks(context, *library, TrackQuery{ "" },
+                    [](mc_result, TrackPage, std::string_view) {}));
+            }
+        } catch (const Error&) {
+            return false;
+        }
+        if (window.Load() != MC_ERROR_BUSY || window.Pending()) return false;
+        for (const auto id : queued) context.Cancel(id);
+        if (context.Dispatch() != MC_OK || window.Load() != MC_OK || !window.Pending()) return false;
+
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (window.Pending() && std::chrono::steady_clock::now() < deadline) {
+            if (context.Dispatch() != MC_OK) return false;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        return !window.Pending() && changes == before + 1 && latest == MC_OK &&
+            window.CachedRow(0) && window.CachedRow(1);
     }
 #ifdef MUSIKCORE_TEST_APP_BINDING
     bool checkRemoteQueryPayloads() {
