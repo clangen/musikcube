@@ -55,6 +55,9 @@ namespace musik { namespace core { namespace audio {
         public:
             enum class DestroyMode: int { Drain = 0, NoDrain = 1 };
 
+            /* Call after stopping playback and before releasing plugins. */
+            static void WaitForWorkers();
+
             struct Gain {
                 Gain() noexcept {
                     this->preamp = this->gain = this->peak = 1.0f;

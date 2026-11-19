@@ -12,6 +12,7 @@
 #include <ev++.h>
 
 #include <musikcore/audio/PlaybackService.h>
+#include <musikcore/audio/Player.h>
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/debug.h>
 #include <musikcore/library/LibraryFactory.h>
@@ -299,6 +300,7 @@ int main(int argc, char** argv) {
         library->Indexer()->Shutdown();
     }
 
+    Player::WaitForWorkers();
     LibraryFactory::Instance().Shutdown();
     plugin::Shutdown();
     debug::Shutdown();

@@ -49,6 +49,7 @@
 #include <app/util/PreferenceKeys.h>
 
 #include <musikcore/audio/PlaybackService.h>
+#include <musikcore/audio/Player.h>
 #include <musikcore/audio/Visualizer.h>
 #include <musikcore/debug.h>
 #include <musikcore/i18n/Locale.h>
@@ -229,6 +230,7 @@ int main(int argc, char* argv[]) {
         library->Indexer()->Shutdown();
     }
 
+    Player::WaitForWorkers();
     PiggyWebSocketClient::Shutdown();
     LibraryFactory::Instance().Shutdown();
     vis::Shutdown();

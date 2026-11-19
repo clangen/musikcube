@@ -58,6 +58,14 @@ using std::max;
 
 static std::string TAG = "Player";
 static float* hammingWindow = nullptr;
+static std::mutex playerWorkersMutex;
+static std::condition_variable playerWorkersChanged;
+static size_t playerWorkers = 0;
+
+void Player::WaitForWorkers() {
+    std::unique_lock<std::mutex> lock(playerWorkersMutex);
+    playerWorkersChanged.wait(lock, [] { return playerWorkers == 0; });
+}
 
 using Listener = Player::EventListener;
 using ListenerList = std::list<Listener*>;
@@ -149,7 +157,15 @@ Player::Player(
     }
 
     /* each player instance is driven by a background thread. start it. */
-    this->thread = new std::thread(std::bind(&musik::core::audio::playerThreadLoop, this));
+    std::lock_guard<std::mutex> lock(playerWorkersMutex);
+    this->thread = new std::thread([this] {
+        /* Wait until construction has published the worker and counted it. */
+        {
+            std::lock_guard<std::mutex> lock(playerWorkersMutex);
+        }
+        musik::core::audio::playerThreadLoop(this);
+    });
+    ++playerWorkers;
 }
 
 Player::~Player() {
@@ -473,6 +489,11 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     player->Destroy();
 
     delete player;
+
+    /* Stream and output plugin references are released as part of player destruction. */
+    std::lock_guard<std::mutex> lock(playerWorkersMutex);
+    --playerWorkers;
+    playerWorkersChanged.notify_all();
 }
 
 bool Player::Exited() {
