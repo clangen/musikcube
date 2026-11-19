@@ -154,6 +154,8 @@ MC_API bool MC_CALL mc_track_result_starts_album(const mc_track_result *tracks, 
 /* Total seconds for the album group starting at row. Other positions return zero. */
 MC_API uint64_t MC_CALL mc_track_result_get_album_duration(const mc_track_result *tracks, size_t row);
 /* Read current metadata. Removed tracks retain their IDs and have no values. */
+/* Remote reads support ID, title, artist, album, duration, track number, and rating. */
+/* A remote read that requests any other field returns MC_ERROR_UNSUPPORTED. */
 /* The submitted request retains the result data after the caller releases the handle. */
 MC_API mc_result MC_CALL mc_track_result_read_async(
     mc_context *context, const mc_track_result *tracks, const mc_track_range *range,
@@ -166,7 +168,8 @@ MC_API mc_result MC_CALL mc_track_result_get_ref(
 /* The ID is scoped to the originating library. Null returns zero. */
 MC_API int64_t MC_CALL mc_track_ref_get_id(const mc_track_ref *track);
 MC_API void MC_CALL mc_track_ref_destroy(mc_track_ref **track);
-/* Resolve against the originating library. Hidden or removed tracks return MC_ERROR_NOT_FOUND. */
+/* Resolve against the originating library. Missing tracks return MC_ERROR_NOT_FOUND. */
+/* Local reads also treat hidden tracks as missing. Remote reads use the range projection above. */
 /* The accepted request copies the identity and all requested fields. */
 MC_API mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_ref *track,
     const mc_string_view *fields, size_t field_count, mc_track_query_completion_fn completion,

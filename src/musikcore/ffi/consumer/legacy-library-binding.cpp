@@ -89,14 +89,16 @@ namespace {
 
         /* Backend submission follows admission so even an immediate failure completes on dispatch. */
         const auto submitted = exception_barrier(nullptr, [&]() -> mc_result {
-            const bool accepted = library->EnqueueForConnection(command, generation,
+            const auto admission = library->EnqueueForConnection(command, generation,
                 [=](const auto&) {
                     finish(exception_barrier(nullptr, [&]() -> mc_result {
                         if (command->GetStatus() != musik::core::db::IQuery::Finished) return MC_ERROR_IO;
                         return convert(*command, *output);
                     }));
                 });
-            return accepted ? MC_OK : MC_ERROR_IO;
+            using Admission = musik::core::library::RemoteLibrary::ConnectionQueryStatus;
+            if (admission == Admission::Busy) return MC_ERROR_BUSY;
+            return admission == Admission::Accepted ? MC_OK : MC_ERROR_IO;
         });
         if (submitted != MC_OK) finish(submitted);
         return MC_OK;

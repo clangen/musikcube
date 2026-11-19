@@ -100,7 +100,8 @@ namespace musik { namespace core { namespace library {
             /* RemoteLibrary */
             void ReloadConnectionFromPreferences();
             const musik::core::net::WebSocketClient& WebSocketClient() const;
-            bool EnqueueForConnection(Query query, uint64_t generation, Callback callback);
+            enum class ConnectionQueryStatus { Accepted, Busy, Unavailable };
+            ConnectionQueryStatus EnqueueForConnection(Query query, uint64_t generation, Callback callback);
 
         private:
             class QueryCompletedMessage;

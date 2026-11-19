@@ -287,8 +287,8 @@ void MainLayout::SetInitialLayout() {
 
 void MainLayout::SwitchToPlayQueue() {
     if (IsLibraryConnected()) {
-        this->SetLayout(libraryLayout);
-        libraryLayout->KeyPress(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue));
+        this->SwitchToLibraryLayout();
+        if (this->libraryLayout) this->libraryLayout->KeyPress(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue));
     }
 }
 

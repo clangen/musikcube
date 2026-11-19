@@ -649,8 +649,9 @@ that need it. Remote searches still use the library query protocol.
    rapid filter changes, and index updates during paging. Verify search
    parity against the legacy view before wiring it into production. Move
    playback and menu actions to track identities once their ABI operations
-   exist. Keep remote-library support on the legacy path until the ABI can
-   provide equivalent search and window semantics for remote results.
+   exist. Production remote Track Search uses the same wrapper with
+   the existing search and batch query protocol. Verify reconnect and
+   playback against the production server.
 5. Benchmark both implementations on the same seeded database. Measure
    search submission to the first usable window and cold-window scrolling
    separately from the keystroke-to-render scenario. Include a broad query

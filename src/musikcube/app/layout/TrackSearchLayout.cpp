@@ -192,6 +192,7 @@ void TrackSearchLayout::Requery() {
                 /* Cancellation cannot retract a completion already queued for dispatch. */
                 if (!generation.IsCurrent()) return;
                 this->localSearchRequest = 0;
+                if (status == MC_ERROR_BUSY) this->Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
                 if (status != MC_OK) return;
 
                 auto headers = std::make_shared<std::set<size_t>>();

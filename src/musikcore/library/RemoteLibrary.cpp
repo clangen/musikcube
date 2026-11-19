@@ -180,18 +180,27 @@ int RemoteLibrary::Enqueue(QueryPtr query, Callback callback) {
     return this->EnqueueAndWait(query, 0LL, callback);
 }
 
-bool RemoteLibrary::EnqueueForConnection(Query query, uint64_t generation, Callback callback) {
+RemoteLibrary::ConnectionQueryStatus RemoteLibrary::EnqueueForConnection(
+    Query query, uint64_t generation, Callback callback) {
     std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
-    if (this->exit || !generation) return false;
+    if (this->exit || !generation || generation != this->wsc.ConnectionGeneration()) {
+        return ConnectionQueryStatus::Unavailable;
+    }
+
+    /* ABI cancellation can finish before the server replies. Keep transport admission bounded. */
+    constexpr auto maxPendingConnectionQueries = 16;
+    const auto pending = std::count_if(this->queriesInFlight.begin(), this->queriesInFlight.end(),
+        [](const auto& entry) { return !entry.second->notify; });
+    if (pending >= maxPendingConnectionQueries) return ConnectionQueryStatus::Busy;
 
     auto context = std::make_shared<QueryContext>();
     context->query = std::move(query);
     context->callback = std::move(callback);
     context->notify = false;
     const auto messageId = this->wsc.EnqueueQuery(context->query, generation);
-    if (messageId.empty()) return false;
+    if (messageId.empty()) return ConnectionQueryStatus::Unavailable;
     this->queriesInFlight.emplace(messageId, std::move(context));
-    return true;
+    return ConnectionQueryStatus::Accepted;
 }
 
 int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {

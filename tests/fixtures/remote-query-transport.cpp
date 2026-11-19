@@ -44,7 +44,7 @@ namespace {
                         reply["options"]["raw_query_data"] =
                             R"({"result":{"42":{"id":42,"title":"Origin","replayGain":{}}}})";
                     }
-                    if (++this->requests == 3 || this->requests == 4) {
+                    if (++this->requests >= 3) {
                         std::lock_guard<std::mutex> lock(this->heldMutex);
                         this->held = [this, connection, reply](bool disconnect) {
                             if (disconnect) this->socket.close(connection, websocketpp::close::status::going_away, "");
@@ -227,7 +227,25 @@ namespace {
         std::shared_ptr<const Library> reconnected;
         if (!wait([&] { return bool(reconnected = selection.OpenClientLibrary()); })) return false;
         ReadTrack(context, reference, { MC_TRACK_FIELD_TITLE }, receive);
-        return dispatch(6) && status == MC_ERROR_IO;
+        if (!dispatch(6) || status != MC_ERROR_IO) return false;
+
+        /* Cancel and drain each ABI request while the server holds every reply. */
+        constexpr unsigned burstSize = 65;
+        for (unsigned i = 0; i < burstSize; ++i) {
+            const auto request = OpenTrackSearch(context, *reconnected, TrackSearch{ "Origin" },
+                [&](mc_result result, TrackResult, std::string_view) {
+                    status = result;
+                    ++calls;
+                });
+            const auto before = calls;
+            const auto cancelled = context.Cancel(request);
+            if (!dispatch(before + 1)) return false;
+            if (status == MC_ERROR_BUSY) {
+                return i > 0 && cancelled == MC_ERROR_NOT_FOUND && server.ReleaseHeld(true);
+            }
+            if (status != MC_ERROR_CANCELLED || cancelled != MC_OK) return false;
+        }
+        return false;
     }
 }
 

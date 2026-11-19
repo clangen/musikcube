@@ -53,7 +53,8 @@ MC_API mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id re
 /* Settles requests on the dispatcher thread. Waits for work and wakeup hooks to stop. */
 MC_API mc_result MC_CALL mc_context_shutdown(mc_context *context);
 
-/* Consumes the context and clears the slot. Null is accepted. */
+/* Shuts down on the dispatcher thread and clears the slot on success. Null is accepted. */
+/* If shutdown is busy, the handle stays valid. Retry on the dispatcher thread outside callbacks. */
 MC_API void MC_CALL mc_context_destroy(mc_context **context);
 
 #ifdef __cplusplus
