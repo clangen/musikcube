@@ -19,7 +19,15 @@ endif()
 if(BUILD_TESTING)
   find_program(MUSIKCUBE_TEST_NODE NAMES node)
   if(MUSIKCUBE_TEST_NODE)
-    add_dependencies(musikcube_tests musikcube_seed_library)
+    add_executable(musikcore_production_api_test
+      ../abi/cpp-wrapper.cpp ../abi/query-support.cpp)
+    set_target_properties(musikcore_production_api_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+    target_compile_features(musikcore_production_api_test PRIVATE cxx_std_17)
+    target_link_libraries(musikcore_production_api_test PRIVATE musikcore Threads::Threads)
+    if(WIN32)
+      target_link_libraries(musikcore_production_api_test PRIVATE musikcube_windows pdh psapi ws2_32 wldap32 comctl32)
+    endif()
+    add_dependencies(musikcube_tests musikcube_seed_library musikcore_production_api_test)
     add_test(NAME musikcore.abi.indexed_query COMMAND "${CMAKE_COMMAND}"
       "-DNODE=${MUSIKCUBE_TEST_NODE}"
       "-DSEED_SCRIPT=${PROJECT_SOURCE_DIR}/script/seed-test-library.js"
@@ -27,6 +35,7 @@ if(BUILD_TESTING)
       "-DINDEXER=$<TARGET_FILE:musikcube_seed_library>"
       "-DQUERY_TEST=$<TARGET_FILE:musikcore_abi_query_test>"
       "-DCPP_TEST=$<TARGET_FILE:musikcore_abi_cpp_test>"
+      "-DPRODUCTION_TEST=$<TARGET_FILE:musikcore_production_api_test>"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/check-indexed-library.cmake")
     set_tests_properties(musikcore.abi.indexed_query PROPERTIES LABELS "integration;abi" TIMEOUT 90)
   endif()

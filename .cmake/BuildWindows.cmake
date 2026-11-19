@@ -94,6 +94,7 @@ target_compile_definitions(pdcurses_gui PRIVATE PDCURSES_WINGUI)
 target_compile_definitions(pdcurses_console PRIVATE PDCURSES_WINCON)
 
 add_library(musikcore STATIC ${windows_core_sources})
+musikcore_add_consumer_api(musikcore)
 target_include_directories(musikcore PRIVATE src/musikcore)
 target_link_libraries(musikcore PRIVATE musikcube_windows musikcube_thirdparty
   vendor::curl vendor::ssl vendor::crypto shell32)

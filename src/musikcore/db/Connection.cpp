@@ -41,22 +41,19 @@
 #include <sqlite/sqlite3.h>
 #pragma warning(pop)
 
-static std::mutex globalMutex;
-
 using namespace musik::core::db;
 
 Connection::Connection() noexcept
 : connection(nullptr)
 , transactionCounter(0) {
-    this->UpdateReferenceCount(true);
 }
 
 Connection::~Connection() {
     this->Close();
-    this->UpdateReferenceCount(false);
 }
 
 int Connection::Open(const std::string &database, unsigned int options, unsigned int cache) {
+    /* SQLite initializes on open. Keep it available for other in-process readers. */
     int error;
 
     #ifdef WIN32
@@ -148,27 +145,6 @@ void Connection::Initialize(unsigned int cache) {
 void Connection::Interrupt() {
     std::unique_lock<std::mutex> lock(this->mutex);
     sqlite3_interrupt(this->connection);
-}
-
-void Connection::UpdateReferenceCount(bool init) {
-    std::unique_lock<std::mutex> lock(this->mutex);
-
-    static int count = 0;
-
-    if (init) {
-        if (count == 0) {
-            sqlite3_initialize();
-        }
-
-        ++count;
-    }
-    else {
-        --count;
-        if (count <= 0) {
-            sqlite3_shutdown();
-            count = 0;
-        }
-    }
 }
 
 int Connection::StepStatement(sqlite3_stmt *stmt) noexcept {

@@ -206,7 +206,7 @@ contract C consumer ──> experimental musikcore ABI shared library
                                   |
 pure-C fixture plugin ──> experimental C SDK host
 
-production musikcube ──> legacy/current core path only
+production musikcube ──> production musikcore (legacy core and consumer C API)
 ```
 
 The experimental library has a distinct logical and output name, such as
@@ -219,8 +219,10 @@ queues, plugin registries, database state, and audio globals.
 
 ### Stage C: application migration
 
-Individual musikcube features move through the C++ wrapper to the experimental
-shared ABI. A migration build links musikcube to one core path only. Temporary
+Individual musikcube features move through the C++ wrapper to the consumer
+C API compiled into production musikcore. The production build shares its
+SQLite implementation and extensions with the new API. The separate ABI0
+shared target remains available for contract tests and the pilot. Temporary
 internal adapters preserve existing behavior behind the façade.
 
 The legacy path remains available to the normal build until the new public

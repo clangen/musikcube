@@ -90,3 +90,22 @@ set_target_properties(musikcore_abi_cpp_test PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}"
 )
 add_dependencies(musikcube_tests musikcore_abi_cpp_test)
+
+add_executable(musikcore_typed_track_queries_test
+  abi/typed-track-queries.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/db/SqliteExtensions.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadQueries.cpp"
+)
+target_include_directories(musikcore_typed_track_queries_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/include"
+  "${PROJECT_SOURCE_DIR}/src"
+  "${PROJECT_SOURCE_DIR}/src/3rdparty/include"
+)
+target_compile_features(musikcore_typed_track_queries_test PRIVATE cxx_std_11)
+target_link_libraries(musikcore_typed_track_queries_test PRIVATE musikcore_abi0_sqlite)
+set_target_properties(musikcore_typed_track_queries_test PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+)
+add_dependencies(musikcube_tests musikcore_typed_track_queries_test)
+add_test(NAME musikcore.abi.typed_track_queries COMMAND musikcore_typed_track_queries_test)
+set_tests_properties(musikcore.abi.typed_track_queries PROPERTIES LABELS "unit;abi")

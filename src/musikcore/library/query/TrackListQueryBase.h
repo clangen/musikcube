@@ -75,6 +75,8 @@ namespace musik { namespace core { namespace library { namespace query {
             }
 
         protected:
+            int GetLimit() const noexcept { return this->limit; }
+            int GetOffset() const noexcept { return this->offset; }
 
             /* for IMetadataProxy */
 

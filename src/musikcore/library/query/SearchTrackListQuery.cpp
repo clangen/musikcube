@@ -36,27 +36,17 @@
 #include "SearchTrackListQuery.h"
 
 #include <musikcore/i18n/Locale.h>
-#include <musikcore/library/track/LibraryTrack.h>
+#include "TrackReadQueries.h"
 #include <musikcore/library/query/util/Serialization.h>
-#include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/sdk/String.h>
-#include <musikcore/db/Statement.h>
-#include <musikcore/sdk/String.h>
 
 #pragma warning(push, 0)
 #include <nlohmann/json.hpp>
 #pragma warning(pop)
 
-using musik::core::db::Statement;
-using musik::core::db::Row;
-using musik::core::TrackPtr;
-using musik::core::LibraryTrack;
 using musik::core::ILibraryPtr;
 
 using namespace musik::core;
-using namespace musik::core::sdk;
 using namespace musik::core::db;
-using namespace musik::core::library::constants;
 using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
 
@@ -73,13 +63,7 @@ SearchTrackListQuery::SearchTrackListQuery(
     this->sortType = sort;
     this->filter = filter;
 
-    if (kTrackSearchSortOrderByPredicate.find(sort) != kTrackSearchSortOrderByPredicate.end()) {
-        this->orderByPredicate = kTrackSearchSortOrderByPredicate.find(sort)->second + " AND ";
-    }
-
-    this->parseHeaders = kTrackSortTypeWithAlbumGrouping.find(sort) != kTrackSortTypeWithAlbumGrouping.end();
-    this->displayString = _TSTR(kTrackListOrderByToDisplayKey.find(sort)->second);
-    this->orderBy = kTrackListSortOrderBy.find(sort)->second;
+    this->displayString = _TSTR(kTrackListOrderByToDisplayKey.at(sort));
     this->result = std::make_shared<TrackList>(library);
     this->headers = std::make_shared<std::set<size_t>>();
     this->durations = std::make_shared<std::map<size_t, size_t>>();
@@ -108,90 +92,19 @@ std::string SearchTrackListQuery::GetSortDisplayString() {
 }
 
 bool SearchTrackListQuery::OnRun(Connection& db) {
-    if (result) {
-        this->result = std::make_shared<TrackList>(library);
-        this->headers = std::make_shared<std::set<size_t>>();
-        this->durations = std::make_shared<std::map<size_t, size_t>>();
+    TrackSearchRows rows;
+    const TrackSearchQuery query(this->filter, this->matchType == MatchType::Regex,
+        this->sortType, this->GetLimit(), this->GetOffset(), _TSTR("tracklist_unknown_album"));
+    if (!query.Run(db.connection, rows)) return false;
+
+    /* Adapt the shared search result to the existing serialized query contract. */
+    this->result = std::make_shared<TrackList>(this->library, rows.ids.data(), rows.ids.size());
+    this->headers = std::make_shared<std::set<size_t>>();
+    this->durations = std::make_shared<std::map<size_t, size_t>>();
+    for (const auto& album : rows.albumDurations) {
+        this->headers->insert(album.first);
+        this->durations->emplace(album.first, album.second);
     }
-
-    const bool useRegex = (matchType == MatchType::Regex);
-    const bool hasFilter = (this->filter.size() > 0);
-    std::string query;
-
-    if (hasFilter) {
-        query =
-            "SELECT DISTINCT tracks.id, tracks.duration, al.name "
-            "FROM tracks, albums al, artists ar, genres gn "
-            "WHERE "
-                " tracks.visible=1 AND "
-                + this->orderByPredicate +
-                "(tracks.title {{match_type}} ? OR al.name {{match_type}} ? OR ar.name {{match_type}} ? OR gn.name {{match_type}} ?) "
-                " AND tracks.album_id=al.id AND tracks.visual_genre_id=gn.id AND tracks.visual_artist_id=ar.id "
-            "ORDER BY " + this->orderBy + " ";
-
-        str::ReplaceAll(query, "{{match_type}}", useRegex ? "REGEXP" : "LIKE");
-    }
-    else {
-        query =
-            "SELECT DISTINCT tracks.id, tracks.duration, al.name "
-            "FROM tracks, albums al, artists ar, genres gn "
-            "WHERE "
-                " tracks.visible=1 AND "
-                + this->orderByPredicate +
-                " tracks.album_id=al.id AND tracks.visual_genre_id=gn.id AND tracks.visual_artist_id=ar.id "
-            "ORDER BY " + this->orderBy + " ";
-    }
-
-    query += this->GetLimitAndOffset();
-
-    Statement trackQuery(query.c_str(), db);
-
-    if (hasFilter) {
-        std::string patternToMatch = useRegex
-            ? filter :  "%" + sdk::str::Trim(sdk::str::ToLowerCopy(filter)) + "%";
-
-        trackQuery.BindText(0, patternToMatch);
-        trackQuery.BindText(1, patternToMatch);
-        trackQuery.BindText(2, patternToMatch);
-        trackQuery.BindText(3, patternToMatch);
-    }
-
-    std::string lastAlbum;
-    size_t index = 0;
-    size_t lastHeaderIndex = 0;
-    size_t trackDuration = 0;
-    size_t runningDuration = 0;
-
-    while (trackQuery.Step() == Row) {
-        const int64_t id = trackQuery.ColumnInt64(0);
-        trackDuration = trackQuery.ColumnInt32(1);
-        std::string album = trackQuery.ColumnText(2);
-
-        if (!album.size()) {
-            album = _TSTR("tracklist_unknown_album");
-        }
-
-        if (this->parseHeaders && album != lastAlbum) {
-            if (!headers->empty()) { /* @copypaste */
-                (*durations)[lastHeaderIndex] = runningDuration;
-                lastHeaderIndex = index;
-                runningDuration = 0;
-            }
-
-            headers->insert(index);
-            lastAlbum = album;
-        }
-
-        runningDuration += trackDuration;
-
-        result->Add(id);
-        ++index;
-    }
-
-    if (this->parseHeaders && !headers->empty()) {
-        (*durations)[lastHeaderIndex] = runningDuration;
-    }
-
     return true;
 }
 

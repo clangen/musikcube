@@ -21,6 +21,7 @@ mc_track_ref_destroy
 mc_track_ref_get_id
 mc_track_ref_read_async
 mc_track_result_destroy
+mc_track_result_get_album_duration
 mc_track_result_get_count
 mc_track_result_get_id
 mc_track_result_get_ref

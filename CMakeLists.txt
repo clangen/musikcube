@@ -11,6 +11,7 @@ endif()
 project(musikcube)
 
 find_package(Threads REQUIRED)
+include(.cmake/MusikcoreConsumerApi.cmake)
 add_subdirectory(src/musikcore/ffi EXCLUDE_FROM_ALL)
 
 include(CTest)

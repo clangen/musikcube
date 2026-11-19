@@ -44,6 +44,10 @@
 struct sqlite3;
 struct sqlite3_stmt;
 
+namespace musik { namespace core { namespace library { namespace query {
+    class SearchTrackListQuery;
+} } } }
+
 namespace musik { namespace core { namespace db {
 
     typedef enum {
@@ -73,11 +77,11 @@ namespace musik { namespace core { namespace db {
 
         private:
             void Initialize(unsigned int cache);
-            void UpdateReferenceCount(bool init);
             int StepStatement(sqlite3_stmt *stmt) noexcept;
 
             friend class Statement;
             friend class ScopedTransaction;
+            friend class musik::core::library::query::SearchTrackListQuery;
 
             int transactionCounter;
             sqlite3 *connection;
