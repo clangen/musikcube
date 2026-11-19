@@ -332,6 +332,13 @@ after the terminal callback.
 
 ## Public C API
 
+`musikcore.h` includes the application-facing subsystem headers. Each
+subsystem header declares its own dependencies. `context.h` covers runtime
+lifecycle and request dispatch, and `library.h` covers library queries and
+metadata pages. Playback and queue, indexing, preferences, and advanced audio
+can get their own headers as those APIs are introduced. The provider SDK has
+its own entry point in `plugin.h`.
+
 ### Purpose
 
 The public C API allows an application to embed musikcore as a shared library.
@@ -634,8 +641,9 @@ The wrapper should provide `std::string`, `std::string_view`, spans, and scoped
 ownership without accessing internal musikcore C++ classes. musikcube should
 depend on this wrapper rather than call the C functions throughout UI code.
 
-The wrapper is source-level convenience. Only the C ABI is promised to be
-binary stable.
+The wrapper is strictly header-only. Its implementations live in public
+headers and link against the C ABI. Only the C ABI is promised to be binary
+stable.
 
 ## C SDK
 

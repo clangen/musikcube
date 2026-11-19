@@ -1,3 +1,5 @@
+#include <musikcore/library.h>
+
 #include "request.h"
 #include "../common/error.h"
 #include "../common/primitives.h"

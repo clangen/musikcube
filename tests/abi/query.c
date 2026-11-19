@@ -1,4 +1,4 @@
-#include <musikcore/musikcore.h>
+#include <musikcore/library.h>
 #include <sqlite3.h>
 
 #include <stdio.h>

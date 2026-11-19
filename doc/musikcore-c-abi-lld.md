@@ -47,7 +47,9 @@ surfaces cover their consumers.
 include/
     musikcore/
         abi.h                   shared C ABI primitives
-        musikcore.h             public application API
+        musikcore.h             public application umbrella
+        context.h               runtime lifecycle and request dispatch
+        library.h               queries and metadata pages
         plugin.h                provider/plugin SDK
         musikcore.hpp           public C++ wrapper
         plugin.hpp              optional C++ provider wrapper
@@ -83,9 +85,6 @@ src/musikcore/
             dsp_adapter.cpp
             tag_adapter.cpp
             indexer_source_adapter.cpp
-        cpp/
-            context.cpp         only where wrapper cannot be header-only
-            event_dispatcher.cpp
 
 tests/
     support/
@@ -107,8 +106,7 @@ separation is:
 - `ffi/consumer` contains the application-facing façade, exception boundaries,
   and validation.
 - `ffi/provider` contains the plugin host and private provider adapters.
-- `ffi/cpp` contains optional convenience-wrapper implementation that cannot be
-  header-only.
+- Public C++ convenience wrappers are header-only and use public C declarations.
 - Legacy C API sources remain separate and removable.
 
 ## CMake target topology
@@ -134,7 +132,7 @@ musikcore_impl_objects
              all platforms: SHARED
              exports: new C ABI only
 
-musikcore_cpp_abi0 --> INTERFACE or small wrapper library --> musikcore_abi0
+musikcore_cpp_abi0 --> INTERFACE --> musikcore_abi0
 ```
 
 `musikcore_impl_objects` excludes both the legacy C boundary and the new public

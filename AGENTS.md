@@ -37,6 +37,8 @@
 
 - Follow [the C ABI design](doc/musikcore-c-abi-design.md), [the high-level migration plan](doc/musikcore-c-abi-hld.md), [the task checklist](doc/musikcore-c-abi-lld.md), and [the testing design](doc/testing-design.md) when working on ABI modernization.
 - Keep the application API and plugin SDK as separate contracts. Specify ownership and lifetime at the ABI boundary.
+- Group public C declarations in subsystem headers that compile on their own. Include application-facing subsystem headers from `musikcore.h`.
+- Keep the public `musikcore.hpp` wrapper strictly header-only. It depends on the public C ABI and uses no private core headers.
 - Keep the experimental ABI version fixed during development. Public signatures and layouts may change freely until the ABI freeze.
 - Document every field in public ABI structs, including units, ownership, and default values where applicable. Provide an `MC_*_DEFAULT` initializer for every public struct with a `struct_size` field.
 - When completing an ABI task, update its checklist entry and the named test in the same change. Mark a gate complete only after its acceptance criteria pass on the named platforms or the task plan records an exception.

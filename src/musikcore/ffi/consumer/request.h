@@ -1,7 +1,7 @@
 #ifndef MUSIKCORE_FFI_CONSUMER_REQUEST_H
 #define MUSIKCORE_FFI_CONSUMER_REQUEST_H
 
-#include <musikcore/musikcore.h>
+#include <musikcore/context.h>
 #include <functional>
 #include <string>
 

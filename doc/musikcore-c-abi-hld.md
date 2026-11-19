@@ -101,7 +101,7 @@ and a queue for unsolicited notifications. The SDK favors explicitly versioned f
 host must invoke providers directly, including in audio paths.
 
 Their private implementation is grouped under `src/musikcore/ffi`, with
-`common`, `consumer`, `provider`, and `cpp` subdirectories. Installed headers
+`common`, `consumer`, and `provider` subdirectories. Installed headers
 remain flat under `include/musikcore`.
 
 ### Ownership never depends on a shared allocator
@@ -281,7 +281,7 @@ event dispatch suitable for musikcube. The provider wrapper optionally lets
 C++ plugin authors implement friendly classes while exporting only C function
 tables.
 
-The wrappers are source conveniences. They are not stable binary contracts.
+The wrappers are header-only source conveniences over the C contracts.
 
 ### Test harness
 
