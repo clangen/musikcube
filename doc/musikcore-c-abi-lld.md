@@ -493,10 +493,13 @@ recorded before the experimental shared façade is introduced.
 - [x] **BLD-006** Add `musikcore_abi0` as a distinct shared target on all
   platforms.
 - [x] **BLD-007** Ensure `musikcore_abi0` excludes legacy C boundary sources.
-- [ ] **BLD-008** Add Windows import/export annotations and import-library
-  generation.
+- [x] **BLD-008** Add Windows import/export annotations and import-library
+  generation. The ABI0 shared target supplies the import library to
+  `musikcore.abi.shared_c`. Native Debug and Release verification is BLD-014.
 - [x] **BLD-009** Add ELF version script and macOS exported-symbols list.
-- [ ] **BLD-010** Add an export allowlist test that rejects private C++ symbols.
+- [x] **BLD-010** Add an export allowlist test that rejects private C++ symbols.
+  `musikcore.abi.exports` checks the complete ELF and Mach-O export lists.
+  Windows export verification remains part of GATE-200.
 - [ ] **BLD-011** Add a build/link check preventing one executable from linking
   legacy and ABI0 targets together.
 - [ ] **BLD-012** Give ABI0 separate runtime output and plugin directories.
@@ -563,7 +566,8 @@ recorded before the experimental shared façade is introduced.
 
 ### Phase 5: metadata/query public vertical slice
 
-- [ ] **LIB-001** Define query options with copied field and filter inputs.
+- [x] **LIB-001** Define query options with copied field and filter inputs.
+  `musikcore.abi.query` mutates both after submission and verifies the original inputs.
 - [ ] **LIB-002** Implement immutable page arena storage.
 - [ ] **LIB-003** Implement row identity, string, numeric, and missing-value
   accessors.
@@ -577,7 +581,9 @@ recorded before the experimental shared façade is introduced.
 - [ ] **LIB-009** Implement batch track-list edits with defined atomicity.
 - [ ] **LIB-010** Add C contract tests for paging, ordering, Unicode, long
   strings, snapshots, invalidation, and cancellation.
-- [ ] **LIB-011** Add SQLite integration tests with isolated databases.
+- [x] **LIB-011** Add SQLite integration tests with isolated databases.
+  `musikcore.abi.query`, `musikcore.abi.indexed_query`, and
+  `musikcore.abi.library_switch` use fixtures under the build tree.
 - [ ] **LIB-012** Add scrolling/cache pressure tests without sleeps.
 - [x] **LIB-013** Move dispatch and shutdown to one app-owned context.
   Add an owning C++ wrapper around the library handle and bind search
@@ -611,8 +617,10 @@ recorded before the experimental shared façade is introduced.
   Start with the track-search results view in `TrackSearchLayout`.
 - [x] **MIG-002** Migrate that slice through the C++ wrapper in an ABI0-only
   migration executable. Exercised by `node tests/tui/track-search.js --compare`.
-- [ ] **PERF-001** Add baseline and ABI0 benchmarks for query, initial display,
-  and rapid scrolling.
+- [x] **PERF-001** Add baseline and ABI0 benchmarks for query, initial display,
+  and rapid scrolling. The headless Track Search benchmark measures
+  keystroke-to-render latency and records the mainline baseline in the
+  [testing design](testing-design.md#headless-track-search).
 
 #### Track Search migration
 
@@ -622,10 +630,10 @@ Resolving a hidden or removed track fails with `MC_ERROR_NOT_FOUND`.
 The next playback slice needs two distinct operations: act on one track by
 identity, and play from a result position in snapshot order.
 
-Production local Track Search opens its results through the C++ wrapper
-in `libmusikcore`. The existing `TrackListView` uses ABI metadata pages for
-local search rows and materializes an ordered legacy list only for actions
-that need it. Remote searches still use the library query protocol.
+Production Track Search opens local and remote results through the C++
+wrapper in `libmusikcore`. Production and the pilot share
+`TrackResultWindow` for paging. `TrackListView` materializes an ordered
+legacy list for actions that still require it.
 
 1. Add an async C operation that opens a search result with a stable row
    order, a count, and track identities. Specify the current search modes,
@@ -796,7 +804,9 @@ that need it. Remote searches still use the library query protocol.
 
 ### Phase 9: system, packaging, and compatibility
 
-- [ ] **SYS-001** Add musikcube pseudo-terminal startup/shutdown smoke test.
+- [x] **SYS-001** Add musikcube pseudo-terminal startup/shutdown smoke test.
+  `node tests/tui/track-search.js` starts the app in a PTY and quits through
+  its normal key binding.
 - [ ] **SYS-002** Cover valid, unset, and unparseable `TERM` behavior.
 - [ ] **SYS-003** Add musikcubed startup/readiness/shutdown smoke test.
 - [ ] **PKG-001** Install headers, shared library, import library, and package
