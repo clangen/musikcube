@@ -83,7 +83,8 @@ namespace type {
     const std::string NowPlaying = "NowPlaying";
 };
 
-LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library,
+LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback,
+    std::shared_ptr<MasterLibrary> library,
     std::shared_ptr<musik::core::client::Context> apiContext)
 : LayoutBase()
 , playback(playback)
@@ -91,7 +92,7 @@ LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, ILib
 , transport(playback.GetTransport()) {
     this->library = library;
     this->prefs = Preferences::ForComponent(components::Settings);
-    this->InitializeWindows(apiContext);
+    this->InitializeWindows(apiContext, *library);
 }
 
 void LibraryLayout::OnLayout() {
@@ -200,7 +201,8 @@ void LibraryLayout::CancelSearchRequests() {
     this->trackSearchLayout->CancelSearchRequests();
 }
 
-void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::client::Context>& apiContext) {
+void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::client::Context>& apiContext,
+    const MasterLibrary& selection) {
     this->browseLayout = std::make_shared<BrowseLayout>(this->playback, this->library);
     this->browseLayout->SetOnHeaderClicked([this]() { this->ShowCategoryChooser(); });
 
@@ -209,9 +211,8 @@ void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::client:
     this->categorySearchLayout = std::make_shared<CategorySearchLayout>(this->playback, this->library);
     this->categorySearchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnCategorySearchResultSelected);
     /* Keep the search view and its playback rows bound to one backend. */
-    const auto master = std::dynamic_pointer_cast<MasterLibrary>(this->library);
     this->trackSearchLayout = std::make_shared<TrackSearchLayout>(
-        this->playback, master ? master->Wrapped() : this->library, apiContext);
+        this->playback, selection.Wrapped(), apiContext, selection.OpenClientLibrary());
     this->transportView = std::make_shared<TransportWindow>(this->library, this->playback);
 
     this->AddWindow(this->transportView);

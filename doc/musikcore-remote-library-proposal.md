@@ -27,11 +27,11 @@ result, and completion types for both backends.
 3. Both routes produce a search result with a stable order and count.
    The app asks the result for a bounded window of metadata and group
    information. An uncached window uses an async typed range query.
-   Remote reads carry a server snapshot token and the same range and
-   projection as local reads. The snapshot stores ordered IDs and album
-   boundaries. Page reads use those IDs, and no read transaction stays
-   open between requests. Bound snapshot storage per connection and
-   expire idle snapshots.
+   The client retains the ordered IDs and album boundaries returned by
+   `SearchTrackListQuery`. For remote pages it sends just the requested IDs
+   through `TrackMetadataBatchQuery` and restores the original order from
+   the result map. Missing IDs keep their positions. Server-side snapshots
+   and capability negotiation are deferred.
 4. The dispatcher delivers the same owned page on the UI thread. The
    view renders and caches it without branching on backend type. The
    page includes the identity of each row and enough group information
@@ -39,8 +39,10 @@ result, and completion types for both backends.
 
 The C API and `SearchTrackListQuery` now share the typed search executor.
 The C API uses a typed projected-page executor for local reads. Route
-these operations through the selected library handle, with server
-snapshots and projected pages for remote reads.
+these operations through the selected library handle. The legacy batch
+payload covers the fields used by Track Search. Arbitrary and multivalued
+tags require a projected query that preserves those values and distinguishes
+missing fields from empty strings.
 
 The current result exposes synchronous ID and album access by row.
 Keep synchronous access on rows already in an owned page. Move arbitrary
@@ -63,12 +65,11 @@ its slot in an existing search and resolves as missing.
 The dispatcher settles each accepted request once, including when a
 reply, cancellation, and disconnect race. The remote backend asks the
 server to stop work when possible and discards late replies. The view
-applies results only to its current search generation. Disconnect
-settles affected requests and invalidates
-server snapshots. Materialized pages remain readable. Reconnect verifies
-library identity before reusing track references. The app opens a fresh
-search when a snapshot expires. Shutdown closes transports and drains
-callbacks before releasing wakeup state.
+applies results only to its current search generation. Disconnect settles
+affected requests. Materialized pages remain readable. Retained remote
+results and references stay bound to their originating connection. After
+reconnect, the app opens a fresh search. Shutdown closes transports and
+drains callbacks before releasing wakeup state.
 [Context contract](../include/musikcore/context.h)
 
 ## What the current app already protects
@@ -90,9 +91,7 @@ through its originating library.
 ## Routing by operation
 
 Catalog reads, library edits, and indexing target the library handle.
-Server capabilities determine which operations are available. Use an
-internal compatibility path for older servers where their query protocol
-can preserve the same contract.
+The first remote search path reuses the existing server query protocol.
 
 Playback uses the client queue, decoder, output, and DSP. A remote track
 resolves to a stream from its originating library. Controlling playback
@@ -104,8 +103,10 @@ the library supplying the track.
 
 1. Move the context to the app and route local Track Search through a
    library handle. Covered by `musikcore.abi.library_switch` with two local databases.
-2. Give remote Track Search the same result and page contract. Negotiate
-   snapshot support on connect and test older-server behavior.
+2. Reuse the existing search and batch query payloads. The indexed
+   fixture exercises serialization, ordered IDs, album grouping, and
+   batch response fields through the query registry. Bind the remote
+   backend to its originating connection before wiring it into the API.
 3. Run parity tests against a real loopback server with an indexed
    fixture. Cover order, grouping, field projection, deletion, distant
    jumps, cancellation, disconnect, and reconnect. Verify metadata and

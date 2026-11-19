@@ -65,7 +65,8 @@ namespace musik {
                 TrackSearchLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
-                    std::shared_ptr<musik::core::client::Context> apiContext);
+                    std::shared_ptr<musik::core::client::Context> apiContext,
+                    std::shared_ptr<const musik::core::client::Library> apiLibrary);
 
                 void CancelSearchRequests();
 
@@ -123,7 +124,7 @@ namespace musik {
                 struct PageCache;
                 std::unique_ptr<PageCache> pageCache;
                 std::shared_ptr<musik::core::client::Context> apiContext;
-                std::unique_ptr<musik::core::client::Library> localLibrary;
+                std::shared_ptr<const musik::core::client::Library> apiLibrary;
         };
     }
 }

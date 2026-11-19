@@ -18,7 +18,10 @@ execute_process(COMMAND "${CPP_TEST}" "${directory}" RESULT_VARIABLE status)
 if(NOT status STREQUAL "0")
   message(FATAL_ERROR "C++ wrapper query failed (${status})")
 endif()
-execute_process(COMMAND "${PRODUCTION_TEST}" "${directory}" RESULT_VARIABLE status)
+get_filename_component(config_directory "${directory}/../.." ABSOLUTE)
+execute_process(COMMAND "${CMAKE_COMMAND}" -E env
+  "XDG_CONFIG_HOME=${config_directory}" "APPDATA=${config_directory}"
+  "${PRODUCTION_TEST}" "${directory}" RESULT_VARIABLE status)
 if(NOT status STREQUAL "0")
   message(FATAL_ERROR "C++ wrapper query through production musikcore failed (${status})")
 endif()

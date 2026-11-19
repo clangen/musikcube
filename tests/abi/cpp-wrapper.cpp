@@ -1,5 +1,18 @@
 #include <musikcore/musikcore.hpp>
 
+#ifdef MUSIKCORE_TEST_APP_BINDING
+#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/library/QueryRegistry.h>
+#include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/library/query/SetTrackRatingQuery.h>
+#include <musikcore/library/query/TrackMetadataBatchQuery.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <limits>
+#include <set>
+#endif
+
 #include <cstdio>
 #include <thread>
 #include <type_traits>
@@ -22,6 +35,15 @@ namespace {
     static_assert(std::is_same_v<decltype(std::declval<const Context &>().Get()), const mc_context *>);
     static_assert(!std::is_invocable_v<decltype(&Context::Dispatch), const Context &>);
 
+    std::shared_ptr<const Library> openLibrary(const char *directory) {
+#ifdef MUSIKCORE_TEST_APP_BINDING
+        musik::core::library::MasterLibrary selection;
+        return selection.OpenClientLibrary();
+#else
+        return std::make_shared<const Library>(directory);
+#endif
+    }
+
     bool checkQuery(const char *directory) {
         using musik::core::client::Error;
         using musik::core::client::QueryTracks;
@@ -36,7 +58,8 @@ namespace {
 
         {
             mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-            Library library(directory);
+            auto library = openLibrary(directory);
+            if (!library) return false;
             options.wakeup = query_test_wakeup;
             Context context(options);
             struct ReleaseWakeup {
@@ -52,7 +75,7 @@ namespace {
 
             /* Hold the worker after its first query so the second is cancelled while queued. */
             const TrackQuery query{ "Morning Light", { MC_TRACK_FIELD_TITLE, "composer" } };
-            const auto first = QueryTracks(context, library, query,
+            const auto first = QueryTracks(context, *library, query,
                 [&](mc_result result, TrackPage received, std::string_view) {
                     ++completed;
                     on_dispatcher = std::this_thread::get_id() == dispatcher;
@@ -60,7 +83,7 @@ namespace {
                 });
             if (!first || !query_test_wait_for_wakeup(1)) return false;
 
-            const auto second = QueryTracks(context, library, query,
+            const auto second = QueryTracks(context, *library, query,
                 [&](mc_result result, TrackPage received, std::string_view) {
                     ++cancelled;
                     cancelled_without_page = result == MC_ERROR_CANCELLED && !received;
@@ -91,14 +114,15 @@ namespace {
         unsigned stale = 0;
         mc_result result = MC_ERROR_INTERNAL;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-        Library library(directory);
+        auto library = openLibrary(directory);
+        if (!library) return false;
         options.wakeup = query_test_wakeup;
         options.track_query_max_limit = 1;
         Context context(options);
 
         const auto search = [&](std::string_view text, size_t offset = 0) {
             const auto current = ++generation;
-            return QueryTracks(context, library, TrackQuery{ text, { MC_TRACK_FIELD_TITLE }, offset, 1 },
+            return QueryTracks(context, *library, TrackQuery{ text, { MC_TRACK_FIELD_TITLE }, offset, 1 },
                 [&, current](mc_result status, TrackPage page, std::string_view) {
                     if (current != generation) {
                         ++stale;
@@ -113,7 +137,7 @@ namespace {
         /* A rejected request must release the wrapper's captured callback state. */
         const auto marker = std::make_shared<int>(0);
         try {
-            QueryTracks(context, library, TrackQuery{ "", {}, 0, 2 },
+            QueryTracks(context, *library, TrackQuery{ "", {}, 0, 2 },
                 [marker](mc_result, TrackPage, std::string_view) {});
             return false;
         } catch (const Error &error) {
@@ -153,7 +177,8 @@ namespace {
         TrackResult tracks;
         TrackPage page;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-        Library library(directory);
+        auto library = openLibrary(directory);
+        if (!library) return false;
         options.wakeup = query_test_wakeup;
         Context context(options);
         auto wakes = query_test_wakeup_count();
@@ -168,7 +193,7 @@ namespace {
         };
 
         /* Artist matching reaches records whose titles do not contain the term. */
-        OpenTrackSearch(context, library, TrackSearch{ "  fixture artist  " }, receive_tracks);
+        OpenTrackSearch(context, *library, TrackSearch{ "  fixture artist  " }, receive_tracks);
         if (!dispatch() || tracks.Size() != 2 || !tracks.StartsAlbum(0) || tracks.StartsAlbum(1) ||
             tracks.AlbumDurationSeconds(0) != 2 || tracks.AlbumDurationSeconds(1) != 0) return false;
 
@@ -186,7 +211,7 @@ namespace {
             row.Album() != "Fixture Album" || row.Duration() != std::chrono::seconds(1)) return false;
 
         /* Title sort reverses the fixture's track-number order and drops grouping. */
-        OpenTrackSearch(context, library, TrackSearch{ "Light|Flight", MC_TRACK_SEARCH_REGEX, MC_TRACK_SEARCH_TITLE },
+        OpenTrackSearch(context, *library, TrackSearch{ "Light|Flight", MC_TRACK_SEARCH_REGEX, MC_TRACK_SEARCH_TITLE },
             receive_tracks);
         if (!dispatch() || tracks.Size() != 2 || tracks.Id(0) != second || tracks.StartsAlbum(0)) return false;
 
@@ -197,11 +222,123 @@ namespace {
         ReadTracks(context, tracks, TrackRange{ 2, 1, {} }, receive_page);
         return dispatch() && page && page.Size() == 0;
     }
+#ifdef MUSIKCORE_TEST_APP_BINDING
+    bool checkRemoteQueryPayloads() {
+        using namespace musik::core;
+        using namespace musik::core::library;
+        using namespace musik::core::library::query;
+
+        MasterLibrary selection;
+        const auto local = selection.Wrapped();
+        const auto remote = LibraryFactory::Instance().DefaultRemoteLibrary();
+        const auto roundTrip = [&](db::ISerializableQuery& client) {
+            const auto server = QueryRegistry::CreateLocalQueryFor(client.Name(), client.SerializeQuery(), local);
+            if (!server || local->EnqueueAndWait(server) < 0 || server->GetStatus() != db::IQuery::Finished) {
+                return false;
+            }
+
+            client.DeserializeResult(server->SerializeResult());
+            return client.GetStatus() == db::IQuery::Finished;
+        };
+
+        /* Exercise the same query registry and payloads the WebSocket path uses. */
+        SearchTrackListQuery search(remote, SearchTrackListQuery::MatchType::Substring,
+            "Fixture Artist", TrackSortType::Album);
+        if (!roundTrip(search)) return false;
+
+        const auto rows = search.GetResult();
+        const auto headers = search.GetHeaders();
+        const auto durations = search.GetDurations();
+        if (!rows || rows->Count() != 2 || !headers || *headers != std::set<size_t>{ 0 } ||
+            !durations || durations->count(0) != 1 || durations->at(0) != 2) return false;
+
+        /* The response is keyed by ID. Keep search ordering when reading the batch. */
+        constexpr auto missingId = std::numeric_limits<int64_t>::max();
+        const auto firstId = rows->GetId(0);
+        const auto secondId = rows->GetId(1);
+        constexpr auto testRating = 4;
+        const auto rating = std::make_shared<SetTrackRatingQuery>(firstId, testRating);
+        if (local->EnqueueAndWait(rating) < 0 || rating->GetStatus() != db::IQuery::Finished) return false;
+
+        TrackMetadataBatchQuery batch({ firstId, missingId, secondId }, remote);
+        if (!roundTrip(batch)) return false;
+
+        const auto& tracks = batch.Result();
+        if (tracks.size() != 2 || tracks.count(missingId) || !tracks.count(firstId) ||
+            !tracks.count(secondId)) return false;
+
+        const auto matches = [](const TrackPtr& track, const char* title, const char* number) {
+            return track->GetString(MC_TRACK_FIELD_TITLE) == title &&
+                track->GetString(MC_TRACK_FIELD_TRACK) == number &&
+                track->GetString(MC_TRACK_FIELD_ARTIST) == "Fixture Artist" &&
+                track->GetString(MC_TRACK_FIELD_ALBUM) == "Fixture Album" &&
+                track->GetString(MC_TRACK_FIELD_DURATION) == "1";
+        };
+        return firstId == tracks.at(firstId)->GetId() &&
+            tracks.at(firstId)->GetString(MC_TRACK_FIELD_RATING) == std::to_string(testRating) &&
+            matches(tracks.at(firstId), "Morning Light", "1") &&
+            matches(tracks.at(secondId), "Evening Flight", "2");
+    }
+
+    bool checkSelectedBackend() {
+        using namespace musik::core::client;
+
+        using namespace musik::core;
+        library::MasterLibrary selection;
+        const auto library = selection.OpenClientLibrary();
+        if (!library) return false;
+        mc_result completed = MC_OK;
+        TrackResult tracks;
+        mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.wakeup = query_test_wakeup;
+        Context context(options);
+        const auto wakes = query_test_wakeup_count();
+
+        /* A retained handle keeps its local backend when the app selects remote. */
+        const auto preferences = Preferences::ForComponent(prefs::components::Settings);
+        preferences->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
+        selection.LoadDefaultLibrary();
+        const bool selectedRemote = selection.GetType() == ILibrary::Type::Remote;
+        preferences->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
+        if (!selectedRemote) return false;
+
+        OpenTrackSearch(context, *library, TrackSearch{ "Fixture Artist" },
+            [&](mc_result status, TrackResult result, std::string_view) {
+                if (status == MC_OK) tracks = std::move(result);
+            });
+        if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || tracks.Size() != 2) return false;
+
+        /* Closing the origin rejects reads even while its database file is present. */
+        selection.LoadDefaultLibrary();
+        selection.Close();
+        OpenTrackSearch(context, *library, TrackSearch{ "Fixture Artist" },
+            [&](mc_result status, TrackResult, std::string_view) { completed = status; });
+        return query_test_wait_for_wakeup(wakes + 2) && context.Dispatch() == MC_OK && completed == MC_ERROR_IO;
+    }
+#endif
+
 }
 
 int main(int argc, char **argv) {
+#ifdef MUSIKCORE_TEST_APP_BINDING
+    struct ShutdownLibraries {
+        ~ShutdownLibraries() { musik::core::LibraryFactory::Shutdown(); }
+    } shutdown;
+#endif
     try {
-        if (argc == 2 && checkQuery(argv[1]) && checkSearch(argv[1]) && checkResultWindows(argv[1])) return 0;
+        if (argc == 2 && checkQuery(argv[1]) && checkSearch(argv[1]) && checkResultWindows(argv[1])) {
+#ifdef MUSIKCORE_TEST_APP_BINDING
+            if (!checkRemoteQueryPayloads()) {
+                std::fputs("Remote search and metadata payload contract failed\n", stderr);
+                return 1;
+            }
+            if (!checkSelectedBackend()) {
+                std::fputs("Selected library contract failed\n", stderr);
+                return 1;
+            }
+#endif
+            return 0;
+        }
         std::fputs("C++ wrapper query contract failed\n", stderr);
     } catch (const std::exception &error) {
         std::fprintf(stderr, "C++ wrapper query failed: %s\n", error.what());

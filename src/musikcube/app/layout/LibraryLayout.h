@@ -51,6 +51,8 @@
 
 #include <sigslot/sigslot.h>
 
+namespace musik { namespace core { namespace library { class MasterLibrary; } } }
+
 namespace musik {
     namespace cube {
         class LibraryLayout :
@@ -63,7 +65,7 @@ namespace musik {
 
                 LibraryLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
+                    std::shared_ptr<musik::core::library::MasterLibrary> library,
                     std::shared_ptr<musik::core::client::Context> apiContext);
 
                 void CancelSearchRequests();
@@ -96,7 +98,8 @@ namespace musik {
                 void OnMainLayoutFocusTerminated(
                     LayoutBase::FocusDirection direction);
 
-                void InitializeWindows(const std::shared_ptr<musik::core::client::Context>& apiContext);
+                void InitializeWindows(const std::shared_ptr<musik::core::client::Context>& apiContext,
+                    const musik::core::library::MasterLibrary& selection);
 
                 void ShowNowPlaying();
                 void ShowBrowse(const std::string& category = "");

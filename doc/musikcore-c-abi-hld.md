@@ -237,9 +237,10 @@ same owned results for either backend. Discovery, connection settings, and
 library selection expose the backend distinction.
 
 Search results and track identities stay bound to their originating library.
-The backend retains a stable result order for page reads. A deleted track
-keeps its position, and a remote disconnect expires affected snapshots
-while leaving materialized pages readable. Every accepted request settles
+The result retains a stable order for page reads. A deleted track keeps
+its position. The client retains remote result IDs and uses the existing
+typed batch query for metadata. A disconnect leaves materialized pages
+readable and ends reads tied to the old connection. Every accepted request settles
 once on the dispatcher, including when a reply races with cancellation or
 disconnect. Catalog operations target the library handle, and playback
 uses the originating library to resolve media for the client.

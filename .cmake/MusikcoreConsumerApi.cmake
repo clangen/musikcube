@@ -7,7 +7,11 @@ function(musikcore_add_consumer_api target)
     "${ffi}/consumer/context.cpp"
     "${ffi}/consumer/library.cpp"
     "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadQueries.cpp"
+    "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadBackend.cpp"
   )
+  if(target STREQUAL "musikcore")
+    list(APPEND sources "${ffi}/consumer/legacy-library-binding.cpp")
+  endif()
   target_sources(${target} PRIVATE ${sources})
   set_source_files_properties(${sources} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
   target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}/include")

@@ -1,12 +1,10 @@
 #include <musikcore/library.h>
-#include <musikcore/db/SqliteExtensions.h>
-#include <musikcore/library/query/TrackReadQueries.h>
+
+#include "library-storage.h"
 
 #include "request.h"
 #include "../common/error.h"
 #include "../common/primitives.h"
-
-#include <sqlite3.h>
 
 #include <algorithm>
 #include <cstring>
@@ -15,43 +13,8 @@
 #include <utility>
 #include <vector>
 
-namespace query = musik::core::library::query;
-
-struct mc_track_page : query::ProjectedTrackPage {};
-
-struct LibraryIdentity {
-    mc_library_kind kind;
-    std::string locator;
-};
-
-struct mc_library {
-    std::shared_ptr<const LibraryIdentity> identity;
-};
-
-struct TrackResultData : query::TrackSearchRows {
-    std::shared_ptr<const LibraryIdentity> library;
-};
-
-struct mc_track_result {
-    std::shared_ptr<const TrackResultData> data;
-};
-
-struct mc_track_ref {
-    std::shared_ptr<const LibraryIdentity> library;
-    int64_t id;
-};
-
 namespace {
     using namespace musik::core::ffi;
-    using Database = std::unique_ptr<sqlite3, decltype(&sqlite3_close)>;
-
-    Database openDatabase(const std::string &path) {
-        sqlite3 *raw = nullptr;
-        const int opened = sqlite3_open_v2(path.c_str(), &raw, SQLITE_OPEN_READONLY, nullptr);
-        Database database(raw, sqlite3_close);
-        if (opened != SQLITE_OK) database.reset();
-        return database;
-    }
 
     template<typename Result, typename Work, typename Completion>
     mc_result submitLibraryRequest(mc_context *context, Work work, Completion completion,
@@ -59,7 +22,7 @@ namespace {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
         return submit_request(context, [=] { return work(*output); }, [=](mc_result result, void *data) {
             mc_error *error = nullptr;
-            if (result == MC_ERROR_IO) fail(result, "Could not query musik.db", &error);
+            if (result == MC_ERROR_IO) fail(result, "Could not query the library", &error);
             const std::unique_ptr<mc_error, void (*)(mc_error *)> owned_error(error,
                 [](mc_error *value) { mc_error_destroy(&value); });
             completion(result, result == MC_OK ? output->release() : nullptr, error, data);
@@ -77,23 +40,18 @@ namespace {
         return true;
     }
 
-    mc_result readPage(const std::string &path, const query::TrackPageQuery &query,
+    mc_result readPage(const LibraryIdentity &library, const query::TrackPageQuery &query,
         std::unique_ptr<mc_track_page> &output) {
-        const auto database = openDatabase(path);
         auto page = std::unique_ptr<mc_track_page>(new mc_track_page);
-        if (!database || !query.Run(database.get(), *page)) return MC_ERROR_IO;
+        if (!library.backend->Run(query, *page)) return MC_ERROR_IO;
         output = std::move(page);
         return MC_OK;
     }
 
     mc_result openSearch(const std::shared_ptr<const LibraryIdentity> &library, const query::TrackSearchQuery &query,
         std::unique_ptr<mc_track_result> &output) {
-        const auto database = openDatabase(library->locator);
-        if (!database || musik::core::db::SqliteExtensions::Register(database.get()) != SQLITE_OK) {
-            return MC_ERROR_IO;
-        }
         auto result = std::make_shared<TrackResultData>();
-        if (!query.Run(database.get(), *result)) return MC_ERROR_IO;
+        if (!library->backend->Run(query, *result)) return MC_ERROR_IO;
         result->library = library;
         output.reset(new mc_track_result{ std::move(result) });
         return MC_OK;
@@ -114,9 +72,8 @@ mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_librar
         }
 
         std::string target(locator.data, locator.length);
-        if (kind == MC_LIBRARY_LOCAL) target += "/musik.db";
-        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{
-            static_cast<mc_library_kind>(kind), std::move(target) });
+        auto backend = kind == MC_LIBRARY_LOCAL ? query::OpenTrackReadBackend(target + "/musik.db") : nullptr;
+        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{ std::move(target), std::move(backend), {} });
         *out_library = new mc_library{ std::move(identity) };
         return MC_OK;
     });
@@ -153,7 +110,7 @@ mc_result MC_CALL mc_library_query_tracks_async(
         const auto offset = read_option(query, &mc_track_query::offset, offsetof(mc_track_query, offset));
         const auto limit = read_option(query, &mc_track_query::limit, offsetof(mc_track_query, limit));
         if (offset > INT64_MAX || limit > limits.max_limit) return MC_ERROR_INVALID_ARGUMENT;
-        if (library->identity->kind != MC_LIBRARY_LOCAL) return MC_ERROR_UNSUPPORTED;
+        if (!library->identity->backend) return MC_ERROR_UNSUPPORTED;
         const auto page_limit = limit ? limit : limits.default_limit;
 
         /* Snapshot inputs before submission. Cancellation leaves worker-owned data alone. */
@@ -163,7 +120,7 @@ mc_result MC_CALL mc_library_query_tracks_async(
         if (!copyFields(fields, count, limits.max_fields, names)) return MC_ERROR_INVALID_ARGUMENT;
         return submitLibraryRequest<mc_track_page>(context,
             [=](std::unique_ptr<mc_track_page> &page) {
-                return readPage(identity->locator, { term, names, offset, page_limit }, page);
+                return readPage(*identity, { term, names, offset, page_limit }, page);
             }, completion, user_data, out_request);
     });
 }
@@ -183,10 +140,15 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
         const auto order = read_option(search, &mc_track_search::order, offsetof(mc_track_search, order));
         if (mode > MC_TRACK_SEARCH_REGEX || order > MC_TRACK_SEARCH_GENRE) return MC_ERROR_UNSUPPORTED;
         if (text.length && !text.data) return MC_ERROR_INVALID_ARGUMENT;
-        if (library->identity->kind != MC_LIBRARY_LOCAL) return MC_ERROR_UNSUPPORTED;
-
         const auto identity = library->identity;
         const std::string term(text.length ? text.data : "", text.length);
+        if (identity->async) {
+            return identity->async->search(context, identity,
+                { term, mode == MC_TRACK_SEARCH_REGEX, static_cast<query::TrackSortType>(order) },
+                completion, user_data, out_request);
+        }
+        if (!identity->backend) return MC_ERROR_UNSUPPORTED;
+
         return submitLibraryRequest<mc_track_result>(context,
             [=](std::unique_ptr<mc_track_result> &result) {
                 return openSearch(identity, { term, mode == MC_TRACK_SEARCH_REGEX,
@@ -238,9 +200,14 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
         const auto data = tracks->data;
         const auto start = std::min(offset, data->ids.size());
         const auto size = std::min(limit ? limit : limits.default_limit, data->ids.size() - start);
+        if (size && data->library->async) {
+            return data->library->async->page(context,
+                { data->ids.begin() + start, data->ids.begin() + start + size },
+                std::move(names), true, completion, user_data, out_request);
+        }
         return submitLibraryRequest<mc_track_page>(context,
             [=](std::unique_ptr<mc_track_page> &page) -> mc_result {
-                if (size) return readPage(data->library->locator, { "", names, 0, size, data->ids.data() + start }, page);
+                if (size) return readPage(*data->library, { "", names, 0, size, data->ids.data() + start }, page);
                 page.reset(new mc_track_page);
                 page->names = names;
                 return MC_OK;
@@ -287,10 +254,14 @@ mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_re
         }
 
         const auto identity = *track;
+        if (identity.library->async) {
+            return identity.library->async->page(context, { identity.id }, std::move(names),
+                false, completion, user_data, out_request);
+        }
         return submitLibraryRequest<mc_track_page>(context,
             [=](std::unique_ptr<mc_track_page> &page) -> mc_result {
                 /* A direct identity lookup distinguishes a removed row from missing tags. */
-                const auto status = readPage(identity.library->locator, { "", names, 0, 1, &identity.id, false }, page);
+                const auto status = readPage(*identity.library, { "", names, 0, 1, &identity.id, false }, page);
                 if (status != MC_OK) return status;
                 return page->rows.empty() ? MC_ERROR_NOT_FOUND : MC_OK;
             }, completion, user_data, out_request);

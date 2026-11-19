@@ -21,6 +21,10 @@ namespace musik { namespace core { namespace ffi {
     mc_result submit_request(mc_context *context, std::function<mc_result()> work,
         RequestCompletion completion, void *user_data, mc_request_id *out_request);
 
+    /* Reserves a request for an external producer. Late replies may outlive the context. */
+    mc_result reserve_external_request(mc_context *context, RequestCompletion completion,
+        void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish);
+
 } } }
 
 #endif

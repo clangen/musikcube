@@ -240,9 +240,29 @@ static bool run_check(const char *name, bool (*check)(State &)) {
     return true;
 }
 
+static bool check_external_reply(State &state) {
+    mc_request_id request = 0;
+    std::function<void(mc_result)> finish;
+    if (musik::core::ffi::reserve_external_request(state.context, dispatch_test_completion,
+        &state, &request, finish) != MC_OK) return false;
+    if (mc_request_cancel(state.context, request) != MC_OK ||
+        mc_context_dispatch(state.context) != MC_OK) return false;
+
+    finish(MC_OK);
+    if (mc_context_dispatch(state.context) != MC_OK || state.completions != 1 ||
+        state.result != MC_ERROR_CANCELLED) return false;
+
+    if (musik::core::ffi::reserve_external_request(state.context, dispatch_test_completion,
+        &state, &request, finish) != MC_OK) return false;
+    mc_context_destroy(&state.context);
+    finish(MC_OK);
+    return state.completions == 2 && state.result == MC_ERROR_CANCELLED;
+}
+
 int main() {
     return run_check("completion and cancellation", check_dispatch) &&
         run_check("dispatch rearm", check_dispatch_rearm) &&
         run_check("queue capacity and wakeup coalescing", check_queue_capacity) &&
-        run_check("shutdown with a wakeup in flight", check_shutdown_wakeup) ? 0 : 1;
+        run_check("shutdown with a wakeup in flight", check_shutdown_wakeup) &&
+        run_check("external reply after cancellation and destruction", check_external_reply) ? 0 : 1;
 }

@@ -55,6 +55,8 @@ namespace musik { namespace core { namespace library { namespace query {
                 Regex = 2
             };
 
+            static constexpr int SuppressCompletionBroadcast = 1;
+
             QueryBase() noexcept
             : status(IQuery::Idle)
             , options(0)

@@ -180,6 +180,20 @@ int RemoteLibrary::Enqueue(QueryPtr query, Callback callback) {
     return this->EnqueueAndWait(query, 0LL, callback);
 }
 
+bool RemoteLibrary::EnqueueForConnection(Query query, uint64_t generation, Callback callback) {
+    std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
+    if (this->exit || !generation) return false;
+
+    auto context = std::make_shared<QueryContext>();
+    context->query = std::move(query);
+    context->callback = std::move(callback);
+    context->notify = false;
+    const auto messageId = this->wsc.EnqueueQuery(context->query, generation);
+    if (messageId.empty()) return false;
+    this->queriesInFlight.emplace(messageId, std::move(context));
+    return true;
+}
+
 int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {
     if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
         auto defaultLocalLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
@@ -260,7 +274,11 @@ void RemoteLibrary::NotifyQueryCompleted(QueryContextPtr context) {
 
 void RemoteLibrary::OnQueryCompleted(QueryContextPtr context) {
     if (context) {
-        if (this->messageQueue) {
+        if (!context->notify) {
+            /* ABI requests deliver through their own dispatcher. */
+            context->callback(context->query);
+        }
+        else if (this->messageQueue) {
             this->messageQueue->Post(std::make_shared<QueryCompletedMessage>(this, context));
         }
         else {
@@ -274,8 +292,10 @@ void RemoteLibrary::OnQueryCompleted(const std::string& messageId, Query query) 
 
     {
         std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
-        context = queriesInFlight[messageId];
-        queriesInFlight.erase(messageId);
+        const auto found = this->queriesInFlight.find(messageId);
+        if (found == this->queriesInFlight.end()) return;
+        context = std::move(found->second);
+        this->queriesInFlight.erase(found);
     }
 
     if (context) {
@@ -409,6 +429,7 @@ void RemoteLibrary::OnClientQuerySucceeded(Client* client, const std::string& me
 }
 
 void RemoteLibrary::OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError result) {
+    query->Invalidate();
     this->OnQueryCompleted(messageId, query);
 }
 

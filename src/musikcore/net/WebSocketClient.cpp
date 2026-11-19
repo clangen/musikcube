@@ -102,16 +102,6 @@ static inline std::string createSendRawQueryRequest(const std::string& rawQuery,
     return rawQueryJson.dump();
 }
 
-static inline bool extractRawQueryResult(
-    nlohmann::json& responseJson, std::string& rawResult)
-{
-    if (responseJson["name"].get<std::string>() != "send_raw_query") {
-        return false;
-    }
-    rawResult = responseJson["options"]["raw_query_data"].get<std::string>();
-    return true;
-}
-
 static inline bool isVersionCompatible(const std::string& str) {
     auto parts = str::Split(str, ".");
     return
@@ -160,33 +150,37 @@ WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener
             }
         }
         else if (name == "send_raw_query") {
-            auto query = this->messageIdToQuery[messageId];
-            if (query) {
-                this->messageIdToQuery.erase(messageId);
-                auto& options = responseJson["options"];
-                if (options.find("success") != options.end() && options["success"] == false) {
-                    this->listener->OnClientQueryFailed(
-                        this, messageId, query, QueryError::QueryFailed);
+            Query query;
+            {
+                std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+                const auto pending = this->messageIdToQuery.find(messageId);
+                if (pending == this->messageIdToQuery.end()) return;
+
+                /* Claim the reply before deserializing or notifying the library. */
+                query = std::move(pending->second);
+                this->messageIdToQuery.erase(pending);
+            }
+
+            auto failure = QueryError::ParseFailed;
+            try {
+                const auto& options = responseJson.at("options");
+                if (options.value("success", true)) {
+                    query->DeserializeResult(options.at("raw_query_data").get<std::string>());
                 }
                 else {
-                    std::string rawResult;
-                    if (extractRawQueryResult(responseJson, rawResult)) {
-                        if (query) {
-                            try {
-                                query->DeserializeResult(rawResult);
-                                this->listener->OnClientQuerySucceeded(this, messageId, query);
-                            }
-                            catch (...) {
-                                this->listener->OnClientQueryFailed(
-                                    this, messageId, query, QueryError::ParseFailed);
-                            }
-                        }
-                        else {
-                            this->listener->OnClientQueryFailed(
-                                this, messageId, query, QueryError::QueryNotFound);
-                        }
-                    }
+                    failure = QueryError::QueryFailed;
                 }
+            }
+            catch (...) {
+                this->listener->OnClientQueryFailed(this, messageId, query, failure);
+                return;
+            }
+
+            if (failure == QueryError::QueryFailed) {
+                this->listener->OnClientQueryFailed(this, messageId, query, failure);
+            }
+            else {
+                this->listener->OnClientQuerySucceeded(this, messageId, query);
             }
         }
     });
@@ -233,18 +227,21 @@ std::string WebSocketClient::Uri() const {
 }
 
 void WebSocketClient::SetDisconnected(ConnectionError errorCode) {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    this->connectionError = errorCode;
-    this->SetState(State::Disconnected);
+    this->SetState(State::Disconnected, errorCode);
 }
 
-std::string WebSocketClient::EnqueueQuery(Query query) {
+uint64_t WebSocketClient::ConnectionGeneration() const {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    return this->state == State::Connected ? this->generation : 0;
+}
+
+std::string WebSocketClient::EnqueueQuery(Query query, uint64_t generation) {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    if (!query) return "";
+    if (generation && (this->state != State::Connected || generation != this->generation)) return "";
+
     if (kDisableOfflineQueue && this->state != State::Connected) {
         query->Invalidate(); /* mark it as failed */
-        return "";
-    }
-    if (!query) {
         return "";
     }
     auto messageId = generateMessageId();
@@ -280,10 +277,10 @@ void WebSocketClient::Connect(
 }
 
 void WebSocketClient::Reconnect() {
+    this->Disconnect();
+
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     this->serverVersion = "";
-
-    this->Disconnect();
 
     io.restart();
 
@@ -328,17 +325,6 @@ void WebSocketClient::Disconnect() {
     }
 }
 
-void WebSocketClient::InvalidatePendingQueries() {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-
-    for (auto& kv : this->messageIdToQuery) {
-        this->listener->OnClientQueryFailed(
-            this, kv.first, kv.second, QueryError::Disconnected);
-    }
-
-    this->messageIdToQuery.clear();
-}
-
 void WebSocketClient::SendPendingQueries() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
 
@@ -353,27 +339,32 @@ void WebSocketClient::SendPendingQueries() {
     }
 }
 
-void WebSocketClient::SetState(State state) {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    if (state != this->state) {
-        auto const oldState = this->state;
-
-        switch (state) {
-            case State::Disconnected:
-                this->connection.reset();
-                this->InvalidatePendingQueries();
-                break;
-            case State::Connected:
-                this->connectionError = ConnectionError::None;
-                this->SendPendingQueries();
-                break;
-            default:
-                break;
-        }
-
+void WebSocketClient::SetState(State state, ConnectionError error) {
+    decltype(this->messageIdToQuery) disconnected;
+    State oldState;
+    {
+        std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+        if (error != ConnectionError::None) this->connectionError = error;
+        if (state == this->state) return;
+        oldState = this->state;
         this->state = state;
-        this->listener->OnClientStateChanged(this, state, oldState);
+
+        if (state == State::Disconnected) {
+            this->connection.reset();
+            disconnected.swap(this->messageIdToQuery);
+        }
+        else if (state == State::Connected) {
+            ++this->generation;
+            this->connectionError = ConnectionError::None;
+            this->SendPendingQueries();
+        }
     }
+
+    /* The library queue can call into the client while submitting a query. */
+    for (const auto& pending : disconnected) {
+        this->listener->OnClientQueryFailed(this, pending.first, pending.second, QueryError::Disconnected);
+    }
+    this->listener->OnClientStateChanged(this, state, oldState);
 }
 
 void WebSocketClient::SetMessageQueue(IMessageQueue* messageQueue) {

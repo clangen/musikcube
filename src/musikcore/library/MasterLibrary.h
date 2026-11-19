@@ -46,6 +46,8 @@
 
 #include <sigslot/sigslot.h>
 
+namespace musik { namespace core { namespace client { class Library; } } }
+
 namespace musik { namespace core { namespace library {
 
     class MasterLibrary: public ILibrary, public sigslot::has_slots<> {
@@ -70,6 +72,7 @@ namespace musik { namespace core { namespace library {
 
             ILibraryPtr Wrapped() const noexcept { return this->wrappedLibrary; }
 
+            std::shared_ptr<const musik::core::client::Library> OpenClientLibrary() const;
             void LoadDefaultLibrary();
 
         private:

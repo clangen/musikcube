@@ -584,14 +584,22 @@ recorded before the experimental shared façade is introduced.
   results and track references to the originating library. Test switching
   between libraries with a request in flight in `musikcore.abi.library_switch`.
 - [ ] **LIB-014** Route Track Search and projected range reads through the
-  selected library's typed query dispatcher. Add negotiated remote
-  snapshots with bounded storage and expiry. Preserve ordered IDs and
-  album boundaries, including when a track is deleted between reads.
+  selected library's typed query dispatcher. Local dispatch is exercised
+  through the app binding in `musikcore.abi.indexed_query`. Retain remote
+  ordered IDs and album boundaries on the client and fetch pages through
+  the legacy typed metadata batch query. Preserve row positions when a
+  track is deleted between reads. Server snapshots are deferred.
+  The app search projection is wired for both backends. Remote arbitrary
+  and multivalued tags still require a projected query.
 - [ ] **LIB-015** Add a real loopback contract test with a controllably
   delayed page reply. Race the reply with cancellation, library switching,
   and disconnect. Assert exactly one completion, no stale repaint, and
   no change to the target of a retained track reference. Cover reconnect
-  and older-server capability handling.
+  and retained handles from the old connection.
+  `musikcore.abi.remote_query_transport` covers the wire and ABI seams,
+  including a delayed page across selection and cancellation, missing IDs,
+  disconnect with an unanswered read, and rejection of an old reference
+  after reconnect. View-level and playback coverage remain separate.
 - [ ] **LIB-016** Route playback media through the track's originating
   library and verify that playing from a search position preserves the
   snapshot order. Verify remote search and streaming separately.

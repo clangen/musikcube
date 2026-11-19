@@ -240,6 +240,9 @@ namespace musik { namespace core { namespace client {
             library.reset(handle);
         }
 
+        /* Takes ownership of a handle created by the C API. */
+        explicit Library(mc_library *handle) noexcept : library(handle) {}
+
         Library(const Library &) = delete;
         Library &operator=(const Library &) = delete;
         Library(Library &&) noexcept = default;

@@ -36,6 +36,8 @@
 
 #include "MasterLibrary.h"
 #include "LibraryFactory.h"
+#include <musikcore/ffi/consumer/library-binding.h>
+#include <musikcore/library.hpp>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 
@@ -96,6 +98,29 @@ MasterLibrary::Type MasterLibrary::GetType() const {
 
 void MasterLibrary::Close() {
     this->wrappedLibrary->Close();
+}
+
+std::shared_ptr<const client::Library> MasterLibrary::OpenClientLibrary() const {
+    std::unique_lock<decltype(this->libraryMutex)> lock(this->libraryMutex);
+    if (!this->wrappedLibrary) return {};
+
+    /* Pin the selected backend so requests and track references survive library switches. */
+    mc_library* handle = nullptr;
+    mc_result status;
+    if (const auto selected = std::dynamic_pointer_cast<LocalLibrary>(this->wrappedLibrary)) {
+        status = ffi::BindLocalLibrary(selected, &handle);
+    }
+    else if (const auto remote = std::dynamic_pointer_cast<RemoteLibrary>(this->wrappedLibrary)) {
+        status = ffi::BindRemoteLibrary(remote, &handle);
+        if (status == MC_ERROR_IO) return {};
+    }
+    else {
+        return {};
+    }
+    if (status != MC_OK) throw client::Error(status);
+
+    client::Library bound(handle);
+    return std::make_shared<const client::Library>(std::move(bound));
 }
 
 void MasterLibrary::LoadDefaultLibrary() {

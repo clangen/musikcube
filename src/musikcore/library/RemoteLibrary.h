@@ -100,6 +100,7 @@ namespace musik { namespace core { namespace library {
             /* RemoteLibrary */
             void ReloadConnectionFromPreferences();
             const musik::core::net::WebSocketClient& WebSocketClient() const;
+            bool EnqueueForConnection(Query query, uint64_t generation, Callback callback);
 
         private:
             class QueryCompletedMessage;
@@ -107,6 +108,7 @@ namespace musik { namespace core { namespace library {
             struct QueryContext {
                 std::shared_ptr<musik::core::db::ISerializableQuery> query;
                 Callback callback;
+                bool notify = true;
             };
 
             using QueryContextPtr = std::shared_ptr<QueryContext>;

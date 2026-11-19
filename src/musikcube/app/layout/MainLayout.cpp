@@ -306,19 +306,25 @@ void MainLayout::SwitchToLibraryLayout() {
 }
 
 void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state) {
-    auto currentLayout = this->GetLayout();
-    if (currentLayout == this->libraryLayout ||
-        currentLayout == this->libraryNotConnectedLayout)
-    {
-        this->SwitchToLibraryLayout();
+    const auto currentLayout = this->GetLayout();
+    const bool showingLibrary = currentLayout == this->libraryLayout ||
+        currentLayout == this->libraryNotConnectedLayout;
+
+    /* A view retained behind Settings must also release handles from the old connection. */
+    if (state != ILibrary::ConnectionState::Connected && this->libraryLayout) {
+        this->libraryLayout->CancelSearchRequests();
+        this->libraryLayout.reset();
     }
+    if (showingLibrary) this->SwitchToLibraryLayout();
 }
 
 void MainLayout::OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr) {
     this->playback.Stop();
-    const bool wasShowingLibrary = this->libraryLayout && this->GetLayout() == this->libraryLayout;
+    const auto currentLayout = this->GetLayout();
+    const bool wasShowingLibrary = currentLayout == this->libraryLayout ||
+        currentLayout == this->libraryNotConnectedLayout;
     if (this->libraryLayout) this->libraryLayout->CancelSearchRequests();
-    this->libraryLayout = std::make_shared<LibraryLayout>(playback, library, this->apiContext);
+    this->libraryLayout.reset();
     if (wasShowingLibrary) this->SwitchToLibraryLayout();
     this->RebindIndexerEventHandlers(prev, curr);
     this->Layout();

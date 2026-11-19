@@ -211,7 +211,7 @@ int LocalLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback call
         context->callback = callback;
 
         if (timeoutMs == kWaitIndefinite) {
-            this->RunQuery(context);
+            this->RunQuery(context, !(localQuery->GetOptions() & LocalQuery::SuppressCompletionBroadcast));
         }
         else {
             queryQueue.push_back(context);

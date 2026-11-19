@@ -40,7 +40,6 @@
 #include <cursespp/Screen.h>
 
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/track/TrackPageCache.h>
 #include <musikcore/library.hpp>
@@ -100,11 +99,13 @@ static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preference
 TrackSearchLayout::TrackSearchLayout(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library,
-    std::shared_ptr<musik::core::client::Context> apiContext)
+    std::shared_ptr<musik::core::client::Context> apiContext,
+    std::shared_ptr<const musik::core::client::Library> apiLibrary)
 : LayoutBase()
 , playback(playback)
 , library(library)
-, apiContext(std::move(apiContext)) {
+, apiContext(std::move(apiContext))
+, apiLibrary(std::move(apiLibrary)) {
     this->prefs = Preferences::ForComponent(components::Settings);
     this->library->Indexer()->Finished.connect(this, &TrackSearchLayout::OnIndexerFinished);
     this->InitializeWindows();
@@ -200,23 +201,18 @@ void TrackSearchLayout::Requery() {
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->CancelLocalSearch();
 
-    const auto local = std::dynamic_pointer_cast<LocalLibrary>(this->library);
-    if (!local) {
-        /* Remote searches still use the library's query protocol. */
+    if (!this->apiLibrary) {
+        /* Use the legacy query if the API handle is unavailable. */
         this->trackList->Requery(
             std::make_shared<SearchTrackListQuery>(this->library, this->matchType, filter, sortOrder));
         return;
     }
 
     try {
-        if (!this->localLibrary) {
-            this->localLibrary = std::make_unique<client::Library>(local->GetLibraryDirectory());
-        }
-
         const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
         const auto generation = this->localSearchGeneration.Capture();
         const auto hash = std::hash<std::string>{}(filter);
-        this->localSearchRequest = client::OpenTrackSearch(*this->apiContext, *this->localLibrary,
+        this->localSearchRequest = client::OpenTrackSearch(*this->apiContext, *this->apiLibrary,
             client::TrackSearch{ filter, mode, static_cast<mc_track_search_order>(sortOrder) },
             [this, generation, sortOrder, hash](mc_result status, client::TrackResult result, std::string_view) {
                 /* Cancellation cannot retract a completion already queued for dispatch. */

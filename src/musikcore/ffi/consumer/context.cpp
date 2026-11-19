@@ -18,6 +18,11 @@
 namespace {
     enum class RequestState { queued, running, ready };
 
+    struct ExternalRequests {
+        std::mutex mutex;
+        mc_context *context = nullptr;
+    };
+
     struct Request {
         mc_request_id id;
         std::function<mc_result()> work;
@@ -32,7 +37,9 @@ struct mc_context {
     mc_context(std::string plugins, mc_wakeup_fn signal, void *signal_data,
         musik::core::ffi::TrackQueryLimits query_limits)
         : plugin_directory(std::move(plugins)),
-          track_query_limits(query_limits), wakeup(signal), wakeup_user_data(signal_data) {}
+          track_query_limits(query_limits), wakeup(signal), wakeup_user_data(signal_data) {
+        external->context = this;
+    }
 
     std::string plugin_directory;
     const musik::core::ffi::TrackQueryLimits track_query_limits;
@@ -47,6 +54,7 @@ struct mc_context {
 
     std::list<Request> requests;
     std::list<Request> dispatch_batch;
+    std::shared_ptr<ExternalRequests> external = std::make_shared<ExternalRequests>();
     mc_request_id next_request = 1;
 
     bool dispatching = false;
@@ -191,6 +199,39 @@ namespace musik { namespace core { namespace ffi {
         });
     }
 
+    mc_result reserve_external_request(mc_context *context, RequestCompletion completion,
+        void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish) {
+        std::lock_guard<std::mutex> lock(context->mutex);
+        if (context->stopping || context->requests.size() >= max_requests ||
+            !context->next_request) return MC_ERROR_BUSY;
+
+        const auto id = context->next_request;
+        const auto external = context->external;
+        finish = [external, id](mc_result result) {
+            std::unique_lock<std::mutex> lifetime(external->mutex);
+            auto *context = external->context;
+            if (!context) return;
+
+            std::unique_lock<std::mutex> lock(context->mutex);
+            const auto request = find_request(*context, id);
+            if (request == context->requests.end() || request->state != RequestState::running) return;
+
+            request->result = result;
+            request->state = RequestState::ready;
+            const bool notify = select_wakeup(*context);
+
+            /* Shutdown waits for the selected wakeup before destroying host state. */
+            lock.unlock();
+            lifetime.unlock();
+            if (notify) signal_host(*context);
+        };
+
+        context->requests.push_back({ id, {}, std::move(completion), user_data, RequestState::running, MC_OK });
+        *out_request = id;
+        ++context->next_request;
+        return MC_OK;
+    }
+
 } } }
 
 mc_result MC_CALL mc_context_create(
@@ -322,6 +363,10 @@ void MC_CALL mc_context_destroy(mc_context **context) {
     if (!context || !*context) return;
     if (mc_context_shutdown(*context) != MC_OK) return;
 
+    {
+        std::lock_guard<std::mutex> lock((*context)->external->mutex);
+        (*context)->external->context = nullptr;
+    }
     delete *context;
     *context = nullptr;
     context_active.store(false);

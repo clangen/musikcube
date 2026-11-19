@@ -108,7 +108,8 @@ namespace musik { namespace core { namespace net {
             std::string LastServerVersion() const;
             std::string Uri() const;
 
-            std::string EnqueueQuery(Query query);
+            uint64_t ConnectionGeneration() const;
+            std::string EnqueueQuery(Query query, uint64_t generation = 0);
 
             void SetMessageQueue(musik::core::runtime::IMessageQueue* messageQueue);
 
@@ -116,8 +117,7 @@ namespace musik { namespace core { namespace net {
             void ProcessMessage(musik::core::runtime::IMessage& message) override;
 
         private:
-            void SetState(State state);
-            void InvalidatePendingQueries();
+            void SetState(State state, ConnectionError error = ConnectionError::None);
             void SendPendingQueries();
             void SetDisconnected(ConnectionError errorCode);
 
@@ -133,6 +133,7 @@ namespace musik { namespace core { namespace net {
             ConnectionError connectionError{ ConnectionError::None };
             std::string serverVersion;
             State state{ State::Disconnected };
+            uint64_t generation = 0;
             Listener* listener{ nullptr };
             musik::core::runtime::IMessageQueue* messageQueue;
     };
