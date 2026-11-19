@@ -494,6 +494,10 @@ void App::SetMouseEnabled(bool enabled) {
     this->mouseEnabled = enabled;
 }
 
+void App::SetInputPollInterval(int milliseconds) {
+    this->inputPollInterval = milliseconds;
+}
+
 #ifdef WIN32
 bool App::Running(const std::string& uniqueId) {
     return App::Running(uniqueId, uniqueId);
@@ -533,6 +537,8 @@ void App::Run(ILayoutPtr layout) {
 
     while (!this->quit && !disconnected) {
         kn = "";
+        const int inputTimeout = this->inputPollInterval > 0
+            ? std::min(IDLE_TIMEOUT_MS, this->inputPollInterval) : IDLE_TIMEOUT_MS;
 
         if (this->injectedKeys.size()) {
             kn = injectedKeys.front();
@@ -545,11 +551,12 @@ void App::Run(ILayoutPtr layout) {
             /* if the focused window is an input, allow it to draw a cursor */
             WINDOW *c = this->state.focused->GetContent();
             keypad(c, TRUE);
-            wtimeout(c, IDLE_TIMEOUT_MS);
+            wtimeout(c, inputTimeout);
             ch = wgetch(c);
         }
         else {
             /* otherwise, no cursor */
+            wtimeout(stdscr, inputTimeout);
             ch = wgetch(stdscr);
         }
 

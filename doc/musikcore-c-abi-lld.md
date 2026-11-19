@@ -153,10 +153,11 @@ The experimental target is not installed as the final supported artifact.
 
 ### Process isolation rule
 
-No executable may link `musikcore_legacy` and `musikcore_abi0` together. The
-build should enforce this through separate targets and link dependencies. A
-debug runtime guard should also detect a second process-wide runtime instance
-if feasible.
+No executable may link production `musikcore` and `musikcore_abi0` together.
+Both targets compile the same consumer API sources. Production uses its
+existing SQLite implementation, including Unicode and regex support. The
+separate ABI0 target retains its strict export allowlist for tests and the
+pilot. The indexed query suite runs the C++ wrapper against both targets.
 
 ### Final topology
 
@@ -596,6 +597,11 @@ reference owns local library identity and can outlive the search result.
 Resolving a hidden or removed track fails with `MC_ERROR_NOT_FOUND`.
 The next playback slice needs two distinct operations: act on one track by
 identity, and play from a result position in snapshot order.
+
+Production local Track Search opens its results through the C++ wrapper
+in `libmusikcore`. The existing `TrackListView` uses ABI metadata pages for
+local search rows and materializes an ordered legacy list only for actions
+that need it. Remote searches still use the library query protocol.
 
 1. Add an async C operation that opens a search result with a stable row
    order, a count, and track identities. Specify the current search modes,

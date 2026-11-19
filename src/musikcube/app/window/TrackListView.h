@@ -67,6 +67,15 @@ namespace musik {
                 using Headers = TrackListQueryBase::Headers;
                 using Durations = TrackListQueryBase::Durations;
 
+                /* Copyable callbacks for rows whose metadata is owned by a different provider. */
+                struct RowSource {
+                    size_t count = 0;
+                    std::function<int64_t(size_t)> id;
+                    std::function<TrackPtr(size_t)> display;
+                    std::function<void(size_t, size_t, size_t)> viewport;
+                    std::function<void()> invalidate;
+                };
+
                 /* ctor, dtor */
                 TrackListView(
                     musik::core::audio::PlaybackService& playback,
@@ -78,7 +87,7 @@ namespace musik {
                 bool KeyPress(const std::string& key) override;
 
                 /* regular methods */
-                std::shared_ptr<musik::core::TrackList> GetTrackList() noexcept;
+                std::shared_ptr<musik::core::TrackList> GetTrackList();
                 void SetTrackList(std::shared_ptr<musik::core::TrackList> trackList);
                 musik::core::TrackPtr GetSelectedTrack();
                 size_t GetSelectedTrackIndex();
@@ -92,6 +101,10 @@ namespace musik {
 
                 void Reset();
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
+                void SetQueryResult(std::shared_ptr<musik::core::TrackList> tracks,
+                    Headers headers, Durations durations, size_t hash);
+                void SetQueryResult(RowSource source, Headers headers, Durations durations, size_t hash);
+                void DetachRowSource();
 
             protected:
                 /* IScrollableWindow */
@@ -132,6 +145,7 @@ namespace musik {
                         Adapter(TrackListView &parent);
                         size_t GetEntryCount() noexcept override;
                         EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
+                        void DrawPage(cursespp::ScrollableWindow* window, size_t index, ScrollPosition& result) override;
 
                     private:
                         TrackListView &parent;
@@ -139,6 +153,10 @@ namespace musik {
                 };
 
             private:
+                void ApplyQueryResult(Headers headers, Durations durations, size_t hash, bool hadTracks);
+                size_t RowIndex(size_t adapterIndex);
+                TrackPtr DisplayTrack(size_t row);
+                RowSource rowSource;
                 /* class to help with header offset calculation. this thing is really gross and
                 should probably be refactored at some point. */
                 class HeaderCalculator {

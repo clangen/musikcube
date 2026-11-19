@@ -124,40 +124,65 @@ void TrackListView::OnTrackListWindowCached(const musik::core::TrackList* track,
 }
 
 void TrackListView::OnQueryCompleted(IQuery* query) {
-    if (this->query && query == this->query.get()) {
-        if (this->query->GetStatus() == IQuery::Finished) {
-            const bool hadTracks = this->tracks && this->tracks->Count() > 0;
-            const bool prevQuerySame = this->lastQueryHash == this->query->GetQueryHash();
-
-            this->SetTrackListAndUpateEventHandlers(this->query->GetResult());
-            this->AdjustTrackListCacheWindowSize();
-            this->headers.Set(this->query->GetHeaders(), this->query->GetDurations());
-            this->lastQueryHash = this->query->GetQueryHash();
-
-            /* update our internal state */
-            this->OnAdapterChanged();
-
-            /* if the query was functionally the same as the last query, or we
-            previously had no tracks, let's scroll to the top and select the first
-            track */
-            if (!hadTracks || !prevQuerySame) {
-                this->ScrollToTop();
-                this->SelectFirstTrack();
-            }
-
-            /* let external listeners know we updated */
-            this->Requeried(this->query.get());
-
-            this->query.reset();
-        }
+    if (this->query && query == this->query.get() && this->query->GetStatus() == IQuery::Finished) {
+        auto completed = std::move(this->query);
+        this->SetQueryResult(completed->GetResult(), completed->GetHeaders(),
+            completed->GetDurations(), completed->GetQueryHash());
+        this->Requeried(completed.get());
     }
 }
 
-std::shared_ptr<TrackList> TrackListView::GetTrackList() noexcept {
+void TrackListView::SetQueryResult(std::shared_ptr<TrackList> tracks,
+    Headers headers, Durations durations, size_t hash) {
+    const bool hadTracks = this->TrackCount() > 0;
+    this->query.reset();
+    this->rowSource = {};
+    this->SetTrackListAndUpateEventHandlers(std::move(tracks));
+    this->AdjustTrackListCacheWindowSize();
+    this->ApplyQueryResult(std::move(headers), std::move(durations), hash, hadTracks);
+}
+
+void TrackListView::SetQueryResult(RowSource source, Headers headers, Durations durations, size_t hash) {
+    const bool hadTracks = this->TrackCount() > 0;
+    this->query.reset();
+    this->rowSource = std::move(source);
+    this->SetTrackListAndUpateEventHandlers(nullptr);
+    this->ApplyQueryResult(std::move(headers), std::move(durations), hash, hadTracks);
+}
+
+void TrackListView::DetachRowSource() {
+    if (this->rowSource.id) {
+        this->rowSource = {};
+        this->headers.Reset();
+    }
+}
+
+void TrackListView::ApplyQueryResult(Headers headers, Durations durations, size_t hash, bool hadTracks) {
+    const bool preserveSelection = hadTracks && this->lastQueryHash == hash;
+    this->headers.Set(std::move(headers), std::move(durations));
+    this->lastQueryHash = hash;
+    this->OnAdapterChanged();
+
+    /* A refresh of the same query keeps the user's position. */
+    if (!preserveSelection) {
+        this->ScrollToTop();
+        this->SelectFirstTrack();
+    }
+}
+
+std::shared_ptr<TrackList> TrackListView::GetTrackList() {
+    /* Playback and queue actions still expect an ordered legacy list. */
+    if (!this->tracks && this->rowSource.id) {
+        this->tracks = std::make_shared<TrackList>(this->library);
+        for (size_t row = 0; row < this->rowSource.count; ++row) {
+            this->tracks->Add(this->rowSource.id(row));
+        }
+    }
     return this->tracks;
 }
 
 void TrackListView::SetTrackList(std::shared_ptr<TrackList> trackList) {
+    this->rowSource = {};
     if (this->tracks != trackList) {
         this->SetTrackListAndUpateEventHandlers(trackList);
         this->AdjustTrackListCacheWindowSize();
@@ -170,28 +195,35 @@ void TrackListView::SetTrackList(std::shared_ptr<TrackList> trackList) {
 
 void TrackListView::Reset() {
     this->query.reset();
-    this->tracks = std::make_shared<TrackList>(this->library);
+    this->rowSource = {};
+    this->SetTrackListAndUpateEventHandlers(std::make_shared<TrackList>(this->library));
     this->headers.Reset();
     this->OnAdapterChanged();
 }
 
 void TrackListView::InvalidateData() {
-    this->tracks->ClearCache();
+    if (this->tracks) this->tracks->ClearCache();
+    if (this->rowSource.invalidate) this->rowSource.invalidate();
     this->OnAdapterChanged();
 }
 
 TrackPtr TrackListView::GetSelectedTrack() {
     const auto i = this->GetSelectedTrackIndex();
-    return (i == ListWindow::NO_SELECTION) ? TrackPtr() : this->tracks->Get(i);
+    return i == ListWindow::NO_SELECTION ? TrackPtr() : this->GetTrackList()->Get(i);
 }
 
 size_t TrackListView::GetSelectedTrackIndex() {
     const auto i = this->GetSelectedIndex();
-    if (i != ListWindow::NO_SELECTION) {
-        auto entry = adapter->GetEntry(this, i);
-        return dynamic_cast<TrackListEntry*>(entry.get())->GetIndex();
-    }
-    return ListWindow::NO_SELECTION;
+    if (i == ListWindow::NO_SELECTION || i >= this->EntryCount()) return ListWindow::NO_SELECTION;
+    return this->RowIndex(i);
+}
+
+size_t TrackListView::RowIndex(size_t adapterIndex) {
+    return this->headers.AdapterToTrackListIndex(adapterIndex + this->headers.HeaderAt(adapterIndex));
+}
+
+TrackPtr TrackListView::DisplayTrack(size_t row) {
+    return this->rowSource.display ? this->rowSource.display(row) : this->tracks->Get(row, sGetAsync);
 }
 
 size_t TrackListView::TrackIndexToAdapterIndex(size_t index) {
@@ -199,7 +231,7 @@ size_t TrackListView::TrackIndexToAdapterIndex(size_t index) {
 }
 
 size_t TrackListView::TrackCount() noexcept {
-    return this->tracks ? this->tracks->Count() : 0;
+    return this->rowSource.id ? this->rowSource.count : (this->tracks ? this->tracks->Count() : 0);
 }
 
 size_t TrackListView::EntryCount() {
@@ -207,10 +239,11 @@ size_t TrackListView::EntryCount() {
 }
 
 void TrackListView::ScrollToPlaying() {
-    if (this->playing && this->tracks) {
+    if (this->playing && this->TrackCount()) {
         const int64_t id = this->playing->GetId();
-        for (size_t i = 0; i < this->tracks->Count(); i++) {
-            if (this->tracks->GetId(i) == id) {
+        for (size_t i = 0; i < this->TrackCount(); i++) {
+            const auto rowId = this->rowSource.id ? this->rowSource.id(i) : this->tracks->GetId(i);
+            if (rowId == id) {
                 const size_t rawIndex = headers.TrackListToAdapterIndex(i);
                 this->SetSelectedIndex(rawIndex);
 
@@ -476,7 +509,16 @@ size_t TrackListView::HeaderCalculator::PrevHeaderIndex(size_t selectedIndex) no
 /* * * * TrackListView::Adapter * * * */
 
 size_t TrackListView::Adapter::GetEntryCount() noexcept {
-    return parent.tracks ? parent.tracks->Count() + parent.headers.Count() : 0;
+    return parent.TrackCount() + parent.headers.Count();
+}
+
+void TrackListView::Adapter::DrawPage(ScrollableWindow* window, size_t index, ScrollPosition& result) {
+    ScrollAdapterBase::DrawPage(window, index, result);
+    if (parent.rowSource.viewport && result.visibleEntryCount) {
+        const auto first = result.firstVisibleEntryIndex;
+        parent.rowSource.viewport(parent.RowIndex(first), parent.RowIndex(first + result.visibleEntryCount - 1),
+            static_cast<size_t>(std::max(1, parent.GetContentHeight())));
+    }
 }
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t rawIndex) {
@@ -486,7 +528,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         /* the next track at the next logical index will have the album
         tracks we're interesetd in. */
         auto const trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
-        TrackPtr track = parent.tracks->Get(trackIndex, sGetAsync);
+        TrackPtr track = parent.DisplayTrack(trackIndex);
 
         if (track) {
             std::string album = track->GetMetadataState() == MetadataState::Loaded
@@ -515,7 +557,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     }
 
     const size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
-    TrackPtr track = parent.tracks->Get(trackIndex, sGetAsync);
+    TrackPtr track = parent.DisplayTrack(trackIndex);
 
     Color attrs = Color::Default;
 
@@ -526,7 +568,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         attrs = selected ? Color::ListItemHighlighted : Color::Default;
 
         TrackPtr playing = parent.playing;
-        if (playing &&
+        if (playing && track &&
             playing->GetId() == track->GetId() &&
             playing->LibraryId() == track->LibraryId())
         {

@@ -33,11 +33,17 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <cstdlib>
 
 #include <cursespp/Colors.h>
+#include <cursespp/App.h>
 #include <cursespp/Screen.h>
 
 #include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/library/track/LibraryTrack.h>
+#include <musikcore/library.hpp>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/support/PreferenceKeys.h>
 
@@ -65,10 +71,36 @@ namespace components = musik::core::prefs::components;
 
 constexpr int kSearchHeight = 3;
 constexpr int kRequeryIntervalMs = 300;
+constexpr size_t kSearchCachePages = 3;
+constexpr int kSearchPagePollIntervalMs = 2;
+
+/* Owns the search snapshot and its bounded window. Neither copyable nor movable. */
+struct TrackSearchLayout::PageCache {
+    explicit PageCache(client::TrackResult result) : result(std::move(result)) {}
+    PageCache(const PageCache&) = delete;
+    PageCache& operator=(const PageCache&) = delete;
+
+    client::TrackResult result;
+    std::map<size_t, client::TrackPage> pages;
+    size_t pageSize = 1;
+    size_t firstRow = 0;
+    size_t lastRow = 0;
+    bool forward = true;
+    bool viewportKnown = false;
+    mc_request_id request = 0;
+    size_t pending = 0;
+    std::optional<size_t> failed;
+};
 
 static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
-    return (TrackSortType) prefs->GetInt(
+    const auto sort = (TrackSortType) prefs->GetInt(
         keys::TrackSearchSortOrder, (int)TrackSortType::Album);
+    return kTrackListOrderByToDisplayKey.count(sort) ? sort : TrackSortType::Album;
+}
+
+static std::shared_ptr<LocalLibrary> getLocalLibrary(const ILibraryPtr& library) {
+    const auto master = std::dynamic_pointer_cast<MasterLibrary>(library);
+    return std::dynamic_pointer_cast<LocalLibrary>(master ? master->Wrapped() : library);
 }
 
 TrackSearchLayout::TrackSearchLayout(
@@ -83,6 +115,11 @@ TrackSearchLayout::TrackSearchLayout(
 }
 
 TrackSearchLayout::~TrackSearchLayout() {
+    /* The base layout can redraw child windows while releasing them. */
+    this->trackList->DetachRowSource();
+    this->CancelLocalSearch();
+    this->ClearPages();
+    this->localSearch.reset();
     this->SaveSession();
 }
 
@@ -124,8 +161,8 @@ void TrackSearchLayout::OnLayout() {
         this->GetHeight() - kSearchHeight);
 }
 
-void TrackSearchLayout::OnIndexerFinished(int totalUrisScanned){
-        this->Requery();
+void TrackSearchLayout::OnIndexerFinished(int totalUrisScanned) {
+    this->Post(message::RequeryTrackList);
 }
 
 void TrackSearchLayout::InitializeWindows() {
@@ -150,6 +187,9 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
         this->Requery();
     }
     else {
+        this->CancelLocalSearch();
+        this->ClearPages();
+        this->pageCache.reset();
         this->SaveSession();
         this->input->SetText("");
         this->trackList->Reset();
@@ -164,12 +204,197 @@ void TrackSearchLayout::FocusInput() {
 void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
-    this->trackList->Requery(
-        std::make_shared<SearchTrackListQuery>(
-            this->library,
-            this->matchType,
-            filter,
-            sortOrder));
+    this->CancelLocalSearch();
+
+    const auto local = getLocalLibrary(this->library);
+    if (!local) {
+        /* Remote searches still use the library's query protocol. */
+        if (this->pageCache) {
+            this->ClearPages();
+            this->pageCache.reset();
+            this->trackList->Reset();
+        }
+        this->localSearch.reset();
+        this->trackList->Requery(
+            std::make_shared<SearchTrackListQuery>(this->library, this->matchType, filter, sortOrder));
+        return;
+    }
+
+    try {
+        const auto directory = local->GetLibraryDirectory();
+        /* Bind the context to the active local database and wake the UI thread. */
+        if (!this->localSearch || this->localSearchDirectory != directory) {
+            this->ClearPages();
+            this->pageCache.reset();
+            this->trackList->Reset();
+            this->localSearch.reset();
+            mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+            options.data_directory = { directory.data(), directory.size() };
+            options.wakeup = [](void *data) {
+                static_cast<TrackSearchLayout *>(data)->Post(message::DispatchTrackSearch);
+            };
+            options.wakeup_user_data = this;
+            this->localSearch = std::make_unique<client::Context>(options);
+            this->localSearchDirectory = directory;
+        }
+
+        const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
+        const auto generation = this->localSearchGeneration;
+        const auto hash = std::hash<std::string>{}(filter);
+        this->localSearchRequest = client::OpenTrackSearch(*this->localSearch,
+            client::TrackSearch{ filter, mode, static_cast<mc_track_search_order>(sortOrder) },
+            [this, generation, local, sortOrder, hash](mc_result status, client::TrackResult result, std::string_view) {
+                if (generation != this->localSearchGeneration) return;
+                this->localSearchRequest = 0;
+                if (status != MC_OK || getLocalLibrary(this->library) != local) return;
+
+                auto headers = std::make_shared<std::set<size_t>>();
+                auto durations = std::make_shared<std::map<size_t, size_t>>();
+                for (size_t row = 0; row < result.Size(); ++row) {
+                    if (result.StartsAlbum(row)) {
+                        headers->insert(row);
+                        durations->emplace(row, result.AlbumDurationSeconds(row));
+                    }
+                }
+
+                this->ClearPages();
+                if (std::getenv("MUSIKCUBE_SEARCH_LEGACY_ROWS")) {
+                    /* Keep the previous renderer input available for production A/B runs. */
+                    auto tracks = std::make_shared<TrackList>(this->library);
+                    for (size_t row = 0; row < result.Size(); ++row) tracks->Add(result.Id(row));
+                    this->pageCache.reset();
+                    this->trackList->SetQueryResult(std::move(tracks), std::move(headers), std::move(durations), hash);
+                } else {
+                    this->pageCache = std::make_unique<PageCache>(std::move(result));
+                    this->trackList->SetQueryResult(TrackListView::RowSource{
+                        this->pageCache->result.Size(),
+                        [this](size_t row) { return this->pageCache->result.Id(row); },
+                        [this](size_t row) { return this->DisplayTrack(row); },
+                        [this](size_t first, size_t last, size_t height) { this->SetViewport(first, last, height); },
+                        [this] { this->ClearPages(); this->Post(message::LoadTrackSearchPage); },
+                    }, std::move(headers), std::move(durations), hash);
+                }
+                this->SetSearchTitle(_TSTR(kTrackListOrderByToDisplayKey.at(sortOrder)));
+            });
+    } catch (const client::Error& error) {
+        musik::debug::error("TrackSearchLayout", error.what());
+    }
+}
+
+void TrackSearchLayout::CancelLocalSearch() {
+    ++this->localSearchGeneration;
+    if (this->localSearchRequest) {
+        this->localSearch->Cancel(this->localSearchRequest);
+        this->localSearchRequest = 0;
+    }
+}
+
+void TrackSearchLayout::ClearPages() {
+    ++this->pageGeneration;
+    if (!this->pageCache) return;
+    auto& cache = *this->pageCache;
+    App::Instance().SetInputPollInterval(0);
+    if (cache.request) this->localSearch->Cancel(cache.request);
+    cache.request = 0;
+    cache.pages.clear();
+    cache.failed.reset();
+}
+
+void TrackSearchLayout::SetViewport(size_t first, size_t last, size_t height) {
+    auto& cache = *this->pageCache;
+    if (cache.pageSize != height) {
+        this->ClearPages();
+        cache.pageSize = height;
+        cache.viewportKnown = false;
+    }
+    if (!cache.viewportKnown || cache.firstRow != first || cache.lastRow != last) {
+        if (first != cache.firstRow) cache.forward = first > cache.firstRow;
+        cache.firstRow = first;
+        cache.lastRow = last;
+        cache.viewportKnown = true;
+        cache.failed.reset();
+        App::Instance().SetInputPollInterval(kSearchPagePollIntervalMs);
+        this->Post(message::LoadTrackSearchPage);
+    }
+}
+
+void TrackSearchLayout::LoadPage() {
+    if (!this->pageCache || !this->IsVisible()) return;
+    auto& cache = *this->pageCache;
+    if (!cache.request) App::Instance().SetInputPollInterval(0);
+    const auto count = cache.result.Size();
+    if (!cache.viewportKnown || cache.firstRow >= count) return;
+
+    const auto size = cache.pageSize;
+    const auto first = (cache.firstRow / size) * size;
+    const auto last = (std::min(cache.lastRow, count - 1) / size) * size;
+    auto next = first;
+    while (next <= last && cache.pages.count(next)) next += size;
+
+    /* Serve missing visible rows before fetching one page in the scroll direction. */
+    if (cache.request) {
+        if (next <= last && (cache.pending < first || cache.pending > last)) {
+            this->localSearch->Cancel(cache.request);
+        }
+        return;
+    }
+    if (next > last) {
+        if (!cache.forward && first == 0) return;
+        next = cache.forward ? last + size : first - size;
+    }
+    if (next >= count || cache.pages.count(next) || cache.failed == next) return;
+
+    const auto generation = this->pageGeneration;
+    cache.pending = next;
+    App::Instance().SetInputPollInterval(kSearchPagePollIntervalMs);
+    cache.request = client::ReadTracks(*this->localSearch, cache.result, client::TrackRange{
+        next, size, { MC_TRACK_FIELD_ID, MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST,
+            MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING } },
+        [this, generation, next](mc_result status, client::TrackPage page, std::string_view) {
+            if (generation != this->pageGeneration) return;
+            auto& cache = *this->pageCache;
+            cache.request = 0;
+            if (status == MC_OK) {
+                /* Evict the page farthest from the visible range. */
+                if (cache.pages.size() >= kSearchCachePages) {
+                    const auto firstPage = (cache.firstRow / cache.pageSize) * cache.pageSize;
+                    const auto lastPage = (cache.lastRow / cache.pageSize) * cache.pageSize;
+                    const auto age = [&](size_t offset) {
+                        if (offset < firstPage) return firstPage - offset;
+                        return offset > lastPage ? offset - lastPage : 0;
+                    };
+                    const auto victim = std::max_element(cache.pages.begin(), cache.pages.end(),
+                        [&](const auto& a, const auto& b) { return age(a.first) < age(b.first); });
+                    if (age(next) <= age(victim->first)) cache.pages.erase(victim);
+                }
+                if (cache.pages.size() < kSearchCachePages) {
+                    cache.pages.emplace(next, std::move(page));
+                    if (next <= cache.lastRow && cache.firstRow < next + cache.pageSize) this->trackList->Redraw();
+                }
+            } else if (status != MC_ERROR_CANCELLED) {
+                cache.failed = next;
+            }
+            this->LoadPage();
+        });
+}
+
+TrackPtr TrackSearchLayout::DisplayTrack(size_t row) {
+    const auto& cache = *this->pageCache;
+    auto track = std::make_shared<LibraryTrack>(cache.result.Id(row), this->library);
+    const auto offset = (row / cache.pageSize) * cache.pageSize;
+    const auto page = cache.pages.find(offset);
+    if (page == cache.pages.end()) return track;
+
+    /* Adapt only the rendered row. The page remains the sole display cache. */
+    const auto metadata = page->second.Track(row - offset);
+    if (metadata.Value(MC_TRACK_FIELD_ID).data()) {
+        for (const auto* key : { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM,
+                 MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING }) {
+            track->SetValue(key, metadata.Value(key).data());
+        }
+        track->SetMetadataState(musik::core::sdk::MetadataState::Loaded);
+    }
+    return track;
 }
 
 void TrackSearchLayout::PlayFromTop() {
@@ -178,7 +403,13 @@ void TrackSearchLayout::PlayFromTop() {
 
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
     if (message.Type() == message::RequeryTrackList) {
-        this->Requery();
+        if (this->IsVisible()) this->Requery();
+    }
+    else if (message.Type() == message::DispatchTrackSearch) {
+        if (this->localSearch) this->localSearch->Dispatch();
+    }
+    else if (message.Type() == message::LoadTrackSearchPage) {
+        this->LoadPage();
     }
     else {
         LayoutBase::ProcessMessage(message);
@@ -188,10 +419,12 @@ void TrackSearchLayout::ProcessMessage(IMessage &message) {
 void TrackSearchLayout::OnRequeried(TrackListQueryBase* query) {
     auto searchQuery = dynamic_cast<SearchTrackListQuery*>(query);
     if (searchQuery) {
-        this->trackList->SetFrameTitle(u8fmt(
-            _TSTR("track_filter_title"),
-            searchQuery->GetSortDisplayString().c_str()));
+        this->SetSearchTitle(searchQuery->GetSortDisplayString());
     }
+}
+
+void TrackSearchLayout::SetSearchTitle(const std::string& order) {
+    this->trackList->SetFrameTitle(u8fmt(_TSTR("track_filter_title"), order.c_str()));
 }
 
 void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
@@ -201,7 +434,7 @@ void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string 
 }
 
 void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
-    if (this->trackList->GetTrackList()->Count()) {
+    if (this->trackList->TrackCount()) {
         playback::PlaySelected(*(this->trackList.get()), this->playback);
         this->SetFocus(this->trackList);
     }

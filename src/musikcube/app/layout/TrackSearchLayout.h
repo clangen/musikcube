@@ -40,10 +40,15 @@
 #include <app/window/TrackListView.h>
 
 #include <musikcore/audio/PlaybackService.h>
+#include <musikcore/context.h>
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
+
+namespace musik { namespace core { namespace client {
+    class Context;
+} } }
 
 namespace musik {
     namespace cube {
@@ -76,6 +81,12 @@ namespace musik {
                 void SaveSession();
                 void InitializeWindows();
                 void Requery();
+                void CancelLocalSearch();
+                void SetSearchTitle(const std::string& order);
+                void ClearPages();
+                void SetViewport(size_t first, size_t last, size_t height);
+                void LoadPage();
+                musik::core::TrackPtr DisplayTrack(size_t row);
                 void OnIndexerFinished(int);
 
                 void OnRequeried(musik::core::library::query::TrackListQueryBase* query);
@@ -100,6 +111,13 @@ namespace musik {
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextInput> input;
+                std::string localSearchDirectory;
+                size_t localSearchGeneration = 0;
+                mc_request_id localSearchRequest = 0;
+                size_t pageGeneration = 0;
+                struct PageCache;
+                std::unique_ptr<PageCache> pageCache;
+                std::unique_ptr<musik::core::client::Context> localSearch;
         };
     }
 }
