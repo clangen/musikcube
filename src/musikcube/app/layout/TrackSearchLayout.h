@@ -96,8 +96,6 @@ namespace musik {
                 musik::core::TrackPtr DisplayTrack(size_t row);
                 void OnIndexerFinished(int);
 
-                void OnRequeried(musik::core::library::query::TrackListQueryBase* query);
-
                 void OnWindowMouseEvent(
                     cursespp::Window* window,
                     const cursespp::IMouseHandler::Event* mouseEvent);

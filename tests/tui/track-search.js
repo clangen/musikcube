@@ -79,7 +79,7 @@ function stagePilot(runtime, binaryDir) {
 }
 
 async function checkTrackSearch(runtime, database, screenshots,
-  { pilot = false, windows = false, cache, legacyRows = false } = {}) {
+  { pilot = false, windows = false, cache } = {}) {
   const fixture = dirname(dirname(dirname(database)));
   /* Keep startup from reindexing the fixture. */
   const settings = join(fixture, 'musikcube', 'settings.json');
@@ -93,8 +93,6 @@ async function checkTrackSearch(runtime, database, screenshots,
     LC_ALL: process.platform === 'darwin' ? 'en_US.UTF-8' : 'C.UTF-8',
   };
   delete env.LANGUAGE;
-  delete env.MUSIKCUBE_SEARCH_LEGACY_ROWS;
-  if (legacyRows) env.MUSIKCUBE_SEARCH_LEGACY_ROWS = '1';
   if (pilot) {
     delete env.MUSIKCUBE_SEARCH_CACHE_PAGES;
     delete env.MUSIKCUBE_SEARCH_PREFETCH_PAGES;
@@ -189,7 +187,7 @@ async function main() {
       tracks: { type: 'string', default: String(TRACK_COUNT) },
       runs: { type: 'string', default: '1' },
       compare: { type: 'boolean' },
-      'compare-production-cache': { type: 'boolean' },
+      windows: { type: 'boolean' },
       'pilot-control': { type: 'string' },
       'cache-pages': { type: 'string' },
       'prefetch-pages': { type: 'string' },
@@ -197,7 +195,7 @@ async function main() {
     },
   });
   if (values.help) {
-    console.log('Usage: node tests/tui/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--compare | --pilot-control <dir> | --compare-production-cache] [--cache-pages <count>] [--prefetch-pages <count>]');
+    console.log('Usage: node tests/tui/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
     return;
   }
   if (!['linux', 'darwin'].includes(process.platform)) {
@@ -211,11 +209,10 @@ async function main() {
     throw new Error('Use at least 20 tracks and one run');
   }
   const controlDir = values['pilot-control'];
-  const productionCache = values['compare-production-cache'];
-  const comparisonModes = [values.compare, controlDir !== undefined, productionCache].filter(Boolean);
-  const compare = comparisonModes.length > 0;
-  if (comparisonModes.length > 1) throw new Error('Choose one comparison mode');
-  if (compare && tracks < 100) throw new Error('The comparison requires at least 100 tracks');
+  const compare = values.compare || controlDir !== undefined;
+  if (values.compare && controlDir !== undefined) throw new Error('Choose one comparison mode');
+  const windows = Boolean(values.windows || compare);
+  if (windows && tracks < 100) throw new Error('The viewport scenario requires at least 100 tracks');
   const capacity = Number(values['cache-pages'] ?? '3');
   const prefetch = Number(values['prefetch-pages'] ?? Math.min(1, capacity - 1));
   if (!Number.isSafeInteger(capacity) || capacity < 1 ||
@@ -242,10 +239,7 @@ async function main() {
       control = { name: 'ABI0 control', runtime: controlRuntime, pilot: true };
     }
     const variants = [control];
-    if (productionCache) {
-      control.name = 'Production page cache';
-      variants.push({ name: 'Production legacy row cache', runtime, pilot: false, legacyRows: true });
-    } else if (compare) {
+    if (compare) {
       const pilot = join(runtime, 'pilot');
       stagePilot(pilot, join(build, 'bin', 'abi0'));
       variants.push({ name: 'ABI0 pilot', runtime: pilot, pilot: true });
@@ -257,15 +251,14 @@ async function main() {
     const results = await sampleVariants(variants, runs, async variant => {
       try {
         return await checkTrackSearch(variant.runtime, database,
-          variant.pilot || variant.legacyRows ? undefined : screenshots,
-          { pilot: variant.pilot, windows: compare, cache, legacyRows: variant.legacyRows });
+          variant.pilot ? undefined : screenshots, { pilot: variant.pilot, windows, cache });
       } finally {
         fs.rmSync(join(fixture, 'musikcube', 'session.json'), { force: true });
       }
     });
     console.log(`Track search passed with ${tracks.toLocaleString('en-US')} tracks across ${runs} runs.`);
     console.log(`Generate and index ${(seedMs / 1000).toFixed(2)} s`);
-    if (compare && !productionCache) console.log(`ABI0 cache: ${capacity} pages, ${prefetch} prefetched in the direction of travel`);
+    if (compare) console.log(`ABI0 cache: ${capacity} pages, ${prefetch} prefetched in the direction of travel`);
     printMetrics(results, [
       ['Open', 'openMs', 'ms'], ['Filter', 'filterMs', 'ms'], ['Scroll', 'scrollMs', 'ms'],
       ['Next window', 'nextMs', 'ms'], ['Back to first window', 'warmMs', 'ms'],

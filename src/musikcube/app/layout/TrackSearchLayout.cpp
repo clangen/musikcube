@@ -33,7 +33,6 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <cstdlib>
 
 #include <cursespp/Colors.h>
 #include <cursespp/App.h>
@@ -43,7 +42,6 @@
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/track/TrackPageCache.h>
 #include <musikcore/library.hpp>
-#include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Hotkeys.h>
@@ -171,7 +169,6 @@ void TrackSearchLayout::InitializeWindows() {
     this->trackList->MouseEvent.connect(this, &TrackSearchLayout::OnWindowMouseEvent);
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
-    this->trackList->Requeried.connect(this, &TrackSearchLayout::OnRequeried);
     this->AddWindow(this->trackList);
 }
 
@@ -201,12 +198,7 @@ void TrackSearchLayout::Requery() {
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->CancelLocalSearch();
 
-    if (!this->apiLibrary) {
-        /* Use the legacy query if the API handle is unavailable. */
-        this->trackList->Requery(
-            std::make_shared<SearchTrackListQuery>(this->library, this->matchType, filter, sortOrder));
-        return;
-    }
+    if (!this->apiLibrary) return;
 
     try {
         const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
@@ -230,22 +222,14 @@ void TrackSearchLayout::Requery() {
                 }
 
                 this->ClearPages();
-                if (std::getenv("MUSIKCUBE_SEARCH_LEGACY_ROWS")) {
-                    /* Keep the previous renderer input available for production A/B runs. */
-                    auto tracks = std::make_shared<TrackList>(this->library);
-                    for (size_t row = 0; row < result.Size(); ++row) tracks->Add(result.Id(row));
-                    this->pageCache.reset();
-                    this->trackList->SetQueryResult(std::move(tracks), std::move(headers), std::move(durations), hash);
-                } else {
-                    this->pageCache = std::make_unique<PageCache>(std::move(result));
-                    this->trackList->SetQueryResult(TrackListView::RowSource{
-                        this->pageCache->result.Size(),
-                        [this](size_t row) { return this->pageCache->result.Id(row); },
-                        [this](size_t row) { return this->DisplayTrack(row); },
-                        [this](size_t first, size_t last, size_t height) { this->SetViewport(first, last, height); },
-                        [this] { this->ClearPages(); this->Post(message::LoadTrackSearchPage); },
-                    }, std::move(headers), std::move(durations), hash);
-                }
+                this->pageCache = std::make_unique<PageCache>(std::move(result));
+                this->trackList->SetQueryResult(TrackListView::RowSource{
+                    this->pageCache->result.Size(),
+                    [this](size_t row) { return this->pageCache->result.Id(row); },
+                    [this](size_t row) { return this->DisplayTrack(row); },
+                    [this](size_t first, size_t last, size_t height) { this->SetViewport(first, last, height); },
+                    [this] { this->ClearPages(); this->Post(message::LoadTrackSearchPage); },
+                }, std::move(headers), std::move(durations), hash);
                 this->SetSearchTitle(_TSTR(kTrackListOrderByToDisplayKey.at(sortOrder)));
             });
     } catch (const client::Error& error) {
@@ -377,13 +361,6 @@ void TrackSearchLayout::ProcessMessage(IMessage &message) {
     }
     else {
         LayoutBase::ProcessMessage(message);
-    }
-}
-
-void TrackSearchLayout::OnRequeried(TrackListQueryBase* query) {
-    auto searchQuery = dynamic_cast<SearchTrackListQuery*>(query);
-    if (searchQuery) {
-        this->SetSearchTitle(searchQuery->GetSortDisplayString());
     }
 }
 

@@ -818,7 +818,7 @@ key binding. It removes the fixture and staged runtime on completion.
 
 The runner reports fixture generation and indexing separately from keystroke
 latency. Filter latency includes the app's debounce interval. The scenario
-uses the existing track search implementation and runs separately from the
+uses the production Track Search implementation and runs separately from the
 ABI CTest suite.
 
 Use `--screenshots <dir>` to save SVGs of the initial, filtered, and scrolled
@@ -847,18 +847,17 @@ keeps the track-search actions and assertions. Other TUI benchmarks can
 reuse `tests/tui/terminal.js` for the PTY and process samples, and
 `tests/tui/benchmark.js` for repeated runs and median/p95 reporting.
 
-Use `--compare-production-cache` to compare page-backed rendering with the
-legacy row cache in the full app. Both modes use the same binary, fixture,
-search API, and renderer. The control switches the row source with
-`MUSIKCUBE_SEARCH_LEGACY_ROWS`.
-
-On Linux, a 20-run comparison at 30,000 tracks measured median peak RSS
+The historical Linux production baseline comes from a 20-run comparison at
+30,000 tracks. Both variants used the same fixture, search API, and renderer.
+The comparison measured median peak RSS
 of 32,224 KiB with pages and 32,190 KiB with the legacy row cache.
 Median CPU time was 70 ms in both modes. A jump to the last viewport
 took 4.6 ms with pages and 1.2 ms with the legacy cache. The page-backed
 view shortens the curses input wait only while an async page is pending.
+Use `node tests/tui/track-search.js --windows --tracks 30000 --runs 20`
+to measure the current production path against those recorded numbers.
 
-The comparison widens the search to 100 results, advances past the first
+The viewport scenario widens the search to 100 results, advances past the first
 viewport, returns to it, and jumps to the end. On Linux, the runner also
 reads the application's peak RSS before exit. It excludes the fixture
 indexer and PTY runner. On Linux it also records user plus system CPU time
