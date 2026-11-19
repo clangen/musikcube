@@ -14,11 +14,12 @@
 ## Coding guidelines
 
 - Reuse existing helpers and follow the surrounding code's conventions. Introduce an abstraction when it simplifies real callers.
+- Write nested C++ namespace declarations on one line, such as `namespace musik { namespace core { namespace audio {`. Indent the body once and close with `} } }` on one line.
 - Let the code explain what it does. Reserve comments for longer blocks, especially those with branches, where they can mark a phase or explain why a decision was made. Keep comments terse and technical.
 - Use `/* comment */` where the language supports block comments. Use `//` only when necessary and the language's native syntax where block comments are unavailable.
 - Keep platform and compiler differences near setup. Pass the resulting options into shared build and application code.
 - Make ownership, cleanup, and error handling explicit at resource and thread boundaries.
-- Verify changes through their normal entry point. Add focused tests for new contracts and regressions that existing tests miss.
+- Verify changes through their normal entry point. Add tests as you go for useful contracts and regressions that existing tests miss. Each test should protect behavior that matters.
 
 ## Build scripts
 

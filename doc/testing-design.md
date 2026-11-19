@@ -268,12 +268,31 @@ endif()
 minimal release builds. Test targets should write into the selected binary
 directory rather than source-tree `bin` directories.
 
-Typical commands should be:
+Use the test runner with an existing CMake build, or let it configure the
+checkout with the default toolchain:
+
+```sh
+node script/run-tests.js
+node script/run-tests.js --build-dir build/test -- -L abi
+```
+
+The runner enables `BUILD_TESTING`, builds the `musikcube_tests` target, and
+passes arguments after `--` to CTest. Use `--config Release` to select Release
+with a multi-config generator such as Visual Studio.
+
+To configure a separate Debug build manually:
 
 ```sh
 cmake -S . -B build/test -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
 cmake --build build/test --parallel
 ctest --test-dir build/test --output-on-failure
+```
+
+To check the ABI header in an existing build with `BUILD_TESTING=ON`:
+
+```sh
+cmake --build build/test --target musikcore_abi_header_test
+ctest --test-dir build/test -R '^musikcore\.abi\.header$' --output-on-failure
 ```
 
 Equivalent presets should be added for Windows, macOS, and Linux after the

@@ -404,8 +404,9 @@ never sleeps.
 - [ ] **DEC-001** Approve the `mc_` public prefix and installed header names.
 - [ ] **DEC-002** Approve the experimental shared-library name
   `musikcore-abi0` or select a replacement.
-- [ ] **DEC-003** Decide whether initial multiple-context creation returns
+- [x] **DEC-003** Decide whether initial multiple-context creation returns
   `MC_ERROR_BUSY` or supports isolated contexts.
+  ABI0 returns `MC_ERROR_BUSY` while one context is active.
 - [ ] **DEC-004** Confirm one active event consumer per context for ABI v1.
 - [ ] **DEC-005** Decide whether public and provider ABI versions advance
   together through v1.
@@ -420,11 +421,11 @@ recorded before the experimental shared façade is introduced.
 
 ### Phase 0: testing foundation without changing linkage
 
-- [ ] **TST-001** Add `include(CTest)` and `BUILD_TESTING` handling to the
+- [x] **TST-001** Add `include(CTest)` and `BUILD_TESTING` handling to the
   Unix-like root build.
-- [ ] **TST-002** Add equivalent CTest registration to the Windows build path
+- [x] **TST-002** Add equivalent CTest registration to the Windows build path
   before its early return.
-- [ ] **TST-003** Create `tests/CMakeLists.txt` and standard CTest labels.
+- [x] **TST-003** Create `tests/CMakeLists.txt` and standard CTest labels.
 - [ ] **TST-004** Add the minimal C11 harness under `tests/support/c_test.h`.
 - [ ] **TST-005** Add cross-platform temporary-directory support that never
   uses production user data.
@@ -436,7 +437,7 @@ recorded before the experimental shared façade is introduced.
   release defaults.
 - [ ] **TST-009** Add an initial internal smoke/unit test to prove CTest on
   Windows, macOS, and Linux.
-- [ ] **TST-010** Document the standard local configure, build, and CTest
+- [x] **TST-010** Document the standard local configure, build, and CTest
   commands.
 
 #### Phase 0 gate
@@ -446,28 +447,28 @@ recorded before the experimental shared façade is introduced.
 
 ### Phase 1: shared ABI foundation, still tested without a new DLL
 
-- [ ] **ABI-001** Create `include/musikcore/abi.h` with C11/C++ guards.
-- [ ] **ABI-002** Implement `MC_API`, `MC_PLUGIN_API`, and `MC_CALL` for all
+- [x] **ABI-001** Create `include/musikcore/abi.h` with C11/C++ guards.
+- [x] **ABI-002** Implement `MC_API`, `MC_PLUGIN_API`, and `MC_CALL` for all
   supported compilers.
-- [ ] **ABI-003** Define ABI major/minor encoding and runtime version helpers.
-- [ ] **ABI-004** Define fixed-width `mc_result`, error codes, booleans, and ABI
+- [x] **ABI-003** Define ABI major/minor encoding and runtime version helpers.
+- [x] **ABI-004** Define fixed-width `mc_result`, error codes, booleans, and ABI
   enum conventions.
-- [ ] **ABI-005** Define `mc_string_view`, byte slices, and caller-buffer
+- [x] **ABI-005** Define `mc_string_view`, byte slices, and caller-buffer
   required-size semantics.
-- [ ] **ABI-006** Define sized-structure initialization and compatibility
+- [x] **ABI-006** Define sized-structure initialization and compatibility
   helpers.
-- [ ] **ABI-007** Define opaque-handle ownership and pointer-to-pointer destroy
+- [x] **ABI-007** Define opaque-handle ownership and pointer-to-pointer destroy
   conventions.
-- [ ] **ABI-008** Implement core-owned error objects with allocation-failure
+- [x] **ABI-008** Implement core-owned error objects with allocation-failure
   fallback behavior.
 - [ ] **ABI-009** Add exception barriers and argument-validation helpers used by
   every public entry point.
-- [ ] **ABI-010** Define common audio format and buffer-view types without
+- [x] **ABI-010** Define common audio format and buffer-view types without
   implementing audio providers yet.
-- [ ] **ABI-011** Add C11 and C++ header compile tests.
-- [ ] **ABI-012** Add unit tests for strings, errors, versions, sized
+- [x] **ABI-011** Add C11 and C++ header compile tests.
+- [x] **ABI-012** Add unit tests for strings, errors, versions, sized
   structures, and ownership helpers.
-- [ ] **ABI-013** Verify no public header exposes `long`, STL types, C++
+- [x] **ABI-013** Verify no public header exposes `long`, STL types, C++
   classes, bitfields, packed structures, or flexible arrays.
 
 #### Phase 1 gate
@@ -487,17 +488,17 @@ recorded before the experimental shared façade is introduced.
   Unix internal shared behavior.
 - [ ] **BLD-005** Relink existing applications against `musikcore_legacy`
   without changing runtime behavior.
-- [ ] **BLD-006** Add `musikcore_abi0` as a distinct shared target on all
+- [x] **BLD-006** Add `musikcore_abi0` as a distinct shared target on all
   platforms.
-- [ ] **BLD-007** Ensure `musikcore_abi0` excludes legacy C boundary sources.
+- [x] **BLD-007** Ensure `musikcore_abi0` excludes legacy C boundary sources.
 - [ ] **BLD-008** Add Windows import/export annotations and import-library
   generation.
-- [ ] **BLD-009** Add ELF version script and macOS exported-symbols list.
+- [x] **BLD-009** Add ELF version script and macOS exported-symbols list.
 - [ ] **BLD-010** Add an export allowlist test that rejects private C++ symbols.
 - [ ] **BLD-011** Add a build/link check preventing one executable from linking
   legacy and ABI0 targets together.
 - [ ] **BLD-012** Give ABI0 separate runtime output and plugin directories.
-- [ ] **BLD-013** Add a separately compiled C executable linked only to ABI0.
+- [x] **BLD-013** Add a separately compiled C executable linked only to ABI0.
 - [ ] **BLD-014** Test Debug and Release import/shared-library behavior on
   Windows.
 
@@ -509,11 +510,11 @@ recorded before the experimental shared façade is introduced.
 
 ### Phase 3: public runtime walking skeleton
 
-- [ ] **API-001** Create `include/musikcore/musikcore.h`.
+- [x] **API-001** Create `include/musikcore/musikcore.h`.
 - [ ] **API-002** Implement `mc_abi_version` and initial feature discovery.
-- [ ] **API-003** Define `mc_context_options` with explicit data and plugin
+- [x] **API-003** Define `mc_context_options` with explicit data and plugin
   roots.
-- [ ] **API-004** Implement transactional `mc_context_create`.
+- [x] **API-004** Implement transactional `mc_context_create`.
 - [ ] **API-005** Implement context shutdown states and
   `mc_context_destroy`.
 - [ ] **API-006** Implement the request ID generator and registry.
@@ -521,7 +522,7 @@ recorded before the experimental shared façade is introduced.
 - [ ] **API-008** Implement owned event objects and take-or-destroy payloads.
 - [ ] **API-009** Implement cancellation and exactly-once terminal completion.
 - [ ] **API-010** Wake blocked event consumers during shutdown.
-- [ ] **API-011** Reject unsupported second contexts according to DEC-003.
+- [x] **API-011** Reject unsupported second contexts according to DEC-003.
 - [ ] **API-012** Add C contract tests for version, context, errors, events,
   cancellation, and teardown.
 - [ ] **API-013** Add repeated create/destroy and failure-injection tests under

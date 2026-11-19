@@ -172,6 +172,8 @@ Platform packaging should encode the ABI major version:
 The ABI uses an independent major and minor version, rather than the musikcube
 application version.
 
+- Encode the major version in the upper 16 bits and the minor version in the
+  lower 16 bits. The initial experimental version is 0.1.
 - A major version change permits incompatible changes.
 - A minor version may only add functions, enum values where documented, or
   fields at the end of extensible structures.
@@ -188,8 +190,10 @@ MC_API mc_result mc_has_feature(
 ```
 
 Every caller-initialized options structure and every cross-boundary function
-table begins with `struct_size`. Implementations read only the fields included
-in the supplied size. Newly added fields must have safe zero defaults.
+table begins with a `uint32_t struct_size`. Callers zero-initialize the
+structure and set `struct_size` to its size in bytes. Implementations read
+only fields that fit entirely within the supplied size. Newly added fields
+must have safe zero defaults.
 
 Opaque library-owned objects do not expose layouts and therefore do not need a
 size field.
@@ -210,7 +214,8 @@ enum {
     MC_ERROR_CANCELLED = 5,
     MC_ERROR_IO = 6,
     MC_ERROR_PLUGIN = 7,
-    MC_ERROR_INTERNAL = 8
+    MC_ERROR_INTERNAL = 8,
+    MC_ERROR_BUFFER_TOO_SMALL = 9
 };
 ```
 
@@ -224,13 +229,17 @@ optional plugin or subsystem identifier. Async completion events carry their
 own error object; they do not depend on thread-local state.
 
 ```c
-MC_API mc_error_code mc_error_get_code(const mc_error *error);
-MC_API mc_string_view mc_error_get_message(const mc_error *error);
-MC_API void mc_error_destroy(mc_error **error);
+MC_API mc_result MC_CALL mc_error_get_code(const mc_error *error);
+MC_API mc_string_view MC_CALL mc_error_get_message(const mc_error *error);
+MC_API void MC_CALL mc_error_destroy(mc_error **error);
 ```
 
 An API may omit an error output when its result code is sufficiently specific.
 The convention must be consistent within each API family.
+
+An error output slot must not already own an error. If error details cannot
+be allocated, the function still returns its result code and clears the slot.
+The message view stays valid until the caller destroys the error.
 
 ### Handles and ownership
 
@@ -291,6 +300,10 @@ terminator, even when the supplied buffer is too small. This permits a single
 call with a stack or reusable buffer in the common case and an exact retry for
 unusually long values.
 
+A null destination with zero capacity queries the required size. A non-null
+destination with insufficient capacity returns `MC_ERROR_BUFFER_TOO_SMALL`
+and leaves the buffer intact. Byte copies do not add a terminator.
+
 Collections use typed pointer/count pairs or accessor functions. Raw arrays do
 not transfer ownership unless explicitly documented.
 
@@ -334,12 +347,12 @@ typedef struct mc_context_options {
     uint32_t flags;
 } mc_context_options;
 
-MC_API mc_result mc_context_create(
+MC_API mc_result MC_CALL mc_context_create(
     const mc_context_options *options,
     mc_context **out_context,
     mc_error **out_error);
 
-MC_API void mc_context_destroy(mc_context **context);
+MC_API void MC_CALL mc_context_destroy(mc_context **context);
 ```
 
 Global initialization should be hidden behind context reference counting. A
@@ -348,6 +361,13 @@ lifecycle. Multiple contexts are supported only if the implementation can
 define their database, plugin, audio-device, and global preference isolation.
 Otherwise, creation of a second context returns `MC_ERROR_BUSY` until true
 multi-context semantics are implemented.
+
+Initialize explicit options with `mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;`
+before overriding fields. ABI0 accepts null options and defaults omitted fields. A zero requested
+version selects the current ABI. Explicit requests must match the current
+major and specify a minor no newer than the library's. Directory views are
+copied during creation. The first lifecycle slice stores these roots for
+later runtime initialization.
 
 ### Async operations and events
 

@@ -4,6 +4,11 @@
 **/*.suo
 **/CMakeCache.txt
 **/CMakeFiles
+**/CTestTestfile.cmake
+/src/musikcore/ffi/exports.list
+/src/musikcore/ffi/exports.map
+/DartConfiguration.tcl
+/Testing/
 **/Makefile
 **/cmake_install.cmake
 **/install_manifest.txt
