@@ -19,26 +19,40 @@ struct mc_track_page {
 };
 
 namespace {
-    constexpr size_t default_limit = 100;
-    constexpr size_t max_limit = 1000;
-
-    constexpr size_t max_fields = 64;
-
     const std::map<std::string, const char *> core_fields = {
-        { "id", "t.id" }, { "title", "t.title" }, { "track", "t.track" }, { "disc", "t.disc" },
-        { "bpm", "t.bpm" }, { "duration", "t.duration" }, { "filesize", "t.filesize" },
-        { "filename", "t.filename" }, { "filetime", "t.filetime" }, { "thumbnail_id", "t.thumbnail_id" },
-        { "visual_genre_id", "t.visual_genre_id" }, { "visual_artist_id", "t.visual_artist_id" },
-        { "album_artist_id", "t.album_artist_id" }, { "album_id", "t.album_id" },
-        { "path_id", "t.path_id" }, { "source_id", "t.source_id" }, { "external_id", "t.external_id" },
-        { "rating", "t.rating" }, { "last_played", "t.last_played" }, { "play_count", "t.play_count" },
-        { "date_added", "t.date_added" }, { "date_updated", "t.date_updated" },
-        { "album", "(SELECT name FROM albums WHERE id = t.album_id)" },
-        { "artist", "(SELECT name FROM artists WHERE id = t.visual_artist_id)" },
-        { "album_artist", "(SELECT name FROM artists WHERE id = t.album_artist_id)" },
-        { "genre", "(SELECT name FROM genres WHERE id = t.visual_genre_id)" },
-        { "directory", "(SELECT name FROM directories WHERE id = t.directory_id)" },
+        { MC_TRACK_FIELD_ID, "t." MC_TRACK_FIELD_ID },
+        { MC_TRACK_FIELD_TITLE, "t." MC_TRACK_FIELD_TITLE },
+        { MC_TRACK_FIELD_TRACK, "t." MC_TRACK_FIELD_TRACK },
+        { MC_TRACK_FIELD_DISC, "t." MC_TRACK_FIELD_DISC },
+        { MC_TRACK_FIELD_BPM, "t." MC_TRACK_FIELD_BPM },
+        { MC_TRACK_FIELD_DURATION, "t." MC_TRACK_FIELD_DURATION },
+        { MC_TRACK_FIELD_FILESIZE, "t." MC_TRACK_FIELD_FILESIZE },
+        { MC_TRACK_FIELD_FILENAME, "t." MC_TRACK_FIELD_FILENAME },
+        { MC_TRACK_FIELD_FILETIME, "t." MC_TRACK_FIELD_FILETIME },
+        { MC_TRACK_FIELD_THUMBNAIL_ID, "t." MC_TRACK_FIELD_THUMBNAIL_ID },
+        { MC_TRACK_FIELD_VISUAL_GENRE_ID, "t." MC_TRACK_FIELD_VISUAL_GENRE_ID },
+        { MC_TRACK_FIELD_VISUAL_ARTIST_ID, "t." MC_TRACK_FIELD_VISUAL_ARTIST_ID },
+        { MC_TRACK_FIELD_ALBUM_ARTIST_ID, "t." MC_TRACK_FIELD_ALBUM_ARTIST_ID },
+        { MC_TRACK_FIELD_ALBUM_ID, "t." MC_TRACK_FIELD_ALBUM_ID },
+        { MC_TRACK_FIELD_PATH_ID, "t." MC_TRACK_FIELD_PATH_ID },
+        { MC_TRACK_FIELD_SOURCE_ID, "t." MC_TRACK_FIELD_SOURCE_ID },
+        { MC_TRACK_FIELD_EXTERNAL_ID, "t." MC_TRACK_FIELD_EXTERNAL_ID },
+        { MC_TRACK_FIELD_RATING, "t." MC_TRACK_FIELD_RATING },
+        { MC_TRACK_FIELD_LAST_PLAYED, "t." MC_TRACK_FIELD_LAST_PLAYED },
+        { MC_TRACK_FIELD_PLAY_COUNT, "t." MC_TRACK_FIELD_PLAY_COUNT },
+        { MC_TRACK_FIELD_DATE_ADDED, "t." MC_TRACK_FIELD_DATE_ADDED },
+        { MC_TRACK_FIELD_DATE_UPDATED, "t." MC_TRACK_FIELD_DATE_UPDATED },
+        { MC_TRACK_FIELD_ALBUM, "(SELECT name FROM albums WHERE id = t.album_id)" },
+        { MC_TRACK_FIELD_ARTIST, "(SELECT name FROM artists WHERE id = t.visual_artist_id)" },
+        { MC_TRACK_FIELD_ALBUM_ARTIST, "(SELECT name FROM artists WHERE id = t.album_artist_id)" },
+        { MC_TRACK_FIELD_GENRE, "(SELECT name FROM genres WHERE id = t.visual_genre_id)" },
+        { MC_TRACK_FIELD_DIRECTORY, "(SELECT name FROM directories WHERE id = t.directory_id)" },
     };
+
+    enum TrackColumn { track_id_column, first_core_column };
+    enum TagColumn { tag_track_id_column, tag_key_column, tag_value_column };
+    enum TrackParameter { search_parameter = 1, limit_parameter, offset_parameter };
+    constexpr int first_tag_parameter = 1;
 
     using TagFields = std::map<std::string, std::vector<size_t>>;
     using Statement = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>;
@@ -79,7 +93,7 @@ namespace {
             "ORDER BY tm.track_id, k.name, v.sort_order, v.id");
         if (!statement) return MC_ERROR_IO;
 
-        int index = 1;
+        int index = first_tag_parameter;
         for (const auto &row : page.rows) {
             if (sqlite3_bind_int64(statement.get(), index++, row.id) != SQLITE_OK) return MC_ERROR_IO;
         }
@@ -89,12 +103,12 @@ namespace {
 
         int status;
         while ((status = sqlite3_step(statement.get())) == SQLITE_ROW) {
-            const auto id = sqlite3_column_int64(statement.get(), 0);
+            const auto id = sqlite3_column_int64(statement.get(), tag_track_id_column);
             auto row = std::lower_bound(page.rows.begin(), page.rows.end(), id,
                 [](const mc_track_page::Row &entry, int64_t key) { return entry.id < key; });
             std::string key;
             std::string value;
-            if (!read_string(statement.get(), 1, key) || !read_string(statement.get(), 2, value)) return MC_ERROR_IO;
+            if (!read_string(statement.get(), tag_key_column, key) || !read_string(statement.get(), tag_value_column, value)) return MC_ERROR_IO;
             const auto field = fields.find(key);
             if (row == page.rows.end() || row->id != id || field == fields.end()) return MC_ERROR_INTERNAL;
             for (const auto slot : field->second) row->fields[slot].push_back(value);
@@ -113,7 +127,7 @@ namespace {
         }
 
         /* Core projections use fixed expressions. Tags share the same read transaction. */
-        std::string sql = "SELECT t.id";
+        std::string sql = "SELECT t." MC_TRACK_FIELD_ID;
         std::vector<size_t> columns;
         TagFields tags;
         for (size_t i = 0; i < fields.size(); ++i) {
@@ -130,19 +144,19 @@ namespace {
             "ORDER BY t.id LIMIT ?2 OFFSET ?3";
 
         auto statement = prepare(database.get(), sql);
-        if (!statement || bind_string(statement.get(), 1, search) != SQLITE_OK ||
-            sqlite3_bind_int64(statement.get(), 2, limit) != SQLITE_OK ||
-            sqlite3_bind_int64(statement.get(), 3, offset) != SQLITE_OK) return MC_ERROR_IO;
+        if (!statement || bind_string(statement.get(), search_parameter, search) != SQLITE_OK ||
+            sqlite3_bind_int64(statement.get(), limit_parameter, limit) != SQLITE_OK ||
+            sqlite3_bind_int64(statement.get(), offset_parameter, offset) != SQLITE_OK) return MC_ERROR_IO;
 
         /* Page tracks before expanding tags so repeated values never consume page slots. */
         std::unique_ptr<mc_track_page> page(new mc_track_page);
         page->names = fields;
         int status;
         while ((status = sqlite3_step(statement.get())) == SQLITE_ROW) {
-            mc_track_page::Row row{ sqlite3_column_int64(statement.get(), 0), {} };
+            mc_track_page::Row row{ sqlite3_column_int64(statement.get(), track_id_column), {} };
             row.fields.resize(fields.size());
             for (size_t i = 0; i < columns.size(); ++i) {
-                const auto column = static_cast<int>(i + 1);
+                const auto column = first_core_column + static_cast<int>(i);
                 if (sqlite3_column_type(statement.get(), column) == SQLITE_NULL) continue;
                 std::string value;
                 if (!read_string(statement.get(), column, value)) return MC_ERROR_IO;
@@ -163,6 +177,7 @@ mc_result MC_CALL mc_library_query_tracks_async(
     mc_context *context, const mc_track_query *query, mc_track_query_completion_fn completion,
     void *user_data, mc_request_id *out_request) {
     using musik::core::ffi::context_data_directory;
+    using musik::core::ffi::context_track_query_limits;
     using musik::core::ffi::exception_barrier;
     using musik::core::ffi::fail;
     using musik::core::ffi::read_option;
@@ -176,10 +191,11 @@ mc_result MC_CALL mc_library_query_tracks_async(
         }
 
         /* Validate the requested projection before copying inputs for the worker. */
+        const auto &limits = context_track_query_limits(*context);
         const auto search = read_option(query, &mc_track_query::search, offsetof(mc_track_query, search));
         const auto count = read_option(query, &mc_track_query::field_count, offsetof(mc_track_query, field_count));
         const auto fields = read_option(query, &mc_track_query::fields, offsetof(mc_track_query, fields));
-        if ((search.length && !search.data) || (count && !fields) || count > max_fields) {
+        if ((search.length && !search.data) || (count && !fields) || count > limits.max_fields) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
         if (read_option(query, &mc_track_query::flags, offsetof(mc_track_query, flags))) {
@@ -189,7 +205,8 @@ mc_result MC_CALL mc_library_query_tracks_async(
         const auto offset = read_option(query, &mc_track_query::offset, offsetof(mc_track_query, offset));
         const auto limit = read_option(query, &mc_track_query::limit, offsetof(mc_track_query, limit));
         const auto &root = context_data_directory(*context);
-        if (offset > INT64_MAX || limit > max_limit || root.empty()) return MC_ERROR_INVALID_ARGUMENT;
+        if (offset > INT64_MAX || limit > limits.max_limit || root.empty()) return MC_ERROR_INVALID_ARGUMENT;
+        const auto page_limit = limit ? limit : limits.default_limit;
 
         /* Snapshot inputs before submission. Cancellation leaves worker-owned data alone. */
         const std::string path = root + "/musik.db";
@@ -199,11 +216,11 @@ mc_result MC_CALL mc_library_query_tracks_async(
             if (!fields[i].data || !fields[i].length) return MC_ERROR_INVALID_ARGUMENT;
             names.emplace_back(fields[i].data, fields[i].length);
         }
-        if (names.empty()) names.emplace_back("title");
+        if (names.empty()) names.emplace_back(MC_TRACK_FIELD_TITLE);
 
         const auto page = std::make_shared<std::unique_ptr<mc_track_page>>();
         return submit_request(context, [=] {
-            return query_tracks(path, term, names, offset, limit ? limit : default_limit, *page);
+            return query_tracks(path, term, names, offset, page_limit, *page);
         }, [=](mc_result result, void *data) {
             mc_error *error = nullptr;
             if (result == MC_ERROR_IO) fail(result, "Could not query musik.db", &error);

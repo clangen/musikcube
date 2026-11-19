@@ -173,8 +173,8 @@ The ABI uses an independent major and minor version, rather than the musikcube
 application version.
 
 - Encode the major version in the upper 16 bits and the minor version in the
-  lower 16 bits. Version 0.1 introduced context creation, 0.2 added request
-  dispatch and wakeups, and 0.3 adds the first track query.
+  lower 16 bits. Keep the experimental version fixed during development.
+  Signatures and layouts can change before the ABI freeze.
 - A major version change permits incompatible changes.
 - A minor version may only add functions, enum values where documented, or
   fields at the end of extensible structures.
@@ -453,12 +453,16 @@ parameters:
 
 ABI0 reads `musik.db` from an explicit context data directory using a read-only
 SQLite connection. Pages contain visible tracks in ascending ID order. Search
-matches a literal case-sensitive title substring. Request up to 64 field
+matches a literal case-sensitive title substring. By default, request up to 64 field
 names in result order. An empty field list requests `title`. Core fields
 use their existing metadata names and take precedence over tags of the same
 name. Other keys are looked up in the normalized tag tables. Track selection
 and tag lookup share a single read transaction. The default page holds up to
-100 rows, and callers can request up to 1000.
+100 rows, and callers can request up to 1000. Set
+`track_query_default_limit`, `track_query_max_limit`, and
+`track_query_max_fields` on the context options to override these limits.
+Nonpositive or omitted settings use the built-in values. If the default row
+limit exceeds the maximum, the maximum applies.
 
 ABI0 exposes values as UTF-8 text, including numbers. The page exposes field
 names and a value count for each row and field. `mc_track_page_get_string`

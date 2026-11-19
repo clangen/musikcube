@@ -29,12 +29,14 @@ namespace {
 }
 
 struct mc_context {
-    mc_context(std::string data, std::string plugins, mc_wakeup_fn signal, void *signal_data)
+    mc_context(std::string data, std::string plugins, mc_wakeup_fn signal, void *signal_data,
+        musik::core::ffi::TrackQueryLimits query_limits)
         : data_directory(std::move(data)), plugin_directory(std::move(plugins)),
-          wakeup(signal), wakeup_user_data(signal_data) {}
+          track_query_limits(query_limits), wakeup(signal), wakeup_user_data(signal_data) {}
 
     std::string data_directory;
     std::string plugin_directory;
+    const musik::core::ffi::TrackQueryLimits track_query_limits;
 
     mc_wakeup_fn wakeup;
     void *wakeup_user_data;
@@ -166,6 +168,10 @@ namespace musik { namespace core { namespace ffi {
         return context.data_directory;
     }
 
+    const TrackQueryLimits &context_track_query_limits(const mc_context &context) {
+        return context.track_query_limits;
+    }
+
     mc_result submit_request(mc_context *context, std::function<mc_result()> work,
         RequestCompletion completion, void *user_data, mc_request_id *out_request) {
         return exception_barrier(nullptr, [&]() -> mc_result {
@@ -233,12 +239,24 @@ mc_result MC_CALL mc_context_create(
             return fail(MC_ERROR_BUSY, "A context is already active", out_error);
         }
 
+        /* Normalize limits once, including options from older callers. */
+        const auto default_limit = read_option(options, &mc_context_options::track_query_default_limit,
+            offsetof(mc_context_options, track_query_default_limit));
+        const auto max_limit = read_option(options, &mc_context_options::track_query_max_limit,
+            offsetof(mc_context_options, track_query_max_limit));
+        const auto max_fields = read_option(options, &mc_context_options::track_query_max_fields,
+            offsetof(mc_context_options, track_query_max_fields));
+        const auto row_cap = static_cast<size_t>(max_limit > 0 ? max_limit : MC_TRACK_QUERY_MAX_LIMIT);
+        const auto default_rows = static_cast<size_t>(default_limit > 0 ? default_limit : MC_TRACK_QUERY_DEFAULT_LIMIT);
+        const auto field_cap = static_cast<size_t>(max_fields > 0 ? max_fields : MC_TRACK_QUERY_MAX_FIELDS);
+
         /* Claim the process slot after allocations succeed. */
         std::unique_ptr<mc_context> context(new mc_context{
             std::string(data.length ? data.data : "", data.length),
             std::string(plugins.length ? plugins.data : "", plugins.length),
             read_option(options, &mc_context_options::wakeup, offsetof(mc_context_options, wakeup)),
-            read_option(options, &mc_context_options::wakeup_user_data, offsetof(mc_context_options, wakeup_user_data))
+            read_option(options, &mc_context_options::wakeup_user_data, offsetof(mc_context_options, wakeup_user_data)),
+            { std::min(default_rows, row_cap), row_cap, field_cap }
         });
         if (context_active.exchange(true)) {
             return fail(MC_ERROR_BUSY, "A context is already active", out_error);

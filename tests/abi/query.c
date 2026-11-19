@@ -8,6 +8,35 @@ void MC_CALL query_test_wakeup(void *data);
 int query_test_wait_for_wakeup(unsigned count);
 void query_test_release_wakeup(void);
 
+#define STRING_VIEW(text) { (text), sizeof(text) - 1 }
+#define MOOD_KEY "mood"
+#define COMMENT_KEY "comment"
+#define MISSING_KEY "missing"
+#define CUSTOM_KEY "custom'key"
+
+enum fixture_field {
+    fixture_mood,
+    fixture_title,
+    fixture_duration,
+    fixture_artist,
+    fixture_comment,
+    fixture_missing,
+    fixture_custom,
+    fixture_field_count
+};
+
+enum indexed_field {
+    indexed_title,
+    indexed_artist,
+    indexed_genre,
+    indexed_composer,
+    indexed_writer,
+    indexed_language,
+    indexed_field_count
+};
+
+static const char indexed_title_value[] = "Morning Light";
+
 struct completion {
     unsigned calls;
     mc_result result;
@@ -56,23 +85,23 @@ static int equals(mc_string_view view, const char *value) {
 }
 
 static int check_metadata(const mc_track_page *page) {
-    const mc_string_view empty = mc_track_page_get_string(page, 4, 4);
+    const mc_string_view empty = mc_track_page_get_string(page, mc_track_page_get_count(page), fixture_comment);
     return !empty.data && mc_track_page_get_count(page) == 1 &&
-        mc_track_page_get_id(page, 0) == 12 && mc_track_page_get_field_count(page) == 7 &&
-        equals(mc_track_page_get_field_name(page, 0), "mood") &&
-        equals(mc_track_page_get_field_name(page, 1), "title") &&
-        mc_track_page_get_value_count(page, 0, 0) == 2 &&
-        equals(mc_track_page_get_string(page, 0, 0), "Bright") &&
-        equals(mc_track_page_get_string_at(page, 0, 0, 1), "Calm") &&
-        !mc_track_page_get_string_at(page, 0, 0, 2).data &&
-        equals(mc_track_page_get_string(page, 0, 1), "Live% Two") &&
-        equals(mc_track_page_get_string(page, 0, 2), "42") &&
-        equals(mc_track_page_get_string(page, 0, 3), "The Band") &&
-        mc_track_page_get_value_count(page, 0, 4) == 1 &&
-        equals(mc_track_page_get_string(page, 0, 4), "") &&
-        mc_track_page_get_value_count(page, 0, 5) == 0 &&
-        !mc_track_page_get_string(page, 0, 5).data &&
-        equals(mc_track_page_get_string(page, 0, 6), "value");
+        mc_track_page_get_id(page, 0) == 12 && mc_track_page_get_field_count(page) == fixture_field_count &&
+        equals(mc_track_page_get_field_name(page, fixture_mood), MOOD_KEY) &&
+        equals(mc_track_page_get_field_name(page, fixture_title), MC_TRACK_FIELD_TITLE) &&
+        mc_track_page_get_value_count(page, 0, fixture_mood) == 2 &&
+        equals(mc_track_page_get_string(page, 0, fixture_mood), "Bright") &&
+        equals(mc_track_page_get_string_at(page, 0, fixture_mood, 1), "Calm") &&
+        !mc_track_page_get_string_at(page, 0, fixture_mood, 2).data &&
+        equals(mc_track_page_get_string(page, 0, fixture_title), "Live% Two") &&
+        equals(mc_track_page_get_string(page, 0, fixture_duration), "42") &&
+        equals(mc_track_page_get_string(page, 0, fixture_artist), "The Band") &&
+        mc_track_page_get_value_count(page, 0, fixture_comment) == 1 &&
+        equals(mc_track_page_get_string(page, 0, fixture_comment), "") &&
+        mc_track_page_get_value_count(page, 0, fixture_missing) == 0 &&
+        !mc_track_page_get_string(page, 0, fixture_missing).data &&
+        equals(mc_track_page_get_string(page, 0, fixture_custom), "value");
 }
 
 static int check_indexed_library(const char *directory) {
@@ -80,22 +109,33 @@ static int check_indexed_library(const char *directory) {
     options.data_directory.data = directory;
     options.data_directory.length = strlen(directory);
     options.wakeup = query_test_wakeup;
+    options.track_query_default_limit = -1;
+    options.track_query_max_fields = -1;
 
     mc_context *context = NULL;
     if (mc_context_create(&options, &context, NULL) != MC_OK) return 1;
 
-    const mc_string_view fields[] = {
-        { "title", 5 }, { "artist", 6 }, { "genre", 5 },
-        { "composer", 8 }, { "writer", 6 }, { "language", 8 }
+    const mc_string_view fields[indexed_field_count] = {
+        [indexed_title] = STRING_VIEW(MC_TRACK_FIELD_TITLE),
+        [indexed_artist] = STRING_VIEW(MC_TRACK_FIELD_ARTIST),
+        [indexed_genre] = STRING_VIEW(MC_TRACK_FIELD_GENRE),
+        [indexed_composer] = STRING_VIEW("composer"),
+        [indexed_writer] = STRING_VIEW("writer"),
+        [indexed_language] = STRING_VIEW("language"),
     };
     mc_track_query query = MC_TRACK_QUERY_DEFAULT;
-    query.search.data = "Morning Light";
-    query.search.length = sizeof("Morning Light") - 1;
+    query.search.data = indexed_title_value;
+    query.search.length = sizeof(indexed_title_value) - 1;
     query.fields = fields;
-    query.field_count = sizeof(fields) / sizeof(fields[0]);
+    query.field_count = indexed_field_count;
 
     struct completion result = { 0 };
     mc_request_id request = 0;
+    query.limit = MC_TRACK_QUERY_MAX_LIMIT + 1;
+    const int rejects_large_page = mc_library_query_tracks_async(
+        context, &query, completed, &result, &request) == MC_ERROR_INVALID_ARGUMENT && !request;
+    query.limit = 0;
+
     const int submitted = mc_library_query_tracks_async(context, &query, completed, &result, &request) == MC_OK;
     const int ready = submitted && query_test_wait_for_wakeup(1);
     query_test_release_wakeup();
@@ -104,18 +144,18 @@ static int check_indexed_library(const char *directory) {
 
     /* Check both indexed core fields and tags read from the generated media. */
     const mc_track_page *page = result.page;
-    const mc_string_view composer_a = mc_track_page_get_string_at(page, 0, 3, 0);
-    const mc_string_view composer_b = mc_track_page_get_string_at(page, 0, 3, 1);
+    const mc_string_view composer_a = mc_track_page_get_string_at(page, 0, indexed_composer, 0);
+    const mc_string_view composer_b = mc_track_page_get_string_at(page, 0, indexed_composer, 1);
     const int composers_match = (equals(composer_a, "Avery Lane") && equals(composer_b, "Casey Reed")) ||
         (equals(composer_b, "Avery Lane") && equals(composer_a, "Casey Reed"));
-    const int passed = dispatched && !context && result.calls == 1 && result.result == MC_OK &&
+    const int passed = rejects_large_page && dispatched && !context && result.calls == 1 && result.result == MC_OK &&
         mc_track_page_get_count(page) == 1 &&
-        equals(mc_track_page_get_string(page, 0, 0), "Morning Light") &&
-        equals(mc_track_page_get_string(page, 0, 1), "Fixture Artist") &&
-        equals(mc_track_page_get_string(page, 0, 2), "Ambient") &&
-        mc_track_page_get_value_count(page, 0, 3) == 2 && composers_match &&
-        mc_track_page_get_value_count(page, 0, 4) == 0 &&
-        equals(mc_track_page_get_string(page, 0, 5), "eng");
+        equals(mc_track_page_get_string(page, 0, indexed_title), indexed_title_value) &&
+        equals(mc_track_page_get_string(page, 0, indexed_artist), "Fixture Artist") &&
+        equals(mc_track_page_get_string(page, 0, indexed_genre), "Ambient") &&
+        mc_track_page_get_value_count(page, 0, indexed_composer) == 2 && composers_match &&
+        mc_track_page_get_value_count(page, 0, indexed_writer) == 0 &&
+        equals(mc_track_page_get_string(page, 0, indexed_language), "eng");
     mc_track_page_destroy(&result.page);
     if (!passed) fputs("indexed track query failed\n", stderr);
     return passed ? 0 : 1;
@@ -129,6 +169,9 @@ int main(int argc, char **argv) {
     options.data_directory.data = argv[1];
     options.data_directory.length = strlen(argv[1]);
     options.wakeup = query_test_wakeup;
+    options.track_query_default_limit = 3;
+    options.track_query_max_limit = 2;
+    options.track_query_max_fields = fixture_field_count;
     mc_context *context = NULL;
     if (mc_context_create(&options, &context, NULL) != MC_OK) return 1;
 
@@ -140,19 +183,37 @@ int main(int argc, char **argv) {
     mc_request_id second = 0;
     int passed = 0;
     char term[] = "Live%";
-    char mood[] = "mood";
-    const mc_string_view fields[] = {
-        { mood, sizeof(mood) - 1 }, { "title", 5 }, { "duration", 8 },
-        { "artist", 6 }, { "comment", 7 }, { "missing", 7 }, { "custom'key", 10 }
+    char mood[] = MOOD_KEY;
+    const mc_string_view fields[fixture_field_count + 1] = {
+        [fixture_mood] = STRING_VIEW(mood),
+        [fixture_title] = STRING_VIEW(MC_TRACK_FIELD_TITLE),
+        [fixture_duration] = STRING_VIEW(MC_TRACK_FIELD_DURATION),
+        [fixture_artist] = STRING_VIEW(MC_TRACK_FIELD_ARTIST),
+        [fixture_comment] = STRING_VIEW(COMMENT_KEY),
+        [fixture_missing] = STRING_VIEW(MISSING_KEY),
+        [fixture_custom] = STRING_VIEW(CUSTOM_KEY),
+        [fixture_field_count] = STRING_VIEW(MC_TRACK_FIELD_ID),
     };
     mc_track_query query = MC_TRACK_QUERY_DEFAULT;
+
+    /* Reject requests over the context caps before reading the field array. */
+    query.limit = 3;
+    if (mc_library_query_tracks_async(context, &query, completed, &warmup, &initial) != MC_ERROR_INVALID_ARGUMENT ||
+        initial) goto cleanup;
+    query.limit = 0;
+    query.fields = fields;
+    query.field_count = fixture_field_count + 1;
+    if (mc_library_query_tracks_async(context, &query, completed, &warmup, &initial) != MC_ERROR_INVALID_ARGUMENT ||
+        initial) goto cleanup;
+    query.fields = NULL;
+    query.field_count = 0;
 
     /* Hold the worker in the first wakeup to control when later queries begin. */
     if (mc_library_query_tracks_async(context, &query, completed, &warmup, &initial) != MC_OK ||
         !query_test_wait_for_wakeup(1)) goto cleanup;
 
     query.fields = fields;
-    query.field_count = sizeof(fields) / sizeof(fields[0]);
+    query.field_count = fixture_field_count;
     query.search.data = term;
     query.search.length = sizeof(term) - 1;
     query.offset = 1;
@@ -168,7 +229,7 @@ int main(int argc, char **argv) {
         !first || !second || first == second ||
         mc_request_cancel(context, second) != MC_OK || cancelled.calls) goto cleanup;
     if (mc_context_dispatch(context) != MC_OK ||
-        warmup.calls != 1 || warmup.result != MC_OK || !warmup.page || found.calls ||
+        warmup.calls != 1 || warmup.result != MC_OK || mc_track_page_get_count(warmup.page) != 2 || found.calls ||
         cancelled.calls != 1 || cancelled.result != MC_ERROR_CANCELLED || cancelled.page) goto cleanup;
     query_test_release_wakeup();
     if (!query_test_wait_for_wakeup(2) || mc_context_dispatch(context) != MC_OK ||
