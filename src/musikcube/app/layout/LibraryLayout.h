@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <musikcore/context.hpp>
+
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ShortcutsWindow.h>
 #include <cursespp/ITopLevelLayout.h>
@@ -61,7 +63,10 @@ namespace musik {
 
                 LibraryLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    musik::core::ILibraryPtr library,
+                    std::shared_ptr<musik::core::client::Context> apiContext);
+
+                void CancelSearchRequests();
 
                 cursespp::IWindowPtr FocusNext() override;
                 cursespp::IWindowPtr FocusPrev() override;
@@ -91,7 +96,7 @@ namespace musik {
                 void OnMainLayoutFocusTerminated(
                     LayoutBase::FocusDirection direction);
 
-                void InitializeWindows();
+                void InitializeWindows(const std::shared_ptr<musik::core::client::Context>& apiContext);
 
                 void ShowNowPlaying();
                 void ShowBrowse(const std::string& category = "");

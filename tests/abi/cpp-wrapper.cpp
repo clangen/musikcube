@@ -12,6 +12,7 @@ extern "C" void query_test_release_wakeup(void);
 
 namespace {
     using musik::core::client::Context;
+    using musik::core::client::Library;
     using musik::core::client::TrackPage;
 
     static_assert(!std::is_copy_constructible_v<Context> && !std::is_copy_assignable_v<Context>);
@@ -35,7 +36,7 @@ namespace {
 
         {
             mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-            options.data_directory = { directory, std::char_traits<char>::length(directory) };
+            Library library(directory);
             options.wakeup = query_test_wakeup;
             Context context(options);
             struct ReleaseWakeup {
@@ -51,7 +52,7 @@ namespace {
 
             /* Hold the worker after its first query so the second is cancelled while queued. */
             const TrackQuery query{ "Morning Light", { MC_TRACK_FIELD_TITLE, "composer" } };
-            const auto first = QueryTracks(context, query,
+            const auto first = QueryTracks(context, library, query,
                 [&](mc_result result, TrackPage received, std::string_view) {
                     ++completed;
                     on_dispatcher = std::this_thread::get_id() == dispatcher;
@@ -59,7 +60,7 @@ namespace {
                 });
             if (!first || !query_test_wait_for_wakeup(1)) return false;
 
-            const auto second = QueryTracks(context, query,
+            const auto second = QueryTracks(context, library, query,
                 [&](mc_result result, TrackPage received, std::string_view) {
                     ++cancelled;
                     cancelled_without_page = result == MC_ERROR_CANCELLED && !received;
@@ -90,14 +91,14 @@ namespace {
         unsigned stale = 0;
         mc_result result = MC_ERROR_INTERNAL;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-        options.data_directory = { directory, std::char_traits<char>::length(directory) };
+        Library library(directory);
         options.wakeup = query_test_wakeup;
         options.track_query_max_limit = 1;
         Context context(options);
 
         const auto search = [&](std::string_view text, size_t offset = 0) {
             const auto current = ++generation;
-            return QueryTracks(context, TrackQuery{ text, { MC_TRACK_FIELD_TITLE }, offset, 1 },
+            return QueryTracks(context, library, TrackQuery{ text, { MC_TRACK_FIELD_TITLE }, offset, 1 },
                 [&, current](mc_result status, TrackPage page, std::string_view) {
                     if (current != generation) {
                         ++stale;
@@ -112,7 +113,7 @@ namespace {
         /* A rejected request must release the wrapper's captured callback state. */
         const auto marker = std::make_shared<int>(0);
         try {
-            QueryTracks(context, TrackQuery{ "", {}, 0, 2 },
+            QueryTracks(context, library, TrackQuery{ "", {}, 0, 2 },
                 [marker](mc_result, TrackPage, std::string_view) {});
             return false;
         } catch (const Error &error) {
@@ -152,7 +153,7 @@ namespace {
         TrackResult tracks;
         TrackPage page;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-        options.data_directory = { directory, std::char_traits<char>::length(directory) };
+        Library library(directory);
         options.wakeup = query_test_wakeup;
         Context context(options);
         auto wakes = query_test_wakeup_count();
@@ -167,7 +168,7 @@ namespace {
         };
 
         /* Artist matching reaches records whose titles do not contain the term. */
-        OpenTrackSearch(context, TrackSearch{ "  fixture artist  " }, receive_tracks);
+        OpenTrackSearch(context, library, TrackSearch{ "  fixture artist  " }, receive_tracks);
         if (!dispatch() || tracks.Size() != 2 || !tracks.StartsAlbum(0) || tracks.StartsAlbum(1) ||
             tracks.AlbumDurationSeconds(0) != 2 || tracks.AlbumDurationSeconds(1) != 0) return false;
 
@@ -185,7 +186,7 @@ namespace {
             row.Album() != "Fixture Album" || row.Duration() != std::chrono::seconds(1)) return false;
 
         /* Title sort reverses the fixture's track-number order and drops grouping. */
-        OpenTrackSearch(context, TrackSearch{ "Light|Flight", MC_TRACK_SEARCH_REGEX, MC_TRACK_SEARCH_TITLE },
+        OpenTrackSearch(context, library, TrackSearch{ "Light|Flight", MC_TRACK_SEARCH_REGEX, MC_TRACK_SEARCH_TITLE },
             receive_tracks);
         if (!dispatch() || tracks.Size() != 2 || tracks.Id(0) != second || tracks.StartsAlbum(0)) return false;
 

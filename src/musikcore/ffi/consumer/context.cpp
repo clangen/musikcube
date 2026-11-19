@@ -29,12 +29,11 @@ namespace {
 }
 
 struct mc_context {
-    mc_context(std::string data, std::string plugins, mc_wakeup_fn signal, void *signal_data,
+    mc_context(std::string plugins, mc_wakeup_fn signal, void *signal_data,
         musik::core::ffi::TrackQueryLimits query_limits)
-        : data_directory(std::move(data)), plugin_directory(std::move(plugins)),
+        : plugin_directory(std::move(plugins)),
           track_query_limits(query_limits), wakeup(signal), wakeup_user_data(signal_data) {}
 
-    std::string data_directory;
     std::string plugin_directory;
     const musik::core::ffi::TrackQueryLimits track_query_limits;
 
@@ -164,10 +163,6 @@ namespace {
 
 namespace musik { namespace core { namespace ffi {
 
-    const std::string &context_data_directory(const mc_context &context) {
-        return context.data_directory;
-    }
-
     const TrackQueryLimits &context_track_query_limits(const mc_context &context) {
         return context.track_query_limits;
     }
@@ -225,12 +220,10 @@ mc_result MC_CALL mc_context_create(
             return fail(MC_ERROR_UNSUPPORTED, "Unsupported context flags", out_error);
         }
 
-        /* Default omitted roots and check that supplied paths can be copied. */
-        const auto data = read_option(options, &mc_context_options::data_directory,
-            offsetof(mc_context_options, data_directory));
+        /* Check that the optional plugin directory can be copied. */
         const auto plugins = read_option(options, &mc_context_options::plugin_directory,
             offsetof(mc_context_options, plugin_directory));
-        if (!valid_directory(data) || !valid_directory(plugins)) {
+        if (!valid_directory(plugins)) {
             return fail(MC_ERROR_INVALID_ARGUMENT, "Invalid directory view", out_error);
         }
 
@@ -252,7 +245,6 @@ mc_result MC_CALL mc_context_create(
 
         /* Claim the process slot after allocations succeed. */
         std::unique_ptr<mc_context> context(new mc_context{
-            std::string(data.length ? data.data : "", data.length),
             std::string(plugins.length ? plugins.data : "", plugins.length),
             read_option(options, &mc_context_options::wakeup, offsetof(mc_context_options, wakeup)),
             read_option(options, &mc_context_options::wakeup_user_data, offsetof(mc_context_options, wakeup_user_data)),

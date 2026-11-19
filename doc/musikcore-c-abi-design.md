@@ -357,7 +357,6 @@ typedef void (MC_CALL *mc_wakeup_fn)(void *user_data);
 typedef struct mc_context_options {
     uint32_t struct_size;
     uint32_t requested_abi_version;
-    mc_string_view data_directory;
     mc_string_view plugin_directory;
     uint32_t flags;
     mc_wakeup_fn wakeup;
@@ -458,8 +457,10 @@ Queries return immutable result pages rather than requiring many calls through
 live track objects. A query specifies the desired metadata fields and paging
 parameters:
 
-ABI0 reads `musik.db` from an explicit context data directory using a read-only
-SQLite connection. Pages contain visible tracks in ascending ID order. Search
+A library handle identifies a local database directory or a remote endpoint.
+Local queries read `musik.db` through a read-only SQLite connection. Requests,
+results, and track references retain the originating library identity after
+the caller releases its library handle. Remote query execution is pending. Pages contain visible tracks in ascending ID order. Search
 matches a literal case-sensitive title substring. By default, request up to 64 field
 names in result order. An empty field list requests `title`. Core fields
 use their existing metadata names and take precedence over tags of the same
@@ -494,6 +495,7 @@ typedef void (MC_CALL *mc_track_query_completion_fn)(
 
 MC_API mc_result MC_CALL mc_library_query_tracks_async(
     mc_context *context,
+    const mc_library *library,
     const mc_track_query *query,
     mc_track_query_completion_fn completion,
     void *user_data,

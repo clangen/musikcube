@@ -109,3 +109,18 @@ set_target_properties(musikcore_typed_track_queries_test PROPERTIES
 add_dependencies(musikcube_tests musikcore_typed_track_queries_test)
 add_test(NAME musikcore.abi.typed_track_queries COMMAND musikcore_typed_track_queries_test)
 set_tests_properties(musikcore.abi.typed_track_queries PROPERTIES LABELS "unit;abi")
+
+add_executable(musikcore_abi_library_switch_test abi/library-switch.cpp abi/query-support.cpp)
+target_include_directories(musikcore_abi_library_switch_test PRIVATE "${PROJECT_SOURCE_DIR}/src/musikcube")
+target_link_libraries(musikcore_abi_library_switch_test PRIVATE
+  musikcore_cpp_abi0 musikcore_abi0_sqlite Threads::Threads)
+set_target_properties(musikcore_abi_library_switch_test PROPERTIES
+  CXX_EXTENSIONS OFF
+  RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}"
+)
+set(library_switch_fixture "${CMAKE_CURRENT_BINARY_DIR}/bin/library-switch")
+file(MAKE_DIRECTORY "${library_switch_fixture}/origin" "${library_switch_fixture}/destination")
+add_test(NAME musikcore.abi.library_switch COMMAND musikcore_abi_library_switch_test
+  "${library_switch_fixture}/origin" "${library_switch_fixture}/destination")
+set_tests_properties(musikcore.abi.library_switch PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+add_dependencies(musikcube_tests musikcore_abi_library_switch_test)

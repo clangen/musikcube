@@ -70,7 +70,7 @@ namespace musik {
             static const int DebugLog               = First + 19;
             static const int LyricsLoaded           = First + 20;
             static const int FocusBrowseFilter      = First + 21;
-            static const int DispatchTrackSearch    = First + 22;
+            static const int DispatchCoreRequests    = First + 22;
             static const int LoadTrackSearchPage    = First + 23;
 
         }

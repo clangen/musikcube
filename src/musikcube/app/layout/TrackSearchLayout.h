@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <app/util/RequestGeneration.h>
+
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
 
@@ -48,6 +50,7 @@
 
 namespace musik { namespace core { namespace client {
     class Context;
+    class Library;
 } } }
 
 namespace musik {
@@ -61,7 +64,10 @@ namespace musik {
 
                 TrackSearchLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    musik::core::ILibraryPtr library,
+                    std::shared_ptr<musik::core::client::Context> apiContext);
+
+                void CancelSearchRequests();
 
                 virtual ~TrackSearchLayout();
 
@@ -106,18 +112,18 @@ namespace musik {
                 void ShowTrackSortOverlay();
 
                 musik::core::audio::PlaybackService& playback;
-                musik::core::ILibraryPtr library;
+                const musik::core::ILibraryPtr library;
                 MatchType matchType{ MatchType::Substring };
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextInput> input;
-                std::string localSearchDirectory;
-                size_t localSearchGeneration = 0;
+                RequestGeneration localSearchGeneration;
                 mc_request_id localSearchRequest = 0;
-                size_t pageGeneration = 0;
+                RequestGeneration pageGeneration;
                 struct PageCache;
                 std::unique_ptr<PageCache> pageCache;
-                std::unique_ptr<musik::core::client::Context> localSearch;
+                std::shared_ptr<musik::core::client::Context> apiContext;
+                std::unique_ptr<musik::core::client::Library> localLibrary;
         };
     }
 }

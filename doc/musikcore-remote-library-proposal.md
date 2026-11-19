@@ -28,7 +28,10 @@ result, and completion types for both backends.
    The app asks the result for a bounded window of metadata and group
    information. An uncached window uses an async typed range query.
    Remote reads carry a server snapshot token and the same range and
-   projection as local reads.
+   projection as local reads. The snapshot stores ordered IDs and album
+   boundaries. Page reads use those IDs, and no read transaction stays
+   open between requests. Bound snapshot storage per connection and
+   expire idle snapshots.
 4. The dispatcher delivers the same owned page on the UI thread. The
    view renders and caches it without branching on backend type. The
    page includes the identity of each row and enough group information
@@ -57,14 +60,32 @@ reference binds to its originating library and identity. Switching views
 never changes the target of an existing handle. A deleted track keeps
 its slot in an existing search and resolves as missing.
 
-Cancellation settles each accepted request once on the dispatcher. The
-remote backend asks the server to stop work when possible and discards
-late replies. Disconnect settles affected requests and invalidates
+The dispatcher settles each accepted request once, including when a
+reply, cancellation, and disconnect race. The remote backend asks the
+server to stop work when possible and discards late replies. The view
+applies results only to its current search generation. Disconnect
+settles affected requests and invalidates
 server snapshots. Materialized pages remain readable. Reconnect verifies
 library identity before reusing track references. The app opens a fresh
 search when a snapshot expires. Shutdown closes transports and drains
 callbacks before releasing wakeup state.
 [Context contract](../include/musikcore/context.h)
+
+## What the current app already protects
+
+Legacy remote search sends the ordered ID list to the client. Its row
+cache fetches metadata by ID, so deleting a track cannot shift later
+rows. The view checks that a query completion belongs to its current
+query. On a library switch, the app stops playback and rebuilds the
+library view.
+[Legacy row cache](../src/musikcore/library/track/TrackList.cpp)
+[Library switching](../src/musikcube/app/layout/MainLayout.cpp)
+
+The new API makes those guarantees hold for callers that retain a result
+or track reference across a library switch. Legacy playback resolves
+media through the active library. An API track reference resolves media
+through its originating library.
+[Legacy playback](../src/musikcore/audio/PlaybackService.cpp)
 
 ## Routing by operation
 
@@ -82,13 +103,15 @@ the library supplying the track.
 ## Migration and tests
 
 1. Move the context to the app and route local Track Search through a
-   library handle. Test switching libraries with requests in flight.
+   library handle. Covered by `musikcore.abi.library_switch` with two local databases.
 2. Give remote Track Search the same result and page contract. Negotiate
    snapshot support on connect and test older-server behavior.
 3. Run parity tests against a real loopback server with an indexed
    fixture. Cover order, grouping, field projection, deletion, distant
    jumps, cancellation, disconnect, and reconnect. Verify metadata and
-   media separately over their respective listeners.
+   media separately over their respective listeners. Hold a page reply
+   until after a switch or cancellation and verify that the stale page
+   cannot update the view or change which track an action targets.
 4. Switch production remote Track Search after those tests pass. Measure
    first viewport, cold and warm scrolling, request count, and bytes
    transferred before migrating browse, edits, indexing, and queue actions.

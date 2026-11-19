@@ -227,8 +227,37 @@ namespace musik { namespace core { namespace client {
         }
     }
 
+    /* Move-only owner of a library identity. Requests retain their own reference. */
+    class Library {
+    public:
+        explicit Library(std::string_view locator, mc_library_kind kind = MC_LIBRARY_LOCAL) {
+            mc_library_options options = MC_LIBRARY_OPTIONS_DEFAULT;
+            options.kind = kind;
+            options.locator = { locator.data(), locator.size() };
+            mc_library *handle = nullptr;
+            const auto result = mc_library_create(&options, &handle);
+            if (result != MC_OK) throw Error(result);
+            library.reset(handle);
+        }
+
+        Library(const Library &) = delete;
+        Library &operator=(const Library &) = delete;
+        Library(Library &&) noexcept = default;
+        Library &operator=(Library &&) noexcept = default;
+
+        /* Borrows the handle for the lifetime of this wrapper. */
+        const mc_library *Get() const noexcept { return library.get(); }
+
+    private:
+        /* Stateless deleter. Copying or moving it has no effect on ownership. */
+        struct Deleter {
+            void operator()(mc_library *handle) const noexcept { mc_library_destroy(&handle); }
+        };
+        std::unique_ptr<mc_library, Deleter> library;
+    };
+
     inline mc_request_id QueryTracks(
-        Context &context, const TrackQuery &query, TrackQueryCompletion completion) {
+        Context &context, const Library &library, const TrackQuery &query, TrackQueryCompletion completion) {
         const auto fields = detail::fieldViews(query.fields);
 
         mc_track_query options = MC_TRACK_QUERY_DEFAULT;
@@ -239,19 +268,19 @@ namespace musik { namespace core { namespace client {
         options.limit = query.limit;
 
         return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
-            return mc_library_query_tracks_async(context.Get(), &options,
+            return mc_library_query_tracks_async(context.Get(), library.Get(), &options,
                 detail::completeLibraryRequest<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
         });
     }
 
-    inline mc_request_id OpenTrackSearch(Context &context, const TrackSearch &search,
+    inline mc_request_id OpenTrackSearch(Context &context, const Library &library, const TrackSearch &search,
         TrackSearchCompletion completion) {
         mc_track_search options = MC_TRACK_SEARCH_DEFAULT;
         options.text = { search.text.data(), search.text.size() };
         options.mode = search.mode;
         options.order = search.order;
         return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
-            return mc_library_open_track_search_async(context.Get(), &options,
+            return mc_library_open_track_search_async(context.Get(), library.Get(), &options,
                 detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
         });
     }

@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <musikcore/context.hpp>
+
 #include <cursespp/App.h>
 #include <cursespp/AppLayout.h>
 #include <cursespp/TextInput.h>
@@ -52,6 +54,7 @@
 
 namespace musik {
     namespace cube {
+        class LibraryLayout;
         class MainLayout : public cursespp::AppLayout {
             public:
                 using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
@@ -97,7 +100,7 @@ namespace musik {
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<cursespp::TextLabel> topBanner;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout;
-                std::shared_ptr<cursespp::LayoutBase> libraryLayout;
+                std::shared_ptr<LibraryLayout> libraryLayout;
                 std::shared_ptr<cursespp::LayoutBase> libraryNotConnectedLayout;
                 std::shared_ptr<cursespp::LayoutBase> settingsLayout;
                 std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;
@@ -106,6 +109,7 @@ namespace musik {
                 MasterLibraryPtr library;
                 bool shortcutsFocused;
                 int syncUpdateCount;
+                std::shared_ptr<musik::core::client::Context> apiContext;
                 UpdateCheck updateCheck;
         };
     }

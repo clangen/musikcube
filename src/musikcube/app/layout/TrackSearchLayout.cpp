@@ -41,8 +41,8 @@
 
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/LocalLibrary.h>
-#include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/track/LibraryTrack.h>
+#include <musikcore/library/track/TrackPageCache.h>
 #include <musikcore/library.hpp>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -71,7 +71,6 @@ namespace components = musik::core::prefs::components;
 
 constexpr int kSearchHeight = 3;
 constexpr int kRequeryIntervalMs = 300;
-constexpr size_t kSearchCachePages = 3;
 constexpr int kSearchPagePollIntervalMs = 2;
 
 /* Owns the search snapshot and its bounded window. Neither copyable nor movable. */
@@ -81,7 +80,7 @@ struct TrackSearchLayout::PageCache {
     PageCache& operator=(const PageCache&) = delete;
 
     client::TrackResult result;
-    std::map<size_t, client::TrackPage> pages;
+    TrackPageCache pages;
     size_t pageSize = 1;
     size_t firstRow = 0;
     size_t lastRow = 0;
@@ -98,17 +97,14 @@ static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preference
     return kTrackListOrderByToDisplayKey.count(sort) ? sort : TrackSortType::Album;
 }
 
-static std::shared_ptr<LocalLibrary> getLocalLibrary(const ILibraryPtr& library) {
-    const auto master = std::dynamic_pointer_cast<MasterLibrary>(library);
-    return std::dynamic_pointer_cast<LocalLibrary>(master ? master->Wrapped() : library);
-}
-
 TrackSearchLayout::TrackSearchLayout(
     musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library)
+    musik::core::ILibraryPtr library,
+    std::shared_ptr<musik::core::client::Context> apiContext)
 : LayoutBase()
 , playback(playback)
-, library(library) {
+, library(library)
+, apiContext(std::move(apiContext)) {
     this->prefs = Preferences::ForComponent(components::Settings);
     this->library->Indexer()->Finished.connect(this, &TrackSearchLayout::OnIndexerFinished);
     this->InitializeWindows();
@@ -117,9 +113,7 @@ TrackSearchLayout::TrackSearchLayout(
 TrackSearchLayout::~TrackSearchLayout() {
     /* The base layout can redraw child windows while releasing them. */
     this->trackList->DetachRowSource();
-    this->CancelLocalSearch();
-    this->ClearPages();
-    this->localSearch.reset();
+    this->CancelSearchRequests();
     this->SaveSession();
 }
 
@@ -206,47 +200,29 @@ void TrackSearchLayout::Requery() {
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->CancelLocalSearch();
 
-    const auto local = getLocalLibrary(this->library);
+    const auto local = std::dynamic_pointer_cast<LocalLibrary>(this->library);
     if (!local) {
         /* Remote searches still use the library's query protocol. */
-        if (this->pageCache) {
-            this->ClearPages();
-            this->pageCache.reset();
-            this->trackList->Reset();
-        }
-        this->localSearch.reset();
         this->trackList->Requery(
             std::make_shared<SearchTrackListQuery>(this->library, this->matchType, filter, sortOrder));
         return;
     }
 
     try {
-        const auto directory = local->GetLibraryDirectory();
-        /* Bind the context to the active local database and wake the UI thread. */
-        if (!this->localSearch || this->localSearchDirectory != directory) {
-            this->ClearPages();
-            this->pageCache.reset();
-            this->trackList->Reset();
-            this->localSearch.reset();
-            mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-            options.data_directory = { directory.data(), directory.size() };
-            options.wakeup = [](void *data) {
-                static_cast<TrackSearchLayout *>(data)->Post(message::DispatchTrackSearch);
-            };
-            options.wakeup_user_data = this;
-            this->localSearch = std::make_unique<client::Context>(options);
-            this->localSearchDirectory = directory;
+        if (!this->localLibrary) {
+            this->localLibrary = std::make_unique<client::Library>(local->GetLibraryDirectory());
         }
 
         const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
-        const auto generation = this->localSearchGeneration;
+        const auto generation = this->localSearchGeneration.Capture();
         const auto hash = std::hash<std::string>{}(filter);
-        this->localSearchRequest = client::OpenTrackSearch(*this->localSearch,
+        this->localSearchRequest = client::OpenTrackSearch(*this->apiContext, *this->localLibrary,
             client::TrackSearch{ filter, mode, static_cast<mc_track_search_order>(sortOrder) },
-            [this, generation, local, sortOrder, hash](mc_result status, client::TrackResult result, std::string_view) {
-                if (generation != this->localSearchGeneration) return;
+            [this, generation, sortOrder, hash](mc_result status, client::TrackResult result, std::string_view) {
+                /* Cancellation cannot retract a completion already queued for dispatch. */
+                if (!generation.IsCurrent()) return;
                 this->localSearchRequest = 0;
-                if (status != MC_OK || getLocalLibrary(this->library) != local) return;
+                if (status != MC_OK) return;
 
                 auto headers = std::make_shared<std::set<size_t>>();
                 auto durations = std::make_shared<std::map<size_t, size_t>>();
@@ -281,22 +257,27 @@ void TrackSearchLayout::Requery() {
     }
 }
 
+void TrackSearchLayout::CancelSearchRequests() {
+    this->CancelLocalSearch();
+    this->ClearPages();
+}
+
 void TrackSearchLayout::CancelLocalSearch() {
-    ++this->localSearchGeneration;
+    this->localSearchGeneration.Invalidate();
     if (this->localSearchRequest) {
-        this->localSearch->Cancel(this->localSearchRequest);
+        this->apiContext->Cancel(this->localSearchRequest);
         this->localSearchRequest = 0;
     }
 }
 
 void TrackSearchLayout::ClearPages() {
-    ++this->pageGeneration;
+    this->pageGeneration.Invalidate();
     if (!this->pageCache) return;
     auto& cache = *this->pageCache;
     App::Instance().SetInputPollInterval(0);
-    if (cache.request) this->localSearch->Cancel(cache.request);
+    if (cache.request) this->apiContext->Cancel(cache.request);
     cache.request = 0;
-    cache.pages.clear();
+    cache.pages.Clear();
     cache.failed.reset();
 }
 
@@ -329,12 +310,12 @@ void TrackSearchLayout::LoadPage() {
     const auto first = (cache.firstRow / size) * size;
     const auto last = (std::min(cache.lastRow, count - 1) / size) * size;
     auto next = first;
-    while (next <= last && cache.pages.count(next)) next += size;
+    while (next <= last && cache.pages.Find(next)) next += size;
 
     /* Serve missing visible rows before fetching one page in the scroll direction. */
     if (cache.request) {
         if (next <= last && (cache.pending < first || cache.pending > last)) {
-            this->localSearch->Cancel(cache.request);
+            this->apiContext->Cancel(cache.request);
         }
         return;
     }
@@ -342,34 +323,24 @@ void TrackSearchLayout::LoadPage() {
         if (!cache.forward && first == 0) return;
         next = cache.forward ? last + size : first - size;
     }
-    if (next >= count || cache.pages.count(next) || cache.failed == next) return;
+    if (next >= count || cache.pages.Find(next) || cache.failed == next) return;
 
-    const auto generation = this->pageGeneration;
+    const auto generation = this->pageGeneration.Capture();
     cache.pending = next;
     App::Instance().SetInputPollInterval(kSearchPagePollIntervalMs);
-    cache.request = client::ReadTracks(*this->localSearch, cache.result, client::TrackRange{
+    cache.request = client::ReadTracks(*this->apiContext, cache.result, client::TrackRange{
         next, size, { MC_TRACK_FIELD_ID, MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST,
             MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING } },
         [this, generation, next](mc_result status, client::TrackPage page, std::string_view) {
-            if (generation != this->pageGeneration) return;
+            if (!generation.IsCurrent()) return;
             auto& cache = *this->pageCache;
             cache.request = 0;
             if (status == MC_OK) {
-                /* Evict the page farthest from the visible range. */
-                if (cache.pages.size() >= kSearchCachePages) {
-                    const auto firstPage = (cache.firstRow / cache.pageSize) * cache.pageSize;
-                    const auto lastPage = (cache.lastRow / cache.pageSize) * cache.pageSize;
-                    const auto age = [&](size_t offset) {
-                        if (offset < firstPage) return firstPage - offset;
-                        return offset > lastPage ? offset - lastPage : 0;
-                    };
-                    const auto victim = std::max_element(cache.pages.begin(), cache.pages.end(),
-                        [&](const auto& a, const auto& b) { return age(a.first) < age(b.first); });
-                    if (age(next) <= age(victim->first)) cache.pages.erase(victim);
-                }
-                if (cache.pages.size() < kSearchCachePages) {
-                    cache.pages.emplace(next, std::move(page));
-                    if (next <= cache.lastRow && cache.firstRow < next + cache.pageSize) this->trackList->Redraw();
+                const auto firstPage = (cache.firstRow / cache.pageSize) * cache.pageSize;
+                const auto lastPage = (cache.lastRow / cache.pageSize) * cache.pageSize;
+                if (cache.pages.Store(next, std::move(page), firstPage, lastPage) &&
+                    firstPage <= next && next <= lastPage) {
+                    this->trackList->Redraw();
                 }
             } else if (status != MC_ERROR_CANCELLED) {
                 cache.failed = next;
@@ -382,11 +353,11 @@ TrackPtr TrackSearchLayout::DisplayTrack(size_t row) {
     const auto& cache = *this->pageCache;
     auto track = std::make_shared<LibraryTrack>(cache.result.Id(row), this->library);
     const auto offset = (row / cache.pageSize) * cache.pageSize;
-    const auto page = cache.pages.find(offset);
-    if (page == cache.pages.end()) return track;
+    const auto* page = cache.pages.Find(offset);
+    if (!page) return track;
 
     /* Adapt only the rendered row. The page remains the sole display cache. */
-    const auto metadata = page->second.Track(row - offset);
+    const auto metadata = page->Track(row - offset);
     if (metadata.Value(MC_TRACK_FIELD_ID).data()) {
         for (const auto* key : { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM,
                  MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING }) {
@@ -404,9 +375,6 @@ void TrackSearchLayout::PlayFromTop() {
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
     if (message.Type() == message::RequeryTrackList) {
         if (this->IsVisible()) this->Requery();
-    }
-    else if (message.Type() == message::DispatchTrackSearch) {
-        if (this->localSearch) this->localSearch->Dispatch();
     }
     else if (message.Type() == message::LoadTrackSearchPage) {
         this->LoadPage();

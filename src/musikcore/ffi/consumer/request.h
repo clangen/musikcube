@@ -15,7 +15,6 @@ namespace musik { namespace core { namespace ffi {
         size_t max_fields;
     };
 
-    const std::string &context_data_directory(const mc_context &context);
     const TrackQueryLimits &context_track_query_limits(const mc_context &context);
 
     /* Work owns its inputs because cancellation can dispatch before the worker returns. */

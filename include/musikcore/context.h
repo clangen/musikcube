@@ -22,8 +22,6 @@ typedef struct mc_context_options {
     uint32_t struct_size;
     /* Requested ABI version. Zero selects the current version. */
     uint32_t requested_abi_version;
-    /* UTF-8 data root, copied at creation. An empty view selects the default root. */
-    mc_string_view data_directory;
     /* UTF-8 plugin root, copied at creation. An empty view selects the default root. */
     mc_string_view plugin_directory;
     /* Reserved for context options. Must be zero. */
@@ -41,7 +39,7 @@ typedef struct mc_context_options {
 } mc_context_options;
 
 #define MC_CONTEXT_OPTIONS_DEFAULT \
-    { sizeof(mc_context_options), 0, { NULL, 0 }, { NULL, 0 }, 0, NULL, NULL, 0, 0, 0 }
+    { sizeof(mc_context_options), 0, { NULL, 0 }, 0, NULL, NULL, 0, 0, 0 }
 
 /* Null options use defaults. Callers own directory storage and may release it on return. */
 /* Output slots must not already own handles. A second context returns MC_ERROR_BUSY. */

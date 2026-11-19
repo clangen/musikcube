@@ -228,6 +228,27 @@ internal adapters preserve existing behavior behind the façade.
 The legacy path remains available to the normal build until the new public
 surface covers the required application behavior.
 
+#### Library routing and identity
+
+The app owns one context for request dispatch, cancellation, and
+shutdown. An explicit library handle selects the local or remote backend.
+Consumer operations pass typed queries through that handle and return the
+same owned results for either backend. Discovery, connection settings, and
+library selection expose the backend distinction.
+
+Search results and track identities stay bound to their originating library.
+The backend retains a stable result order for page reads. A deleted track
+keeps its position, and a remote disconnect expires affected snapshots
+while leaving materialized pages readable. Every accepted request settles
+once on the dispatcher, including when a reply races with cancellation or
+disconnect. Catalog operations target the library handle, and playback
+uses the originating library to resolve media for the client.
+
+Prove local and remote Track Search parity before widening the migration to
+other library views. The remote routing proposal describes the data flow
+and compatibility rules.
+[Remote library routing proposal](musikcore-remote-library-proposal.md)
+
 ### Stage D: final topology
 
 After musikcube and in-tree plugins migrate:

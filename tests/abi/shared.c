@@ -26,11 +26,11 @@ static int check_context_lifecycle(void) {
     if (mc_context_create(&options, &context, NULL) != MC_ERROR_UNSUPPORTED || context) goto cleanup;
 
     options.requested_abi_version = MC_ABI_VERSION;
-    options.data_directory.length = 1;
+    options.plugin_directory.length = 1;
     if (mc_context_create(&options, &context, NULL) != MC_ERROR_INVALID_ARGUMENT || context) goto cleanup;
 
     /* Older callers omit fields past the reported size. */
-    options.struct_size = offsetof(mc_context_options, data_directory);
+    options.struct_size = offsetof(mc_context_options, plugin_directory);
     if (mc_context_create(&options, &context, &error) != MC_OK || !context || error) goto cleanup;
     if (mc_context_create(NULL, &second, &error) != MC_ERROR_BUSY ||
         second || mc_error_get_code(error) != MC_ERROR_BUSY) goto cleanup;

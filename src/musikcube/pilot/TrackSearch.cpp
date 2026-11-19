@@ -1,4 +1,5 @@
 #include <musikcore/musikcore.hpp>
+#include <musikcore/library/track/TrackPageCache.h>
 
 #include <cursespp/curses_config.h>
 #include <algorithm>
@@ -9,7 +10,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
-#include <map>
 #include <poll.h>
 #include <stdexcept>
 #include <string>
@@ -17,6 +17,7 @@
 
 namespace {
     using namespace musik::core::client;
+    using musik::core::library::TrackPageCache;
     using Clock = std::chrono::steady_clock;
     constexpr auto debounce = std::chrono::milliseconds(300);
     constexpr size_t viewport = 8;
@@ -37,7 +38,7 @@ namespace {
 
     /* Copyable and movable. Limits are measured in viewports. */
     struct CacheOptions {
-        size_t capacity = 3;
+        size_t capacity = TrackPageCache::DefaultCapacity;
         size_t prefetch = 1;
     };
 
@@ -105,9 +106,8 @@ namespace {
         Terminal &operator=(const Terminal &) = delete;
     };
 
-    mc_context_options options(std::string_view directory, Wakeup &wakeup) {
+    mc_context_options options(Wakeup &wakeup) {
         mc_context_options value = MC_CONTEXT_OPTIONS_DEFAULT;
-        value.data_directory = { directory.data(), directory.size() };
         value.wakeup = Wakeup::Signal;
         value.wakeup_user_data = &wakeup;
         return value;
@@ -117,7 +117,7 @@ namespace {
     class SearchView {
     public:
         SearchView(std::string_view directory, CacheOptions cache, bool diagnostics)
-            : cache(cache), diagnostics(diagnostics), context(options(directory, wakeup)) {}
+            : cache(cache), diagnostics(diagnostics), pages(cache.capacity), context(options(wakeup)), library(directory) {}
         ~SearchView() { context.Shutdown(); }
         SearchView(const SearchView &) = delete;
         SearchView &operator=(const SearchView &) = delete;
@@ -189,7 +189,7 @@ namespace {
                     ClearSelection();
                     forward = offset > previous;
                     prefetchFailed = false;
-                    lastMove = pages.count(offset) ? "cache hit" : "cache miss";
+                    lastMove = pages.Find(offset) ? "cache hit" : "cache miss";
                 }
             }
         }
@@ -200,7 +200,7 @@ namespace {
             if (searchRequest) context.Cancel(searchRequest);
             if (windowRequest) context.Cancel(windowRequest);
             result = {};
-            pages.clear();
+            pages.Clear();
             offset = 0;
             selected = 0;
             ClearSelection();
@@ -210,7 +210,7 @@ namespace {
             error.clear();
 
             const auto current = generation;
-            searchRequest = OpenTrackSearch(context, TrackSearch{ filter },
+            searchRequest = OpenTrackSearch(context, library, TrackSearch{ filter },
                 [this, current](mc_result status, TrackResult tracks, std::string_view message) {
                     if (current != generation) return;
                     searchRequest = 0;
@@ -254,27 +254,11 @@ namespace {
             return std::min(cache.prefetch, available);
         }
 
-        void CachePage(size_t position, TrackPage page) {
-            if (cache.capacity == 1 && position != offset && pages.count(offset)) return;
-            if (pages.size() == cache.capacity) {
-                /* Keep the visible page and the planned directional prefetch range. */
-                const auto edge = Ahead(PrefetchCount());
-                const auto score = [&](size_t key) {
-                    return std::make_pair(key < std::min(edge, offset) || key > std::max(edge, offset),
-                        key > offset ? key - offset : offset - key);
-                };
-                auto victim = std::max_element(pages.begin(), pages.end(),
-                    [&](const auto &a, const auto &b) { return score(a.first) < score(b.first); });
-                pages.erase(victim);
-            }
-            pages.emplace(position, std::move(page));
-        }
-
         void RequestWindow() {
             if (!result || offset >= result.Size() || !error.empty()) return;
 
             /* A visible miss takes precedence over speculative work for another page. */
-            const bool visibleMissing = !pages.count(offset);
+            const bool visibleMissing = !pages.Find(offset);
             if (windowRequest) {
                 if (visibleMissing && speculative && pendingOffset != offset) context.Cancel(windowRequest);
                 return;
@@ -285,7 +269,7 @@ namespace {
                 if (prefetchFailed) return;
                 const auto count = PrefetchCount();
                 size_t distance = 1;
-                while (distance <= count && pages.count(Ahead(distance))) ++distance;
+                while (distance <= count && pages.Find(Ahead(distance))) ++distance;
                 if (distance > count) return;
                 pendingOffset = Ahead(distance);
             }
@@ -304,7 +288,8 @@ namespace {
                             prefetchFailed = true;
                         }
                     } else {
-                        CachePage(requestedOffset, std::move(page));
+                        const auto edge = Ahead(PrefetchCount());
+                        pages.Store(requestedOffset, std::move(page), std::min(offset, edge), std::max(offset, edge));
                     }
                 });
         }
@@ -318,8 +303,8 @@ namespace {
                 mvaddstr(3, 0, "tracks (sorted by album)");
                 if (!error.empty()) {
                     mvaddnstr(4, 0, error.c_str(), COLS - 1);
-                } else if (const auto found = pages.find(offset); found != pages.end()) {
-                    const auto &page = found->second;
+                } else if (const auto* found = pages.Find(offset)) {
+                    const auto &page = *found;
                     for (size_t row = 0; row < page.Size() && row + 5 < static_cast<size_t>(LINES); ++row) {
                         const auto title = page.Track(row).Title();
                         mvprintw(static_cast<int>(row + 5), 0, "%c%c %.*s",
@@ -335,7 +320,7 @@ namespace {
                 }
             }
             if (diagnostics && opened) {
-                if (PrefetchCount() && pages.count(Ahead(1))) mvaddstr(13, 0, "adjacent page ready");
+                if (PrefetchCount() && pages.Find(Ahead(1))) mvaddstr(13, 0, "adjacent page ready");
                 if (lastMove) mvaddstr(14, 0, lastMove);
             }
             if (!selectionStatus.empty()) mvaddnstr(15, 0, selectionStatus.c_str(), COLS - 1);
@@ -367,8 +352,9 @@ namespace {
         std::string error;
         std::string selectionStatus;
         TrackResult result;
-        std::map<size_t, TrackPage> pages;
+        TrackPageCache pages;
         Context context;
+        Library library;
     };
 }
 

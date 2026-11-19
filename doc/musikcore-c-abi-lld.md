@@ -579,6 +579,22 @@ recorded before the experimental shared façade is introduced.
   strings, snapshots, invalidation, and cancellation.
 - [ ] **LIB-011** Add SQLite integration tests with isolated databases.
 - [ ] **LIB-012** Add scrolling/cache pressure tests without sleeps.
+- [x] **LIB-013** Move dispatch and shutdown to one app-owned context.
+  Add an owning C++ wrapper around the library handle and bind search
+  results and track references to the originating library. Test switching
+  between libraries with a request in flight in `musikcore.abi.library_switch`.
+- [ ] **LIB-014** Route Track Search and projected range reads through the
+  selected library's typed query dispatcher. Add negotiated remote
+  snapshots with bounded storage and expiry. Preserve ordered IDs and
+  album boundaries, including when a track is deleted between reads.
+- [ ] **LIB-015** Add a real loopback contract test with a controllably
+  delayed page reply. Race the reply with cancellation, library switching,
+  and disconnect. Assert exactly one completion, no stale repaint, and
+  no change to the target of a retained track reference. Cover reconnect
+  and older-server capability handling.
+- [ ] **LIB-016** Route playback media through the track's originating
+  library and verify that playing from a search position preserves the
+  snapshot order. Verify remote search and streaming separately.
 - [ ] **CPP-001** Create initial RAII C++ context, event, request, page, and list
   wrappers.
   Context, query submission, and page ownership are implemented.
@@ -639,6 +655,10 @@ that need it. Remote searches still use the library query protocol.
 - [ ] **GATE-500** The pilot musikcube view uses ABI0 exclusively, scrolling
   remains nonblocking, metadata pages remain stable, and benchmark regression
   is within an agreed threshold.
+- [ ] **GATE-510** Production Track Search uses the same wrapper for local
+  and remote libraries. The library-switch and loopback contract tests pass
+  before migrating other library views.
+  [Remote library routing proposal](musikcore-remote-library-proposal.md)
 
 ### Phase 6: decoder SDK vertical slice
 

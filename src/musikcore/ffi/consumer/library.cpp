@@ -9,6 +9,7 @@
 #include <sqlite3.h>
 
 #include <algorithm>
+#include <cstring>
 #include <map>
 #include <memory>
 #include <utility>
@@ -18,8 +19,17 @@ namespace query = musik::core::library::query;
 
 struct mc_track_page : query::ProjectedTrackPage {};
 
+struct LibraryIdentity {
+    mc_library_kind kind;
+    std::string locator;
+};
+
+struct mc_library {
+    std::shared_ptr<const LibraryIdentity> identity;
+};
+
 struct TrackResultData : query::TrackSearchRows {
-    std::string path;
+    std::shared_ptr<const LibraryIdentity> library;
 };
 
 struct mc_track_result {
@@ -27,7 +37,7 @@ struct mc_track_result {
 };
 
 struct mc_track_ref {
-    std::string path;
+    std::shared_ptr<const LibraryIdentity> library;
     int64_t id;
 };
 
@@ -76,28 +86,55 @@ namespace {
         return MC_OK;
     }
 
-    mc_result openSearch(const std::string &path, const query::TrackSearchQuery &query,
+    mc_result openSearch(const std::shared_ptr<const LibraryIdentity> &library, const query::TrackSearchQuery &query,
         std::unique_ptr<mc_track_result> &output) {
-        const auto database = openDatabase(path);
+        const auto database = openDatabase(library->locator);
         if (!database || musik::core::db::SqliteExtensions::Register(database.get()) != SQLITE_OK) {
             return MC_ERROR_IO;
         }
         auto result = std::make_shared<TrackResultData>();
         if (!query.Run(database.get(), *result)) return MC_ERROR_IO;
-        result->path = path;
+        result->library = library;
         output.reset(new mc_track_result{ std::move(result) });
         return MC_OK;
     }
 
 }
 
+mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_library **out_library) {
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!out_library || *out_library || !options || options->struct_size < sizeof(options->struct_size)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        const auto kind = read_option(options, &mc_library_options::kind, offsetof(mc_library_options, kind));
+        const auto locator = read_option(options, &mc_library_options::locator, offsetof(mc_library_options, locator));
+        if (kind != MC_LIBRARY_LOCAL && kind != MC_LIBRARY_REMOTE) return MC_ERROR_UNSUPPORTED;
+        if (!locator.data || !locator.length || std::memchr(locator.data, '\0', locator.length)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+
+        std::string target(locator.data, locator.length);
+        if (kind == MC_LIBRARY_LOCAL) target += "/musik.db";
+        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{
+            static_cast<mc_library_kind>(kind), std::move(target) });
+        *out_library = new mc_library{ std::move(identity) };
+        return MC_OK;
+    });
+}
+
+void MC_CALL mc_library_destroy(mc_library **library) {
+    if (!library) return;
+    delete *library;
+    *library = nullptr;
+}
+
 mc_result MC_CALL mc_library_query_tracks_async(
-    mc_context *context, const mc_track_query *query, mc_track_query_completion_fn completion,
+    mc_context *context, const mc_library *library, const mc_track_query *query, mc_track_query_completion_fn completion,
     void *user_data, mc_request_id *out_request) {
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
         *out_request = 0;
-        if (!context || !query || !completion || query->struct_size < sizeof(query->struct_size)) {
+        if (!context || !library || !query || !completion || query->struct_size < sizeof(query->struct_size)) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
 
@@ -115,28 +152,29 @@ mc_result MC_CALL mc_library_query_tracks_async(
 
         const auto offset = read_option(query, &mc_track_query::offset, offsetof(mc_track_query, offset));
         const auto limit = read_option(query, &mc_track_query::limit, offsetof(mc_track_query, limit));
-        const auto &root = context_data_directory(*context);
-        if (offset > INT64_MAX || limit > limits.max_limit || root.empty()) return MC_ERROR_INVALID_ARGUMENT;
+        if (offset > INT64_MAX || limit > limits.max_limit) return MC_ERROR_INVALID_ARGUMENT;
+        if (library->identity->kind != MC_LIBRARY_LOCAL) return MC_ERROR_UNSUPPORTED;
         const auto page_limit = limit ? limit : limits.default_limit;
 
         /* Snapshot inputs before submission. Cancellation leaves worker-owned data alone. */
-        const std::string path = root + "/musik.db";
+        const auto identity = library->identity;
         const std::string term(search.length ? search.data : "", search.length);
         std::vector<std::string> names;
         if (!copyFields(fields, count, limits.max_fields, names)) return MC_ERROR_INVALID_ARGUMENT;
         return submitLibraryRequest<mc_track_page>(context,
             [=](std::unique_ptr<mc_track_page> &page) {
-                return readPage(path, { term, names, offset, page_limit }, page);
+                return readPage(identity->locator, { term, names, offset, page_limit }, page);
             }, completion, user_data, out_request);
     });
 }
 
-mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const mc_track_search *search,
+mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const mc_library *library,
+    const mc_track_search *search,
     mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request) {
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
         *out_request = 0;
-        if (!context || !search || !completion || search->struct_size < sizeof(search->struct_size)) {
+        if (!context || !library || !search || !completion || search->struct_size < sizeof(search->struct_size)) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
 
@@ -144,14 +182,14 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
         const auto mode = read_option(search, &mc_track_search::mode, offsetof(mc_track_search, mode));
         const auto order = read_option(search, &mc_track_search::order, offsetof(mc_track_search, order));
         if (mode > MC_TRACK_SEARCH_REGEX || order > MC_TRACK_SEARCH_GENRE) return MC_ERROR_UNSUPPORTED;
-        const auto &root = context_data_directory(*context);
-        if ((text.length && !text.data) || root.empty()) return MC_ERROR_INVALID_ARGUMENT;
+        if (text.length && !text.data) return MC_ERROR_INVALID_ARGUMENT;
+        if (library->identity->kind != MC_LIBRARY_LOCAL) return MC_ERROR_UNSUPPORTED;
 
-        const std::string path = root + "/musik.db";
+        const auto identity = library->identity;
         const std::string term(text.length ? text.data : "", text.length);
         return submitLibraryRequest<mc_track_result>(context,
             [=](std::unique_ptr<mc_track_result> &result) {
-                return openSearch(path, { term, mode == MC_TRACK_SEARCH_REGEX,
+                return openSearch(identity, { term, mode == MC_TRACK_SEARCH_REGEX,
                     static_cast<query::TrackSortType>(order) }, result);
             }, completion, user_data, out_request);
     });
@@ -198,12 +236,11 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
 
         /* Keep the snapshot alive even when the caller releases its handle. */
         const auto data = tracks->data;
-        if (data->path != context_data_directory(*context) + "/musik.db") return MC_ERROR_INVALID_ARGUMENT;
         const auto start = std::min(offset, data->ids.size());
         const auto size = std::min(limit ? limit : limits.default_limit, data->ids.size() - start);
         return submitLibraryRequest<mc_track_page>(context,
             [=](std::unique_ptr<mc_track_page> &page) -> mc_result {
-                if (size) return readPage(data->path, { "", names, 0, size, data->ids.data() + start }, page);
+                if (size) return readPage(data->library->locator, { "", names, 0, size, data->ids.data() + start }, page);
                 page.reset(new mc_track_page);
                 page->names = names;
                 return MC_OK;
@@ -222,7 +259,7 @@ mc_result MC_CALL mc_track_result_get_ref(const mc_track_result *tracks, size_t 
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_track || *out_track || !tracks) return MC_ERROR_INVALID_ARGUMENT;
         if (row >= tracks->data->ids.size()) return MC_ERROR_NOT_FOUND;
-        *out_track = new mc_track_ref{ tracks->data->path, tracks->data->ids[row] };
+        *out_track = new mc_track_ref{ tracks->data->library, tracks->data->ids[row] };
         return MC_OK;
     });
 }
@@ -243,8 +280,7 @@ mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_re
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
         *out_request = 0;
-        if (!context || !track || !completion ||
-            track->path != context_data_directory(*context) + "/musik.db") return MC_ERROR_INVALID_ARGUMENT;
+        if (!context || !track || !completion) return MC_ERROR_INVALID_ARGUMENT;
         std::vector<std::string> names;
         if (!copyFields(fields, field_count, context_track_query_limits(*context).max_fields, names)) {
             return MC_ERROR_INVALID_ARGUMENT;
@@ -254,7 +290,7 @@ mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_re
         return submitLibraryRequest<mc_track_page>(context,
             [=](std::unique_ptr<mc_track_page> &page) -> mc_result {
                 /* A direct identity lookup distinguishes a removed row from missing tags. */
-                const auto status = readPage(identity.path, { "", names, 0, 1, &identity.id, false }, page);
+                const auto status = readPage(identity.library->locator, { "", names, 0, 1, &identity.id, false }, page);
                 if (status != MC_OK) return status;
                 return page->rows.empty() ? MC_ERROR_NOT_FOUND : MC_OK;
             }, completion, user_data, out_request);

@@ -105,6 +105,14 @@ MainLayout::MainLayout(
 , library(library)
 , playback(playback)
 , AppLayout(app) {
+    /* Deliver core completions through the app's UI message queue. */
+    mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.wakeup = [](void* data) {
+        static_cast<MainLayout*>(data)->Post(message::DispatchCoreRequests);
+    };
+    options.wakeup_user_data = this;
+    this->apiContext = std::make_shared<client::Context>(options);
+
     this->prefs = Preferences::ForComponent("settings");
 
     library->ConnectionStateChanged.connect(this, &MainLayout::OnLibraryConnectionStateChanged);
@@ -135,6 +143,7 @@ MainLayout::MainLayout(
 }
 
 MainLayout::~MainLayout() {
+    this->Shutdown();
     updateCheck.Cancel();
 }
 
@@ -213,13 +222,19 @@ void MainLayout::Start() {
 }
 
 void MainLayout::Shutdown() {
+    if (this->libraryLayout) this->libraryLayout->CancelSearchRequests();
+    this->apiContext->Shutdown();
+    MessageQueue().Remove(this, message::DispatchCoreRequests);
     MessageQueue().UnregisterForBroadcasts(this);
 }
 
 void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     const int type = message.Type();
 
-    if (type == message::JumpToConsole) {
+    if (type == message::DispatchCoreRequests) {
+        this->apiContext->Dispatch();
+    }
+    else if (type == message::JumpToConsole) {
         this->SetLayout(consoleLayout);
     }
     else if (type == message::JumpToSettings) {
@@ -280,7 +295,7 @@ void MainLayout::SwitchToPlayQueue() {
 void MainLayout::SwitchToLibraryLayout() {
     if (IsLibraryConnected()) {
         if (!this->libraryLayout) {
-            this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
+            this->libraryLayout = std::make_shared<LibraryLayout>(playback, library, this->apiContext);
         }
         this->SetLayout(libraryLayout);
     }
@@ -301,7 +316,10 @@ void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state
 
 void MainLayout::OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr) {
     this->playback.Stop();
-    this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
+    const bool wasShowingLibrary = this->libraryLayout && this->GetLayout() == this->libraryLayout;
+    if (this->libraryLayout) this->libraryLayout->CancelSearchRequests();
+    this->libraryLayout = std::make_shared<LibraryLayout>(playback, library, this->apiContext);
+    if (wasShowingLibrary) this->SwitchToLibraryLayout();
     this->RebindIndexerEventHandlers(prev, curr);
     this->Layout();
 }

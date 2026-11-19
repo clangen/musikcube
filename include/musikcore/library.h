@@ -9,8 +9,31 @@ extern "C" {
 #endif
 
 typedef struct mc_track_page mc_track_page;
+typedef struct mc_library mc_library;
 typedef struct mc_track_result mc_track_result;
 typedef struct mc_track_ref mc_track_ref;
+
+typedef enum mc_library_kind {
+    MC_LIBRARY_LOCAL = 0,
+    MC_LIBRARY_REMOTE = 1
+} mc_library_kind;
+
+typedef struct mc_library_options {
+    /* Size of this struct in bytes. */
+    uint32_t struct_size;
+    /* A value from mc_library_kind. */
+    uint32_t kind;
+    /* UTF-8 local database directory or remote endpoint. Copied at creation. */
+    mc_string_view locator;
+} mc_library_options;
+
+#define MC_LIBRARY_OPTIONS_DEFAULT { sizeof(mc_library_options), MC_LIBRARY_LOCAL, { NULL, 0 } }
+
+/* Create a library identity. The output slot must be empty. */
+/* Remote handles describe an endpoint. ABI0 remote requests currently return MC_ERROR_UNSUPPORTED. */
+MC_API mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_library **out_library);
+/* Release the handle. Accepted requests and derived identities retain their library. */
+MC_API void MC_CALL mc_library_destroy(mc_library **library);
 
 typedef enum mc_track_search_mode {
     MC_TRACK_SEARCH_SUBSTRING = 0,
@@ -121,7 +144,7 @@ typedef void (MC_CALL *mc_track_query_completion_fn)(
 
 /* Open a local search. Membership, sort order and album boundaries stay fixed. */
 MC_API mc_result MC_CALL mc_library_open_track_search_async(
-    mc_context *context, const mc_track_search *search, mc_track_search_completion_fn completion,
+    mc_context *context, const mc_library *library, const mc_track_search *search, mc_track_search_completion_fn completion,
     void *user_data, mc_request_id *out_request);
 MC_API size_t MC_CALL mc_track_result_get_count(const mc_track_result *tracks);
 /* Zero for an invalid row. */
@@ -150,9 +173,9 @@ MC_API mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_t
     void *user_data, mc_request_id *out_request);
 
 /* Callers own query input storage and may release it on return. */
-/* ABI0 reads musik.db in the explicit context data directory. */
+/* Local libraries read musik.db in their locator directory. */
 MC_API mc_result MC_CALL mc_library_query_tracks_async(
-    mc_context *context, const mc_track_query *query, mc_track_query_completion_fn completion,
+    mc_context *context, const mc_library *library, const mc_track_query *query, mc_track_query_completion_fn completion,
     void *user_data, mc_request_id *out_request);
 MC_API size_t MC_CALL mc_track_page_get_count(const mc_track_page *page);
 /* Returns zero for a missing row. */

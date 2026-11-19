@@ -134,7 +134,7 @@ endif()
 if(BUILD_TESTING)
   add_executable(musikcube_abi_search_pilot EXCLUDE_FROM_ALL pilot/TrackSearch.cpp)
   target_include_directories(musikcube_abi_search_pilot PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/cursespp" ${VENDOR_INCLUDE_DIRECTORIES})
+    "${CMAKE_CURRENT_SOURCE_DIR}/cursespp" "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})
   target_link_libraries(musikcube_abi_search_pilot PRIVATE
     musikcore_cpp_abi0 ${LIBNCURSES} ${LIBTINFO})
   set_target_properties(musikcube_abi_search_pilot PROPERTIES

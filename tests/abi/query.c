@@ -113,7 +113,15 @@ static int hide_fixture_track(const char *root) {
     return ok;
 }
 
-static int check_stable_range(mc_context *context, const char *directory) {
+static mc_library *open_local_library(const char *directory) {
+    mc_library_options options = MC_LIBRARY_OPTIONS_DEFAULT;
+    options.locator = (mc_string_view){ directory, strlen(directory) };
+    mc_library *library = NULL;
+    mc_library_create(&options, &library);
+    return library;
+}
+
+static int check_stable_range(mc_context *context, const mc_library *library, const char *directory) {
     mc_track_search search = MC_TRACK_SEARCH_DEFAULT;
     search.text = (mc_string_view)STRING_VIEW("The Band");
     mc_track_result *tracks = NULL;
@@ -124,7 +132,7 @@ static int check_stable_range(mc_context *context, const char *directory) {
     mc_track_range options = MC_TRACK_RANGE_DEFAULT;
     int passed = 0;
 
-    if (mc_library_open_track_search_async(context, &search, search_completed, &tracks, &request) != MC_OK ||
+    if (mc_library_open_track_search_async(context, library, &search, search_completed, &tracks, &request) != MC_OK ||
         !query_test_wait_for_wakeup(3) || mc_context_dispatch(context) != MC_OK ||
         mc_track_result_get_count(tracks) != 1 || mc_track_result_get_id(tracks, 0) != fixture_band_track ||
         !mc_track_result_starts_album(tracks, 0) ||
@@ -172,14 +180,17 @@ static int check_metadata(const mc_track_page *page) {
 
 static int check_indexed_library(const char *directory) {
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-    options.data_directory.data = directory;
-    options.data_directory.length = strlen(directory);
     options.wakeup = query_test_wakeup;
     options.track_query_default_limit = -1;
     options.track_query_max_fields = -1;
 
     mc_context *context = NULL;
     if (mc_context_create(&options, &context, NULL) != MC_OK) return 1;
+    mc_library *library = open_local_library(directory);
+    if (!library) {
+        mc_context_destroy(&context);
+        return 1;
+    }
 
     const mc_string_view fields[indexed_field_count] = {
         [indexed_title] = STRING_VIEW(MC_TRACK_FIELD_TITLE),
@@ -199,14 +210,16 @@ static int check_indexed_library(const char *directory) {
     mc_request_id request = 0;
     query.limit = MC_TRACK_QUERY_MAX_LIMIT + 1;
     const int rejects_large_page = mc_library_query_tracks_async(
-        context, &query, completed, &result, &request) == MC_ERROR_INVALID_ARGUMENT && !request;
+        context, library, &query, completed, &result, &request) == MC_ERROR_INVALID_ARGUMENT && !request;
     query.limit = 0;
 
-    const int submitted = mc_library_query_tracks_async(context, &query, completed, &result, &request) == MC_OK;
+    const int submitted = mc_library_query_tracks_async(context, library, &query, completed, &result, &request) == MC_OK;
     const int ready = submitted && query_test_wait_for_wakeup(1);
     query_test_release_wakeup();
     const int dispatched = ready && mc_context_dispatch(context) == MC_OK;
     mc_context_destroy(&context);
+
+    mc_library_destroy(&library);
 
     /* Check both indexed core fields and tags read from the generated media. */
     const mc_track_page *page = result.page;
@@ -232,14 +245,18 @@ int main(int argc, char **argv) {
     if (argc != 2 || !prepare_fixture(argv[1])) return 1;
 
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-    options.data_directory.data = argv[1];
-    options.data_directory.length = strlen(argv[1]);
     options.wakeup = query_test_wakeup;
     options.track_query_default_limit = 3;
     options.track_query_max_limit = 2;
     options.track_query_max_fields = fixture_field_count;
     mc_context *context = NULL;
     if (mc_context_create(&options, &context, NULL) != MC_OK) return 1;
+
+    mc_library *library = open_local_library(argv[1]);
+    if (!library) {
+        mc_context_destroy(&context);
+        return 1;
+    }
 
     struct completion found = { 0 };
     struct completion cancelled = { 0 };
@@ -264,18 +281,18 @@ int main(int argc, char **argv) {
 
     /* Reject requests over the context caps before reading the field array. */
     query.limit = 3;
-    if (mc_library_query_tracks_async(context, &query, completed, &warmup, &initial) != MC_ERROR_INVALID_ARGUMENT ||
+    if (mc_library_query_tracks_async(context, library, &query, completed, &warmup, &initial) != MC_ERROR_INVALID_ARGUMENT ||
         initial) goto cleanup;
     query.limit = 0;
     query.fields = fields;
     query.field_count = fixture_field_count + 1;
-    if (mc_library_query_tracks_async(context, &query, completed, &warmup, &initial) != MC_ERROR_INVALID_ARGUMENT ||
+    if (mc_library_query_tracks_async(context, library, &query, completed, &warmup, &initial) != MC_ERROR_INVALID_ARGUMENT ||
         initial) goto cleanup;
     query.fields = NULL;
     query.field_count = 0;
 
     /* Hold the worker in the first wakeup to control when later queries begin. */
-    if (mc_library_query_tracks_async(context, &query, completed, &warmup, &initial) != MC_OK ||
+    if (mc_library_query_tracks_async(context, library, &query, completed, &warmup, &initial) != MC_OK ||
         !query_test_wait_for_wakeup(1)) goto cleanup;
 
     query.fields = fields;
@@ -286,12 +303,12 @@ int main(int argc, char **argv) {
     query.limit = 1;
 
     /* Mutate the input after submission to check the worker uses its own copy. */
-    if (mc_library_query_tracks_async(context, &query, completed, &found, &first) != MC_OK) goto cleanup;
+    if (mc_library_query_tracks_async(context, library, &query, completed, &found, &first) != MC_OK) goto cleanup;
     memset(term, 'x', sizeof(term) - 1);
     memset(mood, 'x', sizeof(mood) - 1);
 
     /* Cancel a queued query and drain the current batch before releasing the worker. */
-    if (mc_library_query_tracks_async(context, &query, completed, &cancelled, &second) != MC_OK ||
+    if (mc_library_query_tracks_async(context, library, &query, completed, &cancelled, &second) != MC_OK ||
         !first || !second || first == second ||
         mc_request_cancel(context, second) != MC_OK || cancelled.calls) goto cleanup;
     if (mc_context_dispatch(context) != MC_OK ||
@@ -302,13 +319,14 @@ int main(int argc, char **argv) {
         found.calls != 1 || found.result != MC_OK || !found.page) goto cleanup;
 
     /* The owned page outlives the request and its context. */
-    passed = check_stable_range(context, argv[1]);
+    passed = check_stable_range(context, library, argv[1]);
     mc_context_destroy(&context);
     passed = passed && !context && check_metadata(found.page);
 
 cleanup:
     query_test_release_wakeup();
     mc_context_destroy(&context);
+    mc_library_destroy(&library);
     mc_track_page_destroy(&found.page);
     mc_track_page_destroy(&cancelled.page);
     mc_track_page_destroy(&warmup.page);

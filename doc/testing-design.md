@@ -410,7 +410,7 @@ To generate a database with the production indexer and tag readers, run
 `node script/seed-test-library.js [configured-build-directory]`. The script
 creates two tagged WAV files, indexes them in a fresh config root under
 the selected build directory, and prints the resulting `musik.db` path.
-Use the database's parent directory as the ABI0 context data directory.
+Use the database's parent directory as the ABI0 local library locator.
 
 Run `node script/seed-test-library.js --tracks 10000` for a larger fixture.
 It generates 100 artists with 10 albums per artist and 10 numbered tracks
