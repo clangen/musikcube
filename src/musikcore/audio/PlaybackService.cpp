@@ -45,6 +45,10 @@
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Playback.h>
+#include <musikcore/ffi/consumer/playback-storage.h>
+#include <musikcore/ffi/consumer/library-storage.h>
+#include <musikcore/library/MasterLibrary.h>
+#include <thread>
 #include <musikcore/support/LastFm.h>
 
 using namespace musik::core::library;
@@ -175,11 +179,128 @@ PlaybackService::PlaybackService(
 }
 
 PlaybackService::~PlaybackService() {
+    this->apiLifetime.reset();
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
     savePreferences(*this, *playbackPrefs);
     this->Stop();
     this->ResetRemotes();
+}
+
+/* Borrows the owner-thread service. Neither copyable nor movable. */
+class PlaybackService::PlaybackServiceBinding final : public mc_playback {
+public:
+    explicit PlaybackServiceBinding(PlaybackService& service)
+        : service(service), lifetime(service.apiLifetime), owner(service.apiOwner) {}
+
+    mc_result Control(mc_playback_command command, double value) override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) return status;
+
+        switch (command) {
+            case MC_PLAYBACK_TOGGLE_PAUSE: core::playback::PauseOrResume(this->service.GetTransport()); break;
+            case MC_PLAYBACK_STOP: this->service.Stop(); break;
+            case MC_PLAYBACK_NEXT: this->service.Next(); break;
+            case MC_PLAYBACK_PREVIOUS: this->service.Previous(); break;
+            case MC_PLAYBACK_SEEK_BACK: core::playback::SeekBack(this->service); break;
+            case MC_PLAYBACK_SEEK_FORWARD: core::playback::SeekForward(this->service); break;
+            case MC_PLAYBACK_SEEK_BACK_PROPORTIONAL: core::playback::SeekBackProportional(this->service); break;
+            case MC_PLAYBACK_SEEK_FORWARD_PROPORTIONAL: core::playback::SeekForwardProportional(this->service); break;
+            case MC_PLAYBACK_VOLUME_UP: core::playback::VolumeUp(this->service.GetTransport()); break;
+            case MC_PLAYBACK_VOLUME_DOWN: core::playback::VolumeDown(this->service.GetTransport()); break;
+            case MC_PLAYBACK_TOGGLE_MUTE: this->service.ToggleMute(); break;
+            case MC_PLAYBACK_TOGGLE_REPEAT: this->service.ToggleRepeatMode(); break;
+            case MC_PLAYBACK_TOGGLE_SHUFFLE: this->service.ToggleShuffle(); break;
+            case MC_PLAYBACK_SET_POSITION: this->service.SetPosition(value); break;
+            case MC_PLAYBACK_SET_VOLUME: this->service.SetVolume(value); break;
+            default: return MC_ERROR_UNSUPPORTED;
+        }
+        return MC_OK;
+    }
+
+    mc_result Snapshot(mc_playback_snapshot& snapshot) const override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) return status;
+
+        switch (this->service.GetPlaybackState()) {
+            case PlaybackState::Stopped: snapshot.state = MC_PLAYBACK_STOPPED; break;
+            case PlaybackState::Paused: snapshot.state = MC_PLAYBACK_PAUSED; break;
+            case PlaybackState::Prepared: snapshot.state = MC_PLAYBACK_PREPARED; break;
+            case PlaybackState::Playing: snapshot.state = MC_PLAYBACK_PLAYING; break;
+        }
+        snapshot.position = this->service.GetPosition();
+        snapshot.duration = this->service.GetTransport().GetDuration();
+        snapshot.volume = this->service.GetVolume();
+        snapshot.muted = this->service.IsMuted();
+        return MC_OK;
+    }
+
+    mc_result PlayResult(const TrackResultData& result, size_t row) override {
+        const auto status = this->CheckSession();
+        return status == MC_OK ? this->service.PlayOrderedResult(result, row) : status;
+    }
+
+    mc_result EditQueue(QueueEdit edit, size_t from, size_t to) override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) return status;
+
+        auto editor = this->service.Edit();
+        if (edit == QueueEdit::Clear) {
+            editor.Clear();
+            return MC_OK;
+        }
+        const bool changed = edit == QueueEdit::Move ? editor.Move(from, to) : editor.Delete(from);
+        return changed ? MC_OK : MC_ERROR_NOT_FOUND;
+    }
+
+private:
+    mc_result CheckSession() const {
+        if (std::this_thread::get_id() != this->owner) return MC_ERROR_BUSY;
+        if (this->lifetime.expired()) return MC_ERROR_NOT_FOUND;
+        return MC_OK;
+    }
+
+    PlaybackService& service;
+    const std::weak_ptr<int> lifetime;
+    const std::thread::id owner;
+};
+
+musik::core::client::Playback PlaybackService::CreatePlaybackHandle() {
+    return client::Playback(new PlaybackServiceBinding(*this));
+}
+
+mc_result PlaybackService::PlayOrderedResult(const TrackResultData& result, size_t row) {
+    const auto& origin = result.library;
+    if (!origin->playbackOrigin) return MC_ERROR_UNSUPPORTED;
+    if (!this->MatchesQueueOrigin(*origin)) return MC_ERROR_NOT_FOUND;
+
+    /* Install the snapshot directly in the engine's queue. */
+    TrackList replacement(this->library, result.ids.data(), result.ids.size());
+    {
+        std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+        this->playlist.ClearCache();
+        this->playlist.Swap(replacement);
+        this->unshuffled.Clear();
+        this->queueOrigin = origin;
+    }
+    this->Play(row);
+    POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
+    return MC_OK;
+}
+
+bool PlaybackService::MatchesQueueOrigin(const LibraryIdentity& origin) const {
+    const auto master = std::dynamic_pointer_cast<MasterLibrary>(this->library);
+    const auto selected = master ? master->Wrapped() : this->library;
+    return origin.playbackOrigin && origin.playbackOrigin->Matches(selected.get());
+}
+
+void PlaybackService::DiscardUnavailableQueue() {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    if (!this->queueOrigin || this->MatchesQueueOrigin(*this->queueOrigin)) return;
+
+    /* The legacy queue has one library. Its IDs cannot be used after the origin changes. */
+    this->Stop();
+    this->Edit().Clear();
 }
 
 void PlaybackService::InitRemotes() {
@@ -546,6 +667,8 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
 }
 
 void PlaybackService::MarkTrackAsPlayed(int64_t trackId) {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    if (this->queueOrigin && !this->MatchesQueueOrigin(*this->queueOrigin)) return;
     this->library->Enqueue(std::make_shared<MarkTrackPlayedQuery>(trackId));
 }
 
@@ -650,6 +773,7 @@ bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
         std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
         TrackList temp(this->library);
         temp.CopyFrom(tracks);
+        this->queueOrigin.reset();
         this->playlist.Swap(temp);
         this->unshuffled.Clear();
         this->index = found ? index : NO_POSITION;
@@ -672,6 +796,7 @@ void PlaybackService::Play(const TrackList& tracks, size_t index) {
         if (&tracks != &playlist) {
             TrackList temp(this->library);
             temp.CopyFrom(tracks);
+            this->queueOrigin.reset();
             this->playlist.Swap(temp);
             this->unshuffled.Clear();
         }
@@ -723,7 +848,10 @@ void PlaybackService::CopyTo(TrackList& target) {
 void PlaybackService::CopyFrom(const TrackList& source) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
-    this->playlist.CopyFrom(source);
+    if (&source != &this->playlist) {
+        this->queueOrigin.reset();
+        this->playlist.CopyFrom(source);
+    }
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
 
@@ -748,6 +876,7 @@ void PlaybackService::CopyFrom(const musik::core::sdk::ITrackList* source) {
         /* otherwise we gotta do it one at a time */
         std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
+        this->queueOrigin.reset();
         this->playlist.Clear();
         for (size_t i = 0; i < source->Count(); i++) {
             this->playlist.Add(source->GetId(i));
@@ -874,6 +1003,7 @@ ITrack* PlaybackService::GetTrack(size_t index) {
     }
 
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    if (this->queueOrigin && !this->MatchesQueueOrigin(*this->queueOrigin)) return nullptr;
 
     const size_t count = this->playlist.Count();
 
@@ -908,6 +1038,7 @@ TrackPtr PlaybackService::TrackAtIndexWithTimeout(size_t index) {
     }
 
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    if (this->queueOrigin && !this->MatchesQueueOrigin(*this->queueOrigin)) return {};
 
     if (index >= this->playlist.Count()) {
         return TrackPtr();
@@ -1114,6 +1245,7 @@ void PlaybackService::Editor::Add(const int64_t id) {
 void PlaybackService::Editor::Clear() {
     playback.playlist.Clear();
     playback.unshuffled.Clear();
+    playback.queueOrigin.reset();
     this->playIndex = -1;
     this->nextTrackInvalidated = true;
     this->edited = true;

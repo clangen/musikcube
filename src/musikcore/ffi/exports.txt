@@ -10,6 +10,13 @@ mc_library_create
 mc_library_destroy
 mc_library_open_track_search_async
 mc_library_query_tracks_async
+mc_playback_control
+mc_playback_destroy
+mc_playback_get_snapshot
+mc_playback_play_result
+mc_playback_queue_clear
+mc_playback_queue_move
+mc_playback_queue_remove
 mc_request_cancel
 mc_track_page_destroy
 mc_track_page_get_count

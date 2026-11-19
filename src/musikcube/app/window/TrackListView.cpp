@@ -299,6 +299,10 @@ bool TrackListView::OnEntryActivated(size_t index) {
         PlayQueueOverlays::ShowAlbumDividerOverlay(
             MessageQueue(), this->playback, this->library, track);
     }
+    else if (this->rowSource.play) {
+        const auto row = this->GetSelectedTrackIndex();
+        if (row < this->rowSource.count) this->rowSource.play(row);
+    }
     else {
         playback::PlaySelected(*this, this->playback);
     }

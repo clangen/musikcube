@@ -45,7 +45,6 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
-#include <app/util/Playback.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/WindowUtil.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -83,6 +82,7 @@ TrackSearchLayout::TrackSearchLayout(
     std::shared_ptr<const musik::core::client::Library> apiLibrary)
 : LayoutBase()
 , playback(playback)
+, apiPlayback(playback.CreatePlaybackHandle())
 , library(library)
 , apiContext(std::move(apiContext))
 , apiLibrary(std::move(apiLibrary)) {
@@ -220,6 +220,7 @@ void TrackSearchLayout::Requery() {
                     [this](size_t row) { return this->DisplayTrack(row); },
                     [this](size_t first, size_t last, size_t height) { this->SetViewport(first, last, height); },
                     [this] { this->ClearPages(); this->Post(message::LoadTrackSearchPage); },
+                    [this](size_t row) { this->PlayResult(row); },
                 }, std::move(headers), std::move(durations), hash);
                 this->SetSearchTitle(_TSTR(kTrackListOrderByToDisplayKey.at(sortOrder)));
             });
@@ -292,7 +293,13 @@ TrackPtr TrackSearchLayout::DisplayTrack(size_t row) {
 }
 
 void TrackSearchLayout::PlayFromTop() {
-    playback::PlayFromTop(*this->trackList, this->playback);
+    this->PlayResult(0);
+}
+
+void TrackSearchLayout::PlayResult(size_t row) {
+    if (!this->resultWindow || row >= this->resultWindow->Result().Size()) return;
+    const auto status = this->apiPlayback.Play(this->resultWindow->Result(), row);
+    if (status != MC_OK) musik::debug::error("TrackSearchLayout", client::Error(status).what());
 }
 
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
@@ -319,7 +326,7 @@ void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string 
 
 void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
     if (this->trackList->TrackCount()) {
-        playback::PlaySelected(*(this->trackList.get()), this->playback);
+        this->PlayResult(0);
         this->SetFocus(this->trackList);
     }
 }

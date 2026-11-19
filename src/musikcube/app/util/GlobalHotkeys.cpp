@@ -50,8 +50,7 @@ using namespace musik::core::sdk;
 using namespace musik::cube;
 
 GlobalHotkeys::GlobalHotkeys(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
-: playback(playback)
-, transport(playback.GetTransport()) {
+: playback(playback.CreatePlaybackHandle()) {
     this->library = library;
 }
 
@@ -61,55 +60,55 @@ GlobalHotkeys::~GlobalHotkeys() {
 
 bool GlobalHotkeys::Handle(const std::string& kn) {
     if (Hotkeys::Is(Hotkeys::ToggleMute, kn)) {
-        this->playback.ToggleMute();
+        this->playback.Control(MC_PLAYBACK_TOGGLE_MUTE);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::TogglePause, kn)) {
-        core::playback::PauseOrResume(this->transport);
+        this->playback.Control(MC_PLAYBACK_TOGGLE_PAUSE);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::VolumeUp, kn)) {
-        core::playback::VolumeUp(this->transport);
+        this->playback.Control(MC_PLAYBACK_VOLUME_UP);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::VolumeDown, kn)) {
-        core::playback::VolumeDown(this->transport);
+        this->playback.Control(MC_PLAYBACK_VOLUME_DOWN);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::Previous, kn)) {
-        this->playback.Previous();
+        this->playback.Control(MC_PLAYBACK_PREVIOUS);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::Next, kn)) {
-        this->playback.Next();
+        this->playback.Control(MC_PLAYBACK_NEXT);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekBack, kn)) {
-        core::playback::SeekBack(this->playback);
+        this->playback.Control(MC_PLAYBACK_SEEK_BACK);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekForward, kn)) {
-        core::playback::SeekForward(this->playback);
+        this->playback.Control(MC_PLAYBACK_SEEK_FORWARD);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekForwardProportional, kn)) {
-        core::playback::SeekForwardProportional(this->playback);
+        this->playback.Control(MC_PLAYBACK_SEEK_FORWARD_PROPORTIONAL);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekBackProportional, kn)) {
-        core::playback::SeekBackProportional(this->playback);
+        this->playback.Control(MC_PLAYBACK_SEEK_BACK_PROPORTIONAL);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleRepeat, kn)) {
-        this->playback.ToggleRepeatMode();
+        this->playback.Control(MC_PLAYBACK_TOGGLE_REPEAT);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleShuffle, kn)) {
-        this->playback.ToggleShuffle();
+        this->playback.Control(MC_PLAYBACK_TOGGLE_SHUFFLE);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::Stop, kn)) {
-        this->playback.Stop();
+        this->playback.Control(MC_PLAYBACK_STOP);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::RescanMetadata, kn)) {

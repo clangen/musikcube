@@ -306,6 +306,7 @@ void MainLayout::SwitchToLibraryLayout() {
 }
 
 void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state) {
+    this->playback.DiscardUnavailableQueue();
     const auto currentLayout = this->GetLayout();
     const bool showingLibrary = currentLayout == this->libraryLayout ||
         currentLayout == this->libraryNotConnectedLayout;
@@ -320,6 +321,7 @@ void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state
 
 void MainLayout::OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr) {
     this->playback.Stop();
+    this->playback.DiscardUnavailableQueue();
     const auto currentLayout = this->GetLayout();
     const bool wasShowingLibrary = currentLayout == this->libraryLayout ||
         currentLayout == this->libraryNotConnectedLayout;

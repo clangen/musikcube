@@ -73,7 +73,7 @@ mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_librar
 
         std::string target(locator.data, locator.length);
         auto backend = kind == MC_LIBRARY_LOCAL ? query::OpenTrackReadBackend(target + "/musik.db") : nullptr;
-        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{ std::move(target), std::move(backend), {} });
+        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{ std::move(target), std::move(backend), {}, {} });
         *out_library = new mc_library{ std::move(identity) };
         return MC_OK;
     });
@@ -143,7 +143,7 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
         const auto identity = library->identity;
         const std::string term(text.length ? text.data : "", text.length);
         if (identity->async) {
-            return identity->async->search(context, identity,
+            return identity->async->Search(context, identity,
                 { term, mode == MC_TRACK_SEARCH_REGEX, static_cast<query::TrackSortType>(order) },
                 completion, user_data, out_request);
         }
@@ -201,7 +201,7 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
         const auto start = std::min(offset, data->ids.size());
         const auto size = std::min(limit ? limit : limits.default_limit, data->ids.size() - start);
         if (size && data->library->async) {
-            return data->library->async->page(context,
+            return data->library->async->ReadPage(context,
                 { data->ids.begin() + start, data->ids.begin() + start + size },
                 std::move(names), true, completion, user_data, out_request);
         }
@@ -255,7 +255,7 @@ mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_re
 
         const auto identity = *track;
         if (identity.library->async) {
-            return identity.library->async->page(context, { identity.id }, std::move(names),
+            return identity.library->async->ReadPage(context, { identity.id }, std::move(names),
                 false, completion, user_data, out_request);
         }
         return submitLibraryRequest<mc_track_page>(context,

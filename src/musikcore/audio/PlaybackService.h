@@ -44,8 +44,13 @@
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/IMessageQueue.h>
+#include <musikcore/playback.hpp>
 
 #include <mutex>
+#include <thread>
+
+struct LibraryIdentity;
+struct TrackResultData;
 
 namespace musik { namespace core { namespace audio {
 
@@ -123,6 +128,9 @@ namespace musik { namespace core { namespace audio {
             void CopyTo(musik::core::TrackList& target);
             void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetPlaying();
+            /* The service's construction thread owns API access and teardown. */
+            musik::core::client::Playback CreatePlaybackHandle();
+            void DiscardUnavailableQueue();
 
             musik::core::audio::ITransport& GetTransport() noexcept {
                 return *this->transport.get();
@@ -193,11 +201,17 @@ namespace musik { namespace core { namespace audio {
             void PlayAt(size_t index, ITransport::StartMode mode);
 
             musik::core::TrackPtr TrackAtIndexWithTimeout(size_t index);
+            bool MatchesQueueOrigin(const LibraryIdentity& origin) const;
+            mc_result PlayOrderedResult(const TrackResultData& result, size_t row);
+            class PlaybackServiceBinding;
 
             std::string UriAtIndex(size_t index);
             musik::core::audio::ITransport::Gain GainAtIndex(size_t index);
 
             musik::core::TrackList playlist;
+            std::shared_ptr<const LibraryIdentity> queueOrigin;
+            std::shared_ptr<int> apiLifetime = std::make_shared<int>(0);
+            const std::thread::id apiOwner = std::this_thread::get_id();
             musik::core::TrackList unshuffled;
             std::recursive_mutex playlistMutex;
 

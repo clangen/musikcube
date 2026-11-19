@@ -71,6 +71,7 @@ NowPlayingLayout::NowPlayingLayout(
     musik::core::ILibraryPtr library)
 : LayoutBase()
 , playback(playback)
+, apiPlayback(playback.CreatePlaybackHandle())
 , library(library)
 , lastPlaylistQueryId(-1)
 , reselectIndex(-1) {
@@ -241,7 +242,7 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueueClear, key)) {
-        this->playback.Edit().Clear();
+        this->apiPlayback.ClearQueue();
         return true;
     }
     else if (ProcessEditOperation(key)) {
@@ -257,26 +258,19 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
             const size_t selected = this->trackListView->GetSelectedIndex();
             this->reselectIndex = -1;
 
-            {
-                PlaybackService::Editor editor = this->playback.Edit();
-                if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
-                    if (selected > 0) {
-                        const size_t to = selected - 1;
-                        editor.Move(selected, to);
-                        reselectIndex = narrow_cast<int>(to);
-                    }
-                }
-                else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
-                    if (selected < this->playback.Count() - 1) {
-                        const size_t to = selected + 1;
-                        editor.Move(selected, to);
-                        reselectIndex = narrow_cast<int>(to);
-                    }
-                }
-                else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
-                    editor.Delete(selected);
-                    reselectIndex = narrow_cast<int>(selected);
-                }
+            const auto count = this->playback.Count();
+            if (selected >= count) return true;
+
+            if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key) && selected > 0) {
+                const auto to = selected - 1;
+                if (this->apiPlayback.Move(selected, to) == MC_OK) reselectIndex = narrow_cast<int>(to);
+            }
+            else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key) && selected + 1 < count) {
+                const auto to = selected + 1;
+                if (this->apiPlayback.Move(selected, to) == MC_OK) reselectIndex = narrow_cast<int>(to);
+            }
+            else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
+                if (this->apiPlayback.Remove(selected) == MC_OK) reselectIndex = narrow_cast<int>(selected);
             }
 
             return true;

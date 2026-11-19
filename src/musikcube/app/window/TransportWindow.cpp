@@ -385,6 +385,7 @@ TransportWindow::TransportWindow(
 , replayGainMode(ReplayGainMode::Disabled)
 , playback(playback)
 , transport(playback.GetTransport())
+, apiPlayback(playback.CreatePlaybackHandle())
 , focus(FocusNone)
 , hasReplayGain(false) {
     Strings.Initialize();
@@ -433,25 +434,25 @@ TransportWindow::FocusTarget TransportWindow::GetFocus() const {
 bool TransportWindow::KeyPress(const std::string& kn) {
     if (this->focus == FocusVolume) {
         if (inc(kn)) {
-            core::playback::VolumeUp(this->transport);
+            this->apiPlayback.Control(MC_PLAYBACK_VOLUME_UP);
             return true;
         }
         else if (dec(kn)) {
-            core::playback::VolumeDown(this->transport);
+            this->apiPlayback.Control(MC_PLAYBACK_VOLUME_DOWN);
             return true;
         }
         else if (kn == "KEY_ENTER") {
-            transport.SetMuted(!transport.IsMuted());
+            this->apiPlayback.Control(MC_PLAYBACK_TOGGLE_MUTE);
             return true;
         }
     }
     else if (this->focus == FocusTime) {
         if (inc(kn)) {
-            core::playback::SeekForward(this->playback);
+            this->apiPlayback.Control(MC_PLAYBACK_SEEK_FORWARD);
             return true;
         }
         else if (dec(kn)) {
-            core::playback::SeekBack(this->playback);
+            this->apiPlayback.Control(MC_PLAYBACK_SEEK_BACK);
             return true;
         }
     }
@@ -462,34 +463,36 @@ bool TransportWindow::KeyPress(const std::string& kn) {
 bool TransportWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
     if (event.Button1Clicked()) {
         if (this->currentTimePos.Contains(event)) {
-            const auto state = this->playback.GetPlaybackState();
-            if (state == PlaybackState::Playing || state == PlaybackState::Paused) {
-                this->playback.PauseOrResume();
+            const auto snapshot = this->apiPlayback.Snapshot();
+            if (snapshot && (snapshot->state == MC_PLAYBACK_PLAYING || snapshot->state == MC_PLAYBACK_PAUSED)) {
+                this->apiPlayback.Control(MC_PLAYBACK_TOGGLE_PAUSE);
             }
             return true;
         }
         else if (this->shufflePos.Contains(event)) {
-            this->playback.ToggleShuffle();
+            this->apiPlayback.Control(MC_PLAYBACK_TOGGLE_SHUFFLE);
             return true;
         }
         else if (this->repeatPos.Contains(event)) {
-            this->playback.ToggleRepeatMode();
+            this->apiPlayback.Control(MC_PLAYBACK_TOGGLE_REPEAT);
             return true;
         }
         else if (this->volumePos.Contains(event)) {
-            if (playback.IsMuted()) {
-                playback.ToggleMute();
+            const auto snapshot = this->apiPlayback.Snapshot();
+            if (!snapshot) return true;
+            if (snapshot->muted) {
+                this->apiPlayback.Control(MC_PLAYBACK_TOGGLE_MUTE);
             }
             else {
-                playback.SetVolume(this->volumePos.Percent(event.x));
+                this->apiPlayback.Control(MC_PLAYBACK_SET_VOLUME, this->volumePos.Percent(event.x));
             }
             return true;
         }
         else if (this->timeBarPos.Contains(event)) {
-            if (playback.GetPlaybackState() != PlaybackState::Stopped) {
-                const double duration = playback.GetDuration();
+            const auto snapshot = this->apiPlayback.Snapshot();
+            if (snapshot && snapshot->state != MC_PLAYBACK_STOPPED && snapshot->duration > 0) {
                 const double percent = this->timeBarPos.Percent(event.x);
-                playback.SetPosition(duration * percent);
+                this->apiPlayback.Control(MC_PLAYBACK_SET_POSITION, snapshot->duration * percent);
             }
             return true;
         }
@@ -513,7 +516,7 @@ bool TransportWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
     }
     else if (event.Button3Clicked()) {
         if (this->volumePos.Contains(event)) {
-            playback.ToggleMute();
+            this->apiPlayback.Control(MC_PLAYBACK_TOGGLE_MUTE);
         }
     }
     return Window::ProcessMouseEvent(event);

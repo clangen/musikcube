@@ -4,5 +4,6 @@
 #include <musikcore/abi.h>
 #include <musikcore/context.h>
 #include <musikcore/library.h>
+#include <musikcore/playback.h>
 
 #endif

@@ -54,8 +54,7 @@ namespace musik {
                 bool Handle(const std::string& kn);
 
             private:
-                musik::core::audio::PlaybackService& playback;
-                musik::core::audio::ITransport& transport;
+                musik::core::client::Playback playback;
                 musik::core::ILibraryPtr library;
         };
     }

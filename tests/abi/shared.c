@@ -55,6 +55,10 @@ cleanup:
 }
 
 int main(void) {
+    if (mc_playback_control(NULL, MC_PLAYBACK_STOP, 0) != MC_ERROR_INVALID_ARGUMENT) return 1;
+    mc_playback *playback = NULL;
+    mc_playback_destroy(&playback);
+
     mc_error *error = NULL;
     const mc_string_view message = mc_error_get_message(error);
     if (mc_abi_version() != MC_ABI_VERSION ||

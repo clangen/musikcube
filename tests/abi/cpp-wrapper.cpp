@@ -1,6 +1,8 @@
 #include <musikcore/musikcore.hpp>
 
 #ifdef MUSIKCORE_TEST_APP_BINDING
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/QueryRegistry.h>
@@ -287,6 +289,103 @@ namespace {
             window.CachedRow(0) && window.CachedRow(1);
     }
 #ifdef MUSIKCORE_TEST_APP_BINDING
+    /* Supplies deterministic transport state without opening an audio device. */
+    class TestTransport final : public musik::core::audio::ITransport {
+    public:
+        using PlaybackState = musik::core::sdk::PlaybackState;
+        using StreamState = musik::core::sdk::StreamState;
+
+        void Start(const std::string&, Gain, StartMode) override { state = PlaybackState::Playing; }
+        void PrepareNextTrack(const std::string&, Gain) override {}
+        std::string Uri() override { return {}; }
+        void Stop() override { state = PlaybackState::Stopped; }
+        bool Pause() override { state = PlaybackState::Paused; return true; }
+        bool Resume() override { state = PlaybackState::Playing; return true; }
+        double Position() override { return position; }
+        void SetPosition(double value) override { position = value; }
+        double Volume() override { return volume; }
+        void SetVolume(double value) override { volume = value; }
+        double GetDuration() override { return 30; }
+        bool IsMuted() override { return muted; }
+        void SetMuted(bool value) override { muted = value; }
+        void ReloadOutput() override {}
+        PlaybackState GetPlaybackState() override { return state; }
+        StreamState GetStreamState() override { return StreamState::Stopped; }
+
+        PlaybackState state = PlaybackState::Playing;
+        double position = 0;
+        double volume = 0.5;
+        bool muted = false;
+    };
+
+    bool checkPlaybackCommands() {
+        using namespace musik::core;
+        const auto selection = std::make_shared<library::MasterLibrary>();
+        const auto source = selection->OpenClientLibrary();
+        if (!source) return false;
+        client::TrackResult result;
+        mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.wakeup = query_test_wakeup;
+        client::Context context(options);
+        const auto wakes = query_test_wakeup_count();
+        client::OpenTrackSearch(context, *source, client::TrackSearch{ "Fixture Artist" },
+            [&](mc_result status, client::TrackResult tracks, std::string_view) {
+                if (status == MC_OK) result = std::move(tracks);
+            });
+        if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || result.Size() != 2) return false;
+
+        runtime::MessageQueue queue;
+        const auto transport = std::make_shared<TestTransport>();
+        std::optional<client::Playback> playback;
+        {
+            audio::PlaybackService service(queue, selection, transport);
+            playback.emplace(service.CreatePlaybackHandle());
+            if (playback->Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_OK ||
+                transport->state != sdk::PlaybackState::Paused ||
+                playback->Control(MC_PLAYBACK_SET_VOLUME, 0.25) != MC_OK ||
+                transport->volume != 0.25 ||
+                playback->Control(MC_PLAYBACK_SET_VOLUME, 1.5) != MC_ERROR_INVALID_ARGUMENT ||
+                playback->Control(MC_PLAYBACK_STOP) != MC_OK ||
+                transport->state != sdk::PlaybackState::Stopped) return false;
+
+            if (playback->Control(MC_PLAYBACK_SET_POSITION, 12) != MC_OK ||
+                playback->Control(MC_PLAYBACK_TOGGLE_MUTE) != MC_OK) return false;
+            const auto snapshot = playback->Snapshot();
+            if (!snapshot || snapshot->state != MC_PLAYBACK_STOPPED || snapshot->volume != 0.25 ||
+                snapshot->position != 12 || snapshot->duration != 30 || !snapshot->muted) return false;
+
+            if (playback->Play(result, 2) != MC_ERROR_NOT_FOUND ||
+                playback->Play(result, 1) != MC_OK || service.GetIndex() != 1 ||
+                service.GetTrackList()->GetId(0) != result.Id(0) ||
+                service.GetTrackList()->GetId(1) != result.Id(1)) return false;
+            if (playback->Move(1, 0) != MC_OK || service.GetTrackList()->GetId(0) != result.Id(1) ||
+                playback->Remove(1) != MC_OK || service.Count() != 1 ||
+                playback->Remove(1) != MC_ERROR_NOT_FOUND ||
+                playback->ClearQueue() != MC_OK || service.Count() != 0) return false;
+
+            if (playback->Play(result, 0) != MC_OK) return false;
+            const auto prefs = Preferences::ForComponent(musik::core::prefs::components::Settings);
+            prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
+            selection->LoadDefaultLibrary();
+            const bool rejected = playback->Play(result, 0) == MC_ERROR_NOT_FOUND;
+            service.DiscardUnavailableQueue();
+            const bool cleared = service.Count() == 0 && transport->state == sdk::PlaybackState::Stopped;
+            prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
+            selection->LoadDefaultLibrary();
+            if (!rejected || !cleared) return false;
+
+            mc_result otherThread = MC_OK;
+            std::optional<client::Playback> otherHandle;
+            std::thread caller([&] {
+                otherHandle.emplace(service.CreatePlaybackHandle());
+                otherThread = otherHandle->Control(MC_PLAYBACK_STOP);
+            });
+            caller.join();
+            if (otherThread != MC_ERROR_BUSY || otherHandle->Control(MC_PLAYBACK_STOP) != MC_OK) return false;
+        }
+        return playback->Control(MC_PLAYBACK_STOP) == MC_ERROR_NOT_FOUND && !playback->Snapshot();
+    }
+
     bool checkRemoteQueryPayloads() {
         using namespace musik::core;
         using namespace musik::core::library;
@@ -392,6 +491,10 @@ int main(int argc, char **argv) {
     try {
         if (argc == 2 && checkQuery(argv[1]) && checkSearch(argv[1]) && checkResultWindows(argv[1])) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
+            if (!checkPlaybackCommands()) {
+                std::fputs("Playback command contract failed\n", stderr);
+                return 1;
+            }
             if (!checkRemoteQueryPayloads()) {
                 std::fputs("Remote search and metadata payload contract failed\n", stderr);
                 return 1;

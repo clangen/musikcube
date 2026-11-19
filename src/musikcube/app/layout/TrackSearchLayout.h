@@ -89,6 +89,7 @@ namespace musik {
                 void SaveSession();
                 void InitializeWindows();
                 void Requery();
+                void PlayResult(size_t row);
                 void CancelLocalSearch();
                 void SetSearchTitle(const std::string& order);
                 void ClearPages();
@@ -114,6 +115,7 @@ namespace musik {
                 void ShowTrackSortOverlay();
 
                 musik::core::audio::PlaybackService& playback;
+                musik::core::client::Playback apiPlayback;
                 const musik::core::ILibraryPtr library;
                 MatchType matchType{ MatchType::Substring };
                 std::shared_ptr<musik::core::Preferences> prefs;

@@ -74,6 +74,7 @@ namespace musik {
                     std::function<TrackPtr(size_t)> display;
                     std::function<void(size_t, size_t, size_t)> viewport;
                     std::function<void()> invalidate;
+                    std::function<void(size_t)> play;
                 };
 
                 /* ctor, dtor */
