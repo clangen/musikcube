@@ -58,6 +58,7 @@ function buildConfiguration(compiler, root, flags = {}) {
     env.PATH = join(tools, 'bin') + ':' + env.PATH;
   } else if (compiler === 'x86') {
     config.marker = 'x86';
+    config.variant = 'x86';
   }
 
   return config;
@@ -81,7 +82,6 @@ function buildArchiveConfiguration(root) {
     packageCmake: [],
   });
 
-  if (config.compiler === 'x86') config.variant = 'x86';
   if (config.rpi) config.cmake.push('-DENABLE_PIPEWIRE=false');
   if (config.generatePackages) {
     const debArch = config.rpi ? 'armhf' : arch === 'x86_64' ? 'amd64' : arch;

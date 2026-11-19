@@ -1,2 +1,2 @@
-script/windows-vendor/build-ffmpeg.sh text eol=lf
+script/vendor-packages/windows/build-ffmpeg.sh text eol=lf
 script/archive-win.sh text eol=lf

@@ -151,14 +151,19 @@ const glibcProblems = async (file) => {
   return [...problems];
 };
 
-const neededMac = async (file) => {
+const loadCommandsMac = async (file) => {
   const { stdout } = await execFile('otool', ['-l', file], { env });
-  const names = [...stdout.matchAll(
+  const needed = [...stdout.matchAll(
     /^\s*cmd LC_(?:LOAD|LOAD_WEAK|REEXPORT|LAZY_LOAD|LOAD_UPWARD)_DYLIB\s*\n\s*cmdsize \d+\s*\n\s*name (.+?) \(offset \d+\)/gm
   )].map(([, name]) => name);
+  const rpaths = [...stdout.matchAll(
+    /^\s*cmd LC_RPATH\s*\n\s*cmdsize \d+\s*\n\s*path (.+?) \(offset \d+\)/gm
+  )].map(([, path]) => path);
   /* Universal binaries can list the same dependency in multiple slices. */
-  return [...new Set(names)];
+  return { needed: [...new Set(needed)], rpaths: [...new Set(rpaths)] };
 };
+
+const neededMac = async (file) => (await loadCommandsMac(file)).needed;
 
 const lddLinux = async (fn) => {
   const file = join(root, fn);
@@ -189,9 +194,79 @@ const lddLinux = async (fn) => {
   return [...problems];
 };
 
+let executableRpathRoots;
+
+const expandMacPath = (path, file, packageRoot) => {
+  const substitutions = [
+    ['@loader_path', dirname(file)],
+    ['@executable_path', packageRoot],
+  ];
+  for (const [prefix, directory] of substitutions) {
+    if (path === prefix) return directory;
+    if (path.startsWith(prefix + '/')) return resolve(directory, path.slice(prefix.length + 1));
+  }
+  return isAbsolute(path) ? resolve(path) : undefined;
+};
+
+const packagedMacFile = async (packageRoot, candidate) => {
+  try {
+    const file = await realpath(candidate);
+    return within(packageRoot, file) && (await stat(file)).isFile();
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+};
+
+const macExecutableRpathRoots = async (packageRoot) => {
+  if (!executableRpathRoots) {
+    executableRpathRoots = Promise.all(['musikcube', 'musikcubed'].map(async (name) => {
+      const file = await realpath(join(root, name));
+      const { rpaths } = await loadCommandsMac(file);
+      return rpaths.map((path) => expandMacPath(path, file, packageRoot));
+    })).then((paths) => [...new Set(paths.flat().filter((path) =>
+      path && (path === packageRoot || within(packageRoot, path))))]);
+  }
+  return executableRpathRoots;
+};
+
 const lddMac = async (fn) => {
-  const needed = await neededMac(join(root, fn));
-  return needed.filter((name) => !name.startsWith('@rpath/') && !validLibraries.has(name));
+  const packageRoot = await realpath(root);
+  const file = await realpath(join(root, fn));
+  const { needed, rpaths } = await loadCommandsMac(file);
+  const searchRoots = new Set(rpaths.map((path) => expandMacPath(path, file, packageRoot)));
+  if (fn !== 'musikcube' && fn !== 'musikcubed') {
+    for (const path of await macExecutableRpathRoots(packageRoot)) searchRoots.add(path);
+  }
+  const problems = [];
+
+  for (const name of needed) {
+    if (validLibraries.has(name)) continue;
+
+    if (name.startsWith('@rpath/')) {
+      const suffix = name.slice('@rpath/'.length);
+      let found = false;
+      for (const directory of searchRoots) {
+        if (directory && await packagedMacFile(packageRoot, resolve(directory, suffix))) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) problems.push(`${name} (not found in package rpaths)`);
+      continue;
+    }
+
+    if (name.startsWith('@loader_path/') || name.startsWith('@executable_path/')) {
+      const candidate = expandMacPath(name, file, packageRoot);
+      if (!candidate || !await packagedMacFile(packageRoot, candidate)) {
+        problems.push(`${name} (not found in package)`);
+      }
+      continue;
+    }
+
+    problems.push(name);
+  }
+  return problems;
 };
 
 /* External dependencies allowed before archive staging. */

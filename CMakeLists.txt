@@ -115,12 +115,7 @@ endif()
 
 set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ} ${PTHREAD})
 
-if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
-  if(NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)
-    message(STATUS "[build] libatomic required, adding to library list")
-    set (musikcube_LINK_LIBS ${musikcube_LINK_LIBS} atomic)
-  endif()
-endif()
+check_and_add_libatomic(musikcube_LINK_LIBS)
 
 if (
   (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0) OR

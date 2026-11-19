@@ -1,101 +1,33 @@
-# atomic builtins are required for threading support.
+include(CheckCXXSourceCompiles)
 
-INCLUDE(CheckCXXSourceCompiles)
-INCLUDE(CheckLibraryExists)
-
-# Sometimes linking against libatomic is required for atomic ops, if
-# the platform doesn't support lock-free atomics.
-
-function(check_working_cxx_atomics varname)
-  CHECK_CXX_SOURCE_COMPILES("
-#include <atomic>
-std::atomic<int> x;
+set(_ATOMIC_LINK_TEST_CODE "
+#include <stdatomic.h>
+#include <stdint.h>
+typedef struct { uint64_t a; uint64_t b; } u128;
 int main() {
-  return x;
+  _Atomic(u128) v = { {0,0} };
+  u128 tmp;
+
+  // These map to __atomic_load/__atomic_store/__atomic_exchange for 16 bytes
+  __atomic_load(&v, &tmp, __ATOMIC_SEQ_CST);
+  __atomic_store(&v, &tmp, __ATOMIC_SEQ_CST);
+  __atomic_exchange(&v, &tmp, &tmp, __ATOMIC_SEQ_CST);
+
+  // Also hit a fetch-add on 8 bytes for good measure
+  _Atomic(unsigned long long) x = 0;
+  __atomic_fetch_add(&x, 1ULL, __ATOMIC_SEQ_CST);
+  return (int)(x + tmp.a + tmp.b);
 }
-" ${varname})
-endfunction(check_working_cxx_atomics)
+")
 
-function(check_working_cxx_atomics64 varname)
-  CHECK_CXX_SOURCE_COMPILES("
-#include <atomic>
-#include <cstdint>
-std::atomic<uint64_t> x (0);
-int main() {
-  uint64_t i = x.load(std::memory_order_relaxed);
-  return 0;
-}
-" ${varname})
-endfunction(check_working_cxx_atomics64)
-
-
-# This isn't necessary on MSVC, so avoid command-line switch annoyance
-# by only running on GCC-like hosts.
-if (LLVM_COMPILER_IS_GCC_COMPATIBLE)
-  # First check if atomics work without the library.
-  check_working_cxx_atomics(HAVE_CXX_ATOMICS_WITHOUT_LIB)
-  # If not, check if the library exists, and atomics work with it.
-  if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
-    check_library_exists(atomic __atomic_fetch_add_4 "" HAVE_LIBATOMIC)
-    if( HAVE_LIBATOMIC )
-      list(APPEND CMAKE_REQUIRED_LIBRARIES "atomic")
-      check_working_cxx_atomics(HAVE_CXX_ATOMICS_WITH_LIB)
-      if (NOT HAVE_CXX_ATOMICS_WITH_LIB)
-	message(FATAL_ERROR "Host compiler must support std::atomic!")
-      endif()
+function(check_and_add_libatomic out_var)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    check_cxx_source_compiles("${_ATOMIC_LINK_TEST_CODE}" _ATOMIC_NO_LIB_OK)
+    if(_ATOMIC_NO_LIB_OK)
+      message(STATUS "[check-atomic] atomics link without libatomic")
     else()
-      message(FATAL_ERROR "Host compiler appears to require libatomic, but cannot find it.")
+      set(${out_var} ${${out_var}} atomic PARENT_SCOPE)
+      message(STATUS "[check-atomic] added libatomic")
     endif()
   endif()
-endif()
-
-# Check for 64 bit atomic operations.
-if(MSVC)
-  set(HAVE_CXX_ATOMICS64_WITHOUT_LIB True)
-else()
-  check_working_cxx_atomics64(HAVE_CXX_ATOMICS64_WITHOUT_LIB)
-endif()
-
-# If not, check if the library exists, and atomics work with it.
-if(NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)
-  check_library_exists(atomic __atomic_load_8 "" HAVE_CXX_LIBATOMICS64)
-  if(HAVE_CXX_LIBATOMICS64)
-    list(APPEND CMAKE_REQUIRED_LIBRARIES "atomic")
-    check_working_cxx_atomics64(HAVE_CXX_ATOMICS64_WITH_LIB)
-    if (NOT HAVE_CXX_ATOMICS64_WITH_LIB)
-      message(FATAL_ERROR "Host compiler must support 64-bit std::atomic!")
-    endif()
-  else()
-    message(FATAL_ERROR "Host compiler appears to require libatomic for 64-bit operations, but cannot find it.")
-  endif()
-endif()
-
-## TODO: This define is only used for the legacy atomic operations in
-## llvm's Atomic.h, which should be replaced.  Other code simply
-## assumes C++11 <atomic> works.
-CHECK_CXX_SOURCE_COMPILES("
-#ifdef _MSC_VER
-#include <windows.h>
-#endif
-int main() {
-#ifdef _MSC_VER
-        volatile LONG val = 1;
-        MemoryBarrier();
-        InterlockedCompareExchange(&val, 0, 1);
-        InterlockedIncrement(&val);
-        InterlockedDecrement(&val);
-#else
-        volatile unsigned long val = 1;
-        __sync_synchronize();
-        __sync_val_compare_and_swap(&val, 1, 0);
-        __sync_add_and_fetch(&val, 1);
-        __sync_sub_and_fetch(&val, 1);
-#endif
-        return 0;
-      }
-" LLVM_HAS_ATOMICS)
-
-if( NOT LLVM_HAS_ATOMICS )
-  message(STATUS "Warning: LLVM will be built thread-unsafe because atomic builtins are missing")
-endif()
-
+endfunction()

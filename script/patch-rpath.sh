@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 PLATFORM=$(uname)
 
 if [ "$PLATFORM" = 'Linux' ]; then
@@ -33,10 +35,26 @@ fi
 if [ "$PLATFORM" = 'Darwin' ]; then
     echo "[patch-rpath] patching macOS binaries..."
     SOURCE_DIR=$1
-    install_name_tool -add_rpath "@executable_path/"    $SOURCE_DIR/bin/musikcube
-    install_name_tool -add_rpath "@executable_path/lib" $SOURCE_DIR/bin/musikcube
-    install_name_tool -add_rpath "@executable_path/"    $SOURCE_DIR/bin/musikcubed
-    install_name_tool -add_rpath "@executable_path/lib" $SOURCE_DIR/bin/musikcubed
+
+    add_rpath() {
+        binary=$1
+        rpath=$2
+        if ! otool -l "$binary" | awk -v expected="$rpath" '
+            $1 == "cmd" && $2 == "LC_RPATH" { in_rpath = 1; next }
+            in_rpath && $1 == "path" {
+                if ($2 == expected) found = 1
+                in_rpath = 0
+            }
+            END { exit !found }
+        '; then
+            install_name_tool -add_rpath "$rpath" "$binary"
+        fi
+    }
+
+    for binary in "$SOURCE_DIR/bin/musikcube" "$SOURCE_DIR/bin/musikcubed"; do
+        add_rpath "$binary" "@executable_path/"
+        add_rpath "$binary" "@executable_path/lib"
+    done
 fi
 
 exit 0
