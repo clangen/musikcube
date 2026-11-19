@@ -15,6 +15,7 @@
 
 - Reuse existing helpers and follow the surrounding code's conventions. Introduce an abstraction when it simplifies real callers.
 - Write nested C++ namespace declarations on one line, such as `namespace musik { namespace core { namespace audio {`. Indent the body once and close with `} } }` on one line.
+- Use PascalCase for C++ member functions, including private members. Follow the surrounding code for file-local helpers, which commonly use lower camelCase. Keep exported C ABI functions in snake_case.
 - Let the code explain what it does. As you write or revise longer functions, add terse, technical comments at phase boundaries and branching handoffs to make the flow easy to follow. Explain decisions where the reason is otherwise unclear.
 - Use blank lines to separate distinct steps in a function. Keep closely related statements together and give transitions between phases room to stand out.
 - Name constants for public keys, limits, sentinel values, and positional indices whose meaning matters. Reuse the same definition across callers. Keep local constants near their use, and leave obvious literals inline.

@@ -68,15 +68,15 @@ namespace {
         Wakeup(const Wakeup &) = delete;
         Wakeup &operator=(const Wakeup &) = delete;
 
-        static void MC_CALL signal(void *data) {
+        static void MC_CALL Signal(void *data) {
             const char byte = 0;
             const auto fd = static_cast<Wakeup *>(data)->fds[1];
             /* A full pipe already has a pending wakeup. */
             while (write(fd, &byte, 1) < 0 && errno == EINTR) {}
         }
 
-        int descriptor() const { return fds[0]; }
-        void drain() const {
+        int Descriptor() const { return fds[0]; }
+        void Drain() const {
             char bytes[128];
             ssize_t count;
             do {
@@ -108,7 +108,7 @@ namespace {
     mc_context_options options(std::string_view directory, Wakeup &wakeup) {
         mc_context_options value = MC_CONTEXT_OPTIONS_DEFAULT;
         value.data_directory = { directory.data(), directory.size() };
-        value.wakeup = Wakeup::signal;
+        value.wakeup = Wakeup::Signal;
         value.wakeup_user_data = &wakeup;
         return value;
     }
@@ -118,13 +118,13 @@ namespace {
     public:
         SearchView(std::string_view directory, CacheOptions cache, bool diagnostics)
             : cache(cache), diagnostics(diagnostics), context(options(directory, wakeup)) {}
-        ~SearchView() { context.shutdown(); }
+        ~SearchView() { context.Shutdown(); }
         SearchView(const SearchView &) = delete;
         SearchView &operator=(const SearchView &) = delete;
 
-        void run() {
-            pollfd descriptors[] = { { STDIN_FILENO, POLLIN, 0 }, { wakeup.descriptor(), POLLIN, 0 } };
-            render();
+        void Run() {
+            pollfd descriptors[] = { { STDIN_FILENO, POLLIN, 0 }, { wakeup.Descriptor(), POLLIN, 0 } };
+            Render();
             while (running) {
                 const auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
                     nextSearch - Clock::now()).count();
@@ -135,24 +135,24 @@ namespace {
                 if (ready < 0) throw std::runtime_error("Could not wait for terminal events");
                 if (descriptors[0].revents & (POLLHUP | POLLERR)) break;
 
-                for (int key; (key = getch()) != ERR && running;) handle(key);
+                for (int key; (key = getch()) != ERR && running;) Handle(key);
                 if (!running) break;
-                if (Clock::now() >= nextSearch) search();
+                if (Clock::now() >= nextSearch) Search();
                 if (descriptors[1].revents & POLLIN) {
-                    wakeup.drain();
-                    if (context.dispatch() != MC_OK) throw std::runtime_error("Could not dispatch search");
+                    wakeup.Drain();
+                    if (context.Dispatch() != MC_OK) throw std::runtime_error("Could not dispatch search");
                 }
-                render();
+                Render();
             }
         }
 
     private:
-        void handle(int key) {
+        void Handle(int key) {
             if (key == 4) {
                 running = false;
             } else if (!opened && key == 't') {
                 opened = true;
-                search();
+                Search();
             } else if (opened && key == KEY_DOWN && editing) {
                 editing = false;
             } else if (opened && (key == KEY_UP || key == '\t')) {
@@ -166,19 +166,19 @@ namespace {
                     return;
                 }
                 nextSearch = Clock::now() + debounce;
-            } else if (opened && result.size()) {
+            } else if (opened && result.Size()) {
                 if (key == '\n' || key == KEY_ENTER) {
-                    inspectSelection();
+                    InspectSelection();
                     return;
                 }
                 if (key == 'j' || key == 'k') {
-                    const auto lastRow = std::min(viewport, result.size() - offset) - 1;
+                    const auto lastRow = std::min(viewport, result.Size() - offset) - 1;
                     selected = key == 'j' ? std::min(lastRow, selected + 1) : (selected ? selected - 1 : 0);
-                    clearSelection();
+                    ClearSelection();
                     return;
                 }
                 const auto previous = offset;
-                const auto last = ((result.size() - 1) / viewport) * viewport;
+                const auto last = ((result.Size() - 1) / viewport) * viewport;
                 if (key == KEY_END) offset = last;
                 else if (key == KEY_HOME) offset = 0;
                 else if (key == KEY_NPAGE || key == KEY_DOWN) offset = std::min(last, offset + viewport);
@@ -186,7 +186,7 @@ namespace {
                 else return;
                 if (offset != previous) {
                     selected = 0;
-                    clearSelection();
+                    ClearSelection();
                     forward = offset > previous;
                     prefetchFailed = false;
                     lastMove = pages.count(offset) ? "cache hit" : "cache miss";
@@ -194,23 +194,23 @@ namespace {
             }
         }
 
-        void search() {
+        void Search() {
             nextSearch = Clock::time_point::max();
             ++generation;
-            if (searchRequest) context.cancel(searchRequest);
-            if (windowRequest) context.cancel(windowRequest);
+            if (searchRequest) context.Cancel(searchRequest);
+            if (windowRequest) context.Cancel(windowRequest);
             result = {};
             pages.clear();
             offset = 0;
             selected = 0;
-            clearSelection();
+            ClearSelection();
             forward = true;
             prefetchFailed = false;
             lastMove = nullptr;
             error.clear();
 
             const auto current = generation;
-            searchRequest = open_track_search(context, TrackSearch{ filter },
+            searchRequest = OpenTrackSearch(context, TrackSearch{ filter },
                 [this, current](mc_result status, TrackResult tracks, std::string_view message) {
                     if (current != generation) return;
                     searchRequest = 0;
@@ -219,46 +219,46 @@ namespace {
                 });
         }
 
-        size_t ahead(size_t distance) const {
+        size_t Ahead(size_t distance) const {
             return forward ? offset + distance * viewport : offset - distance * viewport;
         }
 
-        void clearSelection() {
+        void ClearSelection() {
             ++selectionGeneration;
-            if (selectionRequest) context.cancel(selectionRequest);
+            if (selectionRequest) context.Cancel(selectionRequest);
             selectionRequest = 0;
             selectionStatus.clear();
         }
 
-        void inspectSelection() {
-            clearSelection();
+        void InspectSelection() {
+            ClearSelection();
             const auto row = offset + selected;
-            const auto identity = result.track(row);
-            const auto id = identity.id();
+            const auto identity = result.Track(row);
+            const auto id = identity.Id();
             const auto current = selectionGeneration;
 
             /* Re-resolve the selected identity when an action needs current metadata. */
-            selectionRequest = read_track(context, identity,
+            selectionRequest = ReadTrack(context, identity,
                 [this, current, id](mc_result status, TrackPage page, std::string_view) {
                     if (current != selectionGeneration) return;
                     selectionRequest = 0;
                     if (status == MC_ERROR_NOT_FOUND) selectionStatus = "Selected track is unavailable";
-                    else if (status != MC_OK || page.track(0).id() != id) selectionStatus = "Could not resolve selected track";
-                    else selectionStatus = "Selected track: " + std::string(page.track(0).title());
+                    else if (status != MC_OK || page.Track(0).Id() != id) selectionStatus = "Could not resolve selected track";
+                    else selectionStatus = "Selected track: " + std::string(page.Track(0).Title());
                 });
         }
 
-        size_t prefetchCount() const {
-            if (offset >= result.size()) return 0;
-            const auto available = forward ? (result.size() - 1 - offset) / viewport : offset / viewport;
+        size_t PrefetchCount() const {
+            if (offset >= result.Size()) return 0;
+            const auto available = forward ? (result.Size() - 1 - offset) / viewport : offset / viewport;
             return std::min(cache.prefetch, available);
         }
 
-        void cachePage(size_t position, TrackPage page) {
+        void CachePage(size_t position, TrackPage page) {
             if (cache.capacity == 1 && position != offset && pages.count(offset)) return;
             if (pages.size() == cache.capacity) {
                 /* Keep the visible page and the planned directional prefetch range. */
-                const auto edge = ahead(prefetchCount());
+                const auto edge = Ahead(PrefetchCount());
                 const auto score = [&](size_t key) {
                     return std::make_pair(key < std::min(edge, offset) || key > std::max(edge, offset),
                         key > offset ? key - offset : offset - key);
@@ -270,29 +270,29 @@ namespace {
             pages.emplace(position, std::move(page));
         }
 
-        void requestWindow() {
-            if (!result || offset >= result.size() || !error.empty()) return;
+        void RequestWindow() {
+            if (!result || offset >= result.Size() || !error.empty()) return;
 
             /* A visible miss takes precedence over speculative work for another page. */
             const bool visibleMissing = !pages.count(offset);
             if (windowRequest) {
-                if (visibleMissing && speculative && pendingOffset != offset) context.cancel(windowRequest);
+                if (visibleMissing && speculative && pendingOffset != offset) context.Cancel(windowRequest);
                 return;
             }
             pendingOffset = offset;
             speculative = !visibleMissing;
             if (speculative) {
                 if (prefetchFailed) return;
-                const auto count = prefetchCount();
+                const auto count = PrefetchCount();
                 size_t distance = 1;
-                while (distance <= count && pages.count(ahead(distance))) ++distance;
+                while (distance <= count && pages.count(Ahead(distance))) ++distance;
                 if (distance > count) return;
-                pendingOffset = ahead(distance);
+                pendingOffset = Ahead(distance);
             }
 
             const auto requestedOffset = pendingOffset;
             const auto current = generation;
-            windowRequest = read_tracks(context, result, TrackRange{ requestedOffset, viewport },
+            windowRequest = ReadTracks(context, result, TrackRange{ requestedOffset, viewport },
                 [this, current, requestedOffset](mc_result status, TrackPage page, std::string_view message) {
                     windowRequest = 0;
                     if (current != generation) return;
@@ -304,12 +304,12 @@ namespace {
                             prefetchFailed = true;
                         }
                     } else {
-                        cachePage(requestedOffset, std::move(page));
+                        CachePage(requestedOffset, std::move(page));
                     }
                 });
         }
 
-        void render() {
+        void Render() {
             erase();
             mvaddstr(0, 0, "Track Search Pilot");
             if (opened) {
@@ -320,28 +320,28 @@ namespace {
                     mvaddnstr(4, 0, error.c_str(), COLS - 1);
                 } else if (const auto found = pages.find(offset); found != pages.end()) {
                     const auto &page = found->second;
-                    for (size_t row = 0; row < page.size() && row + 5 < static_cast<size_t>(LINES); ++row) {
-                        const auto title = page.track(row).title();
+                    for (size_t row = 0; row < page.Size() && row + 5 < static_cast<size_t>(LINES); ++row) {
+                        const auto title = page.Track(row).Title();
                         mvprintw(static_cast<int>(row + 5), 0, "%c%c %.*s",
                             !editing && row == selected ? '>' : ' ',
-                            result.starts_album(offset + row) ? '*' : ' ',
+                            result.StartsAlbum(offset + row) ? '*' : ' ',
                             static_cast<int>(title.empty() ? 14 : title.size()),
                             title.empty() ? "[unavailable]" : title.data());
                     }
-                } else if (searchRequest || (result && offset < result.size())) {
+                } else if (searchRequest || (result && offset < result.Size())) {
                     mvaddstr(5, 0, "loading tracks");
                 } else {
                     mvaddstr(5, 0, "no tracks");
                 }
             }
             if (diagnostics && opened) {
-                if (prefetchCount() && pages.count(ahead(1))) mvaddstr(13, 0, "adjacent page ready");
+                if (PrefetchCount() && pages.count(Ahead(1))) mvaddstr(13, 0, "adjacent page ready");
                 if (lastMove) mvaddstr(14, 0, lastMove);
             }
             if (!selectionStatus.empty()) mvaddnstr(15, 0, selectionStatus.c_str(), COLS - 1);
             mvaddstr(std::max(0, LINES - 1), 0, "t search  j/k select  enter inspect  page up/down scroll  ^D quit");
             refresh();
-            requestWindow();
+            RequestWindow();
         }
 
         Wakeup wakeup;
@@ -379,7 +379,7 @@ int main() {
         const auto cache = cacheOptions();
         Terminal terminal;
         SearchView view(directory, cache, std::getenv("MUSIKCUBE_SEARCH_CACHE_DIAGNOSTICS") != nullptr);
-        view.run();
+        view.Run();
         return 0;
     } catch (const std::exception &error) {
         std::fprintf(stderr, "%s\n", error.what());

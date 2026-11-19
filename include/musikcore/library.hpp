@@ -17,54 +17,54 @@ namespace musik { namespace core { namespace client {
     /* Copyable and movable. Borrows a row and its strings while the page storage is owned. */
     class TrackView {
     public:
-        int64_t id() const noexcept { return mc_track_page_get_id(page_, row_); }
-        explicit operator bool() const noexcept { return id() != 0; }
+        int64_t Id() const noexcept { return mc_track_page_get_id(page, rowIndex); }
+        explicit operator bool() const noexcept { return Id() != 0; }
 
         /* Missing fields have null data. An explicit empty value has non-null data. */
-        std::string_view title() const noexcept { return value(MC_TRACK_FIELD_TITLE); }
-        std::string_view artist() const noexcept { return value(MC_TRACK_FIELD_ARTIST); }
-        std::string_view album() const noexcept { return value(MC_TRACK_FIELD_ALBUM); }
-        std::string_view album_artist() const noexcept { return value(MC_TRACK_FIELD_ALBUM_ARTIST); }
-        std::string_view genre() const noexcept { return value(MC_TRACK_FIELD_GENRE); }
-        std::string_view filename() const noexcept { return value(MC_TRACK_FIELD_FILENAME); }
-        std::optional<int64_t> track_number() const noexcept { return number(MC_TRACK_FIELD_TRACK); }
-        std::optional<int64_t> disc_number() const noexcept { return number(MC_TRACK_FIELD_DISC); }
-        std::optional<std::chrono::seconds> duration() const noexcept {
-            const auto seconds = number(MC_TRACK_FIELD_DURATION);
+        std::string_view Title() const noexcept { return Value(MC_TRACK_FIELD_TITLE); }
+        std::string_view Artist() const noexcept { return Value(MC_TRACK_FIELD_ARTIST); }
+        std::string_view Album() const noexcept { return Value(MC_TRACK_FIELD_ALBUM); }
+        std::string_view AlbumArtist() const noexcept { return Value(MC_TRACK_FIELD_ALBUM_ARTIST); }
+        std::string_view Genre() const noexcept { return Value(MC_TRACK_FIELD_GENRE); }
+        std::string_view Filename() const noexcept { return Value(MC_TRACK_FIELD_FILENAME); }
+        std::optional<int64_t> TrackNumber() const noexcept { return Number(MC_TRACK_FIELD_TRACK); }
+        std::optional<int64_t> DiscNumber() const noexcept { return Number(MC_TRACK_FIELD_DISC); }
+        std::optional<std::chrono::seconds> Duration() const noexcept {
+            const auto seconds = Number(MC_TRACK_FIELD_DURATION);
             if (!seconds || *seconds < 0) return std::nullopt;
             return std::chrono::seconds(*seconds);
         }
 
-        std::string_view value(std::string_view key, size_t index = 0) const noexcept {
-            return as_string_view(mc_track_page_get_string_at(page_, row_, field_index(key), index));
+        std::string_view Value(std::string_view key, size_t index = 0) const noexcept {
+            return AsStringView(mc_track_page_get_string_at(page, rowIndex, FieldIndex(key), index));
         }
 
         /* The vector owns its elements. Each string view still borrows the page. */
-        std::vector<std::string_view> values(std::string_view key) const {
-            const auto field = field_index(key);
-            const auto count = mc_track_page_get_value_count(page_, row_, field);
+        std::vector<std::string_view> Values(std::string_view key) const {
+            const auto field = FieldIndex(key);
+            const auto count = mc_track_page_get_value_count(page, rowIndex, field);
             std::vector<std::string_view> result;
             result.reserve(count);
             for (size_t index = 0; index < count; ++index) {
-                result.push_back(as_string_view(mc_track_page_get_string_at(page_, row_, field, index)));
+                result.push_back(AsStringView(mc_track_page_get_string_at(page, rowIndex, field, index)));
             }
             return result;
         }
 
     private:
         friend class TrackPage;
-        TrackView(const mc_track_page *page, size_t row) noexcept : page_(page), row_(row) {}
+        TrackView(const mc_track_page *page, size_t row) noexcept : page(page), rowIndex(row) {}
 
-        size_t field_index(std::string_view key) const noexcept {
-            const auto count = mc_track_page_get_field_count(page_);
+        size_t FieldIndex(std::string_view key) const noexcept {
+            const auto count = mc_track_page_get_field_count(page);
             for (size_t index = 0; index < count; ++index) {
-                if (as_string_view(mc_track_page_get_field_name(page_, index)) == key) return index;
+                if (AsStringView(mc_track_page_get_field_name(page, index)) == key) return index;
             }
             return count;
         }
 
-        std::optional<int64_t> number(std::string_view key) const noexcept {
-            const auto text = value(key);
+        std::optional<int64_t> Number(std::string_view key) const noexcept {
+            const auto text = Value(key);
             if (text.empty()) return std::nullopt;
             int64_t result = 0;
             const auto end = text.data() + text.size();
@@ -73,8 +73,8 @@ namespace musik { namespace core { namespace client {
             return result;
         }
 
-        const mc_track_page *page_;
-        size_t row_;
+        const mc_track_page *page;
+        size_t rowIndex;
     };
 
     /* Move-only. Moving transfers ownership and leaves the source empty. */
@@ -82,36 +82,36 @@ namespace musik { namespace core { namespace client {
     public:
         TrackPage() = default;
         /* Takes ownership of a page returned by the C ABI. */
-        explicit TrackPage(mc_track_page *page) noexcept : page_(page) {}
+        explicit TrackPage(mc_track_page *page) noexcept : page(page) {}
 
         TrackPage(const TrackPage &) = delete;
         TrackPage &operator=(const TrackPage &) = delete;
         TrackPage(TrackPage &&) noexcept = default;
         TrackPage &operator=(TrackPage &&) noexcept = default;
 
-        explicit operator bool() const noexcept { return static_cast<bool>(page_); }
-        size_t size() const noexcept { return mc_track_page_get_count(page_.get()); }
-        int64_t id(size_t row) const noexcept { return mc_track_page_get_id(page_.get(), row); }
-        size_t field_count() const noexcept { return mc_track_page_get_field_count(page_.get()); }
-        TrackView track(size_t row) const & noexcept { return TrackView(page_.get(), row); }
-        TrackView track(size_t row) const && = delete;
-        size_t value_count(size_t row, size_t field) const noexcept {
-            return mc_track_page_get_value_count(page_.get(), row, field);
+        explicit operator bool() const noexcept { return static_cast<bool>(page); }
+        size_t Size() const noexcept { return mc_track_page_get_count(page.get()); }
+        int64_t Id(size_t row) const noexcept { return mc_track_page_get_id(page.get(), row); }
+        size_t FieldCount() const noexcept { return mc_track_page_get_field_count(page.get()); }
+        TrackView Track(size_t row) const & noexcept { return TrackView(page.get(), row); }
+        TrackView Track(size_t row) const && = delete;
+        size_t ValueCount(size_t row, size_t field) const noexcept {
+            return mc_track_page_get_value_count(page.get(), row, field);
         }
 
         /* Views borrow from this page. Missing values have null data. */
-        std::string_view field_name(size_t field) const noexcept {
-            return as_string_view(mc_track_page_get_field_name(page_.get(), field));
+        std::string_view FieldName(size_t field) const noexcept {
+            return AsStringView(mc_track_page_get_field_name(page.get(), field));
         }
-        std::string_view value(size_t row, size_t field, size_t index = 0) const noexcept {
-            return as_string_view(mc_track_page_get_string_at(page_.get(), row, field, index));
+        std::string_view Value(size_t row, size_t field, size_t index = 0) const noexcept {
+            return AsStringView(mc_track_page_get_string_at(page.get(), row, field, index));
         }
 
     private:
         struct Destroy {
             void operator()(mc_track_page *page) const noexcept { mc_track_page_destroy(&page); }
         };
-        std::unique_ptr<mc_track_page, Destroy> page_;
+        std::unique_ptr<mc_track_page, Destroy> page;
     };
 
     /* Copyable and movable. The search and field views borrow their strings. */
@@ -130,42 +130,45 @@ namespace musik { namespace core { namespace client {
     class TrackRef {
     public:
         TrackRef() = default;
-        explicit TrackRef(mc_track_ref *track) noexcept : track_(track) {}
+        explicit TrackRef(mc_track_ref *track) noexcept : identity(track) {}
         TrackRef(const TrackRef &) = delete;
         TrackRef &operator=(const TrackRef &) = delete;
         TrackRef(TrackRef &&) noexcept = default;
         TrackRef &operator=(TrackRef &&) noexcept = default;
 
-        explicit operator bool() const noexcept { return static_cast<bool>(track_); }
-        int64_t id() const noexcept { return mc_track_ref_get_id(get()); }
-        const mc_track_ref *get() const noexcept { return track_.get(); }
+        explicit operator bool() const noexcept { return static_cast<bool>(identity); }
+        int64_t Id() const noexcept { return mc_track_ref_get_id(Get()); }
+        const mc_track_ref *Get() const noexcept { return identity.get(); }
 
     private:
         struct Destroy {
             void operator()(mc_track_ref *track) const noexcept { mc_track_ref_destroy(&track); }
         };
-        std::unique_ptr<mc_track_ref, Destroy> track_;
+        std::unique_ptr<mc_track_ref, Destroy> identity;
     };
 
     /* Move-only. Moving transfers ownership and leaves the source empty. */
     class TrackResult {
     public:
         TrackResult() = default;
-        explicit TrackResult(mc_track_result *tracks) noexcept : tracks_(tracks) {}
+        explicit TrackResult(mc_track_result *tracks) noexcept : tracks(tracks) {}
 
         TrackResult(const TrackResult &) = delete;
         TrackResult &operator=(const TrackResult &) = delete;
         TrackResult(TrackResult &&) noexcept = default;
         TrackResult &operator=(TrackResult &&) noexcept = default;
 
-        explicit operator bool() const noexcept { return static_cast<bool>(tracks_); }
-        const mc_track_result *get() const noexcept { return tracks_.get(); }
-        size_t size() const noexcept { return mc_track_result_get_count(get()); }
-        int64_t id(size_t row) const noexcept { return mc_track_result_get_id(get(), row); }
-        bool starts_album(size_t row) const noexcept { return mc_track_result_starts_album(get(), row); }
-        TrackRef track(size_t row) const {
+        explicit operator bool() const noexcept { return static_cast<bool>(tracks); }
+        const mc_track_result *Get() const noexcept { return tracks.get(); }
+        size_t Size() const noexcept { return mc_track_result_get_count(Get()); }
+        int64_t Id(size_t row) const noexcept { return mc_track_result_get_id(Get(), row); }
+        bool StartsAlbum(size_t row) const noexcept { return mc_track_result_starts_album(Get(), row); }
+        uint64_t AlbumDurationSeconds(size_t row) const noexcept {
+            return mc_track_result_get_album_duration(Get(), row);
+        }
+        TrackRef Track(size_t row) const {
             mc_track_ref *track = nullptr;
-            const auto status = mc_track_result_get_ref(get(), row, &track);
+            const auto status = mc_track_result_get_ref(Get(), row, &track);
             if (status != MC_OK) throw Error(status);
             return TrackRef(track);
         }
@@ -174,7 +177,7 @@ namespace musik { namespace core { namespace client {
         struct Destroy {
             void operator()(mc_track_result *tracks) const noexcept { mc_track_result_destroy(&tracks); }
         };
-        std::unique_ptr<mc_track_result, Destroy> tracks_;
+        std::unique_ptr<mc_track_result, Destroy> tracks;
     };
 
     /* Copyable and movable. The text view borrows its input until submission. */
@@ -197,14 +200,14 @@ namespace musik { namespace core { namespace client {
 
     namespace detail {
         template<typename Handle, typename Result, typename Completion>
-        inline void MC_CALL complete_library_request(
+        inline void MC_CALL completeLibraryRequest(
             mc_result result, Handle *handle, const mc_error *error, void *data) {
             std::unique_ptr<Completion> completion(static_cast<Completion *>(data));
-            (*completion)(result, Result(handle), as_string_view(mc_error_get_message(error)));
+            (*completion)(result, Result(handle), AsStringView(mc_error_get_message(error)));
         }
 
         template<typename Completion, typename Start>
-        mc_request_id submit_library_request(Completion completion, Start start) {
+        mc_request_id submitLibraryRequest(Completion completion, Start start) {
             if (!completion) throw Error(MC_ERROR_INVALID_ARGUMENT);
 
             /* An accepted request owns the callback state until its terminal callback. */
@@ -216,7 +219,7 @@ namespace musik { namespace core { namespace client {
             return request;
         }
 
-        inline std::vector<mc_string_view> field_views(const std::vector<std::string_view> &names) {
+        inline std::vector<mc_string_view> fieldViews(const std::vector<std::string_view> &names) {
             std::vector<mc_string_view> fields;
             fields.reserve(names.size());
             for (const auto name : names) fields.push_back({ name.data(), name.size() });
@@ -224,9 +227,9 @@ namespace musik { namespace core { namespace client {
         }
     }
 
-    inline mc_request_id query_tracks(
+    inline mc_request_id QueryTracks(
         Context &context, const TrackQuery &query, TrackQueryCompletion completion) {
-        const auto fields = detail::field_views(query.fields);
+        const auto fields = detail::fieldViews(query.fields);
 
         mc_track_query options = MC_TRACK_QUERY_DEFAULT;
         options.search = { query.search.data(), query.search.size() };
@@ -235,49 +238,49 @@ namespace musik { namespace core { namespace client {
         options.offset = query.offset;
         options.limit = query.limit;
 
-        return detail::submit_library_request(std::move(completion), [&](void *state, mc_request_id *request) {
-            return mc_library_query_tracks_async(context.get(), &options,
-                detail::complete_library_request<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
+        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+            return mc_library_query_tracks_async(context.Get(), &options,
+                detail::completeLibraryRequest<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
         });
     }
 
-    inline mc_request_id open_track_search(Context &context, const TrackSearch &search,
+    inline mc_request_id OpenTrackSearch(Context &context, const TrackSearch &search,
         TrackSearchCompletion completion) {
         mc_track_search options = MC_TRACK_SEARCH_DEFAULT;
         options.text = { search.text.data(), search.text.size() };
         options.mode = search.mode;
         options.order = search.order;
-        return detail::submit_library_request(std::move(completion), [&](void *state, mc_request_id *request) {
-            return mc_library_open_track_search_async(context.get(), &options,
-                detail::complete_library_request<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
+        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+            return mc_library_open_track_search_async(context.Get(), &options,
+                detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
         });
     }
 
-    inline mc_request_id read_tracks(Context &context, const TrackResult &tracks,
+    inline mc_request_id ReadTracks(Context &context, const TrackResult &tracks,
         const TrackRange &range, TrackQueryCompletion completion) {
-        const auto fields = detail::field_views(range.fields);
+        const auto fields = detail::fieldViews(range.fields);
         mc_track_range options = MC_TRACK_RANGE_DEFAULT;
         options.offset = range.offset;
         options.limit = range.limit;
         options.fields = fields.data();
         options.field_count = fields.size();
-        return detail::submit_library_request(std::move(completion), [&](void *state, mc_request_id *request) {
-            return mc_track_result_read_async(context.get(), tracks.get(), &options,
-                detail::complete_library_request<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
+        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+            return mc_track_result_read_async(context.Get(), tracks.Get(), &options,
+                detail::completeLibraryRequest<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
         });
     }
 
-    inline mc_request_id read_track(Context &context, const TrackRef &track,
+    inline mc_request_id ReadTrack(Context &context, const TrackRef &track,
         const std::vector<std::string_view> &names, TrackQueryCompletion completion) {
-        const auto fields = detail::field_views(names);
-        return detail::submit_library_request(std::move(completion), [&](void *state, mc_request_id *request) {
-            return mc_track_ref_read_async(context.get(), track.get(), fields.data(), fields.size(),
-                detail::complete_library_request<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
+        const auto fields = detail::fieldViews(names);
+        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+            return mc_track_ref_read_async(context.Get(), track.Get(), fields.data(), fields.size(),
+                detail::completeLibraryRequest<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
         });
     }
 
-    inline mc_request_id read_track(Context &context, const TrackRef &track, TrackQueryCompletion completion) {
-        return read_track(context, track, TrackRange{}.fields, std::move(completion));
+    inline mc_request_id ReadTrack(Context &context, const TrackRef &track, TrackQueryCompletion completion) {
+        return ReadTrack(context, track, TrackRange{}.fields, std::move(completion));
     }
 
 } } }

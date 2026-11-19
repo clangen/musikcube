@@ -9,7 +9,7 @@
 
 namespace musik { namespace core { namespace client {
 
-    inline std::string_view as_string_view(mc_string_view value) noexcept {
+    inline std::string_view AsStringView(mc_string_view value) noexcept {
         return value.data ? std::string_view(value.data, value.length) : std::string_view{};
     }
 
@@ -19,17 +19,17 @@ namespace musik { namespace core { namespace client {
         explicit Error(mc_result result, std::string_view message = {})
             : std::runtime_error(message.empty()
                 ? "musikcore error " + std::to_string(result) : std::string(message)),
-              result_(result) {}
+              resultCode(result) {}
 
         Error(const Error &) = default;
         Error &operator=(const Error &) = default;
         Error(Error &&) noexcept = default;
         Error &operator=(Error &&) noexcept = default;
 
-        mc_result result() const noexcept { return result_; }
+        mc_result Result() const noexcept { return resultCode; }
 
     private:
-        mc_result result_;
+        mc_result resultCode;
     };
 
     /* Neither copyable nor movable. Dispatch, shutdown, and destruction run on the dispatcher thread. */
@@ -38,7 +38,7 @@ namespace musik { namespace core { namespace client {
     public:
         Context() : Context(nullptr) {}
         explicit Context(const mc_context_options &options) : Context(&options) {}
-        ~Context() { mc_context_destroy(&context_); }
+        ~Context() { mc_context_destroy(&context); }
 
         Context(const Context &) = delete;
         Context &operator=(const Context &) = delete;
@@ -46,27 +46,27 @@ namespace musik { namespace core { namespace client {
         Context &operator=(Context &&) = delete;
 
         /* Borrows the handle for the lifetime of this wrapper. */
-        mc_context *get() noexcept { return context_; }
-        const mc_context *get() const noexcept { return context_; }
-        mc_result dispatch() { return mc_context_dispatch(context_); }
-        mc_result cancel(mc_request_id request) { return mc_request_cancel(context_, request); }
-        mc_result shutdown() { return mc_context_shutdown(context_); }
+        mc_context *Get() noexcept { return context; }
+        const mc_context *Get() const noexcept { return context; }
+        mc_result Dispatch() { return mc_context_dispatch(context); }
+        mc_result Cancel(mc_request_id request) { return mc_request_cancel(context, request); }
+        mc_result Shutdown() { return mc_context_shutdown(context); }
 
     private:
         explicit Context(const mc_context_options *options) {
             mc_error *error = nullptr;
-            const auto result = mc_context_create(options, &context_, &error);
+            const auto result = mc_context_create(options, &context, &error);
             if (result != MC_OK) {
                 /* Copy details before releasing the C error, including if construction throws. */
                 struct OwnedError {
                     mc_error *value;
                     ~OwnedError() { mc_error_destroy(&value); }
                 } owned{ error };
-                throw Error(result, as_string_view(mc_error_get_message(owned.value)));
+                throw Error(result, AsStringView(mc_error_get_message(owned.value)));
             }
         }
 
-        mc_context *context_ = nullptr;
+        mc_context *context = nullptr;
     };
 
 } } }
