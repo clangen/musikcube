@@ -2,12 +2,69 @@
 #define MUSIKCORE_LIBRARY_H
 
 #include <musikcore/context.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct mc_track_page mc_track_page;
+typedef struct mc_track_result mc_track_result;
+typedef struct mc_track_ref mc_track_ref;
+
+typedef enum mc_track_search_mode {
+    MC_TRACK_SEARCH_SUBSTRING = 0,
+    MC_TRACK_SEARCH_REGEX = 1
+} mc_track_search_mode;
+
+typedef enum mc_track_search_order {
+    MC_TRACK_SEARCH_ALBUM = 0,
+    MC_TRACK_SEARCH_TITLE = 1,
+    MC_TRACK_SEARCH_ARTIST = 2,
+    MC_TRACK_SEARCH_DATE_ADDED_ASC = 3,
+    MC_TRACK_SEARCH_DATE_ADDED_DESC = 4,
+    MC_TRACK_SEARCH_DATE_UPDATED_ASC = 5,
+    MC_TRACK_SEARCH_DATE_UPDATED_DESC = 6,
+    MC_TRACK_SEARCH_LAST_PLAYED_ASC = 7,
+    MC_TRACK_SEARCH_LAST_PLAYED_DESC = 8,
+    MC_TRACK_SEARCH_RATING_ASC = 9,
+    MC_TRACK_SEARCH_RATING_DESC = 10,
+    MC_TRACK_SEARCH_PLAY_COUNT_ASC = 11,
+    MC_TRACK_SEARCH_PLAY_COUNT_DESC = 12,
+    MC_TRACK_SEARCH_GENRE = 13
+} mc_track_search_order;
+
+typedef struct mc_track_search {
+    /* Size of this struct in bytes. */
+    uint32_t struct_size;
+    /* UTF-8 title, album, artist, or genre search. Copied during submission. */
+    mc_string_view text;
+    /* A value from mc_track_search_mode. Empty text matches every track in the sort. */
+    uint32_t mode;
+    /* A value from mc_track_search_order. Zero sorts by album. */
+    uint32_t order;
+} mc_track_search;
+
+#define MC_TRACK_SEARCH_DEFAULT { sizeof(mc_track_search), { NULL, 0 }, MC_TRACK_SEARCH_SUBSTRING, MC_TRACK_SEARCH_ALBUM }
+
+typedef struct mc_track_range {
+    /* Size of this struct in bytes. */
+    uint32_t struct_size;
+    /* First track position in the stable result. */
+    size_t offset;
+    /* Maximum tracks to read. Zero uses the context default. */
+    size_t limit;
+    /* Requested keys in field order. Copied during submission. */
+    const mc_string_view *fields;
+    /* Number of keys. Zero requests the title. */
+    size_t field_count;
+} mc_track_range;
+
+#define MC_TRACK_RANGE_DEFAULT { sizeof(mc_track_range), 0, 0, NULL, 0 }
+
+/* Success transfers the result handle. Errors are borrowed for the callback. */
+typedef void (MC_CALL *mc_track_search_completion_fn)(
+    mc_result result, mc_track_result *tracks, const mc_error *error, void *user_data);
 
 /* Built-in metadata keys. Queries also accept keys from the library tag tables. */
 #define MC_TRACK_FIELD_ID "id"
@@ -61,6 +118,34 @@ typedef struct mc_track_query {
 /* Error details and their message views are borrowed until the callback returns. */
 typedef void (MC_CALL *mc_track_query_completion_fn)(
     mc_result result, mc_track_page *page, const mc_error *error, void *user_data);
+
+/* Open a local search. Membership, sort order and album boundaries stay fixed. */
+MC_API mc_result MC_CALL mc_library_open_track_search_async(
+    mc_context *context, const mc_track_search *search, mc_track_search_completion_fn completion,
+    void *user_data, mc_request_id *out_request);
+MC_API size_t MC_CALL mc_track_result_get_count(const mc_track_result *tracks);
+/* Zero for an invalid row. */
+MC_API int64_t MC_CALL mc_track_result_get_id(const mc_track_result *tracks, size_t row);
+/* True when a grouped sort starts a new album at this track position. */
+MC_API bool MC_CALL mc_track_result_starts_album(const mc_track_result *tracks, size_t row);
+/* Read current metadata. Removed tracks retain their IDs and have no values. */
+/* The submitted request retains the result data after the caller releases the handle. */
+MC_API mc_result MC_CALL mc_track_result_read_async(
+    mc_context *context, const mc_track_result *tracks, const mc_track_range *range,
+    mc_track_query_completion_fn completion, void *user_data, mc_request_id *out_request);
+MC_API void MC_CALL mc_track_result_destroy(mc_track_result **tracks);
+
+/* Create an owned identity for a result row. The output slot must be empty. */
+MC_API mc_result MC_CALL mc_track_result_get_ref(
+    const mc_track_result *tracks, size_t row, mc_track_ref **out_track);
+/* The ID is scoped to the originating local library. Null returns zero. */
+MC_API int64_t MC_CALL mc_track_ref_get_id(const mc_track_ref *track);
+MC_API void MC_CALL mc_track_ref_destroy(mc_track_ref **track);
+/* Resolve against the originating library. Hidden or removed tracks return MC_ERROR_NOT_FOUND. */
+/* The accepted request copies the identity and all requested fields. */
+MC_API mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_ref *track,
+    const mc_string_view *fields, size_t field_count, mc_track_query_completion_fn completion,
+    void *user_data, mc_request_id *out_request);
 
 /* Callers own query input storage and may release it on return. */
 /* ABI0 reads musik.db in the explicit context data directory. */

@@ -34,9 +34,6 @@
 
 #pragma once
 
-#include <musikcore/config.h>
-#include <map>
-
 struct sqlite3;
 
 namespace musik { namespace core { namespace db {

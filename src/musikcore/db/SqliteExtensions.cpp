@@ -32,8 +32,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-
 #pragma warning(push, 0)
 extern "C" {
     #include <sqlean/unicode/extension.h>

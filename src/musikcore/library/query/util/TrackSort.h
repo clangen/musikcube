@@ -35,6 +35,8 @@
 #pragma once
 
 #include <map>
+#include <set>
+#include <string>
 
 namespace musik { namespace core { namespace library { namespace query {
 

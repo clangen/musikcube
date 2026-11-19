@@ -1,11 +1,12 @@
 mc_abi_version
 mc_context_create
-mc_context_dispatch
 mc_context_destroy
+mc_context_dispatch
 mc_context_shutdown
 mc_error_destroy
 mc_error_get_code
 mc_error_get_message
+mc_library_open_track_search_async
 mc_library_query_tracks_async
 mc_request_cancel
 mc_track_page_destroy
@@ -16,3 +17,12 @@ mc_track_page_get_id
 mc_track_page_get_string
 mc_track_page_get_string_at
 mc_track_page_get_value_count
+mc_track_ref_destroy
+mc_track_ref_get_id
+mc_track_ref_read_async
+mc_track_result_destroy
+mc_track_result_get_count
+mc_track_result_get_id
+mc_track_result_get_ref
+mc_track_result_read_async
+mc_track_result_starts_album

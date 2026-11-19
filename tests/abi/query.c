@@ -13,6 +13,7 @@ void query_test_release_wakeup(void);
 #define COMMENT_KEY "comment"
 #define MISSING_KEY "missing"
 #define CUSTOM_KEY "custom'key"
+enum { fixture_band_track = 12 };
 
 enum fixture_field {
     fixture_mood,
@@ -60,13 +61,20 @@ static int prepare_fixture(const char *root) {
     if (result == SQLITE_OK) {
         result = sqlite3_exec(database,
             "DROP TABLE IF EXISTS tracks; DROP TABLE IF EXISTS artists;"
+            "DROP TABLE IF EXISTS albums; DROP TABLE IF EXISTS genres;"
             "DROP TABLE IF EXISTS track_meta; DROP TABLE IF EXISTS meta_values; DROP TABLE IF EXISTS meta_keys;"
             "CREATE TABLE tracks (id INTEGER PRIMARY KEY, title TEXT, visible INTEGER, duration INTEGER,"
-            " visual_artist_id INTEGER);"
-            "INSERT INTO tracks VALUES (12, 'Live% Two', 1, 42, 2), (7, 'Live% One', 1, 1, 0),"
+            " visual_artist_id INTEGER, album_id INTEGER DEFAULT 1, visual_genre_id INTEGER DEFAULT 1,"
+            " disc INTEGER DEFAULT 1, track INTEGER DEFAULT 1);"
+            "INSERT INTO tracks (id, title, visible, duration, visual_artist_id)"
+            " VALUES (12, 'Live% Two', 1, 42, 2), (7, 'Live% One', 1, 1, 0),"
             "(9, 'Live% Hidden', 0, 1, 0), (10, 'Live Other', 1, 1, 0);"
             "CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT);"
             "INSERT INTO artists VALUES (2, 'The Band');"
+            "CREATE TABLE albums (id INTEGER PRIMARY KEY, name TEXT);"
+            "INSERT INTO albums VALUES (1, 'Album');"
+            "CREATE TABLE genres (id INTEGER PRIMARY KEY, name TEXT);"
+            "INSERT INTO genres VALUES (1, 'Genre');"
             "CREATE TABLE meta_keys (id INTEGER PRIMARY KEY, name TEXT);"
             "CREATE TABLE meta_values (id INTEGER PRIMARY KEY, meta_key_id INTEGER, sort_order INTEGER, content TEXT);"
             "CREATE TABLE track_meta (track_id INTEGER, meta_value_id INTEGER);"
@@ -82,6 +90,64 @@ static int prepare_fixture(const char *root) {
 
 static int equals(mc_string_view view, const char *value) {
     return view.data && view.length == strlen(value) && memcmp(view.data, value, view.length) == 0;
+}
+
+static void MC_CALL search_completed(mc_result result, mc_track_result *tracks, const mc_error *error, void *data) {
+    (void)result;
+    (void)error;
+    *(mc_track_result **)data = tracks;
+}
+
+static int hide_fixture_track(const char *root) {
+    char path[4096];
+    int length = snprintf(path, sizeof(path), "%s/musik.db", root);
+    if (length < 0 || (size_t)length >= sizeof(path)) return 0;
+    sqlite3 *database = NULL;
+    sqlite3_stmt *statement = NULL;
+    const int ok = sqlite3_open(path, &database) == SQLITE_OK &&
+        sqlite3_prepare_v2(database, "UPDATE tracks SET visible = 0 WHERE id = ?1", -1, &statement, NULL) == SQLITE_OK &&
+        sqlite3_bind_int(statement, 1, fixture_band_track) == SQLITE_OK &&
+        sqlite3_step(statement) == SQLITE_DONE;
+    sqlite3_finalize(statement);
+    sqlite3_close(database);
+    return ok;
+}
+
+static int check_stable_range(mc_context *context, const char *directory) {
+    mc_track_search search = MC_TRACK_SEARCH_DEFAULT;
+    search.text = (mc_string_view)STRING_VIEW("The Band");
+    mc_track_result *tracks = NULL;
+    mc_track_ref *track = NULL;
+    struct completion range = { 0 };
+    struct completion resolved = { 0 };
+    mc_request_id request = 0;
+    mc_track_range options = MC_TRACK_RANGE_DEFAULT;
+    int passed = 0;
+
+    if (mc_library_open_track_search_async(context, &search, search_completed, &tracks, &request) != MC_OK ||
+        !query_test_wait_for_wakeup(3) || mc_context_dispatch(context) != MC_OK ||
+        mc_track_result_get_count(tracks) != 1 || mc_track_result_get_id(tracks, 0) != fixture_band_track ||
+        !mc_track_result_starts_album(tracks, 0) ||
+        mc_track_result_get_ref(tracks, 0, &track) != MC_OK ||
+        mc_track_ref_get_id(track) != fixture_band_track || !hide_fixture_track(directory)) goto cleanup;
+
+    /* An index update removes metadata without shifting the old result's positions. */
+    if (mc_track_result_read_async(context, tracks, &options, completed, &range, &request) != MC_OK ||
+        !query_test_wait_for_wakeup(4) || mc_context_dispatch(context) != MC_OK) goto cleanup;
+    if (mc_track_ref_read_async(context, track, NULL, 0, completed, &resolved, &request) != MC_OK ||
+        !query_test_wait_for_wakeup(5) || mc_context_dispatch(context) != MC_OK) goto cleanup;
+    passed = resolved.calls == 1 && resolved.result == MC_ERROR_NOT_FOUND && !resolved.page &&
+        range.calls == 1 && range.result == MC_OK && mc_track_page_get_count(range.page) == 1 &&
+        mc_track_page_get_id(range.page, 0) == fixture_band_track &&
+        mc_track_page_get_value_count(range.page, 0, 0) == 0;
+
+cleanup:
+    mc_context_shutdown(context);
+    mc_track_result_destroy(&tracks);
+    mc_track_ref_destroy(&track);
+    mc_track_page_destroy(&range.page);
+    mc_track_page_destroy(&resolved.page);
+    return passed;
 }
 
 static int check_metadata(const mc_track_page *page) {
@@ -236,8 +302,9 @@ int main(int argc, char **argv) {
         found.calls != 1 || found.result != MC_OK || !found.page) goto cleanup;
 
     /* The owned page outlives the request and its context. */
+    passed = check_stable_range(context, argv[1]);
     mc_context_destroy(&context);
-    passed = !context && check_metadata(found.page);
+    passed = passed && !context && check_metadata(found.page);
 
 cleanup:
     query_test_release_wakeup();

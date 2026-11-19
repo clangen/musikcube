@@ -650,6 +650,17 @@ context and exposes dispatch, cancellation, and shutdown. `library.hpp`
 provides track queries and owns returned pages. The caller keeps captured
 callback state valid through shutdown, which drains pending callbacks.
 
+`TrackPage::track(row)` returns a read-only `TrackView` with named accessors
+such as `title()`, `artist()`, `album()`, and `duration()`. Text accessors
+return `std::string_view` valid while the page storage is owned. Copy it
+to a `std::string` to keep it independently. Numeric accessors return
+`std::optional`, and duration is in `std::chrono::seconds`. Use
+`value(key)` or `values(key)` for arbitrary requested tags.
+
+C++ range reads and the short `read_track(context, track, completion)`
+overload request title, artist, album, and duration by default. Pass a
+field list to choose a different projection.
+
 ## C SDK
 
 ### Purpose
