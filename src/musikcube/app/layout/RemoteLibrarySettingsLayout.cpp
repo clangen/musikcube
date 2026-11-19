@@ -39,6 +39,7 @@
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
 #include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <app/overlay/SettingsOverlays.h>
 
@@ -202,8 +203,8 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->httpTlsCheckbox->CheckChanged.disconnect(this);
 
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    auto const wssPort = narrow_cast<unsigned short>(prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905));
-    auto const httpPort = narrow_cast<unsigned short>(prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906));
+    auto const wssPort = prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, RemoteLibrary::DefaultWebSocketPort);
+    auto const httpPort = prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, RemoteLibrary::DefaultHttpPort);
     auto const password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
     auto const wssTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
     auto const httpTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
@@ -244,15 +245,15 @@ void RemoteLibrarySettingsLayout::SyncPreferencesAndLayout() {
 
 void RemoteLibrarySettingsLayout::SavePreferences() {
     auto host = this->hostInput->GetText();
-    auto wssPort = getIntFromTextInput(*this->wssPortInput, 7905);
-    auto httpPort = getIntFromTextInput(*this->httpPortInput, 7906);
+    auto wssPort = getIntFromTextInput(*this->wssPortInput, RemoteLibrary::DefaultWebSocketPort);
+    auto httpPort = getIntFromTextInput(*this->httpPortInput, RemoteLibrary::DefaultHttpPort);
     auto password = this->pwInput->GetText();
     auto const wssTls = this->wssTlsCheckbox->IsChecked();
     auto const httpTls = this->httpTlsCheckbox->IsChecked();
     auto const transcoderEnabled = this->transcoderCheckbox->IsChecked();
 
-    if (wssPort > 65535 || wssPort < 0) { wssPort = 7905; }
-    if (httpPort > 65535 || httpPort < 0) { httpPort = 7905; }
+    if (wssPort > 65535 || wssPort <= 0) { wssPort = RemoteLibrary::DefaultWebSocketPort; }
+    if (httpPort > 65535 || httpPort <= 0) { httpPort = RemoteLibrary::DefaultHttpPort; }
 
     prefs->SetString(core::prefs::keys::RemoteLibraryHostname, host.size() ? host.c_str() : "127.0.0.1");
     prefs->SetInt(core::prefs::keys::RemoteLibraryWssPort, wssPort);

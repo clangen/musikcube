@@ -430,7 +430,8 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
 
     auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    const auto port = narrow_cast<unsigned short>(prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7905));
+    const auto configuredPort = prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, DefaultHttpPort);
+    const auto port = configuredPort > 0 && configuredPort <= 65535 ? configuredPort : DefaultHttpPort;
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
     const auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
 
@@ -466,7 +467,9 @@ const net::WebSocketClient& RemoteLibrary::WebSocketClient() const {
 void RemoteLibrary::ReloadConnectionFromPreferences() {
     auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    const auto port = narrow_cast<unsigned short>(prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905));
+    const auto configuredPort = prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, DefaultWebSocketPort);
+    const auto port = narrow_cast<unsigned short>(
+        configuredPort > 0 && configuredPort <= 65535 ? configuredPort : DefaultWebSocketPort);
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
     const auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
     this->wsc.Connect(host, port, password, useTls);

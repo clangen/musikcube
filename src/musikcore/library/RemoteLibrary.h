@@ -58,6 +58,9 @@ namespace musik { namespace core { namespace library {
         public ILibrary::IResourceLocator
     {
         public:
+            static constexpr int DefaultWebSocketPort = 7905;
+            static constexpr int DefaultHttpPort = 7906;
+
             using Client = musik::core::net::WebSocketClient;
             using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
             using MessageQueue = musik::core::runtime::IMessageQueue;
