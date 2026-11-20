@@ -57,7 +57,6 @@ namespace musik {
                     AddTrackToPlaylistCallback addToPlaylist = {});
 
                 static void ShowAddCategoryOverlay(
-                    musik::core::runtime::IMessageQueue& messageQueue,
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
                     const std::string& fieldColumn,
@@ -66,7 +65,6 @@ namespace musik {
                     AddCategoryToPlaylistCallback addToPlaylist = {});
 
                 static void ShowAddDirectoryOverlay(
-                    musik::core::runtime::IMessageQueue& messageQueue,
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
                     const std::string& directory);
@@ -105,10 +103,7 @@ namespace musik {
                     const int64_t playlistId,
                     QueryCallback callback = QueryCallback());
 
-                static void ShowCreatePlaylistOverlay(
-                    musik::core::runtime::IMessageQueue& queue,
-                    musik::core::ILibraryPtr library,
-                    QueryCallback callback = QueryCallback());
+                static void ShowCreatePlaylistOverlay(musik::core::ILibraryPtr library);
 
             private:
                 PlayQueueOverlays() noexcept;

@@ -36,37 +36,19 @@
 #include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <cursespp/Colors.h>
-#include <cursespp/Screen.h>
-#include <cursespp/Text.h>
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
-#include <app/util/PreferenceKeys.h>
-#include <musikcore/library/query/NowPlayingTrackListQuery.h>
 #include <musikcore/debug.h>
-#include <musikcore/library/query/PersistedPlayQueueQuery.h>
-#include <musikcore/support/Duration.h>
-#include <musikcore/support/PreferenceKeys.h>
 #include "NowPlayingLayout.h"
 
 #include <set>
 #include <algorithm>
 
-using namespace musik::core::library::constants;
-
 using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::library;
 using namespace musik::cube;
-using namespace musik::core::library::query;
 using namespace cursespp;
 
-namespace keys = musik::cube::prefs::keys;
-namespace components = musik::core::prefs::components;
-
 static std::set<std::string> kEditKeys;
-
-static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width);
 
 NowPlayingLayout::NowPlayingLayout(
     musik::core::audio::PlaybackService& playback,
@@ -74,14 +56,12 @@ NowPlayingLayout::NowPlayingLayout(
     std::shared_ptr<musik::core::api::Context> context,
     std::shared_ptr<const musik::core::api::Library> apiLibrary)
 : LayoutBase()
-, playback(playback)
 , apiPlayback(musik::core::audio::CreatePlaybackHandle(playback))
 , library(library)
 , reselectIndex(-1)
 , context(std::move(context))
 , apiLibrary(std::move(apiLibrary)) {
-    this->prefs = Preferences::ForComponent(components::Settings);
-    this->InitializeWindows();
+    this->InitializeWindows(playback);
 
     this->displayQueue = std::make_shared<TrackList>(this->library);
     this->apiPlayback.SetQueueChangedCallback(
@@ -125,9 +105,9 @@ void NowPlayingLayout::OnLayout() {
     this->trackListView->SetFocusOrder(0);
 }
 
-void NowPlayingLayout::InitializeWindows() {
+void NowPlayingLayout::InitializeWindows(audio::PlaybackService& playback) {
     this->trackListView = std::make_shared<TrackListView>(
-        this->playback,
+        playback,
         this->library,
         std::bind(
             &NowPlayingLayout::RowDecorator,

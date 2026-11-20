@@ -256,7 +256,7 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
                 auto path = this->adapter->GetFullPathAt(index);
                 if (path.size()) {
                     PlayQueueOverlays::ShowAddDirectoryOverlay(
-                        Window::MessageQueue(), this->playback, this->library, path);
+                        this->playback, this->library, path);
                 }
             }
         }

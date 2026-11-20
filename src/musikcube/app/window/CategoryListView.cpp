@@ -252,7 +252,6 @@ void CategoryListView::ShowContextMenu() {
 
     if (id != -1LL) {
         PlayQueueOverlays::ShowAddCategoryOverlay(
-            this->MessageQueue(),
             this->playback,
             this->library,
             this->fieldName,

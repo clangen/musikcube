@@ -40,17 +40,12 @@
 #include <app/window/TrackListView.h>
 #include <app/util/RequestGeneration.h>
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/support/Preferences.h>
 
 #include <musikcore/library/ILibrary.h>
 
-#include <sigslot/sigslot.h>
-
 namespace musik {
     namespace cube {
-        class NowPlayingLayout :
-            public cursespp::LayoutBase,
-            public sigslot::has_slots<>
+        class NowPlayingLayout : public cursespp::LayoutBase
         {
             enum class PlaylistAction { Load, Save, Rename, Delete };
 
@@ -74,7 +69,7 @@ namespace musik {
                 void OnLayout() override;
 
             private:
-                void InitializeWindows();
+                void InitializeWindows(musik::core::audio::PlaybackService& playback);
                 void RequeryTrackList();
                 void SelectQueueRow();
                 bool ProcessEditOperation(const std::string& key);
@@ -87,13 +82,11 @@ namespace musik {
                 void RenamePlaylist(const musik::core::api::PlaylistEntry& playlist);
                 void DeletePlaylist(const musik::core::api::PlaylistEntry& playlist);
 
-                musik::core::audio::PlaybackService& playback;
                 musik::core::api::Playback apiPlayback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<TrackListView> trackListView;
                 std::shared_ptr<musik::core::TrackList> displayQueue;
                 std::optional<musik::core::api::PlayQueue> queue;
-                std::shared_ptr<musik::core::Preferences> prefs;
                 int reselectIndex; /* sigh... */
                 std::shared_ptr<musik::core::api::Context> context;
                 std::shared_ptr<const musik::core::api::Library> apiLibrary;

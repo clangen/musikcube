@@ -439,7 +439,7 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
             /* note: no callback here, will handle this in ProcessMessage so
             we can still create new playlists from the context menu, out of
             band. */
-            PlayQueueOverlays::ShowCreatePlaylistOverlay(this->MessageQueue(), library);
+            PlayQueueOverlays::ShowCreatePlaylistOverlay(library);
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsSave, key)) {
