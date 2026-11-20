@@ -167,6 +167,13 @@ async function checkTrackSearch(runtime, database, screenshots,
     if (pilot && windows) {
       terminal.send(HOME + 'j\r');
       await terminal.expect(`Selected track: ${FIRST_ALBUM} - Track 02`);
+    } else if (!pilot) {
+      /* Append the selected search result through its track actions menu. */
+      terminal.send('\x1b\r');
+      await terminal.expect('play now');
+      terminal.send(END + UP + UP + '\r');
+      terminal.send('n');
+      await terminal.expect(windows ? DISTANT_TRACK : FILTERED_LAST, { absent: 'tracks (sorted by' });
     }
     terminal.send('\x04');
     await terminal.expectExit();

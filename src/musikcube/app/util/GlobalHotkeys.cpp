@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
 #include "GlobalHotkeys.h"
 #include "Hotkeys.h"
 
@@ -50,7 +51,7 @@ using namespace musik::core::sdk;
 using namespace musik::cube;
 
 GlobalHotkeys::GlobalHotkeys(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
-: playback(playback.CreatePlaybackHandle()) {
+: playback(musik::core::audio::CreatePlaybackHandle(playback)) {
     this->library = library;
 }
 

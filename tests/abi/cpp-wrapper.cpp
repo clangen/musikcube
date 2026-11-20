@@ -1,7 +1,9 @@
 #include <musikcore/musikcore.hpp>
 
 #ifdef MUSIKCORE_TEST_APP_BINDING
+#include "../fixtures/TestTransport.h"
 #include <musikcore/audio/PlaybackService.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
 #include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/MasterLibrary.h>
@@ -289,35 +291,6 @@ namespace {
             window.CachedRow(0) && window.CachedRow(1);
     }
 #ifdef MUSIKCORE_TEST_APP_BINDING
-    /* Supplies deterministic transport state without opening an audio device. */
-    class TestTransport final : public musik::core::audio::ITransport {
-    public:
-        using PlaybackState = musik::core::sdk::PlaybackState;
-        using StreamState = musik::core::sdk::StreamState;
-
-        void Start(const std::string&, Gain, StartMode) override { state = PlaybackState::Playing; }
-        void PrepareNextTrack(const std::string&, Gain) override {}
-        std::string Uri() override { return {}; }
-        void Stop() override { state = PlaybackState::Stopped; }
-        bool Pause() override { state = PlaybackState::Paused; return true; }
-        bool Resume() override { state = PlaybackState::Playing; return true; }
-        double Position() override { return position; }
-        void SetPosition(double value) override { position = value; }
-        double Volume() override { return volume; }
-        void SetVolume(double value) override { volume = value; }
-        double GetDuration() override { return 30; }
-        bool IsMuted() override { return muted; }
-        void SetMuted(bool value) override { muted = value; }
-        void ReloadOutput() override {}
-        PlaybackState GetPlaybackState() override { return state; }
-        StreamState GetStreamState() override { return StreamState::Stopped; }
-
-        PlaybackState state = PlaybackState::Playing;
-        double position = 0;
-        double volume = 0.5;
-        bool muted = false;
-    };
-
     bool checkPlaybackCommands() {
         using namespace musik::core;
         const auto selection = std::make_shared<library::MasterLibrary>();
@@ -339,7 +312,7 @@ namespace {
         std::optional<api::Playback> playback;
         {
             audio::PlaybackService service(queue, selection, transport);
-            playback.emplace(service.CreatePlaybackHandle());
+            playback.emplace(musik::core::audio::CreatePlaybackHandle(service));
             if (playback->Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_OK ||
                 transport->state != sdk::PlaybackState::Paused ||
                 playback->Control(MC_PLAYBACK_SET_VOLUME, 0.25) != MC_OK ||
@@ -363,12 +336,32 @@ namespace {
                 playback->Remove(1) != MC_ERROR_NOT_FOUND ||
                 playback->ClearQueue() != MC_OK || service.Count() != 0) return false;
 
-            if (playback->Play(result, 0) != MC_OK) return false;
+            const auto first = result.Track(0);
+            const auto second = result.Track(1);
+            const auto trackList = service.GetTrackList();
+            if (playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NOW) != MC_OK ||
+                transport->state != sdk::PlaybackState::Playing ||
+                service.Count() != 1 || trackList->GetId(0) != first.Id() ||
+                playback->UseTrack(first, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
+                playback->UseTrack(second, MC_PLAYBACK_TRACK_PLAY_NEXT) != MC_OK ||
+                service.Count() != 3 ||
+                trackList->GetId(1) != second.Id() || trackList->GetId(2) != first.Id() ||
+                playback->UseTrack(second, MC_PLAYBACK_TRACK_PREPEND) != MC_OK ||
+                service.Count() != 4 || trackList->GetId(0) != second.Id()) return false;
+
+            if (playback->UseTrack({}, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_INVALID_ARGUMENT ||
+                playback->UseTrack(first, 0) != MC_ERROR_UNSUPPORTED) return false;
+
             const auto prefs = Preferences::ForComponent(musik::core::prefs::components::Settings);
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
             selection->LoadDefaultLibrary();
-            const bool rejected = playback->Play(result, 0) == MC_ERROR_NOT_FOUND;
-            service.DiscardUnavailableQueue();
+            const bool rejected = playback->Play(result, 0) == MC_ERROR_NOT_FOUND &&
+                playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NOW) == MC_ERROR_NOT_FOUND &&
+                playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NEXT) == MC_ERROR_NOT_FOUND &&
+                playback->UseTrack(first, MC_PLAYBACK_TRACK_APPEND) == MC_ERROR_NOT_FOUND &&
+                playback->UseTrack(first, MC_PLAYBACK_TRACK_PREPEND) == MC_ERROR_NOT_FOUND &&
+                service.Count() == 4 && trackList->GetId(0) == second.Id();
+            audio::DiscardUnavailablePlaybackQueue(service);
             const bool cleared = service.Count() == 0 && transport->state == sdk::PlaybackState::Stopped;
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
             selection->LoadDefaultLibrary();
@@ -377,7 +370,7 @@ namespace {
             mc_result otherThread = MC_OK;
             std::optional<api::Playback> otherHandle;
             std::thread caller([&] {
-                otherHandle.emplace(service.CreatePlaybackHandle());
+                otherHandle.emplace(musik::core::audio::CreatePlaybackHandle(service));
                 otherThread = otherHandle->Control(MC_PLAYBACK_STOP);
             });
             caller.join();
@@ -394,14 +387,15 @@ namespace {
         MasterLibrary selection;
         const auto local = selection.Wrapped();
         const auto remote = LibraryFactory::Instance().DefaultRemoteLibrary();
-        const auto roundTrip = [&](db::ISerializableQuery& client) {
-            const auto server = QueryRegistry::CreateLocalQueryFor(client.Name(), client.SerializeQuery(), local);
+        const auto roundTrip = [&](db::ISerializableQuery& remoteQuery) {
+            const auto server = QueryRegistry::CreateLocalQueryFor(
+                remoteQuery.Name(), remoteQuery.SerializeQuery(), local);
             if (!server || local->EnqueueAndWait(server) < 0 || server->GetStatus() != db::IQuery::Finished) {
                 return false;
             }
 
-            client.DeserializeResult(server->SerializeResult());
-            return client.GetStatus() == db::IQuery::Finished;
+            remoteQuery.DeserializeResult(server->SerializeResult());
+            return remoteQuery.GetStatus() == db::IQuery::Finished;
         };
 
         /* Exercise the same query registry and payloads the WebSocket path uses. */

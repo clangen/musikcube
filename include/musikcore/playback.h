@@ -69,6 +69,20 @@ MC_API mc_result MC_CALL mc_playback_control(mc_playback *playback, mc_playback_
 /* Returns MC_ERROR_NOT_FOUND if the row or its original library session is unavailable. */
 MC_API mc_result MC_CALL mc_playback_play_result(mc_playback *playback, const mc_track_result *result, size_t row);
 
+typedef uint32_t mc_playback_track_action;
+enum {
+    MC_PLAYBACK_TRACK_PLAY_NOW = 1,
+    MC_PLAYBACK_TRACK_PLAY_NEXT,
+    MC_PLAYBACK_TRACK_APPEND,
+    MC_PLAYBACK_TRACK_PREPEND
+};
+
+/* Play now replaces the queue. Play next inserts after the current track, or appends if stopped. */
+/* Call on the owner thread. The track is borrowed for the call. */
+/* Returns MC_ERROR_NOT_FOUND if the originating library session is unavailable. */
+MC_API mc_result MC_CALL mc_playback_use_track(
+    mc_playback *playback, const mc_track_ref *track, mc_playback_track_action action);
+
 /* Move or remove an existing entry by zero-based queue position on the owner thread. */
 MC_API mc_result MC_CALL mc_playback_queue_move(mc_playback *playback, size_t from, size_t to);
 MC_API mc_result MC_CALL mc_playback_queue_remove(mc_playback *playback, size_t row);

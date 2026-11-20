@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <chrono>
 
@@ -475,8 +476,13 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
     IMessageQueue& messageQueue,
     ILibraryPtr library,
     PlaybackService& playback,
-    TrackPtr track)
+    TrackPtr track,
+    std::shared_ptr<const api::TrackRef> trackRef)
 {
+    enum TrackActionIndex : size_t {
+        JumpToAlbum, JumpToArtist, JumpToGenre, AddToPlaylist, Prepend, Append, PlayNext, PlayNow
+    };
+
     auto adapter = std::make_shared<Adapter>();
     adapter->AddEntry(_TSTR("playqueue_overlay_album_jump_to"));
     adapter->AddEntry(_TSTR("playqueue_overlay_artist_jump_to"));
@@ -485,11 +491,12 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_start_of_queue"));
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end_in_queue"));
     adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
+    if (trackRef) adapter->AddEntry(_TSTR("playqueue_overlay_track_play_now"));
     adapter->SetSelectable(true);
 
     size_t selectedIndex = 0;
     if (!lastOperationExpired()) {
-        selectedIndex = lastTrackOverlayIndex;
+        selectedIndex = std::min(lastTrackOverlayIndex, size_t(trackRef ? PlayNow : PlayNext));
     }
 
     auto dialog = std::make_shared<ListOverlay>();
@@ -499,34 +506,54 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
         .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [track, library, &messageQueue, &playback]
+            [track, trackRef, library, &messageQueue, &playback]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                if (index == ListWindow::NO_SELECTION) {
+                if (index > (trackRef ? PlayNow : PlayNext)) {
                     return;
                 }
 
                 setLastTrackOverlayIndex(index);
 
+                if (trackRef && index >= Prepend) {
+                    const mc_playback_track_action actions[] = {
+                        MC_PLAYBACK_TRACK_PREPEND, MC_PLAYBACK_TRACK_APPEND,
+                        MC_PLAYBACK_TRACK_PLAY_NEXT, MC_PLAYBACK_TRACK_PLAY_NOW
+                    };
+                    musik::core::audio::CreatePlaybackHandle(playback).UseTrack(*trackRef, actions[index - Prepend]);
+                    return;
+                }
+
+                /* The remaining menu actions still consume legacy track metadata. */
+                auto selected = track;
+                if (trackRef) {
+                    const auto id = trackRef->Id();
+                    selected = std::make_shared<TrackList>(library, &id, 1)->Get(0);
+                }
+                if (!selected) return;
+
+                if (index <= JumpToGenre) {
+                    handleJumpTo(index, messageQueue, selected);
+                    return;
+                }
+                if (index == AddToPlaylist) {
+                    showAddTrackToPlaylistOverlay(messageQueue, library, selected);
+                    return;
+                }
+
                 auto editor = playback.Edit();
-                if (index <= 2) {
-                    handleJumpTo(index, messageQueue, track);
+                if (index == Prepend) {
+                    editor.Insert(selected->GetId(), 0);
                 }
-                else if (index == 3) {
-                    showAddTrackToPlaylistOverlay(messageQueue, library, track);
-                }
-                else if (index == 4) { /* start */
-                    editor.Insert(track->GetId(), 0);
-                }
-                else if (index == 5) { /* end */
-                    editor.Add(track->GetId());
+                else if (index == Append) {
+                    editor.Add(selected->GetId());
                 }
                 else { /* next */
                     const size_t position = playback.GetIndex();
                     if (position == ListWindow::NO_SELECTION) {
-                        editor.Add(track->GetId());
+                        editor.Add(selected->GetId());
                     }
                     else {
-                        editor.Insert(track->GetId(), position + 1);
+                        editor.Insert(selected->GetId(), position + 1);
                     }
                 }
             });

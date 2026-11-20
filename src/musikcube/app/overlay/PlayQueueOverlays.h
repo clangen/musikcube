@@ -50,7 +50,8 @@ namespace musik {
                     musik::core::runtime::IMessageQueue& messageQueue,
                     musik::core::ILibraryPtr library,
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::TrackPtr track);
+                    musik::core::TrackPtr track,
+                    std::shared_ptr<const musik::core::api::TrackRef> trackRef = {});
 
                 static void ShowAddCategoryOverlay(
                     musik::core::runtime::IMessageQueue& messageQueue,

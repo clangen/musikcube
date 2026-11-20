@@ -316,16 +316,22 @@ bool TrackListView::OnEntryContextMenu(size_t index) {
 }
 
 void TrackListView::ShowContextMenu() {
-    TrackPtr track = this->GetSelectedTrack();
-    if (!headers.HeaderAt(this->GetSelectedIndex())) {
-        if (track) {
-            PlayQueueOverlays::ShowAddTrackOverlay(
-                MessageQueue(), this->library, this->playback, track);
-        }
-    }
-    else {
+    const auto row = this->GetSelectedTrackIndex();
+    if (row == ListWindow::NO_SELECTION) return;
+
+    if (headers.HeaderAt(this->GetSelectedIndex())) {
         PlayQueueOverlays::ShowAlbumDividerOverlay(
-            MessageQueue(), this->playback, this->library, track);
+            MessageQueue(), this->playback, this->library, this->GetSelectedTrack());
+    }
+    else if (this->rowSource.trackRef) {
+        auto track = this->rowSource.trackRef(row);
+        if (track) PlayQueueOverlays::ShowAddTrackOverlay(
+            MessageQueue(), this->library, this->playback, {},
+            std::make_shared<const musik::core::api::TrackRef>(std::move(track)));
+    }
+    else if (auto track = this->GetSelectedTrack()) {
+        PlayQueueOverlays::ShowAddTrackOverlay(
+            MessageQueue(), this->library, this->playback, track);
     }
 }
 

@@ -46,6 +46,7 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Playback.h>
 #include <musikcore/ffi/consumer/playback-storage.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
 #include <musikcore/ffi/consumer/library-storage.h>
 #include <musikcore/library/MasterLibrary.h>
 #include <thread>
@@ -63,6 +64,12 @@ using musik::core::TrackPtr;
 using musik::core::ILibraryPtr;
 using musik::core::audio::ITransport;
 using Editor = PlaybackService::Editor;
+
+static bool matchesQueueOrigin(const LibraryIdentity& origin, const ILibraryPtr& library) {
+    const auto master = std::dynamic_pointer_cast<MasterLibrary>(library);
+    const auto selected = master ? master->Wrapped() : library;
+    return origin.playbackOrigin && origin.playbackOrigin->Matches(selected.get());
+}
 
 #define NO_POSITION (size_t) -1
 #define START_OVER (size_t) -2
@@ -237,7 +244,39 @@ public:
 
     mc_result PlayResult(const TrackResultData& result, size_t row) override {
         const auto status = this->CheckSession();
-        return status == MC_OK ? this->service.PlayOrderedResult(result, row) : status;
+        return status == MC_OK
+            ? this->PlayOrderedIds(result.library, result.ids.data(), result.ids.size(), row)
+            : status;
+    }
+
+    mc_result UseTrack(const mc_track_ref& track, mc_playback_track_action action) override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) return status;
+        if (action == MC_PLAYBACK_TRACK_PLAY_NOW) {
+            return this->PlayOrderedIds(track.library, &track.id, 1, 0);
+        }
+        if (!track.library->playbackOrigin) return MC_ERROR_UNSUPPORTED;
+        if (!matchesQueueOrigin(*track.library, this->service.library)) return MC_ERROR_NOT_FOUND;
+
+        /* The queue's IDs must all resolve through the same library. */
+        auto editor = this->service.Edit();
+        const auto& origin = this->service.queueOrigin;
+        if (origin && !matchesQueueOrigin(*origin, this->service.library)) return MC_ERROR_NOT_FOUND;
+
+        const auto position = this->service.GetIndex();
+        if (action == MC_PLAYBACK_TRACK_PREPEND) {
+            if (!editor.Insert(track.id, 0)) return MC_ERROR_NOT_FOUND;
+        }
+        else if (action == MC_PLAYBACK_TRACK_PLAY_NEXT &&
+            this->service.GetPlaybackState() != PlaybackState::Stopped &&
+            position < this->service.playlist.Count()) {
+            if (!editor.Insert(track.id, position + 1)) return MC_ERROR_NOT_FOUND;
+        }
+        else {
+            editor.Add(track.id);
+        }
+        this->service.queueOrigin = track.library;
+        return MC_OK;
     }
 
     mc_result EditQueue(QueueEdit edit, size_t from, size_t to) override {
@@ -254,6 +293,25 @@ public:
     }
 
 private:
+    mc_result PlayOrderedIds(const std::shared_ptr<const LibraryIdentity>& origin,
+        const int64_t* ids, size_t count, size_t row) {
+        if (!origin->playbackOrigin) return MC_ERROR_UNSUPPORTED;
+        if (!matchesQueueOrigin(*origin, this->service.library)) return MC_ERROR_NOT_FOUND;
+
+        /* Install the snapshot directly in the engine's queue. */
+        TrackList replacement(this->service.library, ids, count);
+        {
+            std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
+            this->service.playlist.ClearCache();
+            this->service.playlist.Swap(replacement);
+            this->service.unshuffled.Clear();
+            this->service.queueOrigin = origin;
+        }
+        this->service.Play(row);
+        this->service.messageQueue.Post(Message::Create(&this->service, MESSAGE_NOTIFY_RESET, 0, 0));
+        return MC_OK;
+    }
+
     mc_result CheckSession() const {
         if (std::this_thread::get_id() != this->owner) return MC_ERROR_BUSY;
         if (this->lifetime.expired()) return MC_ERROR_NOT_FOUND;
@@ -265,42 +323,17 @@ private:
     const std::thread::id owner;
 };
 
-musik::core::api::Playback PlaybackService::CreatePlaybackHandle() {
-    return api::Playback(new PlaybackServiceBinding(*this));
+musik::core::api::Playback musik::core::audio::CreatePlaybackHandle(PlaybackService& playback) {
+    return api::Playback(new PlaybackService::PlaybackServiceBinding(playback));
 }
 
-mc_result PlaybackService::PlayOrderedResult(const TrackResultData& result, size_t row) {
-    const auto& origin = result.library;
-    if (!origin->playbackOrigin) return MC_ERROR_UNSUPPORTED;
-    if (!this->MatchesQueueOrigin(*origin)) return MC_ERROR_NOT_FOUND;
-
-    /* Install the snapshot directly in the engine's queue. */
-    TrackList replacement(this->library, result.ids.data(), result.ids.size());
-    {
-        std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-        this->playlist.ClearCache();
-        this->playlist.Swap(replacement);
-        this->unshuffled.Clear();
-        this->queueOrigin = origin;
-    }
-    this->Play(row);
-    POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
-    return MC_OK;
-}
-
-bool PlaybackService::MatchesQueueOrigin(const LibraryIdentity& origin) const {
-    const auto master = std::dynamic_pointer_cast<MasterLibrary>(this->library);
-    const auto selected = master ? master->Wrapped() : this->library;
-    return origin.playbackOrigin && origin.playbackOrigin->Matches(selected.get());
-}
-
-void PlaybackService::DiscardUnavailableQueue() {
-    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    if (!this->queueOrigin || this->MatchesQueueOrigin(*this->queueOrigin)) return;
+void musik::core::audio::DiscardUnavailablePlaybackQueue(PlaybackService& playback) {
+    std::unique_lock<std::recursive_mutex> lock(playback.playlistMutex);
+    if (!playback.queueOrigin || matchesQueueOrigin(*playback.queueOrigin, playback.library)) return;
 
     /* The legacy queue has one library. Its IDs cannot be used after the origin changes. */
-    this->Stop();
-    this->Edit().Clear();
+    playback.Stop();
+    playback.Edit().Clear();
 }
 
 void PlaybackService::InitRemotes() {
@@ -668,7 +701,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
 
 void PlaybackService::MarkTrackAsPlayed(int64_t trackId) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    if (this->queueOrigin && !this->MatchesQueueOrigin(*this->queueOrigin)) return;
+    if (this->queueOrigin && !matchesQueueOrigin(*this->queueOrigin, this->library)) return;
     this->library->Enqueue(std::make_shared<MarkTrackPlayedQuery>(trackId));
 }
 
@@ -1003,7 +1036,7 @@ ITrack* PlaybackService::GetTrack(size_t index) {
     }
 
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    if (this->queueOrigin && !this->MatchesQueueOrigin(*this->queueOrigin)) return nullptr;
+    if (this->queueOrigin && !matchesQueueOrigin(*this->queueOrigin, this->library)) return nullptr;
 
     const size_t count = this->playlist.Count();
 
@@ -1038,7 +1071,7 @@ TrackPtr PlaybackService::TrackAtIndexWithTimeout(size_t index) {
     }
 
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    if (this->queueOrigin && !this->MatchesQueueOrigin(*this->queueOrigin)) return {};
+    if (this->queueOrigin && !matchesQueueOrigin(*this->queueOrigin, this->library)) return {};
 
     if (index >= this->playlist.Count()) {
         return TrackPtr();
@@ -1166,7 +1199,7 @@ PlaybackService::Editor::~Editor() {
 
 bool PlaybackService::Editor::Insert(int64_t id, size_t index) {
     if ((this->edited = this->tracks->Insert(id, index))) {
-        if (index == this->playIndex) {
+        if (this->playIndex != NO_POSITION && index <= this->playIndex) {
             ++this->playIndex;
         }
 

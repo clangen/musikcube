@@ -34,6 +34,9 @@ namespace musik { namespace core { namespace api {
         }
 
         mc_result Move(size_t from, size_t to) { return mc_playback_queue_move(this->handle.get(), from, to); }
+        mc_result UseTrack(const TrackRef& track, mc_playback_track_action action) {
+            return mc_playback_use_track(this->handle.get(), track.Get(), action);
+        }
         mc_result Remove(size_t row) { return mc_playback_queue_remove(this->handle.get(), row); }
         mc_result ClearQueue() { return mc_playback_queue_clear(this->handle.get()); }
 

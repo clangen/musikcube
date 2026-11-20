@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <cursespp/Colors.h>
 #include <cursespp/App.h>
@@ -82,7 +83,7 @@ TrackSearchLayout::TrackSearchLayout(
     std::shared_ptr<const musik::core::api::Library> apiLibrary)
 : LayoutBase()
 , playback(playback)
-, apiPlayback(playback.CreatePlaybackHandle())
+, apiPlayback(musik::core::audio::CreatePlaybackHandle(playback))
 , library(library)
 , apiContext(std::move(apiContext))
 , apiLibrary(std::move(apiLibrary)) {
@@ -221,6 +222,7 @@ void TrackSearchLayout::Requery() {
                     [this](size_t first, size_t last, size_t height) { this->SetViewport(first, last, height); },
                     [this] { this->ClearPages(); this->Post(message::LoadTrackSearchPage); },
                     [this](size_t row) { this->PlayResult(row); },
+                    [this](size_t row) { return this->resultWindow->Result().Track(row); },
                 }, std::move(headers), std::move(durations), hash);
                 this->SetSearchTitle(_TSTR(kTrackListOrderByToDisplayKey.at(sortOrder)));
             });

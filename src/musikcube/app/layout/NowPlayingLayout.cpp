@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
@@ -71,7 +72,7 @@ NowPlayingLayout::NowPlayingLayout(
     musik::core::ILibraryPtr library)
 : LayoutBase()
 , playback(playback)
-, apiPlayback(playback.CreatePlaybackHandle())
+, apiPlayback(musik::core::audio::CreatePlaybackHandle(playback))
 , library(library)
 , lastPlaylistQueryId(-1)
 , reselectIndex(-1) {

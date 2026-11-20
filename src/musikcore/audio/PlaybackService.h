@@ -50,7 +50,6 @@
 #include <thread>
 
 struct LibraryIdentity;
-struct TrackResultData;
 
 namespace musik { namespace core { namespace audio {
 
@@ -128,9 +127,6 @@ namespace musik { namespace core { namespace audio {
             void CopyTo(musik::core::TrackList& target);
             void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetPlaying();
-            /* The service's construction thread owns API access and teardown. */
-            musik::core::api::Playback CreatePlaybackHandle();
-            void DiscardUnavailableQueue();
 
             musik::core::audio::ITransport& GetTransport() noexcept {
                 return *this->transport.get();
@@ -201,8 +197,8 @@ namespace musik { namespace core { namespace audio {
             void PlayAt(size_t index, ITransport::StartMode mode);
 
             musik::core::TrackPtr TrackAtIndexWithTimeout(size_t index);
-            bool MatchesQueueOrigin(const LibraryIdentity& origin) const;
-            mc_result PlayOrderedResult(const TrackResultData& result, size_t row);
+            friend void DiscardUnavailablePlaybackQueue(PlaybackService& playback);
+            friend api::Playback CreatePlaybackHandle(PlaybackService& playback);
             class PlaybackServiceBinding;
 
             std::string UriAtIndex(size_t index);

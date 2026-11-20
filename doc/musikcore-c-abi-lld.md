@@ -611,7 +611,9 @@ recorded before the experimental shared façade is introduced.
   snapshot order. Verify remote search and streaming separately.
   Track Search play-from-row installs the ordered result directly in the
   engine queue. The command requires the result's originating library
-  session to still be selected. Single-track actions still use legacy adapters.
+  session to still be selected. Single-track queue actions use an origin-bound
+  track reference. The playback tests check rejection after a library switch
+  and after reconnecting to a remote library that returns the same track ID.
 - [ ] **CPP-001** Create initial RAII C++ context, event, request, page, and list
   wrappers.
   Context, query submission, and page ownership are implemented.
@@ -722,10 +724,12 @@ legacy list for actions that still require it.
 - [ ] **PUB-004** Add playback commands and ordered state events.
   The app's transport keys and controls use `mc_playback_control`.
   `musikcore.abi.indexed_query` exercises the bound service with a fake
-  transport. Single-track commands and ordered playback events remain open.
+  transport, including play now, play next, append, prepend, and rejection
+  after switching libraries. Ordered playback events remain open.
 - [ ] **PUB-005** Add queue snapshots and atomic batch edits.
   Move, remove, and clear commands power the Now Playing keyboard editor.
-  Queue snapshots, insertion, and batch edits remain open.
+  Track Search inserts tracks through origin-bound references. Queue
+  snapshots and atomic batch edits remain open.
 - [ ] **PUB-006** Add indexer paths, commands, snapshots, progress, and terminal
   events.
 - [ ] **PUB-007** Add output selection, replay gain, equalizer, and transport

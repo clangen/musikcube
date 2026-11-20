@@ -107,6 +107,7 @@
     "playqueue_overlay_album_header_actions_title": "album actions",
     "playqueue_overlay_album_jump_to": "jump to album in library",
     "playqueue_overlay_album_play": "play album",
+    "playqueue_overlay_track_play_now": "play now",
     "playqueue_overlay_artist_jump_to": "jump to artist in library",
     "playqueue_overlay_confirm_delete_message": "are you sure you want to delete '%s'?",
     "playqueue_overlay_confirm_overwrite_message": "are you sure you want to overwrite the playlist '%s'?",

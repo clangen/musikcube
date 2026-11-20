@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
@@ -306,7 +307,7 @@ void MainLayout::SwitchToLibraryLayout() {
 }
 
 void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state) {
-    this->playback.DiscardUnavailableQueue();
+    audio::DiscardUnavailablePlaybackQueue(this->playback);
     const auto currentLayout = this->GetLayout();
     const bool showingLibrary = currentLayout == this->libraryLayout ||
         currentLayout == this->libraryNotConnectedLayout;
@@ -321,7 +322,7 @@ void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state
 
 void MainLayout::OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr) {
     this->playback.Stop();
-    this->playback.DiscardUnavailableQueue();
+    audio::DiscardUnavailablePlaybackQueue(this->playback);
     const auto currentLayout = this->GetLayout();
     const bool wasShowingLibrary = currentLayout == this->libraryLayout ||
         currentLayout == this->libraryNotConnectedLayout;

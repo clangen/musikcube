@@ -75,6 +75,7 @@ namespace musik {
                     std::function<void(size_t, size_t, size_t)> viewport;
                     std::function<void()> invalidate;
                     std::function<void(size_t)> play;
+                    std::function<musik::core::api::TrackRef(size_t)> trackRef;
                 };
 
                 /* ctor, dtor */

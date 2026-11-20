@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
 #include "TransportWindow.h"
 
 #include <cursespp/Screen.h>
@@ -385,7 +386,7 @@ TransportWindow::TransportWindow(
 , replayGainMode(ReplayGainMode::Disabled)
 , playback(playback)
 , transport(playback.GetTransport())
-, apiPlayback(playback.CreatePlaybackHandle())
+, apiPlayback(musik::core::audio::CreatePlaybackHandle(playback))
 , focus(FocusNone)
 , hasReplayGain(false) {
     Strings.Initialize();

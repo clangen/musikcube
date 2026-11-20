@@ -17,6 +17,7 @@ mc_playback_play_result
 mc_playback_queue_clear
 mc_playback_queue_move
 mc_playback_queue_remove
+mc_playback_use_track
 mc_request_cancel
 mc_track_page_destroy
 mc_track_page_get_count

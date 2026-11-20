@@ -47,6 +47,15 @@ mc_result MC_CALL mc_playback_play_result(mc_playback *playback, const mc_track_
     });
 }
 
+mc_result MC_CALL mc_playback_use_track(
+    mc_playback *playback, const mc_track_ref *track, mc_playback_track_action action) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!playback || !track) return MC_ERROR_INVALID_ARGUMENT;
+        if (action < MC_PLAYBACK_TRACK_PLAY_NOW || action > MC_PLAYBACK_TRACK_PREPEND) return MC_ERROR_UNSUPPORTED;
+        return playback->UseTrack(*track, action);
+    });
+}
+
 static mc_result editQueue(mc_playback *playback, QueueEdit edit, size_t from = 0, size_t to = 0) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         if (!playback) return MC_ERROR_INVALID_ARGUMENT;

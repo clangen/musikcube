@@ -1,8 +1,13 @@
+#include "TestTransport.h"
+#include <musikcore/ffi/consumer/playback-binding.h>
+
+#include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/musikcore.hpp>
 #include <musikcore/net/WebSocketClient.h>
+#include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
@@ -159,11 +164,16 @@ namespace {
         settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
+        settings->SetBool(prefs::keys::SaveSessionOnExit, false);
         struct Shutdown {
             ~Shutdown() { LibraryFactory::Shutdown(); }
         } shutdown;
 
-        library::MasterLibrary selection;
+        const auto master = std::make_shared<library::MasterLibrary>();
+        auto& selection = *master;
+        runtime::MessageQueue messageQueue;
+        audio::PlaybackService service(messageQueue, master, std::make_shared<TestTransport>());
+        auto playback = musik::core::audio::CreatePlaybackHandle(service);
         const auto wait = [](auto ready) {
             const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
             do {
@@ -204,10 +214,17 @@ namespace {
         if (!dispatch(2) || status != MC_OK || page.Size() != 2 || page.Track(0).Title() != "Origin" ||
             page.Id(1) != 17 || page.Track(1).Value(MC_TRACK_FIELD_TITLE).data()) return false;
 
+        const auto reference = tracks.Track(0);
+        if (playback.UseTrack(reference, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
+            service.Count() != 1) return false;
+
         /* Switch before releasing a cancelled remote read. The next remote request stays on its origin. */
         const auto pending = ReadTracks(context, tracks, range, receive);
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
         selection.LoadDefaultLibrary();
+        if (playback.UseTrack(reference, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND) return false;
+        audio::DiscardUnavailablePlaybackQueue(service);
+        if (service.Count() != 0) return false;
         const auto local = selection.OpenApiLibrary();
         if (!local) return false;
         QueryTracks(context, *local, TrackQuery{ "" }, receive);
@@ -215,7 +232,6 @@ namespace {
 
         if (context.Cancel(pending) != MC_OK || !dispatch(4) || status != MC_ERROR_CANCELLED ||
             !server.ReleaseHeld(false)) return false;
-        const auto reference = tracks.Track(0);
         ReadTrack(context, reference, { MC_TRACK_FIELD_TITLE }, receive);
         if (!server.ReleaseHeld(true) || !dispatch(5) || status != MC_ERROR_IO) return false;
 
@@ -228,6 +244,21 @@ namespace {
         if (!wait([&] { return bool(reconnected = selection.OpenApiLibrary()); })) return false;
         ReadTrack(context, reference, { MC_TRACK_FIELD_TITLE }, receive);
         if (!dispatch(6) || status != MC_ERROR_IO) return false;
+
+        OpenTrackSearch(context, *reconnected, TrackSearch{ "Origin" },
+            [&](mc_result result, TrackResult found, std::string_view) {
+                status = result;
+                tracks = std::move(found);
+                ++calls;
+            });
+        if (!server.ReleaseHeld(false) || !dispatch(7) || status != MC_OK || tracks.Size() != 2) return false;
+
+        /* The new generation returns the same ID. Only its new reference can edit the queue. */
+        const auto current = tracks.Track(0);
+        if (current.Id() != reference.Id() ||
+            playback.UseTrack(current, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
+            playback.UseTrack(reference, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND ||
+            service.Count() != 1 || service.GetTrackList()->GetId(0) != current.Id()) return false;
 
         /* Cancel and drain each ABI request while the server holds every reply. */
         constexpr unsigned burstSize = 65;

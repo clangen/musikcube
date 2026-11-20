@@ -19,5 +19,6 @@ struct mc_playback {
     virtual mc_result Control(mc_playback_command command, double value) = 0;
     virtual mc_result Snapshot(mc_playback_snapshot& snapshot) const = 0;
     virtual mc_result PlayResult(const TrackResultData& result, size_t row) = 0;
+    virtual mc_result UseTrack(const mc_track_ref& track, mc_playback_track_action action) = 0;
     virtual mc_result EditQueue(QueueEdit edit, size_t from, size_t to) = 0;
 };
