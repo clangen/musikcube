@@ -73,7 +73,7 @@ mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_librar
 
         std::string target(locator.data, locator.length);
         auto backend = kind == MC_LIBRARY_LOCAL ? query::OpenTrackReadBackend(target + "/musik.db") : nullptr;
-        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{ std::move(target), std::move(backend), {}, {} });
+        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{ std::move(target), std::move(backend), {}, {}, {} });
         *out_library = new mc_library{ std::move(identity) };
         return MC_OK;
     });
@@ -83,6 +83,18 @@ void MC_CALL mc_library_destroy(mc_library **library) {
     if (!library) return;
     delete *library;
     *library = nullptr;
+}
+
+mc_result MC_CALL mc_library_open_playlist_async(mc_context *context, const mc_library *library,
+    int64_t playlist_id, mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request) {
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
+        *out_request = 0;
+        if (!context || !library || !completion || playlist_id <= 0) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library->identity;
+        if (!identity->playlists) return MC_ERROR_UNSUPPORTED;
+        return identity->playlists->OpenPlaylist(context, identity, playlist_id, completion, user_data, out_request);
+    });
 }
 
 mc_result MC_CALL mc_library_query_tracks_async(

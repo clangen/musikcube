@@ -28,11 +28,19 @@ struct AsyncTrackReader : PlaybackOrigin {
 
 struct mc_track_page : query::ProjectedTrackPage {};
 
+/* Implementations retain their backend and inherit its copy and move restrictions. */
+struct PlaylistReader {
+    virtual ~PlaylistReader() = default;
+    virtual mc_result OpenPlaylist(mc_context*, const std::shared_ptr<const LibraryIdentity>&,
+        int64_t, mc_track_search_completion_fn, void*, mc_request_id*) const = 0;
+};
+
 struct LibraryIdentity {
     std::string locator;
     std::shared_ptr<const query::TrackReadBackend> backend;
     std::shared_ptr<const AsyncTrackReader> async;
     std::shared_ptr<const PlaybackOrigin> playbackOrigin;
+    std::shared_ptr<const PlaylistReader> playlists;
 };
 
 struct mc_library {

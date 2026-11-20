@@ -288,6 +288,14 @@ namespace musik { namespace core { namespace api {
         });
     }
 
+    inline mc_request_id OpenPlaylist(Context &context, const Library &library, int64_t playlistId,
+        TrackSearchCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+            return mc_library_open_playlist_async(context.Get(), library.Get(), playlistId,
+                detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
+        });
+    }
+
     inline mc_request_id ReadTracks(Context &context, const TrackResult &tracks,
         const TrackRange &range, TrackQueryCompletion completion) {
         const auto fields = detail::fieldViews(range.fields);

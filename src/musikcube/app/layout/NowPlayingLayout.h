@@ -38,6 +38,7 @@
 #include <cursespp/LayoutBase.h>
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
+#include <app/util/RequestGeneration.h>
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/support/Preferences.h>
 
@@ -56,7 +57,11 @@ namespace musik {
 
                 NowPlayingLayout(
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    musik::core::ILibraryPtr library,
+                    std::shared_ptr<musik::core::api::Context> context,
+                    std::shared_ptr<const musik::core::api::Library> apiLibrary);
+                ~NowPlayingLayout() override;
+                void CancelPlaylistLoad();
 
                 /* IWindow */
                 void OnVisibilityChanged(bool visible) override;
@@ -73,7 +78,6 @@ namespace musik {
                 bool ProcessEditOperation(const std::string& key);
 
                 /* callbacks */
-                void OnTrackListRequeried(musik::core::library::query::TrackListQueryBase* query);
                 cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
                 void OnPlaylistSelected(int64_t playlistId);
 
@@ -85,7 +89,10 @@ namespace musik {
                 std::optional<musik::core::api::PlayQueue> queue;
                 std::shared_ptr<musik::core::Preferences> prefs;
                 int reselectIndex; /* sigh... */
-                int lastPlaylistQueryId;
+                std::shared_ptr<musik::core::api::Context> context;
+                std::shared_ptr<const musik::core::api::Library> apiLibrary;
+                RequestGeneration playlistGeneration;
+                mc_request_id playlistRequest = 0;
         };
     }
 }

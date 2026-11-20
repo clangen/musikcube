@@ -68,7 +68,7 @@ namespace musik {
                     std::shared_ptr<musik::core::library::MasterLibrary> library,
                     std::shared_ptr<musik::core::api::Context> apiContext);
 
-                void CancelSearchRequests();
+                void CancelLibraryRequests();
 
                 cursespp::IWindowPtr FocusNext() override;
                 cursespp::IWindowPtr FocusPrev() override;

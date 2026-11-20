@@ -9,6 +9,7 @@
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/QueryRegistry.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include <musikcore/support/Preferences.h>
@@ -445,6 +446,45 @@ namespace {
             queue.Dispatch();
             if (observers.replacementCalls != 1) return false;
 
+            /* Load through the typed playlist query with playback stopped. */
+            const std::array savedIds{ second.Id(), first.Id(), second.Id() };
+            const auto local = selection->Wrapped();
+            auto savedTracks = std::make_shared<TrackList>(local, savedIds.data(), savedIds.size());
+            const auto save = library::query::SavePlaylistQuery::Save(local, "Queue Load Fixture", savedTracks);
+            if (local->EnqueueAndWait(save, kWaitIndefinite) < 0 || save->GetPlaylistId() <= 0) return false;
+            mc_result loaded = MC_ERROR_INTERNAL;
+            const auto load = [&](mc_result status, api::TrackResult tracks, std::string_view) {
+                loaded = status == MC_OK ? playback->ReplaceQueue(tracks) : status;
+            };
+            auto wake = query_test_wakeup_count();
+            api::OpenPlaylist(context, *source, save->GetPlaylistId(), load);
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || loaded != MC_OK ||
+                transport->state != sdk::PlaybackState::Stopped) return false;
+            const auto loadedQueue = playback->Queue();
+            size_t loadedCount = 0;
+            const auto ids = loadedQueue ? loadedQueue->Ids(loadedCount) : nullptr;
+            if (loadedCount != savedIds.size() || !std::equal(savedIds.begin(), savedIds.end(), ids)) return false;
+
+            /* Stop retains the row for selection and Play Next, without a playing highlight. */
+            if (playback->PlayQueueRow(*loadedQueue, 0) != MC_OK ||
+                playback->Control(MC_PLAYBACK_STOP) != MC_OK) return false;
+            const auto stopped = playback->Queue();
+            if (!stopped || stopped->RetainedRow() != 0 || stopped->CurrentRow() != SIZE_MAX ||
+                playback->UseTrack(second, MC_PLAYBACK_TRACK_PLAY_NEXT) != MC_OK ||
+                trackList->GetId(1) != second.Id() || trackList->GetId(2) != first.Id()) return false;
+
+            /* Switch after the request becomes ready but before dispatching its result. */
+            wake = query_test_wakeup_count();
+            api::OpenPlaylist(context, *source, save->GetPlaylistId(), load);
+            if (!query_test_wait_for_wakeup(wake + 1)) return false;
+            prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
+            selection->LoadDefaultLibrary();
+            const bool ignored = context.Dispatch() == MC_OK && loaded == MC_ERROR_NOT_FOUND &&
+                service.Count() == savedIds.size() + 1;
+            prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
+            selection->LoadDefaultLibrary();
+            if (!ignored) return false;
+
             mc_result otherThread = MC_OK;
             std::optional<api::Playback> otherHandle;
             std::thread caller([&] {
@@ -557,6 +597,8 @@ namespace {
 
 int main(int argc, char **argv) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
+    musik::core::runtime::MessageQueue libraryQueue;
+    musik::core::LibraryFactory::Initialize(libraryQueue);
     struct ShutdownLibraries {
         ~ShutdownLibraries() { musik::core::LibraryFactory::Shutdown(); }
     } shutdown;

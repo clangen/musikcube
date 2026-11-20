@@ -3,6 +3,7 @@
 
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/library/query/GetPlaylistQuery.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/musikcore.hpp>
@@ -44,6 +45,9 @@ namespace {
                     const auto query = nlohmann::json::parse(request.at("options").at("raw_query_data").get<std::string>());
                     if (query.at("name") == SearchTrackListQuery::kQueryName) {
                         reply["options"]["raw_query_data"] = R"({"result":{"headers":[0],"durations":{"0":10},"trackList":[42,17]}})";
+                    }
+                    else if (query.at("name") == musik::core::library::query::GetPlaylistQuery::kQueryName) {
+                        reply["options"]["raw_query_data"] = R"({"result":{"headers":[],"trackList":[42,17,42]}})";
                     }
                     else {
                         reply["options"]["raw_query_data"] =
@@ -245,13 +249,17 @@ namespace {
         ReadTrack(context, reference, { MC_TRACK_FIELD_TITLE }, receive);
         if (!dispatch(6) || status != MC_ERROR_IO) return false;
 
-        OpenTrackSearch(context, *reconnected, TrackSearch{ "Origin" },
+        OpenPlaylist(context, *reconnected, 1,
             [&](mc_result result, TrackResult found, std::string_view) {
                 status = result;
                 tracks = std::move(found);
                 ++calls;
             });
-        if (!server.ReleaseHeld(false) || !dispatch(7) || status != MC_OK || tracks.Size() != 2) return false;
+        if (!server.ReleaseHeld(false) || !dispatch(7) || status != MC_OK || tracks.Size() != 3 ||
+            tracks.Id(0) != 42 || tracks.Id(1) != 17 || tracks.Id(2) != 42 ||
+            playback.ReplaceQueue(tracks) != MC_OK ||
+            service.Count() != 3 || service.GetTrackList()->GetId(2) != 42) return false;
+        if (playback.ClearQueue() != MC_OK) return false;
 
         /* The new generation returns the same ID. Only its new reference can edit the queue. */
         const auto current = tracks.Track(0);

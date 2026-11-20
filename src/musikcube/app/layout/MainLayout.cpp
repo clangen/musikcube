@@ -223,7 +223,7 @@ void MainLayout::Start() {
 }
 
 void MainLayout::Shutdown() {
-    if (this->libraryLayout) this->libraryLayout->CancelSearchRequests();
+    if (this->libraryLayout) this->libraryLayout->CancelLibraryRequests();
     this->apiContext->Shutdown();
     MessageQueue().Remove(this, message::DispatchCoreRequests);
     MessageQueue().UnregisterForBroadcasts(this);
@@ -314,7 +314,7 @@ void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state
 
     /* A view retained behind Settings must also release handles from the old connection. */
     if (state != ILibrary::ConnectionState::Connected && this->libraryLayout) {
-        this->libraryLayout->CancelSearchRequests();
+        this->libraryLayout->CancelLibraryRequests();
         this->libraryLayout.reset();
     }
     if (showingLibrary) this->SwitchToLibraryLayout();
@@ -326,7 +326,7 @@ void MainLayout::OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::IL
     const auto currentLayout = this->GetLayout();
     const bool wasShowingLibrary = currentLayout == this->libraryLayout ||
         currentLayout == this->libraryNotConnectedLayout;
-    if (this->libraryLayout) this->libraryLayout->CancelSearchRequests();
+    if (this->libraryLayout) this->libraryLayout->CancelLibraryRequests();
     this->libraryLayout.reset();
     if (wasShowingLibrary) this->SwitchToLibraryLayout();
     this->RebindIndexerEventHandlers(prev, curr);

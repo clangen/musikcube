@@ -77,7 +77,7 @@ enum {
     MC_PLAYBACK_TRACK_PREPEND
 };
 
-/* Play now replaces the queue. Play next inserts after the current track, or appends if stopped. */
+/* Play now replaces the queue. Play next inserts after the retained position, or appends if absent. */
 /* Call on the owner thread. The track is borrowed for the call. */
 /* Returns MC_ERROR_NOT_FOUND if the originating library session is unavailable. */
 MC_API mc_result MC_CALL mc_playback_use_track(
@@ -92,6 +92,10 @@ MC_API void MC_CALL mc_play_queue_destroy(mc_play_queue **queue);
 MC_API const int64_t *MC_CALL mc_play_queue_get_ids(const mc_play_queue *queue, size_t *out_count);
 /* Returns SIZE_MAX when the queue has no current row. */
 MC_API size_t MC_CALL mc_play_queue_get_current_row(const mc_play_queue *queue);
+/* Returns the retained playback position, including after Stop, or SIZE_MAX. */
+MC_API size_t MC_CALL mc_play_queue_get_retained_row(const mc_play_queue *queue);
+/* Load an ordered result from the selected library on the owner thread without starting playback. */
+MC_API mc_result MC_CALL mc_playback_replace_queue(mc_playback *playback, const mc_track_result *result);
 MC_API bool MC_CALL mc_play_queue_is_shuffled(const mc_play_queue *queue);
 /* Request playback of a row in the supplied snapshot on the owner thread. */
 /* Returns MC_ERROR_NOT_FOUND for a stale snapshot or unavailable row. */

@@ -733,6 +733,10 @@ legacy list for actions that still require it.
   Positional actions reject snapshots invalidated by another queue writer.
   The indexed-query test exercises deferred callback delivery and reentrant
   subscription changes through the dispatcher.
+  Now Playing loads saved playlists through the local or remote typed
+  `GetPlaylistQuery` and replaces the queue without starting playback.
+  The indexed-query and remote transport tests cover playlist order,
+  duplicate IDs, and rejection of a delayed result after switching libraries.
   Atomic batch edits are deferred beyond parity.
 - [ ] **PUB-006** Add indexer paths, commands, snapshots, progress, and terminal
   events.
@@ -884,7 +888,7 @@ legacy list for actions that still require it.
 | --- | --- |
 | `src/musikcore/ffi/consumer/library-binding.h` and `legacy-library-binding.cpp`, plus `MasterLibrary::OpenApiLibrary()` | The public library API creates and owns local and remote backends directly. Retained requests, results, and references must still preserve their originating backend and connection generation. |
 | `src/musikcore/ffi/consumer/playback-binding.h` and `legacy-playback-binding.cpp`, plus the friendship and lifetime token in `PlaybackService` | The public playback API creates and owns the session directly. Carry forward the owner-thread rules, queue origin checks, and dispatcher notifications. |
-| Now Playing's snapshot-to-`TrackList` adapter and playlist load/save calls into the legacy engine | The queue view and playlist overlays can read track metadata and operate on queues and playlists through the public API. |
+| Now Playing's snapshot-to-`TrackList` adapter and legacy playlist overlays | The queue view and playlist overlays can read track metadata and list or modify playlists through the public API. |
 
 #### Final gate
 

@@ -43,7 +43,7 @@
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/PreferenceKeys.h>
 #include <musikcore/library/query/NowPlayingTrackListQuery.h>
-#include <musikcore/library/query/GetPlaylistQuery.h>
+#include <musikcore/debug.h>
 #include <musikcore/library/query/PersistedPlayQueueQuery.h>
 #include <musikcore/support/Duration.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -70,13 +70,16 @@ static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width);
 
 NowPlayingLayout::NowPlayingLayout(
     musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library)
+    musik::core::ILibraryPtr library,
+    std::shared_ptr<musik::core::api::Context> context,
+    std::shared_ptr<const musik::core::api::Library> apiLibrary)
 : LayoutBase()
 , playback(playback)
 , apiPlayback(musik::core::audio::CreatePlaybackHandle(playback))
 , library(library)
-, lastPlaylistQueryId(-1)
-, reselectIndex(-1) {
+, reselectIndex(-1)
+, context(std::move(context))
+, apiLibrary(std::move(apiLibrary)) {
     this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 
@@ -95,6 +98,10 @@ NowPlayingLayout::NowPlayingLayout(
         Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
         Hotkeys::Get(Hotkeys::PlayQueueDelete)
     };
+}
+
+NowPlayingLayout::~NowPlayingLayout() {
+    this->CancelPlaylistLoad();
 }
 
 Color NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
@@ -134,7 +141,6 @@ void NowPlayingLayout::InitializeWindows() {
             this->RequeryTrackList();
         }
     });
-    this->trackListView->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
     this->AddWindow(this->trackListView);
 }
 
@@ -145,19 +151,17 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
         this->RequeryTrackList();
     }
     else {
+        this->CancelPlaylistLoad();
         this->queue.reset();
         this->trackListView->Reset();
     }
 }
 
-void NowPlayingLayout::OnTrackListRequeried(musik::core::library::query::TrackListQueryBase* query) {
-    /* in most cases we pull the TrackList directly from the PlaybackService.
-    however, some user operations cause the TrackList to be loaded from
-    the database, e.g. loading regular playlists. in these cases, copy
-    the tracks TO the PlaybackService, then refresh! */
-    if (query && query->GetId() == this->lastPlaylistQueryId) {
-        this->playback.CopyFrom(*query->GetResult());
-        this->lastPlaylistQueryId = -1;
+void NowPlayingLayout::CancelPlaylistLoad() {
+    this->playlistGeneration.Invalidate();
+    if (this->playlistRequest) {
+        this->context->Cancel(this->playlistRequest);
+        this->playlistRequest = 0;
     }
 }
 
@@ -165,7 +169,7 @@ void NowPlayingLayout::SelectQueueRow() {
     if (this->queue && this->queue->Size()) {
         /* regular logic (i.e, no edit operation) */
         if (this->reselectIndex == -1) {
-            const size_t index = this->queue->CurrentRow();
+            const size_t index = this->queue->RetainedRow();
 
             if (index == ListWindow::NO_SELECTION) { /* not playing? */
                 this->trackListView->ScrollTo(0);
@@ -232,17 +236,35 @@ void NowPlayingLayout::RequeryTrackList() {
 }
 
 void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
-    auto query = std::make_shared<GetPlaylistQuery>(library, playlistId);
-    this->lastPlaylistQueryId = query->GetId();
-    this->trackListView->Requery(query);
+    this->CancelPlaylistLoad();
+    if (!this->apiLibrary) return;
+
+    /* A completed request may still be waiting for dispatch when the library changes. */
+    const auto ticket = this->playlistGeneration.Capture();
+    try {
+        this->playlistRequest = api::OpenPlaylist(*this->context, *this->apiLibrary, playlistId,
+            [this, ticket](mc_result status, api::TrackResult tracks, std::string_view) {
+                if (!ticket.IsCurrent()) return;
+                this->playlistRequest = 0;
+                if (status == MC_OK && this->apiPlayback.ReplaceQueue(tracks) == MC_OK) {
+                    this->RequeryTrackList();
+                }
+            });
+    }
+    catch (const api::Error& error) {
+        musik::debug::error("NowPlayingLayout", error.what());
+    }
 }
 
 bool NowPlayingLayout::KeyPress(const std::string& key) {
     if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistLoad, key)) {
+        const auto ticket = this->playlistGeneration.Capture();
         PlayQueueOverlays::ShowLoadPlaylistOverlay(
             this->playback,
             this->library,
-            std::bind(&NowPlayingLayout::OnPlaylistSelected, this, std::placeholders::_1));
+            [this, ticket](int64_t id) {
+                if (ticket.IsCurrent()) this->OnPlaylistSelected(id);
+            });
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistSave, key)) {

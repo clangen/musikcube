@@ -8,11 +8,13 @@ mc_error_get_code
 mc_error_get_message
 mc_library_create
 mc_library_destroy
+mc_library_open_playlist_async
 mc_library_open_track_search_async
 mc_library_query_tracks_async
 mc_play_queue_destroy
 mc_play_queue_get_current_row
 mc_play_queue_get_ids
+mc_play_queue_get_retained_row
 mc_play_queue_is_shuffled
 mc_playback_control
 mc_playback_destroy
@@ -23,6 +25,7 @@ mc_playback_play_result
 mc_playback_queue_clear
 mc_playback_queue_move
 mc_playback_queue_remove
+mc_playback_replace_queue
 mc_playback_set_queue_changed_callback
 mc_playback_use_track
 mc_request_cancel

@@ -109,11 +109,27 @@ public:
 
         queue.ids = this->service.playlist.GetIds();
         const auto row = this->service.GetIndex();
+        if (row < queue.ids.size()) queue.retainedRow = row;
         const auto playing = this->service.GetPlaying();
         if (playing && row < queue.ids.size() && queue.ids[row] == playing->GetId()) {
             queue.currentRow = row;
         }
         queue.shuffled = this->service.IsShuffled();
+        return MC_OK;
+    }
+
+    mc_result ReplaceQueue(const TrackResultData& result) override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) return status;
+        if (!result.library->playbackOrigin) return MC_ERROR_UNSUPPORTED;
+
+        std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
+        if (!MatchesPlaybackOrigin(*result.library, this->service.library)) return MC_ERROR_NOT_FOUND;
+
+        /* Preserve the legacy playlist-load behavior, including any active transport. */
+        const TrackList replacement(this->service.library, result.ids.data(), result.ids.size());
+        this->service.CopyFrom(replacement);
+        this->service.queueOrigin = result.library;
         return MC_OK;
     }
 
@@ -160,7 +176,6 @@ public:
             if (!editor.Insert(track.id, 0)) return MC_ERROR_NOT_FOUND;
         }
         else if (action == MC_PLAYBACK_TRACK_PLAY_NEXT &&
-            this->service.GetPlaybackState() != PlaybackState::Stopped &&
             position < this->service.playlist.Count()) {
             if (!editor.Insert(track.id, position + 1)) return MC_ERROR_NOT_FOUND;
         }

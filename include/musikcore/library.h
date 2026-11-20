@@ -146,6 +146,12 @@ typedef void (MC_CALL *mc_track_query_completion_fn)(
 MC_API mc_result MC_CALL mc_library_open_track_search_async(
     mc_context *context, const mc_library *library, const mc_track_search *search, mc_track_search_completion_fn completion,
     void *user_data, mc_request_id *out_request);
+
+/* Read the saved playlist in queue order, preserving duplicates. Uses the track-result completion contract. */
+/* Returns MC_ERROR_UNSUPPORTED when the library has no playlist backend. */
+MC_API mc_result MC_CALL mc_library_open_playlist_async(
+    mc_context *context, const mc_library *library, int64_t playlist_id,
+    mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request);
 MC_API size_t MC_CALL mc_track_result_get_count(const mc_track_result *tracks);
 /* Zero for an invalid row. */
 MC_API int64_t MC_CALL mc_track_result_get_id(const mc_track_result *tracks, size_t row);

@@ -29,6 +29,7 @@ namespace musik { namespace core { namespace api {
             return count;
         }
         size_t CurrentRow() const noexcept { return mc_play_queue_get_current_row(this->queue.get()); }
+        size_t RetainedRow() const noexcept { return mc_play_queue_get_retained_row(this->queue.get()); }
         bool IsShuffled() const noexcept { return mc_play_queue_is_shuffled(this->queue.get()); }
 
     private:
@@ -76,6 +77,9 @@ namespace musik { namespace core { namespace api {
         }
         mc_result PlayQueueRow(const PlayQueue& queue, size_t row) {
             return mc_playback_play_queue_row(this->handle.get(), queue.queue.get(), row);
+        }
+        mc_result ReplaceQueue(const TrackResult& result) {
+            return mc_playback_replace_queue(this->handle.get(), result.Get());
         }
 
         mc_result Move(const PlayQueue& queue, size_t from, size_t to) {

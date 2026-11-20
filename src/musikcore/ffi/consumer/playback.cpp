@@ -64,6 +64,17 @@ bool MC_CALL mc_play_queue_is_shuffled(const mc_play_queue *queue) {
     return queue && queue->shuffled;
 }
 
+size_t MC_CALL mc_play_queue_get_retained_row(const mc_play_queue *queue) {
+    return queue ? queue->retainedRow : SIZE_MAX;
+}
+
+mc_result MC_CALL mc_playback_replace_queue(mc_playback *playback, const mc_track_result *result) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!playback || !result) return MC_ERROR_INVALID_ARGUMENT;
+        return playback->ReplaceQueue(*result->data);
+    });
+}
+
 mc_result MC_CALL mc_playback_set_queue_changed_callback(
     mc_playback *playback, mc_play_queue_changed_fn callback, void *user_data) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
