@@ -64,6 +64,11 @@ namespace musik {
                     musik::core::ILibraryPtr library);
 
                 virtual ~BrowseLayout();
+                void SetAddToPlaylistCallbacks(TrackListView::AddTrackToPlaylist track,
+                    TrackListView::AddCategoryToPlaylist category) {
+                    this->categoryList->SetAddToPlaylistCallback(category);
+                    this->trackList->SetAddToPlaylistCallbacks(std::move(track), std::move(category));
+                }
 
                 /* IWindow */
                 bool KeyPress(const std::string& key) override;

@@ -7,6 +7,7 @@ mc_error_destroy
 mc_error_get_code
 mc_error_get_message
 mc_library_create
+mc_library_append_playlist_async
 mc_library_delete_playlist_async
 mc_library_destroy
 mc_library_list_playlists_async

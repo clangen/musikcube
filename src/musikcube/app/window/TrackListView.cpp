@@ -297,7 +297,7 @@ bool TrackListView::OnEntryActivated(size_t index) {
     if (headers.HeaderAt(this->GetSelectedIndex())) {
         TrackPtr track = this->GetSelectedTrack();
         PlayQueueOverlays::ShowAlbumDividerOverlay(
-            MessageQueue(), this->playback, this->library, track);
+            MessageQueue(), this->playback, this->library, track, this->addCategoryToPlaylist);
     }
     else if (this->rowSource.play) {
         const auto row = this->GetSelectedTrackIndex();
@@ -325,17 +325,17 @@ void TrackListView::ShowContextMenu() {
 
     if (headers.HeaderAt(this->GetSelectedIndex())) {
         PlayQueueOverlays::ShowAlbumDividerOverlay(
-            MessageQueue(), this->playback, this->library, this->GetSelectedTrack());
+            MessageQueue(), this->playback, this->library, this->GetSelectedTrack(), this->addCategoryToPlaylist);
     }
     else if (this->rowSource.trackRef) {
         auto track = this->rowSource.trackRef(row);
         if (track) PlayQueueOverlays::ShowAddTrackOverlay(
             MessageQueue(), this->library, this->playback, {},
-            std::make_shared<const musik::core::api::TrackRef>(std::move(track)));
+            std::make_shared<const musik::core::api::TrackRef>(std::move(track)), this->addTrackToPlaylist);
     }
     else if (auto track = this->GetSelectedTrack()) {
         PlayQueueOverlays::ShowAddTrackOverlay(
-            MessageQueue(), this->library, this->playback, track);
+            MessageQueue(), this->library, this->playback, track, {}, this->addTrackToPlaylist);
     }
 }
 

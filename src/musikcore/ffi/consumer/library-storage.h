@@ -34,7 +34,7 @@ struct PlaylistReader {
     virtual mc_result OpenPlaylist(mc_context*, const std::shared_ptr<const LibraryIdentity>&,
         int64_t, mc_track_search_completion_fn, void*, mc_request_id*) const = 0;
     virtual mc_result ListPlaylists(mc_context*, mc_playlist_list_completion_fn, void*, mc_request_id*) const = 0;
-    virtual mc_result SavePlaylist(mc_context*, int64_t, std::string, std::vector<int64_t>,
+    virtual mc_result SavePlaylist(mc_context*, int64_t, std::string, std::vector<int64_t>, bool append,
         mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;
     virtual mc_result RenamePlaylist(mc_context*, int64_t, std::string,
         mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;

@@ -335,6 +335,14 @@ namespace musik { namespace core { namespace api {
         });
     }
 
+    inline mc_request_id AppendPlaylist(Context& context, const Library& library, int64_t id,
+        const std::vector<int64_t>& tracks, PlaylistWriteCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_append_playlist_async(context.Get(), library.Get(), id, tracks.data(), tracks.size(),
+                detail::completePlaylistWrite, state, request);
+        });
+    }
+
     inline mc_request_id RenamePlaylist(Context& context, const Library& library, int64_t id,
         std::string_view name, PlaylistWriteCompletion completion) {
         return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {

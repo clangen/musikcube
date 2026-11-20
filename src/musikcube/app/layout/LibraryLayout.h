@@ -35,6 +35,7 @@
 #pragma once
 
 #include <musikcore/context.hpp>
+#include <app/util/RequestGeneration.h>
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ShortcutsWindow.h>
@@ -88,6 +89,7 @@ namespace musik {
                 void OnRemovedFromParent(IWindow* oldParent) override;
 
             private:
+                RequestGeneration playlistBinding;
                 void LoadLastSession();
 
                 void OnCategorySearchResultSelected(

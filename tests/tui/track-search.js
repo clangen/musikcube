@@ -184,13 +184,32 @@ async function checkTrackSearch(runtime, database, screenshots,
       terminal.send(playlistName + '\r');
       await terminal.expect('play queue', { absent: 'playlist name' });
 
+      /* Append a second track through Track Search's playlist picker. */
+      terminal.send('t');
+      await terminal.expect(FIRST_TRACK);
+      terminal.send(DOWN);
+      await new Promise(resolve => setTimeout(resolve, 150));
+      terminal.send('\x1b\r');
+      await terminal.expect('track actions');
+      terminal.send(HOME + DOWN.repeat(3) + '\r');
+      await terminal.expect(playlistName);
+      await new Promise(resolve => setTimeout(resolve, 150));
+      terminal.send(END + '\r');
+      await terminal.expect('tracks (sorted by', { absent: playlistName });
+      terminal.send('n');
+      await terminal.expect('play queue', { absent: 'tracks (sorted by' });
+
       /* Now Playing refreshes from the queue notification after clear. */
       terminal.send('X');
       await terminal.expect('play queue', { absent: queuedTrack });
       terminal.send('\x1bl');
       await terminal.expect(playlistName);
       terminal.send(END + '\r');
-      await terminal.expect(queuedTrack, { absent: 'load playlist' });
+      await terminal.waitFor(() => {
+        const screen = terminal.screen.text();
+        const first = screen.indexOf(queuedTrack);
+        return !screen.includes('load playlist') && first >= 0 && screen.indexOf(FIRST_TRACK) > first;
+      }, 'both saved tracks in queue order');
 
       terminal.send('\x1br');
       await terminal.expect('rename playlist');

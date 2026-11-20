@@ -120,7 +120,21 @@ mc_result MC_CALL mc_library_save_playlist_async(mc_context *context, const mc_l
         const auto reader = library->identity->playlists;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->SavePlaylist(context, id, std::string(name.data ? name.data : "", name.length),
-            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, completion, data, request);
+            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, false, completion, data, request);
+    });
+}
+
+mc_result MC_CALL mc_library_append_playlist_async(mc_context *context, const mc_library *library,
+    int64_t id, const int64_t *ids, size_t count, mc_playlist_write_completion_fn completion,
+    void *data, mc_request_id *request) {
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!request) return MC_ERROR_INVALID_ARGUMENT;
+        *request = 0;
+        if (!context || !library || !completion || id <= 0 || (count && !ids)) return MC_ERROR_INVALID_ARGUMENT;
+        const auto reader = library->identity->playlists;
+        if (!reader) return MC_ERROR_UNSUPPORTED;
+        return reader->SavePlaylist(context, id, {},
+            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, true, completion, data, request);
     });
 }
 

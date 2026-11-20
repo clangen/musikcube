@@ -67,8 +67,9 @@ namespace {
     }
 
     auto savePlaylistCommand(const ILibraryPtr& library, int64_t id, const std::string& name,
-        const std::vector<int64_t>& ids) {
+        const std::vector<int64_t>& ids, bool append) {
         const auto tracks = std::make_shared<musik::core::TrackList>(library, ids.data(), ids.size());
+        if (append) return query::SavePlaylistQuery::Append(library, id, tracks);
         return id ? query::SavePlaylistQuery::Replace(library, id, tracks)
                   : query::SavePlaylistQuery::Save(library, name, tracks);
     }
@@ -168,9 +169,9 @@ namespace {
                 collectPlaylists, deliverPlaylists(completion), data, request);
         }
 
-        mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids,
+        mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids, bool append,
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
-            return submitLocal<int64_t>(context, this->library, savePlaylistCommand(this->library, id, name, ids),
+            return submitLocal<int64_t>(context, this->library, savePlaylistCommand(this->library, id, name, ids, append),
                 collectPlaylistId, deliverPlaylistWrite(completion), data, request);
         }
 
@@ -278,10 +279,10 @@ namespace {
                 collectPlaylists, deliverPlaylists(completion), data, request);
         }
 
-        mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids,
+        mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids, bool append,
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitRemote<int64_t>(context, this->library, this->generation,
-                savePlaylistCommand(this->library, id, name, ids), collectPlaylistId,
+                savePlaylistCommand(this->library, id, name, ids, append), collectPlaylistId,
                 deliverPlaylistWrite(completion), data, request);
         }
 

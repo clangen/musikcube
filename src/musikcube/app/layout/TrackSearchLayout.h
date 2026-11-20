@@ -70,6 +70,10 @@ namespace musik {
                     std::shared_ptr<const musik::core::api::Library> apiLibrary);
 
                 void CancelSearchRequests();
+                void SetAddToPlaylistCallbacks(TrackListView::AddTrackToPlaylist track,
+                    TrackListView::AddCategoryToPlaylist category) {
+                    this->trackList->SetAddToPlaylistCallbacks(std::move(track), std::move(category));
+                }
 
                 virtual ~TrackSearchLayout();
 

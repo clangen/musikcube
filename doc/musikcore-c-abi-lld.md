@@ -742,6 +742,9 @@ legacy list for actions that still require it.
   listed ID and name and reloads the overwritten queue with duplicates.
   The Now Playing picker also renames and deletes bound-library playlists.
   The headless TUI verifies the updated name and removal through the picker.
+  Track Search and Browse add tracks, albums, and categories using the bound
+  playlist picker and typed save or append commands. The indexed-query test
+  verifies that an ordered append keeps duplicates and leaves prior rows in place.
   Atomic batch edits are deferred beyond parity.
 - [ ] **PUB-006** Add indexer paths, commands, snapshots, progress, and terminal
   events.

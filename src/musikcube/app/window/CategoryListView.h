@@ -55,6 +55,10 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                using AddToPlaylist = std::function<void(const std::string&, const std::string&, int64_t)>;
+                void SetAddToPlaylistCallback(AddToPlaylist callback) {
+                    this->addToPlaylist = std::move(callback);
+                }
                 using MatchType = musik::core::library::query::QueryBase::MatchType;
 
                 CategoryListView(
@@ -122,6 +126,7 @@ namespace musik {
                 };
 
             private:
+                AddToPlaylist addToPlaylist;
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
                 void ScrollToPlaying();
 

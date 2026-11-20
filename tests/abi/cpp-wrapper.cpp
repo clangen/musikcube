@@ -446,7 +446,7 @@ namespace {
             if (observers.replacementCalls != 1) return false;
 
             /* Load through the typed playlist query with playback stopped. */
-            const std::vector savedIds{ second.Id(), first.Id(), second.Id() };
+            const std::vector savedIds{ second.Id(), first.Id(), second.Id(), first.Id(), first.Id() };
             constexpr auto playlistName = "Queue Load Fixture";
             auto wake = query_test_wakeup_count();
             int64_t playlistId = 0;
@@ -465,9 +465,15 @@ namespace {
 
             wake = query_test_wakeup_count();
             bool overwritten = false;
-            api::SavePlaylist(context, *source, playlistId, {}, savedIds,
+            api::SavePlaylist(context, *source, playlistId, {}, { second.Id(), first.Id(), second.Id() },
                 [&](mc_result status, int64_t id) { overwritten = status == MC_OK && id == playlistId; });
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !overwritten) return false;
+
+            wake = query_test_wakeup_count();
+            bool appended = false;
+            api::AppendPlaylist(context, *source, playlistId, { first.Id(), first.Id() },
+                [&](mc_result status, int64_t id) { appended = status == MC_OK && id == playlistId; });
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !appended) return false;
 
             mc_result loaded = MC_ERROR_INTERNAL;
             const auto load = [&](mc_result status, api::TrackResult tracks, std::string_view) {

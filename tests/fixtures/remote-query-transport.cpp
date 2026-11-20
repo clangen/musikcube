@@ -4,6 +4,9 @@
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/query/GetPlaylistQuery.h>
+#include <musikcore/library/query/CategoryListQuery.h>
+#include <musikcore/library/query/SavePlaylistQuery.h>
+#include <musikcore/library/query/DeletePlaylistQuery.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/musikcore.hpp>
@@ -22,6 +25,8 @@
 #include <thread>
 
 namespace {
+    constexpr int64_t kPlaylistId = 7;
+    constexpr int kAppendPlaylistOperation = 4;
     using musik::core::net::WebSocketClient;
     using musik::core::library::query::SearchTrackListQuery;
     using musik::core::library::query::TrackSortType;
@@ -48,6 +53,25 @@ namespace {
                     }
                     else if (query.at("name") == musik::core::library::query::GetPlaylistQuery::kQueryName) {
                         reply["options"]["raw_query_data"] = R"({"result":{"headers":[],"trackList":[42,17,42]}})";
+                    }
+                    else if (query.at("name") == musik::core::library::query::CategoryListQuery::kQueryName) {
+                        reply["options"]["raw_query_data"] = nlohmann::json{
+                            {"result", {{{"id", kPlaylistId}, {"value", "Loopback Playlist"}, {"type", "playlists"}}}}
+                        }.dump();
+                    }
+                    else if (query.at("name") == musik::core::library::query::SavePlaylistQuery::kQueryName) {
+                        const auto& options = query.at("options");
+                        const bool valid = options.at("op") == kAppendPlaylistOperation &&
+                            options.at("playlistId") == kPlaylistId &&
+                            options.at("tracks") == nlohmann::json::array({42, 17, 42});
+                        reply["options"]["raw_query_data"] = nlohmann::json{
+                            {"result", valid}, {"playlistId", kPlaylistId}
+                        }.dump();
+                    }
+                    else if (query.at("name") == musik::core::library::query::DeletePlaylistQuery::kQueryName) {
+                        reply["options"]["raw_query_data"] = nlohmann::json{
+                            {"result", query.at("options").at("playlistId") == kPlaylistId}
+                        }.dump();
                     }
                     else {
                         reply["options"]["raw_query_data"] =
@@ -169,6 +193,8 @@ namespace {
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
         settings->SetBool(prefs::keys::SaveSessionOnExit, false);
+        runtime::MessageQueue libraryQueue;
+        LibraryFactory::Initialize(libraryQueue);
         struct Shutdown {
             ~Shutdown() { LibraryFactory::Shutdown(); }
         } shutdown;
@@ -267,6 +293,22 @@ namespace {
             playback.UseTrack(current, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
             playback.UseTrack(reference, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND ||
             service.Count() != 1 || service.GetTrackList()->GetId(0) != current.Id()) return false;
+
+        bool listed = false;
+        ListPlaylists(context, *reconnected, [&](mc_result result, auto playlists) {
+            listed = result == MC_OK && playlists.size() == 1 &&
+                playlists.front().id == kPlaylistId && playlists.front().name == "Loopback Playlist";
+            ++calls;
+        });
+        if (!server.ReleaseHeld(false) || !dispatch(8) || !listed) return false;
+        const auto written = [&](mc_result result, int64_t id) {
+            status = id == kPlaylistId ? result : MC_ERROR_NOT_FOUND;
+            ++calls;
+        };
+        AppendPlaylist(context, *reconnected, kPlaylistId, {42, 17, 42}, written);
+        if (!server.ReleaseHeld(false) || !dispatch(9) || status != MC_OK) return false;
+        DeletePlaylist(context, *reconnected, kPlaylistId, written);
+        if (!server.ReleaseHeld(false) || !dispatch(10) || status != MC_OK) return false;
 
         /* Cancel and drain each ABI request while the server holds every reply. */
         constexpr unsigned burstSize = 65;

@@ -257,7 +257,7 @@ void CategoryListView::ShowContextMenu() {
             this->library,
             this->fieldName,
             this->GetSelectedValue(),
-            id);
+            id, this->addToPlaylist);
     }
 }
 
