@@ -12,6 +12,12 @@ extern "C" {
 /* An app-supplied playback session handle. The standalone library has no playback engine. */
 typedef struct mc_playback mc_playback;
 
+/* Playback calls require the session's owner thread. Required handles and output
+   slots are non-null. New queue output slots must be initialized to null and
+   remain unchanged on failure. Destroy functions accept null slots and clear
+   owned handles. Snapshot accessors accept null and return empty sentinels.
+   Releasing a snapshot or handle never stops the playback session. */
+
 typedef uint32_t mc_playback_command;
 enum {
     MC_PLAYBACK_TOGGLE_PAUSE = 1,

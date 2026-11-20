@@ -47,7 +47,9 @@ struct completion {
 static void MC_CALL completed(mc_result result, mc_track_page *page, const mc_error *error, void *data) {
     struct completion *state = data;
     ++state->calls;
-    state->result = error ? mc_error_get_code(error) : result;
+    state->result = result == MC_OK ? (error ? MC_ERROR_INTERNAL : MC_OK)
+        : (error && mc_error_get_code(error) == result && mc_error_get_message(error).length
+            ? result : MC_ERROR_INTERNAL);
     state->page = page;
 }
 

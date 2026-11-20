@@ -13,10 +13,22 @@ typedef struct mc_library mc_library;
 typedef struct mc_track_result mc_track_result;
 typedef struct mc_track_ref mc_track_ref;
 
-typedef enum mc_library_kind {
+/* Required handles/options/callbacks/output slots are non-null; user_data may be null.
+   A pointer with a count may be null only when count is zero.
+   New handle output slots must be initialized to null. Occupied slots are rejected
+   without modification. Destroy accepts null slots and clears owned handles.
+   IDs are positive and library-scoped; zero is the invalid/missing ID sentinel.
+   Accessors on null handles return zero, false, or a null view as appropriate.
+   Views borrow their parent's storage; copy their bytes to outlive that parent.
+   Async callbacks use status, payload, borrowed error, user_data order.
+   Error details may be null on allocation failure; status is authoritative.
+   Error is null on success and otherwise valid only during the callback. */
+
+typedef uint32_t mc_library_kind;
+enum {
     MC_LIBRARY_LOCAL = 0,
     MC_LIBRARY_REMOTE = 1
-} mc_library_kind;
+};
 
 typedef struct mc_library_options {
     /* Size of this struct in bytes. */
@@ -35,12 +47,14 @@ MC_API mc_result MC_CALL mc_library_create(const mc_library_options *options, mc
 /* Release the handle. Accepted requests and derived identities retain their library. */
 MC_API void MC_CALL mc_library_destroy(mc_library **library);
 
-typedef enum mc_track_search_mode {
+typedef uint32_t mc_track_search_mode;
+enum {
     MC_TRACK_SEARCH_SUBSTRING = 0,
     MC_TRACK_SEARCH_REGEX = 1
-} mc_track_search_mode;
+};
 
-typedef enum mc_track_search_order {
+typedef uint32_t mc_track_search_order;
+enum {
     MC_TRACK_SEARCH_ALBUM = 0,
     MC_TRACK_SEARCH_TITLE = 1,
     MC_TRACK_SEARCH_ARTIST = 2,
@@ -55,7 +69,7 @@ typedef enum mc_track_search_order {
     MC_TRACK_SEARCH_PLAY_COUNT_ASC = 11,
     MC_TRACK_SEARCH_PLAY_COUNT_DESC = 12,
     MC_TRACK_SEARCH_GENRE = 13
-} mc_track_search_order;
+};
 
 typedef struct mc_track_search {
     /* Size of this struct in bytes. */
@@ -156,11 +170,11 @@ MC_API mc_result MC_CALL mc_library_open_playlist_async(
 /* Open a Browse category, including categories defined by metadata keys. */
 MC_API mc_result MC_CALL mc_library_open_category_async(
     mc_context *context, const mc_library *library, mc_string_view category, int64_t id,
-    mc_track_search_order order, mc_track_search_completion_fn completion, void *data, mc_request_id *request);
+    mc_track_search_order order, mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request);
 /* Open the ordered tracks below a directory using the library's directory query. */
 MC_API mc_result MC_CALL mc_library_open_directory_async(
     mc_context *context, const mc_library *library, mc_string_view directory,
-    mc_track_search_completion_fn completion, void *data, mc_request_id *request);
+    mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request);
 /* Copy library-scoped IDs into a result. The caller owns the returned result. */
 MC_API mc_result MC_CALL mc_library_make_track_result(
     const mc_library *library, const int64_t *ids, size_t count, mc_track_result **out_result);
@@ -172,11 +186,14 @@ typedef struct mc_playlist_entry {
     mc_string_view name;
 } mc_playlist_entry;
 
-/* The entries and their names are borrowed for the duration of the callback. */
+/* Entries, names, and error are borrowed for the callback. Failure yields null
+   entries and zero count. */
 typedef void (MC_CALL *mc_playlist_list_completion_fn)(
-    mc_result result, const mc_playlist_entry *entries, size_t count, void *user_data);
-/* On success, playlist_id identifies the playlist. Older servers may return zero for creation. */
-typedef void (MC_CALL *mc_playlist_write_completion_fn)(mc_result result, int64_t playlist_id, void *user_data);
+    mc_result result, const mc_playlist_entry *entries, size_t count, const mc_error *error, void *user_data);
+/* On success, playlist_id identifies the playlist. Older servers may return zero for creation.
+   Failure yields zero. Error details are borrowed for the callback. */
+typedef void (MC_CALL *mc_playlist_write_completion_fn)(
+    mc_result result, int64_t playlist_id, const mc_error *error, void *user_data);
 
 MC_API mc_result MC_CALL mc_library_list_playlists_async(
     mc_context *context, const mc_library *library, mc_playlist_list_completion_fn completion,

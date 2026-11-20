@@ -62,9 +62,9 @@ namespace {
     }
 
     auto deliverPlaylists(mc_playlist_list_completion_fn completion) {
-        return [completion](mc_result status, PlaylistEntries* list, const mc_error*, void* data) {
+        return [completion](mc_result status, PlaylistEntries* list, const mc_error* error, void* data) {
             const std::unique_ptr<PlaylistEntries> owned(list);
-            completion(status, list ? list->entries.data() : nullptr, list ? list->entries.size() : 0, data);
+            completion(status, list ? list->entries.data() : nullptr, list ? list->entries.size() : 0, error, data);
         };
     }
 
@@ -89,9 +89,9 @@ namespace {
     }
 
     auto deliverPlaylistWrite(mc_playlist_write_completion_fn completion) {
-        return [completion](mc_result status, int64_t* id, const mc_error*, void* data) {
+        return [completion](mc_result status, int64_t* id, const mc_error* error, void* data) {
             const std::unique_ptr<int64_t> owned(id);
-            completion(status, id ? *id : 0, data);
+            completion(status, id ? *id : 0, error, data);
         };
     }
 
@@ -104,7 +104,8 @@ namespace {
                 command->GetStatus() != musik::core::db::IQuery::Finished) return MC_ERROR_IO;
             return convert(*command, *output);
         }, [=](mc_result status, void* userData) {
-            completion(status, status == MC_OK ? output->release() : nullptr, nullptr, userData);
+            const CompletionError error(status);
+            completion(status, status == MC_OK ? output->release() : nullptr, error.Get(), userData);
         }, data, request);
     }
 
@@ -240,7 +241,8 @@ namespace {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
         std::function<void(mc_result)> finish;
         const auto status = reserve_external_request(context, [=](mc_result result, void *data) {
-            completion(result, result == MC_OK ? output->release() : nullptr, nullptr, data);
+            const CompletionError error(result);
+            completion(result, result == MC_OK ? output->release() : nullptr, error.Get(), data);
         }, user_data, out_request, finish);
         if (status != MC_OK) return status;
 
@@ -298,24 +300,7 @@ namespace {
                 request.regex ? Match::Regex : Match::Substring, request.filter, request.order);
             return submitRemote<mc_track_result>(context, this->library, this->generation, command,
                 [identity](auto &search, auto &output) {
-                    auto result = std::make_shared<TrackResultData>();
-                    result->library = identity;
-                    const auto rows = search.GetResult();
-                    const auto headers = search.GetHeaders();
-                    const auto durations = search.GetDurations();
-                    if (!rows || !headers || !durations) return MC_ERROR_IO;
-                    for (size_t i = 0; i < rows->Count(); ++i) result->ids.push_back(rows->GetId(i));
-                    result->albumStarts.resize(result->ids.size());
-                    for (const auto row : *headers) {
-                        if (row >= result->ids.size()) return MC_ERROR_IO;
-                        result->albumStarts[row] = true;
-                    }
-                    for (const auto &album : *durations) {
-                        if (album.first >= result->ids.size()) return MC_ERROR_IO;
-                        result->albumDurations.emplace(album.first, album.second);
-                    }
-                    output.reset(new mc_track_result{ std::move(result) });
-                    return MC_OK;
+                    return makeOrderedResult(search, identity, output);
                 }, completion, user_data, out_request);
         }
 

@@ -241,9 +241,10 @@ mc_result MC_CALL mc_context_create(
     using musik::core::ffi::read_option;
 
     return exception_barrier(out_error, [&]() -> mc_result {
-        /* Clear the output before any validation can fail. */
-        if (!out_context) return fail(MC_ERROR_INVALID_ARGUMENT, "Missing context output", out_error);
-        *out_context = nullptr;
+        /* Never overwrite a live owner, including the currently active context. */
+        if (!out_context || *out_context) {
+            return fail(MC_ERROR_INVALID_ARGUMENT, "Context output must be empty", out_error);
+        }
 
         /* Validate the options prefix and negotiate the ABI version. */
         if (options && options->struct_size < sizeof(options->struct_size)) {

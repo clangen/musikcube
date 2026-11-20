@@ -278,7 +278,7 @@ void NowPlayingLayout::SaveQueueToPlaylist(const api::PlaylistEntry& playlist) {
         if (!ticket.IsCurrent()) return;
         try {
             api::SavePlaylist(*this->context, *this->apiLibrary, id, name, *tracks,
-                [](mc_result status, int64_t) {
+                [](mc_result status, int64_t, std::string_view) {
                     if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not save playlist");
                 });
         }
@@ -302,7 +302,7 @@ void NowPlayingLayout::RenamePlaylist(const api::PlaylistEntry& playlist) {
         [this, ticket, id = playlist.id](const std::string& name) {
             if (!ticket.IsCurrent()) return;
             try {
-                api::RenamePlaylist(*this->context, *this->apiLibrary, id, name, [](mc_result status, int64_t) {
+                api::RenamePlaylist(*this->context, *this->apiLibrary, id, name, [](mc_result status, int64_t, std::string_view) {
                     if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not rename playlist");
                 });
             }
@@ -318,7 +318,7 @@ void NowPlayingLayout::DeletePlaylist(const api::PlaylistEntry& playlist) {
         [this, ticket, id = playlist.id] {
             if (!ticket.IsCurrent()) return;
             try {
-                api::DeletePlaylist(*this->context, *this->apiLibrary, id, [](mc_result status, int64_t) {
+                api::DeletePlaylist(*this->context, *this->apiLibrary, id, [](mc_result status, int64_t, std::string_view) {
                     if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not delete playlist");
                 });
             }

@@ -34,8 +34,7 @@ mc_result MC_CALL mc_playback_control(mc_playback *playback, mc_playback_command
 
 mc_result MC_CALL mc_playback_get_queue(const mc_playback *playback, mc_play_queue **out_queue) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        if (!out_queue) return MC_ERROR_INVALID_ARGUMENT;
-        *out_queue = nullptr;
+        if (!out_queue || *out_queue) return MC_ERROR_INVALID_ARGUMENT;
         if (!playback) return MC_ERROR_INVALID_ARGUMENT;
 
         std::unique_ptr<mc_play_queue> queue(new mc_play_queue());

@@ -612,7 +612,7 @@ void PlayQueueOverlays::ShowPlaylistPicker(api::Context& context, const api::Lib
     int64_t preferredId)
 {
     api::ListPlaylists(context, library,
-        [title, allowCreate, ticket, picked, preferredId](mc_result status, std::vector<api::PlaylistEntry> playlists) {
+        [title, allowCreate, ticket, picked, preferredId](mc_result status, std::vector<api::PlaylistEntry> playlists, std::string_view) {
             if (!ticket.IsCurrent() || status != MC_OK) return;
             if (!allowCreate && playlists.empty()) {
                 showNoPlaylistsDialog();
@@ -636,7 +636,7 @@ void PlayQueueOverlays::ShowAddToPlaylistPicker(std::weak_ptr<api::Context> cont
     const auto write = [context, library, ticket, tracks](int64_t id, const std::string& name) {
         const auto dispatcher = context.lock();
         if (!dispatcher || !ticket.IsCurrent()) return;
-        const auto complete = [ticket](mc_result status, int64_t playlistId) {
+        const auto complete = [ticket](mc_result status, int64_t playlistId, std::string_view) {
             if (ticket.IsCurrent() && status == MC_OK && playlistId > 0) setLastPlaylistId(playlistId);
         };
         try {

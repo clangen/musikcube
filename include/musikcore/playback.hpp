@@ -58,13 +58,17 @@ namespace musik { namespace core { namespace api {
 
         std::optional<mc_playback_snapshot> Snapshot() const {
             mc_playback_snapshot snapshot = MC_PLAYBACK_SNAPSHOT_DEFAULT;
-            if (mc_playback_get_snapshot(this->handle.get(), &snapshot) != MC_OK) return std::nullopt;
+            const auto status = mc_playback_get_snapshot(this->handle.get(), &snapshot);
+            if (status == MC_ERROR_NOT_FOUND) return std::nullopt;
+            if (status != MC_OK) throw Error(status);
             return snapshot;
         }
 
         std::optional<PlayQueue> Queue() const {
             mc_play_queue* queue = nullptr;
-            if (mc_playback_get_queue(this->handle.get(), &queue) != MC_OK) return std::nullopt;
+            const auto status = mc_playback_get_queue(this->handle.get(), &queue);
+            if (status == MC_ERROR_NOT_FOUND) return std::nullopt;
+            if (status != MC_OK) throw Error(status);
             return PlayQueue(queue);
         }
 

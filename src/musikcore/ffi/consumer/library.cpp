@@ -21,11 +21,8 @@ namespace {
         void *user_data, mc_request_id *out_request) {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
         return submit_request(context, [=] { return work(*output); }, [=](mc_result result, void *data) {
-            mc_error *error = nullptr;
-            if (result == MC_ERROR_IO) fail(result, "Could not query the library", &error);
-            const std::unique_ptr<mc_error, void (*)(mc_error *)> owned_error(error,
-                [](mc_error *value) { mc_error_destroy(&value); });
-            completion(result, result == MC_OK ? output->release() : nullptr, error, data);
+            const CompletionError error(result);
+            completion(result, result == MC_OK ? output->release() : nullptr, error.Get(), data);
         }, user_data, out_request);
     }
 
@@ -131,9 +128,12 @@ mc_result MC_CALL mc_library_open_directory_async(mc_context *context, const mc_
 mc_result MC_CALL mc_library_make_track_result(const mc_library *library, const int64_t *ids, size_t count,
     mc_track_result **out_result) {
     return exception_barrier(nullptr, [&]() -> mc_result {
-        if (!out_result) return MC_ERROR_INVALID_ARGUMENT;
-        *out_result = nullptr;
+        if (!out_result || *out_result) return MC_ERROR_INVALID_ARGUMENT;
         if (!library || (count && !ids)) return MC_ERROR_INVALID_ARGUMENT;
+        if (count > static_cast<size_t>(PTRDIFF_MAX) / sizeof(*ids)) return MC_ERROR_INVALID_ARGUMENT;
+        for (size_t i = 0; i < count; ++i) {
+            if (ids[i] <= 0) return MC_ERROR_INVALID_ARGUMENT;
+        }
         auto result = std::make_shared<TrackResultData>();
         result->library = library->identity;
         if (count) result->ids.assign(ids, ids + count);

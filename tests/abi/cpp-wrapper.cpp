@@ -336,6 +336,18 @@ namespace {
                 snapshot->position != 12 || snapshot->duration != 30 || !snapshot->muted) return false;
 
             if (playback->Play(result, 2) != MC_ERROR_NOT_FOUND ||
+            /* Wrong-thread access must retain its diagnosis rather than appear absent. */
+            bool snapshotBusy = false;
+            bool queueBusy = false;
+            std::thread observer([&] {
+                try { playback->Snapshot(); }
+                catch (const api::Error& error) { snapshotBusy = error.Result() == MC_ERROR_BUSY; }
+                try { playback->Queue(); }
+                catch (const api::Error& error) { queueBusy = error.Result() == MC_ERROR_BUSY; }
+            });
+            observer.join();
+            if (!snapshotBusy || !queueBusy) return false;
+
                 playback->Play(result, 1) != MC_OK || service.GetIndex() != 1 ||
                 service.GetTrackList()->GetId(0) != result.Id(0) ||
                 service.GetTrackList()->GetId(1) != result.Id(1)) return false;
@@ -454,12 +466,12 @@ namespace {
             auto wake = query_test_wakeup_count();
             int64_t playlistId = 0;
             api::SavePlaylist(context, *source, 0, playlistName, { first.Id() },
-                [&](mc_result status, int64_t id) { if (status == MC_OK) playlistId = id; });
+                [&](mc_result status, int64_t id, std::string_view) { if (status == MC_OK) playlistId = id; });
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || playlistId <= 0) return false;
 
             wake = query_test_wakeup_count();
             bool listed = false;
-            api::ListPlaylists(context, *source, [&](mc_result status, auto entries) {
+            api::ListPlaylists(context, *source, [&](mc_result status, auto entries, std::string_view) {
                 listed = status == MC_OK && std::any_of(entries.begin(), entries.end(), [&](const auto& entry) {
                     return entry.id == playlistId && entry.name == playlistName;
                 });
@@ -469,13 +481,13 @@ namespace {
             wake = query_test_wakeup_count();
             bool overwritten = false;
             api::SavePlaylist(context, *source, playlistId, {}, { second.Id(), first.Id(), second.Id() },
-                [&](mc_result status, int64_t id) { overwritten = status == MC_OK && id == playlistId; });
+                [&](mc_result status, int64_t id, std::string_view) { overwritten = status == MC_OK && id == playlistId; });
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !overwritten) return false;
 
             wake = query_test_wakeup_count();
             bool appended = false;
             api::AppendPlaylist(context, *source, playlistId, { first.Id(), first.Id() },
-                [&](mc_result status, int64_t id) { appended = status == MC_OK && id == playlistId; });
+                [&](mc_result status, int64_t id, std::string_view) { appended = status == MC_OK && id == playlistId; });
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !appended) return false;
 
             mc_result loaded = MC_ERROR_INTERNAL;
@@ -515,14 +527,14 @@ namespace {
             constexpr auto renamedName = "Renamed Queue Fixture";
             wake = query_test_wakeup_count();
             mc_result mutation = MC_ERROR_INTERNAL;
-            const auto mutated = [&](mc_result status, int64_t id) {
+            const auto mutated = [&](mc_result status, int64_t id, std::string_view) {
                 mutation = id == playlistId ? status : MC_ERROR_NOT_FOUND;
             };
             api::RenamePlaylist(context, *source, playlistId, renamedName, mutated);
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || mutation != MC_OK) return false;
             wake = query_test_wakeup_count();
             listed = false;
-            api::ListPlaylists(context, *source, [&](mc_result status, auto entries) {
+            api::ListPlaylists(context, *source, [&](mc_result status, auto entries, std::string_view) {
                 listed = status == MC_OK && std::any_of(entries.begin(), entries.end(), [&](const auto& entry) {
                     return entry.id == playlistId && entry.name == renamedName;
                 });
@@ -535,7 +547,7 @@ namespace {
                 service.Count() != savedIds.size() + 1) return false;
             wake = query_test_wakeup_count();
             bool removed = false;
-            api::ListPlaylists(context, *source, [&](mc_result status, auto entries) {
+            api::ListPlaylists(context, *source, [&](mc_result status, auto entries, std::string_view) {
                 removed = status == MC_OK && std::none_of(entries.begin(), entries.end(),
                     [&](const auto& entry) { return entry.id == playlistId; });
             });

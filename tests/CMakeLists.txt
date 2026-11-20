@@ -47,6 +47,7 @@ endif()
 
 add_executable(musikcore_abi_dispatch_test
   abi/dispatch.cpp
+  abi/context-allocation.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer/context.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp"
 )

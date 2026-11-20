@@ -100,12 +100,14 @@ namespace musik { namespace core { namespace api {
         }
 
         /* Views borrow from this page. Missing values have null data. */
-        std::string_view FieldName(size_t field) const noexcept {
+        std::string_view FieldName(size_t field) const & noexcept {
             return AsStringView(mc_track_page_get_field_name(page.get(), field));
         }
-        std::string_view Value(size_t row, size_t field, size_t index = 0) const noexcept {
+        std::string_view FieldName(size_t field) const && = delete;
+        std::string_view Value(size_t row, size_t field, size_t index = 0) const & noexcept {
             return AsStringView(mc_track_page_get_string_at(page.get(), row, field, index));
         }
+        std::string_view Value(size_t row, size_t field, size_t index = 0) const && = delete;
 
     private:
         struct Destroy {
@@ -324,27 +326,27 @@ namespace musik { namespace core { namespace api {
         std::string name;
     };
 
-    using PlaylistListCompletion = std::function<void(mc_result, std::vector<PlaylistEntry>)>;
-    using PlaylistWriteCompletion = std::function<void(mc_result, int64_t)>;
+    using PlaylistListCompletion = std::function<void(mc_result, std::vector<PlaylistEntry>, std::string_view)>;
+    using PlaylistWriteCompletion = std::function<void(mc_result, int64_t, std::string_view)>;
 
     namespace detail {
-        inline void MC_CALL completePlaylistWrite(mc_result status, int64_t id, void* data) {
+        inline void MC_CALL completePlaylistWrite(mc_result status, int64_t id, const mc_error* error, void* data) {
             const std::unique_ptr<PlaylistWriteCompletion> callback(static_cast<PlaylistWriteCompletion*>(data));
-            (*callback)(status, id);
+            (*callback)(status, id, AsStringView(mc_error_get_message(error)));
         }
     }
 
     inline mc_request_id ListPlaylists(Context& context, const Library& library, PlaylistListCompletion completion) {
         return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_list_playlists_async(context.Get(), library.Get(),
-                [](mc_result status, const mc_playlist_entry* entries, size_t count, void* data) {
+                [](mc_result status, const mc_playlist_entry* entries, size_t count, const mc_error* error, void* data) {
                     std::unique_ptr<PlaylistListCompletion> callback(static_cast<PlaylistListCompletion*>(data));
                     std::vector<PlaylistEntry> playlists;
                     playlists.reserve(count);
                     for (size_t i = 0; i < count; ++i) {
                         playlists.push_back({entries[i].id, std::string(AsStringView(entries[i].name))});
                     }
-                    (*callback)(status, std::move(playlists));
+                    (*callback)(status, std::move(playlists), AsStringView(mc_error_get_message(error)));
                 }, state, request);
         });
     }

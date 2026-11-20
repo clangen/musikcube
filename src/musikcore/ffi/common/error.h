@@ -8,6 +8,20 @@ namespace musik { namespace core { namespace ffi {
 
     mc_result fail(mc_result code, const char *message, mc_error **out_error) noexcept;
 
+    /* Stack-scoped details shared by all asynchronous result adapters. */
+    class CompletionError {
+    public:
+        explicit CompletionError(mc_result result) noexcept {
+            if (result != MC_OK) fail(result, "Asynchronous operation failed", &this->error);
+        }
+        ~CompletionError() { mc_error_destroy(&this->error); }
+        CompletionError(const CompletionError&) = delete;
+        CompletionError& operator=(const CompletionError&) = delete;
+        const mc_error* Get() const noexcept { return this->error; }
+    private:
+        mc_error* error = nullptr;
+    };
+
     /* The output slot must not already own an error. */
     template <typename Operation>
     mc_result exception_barrier(mc_error **out_error, Operation &&operation) noexcept {

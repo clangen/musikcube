@@ -247,8 +247,8 @@ namespace {
             tracks.Id(1) != 17 || !tracks.StartsAlbum(0) || tracks.AlbumDurationSeconds(0) != 10) return false;
 
         const TrackRange range{ 0, 2, { MC_TRACK_FIELD_TITLE } };
-        const auto receive = [&](mc_result result, TrackPage found, std::string_view) {
-            status = result;
+        const auto receive = [&](mc_result result, TrackPage found, std::string_view error) {
+            status = (result == MC_OK) == error.empty() ? result : MC_ERROR_INTERNAL;
             page = std::move(found);
             ++calls;
         };
@@ -308,13 +308,13 @@ namespace {
             service.Count() != 1 || service.GetTrackList()->GetId(0) != current.Id()) return false;
 
         bool listed = false;
-        ListPlaylists(context, *reconnected, [&](mc_result result, auto playlists) {
+        ListPlaylists(context, *reconnected, [&](mc_result result, auto playlists, std::string_view) {
             listed = result == MC_OK && playlists.size() == 1 &&
                 playlists.front().id == kPlaylistId && playlists.front().name == "Loopback Playlist";
             ++calls;
         });
         if (!server.ReleaseHeld(false) || !dispatch(8) || !listed) return false;
-        const auto written = [&](mc_result result, int64_t id) {
+        const auto written = [&](mc_result result, int64_t id, std::string_view) {
             status = id == kPlaylistId ? result : MC_ERROR_NOT_FOUND;
             ++calls;
         };

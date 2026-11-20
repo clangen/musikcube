@@ -6,6 +6,8 @@
 #include <mutex>
 #include <thread>
 
+bool context_test_allocation_failures();
+
 namespace {
     struct State {
         mc_context *context = nullptr;
@@ -259,10 +261,51 @@ static bool check_external_reply(State &state) {
     return state.completions == 2 && state.result == MC_ERROR_CANCELLED;
 }
 
+static bool check_callback_lifecycle(State &state) {
+    mc_request_id request = 0;
+    std::function<void(mc_result)> finish;
+    if (musik::core::ffi::reserve_external_request(state.context, dispatch_test_completion,
+        &state, &request, finish) != MC_OK) return false;
+
+    bool preserved = false;
+    bool rejected = false;
+    state.after_completion = [&] {
+        const auto original = state.context;
+        rejected = mc_context_shutdown(original) == MC_ERROR_BUSY;
+        mc_context_destroy(&state.context);
+        preserved = state.context == original;
+    };
+    finish(MC_OK);
+    if (mc_context_dispatch(state.context) != MC_OK || !preserved || !rejected || state.completions != 1) return false;
+    state.after_completion = nullptr;
+    return mc_context_shutdown(state.context) == MC_OK && state.completions == 1;
+}
+
+static bool check_callback_cancellation(State &state) {
+    using musik::core::ffi::reserve_external_request;
+    mc_request_id first = 0;
+    mc_request_id second = 0;
+    std::function<void(mc_result)> finishFirst;
+    std::function<void(mc_result)> finishSecond;
+    if (reserve_external_request(state.context, dispatch_test_completion, &state, &first, finishFirst) != MC_OK ||
+        reserve_external_request(state.context, dispatch_test_completion, &state, &second, finishSecond) != MC_OK) return false;
+    mc_result cancelled = MC_ERROR_INTERNAL;
+    state.after_completion = [&] { cancelled = mc_request_cancel(state.context, second); };
+    finishFirst(MC_OK);
+    if (mc_context_dispatch(state.context) != MC_OK || state.completions != 1 || cancelled != MC_OK) return false;
+    state.after_completion = nullptr;
+    finishSecond(MC_OK);
+    return mc_context_dispatch(state.context) == MC_OK && state.completions == 2 &&
+        state.result == MC_ERROR_CANCELLED && mc_context_dispatch(state.context) == MC_OK && state.completions == 2;
+}
+
 int main() {
-    return run_check("completion and cancellation", check_dispatch) &&
+    return context_test_allocation_failures() &&
+        run_check("completion and cancellation", check_dispatch) &&
         run_check("dispatch rearm", check_dispatch_rearm) &&
         run_check("queue capacity and wakeup coalescing", check_queue_capacity) &&
         run_check("shutdown with a wakeup in flight", check_shutdown_wakeup) &&
+        run_check("shutdown and destroy during callback", check_callback_lifecycle) &&
+        run_check("cancel peer request during callback", check_callback_cancellation) &&
         run_check("external reply after cancellation and destruction", check_external_reply) ? 0 : 1;
 }

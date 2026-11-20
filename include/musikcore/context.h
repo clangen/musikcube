@@ -9,6 +9,8 @@ extern "C" {
 
 typedef struct mc_context mc_context;
 typedef uint64_t mc_request_id;
+/* Signal the host loop promptly. May run on a worker or submitting thread.
+   Do not dispatch, shut down, or destroy the context from this hook. */
 typedef void (MC_CALL *mc_wakeup_fn)(void *user_data);
 
 enum {
@@ -22,7 +24,7 @@ typedef struct mc_context_options {
     uint32_t struct_size;
     /* Requested ABI version. Zero selects the current version. */
     uint32_t requested_abi_version;
-    /* UTF-8 plugin root, copied at creation. An empty view selects the default root. */
+    /* Reserved UTF-8 plugin root, copied at creation. The standalone ABI does not load plugins yet. */
     mc_string_view plugin_directory;
     /* Reserved for context options. Must be zero. */
     uint32_t flags;
@@ -46,7 +48,12 @@ typedef struct mc_context_options {
 MC_API mc_result MC_CALL mc_context_create(
     const mc_context_options *options, mc_context **out_context, mc_error **out_error);
 
-/* The first dispatch binds its thread. Callbacks run inline for work already ready. */
+/* The first dispatch or shutdown binds its thread. Ready callbacks run inline,
+   outside internal locks. Nested/concurrent dispatch returns MC_ERROR_BUSY.
+   Callbacks may submit/cancel requests, but cannot shut down or destroy the context.
+   Rejected submissions set out_request to zero and never invoke the callback.
+   Accepted submissions deliver exactly one completion, including on shutdown.
+   Handles must remain valid for the duration of concurrent calls using them. */
 MC_API mc_result MC_CALL mc_context_dispatch(mc_context *context);
 /* Selects cancellation if the request still has no terminal result. */
 MC_API mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id request);

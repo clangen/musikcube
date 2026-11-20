@@ -2,6 +2,39 @@
 
 #include <stdio.h>
 
+_Static_assert(sizeof(mc_library_kind) == 4, "library kind width");
+_Static_assert(sizeof(mc_track_search_mode) == 4, "search mode width");
+_Static_assert(sizeof(mc_track_search_order) == 4, "search order width");
+
+static int check_owned_outputs(void) {
+    mc_library_options options = MC_LIBRARY_OPTIONS_DEFAULT;
+    options.locator = (mc_string_view){ ".", 1 };
+    mc_library* library = NULL;
+    mc_track_result* tracks = NULL;
+    mc_track_ref* track = NULL;
+    const int64_t ids[] = { 42, 17, 42 };
+    const int64_t invalid[] = { 0 };
+    int passed = 0;
+    if (mc_library_create(&options, &library) != MC_OK) goto cleanup;
+    mc_library* original_library = library;
+    if (mc_library_create(&options, &library) != MC_ERROR_INVALID_ARGUMENT || library != original_library) goto cleanup;
+    if (mc_library_make_track_result(library, invalid, 1, &tracks) != MC_ERROR_INVALID_ARGUMENT || tracks) goto cleanup;
+    if (mc_library_make_track_result(library, ids, 3, &tracks) != MC_OK) goto cleanup;
+    mc_track_result* original_tracks = tracks;
+    if (mc_library_make_track_result(library, ids, 3, &tracks) != MC_ERROR_INVALID_ARGUMENT || tracks != original_tracks) goto cleanup;
+    if (mc_track_result_get_ref(tracks, 0, &track) != MC_OK) goto cleanup;
+    mc_track_ref* original_track = track;
+    if (mc_track_result_get_ref(tracks, 1, &track) != MC_ERROR_INVALID_ARGUMENT || track != original_track) goto cleanup;
+    mc_library_destroy(&library);
+    passed = mc_track_result_get_count(tracks) == 3 && mc_track_result_get_id(tracks, 2) == 42 &&
+        mc_track_ref_get_id(track) == 42 && mc_track_result_get_id(tracks, SIZE_MAX) == 0;
+cleanup:
+    mc_track_ref_destroy(&track);
+    mc_track_result_destroy(&tracks);
+    mc_library_destroy(&library);
+    return passed;
+}
+
 static int check_context_lifecycle(void) {
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
     mc_context *context = NULL;
@@ -11,6 +44,10 @@ static int check_context_lifecycle(void) {
 
     if (mc_context_create(NULL, NULL, NULL) != MC_ERROR_INVALID_ARGUMENT) goto cleanup;
     if (mc_context_create(&options, &context, &error) != MC_OK || !context || error) goto cleanup;
+    {
+        mc_context *original = context;
+        if (mc_context_create(NULL, &context, NULL) != MC_ERROR_INVALID_ARGUMENT || context != original) goto cleanup;
+    }
     mc_context_destroy(&context);
 
     options.struct_size = 0;
@@ -46,6 +83,12 @@ static int check_context_lifecycle(void) {
     mc_context_destroy(&context);
     mc_context_destroy(NULL);
     passed = !context;
+    for (unsigned cycle = 0; passed && cycle < 100; ++cycle) {
+        passed = mc_context_create(NULL, &context, NULL) == MC_OK &&
+            mc_context_dispatch(context) == MC_OK && mc_context_shutdown(context) == MC_OK;
+        mc_context_destroy(&context);
+        passed = passed && !context;
+    }
 
 cleanup:
     mc_error_destroy(&error);
@@ -68,7 +111,7 @@ int main(void) {
         return 1;
     }
     mc_error_destroy(&error);
-    if (error || !check_context_lifecycle()) {
+    if (error || !check_context_lifecycle() || !check_owned_outputs()) {
         fputs("shared C context lifecycle failed\n", stderr);
         return 1;
     }
