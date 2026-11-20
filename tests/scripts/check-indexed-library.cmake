@@ -16,7 +16,15 @@ get_filename_component(config_directory "${directory}/../.." ABSOLUTE)
 
 # Each selected case gets its own catalog and process so an earlier assertion
 # cannot hide a later contract or leak preferences into another test.
-if(DEFINED WRAPPER_CASE)
+if(DEFINED PLUGIN_PLAYBACK_TEST)
+  execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
+    "${BUILD_DIR}/tests/bin/isolated" "${PLUGIN_PLAYBACK_TEST}" --stage
+    --headless-output "${NULL_OUTPUT}" "${config_directory}/media/01-morning.wav"
+    RESULT_VARIABLE status)
+  if(NOT status STREQUAL "0")
+    message(FATAL_ERROR "Plugin playback failed (${status}); fixture: ${directory}")
+  endif()
+elseif(DEFINED WRAPPER_CASE)
   if(WRAPPER_PRODUCTION)
     execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
       "${BUILD_DIR}/tests/bin/isolated" "${PRODUCTION_TEST}" --stage
@@ -32,7 +40,7 @@ if(DEFINED WRAPPER_CASE)
 elseif(BACKEND_PARITY)
   execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
     "${BUILD_DIR}/tests/bin/isolated" "${REMOTE_TEST}" --stage
-    --config-root "${config_directory}" --parity RESULT_VARIABLE status)
+    --config-root "${config_directory}" --parity "${database}" RESULT_VARIABLE status)
   if(NOT status STREQUAL "0")
     message(FATAL_ERROR "Local/loopback parity failed (${status}); fixture: ${directory}")
   endif()

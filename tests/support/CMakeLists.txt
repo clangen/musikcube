@@ -92,6 +92,22 @@ if(BUILD_TESTING)
       ${indexed_arguments} -DBACKEND_PARITY=ON -P "${indexed_script}")
     set_tests_properties(musikcore.integration.api.backend_parity PROPERTIES
       LABELS "integration;musikcore;api;transport;contract" TIMEOUT 90)
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET nullout AND TARGET ffmpegdecoder AND TARGET taglibreader)
+      add_executable(musikcore_plugin_playback_test ../integration/musikcore/plugin-playback.cpp)
+      target_include_directories(musikcore_plugin_playback_test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
+      set_target_properties(musikcore_plugin_playback_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+      target_link_libraries(musikcore_plugin_playback_test PRIVATE musikcore Threads::Threads)
+      add_dependencies(musikcore_plugin_playback_test nullout musikcube_seed_library)
+      add_dependencies(musikcube_tests musikcore_plugin_playback_test)
+      add_dependencies(musikcube_integration_tests musikcore_plugin_playback_test)
+      add_test(NAME musikcore.integration.plugin.playback_reload COMMAND "${CMAKE_COMMAND}"
+        ${indexed_arguments} "-DPLUGIN_PLAYBACK_TEST=$<TARGET_FILE:musikcore_plugin_playback_test>"
+        "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
+      set_tests_properties(musikcore.integration.plugin.playback_reload PROPERTIES
+        LABELS "integration;musikcore;plugin;playback" TIMEOUT 30)
+    endif()
   endif()
 endif()
 

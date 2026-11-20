@@ -89,22 +89,12 @@ static void logError(const std::string& message) {
 }
 
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
-static AVChannelLayout resolveChannelLayout(size_t channelCount) {
-    AVChannelLayout result;
-    memset(&result, 0, sizeof(result));
-
-    result.nb_channels = channelCount;
-    switch (channelCount) {
-        case 1: result.u.mask = AV_CH_LAYOUT_MONO; break;
-        case 2: result.u.mask =  AV_CH_LAYOUT_STEREO; break;
-        case 3: result.u.mask =  AV_CH_LAYOUT_2POINT1; break;
-        case 4: result.u.mask =  AV_CH_LAYOUT_3POINT1; break;
-        case 5: result.u.mask =  AV_CH_LAYOUT_4POINT1; break;
-        case 6: result.u.mask =  AV_CH_LAYOUT_5POINT1; break;
-        default: result.u.mask =  AV_CH_LAYOUT_STEREO_DOWNMIX; break;
+static void normalizeChannelLayout(AVChannelLayout& layout) {
+    /* PCM can specify a channel count without an order. Match the layout
+       libswresample resolves internally before it compares input frames. */
+    if (layout.order == AV_CHANNEL_ORDER_UNSPEC && layout.nb_channels > 0) {
+        av_channel_layout_default(&layout, layout.nb_channels);
     }
-
-    return result;
 }
 #endif
 
@@ -418,15 +408,13 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                             }
 
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
-                            if (this->codecContext->ch_layout.nb_channels == 0) {
-                                this->codecContext->ch_layout =
-                                    resolveChannelLayout(this->codecContext->ch_layout.nb_channels);
+                            normalizeChannelLayout(this->codecContext->ch_layout);
 #else
                             if (this->codecContext->channel_layout == 0) {
                                 this->codecContext->channel_layout =
                                     av_get_default_channel_layout(this->codecContext->channels);
-#endif
                             }
+#endif
 
                             this->preferredFrameSize = this->codecContext->frame_size
                                 ? this->codecContext->frame_size
@@ -483,6 +471,9 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket* packet) {
 
         error = avcodec_receive_frame(this->codecContext, this->decodedFrame);
         if (error >= 0) {
+#ifdef USE_FFMPEG7_CHANNEL_LAYOUT
+            normalizeChannelLayout(this->decodedFrame->ch_layout);
+#endif
             this->resampledFrame = this->AllocFrame(
                 this->resampledFrame,
                 AV_SAMPLE_FMT_FLT,
@@ -655,11 +646,8 @@ AVFrame* FfmpegDecoder::AllocFrame(AVFrame* original, AVSampleFormat format, int
             av_frame_free(&original);
         }
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
-        const AVChannelLayout channelLayout = this->codecContext->ch_layout.nb_channels == 0
-            ? resolveChannelLayout(this->codecContext->ch_layout.nb_channels)
-            : this->codecContext->ch_layout;
         original = av_frame_alloc();
-        original->ch_layout = channelLayout;
+        original->ch_layout = this->codecContext->ch_layout;
 #else
         const int channelLayout = this->codecContext->channel_layout == 0
             ? av_get_default_channel_layout(this->codecContext->channels)

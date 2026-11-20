@@ -2,8 +2,8 @@
    Production fixtures can also stage their executable and required plugins.
    The native executable performs the assertions; failed runs retain their files. */
 const { spawnSync } = require('child_process');
-const { mkdirSync, mkdtempSync, rmSync } = require('fs');
-const { join, resolve } = require('path');
+const { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } = require('fs');
+const { dirname, join, resolve } = require('path');
 const { stageTestRuntime } = require('./test-runtime');
 
 const [parent, executable, ...args] = process.argv.slice(2);
@@ -20,6 +20,14 @@ let config = root;
 if (args[0] === '--stage') {
   args.shift();
   command = stageTestRuntime(resolve(executable), root);
+}
+
+if (args[0] === '--headless-output') {
+  args.shift();
+  const plugins = join(dirname(command), 'plugins');
+  copyFileSync(args.shift(), join(plugins, 'libnullout.so'));
+  /* Exercise dlopen failure alongside the working headless output. */
+  writeFileSync(join(plugins, 'libunavailable-output.so'), 'Invalid shared library\n');
 }
 
 if (args[0] === '--config-root') {

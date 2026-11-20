@@ -100,7 +100,8 @@ try {
 
       /* Reuse the seeded catalog for both backends and 10,000-entry playlists. */
       output += run([join(__dirname, 'run-isolated-test.js'), join(production, 'tests/bin/baseline'),
-        join(runtime, `musikcore_remote_query_transport_test${extension}`), '--stage', '--config-root', config, '--parity'], env, true);
+        join(runtime, `musikcore_remote_query_transport_test${extension}`), '--stage',
+        '--config-root', config, '--parity', database], env, true);
     }
 
     /* Store machine/build identity beside metrics so incompatible runs cannot

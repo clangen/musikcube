@@ -2,8 +2,17 @@
    executable, runtime libraries, and required plugins into a private directory
    so tests do not discover unrelated plugins from the normal app installation. */
 
-const { copyFileSync, mkdirSync, readdirSync } = require('fs');
+const { copyFileSync, existsSync, mkdirSync, readdirSync } = require('fs');
 const { basename, dirname, join } = require('path');
+
+function copyRuntimeLibraries(source, destination) {
+  mkdirSync(destination, { recursive: true });
+  for (const entry of readdirSync(source, { withFileTypes: true })) {
+    if (!entry.isDirectory() && /\.(dll|dylib|so)(\.[\d.]+)?$/.test(entry.name)) {
+      copyFileSync(join(source, entry.name), join(destination, entry.name));
+    }
+  }
+}
 
 /* Copy an executable and its runtime libraries into an isolated root, staging only the required test
    plugins. */
@@ -15,11 +24,11 @@ function stageTestRuntime(executable, root) {
   const staged = join(runtime, basename(executable));
   copyFileSync(executable, staged);
 
-  /* Native runtime libraries must follow the executable into its private root. */
-  for (const entry of readdirSync(source, { withFileTypes: true })) {
-    if (!entry.isDirectory() && /\.(dll|dylib|so)(\.[\d.]+)?$/.test(entry.name)) {
-      copyFileSync(join(source, entry.name), join(runtime, entry.name));
-    }
+  /* Preserve the loader paths used by the executable and its plugins. */
+  copyRuntimeLibraries(source, runtime);
+  const libraries = join(source, 'lib');
+  if (existsSync(libraries)) {
+    copyRuntimeLibraries(libraries, join(runtime, 'lib'));
   }
 
   /* An allowlist prevents unrelated output/device plugins from affecting tests. */

@@ -568,11 +568,11 @@ being changed; this work does not authorize a broad legacy-test backfill.
 
 ## Core C API foundation gate
 
-Status: current-surface implementation and native macOS validation complete;
-Windows and Linux acceptance pending. This gate blocks new feature families and
-further application migration. Fixes, tests, documentation, and refactoring of
-the existing surface remain in scope. Provider work additionally waits for
-core application release-candidate quality.
+Status: current-surface implementation and native macOS and Linux validation
+complete. Windows acceptance is deferred. This gate blocks new feature
+families and further application migration. Fixes, tests, documentation, and
+refactoring of the existing surface remain in scope. Provider work
+additionally waits for core application release-candidate quality.
 
 The completed work below groups the former foundation checklist; detailed
 feature tasks remain in the task list rather than a second parallel checklist.
@@ -596,16 +596,17 @@ wakeups, and producers without linking app services. The UI helper
 `musikcube.unit.async_callback_scope` checks replacement, teardown, forwarding,
 move-only handlers, and payload cleanup. The macOS
 `musikcube.ui.terminal_driver` entry checks the script-only PTY bridge's input,
-exit status, and cleanup.
+exit status, and cleanup. On Linux, `musikcore.integration.plugin.playback_reload`
+checks decoding and playback with an invalid output module, then reloads
+the output during playback with an unavailable selection and verifies restart.
 
 Remaining acceptance:
 
 - [ ] **FND-WINDOWS** Run clean native Windows Debug/Release tests, verify actual
   DLL exports, import-library loading, and runtime placement. Requires a Windows
   host; project maintainer owns native execution.
-- [ ] **FND-LINUX** Run clean native Linux Debug/Release tests and verify ELF
-  SONAME/RPATH and actual exports. Deferred by the user to a separate session;
-  no container or Linux runner substitutes for this acceptance.
+- [x] **FND-LINUX** Run clean native Linux Debug/Release tests and verify ELF
+  SONAME/RUNPATH and actual exports.
 - [ ] **GATE-FOUNDATION** Record passing clean Debug/Release contract,
   integration, export, external-consumer and baseline validation on all named
   platforms, or an explicitly approved exception with owner, rationale, and
@@ -622,8 +623,16 @@ Native evidence on 2026-11-20: macOS 26.6.2, Apple M4/arm64, AppleClang
 entries pass, including four independently selected 1,000-track production UI
 scenarios.
 Clean standalone ABI-only Debug and Release workflows pass all 26 entries.
-Earlier production TUI validation used 10,000 tracks across three runs. These
-results do not imply Windows/Linux acceptance.
+Earlier production TUI validation used 10,000 tracks across three runs.
+
+Native Linux evidence on 2026-11-20: Arch Linux x86-64, Zig 0.17.1 with
+glibc 2.28 targeting. Clean Debug and Release standalone builds passed all
+44 CTest entries each, including backend parity and the output reload test.
+Clean ABI-only Debug and Release builds passed all 25 entries each. Verified
+ELF SONAMEs, relative runtime paths, and the exported C symbol allowlist for
+both core libraries. The Release build produced 15 plugin modules. All
+resolved their dynamic symbols on the test host. The standalone dependency
+scan passed at glibc 2.28, and the Linux timing-only baseline completed.
 
 ### Reproducible workflows
 

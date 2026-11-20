@@ -18,6 +18,7 @@
 #include "ApiHost.h"
 #include "../../support/profile.hpp"
 #include <musikcore/library/QueryRegistry.h>
+#include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/sdk/version.h>
@@ -45,36 +46,6 @@ namespace {
     using musik::core::net::WebSocketClient;
     using musik::core::library::query::SearchTrackListQuery;
     using musik::core::library::query::TrackSortType;
-
-    /* Fixture-only typed mutation; production reads still use the public API. */
-    class MetadataFixtureQuery final : public musik::core::library::query::QueryBase {
-        public:
-            /* Copy deterministic title/visibility mutations for execution on the local library's query worker. */
-            MetadataFixtureQuery(int64_t id, std::string title, bool visible)
-            : id(id)
-            , title(std::move(title))
-            , visible(visible)
-            {}
-
-            /* Identify this fixture-only mutation without registering any new production query family. */
-            std::string Name() override { return "MetadataFixtureQuery"; }
-
-        protected:
-            /* Bind metadata edge values into the isolated catalog before comparing public local/remote reads. */
-            bool OnRun(musik::core::db::Connection& db) override {
-                musik::core::db::Statement update(
-                    "UPDATE tracks SET title=?, rating=NULL, visible=? WHERE id=?", db);
-                update.BindText(0, this->title);
-                update.BindInt32(1, this->visible ? 1 : 0);
-                update.BindInt64(2, this->id);
-                return update.Step() == musik::core::db::Done;
-            }
-
-        private:
-            int64_t id;
-            std::string title;
-            bool visible;
-    };
 
     /* Owns its loopback listener and worker. Neither copyable nor movable. */
     class Server {
@@ -503,7 +474,7 @@ namespace {
     }
     /* Use the same typed backend on both sides of a real socket to expose serialization losses
        independently of catalog differences. */
-    bool checkBackendParity() {
+    bool checkBackendParity(const char* database) {
         using namespace musik::core;
         using namespace musik::core::api;
         CoreRuntime runtime;
@@ -657,12 +628,19 @@ namespace {
 
         /* Preserve SQL NULL, explicit empty text, Unicode, and hidden membership
            through the same typed projection on both sides of the socket. */
-        const auto backend = LibraryFactory::Instance().DefaultLocalLibrary();
         const int64_t edgeIds[] = { localTracks.Id(0), localTracks.Id(1) };
         const std::string longTitle = std::string("音楽 🎵 ") + std::string(65536, 'x');
+        /* Seed metadata edge cases without passing test-only types into core. */
+        db::Connection fixture;
+        if (fixture.Open(database) != db::Okay) {
+            return failure(__LINE__);
+        }
         const auto mutate = [&](int64_t id, const std::string& title, bool visible) {
-            const auto query = std::make_shared<MetadataFixtureQuery>(id, title, visible);
-            return backend->EnqueueAndWait(query) >= 0 && query->GetStatus() == db::IQuery::Finished;
+            db::Statement update("UPDATE tracks SET title=?, rating=NULL, visible=? WHERE id=?", fixture);
+            update.BindText(0, title);
+            update.BindInt32(1, visible ? 1 : 0);
+            update.BindInt64(2, id);
+            return update.Step() == db::Done && fixture.LastModifiedRowCount() == 1;
         };
         const auto readEdges = [&] {
             for (bool overRemote : { false, true }) {
@@ -689,8 +667,10 @@ namespace {
             }
             return true;
         };
-        if (!mutate(edgeIds[0], "", true) || !mutate(edgeIds[1], longTitle, true) || !readEdges() ||
-            !remotePage.Value(0, 0).data() || !remotePage.Value(0, 0).empty() ||
+        if (!mutate(edgeIds[0], "", true) || !mutate(edgeIds[1], longTitle, true) || !readEdges()) {
+            return failure(__LINE__);
+        }
+        if (!remotePage.Value(0, 0).data() || !remotePage.Value(0, 0).empty() ||
             remotePage.Value(0, 1).data() || remotePage.Value(1, 0) != longTitle)
         {
             return failure(__LINE__);
@@ -766,8 +746,8 @@ namespace {
 /* Run real-backend parity mode or malformed-response and lifecycle scenarios in an isolated runtime. */
 int main(int argc, char** argv) {
     try {
-        if (argc == 2 && std::strcmp(argv[1], "--parity") == 0) {
-            return checkBackendParity() ? 0 : 1;
+        if (argc > 1 && std::strcmp(argv[1], "--parity") == 0) {
+            return argc == 3 && checkBackendParity(argv[2]) ? 0 : 1;
         }
         Server server;
         Listener listener;
