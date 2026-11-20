@@ -491,13 +491,14 @@ std::string SavePlaylistQuery::SerializeQuery() {
 }
 
 std::string SavePlaylistQuery::SerializeResult() {
-    nlohmann::json output = { { "result", this->result } };
+    nlohmann::json output = { { "result", this->result }, { "playlistId", this->playlistId } };
     return output.dump();
 }
 
 void SavePlaylistQuery::DeserializeResult(const std::string& data) {
     auto input = nlohmann::json::parse(data);
     this->result = input["result"].get<bool>();
+    this->playlistId = input.value("playlistId", this->playlistId);
     this->SetStatus(result ? IQuery::Finished : IQuery::Failed);
     if (result) {
         SendPlaylistMutationBroadcast();

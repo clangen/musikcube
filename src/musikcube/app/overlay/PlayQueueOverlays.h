@@ -38,12 +38,12 @@
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/library/query/TrackListQueryBase.h>
 #include <app/window/TrackListView.h>
+#include <app/util/RequestGeneration.h>
 
 namespace musik {
     namespace cube {
         class PlayQueueOverlays {
             public:
-                using PlaylistSelectedCallback = std::function<void(int64_t)>;
                 using QueryCallback = musik::core::ILibrary::Callback;
 
                 static void ShowAddTrackOverlay(
@@ -73,16 +73,14 @@ namespace musik {
                     musik::core::ILibraryPtr library,
                     musik::core::TrackPtr firstTrack);
 
-                static void ShowLoadPlaylistOverlay(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    PlaylistSelectedCallback callback);
-
-                static void ShowSavePlaylistOverlay(
-                    musik::core::runtime::IMessageQueue& queue,
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    int64_t selectedPlaylistId = -1);
+                using PlaylistPickedCallback = std::function<void(const musik::core::api::PlaylistEntry&)>;
+                static void ShowPlaylistPicker(musik::core::api::Context& context,
+                    const musik::core::api::Library& library, const std::string& title, bool allowCreate,
+                    RequestGeneration::Ticket ticket, PlaylistPickedCallback picked);
+                static void ShowPlaylistNameOverlay(const std::string& title, const std::string& name,
+                    std::function<void(const std::string&)> accepted);
+                static void ShowPlaylistConfirmation(const std::string& messageKey, const std::string& name,
+                    std::function<void()> accepted);
 
                 static void ShowRenamePlaylistOverlay(
                     musik::core::ILibraryPtr library);

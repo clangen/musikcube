@@ -256,20 +256,62 @@ void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
     }
 }
 
+void NowPlayingLayout::ShowPlaylistPicker(bool save) {
+    if (!this->apiLibrary) return;
+    const auto ticket = this->playlistGeneration.Capture();
+    try {
+        const auto title = save ? "playqueue_overlay_save_playlist_title" : "playqueue_overlay_load_playlist_title";
+        PlayQueueOverlays::ShowPlaylistPicker(*this->context, *this->apiLibrary, _TSTR(title), save, ticket,
+            [this, save](const api::PlaylistEntry& playlist) {
+                if (save) this->SaveQueueToPlaylist(playlist);
+                else this->OnPlaylistSelected(playlist.id);
+            });
+    }
+    catch (const api::Error& error) {
+        musik::debug::error("NowPlayingLayout", error.what());
+    }
+}
+
+void NowPlayingLayout::SaveQueueToPlaylist(const api::PlaylistEntry& playlist) {
+    auto snapshot = this->apiPlayback.Queue();
+    if (!snapshot) return;
+
+    size_t count = 0;
+    const auto ids = snapshot->Ids(count);
+    auto tracks = std::make_shared<std::vector<int64_t>>();
+    if (count) tracks->assign(ids, ids + count);
+
+    /* Keep the selected queue snapshot through the name or overwrite prompt. */
+    const auto ticket = this->playlistGeneration.Capture();
+    const auto save = [this, ticket, tracks, id = playlist.id](const std::string& name) {
+        if (!ticket.IsCurrent()) return;
+        try {
+            api::SavePlaylist(*this->context, *this->apiLibrary, id, name, *tracks,
+                [](mc_result status, int64_t) {
+                    if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not save playlist");
+                });
+        }
+        catch (const api::Error& error) {
+            musik::debug::error("NowPlayingLayout", error.what());
+        }
+    };
+
+    if (playlist.id) {
+        PlayQueueOverlays::ShowPlaylistConfirmation("playqueue_overlay_confirm_overwrite_message", playlist.name,
+            [save] { save({}); });
+    }
+    else {
+        PlayQueueOverlays::ShowPlaylistNameOverlay(_TSTR("playqueue_overlay_playlist_name_title"), {}, save);
+    }
+}
+
 bool NowPlayingLayout::KeyPress(const std::string& key) {
     if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistLoad, key)) {
-        const auto ticket = this->playlistGeneration.Capture();
-        PlayQueueOverlays::ShowLoadPlaylistOverlay(
-            this->playback,
-            this->library,
-            [this, ticket](int64_t id) {
-                if (ticket.IsCurrent()) this->OnPlaylistSelected(id);
-            });
+        this->ShowPlaylistPicker(false);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistSave, key)) {
-        PlayQueueOverlays::ShowSavePlaylistOverlay(
-            this->MessageQueue(), this->playback, this->library);
+        this->ShowPlaylistPicker(true);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistRename, key)) {

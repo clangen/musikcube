@@ -176,9 +176,21 @@ async function checkTrackSearch(runtime, database, screenshots,
       const queuedTrack = windows ? DISTANT_TRACK : FILTERED_LAST;
       await terminal.expect(queuedTrack, { absent: 'tracks (sorted by' });
 
+      const playlistName = `Queue fixture ${Date.now()}`;
+      terminal.send('\x1bs');
+      await terminal.expect('save playlist');
+      terminal.send('\r');
+      await terminal.expect('playlist name');
+      terminal.send(playlistName + '\r');
+      await terminal.expect('play queue', { absent: 'playlist name' });
+
       /* Now Playing refreshes from the queue notification after clear. */
       terminal.send('X');
       await terminal.expect('play queue', { absent: queuedTrack });
+      terminal.send('\x1bl');
+      await terminal.expect(playlistName);
+      terminal.send(END + '\r');
+      await terminal.expect(queuedTrack, { absent: 'load playlist' });
     }
     terminal.send('\x04');
     await terminal.expectExit();

@@ -152,6 +152,29 @@ MC_API mc_result MC_CALL mc_library_open_track_search_async(
 MC_API mc_result MC_CALL mc_library_open_playlist_async(
     mc_context *context, const mc_library *library, int64_t playlist_id,
     mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request);
+
+typedef struct mc_playlist_entry {
+    /* ID scoped to the library used for the request. */
+    int64_t id;
+    /* UTF-8 name borrowed for the duration of the completion callback. */
+    mc_string_view name;
+} mc_playlist_entry;
+
+/* The entries and their names are borrowed for the duration of the callback. */
+typedef void (MC_CALL *mc_playlist_list_completion_fn)(
+    mc_result result, const mc_playlist_entry *entries, size_t count, void *user_data);
+/* On success, playlist_id identifies the playlist. Older servers may return zero for creation. */
+typedef void (MC_CALL *mc_playlist_write_completion_fn)(mc_result result, int64_t playlist_id, void *user_data);
+
+MC_API mc_result MC_CALL mc_library_list_playlists_async(
+    mc_context *context, const mc_library *library, mc_playlist_list_completion_fn completion,
+    void *user_data, mc_request_id *out_request);
+/* Zero playlist_id creates a playlist using name. A positive ID overwrites its tracks. */
+/* IDs belong to library. Core copies their order, including duplicates, before returning. */
+MC_API mc_result MC_CALL mc_library_save_playlist_async(
+    mc_context *context, const mc_library *library, int64_t playlist_id, mc_string_view name,
+    const int64_t *track_ids, size_t track_count, mc_playlist_write_completion_fn completion,
+    void *user_data, mc_request_id *out_request);
 MC_API size_t MC_CALL mc_track_result_get_count(const mc_track_result *tracks);
 /* Zero for an invalid row. */
 MC_API int64_t MC_CALL mc_track_result_get_id(const mc_track_result *tracks, size_t row);

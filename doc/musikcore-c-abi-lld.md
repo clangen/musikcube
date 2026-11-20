@@ -737,6 +737,9 @@ legacy list for actions that still require it.
   `GetPlaylistQuery` and replaces the queue without starting playback.
   The indexed-query and remote transport tests cover playlist order,
   duplicate IDs, and rejection of a delayed result after switching libraries.
+  The Now Playing picker lists bound-library playlists and saves or overwrites
+  them from an ordered queue snapshot. The indexed-query test verifies the
+  listed ID and name and reloads the overwritten queue with duplicates.
   Atomic batch edits are deferred beyond parity.
 - [ ] **PUB-006** Add indexer paths, commands, snapshots, progress, and terminal
   events.

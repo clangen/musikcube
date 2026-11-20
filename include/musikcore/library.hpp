@@ -296,6 +296,41 @@ namespace musik { namespace core { namespace api {
         });
     }
 
+    struct PlaylistEntry {
+        int64_t id;
+        std::string name;
+    };
+
+    using PlaylistListCompletion = std::function<void(mc_result, std::vector<PlaylistEntry>)>;
+    using PlaylistWriteCompletion = std::function<void(mc_result, int64_t)>;
+
+    inline mc_request_id ListPlaylists(Context& context, const Library& library, PlaylistListCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_list_playlists_async(context.Get(), library.Get(),
+                [](mc_result status, const mc_playlist_entry* entries, size_t count, void* data) {
+                    std::unique_ptr<PlaylistListCompletion> callback(static_cast<PlaylistListCompletion*>(data));
+                    std::vector<PlaylistEntry> playlists;
+                    playlists.reserve(count);
+                    for (size_t i = 0; i < count; ++i) {
+                        playlists.push_back({entries[i].id, std::string(AsStringView(entries[i].name))});
+                    }
+                    (*callback)(status, std::move(playlists));
+                }, state, request);
+        });
+    }
+
+    inline mc_request_id SavePlaylist(Context& context, const Library& library, int64_t id,
+        std::string_view name, const std::vector<int64_t>& tracks, PlaylistWriteCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_save_playlist_async(context.Get(), library.Get(), id, {name.data(), name.size()},
+                tracks.data(), tracks.size(),
+                [](mc_result status, int64_t id, void* data) {
+                    std::unique_ptr<PlaylistWriteCompletion> callback(static_cast<PlaylistWriteCompletion*>(data));
+                    (*callback)(status, id);
+                }, state, request);
+        });
+    }
+
     inline mc_request_id ReadTracks(Context &context, const TrackResult &tracks,
         const TrackRange &range, TrackQueryCompletion completion) {
         const auto fields = detail::fieldViews(range.fields);

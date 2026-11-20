@@ -80,6 +80,8 @@ namespace musik {
                 /* callbacks */
                 cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
                 void OnPlaylistSelected(int64_t playlistId);
+                void ShowPlaylistPicker(bool save);
+                void SaveQueueToPlaylist(const musik::core::api::PlaylistEntry& playlist);
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::api::Playback apiPlayback;

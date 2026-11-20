@@ -19,6 +19,9 @@
 #include "library-binding.h"
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/library/query/GetPlaylistQuery.h>
+#include <musikcore/library/query/CategoryListQuery.h>
+#include <musikcore/library/query/SavePlaylistQuery.h>
+#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include "library-storage.h"
@@ -29,6 +32,70 @@
 
 namespace {
     using namespace musik::core::ffi;
+    using musik::core::ILibraryPtr;
+
+    struct PlaylistEntries {
+        std::vector<std::string> names;
+        std::vector<mc_playlist_entry> entries;
+    };
+
+    auto listPlaylistsCommand() {
+        return std::make_shared<query::CategoryListQuery>(query::CategoryListQuery::MatchType::Substring,
+            musik::core::library::constants::Playlists::TABLE_NAME);
+    }
+
+    mc_result collectPlaylists(query::CategoryListQuery& command, std::unique_ptr<PlaylistEntries>& output) {
+        auto list = std::make_unique<PlaylistEntries>();
+        const auto result = command.GetResult();
+        list->names.reserve(result->Count());
+        list->entries.reserve(result->Count());
+        for (size_t i = 0; i < result->Count(); ++i) {
+            const auto entry = result->At(i);
+            const auto& name = list->names.emplace_back(entry->ToString());
+            list->entries.push_back({entry->GetId(), {name.data(), name.size()}});
+        }
+        output = std::move(list);
+        return MC_OK;
+    }
+
+    auto deliverPlaylists(mc_playlist_list_completion_fn completion) {
+        return [completion](mc_result status, PlaylistEntries* list, const mc_error*, void* data) {
+            const std::unique_ptr<PlaylistEntries> owned(list);
+            completion(status, list ? list->entries.data() : nullptr, list ? list->entries.size() : 0, data);
+        };
+    }
+
+    auto savePlaylistCommand(const ILibraryPtr& library, int64_t id, const std::string& name,
+        const std::vector<int64_t>& ids) {
+        const auto tracks = std::make_shared<musik::core::TrackList>(library, ids.data(), ids.size());
+        return id ? query::SavePlaylistQuery::Replace(library, id, tracks)
+                  : query::SavePlaylistQuery::Save(library, name, tracks);
+    }
+
+    mc_result collectPlaylistId(query::SavePlaylistQuery& command, std::unique_ptr<int64_t>& output) {
+        output = std::make_unique<int64_t>(std::max(int64_t{0}, command.GetPlaylistId()));
+        return MC_OK;
+    }
+
+    auto deliverPlaylistWrite(mc_playlist_write_completion_fn completion) {
+        return [completion](mc_result status, int64_t* id, const mc_error*, void* data) {
+            const std::unique_ptr<int64_t> owned(id);
+            completion(status, id ? *id : 0, data);
+        };
+    }
+
+    template<typename Result, typename Command, typename Convert, typename Completion>
+    mc_result submitLocal(mc_context* context, const ILibraryPtr& library,
+        std::shared_ptr<Command> command, Convert convert, Completion completion, void* data, mc_request_id* request) {
+        const auto output = std::make_shared<std::unique_ptr<Result>>();
+        return submit_request(context, [=]() -> mc_result {
+            if (library->EnqueueAndWait(command, musik::core::kWaitIndefinite) < 0 ||
+                command->GetStatus() != musik::core::db::IQuery::Finished) return MC_ERROR_IO;
+            return convert(*command, *output);
+        }, [=](mc_result status, void* userData) {
+            completion(status, status == MC_OK ? output->release() : nullptr, nullptr, userData);
+        }, data, request);
+    }
 
     mc_result makePlaylistResult(query::GetPlaylistQuery& command,
         const std::shared_ptr<const LibraryIdentity>& identity, std::unique_ptr<mc_track_result>& output) {
@@ -80,15 +147,23 @@ namespace {
 
         mc_result OpenPlaylist(mc_context* context, const std::shared_ptr<const LibraryIdentity>& identity,
             int64_t id, mc_track_search_completion_fn completion, void* data, mc_request_id* request) const override {
-            const auto output = std::make_shared<std::unique_ptr<mc_track_result>>();
-            return submit_request(context, [identity, library = this->library, id, output]() -> mc_result {
-                const auto command = std::make_shared<query::GetPlaylistQuery>(library, id);
-                if (library->EnqueueAndWait(command, musik::core::kWaitIndefinite) < 0 ||
-                    command->GetStatus() != musik::core::db::IQuery::Finished) return MC_ERROR_IO;
-                return makePlaylistResult(*command, identity, *output);
-            }, [=](mc_result status, void* userData) {
-                completion(status, status == MC_OK ? output->release() : nullptr, nullptr, userData);
-            }, data, request);
+            return submitLocal<mc_track_result>(context, this->library,
+                std::make_shared<query::GetPlaylistQuery>(this->library, id),
+                [identity](auto& command, auto& output) {
+                    return makePlaylistResult(command, identity, output);
+                }, completion, data, request);
+        }
+
+        mc_result ListPlaylists(mc_context* context, mc_playlist_list_completion_fn completion,
+            void* data, mc_request_id* request) const override {
+            return submitLocal<PlaylistEntries>(context, this->library, listPlaylistsCommand(),
+                collectPlaylists, deliverPlaylists(completion), data, request);
+        }
+
+        mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids,
+            mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
+            return submitLocal<int64_t>(context, this->library, savePlaylistCommand(this->library, id, name, ids),
+                collectPlaylistId, deliverPlaylistWrite(completion), data, request);
         }
 
     private:
@@ -175,6 +250,19 @@ namespace {
                     output.reset(new mc_track_result{ std::move(result) });
                     return MC_OK;
                 }, completion, user_data, out_request);
+        }
+
+        mc_result ListPlaylists(mc_context* context, mc_playlist_list_completion_fn completion,
+            void* data, mc_request_id* request) const override {
+            return submitRemote<PlaylistEntries>(context, this->library, this->generation, listPlaylistsCommand(),
+                collectPlaylists, deliverPlaylists(completion), data, request);
+        }
+
+        mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids,
+            mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
+            return submitRemote<int64_t>(context, this->library, this->generation,
+                savePlaylistCommand(this->library, id, name, ids), collectPlaylistId,
+                deliverPlaylistWrite(completion), data, request);
         }
 
         mc_result ReadPage(mc_context *context, std::vector<int64_t> ids,

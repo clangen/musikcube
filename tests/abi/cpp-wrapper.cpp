@@ -9,7 +9,6 @@
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/QueryRegistry.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
-#include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include <musikcore/support/Preferences.h>
@@ -447,17 +446,35 @@ namespace {
             if (observers.replacementCalls != 1) return false;
 
             /* Load through the typed playlist query with playback stopped. */
-            const std::array savedIds{ second.Id(), first.Id(), second.Id() };
-            const auto local = selection->Wrapped();
-            auto savedTracks = std::make_shared<TrackList>(local, savedIds.data(), savedIds.size());
-            const auto save = library::query::SavePlaylistQuery::Save(local, "Queue Load Fixture", savedTracks);
-            if (local->EnqueueAndWait(save, kWaitIndefinite) < 0 || save->GetPlaylistId() <= 0) return false;
+            const std::vector savedIds{ second.Id(), first.Id(), second.Id() };
+            constexpr auto playlistName = "Queue Load Fixture";
+            auto wake = query_test_wakeup_count();
+            int64_t playlistId = 0;
+            api::SavePlaylist(context, *source, 0, playlistName, { first.Id() },
+                [&](mc_result status, int64_t id) { if (status == MC_OK) playlistId = id; });
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || playlistId <= 0) return false;
+
+            wake = query_test_wakeup_count();
+            bool listed = false;
+            api::ListPlaylists(context, *source, [&](mc_result status, auto entries) {
+                listed = status == MC_OK && std::any_of(entries.begin(), entries.end(), [&](const auto& entry) {
+                    return entry.id == playlistId && entry.name == playlistName;
+                });
+            });
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !listed) return false;
+
+            wake = query_test_wakeup_count();
+            bool overwritten = false;
+            api::SavePlaylist(context, *source, playlistId, {}, savedIds,
+                [&](mc_result status, int64_t id) { overwritten = status == MC_OK && id == playlistId; });
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !overwritten) return false;
+
             mc_result loaded = MC_ERROR_INTERNAL;
             const auto load = [&](mc_result status, api::TrackResult tracks, std::string_view) {
                 loaded = status == MC_OK ? playback->ReplaceQueue(tracks) : status;
             };
-            auto wake = query_test_wakeup_count();
-            api::OpenPlaylist(context, *source, save->GetPlaylistId(), load);
+            wake = query_test_wakeup_count();
+            api::OpenPlaylist(context, *source, playlistId, load);
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || loaded != MC_OK ||
                 transport->state != sdk::PlaybackState::Stopped) return false;
             const auto loadedQueue = playback->Queue();
@@ -475,7 +492,7 @@ namespace {
 
             /* Switch after the request becomes ready but before dispatching its result. */
             wake = query_test_wakeup_count();
-            api::OpenPlaylist(context, *source, save->GetPlaylistId(), load);
+            api::OpenPlaylist(context, *source, playlistId, load);
             if (!query_test_wait_for_wakeup(wake + 1)) return false;
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
             selection->LoadDefaultLibrary();

@@ -201,31 +201,6 @@ static void showPlaylistListOverlay(
     cursespp::App::Overlays().Push(dialog);
 }
 
-static void confirmOverwritePlaylist(
-    ILibraryPtr library,
-    const std::string& playlistName,
-    const int64_t playlistId,
-    std::shared_ptr<TrackList> tracks)
-{
-    auto dialog = std::make_shared<DialogOverlay>();
-
-    (*dialog)
-        .SetTitle(_TSTR("default_overlay_title"))
-        .SetMessage(stringWithFormat(
-            "playqueue_overlay_confirm_overwrite_message",
-            playlistName))
-        .AddButton("^[", "ESC", _TSTR("button_no"))
-        .AddButton(
-            "KEY_ENTER",
-            "ENTER",
-            _TSTR("button_yes"),
-            [library, playlistId, tracks](const std::string& str) {
-                library->Enqueue(SavePlaylistQuery::Replace(library, playlistId, tracks));
-            });
-
-    App::Overlays().Push(dialog);
-}
-
 static void createNewPlaylist(
     IMessageQueue& queue,
     std::shared_ptr<TrackList> tracks,
@@ -689,89 +664,59 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
     cursespp::App::Overlays().Push(dialog);
 }
 
-void PlayQueueOverlays::ShowLoadPlaylistOverlay(
-    PlaybackService& playback, ILibraryPtr library, PlaylistSelectedCallback selectedCallback)
+void PlayQueueOverlays::ShowPlaylistPicker(api::Context& context, const api::Library& library,
+    const std::string& title, bool allowCreate, RequestGeneration::Ticket ticket, PlaylistPickedCallback picked)
 {
-    auto playlistsCallback =
-        [&playback, library, selectedCallback]
-        (std::shared_ptr<CategoryListQuery> playlistQuery)
-    {
-        auto result = playlistQuery->GetResult();
+    api::ListPlaylists(context, library,
+        [title, allowCreate, ticket, picked](mc_result status, std::vector<api::PlaylistEntry> playlists) {
+            if (!ticket.IsCurrent() || status != MC_OK) return;
+            if (!allowCreate && playlists.empty()) {
+                showNoPlaylistsDialog();
+                return;
+            }
 
-        if (!result->Count()) {
-            showNoPlaylistsDialog();
-            return;
-        }
+            auto adapter = std::make_shared<Adapter>();
+            adapter->SetSelectable(true);
+            if (allowCreate) adapter->AddEntry(_TSTR("playqueue_overlay_new"));
+            for (const auto& playlist : playlists) adapter->AddEntry(playlist.name);
 
-        auto adapter = std::make_shared<Adapter>();
-        adapter->SetSelectable(true);
-        addPlaylistsToAdapter(adapter, result);
-
-        showPlaylistListOverlay(
-            _TSTR("playqueue_overlay_load_playlist_title"),
-            adapter,
-            [library, result, selectedCallback]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                if (index != ListWindow::NO_SELECTION && selectedCallback) {
-                    int64_t playlistId = (*result)[index]->GetId();
-                    selectedCallback(playlistId);
-                }
-            });
-    };
-
-    queryPlaylists(library, playlistsCallback);
+            showPlaylistListOverlay(title, adapter,
+                [allowCreate, ticket, picked, playlists = std::move(playlists)]
+                (ListOverlay*, IScrollAdapterPtr, size_t index) {
+                    if (!ticket.IsCurrent() || index == ListWindow::NO_SELECTION) return;
+                    if (allowCreate && index == 0) {
+                        picked({0, {}});
+                    }
+                    else {
+                        picked(playlists.at(index - (allowCreate ? 1 : 0)));
+                    }
+                });
+        });
 }
 
-void PlayQueueOverlays::ShowSavePlaylistOverlay(
-    IMessageQueue& queue,
-    PlaybackService& playback,
-    ILibraryPtr library,
-    int64_t selectedPlaylistId)
+void PlayQueueOverlays::ShowPlaylistNameOverlay(const std::string& title, const std::string& name,
+    std::function<void(const std::string&)> accepted)
 {
-    auto playlistsCallback =
-        [&queue, &playback, library, selectedPlaylistId]
-        (std::shared_ptr<CategoryListQuery> playlistQuery)
-    {
-        auto result = playlistQuery->GetResult();
+    auto dialog = std::make_shared<InputOverlay>();
+    dialog->SetTitle(title)
+        .SetWidth(_DIMEN("playqueue_playlist_name_overlay_width", DEFAULT_OVERLAY_WIDTH))
+        .SetText(name)
+        .SetInputAcceptedCallback([accepted](const std::string& value) {
+            if (!value.empty()) accepted(value);
+        });
+    App::Overlays().Push(dialog);
+}
 
-        auto adapter = std::make_shared<Adapter>();
-        adapter->SetSelectable(true);
-        adapter->AddEntry(_TSTR("playqueue_overlay_new"));
-        addPlaylistsToAdapter(adapter, result);
-
-        /* the caller can specify a playlistId that we should try to
-        select by default. if they did, try to find it */
-        size_t selectedIndex = 0;
-        if (selectedPlaylistId != -1) {
-            for (size_t i = 0; i < result->Count(); i++) {
-                if (result->At(i)->GetId() == selectedPlaylistId) {
-                    selectedIndex = i + 1; /* offset "new..." */
-                    break;
-                }
-            }
-        }
-
-        showPlaylistListOverlay(
-            _TSTR("playqueue_overlay_save_playlist_title"),
-            adapter,
-            [&queue, &playback, library, result]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                auto tracks = std::make_shared<TrackList>(library);
-                playback.CopyTo(*tracks);
-                if (index == 0) { /* create new */
-                    createNewPlaylist(queue, tracks, library);
-                }
-                else { /* replace existing */
-                    --index;
-                    int64_t playlistId = (*result)[index]->GetId();
-                    const std::string playlistName = (*result)[index]->ToString();
-                    confirmOverwritePlaylist(library, playlistName, playlistId, tracks);
-                }
-            },
-            selectedIndex);
-    };
-
-    queryPlaylists(library, playlistsCallback);
+void PlayQueueOverlays::ShowPlaylistConfirmation(const std::string& messageKey, const std::string& name,
+    std::function<void()> accepted)
+{
+    auto dialog = std::make_shared<DialogOverlay>();
+    dialog->SetTitle(_TSTR("default_overlay_title"))
+        .SetMessage(stringWithFormat(messageKey, name))
+        .AddButton("^[", "ESC", _TSTR("button_no"))
+        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_yes"),
+            [accepted](const std::string&) { accepted(); });
+    App::Overlays().Push(dialog);
 }
 
 void PlayQueueOverlays::ShowRenamePlaylistOverlay(ILibraryPtr library) {
