@@ -53,6 +53,7 @@ namespace musik { namespace core { namespace runtime {
             MessageQueue& operator=(const MessageQueue&&) = delete;
 
             MessageQueue() noexcept;
+            ~MessageQueue();
 
             void Post(IMessagePtr message, int64_t delayMs = 0) override;
             void Broadcast(IMessagePtr message, int64_t messageMs = 0) override;
@@ -96,6 +97,7 @@ namespace musik { namespace core { namespace runtime {
             std::set<IMessageTarget*> targets;
             std::condition_variable_any waitForDispatch;
             std::atomic<int64_t> nextMessageTime;
+            bool stopping = false;
     };
 
 } } }

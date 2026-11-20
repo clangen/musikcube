@@ -98,6 +98,26 @@ set_tests_properties(musikcore.abi.query PROPERTIES LABELS "contract;abi" TIMEOU
 add_custom_target(musikcube_tests DEPENDS
   musikcore_abi_header_test musikcore_abi0_c_test musikcore_abi_dispatch_test musikcore_abi_query_test)
 
+# Compile the queue on its own: these tests should not need audio, plugins,
+# global library services, or the production precompiled header.
+add_executable(musikcore_message_queue_test
+  unit/message-queue.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/runtime/MessageQueue.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/runtime/Message.cpp")
+target_include_directories(musikcore_message_queue_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/src/3rdparty/include")
+target_link_libraries(musikcore_message_queue_test PRIVATE Threads::Threads)
+set_target_properties(musikcore_message_queue_test PROPERTIES
+  CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
+  DISABLE_PRECOMPILE_HEADERS ON RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_message_queue_test)
+foreach(case IN ITEMS registration_order filtered_removal unregister_during_dispatch
+    reentrant_removal reentrant_handler destructor_cleanup delay_debounce broadcasts
+    shared_payload_lifetime wait_wakeup concurrent_posting)
+  add_test(NAME musikcore.runtime.message_queue.${case} COMMAND musikcore_message_queue_test "${case}")
+  set_tests_properties(musikcore.runtime.message_queue.${case} PROPERTIES LABELS "unit;runtime" TIMEOUT 10)
+endforeach()
+
 add_executable(musikcore_abi_cpp_test abi/cpp-wrapper.cpp abi/query-support.cpp)
 target_link_libraries(musikcore_abi_cpp_test PRIVATE musikcore_cpp_abi0 Threads::Threads)
 set_target_properties(musikcore_abi_cpp_test PROPERTIES

@@ -32,11 +32,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
 #include "MessageQueue.h"
 
 #include <algorithm>
 #include <chrono>
+#include <iterator>
+#include <stdexcept>
 
 using namespace std::chrono;
 using namespace musik::core::runtime;
@@ -45,6 +46,26 @@ using LockT = std::unique_lock<std::mutex>;
 
 MessageQueue::MessageQueue() noexcept {
     this->nextMessageTime.store(1);
+}
+
+MessageQueue::~MessageQueue() {
+    /* Payload destructors can call back into this queue. Detach entries under
+       the lock, then destroy them unlocked while queue members still exist.
+       Producers and dispatch must already be stopped before destruction. */
+    std::list<EnqueuedMessage*> pending;
+    {
+        LockT lock(this->queueMutex);
+        this->stopping = true;
+        pending.splice(pending.end(), this->queue);
+        pending.splice(pending.end(), this->dispatch);
+        this->targets.clear();
+        this->receivers.clear();
+        this->nextMessageTime.store(-1);
+    }
+
+    for (auto entry : pending) {
+        delete entry;
+    }
 }
 
 void MessageQueue::WaitAndDispatch(int64_t timeoutMillis) {
@@ -66,7 +87,7 @@ void MessageQueue::WaitAndDispatch(int64_t timeoutMillis) {
             if (waitTime.count() > 0) {
                 waitForDispatch.wait_for(lock, waitTime);
             }
-       }
+        }
         else {
             if (timeoutMillis >= 0) {
                 waitForDispatch.wait_for(lock, milliseconds(timeoutMillis));
@@ -91,6 +112,7 @@ void MessageQueue::Dispatch() {
     }
 
     using Iterator = std::list<EnqueuedMessage*>::iterator;
+    std::list<EnqueuedMessage*> discarded;
 
     {
         LockT lock(this->queueMutex);
@@ -105,17 +127,20 @@ void MessageQueue::Dispatch() {
             until we get to a message that should be delivered in the future,
             or the queue has been exhausted. */
 
-            EnqueuedMessage *m = (*it);
+            EnqueuedMessage* m = (*it);
 
             if (now >= m->time) {
                 /* it's possible the target (receiver) has been unregistered;
                 if that's the case, just discard it. otherwise, add it to the
                 output set to be dispatched outside of the critical section */
                 auto const target = (*it)->message->Target();
+                auto entry = it++;
                 if (target == nullptr || this->targets.find(target) != this->targets.end()) {
-                    this->dispatch.push_back(m);
+                    this->dispatch.splice(this->dispatch.end(), this->queue, entry);
                 }
-                it = this->queue.erase(it);
+                else {
+                    discarded.splice(discarded.end(), this->queue, entry);
+                }
             }
             else {
                 done = true;
@@ -125,22 +150,36 @@ void MessageQueue::Dispatch() {
 
     /* dispatch outside of the critical section */
 
-    Iterator it = this->dispatch.begin();
-    while (it != this->dispatch.end()) {
-        this->Dispatch((*it)->message.get());
-        delete *it;
-        it++;
+    for (auto entry : discarded) {
+        delete entry;
+    }
+    while (!this->dispatch.empty()) {
+        auto* entry = this->dispatch.front();
+        this->dispatch.pop_front();
+        bool deliver;
+        {
+            LockT lock(this->queueMutex);
+            const auto target = entry->message->Target();
+            deliver = !target || this->targets.find(target) != this->targets.end();
+        }
+        /* An earlier callback can unregister another target in the current batch. */
+        if (deliver) {
+            this->Dispatch(entry->message.get());
+        }
+        delete entry;
     }
 
-    this->dispatch.clear();
-
-    if (this->queue.size()) {
-        this->nextMessageTime.store((*this->queue.begin())->time.count());
+    {
+        LockT lock(this->queueMutex);
+        this->nextMessageTime.store(this->queue.empty() ? -1 : this->queue.front()->time.count());
     }
 }
 
 void MessageQueue::Register(IMessageTarget* target) {
     LockT lock(this->queueMutex);
+    if (this->stopping) {
+        return;
+    }
     this->targets.insert(target);
 }
 
@@ -160,10 +199,13 @@ void MessageQueue::Unregister(IMessageTarget* target) {
 
 void MessageQueue::RegisterForBroadcasts(IMessageTargetPtr target) {
     LockT lock(this->queueMutex);
+    if (this->stopping) {
+        return;
+    }
     this->receivers.insert(target);
 }
 
-void MessageQueue::UnregisterForBroadcasts(IMessageTarget *target) {
+void MessageQueue::UnregisterForBroadcasts(IMessageTarget* target) {
     LockT lock(this->queueMutex);
     for (auto it : this->receivers) {
         auto shared = it.lock();
@@ -174,34 +216,30 @@ void MessageQueue::UnregisterForBroadcasts(IMessageTarget *target) {
     }
 }
 
-int MessageQueue::Remove(IMessageTarget *target, int type) {
-    LockT lock(this->queueMutex);
-
-    int count = 0;
-    std::list<EnqueuedMessage*>::iterator it = this->queue.begin();
-    while (it != this->queue.end()) {
-        IMessagePtr current = (*it)->message;
-
-        if (current->Target() == target) {
-            if (type == -1 || type == current->Type()) {
-                delete (*it);
-                it = this->queue.erase(it);
-                ++count;
-                continue;
+int MessageQueue::Remove(IMessageTarget* target, int type) {
+    std::list<EnqueuedMessage*> removed;
+    {
+        LockT lock(this->queueMutex);
+        for (auto it = this->queue.begin(); it != this->queue.end();) {
+            auto entry = it++;
+            const auto& current = (*entry)->message;
+            if (current->Target() == target && (type == -1 || type == current->Type())) {
+                removed.splice(removed.end(), this->queue, entry);
             }
         }
-
-        ++it;
+        this->nextMessageTime.store(this->queue.empty() ? -1 : this->queue.front()->time.count());
+        this->waitForDispatch.notify_all();
     }
 
-    if (this->queue.size()) {
-        this->nextMessageTime.store((*this->queue.begin())->time.count());
+    /* Payload destruction can release libraries/targets that reenter this queue. */
+    const auto count = static_cast<int>(removed.size());
+    for (auto entry : removed) {
+        delete entry;
     }
-
     return count;
 }
 
-bool MessageQueue::Contains(IMessageTarget *target, int type) {
+bool MessageQueue::Contains(IMessageTarget* target, int type) {
     LockT lock(this->queueMutex);
 
     std::list<EnqueuedMessage*>::iterator it = this->queue.begin();
@@ -221,6 +259,9 @@ bool MessageQueue::Contains(IMessageTarget *target, int type) {
 
 void MessageQueue::Broadcast(IMessagePtr message, int64_t delayMs) {
     LockT lock(this->queueMutex);
+    if (this->stopping) {
+        return;
+    }
 
     if (message->Target()) {
         throw new std::runtime_error("broadcasts cannot have a target!");
@@ -231,6 +272,9 @@ void MessageQueue::Broadcast(IMessagePtr message, int64_t delayMs) {
 
 void MessageQueue::Post(IMessagePtr message, int64_t delayMs) {
     LockT lock(this->queueMutex);
+    if (this->stopping) {
+        return;
+    }
 
     if (this->targets.find(message->Target()) == this->targets.end()) {
         return;
@@ -245,7 +289,7 @@ void MessageQueue::Enqueue(IMessagePtr message, int64_t delayMs) {
     const milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
 
-    EnqueuedMessage *m = new EnqueuedMessage();
+    EnqueuedMessage* m = new EnqueuedMessage();
     m->message = message;
     m->time = now + milliseconds(delayMs);
 
