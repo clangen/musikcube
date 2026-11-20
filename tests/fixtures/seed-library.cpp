@@ -1,76 +1,96 @@
-extern "C" {
-#include <musikcore/musikcore_c.h>
-}
+#include <musikcore/debug.h>
+#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/plugin/Plugins.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/runtime/MessageQueue.h>
 
 #include <chrono>
-#include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
-#include <mutex>
 
 namespace {
-    std::mutex mutex;
-    std::condition_variable changed;
-    bool finished = false;
-    bool verified = false;
-    int64_t track_count = 0;
+    using namespace musik::core;
+    using namespace musik::core::runtime;
+    using namespace musik::core::library::query;
+    using Clock = std::chrono::steady_clock;
 
-    void on_finished(mcsdk_svc_indexer, int) {
-        std::lock_guard<std::mutex> lock(mutex);
-        finished = true;
-        changed.notify_one();
-    }
-
-    bool has_tracks(mcsdk_svc_library, mcsdk_db_connection database, void *) {
-        const auto statement = mcsdk_db_statement_create(database,
-            "SELECT COUNT(*) FROM tracks WHERE visible = 1");
-        const bool found = mcsdk_db_statement_step(statement) == mcsdk_db_result_row;
-        const auto count = found ? mcsdk_db_statement_column_int64(statement, 0) : 0;
-        mcsdk_db_statement_release(statement);
-        std::lock_guard<std::mutex> lock(mutex);
-        track_count = count;
-        verified = true;
-        changed.notify_one();
-        return found;
-    }
-
-    bool seed(mcsdk_context &context, const char *media, int64_t expected) {
-        static mcsdk_svc_indexer_callbacks callbacks{ nullptr, on_finished, nullptr };
-
-        /* Wait for the indexer to commit its work before inspecting the library. */
-        mcsdk_svc_indexer_add_callbacks(context.indexer, &callbacks);
-        mcsdk_svc_indexer_add_path(context.indexer, media);
-        mcsdk_svc_indexer_schedule(context.indexer, mcsdk_svc_indexer_sync_type_local);
-        {
-            std::unique_lock<std::mutex> lock(mutex);
-            if (!changed.wait_for(lock, std::chrono::minutes(5), [] { return finished; })) {
-                std::fputs("Indexer did not finish\n", stderr);
-                return false;
-            }
+    /* Delivers the indexer signal to the fixture's dispatcher. Neither copyable nor movable. */
+    class IndexCompletion final : public IMessageTarget, public sigslot::has_slots<> {
+    public:
+        IndexCompletion(MessageQueue& queue, IIndexer& indexer) : queue(queue) {
+            this->queue.Register(this);
+            indexer.Finished.connect(this, &IndexCompletion::OnFinished);
         }
 
-        /* The legacy wrapper queues the verification even with its synchronous flag. */
-        mcsdk_svc_library_run_query(context.library, "Verify fixture tracks", nullptr,
-            has_tracks, mcsdk_svc_library_query_flag_none);
-        std::unique_lock<std::mutex> lock(mutex);
-        if (!changed.wait_for(lock, std::chrono::seconds(5), [] { return verified; })) return false;
-        if (track_count != expected) {
-            std::fprintf(stderr, "Expected %lld visible tracks, indexed %lld\n",
-                static_cast<long long>(expected), static_cast<long long>(track_count));
+        ~IndexCompletion() { this->queue.Unregister(this); }
+        IndexCompletion(const IndexCompletion&) = delete;
+        IndexCompletion& operator=(const IndexCompletion&) = delete;
+
+        bool Wait() {
+            const auto deadline = Clock::now() + std::chrono::minutes(5);
+            while (!this->finished) {
+                const auto remaining = deadline - Clock::now();
+                if (remaining <= Clock::duration::zero()) return false;
+                this->queue.WaitAndDispatch(std::chrono::ceil<std::chrono::milliseconds>(remaining).count());
+            }
+            return true;
+        }
+
+        void ProcessMessage(IMessage&) override { this->finished = true; }
+
+    private:
+        void OnFinished(int) { this->queue.Post(Message::Create(this, 0, 0, 0)); }
+
+        MessageQueue& queue;
+        bool finished = false;
+    };
+
+    bool seed(MessageQueue& queue, const ILibraryPtr& library, const char* media, int64_t expected) {
+        auto& indexer = *library->Indexer();
+        IndexCompletion completion(queue, indexer);
+        indexer.AddPath(media);
+        indexer.Schedule(IIndexer::SyncType::Local);
+
+        /* Wait for the indexer to commit before inspecting its results. */
+        const bool finished = completion.Wait();
+        indexer.Shutdown();
+        if (!finished) {
+            std::fputs("Indexer did not finish\n", stderr);
+            return false;
+        }
+
+        const auto query = std::make_shared<SearchTrackListQuery>(
+            library, SearchTrackListQuery::MatchType::Substring, "", TrackSortType::Title);
+        if (library->EnqueueAndWait(query) < 0 || query->GetStatus() != db::IQuery::Finished) {
+            std::fputs("Could not verify indexed tracks\n", stderr);
+            return false;
+        }
+
+        const auto count = query->GetResult()->Count();
+        if (expected < 0 || count != static_cast<uint64_t>(expected)) {
+            std::fprintf(stderr, "Expected %lld visible tracks, indexed %zu\n",
+                static_cast<long long>(expected), count);
             return false;
         }
         return true;
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc != 3) return 1;
 
-    mcsdk_context *context = nullptr;
-    mcsdk_context_init(&context);
-    const bool populated = context && seed(*context, argv[1], std::strtoll(argv[2], nullptr, 10));
-    if (context) mcsdk_context_release(&context);
-    mcsdk_env_release();
-    if (!populated) std::fputs("Fixture library is empty or could not be indexed\n", stderr);
+    musik::debug::Start();
+    plugin::Init();
+
+    MessageQueue queue;
+    LibraryFactory::Initialize(queue);
+    const auto library = LibraryFactory::Instance().DefaultLocalLibrary();
+    plugin::Start(&queue, nullptr, library);
+    const bool populated = seed(queue, library, argv[1], std::strtoll(argv[2], nullptr, 10));
+
+    plugin::Shutdown();
+    LibraryFactory::Shutdown();
+    musik::debug::Shutdown();
     return populated ? 0 : 1;
 }

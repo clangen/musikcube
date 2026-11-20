@@ -21,13 +21,12 @@ This document complements the
 SDK should be developed contract-first: externally observable behavior is
 expressed as an executable test before or with its implementation.
 
-## Current state
+## Starting point
 
-The repository does not currently register automated tests with CTest and has
-no dedicated test source tree. `core_c_demo` exercises portions of the existing
-C API, but it is an interactive demonstration rather than a deterministic test:
-it uses hard-coded media paths, sleeps, real playback, and console output for
-validation.
+Before the migration, validation relied in part on `core_c_demo`, an
+interactive example with hard-coded media paths, sleeps, and real playback.
+The demo and its C API have been retired. The indexed-library fixture now
+uses the internal C++ indexer and the ABI contract tests run through CTest.
 
 The current build also differs by platform:
 
@@ -945,8 +944,7 @@ and error paths remain untested.
 - Add `tests/`, the C harness, common temporary-directory support, labels, and
   timeouts.
 - Make context data and plugin directories explicit and isolated.
-- Convert `core_c_demo` scenarios into a checklist of contracts; retain the
-  demo only as a sample if it remains useful.
+- Use the former demo scenarios to identify contracts for automated tests.
 - Preserve the current Windows static production target and Unix production
   topology; do not introduce the experimental shared façade in this phase.
 

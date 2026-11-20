@@ -7,8 +7,6 @@ set(windows_core_sources
   src/musikcore/audio/MasterTransport.cpp
   src/musikcore/audio/Streams.cpp
   src/musikcore/audio/Visualizer.cpp
-  src/musikcore/c_context.cpp
-  src/musikcore/c_interface_wrappers.cpp
   src/musikcore/db/SqliteExtensions.cpp
   src/musikcore/debug.cpp
   src/musikcore/i18n/Locale.cpp
@@ -192,9 +190,4 @@ set(windows_thirdparty_sources
   src/3rdparty/win32_src/pdcurses/touch.c
   src/3rdparty/win32_src/pdcurses/util.c
   src/3rdparty/win32_src/pdcurses/window.c
-)
-
-set(windows_demo_sources
-  src/core_c_demo/main.c
-  src/core_c_demo/core_c_demo.rc
 )

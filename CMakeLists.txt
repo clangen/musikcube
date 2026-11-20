@@ -138,7 +138,6 @@ endif()
 message(STATUS "[build] musikcube_LINK_LIBS: " ${musikcube_LINK_LIBS})
 
 add_subdirectory(src/musikcore)
-add_subdirectory(src/core_c_demo)
 add_subdirectory(src/musikcube)
 add_subdirectory(src/musikcubed)
 

@@ -98,7 +98,7 @@ musikcore_add_consumer_api(musikcore)
 target_include_directories(musikcore PRIVATE src/musikcore)
 target_link_libraries(musikcore PRIVATE musikcube_windows musikcube_thirdparty
   vendor::curl vendor::ssl vendor::crypto shell32)
-target_compile_definitions(musikcore PRIVATE MCSDK_DEFINE_EXPORTS _CRT_SECURE_NO_DEPRECATE)
+target_compile_definitions(musikcore PRIVATE _CRT_SECURE_NO_DEPRECATE)
 target_precompile_headers(musikcore PRIVATE src/musikcore/pch.hpp)
 
 # Use one runtime target for both frontends and for the C SDK demo.
@@ -220,11 +220,6 @@ foreach(target musikcube musikcube-cmd)
     dwmapi windowsapp pdh psapi ws2_32 wldap32 comctl32 winmm)
   add_dependencies(${target} musikcube_runtime)
 endforeach()
-
-add_executable(core_c_demo ${windows_demo_sources})
-target_link_libraries(core_c_demo PRIVATE musikcube_windows musikcore
-  pdh psapi ws2_32 wldap32 comctl32)
-add_dependencies(core_c_demo musikcube_runtime)
 
 windows_project_sources(musikcore src/musikcore)
 

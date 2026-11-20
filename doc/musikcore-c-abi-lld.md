@@ -849,12 +849,13 @@ legacy list for actions that still require it.
 - [ ] **FIN-001** Confirm musikcube and musikcubed have no private core link
   dependencies.
 - [ ] **FIN-002** Confirm every shipped plugin has left the C++ SDK ABI.
-- [ ] **FIN-003** Remove or archive `musikcore_c.h`, `c_context.cpp`, and
-  `c_interface_wrappers.cpp` after their consumers are gone.
+- [x] **FIN-003** Remove or archive `musikcore_c.h`, `c_context.cpp`, and
+  `c_interface_wrappers.cpp` after their consumers are gone. The fixture
+  seeder uses the internal indexer and is exercised by `musikcore.abi.indexed_query`.
 - [ ] **FIN-004** Remove obsolete C++ SDK interfaces from installed/public
   include paths.
-- [ ] **FIN-005** Convert `core_c_demo` into a maintained example using the new
-  API or remove it after equivalent examples exist.
+- [ ] **FIN-005** Add a maintained example using the new C API to replace the
+  retired `core_c_demo`.
 - [ ] **FIN-006** Remove `musikcore_legacy`.
 - [ ] **FIN-007** Rename `musikcore_abi0` to the final `musikcore` target and
   output names.
