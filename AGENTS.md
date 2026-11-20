@@ -19,6 +19,7 @@
 - Let the code explain what it does. As you write or revise longer functions, add terse, technical comments at phase boundaries and branching handoffs to make the flow easy to follow. Explain decisions where the reason is otherwise unclear.
 - Use blank lines to separate distinct steps in a function. Keep closely related statements together and give transitions between phases room to stand out.
 - Name constants for public keys, limits, sentinel values, and positional indices whose meaning matters. Reuse the same definition across callers. Keep local constants near their use, and leave obvious literals inline.
+- Group related message IDs in one place. Declare class-scoped message IDs together near the top of the class definition in its header.
 - Use `/* comment */` where the language supports block comments. Use `//` only when necessary and the language's native syntax where block comments are unavailable.
 - Keep platform and compiler differences near setup. Pass the resulting options into shared build and application code.
 - Make ownership, cleanup, and error handling explicit at resource and thread boundaries.

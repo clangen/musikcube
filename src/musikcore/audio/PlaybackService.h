@@ -58,6 +58,26 @@ namespace musik { namespace core { namespace audio {
         public musik::core::runtime::IMessageTarget,
         public sigslot::has_slots<>
     {
+        enum MessageType {
+            MESSAGE_STREAM_EVENT = 1000,
+            MESSAGE_PLAYBACK_EVENT = 1001,
+            MESSAGE_PREPARE_NEXT_TRACK = 1002,
+            MESSAGE_VOLUME_CHANGED = 1003,
+            MESSAGE_TIME_CHANGED = 1004,
+            MESSAGE_MODE_CHANGED = 1005,
+            MESSAGE_SHUFFLED = 1006,
+            MESSAGE_NOTIFY_EDITED = 1007,
+            MESSAGE_NOTIFY_RESET = 1008,
+            MESSAGE_SEEK = 1009,
+            MESSAGE_RELOAD_OUTPUT = 1010,
+            MESSAGE_LOAD_PLAYBACK_CONTEXT = 1011,
+            MESSAGE_MARK_TRACK_PLAYED = 1012,
+            MESSAGE_NEXT_TRACK_EDITED = 1013,
+            MESSAGE_MARK_TRACK_PLAYING = 1014,
+        };
+
+        class StreamMessage;
+
         public:
             /* our unique events */
             sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;

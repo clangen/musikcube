@@ -874,6 +874,14 @@ legacy list for actions that still require it.
 - [ ] **FIN-013** Publish API, SDK, ownership, threading, and example
   documentation with release artifacts.
 
+#### Legacy binding cleanup inventory
+
+| Bridge | Remove when |
+| --- | --- |
+| `src/musikcore/ffi/consumer/library-binding.h` and `legacy-library-binding.cpp`, plus `MasterLibrary::OpenApiLibrary()` | The public library API creates and owns local and remote backends directly. Retained requests, results, and references must still preserve their originating backend and connection generation. |
+| `src/musikcore/ffi/consumer/playback-binding.h` and `legacy-playback-binding.cpp`, plus the friendship and lifetime token in `PlaybackService` | The public playback API creates and owns the session directly. Carry forward the owner-thread rules, queue origin checks, and dispatcher notifications. |
+| Now Playing's snapshot-to-`TrackList` adapter and playlist load/save calls into the legacy engine | The queue view and playlist overlays can read track metadata and operate on queues and playlists through the public API. |
+
 #### Final gate
 
 - [ ] **GATE-1000** ABI v1 is released only after all prior gates pass and the
