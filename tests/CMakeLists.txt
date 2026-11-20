@@ -177,6 +177,11 @@ set_tests_properties(musikcore.abi.library_switch PROPERTIES LABELS "contract;ab
 add_dependencies(musikcube_tests musikcore_abi_library_switch_test)
 
 if(APPLE)
+  add_library(musikcore_test_profile SHARED support/profile-macos.c)
+  set_target_properties(musikcore_test_profile PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
+    C_VISIBILITY_PRESET hidden LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  target_compile_options(musikcore_test_profile PRIVATE -fno-builtin-memcpy -fno-builtin-memmove)
+  add_dependencies(musikcube_tests musikcore_test_profile)
   add_executable(musikcube_pty_host support/pty-host.c)
   set_target_properties(musikcube_pty_host PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")

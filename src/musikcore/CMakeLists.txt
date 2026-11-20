@@ -84,7 +84,7 @@ include_directories(
 add_library(musikcore SHARED ${CORE_SOURCES})
 musikcore_add_consumer_api(musikcore)
 
-set_target_properties(musikcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${musikcube_SOURCE_DIR}/bin)
+set_target_properties(musikcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}")
 target_link_libraries(musikcore PUBLIC ${musikcube_LINK_LIBS})
 target_include_directories(musikcore BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 find_header(asio.hpp)

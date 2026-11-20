@@ -1,3 +1,7 @@
+/* Generate deterministic WAV files and run the production C++ indexer over them.
+   Integration tests and TUI scenarios share these isolated catalogs so they can
+   exercise real indexed metadata without depending on a user's music collection. */
+
 const { spawnSync } = require('child_process');
 const { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } = require('fs');
 const { join, resolve } = require('path');
@@ -24,12 +28,14 @@ const extraTags = [
   ['TPE3', 'Taylor Quinn'],
 ];
 
+/* Run a fixture tool synchronously and fail before inspecting an incomplete library database. */
 function run(command, args, env = process.env) {
   const result = spawnSync(command, args, { env, stdio: 'inherit' });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${command} failed (${result.signal || result.status})`);
 }
 
+/* Encode a RIFF chunk with its little-endian byte length and required even-byte padding. */
 function chunk(id, data) {
   const header = Buffer.alloc(8);
   header.write(id);
@@ -37,6 +43,7 @@ function chunk(id, data) {
   return Buffer.concat([header, data, Buffer.alloc(data.length % 2)]);
 }
 
+/* Encode one ID3v2.3 text frame, including its encoding byte and big-endian payload length. */
 function id3TextFrame(id, value) {
   const text = Buffer.from(value);
   const header = Buffer.alloc(11);
@@ -45,6 +52,7 @@ function id3TextFrame(id, value) {
   return Buffer.concat([header, text]);
 }
 
+/* Build deterministic optional metadata so indexed fixtures exercise present, absent, and multivalue tags. */
 function id3Tag(album, track) {
   const frames = [id3TextFrame('TALB', album)];
   for (const [index, [id, values]] of extraTags.entries()) {
@@ -60,6 +68,7 @@ function id3Tag(album, track) {
   return Buffer.concat([header, payload]);
 }
 
+/* Generate a silent one-second WAV in memory with RIFF and ID3 tags read by the production indexer. */
 function wave({ title, artist, album, genre, track }) {
   const format = Buffer.alloc(16);
   format.writeUInt16LE(1, 0);
@@ -84,6 +93,7 @@ function wave({ title, artist, album, genre, track }) {
   ]));
 }
 
+/* Write either the small named contract fixture or a larger deterministic artist/album catalog. */
 function writeMedia(media, count) {
   if (count === 2) {
     writeFileSync(join(media, '01-morning.wav'), wave({
@@ -114,6 +124,7 @@ function writeMedia(media, count) {
   }
 }
 
+/* Locate the generated musik.db under the fixture's private configuration tree. */
 function findDatabase(directory) {
   const database = join(directory, 'musik.db');
   if (existsSync(database)) return database;
@@ -124,6 +135,7 @@ function findDatabase(directory) {
   }
 }
 
+/* Validate fixture size, stage the indexer, generate media, and print the resulting database path. */
 function main() {
   const { values, positionals: [buildDir, ...extra] } = parseArgs({
     options: {
@@ -138,11 +150,15 @@ function main() {
     console.log('Usage: node script/test/seed-test-library.js [--tracks <count>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
     return;
   }
+
   if (extra.length) throw new Error('Expected a single configured build directory.');
   const count = Number(values.tracks);
   if (!/^\d+$/.test(values.tracks) || !Number.isSafeInteger(count) || count < 1) {
     throw new Error('--tracks requires a positive integer.');
   }
+
+  /* An explicitly supplied indexer is already built by its caller (CTest or
+     the TUI runner); avoid reconfiguring that caller's build in this path. */
   const build = buildDir ? resolve(buildDir) : windows ? join(source, 'build/windows-x64') : source;
   if (!existsSync(join(build, 'CMakeCache.txt'))) throw new Error(`Configure the build first: ${build}`);
   if (!values.indexer) {
@@ -156,15 +172,22 @@ function main() {
   const root = mkdtempSync(join(fixtures, 'library-'));
   const media = join(root, 'media');
   mkdirSync(media);
+
   console.log(`Generating ${count} fixture tracks under ${root}`);
   writeMedia(media, count);
+
+  /* Stage plugins and redirect preferences before starting production code so
+     indexing cannot discover user paths or unrelated installed audio plugins. */
   const executable = values.indexer ? resolve(values.indexer) : windows
     ? join(source, 'bin64', config, 'musikcube_seed_library.exe')
-    : join(source, 'bin', 'musikcube_seed_library');
+    : join(build, 'bin', 'musikcube_seed_library');
   run(stageTestRuntime(executable, root), [media, String(count)], { ...process.env, APPDATA: root, XDG_CONFIG_HOME: root });
 
   const database = findDatabase(join(root, 'musikcube'));
   if (!database) throw new Error(`No library database created under ${root}`);
+
+  /* Callers consume the last stdout line as the database path; diagnostics
+     above it can remain readable without complicating that interface. */
   console.log(database);
 }
 

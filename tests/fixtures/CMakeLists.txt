@@ -60,6 +60,7 @@ if(BUILD_TESTING)
       "-DPRODUCTION_TEST=$<TARGET_FILE:musikcore_production_api_test>"
       "-DC_EXAMPLE=$<TARGET_FILE:musikcore_example_c>"
       "-DCPP_EXAMPLE=$<TARGET_FILE:musikcore_example_cpp>"
+      "-DREMOTE_TEST=$<TARGET_FILE:musikcore_remote_query_transport_test>"
       -P "${PROJECT_SOURCE_DIR}/script/test/check-indexed-library.cmake")
     set_tests_properties(musikcore.abi.indexed_query PROPERTIES LABELS "integration;abi" TIMEOUT 90)
   endif()

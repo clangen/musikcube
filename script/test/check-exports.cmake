@@ -1,3 +1,5 @@
+# Inspect the actual binary to catch C++ symbols leaked by linker visibility,
+# even when public headers and the export allowlist still match.
 if(APPLE)
   set(args -gUj)
 else()
@@ -9,6 +11,8 @@ if(NOT status STREQUAL "0")
   message(FATAL_ERROR "Cannot inspect exports from ${LIBRARY}: ${status}\n${error}")
 endif()
 
+# Normalize platform spelling before comparing sets: Mach-O adds a leading
+# underscore, while ELF's POSIX listing includes columns after each symbol.
 string(REGEX MATCHALL "[^\r\n]+" lines "${listing}")
 foreach(line IN LISTS lines)
   if(APPLE)

@@ -1,6 +1,11 @@
+/* Shared measurement helpers for TUI scenarios. Repeat and alternate variants,
+   summarize latency samples, and convert Linux CPU-accounting ticks to time.
+   Scenario code supplies the interactions and correctness assertions. */
+
 const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 
+/* Collect repeated scenario measurements, alternating variant order to reduce warm-cache bias. */
 async function sampleVariants(variants, runs, run) {
   const results = variants.map(variant => ({ variant, samples: [] }));
 
@@ -15,6 +20,7 @@ async function sampleVariants(variants, runs, run) {
   return results;
 }
 
+/* Validate available measurements and print scaled median and nearest-rank p95 for each variant. */
 function printMetrics(results, metrics) {
   for (const { variant, samples } of results) {
     console.log(variant.name);
@@ -23,6 +29,8 @@ function printMetrics(results, metrics) {
       if (values.every(value => value === undefined)) continue;
       if (!values.every(Number.isFinite)) throw new Error(`Missing or invalid sample for ${label}`);
 
+      /* Missing a platform-only metric is valid; partial/invalid samples above
+         are not, since silently dropping them would bias the comparison. */
       const sorted = values.map(value => value * scale).sort((a, b) => a - b);
       const middle = Math.floor(sorted.length / 2);
       const median = sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
@@ -32,6 +40,7 @@ function printMetrics(results, metrics) {
   }
 }
 
+/* Read Linux's process-accounting tick rate; leave CPU metrics unavailable on other platforms. */
 async function cpuMillisecondsPerTick() {
   if (process.platform !== 'linux') return undefined;
   const { stdout } = await promisify(execFile)('getconf', ['CLK_TCK']);
@@ -39,6 +48,7 @@ async function cpuMillisecondsPerTick() {
   if (!Number.isSafeInteger(rate) || rate <= 0) {
     throw new Error('Could not determine the process CPU clock tick rate');
   }
+
   return 1000 / rate;
 }
 

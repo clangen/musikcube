@@ -1,0 +1,147 @@
+{
+  "platform": "darwin",
+  "arch": "arm64",
+  "cpu": "Apple M4",
+  "instrumentation": "dyld-allocator-copy",
+  "config": "Release",
+  "metrics": {
+    "context_create": {
+      "allocations": 2,
+      "requested_bytes": 376,
+      "dynamic_copy_bytes": 0,
+      "median_us": 0.042,
+      "p95_us": 1.042,
+      "samples": 31
+    },
+    "idle_shutdown": {
+      "allocations": 0,
+      "requested_bytes": 0,
+      "dynamic_copy_bytes": 0,
+      "median_us": 0.042,
+      "p95_us": 0.084,
+      "samples": 31
+    },
+    "search_10000_ids": {
+      "allocations": 26,
+      "requested_bytes": 263328,
+      "dynamic_copy_bytes": 7056336,
+      "median_us": 2225.917,
+      "p95_us": 3011.958,
+      "samples": 31
+    },
+    "read_1000_titles": {
+      "allocations": 3036,
+      "requested_bytes": 298248,
+      "dynamic_copy_bytes": 381485,
+      "median_us": 469.958,
+      "p95_us": 697.708,
+      "samples": 31
+    },
+    "submit_page_c": {
+      "allocations": 7,
+      "requested_bytes": 320,
+      "dynamic_copy_bytes": 5
+    },
+    "adopt_page_cpp": {
+      "allocations": 1,
+      "requested_bytes": 32,
+      "dynamic_copy_bytes": 0
+    },
+    "submit_page_cpp": {
+      "allocations": 9,
+      "requested_bytes": 368,
+      "dynamic_copy_bytes": 5
+    },
+    "make_result_10000_ids": {
+      "allocations": 3,
+      "requested_bytes": 80128,
+      "dynamic_copy_bytes": 80000,
+      "median_us": 3.292,
+      "p95_us": 3.375,
+      "samples": 31
+    },
+    "borrowed_titles_1000": {
+      "allocations": 0,
+      "requested_bytes": 0,
+      "dynamic_copy_bytes": 0
+    },
+    "borrowed_title_access": {
+      "rows": 1000,
+      "payload_bytes": 128000,
+      "copied_bytes": 0,
+      "live_blocks_delta": 0,
+      "live_bytes_delta": 0
+    },
+    "scroll_100_pages_capacity_3": {
+      "allocations": 33200,
+      "requested_bytes": 3223200,
+      "dynamic_copy_bytes": 4163845
+    },
+    "scroll_100_pages": {
+      "total_us": 11995.333,
+      "cache_peak_extra_bytes": 87984,
+      "cache_growth_after_warm_bytes": 0
+    },
+    "local_search": {
+      "allocations": 33,
+      "requested_bytes": 2248,
+      "dynamic_copy_bytes": 29396,
+      "median_us": 486.834,
+      "p95_us": 655.042,
+      "samples": 7
+    },
+    "local_page": {
+      "allocations": 62,
+      "requested_bytes": 4072,
+      "dynamic_copy_bytes": 30162,
+      "median_us": 444.125,
+      "p95_us": 522.5,
+      "samples": 7
+    },
+    "remote_search": {
+      "allocations": 375,
+      "requested_bytes": 22043,
+      "dynamic_copy_bytes": 8360,
+      "median_us": 280.333,
+      "p95_us": 418.542,
+      "samples": 7
+    },
+    "remote_page": {
+      "allocations": 642,
+      "requested_bytes": 33922,
+      "dynamic_copy_bytes": 12509,
+      "median_us": 245.667,
+      "p95_us": 335.833,
+      "samples": 7
+    },
+    "save_playlist_10000": {
+      "allocations": 20087,
+      "requested_bytes": 966003,
+      "dynamic_copy_bytes": 7436497
+    },
+    "local_playlist_10000": {
+      "allocations": 52,
+      "requested_bytes": 426032,
+      "dynamic_copy_bytes": 652473,
+      "median_us": 2239.125,
+      "p95_us": 2525.75,
+      "samples": 7
+    },
+    "remote_playlist_10000": {
+      "allocations": 409,
+      "requested_bytes": 1968125,
+      "dynamic_copy_bytes": 1116625,
+      "median_us": 3005,
+      "p95_us": 3308.208,
+      "samples": 7
+    },
+    "replace_queue_10000": {
+      "allocations": 5,
+      "requested_bytes": 80120,
+      "dynamic_copy_bytes": 80000,
+      "median_us": 25.084,
+      "p95_us": 37.625,
+      "samples": 7
+    }
+  }
+}

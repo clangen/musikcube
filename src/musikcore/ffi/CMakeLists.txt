@@ -1,5 +1,6 @@
 set(MUSIKCORE_ABI0_OUTPUT_DIR "${PROJECT_BINARY_DIR}/bin/abi0" PARENT_SCOPE)
 set(output_dir "${PROJECT_BINARY_DIR}/bin/abi0")
+file(MAKE_DIRECTORY "${output_dir}/plugins")
 
 add_library(musikcore_abi0_sqlite STATIC
   "${PROJECT_SOURCE_DIR}/src/3rdparty/src/sqlite/sqlite3.c"

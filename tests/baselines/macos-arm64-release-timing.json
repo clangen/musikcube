@@ -1,0 +1,81 @@
+{
+  "platform": "darwin",
+  "arch": "arm64",
+  "cpu": "Apple M4",
+  "instrumentation": "none",
+  "config": "Release",
+  "metrics": {
+    "context_create": {
+      "median_us": 0.084,
+      "p95_us": 1.792,
+      "samples": 31
+    },
+    "idle_shutdown": {
+      "median_us": 0.083,
+      "p95_us": 0.209,
+      "samples": 31
+    },
+    "search_10000_ids": {
+      "median_us": 2089.958,
+      "p95_us": 2697.125,
+      "samples": 31
+    },
+    "read_1000_titles": {
+      "median_us": 411,
+      "p95_us": 582.792,
+      "samples": 31
+    },
+    "make_result_10000_ids": {
+      "median_us": 3.875,
+      "p95_us": 4.416,
+      "samples": 31
+    },
+    "borrowed_title_access": {
+      "rows": 1000,
+      "payload_bytes": 128000,
+      "copied_bytes": 0,
+      "live_blocks_delta": 0,
+      "live_bytes_delta": 0
+    },
+    "scroll_100_pages": {
+      "total_us": 10830.708,
+      "cache_peak_extra_bytes": 87952,
+      "cache_growth_after_warm_bytes": 0
+    },
+    "local_search": {
+      "median_us": 433.667,
+      "p95_us": 683.625,
+      "samples": 7
+    },
+    "remote_search": {
+      "median_us": 203.416,
+      "p95_us": 375.667,
+      "samples": 7
+    },
+    "local_page": {
+      "median_us": 375,
+      "p95_us": 532.875,
+      "samples": 7
+    },
+    "remote_page": {
+      "median_us": 194.75,
+      "p95_us": 261.375,
+      "samples": 7
+    },
+    "local_playlist_10000": {
+      "median_us": 2334.292,
+      "p95_us": 2607.708,
+      "samples": 7
+    },
+    "remote_playlist_10000": {
+      "median_us": 3106.167,
+      "p95_us": 3292.834,
+      "samples": 7
+    },
+    "replace_queue_10000": {
+      "median_us": 25.666,
+      "p95_us": 36.25,
+      "samples": 7
+    }
+  }
+}

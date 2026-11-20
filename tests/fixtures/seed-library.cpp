@@ -19,6 +19,7 @@ namespace {
     /* Delivers the indexer signal to the fixture's dispatcher. Neither copyable nor movable. */
     class IndexCompletion final : public IMessageTarget, public sigslot::has_slots<> {
     public:
+        /* Register the host target and connect the indexer's completion signal for the requested scan. */
         IndexCompletion(MessageQueue& queue, IIndexer& indexer, int expectedScanned)
         : queue(queue)
         , expectedScanned(expectedScanned) {
@@ -26,10 +27,12 @@ namespace {
             indexer.Finished.connect(this, &IndexCompletion::OnFinished);
         }
 
+        /* Unregister queued notifications before the observer's storage goes away. */
         ~IndexCompletion() { this->queue.Unregister(this); }
         IndexCompletion(const IndexCompletion&) = delete;
         IndexCompletion& operator=(const IndexCompletion&) = delete;
 
+        /* Pump the host queue until the requested index scan finishes or its deadline expires. */
         bool Wait() {
             const auto deadline = Clock::now() + std::chrono::minutes(5);
             while (!this->finished) {
@@ -40,9 +43,11 @@ namespace {
             return true;
         }
 
+        /* Mark completion only on the host thread after the indexer's signal has been marshalled. */
         void ProcessMessage(IMessage&) override { this->finished = true; }
 
     private:
+        /* Post a host notification only for a scan that includes the expected number of fixture files. */
         void OnFinished(int scanned) {
             /* A database upgrade may have already scheduled an empty scan. Wait
             for the scan that includes the fixture media instead of accepting
@@ -57,8 +62,12 @@ namespace {
         bool finished = false;
     };
 
+    /* Drain startup indexing, run the requested scan, then verify committed visible tracks with a typed
+       query. */
     bool seed(MessageQueue& queue, const ILibraryPtr& library, const char* media, int64_t expected) {
         auto& indexer = *library->Indexer();
+        /* Drain the initialization/upgrade scan before observing this requested scan. */
+        indexer.Shutdown();
         IndexCompletion completion(queue, indexer, static_cast<int>(expected));
         indexer.AddPath(media);
         indexer.Schedule(IIndexer::SyncType::Local);
@@ -88,6 +97,7 @@ namespace {
     }
 }
 
+/* Start production services/plugins, index generated media, and tear down in production order. */
 int main(int argc, char** argv) {
     if (argc != 3) return 1;
 

@@ -41,8 +41,10 @@ set (musikcube_VERSION_MAJOR 3)
 set (musikcube_VERSION_MINOR 0)
 set (musikcube_VERSION_PATCH 5)
 set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
-set (LIBRARY_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin/plugins)
-set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
+set(MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY "${musikcube_SOURCE_DIR}/bin" CACHE PATH
+  "Production runtime directory; test builds select a private directory under their build root")
+set (LIBRARY_OUTPUT_PATH ${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/plugins)
+set (EXECUTABLE_OUTPUT_PATH ${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY})
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/.cmake)
 include(Colors)
@@ -91,7 +93,7 @@ list(
 
 include_directories(${PROJECT_INCLUDE_DIRECTORIES})
 
-link_directories("${musikcube_SOURCE_DIR}/bin/plugins")
+link_directories("${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/plugins")
 
 message(STATUS "[vendor-link-directories] ${VENDOR_LINK_DIRECTORIES}")
 message(STATUS "[vendor-include-directories] ${VENDOR_INCLUDE_DIRECTORIES}")
