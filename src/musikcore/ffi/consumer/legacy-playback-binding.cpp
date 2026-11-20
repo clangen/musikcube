@@ -13,6 +13,29 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 
+namespace {
+    struct QueueObserver {
+        mc_play_queue_changed_fn callback;
+        void* data;
+        bool pending = false;
+    };
+
+    class QueueNotification final : public Message {
+    public:
+        QueueNotification(IMessageTarget* target, int type, const std::shared_ptr<QueueObserver>& observer)
+            : Message(target, type, 0, 0), observer(observer) {}
+
+        std::weak_ptr<QueueObserver> observer;
+    };
+}
+
+void musik::core::audio::DeliverPlaybackQueueNotification(IMessage& message) {
+    if (auto observer = static_cast<QueueNotification&>(message).observer.lock()) {
+        observer->pending = false;
+        observer->callback(observer->data);
+    }
+}
+
 bool musik::core::audio::MatchesPlaybackOrigin(const LibraryIdentity& origin, const ILibraryPtr& library) {
     const auto master = std::dynamic_pointer_cast<MasterLibrary>(library);
     const auto selected = master ? master->Wrapped() : library;
@@ -80,6 +103,8 @@ public:
         if (status != MC_OK) return status;
 
         std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
+        queue.lifetime = this->lifetime;
+        queue.revision = this->service.queueRevision;
         if (!this->QueueOriginAvailable()) return MC_OK;
 
         queue.ids = this->service.playlist.GetIds();
@@ -101,17 +126,17 @@ public:
             this->service.TrackChanged.connect(this, &PlaybackServiceBinding::OnTrackChanged);
             this->observingQueue = true;
         }
-        this->queueChanged = callback;
-        this->queueChangedData = data;
+        /* Replacing a subscription invalidates any delivery posted for its user data. */
+        this->queueObserver = callback ? std::make_shared<QueueObserver>(QueueObserver{callback, data}) : nullptr;
         return MC_OK;
     }
 
-    mc_result PlayQueueRow(size_t row) override {
+    mc_result PlayQueueRow(const mc_play_queue& queue, size_t row) override {
         const auto status = this->CheckSession();
         if (status != MC_OK) return status;
 
         std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
-        if (!this->QueueOriginAvailable() || row >= this->service.playlist.Count()) return MC_ERROR_NOT_FOUND;
+        if (!this->QueueIsCurrent(queue) || row >= queue.ids.size()) return MC_ERROR_NOT_FOUND;
         this->service.Play(row);
         return MC_OK;
     }
@@ -146,7 +171,7 @@ public:
         return MC_OK;
     }
 
-    mc_result EditQueue(QueueEdit edit, size_t from, size_t to) override {
+    mc_result EditQueue(QueueEdit edit, const mc_play_queue* queue, size_t from, size_t to) override {
         const auto status = this->CheckSession();
         if (status != MC_OK) return status;
 
@@ -155,7 +180,7 @@ public:
             editor.Clear();
             return MC_OK;
         }
-        if (!this->QueueOriginAvailable()) return MC_ERROR_NOT_FOUND;
+        if (!this->QueueIsCurrent(*queue)) return MC_ERROR_NOT_FOUND;
         const bool changed = edit == QueueEdit::Move ? editor.Move(from, to) : editor.Delete(from);
         return changed ? MC_OK : MC_ERROR_NOT_FOUND;
     }
@@ -166,8 +191,19 @@ private:
         return !origin || MatchesPlaybackOrigin(*origin, this->service.library);
     }
 
+    /* Check under the same lock used for the positional action. */
+    bool QueueIsCurrent(const mc_play_queue& queue) const {
+        return queue.lifetime.lock() == this->service.apiLifetime &&
+            queue.revision == this->service.queueRevision && this->QueueOriginAvailable();
+    }
+
     void OnQueueChanged() {
-        if (this->queueChanged && this->CheckSession() == MC_OK) this->queueChanged(this->queueChangedData);
+        if (this->CheckSession() != MC_OK || !this->queueObserver || this->queueObserver->pending) return;
+
+        /* The legacy signal holds its lock while notifying listeners. */
+        this->service.messageQueue.Post(std::make_shared<QueueNotification>(
+            &this->service, MESSAGE_NOTIFY_API_QUEUE_CHANGED, this->queueObserver));
+        this->queueObserver->pending = true;
     }
 
     void OnTrackChanged(size_t, TrackPtr) {
@@ -187,6 +223,7 @@ private:
             this->service.playlist.Swap(replacement);
             this->service.unshuffled.Clear();
             this->service.queueOrigin = origin;
+            ++this->service.queueRevision;
         }
         this->service.Play(row);
         this->service.messageQueue.Post(Message::Create(&this->service, MESSAGE_NOTIFY_RESET, 0, 0));
@@ -202,8 +239,7 @@ private:
     PlaybackService& service;
     const std::weak_ptr<int> lifetime;
     const std::thread::id owner;
-    mc_play_queue_changed_fn queueChanged = nullptr;
-    void* queueChangedData = nullptr;
+    std::shared_ptr<QueueObserver> queueObserver;
     bool observingQueue = false;
 };
 

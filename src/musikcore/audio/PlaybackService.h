@@ -74,6 +74,7 @@ namespace musik { namespace core { namespace audio {
             MESSAGE_MARK_TRACK_PLAYED = 1012,
             MESSAGE_NEXT_TRACK_EDITED = 1013,
             MESSAGE_MARK_TRACK_PLAYING = 1014,
+            MESSAGE_NOTIFY_API_QUEUE_CHANGED = 1015,
         };
 
         class StreamMessage;
@@ -225,6 +226,7 @@ namespace musik { namespace core { namespace audio {
             musik::core::audio::ITransport::Gain GainAtIndex(size_t index);
 
             musik::core::TrackList playlist;
+            uint64_t queueRevision = 0;
             std::shared_ptr<const LibraryIdentity> queueOrigin;
             std::shared_ptr<int> apiLifetime = std::make_shared<int>(0);
             const std::thread::id apiOwner = std::this_thread::get_id();

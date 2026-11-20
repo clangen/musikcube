@@ -93,19 +93,24 @@ MC_API const int64_t *MC_CALL mc_play_queue_get_ids(const mc_play_queue *queue, 
 /* Returns SIZE_MAX when the queue has no current row. */
 MC_API size_t MC_CALL mc_play_queue_get_current_row(const mc_play_queue *queue);
 MC_API bool MC_CALL mc_play_queue_is_shuffled(const mc_play_queue *queue);
-/* Start the existing queue at row without replacing it. Call on the owner thread. */
-MC_API mc_result MC_CALL mc_playback_play_queue_row(mc_playback *playback, size_t row);
+/* Request playback of a row in the supplied snapshot on the owner thread. */
+/* Returns MC_ERROR_NOT_FOUND for a stale snapshot or unavailable row. */
+MC_API mc_result MC_CALL mc_playback_play_queue_row(
+    mc_playback *playback, const mc_play_queue *queue, size_t row);
 
 typedef void (MC_CALL *mc_play_queue_changed_fn)(void *user_data);
-/* Register on the owner thread. The playback dispatcher delivers queue and current-row changes. */
+/* Register on the owner thread. The dispatcher delivers changes outside the engine's signal locks. */
+/* Pending notifications may be coalesced. Replacing the callback discards pending delivery. */
 /* Pass NULL to unsubscribe. Keep user_data alive until unsubscription or handle destruction. */
-/* Do not destroy the playback handle from inside the callback. */
 MC_API mc_result MC_CALL mc_playback_set_queue_changed_callback(
     mc_playback *playback, mc_play_queue_changed_fn callback, void *user_data);
 
-/* Move or remove an existing entry by zero-based queue position on the owner thread. */
-MC_API mc_result MC_CALL mc_playback_queue_move(mc_playback *playback, size_t from, size_t to);
-MC_API mc_result MC_CALL mc_playback_queue_remove(mc_playback *playback, size_t row);
+/* Edit zero-based positions from the supplied snapshot on the owner thread. */
+/* Returns MC_ERROR_NOT_FOUND if the snapshot is stale or a row is unavailable. */
+MC_API mc_result MC_CALL mc_playback_queue_move(
+    mc_playback *playback, const mc_play_queue *queue, size_t from, size_t to);
+MC_API mc_result MC_CALL mc_playback_queue_remove(
+    mc_playback *playback, const mc_play_queue *queue, size_t row);
 MC_API mc_result MC_CALL mc_playback_queue_clear(mc_playback *playback);
 /* Release the handle. The playback session and its queue remain active. */
 MC_API void MC_CALL mc_playback_destroy(mc_playback **playback);

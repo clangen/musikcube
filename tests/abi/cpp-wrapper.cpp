@@ -315,12 +315,9 @@ namespace {
         {
             audio::PlaybackService service(queue, selection, transport);
             playback.emplace(musik::core::audio::CreatePlaybackHandle(service));
-            unsigned queueChanges = 0;
-            const auto changed = [](void* data) { ++*static_cast<unsigned*>(data); };
-            if (playback->SetQueueChangedCallback(changed, &queueChanges) != MC_OK) return false;
             const auto empty = playback->Queue();
             if (!empty || empty->Size() || empty->CurrentRow() != SIZE_MAX ||
-                playback->PlayQueueRow(0) != MC_ERROR_NOT_FOUND) return false;
+                playback->PlayQueueRow(*empty, 0) != MC_ERROR_NOT_FOUND) return false;
             if (playback->Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_OK ||
                 transport->state != sdk::PlaybackState::Paused ||
                 playback->Control(MC_PLAYBACK_SET_VOLUME, 0.25) != MC_OK ||
@@ -339,9 +336,13 @@ namespace {
                 playback->Play(result, 1) != MC_OK || service.GetIndex() != 1 ||
                 service.GetTrackList()->GetId(0) != result.Id(0) ||
                 service.GetTrackList()->GetId(1) != result.Id(1)) return false;
-            if (playback->Move(1, 0) != MC_OK || service.GetTrackList()->GetId(0) != result.Id(1) ||
-                playback->Remove(1) != MC_OK || service.Count() != 1 ||
-                playback->Remove(1) != MC_ERROR_NOT_FOUND ||
+            const auto original = playback->Queue();
+            if (!original || playback->Move(*original, 1, 0) != MC_OK ||
+                service.GetTrackList()->GetId(0) != result.Id(1) ||
+                playback->Remove(*original, 1) != MC_ERROR_NOT_FOUND) return false;
+            const auto reordered = playback->Queue();
+            if (!reordered || playback->Remove(*reordered, 1) != MC_OK || service.Count() != 1 ||
+                playback->Remove(*reordered, 1) != MC_ERROR_NOT_FOUND ||
                 playback->ClearQueue() != MC_OK || service.Count() != 0) return false;
 
             const auto first = result.Track(0);
@@ -370,25 +371,28 @@ namespace {
                 return count == expected.size() && std::equal(expected.begin(), expected.end(), ids);
             };
             if (!captureMatches() ||
-                captured->IsShuffled() || playback->PlayQueueRow(2) != MC_OK || service.GetIndex() != 2 ||
+                captured->IsShuffled() || playback->PlayQueueRow(*captured, 2) != MC_OK || service.GetIndex() != 2 ||
                 empty->Size()) return false;
 
-            service.QueueEdited();
-            if (queueChanges != 1 ||
-                playback->SetQueueChangedCallback(nullptr) != MC_OK) return false;
-            service.QueueEdited();
-            if (queueChanges != 1 ||
-                playback->SetQueueChangedCallback(changed, &queueChanges) != MC_OK) return false;
-            service.QueueEdited();
-            if (queueChanges != 2 || playback->SetQueueChangedCallback(nullptr) != MC_OK) return false;
+            /* A legacy writer can swap duplicate entries without changing the visible ID sequence. */
+            {
+                auto edit = service.Edit();
+                if (!edit.Swap(0, 2) || edit.Delete(expected.size())) return false;
+            }
+            if (playback->PlayQueueRow(*captured, 0) != MC_ERROR_NOT_FOUND ||
+                playback->Move(*captured, 0, 1) != MC_ERROR_NOT_FOUND ||
+                playback->Remove(*captured, 0) != MC_ERROR_NOT_FOUND ||
+                service.Count() != expected.size() || service.GetIndex() != 2) return false;
+            const auto current = playback->Queue();
+            if (!current || playback->PlayQueueRow(*current, 2) != MC_OK) return false;
 
             const auto prefs = Preferences::ForComponent(musik::core::prefs::components::Settings);
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
             selection->LoadDefaultLibrary();
             const auto unavailable = playback->Queue();
             const bool rejected = unavailable && !unavailable->Size() &&
-                playback->PlayQueueRow(0) == MC_ERROR_NOT_FOUND &&
-                playback->Remove(0) == MC_ERROR_NOT_FOUND &&
+                playback->PlayQueueRow(*current, 0) == MC_ERROR_NOT_FOUND &&
+                playback->Remove(*current, 0) == MC_ERROR_NOT_FOUND &&
                 playback->Play(result, 0) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NOW) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NEXT) == MC_ERROR_NOT_FOUND &&
@@ -400,6 +404,46 @@ namespace {
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
             selection->LoadDefaultLibrary();
             if (!rejected || !cleared || !captureMatches()) return false;
+
+            /* Reenter subscription from the real dispatcher and destroy a peer with pending delivery. */
+            queue.Dispatch();
+            struct Observers {
+                audio::PlaybackService& service;
+                api::Playback& primary;
+                std::optional<api::Playback> peer;
+                unsigned primaryCalls = 0;
+                unsigned cancelledCalls = 0;
+                unsigned replacementCalls = 0;
+                mc_result subscribed = MC_ERROR_INTERNAL;
+                mc_result unsubscribed = MC_ERROR_INTERNAL;
+            } observers{service, *playback, audio::CreatePlaybackHandle(service)};
+            const auto countCall = [](void* data) { ++*static_cast<unsigned*>(data); };
+            const auto replacePeer = [](void* data) {
+                auto& state = *static_cast<Observers*>(data);
+                ++state.primaryCalls;
+                state.peer.reset();
+                state.peer.emplace(audio::CreatePlaybackHandle(state.service));
+                state.subscribed = state.peer->SetQueueChangedCallback(
+                    [](void* count) { ++*static_cast<unsigned*>(count); }, &state.replacementCalls);
+                state.unsubscribed = state.primary.SetQueueChangedCallback(nullptr);
+            };
+
+            if (playback->SetQueueChangedCallback(replacePeer, &observers) != MC_OK ||
+                observers.peer->SetQueueChangedCallback(countCall, &observers.cancelledCalls) != MC_OK ||
+                playback->ClearQueue() != MC_OK || playback->ClearQueue() != MC_OK) return false;
+            queue.Dispatch();
+            if (observers.primaryCalls || observers.cancelledCalls) return false;
+            queue.Dispatch();
+            if (observers.primaryCalls != 1 || observers.cancelledCalls || observers.replacementCalls ||
+                observers.subscribed != MC_OK || observers.unsubscribed != MC_OK ||
+                playback->ClearQueue() != MC_OK) return false;
+            queue.Dispatch();
+            queue.Dispatch();
+            if (observers.replacementCalls != 1 || playback->ClearQueue() != MC_OK) return false;
+            queue.Dispatch();
+            if (observers.peer->SetQueueChangedCallback(nullptr) != MC_OK) return false;
+            queue.Dispatch();
+            if (observers.replacementCalls != 1) return false;
 
             mc_result otherThread = MC_OK;
             std::optional<api::Playback> otherHandle;

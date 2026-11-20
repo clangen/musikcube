@@ -47,6 +47,7 @@
 #include <musikcore/support/Playback.h>
 #include <musikcore/ffi/consumer/playback-binding.h>
 #include <thread>
+#include <utility>
 #include <musikcore/support/LastFm.h>
 
 using namespace musik::core::library;
@@ -275,6 +276,7 @@ void PlaybackService::ToggleShuffle() {
         this->playlist.Shuffle();
         shuffled = true;
     }
+    ++this->queueRevision;
 
     /* find the new playback index and prefetch the next track */
     if (id != -1) {
@@ -291,7 +293,10 @@ void PlaybackService::ToggleShuffle() {
 
 void PlaybackService::ProcessMessage(IMessage &message) {
     const int type = message.Type();
-    if (type == MESSAGE_LOAD_PLAYBACK_CONTEXT) {
+    if (type == MESSAGE_NOTIFY_API_QUEUE_CHANGED) {
+        DeliverPlaybackQueueNotification(message);
+    }
+    else if (type == MESSAGE_LOAD_PLAYBACK_CONTEXT) {
         loadPreferences(*this->transport, *this, *playbackPrefs);
         playback::LoadPlaybackContext(library, *this);
         this->InitRemotes();
@@ -641,6 +646,7 @@ bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
         temp.CopyFrom(tracks);
         this->queueOrigin.reset();
         this->playlist.Swap(temp);
+        ++this->queueRevision;
         this->unshuffled.Clear();
         this->index = found ? index : NO_POSITION;
         this->nextIndex = NO_POSITION;
@@ -664,6 +670,7 @@ void PlaybackService::Play(const TrackList& tracks, size_t index) {
             temp.CopyFrom(tracks);
             this->queueOrigin.reset();
             this->playlist.Swap(temp);
+            ++this->queueRevision;
             this->unshuffled.Clear();
         }
     }
@@ -717,6 +724,7 @@ void PlaybackService::CopyFrom(const TrackList& source) {
     if (&source != &this->playlist) {
         this->queueOrigin.reset();
         this->playlist.CopyFrom(source);
+        ++this->queueRevision;
     }
     this->index = NO_POSITION;
     this->nextIndex = NO_POSITION;
@@ -747,6 +755,7 @@ void PlaybackService::CopyFrom(const musik::core::sdk::ITrackList* source) {
         for (size_t i = 0; i < source->Count(); i++) {
             this->playlist.Add(source->GetId(i));
         }
+        ++this->queueRevision;
 
         this->index = NO_POSITION;
         this->nextIndex = NO_POSITION;
@@ -998,7 +1007,7 @@ PlaybackService::Editor::Editor(Editor&& other)
 , tracks(other.tracks)
 , queue(other.queue)
 , playIndex(other.playIndex)
-, edited(false) {
+, edited(std::exchange(other.edited, false)) {
     std::swap(this->lock, other.lock);
 
     /* we may never actually edit the playing track, but instead, edit the
@@ -1010,6 +1019,7 @@ PlaybackService::Editor::Editor(Editor&& other)
 
 PlaybackService::Editor::~Editor() {
     if (this->edited) {
+        ++this->playback.queueRevision;
         /* we've been tracking the playback index through edit operations. let's
         update it here. */
 
@@ -1031,7 +1041,8 @@ PlaybackService::Editor::~Editor() {
 }
 
 bool PlaybackService::Editor::Insert(int64_t id, size_t index) {
-    if ((this->edited = this->tracks->Insert(id, index))) {
+    if (this->tracks->Insert(id, index)) {
+        this->edited = true;
         if (this->playIndex != NO_POSITION && index <= this->playIndex) {
             ++this->playIndex;
         }
@@ -1046,7 +1057,8 @@ bool PlaybackService::Editor::Insert(int64_t id, size_t index) {
 }
 
 bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
-    if ((this->edited = this->tracks->Swap(index1, index2))) {
+    if (this->tracks->Swap(index1, index2)) {
+        this->edited = true;
         if (index1 == this->playIndex) {
             this->playIndex = index2;
             this->nextTrackInvalidated = true;
@@ -1062,7 +1074,8 @@ bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
 }
 
 bool PlaybackService::Editor::Move(size_t from, size_t to) {
-    if ((this->edited = this->tracks->Move(from, to))) {
+    if (this->tracks->Move(from, to)) {
+        this->edited = true;
         if (from == this->playIndex) {
             this->playIndex = to;
         }
@@ -1080,7 +1093,8 @@ bool PlaybackService::Editor::Move(size_t from, size_t to) {
 }
 
 bool PlaybackService::Editor::Delete(size_t index) {
-    if ((this->edited = this->tracks->Delete(index))) {
+    if (this->tracks->Delete(index)) {
+        this->edited = true;
         if (this->playback.Count() == 0) {
             this->playIndex = NO_POSITION;
         }

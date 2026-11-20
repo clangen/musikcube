@@ -32,6 +32,8 @@ namespace musik { namespace core { namespace api {
         bool IsShuffled() const noexcept { return mc_play_queue_is_shuffled(this->queue.get()); }
 
     private:
+        friend class Playback;
+
         /* Stateless deleter. Copy and move leave no retained state. */
         struct Deleter {
             void operator()(mc_play_queue* queue) const noexcept { mc_play_queue_destroy(&queue); }
@@ -72,13 +74,19 @@ namespace musik { namespace core { namespace api {
         mc_result Play(const TrackResult& result, size_t row) {
             return mc_playback_play_result(this->handle.get(), result.Get(), row);
         }
-        mc_result PlayQueueRow(size_t row) { return mc_playback_play_queue_row(this->handle.get(), row); }
+        mc_result PlayQueueRow(const PlayQueue& queue, size_t row) {
+            return mc_playback_play_queue_row(this->handle.get(), queue.queue.get(), row);
+        }
 
-        mc_result Move(size_t from, size_t to) { return mc_playback_queue_move(this->handle.get(), from, to); }
+        mc_result Move(const PlayQueue& queue, size_t from, size_t to) {
+            return mc_playback_queue_move(this->handle.get(), queue.queue.get(), from, to);
+        }
         mc_result UseTrack(const TrackRef& track, mc_playback_track_action action) {
             return mc_playback_use_track(this->handle.get(), track.Get(), action);
         }
-        mc_result Remove(size_t row) { return mc_playback_queue_remove(this->handle.get(), row); }
+        mc_result Remove(const PlayQueue& queue, size_t row) {
+            return mc_playback_queue_remove(this->handle.get(), queue.queue.get(), row);
+        }
         mc_result ClearQueue() { return mc_playback_queue_clear(this->handle.get()); }
 
     private:

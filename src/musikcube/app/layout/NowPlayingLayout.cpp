@@ -130,7 +130,9 @@ void NowPlayingLayout::InitializeWindows() {
 
     this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
     this->trackListView->SetQueueActivationCallback([this](size_t row) {
-        this->apiPlayback.PlayQueueRow(row);
+        if (this->queue && this->apiPlayback.PlayQueueRow(*this->queue, row) == MC_ERROR_NOT_FOUND) {
+            this->RequeryTrackList();
+        }
     });
     this->trackListView->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
     this->AddWindow(this->trackListView);
@@ -276,18 +278,20 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
             const auto count = this->queue->Size();
             if (selected >= count) return true;
 
-            if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key) && selected > 0) {
-                const auto to = selected - 1;
-                if (this->apiPlayback.Move(selected, to) == MC_OK) reselectIndex = narrow_cast<int>(to);
+            size_t target = selected;
+            mc_result status;
+            if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
+                status = this->apiPlayback.Remove(*this->queue, selected);
             }
-            else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key) && selected + 1 < count) {
-                const auto to = selected + 1;
-                if (this->apiPlayback.Move(selected, to) == MC_OK) reselectIndex = narrow_cast<int>(to);
-            }
-            else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
-                if (this->apiPlayback.Remove(selected) == MC_OK) reselectIndex = narrow_cast<int>(selected);
+            else {
+                const bool up = Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key);
+                if ((up && selected == 0) || (!up && selected + 1 == count)) return true;
+                target = up ? selected - 1 : selected + 1;
+                status = this->apiPlayback.Move(*this->queue, selected, target);
             }
 
+            if (status == MC_OK) this->reselectIndex = narrow_cast<int>(target);
+            if (status == MC_OK || status == MC_ERROR_NOT_FOUND) this->RequeryTrackList();
             return true;
         }
     }

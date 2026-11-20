@@ -96,28 +96,28 @@ mc_result MC_CALL mc_playback_use_track(
     });
 }
 
-mc_result MC_CALL mc_playback_play_queue_row(mc_playback *playback, size_t row) {
+mc_result MC_CALL mc_playback_play_queue_row(mc_playback *playback, const mc_play_queue *queue, size_t row) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        if (!playback) return MC_ERROR_INVALID_ARGUMENT;
-        return playback->PlayQueueRow(row);
+        if (!playback || !queue) return MC_ERROR_INVALID_ARGUMENT;
+        return playback->PlayQueueRow(*queue, row);
     });
 }
 
-static mc_result editQueue(mc_playback *playback, QueueEdit edit, size_t from = 0, size_t to = 0) {
+static mc_result editQueue(mc_playback *playback, QueueEdit edit, const mc_play_queue *queue, size_t from, size_t to) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        if (!playback) return MC_ERROR_INVALID_ARGUMENT;
-        return playback->EditQueue(edit, from, to);
+        if (!playback || (!queue && edit != QueueEdit::Clear)) return MC_ERROR_INVALID_ARGUMENT;
+        return playback->EditQueue(edit, queue, from, to);
     });
 }
 
-mc_result MC_CALL mc_playback_queue_move(mc_playback *playback, size_t from, size_t to) {
-    return editQueue(playback, QueueEdit::Move, from, to);
+mc_result MC_CALL mc_playback_queue_move(mc_playback *playback, const mc_play_queue *queue, size_t from, size_t to) {
+    return editQueue(playback, QueueEdit::Move, queue, from, to);
 }
 
-mc_result MC_CALL mc_playback_queue_remove(mc_playback *playback, size_t row) {
-    return editQueue(playback, QueueEdit::Remove, row);
+mc_result MC_CALL mc_playback_queue_remove(mc_playback *playback, const mc_play_queue *queue, size_t row) {
+    return editQueue(playback, QueueEdit::Remove, queue, row, 0);
 }
 
 mc_result MC_CALL mc_playback_queue_clear(mc_playback *playback) {
-    return editQueue(playback, QueueEdit::Clear);
+    return editQueue(playback, QueueEdit::Clear, nullptr, 0, 0);
 }

@@ -12,6 +12,8 @@ enum class QueueEdit { Move, Remove, Clear };
 
 struct mc_play_queue {
     std::vector<int64_t> ids;
+    std::weak_ptr<int> lifetime;
+    uint64_t revision = 0;
     size_t currentRow = SIZE_MAX;
     bool shuffled = false;
 };
@@ -28,7 +30,7 @@ struct mc_playback {
     virtual mc_result QueueSnapshot(mc_play_queue& queue) const = 0;
     virtual mc_result SetQueueChangedCallback(mc_play_queue_changed_fn callback, void* data) = 0;
     virtual mc_result PlayResult(const TrackResultData& result, size_t row) = 0;
-    virtual mc_result PlayQueueRow(size_t row) = 0;
+    virtual mc_result PlayQueueRow(const mc_play_queue& queue, size_t row) = 0;
     virtual mc_result UseTrack(const mc_track_ref& track, mc_playback_track_action action) = 0;
-    virtual mc_result EditQueue(QueueEdit edit, size_t from, size_t to) = 0;
+    virtual mc_result EditQueue(QueueEdit edit, const mc_play_queue* queue, size_t from, size_t to) = 0;
 };

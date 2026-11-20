@@ -730,6 +730,9 @@ legacy list for actions that still require it.
   Move, remove, and clear commands power the Now Playing keyboard editor.
   Track Search inserts tracks through origin-bound references. Now Playing
   reads an ordered snapshot and refreshes on playback dispatcher notifications.
+  Positional actions reject snapshots invalidated by another queue writer.
+  The indexed-query test exercises deferred callback delivery and reentrant
+  subscription changes through the dispatcher.
   Atomic batch edits are deferred beyond parity.
 - [ ] **PUB-006** Add indexer paths, commands, snapshots, progress, and terminal
   events.
