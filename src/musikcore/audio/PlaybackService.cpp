@@ -265,8 +265,8 @@ private:
     const std::thread::id owner;
 };
 
-musik::core::client::Playback PlaybackService::CreatePlaybackHandle() {
-    return client::Playback(new PlaybackServiceBinding(*this));
+musik::core::api::Playback PlaybackService::CreatePlaybackHandle() {
+    return api::Playback(new PlaybackServiceBinding(*this));
 }
 
 mc_result PlaybackService::PlayOrderedResult(const TrackResultData& result, size_t row) {

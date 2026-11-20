@@ -66,7 +66,7 @@ namespace musik {
                 LibraryLayout(
                     musik::core::audio::PlaybackService& playback,
                     std::shared_ptr<musik::core::library::MasterLibrary> library,
-                    std::shared_ptr<musik::core::client::Context> apiContext);
+                    std::shared_ptr<musik::core::api::Context> apiContext);
 
                 void CancelSearchRequests();
 
@@ -98,7 +98,7 @@ namespace musik {
                 void OnMainLayoutFocusTerminated(
                     LayoutBase::FocusDirection direction);
 
-                void InitializeWindows(const std::shared_ptr<musik::core::client::Context>& apiContext,
+                void InitializeWindows(const std::shared_ptr<musik::core::api::Context>& apiContext,
                     const musik::core::library::MasterLibrary& selection);
 
                 void ShowNowPlaying();

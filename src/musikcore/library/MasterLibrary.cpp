@@ -100,7 +100,7 @@ void MasterLibrary::Close() {
     this->wrappedLibrary->Close();
 }
 
-std::shared_ptr<const client::Library> MasterLibrary::OpenClientLibrary() const {
+std::shared_ptr<const api::Library> MasterLibrary::OpenApiLibrary() const {
     std::unique_lock<decltype(this->libraryMutex)> lock(this->libraryMutex);
     if (!this->wrappedLibrary) return {};
 
@@ -117,10 +117,10 @@ std::shared_ptr<const client::Library> MasterLibrary::OpenClientLibrary() const 
     else {
         return {};
     }
-    if (status != MC_OK) throw client::Error(status);
+    if (status != MC_OK) throw api::Error(status);
 
-    client::Library bound(handle);
-    return std::make_shared<const client::Library>(std::move(bound));
+    api::Library bound(handle);
+    return std::make_shared<const api::Library>(std::move(bound));
 }
 
 void MasterLibrary::LoadDefaultLibrary() {

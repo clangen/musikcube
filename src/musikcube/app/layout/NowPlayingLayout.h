@@ -77,7 +77,7 @@ namespace musik {
                 void OnPlaylistSelected(int64_t playlistId);
 
                 musik::core::audio::PlaybackService& playback;
-                musik::core::client::Playback apiPlayback;
+                musik::core::api::Playback apiPlayback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<TrackListView> trackListView;
                 std::shared_ptr<musik::core::Preferences> prefs;

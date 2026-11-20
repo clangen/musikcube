@@ -9,7 +9,7 @@ extern "C" int query_test_wait_for_wakeup(unsigned count);
 extern "C" void query_test_release_wakeup();
 
 namespace {
-    using namespace musik::core::client;
+    using namespace musik::core::api;
 
     bool seed(const std::string &directory, const char *title) {
         sqlite3 *raw = nullptr;

@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <map>
 
-namespace musik { namespace core { namespace client { namespace detail {
+namespace musik { namespace core { namespace api { namespace detail {
 
     /* Owns projected pages. Neither copyable nor movable. */
     class TrackPageCache {
@@ -16,14 +16,14 @@ namespace musik { namespace core { namespace client { namespace detail {
         TrackPageCache(const TrackPageCache&) = delete;
         TrackPageCache& operator=(const TrackPageCache&) = delete;
 
-        const client::TrackPage* Find(size_t offset) const {
+        const api::TrackPage* Find(size_t offset) const {
             const auto found = this->pages.find(offset);
             return found == this->pages.end() ? nullptr : &found->second;
         }
 
         void Clear() { this->pages.clear(); }
 
-        bool Store(size_t offset, client::TrackPage page, size_t first, size_t last) {
+        bool Store(size_t offset, api::TrackPage page, size_t first, size_t last) {
             if (!this->capacity) return false;
 
             /* Keep pages in the requested window ahead of speculative or stale pages. */
@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace client { namespace detail {
 
     private:
         const size_t capacity;
-        std::map<size_t, client::TrackPage> pages;
+        std::map<size_t, api::TrackPage> pages;
     };
 
 } } } }

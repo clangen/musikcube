@@ -2,7 +2,7 @@
 
 #include <musikcore/detail/track-page-cache.hpp>
 
-namespace musik { namespace core { namespace client {
+namespace musik { namespace core { namespace api {
 
     /*
      * Load metadata for the visible rows of a stable, ordered track result.

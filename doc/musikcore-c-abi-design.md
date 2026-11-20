@@ -635,6 +635,8 @@ separate stability guarantees.
 
 ### Public C++ wrapper
 
+The header-only C++ wrapper lives in `musik::core::api`.
+
 `musikcore.hpp` provides move-only or reference-counted RAII types, translates
 error results into an explicit C++ result type or documented exceptions, and
 maps request callbacks and notifications to the application's event loop.

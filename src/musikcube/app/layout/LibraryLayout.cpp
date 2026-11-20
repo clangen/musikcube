@@ -85,7 +85,7 @@ namespace type {
 
 LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback,
     std::shared_ptr<MasterLibrary> library,
-    std::shared_ptr<musik::core::client::Context> apiContext)
+    std::shared_ptr<musik::core::api::Context> apiContext)
 : LayoutBase()
 , playback(playback)
 , shortcuts(nullptr)
@@ -201,7 +201,7 @@ void LibraryLayout::CancelSearchRequests() {
     this->trackSearchLayout->CancelSearchRequests();
 }
 
-void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::client::Context>& apiContext,
+void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::api::Context>& apiContext,
     const MasterLibrary& selection) {
     this->browseLayout = std::make_shared<BrowseLayout>(this->playback, this->library);
     this->browseLayout->SetOnHeaderClicked([this]() { this->ShowCategoryChooser(); });
@@ -212,7 +212,7 @@ void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::client:
     this->categorySearchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnCategorySearchResultSelected);
     /* Keep the search view and its playback rows bound to one backend. */
     this->trackSearchLayout = std::make_shared<TrackSearchLayout>(
-        this->playback, selection.Wrapped(), apiContext, selection.OpenClientLibrary());
+        this->playback, selection.Wrapped(), apiContext, selection.OpenApiLibrary());
     this->transportView = std::make_shared<TransportWindow>(this->library, this->playback);
 
     this->AddWindow(this->transportView);

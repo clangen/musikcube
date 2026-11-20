@@ -7,7 +7,7 @@
 #include <memory>
 #include <optional>
 
-namespace musik { namespace core { namespace client {
+namespace musik { namespace core { namespace api {
 
     /* Move-only handle to a playback session. Moving transfers handle ownership. */
     class Playback {

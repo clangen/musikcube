@@ -26,9 +26,9 @@ extern "C" unsigned query_test_wakeup_count();
 extern "C" void query_test_release_wakeup(void);
 
 namespace {
-    using musik::core::client::Context;
-    using musik::core::client::Library;
-    using musik::core::client::TrackPage;
+    using musik::core::api::Context;
+    using musik::core::api::Library;
+    using musik::core::api::TrackPage;
 
     static_assert(!std::is_copy_constructible_v<Context> && !std::is_copy_assignable_v<Context>);
     static_assert(!std::is_move_constructible_v<Context> && !std::is_move_assignable_v<Context>);
@@ -40,16 +40,16 @@ namespace {
     std::shared_ptr<const Library> openLibrary(const char *directory) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
         musik::core::library::MasterLibrary selection;
-        return selection.OpenClientLibrary();
+        return selection.OpenApiLibrary();
 #else
         return std::make_shared<const Library>(directory);
 #endif
     }
 
     bool checkQuery(const char *directory) {
-        using musik::core::client::Error;
-        using musik::core::client::QueryTracks;
-        using musik::core::client::TrackQuery;
+        using musik::core::api::Error;
+        using musik::core::api::QueryTracks;
+        using musik::core::api::TrackQuery;
 
         TrackPage page;
         unsigned completed = 0;
@@ -106,9 +106,9 @@ namespace {
     }
 
     bool checkSearch(const char *directory) {
-        using musik::core::client::Error;
-        using musik::core::client::QueryTracks;
-        using musik::core::client::TrackQuery;
+        using musik::core::api::Error;
+        using musik::core::api::QueryTracks;
+        using musik::core::api::TrackQuery;
 
         TrackPage visible;
         unsigned generation = 0;
@@ -172,7 +172,7 @@ namespace {
     }
 
     bool checkResultWindows(const char *directory) {
-        using namespace musik::core::client;
+        using namespace musik::core::api;
         static_assert(!std::is_copy_constructible_v<TrackResult>);
         static_assert(std::is_nothrow_move_constructible_v<TrackResult>);
 
@@ -321,22 +321,22 @@ namespace {
     bool checkPlaybackCommands() {
         using namespace musik::core;
         const auto selection = std::make_shared<library::MasterLibrary>();
-        const auto source = selection->OpenClientLibrary();
+        const auto source = selection->OpenApiLibrary();
         if (!source) return false;
-        client::TrackResult result;
+        api::TrackResult result;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
         options.wakeup = query_test_wakeup;
-        client::Context context(options);
+        api::Context context(options);
         const auto wakes = query_test_wakeup_count();
-        client::OpenTrackSearch(context, *source, client::TrackSearch{ "Fixture Artist" },
-            [&](mc_result status, client::TrackResult tracks, std::string_view) {
+        api::OpenTrackSearch(context, *source, api::TrackSearch{ "Fixture Artist" },
+            [&](mc_result status, api::TrackResult tracks, std::string_view) {
                 if (status == MC_OK) result = std::move(tracks);
             });
         if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || result.Size() != 2) return false;
 
         runtime::MessageQueue queue;
         const auto transport = std::make_shared<TestTransport>();
-        std::optional<client::Playback> playback;
+        std::optional<api::Playback> playback;
         {
             audio::PlaybackService service(queue, selection, transport);
             playback.emplace(service.CreatePlaybackHandle());
@@ -375,7 +375,7 @@ namespace {
             if (!rejected || !cleared) return false;
 
             mc_result otherThread = MC_OK;
-            std::optional<client::Playback> otherHandle;
+            std::optional<api::Playback> otherHandle;
             std::thread caller([&] {
                 otherHandle.emplace(service.CreatePlaybackHandle());
                 otherThread = otherHandle->Control(MC_PLAYBACK_STOP);
@@ -444,11 +444,11 @@ namespace {
     }
 
     bool checkSelectedBackend() {
-        using namespace musik::core::client;
+        using namespace musik::core::api;
 
         using namespace musik::core;
         library::MasterLibrary selection;
-        const auto library = selection.OpenClientLibrary();
+        const auto library = selection.OpenApiLibrary();
         if (!library) return false;
         mc_result completed = MC_OK;
         TrackResult tracks;

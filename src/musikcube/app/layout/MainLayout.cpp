@@ -111,7 +111,7 @@ MainLayout::MainLayout(
         static_cast<MainLayout*>(data)->Post(message::DispatchCoreRequests);
     };
     options.wakeup_user_data = this;
-    this->apiContext = std::make_shared<client::Context>(options);
+    this->apiContext = std::make_shared<api::Context>(options);
 
     this->prefs = Preferences::ForComponent("settings");
 

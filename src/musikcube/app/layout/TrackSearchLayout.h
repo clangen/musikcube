@@ -48,7 +48,7 @@
 
 #include <sigslot/sigslot.h>
 
-namespace musik { namespace core { namespace client {
+namespace musik { namespace core { namespace api {
     class Context;
     class Library;
     class TrackResultWindow;
@@ -66,8 +66,8 @@ namespace musik {
                 TrackSearchLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
-                    std::shared_ptr<musik::core::client::Context> apiContext,
-                    std::shared_ptr<const musik::core::client::Library> apiLibrary);
+                    std::shared_ptr<musik::core::api::Context> apiContext,
+                    std::shared_ptr<const musik::core::api::Library> apiLibrary);
 
                 void CancelSearchRequests();
 
@@ -115,7 +115,7 @@ namespace musik {
                 void ShowTrackSortOverlay();
 
                 musik::core::audio::PlaybackService& playback;
-                musik::core::client::Playback apiPlayback;
+                musik::core::api::Playback apiPlayback;
                 const musik::core::ILibraryPtr library;
                 MatchType matchType{ MatchType::Substring };
                 std::shared_ptr<musik::core::Preferences> prefs;
@@ -123,9 +123,9 @@ namespace musik {
                 std::shared_ptr<cursespp::TextInput> input;
                 RequestGeneration localSearchGeneration;
                 mc_request_id localSearchRequest = 0;
-                std::shared_ptr<musik::core::client::Context> apiContext;
-                std::shared_ptr<const musik::core::client::Library> apiLibrary;
-                std::unique_ptr<musik::core::client::TrackResultWindow> resultWindow;
+                std::shared_ptr<musik::core::api::Context> apiContext;
+                std::shared_ptr<const musik::core::api::Library> apiLibrary;
+                std::unique_ptr<musik::core::api::TrackResultWindow> resultWindow;
         };
     }
 }

@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-namespace musik { namespace core { namespace client {
+namespace musik { namespace core { namespace api {
 
     /* Copyable and movable. Borrows a row and its strings while the page storage is owned. */
     class TrackView {

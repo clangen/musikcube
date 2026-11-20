@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 namespace {
-    using namespace musik::core::client;
+    using namespace musik::core::api;
     using Clock = std::chrono::steady_clock;
     constexpr auto debounce = std::chrono::milliseconds(300);
     constexpr size_t viewport = 8;

@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace musik { namespace core { namespace client {
+namespace musik { namespace core { namespace api {
 
     inline std::string_view AsStringView(mc_string_view value) noexcept {
         return value.data ? std::string_view(value.data, value.length) : std::string_view{};

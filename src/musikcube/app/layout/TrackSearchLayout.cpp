@@ -78,8 +78,8 @@ static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preference
 TrackSearchLayout::TrackSearchLayout(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library,
-    std::shared_ptr<musik::core::client::Context> apiContext,
-    std::shared_ptr<const musik::core::client::Library> apiLibrary)
+    std::shared_ptr<musik::core::api::Context> apiContext,
+    std::shared_ptr<const musik::core::api::Library> apiLibrary)
 : LayoutBase()
 , playback(playback)
 , apiPlayback(playback.CreatePlaybackHandle())
@@ -186,9 +186,9 @@ void TrackSearchLayout::Requery() {
         const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
         const auto generation = this->localSearchGeneration.Capture();
         const auto hash = std::hash<std::string>{}(filter);
-        this->localSearchRequest = client::OpenTrackSearch(*this->apiContext, *this->apiLibrary,
-            client::TrackSearch{ filter, mode, static_cast<mc_track_search_order>(sortOrder) },
-            [this, generation, sortOrder, hash](mc_result status, client::TrackResult result, std::string_view) {
+        this->localSearchRequest = api::OpenTrackSearch(*this->apiContext, *this->apiLibrary,
+            api::TrackSearch{ filter, mode, static_cast<mc_track_search_order>(sortOrder) },
+            [this, generation, sortOrder, hash](mc_result status, api::TrackResult result, std::string_view) {
                 /* Cancellation cannot retract a completion already queued for dispatch. */
                 if (!generation.IsCurrent()) return;
                 this->localSearchRequest = 0;
@@ -205,7 +205,7 @@ void TrackSearchLayout::Requery() {
                 }
 
                 this->ClearPages();
-                this->resultWindow = std::make_unique<client::TrackResultWindow>(*this->apiContext,
+                this->resultWindow = std::make_unique<api::TrackResultWindow>(*this->apiContext,
                     std::move(result), std::vector<std::string>{ MC_TRACK_FIELD_ID, MC_TRACK_FIELD_TITLE,
                         MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION,
                         MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING },
@@ -224,7 +224,7 @@ void TrackSearchLayout::Requery() {
                 }, std::move(headers), std::move(durations), hash);
                 this->SetSearchTitle(_TSTR(kTrackListOrderByToDisplayKey.at(sortOrder)));
             });
-    } catch (const client::Error& error) {
+    } catch (const api::Error& error) {
         musik::debug::error("TrackSearchLayout", error.what());
     }
 }
@@ -249,7 +249,7 @@ void TrackSearchLayout::ClearPages() {
 
 void TrackSearchLayout::SetViewport(size_t first, size_t last, size_t height) {
     const auto update = this->resultWindow->SetViewport(first, last, height);
-    if (update == client::TrackResultWindow::ViewportUpdate::Changed) {
+    if (update == api::TrackResultWindow::ViewportUpdate::Changed) {
         App::Instance().SetInputPollInterval(kSearchPagePollIntervalMs);
         this->Post(message::LoadTrackSearchPage);
     }
@@ -267,7 +267,7 @@ void TrackSearchLayout::HandlePageStatus(mc_result status) {
     if (status == MC_ERROR_BUSY) {
         this->Debounce(message::LoadTrackSearchPage, 0, 0, kSearchPageRetryMs);
     } else if (status != MC_OK && status != MC_ERROR_CANCELLED) {
-        musik::debug::error("TrackSearchLayout", client::Error(status).what());
+        musik::debug::error("TrackSearchLayout", api::Error(status).what());
     }
 }
 
@@ -299,7 +299,7 @@ void TrackSearchLayout::PlayFromTop() {
 void TrackSearchLayout::PlayResult(size_t row) {
     if (!this->resultWindow || row >= this->resultWindow->Result().Size()) return;
     const auto status = this->apiPlayback.Play(this->resultWindow->Result(), row);
-    if (status != MC_OK) musik::debug::error("TrackSearchLayout", client::Error(status).what());
+    if (status != MC_OK) musik::debug::error("TrackSearchLayout", api::Error(status).what());
 }
 
 void TrackSearchLayout::ProcessMessage(IMessage &message) {

@@ -129,7 +129,7 @@ namespace musik { namespace core { namespace audio {
             void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetPlaying();
             /* The service's construction thread owns API access and teardown. */
-            musik::core::client::Playback CreatePlaybackHandle();
+            musik::core::api::Playback CreatePlaybackHandle();
             void DiscardUnavailableQueue();
 
             musik::core::audio::ITransport& GetTransport() noexcept {

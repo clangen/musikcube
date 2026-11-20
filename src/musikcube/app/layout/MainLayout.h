@@ -109,7 +109,7 @@ namespace musik {
                 MasterLibraryPtr library;
                 bool shortcutsFocused;
                 int syncUpdateCount;
-                std::shared_ptr<musik::core::client::Context> apiContext;
+                std::shared_ptr<musik::core::api::Context> apiContext;
                 UpdateCheck updateCheck;
         };
     }

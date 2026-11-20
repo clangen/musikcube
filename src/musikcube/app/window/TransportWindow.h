@@ -134,7 +134,7 @@ namespace musik {
                 musik::core::ILibraryPtr library;
                 musik::core::audio::ITransport& transport;
                 musik::core::audio::PlaybackService& playback;
-                musik::core::client::Playback apiPlayback;
+                musik::core::api::Playback apiPlayback;
                 musik::core::TrackPtr currentTrack;
                 FocusTarget focus, lastFocus;
                 DisplayCache displayCache;

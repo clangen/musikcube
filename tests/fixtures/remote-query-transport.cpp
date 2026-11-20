@@ -152,7 +152,7 @@ namespace {
     };
     bool checkRemoteAbi() {
         using namespace musik::core;
-        using namespace musik::core::client;
+        using namespace musik::core::api;
 
         Server server(true);
         const auto settings = Preferences::ForComponent(prefs::components::Settings);
@@ -174,7 +174,7 @@ namespace {
         };
 
         std::shared_ptr<const Library> origin;
-        if (!wait([&] { return bool(origin = selection.OpenClientLibrary()); })) return false;
+        if (!wait([&] { return bool(origin = selection.OpenApiLibrary()); })) return false;
 
         TrackResult tracks;
         TrackPage page;
@@ -208,7 +208,7 @@ namespace {
         const auto pending = ReadTracks(context, tracks, range, receive);
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
         selection.LoadDefaultLibrary();
-        const auto local = selection.OpenClientLibrary();
+        const auto local = selection.OpenApiLibrary();
         if (!local) return false;
         QueryTracks(context, *local, TrackQuery{ "" }, receive);
         if (!dispatch(3) || status != MC_OK) return false;
@@ -225,7 +225,7 @@ namespace {
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
         selection.LoadDefaultLibrary();
         std::shared_ptr<const Library> reconnected;
-        if (!wait([&] { return bool(reconnected = selection.OpenClientLibrary()); })) return false;
+        if (!wait([&] { return bool(reconnected = selection.OpenApiLibrary()); })) return false;
         ReadTrack(context, reference, { MC_TRACK_FIELD_TITLE }, receive);
         if (!dispatch(6) || status != MC_ERROR_IO) return false;
 
