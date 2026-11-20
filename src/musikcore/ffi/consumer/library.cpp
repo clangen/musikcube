@@ -124,6 +124,30 @@ mc_result MC_CALL mc_library_save_playlist_async(mc_context *context, const mc_l
     });
 }
 
+mc_result MC_CALL mc_library_rename_playlist_async(mc_context *context, const mc_library *library,
+    int64_t id, mc_string_view name, mc_playlist_write_completion_fn completion, void *data, mc_request_id *request) {
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!request) return MC_ERROR_INVALID_ARGUMENT;
+        *request = 0;
+        if (!context || !library || !completion || id <= 0 || !name.data || !name.length ||
+            std::memchr(name.data, '\0', name.length)) return MC_ERROR_INVALID_ARGUMENT;
+        const auto reader = library->identity->playlists;
+        if (!reader) return MC_ERROR_UNSUPPORTED;
+        return reader->RenamePlaylist(context, id, std::string(name.data, name.length), completion, data, request);
+    });
+}
+
+mc_result MC_CALL mc_library_delete_playlist_async(mc_context *context, const mc_library *library,
+    int64_t id, mc_playlist_write_completion_fn completion, void *data, mc_request_id *request) {
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!request) return MC_ERROR_INVALID_ARGUMENT;
+        *request = 0;
+        if (!context || !library || !completion || id <= 0) return MC_ERROR_INVALID_ARGUMENT;
+        const auto reader = library->identity->playlists;
+        return reader ? reader->DeletePlaylist(context, id, completion, data, request) : MC_ERROR_UNSUPPORTED;
+    });
+}
+
 mc_result MC_CALL mc_library_query_tracks_async(
     mc_context *context, const mc_library *library, const mc_track_query *query, mc_track_query_completion_fn completion,
     void *user_data, mc_request_id *out_request) {

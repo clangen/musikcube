@@ -175,6 +175,13 @@ MC_API mc_result MC_CALL mc_library_save_playlist_async(
     mc_context *context, const mc_library *library, int64_t playlist_id, mc_string_view name,
     const int64_t *track_ids, size_t track_count, mc_playlist_write_completion_fn completion,
     void *user_data, mc_request_id *out_request);
+/* Rename or delete a playlist in the supplied library. */
+MC_API mc_result MC_CALL mc_library_rename_playlist_async(
+    mc_context *context, const mc_library *library, int64_t playlist_id, mc_string_view name,
+    mc_playlist_write_completion_fn completion, void *user_data, mc_request_id *out_request);
+MC_API mc_result MC_CALL mc_library_delete_playlist_async(
+    mc_context *context, const mc_library *library, int64_t playlist_id,
+    mc_playlist_write_completion_fn completion, void *user_data, mc_request_id *out_request);
 MC_API size_t MC_CALL mc_track_result_get_count(const mc_track_result *tracks);
 /* Zero for an invalid row. */
 MC_API int64_t MC_CALL mc_track_result_get_id(const mc_track_result *tracks, size_t row);

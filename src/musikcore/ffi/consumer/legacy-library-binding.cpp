@@ -21,6 +21,7 @@
 #include <musikcore/library/query/GetPlaylistQuery.h>
 #include <musikcore/library/query/CategoryListQuery.h>
 #include <musikcore/library/query/SavePlaylistQuery.h>
+#include <musikcore/library/query/DeletePlaylistQuery.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
@@ -75,6 +76,13 @@ namespace {
     mc_result collectPlaylistId(query::SavePlaylistQuery& command, std::unique_ptr<int64_t>& output) {
         output = std::make_unique<int64_t>(std::max(int64_t{0}, command.GetPlaylistId()));
         return MC_OK;
+    }
+
+    auto collectDeletedPlaylistId(int64_t id) {
+        return [id](query::DeletePlaylistQuery&, std::unique_ptr<int64_t>& output) {
+            output = std::make_unique<int64_t>(id);
+            return MC_OK;
+        };
     }
 
     auto deliverPlaylistWrite(mc_playlist_write_completion_fn completion) {
@@ -164,6 +172,18 @@ namespace {
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitLocal<int64_t>(context, this->library, savePlaylistCommand(this->library, id, name, ids),
                 collectPlaylistId, deliverPlaylistWrite(completion), data, request);
+        }
+
+        mc_result RenamePlaylist(mc_context* context, int64_t id, std::string name,
+            mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
+            return submitLocal<int64_t>(context, this->library, query::SavePlaylistQuery::Rename(this->library, id, name),
+                collectPlaylistId, deliverPlaylistWrite(completion), data, request);
+        }
+
+        mc_result DeletePlaylist(mc_context* context, int64_t id,
+            mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
+            return submitLocal<int64_t>(context, this->library, std::make_shared<query::DeletePlaylistQuery>(this->library, id),
+                collectDeletedPlaylistId(id), deliverPlaylistWrite(completion), data, request);
         }
 
     private:
@@ -263,6 +283,20 @@ namespace {
             return submitRemote<int64_t>(context, this->library, this->generation,
                 savePlaylistCommand(this->library, id, name, ids), collectPlaylistId,
                 deliverPlaylistWrite(completion), data, request);
+        }
+
+        mc_result RenamePlaylist(mc_context* context, int64_t id, std::string name,
+            mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
+            return submitRemote<int64_t>(context, this->library, this->generation,
+                query::SavePlaylistQuery::Rename(this->library, id, name),
+                collectPlaylistId, deliverPlaylistWrite(completion), data, request);
+        }
+
+        mc_result DeletePlaylist(mc_context* context, int64_t id,
+            mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
+            return submitRemote<int64_t>(context, this->library, this->generation,
+                std::make_shared<query::DeletePlaylistQuery>(this->library, id),
+                collectDeletedPlaylistId(id), deliverPlaylistWrite(completion), data, request);
         }
 
         mc_result ReadPage(mc_context *context, std::vector<int64_t> ids,

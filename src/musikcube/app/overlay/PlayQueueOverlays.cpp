@@ -719,63 +719,6 @@ void PlayQueueOverlays::ShowPlaylistConfirmation(const std::string& messageKey, 
     App::Overlays().Push(dialog);
 }
 
-void PlayQueueOverlays::ShowRenamePlaylistOverlay(ILibraryPtr library) {
-    auto playlistsCallback = [library](std::shared_ptr<CategoryListQuery> playlistQuery) {
-        auto result = playlistQuery->GetResult();
-
-        if (!result->Count()) {
-            showNoPlaylistsDialog();
-            return;
-        }
-
-        auto adapter = std::make_shared<Adapter>();
-        adapter->SetSelectable(true);
-        addPlaylistsToAdapter(adapter, result);
-
-        showPlaylistListOverlay(
-            _TSTR("playqueue_overlay_rename_playlist_title"),
-            adapter,
-            [library, result](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                if (index != ListWindow::NO_SELECTION) {
-                    int64_t playlistId = (*result)[index]->GetId();
-                    const std::string playlistName = (*result)[index]->ToString();
-                    ShowRenamePlaylistOverlay(library, playlistId, playlistName);
-                }
-            });
-    };
-
-    queryPlaylists(library, playlistsCallback);
-}
-
-void PlayQueueOverlays::ShowDeletePlaylistOverlay(ILibraryPtr library) {
-    auto playlistsCallback = [library](std::shared_ptr<CategoryListQuery> playlistQuery) {
-        auto result = playlistQuery->GetResult();
-
-        if (!result->Count()) {
-            showNoPlaylistsDialog();
-            return;
-        }
-
-        auto adapter = std::make_shared<Adapter>();
-        adapter->SetSelectable(true);
-        addPlaylistsToAdapter(adapter, result);
-
-        showPlaylistListOverlay(
-            _TSTR("playqueue_overlay_delete_playlist_title"),
-            adapter,
-            [library, result]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                if (index != ListWindow::NO_SELECTION) {
-                    int64_t playlistId = (*result)[index]->GetId();
-                    const std::string playlistName = (*result)[index]->ToString();
-                    ShowConfirmDeletePlaylistOverlay(library, playlistName, playlistId);
-                }
-            });
-    };
-
-    queryPlaylists(library, playlistsCallback);
-}
-
 void PlayQueueOverlays::ShowCreatePlaylistOverlay(
     IMessageQueue& queue, ILibraryPtr library, QueryCallback callback)
 {

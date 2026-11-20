@@ -36,6 +36,10 @@ struct PlaylistReader {
     virtual mc_result ListPlaylists(mc_context*, mc_playlist_list_completion_fn, void*, mc_request_id*) const = 0;
     virtual mc_result SavePlaylist(mc_context*, int64_t, std::string, std::vector<int64_t>,
         mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;
+    virtual mc_result RenamePlaylist(mc_context*, int64_t, std::string,
+        mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;
+    virtual mc_result DeletePlaylist(mc_context*, int64_t,
+        mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;
 };
 
 struct LibraryIdentity {

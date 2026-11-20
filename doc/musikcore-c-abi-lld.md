@@ -740,6 +740,8 @@ legacy list for actions that still require it.
   The Now Playing picker lists bound-library playlists and saves or overwrites
   them from an ordered queue snapshot. The indexed-query test verifies the
   listed ID and name and reloads the overwritten queue with duplicates.
+  The Now Playing picker also renames and deletes bound-library playlists.
+  The headless TUI verifies the updated name and removal through the picker.
   Atomic batch edits are deferred beyond parity.
 - [ ] **PUB-006** Add indexer paths, commands, snapshots, progress, and terminal
   events.

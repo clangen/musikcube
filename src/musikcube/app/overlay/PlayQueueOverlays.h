@@ -83,16 +83,10 @@ namespace musik {
                     std::function<void()> accepted);
 
                 static void ShowRenamePlaylistOverlay(
-                    musik::core::ILibraryPtr library);
-
-                static void ShowRenamePlaylistOverlay(
                     musik::core::ILibraryPtr library,
                     const int64_t playlistId,
                     const std::string& old,
                     QueryCallback callback = QueryCallback());
-
-                static void ShowDeletePlaylistOverlay(
-                    musik::core::ILibraryPtr library);
 
                 static void ShowConfirmDeletePlaylistOverlay(
                     musik::core::ILibraryPtr library,

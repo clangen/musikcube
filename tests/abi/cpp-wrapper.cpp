@@ -502,6 +502,36 @@ namespace {
             selection->LoadDefaultLibrary();
             if (!ignored) return false;
 
+            /* Rename and delete the selected playlist, leaving the active queue alone. */
+            constexpr auto renamedName = "Renamed Queue Fixture";
+            wake = query_test_wakeup_count();
+            mc_result mutation = MC_ERROR_INTERNAL;
+            const auto mutated = [&](mc_result status, int64_t id) {
+                mutation = id == playlistId ? status : MC_ERROR_NOT_FOUND;
+            };
+            api::RenamePlaylist(context, *source, playlistId, renamedName, mutated);
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || mutation != MC_OK) return false;
+            wake = query_test_wakeup_count();
+            listed = false;
+            api::ListPlaylists(context, *source, [&](mc_result status, auto entries) {
+                listed = status == MC_OK && std::any_of(entries.begin(), entries.end(), [&](const auto& entry) {
+                    return entry.id == playlistId && entry.name == renamedName;
+                });
+            });
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !listed) return false;
+            wake = query_test_wakeup_count();
+            mutation = MC_ERROR_INTERNAL;
+            api::DeletePlaylist(context, *source, playlistId, mutated);
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || mutation != MC_OK ||
+                service.Count() != savedIds.size() + 1) return false;
+            wake = query_test_wakeup_count();
+            bool removed = false;
+            api::ListPlaylists(context, *source, [&](mc_result status, auto entries) {
+                removed = status == MC_OK && std::none_of(entries.begin(), entries.end(),
+                    [&](const auto& entry) { return entry.id == playlistId; });
+            });
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !removed) return false;
+
             mc_result otherThread = MC_OK;
             std::optional<api::Playback> otherHandle;
             std::thread caller([&] {

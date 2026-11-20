@@ -52,6 +52,8 @@ namespace musik {
             public cursespp::LayoutBase,
             public sigslot::has_slots<>
         {
+            enum class PlaylistAction { Load, Save, Rename, Delete };
+
             public:
                 DELETE_CLASS_DEFAULTS(NowPlayingLayout)
 
@@ -80,8 +82,10 @@ namespace musik {
                 /* callbacks */
                 cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
                 void OnPlaylistSelected(int64_t playlistId);
-                void ShowPlaylistPicker(bool save);
+                void ShowPlaylistPicker(PlaylistAction action);
                 void SaveQueueToPlaylist(const musik::core::api::PlaylistEntry& playlist);
+                void RenamePlaylist(const musik::core::api::PlaylistEntry& playlist);
+                void DeletePlaylist(const musik::core::api::PlaylistEntry& playlist);
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::api::Playback apiPlayback;

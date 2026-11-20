@@ -256,15 +256,25 @@ void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
     }
 }
 
-void NowPlayingLayout::ShowPlaylistPicker(bool save) {
+void NowPlayingLayout::ShowPlaylistPicker(PlaylistAction action) {
     if (!this->apiLibrary) return;
     const auto ticket = this->playlistGeneration.Capture();
     try {
-        const auto title = save ? "playqueue_overlay_save_playlist_title" : "playqueue_overlay_load_playlist_title";
-        PlayQueueOverlays::ShowPlaylistPicker(*this->context, *this->apiLibrary, _TSTR(title), save, ticket,
-            [this, save](const api::PlaylistEntry& playlist) {
-                if (save) this->SaveQueueToPlaylist(playlist);
-                else this->OnPlaylistSelected(playlist.id);
+        const char* title = nullptr;
+        switch (action) {
+            case PlaylistAction::Load: title = "playqueue_overlay_load_playlist_title"; break;
+            case PlaylistAction::Save: title = "playqueue_overlay_save_playlist_title"; break;
+            case PlaylistAction::Rename: title = "playqueue_overlay_rename_playlist_title"; break;
+            case PlaylistAction::Delete: title = "playqueue_overlay_delete_playlist_title"; break;
+        }
+        PlayQueueOverlays::ShowPlaylistPicker(*this->context, *this->apiLibrary, _TSTR(title),
+            action == PlaylistAction::Save, ticket, [this, action](const api::PlaylistEntry& playlist) {
+                switch (action) {
+                    case PlaylistAction::Load: this->OnPlaylistSelected(playlist.id); break;
+                    case PlaylistAction::Save: this->SaveQueueToPlaylist(playlist); break;
+                    case PlaylistAction::Rename: this->RenamePlaylist(playlist); break;
+                    case PlaylistAction::Delete: this->DeletePlaylist(playlist); break;
+                }
             });
     }
     catch (const api::Error& error) {
@@ -305,21 +315,53 @@ void NowPlayingLayout::SaveQueueToPlaylist(const api::PlaylistEntry& playlist) {
     }
 }
 
+void NowPlayingLayout::RenamePlaylist(const api::PlaylistEntry& playlist) {
+    const auto ticket = this->playlistGeneration.Capture();
+    PlayQueueOverlays::ShowPlaylistNameOverlay(_TSTR("playqueue_overlay_new_playlist_name_title"), playlist.name,
+        [this, ticket, id = playlist.id](const std::string& name) {
+            if (!ticket.IsCurrent()) return;
+            try {
+                api::RenamePlaylist(*this->context, *this->apiLibrary, id, name, [](mc_result status, int64_t) {
+                    if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not rename playlist");
+                });
+            }
+            catch (const api::Error& error) {
+                musik::debug::error("NowPlayingLayout", error.what());
+            }
+        });
+}
+
+void NowPlayingLayout::DeletePlaylist(const api::PlaylistEntry& playlist) {
+    const auto ticket = this->playlistGeneration.Capture();
+    PlayQueueOverlays::ShowPlaylistConfirmation("playqueue_overlay_confirm_delete_message", playlist.name,
+        [this, ticket, id = playlist.id] {
+            if (!ticket.IsCurrent()) return;
+            try {
+                api::DeletePlaylist(*this->context, *this->apiLibrary, id, [](mc_result status, int64_t) {
+                    if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not delete playlist");
+                });
+            }
+            catch (const api::Error& error) {
+                musik::debug::error("NowPlayingLayout", error.what());
+            }
+        });
+}
+
 bool NowPlayingLayout::KeyPress(const std::string& key) {
     if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistLoad, key)) {
-        this->ShowPlaylistPicker(false);
+        this->ShowPlaylistPicker(PlaylistAction::Load);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistSave, key)) {
-        this->ShowPlaylistPicker(true);
+        this->ShowPlaylistPicker(PlaylistAction::Save);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistRename, key)) {
-        PlayQueueOverlays::ShowRenamePlaylistOverlay(this->library);
+        this->ShowPlaylistPicker(PlaylistAction::Rename);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistDelete, key)) {
-        PlayQueueOverlays::ShowDeletePlaylistOverlay(this->library);
+        this->ShowPlaylistPicker(PlaylistAction::Delete);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueueClear, key)) {

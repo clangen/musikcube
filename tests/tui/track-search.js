@@ -176,7 +176,7 @@ async function checkTrackSearch(runtime, database, screenshots,
       const queuedTrack = windows ? DISTANT_TRACK : FILTERED_LAST;
       await terminal.expect(queuedTrack, { absent: 'tracks (sorted by' });
 
-      const playlistName = `Queue fixture ${Date.now()}`;
+      const playlistName = `Fixture ${Date.now()}`;
       terminal.send('\x1bs');
       await terminal.expect('save playlist');
       terminal.send('\r');
@@ -191,6 +191,25 @@ async function checkTrackSearch(runtime, database, screenshots,
       await terminal.expect(playlistName);
       terminal.send(END + '\r');
       await terminal.expect(queuedTrack, { absent: 'load playlist' });
+
+      terminal.send('\x1br');
+      await terminal.expect('rename playlist');
+      terminal.send('\r');
+      await terminal.expect('new playlist name');
+      terminal.send(END + ' revised\r');
+      await terminal.expect('play queue', { absent: 'new playlist name' });
+
+      terminal.send('\x1bx');
+      await terminal.expect(playlistName + ' revised');
+      /* The async picker can paint before the terminal loop switches input focus. */
+      await new Promise(resolve => setTimeout(resolve, 150));
+      terminal.send(END + '\r');
+      await terminal.expect('are you sure you want to delete');
+      terminal.send('\r');
+      await terminal.expect('play queue', { absent: 'are you sure you want to delete' });
+      terminal.send('\x1bl');
+      await terminal.expect("you haven't saved any playlists yet!");
+      terminal.send('\r');
     }
     terminal.send('\x04');
     await terminal.expectExit();

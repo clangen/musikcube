@@ -304,6 +304,13 @@ namespace musik { namespace core { namespace api {
     using PlaylistListCompletion = std::function<void(mc_result, std::vector<PlaylistEntry>)>;
     using PlaylistWriteCompletion = std::function<void(mc_result, int64_t)>;
 
+    namespace detail {
+        inline void MC_CALL completePlaylistWrite(mc_result status, int64_t id, void* data) {
+            const std::unique_ptr<PlaylistWriteCompletion> callback(static_cast<PlaylistWriteCompletion*>(data));
+            (*callback)(status, id);
+        }
+    }
+
     inline mc_request_id ListPlaylists(Context& context, const Library& library, PlaylistListCompletion completion) {
         return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_list_playlists_async(context.Get(), library.Get(),
@@ -324,10 +331,23 @@ namespace musik { namespace core { namespace api {
         return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_save_playlist_async(context.Get(), library.Get(), id, {name.data(), name.size()},
                 tracks.data(), tracks.size(),
-                [](mc_result status, int64_t id, void* data) {
-                    std::unique_ptr<PlaylistWriteCompletion> callback(static_cast<PlaylistWriteCompletion*>(data));
-                    (*callback)(status, id);
-                }, state, request);
+                detail::completePlaylistWrite, state, request);
+        });
+    }
+
+    inline mc_request_id RenamePlaylist(Context& context, const Library& library, int64_t id,
+        std::string_view name, PlaylistWriteCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_rename_playlist_async(context.Get(), library.Get(), id, {name.data(), name.size()},
+                detail::completePlaylistWrite, state, request);
+        });
+    }
+
+    inline mc_request_id DeletePlaylist(Context& context, const Library& library, int64_t id,
+        PlaylistWriteCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_delete_playlist_async(context.Get(), library.Get(), id,
+                detail::completePlaylistWrite, state, request);
         });
     }
 
