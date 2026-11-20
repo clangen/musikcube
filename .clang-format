@@ -1,0 +1,76 @@
+# C/C++ formatting, tested with Apple clang-format 21. Requires clang-format 14+.
+# Run on selected files; adoption is incremental. Review namespace closing
+# spacing: CompactNamespaces emits }}, while repository style requires } }.
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++17
+
+# Match existing indentation without imposing a new line-length limit.
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 0
+AlignAfterOpenBracket: DontAlign
+# Use continuation indentation instead of aligning under an expression. Inside
+# calls, clang-format still adds an extra level to ternary branches; review those
+# manually to keep ? and : one continuation level beyond the statement.
+AlignOperands: DontAlign
+BreakBeforeTernaryOperators: true
+# Start multiline string arguments on a new line instead of aligning their
+# continuation beneath a string that follows the function name.
+AlwaysBreakBeforeMultilineStrings: true
+IndentAccessModifiers: true
+IndentCaseLabels: true
+NamespaceIndentation: All
+CompactNamespaces: true
+FixNamespaceComments: false
+
+# Keep opening braces attached, with else/catch on their own lines. Review
+# multiline function/method/constructor definitions manually: their opening
+# brace belongs on a new line, which AfterFunction cannot express conditionally.
+# Multiline class inheritance also needs a manually placed opening brace.
+# With ColumnLimit: 0, also review manually wrapped conditions: MultiLine does
+# not consistently recognize preserved input line breaks.
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterControlStatement: MultiLine
+  BeforeElse: true
+  BeforeCatch: true
+  SplitEmptyFunction: false
+InsertBraces: true
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+# Review braced cases manually: break; belongs after the closing brace on its
+# own line, aligned with that brace. clang-format otherwise emits } break;.
+AllowShortFunctionsOnASingleLine: InlineOnly
+# Compaction combined with InsertBraces produces malformed layout in clang-format
+# 21 when a lambda contains unbraced control flow.
+AllowShortLambdasOnASingleLine: None
+
+# Existing constructor lists put the colon and each comma at the line start.
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerIndentWidth: 0
+PackConstructorInitializers: Never
+
+# Prefer type-attached pointers/references where legacy spacing is mixed.
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+SpaceAfterTemplateKeyword: false
+SpaceAfterCStyleCast: true
+SpacesInContainerLiterals: true
+Cpp11BracedListStyle: false
+SpaceBeforeCpp11BracedList: true
+
+# Preserve include dependencies, deliberate comment layout, and phase spacing.
+SortIncludes: Never
+IncludeBlocks: Preserve
+SortUsingDeclarations: Never
+ReflowComments: false
+MaxEmptyLinesToKeep: 2
+SeparateDefinitionBlocks: Leave
+EmptyLineBeforeAccessModifier: Always
+EmptyLineAfterAccessModifier: Never

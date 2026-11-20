@@ -13,6 +13,16 @@
 
 ## Coding guidelines
 
+- Always use braces for control-flow bodies, including single-statement `if`, `else`, `for`, and `while` bodies. Do not put an unbraced statement after a condition or loop.
+- For function, method, and constructor definitions, attach the opening brace when the signature fits on one line; put it on its own line when the signature spans multiple lines. Keep constructor initializer lists between the signature and opening brace. Review this distinction manually because clang-format does not support conditional function-brace placement.
+- For class definitions with a multiline inheritance list, put the opening brace on its own line. Do the same for control-flow statements whose condition spans multiple lines; keep the brace attached for single-line conditions. Review class braces manually because clang-format does not support conditional class-brace placement.
+- Put spaces before and inside braced initializers, such as `MatchType matchType { MatchType::Substring };`.
+- Put a space after C-style casts, such as `(int64_t) 0`.
+- Put `break;` statements on their own lines. When a case has a braced block, put its `break;` after the closing brace at the same indentation as that brace. Preserve this manually; clang-format joins them onto one line.
+- For multiline ternary expressions, put `?` and `:` at the start of their lines and indent them one continuation level (four spaces) beyond the statement, rather than aligning them under the condition. Review nested function-call arguments manually because clang-format adds another indentation level there.
+- Use continuation indentation for multiline call arguments and adjacent string literals, rather than aligning them beneath an earlier argument. In a compound condition, move a long call to its own continuation line before wrapping its arguments.
+- Organize class declarations into `public`, `protected`, then `private` sections, omitting empty sections. Within each access section, order declarations as types, constructors, destructor, operators, member functions, then instance variables. Public instance variables should be very rare. Separate each nonempty group and each access section with a blank line; section-label comments are optional. Clang-format does not enforce declaration order, so preserve this structure when editing classes.
+- Use the root `.clang-format` for incremental C/C++ formatting of selected files. Review the diff, including inserted braces. Preserve the spaced nested-namespace closings required below; clang-format currently compacts those closings. Its indented-access-label setting also adds an extra level to structs without explicit access labels.
 - Reuse existing helpers and follow the surrounding code's conventions. Introduce an abstraction when it simplifies real callers.
 - Write nested C++ namespace declarations on one line, such as `namespace musik { namespace core { namespace audio {`. Indent the body once and close with `} } }` on one line.
 - Use PascalCase for C++ member functions, including private members. Follow the surrounding code for file-local helpers, which commonly use lower camelCase. Keep exported C ABI functions in snake_case.
