@@ -75,9 +75,6 @@ namespace musik { namespace core { namespace runtime {
         private:
             typedef std::weak_ptr<IMessageTarget> IWeakMessageTarget;
 
-            void Enqueue(IMessagePtr message, int64_t delayMs);
-            void Dispatch(IMessage* message);
-
             struct EnqueuedMessage {
                 IMessagePtr message;
                 std::chrono::milliseconds time;
@@ -89,6 +86,11 @@ namespace musik { namespace core { namespace runtime {
                     return l.lock().get() < r.lock().get();
                 }
             };
+
+            void Enqueue(IMessagePtr message, int64_t delayMs);
+            void Dispatch(IMessage* message);
+            void DetachMessages(std::list<EnqueuedMessage*>& removed,
+                std::list<EnqueuedMessage*>& source, IMessageTarget* target, int type);
 
             std::mutex queueMutex;
             std::list<EnqueuedMessage*> queue;

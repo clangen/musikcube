@@ -153,19 +153,17 @@ void MessageQueue::Dispatch() {
     for (auto entry : discarded) {
         delete entry;
     }
-    while (!this->dispatch.empty()) {
-        auto* entry = this->dispatch.front();
-        this->dispatch.pop_front();
-        bool deliver;
+    while (true) {
+        EnqueuedMessage* entry;
         {
             LockT lock(this->queueMutex);
-            const auto target = entry->message->Target();
-            deliver = !target || this->targets.find(target) != this->targets.end();
+            if (this->dispatch.empty()) {
+                break;
+            }
+            entry = this->dispatch.front();
+            this->dispatch.pop_front();
         }
-        /* An earlier callback can unregister another target in the current batch. */
-        if (deliver) {
-            this->Dispatch(entry->message.get());
-        }
+        this->Dispatch(entry->message.get());
         delete entry;
     }
 
@@ -184,16 +182,23 @@ void MessageQueue::Register(IMessageTarget* target) {
 }
 
 void MessageQueue::Unregister(IMessageTarget* target) {
-    bool shouldRemove = false;
+    std::list<EnqueuedMessage*> removed;
     {
         LockT lock(this->queueMutex);
-        if (this->targets.find(target) != this->targets.end()) {
-            this->targets.erase(target);
-            shouldRemove = true;
+        if (!this->targets.erase(target)) {
+            return;
         }
+
+        /* Clear both lists before the address can be registered again. */
+        this->DetachMessages(removed, this->queue, target, -1);
+        this->DetachMessages(removed, this->dispatch, target, -1);
+        this->nextMessageTime.store(this->queue.empty() ? -1 : this->queue.front()->time.count());
+        this->waitForDispatch.notify_all();
     }
-    if (shouldRemove) {
-        this->Remove(target);
+
+    /* Payload destruction can reenter the queue. */
+    for (auto entry : removed) {
+        delete entry;
     }
 }
 
@@ -216,17 +221,23 @@ void MessageQueue::UnregisterForBroadcasts(IMessageTarget* target) {
     }
 }
 
+void MessageQueue::DetachMessages(std::list<EnqueuedMessage*>& removed,
+    std::list<EnqueuedMessage*>& source, IMessageTarget* target, int type)
+{
+    for (auto it = source.begin(); it != source.end();) {
+        auto entry = it++;
+        const auto& current = (*entry)->message;
+        if (current->Target() == target && (type == -1 || type == current->Type())) {
+            removed.splice(removed.end(), source, entry);
+        }
+    }
+}
+
 int MessageQueue::Remove(IMessageTarget* target, int type) {
     std::list<EnqueuedMessage*> removed;
     {
         LockT lock(this->queueMutex);
-        for (auto it = this->queue.begin(); it != this->queue.end();) {
-            auto entry = it++;
-            const auto& current = (*entry)->message;
-            if (current->Target() == target && (type == -1 || type == current->Type())) {
-                removed.splice(removed.end(), this->queue, entry);
-            }
-        }
+        this->DetachMessages(removed, this->queue, target, type);
         this->nextMessageTime.store(this->queue.empty() ? -1 : this->queue.front()->time.count());
         this->waitForDispatch.notify_all();
     }

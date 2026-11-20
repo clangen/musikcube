@@ -139,6 +139,21 @@ namespace {
         CHECK(first.seen.size() == 1 && second.seen.empty() && released == 1);
         queue.Post(std::make_shared<TrackedMessage>(&second, 3, [&] { ++released; }));
         CHECK(released == 2 && !queue.Contains(&second));
+
+        queue.Register(&second);
+        first.action = [&](IMessage&) {
+            queue.Unregister(&second);
+            queue.Register(&second);
+            queue.Post(Message::Create(&second, 6));
+        };
+        queue.Post(Message::Create(&first, 4));
+        queue.Post(std::make_shared<TrackedMessage>(&second, 5, [&] {
+            ++released;
+        }));
+        queue.Dispatch();
+        CHECK(second.seen.empty() && released == 3);
+        queue.Dispatch();
+        CHECK(second.seen.size() == 1 && second.seen.front().type == 6);
         return true;
     }
 
