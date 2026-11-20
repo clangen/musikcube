@@ -18,7 +18,9 @@ namespace {
     /* Delivers the indexer signal to the fixture's dispatcher. Neither copyable nor movable. */
     class IndexCompletion final : public IMessageTarget, public sigslot::has_slots<> {
     public:
-        IndexCompletion(MessageQueue& queue, IIndexer& indexer) : queue(queue) {
+        IndexCompletion(MessageQueue& queue, IIndexer& indexer, int expectedScanned)
+        : queue(queue)
+        , expectedScanned(expectedScanned) {
             this->queue.Register(this);
             indexer.Finished.connect(this, &IndexCompletion::OnFinished);
         }
@@ -40,15 +42,23 @@ namespace {
         void ProcessMessage(IMessage&) override { this->finished = true; }
 
     private:
-        void OnFinished(int) { this->queue.Post(Message::Create(this, 0, 0, 0)); }
+        void OnFinished(int scanned) {
+            /* A database upgrade may have already scheduled an empty scan. Wait
+            for the scan that includes the fixture media instead of accepting
+            the first generic Finished notification. */
+            if (scanned >= this->expectedScanned) {
+                this->queue.Post(Message::Create(this, 0, 0, 0));
+            }
+        }
 
         MessageQueue& queue;
+        int expectedScanned;
         bool finished = false;
     };
 
     bool seed(MessageQueue& queue, const ILibraryPtr& library, const char* media, int64_t expected) {
         auto& indexer = *library->Indexer();
-        IndexCompletion completion(queue, indexer);
+        IndexCompletion completion(queue, indexer, static_cast<int>(expected));
         indexer.AddPath(media);
         indexer.Schedule(IIndexer::SyncType::Local);
 

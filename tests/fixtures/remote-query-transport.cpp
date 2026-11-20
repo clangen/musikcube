@@ -13,6 +13,7 @@
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/musikcore.hpp>
 #include <musikcore/net/WebSocketClient.h>
+#include <musikcore/plugin/Plugins.h>
 #include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -200,10 +201,14 @@ namespace {
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
         settings->SetBool(prefs::keys::SaveSessionOnExit, false);
+        plugin::Init();
         runtime::MessageQueue libraryQueue;
         LibraryFactory::Initialize(libraryQueue);
         struct Shutdown {
-            ~Shutdown() { LibraryFactory::Shutdown(); }
+            ~Shutdown() {
+                LibraryFactory::Shutdown();
+                plugin::Shutdown();
+            }
         } shutdown;
 
         const auto master = std::make_shared<library::MasterLibrary>();
@@ -290,6 +295,7 @@ namespace {
             });
         if (!server.ReleaseHeld(false) || !dispatch(7) || status != MC_OK || tracks.Size() != 3 ||
             tracks.Id(0) != 42 || tracks.Id(1) != 17 || tracks.Id(2) != 42 ||
+            tracks.AlbumDurationSeconds(0) != 0 ||
             playback.ReplaceQueue(tracks) != MC_OK ||
             service.Count() != 3 || service.GetTrackList()->GetId(2) != 42) return false;
         if (playback.ClearQueue() != MC_OK) return false;

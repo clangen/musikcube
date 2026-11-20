@@ -110,15 +110,22 @@ namespace {
 
     mc_result makeOrderedResult(query::TrackListQueryBase& command,
         const std::shared_ptr<const LibraryIdentity>& identity, std::unique_ptr<mc_track_result>& output) {
+        /* Some legacy queries return fresh shared owners from their accessors. */
+        /* Retain each owner before borrowing its storage for conversion. */
+        const auto rows = command.GetResult();
+        const auto headers = command.GetHeaders();
+        const auto durations = command.GetDurations();
+        if (!rows || !headers || !durations) return MC_ERROR_IO;
+
         auto result = std::make_shared<TrackResultData>();
         result->library = identity;
-        result->ids = command.GetResult()->GetIds();
+        result->ids = rows->GetIds();
         result->albumStarts.resize(result->ids.size());
-        for (const auto row : *command.GetHeaders()) {
+        for (const auto row : *headers) {
             if (row >= result->ids.size()) return MC_ERROR_IO;
             result->albumStarts[row] = true;
         }
-        for (const auto& album : *command.GetDurations()) {
+        for (const auto& album : *durations) {
             if (album.first >= result->ids.size()) return MC_ERROR_IO;
             result->albumDurations.emplace(album.first, album.second);
         }
@@ -294,13 +301,16 @@ namespace {
                     auto result = std::make_shared<TrackResultData>();
                     result->library = identity;
                     const auto rows = search.GetResult();
+                    const auto headers = search.GetHeaders();
+                    const auto durations = search.GetDurations();
+                    if (!rows || !headers || !durations) return MC_ERROR_IO;
                     for (size_t i = 0; i < rows->Count(); ++i) result->ids.push_back(rows->GetId(i));
                     result->albumStarts.resize(result->ids.size());
-                    for (const auto row : *search.GetHeaders()) {
+                    for (const auto row : *headers) {
                         if (row >= result->ids.size()) return MC_ERROR_IO;
                         result->albumStarts[row] = true;
                     }
-                    for (const auto &album : *search.GetDurations()) {
+                    for (const auto &album : *durations) {
                         if (album.first >= result->ids.size()) return MC_ERROR_IO;
                         result->albumDurations.emplace(album.first, album.second);
                     }

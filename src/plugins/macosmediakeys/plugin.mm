@@ -77,10 +77,10 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
             this->mediaKeys = [[MediaKeys alloc] init];
             if ([this->mediaKeys register]) {
                 [this->mediaKeys setKeyProcessor: this];
-                debug->Info(TAG, "listening to media keys");
+                if (debug) debug->Info(TAG, "listening to media keys");
             }
             else {
-                debug->Error(TAG, "failed to register media keys listener");
+                if (debug) debug->Error(TAG, "failed to register media keys listener");
                 this->Unregister();
             }
         }
@@ -95,7 +95,7 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
                 [this->mediaKeys unregister];
                 [this->mediaKeys release];
                 this->mediaKeys = nullptr;
-                debug->Info(TAG, "unregistered media keys");
+                if (debug) debug->Info(TAG, "unregistered media keys");
             }
         }
 

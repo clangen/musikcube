@@ -12,6 +12,7 @@
 #include <musikcore/library/query/CategoryListQuery.h>
 #include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
+#include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <algorithm>
@@ -701,10 +702,15 @@ namespace {
 
 int main(int argc, char **argv) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
+    /* Exercise production bindings with the same plugin services as the apps. */
+    musik::core::plugin::Init();
     musik::core::runtime::MessageQueue libraryQueue;
     musik::core::LibraryFactory::Initialize(libraryQueue);
-    struct ShutdownLibraries {
-        ~ShutdownLibraries() { musik::core::LibraryFactory::Shutdown(); }
+    struct ShutdownRuntime {
+        ~ShutdownRuntime() {
+            musik::core::LibraryFactory::Shutdown();
+            musik::core::plugin::Shutdown();
+        }
     } shutdown;
 #endif
     try {
