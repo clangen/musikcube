@@ -1,3 +1,7 @@
+/* End-to-end TUI scenarios. Launch musikcube in a pseudo-terminal, send real
+   keystrokes, and check visible search, queue, playlist, and browse behavior.
+   Uses an isolated indexed catalog and records selected interaction timings. */
+
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const { dirname, join, resolve } = require('node:path');
@@ -22,6 +26,7 @@ const HOME = '\x1bOH';
 const PAGE_DOWN = '\x1b[6~';
 const DISTANT_PAGE = 12;
 
+/* Stage the production app/assets with only the plugins required to index the generated fixture. */
 function stageRuntime(runtime, binaryDir) {
   /* Load only the plugins needed to index the fixture. */
   for (const name of fs.readdirSync(binaryDir)) {
@@ -42,6 +47,7 @@ function stageRuntime(runtime, binaryDir) {
   }
 }
 
+/* Run the production indexer with a retained log and resolve its generated database path. */
 async function seedLibrary(runtime, build, tracks) {
   const log = join(runtime, 'indexer.log');
   const output = fs.openSync(log, 'w');
@@ -71,6 +77,7 @@ async function seedLibrary(runtime, build, tracks) {
   return database;
 }
 
+/* Stage the optional ABI-only search pilot beside its experimental shared library. */
 function stagePilot(runtime, binaryDir) {
   fs.mkdirSync(runtime);
   const library = process.platform === 'darwin' ? 'libmusikcore-abi0.dylib' : 'libmusikcore-abi0.so';
@@ -78,6 +85,7 @@ function stagePilot(runtime, binaryDir) {
   fs.copyFileSync(join(binaryDir, 'musikcube_abi_search_pilot'), join(runtime, 'musikcube'));
 }
 
+/* Drive search/paging and production queue/playlist/browse workflows, measuring only selected interactions. */
 async function checkTrackSearch(runtime, database, screenshots,
   { pilot = false, windows = false, cache } = {}) {
   const fixture = dirname(dirname(dirname(database)));
@@ -102,12 +110,18 @@ async function checkTrackSearch(runtime, database, screenshots,
   }
 
   const terminal = new Terminal(runtime, env, 18, 140);
+
+  /* Wait for the final intended row before capturing; an earlier matching
+     header alone could yield an SVG of an incompletely repainted viewport. */
   const capture = async (name, lastVisibleTrack) => {
     if (!screenshots) return;
     await terminal.expect(lastVisibleTrack);
     fs.writeFileSync(join(screenshots, `${name}.svg`), terminal.screen.svg());
   };
+
   try {
+    /* Establish startup readiness before timing search, otherwise process and
+       plugin initialization would contaminate the search-open measurement. */
     await terminal.expect(pilot ? 'Track Search Pilot' : 'playback is stopped');
     const ready = terminal.processStats();
     let started = performance.now();
@@ -176,6 +190,8 @@ async function checkTrackSearch(runtime, database, screenshots,
       const queuedTrack = windows ? DISTANT_TRACK : FILTERED_LAST;
       await terminal.expect(queuedTrack, { absent: 'tracks (sorted by' });
 
+      /* Save the queue, then add a track from Search. Reloading must show both
+         writes in order, even though they came through different UI paths. */
       const playlistName = `Fixture ${Date.now()}`;
       terminal.send('\x1bs');
       await terminal.expect('save playlist');
@@ -211,6 +227,8 @@ async function checkTrackSearch(runtime, database, screenshots,
         return !screen.includes('load playlist') && first >= 0 && screen.indexOf(FIRST_TRACK) > first;
       }, 'both saved tracks in queue order');
 
+      /* Rename/delete exercise separate modal focus transitions; checking the
+         resulting names prevents an unnoticed picker action on the wrong row. */
       terminal.send('\x1br');
       await terminal.expect('rename playlist');
       terminal.send('\r');
@@ -250,6 +268,8 @@ async function checkTrackSearch(runtime, database, screenshots,
       terminal.send('X');
       await terminal.expect('play queue', { absent: FIRST_TRACK });
     }
+    /* The driver must observe a clean application exit, not just a screen that
+       happened to match before a shutdown crash. */
     terminal.send('\x04');
     await terminal.expectExit();
     return result;
@@ -260,6 +280,7 @@ async function checkTrackSearch(runtime, database, screenshots,
   }
 }
 
+/* Create an isolated catalog/runtime, run selected variants, report measurements, and clean up. */
 async function main() {
   const { values } = parseArgs({
     options: {
@@ -276,6 +297,7 @@ async function main() {
       help: { type: 'boolean' },
     },
   });
+
   if (values.help) {
     console.log('Usage: node script/test/tui/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
     return;
@@ -290,11 +312,16 @@ async function main() {
   if (!Number.isSafeInteger(tracks) || tracks < 20 || !Number.isSafeInteger(runs) || runs < 1) {
     throw new Error('Use at least 20 tracks and one run');
   }
+
+  /* Comparison mode uses identical generated data for both executables so
+     differences reflect the implementation rather than a different catalog. */
   const controlDir = values['pilot-control'];
   const compare = values.compare || controlDir !== undefined;
   if (values.compare && controlDir !== undefined) throw new Error('Choose one comparison mode');
   const windows = Boolean(values.windows || compare);
   if (windows && tracks < 100) throw new Error('The viewport scenario requires at least 100 tracks');
+
+  /* Capacity must leave room for the viewport before any prefetch is enabled. */
   const capacity = Number(values['cache-pages'] ?? '3');
   const prefetch = Number(values['prefetch-pages'] ?? Math.min(1, capacity - 1));
   if (!Number.isSafeInteger(capacity) || capacity < 1 ||
@@ -305,6 +332,9 @@ async function main() {
     capacity, prefetch,
     capacityOverride: values['cache-pages'], prefetchOverride: values['prefetch-pages'],
   };
+
+  /* Keep generated databases, settings, staged assets, and screenshots under
+     explicit test roots rather than the user's normal app configuration. */
   const tickMs = await cpuMillisecondsPerTick();
   const work = join(build, 'tests', 'bin');
   fs.mkdirSync(work, { recursive: true });
@@ -313,6 +343,8 @@ async function main() {
   const runtime = fs.mkdtempSync(join(work, 'tui-'));
 
   try {
+    /* Stage each implementation separately to prevent loading the wrong core
+       library while retaining the same catalog for comparison runs. */
     stageRuntime(runtime, resolve(values['bin-dir']));
     let control = { name: 'Production', runtime, pilot: false };
     if (controlDir !== undefined) {
@@ -320,21 +352,21 @@ async function main() {
       stagePilot(controlRuntime, resolve(controlDir));
       control = { name: 'ABI0 control', runtime: controlRuntime, pilot: true };
     }
+
     const variants = [control];
     if (compare) {
       const pilot = join(runtime, 'pilot');
       stagePilot(pilot, join(build, 'bin', 'abi0'));
       variants.push({ name: 'ABI0 pilot', runtime: pilot, pilot: true });
     }
-    if (process.platform === 'darwin') {
-      for (const variant of variants) {
-        fs.copyFileSync(join(build, 'tests', 'bin', 'musikcube_pty_host'), join(variant.runtime, 'musikcube_pty_host'));
-      }
-    }
+
+    /* Index once outside measured interactions; reseeding per launch would
+       dominate runtime and make cache/viewport comparisons harder to interpret. */
     const started = performance.now();
     const database = await seedLibrary(runtime, build, tracks);
     const fixture = dirname(dirname(dirname(database)));
     const seedMs = performance.now() - started;
+
     const results = await sampleVariants(variants, runs, async variant => {
       try {
         return await checkTrackSearch(variant.runtime, database,
@@ -343,6 +375,9 @@ async function main() {
         fs.rmSync(join(fixture, 'musikcube', 'session.json'), { force: true });
       }
     });
+
+    /* Report functional success separately from descriptive latency samples;
+       this runner does not enforce machine-specific performance thresholds. */
     console.log(`Track search passed with ${tracks.toLocaleString('en-US')} tracks across ${runs} runs.`);
     console.log(`Generate and index ${(seedMs / 1000).toFixed(2)} s`);
     if (compare) console.log(`ABI0 cache: ${capacity} pages, ${prefetch} prefetched in the direction of travel`);

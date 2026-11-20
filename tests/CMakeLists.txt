@@ -192,10 +192,11 @@ if(APPLE)
     C_VISIBILITY_PRESET hidden LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
   target_compile_options(musikcore_test_profile PRIVATE -fno-builtin-memcpy -fno-builtin-memmove)
   add_dependencies(musikcube_tests musikcore_test_profile)
-  add_executable(musikcube_pty_host support/pty-host.c)
-  set_target_properties(musikcube_pty_host PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
-  add_dependencies(musikcube_tests musikcube_pty_host)
+  # Exercise the real macOS script launcher so socket-input failures and feeder
+  # cleanup regressions are caught without building the full application.
+  add_test(NAME musikcube.ui.terminal_driver COMMAND "${MUSIKCORE_TEST_NODE}" --test
+    "${PROJECT_SOURCE_DIR}/script/test/tui/terminal.test.js")
+  set_tests_properties(musikcube.ui.terminal_driver PROPERTIES LABELS "integration;ui" TIMEOUT 45)
 endif()
 
 # Compile each public header in its own translation unit using public includes only.
