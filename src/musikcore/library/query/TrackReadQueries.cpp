@@ -241,13 +241,26 @@ namespace musik { namespace core { namespace library { namespace query {
         if (ids && keepMissing) {
             /* SQL returns by ID. Restore snapshot order and leave removed rows empty. */
             auto sorted = std::move(page.rows);
+            std::vector<size_t> restored(sorted.size(), SIZE_MAX);
             page.rows.clear();
             page.rows.reserve(limit);
             for (size_t i = 0; i < limit; ++i) {
                 auto row = std::lower_bound(sorted.begin(), sorted.end(), ids[i],
                     [](const ProjectedTrackPage::Row &entry, int64_t id) { return entry.id < id; });
-                if (row != sorted.end() && row->id == ids[i]) page.rows.push_back(std::move(*row));
-                else page.rows.push_back({ ids[i], std::vector<std::vector<std::string>>(fields.size()) });
+                if (row == sorted.end() || row->id != ids[i]) {
+                    page.rows.push_back({ ids[i], std::vector<std::vector<std::string>>(fields.size()) });
+                    continue;
+                }
+
+                /* One SQL row can represent several queue entries with the same ID. */
+                auto& first = restored[static_cast<size_t>(row - sorted.begin())];
+                if (first == SIZE_MAX) {
+                    first = page.rows.size();
+                    page.rows.push_back(std::move(*row));
+                }
+                else {
+                    page.rows.push_back(page.rows[first]);
+                }
             }
         }
         result = std::move(page);

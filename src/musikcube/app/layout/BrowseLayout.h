@@ -64,6 +64,11 @@ namespace musik {
                     musik::core::ILibraryPtr library);
 
                 virtual ~BrowseLayout();
+                void SetTrackLibrary(std::shared_ptr<musik::core::api::Context> context,
+                    std::shared_ptr<const musik::core::api::Library> library) {
+                    this->trackList->SetApiLibrary(std::move(context), std::move(library));
+                }
+                void CancelTrackRequests() { this->trackList->CancelTrackRequests(); }
                 void SetAddToPlaylistCallbacks(TrackListView::AddTrackToPlaylist track,
                     TrackListView::AddCategoryToPlaylist category) {
                     this->categoryList->SetAddToPlaylistCallback(category);
@@ -107,7 +112,7 @@ namespace musik {
                 void OnWindowMouseEvent(
                     cursespp::Window* window, const cursespp::IMouseHandler::Event* mouseEvent);
 
-                void OnRequeried(musik::core::library::query::TrackListQueryBase* query);
+                void UpdateTrackTitle();
 
                 bool IsPlaylist();
                 bool ProcessEditOperation(const std::string& key);

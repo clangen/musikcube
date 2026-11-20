@@ -33,15 +33,12 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <cursespp/Colors.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/track/LibraryTrack.h>
-#include <musikcore/track-result-window.hpp>
 #include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Hotkeys.h>
@@ -67,8 +64,6 @@ namespace components = musik::core::prefs::components;
 
 constexpr int kSearchHeight = 3;
 constexpr int kRequeryIntervalMs = 300;
-constexpr int kSearchPagePollIntervalMs = 2;
-constexpr int kSearchPageRetryMs = 25;
 
 static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
     const auto sort = (TrackSortType) prefs->GetInt(
@@ -83,7 +78,6 @@ TrackSearchLayout::TrackSearchLayout(
     std::shared_ptr<const musik::core::api::Library> apiLibrary)
 : LayoutBase()
 , playback(playback)
-, apiPlayback(musik::core::audio::CreatePlaybackHandle(playback))
 , library(library)
 , apiContext(std::move(apiContext))
 , apiLibrary(std::move(apiLibrary)) {
@@ -93,8 +87,6 @@ TrackSearchLayout::TrackSearchLayout(
 }
 
 TrackSearchLayout::~TrackSearchLayout() {
-    /* The base layout can redraw child windows while releasing them. */
-    this->trackList->DetachRowSource();
     this->CancelSearchRequests();
     this->SaveSession();
 }
@@ -149,6 +141,7 @@ void TrackSearchLayout::InitializeWindows() {
     this->AddWindow(this->input);
 
     this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
+    this->trackList->SetApiLibrary(this->apiContext, this->apiLibrary);
     this->trackList->MouseEvent.connect(this, &TrackSearchLayout::OnWindowMouseEvent);
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
@@ -163,8 +156,6 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
     }
     else {
         this->CancelLocalSearch();
-        this->ClearPages();
-        this->resultWindow.reset();
         this->SaveSession();
         this->input->SetText("");
         this->trackList->Reset();
@@ -196,34 +187,7 @@ void TrackSearchLayout::Requery() {
                 if (status == MC_ERROR_BUSY) this->Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
                 if (status != MC_OK) return;
 
-                auto headers = std::make_shared<std::set<size_t>>();
-                auto durations = std::make_shared<std::map<size_t, size_t>>();
-                for (size_t row = 0; row < result.Size(); ++row) {
-                    if (result.StartsAlbum(row)) {
-                        headers->insert(row);
-                        durations->emplace(row, result.AlbumDurationSeconds(row));
-                    }
-                }
-
-                this->ClearPages();
-                this->resultWindow = std::make_unique<api::TrackResultWindow>(*this->apiContext,
-                    std::move(result), std::vector<std::string>{ MC_TRACK_FIELD_ID, MC_TRACK_FIELD_TITLE,
-                        MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION,
-                        MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING },
-                    [this](size_t offset, size_t count, mc_result status) {
-                        this->UpdatePagePolling();
-                        if (this->resultWindow->IntersectsViewport(offset, count)) this->trackList->Redraw();
-                        this->HandlePageStatus(status);
-                    });
-                this->trackList->SetQueryResult(TrackListView::RowSource{
-                    this->resultWindow->Result().Size(),
-                    [this](size_t row) { return this->resultWindow->Result().Id(row); },
-                    [this](size_t row) { return this->DisplayTrack(row); },
-                    [this](size_t first, size_t last, size_t height) { this->SetViewport(first, last, height); },
-                    [this] { this->ClearPages(); this->Post(message::LoadTrackSearchPage); },
-                    [this](size_t row) { this->PlayResult(row); },
-                    [this](size_t row) { return this->resultWindow->Result().Track(row); },
-                }, std::move(headers), std::move(durations), hash);
+                this->trackList->SetTrackResult(std::move(result), hash);
                 this->SetSearchTitle(_TSTR(kTrackListOrderByToDisplayKey.at(sortOrder)));
             });
     } catch (const api::Error& error) {
@@ -233,7 +197,7 @@ void TrackSearchLayout::Requery() {
 
 void TrackSearchLayout::CancelSearchRequests() {
     this->CancelLocalSearch();
-    this->ClearPages();
+    this->trackList->CancelTrackRequests();
 }
 
 void TrackSearchLayout::CancelLocalSearch() {
@@ -244,72 +208,13 @@ void TrackSearchLayout::CancelLocalSearch() {
     }
 }
 
-void TrackSearchLayout::ClearPages() {
-    if (this->resultWindow) this->resultWindow->Clear();
-    this->UpdatePagePolling();
-}
-
-void TrackSearchLayout::SetViewport(size_t first, size_t last, size_t height) {
-    const auto update = this->resultWindow->SetViewport(first, last, height);
-    if (update == api::TrackResultWindow::ViewportUpdate::Changed) {
-        App::Instance().SetInputPollInterval(kSearchPagePollIntervalMs);
-        this->Post(message::LoadTrackSearchPage);
-    }
-}
-
-void TrackSearchLayout::LoadPage() {
-    if (!this->resultWindow || !this->IsVisible()) return;
-
-    const auto status = this->resultWindow->Load();
-    this->UpdatePagePolling();
-    this->HandlePageStatus(status);
-}
-
-void TrackSearchLayout::HandlePageStatus(mc_result status) {
-    if (status == MC_ERROR_BUSY) {
-        this->Debounce(message::LoadTrackSearchPage, 0, 0, kSearchPageRetryMs);
-    } else if (status != MC_OK && status != MC_ERROR_CANCELLED) {
-        musik::debug::error("TrackSearchLayout", api::Error(status).what());
-    }
-}
-
-void TrackSearchLayout::UpdatePagePolling() {
-    App::Instance().SetInputPollInterval(this->resultWindow && this->resultWindow->Pending()
-        ? kSearchPagePollIntervalMs : 0);
-}
-
-TrackPtr TrackSearchLayout::DisplayTrack(size_t row) {
-    const auto& window = *this->resultWindow;
-    auto track = std::make_shared<LibraryTrack>(window.Result().Id(row), this->library);
-
-    /* Adapt only the rendered row. The window owns its display metadata. */
-    const auto metadata = window.CachedRow(row);
-    if (metadata && metadata->Value(MC_TRACK_FIELD_ID).data()) {
-        for (const auto* key : { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM,
-                 MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING }) {
-            track->SetValue(key, metadata->Value(key).data());
-        }
-        track->SetMetadataState(musik::core::sdk::MetadataState::Loaded);
-    }
-    return track;
-}
-
 void TrackSearchLayout::PlayFromTop() {
-    this->PlayResult(0);
-}
-
-void TrackSearchLayout::PlayResult(size_t row) {
-    if (!this->resultWindow || row >= this->resultWindow->Result().Size()) return;
-    const auto status = this->apiPlayback.Play(this->resultWindow->Result(), row);
-    if (status != MC_OK) musik::debug::error("TrackSearchLayout", api::Error(status).what());
+    this->trackList->PlayRow(0);
 }
 
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
     if (message.Type() == message::RequeryTrackList) {
         if (this->IsVisible()) this->Requery();
-    }
-    else if (message.Type() == message::LoadTrackSearchPage) {
-        this->LoadPage();
     }
     else {
         LayoutBase::ProcessMessage(message);
@@ -328,7 +233,7 @@ void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string 
 
 void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
     if (this->trackList->TrackCount()) {
-        this->PlayResult(0);
+        this->PlayFromTop();
         this->SetFocus(this->trackList);
     }
 }

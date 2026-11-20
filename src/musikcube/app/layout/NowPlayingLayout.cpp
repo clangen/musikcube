@@ -63,7 +63,6 @@ NowPlayingLayout::NowPlayingLayout(
 , apiLibrary(std::move(apiLibrary)) {
     this->InitializeWindows(playback);
 
-    this->displayQueue = std::make_shared<TrackList>(this->library);
     this->apiPlayback.SetQueueChangedCallback(
         [](void* data) {
             auto& layout = *static_cast<NowPlayingLayout*>(data);
@@ -116,6 +115,7 @@ void NowPlayingLayout::InitializeWindows(audio::PlaybackService& playback) {
             std::placeholders::_2));
 
     this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
+    this->trackListView->SetApiLibrary(this->context, this->apiLibrary);
     this->trackListView->SetQueueActivationCallback([this](size_t row) {
         if (this->queue && this->apiPlayback.PlayQueueRow(*this->queue, row) == MC_ERROR_NOT_FOUND) {
             this->RequeryTrackList();
@@ -206,12 +206,13 @@ void NowPlayingLayout::RequeryTrackList() {
         (count && !std::equal(ids, ids + count, previous));
     this->queue = std::move(updated);
 
-    /* Reuse the renderer's metadata cache while updating the ordered rows. */
+    /* Playback remains authoritative for duplicate rows, position, and revision. */
     if (changed) {
-        TrackList replacement(this->library, ids, count);
-        this->displayQueue->Swap(replacement);
+        this->trackListView->SetTrackIds(ids, count, 0);
     }
-    this->trackListView->SetTrackList(this->displayQueue);
+    else {
+        this->trackListView->Redraw();
+    }
     if (changed || this->reselectIndex >= 0) this->SelectQueueRow();
 }
 

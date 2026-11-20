@@ -51,7 +51,6 @@
 namespace musik { namespace core { namespace api {
     class Context;
     class Library;
-    class TrackResultWindow;
 } } }
 
 namespace musik {
@@ -93,15 +92,8 @@ namespace musik {
                 void SaveSession();
                 void InitializeWindows();
                 void Requery();
-                void PlayResult(size_t row);
                 void CancelLocalSearch();
                 void SetSearchTitle(const std::string& order);
-                void ClearPages();
-                void SetViewport(size_t first, size_t last, size_t height);
-                void LoadPage();
-                void UpdatePagePolling();
-                void HandlePageStatus(mc_result status);
-                musik::core::TrackPtr DisplayTrack(size_t row);
                 void OnIndexerFinished(int);
 
                 void OnWindowMouseEvent(
@@ -119,7 +111,6 @@ namespace musik {
                 void ShowTrackSortOverlay();
 
                 musik::core::audio::PlaybackService& playback;
-                musik::core::api::Playback apiPlayback;
                 const musik::core::ILibraryPtr library;
                 MatchType matchType{ MatchType::Substring };
                 std::shared_ptr<musik::core::Preferences> prefs;
@@ -129,7 +120,6 @@ namespace musik {
                 mc_request_id localSearchRequest = 0;
                 std::shared_ptr<musik::core::api::Context> apiContext;
                 std::shared_ptr<const musik::core::api::Library> apiLibrary;
-                std::unique_ptr<musik::core::api::TrackResultWindow> resultWindow;
         };
     }
 }

@@ -9,12 +9,14 @@
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/QueryRegistry.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/library/query/CategoryListQuery.h>
 #include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <algorithm>
 #include <array>
+#include <filesystem>
 #include <limits>
 #include <set>
 #endif
@@ -609,6 +611,55 @@ namespace {
             matches(tracks.at(secondId), "Evening Flight", "2");
     }
 
+    bool checkBrowseReads(const char* directory) {
+        using namespace musik::core;
+        library::MasterLibrary selected;
+        const auto source = selected.OpenApiLibrary();
+        if (!source) return false;
+
+        mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.wakeup = query_test_wakeup;
+        api::Context context(options);
+        api::TrackResult album;
+        api::TrackResult artist;
+        api::TrackResult folder;
+        auto wake = query_test_wakeup_count();
+        const auto receive = [](api::TrackResult& result) {
+            return [&result](mc_result status, api::TrackResult tracks, std::string_view) {
+                if (status == MC_OK) result = std::move(tracks);
+            };
+        };
+        for (const auto& [key, result] : std::array{
+            std::pair{MC_TRACK_FIELD_ALBUM, &album}, std::pair{MC_TRACK_FIELD_ARTIST, &artist}}) {
+            using Categories = library::query::CategoryListQuery;
+            const auto categories = std::make_shared<Categories>(Categories::MatchType::Substring, key);
+            if (selected.EnqueueAndWait(categories, kWaitIndefinite) < 0 || !categories->GetResult()->Count()) return false;
+            api::OpenCategory(context, *source, key, categories->GetResult()->At(0)->GetId(),
+                MC_TRACK_SEARCH_ALBUM, receive(*result));
+            if (!query_test_wait_for_wakeup(++wake) || context.Dispatch() != MC_OK ||
+                result->Size() != 2 || !result->StartsAlbum(0) || result->StartsAlbum(1) ||
+                result->AlbumDurationSeconds(0) != 2) return false;
+        }
+        const auto path = (std::filesystem::path(directory) / ".." / ".." / "media").lexically_normal();
+        api::OpenDirectory(context, *source, path.string(), receive(folder));
+        if (!query_test_wait_for_wakeup(++wake) || context.Dispatch() != MC_OK ||
+            folder.Size() != 2 || !folder.StartsAlbum(0) || folder.AlbumDurationSeconds(0) != 2 ||
+            folder.Id(0) != album.Id(0) || folder.Id(1) != album.Id(1) ||
+            artist.Id(0) != album.Id(0) || artist.Id(1) != album.Id(1)) return false;
+
+        const std::array ids{album.Id(1), album.Id(0), album.Id(1)};
+        const auto queue = api::MakeTrackResult(*source, ids.data(), ids.size());
+        api::TrackPage page;
+        api::ReadTracks(context, queue, {0, ids.size(), {MC_TRACK_FIELD_TITLE}},
+            [&](mc_result status, api::TrackPage tracks, std::string_view) {
+                if (status == MC_OK) page = std::move(tracks);
+            });
+        return query_test_wait_for_wakeup(++wake) && context.Dispatch() == MC_OK && page.Size() == ids.size() &&
+            page.Id(0) == ids[0] && page.Id(1) == ids[1] && page.Id(2) == ids[2] &&
+            page.Track(0).Title() == "Evening Flight" && page.Track(1).Title() == "Morning Light" &&
+            page.Track(2).Title() == "Evening Flight";
+    }
+
     bool checkSelectedBackend() {
         using namespace musik::core::api;
 
@@ -665,6 +716,10 @@ int main(int argc, char **argv) {
             }
             if (!checkRemoteQueryPayloads()) {
                 std::fputs("Remote search and metadata payload contract failed\n", stderr);
+                return 1;
+            }
+            if (!checkBrowseReads(argv[1])) {
+                std::fputs("Category, directory, and queue track reads failed\n", stderr);
                 return 1;
             }
             if (!checkSelectedBackend()) {

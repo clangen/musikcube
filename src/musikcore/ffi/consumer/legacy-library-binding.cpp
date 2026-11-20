@@ -19,6 +19,8 @@
 #include "library-binding.h"
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/library/query/GetPlaylistQuery.h>
+#include <musikcore/library/query/CategoryTrackListQuery.h>
+#include <musikcore/library/query/DirectoryTrackListQuery.h>
 #include <musikcore/library/query/CategoryListQuery.h>
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/DeletePlaylistQuery.h>
@@ -106,13 +108,29 @@ namespace {
         }, data, request);
     }
 
-    mc_result makePlaylistResult(query::GetPlaylistQuery& command,
+    mc_result makeOrderedResult(query::TrackListQueryBase& command,
         const std::shared_ptr<const LibraryIdentity>& identity, std::unique_ptr<mc_track_result>& output) {
         auto result = std::make_shared<TrackResultData>();
         result->library = identity;
         result->ids = command.GetResult()->GetIds();
+        result->albumStarts.resize(result->ids.size());
+        for (const auto row : *command.GetHeaders()) {
+            if (row >= result->ids.size()) return MC_ERROR_IO;
+            result->albumStarts[row] = true;
+        }
+        for (const auto& album : *command.GetDurations()) {
+            if (album.first >= result->ids.size()) return MC_ERROR_IO;
+            result->albumDurations.emplace(album.first, album.second);
+        }
         output.reset(new mc_track_result{ std::move(result) });
         return MC_OK;
+    }
+
+    std::shared_ptr<query::TrackListQueryBase> selectionCommand(const ILibraryPtr& library,
+        const std::string& category, const std::string& directory, int64_t id, query::TrackSortType order) {
+        if (category.empty()) return std::make_shared<query::DirectoryTrackListQuery>(library, directory);
+        /* The typed query binds extended metadata keys as values. */
+        return std::make_shared<query::CategoryTrackListQuery>(library, category, id, "", order);
     }
 
     /* Synchronous commands borrow their inputs until the library dispatcher returns. */
@@ -137,7 +155,7 @@ namespace {
     };
 
     /* Inherits noncopyable and nonmovable ownership. */
-    class AppTrackReadBackend final : public query::TrackReadBackend, public PlaybackOrigin, public PlaylistReader {
+    class AppTrackReadBackend final : public query::TrackReadBackend, public PlaybackOrigin, public LibraryQueries {
     public:
         explicit AppTrackReadBackend(std::shared_ptr<musik::core::library::LocalLibrary> library)
             : library(std::move(library)), reader(query::OpenTrackReadBackend(this->library->GetDatabaseFilename())) {}
@@ -159,8 +177,17 @@ namespace {
             return submitLocal<mc_track_result>(context, this->library,
                 std::make_shared<query::GetPlaylistQuery>(this->library, id),
                 [identity](auto& command, auto& output) {
-                    return makePlaylistResult(command, identity, output);
+                    return makeOrderedResult(command, identity, output);
                 }, completion, data, request);
+        }
+
+        mc_result OpenSelection(mc_context* context, const std::shared_ptr<const LibraryIdentity>& identity,
+            std::string category, std::string directory, int64_t id, query::TrackSortType order,
+            mc_track_search_completion_fn completion, void* data, mc_request_id* request) const override {
+            const auto command = selectionCommand(this->library, category, directory, id, order);
+            return submitLocal<mc_track_result>(context, this->library, command,
+                [identity](auto& query, auto& output) { return makeOrderedResult(query, identity, output); },
+                completion, data, request);
         }
 
         mc_result ListPlaylists(mc_context* context, mc_playlist_list_completion_fn completion,
@@ -228,7 +255,7 @@ namespace {
     }
 
     /* Neither copyable nor movable. Retains one remote library and connection generation. */
-    class RemoteTrackReader final : public AsyncTrackReader, public PlaylistReader {
+    class RemoteTrackReader final : public AsyncTrackReader, public LibraryQueries {
     public:
         RemoteTrackReader(std::shared_ptr<musik::core::library::RemoteLibrary> library, uint64_t generation)
             : library(std::move(library)), generation(generation) {}
@@ -243,8 +270,17 @@ namespace {
             const auto command = std::make_shared<query::GetPlaylistQuery>(this->library, id);
             return submitRemote<mc_track_result>(context, this->library, this->generation, command,
                 [identity](auto& playlist, auto& output) {
-                    return makePlaylistResult(playlist, identity, output);
+                    return makeOrderedResult(playlist, identity, output);
                 }, completion, data, request);
+        }
+
+        mc_result OpenSelection(mc_context* context, const std::shared_ptr<const LibraryIdentity>& identity,
+            std::string category, std::string directory, int64_t id, query::TrackSortType order,
+            mc_track_search_completion_fn completion, void* data, mc_request_id* request) const override {
+            const auto command = selectionCommand(this->library, category, directory, id, order);
+            return submitRemote<mc_track_result>(context, this->library, this->generation, command,
+                [identity](auto& query, auto& output) { return makeOrderedResult(query, identity, output); },
+                completion, data, request);
         }
 
         mc_result Search(mc_context *context, const std::shared_ptr<const LibraryIdentity> &identity,
@@ -363,7 +399,7 @@ mc_result musik::core::ffi::BindRemoteLibrary(const std::shared_ptr<library::Rem
         const auto reader = std::make_shared<RemoteTrackReader>(library, generation);
         identity->async = reader;
         identity->playbackOrigin = reader;
-        identity->playlists = reader;
+        identity->queries = reader;
         *out = new mc_library{ std::move(identity) };
         return MC_OK;
     });

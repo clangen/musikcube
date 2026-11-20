@@ -229,6 +229,26 @@ async function checkTrackSearch(runtime, database, screenshots,
       terminal.send('\x1bl');
       await terminal.expect("you haven't saved any playlists yet!");
       terminal.send('\r');
+
+      /* Switch album selections before the first one has time to publish a refresh. */
+      terminal.send('b2');
+      await terminal.expect('albums');
+      terminal.send('\x06');
+      await terminal.expect('search');
+      await new Promise(resolve => setTimeout(resolve, 150));
+      terminal.send('\r' + HOME);
+      await terminal.expect(FIRST_TRACK);
+      terminal.send(DOWN + UP + DOWN);
+      await terminal.expect(FILTERED_FIRST, { absent: FIRST_TRACK });
+
+      terminal.send('d');
+      await terminal.expect('tracks in');
+      await terminal.expect(FIRST_TRACK);
+
+      terminal.send('n');
+      await terminal.expect('play queue', { absent: 'tracks in' });
+      terminal.send('X');
+      await terminal.expect('play queue', { absent: FIRST_TRACK });
     }
     terminal.send('\x04');
     await terminal.expectExit();

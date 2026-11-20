@@ -38,7 +38,6 @@
 #include <cursespp/Screen.h>
 
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/query/CategoryTrackListQuery.h>
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/util/TrackSort.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -46,7 +45,6 @@
 #include <musikcore/i18n/Locale.h>
 
 #include <app/util/Hotkeys.h>
-#include <app/util/Playback.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/Messages.h>
 #include <app/util/WindowUtil.h>
@@ -192,7 +190,6 @@ void BrowseLayout::InitializeWindows() {
 
     this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
     this->trackList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
-    this->trackList->Requeried.connect(this, &BrowseLayout::OnRequeried);
 
     this->modifiedLabel = std::make_shared<TextLabel>();
     this->modifiedLabel->SetText(getModifiedText(), text::AlignCenter);
@@ -293,7 +290,7 @@ void BrowseLayout::OnIndexerProgress(int count) {
     this->Post(message::IndexerProgress);
 }
 
-void BrowseLayout::OnRequeried(TrackListQueryBase* query) {
+void BrowseLayout::UpdateTrackTitle() {
     std::string sortByDisplayString = kTrackListOrderByToDisplayKey
         .find(getDefaultTrackSort(this->prefs))->second;
 
@@ -307,14 +304,15 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
         const int64_t selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
             const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
-            auto column = this->categoryList->GetFieldName();
-            this->trackList->Requery(
-                std::make_shared<CategoryTrackListQuery>(
-                    this->library,
-                    column,
-                    selectedId,
-                    "",
-                    sortOrder));
+            const auto column = this->categoryList->GetFieldName();
+            const auto hash = std::hash<std::string>{}(column + ":" + std::to_string(selectedId) +
+                ":" + std::to_string(static_cast<int>(sortOrder)));
+            this->trackList->RequeryTracks(hash, [column, selectedId, sortOrder]
+                (api::Context& context, const api::Library& library, api::TrackSearchCompletion completion) {
+                    return api::OpenCategory(context, library, column, selectedId,
+                        static_cast<mc_track_search_order>(sortOrder), std::move(completion));
+                });
+            this->UpdateTrackTitle();
         }
         else {
             this->trackList->Reset();
@@ -374,7 +372,7 @@ void BrowseLayout::SwitchCategory(const std::string& fieldName) {
 }
 
 void BrowseLayout::PlayFromTop() {
-    playback::PlayFromTop(*this->trackList, this->playback);
+    this->trackList->PlayRow(0);
 }
 
 void BrowseLayout::SetOnHeaderClicked(HeaderClickHandler handler) {
@@ -396,11 +394,7 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         /* if the tracklist is NOT focused (i.e. the focus is on a
         category window), start playback from the top. */
         if (this->GetFocus() != this->trackList) {
-            auto tracks = trackList->GetTrackList();
-            if (tracks) {
-                playback.Play(*tracks.get(), 0);
-                return true;
-            }
+            return this->trackList->PlayRow(0);
         }
     }
 	else if (Hotkeys::Is(Hotkeys::BrowseCategoryFilter, key)) {
@@ -532,17 +526,15 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
             to = selected;
         }
 
+        const auto ids = tracks->GetIds();
+        this->trackList->SetEditedTrackIds(ids);
         this->ShowModifiedLabel(modified);
 
-        to = trackList->TrackIndexToAdapterIndex(to);
-        trackList->OnAdapterChanged();
-
-        if (!trackList->IsEntryVisible(to)) {
-            trackList->ScrollTo(to);
+        if (!ids.empty()) {
+            to = trackList->TrackIndexToAdapterIndex(std::min(ids.size() - 1, to));
+            if (!trackList->IsEntryVisible(to)) trackList->ScrollTo(to);
+            trackList->SetSelectedIndex(to);
         }
-
-        to = std::min(tracks->Count() - 1, to);
-        trackList->SetSelectedIndex(to);
 
         return true;
     }

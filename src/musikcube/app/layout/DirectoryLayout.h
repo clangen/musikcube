@@ -61,6 +61,11 @@ namespace musik {
                     musik::core::ILibraryPtr library);
 
                 void SetDirectory(const std::string& directory);
+                void SetTrackLibrary(std::shared_ptr<musik::core::api::Context> context,
+                    std::shared_ptr<const musik::core::api::Library> library) {
+                    this->trackList->SetApiLibrary(std::move(context), std::move(library));
+                }
+                void CancelTrackRequests() { this->trackList->CancelTrackRequests(); }
                 void PlayFromTop();
                 std::string GetDirectory();
 

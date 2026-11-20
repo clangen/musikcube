@@ -717,6 +717,9 @@ legacy list for actions that still require it.
   persistence contracts.
 - [ ] **PUB-002** Add category, album, directory, and remaining metadata query
   shapes.
+  Browse and Directories use typed ordered results for their track panes.
+  Now Playing projects metadata from its queue snapshot using the same paged
+  track view. The indexed-query and loopback tests cover order and headers.
 - [ ] **PUB-003** Add coherent playback snapshots.
   The transport control surface reads state, position, duration, volume,
   and mute through `mc_playback_get_snapshot`. Queue and current-track
@@ -896,7 +899,7 @@ legacy list for actions that still require it.
 | --- | --- |
 | `src/musikcore/ffi/consumer/library-binding.h` and `legacy-library-binding.cpp`, plus `MasterLibrary::OpenApiLibrary()` | The public library API creates and owns local and remote backends directly. Retained requests, results, and references must still preserve their originating backend and connection generation. |
 | `src/musikcore/ffi/consumer/playback-binding.h` and `legacy-playback-binding.cpp`, plus the friendship and lifetime token in `PlaybackService` | The public playback API creates and owns the session directly. Carry forward the owner-thread rules, queue origin checks, and dispatcher notifications. |
-| Now Playing's snapshot-to-`TrackList` adapter and legacy playlist overlays | The queue view and playlist overlays can read track metadata and list or modify playlists through the public API. |
+| `TrackListView::GetTrackList()` and legacy track and playlist action overlays | Hot-swap, playlist drafts, and the remaining overlays can consume ordered results and track references directly. |
 
 #### Final gate
 

@@ -153,6 +153,18 @@ MC_API mc_result MC_CALL mc_library_open_playlist_async(
     mc_context *context, const mc_library *library, int64_t playlist_id,
     mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request);
 
+/* Open a Browse category, including categories defined by metadata keys. */
+MC_API mc_result MC_CALL mc_library_open_category_async(
+    mc_context *context, const mc_library *library, mc_string_view category, int64_t id,
+    mc_track_search_order order, mc_track_search_completion_fn completion, void *data, mc_request_id *request);
+/* Open the ordered tracks below a directory using the library's directory query. */
+MC_API mc_result MC_CALL mc_library_open_directory_async(
+    mc_context *context, const mc_library *library, mc_string_view directory,
+    mc_track_search_completion_fn completion, void *data, mc_request_id *request);
+/* Copy library-scoped IDs into a result. The caller owns the returned result. */
+MC_API mc_result MC_CALL mc_library_make_track_result(
+    const mc_library *library, const int64_t *ids, size_t count, mc_track_result **out_result);
+
 typedef struct mc_playlist_entry {
     /* ID scoped to the library used for the request. */
     int64_t id;

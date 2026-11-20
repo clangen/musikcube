@@ -34,13 +34,11 @@
 
 #include <stdafx.h>
 
-#include <musikcore/library/query/DirectoryTrackListQuery.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/i18n/Locale.h>
 #include <cursespp/Colors.h>
 #include <cursespp/ToastOverlay.h>
 #include <app/util/Hotkeys.h>
-#include <app/util/Playback.h>
 #include <app/util/Messages.h>
 #include <app/overlay/PlayQueueOverlays.h>
 
@@ -161,14 +159,14 @@ void DirectoryLayout::RequeryTrackList(ListWindow *view) {
     }
 
     if (fullPath.size()) {
-        auto query = std::shared_ptr<TrackListQueryBase>(
-            new DirectoryTrackListQuery(this->library, fullPath));
-
-        auto hash = query->GetQueryHash();
+        const auto hash = std::hash<std::string>{}(fullPath);
 
         if (hash != this->queryHash) {
             this->queryHash = hash;
-            this->trackList->Requery(query);
+            this->trackList->RequeryTracks(hash, [fullPath]
+                (api::Context& context, const api::Library& library, api::TrackSearchCompletion completion) {
+                    return api::OpenDirectory(context, library, fullPath, std::move(completion));
+                });
         }
     }
 }
@@ -221,7 +219,7 @@ bool DirectoryLayout::IsParentRoot() {
 }
 
 void DirectoryLayout::PlayFromTop() {
-    playback::PlayFromTop(*this->trackList, this->playback);
+    this->trackList->PlayRow(0);
 }
 
 bool DirectoryLayout::KeyPress(const std::string& key) {
@@ -261,10 +259,9 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
             }
         }
         else {
-            auto tracks = this->trackList->GetTrackList();
             auto index = this->trackList->GetSelectedTrackIndex();
             index = (index == ListWindow::NO_SELECTION) ? 0 : index;
-            this->playback.Play(*tracks.get(), index);
+            this->trackList->PlayRow(index);
         }
         return true;
     }

@@ -4,6 +4,8 @@
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/query/GetPlaylistQuery.h>
+#include <musikcore/library/query/CategoryTrackListQuery.h>
+#include <musikcore/library/query/DirectoryTrackListQuery.h>
 #include <musikcore/library/query/CategoryListQuery.h>
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/DeletePlaylistQuery.h>
@@ -53,6 +55,11 @@ namespace {
                     }
                     else if (query.at("name") == musik::core::library::query::GetPlaylistQuery::kQueryName) {
                         reply["options"]["raw_query_data"] = R"({"result":{"headers":[],"trackList":[42,17,42]}})";
+                    }
+                    else if (query.at("name") == musik::core::library::query::CategoryTrackListQuery::kQueryName ||
+                             query.at("name") == musik::core::library::query::DirectoryTrackListQuery::kQueryName) {
+                        reply["options"]["raw_query_data"] =
+                            R"({"result":{"headers":[0,2],"durations":{"0":10,"2":4},"trackList":[42,17,42]}})";
                     }
                     else if (query.at("name") == musik::core::library::query::CategoryListQuery::kQueryName) {
                         reply["options"]["raw_query_data"] = nlohmann::json{
@@ -309,6 +316,18 @@ namespace {
         if (!server.ReleaseHeld(false) || !dispatch(9) || status != MC_OK) return false;
         DeletePlaylist(context, *reconnected, kPlaylistId, written);
         if (!server.ReleaseHeld(false) || !dispatch(10) || status != MC_OK) return false;
+
+        const auto receiveSelection = [&](mc_result result, TrackResult selection, std::string_view) {
+            status = result;
+            tracks = std::move(selection);
+            ++calls;
+        };
+        OpenCategory(context, *reconnected, MC_TRACK_FIELD_ALBUM, 1, MC_TRACK_SEARCH_ALBUM, receiveSelection);
+        if (!server.ReleaseHeld(false) || !dispatch(11) || status != MC_OK || tracks.Size() != 3 ||
+            !tracks.StartsAlbum(2) || tracks.AlbumDurationSeconds(2) != 4) return false;
+        OpenDirectory(context, *reconnected, "/remote/music", receiveSelection);
+        if (!server.ReleaseHeld(false) || !dispatch(12) || status != MC_OK || tracks.Size() != 3 ||
+            tracks.Id(0) != 42 || tracks.Id(1) != 17 || tracks.Id(2) != 42 || !tracks.StartsAlbum(0)) return false;
 
         /* Cancel and drain each ABI request while the server holds every reply. */
         constexpr unsigned burstSize = 65;

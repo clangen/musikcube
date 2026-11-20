@@ -42,25 +42,21 @@
 
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Duration.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/overlay/TrackOverlays.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
+#include <musikcore/library/track/LibraryTrack.h>
+#include <musikcore/debug.h>
 
-#define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
-#define WINDOW_MESSAGE_TRACK_LIST_WINDOW_CACHED 1004
-
-/* this is pretty gross, but i think we'll eventually settle on one versus the other
-and i don't want to bother adding a bunch of annoying infrastructure to more
-dynamnically switch between this */
-static bool sGetAsync = false;
+static constexpr int kTrackPagePollIntervalMs = 2;
+static constexpr int kTrackPageRetryMs = 25;
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
@@ -83,9 +79,9 @@ TrackListView::TrackListView(
     ILibraryPtr library,
     RowDecorator decorator)
 : ListWindow(nullptr)
-, playback(playback) {
+, playback(playback)
+, apiPlayback(CreatePlaybackHandle(playback)) {
     this->library = library;
-    this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
     this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
     this->adapter = std::make_unique<Adapter>(*this);
     this->lastQueryHash = 0;
@@ -96,9 +92,147 @@ TrackListView::TrackListView(
     this->playing = playback.GetPlaying();
 }
 
-void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
-    this->query = query;
-    this->library->Enqueue(this->query);
+TrackListView::~TrackListView() {
+    this->CancelTrackRequests();
+}
+
+void TrackListView::SetApiLibrary(std::shared_ptr<api::Context> context, std::shared_ptr<const api::Library> library) {
+    this->apiContext = std::move(context);
+    this->apiLibrary = std::move(library);
+}
+
+void TrackListView::CancelTrackRequest() {
+    this->trackRequestGeneration.Invalidate();
+    if (this->trackRequest) this->apiContext->Cancel(std::exchange(this->trackRequest, 0));
+    this->pendingTrackQuery = {};
+}
+
+void TrackListView::CancelTrackRequests() {
+    this->CancelTrackRequest();
+    if (this->resultWindow) this->resultWindow->Clear();
+    this->UpdatePagePolling(false);
+}
+
+void TrackListView::RequeryTracks(size_t hash, TrackRequest request) {
+    this->CancelTrackRequest();
+    if (!this->apiLibrary) {
+        this->Reset();
+        return;
+    }
+    if (hash != this->lastQueryHash) this->Reset();
+
+    this->pendingTrackQuery = std::move(request);
+    this->pendingTrackHash = hash;
+    this->SubmitTrackRequest();
+}
+
+void TrackListView::SubmitTrackRequest() {
+    if (!this->pendingTrackQuery || this->trackRequest) return;
+    const auto ticket = this->trackRequestGeneration.Capture();
+    try {
+        this->trackRequest = this->pendingTrackQuery(*this->apiContext, *this->apiLibrary,
+            [this, ticket](mc_result status, api::TrackResult result, std::string_view) {
+                if (!ticket.IsCurrent()) return;
+                this->trackRequest = 0;
+                if (status == MC_ERROR_BUSY) {
+                    this->Debounce(RetryTrackRequestMessage, 0, 0, kTrackPageRetryMs);
+                    return;
+                }
+                this->pendingTrackQuery = {};
+                if (status == MC_OK) this->SetTrackResult(std::move(result), this->pendingTrackHash);
+            });
+    }
+    catch (const api::Error& error) {
+        if (error.Result() == MC_ERROR_BUSY) {
+            this->Debounce(RetryTrackRequestMessage, 0, 0, kTrackPageRetryMs);
+        }
+        else {
+            this->pendingTrackQuery = {};
+            musik::debug::error("TrackListView", error.what());
+        }
+    }
+}
+
+void TrackListView::SetTrackIds(const int64_t* ids, size_t count, size_t hash) {
+    if (!this->apiLibrary) {
+        this->Reset();
+        return;
+    }
+    this->SetTrackResult(api::MakeTrackResult(*this->apiLibrary, ids, count), hash);
+}
+
+void TrackListView::SetTrackResult(api::TrackResult result, size_t hash) {
+    const bool hadTracks = this->TrackCount() > 0;
+    auto headers = std::make_shared<std::set<size_t>>();
+    auto durations = std::make_shared<std::map<size_t, size_t>>();
+    for (size_t row = 0; row < result.Size(); ++row) {
+        if (result.StartsAlbum(row)) {
+            headers->insert(row);
+            durations->emplace(row, result.AlbumDurationSeconds(row));
+        }
+    }
+
+    this->UpdatePagePolling(false);
+    this->resultWindow = std::make_unique<api::TrackResultWindow>(*this->apiContext,
+        std::move(result), std::vector<std::string>{ MC_TRACK_FIELD_ID, MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST,
+            MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING },
+        [this](size_t offset, size_t count, mc_result status) {
+            this->UpdatePagePolling(this->resultWindow->Pending() && this->IsParentVisible());
+            if (this->resultWindow->IntersectsViewport(offset, count)) this->Redraw();
+            this->HandlePageStatus(status);
+        });
+
+    this->tracks.reset();
+    this->ApplyQueryResult(std::move(headers), std::move(durations), hash, hadTracks);
+}
+
+void TrackListView::OnParentVisibilityChanged(bool visible) {
+    ListWindow::OnParentVisibilityChanged(visible);
+    if (!visible) this->UpdatePagePolling(false);
+    else if (this->resultWindow) this->Post(LoadTrackPageMessage);
+}
+
+void TrackListView::UpdatePagePolling(bool pending) {
+    if (this->pollingPages == pending) return;
+    this->pollingPages = pending;
+    App::Instance().SetInputPollInterval(pending ? kTrackPagePollIntervalMs : 0);
+}
+
+void TrackListView::HandlePageStatus(mc_result status) {
+    if (status == MC_ERROR_BUSY) this->Debounce(LoadTrackPageMessage, 0, 0, kTrackPageRetryMs);
+    else if (status != MC_OK && status != MC_ERROR_CANCELLED) {
+        musik::debug::error("TrackListView", api::Error(status).what());
+    }
+}
+
+void TrackListView::LoadTrackPage() {
+    if (!this->resultWindow || !this->IsVisible() || !this->IsParentVisible()) return;
+    const auto status = this->resultWindow->Load();
+    this->UpdatePagePolling(this->resultWindow->Pending());
+    this->HandlePageStatus(status);
+}
+
+TrackPtr TrackListView::DisplayApiTrack(size_t row) {
+    const auto metadata = this->resultWindow->CachedRow(row);
+    auto track = std::make_shared<LibraryTrack>(this->resultWindow->Result().Id(row), this->library);
+    if (metadata && metadata->Value(MC_TRACK_FIELD_ID).data()) {
+        for (const auto* key : { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM,
+                 MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING }) {
+            const auto value = metadata->Value(key);
+            if (value.data()) track->SetValue(key, value.data());
+        }
+        track->SetMetadataState(MetadataState::Loaded);
+    }
+    return track;
+}
+
+bool TrackListView::PlayRow(size_t row) {
+    if (row >= this->TrackCount()) return false;
+    if (this->activateQueueRow) {
+        this->activateQueueRow(row);
+        return true;
+    }
+    return this->apiPlayback.Play(this->resultWindow->Result(), row) == MC_OK;
 }
 
 void TrackListView::SelectFirstTrack() {
@@ -119,44 +253,6 @@ void TrackListView::SetRowRenderer(TrackRowRenderers::Renderer renderer) {
     this->renderer = renderer;
 }
 
-void TrackListView::OnTrackListWindowCached(const musik::core::TrackList* track, size_t from, size_t to) {
-    this->Debounce(WINDOW_MESSAGE_TRACK_LIST_WINDOW_CACHED, 0, 0, 50);
-}
-
-void TrackListView::OnQueryCompleted(IQuery* query) {
-    if (this->query && query == this->query.get() && this->query->GetStatus() == IQuery::Finished) {
-        auto completed = std::move(this->query);
-        this->SetQueryResult(completed->GetResult(), completed->GetHeaders(),
-            completed->GetDurations(), completed->GetQueryHash());
-        this->Requeried(completed.get());
-    }
-}
-
-void TrackListView::SetQueryResult(std::shared_ptr<TrackList> tracks,
-    Headers headers, Durations durations, size_t hash) {
-    const bool hadTracks = this->TrackCount() > 0;
-    this->query.reset();
-    this->rowSource = {};
-    this->SetTrackListAndUpateEventHandlers(std::move(tracks));
-    this->AdjustTrackListCacheWindowSize();
-    this->ApplyQueryResult(std::move(headers), std::move(durations), hash, hadTracks);
-}
-
-void TrackListView::SetQueryResult(RowSource source, Headers headers, Durations durations, size_t hash) {
-    const bool hadTracks = this->TrackCount() > 0;
-    this->query.reset();
-    this->rowSource = std::move(source);
-    this->SetTrackListAndUpateEventHandlers(nullptr);
-    this->ApplyQueryResult(std::move(headers), std::move(durations), hash, hadTracks);
-}
-
-void TrackListView::DetachRowSource() {
-    if (this->rowSource.id) {
-        this->rowSource = {};
-        this->headers.Reset();
-    }
-}
-
 void TrackListView::ApplyQueryResult(Headers headers, Durations durations, size_t hash, bool hadTracks) {
     const bool preserveSelection = hadTracks && this->lastQueryHash == hash;
     this->headers.Set(std::move(headers), std::move(durations));
@@ -171,45 +267,37 @@ void TrackListView::ApplyQueryResult(Headers headers, Durations durations, size_
 }
 
 std::shared_ptr<TrackList> TrackListView::GetTrackList() {
-    /* Playback and queue actions still expect an ordered legacy list. */
-    if (!this->tracks && this->rowSource.id) {
+    /* Legacy actions and playlist drafts still consume an ordered list. */
+    if (!this->tracks && this->resultWindow) {
         this->tracks = std::make_shared<TrackList>(this->library);
-        for (size_t row = 0; row < this->rowSource.count; ++row) {
-            this->tracks->Add(this->rowSource.id(row));
-        }
+        const auto& result = this->resultWindow->Result();
+        for (size_t row = 0; row < result.Size(); ++row) this->tracks->Add(result.Id(row));
     }
     return this->tracks;
 }
 
-void TrackListView::SetTrackList(std::shared_ptr<TrackList> trackList) {
-    this->rowSource = {};
-    if (this->tracks != trackList) {
-        this->SetTrackListAndUpateEventHandlers(trackList);
-        this->AdjustTrackListCacheWindowSize();
-        this->ScrollToTop();
-        this->SelectFirstTrack();
-    }
-
-    this->OnAdapterChanged();
-}
-
 void TrackListView::Reset() {
-    this->query.reset();
-    this->rowSource = {};
-    this->SetTrackListAndUpateEventHandlers(std::make_shared<TrackList>(this->library));
+    this->CancelTrackRequests();
+    this->resultWindow.reset();
+    this->tracks.reset();
     this->headers.Reset();
     this->OnAdapterChanged();
 }
 
 void TrackListView::InvalidateData() {
     if (this->tracks) this->tracks->ClearCache();
-    if (this->rowSource.invalidate) this->rowSource.invalidate();
+    if (this->resultWindow) {
+        this->resultWindow->Clear();
+        this->Post(LoadTrackPageMessage);
+    }
     this->OnAdapterChanged();
 }
 
 TrackPtr TrackListView::GetSelectedTrack() {
     const auto i = this->GetSelectedTrackIndex();
-    return i == ListWindow::NO_SELECTION ? TrackPtr() : this->GetTrackList()->Get(i);
+    if (i == ListWindow::NO_SELECTION) return {};
+    const auto id = this->resultWindow->Result().Id(i);
+    return std::make_shared<TrackList>(this->library, &id, 1)->Get(0);
 }
 
 size_t TrackListView::GetSelectedTrackIndex() {
@@ -223,7 +311,7 @@ size_t TrackListView::RowIndex(size_t adapterIndex) {
 }
 
 TrackPtr TrackListView::DisplayTrack(size_t row) {
-    return this->rowSource.display ? this->rowSource.display(row) : this->tracks->Get(row, sGetAsync);
+    return row < this->TrackCount() ? this->DisplayApiTrack(row) : TrackPtr{};
 }
 
 size_t TrackListView::TrackIndexToAdapterIndex(size_t index) {
@@ -231,7 +319,7 @@ size_t TrackListView::TrackIndexToAdapterIndex(size_t index) {
 }
 
 size_t TrackListView::TrackCount() noexcept {
-    return this->rowSource.id ? this->rowSource.count : (this->tracks ? this->tracks->Count() : 0);
+    return this->resultWindow ? this->resultWindow->Result().Size() : 0;
 }
 
 size_t TrackListView::EntryCount() {
@@ -242,7 +330,7 @@ void TrackListView::ScrollToPlaying() {
     if (this->playing && this->TrackCount()) {
         const int64_t id = this->playing->GetId();
         for (size_t i = 0; i < this->TrackCount(); i++) {
-            const auto rowId = this->rowSource.id ? this->rowSource.id(i) : this->tracks->GetId(i);
+            const auto rowId = this->resultWindow->Result().Id(i);
             if (rowId == id) {
                 const size_t rawIndex = headers.TrackListToAdapterIndex(i);
                 this->SetSelectedIndex(rawIndex);
@@ -257,40 +345,19 @@ void TrackListView::ScrollToPlaying() {
     }
 }
 
-void TrackListView::SetTrackListAndUpateEventHandlers(std::shared_ptr<TrackList> trackList) {
-    if (this->tracks) {
-        this->tracks->WindowCached.disconnect(this);
-    }
-    this->tracks = trackList;
-    if (this->tracks) {
-        this->tracks->WindowCached.connect(this, &TrackListView::OnTrackListWindowCached);
-    }
-    sGetAsync = Preferences::ForComponent(core::prefs::components::Settings)->GetBool(
-        core::prefs::keys::AsyncTrackListQueries, true);
-}
-
 void TrackListView::ProcessMessage(IMessage &message) {
-    if (message.Type() == WINDOW_MESSAGE_SCROLL_TO_PLAYING) {
-        this->ScrollToPlaying();
+    if (message.Type() == LoadTrackPageMessage) {
+        this->LoadTrackPage();
     }
-    else if (message.Type() == WINDOW_MESSAGE_TRACK_LIST_WINDOW_CACHED) {
-        this->Redraw();
+    else if (message.Type() == RetryTrackRequestMessage) {
+        this->SubmitTrackRequest();
+    }
+    else if (message.Type() == ScrollToPlayingMessage) {
+        this->ScrollToPlaying();
     }
     else {
         ListWindow::ProcessMessage(message);
     }
-}
-
-void TrackListView::AdjustTrackListCacheWindowSize() {
-    const auto height = this->GetHeight();
-    if (tracks && height > 0) {
-        tracks->SetCacheWindowSize(this->GetHeight());
-    }
-}
-
-void TrackListView::OnDimensionsChanged() {
-    this->AdjustTrackListCacheWindowSize();
-    ListWindow::OnDimensionsChanged();
 }
 
 bool TrackListView::OnEntryActivated(size_t index) {
@@ -299,16 +366,8 @@ bool TrackListView::OnEntryActivated(size_t index) {
         PlayQueueOverlays::ShowAlbumDividerOverlay(
             MessageQueue(), this->playback, this->library, track, this->addCategoryToPlaylist);
     }
-    else if (this->rowSource.play) {
-        const auto row = this->GetSelectedTrackIndex();
-        if (row < this->rowSource.count) this->rowSource.play(row);
-    }
-    else if (this->activateQueueRow) {
-        const auto row = this->GetSelectedTrackIndex();
-        if (row != ListWindow::NO_SELECTION) this->activateQueueRow(row);
-    }
     else {
-        playback::PlaySelected(*this, this->playback);
+        this->PlayRow(this->GetSelectedTrackIndex());
     }
     return true;
 }
@@ -327,8 +386,8 @@ void TrackListView::ShowContextMenu() {
         PlayQueueOverlays::ShowAlbumDividerOverlay(
             MessageQueue(), this->playback, this->library, this->GetSelectedTrack(), this->addCategoryToPlaylist);
     }
-    else if (this->rowSource.trackRef) {
-        auto track = this->rowSource.trackRef(row);
+    else if (!this->activateQueueRow) {
+        auto track = this->resultWindow->Result().Track(row);
         if (track) PlayQueueOverlays::ShowAddTrackOverlay(
             MessageQueue(), this->library, this->playback, {},
             std::make_shared<const musik::core::api::TrackRef>(std::move(track)), this->addTrackToPlaylist);
@@ -368,7 +427,7 @@ bool TrackListView::KeyPress(const std::string& key) {
                 track,
                 this->library,
                 [this](bool success) {
-                    if (success && this->tracks) {
+                    if (success && this->resultWindow) {
                         this->InvalidateData();
                     }
                 });
@@ -396,7 +455,7 @@ bool TrackListView::KeyPress(const std::string& key) {
         handled = true;
     }
     else if (Hotkeys::Is(Hotkeys::TrackListPlayFromTop, key)) {
-        playback::PlayFromTop(*this, this->playback);
+        this->PlayRow(0);
         handled = true;
     }
 
@@ -408,7 +467,7 @@ bool TrackListView::KeyPress(const std::string& key) {
         this->lastChanged = now();
 
         this->Debounce(
-            WINDOW_MESSAGE_SCROLL_TO_PLAYING,
+            ScrollToPlayingMessage,
             0, 0, AUTO_SCROLL_COOLDOWN.count());
     }
 
@@ -531,10 +590,15 @@ size_t TrackListView::Adapter::GetEntryCount() noexcept {
 
 void TrackListView::Adapter::DrawPage(ScrollableWindow* window, size_t index, ScrollPosition& result) {
     ScrollAdapterBase::DrawPage(window, index, result);
-    if (parent.rowSource.viewport && result.visibleEntryCount) {
+    if (parent.resultWindow && result.visibleEntryCount) {
         const auto first = result.firstVisibleEntryIndex;
-        parent.rowSource.viewport(parent.RowIndex(first), parent.RowIndex(first + result.visibleEntryCount - 1),
+        const auto update = parent.resultWindow->SetViewport(parent.RowIndex(first),
+            parent.RowIndex(first + result.visibleEntryCount - 1),
             static_cast<size_t>(std::max(1, parent.GetContentHeight())));
+        if (update == api::TrackResultWindow::ViewportUpdate::Changed) {
+            parent.UpdatePagePolling(parent.IsParentVisible());
+            parent.Post(LoadTrackPageMessage);
+        }
     }
 }
 

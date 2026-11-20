@@ -92,8 +92,53 @@ mc_result MC_CALL mc_library_open_playlist_async(mc_context *context, const mc_l
         *out_request = 0;
         if (!context || !library || !completion || playlist_id <= 0) return MC_ERROR_INVALID_ARGUMENT;
         const auto identity = library->identity;
-        if (!identity->playlists) return MC_ERROR_UNSUPPORTED;
-        return identity->playlists->OpenPlaylist(context, identity, playlist_id, completion, user_data, out_request);
+        if (!identity->queries) return MC_ERROR_UNSUPPORTED;
+        return identity->queries->OpenPlaylist(context, identity, playlist_id, completion, user_data, out_request);
+    });
+}
+
+static mc_result openSelection(mc_context *context, const mc_library *library, mc_string_view category,
+    mc_string_view directory, int64_t id, mc_track_search_order order, mc_track_search_completion_fn completion,
+    void *data, mc_request_id *request) {
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!request) return MC_ERROR_INVALID_ARGUMENT;
+        *request = 0;
+        if (!context || !library || !completion || int(order) < 0 || order > MC_TRACK_SEARCH_GENRE) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        const auto input = category.length ? category : directory;
+        if (!input.data || !input.length || std::memchr(input.data, '\0', input.length)) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library->identity;
+        if (!identity->queries) return MC_ERROR_UNSUPPORTED;
+        return identity->queries->OpenSelection(context, identity,
+            std::string(category.data ? category.data : "", category.length),
+            std::string(directory.data ? directory.data : "", directory.length), id,
+            static_cast<query::TrackSortType>(order), completion, data, request);
+    });
+}
+
+mc_result MC_CALL mc_library_open_category_async(mc_context *context, const mc_library *library,
+    mc_string_view category, int64_t id, mc_track_search_order order, mc_track_search_completion_fn completion,
+    void *data, mc_request_id *request) {
+    return openSelection(context, library, category, {}, id, order, completion, data, request);
+}
+
+mc_result MC_CALL mc_library_open_directory_async(mc_context *context, const mc_library *library,
+    mc_string_view directory, mc_track_search_completion_fn completion, void *data, mc_request_id *request) {
+    return openSelection(context, library, {}, directory, 0, MC_TRACK_SEARCH_ALBUM, completion, data, request);
+}
+
+mc_result MC_CALL mc_library_make_track_result(const mc_library *library, const int64_t *ids, size_t count,
+    mc_track_result **out_result) {
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!out_result) return MC_ERROR_INVALID_ARGUMENT;
+        *out_result = nullptr;
+        if (!library || (count && !ids)) return MC_ERROR_INVALID_ARGUMENT;
+        auto result = std::make_shared<TrackResultData>();
+        result->library = library->identity;
+        if (count) result->ids.assign(ids, ids + count);
+        *out_result = new mc_track_result{std::move(result)};
+        return MC_OK;
     });
 }
 
@@ -103,7 +148,7 @@ mc_result MC_CALL mc_library_list_playlists_async(mc_context *context, const mc_
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
         if (!context || !library || !completion) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->playlists;
+        const auto reader = library->identity->queries;
         return reader ? reader->ListPlaylists(context, completion, data, request) : MC_ERROR_UNSUPPORTED;
     });
 }
@@ -117,7 +162,7 @@ mc_result MC_CALL mc_library_save_playlist_async(mc_context *context, const mc_l
         if (!context || !library || !completion || id < 0 || (!id && !name.length) ||
             (name.length && (!name.data || std::memchr(name.data, '\0', name.length))) ||
             (count && !ids)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->playlists;
+        const auto reader = library->identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->SavePlaylist(context, id, std::string(name.data ? name.data : "", name.length),
             count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, false, completion, data, request);
@@ -131,7 +176,7 @@ mc_result MC_CALL mc_library_append_playlist_async(mc_context *context, const mc
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
         if (!context || !library || !completion || id <= 0 || (count && !ids)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->playlists;
+        const auto reader = library->identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->SavePlaylist(context, id, {},
             count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, true, completion, data, request);
@@ -145,7 +190,7 @@ mc_result MC_CALL mc_library_rename_playlist_async(mc_context *context, const mc
         *request = 0;
         if (!context || !library || !completion || id <= 0 || !name.data || !name.length ||
             std::memchr(name.data, '\0', name.length)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->playlists;
+        const auto reader = library->identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->RenamePlaylist(context, id, std::string(name.data, name.length), completion, data, request);
     });
@@ -157,7 +202,7 @@ mc_result MC_CALL mc_library_delete_playlist_async(mc_context *context, const mc
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
         if (!context || !library || !completion || id <= 0) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->playlists;
+        const auto reader = library->identity->queries;
         return reader ? reader->DeletePlaylist(context, id, completion, data, request) : MC_ERROR_UNSUPPORTED;
     });
 }

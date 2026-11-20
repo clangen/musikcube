@@ -200,6 +200,8 @@ void LibraryLayout::ShowDirectories(const std::string& directory) {
 void LibraryLayout::CancelLibraryRequests() {
     this->playlistBinding.Invalidate();
     this->trackSearchLayout->CancelSearchRequests();
+    this->browseLayout->CancelTrackRequests();
+    this->directoryLayout->CancelTrackRequests();
     this->nowPlayingLayout->CancelPlaylistLoad();
 }
 
@@ -210,6 +212,8 @@ void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::api::Co
 
     this->directoryLayout = std::make_shared<DirectoryLayout>(this->playback, this->library);
     const auto apiLibrary = selection.OpenApiLibrary();
+    this->browseLayout->SetTrackLibrary(apiContext, apiLibrary);
+    this->directoryLayout->SetTrackLibrary(apiContext, apiLibrary);
     this->nowPlayingLayout = std::make_shared<NowPlayingLayout>(this->playback, this->library, apiContext, apiLibrary);
     this->categorySearchLayout = std::make_shared<CategorySearchLayout>(this->playback, this->library);
     this->categorySearchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnCategorySearchResultSelected);

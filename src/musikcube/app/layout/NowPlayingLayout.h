@@ -85,7 +85,6 @@ namespace musik {
                 musik::core::api::Playback apiPlayback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<TrackListView> trackListView;
-                std::shared_ptr<musik::core::TrackList> displayQueue;
                 std::optional<musik::core::api::PlayQueue> queue;
                 int reselectIndex; /* sigh... */
                 std::shared_ptr<musik::core::api::Context> context;

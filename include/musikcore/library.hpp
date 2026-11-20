@@ -296,6 +296,29 @@ namespace musik { namespace core { namespace api {
         });
     }
 
+    inline mc_request_id OpenCategory(Context& context, const Library& library, std::string_view category,
+        int64_t id, mc_track_search_order order, TrackSearchCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_open_category_async(context.Get(), library.Get(), {category.data(), category.size()}, id,
+                order, detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
+        });
+    }
+
+    inline mc_request_id OpenDirectory(Context& context, const Library& library, std::string_view directory,
+        TrackSearchCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_open_directory_async(context.Get(), library.Get(), {directory.data(), directory.size()},
+                detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
+        });
+    }
+
+    inline TrackResult MakeTrackResult(const Library& library, const int64_t* ids, size_t count) {
+        mc_track_result* result = nullptr;
+        const auto status = mc_library_make_track_result(library.Get(), ids, count, &result);
+        if (status != MC_OK) throw Error(status);
+        return TrackResult(result);
+    }
+
     struct PlaylistEntry {
         int64_t id;
         std::string name;

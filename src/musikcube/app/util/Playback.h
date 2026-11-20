@@ -45,14 +45,6 @@
 namespace musik {
     namespace cube {
         namespace playback {
-            void PlaySelected(
-                musik::cube::TrackListView& trackList,
-                musik::core::audio::PlaybackService& playback);
-
-            void PlayFromTop(
-                musik::cube::TrackListView& trackList,
-                musik::core::audio::PlaybackService& playback);
-
             bool HotSwap(
                 musik::cube::TrackListView& trackList,
                 musik::core::audio::PlaybackService& playback);
