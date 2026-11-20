@@ -69,6 +69,7 @@ namespace musik {
             private:
                 void InitializeWindows();
                 void RequeryTrackList();
+                void SelectQueueRow();
                 bool ProcessEditOperation(const std::string& key);
 
                 /* callbacks */
@@ -80,6 +81,8 @@ namespace musik {
                 musik::core::api::Playback apiPlayback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<TrackListView> trackListView;
+                std::shared_ptr<musik::core::TrackList> displayQueue;
+                std::optional<musik::core::api::PlayQueue> queue;
                 std::shared_ptr<musik::core::Preferences> prefs;
                 int reselectIndex; /* sigh... */
                 int lastPlaylistQueryId;

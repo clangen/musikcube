@@ -13,6 +13,8 @@
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
+#include <algorithm>
+#include <array>
 #include <limits>
 #include <set>
 #endif
@@ -313,6 +315,12 @@ namespace {
         {
             audio::PlaybackService service(queue, selection, transport);
             playback.emplace(musik::core::audio::CreatePlaybackHandle(service));
+            unsigned queueChanges = 0;
+            const auto changed = [](void* data) { ++*static_cast<unsigned*>(data); };
+            if (playback->SetQueueChangedCallback(changed, &queueChanges) != MC_OK) return false;
+            const auto empty = playback->Queue();
+            if (!empty || empty->Size() || empty->CurrentRow() != SIZE_MAX ||
+                playback->PlayQueueRow(0) != MC_ERROR_NOT_FOUND) return false;
             if (playback->Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_OK ||
                 transport->state != sdk::PlaybackState::Paused ||
                 playback->Control(MC_PLAYBACK_SET_VOLUME, 0.25) != MC_OK ||
@@ -352,10 +360,36 @@ namespace {
             if (playback->UseTrack({}, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_INVALID_ARGUMENT ||
                 playback->UseTrack(first, 0) != MC_ERROR_UNSUPPORTED) return false;
 
+            /* Snapshots preserve duplicate IDs and remain valid across subsequent edits. */
+            const auto captured = playback->Queue();
+            const std::array expected{ second.Id(), first.Id(), second.Id(), first.Id() };
+            const auto captureMatches = [&] {
+                if (!captured) return false;
+                size_t count = 0;
+                const auto ids = captured->Ids(count);
+                return count == expected.size() && std::equal(expected.begin(), expected.end(), ids);
+            };
+            if (!captureMatches() ||
+                captured->IsShuffled() || playback->PlayQueueRow(2) != MC_OK || service.GetIndex() != 2 ||
+                empty->Size()) return false;
+
+            service.QueueEdited();
+            if (queueChanges != 1 ||
+                playback->SetQueueChangedCallback(nullptr) != MC_OK) return false;
+            service.QueueEdited();
+            if (queueChanges != 1 ||
+                playback->SetQueueChangedCallback(changed, &queueChanges) != MC_OK) return false;
+            service.QueueEdited();
+            if (queueChanges != 2 || playback->SetQueueChangedCallback(nullptr) != MC_OK) return false;
+
             const auto prefs = Preferences::ForComponent(musik::core::prefs::components::Settings);
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
             selection->LoadDefaultLibrary();
-            const bool rejected = playback->Play(result, 0) == MC_ERROR_NOT_FOUND &&
+            const auto unavailable = playback->Queue();
+            const bool rejected = unavailable && !unavailable->Size() &&
+                playback->PlayQueueRow(0) == MC_ERROR_NOT_FOUND &&
+                playback->Remove(0) == MC_ERROR_NOT_FOUND &&
+                playback->Play(result, 0) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NOW) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NEXT) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_APPEND) == MC_ERROR_NOT_FOUND &&
@@ -365,7 +399,7 @@ namespace {
             const bool cleared = service.Count() == 0 && transport->state == sdk::PlaybackState::Stopped;
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
             selection->LoadDefaultLibrary();
-            if (!rejected || !cleared) return false;
+            if (!rejected || !cleared || !captureMatches()) return false;
 
             mc_result otherThread = MC_OK;
             std::optional<api::Playback> otherHandle;
@@ -376,7 +410,8 @@ namespace {
             caller.join();
             if (otherThread != MC_ERROR_BUSY || otherHandle->Control(MC_PLAYBACK_STOP) != MC_OK) return false;
         }
-        return playback->Control(MC_PLAYBACK_STOP) == MC_ERROR_NOT_FOUND && !playback->Snapshot();
+        return playback->Control(MC_PLAYBACK_STOP) == MC_ERROR_NOT_FOUND &&
+            !playback->Snapshot() && !playback->Queue();
     }
 
     bool checkRemoteQueryPayloads() {

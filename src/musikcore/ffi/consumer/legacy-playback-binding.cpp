@@ -21,7 +21,7 @@ bool musik::core::audio::MatchesPlaybackOrigin(const LibraryIdentity& origin, co
 
 /* Bridge the public handle to the existing engine until the API owns playback sessions. */
 /* Borrows the owner-thread service. Neither copyable nor movable. */
-class PlaybackService::PlaybackServiceBinding final : public mc_playback {
+class PlaybackService::PlaybackServiceBinding final : public mc_playback, public sigslot::has_slots<> {
 public:
     explicit PlaybackServiceBinding(PlaybackService& service)
         : service(service), lifetime(service.apiLifetime), owner(service.apiOwner) {}
@@ -75,6 +75,47 @@ public:
             : status;
     }
 
+    mc_result QueueSnapshot(mc_play_queue& queue) const override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) return status;
+
+        std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
+        if (!this->QueueOriginAvailable()) return MC_OK;
+
+        queue.ids = this->service.playlist.GetIds();
+        const auto row = this->service.GetIndex();
+        const auto playing = this->service.GetPlaying();
+        if (playing && row < queue.ids.size() && queue.ids[row] == playing->GetId()) {
+            queue.currentRow = row;
+        }
+        queue.shuffled = this->service.IsShuffled();
+        return MC_OK;
+    }
+
+    mc_result SetQueueChangedCallback(mc_play_queue_changed_fn callback, void* data) override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) return status;
+
+        if (callback && !this->observingQueue) {
+            this->service.QueueEdited.connect(this, &PlaybackServiceBinding::OnQueueChanged);
+            this->service.TrackChanged.connect(this, &PlaybackServiceBinding::OnTrackChanged);
+            this->observingQueue = true;
+        }
+        this->queueChanged = callback;
+        this->queueChangedData = data;
+        return MC_OK;
+    }
+
+    mc_result PlayQueueRow(size_t row) override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) return status;
+
+        std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
+        if (!this->QueueOriginAvailable() || row >= this->service.playlist.Count()) return MC_ERROR_NOT_FOUND;
+        this->service.Play(row);
+        return MC_OK;
+    }
+
     mc_result UseTrack(const mc_track_ref& track, mc_playback_track_action action) override {
         const auto status = this->CheckSession();
         if (status != MC_OK) return status;
@@ -114,11 +155,25 @@ public:
             editor.Clear();
             return MC_OK;
         }
+        if (!this->QueueOriginAvailable()) return MC_ERROR_NOT_FOUND;
         const bool changed = edit == QueueEdit::Move ? editor.Move(from, to) : editor.Delete(from);
         return changed ? MC_OK : MC_ERROR_NOT_FOUND;
     }
 
 private:
+    bool QueueOriginAvailable() const {
+        const auto& origin = this->service.queueOrigin;
+        return !origin || MatchesPlaybackOrigin(*origin, this->service.library);
+    }
+
+    void OnQueueChanged() {
+        if (this->queueChanged && this->CheckSession() == MC_OK) this->queueChanged(this->queueChangedData);
+    }
+
+    void OnTrackChanged(size_t, TrackPtr) {
+        this->OnQueueChanged();
+    }
+
     mc_result PlayOrderedIds(const std::shared_ptr<const LibraryIdentity>& origin,
         const int64_t* ids, size_t count, size_t row) {
         if (!origin->playbackOrigin) return MC_ERROR_UNSUPPORTED;
@@ -147,6 +202,9 @@ private:
     PlaybackService& service;
     const std::weak_ptr<int> lifetime;
     const std::thread::id owner;
+    mc_play_queue_changed_fn queueChanged = nullptr;
+    void* queueChangedData = nullptr;
+    bool observingQueue = false;
 };
 
 musik::core::api::Playback musik::core::audio::CreatePlaybackHandle(PlaybackService& playback) {

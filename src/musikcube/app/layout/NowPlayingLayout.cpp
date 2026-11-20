@@ -50,6 +50,7 @@
 #include "NowPlayingLayout.h"
 
 #include <set>
+#include <algorithm>
 
 using namespace musik::core::library::constants;
 
@@ -79,7 +80,12 @@ NowPlayingLayout::NowPlayingLayout(
     this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 
-    this->playback.QueueEdited.connect(this, &NowPlayingLayout::RequeryTrackList);
+    this->displayQueue = std::make_shared<TrackList>(this->library);
+    this->apiPlayback.SetQueueChangedCallback(
+        [](void* data) {
+            auto& layout = *static_cast<NowPlayingLayout*>(data);
+            if (layout.IsVisible()) layout.RequeryTrackList();
+        }, this);
 
     this->trackListView->SetRowRenderer(
         TrackRowRenderers::Get(TrackRowRenderers::Type::NowPlaying));
@@ -95,22 +101,8 @@ Color NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) 
     const bool selected = index == trackListView->GetSelectedIndex();
 
     Color attrs = selected ? Color::ListItemHighlighted : Color::Default;
-    const size_t playingIndex = playback.GetIndex();
-
-    if (index == playingIndex) {
-        TrackPtr playing = playback.GetPlaying();
-
-        if (playing &&
-            playing->GetId() == track->GetId() &&
-            playing->LibraryId() == track->LibraryId())
-        {
-            if (selected) {
-                attrs = Color::ListItemHighlightedSelected;
-            }
-            else {
-                attrs = Color::ListItemSelected;
-            }
-        }
+    if (track && this->queue && index == this->queue->CurrentRow()) {
+        attrs = selected ? Color::ListItemHighlightedSelected : Color::ListItemSelected;
     }
 
     return attrs;
@@ -137,6 +129,9 @@ void NowPlayingLayout::InitializeWindows() {
             std::placeholders::_2));
 
     this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
+    this->trackListView->SetQueueActivationCallback([this](size_t row) {
+        this->apiPlayback.PlayQueueRow(row);
+    });
     this->trackListView->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
     this->AddWindow(this->trackListView);
 }
@@ -148,6 +143,7 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
         this->RequeryTrackList();
     }
     else {
+        this->queue.reset();
         this->trackListView->Reset();
     }
 }
@@ -161,11 +157,13 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::library::query::TrackLi
         this->playback.CopyFrom(*query->GetResult());
         this->lastPlaylistQueryId = -1;
     }
+}
 
-    if (playback.Count()) {
+void NowPlayingLayout::SelectQueueRow() {
+    if (this->queue && this->queue->Size()) {
         /* regular logic (i.e, no edit operation) */
         if (this->reselectIndex == -1) {
-            const size_t index = playback.GetIndex();
+            const size_t index = this->queue->CurrentRow();
 
             if (index == ListWindow::NO_SELECTION) { /* not playing? */
                 this->trackListView->ScrollTo(0);
@@ -205,14 +203,30 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::library::query::TrackLi
         }
     }
     else {
+        this->reselectIndex = -1;
         this->trackListView->ScrollTo(0);
     }
 }
 
 void NowPlayingLayout::RequeryTrackList() {
-    auto noconst = std::const_pointer_cast<TrackList>(this->playback.GetTrackList());
-    this->trackListView->SetTrackList(noconst);
-    this->OnTrackListRequeried(nullptr);
+    auto updated = this->apiPlayback.Queue();
+    if (!updated) return;
+
+    size_t count = 0;
+    size_t previousCount = 0;
+    const auto ids = updated->Ids(count);
+    const auto previous = this->queue ? this->queue->Ids(previousCount) : nullptr;
+    const bool changed = !this->queue || count != previousCount ||
+        (count && !std::equal(ids, ids + count, previous));
+    this->queue = std::move(updated);
+
+    /* Reuse the renderer's metadata cache while updating the ordered rows. */
+    if (changed) {
+        TrackList replacement(this->library, ids, count);
+        this->displayQueue->Swap(replacement);
+    }
+    this->trackListView->SetTrackList(this->displayQueue);
+    if (changed || this->reselectIndex >= 0) this->SelectQueueRow();
 }
 
 void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
@@ -255,11 +269,11 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
 
 bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
     if (kEditKeys.find(key) != kEditKeys.end()) {
-        if (!playback.IsShuffled()) {
+        if (this->queue && !this->queue->IsShuffled()) {
             const size_t selected = this->trackListView->GetSelectedIndex();
             this->reselectIndex = -1;
 
-            const auto count = this->playback.Count();
+            const auto count = this->queue->Size();
             if (selected >= count) return true;
 
             if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key) && selected > 0) {

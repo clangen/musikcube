@@ -303,6 +303,10 @@ bool TrackListView::OnEntryActivated(size_t index) {
         const auto row = this->GetSelectedTrackIndex();
         if (row < this->rowSource.count) this->rowSource.play(row);
     }
+    else if (this->activateQueueRow) {
+        const auto row = this->GetSelectedTrackIndex();
+        if (row != ListWindow::NO_SELECTION) this->activateQueueRow(row);
+    }
     else {
         playback::PlaySelected(*this, this->playback);
     }
@@ -348,7 +352,10 @@ bool TrackListView::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueueHotSwap, key)) {
         if (!headers.HeaderAt(this->GetSelectedIndex())) {
-            if (playback::HotSwap(*this, this->playback)) {
+            /* A queue-backed view already displays the playback queue. */
+            const bool swapped = this->activateQueueRow ? this->GetSelectedTrackIndex() != ListWindow::NO_SELECTION
+                : playback::HotSwap(*this, this->playback);
+            if (swapped) {
                 ToastOverlay::Show(_TSTR("tracklist_hot_swap_success_toast"), 2000);
             }
         }

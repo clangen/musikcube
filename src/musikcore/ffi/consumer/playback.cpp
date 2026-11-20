@@ -32,6 +32,46 @@ mc_result MC_CALL mc_playback_control(mc_playback *playback, mc_playback_command
     });
 }
 
+mc_result MC_CALL mc_playback_get_queue(const mc_playback *playback, mc_play_queue **out_queue) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!out_queue) return MC_ERROR_INVALID_ARGUMENT;
+        *out_queue = nullptr;
+        if (!playback) return MC_ERROR_INVALID_ARGUMENT;
+
+        std::unique_ptr<mc_play_queue> queue(new mc_play_queue());
+        const auto status = playback->QueueSnapshot(*queue);
+        if (status == MC_OK) *out_queue = queue.release();
+        return status;
+    });
+}
+
+void MC_CALL mc_play_queue_destroy(mc_play_queue **queue) {
+    if (!queue) return;
+    delete *queue;
+    *queue = nullptr;
+}
+
+const int64_t *MC_CALL mc_play_queue_get_ids(const mc_play_queue *queue, size_t *out_count) {
+    if (out_count) *out_count = queue ? queue->ids.size() : 0;
+    return queue && !queue->ids.empty() ? queue->ids.data() : nullptr;
+}
+
+size_t MC_CALL mc_play_queue_get_current_row(const mc_play_queue *queue) {
+    return queue ? queue->currentRow : SIZE_MAX;
+}
+
+bool MC_CALL mc_play_queue_is_shuffled(const mc_play_queue *queue) {
+    return queue && queue->shuffled;
+}
+
+mc_result MC_CALL mc_playback_set_queue_changed_callback(
+    mc_playback *playback, mc_play_queue_changed_fn callback, void *user_data) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!playback) return MC_ERROR_INVALID_ARGUMENT;
+        return playback->SetQueueChangedCallback(callback, user_data);
+    });
+}
+
 void MC_CALL mc_playback_destroy(mc_playback **playback) {
     if (!playback) return;
     delete *playback;
@@ -53,6 +93,13 @@ mc_result MC_CALL mc_playback_use_track(
         if (!playback || !track) return MC_ERROR_INVALID_ARGUMENT;
         if (action < MC_PLAYBACK_TRACK_PLAY_NOW || action > MC_PLAYBACK_TRACK_PREPEND) return MC_ERROR_UNSUPPORTED;
         return playback->UseTrack(*track, action);
+    });
+}
+
+mc_result MC_CALL mc_playback_play_queue_row(mc_playback *playback, size_t row) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!playback) return MC_ERROR_INVALID_ARGUMENT;
+        return playback->PlayQueueRow(row);
     });
 }
 

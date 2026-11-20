@@ -173,7 +173,12 @@ async function checkTrackSearch(runtime, database, screenshots,
       await terminal.expect('play now');
       terminal.send(END + UP + UP + '\r');
       terminal.send('n');
-      await terminal.expect(windows ? DISTANT_TRACK : FILTERED_LAST, { absent: 'tracks (sorted by' });
+      const queuedTrack = windows ? DISTANT_TRACK : FILTERED_LAST;
+      await terminal.expect(queuedTrack, { absent: 'tracks (sorted by' });
+
+      /* Now Playing refreshes from the queue notification after clear. */
+      terminal.send('X');
+      await terminal.expect('play queue', { absent: queuedTrack });
     }
     terminal.send('\x04');
     await terminal.expectExit();

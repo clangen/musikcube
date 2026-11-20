@@ -9,6 +9,36 @@
 
 namespace musik { namespace core { namespace api {
 
+    /* Move-only snapshot. Moving transfers ownership of its track ID storage. */
+    class PlayQueue {
+    public:
+        explicit PlayQueue(mc_play_queue* queue) noexcept : queue(queue) {}
+        PlayQueue(const PlayQueue&) = delete;
+        PlayQueue& operator=(const PlayQueue&) = delete;
+        PlayQueue(PlayQueue&&) noexcept = default;
+        PlayQueue& operator=(PlayQueue&&) noexcept = default;
+
+        /* The returned array is owned by this snapshot. */
+        const int64_t* Ids(size_t& count) const & noexcept {
+            return mc_play_queue_get_ids(this->queue.get(), &count);
+        }
+        const int64_t* Ids(size_t& count) const && = delete;
+        size_t Size() const noexcept {
+            size_t count = 0;
+            this->Ids(count);
+            return count;
+        }
+        size_t CurrentRow() const noexcept { return mc_play_queue_get_current_row(this->queue.get()); }
+        bool IsShuffled() const noexcept { return mc_play_queue_is_shuffled(this->queue.get()); }
+
+    private:
+        /* Stateless deleter. Copy and move leave no retained state. */
+        struct Deleter {
+            void operator()(mc_play_queue* queue) const noexcept { mc_play_queue_destroy(&queue); }
+        };
+        std::unique_ptr<mc_play_queue, Deleter> queue;
+    };
+
     /* Move-only handle to a playback session. Moving transfers handle ownership. */
     class Playback {
     public:
@@ -29,9 +59,20 @@ namespace musik { namespace core { namespace api {
             return snapshot;
         }
 
+        std::optional<PlayQueue> Queue() const {
+            mc_play_queue* queue = nullptr;
+            if (mc_playback_get_queue(this->handle.get(), &queue) != MC_OK) return std::nullopt;
+            return PlayQueue(queue);
+        }
+
+        mc_result SetQueueChangedCallback(mc_play_queue_changed_fn callback, void* data = nullptr) {
+            return mc_playback_set_queue_changed_callback(this->handle.get(), callback, data);
+        }
+
         mc_result Play(const TrackResult& result, size_t row) {
             return mc_playback_play_result(this->handle.get(), result.Get(), row);
         }
+        mc_result PlayQueueRow(size_t row) { return mc_playback_play_queue_row(this->handle.get(), row); }
 
         mc_result Move(size_t from, size_t to) { return mc_playback_queue_move(this->handle.get(), from, to); }
         mc_result UseTrack(const TrackRef& track, mc_playback_track_action action) {

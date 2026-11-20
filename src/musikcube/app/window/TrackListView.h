@@ -91,6 +91,9 @@ namespace musik {
                 /* regular methods */
                 std::shared_ptr<musik::core::TrackList> GetTrackList();
                 void SetTrackList(std::shared_ptr<musik::core::TrackList> trackList);
+                void SetQueueActivationCallback(std::function<void(size_t)> callback) {
+                    this->activateQueueRow = std::move(callback);
+                }
                 musik::core::TrackPtr GetSelectedTrack();
                 size_t GetSelectedTrackIndex();
                 size_t TrackIndexToAdapterIndex(size_t index);
@@ -159,6 +162,7 @@ namespace musik {
                 size_t RowIndex(size_t adapterIndex);
                 TrackPtr DisplayTrack(size_t row);
                 RowSource rowSource;
+                std::function<void(size_t)> activateQueueRow;
                 /* class to help with header offset calculation. this thing is really gross and
                 should probably be refactored at some point. */
                 class HeaderCalculator {

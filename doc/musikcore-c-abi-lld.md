@@ -728,8 +728,9 @@ legacy list for actions that still require it.
   after switching libraries. Ordered playback events remain open.
 - [ ] **PUB-005** Add queue snapshots and atomic batch edits.
   Move, remove, and clear commands power the Now Playing keyboard editor.
-  Track Search inserts tracks through origin-bound references. Queue
-  snapshots and atomic batch edits remain open.
+  Track Search inserts tracks through origin-bound references. Now Playing
+  reads an ordered snapshot and refreshes on playback dispatcher notifications.
+  Atomic batch edits are deferred beyond parity.
 - [ ] **PUB-006** Add indexer paths, commands, snapshots, progress, and terminal
   events.
 - [ ] **PUB-007** Add output selection, replay gain, equalizer, and transport
