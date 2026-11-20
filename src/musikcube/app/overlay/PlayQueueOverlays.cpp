@@ -136,7 +136,8 @@ static void queryTracksByCategory(
 
     library->Enqueue(query, [query, callback](auto q) {
         callback(query->GetStatus() == IQuery::Finished
-            ? query->GetResult()  : std::shared_ptr<TrackList>());
+            ? query->GetResult()
+            : std::shared_ptr<TrackList>());
     });
 }
 
@@ -156,7 +157,8 @@ static void queryPlaylists(
     auto completion = [callback, query, called](auto q) {
         if (!*called) {
             callback(query->GetStatus() == IQuery::Finished
-                ? query : std::shared_ptr<CategoryListQuery>());
+                ? query
+                : std::shared_ptr<CategoryListQuery>());
         }
     };
 
@@ -318,8 +320,12 @@ static void showPlaylistPicker(const std::string& title, bool allowCreate,
 {
     auto adapter = std::make_shared<Adapter>();
     adapter->SetSelectable(true);
-    if (allowCreate) adapter->AddEntry(_TSTR("playqueue_overlay_new"));
-    for (const auto& playlist : playlists) adapter->AddEntry(playlist.name);
+    if (allowCreate) {
+        adapter->AddEntry(_TSTR("playqueue_overlay_new"));
+    }
+    for (const auto& playlist : playlists) {
+        adapter->AddEntry(playlist.name);
+    }
 
     const auto preferred = std::find_if(playlists.begin(), playlists.end(),
         [preferredId](const auto& playlist) { return playlist.id == preferredId; });
@@ -329,8 +335,12 @@ static void showPlaylistPicker(const std::string& title, bool allowCreate,
 
     showPlaylistListOverlay(title, adapter,
         [offset, picked, playlists = std::move(playlists)](ListOverlay*, IScrollAdapterPtr, size_t index) {
-            if (index < offset) picked({0, {}});
-            else if (index - offset < playlists.size()) picked(playlists[index - offset]);
+            if (index < offset) {
+                picked({ 0, {} });
+            }
+            else if (index - offset < playlists.size()) {
+                picked(playlists[index - offset]);
+            }
         }, selected);
 }
 
@@ -340,21 +350,25 @@ static void showLegacyAddToPlaylistOverlay(
     ILibraryPtr library, LoadPlaylistTracks load)
 {
     queryPlaylists(library, [library, load](std::shared_ptr<CategoryListQuery> query) {
-        if (!query) return;
+        if (!query) {
+            return;
+        }
 
         const auto result = query->GetResult();
         std::vector<api::PlaylistEntry> playlists;
         playlists.reserve(result->Count());
         for (size_t i = 0; i < result->Count(); ++i) {
             const auto entry = result->At(i);
-            playlists.push_back({entry->GetId(), entry->ToString()});
+            playlists.push_back({ entry->GetId(), entry->ToString() });
         }
 
         showPlaylistPicker(_TSTR("playqueue_overlay_select_playlist_title"), true, std::move(playlists),
             lastOperationExpired() ? 0 : lastPlaylistId,
             [library, load](const api::PlaylistEntry& playlist) {
                 load([library, id = playlist.id](std::shared_ptr<TrackList> tracks) {
-                    if (!tracks) return;
+                    if (!tracks) {
+                        return;
+                    }
                     if (id) {
                         setLastPlaylistId(id);
                         library->Enqueue(SavePlaylistQuery::Append(library, id, tracks));
@@ -388,7 +402,14 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
     AddTrackToPlaylistCallback addToPlaylist)
 {
     enum TrackActionIndex : size_t {
-        JumpToAlbum, JumpToArtist, JumpToGenre, AddToPlaylist, Prepend, Append, PlayNext, PlayNow
+        JumpToAlbum,
+        JumpToArtist,
+        JumpToGenre,
+        AddToPlaylist,
+        Prepend,
+        Append,
+        PlayNext,
+        PlayNow
     };
 
     auto adapter = std::make_shared<Adapter>();
@@ -399,7 +420,9 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_start_of_queue"));
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end_in_queue"));
     adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
-    if (trackRef) adapter->AddEntry(_TSTR("playqueue_overlay_track_play_now"));
+    if (trackRef) {
+        adapter->AddEntry(_TSTR("playqueue_overlay_track_play_now"));
+    }
     adapter->SetSelectable(true);
 
     size_t selectedIndex = 0;
@@ -414,8 +437,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
         .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [track, trackRef, library, addToPlaylist, &messageQueue, &playback]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+            [track, trackRef, library, addToPlaylist, &messageQueue, &playback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 if (index > (trackRef ? PlayNow : PlayNext)) {
                     return;
                 }
@@ -442,7 +464,9 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
                     const auto id = trackRef->Id();
                     selected = std::make_shared<TrackList>(library, &id, 1)->Get(0);
                 }
-                if (!selected) return;
+                if (!selected) {
+                    return;
+                }
 
                 if (index <= JumpToGenre) {
                     handleJumpTo(index, messageQueue, selected);
@@ -505,8 +529,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
         .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [&playback, library, fieldColumn, fieldValue, fieldId, addToPlaylist]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+            [&playback, library, fieldColumn, fieldValue, fieldId, addToPlaylist](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 if (index == ListWindow::NO_SELECTION) {
                     return;
                 }
@@ -514,9 +537,13 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
                 setLastCategoryOverlayIndex(index);
 
                 if (index == 0) {
-                    if (addToPlaylist) addToPlaylist(fieldColumn, fieldValue, fieldId);
-                    else showAddCategorySelectionToPlaylistOverlay(
+                    if (addToPlaylist) {
+                        addToPlaylist(fieldColumn, fieldValue, fieldId);
+                    }
+                    else {
+                        showAddCategorySelectionToPlaylistOverlay(
                             library, fieldColumn, fieldValue, fieldId);
+                    }
                 }
                 else if (index == adapter->GetEntryCount() - 1) {
                     auto const callback = [&playback](std::shared_ptr<TrackList> tracks) {
@@ -551,7 +578,9 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
     IMessageQueue& messageQueue, PlaybackService& playback, ILibraryPtr library, TrackPtr firstTrack,
     AddCategoryToPlaylistCallback addToPlaylist)
 {
-    if (!firstTrack) return;
+    if (!firstTrack) {
+        return;
+    }
     auto adapter = std::make_shared<Adapter>();
     adapter->AddEntry(_TSTR("playqueue_overlay_album_jump_to"));
     adapter->AddEntry(_TSTR("playqueue_overlay_artist_jump_to"));
@@ -570,78 +599,95 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
         .SetWidth(_DIMEN("playqueue_album_header_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
-            [&playback, library, &messageQueue, firstTrack, addToPlaylist]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-            if (index == ListWindow::NO_SELECTION) {
-                return;
-            }
+            [&playback, library, &messageQueue, firstTrack, addToPlaylist](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                if (index == ListWindow::NO_SELECTION) {
+                    return;
+                }
 
-            auto albumColumn = library::constants::Track::ALBUM;
-            auto const albumId = firstTrack->GetInt64(library::constants::Track::ALBUM_ID);
+                auto albumColumn = library::constants::Track::ALBUM;
+                auto const albumId = firstTrack->GetInt64(library::constants::Track::ALBUM_ID);
 
-            /* items 0, 1, and 2 jump to category */
-            if (index <= 2) {
-                handleJumpTo(index, messageQueue, firstTrack);
-            }
-            else if (index == 3) { /* replace play queue */
-                auto query = std::make_shared<CategoryTrackListQuery>(library, albumColumn, albumId);
-                library->Enqueue(query, [&playback, query](auto q) {
-                    if (query->GetStatus() == IQuery::Finished) {
-                        playback.Play(*query->GetResult().get(), 0);
+                /* items 0, 1, and 2 jump to category */
+                if (index <= 2) {
+                    handleJumpTo(index, messageQueue, firstTrack);
+                }
+                else if (index == 3) { /* replace play queue */
+                    auto query = std::make_shared<CategoryTrackListQuery>(library, albumColumn, albumId);
+                    library->Enqueue(query, [&playback, query](auto q) {
+                        if (query->GetStatus() == IQuery::Finished) {
+                            playback.Play(*query->GetResult().get(), 0);
+                        }
+                    });
+                }
+                /* add to playlist */
+                else if (index == 4) {
+                    if (addToPlaylist) {
+                        addToPlaylist(albumColumn, "", albumId);
                     }
-                });
-            }
-            /* add to playlist */
-            else if (index == 4) {
-                if (addToPlaylist) addToPlaylist(albumColumn, "", albumId);
-                else showAddCategorySelectionToPlaylistOverlay(
-                        library, albumColumn, "", albumId);
-            }
-            /* the other are our standard play queue operations */
-            else {
-                handleAddCategorySelectionToPlayQueue(
-                    playback, library, albumColumn, "", albumId, index - 5);
-            }
-    });
+                    else {
+                        showAddCategorySelectionToPlaylistOverlay(
+                            library, albumColumn, "", albumId);
+                    }
+                }
+                /* the other are our standard play queue operations */
+                else {
+                    handleAddCategorySelectionToPlayQueue(
+                        playback, library, albumColumn, "", albumId, index - 5);
+                }
+            });
 
     cursespp::App::Overlays().Push(dialog);
 }
 
 void PlayQueueOverlays::ShowPlaylistPicker(api::Context& context, const api::Library& library,
-    const std::string& title, bool allowCreate, RequestGeneration::Ticket ticket, PlaylistPickedCallback picked,
+    const std::string& title, bool allowCreate, AsyncCallbackScope::Token token, PlaylistPickedCallback picked,
     int64_t preferredId)
 {
     api::ListPlaylists(context, library,
-        [title, allowCreate, ticket, picked, preferredId](mc_result status, std::vector<api::PlaylistEntry> playlists, std::string_view) {
-            if (!ticket.IsCurrent() || status != MC_OK) return;
+        [title, allowCreate, token, picked, preferredId](mc_result status, std::vector<api::PlaylistEntry> playlists, std::string_view) {
+            if (!token.IsCurrent() || status != MC_OK) {
+                return;
+            }
             if (!allowCreate && playlists.empty()) {
                 showNoPlaylistsDialog();
                 return;
             }
 
             showPlaylistPicker(title, allowCreate, std::move(playlists), preferredId,
-                [ticket, picked](const api::PlaylistEntry& playlist) {
-                    if (ticket.IsCurrent()) picked(playlist);
+                [token, picked](const api::PlaylistEntry& playlist) {
+                    if (token.IsCurrent()) {
+                        picked(playlist);
+                    }
                 });
         });
 }
 
 void PlayQueueOverlays::ShowAddToPlaylistPicker(std::weak_ptr<api::Context> context,
-    std::shared_ptr<const api::Library> library, RequestGeneration::Ticket ticket, std::vector<int64_t> ids)
+    std::shared_ptr<const api::Library> library, AsyncCallbackScope::Token token, std::vector<int64_t> ids)
 {
     const auto dispatcher = context.lock();
-    if (!dispatcher || !ticket.IsCurrent() || ids.empty()) return;
+    if (!dispatcher || !token.IsCurrent() || ids.empty()) {
+        return;
+    }
 
     const auto tracks = std::make_shared<const std::vector<int64_t>>(std::move(ids));
-    const auto write = [context, library, ticket, tracks](int64_t id, const std::string& name) {
+    const auto write = [context, library, token, tracks](int64_t id, const std::string& name) {
         const auto dispatcher = context.lock();
-        if (!dispatcher || !ticket.IsCurrent()) return;
-        const auto complete = [ticket](mc_result status, int64_t playlistId, std::string_view) {
-            if (ticket.IsCurrent() && status == MC_OK && playlistId > 0) setLastPlaylistId(playlistId);
+        if (!dispatcher || !token.IsCurrent()) {
+            return;
+        }
+        const auto complete = [token](mc_result status, int64_t playlistId, std::string_view) {
+            if (token.IsCurrent() && status == MC_OK && playlistId > 0) {
+                setLastPlaylistId(playlistId);
+            }
         };
         try {
-            if (id) api::AppendPlaylist(*dispatcher, *library, id, *tracks, complete);
-            else api::SavePlaylist(*dispatcher, *library, 0, name, *tracks, complete);
+            if (id) {
+                api::AppendPlaylist(*dispatcher, *library, id, *tracks, complete);
+            }
+            else {
+                api::SavePlaylist(*dispatcher, *library, 0, name, *tracks, complete);
+            }
         }
         catch (const api::Error& error) {
             musik::debug::error("PlayQueueOverlays", error.what());
@@ -649,11 +695,15 @@ void PlayQueueOverlays::ShowAddToPlaylistPicker(std::weak_ptr<api::Context> cont
     };
 
     try {
-        ShowPlaylistPicker(*dispatcher, *library, _TSTR("playqueue_overlay_select_playlist_title"), true, ticket,
+        ShowPlaylistPicker(*dispatcher, *library, _TSTR("playqueue_overlay_select_playlist_title"), true, token,
             [write](const api::PlaylistEntry& playlist) {
-                if (playlist.id) write(playlist.id, {});
-                else ShowPlaylistNameOverlay(_TSTR("playqueue_overlay_playlist_name_title"), {},
-                    [write](const std::string& name) { write(0, name); });
+                if (playlist.id) {
+                    write(playlist.id, {});
+                }
+                else {
+                    ShowPlaylistNameOverlay(_TSTR("playqueue_overlay_playlist_name_title"), {},
+                        [write](const std::string& name) { write(0, name); });
+                }
             }, lastOperationExpired() ? 0 : lastPlaylistId);
     }
     catch (const api::Error& error) {
@@ -662,14 +712,18 @@ void PlayQueueOverlays::ShowAddToPlaylistPicker(std::weak_ptr<api::Context> cont
 }
 
 void PlayQueueOverlays::ShowAddCategoryToPlaylistPicker(std::weak_ptr<api::Context> context,
-    std::shared_ptr<const api::Library> library, RequestGeneration::Ticket ticket,
+    std::shared_ptr<const api::Library> library, AsyncCallbackScope::Token token,
     ILibraryPtr backend, const std::string& field, const std::string& value, int64_t id)
 {
-    if (!ticket.IsCurrent()) return;
+    if (!token.IsCurrent()) {
+        return;
+    }
     /* Resolve the ordered selection through the concrete backend that supplied the category. */
     queryTracksByCategory(backend, field, value, id,
-        [context, library, ticket](std::shared_ptr<TrackList> tracks) {
-            if (tracks && ticket.IsCurrent()) ShowAddToPlaylistPicker(context, library, ticket, tracks->GetIds());
+        [context, library, token](std::shared_ptr<TrackList> tracks) {
+            if (tracks && token.IsCurrent()) {
+                ShowAddToPlaylistPicker(context, library, token, tracks->GetIds());
+            }
         });
 }
 
@@ -681,7 +735,9 @@ void PlayQueueOverlays::ShowPlaylistNameOverlay(const std::string& title, const 
         .SetWidth(_DIMEN("playqueue_playlist_name_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetText(name)
         .SetInputAcceptedCallback([accepted](const std::string& value) {
-            if (!value.empty()) accepted(value);
+            if (!value.empty()) {
+                accepted(value);
+            }
         });
     App::Overlays().Push(dialog);
 }

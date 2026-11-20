@@ -60,14 +60,18 @@ NowPlayingLayout::NowPlayingLayout(
 , library(library)
 , reselectIndex(-1)
 , context(std::move(context))
-, apiLibrary(std::move(apiLibrary)) {
+, apiLibrary(std::move(apiLibrary))
+{
     this->InitializeWindows(playback);
 
     this->apiPlayback.SetQueueChangedCallback(
         [](void* data) {
             auto& layout = *static_cast<NowPlayingLayout*>(data);
-            if (layout.IsVisible()) layout.RequeryTrackList();
-        }, this);
+            if (layout.IsVisible()) {
+                layout.RequeryTrackList();
+            }
+        },
+        this);
 
     this->trackListView->SetRowRenderer(
         TrackRowRenderers::Get(TrackRowRenderers::Type::NowPlaying));
@@ -138,7 +142,7 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
 }
 
 void NowPlayingLayout::CancelPlaylistLoad() {
-    this->playlistGeneration.Invalidate();
+    this->playlistWork.Invalidate();
     if (this->playlistRequest) {
         this->context->Cancel(this->playlistRequest);
         this->playlistRequest = 0;
@@ -196,7 +200,9 @@ void NowPlayingLayout::SelectQueueRow() {
 
 void NowPlayingLayout::RequeryTrackList() {
     auto updated = this->apiPlayback.Queue();
-    if (!updated) return;
+    if (!updated) {
+        return;
+    }
 
     size_t count = 0;
     size_t previousCount = 0;
@@ -213,24 +219,25 @@ void NowPlayingLayout::RequeryTrackList() {
     else {
         this->trackListView->Redraw();
     }
-    if (changed || this->reselectIndex >= 0) this->SelectQueueRow();
+    if (changed || this->reselectIndex >= 0) {
+        this->SelectQueueRow();
+    }
 }
 
 void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
     this->CancelPlaylistLoad();
-    if (!this->apiLibrary) return;
+    if (!this->apiLibrary) {
+        return;
+    }
 
-    /* A completed request may still be waiting for dispatch when the library changes. */
-    const auto ticket = this->playlistGeneration.Capture();
     try {
         this->playlistRequest = api::OpenPlaylist(*this->context, *this->apiLibrary, playlistId,
-            [this, ticket](mc_result status, api::TrackResult tracks, std::string_view) {
-                if (!ticket.IsCurrent()) return;
+            this->playlistWork.Begin([this](mc_result status, api::TrackResult tracks, std::string_view) {
                 this->playlistRequest = 0;
                 if (status == MC_OK && this->apiPlayback.ReplaceQueue(tracks) == MC_OK) {
                     this->RequeryTrackList();
                 }
-            });
+            }));
     }
     catch (const api::Error& error) {
         musik::debug::error("NowPlayingLayout", error.what());
@@ -238,23 +245,41 @@ void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
 }
 
 void NowPlayingLayout::ShowPlaylistPicker(PlaylistAction action) {
-    if (!this->apiLibrary) return;
-    const auto ticket = this->playlistGeneration.Capture();
+    if (!this->apiLibrary) {
+        return;
+    }
+    const auto token = this->playlistWork.CurrentToken();
     try {
         const char* title = nullptr;
         switch (action) {
-            case PlaylistAction::Load: title = "playqueue_overlay_load_playlist_title"; break;
-            case PlaylistAction::Save: title = "playqueue_overlay_save_playlist_title"; break;
-            case PlaylistAction::Rename: title = "playqueue_overlay_rename_playlist_title"; break;
-            case PlaylistAction::Delete: title = "playqueue_overlay_delete_playlist_title"; break;
+            case PlaylistAction::Load:
+                title = "playqueue_overlay_load_playlist_title";
+                break;
+            case PlaylistAction::Save:
+                title = "playqueue_overlay_save_playlist_title";
+                break;
+            case PlaylistAction::Rename:
+                title = "playqueue_overlay_rename_playlist_title";
+                break;
+            case PlaylistAction::Delete:
+                title = "playqueue_overlay_delete_playlist_title";
+                break;
         }
         PlayQueueOverlays::ShowPlaylistPicker(*this->context, *this->apiLibrary, _TSTR(title),
-            action == PlaylistAction::Save, ticket, [this, action](const api::PlaylistEntry& playlist) {
+            action == PlaylistAction::Save, token, [this, action](const api::PlaylistEntry& playlist) {
                 switch (action) {
-                    case PlaylistAction::Load: this->OnPlaylistSelected(playlist.id); break;
-                    case PlaylistAction::Save: this->SaveQueueToPlaylist(playlist); break;
-                    case PlaylistAction::Rename: this->RenamePlaylist(playlist); break;
-                    case PlaylistAction::Delete: this->DeletePlaylist(playlist); break;
+                    case PlaylistAction::Load:
+                        this->OnPlaylistSelected(playlist.id);
+                        break;
+                    case PlaylistAction::Save:
+                        this->SaveQueueToPlaylist(playlist);
+                        break;
+                    case PlaylistAction::Rename:
+                        this->RenamePlaylist(playlist);
+                        break;
+                    case PlaylistAction::Delete:
+                        this->DeletePlaylist(playlist);
+                        break;
                 }
             });
     }
@@ -265,21 +290,29 @@ void NowPlayingLayout::ShowPlaylistPicker(PlaylistAction action) {
 
 void NowPlayingLayout::SaveQueueToPlaylist(const api::PlaylistEntry& playlist) {
     auto snapshot = this->apiPlayback.Queue();
-    if (!snapshot) return;
+    if (!snapshot) {
+        return;
+    }
 
     size_t count = 0;
     const auto ids = snapshot->Ids(count);
     auto tracks = std::make_shared<std::vector<int64_t>>();
-    if (count) tracks->assign(ids, ids + count);
+    if (count) {
+        tracks->assign(ids, ids + count);
+    }
 
     /* Keep the selected queue snapshot through the name or overwrite prompt. */
-    const auto ticket = this->playlistGeneration.Capture();
-    const auto save = [this, ticket, tracks, id = playlist.id](const std::string& name) {
-        if (!ticket.IsCurrent()) return;
+    const auto token = this->playlistWork.CurrentToken();
+    const auto save = [this, token, tracks, id = playlist.id](const std::string& name) {
+        if (!token.IsCurrent()) {
+            return;
+        }
         try {
             api::SavePlaylist(*this->context, *this->apiLibrary, id, name, *tracks,
                 [](mc_result status, int64_t, std::string_view) {
-                    if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not save playlist");
+                    if (status != MC_OK) {
+                        musik::debug::error("NowPlayingLayout", "Could not save playlist");
+                    }
                 });
         }
         catch (const api::Error& error) {
@@ -297,13 +330,17 @@ void NowPlayingLayout::SaveQueueToPlaylist(const api::PlaylistEntry& playlist) {
 }
 
 void NowPlayingLayout::RenamePlaylist(const api::PlaylistEntry& playlist) {
-    const auto ticket = this->playlistGeneration.Capture();
+    const auto token = this->playlistWork.CurrentToken();
     PlayQueueOverlays::ShowPlaylistNameOverlay(_TSTR("playqueue_overlay_new_playlist_name_title"), playlist.name,
-        [this, ticket, id = playlist.id](const std::string& name) {
-            if (!ticket.IsCurrent()) return;
+        [this, token, id = playlist.id](const std::string& name) {
+            if (!token.IsCurrent()) {
+                return;
+            }
             try {
                 api::RenamePlaylist(*this->context, *this->apiLibrary, id, name, [](mc_result status, int64_t, std::string_view) {
-                    if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not rename playlist");
+                    if (status != MC_OK) {
+                        musik::debug::error("NowPlayingLayout", "Could not rename playlist");
+                    }
                 });
             }
             catch (const api::Error& error) {
@@ -313,13 +350,17 @@ void NowPlayingLayout::RenamePlaylist(const api::PlaylistEntry& playlist) {
 }
 
 void NowPlayingLayout::DeletePlaylist(const api::PlaylistEntry& playlist) {
-    const auto ticket = this->playlistGeneration.Capture();
+    const auto token = this->playlistWork.CurrentToken();
     PlayQueueOverlays::ShowPlaylistConfirmation("playqueue_overlay_confirm_delete_message", playlist.name,
-        [this, ticket, id = playlist.id] {
-            if (!ticket.IsCurrent()) return;
+        [this, token, id = playlist.id] {
+            if (!token.IsCurrent()) {
+                return;
+            }
             try {
                 api::DeletePlaylist(*this->context, *this->apiLibrary, id, [](mc_result status, int64_t, std::string_view) {
-                    if (status != MC_OK) musik::debug::error("NowPlayingLayout", "Could not delete playlist");
+                    if (status != MC_OK) {
+                        musik::debug::error("NowPlayingLayout", "Could not delete playlist");
+                    }
                 });
             }
             catch (const api::Error& error) {
@@ -363,7 +404,9 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
             this->reselectIndex = -1;
 
             const auto count = this->queue->Size();
-            if (selected >= count) return true;
+            if (selected >= count) {
+                return true;
+            }
 
             size_t target = selected;
             mc_result status;
@@ -372,13 +415,19 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
             }
             else {
                 const bool up = Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key);
-                if ((up && selected == 0) || (!up && selected + 1 == count)) return true;
+                if ((up && selected == 0) || (!up && selected + 1 == count)) {
+                    return true;
+                }
                 target = up ? selected - 1 : selected + 1;
                 status = this->apiPlayback.Move(*this->queue, selected, target);
             }
 
-            if (status == MC_OK) this->reselectIndex = narrow_cast<int>(target);
-            if (status == MC_OK || status == MC_ERROR_NOT_FOUND) this->RequeryTrackList();
+            if (status == MC_OK) {
+                this->reselectIndex = narrow_cast<int>(target);
+            }
+            if (status == MC_OK || status == MC_ERROR_NOT_FOUND) {
+                this->RequeryTrackList();
+            }
             return true;
         }
     }

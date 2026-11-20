@@ -118,6 +118,16 @@ foreach(case IN ITEMS registration_order filtered_removal unregister_during_disp
   set_tests_properties(musikcore.runtime.message_queue.${case} PROPERTIES LABELS "unit;runtime" TIMEOUT 10)
 endforeach()
 
+# This application helper is header-only and needs no running core context.
+add_executable(musikcube_async_callback_scope_test unit/async-callback-scope.cpp)
+target_include_directories(musikcube_async_callback_scope_test PRIVATE "${PROJECT_SOURCE_DIR}/src/musikcube")
+set_target_properties(musikcube_async_callback_scope_test PROPERTIES
+  CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcube_async_callback_scope_test)
+add_test(NAME musikcube.unit.async_callback_scope COMMAND musikcube_async_callback_scope_test)
+set_tests_properties(musikcube.unit.async_callback_scope PROPERTIES LABELS "unit;app" TIMEOUT 10)
+
 add_executable(musikcore_abi_arguments_test abi/arguments.c)
 target_link_libraries(musikcore_abi_arguments_test PRIVATE musikcore_abi0)
 set_target_properties(musikcore_abi_arguments_test PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON

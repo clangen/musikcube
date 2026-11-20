@@ -102,7 +102,7 @@ void TrackListView::SetApiLibrary(std::shared_ptr<api::Context> context, std::sh
 }
 
 void TrackListView::CancelTrackRequest() {
-    this->trackRequestGeneration.Invalidate();
+    this->trackQueryWork.Invalidate();
     if (this->trackRequest) this->apiContext->Cancel(std::exchange(this->trackRequest, 0));
     this->pendingTrackQuery = {};
 }
@@ -127,20 +127,22 @@ void TrackListView::RequeryTracks(size_t hash, TrackRequest request) {
 }
 
 void TrackListView::SubmitTrackRequest() {
-    if (!this->pendingTrackQuery || this->trackRequest) return;
-    const auto ticket = this->trackRequestGeneration.Capture();
+    if (!this->pendingTrackQuery || this->trackRequest) {
+        return;
+    }
     try {
         this->trackRequest = this->pendingTrackQuery(*this->apiContext, *this->apiLibrary,
-            [this, ticket](mc_result status, api::TrackResult result, std::string_view) {
-                if (!ticket.IsCurrent()) return;
+            this->trackQueryWork.Begin([this](mc_result status, api::TrackResult result, std::string_view) {
                 this->trackRequest = 0;
                 if (status == MC_ERROR_BUSY) {
                     this->Debounce(RetryTrackRequestMessage, 0, 0, kTrackPageRetryMs);
                     return;
                 }
                 this->pendingTrackQuery = {};
-                if (status == MC_OK) this->SetTrackResult(std::move(result), this->pendingTrackHash);
-            });
+                if (status == MC_OK) {
+                    this->SetTrackResult(std::move(result), this->pendingTrackHash);
+                }
+            }));
     }
     catch (const api::Error& error) {
         if (error.Result() == MC_ERROR_BUSY) {

@@ -66,14 +66,16 @@ using namespace cursespp;
 namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
-#define SHOULD_REFOCUS(target) \
+#define SHOULD_REFOCUS(target)         \
     (this->visibleLayout == target) && \
-    (this->shortcuts && !this->shortcuts->IsFocused())
+        (this->shortcuts && !this->shortcuts->IsFocused())
 
-#define REMEMBER(key, value) { \
-    auto prefs = Preferences::ForComponent(components::Session); \
-    prefs->SetString(key, value.c_str()); this->prefs->Save(); \
-}
+#define REMEMBER(key, value)                                         \
+    {                                                                \
+        auto prefs = Preferences::ForComponent(components::Session); \
+        prefs->SetString(key, value.c_str());                        \
+        this->prefs->Save();                                         \
+    }
 
 namespace type {
     const std::string CategoryFilter = "CategoryFilter";
@@ -89,7 +91,8 @@ LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback,
 : LayoutBase()
 , playback(playback)
 , shortcuts(nullptr)
-, transport(playback.GetTransport()) {
+, transport(playback.GetTransport())
+{
     this->library = library;
     this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows(apiContext, *library);
@@ -117,8 +120,7 @@ void LibraryLayout::OnVisibilityChanged(bool visible) {
 
     if (visible &&
         library->GetType() == ILibrary::Type::Remote &&
-        library->GetConnectionState() == ILibrary::ConnectionState::Connected)
-    {
+        library->GetConnectionState() == ILibrary::ConnectionState::Connected) {
         prefs->SetBool(core::prefs::keys::RemoteLibraryViewed, true);
     }
 }
@@ -128,9 +130,9 @@ void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLa
         this->transportView->SetFocus(TransportWindow::FocusNone);
 
         if (this->visibleLayout) {
-           this->RemoveWindow(this->visibleLayout);
-           this->visibleLayout->FocusTerminated.disconnect(this);
-           this->visibleLayout->Hide();
+            this->RemoveWindow(this->visibleLayout);
+            this->visibleLayout->FocusTerminated.disconnect(this);
+            this->visibleLayout->Hide();
         }
 
         this->visibleLayout = newLayout;
@@ -174,15 +176,15 @@ void LibraryLayout::ShowBrowse(const std::string& category) {
 
 void LibraryLayout::ShowCategorySearch() {
     SHOULD_REFOCUS(this->categorySearchLayout)
-        ? this->categorySearchLayout->FocusInput()
-        : this->ChangeMainLayout(this->categorySearchLayout);
+    ? this->categorySearchLayout->FocusInput()
+    : this->ChangeMainLayout(this->categorySearchLayout);
     REMEMBER(keys::LastLibraryView, type::CategoryFilter);
 }
 
 void LibraryLayout::ShowTrackSearch() {
     SHOULD_REFOCUS(this->trackSearchLayout)
-        ? this->trackSearchLayout->FocusInput()
-        : this->ChangeMainLayout(this->trackSearchLayout);
+    ? this->trackSearchLayout->FocusInput()
+    : this->ChangeMainLayout(this->trackSearchLayout);
 
     REMEMBER(keys::LastLibraryView, type::TrackFilter);
 }
@@ -198,7 +200,7 @@ void LibraryLayout::ShowDirectories(const std::string& directory) {
 }
 
 void LibraryLayout::CancelLibraryRequests() {
-    this->playlistBinding.Invalidate();
+    this->playlistWork.Invalidate();
     this->trackSearchLayout->CancelSearchRequests();
     this->browseLayout->CancelTrackRequests();
     this->directoryLayout->CancelTrackRequests();
@@ -206,7 +208,8 @@ void LibraryLayout::CancelLibraryRequests() {
 }
 
 void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::api::Context>& apiContext,
-    const MasterLibrary& selection) {
+    const MasterLibrary& selection)
+{
     this->browseLayout = std::make_shared<BrowseLayout>(this->playback, this->library);
     this->browseLayout->SetOnHeaderClicked([this]() { this->ShowCategoryChooser(); });
 
@@ -222,14 +225,13 @@ void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::api::Co
         this->playback, selection.Wrapped(), apiContext, apiLibrary);
     if (apiLibrary) {
         const std::weak_ptr<api::Context> context = apiContext;
-        const auto ticket = this->playlistBinding.Capture();
-        const auto addTrack = [context, apiLibrary, ticket](int64_t id) {
-            PlayQueueOverlays::ShowAddToPlaylistPicker(context, apiLibrary, ticket, {id});
+        const auto token = this->playlistWork.CurrentToken();
+        const auto addTrack = [context, apiLibrary, token](int64_t id) {
+            PlayQueueOverlays::ShowAddToPlaylistPicker(context, apiLibrary, token, { id });
         };
-        const auto addCategory = [context, apiLibrary, ticket, backend = selection.Wrapped()]
-            (const std::string& field, const std::string& value, int64_t id) {
-                PlayQueueOverlays::ShowAddCategoryToPlaylistPicker(context, apiLibrary, ticket, backend, field, value, id);
-            };
+        const auto addCategory = [context, apiLibrary, token, backend = selection.Wrapped()](const std::string& field, const std::string& value, int64_t id) {
+            PlayQueueOverlays::ShowAddCategoryToPlaylistPicker(context, apiLibrary, token, backend, field, value, id);
+        };
         this->browseLayout->SetAddToPlaylistCallbacks(addTrack, addCategory);
         this->trackSearchLayout->SetAddToPlaylistCallbacks(addTrack, addCategory);
     }
@@ -312,8 +314,7 @@ void LibraryLayout::UpdateShortcutsWindow() {
             this->visibleLayout->SetFocus(IWindowPtr());
         }
         if (this->visibleLayout == this->browseLayout ||
-            this->visibleLayout == this->directoryLayout)
-        {
+            this->visibleLayout == this->directoryLayout) {
             this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryBrowse));
         }
         else if (this->visibleLayout == nowPlayingLayout) {
@@ -402,33 +403,33 @@ bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
     return this->visibleLayout->SetFocus(window);
 }
 
-void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
+void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage& message) {
     switch (message.Type()) {
         case message::JumpToCategory: {
-                static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
-                    { cube::message::category::Album, constants::Track::ALBUM },
-                    { cube::message::category::Artist, constants::Track::ARTIST },
-                    { cube::message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
-                    { cube::message::category::Genre, constants::Track::GENRE }
-                };
+            static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
+                { cube::message::category::Album, constants::Track::ALBUM },
+                { cube::message::category::Artist, constants::Track::ARTIST },
+                { cube::message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
+                { cube::message::category::Genre, constants::Track::GENRE }
+            };
 
-                auto type = JUMP_TYPE_TO_COLUMN[(int)message.UserData1()];
-                const auto id = message.UserData2();
-                this->OnCategorySearchResultSelected(nullptr, type, id);
-            }
-            break;
+            auto type = JUMP_TYPE_TO_COLUMN[(int) message.UserData1()];
+            const auto id = message.UserData2();
+            this->OnCategorySearchResultSelected(nullptr, type, id);
+        }
+        break;
 
         case core::message::PlaylistModified:
         case core::message::PlaylistCreated:
         case core::message::PlaylistRenamed:
         case core::message::PlaylistDeleted: {
-                MessageQueue().Post(Message::Create(
-                    this->browseLayout.get(),
-                    message.Type(),
-                    message.UserData1(),
-                    message.UserData2()));
-            }
-            break;
+            MessageQueue().Post(Message::Create(
+                this->browseLayout.get(),
+                message.Type(),
+                message.UserData1(),
+                message.UserData2()));
+        }
+        break;
 
         default:
             break;
@@ -460,8 +461,7 @@ void LibraryLayout::ShowCategoryChooser() {
 
 bool LibraryLayout::KeyPress(const std::string& key) {
     if (this->visibleLayout == this->browseLayout ||
-        this->visibleLayout == this->directoryLayout)
-    {
+        this->visibleLayout == this->directoryLayout) {
         if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
             this->ShowBrowse(constants::Track::ARTIST);
             return true;

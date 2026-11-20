@@ -35,7 +35,7 @@
 #pragma once
 
 #include <musikcore/context.hpp>
-#include <app/util/RequestGeneration.h>
+#include <app/util/AsyncCallbackScope.h>
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ShortcutsWindow.h>
@@ -52,82 +52,81 @@
 
 #include <sigslot/sigslot.h>
 
-namespace musik { namespace core { namespace library { class MasterLibrary; } } }
+namespace musik { namespace core { namespace library {
+    class MasterLibrary;
+} } }
 
-namespace musik {
-    namespace cube {
-        class LibraryLayout :
-            public cursespp::LayoutBase,
-            public cursespp::ITopLevelLayout,
-            public sigslot::has_slots<>
-        {
-            public:
-                DELETE_CLASS_DEFAULTS(LibraryLayout)
+namespace musik { namespace cube {
+    class LibraryLayout : public cursespp::LayoutBase,
+                          public cursespp::ITopLevelLayout,
+                          public sigslot::has_slots<>
+    {
+        public:
+            DELETE_CLASS_DEFAULTS(LibraryLayout)
 
-                LibraryLayout(
-                    musik::core::audio::PlaybackService& playback,
-                    std::shared_ptr<musik::core::library::MasterLibrary> library,
-                    std::shared_ptr<musik::core::api::Context> apiContext);
+            LibraryLayout(
+                musik::core::audio::PlaybackService& playback,
+                std::shared_ptr<musik::core::library::MasterLibrary> library,
+                std::shared_ptr<musik::core::api::Context> apiContext);
 
-                void CancelLibraryRequests();
+            void CancelLibraryRequests();
 
-                cursespp::IWindowPtr FocusNext() override;
-                cursespp::IWindowPtr FocusPrev() override;
-                cursespp::IWindowPtr GetFocus() override;
-                bool SetFocus(cursespp::IWindowPtr window) override;
-                void ProcessMessage(musik::core::runtime::IMessage &message) override;
-                void OnVisibilityChanged(bool visible) override;
+            cursespp::IWindowPtr FocusNext() override;
+            cursespp::IWindowPtr FocusPrev() override;
+            cursespp::IWindowPtr GetFocus() override;
+            bool SetFocus(cursespp::IWindowPtr window) override;
+            void ProcessMessage(musik::core::runtime::IMessage& message) override;
+            void OnVisibilityChanged(bool visible) override;
 
-                void SetShortcutsWindow(
-                    cursespp::ShortcutsWindow* w) override;
+            void SetShortcutsWindow(
+                cursespp::ShortcutsWindow* w) override;
 
-                bool KeyPress(const std::string& key) override;
+            bool KeyPress(const std::string& key) override;
 
-            protected:
-                void OnLayout() override;
-                void OnAddedToParent(IWindow* newParent) override;
-                void OnRemovedFromParent(IWindow* oldParent) override;
+        protected:
+            void OnLayout() override;
+            void OnAddedToParent(IWindow* newParent) override;
+            void OnRemovedFromParent(IWindow* oldParent) override;
 
-            private:
-                RequestGeneration playlistBinding;
-                void LoadLastSession();
+        private:
+            void LoadLastSession();
 
-                void OnCategorySearchResultSelected(
-                    CategorySearchLayout* layout,
-                    std::string fieldType,
-                    int64_t fieldId);
+            void OnCategorySearchResultSelected(
+                CategorySearchLayout* layout,
+                std::string fieldType,
+                int64_t fieldId);
 
-                void OnMainLayoutFocusTerminated(
-                    LayoutBase::FocusDirection direction);
+            void OnMainLayoutFocusTerminated(
+                LayoutBase::FocusDirection direction);
 
-                void InitializeWindows(const std::shared_ptr<musik::core::api::Context>& apiContext,
-                    const musik::core::library::MasterLibrary& selection);
+            void InitializeWindows(const std::shared_ptr<musik::core::api::Context>& apiContext,
+                const musik::core::library::MasterLibrary& selection);
 
-                void ShowNowPlaying();
-                void ShowBrowse(const std::string& category = "");
-                void ShowCategorySearch();
-                void ShowCategoryChooser();
-                void ShowTrackSearch();
-                void ShowDirectoryChooser();
-                void ShowDirectories(const std::string& directory = "");
+            void ShowNowPlaying();
+            void ShowBrowse(const std::string& category = "");
+            void ShowCategorySearch();
+            void ShowCategoryChooser();
+            void ShowTrackSearch();
+            void ShowDirectoryChooser();
+            void ShowDirectories(const std::string& directory = "");
 
-                void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
-                void OnLayoutChanged();
-                void UpdateShortcutsWindow();
+            void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
+            void OnLayoutChanged();
+            void UpdateShortcutsWindow();
 
-                musik::core::audio::PlaybackService& playback;
-                musik::core::audio::ITransport& transport;
-                musik::core::ILibraryPtr library;
-                std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<BrowseLayout> browseLayout;
-                std::shared_ptr<DirectoryLayout> directoryLayout;
-                std::shared_ptr<TransportWindow> transportView;
-                std::shared_ptr<NowPlayingLayout> nowPlayingLayout;
-                std::shared_ptr<CategorySearchLayout> categorySearchLayout;
-                std::shared_ptr<TrackSearchLayout> trackSearchLayout;
-                std::shared_ptr<cursespp::LayoutBase> visibleLayout;
-                cursespp::ShortcutsWindow* shortcuts;
-                std::string lastBrowseCategoryType;
-        };
-    }
-}
+            AsyncCallbackScope playlistWork;
+            musik::core::audio::PlaybackService& playback;
+            musik::core::audio::ITransport& transport;
+            musik::core::ILibraryPtr library;
+            std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<BrowseLayout> browseLayout;
+            std::shared_ptr<DirectoryLayout> directoryLayout;
+            std::shared_ptr<TransportWindow> transportView;
+            std::shared_ptr<NowPlayingLayout> nowPlayingLayout;
+            std::shared_ptr<CategorySearchLayout> categorySearchLayout;
+            std::shared_ptr<TrackSearchLayout> trackSearchLayout;
+            std::shared_ptr<cursespp::LayoutBase> visibleLayout;
+            cursespp::ShortcutsWindow* shortcuts;
+            std::string lastBrowseCategoryType;
+    };
+} }

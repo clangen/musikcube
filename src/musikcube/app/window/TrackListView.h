@@ -47,7 +47,7 @@
 #include <musikcore/library/ILibrary.h>
 
 #include <app/util/TrackRowRenderers.h>
-#include <app/util/RequestGeneration.h>
+#include <app/util/AsyncCallbackScope.h>
 #include <musikcore/track-result-window.hpp>
 #include <map>
 #include <set>
@@ -170,7 +170,7 @@ namespace musik {
                 std::shared_ptr<musik::core::api::Context> apiContext;
                 std::shared_ptr<const musik::core::api::Library> apiLibrary;
                 std::unique_ptr<musik::core::api::TrackResultWindow> resultWindow;
-                RequestGeneration trackRequestGeneration;
+                AsyncCallbackScope trackQueryWork;
                 mc_request_id trackRequest = 0;
                 TrackRequest pendingTrackQuery;
                 size_t pendingTrackHash = 0;

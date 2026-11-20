@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <app/util/RequestGeneration.h>
+#include <app/util/AsyncCallbackScope.h>
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
@@ -53,73 +53,71 @@ namespace musik { namespace core { namespace api {
     class Library;
 } } }
 
-namespace musik {
-    namespace cube {
-        class TrackSearchLayout :
-            public cursespp::LayoutBase,
-            public sigslot::has_slots<>
-        {
-            public:
-                DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackSearchLayout)
+namespace musik { namespace cube {
+    class TrackSearchLayout : public cursespp::LayoutBase,
+                              public sigslot::has_slots<>
+    {
+        public:
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackSearchLayout)
 
-                TrackSearchLayout(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    std::shared_ptr<musik::core::api::Context> apiContext,
-                    std::shared_ptr<const musik::core::api::Library> apiLibrary);
+            TrackSearchLayout(
+                musik::core::audio::PlaybackService& playback,
+                musik::core::ILibraryPtr library,
+                std::shared_ptr<musik::core::api::Context> apiContext,
+                std::shared_ptr<const musik::core::api::Library> apiLibrary);
 
-                void CancelSearchRequests();
-                void SetAddToPlaylistCallbacks(TrackListView::AddTrackToPlaylist track,
-                    TrackListView::AddCategoryToPlaylist category) {
-                    this->trackList->SetAddToPlaylistCallbacks(std::move(track), std::move(category));
-                }
+            virtual ~TrackSearchLayout();
 
-                virtual ~TrackSearchLayout();
+            void CancelSearchRequests();
+            void SetAddToPlaylistCallbacks(TrackListView::AddTrackToPlaylist track,
+                TrackListView::AddCategoryToPlaylist category)
+            {
+                this->trackList->SetAddToPlaylistCallbacks(std::move(track), std::move(category));
+            }
 
-                void PlayFromTop();
-                void FocusInput();
-                void LoadLastSession();
+            void PlayFromTop();
+            void FocusInput();
+            void LoadLastSession();
 
-                /* IWindow */
-                void OnVisibilityChanged(bool visible) override;
-                bool KeyPress(const std::string& key) override;
-                void ProcessMessage(musik::core::runtime::IMessage &message) override;
-                void OnLayout() override;
+            /* IWindow */
+            void OnVisibilityChanged(bool visible) override;
+            bool KeyPress(const std::string& key) override;
+            void ProcessMessage(musik::core::runtime::IMessage& message) override;
+            void OnLayout() override;
 
-            private:
-                using MatchType = musik::core::library::query::QueryBase::MatchType;
+        private:
+            using MatchType = musik::core::library::query::QueryBase::MatchType;
 
-                void SaveSession();
-                void InitializeWindows();
-                void Requery();
-                void CancelLocalSearch();
-                void SetSearchTitle(const std::string& order);
-                void OnIndexerFinished(int);
+            void SaveSession();
+            void InitializeWindows();
+            void Requery();
+            void CancelLocalSearch();
+            void SetSearchTitle(const std::string& order);
+            void OnIndexerFinished(int);
 
-                void OnWindowMouseEvent(
-                    cursespp::Window* window,
-                    const cursespp::IMouseHandler::Event* mouseEvent);
+            void OnWindowMouseEvent(
+                cursespp::Window* window,
+                const cursespp::IMouseHandler::Event* mouseEvent);
 
-                void OnInputChanged(
-                    cursespp::TextInput* sender,
-                    std::string value);
+            void OnInputChanged(
+                cursespp::TextInput* sender,
+                std::string value);
 
-                void OnEnterPressed(cursespp::TextInput* sender);
+            void OnEnterPressed(cursespp::TextInput* sender);
 
-                void ToggleMatchType();
-                void SetMatchType(MatchType matchType);
-                void ShowTrackSortOverlay();
+            void ToggleMatchType();
+            void SetMatchType(MatchType matchType);
+            void ShowTrackSortOverlay();
 
-                musik::core::audio::PlaybackService& playback;
-                const musik::core::ILibraryPtr library;
-                MatchType matchType{ MatchType::Substring };
-                std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<TrackListView> trackList;
-                std::shared_ptr<cursespp::TextInput> input;
-                RequestGeneration localSearchGeneration;
-                mc_request_id localSearchRequest = 0;
-                std::shared_ptr<musik::core::api::Context> apiContext;
-                std::shared_ptr<const musik::core::api::Library> apiLibrary;
-        };
-    }
-}
+            musik::core::audio::PlaybackService& playback;
+            const musik::core::ILibraryPtr library;
+            MatchType matchType { MatchType::Substring };
+            std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<TrackListView> trackList;
+            std::shared_ptr<cursespp::TextInput> input;
+            AsyncCallbackScope searchWork;
+            mc_request_id localSearchRequest = 0;
+            std::shared_ptr<musik::core::api::Context> apiContext;
+            std::shared_ptr<const musik::core::api::Library> apiLibrary;
+    };
+} }

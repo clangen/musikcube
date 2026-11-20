@@ -38,59 +38,63 @@
 #include <cursespp/LayoutBase.h>
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
-#include <app/util/RequestGeneration.h>
+#include <app/util/AsyncCallbackScope.h>
 #include <musikcore/audio/PlaybackService.h>
 
 #include <musikcore/library/ILibrary.h>
 
-namespace musik {
-    namespace cube {
-        class NowPlayingLayout : public cursespp::LayoutBase
-        {
-            enum class PlaylistAction { Load, Save, Rename, Delete };
+namespace musik { namespace cube {
+    class NowPlayingLayout : public cursespp::LayoutBase {
+        public:
+            DELETE_CLASS_DEFAULTS(NowPlayingLayout)
 
-            public:
-                DELETE_CLASS_DEFAULTS(NowPlayingLayout)
+            NowPlayingLayout(
+                musik::core::audio::PlaybackService& playback,
+                musik::core::ILibraryPtr library,
+                std::shared_ptr<musik::core::api::Context> context,
+                std::shared_ptr<const musik::core::api::Library> apiLibrary);
 
-                NowPlayingLayout(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
-                    std::shared_ptr<musik::core::api::Context> context,
-                    std::shared_ptr<const musik::core::api::Library> apiLibrary);
-                ~NowPlayingLayout() override;
-                void CancelPlaylistLoad();
+            ~NowPlayingLayout() override;
 
-                /* IWindow */
-                void OnVisibilityChanged(bool visible) override;
-                bool KeyPress(const std::string& key) override;
+            void CancelPlaylistLoad();
 
-            protected:
-                /* LayoutBase */
-                void OnLayout() override;
+            /* IWindow */
+            void OnVisibilityChanged(bool visible) override;
+            bool KeyPress(const std::string& key) override;
 
-            private:
-                void InitializeWindows(musik::core::audio::PlaybackService& playback);
-                void RequeryTrackList();
-                void SelectQueueRow();
-                bool ProcessEditOperation(const std::string& key);
+        protected:
+            /* LayoutBase */
+            void OnLayout() override;
 
-                /* callbacks */
-                cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
-                void OnPlaylistSelected(int64_t playlistId);
-                void ShowPlaylistPicker(PlaylistAction action);
-                void SaveQueueToPlaylist(const musik::core::api::PlaylistEntry& playlist);
-                void RenamePlaylist(const musik::core::api::PlaylistEntry& playlist);
-                void DeletePlaylist(const musik::core::api::PlaylistEntry& playlist);
+        private:
+            enum class PlaylistAction {
+                Load,
+                Save,
+                Rename,
+                Delete
+            };
 
-                musik::core::api::Playback apiPlayback;
-                musik::core::ILibraryPtr library;
-                std::shared_ptr<TrackListView> trackListView;
-                std::optional<musik::core::api::PlayQueue> queue;
-                int reselectIndex; /* sigh... */
-                std::shared_ptr<musik::core::api::Context> context;
-                std::shared_ptr<const musik::core::api::Library> apiLibrary;
-                RequestGeneration playlistGeneration;
-                mc_request_id playlistRequest = 0;
-        };
-    }
-}
+            void InitializeWindows(musik::core::audio::PlaybackService& playback);
+            void RequeryTrackList();
+            void SelectQueueRow();
+            bool ProcessEditOperation(const std::string& key);
+
+            /* callbacks */
+            cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
+            void OnPlaylistSelected(int64_t playlistId);
+            void ShowPlaylistPicker(PlaylistAction action);
+            void SaveQueueToPlaylist(const musik::core::api::PlaylistEntry& playlist);
+            void RenamePlaylist(const musik::core::api::PlaylistEntry& playlist);
+            void DeletePlaylist(const musik::core::api::PlaylistEntry& playlist);
+
+            musik::core::api::Playback apiPlayback;
+            musik::core::ILibraryPtr library;
+            std::shared_ptr<TrackListView> trackListView;
+            std::optional<musik::core::api::PlayQueue> queue;
+            int reselectIndex; /* sigh... */
+            std::shared_ptr<musik::core::api::Context> context;
+            std::shared_ptr<const musik::core::api::Library> apiLibrary;
+            AsyncCallbackScope playlistWork;
+            mc_request_id playlistRequest = 0;
+    };
+} }

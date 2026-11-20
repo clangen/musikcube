@@ -67,7 +67,7 @@ constexpr int kRequeryIntervalMs = 300;
 
 static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
     const auto sort = (TrackSortType) prefs->GetInt(
-        keys::TrackSearchSortOrder, (int)TrackSortType::Album);
+        keys::TrackSearchSortOrder, (int) TrackSortType::Album);
     return kTrackListOrderByToDisplayKey.count(sort) ? sort : TrackSortType::Album;
 }
 
@@ -80,7 +80,8 @@ TrackSearchLayout::TrackSearchLayout(
 , playback(playback)
 , library(library)
 , apiContext(std::move(apiContext))
-, apiLibrary(std::move(apiLibrary)) {
+, apiLibrary(std::move(apiLibrary))
+{
     this->prefs = Preferences::ForComponent(components::Settings);
     this->library->Indexer()->Finished.connect(this, &TrackSearchLayout::OnIndexerFinished);
     this->InitializeWindows();
@@ -172,25 +173,29 @@ void TrackSearchLayout::Requery() {
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->CancelLocalSearch();
 
-    if (!this->apiLibrary) return;
+    if (!this->apiLibrary) {
+        return;
+    }
 
     try {
         const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
-        const auto generation = this->localSearchGeneration.Capture();
-        const auto hash = std::hash<std::string>{}(filter);
+        const auto hash = std::hash<std::string> {}(filter);
         this->localSearchRequest = api::OpenTrackSearch(*this->apiContext, *this->apiLibrary,
-            api::TrackSearch{ filter, mode, static_cast<mc_track_search_order>(sortOrder) },
-            [this, generation, sortOrder, hash](mc_result status, api::TrackResult result, std::string_view) {
-                /* Cancellation cannot retract a completion already queued for dispatch. */
-                if (!generation.IsCurrent()) return;
+            api::TrackSearch { filter, mode, static_cast<mc_track_search_order>(sortOrder) },
+            this->searchWork.Begin([this, sortOrder, hash](mc_result status, api::TrackResult result, std::string_view) {
                 this->localSearchRequest = 0;
-                if (status == MC_ERROR_BUSY) this->Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
-                if (status != MC_OK) return;
+                if (status == MC_ERROR_BUSY) {
+                    this->Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
+                }
+                if (status != MC_OK) {
+                    return;
+                }
 
                 this->trackList->SetTrackResult(std::move(result), hash);
                 this->SetSearchTitle(_TSTR(kTrackListOrderByToDisplayKey.at(sortOrder)));
-            });
-    } catch (const api::Error& error) {
+            }));
+    }
+    catch (const api::Error& error) {
         musik::debug::error("TrackSearchLayout", error.what());
     }
 }
@@ -201,7 +206,7 @@ void TrackSearchLayout::CancelSearchRequests() {
 }
 
 void TrackSearchLayout::CancelLocalSearch() {
-    this->localSearchGeneration.Invalidate();
+    this->searchWork.Invalidate();
     if (this->localSearchRequest) {
         this->apiContext->Cancel(this->localSearchRequest);
         this->localSearchRequest = 0;
@@ -212,9 +217,11 @@ void TrackSearchLayout::PlayFromTop() {
     this->trackList->PlayRow(0);
 }
 
-void TrackSearchLayout::ProcessMessage(IMessage &message) {
+void TrackSearchLayout::ProcessMessage(IMessage& message) {
     if (message.Type() == message::RequeryTrackList) {
-        if (this->IsVisible()) this->Requery();
+        if (this->IsVisible()) {
+            this->Requery();
+        }
     }
     else {
         LayoutBase::ProcessMessage(message);
@@ -249,7 +256,7 @@ void TrackSearchLayout::ShowTrackSortOverlay() {
         getDefaultTrackSort(this->prefs),
         kTrackListOrderByToDisplayKey,
         [this](TrackSortType type) {
-            this->prefs->SetInt(keys::TrackSearchSortOrder, (int)type);
+            this->prefs->SetInt(keys::TrackSearchSortOrder, (int) type);
             this->Requery();
         });
 }
