@@ -1,8 +1,8 @@
 # musikcore C ABI modernization: low-level design and task plan
 
-Status: active migration; foundation stabilization in progress
+Status: active migration; macOS foundation validation complete, platform gates open
 
-The [core C API foundation gate](musikcore-c-api-foundation-gate.md) supersedes
+The [core C API foundation gate](#core-c-api-foundation-gate) supersedes
 the original phase ordering below. Additional application feature migrations
 wait for that gate. All provider tasks, including the SDK walking skeleton and
 decoder vertical slice, wait for core application API release-candidate quality.
@@ -15,6 +15,12 @@ This document translates the
 [high-level design](musikcore-c-abi-hld.md) into concrete build targets, source
 layout, runtime components, state machines, test fixtures, migration steps, and
 trackable tasks.
+
+The current goal is a complete core application API consumed by musikcube.
+Provider tasks remain deferred until that integration reaches release-candidate
+quality. This document is the task/status authority; the HLD links architectural decisions,
+and public headers define parameter-level contracts. Runtime and provider
+sections describing future services are target design, not implemented features.
 
 The task list uses stable identifiers so progress and dependencies can be
 discussed without relying on line numbers. Checkboxes represent repository
@@ -30,8 +36,23 @@ Status legend:
 
 - [High-level architecture and sequencing](musikcore-c-abi-hld.md)
 - [Detailed public API and C SDK design](musikcore-c-abi-design.md)
-- [Core C API foundation gate](musikcore-c-api-foundation-gate.md)
 - [Unit and integration testing design](testing-design.md)
+
+## Decisions this plan implements
+
+- [C ABI and core-first sequencing](../docs/adr/0001-c-abi-and-core-first-refactor.md):
+  interoperability goal, alternatives, header-only wrapper, shared-library rollout,
+  application migration, and deferred provider work.
+- [Host dispatch and request lifetime](../docs/adr/0002-host-dispatch-and-request-lifetime.md):
+  async delivery, cancellation, wakeups, and shutdown guarantees.
+- [Origin-bound results and paged metadata](../docs/adr/0003-origin-bound-results-and-paged-metadata.md):
+  identity, snapshot/page ownership, backend routing, and copy-cost tradeoffs.
+- [Tests at the public boundary](../docs/adr/0004-test-the-public-boundary-first.md):
+  contract-first coverage, hermetic fixtures, and expansion alongside app changes.
+
+ADRs own the choice and rationale. This plan records implementation mechanisms,
+current ABI details, remaining work, and acceptance evidence. Change a decision
+through its ADR rather than adding a competing policy to a task description.
 
 ## Constraints from the current repository
 
@@ -163,11 +184,12 @@ The experimental target is not installed as the final supported artifact.
 
 ### Process isolation rule
 
-No executable may link production `musikcore` and `musikcore_abi0` together.
-Both targets compile the same consumer API sources. Production uses its
-existing SQLite implementation, including Unicode and regex support. The
-separate ABI0 target retains its strict export allowlist for tests and the
-pilot. The indexed query suite runs the C++ wrapper against both targets.
+Implement the single-core-per-process decision in
+[ADR-0001](../docs/adr/0001-c-abi-and-core-first-refactor.md) with
+`.cmake/VerifyCoreBoundary.cmake` and the positive/negative `link_boundary`
+fixtures. Both targets compile the consumer API sources; production uses its
+SQLite implementation and extensions, while ABI0 has a strict export allowlist.
+The indexed-query suite exercises both targets in separate processes.
 
 ### Final topology
 
@@ -205,7 +227,11 @@ A packaging test compares actual exports with the allowlist.
 
 ### Context
 
-`mc_context` owns or coordinates:
+Lifecycle and delivery decisions are in
+[ADR-0002](../docs/adr/0002-host-dispatch-and-request-lifetime.md).
+
+The target context owns or coordinates the following services; this is the
+future runtime layout, not a list of services already exposed by ABI0:
 
 - Runtime/global initialization reference.
 - Library/database instance.
@@ -216,9 +242,8 @@ A packaging test compares actual exports with the allowlist.
 - Context-scoped preferences and paths.
 - Shutdown state.
 
-Initial multiple-context behavior should be explicit. If the current singleton
-implementation cannot isolate two contexts, a second create returns
-`MC_ERROR_BUSY` rather than silently sharing mutable state.
+Current ABI0 permits one context. A second create returns `MC_ERROR_BUSY`;
+only successful destruction releases the slot.
 
 Context lifecycle states:
 
@@ -228,11 +253,10 @@ constructing -> running -> shutting_down -> stopped -> destroyed
                     +-- failure --+
 ```
 
-Creation publishes the handle only after all required services initialize.
-Shutdown stops admission and wakeups, waits for running hooks, settles
-in-flight requests, and dispatches their terminal callbacks on the host
-dispatcher before returning. The host drains or cancels any posted dispatch
-tasks before destruction.
+Construct transactionally and publish only after required initialization.
+The worker join, hook barrier, and terminal drain implement the shutdown
+contract in ADR-0002; the host drains/cancels its posted dispatch tasks before
+destroying the context.
 
 ### Request registry
 
@@ -245,32 +269,23 @@ accepted -> queued -> running -> completed
                    \-> failed
 ```
 
-Rules:
-
-- Exactly one terminal callback runs per accepted request.
-- Cancellation races with completion to select one terminal outcome.
-- Request IDs are not reused while their completion can remain queued.
-- Input strings and slices are copied or retained before the initiating call
-  returns.
-- Context shutdown transitions every accepted request to a terminal outcome.
+The registry implements ADR-0002's exactly-once contract. It records retained
+inputs/origin, callback state, and terminal capacity before admission returns.
+Select completion/cancellation under synchronization, then dispatch without
+holding that lock. IDs are nonzero, monotonic within the context, and not reused
+while a completion can remain queued.
 
 ### Dispatch and notifications
 
-Concurrent producers queue ready completions and unsolicited notifications.
-One host-selected thread calls nonblocking dispatch and polls notifications.
-Select terminal results while holding the queue lock, then release the lock
-before invoking callbacks or the wakeup hook. Reject nested or concurrent
-dispatch. Callbacks may submit or cancel requests.
+Completion producers enqueue terminal records for the host-selected dispatcher.
+Coordinate wakeup coalescing/rearming with enqueue under the same synchronization
+so a producer racing with the final drain cannot strand work. Invoke callbacks
+and wakeup hooks outside the queue lock.
 
-Reserve capacity for terminal completions at admission. State transitions and
-terminal indexer notifications are lossless. Coalesce documented progress and
-invalidation notifications. Dequeueing a notification transfers ownership.
-
-Coalesce wakeups while a drain is pending. Coordinate rearming with enqueue
-under the same synchronization so a producer racing with the last drain
-cannot leave work stranded. The hook only signals the host, which dispatches
-on its selected thread. Shutdown and destruction run outside callbacks on
-that thread once established.
+Unsolicited notification polling remains unimplemented. When added, reserve
+lossless terminal/state notification capacity at admission, coalesce only the
+documented progress/invalidation records, and transfer ownership on dequeue.
+This future mechanism must preserve the separation selected in ADR-0002.
 
 ### Error objects
 
@@ -286,7 +301,9 @@ even if a detailed error object cannot be created.
 
 ### Metadata pages
 
-`mc_track_page` is immutable after publication. It contains:
+Implement the page ownership and range-read decision in
+[ADR-0003](../docs/adr/0003-origin-bound-results-and-paged-metadata.md) with
+immutable `mc_track_page` storage containing:
 
 - Row count.
 - Requested field descriptors or stable field ordering.
@@ -294,9 +311,9 @@ even if a detailed error object cannot be created.
 - One page-owned UTF-8 arena or equivalent compact backing storage.
 - Offsets/lengths into the arena.
 
-Views returned from a page remain valid until page destruction. Database
-changes produce invalidation events or new pages; they do not mutate published
-pages.
+Reads create new pages rather than mutating published storage. Future
+invalidation events can signal database changes; there is no public notification
+surface yet. Current lifetime/error details are recorded below and in headers.
 
 ### Plugin registry
 
@@ -338,6 +355,11 @@ Adapters allow the internal playback/indexer implementation to migrate without
 being rewritten at the same time as the plugin ABI.
 
 ## Test target design
+
+The strategy and alternatives are recorded in
+[ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md). The roles below
+describe target responsibilities; current executable names and registration
+live in `tests/CMakeLists.txt` and `tests/fixtures/CMakeLists.txt`.
 
 ### API contract executable
 
@@ -403,6 +425,232 @@ never sleeps.
 8. DSP and analyzers.
 9. Visualizers, remotes, server integration, and schema/configuration.
 
+## Current experimental core contracts
+
+The supported standalone and production-bound surfaces are summarized in the
+[HLD](musikcore-c-abi-hld.md#current-experimental-scope). Unsupported operations
+reject admission with `MC_ERROR_UNSUPPORTED` and deliver no callback.
+`plugin_directory` is copied but does not start a plugin loader.
+
+### Declarations and validation
+
+Public C declarations live in independently compilable `abi.h`, `context.h`,
+`library.h`, and `playback.h`; `musikcore.h` is the application umbrella. They
+contain parameter-level nullability, units, defaults, ownership, and lifetimes.
+The `musikcore.abi.inventory` test compares declarations with
+`src/musikcore/ffi/exports.txt`; `exports` checks the actual binary. Generate a
+current declaration inventory with `node script/test/audit-core-api.js` rather
+than maintaining a second symbol list or per-export prose table.
+
+- Handles must have the correct kind and remain live through a call. Arbitrary
+  dangling or forged pointers cannot be validated. Immutable reads can run
+  concurrently; destroying a handle concurrently with its use is invalid.
+- Initialize output handle/error slots to null. Occupied outputs are rejected
+  unchanged. Destruction accepts null and clears a successfully consumed slot;
+  do not share mutable output slots between concurrent calls.
+- Sized option inputs accept a known prefix and default absent fields. Snapshot
+  outputs require the full current prefix and preserve a caller's future tail.
+  Every sized public struct has an `MC_*_DEFAULT` initializer.
+- Text views reject null/nonzero length, embedded NUL, and lengths above
+  `PTRDIFF_MAX`. Callers supply UTF-8; the API does not normalize it. Validate
+  field counts/page limits before inspecting arrays.
+- Track IDs are positive and library-scoped; zero is the missing-ID sentinel.
+  Reject null/nonempty arrays, excessive counts, and nonpositive IDs. Invalid
+  IDs returned by a backend become `MC_ERROR_IO`. Category IDs are signed and
+  may include an uncategorized sentinel. Playlist ID zero means creation; an
+  older remote server may also return zero after successful creation.
+- Missing metadata has null data. Explicit empty text has non-null data and
+  zero length. Queue row absence is `SIZE_MAX`; zero album duration alone does
+  not distinguish no group from an unknown/zero duration: use `starts_album`.
+
+### Requests, dispatch, and shutdown
+
+Implement the delivery and lifetime contract in
+[ADR-0002](../docs/adr/0002-host-dispatch-and-request-lifetime.md). Current ABI
+bindings return `MC_ERROR_BUSY` for nested/concurrent dispatch or shutdown; a
+busy/failed destroy leaves the handle intact. Rejected submissions clear their
+request-ID output and deliver no callback.
+
+Completion arguments are status, payload, callback-scoped error, then user data;
+array counts follow their pointers. Status is authoritative. Success has no
+error; allocation failure can omit details. Page/result handles transfer to the
+callback. Playlist arrays/names and error messages expire when it returns;
+playlist-write IDs are values with no owned payload.
+
+Allocating/dispatching operations use the C exception barrier. Scalar getters
+and normal destructors do not allocate or invoke host code. Context destruction
+contains cleanup failures. Foreign callbacks must not throw; dispatch contains
+callback exceptions but currently has no public diagnostic channel for them.
+
+### Library, result, and playback semantics
+
+The read model and identity decision is in
+[ADR-0003](../docs/adr/0003-origin-bound-results-and-paged-metadata.md).
+A direct missing-track reference read returns `MC_ERROR_NOT_FOUND`. Plain queries
+use a literal title substring; ordered search keeps typed-backend LIKE wildcards
+or explicit regex matching across metadata fields.
+
+A source-less remote identity cannot read metadata, including constructed
+results/references. It rejects admission as unsupported. A bound empty range
+still validates projection support and connection generation, then returns an
+owned empty page without submitting an empty metadata query.
+
+Modern servers support an optional lossless projection on the existing typed
+batch query. Older servers can ignore it and return the legacy map; their
+conversion cannot preserve every NULL/empty distinction or guarantee hidden-row
+filtering. Tests cover modern parity and legacy fallback separately.
+
+Playback has an owner-thread contract. Queue snapshots capture immutable
+revisions; edits, shuffle, and library changes invalidate stale positional
+actions before mutation. Stopped playback has no current row even before the
+deferred engine notification, while its retained row remains available for
+selection and Play Next. Queue-change notifications must run outside engine
+signal locks and support safe replacement/unsubscription.
+
+### Header-only C++ ownership and errors
+
+Wrappers include only public C headers. Construction/admission failures throw
+`api::Error`; async completion returns status, owned value, and a callback-scoped
+message. Synchronous commands return C status. Snapshot getters use `nullopt`
+for an ended/unavailable session and throw for other errors, including a wrong
+thread. Destroy `Context` on its dispatcher thread outside callbacks.
+
+The wrapper is strictly header-only per ADR-0001; TrackView ownership and
+copy-cost tradeoffs are in ADR-0003. View-producing page accessors reject
+temporary owners. `Values` allocates a vector of views, not string copies.
+If shared-owner allocation fails during C page adoption, release the page and
+deliver one internal-error completion. Playlist wrappers copy callback-scoped
+names into owned strings so their returned vectors can be retained.
+
+Request IDs and explicit cancellation follow ADR-0002. Any future coroutine or
+future adapters remain optional and header-only.
+
+## Core C API foundation gate
+
+Status: current-surface implementation and native macOS validation complete;
+Windows and Linux acceptance pending. This gate blocks new feature families and
+further application migration. Fixes, tests, documentation, and refactoring of
+the existing surface remain in scope. Provider work additionally waits for
+core application release-candidate quality.
+
+The completed work below groups the former foundation checklist; detailed
+feature tasks remain in the task list rather than a second parallel checklist.
+Test names have the `musikcore.abi.` prefix unless fully qualified.
+
+| Completed foundation area | Acceptance evidence |
+| --- | --- |
+| Contract reconciliation and ergonomics | Independent C11/C++ headers, `inventory`, `exports`, `arguments`, `shared_c`, C/C++ examples; consistent outputs, defaults, callbacks, lifetimes, validation, exception barriers |
+| Context, request, dispatch, shutdown | `dispatch`, `remote_query_transport`; transactional/fault-injected creation, binding/reentrancy, exactly-once races, wakeup rearming, admission limits, late replies, repeated teardown |
+| Library/results and backend parity | `query`, `result_contracts`, `library_switch`, `typed_track_queries`, `indexed_query`, `remote_query_transport`; ordering/duplicates/origin, range limits, NULL/empty/Unicode/long/multivalue data, missing/hidden rows, reconnects, playlists |
+| Playback and queues | Production wrapper checks in `indexed_query`; owner threads, units/output preservation, stale revisions/origins, edits/duplicates/shuffle, stopped/retained/prepared/paused/playing rows, notifications |
+| Strictly header-only C++ | Public-only consumers, `result_contracts`, window/cache tests; owning copy/move, retained TrackViews, raw view lifetimes, adoption failure and callback cleanup |
+| Hermetic deterministic tests | Isolated config/database/plugin/runtime roots, deadline predicates, deterministic WAV bytes, fake output, dynamic loopback ports, `CoreRuntime`; no user data, hardware or internet |
+| Shared-library boundary | `shared_c`, `exports`, `link_boundary`; independent C consumer, version rejection, isolated ABI0 outputs, Mach-O install names/RPATH/dependencies, no duplicate core linkage |
+| Performance and allocations | Stored instrumented and uninstrumented baselines, C/C++ submission budgets, bounded cache, local/loopback parity; commands and limits below |
+
+Additional runtime regressions are covered by the eleven standalone
+`musikcore.runtime.message_queue.*` cases. They check delivery ordering,
+removal/unregister, reentrant cleanup, teardown, scheduling, broadcasts,
+wakeups, and producers without linking app services. The UI helper
+`musikcube.unit.async_callback_scope` checks replacement, teardown, forwarding,
+move-only handlers, and payload cleanup. The macOS
+`musikcube.ui.terminal_driver` entry checks the script-only PTY bridge's input,
+exit status, and cleanup.
+
+Remaining acceptance:
+
+- [ ] **FND-WINDOWS** Run clean native Windows Debug/Release tests, verify actual
+  DLL exports, import-library loading, and runtime placement. Requires a Windows
+  host; project maintainer owns native execution.
+- [ ] **FND-LINUX** Run clean native Linux Debug/Release tests and verify ELF
+  SONAME/RPATH and actual exports. Deferred by the user to a separate session;
+  no container or Linux runner substitutes for this acceptance.
+- [ ] **GATE-FOUNDATION** Record passing clean Debug/Release contract,
+  integration, export, external-consumer and baseline validation on all named
+  platforms, or an explicitly approved exception with owner, rationale, and
+  replacement validation. Native macOS results do not establish DLL/ELF behavior.
+
+Only after this gate passes may additional core feature/application migration
+work resume. The provider phases remain blocked until the migrated core API
+reaches release-candidate quality.
+
+## Foundation validation and baselines
+
+Native evidence on 2026-11-20: macOS 26.6.2, Apple M4/arm64, AppleClang
+21.0.0.21000101. Clean full and ABI-only Debug/Release workflows were validated
+before the latest review. The latest Release app build and all 26 CTest entries
+pass; the final style review also passed a 1,000-track production TUI run.
+Earlier production TUI validation used 10,000 tracks across three runs. These
+results do not imply current Windows/Linux acceptance or a fresh Debug rerun.
+
+### Reproducible workflows
+
+The C and header-only C++ examples in `examples/core-query.*` use only public
+headers and a supplied local database. Their test host wakeup adapter models a
+sleeping application loop. `indexed_query` builds and runs both against generated
+indexed media. Full fixtures stage only required decoder/tag-reader plugins,
+use fake playback and dynamic loopback ports, and retain failure directories
+through `script/test/run-isolated-test.js`.
+
+With normal macOS vendor dependencies already built, run from the repository
+root. Build-local runtime outputs keep Debug/Release assets independent:
+
+```sh
+cmake -S . -B build/foundation-full-debug -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DBUILD_STANDALONE=true -DMUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY="$PWD/build/foundation-full-debug/bin"
+cmake --build build/foundation-full-debug --target musikcube_tests musikcube -j6
+ctest --test-dir build/foundation-full-debug -C Debug --output-on-failure -j6
+
+cmake -S . -B build/foundation-full-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DBUILD_STANDALONE=true -DMUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY="$PWD/build/foundation-full-release/bin"
+cmake --build build/foundation-full-release --target musikcube_tests musikcube -j6
+ctest --test-dir build/foundation-full-release -C Release --output-on-failure -j6
+
+node script/test/run-tests.js --build-dir build/foundation-debug --config Debug --abi-only
+node script/test/run-tests.js --build-dir build/foundation-release --config Release --abi-only
+node script/test/tui/track-search.js --build-dir build/foundation-full-release --bin-dir build/foundation-full-release/bin --tracks 10000 --windows --runs 3
+```
+
+The normal full-suite runner is
+`node script/test/run-tests.js --build-dir <configured-build> --config Release`.
+ABI-only mode avoids production audio/curses/vendor dependencies without
+changing production topology; it does not replace integration validation.
+
+### Performance and allocation acceptance
+
+Machine-readable results live in `tests/baselines/`. Compare equivalent CPU,
+architecture, build configuration, and instrumentation; unlike environments
+are rejected. Run timings on an otherwise idle host.
+
+```sh
+node script/test/run-baseline.js --build-dir build/foundation-release --config Release --production-build-dir build/foundation-full-release --compare tests/baselines/macos-arm64-release.json --record build/foundation-measurements.json
+node script/test/run-baseline.js --build-dir build/foundation-release --config Release --production-build-dir build/foundation-full-release --timing-only --compare tests/baselines/macos-arm64-release-timing.json --record build/foundation-timings.json
+```
+
+The synthetic ABI fixture has 10,000 tracks, 128-byte titles, and 31 latency
+samples. Production parity uses two indexed WAV tracks locally and over loopback,
+seven latency samples, and duplicate-ID playlists with 10,000 entries; it is not
+a representative 10,000-track remote metadata benchmark.
+
+The macOS test-only dyld profiler counts dynamic malloc/calloc/realloc calls,
+requested bytes, and out-of-line memcpy/memmove bytes across producer threads.
+It cannot observe every inlined/system-library copy. Pointer-identity checks and
+caller-thread C/C++ comparisons additionally protect zero-copy access and isolate
+wrapper callback-state overhead. Instrumented and uninstrumented timings remain
+separate.
+
+- Equivalent C++ page submission permits at most four allocations/64 requested
+  bytes above C, with no extra observed dynamic-copy bytes. The recorded sample
+  adds two allocations/48 bytes. Page adoption permits one allocation (recorded
+  32 bytes), with no copied metadata bytes; title-view access must allocate/copy
+  nothing.
+- The three-page cache has a fixed 512 KiB peak allowance and at most 64 KiB
+  growth after warmup while scrolling all 100 fixture pages. Externally retained
+  TrackViews can keep evicted pages alive; the budget covers cache-owned pages.
+- Baseline comparison permits median ×1.5 + 50 microseconds, p95 ×2 + 100
+  microseconds, and nonzero allocation/copy counters ×1.5 + 64. Zero counters
+  stay zero. Missing measurements fail. Investigate repeated failures rather
+  than silently replacing the baseline; UI timings are observations, not API
+  microbenchmark thresholds.
+
 ## Task list
 
 ### Documentation and decisions
@@ -412,14 +660,17 @@ never sleeps.
 - [x] **DOC-003** Document the static-first high-level architecture and
   migration sequence.
 - [x] **DOC-004** Create this low-level design and trackable task plan.
-- [ ] **DEC-001** Approve the `mc_` public prefix and installed header names.
-- [ ] **DEC-002** Approve the experimental shared-library name
-  `musikcore-abi0` or select a replacement.
+- [x] **DEC-001** Retain the `mc_` public prefix and subsystem headers under
+  `include/musikcore`. `musikcore.abi.inventory` and independent header builds
+  verify the selected surface.
+- [x] **DEC-002** Retain `musikcore-abi0` as the distinct experimental shared
+  library name. `musikcore.abi.shared_c` and `musikcore.abi.exports` verify it.
 - [x] **DEC-003** Decide whether initial multiple-context creation returns
   `MC_ERROR_BUSY` or supports isolated contexts.
   ABI0 returns `MC_ERROR_BUSY` while one context is active.
 - [x] **DEC-004** Use one host-selected dispatcher per context.
-  Request completions use callbacks. Unsolicited notifications are polled.
+  Request completions use callbacks. A separate unsolicited-notification polling
+  surface remains planned and is not implemented by the current headers.
 - [ ] **DEC-005** Decide whether public and provider ABI versions advance
   together through v1.
 - [ ] **DEC-006** Select and pin the internal C++ unit-test framework.
@@ -439,12 +690,18 @@ recorded before the experimental shared façade is introduced.
   before its early return.
 - [x] **TST-003** Create `tests/CMakeLists.txt` and standard CTest labels.
 - [ ] **TST-004** Add the minimal C11 harness under `tests/support/c_test.h`.
-- [ ] **TST-005** Add cross-platform temporary-directory support that never
+- [x] **TST-005** Add cross-platform temporary-directory support that never
   uses production user data.
-- [ ] **TST-006** Add deadline-based event/predicate waiting support with
+  `script/test/run-isolated-test.js` and the indexed fixture create private roots;
+  `musikcore.abi.query`, `result_contracts`, and `indexed_query` exercise them.
+- [x] **TST-006** Add deadline-based event/predicate waiting support with
   timeout diagnostics.
+  `tests/support/host-wakeup`, `tests/fixtures/ApiHost.h`, and query wait helpers
+  drive `result_contracts`, `remote_query_transport`, and `indexed_query`.
 - [ ] **TST-007** Add a deterministic memory stream and fake/null output for
   component tests.
+  Fake transport and deterministic in-memory WAV generation cover current core
+  API tests. An `IDataStream`/provider fixture remains deferred with plugin work.
 - [ ] **TST-008** Add sanitizer CMake options for ASan/UBSan without changing
   release defaults.
 - [ ] **TST-009** Add an initial internal smoke/unit test to prove CTest on
@@ -467,14 +724,18 @@ recorded before the experimental shared façade is introduced.
   enum conventions.
 - [x] **ABI-005** Define `mc_string_view`, byte slices, and caller-buffer
   required-size semantics.
+  Caller-buffer helpers are currently internal and tested by `musikcore.abi.header`;
+  the installed API returns owned pages and borrowed views, not public copy helpers.
 - [x] **ABI-006** Define sized-structure initialization and compatibility
   helpers.
 - [x] **ABI-007** Define opaque-handle ownership and pointer-to-pointer destroy
   conventions.
 - [x] **ABI-008** Implement core-owned error objects with allocation-failure
   fallback behavior.
-- [ ] **ABI-009** Add exception barriers and argument-validation helpers used by
-  every public entry point.
+- [x] **ABI-009** Contain exceptions in allocating/dispatching entry points and
+  audit scalar getters/destructors as nonthrowing. Share text and ID validation
+  helpers. `arguments`, `shared_c`, and `dispatch` verify
+  nullability, bounds, output preservation, and failure cleanup.
 - [x] **ABI-010** Define common audio format and buffer-view types without
   implementing audio providers yet.
 - [x] **ABI-011** Add C11 and C++ header compile tests.
@@ -510,9 +771,13 @@ recorded before the experimental shared façade is introduced.
 - [x] **BLD-010** Add an export allowlist test that rejects private C++ symbols.
   `musikcore.abi.exports` checks the complete ELF and Mach-O export lists.
   Windows export verification remains part of GATE-200.
-- [ ] **BLD-011** Add a build/link check preventing one executable from linking
+- [x] **BLD-011** Add a build/link check preventing one executable from linking
   legacy and ABI0 targets together.
-- [ ] **BLD-012** Give ABI0 separate runtime output and plugin directories.
+  `.cmake/VerifyCoreBoundary.cmake` traverses target dependencies; the positive
+  and negative `musikcore.abi.link_boundary` configure fixtures exercise it.
+- [x] **BLD-012** Give ABI0 separate runtime output and plugin directories.
+  `bin/abi0` and its empty reserved plugin directory are build-local. Standalone
+  ABI0 currently does not load plugins; production fixtures stage selected plugins.
 - [x] **BLD-013** Add a separately compiled C executable linked only to ABI0.
 - [ ] **BLD-014** Test Debug and Release import/shared-library behavior on
   Windows.
@@ -527,14 +792,20 @@ recorded before the experimental shared façade is introduced.
 
 - [x] **API-001** Create `include/musikcore/musikcore.h`.
 - [ ] **API-002** Implement `mc_abi_version` and initial feature discovery.
-- [x] **API-003** Define `mc_context_options` with explicit data and plugin
-  roots.
+- [x] **API-003** Define context options for ABI version validation,
+  dispatch wakeups, query limits, and a reserved copied plugin root. Database
+  directories belong to explicit library identities rather than context-global
+  data roots. `shared_c` and `arguments` verify these contracts.
 - [x] **API-004** Implement transactional `mc_context_create`.
 - [x] **API-005** Implement context shutdown states and
   `mc_context_destroy`.
 - [x] **API-006** Implement the request ID generator and registry.
 - [ ] **API-007** Implement caller-thread completion dispatch and notification polling.
+  Completion dispatch is implemented and tested by `dispatch`; notification
+  polling is a future feature and must not be inferred from context creation.
 - [ ] **API-008** Implement completion payload ownership and owned notifications.
+  Current page/result completion ownership is verified by `query` and
+  `result_contracts`; owned unsolicited notifications remain unimplemented.
 - [x] **API-009** Implement cancellation and exactly-once terminal completion.
 - [x] **API-010** Implement wakeup coalescing and dispatcher-thread shutdown draining.
 - [x] **API-011** Reject unsupported second contexts according to DEC-003.
@@ -916,24 +1187,22 @@ legacy list for actions that still require it.
 - [ ] **GATE-1000** ABI v1 is released only after all prior gates pass and the
   previous-boundary implementations are absent from shipped artifacts.
 
-## Recommended first implementation batch
+## Active next steps
 
-The first batch should stop before creating a shared Windows target:
+1. Resolve `FND-WINDOWS`, `FND-LINUX`, and `GATE-FOUNDATION` before extending the
+   current surface. Preserve the user's separate-session Linux deferral.
+2. Finish the core application API and its real consumers: the remaining
+   runtime/query gaps, `PUB-*`, `CPP-003`, and `MIG-003` through `MIG-010`.
+   Remove temporary bindings only when public ownership replaces them.
+3. Pass `GATE-700` with musikcube using only the C API and public header-only
+   wrapper. Validate core consumer installation, runtime paths, dependencies,
+   and application packages on supported platforms to reach core
+   release-candidate quality. Plugin-specific package tasks remain deferred.
+4. Then begin the provider walking skeleton and SDK migration tasks. Finish
+   combined packaging/compatibility gates before the final ABI v1 freeze.
 
-1. `TST-001` through `TST-010`.
-2. `ABI-001` through `ABI-013`.
-3. Resolve `DEC-001` through `DEC-006` as needed by those headers.
-4. Pass `GATE-000` and `GATE-100`.
-
-The second batch introduces the experimental shared boundary:
-
-1. `BLD-001` through `BLD-014`.
-2. `API-001` through `API-013`.
-3. Pass `GATE-200` and `GATE-300`.
-
-This ordering ensures the first Windows DLL is built around an intentional C
-contract and explicit ownership rules rather than exporting the current C++
-surface.
+Historical phase numbers and completed implementation boxes do not override
+this dependency order or imply an unchecked cross-platform gate has passed.
 
 ## Progress reporting
 
@@ -941,7 +1210,10 @@ When completing a task:
 
 1. Check its box in this document in the same commit as the implementation.
 2. Add or update the named contract/unit/integration test.
-3. Record any change to an approved decision under the task that required it.
+3. Record meaningful architectural decisions as individual ADRs in `docs/adr/`,
+   linked from the HLD, with status,
+   context, rationale, and consequences; link the affected task. Do not add a
+   progress diary or duplicate an existing decision record.
 4. Do not check a gate until its acceptance statement passes on every named
    platform or the document explicitly records a temporary exception.
 

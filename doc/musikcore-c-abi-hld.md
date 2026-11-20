@@ -2,15 +2,20 @@
 
 Status: active migration; foundation stabilization in progress
 
-## Current sequencing decision
+## Current delivery goal
 
-The [core C API foundation gate](musikcore-c-api-foundation-gate.md) takes
-precedence over the original sequence below. Finish that gate before adding
-feature families or migrating further application functionality. Then finish
-the core application API and validate musikcube as its consumer to reach core
-release-candidate quality. Begin the plugin/provider API only afterward.
-Experimental ABI0 remains unfrozen throughout this work. Final ABI v1 freeze
-still follows validation of both surfaces.
+Finish the core application C API and integrate musikcube through its strictly
+header-only C++ wrapper. The [foundation gate](musikcore-c-abi-lld.md#core-c-api-foundation-gate)
+comes first; native Windows and Linux acceptance is still pending. Then close
+the application API gaps, migrate the remaining consumers, and reach core
+release-candidate quality before beginning plugin/provider API work.
+
+This document owns architecture and sequencing, and links the decision records
+in `docs/adr/`.
+The [LLD](musikcore-c-abi-lld.md) owns the implemented contract, acceptance
+criteria, task status, and validation commands. Public headers define individual
+parameters and lifetimes; tests verify their behavior. The detailed API/SDK
+design describes the target, including deferred surfaces.
 
 ## Purpose
 
@@ -32,15 +37,16 @@ tasks and acceptance gates are in
 
 ## Context
 
-musikcore currently has two boundary mechanisms:
+At the start of this refactor, musikcore had two boundary mechanisms:
 
 - A C API that forwards through opaque values into C++ interfaces.
 - Plugin entry points with C linkage that return C++ interface pointers.
 
-Neither is a suitable long-lived, cross-language binary contract. The current
-C API has ambiguous ownership, inconsistent errors, incomplete async behavior,
-and callback/threading hazards. The plugin entry points avoid C++ symbol
-mangling, but still expose C++ vtables, allocation behavior, and compiler ABI.
+Those boundaries motivated the replacement described in
+[ADR-0001](../docs/adr/0001-c-abi-and-core-first-refactor.md). The previous C API
+had ambiguous ownership, inconsistent errors, incomplete async behavior, and
+callback/threading hazards. Its declarations are now retired. Existing plugin
+entry points still expose C++ vtables and compiler ABI despite their C linkage.
 
 The current build topology also differs by platform. Unix-like builds currently
 produce a shared musikcore library for the application, while Windows links
@@ -85,6 +91,26 @@ precede it.
 - Supporting untrusted in-process plugins.
 - Rewriting the musikcore implementation in C.
 - Defining an out-of-process RPC protocol in this project phase.
+
+## Current experimental scope
+
+The installed names are `mc_*`, `include/musikcore`, and `musikcore-abi0`.
+ABI0 is experimental; callers and the library must be rebuilt together after
+interface changes. Successful context or identity creation does not imply a
+running library connection, plugin loader, or audio session.
+
+| Surface | Standalone ABI0 | Production-bound core |
+| --- | --- | --- |
+| Context, dispatch, cancellation, shutdown, errors | Supported | Supported |
+| Local queries, search, result/range reads | Supported against `musik.db` | Selected typed backend |
+| Remote queries and projected reads | Identity only; no public connection factory | Live connection-generation adapter; projection limits in `library.h` |
+| Category/directory selection and playlists | Unsupported without adapter | Typed local/remote queries |
+| Playback and queues | No public session factory | Handle bound to the application's session |
+| Plugin loading, notifications, preferences, indexing | No public surface yet | Private implementation services |
+
+Existing bound operations are migration steps, not a finished embedding API.
+Public runtime/session ownership and the remaining application consumers must
+be addressed before the app can stop depending on private core services.
 
 ## Architectural principles
 
@@ -331,84 +357,27 @@ The test harness provides:
 
 ## Sequencing
 
-### 1. Test infrastructure without a DLL conversion
+1. Establish tests, C ABI primitives, and an experimental shared façade without
+   changing the Windows production application's static linkage. These are
+   already implemented to varying degrees; the LLD tracks the remaining gates.
+2. Finish the core C API foundation gate. Validate the existing contracts and
+   native binary boundary before adding feature families or migrating more
+   application functionality.
+3. Complete the core application API and migrate musikcube in tested vertical
+   slices. Each slice includes C contracts, header-only wrapper support, and
+   real application consumers. Remove private application dependencies and the
+   temporary library/playback binding adapters as public ownership replaces them.
+4. Validate the migrated application and shared library on supported platforms,
+   including installed consumers, runtime paths, dependency scans, and staged
+   application smoke tests. This establishes core release-candidate quality.
+5. Only then start the provider SDK walking skeleton, decoder slice, and other
+   plugin categories. Use pure-C fixtures before migrating production plugins.
+6. Complete consumer/plugin packaging and compatibility validation, remove
+   transitional implementations, and freeze ABI v1 after both surfaces have
+   proven real consumers. Core release-candidate quality does not freeze ABI0.
 
-Add CTest, isolated temporary state, a small C harness, and focused internal
-tests. Preserve the current Windows static target and Unix production topology.
-
-Gate: tests run on all supported build systems without changing how musikcube
-links musikcore.
-
-### 2. Shared ABI foundation
-
-Define and test symbol macros, calling convention, versioning, results, errors,
-strings, sized structures, opaque ownership, and exception containment.
-
-Gate: the public headers compile as C11 and C++, and foundation behavior passes
-in a static test configuration.
-
-### 3. Experimental shared façade and walking skeleton
-
-Only now add an experimental shared target. Expose context creation, version
-query, event retrieval, and destruction. Add the plugin entry point and one
-trivial fixture capability.
-
-Gate: a separate C process crosses the shared-library boundary and loads a
-separate C plugin on Windows, macOS, and Linux without leaking or exporting
-private C++ symbols.
-
-### 4. Metadata/query public vertical slice
-
-Implement async requests, immutable metadata pages, track identities, cache
-windows, and invalidation events. Add the C++ wrapper and migrate one
-representative musikcube list view.
-
-Gate: search and scrolling remain nonblocking and show no meaningful
-performance regression.
-
-### 5. Decoder SDK vertical slice
-
-Implement stream, buffer, decoder-factory, and decoder tables. Prove the design
-with a pure-C deterministic decoder and the real playback pipeline using a fake
-output.
-
-Gate: known PCM frames flow through the C SDK with correct ownership, failures,
-teardown, and plugin unload.
-
-### 6. Expand and migrate the public API
-
-Add preferences, remaining metadata views, playback, queue editing, indexer,
-and other application-required behavior one vertical slice at a time. Each
-slice lands with contract tests, wrapper support, and a migrated consumer.
-
-Gate: musikcube no longer includes or links private musikcore application
-interfaces.
-
-### 7. Expand and migrate the provider SDK
-
-Add data-stream factories, encoders, tag readers, indexer sources, outputs,
-DSPs, and secondary plugin categories. Each category begins with a fixture and
-then migrates one simple production plugin before wider conversion.
-
-Gate: in-tree plugins no longer return current C++ SDK interfaces across module
-boundaries.
-
-### 8. Integration, packaging, and compatibility
-
-Run application smoke tests, installed external consumers, installed external
-plugins, dependency scans, runtime path checks, and archive tests.
-
-Gate: staged release artifacts work outside the source and build trees on all
-supported platforms.
-
-### 9. ABI v1 freeze
-
-Record exported symbols and public layouts, retain prior-version executable
-fixtures, assign platform ABI metadata, remove legacy boundaries, and publish
-the supported surface.
-
-Gate: older v1 consumer and plugin fixtures work with a newer compatible v1
-library without recompilation.
+The LLD retains stable task IDs and historical phase numbers for tracking.
+Those numbers do not authorize starting a provider phase before step 4.
 
 ## Windows-specific strategy
 
@@ -497,15 +466,9 @@ The modernization is complete when:
 - ABI version 1 compatibility is enforced by older consumer and plugin
   fixtures.
 
-## Decision summary
+## Architectural decision records
 
-musikcore will adopt one stable C ABI foundation with two distinct surfaces: a
-public application API and a provider SDK. Testing begins at those boundaries.
-The current Windows static build is preserved until the minimal C ABI exists;
-the first new shared artifact is an explicitly experimental façade used by
-contract tests, not a DLL conversion of the existing public C++ surface.
-
-Migration proceeds through tested vertical slices. The final shared library
-becomes the normal musikcore artifact only after musikcube and production
-plugins have moved to the C surfaces and all supported platforms pass package
-and compatibility tests.
+- [ADR-0001: C ABI choice and core-first refactor](../docs/adr/0001-c-abi-and-core-first-refactor.md)
+- [ADR-0002: host dispatch and request lifetime](../docs/adr/0002-host-dispatch-and-request-lifetime.md)
+- [ADR-0003: origin-bound results and paged metadata](../docs/adr/0003-origin-bound-results-and-paged-metadata.md)
+- [ADR-0004: testing at the public boundary](../docs/adr/0004-test-the-public-boundary-first.md)

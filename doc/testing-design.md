@@ -8,11 +8,10 @@ musikcube should introduce automated testing from the public musikcore C API
 and C SDK boundary, then fan inward toward focused implementation units and
 outward toward full application, plugin, and package integration tests.
 
-The API and SDK boundary is the highest-value starting point because it defines
-the behavior that applications, language bindings, and plugins are allowed to
-depend on. Boundary tests remain valid while internal C++ implementations are
-refactored, and they exercise ownership, errors, concurrency, dynamic loading,
-and ABI compatibility that isolated unit tests cannot cover.
+The rationale, alternatives, and scope of that choice are recorded in
+[ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md). This document
+specifies the harness and test layers; it does not maintain a second decision
+record.
 
 This document complements the
 [high-level architecture](musikcore-c-abi-hld.md),
@@ -845,6 +844,14 @@ Both variants use the same fixture and alternate launch order. The driver
 keeps the track-search actions and assertions. Other TUI benchmarks can
 reuse `script/test/tui/terminal.js` for the PTY and process samples, and
 `script/test/tui/benchmark.js` for repeated runs and median/p95 reporting.
+
+On macOS, the terminal driver launches the system `script` utility through a
+Bash pipe bridge. Node's subprocess stdin is socket-backed; macOS `script`
+accepts ordinary pipes but fails its terminal probe on that socket. A `cat`
+feeder supplies a real pipe and is stopped when the app exits. The launcher
+preserves the app's status and closes its process group on scenario failure.
+`node --test script/test/tui/terminal.test.js` exercises input, exit status, and
+cleanup; CTest registers it as `musikcube.ui.terminal_driver` on macOS.
 
 The historical Linux production baseline comes from a 20-run comparison at
 30,000 tracks. Both variants used the same fixture, search API, and renderer.

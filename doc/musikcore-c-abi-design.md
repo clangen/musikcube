@@ -2,6 +2,16 @@
 
 Status: proposed
 
+The sections below describe the target design, including future surfaces. The
+implemented experimental contract and foundation gate are recorded in the
+[low-level plan](musikcore-c-abi-lld.md#current-experimental-core-contracts).
+The [high-level plan](musikcore-c-abi-hld.md) owns delivery sequencing and links
+the architectural decision records in `docs/adr/`. These distinguish supported
+operations from proposals. The core foundation gate takes precedence over the
+original sequence: finish and stabilize the core application C API before
+beginning plugin/provider ABI work. Legacy `mcsdk_*` declarations are already
+removed; references to their limitations below describe the migration baseline.
+
 Related documents:
 
 - [High-level architecture and sequencing](musikcore-c-abi-hld.md)

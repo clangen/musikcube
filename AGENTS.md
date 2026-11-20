@@ -37,6 +37,7 @@
 - Route library operations through typed queries dispatched by the selected library backend. Reuse an existing query where possible, or add one when needed. Keep ad-hoc SQL for cases that require it, and keep library SQL inside the local typed-query implementation so the same operation can run against local and remote libraries.
 - Protect all database operations from SQL injection. Use prepared statements and bind every variable value, including each value in an `IN` list. Select SQL identifiers and syntax from fixed fragments or explicit allowlists. Use direct execution only for fixed SQL with no variable values.
 - Verify changes through their normal entry point. Add tests as you go for useful contracts and regressions that existing tests miss. Each test should protect behavior that matters.
+- When completing a backlog section, capture meaningful architectural discussions and decisions as individual, numbered Markdown ADRs under `docs/adr/`, linked from the relevant design document. Explain the goal and problem that led to the decision, relevant alternatives, why the chosen approach fits, how it will be introduced, and its consequences; include status. Keep implementation tasks and routine progress in the LLD/checklist. Do not split one cohesive decision into several policy notes or duplicate decisions already recorded.
 
 ## Build scripts
 
@@ -50,7 +51,7 @@
 
 ## musikcore C ABI and tests
 
-- Follow [the C ABI design](doc/musikcore-c-abi-design.md), [the high-level migration plan](doc/musikcore-c-abi-hld.md), [the task checklist](doc/musikcore-c-abi-lld.md), [the core C API foundation gate](doc/musikcore-c-api-foundation-gate.md), and [the testing design](doc/testing-design.md) when working on ABI modernization.
+- Follow [the C ABI design](doc/musikcore-c-abi-design.md), [the high-level migration plan](doc/musikcore-c-abi-hld.md), [the task checklist and foundation gate](doc/musikcore-c-abi-lld.md), and [the testing design](doc/testing-design.md) when working on ABI modernization. Architectural decisions are linked from the HLD and recorded individually under `docs/adr/`.
 - Complete the core C API foundation gate before adding feature families, migrating more application functionality, or beginning plugin/provider API work.
 - Keep the application API and plugin SDK as separate contracts. Specify ownership and lifetime at the ABI boundary.
 - Group public C declarations in subsystem headers that compile on their own. Include application-facing subsystem headers from `musikcore.h`.
