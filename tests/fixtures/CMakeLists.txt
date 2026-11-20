@@ -28,11 +28,12 @@ if(BUILD_TESTING)
       musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
   endif()
   add_dependencies(musikcube_tests musikcore_remote_query_transport_test)
-  add_test(NAME musikcore.abi.remote_query_transport COMMAND musikcore_remote_query_transport_test)
+  add_test(NAME musikcore.abi.remote_query_transport COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/script/test/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcore_remote_query_transport_test>" --stage)
   set_tests_properties(musikcore.abi.remote_query_transport PROPERTIES
     LABELS "integration;abi"
-    TIMEOUT 20
-    ENVIRONMENT "XDG_CONFIG_HOME=${CMAKE_CURRENT_BINARY_DIR}/bin/remote-fixture;APPDATA=${CMAKE_CURRENT_BINARY_DIR}/bin/remote-fixture")
+    TIMEOUT 20)
 
   find_program(MUSIKCUBE_TEST_NODE NAMES node)
   if(MUSIKCUBE_TEST_NODE)
@@ -50,13 +51,16 @@ if(BUILD_TESTING)
     add_dependencies(musikcube_tests musikcube_seed_library musikcore_production_api_test)
     add_test(NAME musikcore.abi.indexed_query COMMAND "${CMAKE_COMMAND}"
       "-DNODE=${MUSIKCUBE_TEST_NODE}"
-      "-DSEED_SCRIPT=${PROJECT_SOURCE_DIR}/script/seed-test-library.js"
+      "-DSEED_SCRIPT=${PROJECT_SOURCE_DIR}/script/test/seed-test-library.js"
+      "-DISOLATED_RUNNER=${PROJECT_SOURCE_DIR}/script/test/run-isolated-test.js"
       "-DBUILD_DIR=${PROJECT_BINARY_DIR}"
       "-DINDEXER=$<TARGET_FILE:musikcube_seed_library>"
       "-DQUERY_TEST=$<TARGET_FILE:musikcore_abi_query_test>"
       "-DCPP_TEST=$<TARGET_FILE:musikcore_abi_cpp_test>"
       "-DPRODUCTION_TEST=$<TARGET_FILE:musikcore_production_api_test>"
-      -P "${CMAKE_CURRENT_SOURCE_DIR}/check-indexed-library.cmake")
+      "-DC_EXAMPLE=$<TARGET_FILE:musikcore_example_c>"
+      "-DCPP_EXAMPLE=$<TARGET_FILE:musikcore_example_cpp>"
+      -P "${PROJECT_SOURCE_DIR}/script/test/check-indexed-library.cmake")
     set_tests_properties(musikcore.abi.indexed_query PROPERTIES LABELS "integration;abi" TIMEOUT 90)
   endif()
 endif()

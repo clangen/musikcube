@@ -2,8 +2,9 @@ const { spawnSync } = require('child_process');
 const { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } = require('fs');
 const { join, resolve } = require('path');
 const { parseArgs } = require('util');
+const { stageTestRuntime } = require('./test-runtime');
 
-const source = resolve(__dirname, '..');
+const source = resolve(__dirname, '../..');
 const windows = process.platform === 'win32';
 const config = 'Release';
 const tracksPerAlbum = 10;
@@ -134,7 +135,7 @@ function main() {
     allowPositionals: true,
   });
   if (values.help) {
-    console.log('Usage: node script/seed-test-library.js [--tracks <count>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
+    console.log('Usage: node script/test/seed-test-library.js [--tracks <count>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
     return;
   }
   if (extra.length) throw new Error('Expected a single configured build directory.');
@@ -160,7 +161,7 @@ function main() {
   const executable = values.indexer ? resolve(values.indexer) : windows
     ? join(source, 'bin64', config, 'musikcube_seed_library.exe')
     : join(source, 'bin', 'musikcube_seed_library');
-  run(executable, [media, String(count)], { ...process.env, APPDATA: root, XDG_CONFIG_HOME: root });
+  run(stageTestRuntime(executable, root), [media, String(count)], { ...process.env, APPDATA: root, XDG_CONFIG_HOME: root });
 
   const database = findDatabase(join(root, 'musikcube'));
   if (!database) throw new Error(`No library database created under ${root}`);

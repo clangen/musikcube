@@ -12,6 +12,7 @@ project(musikcube)
 
 find_package(Threads REQUIRED)
 include(.cmake/MusikcoreConsumerApi.cmake)
+include(.cmake/VerifyCoreBoundary.cmake)
 add_subdirectory(src/musikcore/ffi EXCLUDE_FROM_ALL)
 
 include(CTest)
@@ -19,9 +20,16 @@ if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()
 
+option(MUSIKCORE_ABI_ONLY "Build the standalone experimental C API and its contract tests" OFF)
+if(MUSIKCORE_ABI_ONLY)
+  musikcore_verify_core_boundary("${CMAKE_CURRENT_SOURCE_DIR}")
+  return()
+endif()
+
 if(WIN32)
   include("${CMAKE_CURRENT_SOURCE_DIR}/.cmake/BuildWindows.cmake")
   add_subdirectory(tests/fixtures EXCLUDE_FROM_ALL)
+  musikcore_verify_core_boundary("${CMAKE_CURRENT_SOURCE_DIR}")
   return()
 endif()
 
@@ -184,3 +192,4 @@ add_custom_command(
 
 include(InstallFiles)
 include(GeneratePackage)
+musikcore_verify_core_boundary("${CMAKE_CURRENT_SOURCE_DIR}")

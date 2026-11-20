@@ -13,6 +13,7 @@
 #include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include <musikcore/plugin/Plugins.h>
+#include "../fixtures/CoreRuntime.h"
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <algorithm>
@@ -335,7 +336,6 @@ namespace {
             if (!snapshot || snapshot->state != MC_PLAYBACK_STOPPED || snapshot->volume != 0.25 ||
                 snapshot->position != 12 || snapshot->duration != 30 || !snapshot->muted) return false;
 
-            if (playback->Play(result, 2) != MC_ERROR_NOT_FOUND ||
             /* Wrong-thread access must retain its diagnosis rather than appear absent. */
             bool snapshotBusy = false;
             bool queueBusy = false;
@@ -348,6 +348,7 @@ namespace {
             observer.join();
             if (!snapshotBusy || !queueBusy) return false;
 
+            if (playback->Play(result, 2) != MC_ERROR_NOT_FOUND ||
                 playback->Play(result, 1) != MC_OK || service.GetIndex() != 1 ||
                 service.GetTrackList()->GetId(0) != result.Id(0) ||
                 service.GetTrackList()->GetId(1) != result.Id(1)) return false;
@@ -714,16 +715,7 @@ namespace {
 
 int main(int argc, char **argv) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
-    /* Exercise production bindings with the same plugin services as the apps. */
-    musik::core::plugin::Init();
-    musik::core::runtime::MessageQueue libraryQueue;
-    musik::core::LibraryFactory::Initialize(libraryQueue);
-    struct ShutdownRuntime {
-        ~ShutdownRuntime() {
-            musik::core::LibraryFactory::Shutdown();
-            musik::core::plugin::Shutdown();
-        }
-    } shutdown;
+    CoreRuntime runtime;
 #endif
     try {
         if (argc == 2 && checkQuery(argv[1]) && checkSearch(argv[1]) && checkResultWindows(argv[1])) {

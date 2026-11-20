@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include "CoreRuntime.h"
 
 namespace {
     using namespace musik::core;
@@ -90,17 +91,11 @@ namespace {
 int main(int argc, char** argv) {
     if (argc != 3) return 1;
 
-    musik::debug::Start();
-    plugin::Init();
-
-    MessageQueue queue;
-    LibraryFactory::Initialize(queue);
+    CoreRuntime runtime;
+    auto& queue = runtime.Queue();
     const auto library = LibraryFactory::Instance().DefaultLocalLibrary();
     plugin::Start(&queue, nullptr, library);
     const bool populated = seed(queue, library, argv[1], std::strtoll(argv[2], nullptr, 10));
 
-    plugin::Shutdown();
-    LibraryFactory::Shutdown();
-    musik::debug::Shutdown();
     return populated ? 0 : 1;
 }

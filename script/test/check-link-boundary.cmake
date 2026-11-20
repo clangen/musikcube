@@ -1,0 +1,12 @@
+foreach(mixed IN ITEMS OFF ON)
+  execute_process(COMMAND "${CMAKE_COMMAND}" -S "${FIXTURE}" -B "${BUILD}/${mixed}"
+    "-DGUARD=${GUARD}" "-DMIX_CORES=${mixed}"
+    RESULT_VARIABLE status OUTPUT_VARIABLE output ERROR_VARIABLE error)
+  if(mixed)
+    if(status EQUAL 0 OR NOT "${output}${error}" MATCHES "links both production musikcore and musikcore_abi0")
+      message(FATAL_ERROR "Mixed core link was not rejected as expected: ${output}${error}")
+    endif()
+  elseif(NOT status EQUAL 0)
+    message(FATAL_ERROR "Single core link was rejected: ${output}${error}")
+  endif()
+endforeach()

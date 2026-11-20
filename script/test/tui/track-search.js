@@ -6,7 +6,7 @@ const { parseArgs } = require('node:util');
 const { sampleVariants, printMetrics, cpuMillisecondsPerTick } = require('./benchmark');
 const { Terminal } = require('./terminal');
 
-const SOURCE = resolve(__dirname, '../..');
+const SOURCE = resolve(__dirname, '../../..');
 const TRACK_COUNT = 10000;
 const FILTER = 'Artist 001 - Album 02';
 const FIRST_ALBUM = 'Artist 001 - Album 01';
@@ -47,7 +47,7 @@ async function seedLibrary(runtime, build, tracks) {
   const output = fs.openSync(log, 'w');
   try {
     const child = spawn(process.execPath, [
-      join(SOURCE, 'script/seed-test-library.js'),
+      join(SOURCE, 'script/test/seed-test-library.js'),
       '--tracks', String(tracks),
       '--indexer', join(runtime, 'musikcube_seed_library'),
       '--fixture-dir', runtime, build,
@@ -277,7 +277,7 @@ async function main() {
     },
   });
   if (values.help) {
-    console.log('Usage: node tests/tui/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
+    console.log('Usage: node script/test/tui/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
     return;
   }
   if (!['linux', 'darwin'].includes(process.platform)) {
@@ -325,6 +325,11 @@ async function main() {
       const pilot = join(runtime, 'pilot');
       stagePilot(pilot, join(build, 'bin', 'abi0'));
       variants.push({ name: 'ABI0 pilot', runtime: pilot, pilot: true });
+    }
+    if (process.platform === 'darwin') {
+      for (const variant of variants) {
+        fs.copyFileSync(join(build, 'tests', 'bin', 'musikcube_pty_host'), join(variant.runtime, 'musikcube_pty_host'));
+      }
     }
     const started = performance.now();
     const database = await seedLibrary(runtime, build, tracks);

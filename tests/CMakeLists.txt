@@ -41,7 +41,7 @@ if(UNIX)
     "-DAPPLE=${APPLE}"
     "-DLIBRARY=$<TARGET_FILE:musikcore_abi0>"
     "-DALLOWLIST=${PROJECT_SOURCE_DIR}/src/musikcore/ffi/exports.txt"
-    -P "${CMAKE_CURRENT_SOURCE_DIR}/abi/check-exports.cmake")
+    -P "${PROJECT_SOURCE_DIR}/script/test/check-exports.cmake")
   set_tests_properties(musikcore.abi.exports PROPERTIES LABELS "contract;abi")
 endif()
 
@@ -76,9 +76,23 @@ set_target_properties(musikcore_abi_query_test PROPERTIES
   CXX_EXTENSIONS OFF
   RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}"
 )
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/query-fixture")
-add_test(NAME musikcore.abi.query COMMAND musikcore_abi_query_test
-  "${CMAKE_CURRENT_BINARY_DIR}/bin/query-fixture")
+find_program(MUSIKCORE_TEST_NODE NAMES node)
+if(NOT MUSIKCORE_TEST_NODE)
+  message(FATAL_ERROR "Node.js is required for isolated ABI test fixtures")
+endif()
+set(isolated_test "${PROJECT_SOURCE_DIR}/script/test/run-isolated-test.js")
+set(isolated_root "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated")
+add_test(NAME musikcore.abi.inventory COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/script/test/audit-core-api.js" --check)
+set_tests_properties(musikcore.abi.inventory PROPERTIES LABELS "contract;abi")
+add_test(NAME musikcore.abi.link_boundary COMMAND "${CMAKE_COMMAND}"
+  "-DFIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/abi/link-boundary"
+  "-DBUILD=${CMAKE_CURRENT_BINARY_DIR}/bin/link-boundary"
+  "-DGUARD=${PROJECT_SOURCE_DIR}/.cmake/VerifyCoreBoundary.cmake"
+  -P "${PROJECT_SOURCE_DIR}/script/test/check-link-boundary.cmake")
+set_tests_properties(musikcore.abi.link_boundary PROPERTIES LABELS "contract;abi")
+add_test(NAME musikcore.abi.query COMMAND "${MUSIKCORE_TEST_NODE}" "${isolated_test}"
+  "${isolated_root}" "$<TARGET_FILE:musikcore_abi_query_test>" @origin)
 set_tests_properties(musikcore.abi.query PROPERTIES LABELS "contract;abi" TIMEOUT 20)
 
 add_custom_target(musikcube_tests DEPENDS
@@ -119,9 +133,53 @@ set_target_properties(musikcore_abi_library_switch_test PROPERTIES
   CXX_EXTENSIONS OFF
   RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}"
 )
-set(library_switch_fixture "${CMAKE_CURRENT_BINARY_DIR}/bin/library-switch")
-file(MAKE_DIRECTORY "${library_switch_fixture}/origin" "${library_switch_fixture}/destination")
-add_test(NAME musikcore.abi.library_switch COMMAND musikcore_abi_library_switch_test
-  "${library_switch_fixture}/origin" "${library_switch_fixture}/destination")
+add_test(NAME musikcore.abi.library_switch COMMAND "${MUSIKCORE_TEST_NODE}" "${isolated_test}"
+  "${isolated_root}" "$<TARGET_FILE:musikcore_abi_library_switch_test>" @origin @destination)
 set_tests_properties(musikcore.abi.library_switch PROPERTIES LABELS "contract;abi" TIMEOUT 20)
 add_dependencies(musikcube_tests musikcore_abi_library_switch_test)
+
+if(APPLE)
+  add_executable(musikcube_pty_host support/pty-host.c)
+  set_target_properties(musikcube_pty_host PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  add_dependencies(musikcube_tests musikcube_pty_host)
+endif()
+
+# Compile each public header in its own translation unit using public includes only.
+set(public_c_headers abi context library playback musikcore)
+set(public_cpp_headers context library playback musikcore track-result-window detail/track-page-cache)
+set(header_sources)
+foreach(header IN LISTS public_c_headers)
+  foreach(language IN ITEMS c cpp)
+    set(unit "${CMAKE_CURRENT_BINARY_DIR}/bin/headers/${header}.h.${language}")
+    file(GENERATE OUTPUT "${unit}" CONTENT "#include <musikcore/${header}.h>\n")
+    list(APPEND header_sources "${unit}")
+  endforeach()
+endforeach()
+add_executable(musikcore_api_baseline abi/baseline.cpp support/host-wakeup.cpp)
+target_include_directories(musikcore_api_baseline PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_link_libraries(musikcore_api_baseline PRIVATE musikcore_cpp_abi0 musikcore_abi0_sqlite Threads::Threads)
+set_target_properties(musikcore_api_baseline PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}")
+add_dependencies(musikcube_tests musikcore_api_baseline)
+foreach(header IN LISTS public_cpp_headers)
+  set(unit "${CMAKE_CURRENT_BINARY_DIR}/bin/headers/${header}.hpp.cpp")
+  file(GENERATE OUTPUT "${unit}" CONTENT "#include <musikcore/${header}.hpp>\n")
+  list(APPEND header_sources "${unit}")
+endforeach()
+add_library(musikcore_public_headers OBJECT ${header_sources})
+target_include_directories(musikcore_public_headers PRIVATE "${PROJECT_SOURCE_DIR}/include")
+set_target_properties(musikcore_public_headers PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
+  C_EXTENSIONS OFF CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+add_dependencies(musikcube_tests musikcore_public_headers)
+
+foreach(language IN ITEMS c cpp)
+  add_executable(musikcore_example_${language}
+    "${PROJECT_SOURCE_DIR}/examples/core-query.${language}" support/host-wakeup.cpp)
+  target_include_directories(musikcore_example_${language} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/support")
+  target_link_libraries(musikcore_example_${language} PRIVATE musikcore_cpp_abi0 Threads::Threads)
+  set_target_properties(musikcore_example_${language} PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
+    C_EXTENSIONS OFF CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
+    RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}")
+  add_dependencies(musikcube_tests musikcore_example_${language})
+endforeach()

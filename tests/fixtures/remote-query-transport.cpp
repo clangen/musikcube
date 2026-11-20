@@ -14,6 +14,7 @@
 #include <musikcore/musikcore.hpp>
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/plugin/Plugins.h>
+#include "CoreRuntime.h"
 #include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -201,15 +202,7 @@ namespace {
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
         settings->SetBool(prefs::keys::SaveSessionOnExit, false);
-        plugin::Init();
-        runtime::MessageQueue libraryQueue;
-        LibraryFactory::Initialize(libraryQueue);
-        struct Shutdown {
-            ~Shutdown() {
-                LibraryFactory::Shutdown();
-                plugin::Shutdown();
-            }
-        } shutdown;
+        CoreRuntime coreRuntime;
 
         const auto master = std::make_shared<library::MasterLibrary>();
         auto& selection = *master;

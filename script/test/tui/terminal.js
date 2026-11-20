@@ -14,9 +14,10 @@ class Terminal {
     /* Keep stdin open for keystrokes and return the PTY child's exit status. */
     const command = `stty rows ${rows} cols ${columns} && echo $$ > .tui-pid && exec ./musikcube`;
     const args = process.platform === 'darwin'
-      ? ['-q', '/dev/null', '/bin/sh', '-c', command]
+      ? ['/bin/sh', '-c', command]
       : ['--quiet', '--flush', '--return', '--command', command, '/dev/null'];
-    this.child = spawn('script', args, {
+    const host = process.platform === 'darwin' ? join(runtime, 'musikcube_pty_host') : 'script';
+    this.child = spawn(host, args, {
       cwd: runtime,
       env: { ...env, SHELL: '/bin/sh' },
     });
