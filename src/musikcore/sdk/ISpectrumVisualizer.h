@@ -42,6 +42,11 @@ namespace musik { namespace core { namespace sdk {
     class ISpectrumVisualizer : public IVisualizer {
     public:
         virtual void Release() = 0;
+        /*
+         * Each bin is expressed as decibels above an -80 dBFS display floor.
+         * Values are clamped to [0, 80], where 0 is at/below the floor and 80
+         * represents 0 dBFS.
+         */
         virtual void Write(float *spectrum, int size) = 0;
     };
 

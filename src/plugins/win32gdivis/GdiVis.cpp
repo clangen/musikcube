@@ -193,8 +193,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
     }
     else if (reason == DLL_PROCESS_DETACH) {
         std::unique_lock<std::mutex> lock(pcmMutex);
-        delete ::spectrumIn;
-        delete ::spectrumOut;
+        delete[] ::spectrumIn;
+        delete[] ::spectrumOut;
         ::spectrumIn = nullptr;
         ::spectrumOut = nullptr;
     }
@@ -229,8 +229,8 @@ class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
             std::unique_lock<std::mutex> lock(pcmMutex);
 
             if (::spectrumSize != size) {
-                delete ::spectrumIn;
-                delete ::spectrumOut;
+                delete[] ::spectrumIn;
+                delete[] ::spectrumOut;
                 ::spectrumSize = size;
                 ::spectrumIn = new float[size];
                 ::spectrumOut = new float[size];

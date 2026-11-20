@@ -43,6 +43,7 @@
 #include <musikcore/sdk/constants.h>
 
 #include <algorithm>
+#include <array>
 #include <math.h>
 #include <future>
 
@@ -57,7 +58,6 @@ using std::min;
 using std::max;
 
 static std::string TAG = "Player";
-static float* hammingWindow = nullptr;
 static std::mutex playerWorkersMutex;
 static std::condition_variable playerWorkersChanged;
 static size_t playerWorkers = 0;
@@ -76,40 +76,17 @@ namespace musik {
             void playerThreadLoop(Player* player);
 
             struct FftContext {
-                FftContext() {
-                    samples = 0;
-                    cfg = nullptr;
-                    deinterleaved = nullptr;
-                    scratch = nullptr;
+                FftContext()
+                : cfg(kiss_fftr_alloc(FFT_N, false, nullptr, nullptr)) {
                 }
 
                 ~FftContext() {
-                    Reset();
-                }
-
-                void Reset() {
                     kiss_fftr_free(cfg);
-                    delete[] deinterleaved;
-                    delete[] scratch;
-                    cfg = nullptr;
-                    deinterleaved = nullptr;
-                    scratch = nullptr;
                 }
 
-                void Init(int samples) {
-                    if (!cfg || samples != this->samples) {
-                        Reset();
-                        cfg = kiss_fftr_alloc(FFT_N, false, 0, 0);
-                        deinterleaved = new float[samples];
-                        scratch = new kiss_fft_cpx[(FFT_N / 2) + 1];
-                        this->samples = samples;
-                    }
-                }
-
-                int samples;
                 kiss_fftr_cfg cfg;
-                float* deinterleaved;
-                kiss_fft_cpx* scratch;
+                std::array<kiss_fft_scalar, FFT_N> input;
+                std::array<kiss_fft_cpx, (FFT_N / 2) + 1> output;
             };
         }
     }
@@ -501,51 +478,84 @@ bool Player::Exited() {
     return (this->internalState == Player::Quit);
 }
 
-static inline void initHammingWindow() {
-    delete hammingWindow;
-    hammingWindow = new float[FFT_N];
+struct HammingWindow {
+    std::array<float, FFT_N> values;
+    double sum;
+};
 
-    for (int i = 0; i < FFT_N; i++) {
-        hammingWindow[i] = 0.54f - 0.46f * (float) cos((2 * PI * i) / (FFT_N - 1));
-    }
+static const HammingWindow& getHammingWindow() {
+    static const HammingWindow window = []() {
+        HammingWindow result = {};
+        for (int i = 0; i < FFT_N; i++) {
+            result.values[i] =
+                0.54f - 0.46f * (float) cos((2 * PI * i) / (FFT_N - 1));
+            result.sum += result.values[i];
+        }
+        return result;
+    }();
+
+    return window;
 }
 
 static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, int outputSize) {
-    long samples = buffer->Samples();
-    int channels = buffer->Channels();
-    long samplesPerChannel = samples / channels;
-
-    if (samplesPerChannel < FFT_N || outputSize != FFT_N / 2) {
+    if (!buffer || !fft || !fft->cfg || !output || outputSize != FFT_N / 2) {
         return false;
     }
 
-    if (!hammingWindow) {
-        initHammingWindow();
+    long samples = buffer->Samples();
+    int channels = buffer->Channels();
+    if (channels <= 0 || samples <= 0 || !buffer->BufferPointer()) {
+        return false;
+    }
+
+    const long samplesPerChannel = samples / channels;
+    const long windowsPerChannel = samplesPerChannel / FFT_N;
+    if (windowsPerChannel == 0) {
+        return false;
     }
 
     memset(output, 0, outputSize * sizeof(float));
 
     float* input = buffer->BufferPointer();
+    const HammingWindow& window = getHammingWindow();
+    std::array<double, FFT_N / 2> accumulatedPower = {};
 
-    fft->Init(samples);
+    for (int channel = 0; channel < channels; channel++) {
+        for (long block = 0; block < windowsPerChannel; block++) {
+            const long firstFrame = block * FFT_N;
+            for (int i = 0; i < FFT_N; i++) {
+                const long source = ((firstFrame + i) * channels) + channel;
+                fft->input[i] = input[source] * window.values[i];
+            }
 
-    for (int i = 0; i < samples; i++) {
-        const int to = ((i % channels) * samplesPerChannel) + (i / channels);
-        fft->deinterleaved[to] = input[i] * hammingWindow[to % FFT_N];
+            kiss_fftr(fft->cfg, fft->input.data(), fft->output.data());
+
+            for (int bin = 0; bin < outputSize; bin++) {
+                const double real = fft->output[bin].r;
+                const double imaginary = fft->output[bin].i;
+                accumulatedPower[bin] += (real * real) + (imaginary * imaginary);
+            }
+        }
     }
 
-    int offset = 0;
-    int iterations = samples / FFT_N;
-    for (int i = 0; i < iterations; i++) {
-        kiss_fftr(fft->cfg, fft->deinterleaved + offset, fft->scratch);
+    /*
+     * Convert average power to a single-sided, window-normalized amplitude.
+     * The visualizer API historically expects positive bar heights, so expose
+     * decibels above an -80 dBFS display floor: 0 is at/below the floor and 80
+     * represents 0 dBFS. DC is not doubled; the omitted Nyquist bin would use
+     * the same treatment.
+     */
+    constexpr double floorDb = -80.0;
+    const double iterations = (double)(channels * windowsPerChannel);
+    for (int bin = 0; bin < outputSize; bin++) {
+        const double averagePower = accumulatedPower[bin] / iterations;
+        const double singleSidedScale = (bin == 0) ? 1.0 : 2.0;
+        const double amplitude = singleSidedScale * sqrt(averagePower) / window.sum;
 
-        for (int z = 0; z < outputSize; z++) {
-            /* convert to decibels */
-            double db = (fft->scratch[z].r * fft->scratch[z].r + fft->scratch[z].i + fft->scratch[z].i);
-            output[z] += (db < 1 ? 0 : 20 * (float) log10(db)) / iterations; /* frequencies over all channels */
+        if (amplitude > 0.0) {
+            const double dbfs = 20.0 * log10(amplitude);
+            output[bin] = (float) std::clamp(dbfs - floorDb, 0.0, -floorDb);
         }
-
-        offset += FFT_N;
     }
 
     return true;
