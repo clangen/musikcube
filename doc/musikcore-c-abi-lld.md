@@ -1,6 +1,13 @@
 # musikcore C ABI modernization: low-level design and task plan
 
-Status: proposed
+Status: active migration; foundation stabilization in progress
+
+The [core C API foundation gate](musikcore-c-api-foundation-gate.md) supersedes
+the original phase ordering below. Additional application feature migrations
+wait for that gate. All provider tasks, including the SDK walking skeleton and
+decoder vertical slice, wait for core application API release-candidate quality.
+Existing checkboxes describe implementation progress; unchecked platform gates
+remain mandatory and are not implied by completed implementation tasks.
 
 ## Purpose
 
@@ -23,6 +30,7 @@ Status legend:
 
 - [High-level architecture and sequencing](musikcore-c-abi-hld.md)
 - [Detailed public API and C SDK design](musikcore-c-abi-design.md)
+- [Core C API foundation gate](musikcore-c-api-foundation-gate.md)
 - [Unit and integration testing design](testing-design.md)
 
 ## Constraints from the current repository
@@ -31,10 +39,12 @@ Status legend:
 - Windows currently defines `musikcore` as a static CMake target.
 - Core source lists are duplicated between `src/musikcore/CMakeLists.txt` and
   `.cmake/WindowsSources.cmake`.
-- The legacy C boundary is implemented primarily in `c_context.cpp` and
-  `c_interface_wrappers.cpp`.
+- The retired legacy C boundary (`c_context.cpp`, `c_interface_wrappers.cpp`,
+  and `musikcore_c.h`) has been removed. The new consumer boundary lives in
+  `src/musikcore/ffi/consumer`.
 - Existing plugins export C-named entry points that exchange C++ SDK pointers.
-- No CTest tree or automated unit/integration suite currently exists.
+- CTest now runs header, lifecycle, dispatch, query, wrapper, backend-switch,
+  export, and production/remote integration tests.
 - Production binaries and plugins currently share source-tree output
   directories in several configurations.
 
@@ -621,7 +631,7 @@ recorded before the experimental shared façade is introduced.
 - [x] **MIG-001** Select one musikcube search/list vertical slice for the pilot.
   Start with the track-search results view in `TrackSearchLayout`.
 - [x] **MIG-002** Migrate that slice through the C++ wrapper in an ABI0-only
-  migration executable. Exercised by `node tests/tui/track-search.js --compare`.
+  migration executable. Exercised by `node script/test/tui/track-search.js --compare`.
 - [x] **PERF-001** Add baseline and ABI0 benchmarks for query, initial display,
   and rapid scrolling. The headless Track Search benchmark measures
   keystroke-to-render latency and records the mainline baseline in the
@@ -839,7 +849,7 @@ legacy list for actions that still require it.
 ### Phase 9: system, packaging, and compatibility
 
 - [x] **SYS-001** Add musikcube pseudo-terminal startup/shutdown smoke test.
-  `node tests/tui/track-search.js` starts the app in a PTY and quits through
+  `node script/test/tui/track-search.js` starts the app in a PTY and quits through
   its normal key binding.
 - [ ] **SYS-002** Cover valid, unset, and unparseable `TERM` behavior.
 - [ ] **SYS-003** Add musikcubed startup/readiness/shutdown smoke test.

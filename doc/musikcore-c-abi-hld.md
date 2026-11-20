@@ -1,6 +1,16 @@
 # musikcore C ABI modernization: high-level design
 
-Status: proposed
+Status: active migration; foundation stabilization in progress
+
+## Current sequencing decision
+
+The [core C API foundation gate](musikcore-c-api-foundation-gate.md) takes
+precedence over the original sequence below. Finish that gate before adding
+feature families or migrating further application functionality. Then finish
+the core application API and validate musikcube as its consumer to reach core
+release-candidate quality. Begin the plugin/provider API only afterward.
+Experimental ABI0 remains unfrozen throughout this work. Final ABI v1 freeze
+still follows validation of both surfaces.
 
 ## Purpose
 

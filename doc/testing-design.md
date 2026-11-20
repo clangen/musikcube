@@ -271,8 +271,8 @@ Use the test runner with an existing CMake build, or let it configure the
 checkout with the default toolchain:
 
 ```sh
-node script/run-tests.js
-node script/run-tests.js --build-dir build/test -- -L abi
+node script/test/run-tests.js
+node script/test/run-tests.js --build-dir build/test -- -L abi
 ```
 
 The runner enables `BUILD_TESTING`, builds the `musikcube_tests` target, and
@@ -406,12 +406,12 @@ empty or populated state and owns its transactions.
 ### Media fixtures
 
 To generate a database with the production indexer and tag readers, run
-`node script/seed-test-library.js [configured-build-directory]`. The script
+`node script/test/seed-test-library.js [configured-build-directory]`. The script
 creates two tagged WAV files, indexes them in a fresh config root under
 the selected build directory, and prints the resulting `musik.db` path.
 Use the database's parent directory as the ABI0 local library locator.
 
-Run `node script/seed-test-library.js --tracks 10000` for a larger fixture.
+Run `node script/test/seed-test-library.js --tracks 10000` for a larger fixture.
 It generates 100 artists with 10 albums per artist and 10 numbered tracks
 per album, distributed across five genres.
 The fixtures also embed ten extended tag keys, with a mix of missing values,
@@ -419,7 +419,7 @@ repeated values across tracks, and tracks with more than one composer.
 
 When Node.js is available, `musikcore.abi.indexed_query` seeds the two-track
 fixture before querying it through ABI0. Run it with
-`node script/run-tests.js -- -R '^musikcore\.abi\.indexed_query$'`.
+`node script/test/run-tests.js -- -R '^musikcore\.abi\.indexed_query$'`.
 
 Fixtures should be small, deterministic, and redistributable. Prefer generating
 simple PCM WAV data during the test. Commit compact binary fixtures only when
@@ -807,7 +807,7 @@ uses util-linux `script` on Linux and BSD `script` on macOS.
 
 ```sh
 cmake --build . --target musikcube musikcube_seed_library
-node tests/tui/track-search.js
+node script/test/tui/track-search.js
 ```
 
 The scenario indexes 10,000 tracks under the build tree alongside the staged
@@ -830,7 +830,7 @@ views against the same fixture.
 
 ```sh
 cmake --build . --target musikcube_abi_search_pilot
-node tests/tui/track-search.js --compare --runs 20
+node script/test/tui/track-search.js --compare --runs 20
 ```
 
 To compare two pilot builds, save the control executable and its matching
@@ -838,13 +838,13 @@ To compare two pilot builds, save the control executable and its matching
 directory containing both files to `--pilot-control`.
 
 ```sh
-node tests/tui/track-search.js --pilot-control build/search-control --runs 20
+node script/test/tui/track-search.js --pilot-control build/search-control --runs 20
 ```
 
 Both variants use the same fixture and alternate launch order. The driver
 keeps the track-search actions and assertions. Other TUI benchmarks can
-reuse `tests/tui/terminal.js` for the PTY and process samples, and
-`tests/tui/benchmark.js` for repeated runs and median/p95 reporting.
+reuse `script/test/tui/terminal.js` for the PTY and process samples, and
+`script/test/tui/benchmark.js` for repeated runs and median/p95 reporting.
 
 The historical Linux production baseline comes from a 20-run comparison at
 30,000 tracks. Both variants used the same fixture, search API, and renderer.
@@ -853,7 +853,7 @@ of 32,224 KiB with pages and 32,190 KiB with the legacy row cache.
 Median CPU time was 70 ms in both modes. A jump to the last viewport
 took 4.6 ms with pages and 1.2 ms with the legacy cache. The page-backed
 view shortens the curses input wait only while an async page is pending.
-Use `node tests/tui/track-search.js --windows --tracks 30000 --runs 20`
+Use `node script/test/tui/track-search.js --windows --tracks 30000 --runs 20`
 to measure the current production path against those recorded numbers.
 
 The viewport scenario widens the search to 100 results, advances past the first

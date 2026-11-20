@@ -30,6 +30,7 @@
 ## Build scripts
 
 - Keep new Unix build scripts in Node.js. Reuse `script/unix-build-config.js` for shared compiler and target settings.
+- Keep test runners, fixture-generation scripts, test check scripts, and benchmark scripts under `script/test/`.
 - Keep compiler-specific flags and setup in compiler profiles. Use the existing vendor include and library directory lists in CMake targets.
 - Keep package-specific build steps under `script/vendor-packages/`. Define fixed configure and build arguments as named constants in the recipe.
 - Keep staging, caches, logs, and temporary build files under the build root. Use the existing build cache and staging directories where possible.
@@ -38,7 +39,8 @@
 
 ## musikcore C ABI and tests
 
-- Follow [the C ABI design](doc/musikcore-c-abi-design.md), [the high-level migration plan](doc/musikcore-c-abi-hld.md), [the task checklist](doc/musikcore-c-abi-lld.md), and [the testing design](doc/testing-design.md) when working on ABI modernization.
+- Follow [the C ABI design](doc/musikcore-c-abi-design.md), [the high-level migration plan](doc/musikcore-c-abi-hld.md), [the task checklist](doc/musikcore-c-abi-lld.md), [the core C API foundation gate](doc/musikcore-c-api-foundation-gate.md), and [the testing design](doc/testing-design.md) when working on ABI modernization.
+- Complete the core C API foundation gate before adding feature families, migrating more application functionality, or beginning plugin/provider API work.
 - Keep the application API and plugin SDK as separate contracts. Specify ownership and lifetime at the ABI boundary.
 - Group public C declarations in subsystem headers that compile on their own. Include application-facing subsystem headers from `musikcore.h`.
 - Keep the public `musikcore.hpp` wrapper strictly header-only. It depends on the public C ABI and uses no private core headers.
