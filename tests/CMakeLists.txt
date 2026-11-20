@@ -1,7 +1,7 @@
 add_executable(musikcore_abi_header_test
-  abi/header.c
-  abi/header.cpp
-  abi/error.cpp
+  unit/musikcore/ffi/header.c
+  unit/musikcore/ffi/header.cpp
+  unit/musikcore/ffi/error.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/version.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/string.cpp"
@@ -21,9 +21,9 @@ set_target_properties(musikcore_abi_header_test PROPERTIES
 )
 
 add_test(NAME musikcore.abi.header COMMAND musikcore_abi_header_test)
-set_tests_properties(musikcore.abi.header PROPERTIES LABELS "contract;abi")
+set_tests_properties(musikcore.abi.header PROPERTIES LABELS "unit;musikcore;abi;contract")
 
-add_executable(musikcore_abi0_c_test abi/shared.c)
+add_executable(musikcore_abi0_c_test integration/api/shared.c)
 target_link_libraries(musikcore_abi0_c_test PRIVATE musikcore_abi0)
 set_target_properties(musikcore_abi0_c_test PROPERTIES
   C_STANDARD 11
@@ -33,7 +33,7 @@ set_target_properties(musikcore_abi0_c_test PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}"
 )
 add_test(NAME musikcore.abi.shared_c COMMAND musikcore_abi0_c_test)
-set_tests_properties(musikcore.abi.shared_c PROPERTIES LABELS "contract;abi")
+set_tests_properties(musikcore.abi.shared_c PROPERTIES LABELS "integration;musikcore;abi;contract")
 
 if(UNIX)
   add_test(NAME musikcore.abi.exports COMMAND "${CMAKE_COMMAND}"
@@ -41,13 +41,13 @@ if(UNIX)
     "-DAPPLE=${APPLE}"
     "-DLIBRARY=$<TARGET_FILE:musikcore_abi0>"
     "-DALLOWLIST=${PROJECT_SOURCE_DIR}/src/musikcore/ffi/exports.txt"
-    -P "${PROJECT_SOURCE_DIR}/script/test/check-exports.cmake")
-  set_tests_properties(musikcore.abi.exports PROPERTIES LABELS "contract;abi")
+    -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-exports.cmake")
+  set_tests_properties(musikcore.abi.exports PROPERTIES LABELS "integration;musikcore;abi;contract")
 endif()
 
 add_executable(musikcore_abi_dispatch_test
-  abi/dispatch.cpp
-  abi/context-allocation.cpp
+  integration/api/dispatch.cpp
+  integration/api/context-allocation.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer/context.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp"
 )
@@ -63,9 +63,9 @@ set_target_properties(musikcore_abi_dispatch_test PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
 )
 add_test(NAME musikcore.abi.dispatch COMMAND musikcore_abi_dispatch_test)
-set_tests_properties(musikcore.abi.dispatch PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+set_tests_properties(musikcore.abi.dispatch PROPERTIES LABELS "integration;musikcore;abi;contract" TIMEOUT 20)
 
-add_executable(musikcore_abi_query_test abi/query.c abi/query-support.cpp)
+add_executable(musikcore_abi_query_test integration/api/query.c integration/api/query-support.cpp)
 target_link_libraries(musikcore_abi_query_test PRIVATE musikcore_abi0 musikcore_abi0_sqlite Threads::Threads)
 set_target_properties(musikcore_abi_query_test PROPERTIES
   C_STANDARD 11
@@ -80,20 +80,20 @@ find_program(MUSIKCORE_TEST_NODE NAMES node)
 if(NOT MUSIKCORE_TEST_NODE)
   message(FATAL_ERROR "Node.js is required for isolated ABI test fixtures")
 endif()
-set(isolated_test "${PROJECT_SOURCE_DIR}/script/test/run-isolated-test.js")
+set(isolated_test "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js")
 set(isolated_root "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated")
 add_test(NAME musikcore.abi.inventory COMMAND "${MUSIKCORE_TEST_NODE}"
-  "${PROJECT_SOURCE_DIR}/script/test/audit-core-api.js" --check)
-set_tests_properties(musikcore.abi.inventory PROPERTIES LABELS "contract;abi")
+  "${PROJECT_SOURCE_DIR}/tests/scripts/audit-core-api.js" --check)
+set_tests_properties(musikcore.abi.inventory PROPERTIES LABELS "unit;musikcore;abi;contract")
 add_test(NAME musikcore.abi.link_boundary COMMAND "${CMAKE_COMMAND}"
-  "-DFIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/abi/link-boundary"
+  "-DFIXTURE=${CMAKE_CURRENT_SOURCE_DIR}/integration/binary/link-boundary"
   "-DBUILD=${CMAKE_CURRENT_BINARY_DIR}/bin/link-boundary"
   "-DGUARD=${PROJECT_SOURCE_DIR}/.cmake/VerifyCoreBoundary.cmake"
-  -P "${PROJECT_SOURCE_DIR}/script/test/check-link-boundary.cmake")
-set_tests_properties(musikcore.abi.link_boundary PROPERTIES LABELS "contract;abi")
+  -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-link-boundary.cmake")
+set_tests_properties(musikcore.abi.link_boundary PROPERTIES LABELS "integration;musikcore;abi;contract")
 add_test(NAME musikcore.abi.query COMMAND "${MUSIKCORE_TEST_NODE}" "${isolated_test}"
   "${isolated_root}" "$<TARGET_FILE:musikcore_abi_query_test>" @origin)
-set_tests_properties(musikcore.abi.query PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+set_tests_properties(musikcore.abi.query PROPERTIES LABELS "integration;musikcore;abi;contract" TIMEOUT 20)
 
 add_custom_target(musikcube_tests DEPENDS
   musikcore_abi_header_test musikcore_abi0_c_test musikcore_abi_dispatch_test musikcore_abi_query_test)
@@ -101,7 +101,7 @@ add_custom_target(musikcube_tests DEPENDS
 # Compile the queue on its own: these tests should not need audio, plugins,
 # global library services, or the production precompiled header.
 add_executable(musikcore_message_queue_test
-  unit/message-queue.cpp
+  unit/musikcore/runtime/message-queue.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/runtime/MessageQueue.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/runtime/Message.cpp")
 target_include_directories(musikcore_message_queue_test PRIVATE
@@ -115,28 +115,28 @@ foreach(case IN ITEMS registration_order filtered_removal unregister_during_disp
     reentrant_removal reentrant_handler destructor_cleanup delay_debounce broadcasts
     shared_payload_lifetime wait_wakeup concurrent_posting)
   add_test(NAME musikcore.runtime.message_queue.${case} COMMAND musikcore_message_queue_test "${case}")
-  set_tests_properties(musikcore.runtime.message_queue.${case} PROPERTIES LABELS "unit;runtime" TIMEOUT 10)
+  set_tests_properties(musikcore.runtime.message_queue.${case} PROPERTIES LABELS "unit;musikcore;runtime" TIMEOUT 10)
 endforeach()
 
 # This application helper is header-only and needs no running core context.
-add_executable(musikcube_async_callback_scope_test unit/async-callback-scope.cpp)
+add_executable(musikcube_async_callback_scope_test unit/musikcube/async-callback-scope.cpp)
 target_include_directories(musikcube_async_callback_scope_test PRIVATE "${PROJECT_SOURCE_DIR}/src/musikcube")
 set_target_properties(musikcube_async_callback_scope_test PROPERTIES
   CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 add_dependencies(musikcube_tests musikcube_async_callback_scope_test)
 add_test(NAME musikcube.unit.async_callback_scope COMMAND musikcube_async_callback_scope_test)
-set_tests_properties(musikcube.unit.async_callback_scope PROPERTIES LABELS "unit;app" TIMEOUT 10)
+set_tests_properties(musikcube.unit.async_callback_scope PROPERTIES LABELS "unit;musikcube;app" TIMEOUT 10)
 
-add_executable(musikcore_abi_arguments_test abi/arguments.c)
+add_executable(musikcore_abi_arguments_test integration/api/arguments.c)
 target_link_libraries(musikcore_abi_arguments_test PRIVATE musikcore_abi0)
 set_target_properties(musikcore_abi_arguments_test PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
   C_EXTENSIONS OFF LINKER_LANGUAGE C RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}")
 add_dependencies(musikcube_tests musikcore_abi_arguments_test)
 add_test(NAME musikcore.abi.arguments COMMAND musikcore_abi_arguments_test)
-set_tests_properties(musikcore.abi.arguments PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+set_tests_properties(musikcore.abi.arguments PROPERTIES LABELS "integration;musikcore;abi;contract" TIMEOUT 20)
 
-add_executable(musikcore_result_contracts_test abi/result-contracts.cpp support/host-wakeup.cpp support/fail-new.cpp)
+add_executable(musikcore_result_contracts_test integration/api/result-contracts.cpp support/host-wakeup.cpp support/fail-new.cpp)
 target_include_directories(musikcore_result_contracts_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/support")
 target_link_libraries(musikcore_result_contracts_test PRIVATE musikcore_cpp_abi0 musikcore_abi0_sqlite Threads::Threads)
 set_target_properties(musikcore_result_contracts_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
@@ -144,9 +144,9 @@ set_target_properties(musikcore_result_contracts_test PROPERTIES CXX_STANDARD 17
 add_dependencies(musikcube_tests musikcore_result_contracts_test)
 add_test(NAME musikcore.abi.result_contracts COMMAND "${MUSIKCORE_TEST_NODE}" "${isolated_test}"
   "${isolated_root}" "$<TARGET_FILE:musikcore_result_contracts_test>" @origin)
-set_tests_properties(musikcore.abi.result_contracts PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+set_tests_properties(musikcore.abi.result_contracts PROPERTIES LABELS "integration;musikcore;abi;contract" TIMEOUT 20)
 
-add_executable(musikcore_abi_cpp_test abi/cpp-wrapper.cpp abi/query-support.cpp)
+add_executable(musikcore_abi_cpp_test integration/api/cpp-wrapper.cpp integration/api/query-support.cpp)
 target_link_libraries(musikcore_abi_cpp_test PRIVATE musikcore_cpp_abi0 Threads::Threads)
 set_target_properties(musikcore_abi_cpp_test PROPERTIES
   CXX_EXTENSIONS OFF
@@ -155,7 +155,7 @@ set_target_properties(musikcore_abi_cpp_test PROPERTIES
 add_dependencies(musikcube_tests musikcore_abi_cpp_test)
 
 add_executable(musikcore_typed_track_queries_test
-  abi/typed-track-queries.cpp
+  integration/library/typed-track-queries.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/db/SqliteExtensions.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadQueries.cpp"
 )
@@ -171,9 +171,9 @@ set_target_properties(musikcore_typed_track_queries_test PROPERTIES
 )
 add_dependencies(musikcube_tests musikcore_typed_track_queries_test)
 add_test(NAME musikcore.abi.typed_track_queries COMMAND musikcore_typed_track_queries_test)
-set_tests_properties(musikcore.abi.typed_track_queries PROPERTIES LABELS "unit;abi")
+set_tests_properties(musikcore.abi.typed_track_queries PROPERTIES LABELS "integration;musikcore;library;contract")
 
-add_executable(musikcore_abi_library_switch_test abi/library-switch.cpp abi/query-support.cpp)
+add_executable(musikcore_abi_library_switch_test integration/app/library-switch.cpp integration/api/query-support.cpp)
 target_include_directories(musikcore_abi_library_switch_test PRIVATE "${PROJECT_SOURCE_DIR}/src/musikcube")
 target_link_libraries(musikcore_abi_library_switch_test PRIVATE
   musikcore_cpp_abi0 musikcore_abi0_sqlite Threads::Threads)
@@ -183,7 +183,7 @@ set_target_properties(musikcore_abi_library_switch_test PROPERTIES
 )
 add_test(NAME musikcore.abi.library_switch COMMAND "${MUSIKCORE_TEST_NODE}" "${isolated_test}"
   "${isolated_root}" "$<TARGET_FILE:musikcore_abi_library_switch_test>" @origin @destination)
-set_tests_properties(musikcore.abi.library_switch PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+set_tests_properties(musikcore.abi.library_switch PROPERTIES LABELS "integration;musikcube;api;contract" TIMEOUT 20)
 add_dependencies(musikcube_tests musikcore_abi_library_switch_test)
 
 if(APPLE)
@@ -195,8 +195,8 @@ if(APPLE)
   # Exercise the real macOS script launcher so socket-input failures and feeder
   # cleanup regressions are caught without building the full application.
   add_test(NAME musikcube.ui.terminal_driver COMMAND "${MUSIKCORE_TEST_NODE}" --test
-    "${PROJECT_SOURCE_DIR}/script/test/tui/terminal.test.js")
-  set_tests_properties(musikcube.ui.terminal_driver PROPERTIES LABELS "integration;ui" TIMEOUT 45)
+    "${PROJECT_SOURCE_DIR}/tests/ui/driver/terminal.test.js")
+  set_tests_properties(musikcube.ui.terminal_driver PROPERTIES LABELS "integration;musikcube;terminal" TIMEOUT 45)
 endif()
 
 # Compile each public header in its own translation unit using public includes only.
@@ -210,7 +210,7 @@ foreach(header IN LISTS public_c_headers)
     list(APPEND header_sources "${unit}")
   endforeach()
 endforeach()
-add_executable(musikcore_api_baseline abi/baseline.cpp support/host-wakeup.cpp)
+add_executable(musikcore_api_baseline integration/performance/core-api.cpp support/host-wakeup.cpp)
 target_include_directories(musikcore_api_baseline PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/support")
 target_link_libraries(musikcore_api_baseline PRIVATE musikcore_cpp_abi0 musikcore_abi0_sqlite Threads::Threads)
 set_target_properties(musikcore_api_baseline PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
@@ -237,3 +237,29 @@ foreach(language IN ITEMS c cpp)
     RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}")
   add_dependencies(musikcube_tests musikcore_example_${language})
 endforeach()
+
+# Driver-model tests run without launching the app or requiring native plugins.
+add_test(NAME musikcube.unit.terminal_screen COMMAND "${MUSIKCORE_TEST_NODE}" --test
+  "${PROJECT_SOURCE_DIR}/tests/ui/driver/screen.test.js")
+set_tests_properties(musikcube.unit.terminal_screen PROPERTIES
+  LABELS "unit;musikcube;terminal" TIMEOUT 20)
+add_test(NAME musikcube.unit.ui_artifacts COMMAND "${MUSIKCORE_TEST_NODE}" --test
+  "${PROJECT_SOURCE_DIR}/tests/ui/driver/artifacts.test.js")
+set_tests_properties(musikcube.unit.ui_artifacts PROPERTIES
+  LABELS "unit;musikcube;terminal" TIMEOUT 20)
+
+# Level-specific targets keep a quick unit run from building the full app.
+add_custom_target(musikcube_unit_tests DEPENDS musikcore_abi_header_test
+  musikcore_message_queue_test musikcube_async_callback_scope_test musikcore_public_headers)
+add_custom_target(musikcube_integration_tests DEPENDS musikcore_abi0_c_test
+  musikcore_abi_dispatch_test musikcore_abi_query_test musikcore_abi_arguments_test
+  musikcore_result_contracts_test musikcore_abi_cpp_test musikcore_typed_track_queries_test
+  musikcore_abi_library_switch_test)
+add_custom_target(musikcube_ui_tests)
+
+set(driver_tests musikcube.unit.terminal_screen musikcube.unit.ui_artifacts)
+if(APPLE)
+  list(APPEND driver_tests musikcube.ui.terminal_driver)
+endif()
+set_tests_properties(${driver_tests} PROPERTIES
+  ENVIRONMENT "MUSIKCUBE_TEST_ARTIFACT_ROOT=${CMAKE_CURRENT_BINARY_DIR}/bin/driver")

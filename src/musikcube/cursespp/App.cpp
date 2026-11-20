@@ -656,6 +656,11 @@ void App::Layout() {
     messages, ensure our overlay is on top, then do a redraw. */
     Window::MessageQueue().Dispatch();
 
+    /* Dispatch can create an overlay or change focus. Activate it before its
+       first paint so input sent in response to that screen reaches the new view. */
+    this->CheckShowOverlay();
+    this->EnsureFocusIsValid();
+
     if (this->state.overlayWindow) {
         this->state.overlay->BringToTop(); /* active overlay is always on top... */
     }

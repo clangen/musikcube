@@ -7,8 +7,9 @@ const fs = require('node:fs');
 const { dirname, join, resolve } = require('node:path');
 const { performance } = require('node:perf_hooks');
 const { parseArgs } = require('node:util');
-const { sampleVariants, printMetrics, cpuMillisecondsPerTick } = require('./benchmark');
-const { Terminal } = require('./terminal');
+const { sampleVariants, printMetrics, cpuMillisecondsPerTick } = require('../support/benchmark');
+const { Terminal } = require('../support/terminal');
+const { withRuntime } = require('../support/artifacts');
 
 const SOURCE = resolve(__dirname, '../../..');
 const TRACK_COUNT = 10000;
@@ -53,7 +54,7 @@ async function seedLibrary(runtime, build, tracks) {
   const output = fs.openSync(log, 'w');
   try {
     const child = spawn(process.execPath, [
-      join(SOURCE, 'script/test/seed-test-library.js'),
+      join(SOURCE, 'tests/scripts/seed-test-library.js'),
       '--tracks', String(tracks),
       '--indexer', join(runtime, 'musikcube_seed_library'),
       '--fixture-dir', runtime, build,
@@ -87,7 +88,7 @@ function stagePilot(runtime, binaryDir) {
 
 /* Drive search/paging and production queue/playlist/browse workflows, measuring only selected interactions. */
 async function checkTrackSearch(runtime, database, screenshots,
-  { pilot = false, windows = false, cache } = {}) {
+  { pilot = false, windows = false, cache, scenario = 'all' } = {}) {
   const fixture = dirname(dirname(dirname(database)));
   /* Keep startup from reindexing the fixture. */
   const settings = join(fixture, 'musikcube', 'settings.json');
@@ -181,7 +182,7 @@ async function checkTrackSearch(runtime, database, screenshots,
     if (pilot && windows) {
       terminal.send(HOME + 'j\r');
       await terminal.expect(`Selected track: ${FIRST_ALBUM} - Track 02`);
-    } else if (!pilot) {
+    } else if (!pilot && ['all', 'queue', 'playlists'].includes(scenario)) {
       /* Append the selected search result through its track actions menu. */
       terminal.send('\x1b\r');
       await terminal.expect('play now');
@@ -190,70 +191,70 @@ async function checkTrackSearch(runtime, database, screenshots,
       const queuedTrack = windows ? DISTANT_TRACK : FILTERED_LAST;
       await terminal.expect(queuedTrack, { absent: 'tracks (sorted by' });
 
-      /* Save the queue, then add a track from Search. Reloading must show both
-         writes in order, even though they came through different UI paths. */
-      const playlistName = `Fixture ${Date.now()}`;
-      terminal.send('\x1bs');
-      await terminal.expect('save playlist');
-      terminal.send('\r');
-      await terminal.expect('playlist name');
-      terminal.send(playlistName + '\r');
-      await terminal.expect('play queue', { absent: 'playlist name' });
+      if (scenario !== 'queue') {
+        /* Save the queue, then add a track from Search. Reloading must show both
+           writes in order, even though they came through different UI paths. */
+        const playlistName = `Fixture ${Date.now()}`;
+        terminal.send('\x1bs');
+        await terminal.expect('save playlist');
+        terminal.send('\r');
+        await terminal.expect('playlist name');
+        terminal.send(playlistName + '\r');
+        await terminal.expect('play queue', { absent: 'playlist name' });
 
-      /* Append a second track through Track Search's playlist picker. */
-      terminal.send('t');
-      await terminal.expect(FIRST_TRACK);
-      terminal.send(DOWN);
-      await new Promise(resolve => setTimeout(resolve, 150));
-      terminal.send('\x1b\r');
-      await terminal.expect('track actions');
-      terminal.send(HOME + DOWN.repeat(3) + '\r');
-      await terminal.expect(playlistName);
-      await new Promise(resolve => setTimeout(resolve, 150));
-      terminal.send(END + '\r');
-      await terminal.expect('tracks (sorted by', { absent: playlistName });
-      terminal.send('n');
-      await terminal.expect('play queue', { absent: 'tracks (sorted by' });
+        /* Append a second track through Track Search's playlist picker. */
+        terminal.send('t');
+        await terminal.expect(FIRST_TRACK);
+        terminal.send(DOWN);
+        terminal.send('\x1b\r');
+        await terminal.expect('track actions');
+        terminal.send(HOME + DOWN.repeat(3) + '\r');
+        await terminal.expect(playlistName);
+        terminal.send(END + '\r');
+        await terminal.expect('tracks (sorted by', { absent: playlistName });
+        terminal.send('n');
+        await terminal.expect('play queue', { absent: 'tracks (sorted by' });
 
-      /* Now Playing refreshes from the queue notification after clear. */
-      terminal.send('X');
-      await terminal.expect('play queue', { absent: queuedTrack });
-      terminal.send('\x1bl');
-      await terminal.expect(playlistName);
-      terminal.send(END + '\r');
-      await terminal.waitFor(() => {
-        const screen = terminal.screen.text();
-        const first = screen.indexOf(queuedTrack);
-        return !screen.includes('load playlist') && first >= 0 && screen.indexOf(FIRST_TRACK) > first;
-      }, 'both saved tracks in queue order');
+        /* Now Playing refreshes from the queue notification after clear. */
+        terminal.send('X');
+        await terminal.expect('play queue', { absent: queuedTrack });
+        terminal.send('\x1bl');
+        await terminal.expect(playlistName);
+        terminal.send(END + '\r');
+        await terminal.waitFor(() => {
+          const screen = terminal.screen.text();
+          const first = screen.indexOf(queuedTrack);
+          return !screen.includes('load playlist') && first >= 0 && screen.indexOf(FIRST_TRACK) > first;
+        }, 'both saved tracks in queue order');
 
-      /* Rename/delete exercise separate modal focus transitions; checking the
-         resulting names prevents an unnoticed picker action on the wrong row. */
-      terminal.send('\x1br');
-      await terminal.expect('rename playlist');
-      terminal.send('\r');
-      await terminal.expect('new playlist name');
-      terminal.send(END + ' revised\r');
-      await terminal.expect('play queue', { absent: 'new playlist name' });
+        /* Rename/delete exercise separate modal focus transitions; checking the
+           resulting names prevents an unnoticed picker action on the wrong row. */
+        terminal.send('\x1br');
+        await terminal.expect('rename playlist');
+        terminal.send('\r');
+        await terminal.expect('new playlist name');
+        terminal.send(END + ' revised\r');
+        await terminal.expect('play queue', { absent: 'new playlist name' });
 
-      terminal.send('\x1bx');
-      await terminal.expect(playlistName + ' revised');
-      /* The async picker can paint before the terminal loop switches input focus. */
-      await new Promise(resolve => setTimeout(resolve, 150));
-      terminal.send(END + '\r');
-      await terminal.expect('are you sure you want to delete');
-      terminal.send('\r');
-      await terminal.expect('play queue', { absent: 'are you sure you want to delete' });
-      terminal.send('\x1bl');
-      await terminal.expect("you haven't saved any playlists yet!");
-      terminal.send('\r');
+        terminal.send('\x1bx');
+        await terminal.expect(playlistName + ' revised');
+        /* A painted picker must already own input; no focus-delay sleep is needed. */
+        terminal.send(END + '\r');
+        await terminal.expect('are you sure you want to delete');
+        terminal.send('\r');
+        await terminal.expect('play queue', { absent: 'are you sure you want to delete' });
+        terminal.send('\x1bl');
+        await terminal.expect("you haven't saved any playlists yet!");
+        terminal.send('\r');
+      }
+    }
 
+    if (!pilot && ['all', 'browse'].includes(scenario)) {
       /* Switch album selections before the first one has time to publish a refresh. */
       terminal.send('b2');
       await terminal.expect('albums');
       terminal.send('\x06');
       await terminal.expect('search');
-      await new Promise(resolve => setTimeout(resolve, 150));
       terminal.send('\r' + HOME);
       await terminal.expect(FIRST_TRACK);
       terminal.send(DOWN + UP + DOWN);
@@ -274,6 +275,7 @@ async function checkTrackSearch(runtime, database, screenshots,
     await terminal.expectExit();
     return result;
   } catch (error) {
+    terminal.saveArtifacts(join(runtime, 'failure'));
     throw new Error(`${error.message}\n${terminal.screen.text()}\nPTY output tail ${JSON.stringify(terminal.transcript.toString())}`);
   } finally {
     await terminal.close();
@@ -291,6 +293,7 @@ async function main() {
       runs: { type: 'string', default: '1' },
       compare: { type: 'boolean' },
       windows: { type: 'boolean' },
+      scenario: { type: 'string', default: 'all' },
       'pilot-control': { type: 'string' },
       'cache-pages': { type: 'string' },
       'prefetch-pages': { type: 'string' },
@@ -299,11 +302,15 @@ async function main() {
   });
 
   if (values.help) {
-    console.log('Usage: node script/test/tui/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
+    console.log('Usage: node tests/ui/scenarios/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|all] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
     return;
   }
   if (!['linux', 'darwin'].includes(process.platform)) {
     throw new Error('This test requires script on Linux or macOS');
+  }
+
+  if (!['search', 'queue', 'playlists', 'browse', 'all'].includes(values.scenario)) {
+    throw new Error('Choose scenario search, queue, playlists, browse, or all');
   }
 
   const build = resolve(values['build-dir']);
@@ -342,7 +349,7 @@ async function main() {
   if (screenshots) fs.mkdirSync(screenshots, { recursive: true });
   const runtime = fs.mkdtempSync(join(work, 'tui-'));
 
-  try {
+  await withRuntime(runtime, async () => {
     /* Stage each implementation separately to prevent loading the wrong core
        library while retaining the same catalog for comparison runs. */
     stageRuntime(runtime, resolve(values['bin-dir']));
@@ -370,7 +377,7 @@ async function main() {
     const results = await sampleVariants(variants, runs, async variant => {
       try {
         return await checkTrackSearch(variant.runtime, database,
-          variant.pilot ? undefined : screenshots, { pilot: variant.pilot, windows, cache });
+          variant.pilot ? undefined : screenshots, { pilot: variant.pilot, windows, cache, scenario: values.scenario });
       } finally {
         fs.rmSync(join(fixture, 'musikcube', 'session.json'), { force: true });
       }
@@ -378,7 +385,7 @@ async function main() {
 
     /* Report functional success separately from descriptive latency samples;
        this runner does not enforce machine-specific performance thresholds. */
-    console.log(`Track search passed with ${tracks.toLocaleString('en-US')} tracks across ${runs} runs.`);
+    console.log(`UI ${values.scenario} passed with ${tracks.toLocaleString('en-US')} tracks across ${runs} runs.`);
     console.log(`Generate and index ${(seedMs / 1000).toFixed(2)} s`);
     if (compare) console.log(`ABI0 cache: ${capacity} pages, ${prefetch} prefetched in the direction of travel`);
     printMetrics(results, [
@@ -389,9 +396,7 @@ async function main() {
       ['Startup + search CPU', 'totalCpuTicks', 'ms', tickMs],
     ]);
     if (screenshots && !control.pilot) console.log(`Screenshots saved to ${screenshots}`);
-  } finally {
-    fs.rmSync(runtime, { recursive: true, force: true });
-  }
+  });
 }
 
 main().catch(error => {

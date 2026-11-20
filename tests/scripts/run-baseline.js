@@ -58,7 +58,7 @@ try {
   });
 
   if (values.help) {
-    console.log('Usage: node script/test/run-baseline.js [--build-dir <dir>] [--config <name>] [--production-build-dir <configured dir>] [--timing-only] [--record <json>] [--compare <json>]');
+    console.log('Usage: node tests/scripts/run-baseline.js [--build-dir <dir>] [--config <name>] [--production-build-dir <configured dir>] [--timing-only] [--record <json>] [--compare <json>]');
   } else {
     /* Verify the public boundary first, then measure a fresh synthetic catalog. */
     const build = resolve(values['build-dir']);

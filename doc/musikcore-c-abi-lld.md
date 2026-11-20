@@ -118,15 +118,20 @@ src/musikcore/
             indexer_source_adapter.cpp
 
 tests/
-    support/
-    api/
-    sdk/
-    sdk/plugins/
-    unit/
-    integration/
-    system/
-    packaging/
-    fixtures/
+    scripts/                    orchestration and fixture generation
+    unit/musikcore/             focused core units
+    unit/musikcube/             focused application units
+    integration/api/            standalone C/C++ contract consumers
+    integration/app/            application/core integration
+    integration/library/        typed SQLite query contracts
+    integration/transport/      loopback and protocol boundaries
+    integration/binary/         linkage and installed-artifact checks
+    integration/performance/    explicitly selected native baselines
+    ui/scenarios/               production user workflows
+    ui/driver/                  parser, PTY, and artifact utility tests
+    ui/support/                 reusable terminal/benchmark helpers
+    support/                    shared native fixtures and checks
+    baselines/
 ```
 
 The exact file count may be reduced during implementation. The important
@@ -138,7 +143,8 @@ separation is:
   and validation.
 - `ffi/provider` contains the plugin host and private provider adapters.
 - Public C++ convenience wrappers are header-only and use public C declarations.
-- Legacy C API sources remain separate and removable.
+- Temporary library/playback binding adapters remain private and removable
+  when public API ownership replaces them.
 
 ## CMake target topology
 
@@ -359,7 +365,7 @@ being rewritten at the same time as the plugin ABI.
 The strategy and alternatives are recorded in
 [ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md). The roles below
 describe target responsibilities; current executable names and registration
-live in `tests/CMakeLists.txt` and `tests/fixtures/CMakeLists.txt`.
+live in `tests/CMakeLists.txt` and `tests/support/CMakeLists.txt`.
 
 ### API contract executable
 
@@ -439,7 +445,7 @@ Public C declarations live in independently compilable `abi.h`, `context.h`,
 contain parameter-level nullability, units, defaults, ownership, and lifetimes.
 The `musikcore.abi.inventory` test compares declarations with
 `src/musikcore/ffi/exports.txt`; `exports` checks the actual binary. Generate a
-current declaration inventory with `node script/test/audit-core-api.js` rather
+current declaration inventory with `node tests/scripts/audit-core-api.js` rather
 than maintaining a second symbol list or per-export prose table.
 
 - Handles must have the correct kind and remain live through a call. Arbitrary
@@ -525,6 +531,41 @@ names into owned strings so their returned vectors can be retained.
 Request IDs and explicit cancellation follow ADR-0002. Any future coroutine or
 future adapters remain optional and header-only.
 
+## Test infrastructure
+
+The organization/tooling decision is in
+[ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md#organization-and-execution).
+This is the implementation checklist; there is no separate application-testing
+proposal to reconcile.
+
+- [x] **TINF-001** Move tests by level and boundary into the top-level `tests/`
+  tree, with shared native helpers in `support/`, runners in `scripts/`, and UI
+  scenarios/driver code under `ui/`. Update source paths and documentation.
+- [x] **TINF-002** Give every CTest entry exactly one level label plus owner and
+  subsystem labels. Provide `--suite`, `--list`, and bounded `--jobs` selection;
+  level-specific build targets avoid building the app for unit-only runs.
+- [x] **TINF-003** Report C++ wrapper checks as independently selectable public
+  and production cases with fresh catalogs/processes. Cases initialize their own
+  wakeup synchronization instead of relying on another case running first.
+  Share C11/C++ expression/file/line diagnostics through `tests/support/check.h`.
+- [x] **TINF-004** Add Node driver tests for split UTF-8/escape parsing, cursor,
+  erase, scrolling, styling, CJK/combining cells, artifact retention, and real
+  PTY resizing. `musikcube.unit.terminal_screen`, `musikcube.unit.ui_artifacts`,
+  and `musikcube.ui.terminal_driver` exercise these boundaries.
+- [x] **TINF-005** Register independent search, queue, playlist, and browse UI
+  smoke scenarios. Remove fixed focus sleeps by activating overlays created
+  during dispatch before painting them. The immediate-input playlist scenario
+  fails on the previous ordering and passes after the fix.
+- [x] **TINF-006** Preserve failed UI runtimes, configuration, indexer logs,
+  raw terminal output, visible text and SVG; clean successful runs. Separate
+  correctness smoke tests from explicitly selected catalog/timing benchmarks.
+
+Windows UI needs a native PTY backend and validation before its smoke scenarios
+can be enabled. Linux execution remains deferred to a separate user-directed
+session. Emoji/ZWJ and terminal-specific glyph presentation remain explicit
+screen-model limits, not coverage claims. Add further tests alongside the code
+being changed; this work does not authorize a broad legacy-test backfill.
+
 ## Core C API foundation gate
 
 Status: current-surface implementation and native macOS validation complete;
@@ -577,11 +618,12 @@ reaches release-candidate quality.
 ## Foundation validation and baselines
 
 Native evidence on 2026-11-20: macOS 26.6.2, Apple M4/arm64, AppleClang
-21.0.0.21000101. Clean full and ABI-only Debug/Release workflows were validated
-before the latest review. The latest Release app build and all 26 CTest entries
-pass; the final style review also passed a 1,000-track production TUI run.
+21.0.0.21000101. The current full Debug and Release app builds and all 44 CTest
+entries pass, including four independently selected 1,000-track production UI
+scenarios.
+Clean standalone ABI-only Debug and Release workflows pass all 26 entries.
 Earlier production TUI validation used 10,000 tracks across three runs. These
-results do not imply current Windows/Linux acceptance or a fresh Debug rerun.
+results do not imply Windows/Linux acceptance.
 
 ### Reproducible workflows
 
@@ -590,7 +632,7 @@ headers and a supplied local database. Their test host wakeup adapter models a
 sleeping application loop. `indexed_query` builds and runs both against generated
 indexed media. Full fixtures stage only required decoder/tag-reader plugins,
 use fake playback and dynamic loopback ports, and retain failure directories
-through `script/test/run-isolated-test.js`.
+through `tests/scripts/run-isolated-test.js`.
 
 With normal macOS vendor dependencies already built, run from the repository
 root. Build-local runtime outputs keep Debug/Release assets independent:
@@ -604,13 +646,13 @@ cmake -S . -B build/foundation-full-release -DCMAKE_BUILD_TYPE=Release -DBUILD_T
 cmake --build build/foundation-full-release --target musikcube_tests musikcube -j6
 ctest --test-dir build/foundation-full-release -C Release --output-on-failure -j6
 
-node script/test/run-tests.js --build-dir build/foundation-debug --config Debug --abi-only
-node script/test/run-tests.js --build-dir build/foundation-release --config Release --abi-only
-node script/test/tui/track-search.js --build-dir build/foundation-full-release --bin-dir build/foundation-full-release/bin --tracks 10000 --windows --runs 3
+node tests/scripts/run-tests.js --build-dir build/foundation-debug --config Debug --abi-only
+node tests/scripts/run-tests.js --build-dir build/foundation-release --config Release --abi-only
+node tests/ui/scenarios/track-search.js --build-dir build/foundation-full-release --bin-dir build/foundation-full-release/bin --tracks 10000 --windows --runs 3
 ```
 
 The normal full-suite runner is
-`node script/test/run-tests.js --build-dir <configured-build> --config Release`.
+`node tests/scripts/run-tests.js --build-dir <configured-build> --config Release`.
 ABI-only mode avoids production audio/curses/vendor dependencies without
 changing production topology; it does not replace integration validation.
 
@@ -621,8 +663,8 @@ architecture, build configuration, and instrumentation; unlike environments
 are rejected. Run timings on an otherwise idle host.
 
 ```sh
-node script/test/run-baseline.js --build-dir build/foundation-release --config Release --production-build-dir build/foundation-full-release --compare tests/baselines/macos-arm64-release.json --record build/foundation-measurements.json
-node script/test/run-baseline.js --build-dir build/foundation-release --config Release --production-build-dir build/foundation-full-release --timing-only --compare tests/baselines/macos-arm64-release-timing.json --record build/foundation-timings.json
+node tests/scripts/run-baseline.js --build-dir build/foundation-release --config Release --production-build-dir build/foundation-full-release --compare tests/baselines/macos-arm64-release.json --record build/foundation-measurements.json
+node tests/scripts/run-baseline.js --build-dir build/foundation-release --config Release --production-build-dir build/foundation-full-release --timing-only --compare tests/baselines/macos-arm64-release-timing.json --record build/foundation-timings.json
 ```
 
 The synthetic ABI fixture has 10,000 tracks, 128-byte titles, and 31 latency
@@ -673,7 +715,9 @@ separate.
   surface remains planned and is not implemented by the current headers.
 - [ ] **DEC-005** Decide whether public and provider ABI versions advance
   together through v1.
-- [ ] **DEC-006** Select and pin the internal C++ unit-test framework.
+- [x] **DEC-006** Retain CTest, existing named native harnesses, shared C11
+  diagnostics, and Node's test runner. ADR-0004 records why a new C++ framework
+  is not necessary now; any future framework must be pinned and test-only.
 - [ ] **DEC-007** Decide whether raw database access is removed or moved into
   an explicitly unstable extension.
 
@@ -689,14 +733,16 @@ recorded before the experimental shared façade is introduced.
 - [x] **TST-002** Add equivalent CTest registration to the Windows build path
   before its early return.
 - [x] **TST-003** Create `tests/CMakeLists.txt` and standard CTest labels.
-- [ ] **TST-004** Add the minimal C11 harness under `tests/support/c_test.h`.
+- [x] **TST-004** Add C11-compatible expression/file/line checks in
+  `tests/support/check.h`, without choosing the caller's cleanup strategy.
+  The `arguments` and `shared_c` contract consumers use the helper.
 - [x] **TST-005** Add cross-platform temporary-directory support that never
   uses production user data.
-  `script/test/run-isolated-test.js` and the indexed fixture create private roots;
+  `tests/scripts/run-isolated-test.js` and the indexed fixture create private roots;
   `musikcore.abi.query`, `result_contracts`, and `indexed_query` exercise them.
 - [x] **TST-006** Add deadline-based event/predicate waiting support with
   timeout diagnostics.
-  `tests/support/host-wakeup`, `tests/fixtures/ApiHost.h`, and query wait helpers
+  `tests/support/host-wakeup`, `tests/support/ApiHost.h`, and query wait helpers
   drive `result_contracts`, `remote_query_transport`, and `indexed_query`.
 - [ ] **TST-007** Add a deterministic memory stream and fake/null output for
   component tests.
@@ -902,7 +948,7 @@ recorded before the experimental shared façade is introduced.
 - [x] **MIG-001** Select one musikcube search/list vertical slice for the pilot.
   Start with the track-search results view in `TrackSearchLayout`.
 - [x] **MIG-002** Migrate that slice through the C++ wrapper in an ABI0-only
-  migration executable. Exercised by `node script/test/tui/track-search.js --compare`.
+  migration executable. Exercised by `node tests/ui/scenarios/track-search.js --compare`.
 - [x] **PERF-001** Add baseline and ABI0 benchmarks for query, initial display,
   and rapid scrolling. The headless Track Search benchmark measures
   keystroke-to-render latency and records the mainline baseline in the
@@ -1120,7 +1166,7 @@ legacy list for actions that still require it.
 ### Phase 9: system, packaging, and compatibility
 
 - [x] **SYS-001** Add musikcube pseudo-terminal startup/shutdown smoke test.
-  `node script/test/tui/track-search.js` starts the app in a PTY and quits through
+  `node tests/ui/scenarios/track-search.js` starts the app in a PTY and quits through
   its normal key binding.
 - [ ] **SYS-002** Cover valid, unset, and unparseable `TERM` behavior.
 - [ ] **SYS-003** Add musikcubed startup/readiness/shutdown smoke test.

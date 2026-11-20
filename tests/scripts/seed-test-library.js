@@ -147,7 +147,7 @@ function main() {
     allowPositionals: true,
   });
   if (values.help) {
-    console.log('Usage: node script/test/seed-test-library.js [--tracks <count>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
+    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
     return;
   }
 

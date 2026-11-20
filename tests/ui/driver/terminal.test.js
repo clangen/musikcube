@@ -2,26 +2,31 @@
    the socket-stdin failure and feeder hangs without building or indexing musikcube. */
 
 const assert = require('node:assert/strict');
-const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = require('node:fs');
+const { mkdirSync, mkdtempSync, writeFileSync } = require('node:fs');
 const { join, resolve } = require('node:path');
 const { test } = require('node:test');
-const { Terminal } = require('./terminal');
+const { Terminal } = require('../support/terminal');
+const { withRuntime } = require('../support/artifacts');
 
 /* Keep each fake app and its terminal private so process/stream cleanup can be
    checked without using a real library, audio device, or user configuration. */
 async function withTerminal(script, run) {
-  const parent = resolve(__dirname, '../../../build/tui-driver-tests');
+  const parent = process.env.MUSIKCUBE_TEST_ARTIFACT_ROOT || resolve(__dirname, '../../../build/tui-driver-tests');
   mkdirSync(parent, { recursive: true });
   const runtime = mkdtempSync(join(parent, 'run-'));
   writeFileSync(join(runtime, 'musikcube'), '#!/bin/sh\n' + script, { mode: 0o755 });
 
-  const terminal = new Terminal(runtime, { ...process.env, TERM: 'xterm-256color' }, 18, 140);
-  try {
-    await run(terminal);
-  } finally {
-    await terminal.close();
-    rmSync(runtime, { recursive: true, force: true });
-  }
+  await withRuntime(runtime, async () => {
+    const terminal = new Terminal(runtime, { ...process.env, TERM: 'xterm-256color' }, 18, 140);
+    try {
+      await run(terminal);
+    } catch (error) {
+      terminal.saveArtifacts(join(runtime, 'failure'));
+      throw error;
+    } finally {
+      await terminal.close();
+    }
+  });
 }
 
 /* Keep Node's input open after the fake app exits. A plain cat | script pipeline
@@ -46,6 +51,22 @@ test('macOS PTY preserves the application exit status', {
   await withTerminal('exit 7\n', async terminal => {
     await assert.rejects(terminal.expectExit(), /musikcube exited with 7/);
     assert.equal(terminal.result.code, 7);
+  });
+});
+
+/* Changing only the model would hide resize failures. Ask the child itself
+   for its actual PTY dimensions after the driver updates the window size. */
+test('macOS PTY resize reaches the child and updates the screen model', {
+  skip: process.platform !== 'darwin', timeout: 15000,
+}, async () => {
+  await withTerminal('printf "READY\\n"\nread value\nstty size\n', async terminal => {
+    await terminal.expect('READY');
+    await terminal.resize(24, 100);
+    terminal.send('size\n');
+    await terminal.expect('24 100');
+    await terminal.expectExit();
+    assert.equal(terminal.screen.rows, 24);
+    assert.equal(terminal.screen.columns, 100);
   });
 });
 

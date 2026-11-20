@@ -16,7 +16,7 @@
 #include <musikcore/plugin/Plugins.h>
 #include "CoreRuntime.h"
 #include "ApiHost.h"
-#include "../support/profile.hpp"
+#include "../../support/profile.hpp"
 #include <musikcore/library/QueryRegistry.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/runtime/MessageQueue.h>

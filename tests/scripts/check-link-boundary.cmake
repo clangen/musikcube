@@ -1,6 +1,9 @@
 # Test both valid and mixed-core consumers so the guard cannot pass by simply
 # rejecting every build. The mixed case also checks a transitive dependency.
 foreach(mixed IN ITEMS OFF ON)
+  # These directories belong only to the configure fixture. A fresh cache keeps
+  # moved sources and previous compiler/generator choices out of this contract.
+  file(REMOVE_RECURSE "${BUILD}/${mixed}")
   execute_process(COMMAND "${CMAKE_COMMAND}" -S "${FIXTURE}" -B "${BUILD}/${mixed}"
     "-DGUARD=${GUARD}" "-DMIX_CORES=${mixed}"
     RESULT_VARIABLE status OUTPUT_VARIABLE output ERROR_VARIABLE error)

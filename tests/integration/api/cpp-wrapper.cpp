@@ -1,7 +1,7 @@
 #include <musikcore/musikcore.hpp>
 
 #ifdef MUSIKCORE_TEST_APP_BINDING
-#include "../fixtures/TestTransport.h"
+#include "../../support/TestTransport.h"
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/ffi/consumer/playback-binding.h>
 #include <musikcore/runtime/MessageQueue.h>
@@ -14,7 +14,7 @@
 #include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include <musikcore/plugin/Plugins.h>
-#include "../fixtures/CoreRuntime.h"
+#include "../../support/CoreRuntime.h"
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <algorithm>
@@ -25,6 +25,8 @@
 #endif
 
 #include <cstdio>
+#include <cstring>
+#include <functional>
 #include <thread>
 #include <type_traits>
 #include <utility>
@@ -874,40 +876,56 @@ namespace {
 
 }
 
-/* Run public wrapper cases and, in the production build, the engine/backend integration cases. */
-int main(int argc, char **argv) {
-#ifdef MUSIKCORE_TEST_APP_BINDING
-    CoreRuntime runtime;
-#endif
-    try {
-        if (argc == 2 && checkQuery(argv[1]) && checkSearch(argv[1]) && checkResultWindows(argv[1])) {
-#ifdef MUSIKCORE_TEST_APP_BINDING
-            if (!checkMessageCleanup()) {
-                std::fputs("Message queue payload cleanup reentrancy failed\n", stderr);
-                return 1;
-            }
-            if (!checkPlaybackCommands()) {
-                std::fputs("Playback command contract failed\n", stderr);
-                return 1;
-            }
-            if (!checkRemoteQueryPayloads()) {
-                std::fputs("Remote search and metadata payload contract failed\n", stderr);
-                return 1;
-            }
-            if (!checkBrowseReads(argv[1])) {
-                std::fputs("Category, directory, and queue track reads failed\n", stderr);
-                return 1;
-            }
-            if (!checkSelectedBackend()) {
-                std::fputs("Selected library contract failed\n", stderr);
-                return 1;
-            }
-#endif
-            return 0;
-        }
-        std::fputs("C++ wrapper query contract failed\n", stderr);
-    } catch (const std::exception &error) {
-        std::fprintf(stderr, "C++ wrapper query failed: %s\n", error.what());
+/* Select one independently reported contract for CTest, or retain the full
+   legacy flow when no case is specified. Every invocation owns fresh services. */
+int main(int argc, char** argv) {
+    if (argc != 2 && (argc != 4 || std::strcmp(argv[2], "--case") != 0)) {
+        std::fputs("Expected catalog directory [--case name]\n", stderr);
+        return 1;
     }
-    return 1;
+
+    const char* selected = argc == 4 ? argv[3] : nullptr;
+    /* Only query deliberately blocks the producer hook. Other cases must run
+       independently instead of relying on query having released it first. */
+    if (selected && std::strcmp(selected, "query") != 0) {
+        query_test_release_wakeup();
+    }
+    try {
+#ifdef MUSIKCORE_TEST_APP_BINDING
+        CoreRuntime runtime;
+#endif
+        const std::pair<const char*, std::function<bool()>> cases[] = {
+            { "query", [&] { return checkQuery(argv[1]); } },
+            { "search", [&] { return checkSearch(argv[1]); } },
+            { "result_windows", [&] { return checkResultWindows(argv[1]); } },
+#ifdef MUSIKCORE_TEST_APP_BINDING
+            { "message_cleanup", [] { return checkMessageCleanup(); } },
+            { "playback_commands", [] { return checkPlaybackCommands(); } },
+            { "remote_payloads", [] { return checkRemoteQueryPayloads(); } },
+            { "browse_reads", [&] { return checkBrowseReads(argv[1]); } },
+            { "selected_backend", [] { return checkSelectedBackend(); } },
+#endif
+        };
+
+        bool matched = false;
+        for (const auto& entry : cases) {
+            if (selected && std::strcmp(selected, entry.first) != 0) {
+                continue;
+            }
+            matched = true;
+            if (!entry.second()) {
+                std::fprintf(stderr, "C++ wrapper case %s failed\n", entry.first);
+                return 1;
+            }
+        }
+        if (!matched) {
+            std::fprintf(stderr, "Unknown C++ wrapper case: %s\n", selected);
+            return 1;
+        }
+        return 0;
+    }
+    catch (const std::exception& error) {
+        std::fprintf(stderr, "C++ wrapper case %s failed: %s\n", selected ? selected : "all", error.what());
+        return 1;
+    }
 }

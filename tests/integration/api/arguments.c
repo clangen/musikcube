@@ -1,9 +1,14 @@
 #include <musikcore/musikcore.h>
+#include "../../support/check.h"
 #include <stdio.h>
 #include <string.h>
 
-#define CHECK(expression) do { if (!(expression)) { \
-    fprintf(stderr, "C argument contract failed at line %d: %s\n", __LINE__, #expression); goto cleanup; } } while (0)
+/* Preserve the fixture's cleanup path while sharing C/C++ failure diagnostics. */
+#define CHECK(expression) do { \
+    if (!TEST_CHECK(expression)) { \
+        goto cleanup; \
+    } \
+} while (0)
 #define REJECT(expression, expected) do { request = 999; \
     CHECK((expression) == (expected)); CHECK(request == 0); } while (0)
 

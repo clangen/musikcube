@@ -1,12 +1,13 @@
 # Unit and integration testing design
 
-Status: proposed
+Status: active foundation; provider and package validation remain planned
 
 ## Summary
 
-musikcube should introduce automated testing from the public musikcore C API
-and C SDK boundary, then fan inward toward focused implementation units and
-outward toward full application, plugin, and package integration tests.
+musikcube tests start at the public musikcore C API boundary, then fan inward
+toward focused units and outward through production integration and the TUI.
+Apply the same approach to the C SDK after the core API is integrated into the
+app; provider implementation remains deferred by the HLD/LLD sequence.
 
 The rationale, alternatives, and scope of that choice are recorded in
 [ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md). This document
@@ -64,7 +65,7 @@ requiring a complete build-system rewrite before the first test can run.
 - Requiring physical audio devices in the default suite.
 - Making network-dependent or hardware-dependent tests mandatory for every
   change.
-- Testing curses rendering through pixel or terminal snapshots initially.
+- Requiring whole-screen golden snapshots for ordinary UI behavior.
 - Preserving `core_c_demo` as the primary validation mechanism.
 - Replacing every manual exploratory test with automation in the first phase.
 
@@ -84,8 +85,8 @@ The test program is organized into concentric layers:
                   focused C++ and C unit tests
 ```
 
-Implementation begins in the center of the diagram's behavioral value: the C
-API and SDK contract. Tests then fan in and out:
+Implementation begins with the C API contract. Apply the same process to the
+SDK only after core application integration. Tests then fan in and out:
 
 - **Fan inward** when a boundary failure would be diagnosed or exercised more
   precisely with a unit test. Initial targets include handle ownership, page
@@ -101,152 +102,63 @@ unit seams.
 
 ## Test taxonomy
 
-### Contract tests
-
-Contract tests are black-box tests of a documented ABI. They use only installed
-public headers and exported symbols. They do not include private musikcore
-headers or link private object libraries.
-
-There are two contract suites:
-
-- Public C API contract tests, written in C11 and linked to the shared library.
-- C SDK contract plugins, written in C11 and loaded through the real plugin
-  loader.
-
-These are the first required tests and run on every supported platform.
+Use three execution levels. Contract coverage and optional platform/package
+checks describe guarantees or environments, not additional parallel levels.
 
 ### Unit tests
 
-Unit tests exercise one algorithm, state machine, or class with controlled
-dependencies. They should normally avoid the filesystem, real clocks, worker
-threads, dynamic libraries, and process-global state.
-
-Examples include:
-
-- UTF-8 view and caller-buffer behavior.
-- Error translation.
-- Metadata page arena layout.
-- Handle retain/destroy state.
-- Event queue ordering and coalescing.
-- Async request and cancellation transitions.
-- Track-list editing operations.
-- Duration and serialization utilities.
-- Plugin version negotiation.
-- Audio frame and byte-count calculations.
-
-Unit tests are not required to use the public ABI if testing a private
-implementation is materially clearer.
-
-### Component tests
-
-Component tests exercise a subsystem through its normal interface while
-replacing external dependencies. Examples include a playback service using a
-deterministic decoder and fake output, or an indexer using a temporary database
-and fake source.
-
-These tests may use threads and temporary files, but must remain deterministic
-and must not use production plugin or data directories.
+Exercise one algorithm, state machine, or class with controlled dependencies.
+Normally avoid databases, external processes, dynamic libraries, and global
+runtime initialization. Examples include error/string helpers, queue ordering,
+callback validity, and the terminal screen model. Tests can use a private
+implementation when that gives clearer evidence than the public boundary.
 
 ### Integration tests
 
-Integration tests combine real musikcore subsystems:
+Exercise real boundaries: the shared library, SQLite and typed queries,
+workers/dispatch, loopback transport, or production playback/library services.
+Component checks with fake audio or other external dependencies also belong
+here. They stay deterministic, use private roots and ports, and require no
+user collection or hardware. Installed-consumer/package checks are binary
+integration tests; provider integration remains deferred with the SDK.
 
-- Context plus SQLite plus worker queue.
-- Async library query plus metadata page creation.
-- Plugin discovery plus factory registration plus provider invocation.
-- Decoder plus stream plus playback transport plus fake audio output.
-- Indexer plus tag reader plus database commit or rollback.
-- Shared-library consumer built separately from musikcore.
+### UI tests
 
-Integration tests run against temporary resources and deterministic media
-fixtures. They do not require a user's music collection.
+Send real input through musikcube in a PTY and assert visible state, ordering,
+selection, and outcomes. Use independent small correctness workflows for routine
+runs and explicit larger/repeated commands for performance observations. A fake
+child validating PTY plumbing is an integration test of the driver, not proof
+of application UI behavior.
 
-### System and packaging tests
+### Contract coverage
 
-System tests launch final executables or installed artifacts. Packaging tests
-validate that an archive contains a usable shared library, headers, plugins,
-assets, and correct runtime paths.
+Black-box public ABI tests use only public headers and exported symbols, with
+separately compiled C11 consumers crossing the real shared boundary. They carry
+`contract` alongside their execution level. Tests that intentionally inspect
+private adapters must not be described as external consumers. Pure-C SDK plugins
+will apply the same rule when provider work begins.
 
-These tests are slower and may be separated from the default developer suite,
-but release artifacts must pass them before publication.
+### Optional environments
 
-### Hardware and network tests
-
-Tests requiring a real audio device, CD drive, MPRIS session, network service,
-or remote HTTP endpoint are opt-in and labeled. They may run in dedicated
-environments or before releases, but are not merge gates unless a reliable
-runner exists.
+Physical audio, CD drives, desktop services, external endpoints, sanitizers,
+and staged release packages require explicit environment/selection policies.
+They do not replace the normal hermetic suite or imply native platform coverage
+from a different host's results.
 
 ## Test directory layout
 
-Proposed repository structure:
+The accepted organization and rationale are in
+[ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md#organization-and-execution).
+Tests live at the monorepo root under `tests/unit/`, `tests/integration/`, and
+`tests/ui/`; unit directories identify their owning project. Shared native
+fixtures and `check.h` live in `tests/support/`. Runners and build checks live
+in `tests/scripts/`; TUI scenarios and driver support stay together in `tests/ui/`.
 
-```text
-tests/
-    CMakeLists.txt
-    support/
-        c_test.h
-        temp_directory.cpp
-        test_context.cpp
-        event_waiter.cpp
-        fake_clock.cpp
-        fixture_paths.cpp
-    api/
-        context_test.c
-        error_test.c
-        string_test.c
-        event_test.c
-        library_test.c
-        track_page_test.c
-        track_list_test.c
-        playback_test.c
-        indexer_test.c
-        preferences_test.c
-        audio_test.c
-    sdk/
-        loader_test.c
-        lifecycle_test.c
-        decoder_test.c
-        encoder_test.c
-        stream_test.c
-        output_test.c
-        malformed_plugin_test.c
-        plugins/
-            valid_decoder/
-            incompatible_abi/
-            truncated_tables/
-            failing_initialize/
-            invalid_provider/
-    unit/
-        event_queue_test.cpp
-        request_state_test.cpp
-        page_arena_test.cpp
-        handle_test.cpp
-        plugin_negotiation_test.cpp
-        track_list_test.cpp
-        serialization_test.cpp
-    integration/
-        library_query_test.cpp
-        playback_pipeline_test.cpp
-        indexer_pipeline_test.cpp
-        plugin_pipeline_test.cpp
-        shutdown_test.cpp
-    system/
-        musikcube_smoke_test.cpp
-        musikcubed_smoke_test.cpp
-    packaging/
-        installed_c_consumer/
-        installed_c_plugin/
-        verify_exports.cmake
-        verify_archive.cmake
-    fixtures/
-        metadata/
-        playlists/
-        media/
-```
-
-Directories can be added incrementally. The initial change only needs
-`support`, `api`, `sdk`, and the first SDK fixture plugin.
+Do not keep executable test cases in a directory called `fixtures`. The remote
+transport suite lives in `tests/integration/transport/`; its reusable host and
+fake-transport helpers live in `tests/support/`. Optional future provider and
+package suites belong under the appropriate integration boundary and do not
+require another parallel test hierarchy.
 
 ## Build-system integration
 
@@ -270,13 +182,20 @@ Use the test runner with an existing CMake build, or let it configure the
 checkout with the default toolchain:
 
 ```sh
-node script/test/run-tests.js
-node script/test/run-tests.js --build-dir build/test -- -L abi
+node tests/scripts/run-tests.js --suite unit
+node tests/scripts/run-tests.js --build-dir build/test --config Release --suite integration
+node tests/scripts/run-tests.js --build-dir build/test --config Release --suite ui
+node tests/scripts/run-tests.js --build-dir build/test --config Release --list
+node tests/scripts/run-tests.js --build-dir build/test --config Release -- -L musikcore
 ```
 
-The runner enables `BUILD_TESTING`, builds the `musikcube_tests` target, and
-passes arguments after `--` to CTest. Use `--config Release` to select Release
-with a multi-config generator such as Visual Studio.
+The runner enables `BUILD_TESTING`, builds `musikcube_tests`, and passes
+arguments after `--` to CTest. Without `--build-dir`, it uses
+`build/tests-<configuration>`; `--jobs` bounds build parallelism. `--list`
+configures and lists tests without compiling them. Use `--config Release` for
+Release, including multi-config generators such as Visual Studio. `--abi-only`
+omits production service/UI dependencies while retaining the standalone ABI
+and lightweight unit/driver checks.
 
 To configure a separate Debug build manually:
 
@@ -299,45 +218,32 @@ targets rather than returning before test registration.
 
 ### Test labels
 
-CTest labels keep local and CI selection predictable:
-
-- `unit`
-- `api-contract`
-- `sdk-contract`
-- `component`
-- `integration`
-- `system`
-- `packaging`
-- `slow`
-- `network`
-- `hardware`
-
-Examples:
+Each registered test has exactly one level (`unit`, `integration`, or `ui`),
+an owner (`musikcore` or `musikcube`), and useful subsystem labels such as
+`api`, `library`, `runtime`, or `terminal`. Add `contract` for a documented
+promise; it does not replace the level. Tests involving SQLite, real sockets,
+or the shared library are integration checks. Future opt-in hardware/network
+checks must be selected explicitly.
 
 ```sh
-ctest --test-dir build/test -L 'api-contract|sdk-contract'
-ctest --test-dir build/test -L unit
-ctest --test-dir build/test -LE 'slow|network|hardware'
+ctest --test-dir build/test -L '^unit$'
+ctest --test-dir build/test -L '^integration$'
+ctest --test-dir build/test -L '^ui$'
+ctest --test-dir build/test -R '^musikcore.integration.api.production.playback_commands$'
 ```
 
 ### Test frameworks
 
-CTest owns test discovery, execution, labels, timeouts, and reports.
+CTest owns discovery, selection, timeouts, and reports. Keep public consumers
+in real C11. `tests/support/check.h` reports the expression and source location
+without dictating whether a case returns or jumps to resource cleanup.
 
-Public C API tests and pure-C plugin fixtures should use a very small C test
-harness maintained under `tests/support/c_test.h`. Keeping the boundary suite
-in real C is part of the test: it prevents accidental reliance on C++ syntax,
-linkage, layouts, or exception behavior.
-
-Focused C++ unit tests should use one pinned test framework with good CMake and
-CTest integration. Catch2 is the initial recommendation. The framework should
-be a test-only dependency and must not become part of the musikcore ABI or
-release runtime. It should be acquired through the same pinned dependency
-mechanism used by other build inputs, not downloaded implicitly during an
-offline configure.
-
-The framework choice is less important than maintaining a single convention.
-Contract tests must remain independent of it.
+C++ fixtures expose named cases through their existing harnesses; broad wrapper
+contracts use `--case`, and CTest registers public-only and production-bound
+cases independently. JavaScript uses Node's built-in test runner. No new native
+framework is required for this organization. If authoring or diagnostics later
+justify one, pin it as a test-only dependency with offline configuration support;
+keep it out of the public boundary and shipped runtime.
 
 ### Separate compilation
 
@@ -405,12 +311,12 @@ empty or populated state and owns its transactions.
 ### Media fixtures
 
 To generate a database with the production indexer and tag readers, run
-`node script/test/seed-test-library.js [configured-build-directory]`. The script
+`node tests/scripts/seed-test-library.js [configured-build-directory]`. The script
 creates two tagged WAV files, indexes them in a fresh config root under
 the selected build directory, and prints the resulting `musik.db` path.
 Use the database's parent directory as the ABI0 local library locator.
 
-Run `node script/test/seed-test-library.js --tracks 10000` for a larger fixture.
+Run `node tests/scripts/seed-test-library.js --tracks 10000` for a larger fixture.
 It generates 100 artists with 10 albums per artist and 10 numbered tracks
 per album, distributed across five genres.
 The fixtures also embed ten extended tag keys, with a mix of missing values,
@@ -418,7 +324,7 @@ repeated values across tracks, and tracks with more than one composer.
 
 When Node.js is available, `musikcore.abi.indexed_query` seeds the two-track
 fixture before querying it through ABI0. Run it with
-`node script/test/run-tests.js -- -R '^musikcore\.abi\.indexed_query$'`.
+`node tests/scripts/run-tests.js -- -R '^musikcore\.abi\.indexed_query$'`.
 
 Fixtures should be small, deterministic, and redistributable. Prefer generating
 simple PCM WAV data during the test. Commit compact binary fixtures only when
@@ -806,18 +712,19 @@ uses util-linux `script` on Linux and BSD `script` on macOS.
 
 ```sh
 cmake --build . --target musikcube musikcube_seed_library
-node script/test/tui/track-search.js
+node tests/ui/scenarios/track-search.js
 ```
 
 The scenario indexes 10,000 tracks under the build tree alongside the staged
 executables and indexing plugins. It opens Track Search, filters by album,
 scrolls to a result below the initial viewport, then quits through the normal
-key binding. It removes the fixture and staged runtime on completion.
+key binding. Successful runs remove the fixture and staged runtime; failures
+retain them with diagnostics.
 
 The runner reports fixture generation and indexing separately from keystroke
 latency. Filter latency includes the app's debounce interval. The scenario
-uses the production Track Search implementation and runs separately from the
-ABI CTest suite.
+uses the production Track Search implementation. Small correctness workflows
+are registered with CTest; larger repeated benchmark runs remain explicit.
 
 Use `--screenshots <dir>` to save SVGs of the initial, filtered, and scrolled
 views. For an out-of-tree build, pass `--build-dir` and, if needed, `--bin-dir`.
@@ -829,7 +736,7 @@ views against the same fixture.
 
 ```sh
 cmake --build . --target musikcube_abi_search_pilot
-node script/test/tui/track-search.js --compare --runs 20
+node tests/ui/scenarios/track-search.js --compare --runs 20
 ```
 
 To compare two pilot builds, save the control executable and its matching
@@ -837,20 +744,20 @@ To compare two pilot builds, save the control executable and its matching
 directory containing both files to `--pilot-control`.
 
 ```sh
-node script/test/tui/track-search.js --pilot-control build/search-control --runs 20
+node tests/ui/scenarios/track-search.js --pilot-control build/search-control --runs 20
 ```
 
 Both variants use the same fixture and alternate launch order. The driver
 keeps the track-search actions and assertions. Other TUI benchmarks can
-reuse `script/test/tui/terminal.js` for the PTY and process samples, and
-`script/test/tui/benchmark.js` for repeated runs and median/p95 reporting.
+reuse `tests/ui/support/terminal.js` for the PTY and process samples, and
+`tests/ui/support/benchmark.js` for repeated runs and median/p95 reporting.
 
 On macOS, the terminal driver launches the system `script` utility through a
 Bash pipe bridge. Node's subprocess stdin is socket-backed; macOS `script`
 accepts ordinary pipes but fails its terminal probe on that socket. A `cat`
 feeder supplies a real pipe and is stopped when the app exits. The launcher
 preserves the app's status and closes its process group on scenario failure.
-`node --test script/test/tui/terminal.test.js` exercises input, exit status, and
+`node --test tests/ui/driver/terminal.test.js` exercises input, exit status, and
 cleanup; CTest registers it as `musikcube.ui.terminal_driver` on macOS.
 
 The historical Linux production baseline comes from a 20-run comparison at
@@ -860,7 +767,7 @@ of 32,224 KiB with pages and 32,190 KiB with the legacy row cache.
 Median CPU time was 70 ms in both modes. A jump to the last viewport
 took 4.6 ms with pages and 1.2 ms with the legacy cache. The page-backed
 view shortens the curses input wait only while an async page is pending.
-Use `node script/test/tui/track-search.js --windows --tracks 30000 --runs 20`
+Use `node tests/ui/scenarios/track-search.js --windows --tracks 30000 --runs 20`
 to measure the current production path against those recorded numbers.
 
 The viewport scenario widens the search to 100 results, advances past the first
@@ -943,83 +850,20 @@ Coverage reports are used to find important untested branches. A global
 percentage should not encourage tests of trivial accessors while concurrency
 and error paths remain untested.
 
-## Implementation phases
+## Execution and remaining work
 
-### Phase 0: test foundations
+The [LLD](musikcore-c-abi-lld.md#test-infrastructure) tracks completed harness
+work and remaining native-platform acceptance. Do not maintain a second progress
+checklist here. Extend unit, integration, and UI coverage alongside the behavior
+being changed; there is no backfill requirement for untouched code and no rule
+that each change needs all three levels.
 
-- Add `include(CTest)` and `BUILD_TESTING` handling to Unix and Windows builds.
-- Add `tests/`, the C harness, common temporary-directory support, labels, and
-  timeouts.
-- Make context data and plugin directories explicit and isolated.
-- Use the former demo scenarios to identify contracts for automated tests.
-- Preserve the current Windows static production target and Unix production
-  topology; do not introduce the experimental shared façade in this phase.
-
-### Phase 1: public ABI contract
-
-- Add C11 header, linkage, version, lifecycle, error, ownership, and string
-  tests alongside the new ABI foundation.
-- Add event queue and async request tests before library-query migration.
-- Add immutable metadata page and cache-window contracts.
-- Build and run against the shared library on all three platforms.
-
-### Phase 2: SDK contract
-
-- Add the pure-C decoder fixture plugin and loader tests.
-- Add version, sized-table, initialization, instance, shutdown, and unload
-  contracts.
-- Add deterministic stream, buffer, decoder, and failure behavior.
-- Confirm the fixture is built only against installed-style SDK headers.
-
-### Phase 3: fan inward
-
-- Extract and test event, request, page, handle, plugin-registry, and buffer
-  units where boundary tests reveal complex state.
-- Add component tests for library queries and playback using deterministic
-  providers.
-- Run ASan/UBSan continuously and introduce a separate TSan configuration.
-
-### Phase 4: fan outward
-
-- Add real SQLite, worker, plugin, playback, indexer, and persistence workflows.
-- Add musikcube and musikcubed startup/shutdown smoke tests.
-- Add installed consumer and installed plugin projects.
-
-### Phase 5: packaging and compatibility
-
-- Run contract and smoke tests from staged or extracted release artifacts.
-- Establish exported-symbol and public-layout baselines.
-- Retain previous-release consumer and plugin fixtures for ABI compatibility.
-- Make package validation a release gate.
-
-### Phase 6: expand coverage by risk
-
-- Add encoder, output, DSP, tag-reader, and indexer-source SDK fixtures.
-- Add regression tests for every fixed production defect.
-- Add opt-in platform, hardware, and network coverage where reliable runners
-  exist.
-
-## Initial milestone
-
-The first complete boundary milestone, reached after the static-tested ABI
-foundation is defined, should be deliberately narrow:
-
-1. CTest enabled on Windows, macOS, and Linux.
-2. A real C executable linked to the shared musikcore library.
-3. Contract tests for ABI version, context lifecycle, errors, strings, and
-   event ownership.
-4. One pure-C decoder fixture loaded through the proposed C SDK.
-5. Tests for plugin negotiation, initialization, decoder creation, one known
-   PCM result, destruction, shutdown, and unload.
-6. ASan/UBSan passing on the supported Unix-like sanitizer configuration.
-
-This milestone validates both directions of the ABI before broader musikcube
-migration. It also creates the harness needed to develop each subsequent API
-and SDK feature contract-first.
+Provider fixtures, sanitizer/CI matrices, installed artifacts, and package
+compatibility remain future work in the core migration plan. A provider test
+milestone does not precede the current core API/app integration goal.
 
 ## Open questions
 
-- Which C++ test framework should be pinned for internal units?
 - Should test-only fake providers be statically registered for component tests,
   or always loaded as dynamic plugins?
 - Which C compiler versions form the public-header compatibility matrix?
@@ -1045,3 +889,35 @@ or network dependencies. Once ABI version 1 is stable, previous-release
 consumers and plugins become executable compatibility fixtures. This strategy
 lets the new API and SDK be designed contract-first while creating a practical
 path from the current untested codebase to reliable cross-platform releases.
+
+## Correctness UI scenarios and driver checks
+
+The full `musikcube_tests` target builds the app and required fixture plugins on
+Unix. CTest registers `musikcube.ui.search`, `musikcube.ui.queue`,
+`musikcube.ui.playlists`, and `musikcube.ui.browse` with small isolated catalogs.
+Windows requires a native PTY backend before these app scenarios can be enabled;
+registration on macOS does not establish Windows/Linux acceptance.
+
+```sh
+node tests/ui/scenarios/track-search.js --build-dir build/test --bin-dir build/test/bin --tracks 1000 --windows --scenario playlists
+node --test tests/ui/driver/*.test.js
+```
+
+Each selected scenario launches a fresh app/catalog. The default `--scenario all`
+retains the combined flow for manual/benchmark use. Search and queue setup may
+be shared by a workflow, but playlist and browse outcomes are reported separately
+and cannot be hidden by an earlier scenario's failure. Focus transitions use
+visible state with no arbitrary focus-delay sleeps; the app activates overlays
+created by dispatch before drawing them.
+
+Failed UI runs retain their runtime under the selected build root, including
+`failure.log`, indexer logs, settings, `failure/screen.txt`, `failure/screen.svg`,
+and the bounded `failure/terminal.log` transcript tail. The error names the
+retained root. Successful runs remove their private runtime. Optional
+`--screenshots` remains available for captures of successful runs.
+
+`Terminal.resize()` changes the real PTY through `stty` and updates the screen
+model. Driver tests verify the child observes the new dimensions. The screen
+suite checks chunked UTF-8/CSI/OSC parsing, cursor/erase/scroll operations,
+CJK/combining cells, styles/SVG escaping, and resizing. Emoji grapheme/ZWJ and
+terminal-specific ambiguous widths are not treated as a layout oracle.

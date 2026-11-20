@@ -11,6 +11,23 @@ const BASIC = ['#000', '#800000', '#008000', '#808000', '#000080', '#800080', '#
 const BOX = { l: '┌', k: '┐', m: '└', j: '┘', q: '─', x: '│', t: '├', u: '┤', v: '┴', w: '┬', n: '┼' };
 const XML = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
 
+/* Treat combining/format characters as zero-width and the ordinary CJK/fullwidth
+   ranges as two cells, matching the app's wcwidth-style layout. Ambiguous glyphs
+   stay narrow; emoji grapheme/ZWJ presentation is not a terminal-layout oracle. */
+function cellWidth(char) {
+  if (/^[\p{Mark}\p{Default_Ignorable_Code_Point}]$/u.test(char)) {
+    return 0;
+  }
+
+  const point = char.codePointAt(0);
+  return point >= 0x1100 && (point <= 0x115f || point === 0x2329 || point === 0x232a ||
+    (point >= 0x2e80 && point <= 0xa4cf && point !== 0x303f) ||
+    (point >= 0xac00 && point <= 0xd7a3) || (point >= 0xf900 && point <= 0xfaff) ||
+    (point >= 0xfe10 && point <= 0xfe19) || (point >= 0xfe30 && point <= 0xfe6f) ||
+    (point >= 0xff00 && point <= 0xff60) || (point >= 0xffe0 && point <= 0xffe6) ||
+    (point >= 0x20000 && point <= 0x3fffd)) ? 2 : 1;
+}
+
 /* Translate ANSI palette indices into SVG colors for diagnostic screen captures. */
 function color(index) {
   if (index < 16) return BASIC[index];
@@ -70,7 +87,7 @@ class Screen {
       } else if (token === '\r') {
         this.column = 0;
       } else if (token === '\n') {
-        this.row = Math.min(this.row + 1, this.rows - 1);
+        this.lineFeed();
       } else if (token === '\b') {
         this.column = Math.max(0, this.column - 1);
       } else if (token.startsWith('\x1b(')) {
@@ -84,14 +101,64 @@ class Screen {
 
   /* Place one decoded character at the cursor and apply the model's cell wrapping behavior. */
   write(char) {
-    /* This minimal model uses one cell per code point. It is sufficient for
-       current ASCII fixture assertions, not wide/combining-character layout. */
-    if (this.column === this.columns) {
-      this.row = Math.min(this.row + 1, this.rows - 1);
+    const width = cellWidth(char);
+    if (width === 0) {
+      let row = this.row;
+      let column = this.column - 1;
+      if (column < 0 && row > 0) {
+        --row;
+        column = this.columns - 1;
+      }
+      while (column > 0 && this.cells[row][column] === '') {
+        --column;
+      }
+      if (column >= 0) {
+        this.cells[row][column] += char;
+      }
+      return;
+    }
+
+    if (this.column + width > this.columns) {
+      this.lineFeed();
       this.column = 0;
     }
+
+    this.erase(this.row, this.column, this.column + width);
     this.cells[this.row][this.column] = char;
-    this.styles[this.row][this.column++] = this.style;
+    this.styles[this.row][this.column] = this.style;
+    if (width === 2) {
+      this.cells[this.row][this.column + 1] = '';
+      this.styles[this.row][this.column + 1] = this.style;
+    }
+    this.column += width;
+  }
+
+  /* Advance within the scroll region, scrolling its contents only at its bottom. */
+  lineFeed() {
+    if (this.row === this.scrollBottom) {
+      this.scrollUp(1);
+    } else {
+      this.row = Math.min(this.row + 1, this.rows - 1);
+    }
+  }
+
+  /* Preserve intersecting cells while a real PTY resize causes the app to repaint. */
+  resize(rows, columns) {
+    if (!Number.isSafeInteger(rows) || rows < 1 || !Number.isSafeInteger(columns) || columns < 2) {
+      throw new RangeError('Terminal dimensions must be positive integers with at least two columns');
+    }
+
+    this.cells = Array.from({ length: rows }, (_, row) =>
+      Array.from({ length: columns }, (_, column) => this.cells[row]?.[column] ?? ' '));
+    this.styles = Array.from({ length: rows }, (_, row) =>
+      Array.from({ length: columns }, (_, column) => this.styles[row]?.[column]));
+    this.rows = rows;
+    this.columns = columns;
+    this.row = Math.min(this.row, rows - 1);
+    this.column = Math.min(this.column, columns);
+    this.scrollTop = 0;
+    this.scrollBottom = rows - 1;
+    this.savedCursor = [Math.min(this.savedCursor[0], rows - 1), Math.min(this.savedCursor[1], columns - 1)];
   }
 
   /* Restore default foreground/background and clear inverse-video styling. */
@@ -133,6 +200,13 @@ class Screen {
 
   /* Blank a cell range using the currently active style, preserving the rest of the row. */
   erase(row, start = 0, end = this.columns) {
+    /* An overwrite touching either half of a wide glyph clears the whole glyph. */
+    if (this.cells[row][start] === '' && start > 0) {
+      --start;
+    }
+    if (end < this.columns && this.cells[row][end] === '') {
+      ++end;
+    }
     this.cells[row].fill(' ', start, end);
     this.styles[row].fill(this.style, start, end);
   }
@@ -174,6 +248,9 @@ class Screen {
       case 'm': this.setStyle(args); break;
 
       case 'r':
+        if (count >= (second || this.rows) || (second || this.rows) > this.rows) {
+          break;
+        }
         this.scrollTop = count - 1;
         this.scrollBottom = (second || this.rows) - 1;
         this.row = 0;

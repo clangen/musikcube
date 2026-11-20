@@ -1,5 +1,6 @@
 #include <musikcore/musikcore.h>
 
+#include "../../support/check.h"
 #include <stdio.h>
 
 _Static_assert(sizeof(mc_library_kind) == 4, "library kind width");
@@ -134,7 +135,7 @@ int main(void) {
         return 1;
     }
     mc_error_destroy(&error);
-    if (error || !check_context_lifecycle() || !check_owned_outputs()) {
+    if (!TEST_CHECK(!error) || !TEST_CHECK(check_context_lifecycle()) || !TEST_CHECK(check_owned_outputs())) {
         fputs("shared C context lifecycle failed\n", stderr);
         return 1;
     }

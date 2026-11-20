@@ -34,6 +34,67 @@ deterministic media, fake audio output, loopback dynamic ports, and deadline-bas
 operation predicates. Establish race ordering explicitly instead of using sleeps
 to guess when work has completed.
 
+## Organization and execution
+
+Keep one repository-level test tree rather than a separate test root per
+project. Organize by the boundary exercised, with unit ownership explicit:
+
+```text
+tests/
+    scripts/                 runners, fixture generation, CMake checks
+    unit/
+        musikcore/
+        musikcube/
+    integration/
+        api/
+        app/
+        library/
+        transport/
+        binary/
+        performance/
+    ui/
+        scenarios/
+        driver/              tests of the driver itself
+        support/             screen, PTY, artifact and benchmark helpers
+    support/                 native fixtures and shared C/C++ checks
+    baselines/
+```
+
+Each CTest entry has exactly one level label: `unit`, `integration`, or `ui`.
+Owner and subsystem labels describe what it covers; `contract` describes a
+promised behavior, not a fourth test level. Real SQLite, socket, shared-library,
+and production-service boundaries belong in integration tests even when a
+component is small or uses fake audio output. A terminal parser is a unit;
+a PTY launcher interacting with a child is an integration boundary; keystrokes
+through musikcube's real UI are UI tests. Existing test names remain stable
+where practical; labels are the selection authority.
+
+Retain CTest as the outer runner and use Node's built-in runner for JavaScript.
+Native tests currently use explicit named cases and a small C-compatible
+assertion helper. This provides independent reporting without adding another
+dependency during the organization work. Adopt a C++ assertion framework only
+when diagnostics or test authoring show a concrete limitation; any future
+framework must be pinned, test-only, and available without an implicit network
+download. It does not replace CTest or turn the C11 boundary consumers into C++.
+
+Split broad native checks and UI workflows into individually selectable cases
+with fresh state. Keep a combined UI flow for end-to-end interaction coverage,
+while ordinary smoke tests report search, queue, playlist, and browse behavior
+separately. Run large catalogs and repeated timing comparisons explicitly;
+ordinary correctness assertions do not enforce machine-specific latency limits.
+
+A rendered screen must correspond to an input-ready view. Fix application focus
+ordering when needed instead of delaying input with arbitrary sleeps. Test the
+driver's parsing, cursor, erase, scroll, styling, Unicode cells, and resize
+behavior separately so a driver defect cannot silently invalidate UI assertions.
+The screen model covers CJK width and combining marks, not every emoji/ZWJ or
+terminal-dependent glyph presentation.
+
+Failed scenarios keep their isolated runtime, configuration, indexer log,
+terminal output, visible text, and SVG under the build root, with the retained
+path in the error. Successful runs clean up. Test harness failures must not
+erase the evidence needed to diagnose them.
+
 ## Alternatives considered
 
 - Broadly backfill unit tests first: delays validating the new public boundary
@@ -48,8 +109,9 @@ to guess when work has completed.
 ## Consequences and implementation
 
 Keep checks selectable and failure messages tied to observable contracts.
-Retain CTest as the build/test entry point; choosing another assertion framework
-is a separate tooling decision, not required by this architecture.
+Retain the normal `node tests/scripts/run-tests.js` entry point. Select a level
+with `--suite`, inspect available checks with `--list`, or pass ordinary CTest
+filters after `--`. Test executables remain separately compiled at ABI seams.
 
 Native platform boundary tests are necessary: macOS success does not establish
 Windows DLL or Linux ELF behavior. Performance/allocation measurements are

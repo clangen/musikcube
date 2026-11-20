@@ -42,7 +42,8 @@
 ## Build scripts
 
 - Keep new Unix build scripts in Node.js. Reuse `script/unix-build-config.js` for shared compiler and target settings.
-- Keep test runners, fixture-generation scripts, test check scripts, and benchmark scripts under `script/test/`.
+- Keep test orchestration, fixture-generation scripts, build checks, and benchmark runners under `tests/scripts/`. Put TUI scenarios in `tests/ui/scenarios/` and their reusable driver code in `tests/ui/support/`.
+- Keep tests top-level in this monorepo, grouped under `tests/unit/`, `tests/integration/`, and `tests/ui/`. Group unit tests by owning project and share native helpers through `tests/support/`. Give each CTest entry exactly one level label (`unit`, `integration`, or `ui`), plus owner and subsystem labels; `contract` is an additional guarantee label. Add coverage as behavior changes rather than backfilling untouched code.
 - Keep compiler-specific flags and setup in compiler profiles. Use the existing vendor include and library directory lists in CMake targets.
 - Keep package-specific build steps under `script/vendor-packages/`. Define fixed configure and build arguments as named constants in the recipe.
 - Keep staging, caches, logs, and temporary build files under the build root. Use the existing build cache and staging directories where possible.

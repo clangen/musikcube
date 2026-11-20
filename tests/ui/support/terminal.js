@@ -2,7 +2,7 @@
    waits for screen or exit conditions. Feeds app output into Screen and keeps
    a raw transcript tail so scenario failures can be diagnosed. */
 
-const { spawn } = require('node:child_process');
+const { spawn, execFile } = require('node:child_process');
 const { EventEmitter } = require('node:events');
 const fs = require('node:fs');
 const { join } = require('node:path');
@@ -30,10 +30,11 @@ class Terminal {
     this.events = new EventEmitter();
     this.transcript = Buffer.alloc(0);
     this.pidFile = join(runtime, '.tui-pid');
+    this.ttyFile = join(runtime, '.tui-tty');
     this.isProcessGroup = process.platform === 'darwin';
 
     /* Keep stdin open for keystrokes and return the PTY child's exit status. */
-    const command = `stty rows ${rows} cols ${columns} && echo $$ > .tui-pid && exec ./musikcube`;
+    const command = `stty rows ${rows} cols ${columns} && tty > .tui-tty && echo $$ > .tui-pid && exec ./musikcube`;
     const args = process.platform === 'darwin'
       ? ['-c', MACOS_LAUNCHER, 'musikcube-tui', command]
       : ['--quiet', '--flush', '--return', '--command', command, '/dev/null'];
@@ -81,6 +82,32 @@ class Terminal {
   /* Write raw keystrokes to the PTY child without bypassing the app's real input handling. */
   send(keys) {
     this.child.stdin.write(keys);
+  }
+
+  /* Resize the actual PTY, not just the grid. The kernel's window-size change
+     notifies the app through its normal SIGWINCH/curses resize handling. */
+  async resize(rows, columns) {
+    this.screen.resize(rows, columns);
+    const tty = fs.readFileSync(this.ttyFile, 'utf8').trim();
+    const deviceFlag = process.platform === 'darwin' ? '-f' : '-F';
+    await new Promise((resolve, reject) => {
+      execFile('stty', [deviceFlag, tty, 'rows', String(rows), 'cols', String(columns)], error => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  /* Save the rendered screen and raw output together so a failure can be
+     diagnosed even when a caller did not request optional screenshots. */
+  saveArtifacts(directory) {
+    fs.mkdirSync(directory, { recursive: true });
+    fs.writeFileSync(join(directory, 'screen.txt'), this.screen.text());
+    fs.writeFileSync(join(directory, 'screen.svg'), this.screen.svg());
+    fs.writeFileSync(join(directory, 'terminal.log'), this.transcript);
   }
 
   /* Read Linux peak RSS and CPU ticks for the actual app process, excluding the terminal launcher. */

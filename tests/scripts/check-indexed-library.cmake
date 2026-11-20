@@ -1,0 +1,51 @@
+# Index generated media so these cases cover production tag readers and schema,
+# rather than only the small hand-written databases in API tests.
+execute_process(COMMAND "${NODE}" "${SEED_SCRIPT}" --indexer "${INDEXER}" "${BUILD_DIR}"
+  RESULT_VARIABLE status OUTPUT_VARIABLE output ERROR_VARIABLE error
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT status STREQUAL "0")
+  message(FATAL_ERROR "Could not seed the test library (${status})\n${output}\n${error}")
+endif()
+
+string(REGEX MATCH "[^\r\n]+$" database "${output}")
+if(NOT EXISTS "${database}")
+  message(FATAL_ERROR "Fixture database missing: ${database}")
+endif()
+get_filename_component(directory "${database}" DIRECTORY)
+get_filename_component(config_directory "${directory}/../.." ABSOLUTE)
+
+# Each selected case gets its own catalog and process so an earlier assertion
+# cannot hide a later contract or leak preferences into another test.
+if(DEFINED WRAPPER_CASE)
+  if(WRAPPER_PRODUCTION)
+    execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
+      "${BUILD_DIR}/tests/bin/isolated" "${PRODUCTION_TEST}" --stage
+      --config-root "${config_directory}" "${directory}" --case "${WRAPPER_CASE}"
+      RESULT_VARIABLE status)
+  else()
+    execute_process(COMMAND "${CPP_TEST}" "${directory}" --case "${WRAPPER_CASE}"
+      RESULT_VARIABLE status)
+  endif()
+  if(NOT status STREQUAL "0")
+    message(FATAL_ERROR "Wrapper case ${WRAPPER_CASE} failed (${status}); fixture: ${directory}")
+  endif()
+elseif(BACKEND_PARITY)
+  execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
+    "${BUILD_DIR}/tests/bin/isolated" "${REMOTE_TEST}" --stage
+    --config-root "${config_directory}" --parity RESULT_VARIABLE status)
+  if(NOT status STREQUAL "0")
+    message(FATAL_ERROR "Local/loopback parity failed (${status}); fixture: ${directory}")
+  endif()
+else()
+  # Both golden paths cross the real shared boundary against indexed media.
+  foreach(example IN ITEMS C_EXAMPLE CPP_EXAMPLE)
+    execute_process(COMMAND "${${example}}" "${directory}" RESULT_VARIABLE status)
+    if(NOT status STREQUAL "0")
+      message(FATAL_ERROR "${example} failed (${status}); fixture: ${directory}")
+    endif()
+  endforeach()
+  execute_process(COMMAND "${QUERY_TEST}" --indexed "${directory}" RESULT_VARIABLE status)
+  if(NOT status STREQUAL "0")
+    message(FATAL_ERROR "Indexed C query failed (${status}); fixture: ${directory}")
+  endif()
+endif()
