@@ -44,10 +44,6 @@
 struct sqlite3;
 struct sqlite3_stmt;
 
-namespace musik { namespace core { namespace library { namespace query {
-    class SearchTrackListQuery;
-} } } }
-
 namespace musik { namespace core { namespace db {
 
     typedef enum {
@@ -68,6 +64,8 @@ namespace musik { namespace core { namespace db {
             int Close() noexcept;
             int Execute(const char* sql);
 
+            sqlite3* NativeHandle() noexcept { return this->connection; }
+
             int64_t LastInsertedId() noexcept;
 
             int LastModifiedRowCount() noexcept;
@@ -81,7 +79,6 @@ namespace musik { namespace core { namespace db {
 
             friend class Statement;
             friend class ScopedTransaction;
-            friend class musik::core::library::query::SearchTrackListQuery;
 
             int transactionCounter;
             sqlite3 *connection;

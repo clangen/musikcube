@@ -9,11 +9,15 @@
 
 namespace musik { namespace core { namespace api {
 
+    /* Adapt a C string view for C++ readers without copying. Use only while the
+       supplying API's owner is alive; this conversion does not retain storage. */
     inline std::string_view AsStringView(mc_string_view value) noexcept {
         return value.data ? std::string_view(value.data, value.length) : std::string_view{};
     }
 
-    /* Copyable and movable. The exception owns its message. */
+    /* Exception for wrapper construction or rejected request submission. Catch
+       this for synchronous failures; accepted requests report status in their
+       callbacks. Copyable and movable, with an owned diagnostic message. */
     class Error : public std::runtime_error {
     public:
         explicit Error(mc_result result, std::string_view message = {})
@@ -32,8 +36,11 @@ namespace musik { namespace core { namespace api {
         mc_result resultCode;
     };
 
-    /* Neither copyable nor movable. Dispatch, shutdown, and destruction run on the dispatcher thread. */
-    /* Destruction drains callbacks. */
+    /* Owns request processing and callback dispatch. Keep a Context in the host
+       event loop and call Dispatch after wakeups; it must outlive its users.
+       Neither copyable nor movable. Dispatch, shutdown, and destruction use the
+       dispatcher thread. Destruction drains callbacks, so their state must
+       still be alive when the Context is destroyed. */
     class Context {
     public:
         Context() : Context(nullptr) {}
@@ -45,7 +52,7 @@ namespace musik { namespace core { namespace api {
         Context(Context &&) = delete;
         Context &operator=(Context &&) = delete;
 
-        /* Borrows the handle for the lifetime of this wrapper. */
+        /* Wrapper-owned handle. Do not destroy it; valid until wrapper destruction. */
         mc_context *Get() noexcept { return context; }
         const mc_context *Get() const noexcept { return context; }
         mc_result Dispatch() { return mc_context_dispatch(context); }

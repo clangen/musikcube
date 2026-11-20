@@ -5,6 +5,7 @@
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/ffi/consumer/playback-binding.h>
 #include <musikcore/runtime/MessageQueue.h>
+#include <musikcore/runtime/Message.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/QueryRegistry.h>
@@ -32,6 +33,7 @@ extern "C" void MC_CALL query_test_wakeup(void *);
 extern "C" int query_test_wait_for_wakeup(unsigned count);
 extern "C" unsigned query_test_wakeup_count();
 extern "C" void query_test_release_wakeup(void);
+bool query_test_dispatch_until(mc_context*, const std::function<bool()>&);
 
 namespace {
     using musik::core::api::Context;
@@ -45,6 +47,7 @@ namespace {
     static_assert(std::is_same_v<decltype(std::declval<const Context &>().Get()), const mc_context *>);
     static_assert(!std::is_invocable_v<decltype(&Context::Dispatch), const Context &>);
 
+    /* Open the same fixture through either the public standalone identity or the production library adapter. */
     std::shared_ptr<const Library> openLibrary(const char *directory) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
         musik::core::library::MasterLibrary selection;
@@ -54,6 +57,7 @@ namespace {
 #endif
     }
 
+    /* Retain views while replacing their pages to catch use-after-free without copying metadata strings. */
     bool checkQuery(const char *directory) {
         using musik::core::api::Error;
         using musik::core::api::QueryTracks;
@@ -106,13 +110,21 @@ namespace {
         /* The wrapper owns its result beyond context shutdown. */
         const auto track = page.Track(0);
         const auto composers = track.Values("composer");
-        return completed == 1 && cancelled == 1 && on_dispatcher && cancelled_without_page &&
+        const bool valuesMatch = completed == 1 && cancelled == 1 && on_dispatcher && cancelled_without_page &&
             page && page.Size() == 1 && page.FieldName(0) == MC_TRACK_FIELD_TITLE &&
             track.Title() == "Morning Light" && composers.size() == 2 &&
             track.Value("composer", 1) == composers[1] && track.Artist().data() == nullptr &&
             !track.Duration() && !page.Track(1);
+        auto moved = std::move(page);
+        if (page || !moved) return false;
+        moved = {};
+        auto copiedView = track;
+        auto movedView = std::move(copiedView);
+        return valuesMatch && !copiedView && movedView.Title() == "Morning Light" &&
+            movedView.Value("composer", 1) == composers[1];
     }
 
+    /* Verify ordered searches, grouping, projected reads, and track identities through the wrapper. */
     bool checkSearch(const char *directory) {
         using musik::core::api::Error;
         using musik::core::api::QueryTracks;
@@ -179,6 +191,8 @@ namespace {
             delivered == 4 && stale == 1 && result == MC_OK && visible && visible.Size() == 0;
     }
 
+    /* Move/invalidate viewports while reads are pending so stale callbacks cannot repopulate the wrong
+       window. */
     bool checkResultWindows(const char *directory) {
         using namespace musik::core::api;
         static_assert(!std::is_copy_constructible_v<TrackResult>);
@@ -288,20 +302,94 @@ namespace {
         for (const auto id : queued) context.Cancel(id);
         if (context.Dispatch() != MC_OK || window.Load() != MC_OK || !window.Pending()) return false;
 
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-        while (window.Pending() && std::chrono::steady_clock::now() < deadline) {
-            if (context.Dispatch() != MC_OK) return false;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-        return !window.Pending() && changes == before + 1 && latest == MC_OK &&
+        return query_test_dispatch_until(context.Get(), [&] { return !window.Pending(); }) &&
+            changes == before + 1 && latest == MC_OK &&
             window.CachedRow(0) && window.CachedRow(1);
     }
 #ifdef MUSIKCORE_TEST_APP_BINDING
+    /* Reenter the queue during payload destruction to catch cleanup-under-lock deadlocks and delivery to
+       unregistered targets. */
+    bool checkMessageCleanup() {
+        using namespace musik::core::runtime;
+        MessageQueue queue;
+        struct Target final : IMessageTarget {
+            /* Stay inert so the case observes cleanup/reentrancy, not a handler side effect. */
+            void ProcessMessage(IMessage&) override {}
+        } target, nested;
+        queue.Register(&target);
+        queue.Register(&nested);
+        bool destroyed = false;
+        struct Cleanup final : Message {
+            /* Keep the queue and peer alive until payload destruction can reenter Unregister. */
+            Cleanup(MessageQueue& queue, IMessageTarget* target, IMessageTarget& nested, bool& destroyed)
+                : Message(target, 1, 0, 0), queue(queue), nested(nested), destroyed(destroyed) {}
+
+            /* Real payload owners can unregister dependencies during teardown;
+               doing this under the queue mutex used to deadlock. */
+            ~Cleanup() {
+                this->queue.Unregister(&this->nested);
+                this->destroyed = true;
+            }
+
+            MessageQueue& queue;
+            IMessageTarget& nested;
+            bool& destroyed;
+        };
+        queue.Post(std::make_shared<Cleanup>(queue, &target, nested, destroyed));
+        const bool passed = queue.Remove(&target) == 1 && destroyed && !queue.Contains(&target);
+        queue.Unregister(&target);
+
+        /* Both messages become dispatch-ready together. The first handler
+           unregisters the second to expose stale target checks made too early. */
+        struct Counter final : IMessageTarget {
+            /* Any invocation means an unregistered target still received its batched message. */
+            void ProcessMessage(IMessage&) override { ++this->calls; }
+            unsigned calls = 0;
+        } counter;
+        struct Unsubscriber final : IMessageTarget {
+            /* Reference the test-owned peer so the first callback can unregister the second target. */
+            Unsubscriber(MessageQueue& queue, IMessageTarget& peer) : queue(queue), peer(peer) {}
+
+            /* Invalidate a later target from inside dispatch, outside the queue's signal lock. */
+            void ProcessMessage(IMessage&) override { this->queue.Unregister(&this->peer); }
+
+            MessageQueue& queue;
+            IMessageTarget& peer;
+        } first(queue, counter);
+        queue.Register(&first);
+        queue.Register(&counter);
+        queue.Post(Message::Create(&first, 1));
+        queue.Post(Message::Create(&counter, 1));
+        queue.Dispatch();
+        queue.Unregister(&first);
+
+        /* Destruction with undelivered messages must release their payloads
+           while queue members still exist for any reentrant unregister calls. */
+        bool releasedAtDestruction = false;
+        Target pendingTarget, pendingPeer;
+        {
+            MessageQueue retiring;
+            retiring.Register(&pendingTarget);
+            retiring.Register(&pendingPeer);
+            retiring.Post(std::make_shared<Cleanup>(retiring, &pendingTarget, pendingPeer, releasedAtDestruction));
+        }
+        return passed && counter.calls == 0 && releasedAtDestruction;
+    }
+
+    /* Report the failing playback assertion's source line without hiding the violated contract behind a
+       crash. */
+    bool playbackFailure(int line) {
+        std::fprintf(stderr, "Playback API contract failed at line %d\n", line);
+        return false;
+    }
+
+    /* Drive the real playback adapter with fake output so stale row actions, thread violations, and
+       queue-state drift are detected without hardware. */
     bool checkPlaybackCommands() {
         using namespace musik::core;
         const auto selection = std::make_shared<library::MasterLibrary>();
         const auto source = selection->OpenApiLibrary();
-        if (!source) return false;
+        if (!source) return playbackFailure(__LINE__);
         api::TrackResult result;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
         options.wakeup = query_test_wakeup;
@@ -311,30 +399,59 @@ namespace {
             [&](mc_result status, api::TrackResult tracks, std::string_view) {
                 if (status == MC_OK) result = std::move(tracks);
             });
-        if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || result.Size() != 2) return false;
+        if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || result.Size() != 2) return playbackFailure(__LINE__);
 
         runtime::MessageQueue queue;
         const auto transport = std::make_shared<TestTransport>();
+        Preferences::ForComponent(musik::core::prefs::components::Settings)
+            ->SetBool(musik::core::prefs::keys::SaveSessionOnExit, false);
         std::optional<api::Playback> playback;
         {
             audio::PlaybackService service(queue, selection, transport);
+            queue.Dispatch();
             playback.emplace(musik::core::audio::CreatePlaybackHandle(service));
+            mc_play_queue* rawQueue = nullptr;
+            if (mc_playback_get_queue(playback->Get(), &rawQueue) != MC_OK) return playbackFailure(__LINE__);
+            const auto originalRaw = rawQueue;
+            const bool preservedOutput = mc_playback_get_queue(playback->Get(), &rawQueue) == MC_ERROR_INVALID_ARGUMENT &&
+                rawQueue == originalRaw;
+            mc_play_queue_destroy(&rawQueue);
+            if (!preservedOutput || rawQueue) return playbackFailure(__LINE__);
+
+            /* Default snapshots, bounds, and every transport-state mapping cross the C surface. */
+            mc_playback_snapshot invalidSnapshot = MC_PLAYBACK_SNAPSHOT_DEFAULT;
+            invalidSnapshot.struct_size = 0;
+            if (mc_playback_get_snapshot(playback->Get(), &invalidSnapshot) != MC_ERROR_INVALID_ARGUMENT ||
+                invalidSnapshot.struct_size || invalidSnapshot.volume) return playbackFailure(__LINE__);
+            for (const auto state : {sdk::PlaybackState::Stopped, sdk::PlaybackState::Paused,
+                sdk::PlaybackState::Prepared, sdk::PlaybackState::Playing}) {
+                transport->state = state;
+                const auto stateSnapshot = playback->Snapshot();
+                const auto expectedState = state == sdk::PlaybackState::Stopped ? MC_PLAYBACK_STOPPED :
+                    state == sdk::PlaybackState::Paused ? MC_PLAYBACK_PAUSED :
+                    state == sdk::PlaybackState::Prepared ? MC_PLAYBACK_PREPARED : MC_PLAYBACK_PLAYING;
+                if (!stateSnapshot || stateSnapshot->state != expectedState) return playbackFailure(__LINE__);
+            }
+            if (playback->Control(MC_PLAYBACK_SET_VOLUME, std::numeric_limits<double>::quiet_NaN()) != MC_ERROR_INVALID_ARGUMENT ||
+                playback->Control(MC_PLAYBACK_SET_POSITION, std::numeric_limits<double>::infinity()) != MC_ERROR_INVALID_ARGUMENT ||
+                playback->Control(MC_PLAYBACK_SET_POSITION, -1) != MC_ERROR_INVALID_ARGUMENT ||
+                playback->Control(UINT32_MAX) != MC_ERROR_UNSUPPORTED) return playbackFailure(__LINE__);
             const auto empty = playback->Queue();
             if (!empty || empty->Size() || empty->CurrentRow() != SIZE_MAX ||
-                playback->PlayQueueRow(*empty, 0) != MC_ERROR_NOT_FOUND) return false;
+                playback->PlayQueueRow(*empty, 0) != MC_ERROR_NOT_FOUND) return playbackFailure(__LINE__);
             if (playback->Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_OK ||
                 transport->state != sdk::PlaybackState::Paused ||
                 playback->Control(MC_PLAYBACK_SET_VOLUME, 0.25) != MC_OK ||
                 transport->volume != 0.25 ||
                 playback->Control(MC_PLAYBACK_SET_VOLUME, 1.5) != MC_ERROR_INVALID_ARGUMENT ||
                 playback->Control(MC_PLAYBACK_STOP) != MC_OK ||
-                transport->state != sdk::PlaybackState::Stopped) return false;
+                transport->state != sdk::PlaybackState::Stopped) return playbackFailure(__LINE__);
 
             if (playback->Control(MC_PLAYBACK_SET_POSITION, 12) != MC_OK ||
-                playback->Control(MC_PLAYBACK_TOGGLE_MUTE) != MC_OK) return false;
+                playback->Control(MC_PLAYBACK_TOGGLE_MUTE) != MC_OK) return playbackFailure(__LINE__);
             const auto snapshot = playback->Snapshot();
             if (!snapshot || snapshot->state != MC_PLAYBACK_STOPPED || snapshot->volume != 0.25 ||
-                snapshot->position != 12 || snapshot->duration != 30 || !snapshot->muted) return false;
+                snapshot->position != 12 || snapshot->duration != 30 || !snapshot->muted) return playbackFailure(__LINE__);
 
             /* Wrong-thread access must retain its diagnosis rather than appear absent. */
             bool snapshotBusy = false;
@@ -346,20 +463,20 @@ namespace {
                 catch (const api::Error& error) { queueBusy = error.Result() == MC_ERROR_BUSY; }
             });
             observer.join();
-            if (!snapshotBusy || !queueBusy) return false;
+            if (!snapshotBusy || !queueBusy) return playbackFailure(__LINE__);
 
             if (playback->Play(result, 2) != MC_ERROR_NOT_FOUND ||
                 playback->Play(result, 1) != MC_OK || service.GetIndex() != 1 ||
                 service.GetTrackList()->GetId(0) != result.Id(0) ||
-                service.GetTrackList()->GetId(1) != result.Id(1)) return false;
+                service.GetTrackList()->GetId(1) != result.Id(1)) return playbackFailure(__LINE__);
             const auto original = playback->Queue();
             if (!original || playback->Move(*original, 1, 0) != MC_OK ||
                 service.GetTrackList()->GetId(0) != result.Id(1) ||
-                playback->Remove(*original, 1) != MC_ERROR_NOT_FOUND) return false;
+                playback->Remove(*original, 1) != MC_ERROR_NOT_FOUND) return playbackFailure(__LINE__);
             const auto reordered = playback->Queue();
             if (!reordered || playback->Remove(*reordered, 1) != MC_OK || service.Count() != 1 ||
                 playback->Remove(*reordered, 1) != MC_ERROR_NOT_FOUND ||
-                playback->ClearQueue() != MC_OK || service.Count() != 0) return false;
+                playback->ClearQueue() != MC_OK || service.Count() != 0) return playbackFailure(__LINE__);
 
             const auto first = result.Track(0);
             const auto second = result.Track(1);
@@ -372,35 +489,55 @@ namespace {
                 service.Count() != 3 ||
                 trackList->GetId(1) != second.Id() || trackList->GetId(2) != first.Id() ||
                 playback->UseTrack(second, MC_PLAYBACK_TRACK_PREPEND) != MC_OK ||
-                service.Count() != 4 || trackList->GetId(0) != second.Id()) return false;
+                service.Count() != 4 || trackList->GetId(0) != second.Id()) return playbackFailure(__LINE__);
 
             if (playback->UseTrack({}, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_INVALID_ARGUMENT ||
-                playback->UseTrack(first, 0) != MC_ERROR_UNSUPPORTED) return false;
+                playback->UseTrack(first, 0) != MC_ERROR_UNSUPPORTED) return playbackFailure(__LINE__);
 
             /* Snapshots preserve duplicate IDs and remain valid across subsequent edits. */
             const auto captured = playback->Queue();
             const std::array expected{ second.Id(), first.Id(), second.Id(), first.Id() };
             const auto captureMatches = [&] {
-                if (!captured) return false;
+                if (!captured) return playbackFailure(__LINE__);
                 size_t count = 0;
                 const auto ids = captured->Ids(count);
                 return count == expected.size() && std::equal(expected.begin(), expected.end(), ids);
             };
             if (!captureMatches() ||
                 captured->IsShuffled() || playback->PlayQueueRow(*captured, 2) != MC_OK || service.GetIndex() != 2 ||
-                empty->Size()) return false;
+                empty->Size()) return playbackFailure(__LINE__);
+
+            if (playback->Control(MC_PLAYBACK_TOGGLE_SHUFFLE) != MC_OK) return playbackFailure(__LINE__);
+            const auto shuffled = playback->Queue();
+            if (!shuffled || !shuffled->IsShuffled() || shuffled->Size() != expected.size()) return playbackFailure(__LINE__);
+            size_t shuffledCount = 0;
+            const auto shuffledIds = shuffled->Ids(shuffledCount);
+            std::vector<int64_t> sortedActual(shuffledIds, shuffledIds + shuffledCount);
+            std::vector<int64_t> sortedExpected(expected.begin(), expected.end());
+            std::sort(sortedActual.begin(), sortedActual.end());
+            std::sort(sortedExpected.begin(), sortedExpected.end());
+            if (sortedActual != sortedExpected || playback->Control(MC_PLAYBACK_TOGGLE_SHUFFLE) != MC_OK) return playbackFailure(__LINE__);
+            auto restored = playback->Queue();
+            if (!restored || restored->IsShuffled() || playback->PlayQueueRow(*restored, 2) != MC_OK ||
+                !captureMatches()) return playbackFailure(__LINE__);
+            size_t restoredCount = 0;
+            const auto restoredIds = restored->Ids(restoredCount);
+            auto movedQueue = std::move(*restored);
+            size_t movedCount = 0;
+            if (restored->Size() || movedQueue.Ids(movedCount) != restoredIds ||
+                movedCount != expected.size() || !std::equal(expected.begin(), expected.end(), restoredIds)) return playbackFailure(__LINE__);
 
             /* A legacy writer can swap duplicate entries without changing the visible ID sequence. */
             {
                 auto edit = service.Edit();
-                if (!edit.Swap(0, 2) || edit.Delete(expected.size())) return false;
+                if (!edit.Swap(0, 2) || edit.Delete(expected.size())) return playbackFailure(__LINE__);
             }
             if (playback->PlayQueueRow(*captured, 0) != MC_ERROR_NOT_FOUND ||
                 playback->Move(*captured, 0, 1) != MC_ERROR_NOT_FOUND ||
                 playback->Remove(*captured, 0) != MC_ERROR_NOT_FOUND ||
-                service.Count() != expected.size() || service.GetIndex() != 2) return false;
+                service.Count() != expected.size() || service.GetIndex() != 2) return playbackFailure(__LINE__);
             const auto current = playback->Queue();
-            if (!current || playback->PlayQueueRow(*current, 2) != MC_OK) return false;
+            if (!current || playback->PlayQueueRow(*current, 2) != MC_OK) return playbackFailure(__LINE__);
 
             const auto prefs = Preferences::ForComponent(musik::core::prefs::components::Settings);
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
@@ -419,7 +556,7 @@ namespace {
             const bool cleared = service.Count() == 0 && transport->state == sdk::PlaybackState::Stopped;
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
             selection->LoadDefaultLibrary();
-            if (!rejected || !cleared || !captureMatches()) return false;
+            if (!rejected || !cleared || !captureMatches()) return playbackFailure(__LINE__);
 
             /* Reenter subscription from the real dispatcher and destroy a peer with pending delivery. */
             queue.Dispatch();
@@ -446,20 +583,20 @@ namespace {
 
             if (playback->SetQueueChangedCallback(replacePeer, &observers) != MC_OK ||
                 observers.peer->SetQueueChangedCallback(countCall, &observers.cancelledCalls) != MC_OK ||
-                playback->ClearQueue() != MC_OK || playback->ClearQueue() != MC_OK) return false;
+                playback->ClearQueue() != MC_OK || playback->ClearQueue() != MC_OK) return playbackFailure(__LINE__);
             queue.Dispatch();
-            if (observers.primaryCalls || observers.cancelledCalls) return false;
+            if (observers.primaryCalls || observers.cancelledCalls) return playbackFailure(__LINE__);
             queue.Dispatch();
             if (observers.primaryCalls != 1 || observers.cancelledCalls || observers.replacementCalls ||
                 observers.subscribed != MC_OK || observers.unsubscribed != MC_OK ||
-                playback->ClearQueue() != MC_OK) return false;
+                playback->ClearQueue() != MC_OK) return playbackFailure(__LINE__);
             queue.Dispatch();
             queue.Dispatch();
-            if (observers.replacementCalls != 1 || playback->ClearQueue() != MC_OK) return false;
+            if (observers.replacementCalls != 1 || playback->ClearQueue() != MC_OK) return playbackFailure(__LINE__);
             queue.Dispatch();
-            if (observers.peer->SetQueueChangedCallback(nullptr) != MC_OK) return false;
+            if (observers.peer->SetQueueChangedCallback(nullptr) != MC_OK) return playbackFailure(__LINE__);
             queue.Dispatch();
-            if (observers.replacementCalls != 1) return false;
+            if (observers.replacementCalls != 1) return playbackFailure(__LINE__);
 
             /* Load through the typed playlist query with playback stopped. */
             const std::vector savedIds{ second.Id(), first.Id(), second.Id(), first.Id(), first.Id() };
@@ -468,7 +605,7 @@ namespace {
             int64_t playlistId = 0;
             api::SavePlaylist(context, *source, 0, playlistName, { first.Id() },
                 [&](mc_result status, int64_t id, std::string_view) { if (status == MC_OK) playlistId = id; });
-            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || playlistId <= 0) return false;
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || playlistId <= 0) return playbackFailure(__LINE__);
 
             wake = query_test_wakeup_count();
             bool listed = false;
@@ -477,19 +614,19 @@ namespace {
                     return entry.id == playlistId && entry.name == playlistName;
                 });
             });
-            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !listed) return false;
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !listed) return playbackFailure(__LINE__);
 
             wake = query_test_wakeup_count();
             bool overwritten = false;
             api::SavePlaylist(context, *source, playlistId, {}, { second.Id(), first.Id(), second.Id() },
                 [&](mc_result status, int64_t id, std::string_view) { overwritten = status == MC_OK && id == playlistId; });
-            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !overwritten) return false;
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !overwritten) return playbackFailure(__LINE__);
 
             wake = query_test_wakeup_count();
             bool appended = false;
             api::AppendPlaylist(context, *source, playlistId, { first.Id(), first.Id() },
                 [&](mc_result status, int64_t id, std::string_view) { appended = status == MC_OK && id == playlistId; });
-            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !appended) return false;
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !appended) return playbackFailure(__LINE__);
 
             mc_result loaded = MC_ERROR_INTERNAL;
             const auto load = [&](mc_result status, api::TrackResult tracks, std::string_view) {
@@ -498,31 +635,31 @@ namespace {
             wake = query_test_wakeup_count();
             api::OpenPlaylist(context, *source, playlistId, load);
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || loaded != MC_OK ||
-                transport->state != sdk::PlaybackState::Stopped) return false;
+                transport->state != sdk::PlaybackState::Stopped) return playbackFailure(__LINE__);
             const auto loadedQueue = playback->Queue();
             size_t loadedCount = 0;
             const auto ids = loadedQueue ? loadedQueue->Ids(loadedCount) : nullptr;
-            if (loadedCount != savedIds.size() || !std::equal(savedIds.begin(), savedIds.end(), ids)) return false;
+            if (loadedCount != savedIds.size() || !std::equal(savedIds.begin(), savedIds.end(), ids)) return playbackFailure(__LINE__);
 
             /* Stop retains the row for selection and Play Next, without a playing highlight. */
             if (playback->PlayQueueRow(*loadedQueue, 0) != MC_OK ||
-                playback->Control(MC_PLAYBACK_STOP) != MC_OK) return false;
+                playback->Control(MC_PLAYBACK_STOP) != MC_OK) return playbackFailure(__LINE__);
             const auto stopped = playback->Queue();
             if (!stopped || stopped->RetainedRow() != 0 || stopped->CurrentRow() != SIZE_MAX ||
                 playback->UseTrack(second, MC_PLAYBACK_TRACK_PLAY_NEXT) != MC_OK ||
-                trackList->GetId(1) != second.Id() || trackList->GetId(2) != first.Id()) return false;
+                trackList->GetId(1) != second.Id() || trackList->GetId(2) != first.Id()) return playbackFailure(__LINE__);
 
             /* Switch after the request becomes ready but before dispatching its result. */
             wake = query_test_wakeup_count();
             api::OpenPlaylist(context, *source, playlistId, load);
-            if (!query_test_wait_for_wakeup(wake + 1)) return false;
+            if (!query_test_wait_for_wakeup(wake + 1)) return playbackFailure(__LINE__);
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
             selection->LoadDefaultLibrary();
             const bool ignored = context.Dispatch() == MC_OK && loaded == MC_ERROR_NOT_FOUND &&
                 service.Count() == savedIds.size() + 1;
             prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
             selection->LoadDefaultLibrary();
-            if (!ignored) return false;
+            if (!ignored) return playbackFailure(__LINE__);
 
             /* Rename and delete the selected playlist, leaving the active queue alone. */
             constexpr auto renamedName = "Renamed Queue Fixture";
@@ -532,7 +669,7 @@ namespace {
                 mutation = id == playlistId ? status : MC_ERROR_NOT_FOUND;
             };
             api::RenamePlaylist(context, *source, playlistId, renamedName, mutated);
-            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || mutation != MC_OK) return false;
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || mutation != MC_OK) return playbackFailure(__LINE__);
             wake = query_test_wakeup_count();
             listed = false;
             api::ListPlaylists(context, *source, [&](mc_result status, auto entries, std::string_view) {
@@ -540,19 +677,19 @@ namespace {
                     return entry.id == playlistId && entry.name == renamedName;
                 });
             });
-            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !listed) return false;
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !listed) return playbackFailure(__LINE__);
             wake = query_test_wakeup_count();
             mutation = MC_ERROR_INTERNAL;
             api::DeletePlaylist(context, *source, playlistId, mutated);
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || mutation != MC_OK ||
-                service.Count() != savedIds.size() + 1) return false;
+                service.Count() != savedIds.size() + 1) return playbackFailure(__LINE__);
             wake = query_test_wakeup_count();
             bool removed = false;
             api::ListPlaylists(context, *source, [&](mc_result status, auto entries, std::string_view) {
                 removed = status == MC_OK && std::none_of(entries.begin(), entries.end(),
                     [&](const auto& entry) { return entry.id == playlistId; });
             });
-            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !removed) return false;
+            if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !removed) return playbackFailure(__LINE__);
 
             mc_result otherThread = MC_OK;
             std::optional<api::Playback> otherHandle;
@@ -561,12 +698,33 @@ namespace {
                 otherThread = otherHandle->Control(MC_PLAYBACK_STOP);
             });
             caller.join();
-            if (otherThread != MC_ERROR_BUSY || otherHandle->Control(MC_PLAYBACK_STOP) != MC_OK) return false;
+            if (otherThread != MC_ERROR_BUSY || otherHandle->Control(MC_PLAYBACK_STOP) != MC_OK) return playbackFailure(__LINE__);
+
+            /* A fresh service has no queued edit events from earlier scenarios. */
+            runtime::MessageQueue stateMessages;
+            const auto stateTransport = std::make_shared<TestTransport>();
+            audio::PlaybackService stateService(stateMessages, selection, stateTransport);
+            stateMessages.Dispatch();
+            auto statePlayback = audio::CreatePlaybackHandle(stateService);
+            if (statePlayback.Play(result, 1) != MC_OK) return playbackFailure(__LINE__);
+            stateTransport->state = sdk::PlaybackState::Prepared;
+            stateTransport->PlaybackEvent(sdk::PlaybackState::Prepared);
+            stateMessages.Dispatch();
+            for (const auto state : {sdk::PlaybackState::Paused, sdk::PlaybackState::Prepared, sdk::PlaybackState::Playing}) {
+                stateTransport->state = state;
+                const auto stateQueue = statePlayback.Queue();
+                if (!stateQueue || stateQueue->CurrentRow() != 1 || stateQueue->RetainedRow() != 1) return playbackFailure(__LINE__);
+            }
+            if (statePlayback.Control(MC_PLAYBACK_STOP) != MC_OK) return playbackFailure(__LINE__);
+            const auto stoppedBeforeNotification = statePlayback.Queue();
+            if (!stoppedBeforeNotification || stoppedBeforeNotification->CurrentRow() != SIZE_MAX ||
+                stoppedBeforeNotification->RetainedRow() != 1 || !stateService.GetPlaying()) return playbackFailure(__LINE__);
         }
         return playback->Control(MC_PLAYBACK_STOP) == MC_ERROR_NOT_FOUND &&
             !playback->Snapshot() && !playback->Queue();
     }
 
+    /* Verify typed remote query serialization preserves ordering/grouping and rejects malformed payloads. */
     bool checkRemoteQueryPayloads() {
         using namespace musik::core;
         using namespace musik::core::library;
@@ -625,6 +783,7 @@ namespace {
             matches(tracks.at(secondId), "Evening Flight", "2");
     }
 
+    /* Compare category/directory selections and read reordered duplicate IDs through the selected backend. */
     bool checkBrowseReads(const char* directory) {
         using namespace musik::core;
         library::MasterLibrary selected;
@@ -674,6 +833,8 @@ namespace {
             page.Track(2).Title() == "Evening Flight";
     }
 
+    /* Switch the selected backend while retaining an identity so reads cannot silently use another
+       library with colliding IDs. */
     bool checkSelectedBackend() {
         using namespace musik::core::api;
 
@@ -713,6 +874,7 @@ namespace {
 
 }
 
+/* Run public wrapper cases and, in the production build, the engine/backend integration cases. */
 int main(int argc, char **argv) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
     CoreRuntime runtime;
@@ -720,6 +882,10 @@ int main(int argc, char **argv) {
     try {
         if (argc == 2 && checkQuery(argv[1]) && checkSearch(argv[1]) && checkResultWindows(argv[1])) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
+            if (!checkMessageCleanup()) {
+                std::fputs("Message queue payload cleanup reentrancy failed\n", stderr);
+                return 1;
+            }
             if (!checkPlaybackCommands()) {
                 std::fputs("Playback command contract failed\n", stderr);
                 return 1;

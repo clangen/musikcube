@@ -30,6 +30,7 @@ namespace {
         "INSERT INTO meta_values VALUES (1,1,20,'Second'),(2,1,10,'First'),(3,2,1,'');"
         "INSERT INTO track_meta VALUES (30,1),(30,2),(30,3);";
 
+    /* Verify typed SQL search ordering, album boundaries, pagination, and bound injection-like filter text. */
     bool checkSearch(sqlite3 *database) {
         TrackSearchRows rows;
         const TrackSearchQuery artist("  fixture artist  ", false, TrackSortType::Album);
@@ -51,6 +52,8 @@ namespace {
             rows.ids.empty();
     }
 
+    /* Read inside an existing transaction so projection cleanup cannot accidentally commit the caller's
+       work or reorder missing/multivalue metadata. */
     bool checkProjection(sqlite3 *database) {
         const std::vector<std::string> fields = { "composer", MC_TRACK_FIELD_TITLE, "empty" };
         const int64_t ids[] = { firstTrack, hiddenTrack, missingTrack, secondTrack };
@@ -73,6 +76,7 @@ namespace {
     }
 }
 
+/* Initialize an in-memory SQLite catalog and exercise the typed query implementation directly. */
 int main() {
     sqlite3 *raw = nullptr;
     const auto opened = sqlite3_open(":memory:", &raw);

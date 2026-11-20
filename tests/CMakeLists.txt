@@ -118,6 +118,24 @@ foreach(case IN ITEMS registration_order filtered_removal unregister_during_disp
   set_tests_properties(musikcore.runtime.message_queue.${case} PROPERTIES LABELS "unit;runtime" TIMEOUT 10)
 endforeach()
 
+add_executable(musikcore_abi_arguments_test abi/arguments.c)
+target_link_libraries(musikcore_abi_arguments_test PRIVATE musikcore_abi0)
+set_target_properties(musikcore_abi_arguments_test PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
+  C_EXTENSIONS OFF LINKER_LANGUAGE C RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}")
+add_dependencies(musikcube_tests musikcore_abi_arguments_test)
+add_test(NAME musikcore.abi.arguments COMMAND musikcore_abi_arguments_test)
+set_tests_properties(musikcore.abi.arguments PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+
+add_executable(musikcore_result_contracts_test abi/result-contracts.cpp support/host-wakeup.cpp support/fail-new.cpp)
+target_include_directories(musikcore_result_contracts_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/support")
+target_link_libraries(musikcore_result_contracts_test PRIVATE musikcore_cpp_abi0 musikcore_abi0_sqlite Threads::Threads)
+set_target_properties(musikcore_result_contracts_test PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
+  RUNTIME_OUTPUT_DIRECTORY "${MUSIKCORE_ABI0_OUTPUT_DIR}")
+add_dependencies(musikcube_tests musikcore_result_contracts_test)
+add_test(NAME musikcore.abi.result_contracts COMMAND "${MUSIKCORE_TEST_NODE}" "${isolated_test}"
+  "${isolated_root}" "$<TARGET_FILE:musikcore_result_contracts_test>" @origin)
+set_tests_properties(musikcore.abi.result_contracts PROPERTIES LABELS "contract;abi" TIMEOUT 20)
+
 add_executable(musikcore_abi_cpp_test abi/cpp-wrapper.cpp abi/query-support.cpp)
 target_link_libraries(musikcore_abi_cpp_test PRIVATE musikcore_cpp_abi0 Threads::Threads)
 set_target_properties(musikcore_abi_cpp_test PROPERTIES

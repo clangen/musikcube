@@ -30,6 +30,7 @@
 #include "library-storage.h"
 #include "request.h"
 #include "../common/error.h"
+#include "../common/primitives.h"
 
 #include <unordered_set>
 
@@ -121,6 +122,7 @@ namespace {
         auto result = std::make_shared<TrackResultData>();
         result->library = identity;
         result->ids = rows->GetIds();
+        if (!valid_ids(result->ids.data(), result->ids.size())) return MC_ERROR_IO;
         result->albumStarts.resize(result->ids.size());
         for (const auto row : *headers) {
             if (row >= result->ids.size()) return MC_ERROR_IO;
@@ -340,13 +342,36 @@ namespace {
                     field != MC_TRACK_FIELD_TRACK && field != MC_TRACK_FIELD_RATING) return MC_ERROR_UNSUPPORTED;
             }
 
+            if (ids.empty()) {
+                /* Empty projections still honor field support and the origin generation. */
+                const auto output = std::make_shared<std::unique_ptr<mc_track_page>>(std::make_unique<mc_track_page>());
+                (*output)->names = std::move(fields);
+                return submit_request(context, [library = this->library, generation = this->generation]() -> mc_result {
+                    return library->WebSocketClient().ConnectionGeneration() == generation ? MC_OK : MC_ERROR_IO;
+                }, [=](mc_result status, void* data) {
+                    const CompletionError error(status);
+                    completion(status, status == MC_OK ? output->release() : nullptr, error.Get(), data);
+                }, user_data, out_request);
+            }
+
             const auto command = std::make_shared<query::TrackMetadataBatchQuery>(
-                std::unordered_set<int64_t>(ids.begin(), ids.end()), this->library);
+                std::unordered_set<int64_t>(ids.begin(), ids.end()), this->library, fields);
             return submitRemote<mc_track_page>(context, this->library, this->generation, command,
                 [ids = std::move(ids), fields = std::move(fields), keepMissing](auto &batch, auto &output) -> mc_result {
                     auto page = std::make_unique<mc_track_page>();
                     page->names = fields;
                     for (const auto id : ids) {
+                        if (batch.HasProjectedPage()) {
+                            const auto& rows = batch.Page().rows;
+                            const auto found = std::lower_bound(rows.begin(), rows.end(), id,
+                                [](const auto& row, int64_t value) { return row.id < value; });
+                            if (found == rows.end() || found->id != id) {
+                                if (!keepMissing) return MC_ERROR_NOT_FOUND;
+                                page->rows.push_back({id, std::vector<std::vector<std::string>>(fields.size())});
+                            }
+                            else page->rows.push_back(*found);
+                            continue;
+                        }
                         const auto track = batch.Result().find(id);
                         if (track == batch.Result().end() && !keepMissing) return MC_ERROR_NOT_FOUND;
 

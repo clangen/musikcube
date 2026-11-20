@@ -41,6 +41,8 @@
 #include <musikcore/sdk/String.h>
 
 #include <musikcore/sdk/ReplayGain.h>
+#include <algorithm>
+#include <stdexcept>
 
 #pragma warning(push, 0)
 #include <nlohmann/json.hpp>
@@ -56,16 +58,29 @@ using namespace musik::core::sdk;
 
 const std::string TrackMetadataBatchQuery::kQueryName = "TrackMetadataBatchQuery";
 
-TrackMetadataBatchQuery::TrackMetadataBatchQuery(std::unordered_set<int64_t> trackIds, ILibraryPtr library)
-: trackIds(trackIds)
-, library(library) {
+TrackMetadataBatchQuery::TrackMetadataBatchQuery(std::unordered_set<int64_t> trackIds, ILibraryPtr library,
+    std::vector<std::string> projection)
+: library(std::move(library))
+, trackIds(std::move(trackIds))
+, projection(std::move(projection)) {
 }
 
 bool TrackMetadataBatchQuery::OnRun(Connection& db) {
+    if (!this->projection.empty()) {
+        /* Read selected fields directly. Going through full track objects loses
+           the difference between a missing value and an empty string. */
+        const std::vector<int64_t> ids(this->trackIds.begin(), this->trackIds.end());
+        this->page.names = this->projection;
+        if (!ids.empty() && !TrackPageQuery("", this->projection, 0, ids.size(), ids.data(), false)
+            .Run(db.NativeHandle(), this->page)) return false;
+        this->hasProjectedPage = true;
+        return true;
+    }
+    if (this->trackIds.empty()) return true;
     std::string idList;
     size_t i = 0;
     for (const int64_t id : this->trackIds) {
-        idList += std::to_string(id);
+        idList += "?";
         if (i < this->trackIds.size() - 1) {
             idList += ",";
         }
@@ -76,15 +91,18 @@ bool TrackMetadataBatchQuery::OnRun(Connection& db) {
     str::ReplaceAll(query, "{{ids}}", idList.c_str());
 
     Statement trackQuery(query.c_str(), db);
+    int parameter = 0;
+    for (const auto id : this->trackIds) trackQuery.BindInt64(parameter++, id);
 
-    while (trackQuery.Step() == Row) {
+    int status;
+    while ((status = trackQuery.Step()) == Row) {
         auto id = trackQuery.ColumnInt64(0);
         auto track = std::make_shared<LibraryTrack>(id, this->library);
         tracks::ParseFullTrackMetadata(track, trackQuery);
         this->result[id] = track;
     }
 
-    return true;
+    return status == Done;
 }
 
 /* ISerializableQuery */
@@ -96,10 +114,18 @@ std::string TrackMetadataBatchQuery::SerializeQuery() {
             { "trackIds", this->trackIds }
         }}
     };
+    /* Old servers ignore fields and return full tracks. */
+    if (!this->projection.empty()) output["options"]["fields"] = this->projection;
     return output.dump();
 }
 
 std::string TrackMetadataBatchQuery::SerializeResult() {
+    if (this->hasProjectedPage) {
+        /* Value lists keep missing ([]) distinct from empty text ([""]). */
+        nlohmann::json rows = nlohmann::json::array();
+        for (const auto& row : this->page.rows) rows.push_back({{"id", row.id}, {"values", row.fields}});
+        return nlohmann::json{{"projectedPage", {{"fields", this->page.names}, {"rows", rows}}}}.dump();
+    }
     nlohmann::json idToTrackMap;
     for (auto& kv : this->result) {
         auto trackJson = TrackToJson(kv.second, false);;
@@ -113,7 +139,34 @@ std::string TrackMetadataBatchQuery::SerializeResult() {
 
 void TrackMetadataBatchQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
-    auto input = nlohmann::json::parse(data)["result"];
+    const auto response = nlohmann::json::parse(data);
+    if (response.contains("projectedPage")) {
+        /* Reject replies for other fields or tracks. Sort once so the caller
+           can look up each requested ID. */
+        const auto& projected = response.at("projectedPage");
+        ProjectedTrackPage page;
+        page.names = projected.at("fields").get<std::vector<std::string>>();
+        if (this->projection.empty() || page.names != this->projection ||
+            projected.at("rows").size() > this->trackIds.size()) throw std::invalid_argument("Invalid projected fields");
+        for (const auto& row : projected.at("rows")) {
+            ProjectedTrackPage::Row value{row.at("id").get<int64_t>(),
+                row.at("values").get<std::vector<std::vector<std::string>>>()};
+            if (!this->trackIds.count(value.id) || value.fields.size() != this->projection.size()) {
+                throw std::invalid_argument("Invalid projected row");
+            }
+            page.rows.push_back(std::move(value));
+        }
+        std::sort(page.rows.begin(), page.rows.end(), [](const auto& a, const auto& b) { return a.id < b.id; });
+        for (size_t i = 1; i < page.rows.size(); ++i) {
+            if (page.rows[i - 1].id == page.rows[i].id) throw std::invalid_argument("Duplicate projected row");
+        }
+        this->page = std::move(page);
+        this->hasProjectedPage = true;
+        this->SetStatus(IQuery::Finished);
+        return;
+    }
+    /* Older servers ignore the optional projection and return their legacy map. */
+    auto input = response["result"];
     for (const auto& kv : input.items()) {
         int64_t id = std::atoll(kv.key().c_str());
         auto track = std::make_shared<LibraryTrack>(id, this->library);
@@ -130,5 +183,6 @@ std::shared_ptr<TrackMetadataBatchQuery> TrackMetadataBatchQuery::DeserializeQue
     auto json = nlohmann::json::parse(data);
     SetType trackIds;
     JsonArrayToSet<SetType, int64_t>(json["options"]["trackIds"], trackIds);
-    return std::make_shared<TrackMetadataBatchQuery>(trackIds, library);
+    return std::make_shared<TrackMetadataBatchQuery>(trackIds, library,
+        json["options"].value("fields", std::vector<std::string>{}));
 }

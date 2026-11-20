@@ -17,14 +17,18 @@ void *operator new(size_t size) {
     throw std::bad_alloc();
 }
 
+/* Release the test allocator's storage through the unsized delete path. */
 void operator delete(void *data) noexcept {
     std::free(data);
 }
 
+/* Release the test allocator's storage through the sized delete path. */
 void operator delete(void *data, size_t) noexcept {
     std::free(data);
 }
 
+/* Select success, detailed failure, allocation failure, or an unknown exception to probe C error
+   translation. */
 extern "C" mc_result MC_CALL check_error_operation(int mode, mc_error **error) {
     using musik::core::ffi::exception_barrier;
     using musik::core::ffi::fail;
@@ -38,8 +42,10 @@ extern "C" mc_result MC_CALL check_error_operation(int mode, mc_error **error) {
                 return fail(MC_ERROR_NOT_FOUND, message.c_str(), error);
             }
             case 2:
+                /* Allocation failure itself must not need an allocated error. */
                 throw std::bad_alloc();
             case 4: {
+                /* Preserve NOT_FOUND even when allocating its message fails. */
                 fail_next_allocation = true;
                 const auto result = fail(MC_ERROR_NOT_FOUND, "Input is missing", error);
                 const bool allocation_attempted = !fail_next_allocation;
@@ -47,6 +53,7 @@ extern "C" mc_result MC_CALL check_error_operation(int mode, mc_error **error) {
                 return allocation_attempted ? result : MC_ERROR_INTERNAL;
             }
             default:
+                /* No unrecognized C++ exception may escape a C entry point. */
                 throw mode;
         }
     });

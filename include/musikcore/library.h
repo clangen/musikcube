@@ -17,10 +17,14 @@ typedef struct mc_track_ref mc_track_ref;
    A pointer with a count may be null only when count is zero.
    New handle output slots must be initialized to null. Occupied slots are rejected
    without modification. Destroy accepts null slots and clears owned handles.
-   IDs are positive and library-scoped; zero is the invalid/missing ID sentinel.
+   Track IDs are positive and library-scoped; zero is the invalid/missing track ID.
+   Text inputs must describe readable UTF-8 without embedded NUL. Byte lengths
+   above PTRDIFF_MAX are rejected before reading storage. No UTF-8 normalization
+   is performed. The caller is responsible for encoding validity.
    Accessors on null handles return zero, false, or a null view as appropriate.
-   Views borrow their parent's storage; copy their bytes to outlive that parent.
-   Async callbacks use status, payload, borrowed error, user_data order.
+   Views do not own storage and are valid until their parent is destroyed.
+   Copy their bytes if they must outlive that parent.
+   Async callbacks use status, payload, callback-scoped error, user_data order.
    Error details may be null on allocation failure; status is authoritative.
    Error is null on success and otherwise valid only during the callback. */
 
@@ -42,7 +46,8 @@ typedef struct mc_library_options {
 #define MC_LIBRARY_OPTIONS_DEFAULT { sizeof(mc_library_options), MC_LIBRARY_LOCAL, { NULL, 0 } }
 
 /* Create a library identity. The output slot must be empty. */
-/* Creating a remote handle by endpoint does not open a connection. Remote reads require a core-bound session. */
+/* Creating a remote handle by endpoint does not open a connection. Remote reads require a core-bound
+   session. */
 MC_API mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_library **out_library);
 /* Release the handle. Accepted requests and derived identities retain their library. */
 MC_API void MC_CALL mc_library_destroy(mc_library **library);
@@ -99,7 +104,7 @@ typedef struct mc_track_range {
 
 #define MC_TRACK_RANGE_DEFAULT { sizeof(mc_track_range), 0, 0, NULL, 0 }
 
-/* Success transfers the result handle. Errors are borrowed for the callback. */
+/* Success transfers the result handle. Errors are valid only during the callback. */
 typedef void (MC_CALL *mc_track_search_completion_fn)(
     mc_result result, mc_track_result *tracks, const mc_error *error, void *user_data);
 
@@ -152,7 +157,7 @@ typedef struct mc_track_query {
 #define MC_TRACK_QUERY_DEFAULT { sizeof(mc_track_query), { NULL, 0 }, NULL, 0, 0, 0, 0 }
 
 /* Success transfers the page to the callback. Release it with mc_track_page_destroy. */
-/* Error details and their message views are borrowed until the callback returns. */
+/* Core owns error details and message bytes; they are valid until the callback returns. */
 typedef void (MC_CALL *mc_track_query_completion_fn)(
     mc_result result, mc_track_page *page, const mc_error *error, void *user_data);
 
@@ -167,7 +172,8 @@ MC_API mc_result MC_CALL mc_library_open_playlist_async(
     mc_context *context, const mc_library *library, int64_t playlist_id,
     mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request);
 
-/* Open a Browse category, including categories defined by metadata keys. */
+/* Open a Browse category, including categories defined by metadata keys.
+   id is a signed backend catalog ID; zero can identify an uncategorized group. */
 MC_API mc_result MC_CALL mc_library_open_category_async(
     mc_context *context, const mc_library *library, mc_string_view category, int64_t id,
     mc_track_search_order order, mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request);
@@ -182,16 +188,16 @@ MC_API mc_result MC_CALL mc_library_make_track_result(
 typedef struct mc_playlist_entry {
     /* ID scoped to the library used for the request. */
     int64_t id;
-    /* UTF-8 name borrowed for the duration of the completion callback. */
+    /* UTF-8 name owned by core, valid only during the completion callback. */
     mc_string_view name;
 } mc_playlist_entry;
 
-/* Entries, names, and error are borrowed for the callback. Failure yields null
+/* Core owns entries, names, and error; valid only during the callback. Failure yields null
    entries and zero count. */
 typedef void (MC_CALL *mc_playlist_list_completion_fn)(
     mc_result result, const mc_playlist_entry *entries, size_t count, const mc_error *error, void *user_data);
 /* On success, playlist_id identifies the playlist. Older servers may return zero for creation.
-   Failure yields zero. Error details are borrowed for the callback. */
+   Failure yields zero. Error details are valid only during the callback. */
 typedef void (MC_CALL *mc_playlist_write_completion_fn)(
     mc_result result, int64_t playlist_id, const mc_error *error, void *user_data);
 
@@ -226,6 +232,8 @@ MC_API uint64_t MC_CALL mc_track_result_get_album_duration(const mc_track_result
 /* Read current metadata. Removed tracks retain their IDs and have no values. */
 /* Remote reads support ID, title, artist, album, duration, track number, and rating. */
 /* A remote read that requests any other field returns MC_ERROR_UNSUPPORTED. */
+/* Current servers preserve missing/empty values and hidden rows through a typed
+   projection. Legacy servers can return their older, less precise metadata map. */
 /* The submitted request retains the result data after the caller releases the handle. */
 MC_API mc_result MC_CALL mc_track_result_read_async(
     mc_context *context, const mc_track_result *tracks, const mc_track_range *range,
@@ -253,15 +261,15 @@ MC_API mc_result MC_CALL mc_library_query_tracks_async(
 MC_API size_t MC_CALL mc_track_page_get_count(const mc_track_page *page);
 /* Returns zero for a missing row. */
 MC_API int64_t MC_CALL mc_track_page_get_id(const mc_track_page *page, size_t row);
-/* Borrows the first value until page destruction. Null data means missing. */
+/* Returns a view into page-owned storage, valid until page destruction. Null data means missing. */
 MC_API mc_string_view MC_CALL mc_track_page_get_string(const mc_track_page *page, size_t row, size_t field);
 /* Counts fields in the original request order. Null pages return zero. */
 MC_API size_t MC_CALL mc_track_page_get_field_count(const mc_track_page *page);
-/* Borrows a field name until page destruction. An invalid index returns a null view. */
+/* Returns a page-owned field name, valid until page destruction. Invalid indices return a null view. */
 MC_API mc_string_view MC_CALL mc_track_page_get_field_name(const mc_track_page *page, size_t field);
 /* Returns zero for missing values and invalid indices. */
 MC_API size_t MC_CALL mc_track_page_get_value_count(const mc_track_page *page, size_t row, size_t field);
-/* Borrows a value until page destruction. An invalid index returns a null view. */
+/* Returns a page-owned value, valid until page destruction. Invalid indices return a null view. */
 MC_API mc_string_view MC_CALL mc_track_page_get_string_at(
     const mc_track_page *page, size_t row, size_t field, size_t value);
 /* Consumes the page and clears the slot. Null is accepted. */

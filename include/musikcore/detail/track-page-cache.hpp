@@ -7,7 +7,10 @@
 
 namespace musik { namespace core { namespace api { namespace detail {
 
-    /* Owns projected pages. Neither copyable nor movable. */
+    /* Internal page storage used by TrackResultWindow to bound cached metadata.
+       Keeps pages near the requested window when evicting; callers needing
+       loading/prefetch should use TrackResultWindow. Owns its pages and is
+       neither copyable nor movable. Retained TrackViews can outlive eviction. */
     class TrackPageCache {
     public:
         static constexpr size_t DefaultCapacity = 3;
@@ -15,6 +18,8 @@ namespace musik { namespace core { namespace api { namespace detail {
         explicit TrackPageCache(size_t capacity = DefaultCapacity) : capacity(capacity) {}
         TrackPageCache(const TrackPageCache&) = delete;
         TrackPageCache& operator=(const TrackPageCache&) = delete;
+        TrackPageCache(TrackPageCache&&) = delete;
+        TrackPageCache& operator=(TrackPageCache&&) = delete;
 
         const api::TrackPage* Find(size_t offset) const {
             const auto found = this->pages.find(offset);

@@ -9,6 +9,7 @@
    Dependent playback/library objects must be declared after this fixture. */
 class CoreRuntime final {
 public:
+    /* Start debug, plugin, and library services in application order, rolling back partial initialization. */
     CoreRuntime() {
         musik::debug::Start();
         try {
@@ -22,6 +23,7 @@ public:
             throw;
         }
     }
+    /* Stop library workers before unloading plugins and shutting down debugging. */
     ~CoreRuntime() {
         musik::core::LibraryFactory::Shutdown();
         musik::core::plugin::Shutdown();
@@ -31,6 +33,7 @@ public:
     CoreRuntime& operator=(const CoreRuntime&) = delete;
     CoreRuntime(CoreRuntime&&) = delete;
     CoreRuntime& operator=(CoreRuntime&&) = delete;
+    /* Return the fixture-owned host queue; callers must not retain it beyond the fixture's lifetime. */
     musik::core::runtime::MessageQueue& Queue() noexcept { return this->queue; }
 private:
     musik::core::runtime::MessageQueue queue;

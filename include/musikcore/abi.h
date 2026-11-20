@@ -54,15 +54,15 @@ enum {
 /* Non-owning UTF-8 view. Keep the backing storage alive while using it. */
 /* Copy the bytes for longer use. The view itself needs no cleanup. */
 typedef struct mc_string_view {
-    /* Borrowed UTF-8 storage. May be null for an empty view. */
+    /* Non-owning UTF-8 pointer; lifetime is set by the supplying API. Null is allowed for an empty view. */
     const char *data;
     /* Byte count, excluding any terminating NUL. */
     size_t length;
 } mc_string_view;
 
-/* Borrowed bytes. */
+/* Byte view that does not own or extend the lifetime of its storage. */
 typedef struct mc_byte_view {
-    /* Borrowed byte storage. May be null for an empty view. */
+    /* Non-owning byte pointer; lifetime is set by the supplying API. Null is allowed for an empty view. */
     const uint8_t *data;
     /* Number of readable bytes. */
     size_t length;
@@ -88,11 +88,11 @@ typedef struct mc_audio_format {
 
 #define MC_AUDIO_FORMAT_DEFAULT { sizeof(mc_audio_format), 0, 0, 0, 0 }
 
-/* Borrows interleaved PCM storage from the owner of the view. */
+/* Interleaved PCM view. It does not own or extend the lifetime of its storage. */
 typedef struct mc_audio_buffer_view {
     /* Size of this struct in bytes. */
     uint32_t struct_size;
-    /* Borrowed PCM storage. Null for the default empty view. */
+    /* Non-owning PCM pointer. The owner must keep it valid during use. Null for the default empty view. */
     void *data;
     /* Number of populated frames. */
     size_t frame_count;
@@ -108,7 +108,7 @@ typedef struct mc_error mc_error;
 
 /* Returns MC_ERROR_INVALID_ARGUMENT for a null handle. */
 MC_API mc_result MC_CALL mc_error_get_code(const mc_error *error);
-/* Borrows from the error for its lifetime. A null handle returns an empty view. */
+/* Error-owned message, valid until error destruction. A null handle returns an empty view. */
 MC_API mc_string_view MC_CALL mc_error_get_message(const mc_error *error);
 /* Consumes the handle and clears the caller's slot. Null is accepted. */
 MC_API void MC_CALL mc_error_destroy(mc_error **error);

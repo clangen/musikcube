@@ -8,16 +8,21 @@ namespace {
     thread_local long allocationsUntilFailure = -1;
 }
 
+/* Fail the selected allocation on the creating thread while leaving other threads unaffected. */
 void* operator new(std::size_t size) {
     if (allocationsUntilFailure == 0) throw std::bad_alloc();
     if (allocationsUntilFailure > 0) --allocationsUntilFailure;
     if (auto* memory = std::malloc(size ? size : 1)) return memory;
     throw std::bad_alloc();
 }
+/* Route array allocation through the same deterministic allocation-failure gate. */
 void* operator new[](std::size_t size) { return ::operator new(size); }
+/* Release storage obtained by the test's malloc-backed allocation override. */
 void operator delete(void* memory) noexcept { std::free(memory); }
+/* Release array storage obtained through the same malloc-backed override. */
 void operator delete[](void* memory) noexcept { std::free(memory); }
 
+/* Fail each initialization allocation in turn and verify no handle or singleton slot leaks. */
 bool context_test_allocation_failures() {
     const std::string directory(512, 'x');
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;

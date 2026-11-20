@@ -163,8 +163,7 @@ namespace {
     }
 
     bool valid_directory(mc_string_view directory) {
-        return !directory.length ||
-            (directory.data && !std::memchr(directory.data, '\0', directory.length));
+        return musik::core::ffi::valid_text(directory);
     }
 
 }
@@ -240,6 +239,8 @@ mc_result MC_CALL mc_context_create(
     using musik::core::ffi::fail;
     using musik::core::ffi::read_option;
 
+    /* Preserve an existing owned error instead of losing the caller's handle. */
+    if (out_error && *out_error) return MC_ERROR_INVALID_ARGUMENT;
     return exception_barrier(out_error, [&]() -> mc_result {
         /* Never overwrite a live owner, including the currently active context. */
         if (!out_context || *out_context) {
@@ -361,14 +362,18 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
 }
 
 void MC_CALL mc_context_destroy(mc_context **context) {
-    if (!context || !*context) return;
-    if (mc_context_shutdown(*context) != MC_OK) return;
+    musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!context || !*context) return MC_OK;
+        const auto status = mc_context_shutdown(*context);
+        if (status != MC_OK) return status;
 
-    {
-        std::lock_guard<std::mutex> lock((*context)->external->mutex);
-        (*context)->external->context = nullptr;
-    }
-    delete *context;
-    *context = nullptr;
-    context_active.store(false);
+        {
+            std::lock_guard<std::mutex> lock((*context)->external->mutex);
+            (*context)->external->context = nullptr;
+        }
+        delete *context;
+        *context = nullptr;
+        context_active.store(false);
+        return MC_OK;
+    });
 }

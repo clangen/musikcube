@@ -111,7 +111,8 @@ public:
         const auto row = this->service.GetIndex();
         if (row < queue.ids.size()) queue.retainedRow = row;
         const auto playing = this->service.GetPlaying();
-        if (playing && row < queue.ids.size() && queue.ids[row] == playing->GetId()) {
+        if (this->service.GetPlaybackState() != PlaybackState::Stopped &&
+            playing && row < queue.ids.size() && queue.ids[row] == playing->GetId()) {
             queue.currentRow = row;
         }
         queue.shuffled = this->service.IsShuffled();

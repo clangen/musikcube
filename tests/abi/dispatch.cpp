@@ -28,6 +28,7 @@ namespace {
     };
 }
 
+/* Count wakeups and optionally hold the producer inside its hook to exercise shutdown synchronization. */
 extern "C" void MC_CALL dispatch_test_wakeup(void *data) {
     auto &state = *static_cast<State *>(data);
     std::unique_lock<std::mutex> lock(state.mutex);
@@ -38,6 +39,7 @@ extern "C" void MC_CALL dispatch_test_wakeup(void *data) {
     state.wakeup_returned = true;
 }
 
+/* Record terminal delivery and probe nested dispatch before invoking the case-specific callback action. */
 extern "C" void MC_CALL dispatch_test_completion(mc_result result, void *data) {
     auto &state = *static_cast<State *>(data);
     ++state.completions;
@@ -50,11 +52,13 @@ extern "C" void MC_CALL dispatch_test_completion(mc_result result, void *data) {
 namespace {
     const auto deadline = std::chrono::seconds(5);
 
+    /* Wait with a deadline until the requested number of producer hooks has entered. */
     bool wait_for_wakeups(State &state, unsigned count) {
         std::unique_lock<std::mutex> lock(state.mutex);
         return state.changed.wait_for(lock, deadline, [&] { return state.wakeups >= count; });
     }
 
+    /* Hold a worker at a known gate so cancellation can win before a terminal result is selected. */
     mc_result block_work(State &state) {
         std::unique_lock<std::mutex> lock(state.mutex);
         state.work_started = true;
@@ -63,11 +67,13 @@ namespace {
         return MC_OK;
     }
 
+    /* Wait for the worker's gate-entry signal instead of guessing its scheduling with a sleep. */
     bool wait_for_work(State &state) {
         std::unique_lock<std::mutex> lock(state.mutex);
         return state.changed.wait_for(lock, deadline, [&] { return state.work_started; });
     }
 
+    /* Verify dispatcher binding, deferred callback delivery, cancellation, and rejection after shutdown. */
     bool check_dispatch(State &state) {
         using musik::core::ffi::submit_request;
         const auto dispatcher = std::this_thread::get_id();
@@ -121,6 +127,8 @@ namespace {
             mc_context_dispatch(state.context) == MC_OK && state.completions == 2;
     }
 
+    /* Make work ready during callback delivery to catch a lost rearm that would leave a sleeping host
+       with an undelivered completion. */
     bool check_dispatch_rearm(State &state) {
         using musik::core::ffi::submit_request;
         mc_request_id first = 0;
@@ -145,6 +153,8 @@ namespace {
             mc_context_dispatch(state.context) == MC_OK && state.completions == 2;
     }
 
+    /* Retain terminal slots until dispatch so finished workers cannot bypass the admission bound or
+       generate redundant host wakeups. */
     bool check_queue_capacity(State &state) {
         using musik::core::ffi::submit_request;
         mc_request_id first = 0;
@@ -179,6 +189,7 @@ namespace {
             mc_context_dispatch(state.context) == MC_OK && state.completions == accepted;
     }
 
+    /* Verify shutdown waits for an in-flight wakeup hook before returning and drains cancellation once. */
     bool check_shutdown_wakeup(State &state) {
         using musik::core::ffi::submit_request;
         state.hold_wakeup = true;
@@ -221,6 +232,7 @@ namespace {
     }
 }
 
+/* Give each dispatch case a fresh context and release held gates before cleanup, including on failure. */
 static bool run_check(const char *name, bool (*check)(State &)) {
     State state;
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
@@ -242,6 +254,7 @@ static bool run_check(const char *name, bool (*check)(State &)) {
     return true;
 }
 
+/* Verify late external replies cannot redeliver cancelled work or access a destroyed context. */
 static bool check_external_reply(State &state) {
     mc_request_id request = 0;
     std::function<void(mc_result)> finish;
@@ -261,6 +274,7 @@ static bool check_external_reply(State &state) {
     return state.completions == 2 && state.result == MC_ERROR_CANCELLED;
 }
 
+/* Verify a callback cannot shut down or destroy its own active context, preserving its handle for retry. */
 static bool check_callback_lifecycle(State &state) {
     mc_request_id request = 0;
     std::function<void(mc_result)> finish;
@@ -281,6 +295,7 @@ static bool check_callback_lifecycle(State &state) {
     return mc_context_shutdown(state.context) == MC_OK && state.completions == 1;
 }
 
+/* Cancel a peer from a callback and verify the peer's later success cannot replace cancellation. */
 static bool check_callback_cancellation(State &state) {
     using musik::core::ffi::reserve_external_request;
     mc_request_id first = 0;
@@ -299,6 +314,50 @@ static bool check_callback_cancellation(State &state) {
         state.result == MC_ERROR_CANCELLED && mc_context_dispatch(state.context) == MC_OK && state.completions == 2;
 }
 
+/* Start cancellation and completion together to expose double delivery; repeat late replies after either
+   winner to check terminal state stays final. */
+static bool check_terminal_races(State &state) {
+    for (unsigned iteration = 0; iteration < 64; ++iteration) {
+        mc_request_id request = 0;
+        std::function<void(mc_result)> finish;
+        if (musik::core::ffi::reserve_external_request(state.context, dispatch_test_completion,
+            &state, &request, finish) != MC_OK) return false;
+        std::mutex gate;
+        std::condition_variable changed;
+        unsigned waiting = 0;
+        bool release = false;
+        /* Release both threads from one gate; a sleep could consistently give
+           one side a head start and conceal the competing terminal selection. */
+        const auto start = [&] {
+            std::unique_lock<std::mutex> lock(gate);
+            ++waiting;
+            changed.notify_all();
+            changed.wait(lock, [&] { return release; });
+        };
+        mc_result cancelled = MC_ERROR_INTERNAL;
+        std::thread producer([&] { start(); finish(MC_OK); finish(MC_ERROR_IO); });
+        std::thread canceller([&] { start(); cancelled = mc_request_cancel(state.context, request); });
+        {
+            std::unique_lock<std::mutex> lock(gate);
+            changed.wait(lock, [&] { return waiting == 2; });
+            release = true;
+            changed.notify_all();
+        }
+        producer.join();
+        canceller.join();
+        /* Either result is valid, but Cancel's return value must agree with
+           the selected terminal result and only one callback may consume it. */
+        if (mc_context_dispatch(state.context) != MC_OK || state.completions != iteration + 1 ||
+            (cancelled == MC_OK ? state.result != MC_ERROR_CANCELLED :
+                cancelled != MC_ERROR_NOT_FOUND || state.result != MC_OK)) return false;
+        /* Duplicate/late producer reports cannot resurrect a delivered slot. */
+        finish(MC_OK);
+        if (mc_context_dispatch(state.context) != MC_OK || state.completions != iteration + 1) return false;
+    }
+    return true;
+}
+
+/* Run each lifecycle case independently so context/thread state cannot leak between scenarios. */
 int main() {
     return context_test_allocation_failures() &&
         run_check("completion and cancellation", check_dispatch) &&
@@ -307,5 +366,6 @@ int main() {
         run_check("shutdown with a wakeup in flight", check_shutdown_wakeup) &&
         run_check("shutdown and destroy during callback", check_callback_lifecycle) &&
         run_check("cancel peer request during callback", check_callback_cancellation) &&
+        run_check("completion and cancellation terminal selection races", check_terminal_races) &&
         run_check("external reply after cancellation and destruction", check_external_reply) ? 0 : 1;
 }

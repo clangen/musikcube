@@ -95,7 +95,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     TrackSearchRows rows;
     const TrackSearchQuery query(this->filter, this->matchType == MatchType::Regex,
         this->sortType, this->GetLimit(), this->GetOffset(), _TSTR("tracklist_unknown_album"));
-    if (!query.Run(db.connection, rows)) return false;
+    if (!query.Run(db.NativeHandle(), rows)) return false;
 
     /* Adapt the shared search result to the existing serialized query contract. */
     this->result = std::make_shared<TrackList>(this->library, rows.ids.data(), rows.ids.size());

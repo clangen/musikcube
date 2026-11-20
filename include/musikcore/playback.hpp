@@ -9,7 +9,10 @@
 
 namespace musik { namespace core { namespace api {
 
-    /* Move-only snapshot. Moving transfers ownership of its track ID storage. */
+    /* Immutable snapshot of queue IDs and current/retained rows. Use it to
+       display the queue or identify positions for edits; capture a new snapshot
+       after edits because stale positional actions are rejected. Move-only,
+       transferring ID storage; the Ids() array lasts until its owner releases it. */
     class PlayQueue {
     public:
         explicit PlayQueue(mc_play_queue* queue) noexcept : queue(queue) {}
@@ -35,14 +38,18 @@ namespace musik { namespace core { namespace api {
     private:
         friend class Playback;
 
-        /* Stateless deleter. Copy and move leave no retained state. */
+        /* Releases only the captured C snapshot, without changing playback.
+           Stateless; copy and move leave no retained state. */
         struct Deleter {
             void operator()(mc_play_queue* queue) const noexcept { mc_play_queue_destroy(&queue); }
         };
         std::unique_ptr<mc_play_queue, Deleter> queue;
     };
 
-    /* Move-only handle to a playback session. Moving transfers handle ownership. */
+    /* Controls and samples an existing app-supplied playback session on its
+       owner thread. Use for transport commands and queue edits; it does not
+       create an audio engine. Move-only, transferring handle ownership.
+       Releasing the handle does not stop playback or destroy the session. */
     class Playback {
     public:
         /* Takes ownership of a handle supplied by core. */
@@ -51,6 +58,10 @@ namespace musik { namespace core { namespace api {
         Playback& operator=(const Playback&) = delete;
         Playback(Playback&&) noexcept = default;
         Playback& operator=(Playback&&) noexcept = default;
+
+        /* Wrapper-owned C handle. Do not destroy it; valid until this wrapper releases it. */
+        mc_playback* Get() noexcept { return this->handle.get(); }
+        const mc_playback* Get() const noexcept { return this->handle.get(); }
 
         mc_result Control(mc_playback_command command, double value = 0) {
             return mc_playback_control(this->handle.get(), command, value);
@@ -98,7 +109,8 @@ namespace musik { namespace core { namespace api {
         mc_result ClearQueue() { return mc_playback_queue_clear(this->handle.get()); }
 
     private:
-        /* Stateless deleter. Copying or moving it does not affect handle ownership. */
+        /* Releases the C handle and its subscription, leaving playback active.
+           Stateless; copying or moving it does not affect handle ownership. */
         struct Deleter {
             void operator()(mc_playback* handle) const noexcept { mc_playback_destroy(&handle); }
         };

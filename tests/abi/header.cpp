@@ -3,6 +3,7 @@
 #include <type_traits>
 #include "primitives.h"
 
+/* C++ must see ordinary C-compatible layouts, not compiler-specific class ABI. */
 static_assert(std::is_same<mc_result, int32_t>::value, "result type");
 static_assert(std::is_standard_layout<mc_string_view>::value, "string layout");
 static_assert(std::is_standard_layout<mc_byte_view>::value, "byte layout");
@@ -11,6 +12,7 @@ static_assert(std::is_standard_layout<mc_audio_buffer_view>::value, "audio buffe
 constexpr mc_audio_buffer_view default_audio_buffer = MC_AUDIO_BUFFER_VIEW_DEFAULT;
 static_assert(default_audio_buffer.format.struct_size == sizeof(mc_audio_format), "nested format size");
 
+/* Verify counted string/byte copies, required capacities, preserved short buffers, and invalid lengths. */
 extern "C" mc_result MC_CALL check_string_view(mc_string_view view) {
     using musik::core::ffi::copy_bytes;
     using musik::core::ffi::copy_string;
@@ -20,6 +22,8 @@ extern "C" mc_result MC_CALL check_string_view(mc_string_view view) {
     const mc_byte_view bytes = { data, sizeof(data) };
     uint8_t output[] = { 42, 42, 42 };
 
+    /* Capacity includes the string terminator. A short buffer must be left
+       untouched so callers can query/retry without observing partial output. */
     if (copy_string(view, nullptr, 0, &required) != MC_OK || required != sizeof(text) ||
         copy_string(view, text, sizeof(text) - 1, &required) != MC_ERROR_BUFFER_TOO_SMALL ||
         required != sizeof(text) || text[0] != 'x' || text[1] != 'x' || text[2] != 'x' ||
@@ -29,6 +33,8 @@ extern "C" mc_result MC_CALL check_string_view(mc_string_view view) {
         required != 1 || text[0] != '\0') {
         return MC_ERROR_INTERNAL;
     }
+    /* Binary slices have no terminator and may contain zero bytes. Impossible
+       string lengths must be rejected before overflow or pointer traversal. */
     if (copy_bytes(bytes, output, sizeof(output), &required) != MC_OK ||
         required != sizeof(data) || output[0] != 0 || output[1] != 255 || output[2] != 42 ||
         copy_string({ nullptr, 1 }, nullptr, 0, &required) != MC_ERROR_INVALID_ARGUMENT ||
@@ -38,6 +44,7 @@ extern "C" mc_result MC_CALL check_string_view(mc_string_view view) {
     return MC_OK;
 }
 
+/* Verify default sizing and prefix-field detection without overflow or access to omitted fields. */
 extern "C" int MC_CALL check_sized_structures(void) {
     using musik::core::ffi::has_field;
     using musik::core::ffi::init_sized;

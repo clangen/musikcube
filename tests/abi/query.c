@@ -44,6 +44,7 @@ struct completion {
     mc_track_page *page;
 };
 
+/* Record status/error consistency and take ownership of the callback's transferred page. */
 static void MC_CALL completed(mc_result result, mc_track_page *page, const mc_error *error, void *data) {
     struct completion *state = data;
     ++state->calls;
@@ -53,6 +54,7 @@ static void MC_CALL completed(mc_result result, mc_track_page *page, const mc_er
     state->page = page;
 }
 
+/* Create a deterministic catalog containing literal wildcard text, hidden rows, and custom multivalue tags. */
 static int prepare_fixture(const char *root) {
     char path[4096];
     int length = snprintf(path, sizeof(path), "%s/musik.db", root);
@@ -90,16 +92,19 @@ static int prepare_fixture(const char *root) {
     return result == SQLITE_OK;
 }
 
+/* Compare a counted non-owning view to a literal without assuming the view is NUL-terminated. */
 static int equals(mc_string_view view, const char *value) {
     return view.data && view.length == strlen(value) && memcmp(view.data, value, view.length) == 0;
 }
 
+/* Transfer the search result into the caller's output slot for later range/reference checks. */
 static void MC_CALL search_completed(mc_result result, mc_track_result *tracks, const mc_error *error, void *data) {
     (void)result;
     (void)error;
     *(mc_track_result **)data = tracks;
 }
 
+/* Hide one bound track ID after search to test stable membership against changing metadata. */
 static int hide_fixture_track(const char *root) {
     char path[4096];
     int length = snprintf(path, sizeof(path), "%s/musik.db", root);
@@ -115,6 +120,7 @@ static int hide_fixture_track(const char *root) {
     return ok;
 }
 
+/* Create a public local identity for the supplied isolated database directory. */
 static mc_library *open_local_library(const char *directory) {
     mc_library_options options = MC_LIBRARY_OPTIONS_DEFAULT;
     options.locator = (mc_string_view){ directory, strlen(directory) };
@@ -123,6 +129,7 @@ static mc_library *open_local_library(const char *directory) {
     return library;
 }
 
+/* Verify hidden tracks retain their old result positions while direct reference reads report NOT_FOUND. */
 static int check_stable_range(mc_context *context, const mc_library *library, const char *directory) {
     mc_track_search search = MC_TRACK_SEARCH_DEFAULT;
     search.text = (mc_string_view)STRING_VIEW("The Band");
@@ -160,6 +167,7 @@ cleanup:
     return passed;
 }
 
+/* Verify field order, multivalue order, empty versus absent values, and invalid-index sentinels. */
 static int check_metadata(const mc_track_page *page) {
     const mc_string_view empty = mc_track_page_get_string(page, mc_track_page_get_count(page), fixture_comment);
     return !empty.data && mc_track_page_get_count(page) == 1 &&
@@ -180,6 +188,7 @@ static int check_metadata(const mc_track_page *page) {
         equals(mc_track_page_get_string(page, 0, fixture_custom), "value");
 }
 
+/* Read real generated/indexed media tags through C and retain the page after context/library teardown. */
 static int check_indexed_library(const char *directory) {
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
     options.wakeup = query_test_wakeup;
@@ -242,6 +251,7 @@ static int check_indexed_library(const char *directory) {
     return passed ? 0 : 1;
 }
 
+/* Run synthetic C query contracts or the production-indexed fixture mode selected by the runner. */
 int main(int argc, char **argv) {
     if (argc == 3 && strcmp(argv[1], "--indexed") == 0) return check_indexed_library(argv[2]);
     if (argc != 2 || !prepare_fixture(argv[1])) return 1;

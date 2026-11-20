@@ -30,7 +30,7 @@ typedef struct mc_context_options {
     uint32_t flags;
     /* Optional hook that signals the host loop. May run on a worker thread. */
     mc_wakeup_fn wakeup;
-    /* Borrowed hook argument. Keep it valid until shutdown returns. */
+    /* Caller-owned hook argument. Keep it valid until shutdown returns. */
     void *wakeup_user_data;
     /* Default query row limit, capped by the maximum. Nonpositive uses MC_TRACK_QUERY_DEFAULT_LIMIT. */
     int32_t track_query_default_limit;
@@ -44,7 +44,9 @@ typedef struct mc_context_options {
     { sizeof(mc_context_options), 0, { NULL, 0 }, 0, NULL, NULL, 0, 0, 0 }
 
 /* Null options use defaults. Callers own directory storage and may release it on return. */
-/* Output slots must not already own handles. A second context returns MC_ERROR_BUSY. */
+/* out_context is required. out_error is optional; initialize both supplied slots
+   to null. Occupied slots are rejected unchanged. A second context returns MC_ERROR_BUSY.
+   A successful context is owned by the caller until destroy succeeds. */
 MC_API mc_result MC_CALL mc_context_create(
     const mc_context_options *options, mc_context **out_context, mc_error **out_error);
 

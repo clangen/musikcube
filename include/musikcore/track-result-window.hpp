@@ -17,7 +17,9 @@ namespace musik { namespace core { namespace api {
      */
     class TrackResultWindow {
     public:
-        /* Copyable and movable. Limits are measured in pages. */
+        /* Set the memory/latency tradeoff when constructing a window: capacity
+           bounds cached pages and prefetch limits read-ahead. Copyable and
+           movable; both limits are measured in pages. */
         struct Options {
             size_t capacity = detail::TrackPageCache::DefaultCapacity;
             size_t prefetch = 1;
@@ -27,6 +29,8 @@ namespace musik { namespace core { namespace api {
         /* Zero count means no rows changed. Status can include a failure to submit the next page. */
         using Changed = std::function<void(size_t offset, size_t count, mc_result status)>;
 
+        /* Result of SetViewport. Use to distinguish a changed selection from
+           rejected input without discarding the previous valid viewport. */
         enum class ViewportUpdate { Changed, Unchanged, InvalidRange, ExceedsCapacity };
 
         TrackResultWindow(Context& context, TrackResult result, std::vector<std::string> fields, Changed changed)
@@ -53,7 +57,8 @@ namespace musik { namespace core { namespace api {
                 (offset >= this->first || count > this->first - offset);
         }
 
-        /* Borrows metadata until the page is evicted or the window is cleared or destroyed. */
+        /* The returned view retains its page across cache eviction or window destruction.
+           External views may retain storage beyond this window's bounded cache. */
         std::optional<TrackView> CachedRow(size_t row) const noexcept {
             const auto offset = this->PageOffset(row);
             const auto* page = this->pages.Find(offset);

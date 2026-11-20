@@ -39,6 +39,7 @@
 #include <musikcore/library/ILibrary.h>
 #include <unordered_set>
 #include <unordered_map>
+#include <musikcore/library/query/TrackReadQueries.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -50,10 +51,20 @@ class TrackMetadataBatchQuery: public QueryBase {
 
         DELETE_CLASS_DEFAULTS(TrackMetadataBatchQuery)
 
+        /* Leave fields empty to get full tracks. The C API requests named fields
+           so missing values stay distinct from empty strings. */
         TrackMetadataBatchQuery(
             std::unordered_set<int64_t> trackIds,
-            musik::core::ILibraryPtr library);
+            musik::core::ILibraryPtr library,
+            std::vector<std::string> projection = {});
 
+        /* Old servers return full tracks even when fields were requested.
+           Check this before choosing Page() or Result(). */
+        bool HasProjectedPage() const noexcept { return this->hasProjectedPage; }
+        /* Rows are sorted by ID. The caller restores its original order and repeated IDs. */
+        const ProjectedTrackPage& Page() const noexcept { return this->page; }
+
+        /* Full tracks, used when no fields were requested or an old server ignored them. */
         const IdToTrackMap& Result() noexcept {
             return this->result;
         }
@@ -76,6 +87,10 @@ class TrackMetadataBatchQuery: public QueryBase {
         musik::core::ILibraryPtr library;
         std::unordered_set<int64_t> trackIds;
         IdToTrackMap result;
+        /* Empty means full tracks; otherwise these names set the page's column order. */
+        std::vector<std::string> projection;
+        ProjectedTrackPage page;
+        bool hasProjectedPage = false;
 };
 
 } } } }

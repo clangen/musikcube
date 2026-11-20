@@ -28,9 +28,9 @@ namespace {
 
     bool copyFields(const mc_string_view *fields, size_t count, size_t maximum,
         std::vector<std::string> &names) {
-        if ((count && !fields) || count > maximum) return false;
+        if ((count && !fields) || count > maximum || count > static_cast<size_t>(PTRDIFF_MAX) / sizeof(*fields)) return false;
         for (size_t i = 0; i < count; ++i) {
-            if (!fields[i].data || !fields[i].length) return false;
+            if (!valid_text(fields[i], false)) return false;
             names.emplace_back(fields[i].data, fields[i].length);
         }
         if (names.empty()) names.emplace_back(MC_TRACK_FIELD_TITLE);
@@ -39,8 +39,10 @@ namespace {
 
     mc_result readPage(const LibraryIdentity &library, const query::TrackPageQuery &query,
         std::unique_ptr<mc_track_page> &output) {
+        if (!library.backend) return MC_ERROR_UNSUPPORTED;
         auto page = std::unique_ptr<mc_track_page>(new mc_track_page);
         if (!library.backend->Run(query, *page)) return MC_ERROR_IO;
+        for (const auto& row : page->rows) if (row.id <= 0) return MC_ERROR_IO;
         output = std::move(page);
         return MC_OK;
     }
@@ -49,6 +51,7 @@ namespace {
         std::unique_ptr<mc_track_result> &output) {
         auto result = std::make_shared<TrackResultData>();
         if (!library->backend->Run(query, *result)) return MC_ERROR_IO;
+        if (!valid_ids(result->ids.data(), result->ids.size())) return MC_ERROR_IO;
         result->library = library;
         output.reset(new mc_track_result{ std::move(result) });
         return MC_OK;
@@ -64,7 +67,7 @@ mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_librar
         const auto kind = read_option(options, &mc_library_options::kind, offsetof(mc_library_options, kind));
         const auto locator = read_option(options, &mc_library_options::locator, offsetof(mc_library_options, locator));
         if (kind != MC_LIBRARY_LOCAL && kind != MC_LIBRARY_REMOTE) return MC_ERROR_UNSUPPORTED;
-        if (!locator.data || !locator.length || std::memchr(locator.data, '\0', locator.length)) {
+        if (!valid_text(locator, false)) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
 
@@ -104,7 +107,7 @@ static mc_result openSelection(mc_context *context, const mc_library *library, m
             return MC_ERROR_INVALID_ARGUMENT;
         }
         const auto input = category.length ? category : directory;
-        if (!input.data || !input.length || std::memchr(input.data, '\0', input.length)) return MC_ERROR_INVALID_ARGUMENT;
+        if (!valid_text(input, false)) return MC_ERROR_INVALID_ARGUMENT;
         const auto identity = library->identity;
         if (!identity->queries) return MC_ERROR_UNSUPPORTED;
         return identity->queries->OpenSelection(context, identity,
@@ -129,11 +132,7 @@ mc_result MC_CALL mc_library_make_track_result(const mc_library *library, const 
     mc_track_result **out_result) {
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_result || *out_result) return MC_ERROR_INVALID_ARGUMENT;
-        if (!library || (count && !ids)) return MC_ERROR_INVALID_ARGUMENT;
-        if (count > static_cast<size_t>(PTRDIFF_MAX) / sizeof(*ids)) return MC_ERROR_INVALID_ARGUMENT;
-        for (size_t i = 0; i < count; ++i) {
-            if (ids[i] <= 0) return MC_ERROR_INVALID_ARGUMENT;
-        }
+        if (!library || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
         auto result = std::make_shared<TrackResultData>();
         result->library = library->identity;
         if (count) result->ids.assign(ids, ids + count);
@@ -160,8 +159,7 @@ mc_result MC_CALL mc_library_save_playlist_async(mc_context *context, const mc_l
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
         if (!context || !library || !completion || id < 0 || (!id && !name.length) ||
-            (name.length && (!name.data || std::memchr(name.data, '\0', name.length))) ||
-            (count && !ids)) return MC_ERROR_INVALID_ARGUMENT;
+            !valid_text(name) || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
         const auto reader = library->identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->SavePlaylist(context, id, std::string(name.data ? name.data : "", name.length),
@@ -175,7 +173,7 @@ mc_result MC_CALL mc_library_append_playlist_async(mc_context *context, const mc
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !library || !completion || id <= 0 || (count && !ids)) return MC_ERROR_INVALID_ARGUMENT;
+        if (!context || !library || !completion || id <= 0 || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
         const auto reader = library->identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->SavePlaylist(context, id, {},
@@ -188,8 +186,7 @@ mc_result MC_CALL mc_library_rename_playlist_async(mc_context *context, const mc
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !library || !completion || id <= 0 || !name.data || !name.length ||
-            std::memchr(name.data, '\0', name.length)) return MC_ERROR_INVALID_ARGUMENT;
+        if (!context || !library || !completion || id <= 0 || !valid_text(name, false)) return MC_ERROR_INVALID_ARGUMENT;
         const auto reader = library->identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->RenamePlaylist(context, id, std::string(name.data, name.length), completion, data, request);
@@ -222,7 +219,7 @@ mc_result MC_CALL mc_library_query_tracks_async(
         const auto search = read_option(query, &mc_track_query::search, offsetof(mc_track_query, search));
         const auto count = read_option(query, &mc_track_query::field_count, offsetof(mc_track_query, field_count));
         const auto fields = read_option(query, &mc_track_query::fields, offsetof(mc_track_query, fields));
-        if (search.length && !search.data) {
+        if (!valid_text(search)) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
         if (read_option(query, &mc_track_query::flags, offsetof(mc_track_query, flags))) {
@@ -261,7 +258,7 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
         const auto mode = read_option(search, &mc_track_search::mode, offsetof(mc_track_search, mode));
         const auto order = read_option(search, &mc_track_search::order, offsetof(mc_track_search, order));
         if (mode > MC_TRACK_SEARCH_REGEX || order > MC_TRACK_SEARCH_GENRE) return MC_ERROR_UNSUPPORTED;
-        if (text.length && !text.data) return MC_ERROR_INVALID_ARGUMENT;
+        if (!valid_text(text)) return MC_ERROR_INVALID_ARGUMENT;
         const auto identity = library->identity;
         const std::string term(text.length ? text.data : "", text.length);
         if (identity->async) {
@@ -322,7 +319,8 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
         const auto data = tracks->data;
         const auto start = std::min(offset, data->ids.size());
         const auto size = std::min(limit ? limit : limits.default_limit, data->ids.size() - start);
-        if (size && data->library->async) {
+        if (!data->library->backend && !data->library->async) return MC_ERROR_UNSUPPORTED;
+        if (data->library->async) {
             return data->library->async->ReadPage(context,
                 { data->ids.begin() + start, data->ids.begin() + start + size },
                 std::move(names), true, completion, user_data, out_request);
@@ -376,6 +374,7 @@ mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_re
         }
 
         const auto identity = *track;
+        if (!identity.library->backend && !identity.library->async) return MC_ERROR_UNSUPPORTED;
         if (identity.library->async) {
             return identity.library->async->ReadPage(context, { identity.id }, std::move(names),
                 false, completion, user_data, out_request);
