@@ -85,3 +85,6 @@ mc_track_ref_get_library
 mc_output_read_configuration
 mc_output_select_driver
 mc_output_select_device
+mc_equalizer_get_state
+mc_equalizer_set_enabled
+mc_equalizer_set_gains

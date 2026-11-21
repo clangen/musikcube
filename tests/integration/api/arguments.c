@@ -72,6 +72,14 @@ int main(void) {
     CHECK(mc_output_read_configuration(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_output_select_driver(name) == MC_ERROR_UNSUPPORTED);
     CHECK(mc_output_select_device(name, malformed) == MC_ERROR_INVALID_ARGUMENT);
+    mc_equalizer_state equalizer = MC_EQUALIZER_STATE_DEFAULT;
+    CHECK(mc_equalizer_get_state(NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_equalizer_get_state(&equalizer) == MC_ERROR_UNSUPPORTED);
+    CHECK(equalizer.struct_size == sizeof(equalizer) && !equalizer.enabled);
+    double gains[MC_EQUALIZER_BAND_COUNT] = { 0 };
+    CHECK(mc_equalizer_set_gains(gains, MC_EQUALIZER_BAND_COUNT) == MC_ERROR_UNSUPPORTED);
+    gains[0] = 21;
+    CHECK(mc_equalizer_set_gains(gains, MC_EQUALIZER_BAND_COUNT) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_dispatch(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_shutdown(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_request_cancel(NULL, 1) == MC_ERROR_INVALID_ARGUMENT);

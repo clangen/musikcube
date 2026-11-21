@@ -35,6 +35,9 @@
 #include "pch.hpp"
 #include "Plugins.h"
 #include "PluginFactory.h"
+#include <musikcore/equalizer.h>
+#include "../ffi/common/error.h"
+#include <cmath>
 
 #include <musikcore/debug.h>
 #include <musikcore/sdk/version.h>
@@ -102,6 +105,80 @@ static void getEqualizerPluginAndPrefs(
     if (plugin) {
         prefs = Preferences::ForPlugin(plugin->Name());
     }
+}
+
+static_assert(EqualizerBandCount == MC_EQUALIZER_BAND_COUNT);
+
+static bool writeEqualizerGains(const double* gains) {
+    std::shared_ptr<IPlugin> plugin;
+    std::shared_ptr<Preferences> prefs;
+    getEqualizerPluginAndPrefs(plugin, prefs);
+    if (!prefs) {
+        return false;
+    }
+    for (size_t i = 0; i < EqualizerBandCount; ++i) {
+        prefs->SetDouble(std::to_string(EqualizerBands[i]), gains[i]);
+    }
+    plugin->Reload();
+    broadcastEqualizerUpdated();
+    return true;
+}
+
+mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
+    if (!state || state->struct_size < sizeof(*state)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        std::shared_ptr<IPlugin> plugin;
+        std::shared_ptr<Preferences> prefs;
+        getEqualizerPluginAndPrefs(plugin, prefs);
+        if (!prefs) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+
+        mc_equalizer_state snapshot = MC_EQUALIZER_STATE_DEFAULT;
+        snapshot.struct_size = state->struct_size;
+        snapshot.enabled = prefs->GetBool("enabled", false);
+        for (size_t i = 0; i < EqualizerBandCount; ++i) {
+            snapshot.bands[i] = {
+                static_cast<uint32_t>(EqualizerBands[i]), prefs->GetDouble(std::to_string(EqualizerBands[i]), 0.0)
+            };
+        }
+        *state = snapshot;
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_equalizer_set_enabled(bool enabled) {
+    return ffi::exception_barrier(nullptr, [&] {
+        std::shared_ptr<IPlugin> plugin;
+        std::shared_ptr<Preferences> prefs;
+        getEqualizerPluginAndPrefs(plugin, prefs);
+        if (!prefs) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        if (prefs->GetBool("enabled", false) != enabled) {
+            prefs->SetBool("enabled", enabled);
+            plugin->Reload();
+            broadcastEqualizerUpdated();
+        }
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_equalizer_set_gains(const double* gains, size_t count) {
+    if (!gains || count != MC_EQUALIZER_BAND_COUNT) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    for (size_t i = 0; i < count; ++i) {
+        if (!std::isfinite(gains[i]) || gains[i] < -20.0 || gains[i] > 20.0) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        return writeEqualizerGains(gains) ? MC_OK : MC_ERROR_UNSUPPORTED;
+    });
 }
 
 static class Debug: public IDebug {
@@ -280,70 +357,27 @@ static class Environment: public IEnvironment {
         }
 
         bool GetEqualizerBandValues(double target[], size_t count) override {
-            if (count != EqualizerBandCount) {
+            mc_equalizer_state state = MC_EQUALIZER_STATE_DEFAULT;
+            if (!target || count != EqualizerBandCount || mc_equalizer_get_state(&state) != MC_OK) {
                 return false;
             }
-
-            std::shared_ptr<IPlugin> plugin;
-            std::shared_ptr<Preferences> prefs;
-            getEqualizerPluginAndPrefs(plugin, prefs);
-
-            if (plugin && prefs) {
-                for (size_t i = 0; i < EqualizerBandCount; i++) {
-                    target[i] = prefs->GetDouble(std::to_string(EqualizerBands[i]), 0.0);
-                }
-
-                return true;
+            for (size_t i = 0; i < count; ++i) {
+                target[i] = state.bands[i].gain;
             }
-
-            return false;
+            return true;
         }
 
         bool SetEqualizerBandValues(double values[], size_t count) override {
-            if (count != EqualizerBandCount) {
-                return false;
-            }
-
-            std::shared_ptr<IPlugin> plugin;
-            std::shared_ptr<Preferences> prefs;
-            getEqualizerPluginAndPrefs(plugin, prefs);
-
-            if (plugin && prefs) {
-                for (size_t i = 0; i < EqualizerBandCount; i++) {
-                    prefs->SetDouble(std::to_string(EqualizerBands[i]), values[i]);
-                }
-                plugin->Reload();
-                broadcastEqualizerUpdated();
-                return true;
-            }
-
-            return false;
+            return values && count == EqualizerBandCount && writeEqualizerGains(values);
         }
 
         bool GetEqualizerEnabled() override {
-            std::shared_ptr<IPlugin> plugin;
-            std::shared_ptr<Preferences> prefs;
-            getEqualizerPluginAndPrefs(plugin, prefs);
-
-            if (plugin && prefs) {
-                return prefs->GetBool("enabled", false);
-            }
-
-            return false;
+            mc_equalizer_state state = MC_EQUALIZER_STATE_DEFAULT;
+            return mc_equalizer_get_state(&state) == MC_OK && state.enabled;
         }
 
         void SetEqualizerEnabled(bool enabled) override {
-            std::shared_ptr<IPlugin> plugin;
-            std::shared_ptr<Preferences> prefs;
-            getEqualizerPluginAndPrefs(plugin, prefs);
-
-            if (plugin && prefs) {
-                if (prefs->GetBool("enabled", false) != enabled) {
-                    prefs->SetBool("enabled", enabled);
-                    plugin->Reload();
-                    broadcastEqualizerUpdated();
-                }
-            }
+            mc_equalizer_set_enabled(enabled);
         }
 
         void ReloadPlaybackOutput() override {

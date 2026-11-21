@@ -124,9 +124,7 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ShowEqualizer, kn)) {
-        if (EqualizerOverlay::FindPlugin()) {
-            EqualizerOverlay::ShowOverlay();
-        }
+        EqualizerOverlay::ShowOverlay();
         return true;
     }
 

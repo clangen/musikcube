@@ -34,8 +34,7 @@
 
 #pragma once
 
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/equalizer.hpp>
 #include <cursespp/OverlayBase.h>
 #include <cursespp/Checkbox.h>
 #include <cursespp/ListWindow.h>
@@ -51,14 +50,10 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                using Plugin = std::shared_ptr<musik::core::sdk::IPlugin>;
-                using Prefs = std::shared_ptr<musik::core::Preferences>;
-
-                EqualizerOverlay();
+                explicit EqualizerOverlay(const mc_equalizer_state& state);
                 virtual ~EqualizerOverlay();
 
                 static void ShowOverlay();
-                static std::shared_ptr<musik::core::sdk::IPlugin> FindPlugin();
 
                 virtual void Layout() override;
                 virtual bool KeyPress(const std::string& key) override;
@@ -67,22 +62,21 @@ namespace musik {
             private:
                 class BandsAdapter : public cursespp::ScrollAdapterBase {
                     public:
-                        BandsAdapter(Prefs prefs);
+                        explicit BandsAdapter(const mc_equalizer_state& state);
                         virtual ~BandsAdapter();
                         virtual size_t GetEntryCount() override;
                         virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
 
                     private:
-                        Prefs prefs;
+                        const mc_equalizer_state& state;
                 };
 
                 void UpdateSelectedBand(double delta);
-                void NotifyAndRedraw();
+                void Refresh();
 
                 void OnEnabledChanged(cursespp::Checkbox* cb, bool checked);
 
-                Plugin plugin;
-                Prefs prefs;
+                mc_equalizer_state state;
                 std::shared_ptr<BandsAdapter> adapter;
                 std::shared_ptr<cursespp::Checkbox> enabledCb;
                 std::shared_ptr<cursespp::ListWindow> listView;

@@ -43,28 +43,15 @@
 #include <cursespp/Text.h>
 
 #include <musikcore/support/Messages.h>
-#include <musikcore/plugin/PluginFactory.h>
 
-#include <app/util/Messages.h>
 
 using namespace cursespp;
 using namespace musik::core;
 using namespace musik::core::sdk;
 using namespace musik::cube;
 
-static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
-
-static const size_t NO_INDEX = (size_t)-1;
-
-static const std::vector<std::string> BANDS = {
-    "65", "92", "131", "185", "262",
-    "370", "523", "740", "1047", "1480",
-    "2093", "2960", "4186", "5920", "8372",
-    "11840", "16744", "22000"
-};
-
 static const int VERTICAL_PADDING = 2;
-static const int MAX_HEIGHT = 7 + (int) BANDS.size();
+static const int MAX_HEIGHT = 7 + MC_EQUALIZER_BAND_COUNT;
 static const int DEFAULT_WIDTH = 46;
 static const int TRACK_WIDTH = 21;
 static const int DB_LABEL_WIDTH = 6; /* "-XY dB" */
@@ -103,19 +90,18 @@ static std::string formatBandRow(size_t width, const std::string& band, double d
     return text::Align(leftText, text::AlignLeft, u8cols(leftText) + remain) + rightText;
 }
 
-EqualizerOverlay::EqualizerOverlay()
-: OverlayBase() {
-    this->plugin = this->FindPlugin();
-    this->prefs = Preferences::ForPlugin(this->plugin->Name());
-
+EqualizerOverlay::EqualizerOverlay(const mc_equalizer_state& state)
+: OverlayBase()
+, state(state)
+{
     this->enabledCb = std::make_shared<Checkbox>();
     this->enabledCb->SetText(_TSTR("equalizer_overlay_enabled"));
     this->enabledCb->SetAlignment(text::AlignCenter);
     this->enabledCb->SetBold(true);
-    this->enabledCb->SetChecked(this->prefs->GetBool("enabled", false));
+    this->enabledCb->SetChecked(this->state.enabled);
     this->enabledCb->CheckChanged.connect(this, &EqualizerOverlay::OnEnabledChanged);
 
-    this->adapter = std::make_shared<BandsAdapter>(prefs);
+    this->adapter = std::make_shared<BandsAdapter>(this->state);
 
     this->listView = std::make_shared<ListWindow>(this->adapter);
     this->listView->SetFrameTitle(_TSTR("equalizer_overlay_frequencies"));
@@ -148,13 +134,11 @@ EqualizerOverlay::~EqualizerOverlay() {
 }
 
 void EqualizerOverlay::ShowOverlay() {
-    auto overlay = std::make_shared<EqualizerOverlay>();
-    App::Overlays().Push(overlay);
-    MessageQueue().RegisterForBroadcasts(overlay);
-}
-
-std::shared_ptr<IPlugin> EqualizerOverlay::FindPlugin() {
-    return PluginFactory::Instance().QueryGuid(SUPEREQ_PLUGIN_GUID);
+    if (const auto state = api::ReadEqualizer()) {
+        auto overlay = std::make_shared<EqualizerOverlay>(*state);
+        App::Overlays().Push(overlay);
+        MessageQueue().RegisterForBroadcasts(overlay);
+    }
 }
 
 void EqualizerOverlay::Layout() {
@@ -179,8 +163,8 @@ void EqualizerOverlay::Layout() {
 }
 
 void EqualizerOverlay::OnEnabledChanged(cursespp::Checkbox* cb, bool checked) {
-    this->prefs->SetBool("enabled", checked);
-    this->NotifyAndRedraw();
+    api::SetEqualizerEnabled(checked);
+    this->Refresh();
 }
 
 bool EqualizerOverlay::KeyPress(const std::string& key) {
@@ -191,10 +175,8 @@ bool EqualizerOverlay::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "z") {
-        for (auto band : BANDS) {
-            this->prefs->SetDouble(band.c_str(), 0.0);
-        }
-        this->NotifyAndRedraw();
+        api::SetEqualizerGains({});
+        this->Refresh();
     }
     else if (this->GetFocus() == this->listView) {
         if (keys.Left(key)) {
@@ -209,18 +191,17 @@ bool EqualizerOverlay::KeyPress(const std::string& key) {
     return OverlayBase::KeyPress(key);
 }
 
-void EqualizerOverlay::NotifyAndRedraw() {
-    this->listView->OnAdapterChanged();
-    this->plugin->Reload();
+void EqualizerOverlay::Refresh() {
+    if (const auto updated = api::ReadEqualizer()) {
+        this->state = *updated;
+        this->enabledCb->SetChecked(this->state.enabled);
+        this->listView->OnAdapterChanged();
+    }
 }
 
-void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
-    if (message.Type() == message::UpdateEqualizer) {
-        this->plugin->Reload();
-    }
-    else if (message.Type() == musik::core::message::EqualizerUpdated) {
-        this->enabledCb->SetChecked(this->prefs->GetBool("enabled", false));
-        this->listView->OnAdapterChanged();
+void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage& message) {
+    if (message.Type() == musik::core::message::EqualizerUpdated) {
+        this->Refresh();
     }
     else {
         OverlayBase::ProcessMessage(message);
@@ -228,17 +209,24 @@ void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
 }
 
 void EqualizerOverlay::UpdateSelectedBand(double delta) {
-    const std::string band = BANDS[this->listView->GetSelectedIndex()];
-    double existing = this->prefs->GetDouble(band.c_str(), 0.0);
-    double updated = std::min(20.0, std::max(-20.0, existing + delta));
-    this->prefs->SetDouble(band.c_str(), updated);
-    this->NotifyAndRedraw();
+    const auto index = this->listView->GetSelectedIndex();
+    if (index >= MC_EQUALIZER_BAND_COUNT) {
+        return;
+    }
+
+    api::EqualizerGains gains;
+    for (size_t i = 0; i < gains.size(); ++i) {
+        gains[i] = this->state.bands[i].gain;
+    }
+    gains[index] = std::clamp(gains[index] + delta, -20.0, 20.0);
+    api::SetEqualizerGains(gains);
+    this->Refresh();
 }
 
 /* ~~~~~~ BandsAdapter ~~~~~ */
 
-EqualizerOverlay::BandsAdapter::BandsAdapter(EqualizerOverlay::Prefs prefs)
-: prefs(prefs) {
+EqualizerOverlay::BandsAdapter::BandsAdapter(const mc_equalizer_state& state)
+: state(state) {
 
 }
 
@@ -246,16 +234,16 @@ EqualizerOverlay::BandsAdapter::~BandsAdapter() {
 }
 
 size_t EqualizerOverlay::BandsAdapter::GetEntryCount() {
-    return BANDS.size();
+    return MC_EQUALIZER_BAND_COUNT;
 }
 
 ScrollAdapterBase::EntryPtr EqualizerOverlay::BandsAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
-    const std::string band = BANDS[index];
+    const auto& band = this->state.bands[index];
 
     auto entry = std::make_shared<SingleLineEntry>(formatBandRow(
         window->GetContentWidth(),
-        band,
-        prefs->GetDouble(band.c_str(), 0.0)));
+        std::to_string(band.frequency),
+        band.gain));
 
     entry->SetAttrs(Color::Default);
     if (index == window->GetScrollPosition().logicalIndex) {

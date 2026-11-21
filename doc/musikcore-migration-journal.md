@@ -24,3 +24,9 @@ The Windows core target was missing the two playback and selection sources used 
 Added driver and device discovery and selection to the public C ABI and header-only SDK. The C entry points live in the existing output implementation. Settings and the playback chooser overlays now consume copied names and device IDs instead of holding plugin objects. Selection rejects a stale driver name before applying a device change.
 
 Verified all 44 Linux Release tests. The headless plugin test exercises SDK driver discovery, invalid selection, and fallback while reloading playback. The standalone ABI fixture verifies argument validation without an output runtime.
+
+## Equalizer
+
+The existing equalizer overlay now reads and writes public band snapshots. Core reuses the same preferences and reload path for the public ABI and the plugin environment. The overlay no longer looks up the plugin or edits its preference store.
+
+All 44 Linux Release tests passed. In three consecutive focused runs, the Browse TUI scenario loaded the real equalizer plugin, changed a band, reset the gains, and opened Settings with the headless output selected. The C ABI fixture verifies the missing-plugin and invalid-gain cases.

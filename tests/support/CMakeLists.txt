@@ -124,6 +124,12 @@ endif()
 if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGET ffmpegdecoder)
   add_dependencies(musikcube_tests musikcube taglibreader ffmpegdecoder)
   add_dependencies(musikcube_ui_tests musikcube musikcube_seed_library taglibreader ffmpegdecoder)
+  foreach(plugin IN ITEMS nullout supereqdsp)
+    if(TARGET ${plugin})
+      add_dependencies(musikcube_tests ${plugin})
+      add_dependencies(musikcube_ui_tests ${plugin})
+    endif()
+  endforeach()
   foreach(scenario IN ITEMS search queue playlists browse)
     add_test(NAME musikcube.ui.${scenario} COMMAND "${MUSIKCORE_TEST_NODE}"
       "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/track-search.js"

@@ -6,6 +6,7 @@
 #include <musikcore/library.h>
 #include <musikcore/playback.h>
 #include <musikcore/output.h>
+#include <musikcore/equalizer.h>
 #include <musikcore/indexer.h>
 
 #endif

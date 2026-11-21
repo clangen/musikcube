@@ -22,14 +22,14 @@ const FIRST_WINDOW_MISS = `${FIRST_ALBUM} - Track 10`;
 const DISTANT_TRACK = 'Artist 001 - Album 10 - Track 10';
 const DOWN = '\x1bOB';
 const UP = '\x1bOA';
+const RIGHT = '\x1bOC';
 const END = '\x1bOF';
 const HOME = '\x1bOH';
 const PAGE_DOWN = '\x1b[6~';
 const DISTANT_PAGE = 12;
 
 /* Stage the production app/assets with only the plugins required to index the generated fixture. */
-function stageRuntime(runtime, binaryDir) {
-  /* Load only the plugins needed to index the fixture. */
+function stageRuntime(runtime, binaryDir, testAudioSettings) {
   for (const name of fs.readdirSync(binaryDir)) {
     if (['lib', 'locales', 'share', 'themes'].includes(name) || name.startsWith('libmusikcore')) {
       fs.symlinkSync(fs.realpathSync(join(binaryDir, name)), join(runtime, name));
@@ -42,7 +42,8 @@ function stageRuntime(runtime, binaryDir) {
 
   fs.mkdirSync(join(runtime, 'plugins'));
   for (const name of fs.readdirSync(join(binaryDir, 'plugins'))) {
-    if (/^lib(?:taglibreader|ffmpegdecoder)\./.test(name)) {
+    if (/^lib(?:taglibreader|ffmpegdecoder)\./.test(name) ||
+        (testAudioSettings && /^lib(?:nullout|supereqdsp)\./.test(name))) {
       fs.symlinkSync(fs.realpathSync(join(binaryDir, 'plugins', name)), join(runtime, 'plugins', name));
     }
   }
@@ -94,6 +95,7 @@ async function checkTrackSearch(runtime, database, screenshots,
   const settings = join(fixture, 'musikcube', 'settings.json');
   const preferences = fs.existsSync(settings) ? JSON.parse(fs.readFileSync(settings, 'utf8')) : {};
   preferences.SyncOnStartup = false;
+  preferences.FirstRunSettingsDisplayed = true;
   fs.writeFileSync(settings, JSON.stringify(preferences));
 
   const env = {
@@ -308,6 +310,22 @@ async function checkTrackSearch(runtime, database, screenshots,
       await terminal.expect('new playlist name');
       terminal.send(END + ' revised\r');
       await terminal.expect('Browse fixture revised', { absent: 'new playlist name' });
+
+      const staged = fs.readdirSync(join(runtime, 'plugins'));
+      if (staged.some(name => name.startsWith('libsupereqdsp.'))) {
+        terminal.send('\x05');
+        await terminal.expect('frequency bands');
+        terminal.send('\t' + RIGHT);
+        await terminal.expect('1 dB');
+        terminal.send('z');
+        await terminal.expect('frequency bands', { absent: '1 dB' });
+        terminal.send('\x1b');
+        await terminal.expect('Browse fixture revised', { absent: 'frequency bands' });
+      }
+      if (staged.some(name => name.startsWith('libnullout.'))) {
+        terminal.send('s');
+        await terminal.expect('output driver: Null');
+      }
     }
     /* The driver must observe a clean application exit, not just a screen that
        happened to match before a shutdown crash. */
@@ -392,7 +410,7 @@ async function main() {
   await withRuntime(runtime, async () => {
     /* Stage each implementation separately to prevent loading the wrong core
        library while retaining the same catalog for comparison runs. */
-    stageRuntime(runtime, resolve(values['bin-dir']));
+    stageRuntime(runtime, resolve(values['bin-dir']), ['all', 'browse'].includes(values.scenario));
     let control = { name: 'Production', runtime, pilot: false };
     if (controlDir !== undefined) {
       const controlRuntime = join(runtime, 'control');
