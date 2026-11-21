@@ -6,17 +6,29 @@ const { mkdirSync, mkdtempSync, rmSync } = require('node:fs');
 const { join, resolve } = require('node:path');
 const { stageTestRuntime } = require('./test-runtime');
 
-const [parent, executable] = process.argv.slice(2);
+const [parent, executable, indexer, build] = process.argv.slice(2);
 mkdirSync(parent, { recursive: true });
 const root = mkdtempSync(join(resolve(parent), 'migration-scan-'));
 const staged = stageTestRuntime(resolve(executable), root);
-const env = { ...process.env, XDG_CONFIG_HOME: root, APPDATA: root };
 let passed = false;
 
 try {
-  /* no stage explicitly requests a scan: enabling Indexer must recover the work
-  committed by the earlier library-only process, even after completion fails. */
-  for (const mode of ['migration_prepare', 'migration_fail_completion', 'migration_resume', 'migration_verify']) {
+  let config = root;
+  const stages = ['migration_prepare', 'migration_fail_completion'];
+  if (indexer) {
+    const seed = spawnSync(process.execPath, [
+      join(__dirname, 'seed-test-library.js'), '--tracks', '3', '--indexer', indexer, '--fixture-dir', root, build,
+    ], { encoding: 'utf8', timeout: 10000 });
+    assert.ifError(seed.error);
+    assert.equal(seed.status, 0, seed.stderr);
+    const database = seed.stdout.trim().split(/\r?\n/).at(-1);
+    config = resolve(database, '../../..');
+    stages.push('migration_fail_metadata');
+  }
+
+  /* Starting the indexer must recover the work committed by the library-only process. */
+  const env = { ...process.env, XDG_CONFIG_HOME: config, APPDATA: config };
+  for (const mode of [...stages, 'migration_resume', 'migration_verify']) {
     const result = spawnSync(staged, [mode], { env, stdio: 'inherit', timeout: 10000 });
     assert.ifError(result.error);
     assert.equal(result.status, 0, `${mode} failed (${result.signal ?? 'exit'})`);

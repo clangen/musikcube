@@ -90,7 +90,7 @@ void IndexerTrack::OnIndexerFinished(db::Connection &dbConnection) {
 
     /* if we got some new album art, make sure all of the tracks for the
     album get the updated ID! */
-    std::string query = "UPDATE tracks SET thumbnail_id=? WHERE album_id=?)";
+    std::string query = "UPDATE tracks SET thumbnail_id=? WHERE album_id=?";
     db::ScopedTransaction transaction(dbConnection);
     for (auto it : thumbnailIdCache) {
         db::Statement stmt(query.c_str(), dbConnection);
@@ -262,7 +262,8 @@ int64_t IndexerTrack::GetId() {
 
 bool IndexerTrack::NeedsToBeIndexed(
     const std::filesystem::path &file,
-    db::Connection &dbConnection)
+    db::Connection &dbConnection,
+    bool refreshMetadata)
 {
     try {
         const auto path = pathToUtf8(file);
@@ -295,7 +296,7 @@ bool IndexerTrack::NeedsToBeIndexed(
             const int dbFileSize = stmt.ColumnInt32(2);
             const int64_t dbFileTime = stmt.ColumnInt64(3);
 
-            if (fileSize == dbFileSize && fileTime == dbFileTime) {
+            if (!refreshMetadata && fileSize == dbFileSize && fileTime == dbFileTime) {
                 return false;
             }
         }
@@ -638,12 +639,12 @@ int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection, int64_t thumbnailI
         return metadataIdCache[cacheKey];
     }
     else {
-        std::string insertStatement = "INSERT INTO albums (id, name) VALUES (?, ?)";
-        db::Statement insertValue(insertStatement.c_str(), dbConnection);
+        const char* insertStatement = "INSERT INTO albums (id, name) VALUES (?, ?) ON CONFLICT(id) DO NOTHING";
+        db::Statement insertValue(insertStatement, dbConnection);
         insertValue.BindInt64(0, albumId);
         insertValue.BindText(1, album);
 
-        if (insertValue.Step() == db::Done) {
+        if (insertValue.Step() == db::Done && dbConnection.LastModifiedRowCount() > 0) {
             metadataIdCache[cacheKey] = albumId;
         }
     }

@@ -47,8 +47,7 @@ Statement::Statement(const char* sql, Connection &connection) noexcept
 : connection(&connection)
 , stmt(nullptr)
 , modifiedRows(0) {
-    std::unique_lock<std::mutex> lock(connection.mutex);
-    sqlite3_prepare_v2(this->connection->connection, sql, -1, &this->stmt, nullptr);
+    connection.PrepareStatement(sql, &this->stmt);
 }
 
 Statement::Statement(Connection &connection) noexcept

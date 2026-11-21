@@ -75,7 +75,8 @@ namespace musik { namespace core {
 
             bool NeedsToBeIndexed(
                 const std::filesystem::path &file,
-                db::Connection &dbConnection);
+                db::Connection &dbConnection,
+                bool refreshMetadata);
 
             bool Save(
                 db::Connection &dbConnection,

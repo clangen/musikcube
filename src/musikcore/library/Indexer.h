@@ -172,6 +172,7 @@ namespace musik { namespace core {
             IndexerSourceList sources;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
+            bool refreshMetadata { false };
             std::vector<std::string> paths;
             std::shared_ptr<musik::core::sdk::IIndexerSource> currentSource;
     };

@@ -1238,9 +1238,10 @@ legacy list for actions that still require it.
 
 - [x] **API-SERVICES-004** Persist migration-required scanning with the catalog
   transaction; resume it after service bindings/subscriptions are ready. Keep the
-  marker through failed completion writes and remove it with scan commit.
+  marker through failed metadata writes, commits, and completion writes.
   `musikcore.integration.runtime.migration_scan` runs library-only migration,
-  failed completion, successful retry, and no-repeat startup in separate processes.
+  failed writes, successful retry with refreshed tracks, and no-repeat startup
+  in separate processes.
   `musikcore.integration.runtime.database_failure` checks schema/marker rollback.
 - [x] **API-SERVICES-005** Retire visualizer state for every provider session,
   including Plugins-only contexts. `musikcore.integration.runtime.visualizer_session`

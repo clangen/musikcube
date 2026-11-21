@@ -40,6 +40,8 @@
 
 #include <map>
 #include <mutex>
+#include <atomic>
+#include <cstdint>
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -64,6 +66,9 @@ namespace musik { namespace core { namespace db {
             int Close() noexcept;
             int Execute(const char* sql);
 
+            /* Snapshot across a batch of statements, including concurrent workers. */
+            uint64_t ErrorCount() const noexcept { return this->errors.load(std::memory_order_relaxed); }
+
             sqlite3* NativeHandle() noexcept { return this->connection; }
 
             int64_t LastInsertedId() noexcept;
@@ -75,7 +80,9 @@ namespace musik { namespace core { namespace db {
 
         private:
             void Initialize(unsigned int cache);
+            int PrepareStatement(const char* sql, sqlite3_stmt** stmt);
             int StepStatement(sqlite3_stmt *stmt) noexcept;
+            int RecordResult(int result) noexcept;
 
             friend class Statement;
             friend class ScopedTransaction;
@@ -83,6 +90,7 @@ namespace musik { namespace core { namespace db {
             int transactionCounter;
             sqlite3 *connection;
             std::mutex mutex;
+            std::atomic<uint64_t> errors { 0 };
     };
 
 } } }

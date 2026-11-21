@@ -199,7 +199,11 @@ namespace {
     /* start only Indexer and let startup resume pending work, without an explicit
     scan request. a failed completion write must preserve the marker for another
     process; successful retry must clear it in the committed scan transaction. */
-    bool resumeMigration(bool failCompletion) {
+    enum class MigrationFailure { None, Completion, Metadata };
+
+    bool resumeMigration(MigrationFailure failure) {
+        const bool failCompletion = failure == MigrationFailure::Completion;
+        const bool failMetadata = failure == MigrationFailure::Metadata;
         if (failCompletion) {
             if (!editMigrationDatabase(
                 "CREATE TABLE migration_scan_attempts(count INTEGER);"
@@ -211,7 +215,25 @@ namespace {
                 return false;
             }
         }
-        else if (!editMigrationDatabase("DROP TRIGGER defer_migration_scan")) {
+        else if (!editMigrationDatabase("DROP TRIGGER IF EXISTS defer_migration_scan")) {
+            return false;
+        }
+
+        if (failMetadata && !editMigrationDatabase(
+            "UPDATE tracks SET album_id=0;"
+            "CREATE TRIGGER reject_metadata BEFORE UPDATE OF album_id ON tracks BEGIN "
+            "SELECT RAISE(FAIL, 'test metadata write failure'); END;"))
+        {
+            return false;
+        }
+        if (!failCompletion && !failMetadata &&
+            !editMigrationDatabase("DROP TRIGGER IF EXISTS reject_metadata"))
+        {
+            return false;
+        }
+
+        const auto trackCount = readMigrationValue("SELECT count(*) FROM tracks");
+        if (!TEST_CHECK(trackCount >= 0) || (failMetadata && !TEST_CHECK(trackCount > 0))) {
             return false;
         }
 
@@ -222,21 +244,36 @@ namespace {
         }
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
         options.services = MC_SERVICE_INDEXER;
+        options.flags = MC_CONTEXT_ENABLE_LOGGING;
         options.wakeup = test_host_event_signal;
         options.wakeup_user_data = event.get();
-        api::Context context(options);
-        const auto complete = [&] {
-            return failCompletion
-                ? readMigrationValue("SELECT count FROM migration_scan_attempts") > 0
-                : readMigrationValue("SELECT count(*) FROM pending_migration_scan") == 0;
+        /* The scan can finish before context creation returns. Observe the
+        queued final log to wait until the indexer has closed its transaction. */
+        bool completed = false;
+        options.log_user_data = &completed;
+        options.log = [](void* data, mc_log_level, mc_string_view tag, mc_string_view message) {
+            if (api::AsStringView(tag) == "Indexer" && api::AsStringView(message) == "done!") {
+                *static_cast<bool*>(data) = true;
+            }
         };
-        while (!complete()) {
+        api::Context context(options);
+        while (!completed) {
             if (!TEST_CHECK(test_host_event_wait(event.get())) || !TEST_CHECK(context.Dispatch() == MC_OK)) {
                 return false;
             }
         }
-        return TEST_CHECK(context.Shutdown() == MC_OK) &&
-            TEST_CHECK(readMigrationValue("SELECT count(*) FROM pending_migration_scan") == (failCompletion ? 1 : 0));
+        if (!TEST_CHECK(context.Shutdown() == MC_OK) ||
+            !TEST_CHECK(readMigrationValue("SELECT count(*) FROM pending_migration_scan") ==
+                (failCompletion || failMetadata ? 1 : 0)))
+        {
+            return false;
+        }
+        if (failCompletion) {
+            return TEST_CHECK(readMigrationValue("SELECT count FROM migration_scan_attempts") > 0);
+        }
+        const auto unrefreshed = readMigrationValue("SELECT count(*) FROM tracks WHERE COALESCE(album_id, 0)=0");
+        return TEST_CHECK(readMigrationValue("SELECT count(*) FROM tracks") == trackCount) &&
+            TEST_CHECK(unrefreshed == (failMetadata ? trackCount : 0));
     }
 
     /* once completed, a fresh scanner stays stopped until a caller requests work;
@@ -618,10 +655,13 @@ int main(int argc, char** argv) {
         return prepareMigration() ? 0 : 1;
     }
     if (mode == "migration_fail_completion") {
-        return resumeMigration(true) ? 0 : 1;
+        return resumeMigration(MigrationFailure::Completion) ? 0 : 1;
+    }
+    if (mode == "migration_fail_metadata") {
+        return resumeMigration(MigrationFailure::Metadata) ? 0 : 1;
     }
     if (mode == "migration_resume") {
-        return resumeMigration(false) ? 0 : 1;
+        return resumeMigration(MigrationFailure::None) ? 0 : 1;
     }
     if (mode == "migration_verify") {
         return verifyMigrationComplete() ? 0 : 1;

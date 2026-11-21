@@ -376,7 +376,7 @@ void Indexer::ReadMetadataFromFile(
 
     musik::core::IndexerTrack track(0);
 
-    const bool needsToBeIndexed = track.NeedsToBeIndexed(file, this->dbConnection);
+    const bool needsToBeIndexed = track.NeedsToBeIndexed(file, this->dbConnection, this->refreshMetadata);
 
     /* get cached filesize, parts, size, etc */
     if (needsToBeIndexed) {
@@ -623,8 +623,23 @@ void Indexer::ThreadLoop() {
         this->state = StateIndexing;
         this->Started();
 
-        this->dbConnection.Open(this->dbFilename.c_str(), 0);
+        if (this->dbConnection.Open(this->dbFilename.c_str(), 0) != db::Okay) {
+            musik::debug::warning(TAG, "could not open catalog for indexing");
+            this->dbConnection.Close();
+            this->Finished(0);
+            continue;
+        }
+
+        const auto previousErrors = this->dbConnection.ErrorCount();
         this->trackTransaction = std::make_shared<db::ScopedTransaction>(this->dbConnection);
+
+        /* Earlier batches may have committed file times before a later
+        metadata write failed. Pending migrations revisit those tracks too. */
+        this->refreshMetadata = false;
+        if (context.type != SyncType::Sources && context.sourceId == 0) {
+            library::query::MigrationScanQuery pending;
+            this->refreshMetadata = pending.Run(this->dbConnection) && pending.IsPending();
+        }
 
         const int threadCount = prefs->GetInt(
             prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS);
@@ -661,13 +676,17 @@ void Indexer::ThreadLoop() {
 
         this->FinalizeSync(context);
 
-        /* retire the requirement in the scan's final transaction. interrupted
-        or source-only scans cannot satisfy a local metadata migration. a failed
-        write leaves it pending for a later startup rather than losing the work. */
-        if (!this->Bail() && context.type != SyncType::Sources && context.sourceId == 0) {
-            library::query::MigrationScanQuery completed(library::query::MigrationScanQuery::Operation::Complete);
-            if (!completed.Run(this->dbConnection)) {
-                musik::debug::warning(TAG, "could not clear pending migration scan");
+        /* Retire the requirement in the final transaction only when all scan
+        writes and earlier commits succeeded, including writes from workers. */
+        if (!this->Bail() && this->refreshMetadata) {
+            if (this->dbConnection.ErrorCount() == previousErrors) {
+                library::query::MigrationScanQuery completed(library::query::MigrationScanQuery::Operation::Complete);
+                if (!completed.Run(this->dbConnection)) {
+                    musik::debug::warning(TAG, "could not clear pending migration scan");
+                }
+            }
+            else {
+                musik::debug::warning(TAG, "catalog writes failed during indexing");
             }
         }
         this->trackTransaction.reset();
@@ -764,9 +783,6 @@ void Indexer::SyncCleanup() {
     }
 
     this->SyncPlaylistTracksOrder();
-
-    /* optimize and shrink */
-    this->dbConnection.Execute("VACUUM");
 }
 
 void Indexer::SyncPlaylistTracksOrder() {
@@ -874,7 +890,6 @@ void Indexer::SyncOptimize() {
     optimize(this->dbConnection, "genre", "genres");
     optimize(this->dbConnection, "artist", "artists");
     optimize(this->dbConnection, "album", "albums");
-    optimize(this->dbConnection, "content", "meta_values");
 }
 
 void Indexer::ProcessAddRemoveQueue() {

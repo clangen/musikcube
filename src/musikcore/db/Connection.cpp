@@ -82,14 +82,9 @@ int Connection::Close() noexcept {
 int Connection::Execute(const char* sql) {
     sqlite3_stmt *stmt  = nullptr;
 
-    /* prepare seems to give errors when interrupted */
-    {
-        std::unique_lock<std::mutex> lock(this->mutex);
-
-        if (sqlite3_prepare_v2(this->connection, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-            sqlite3_finalize(stmt);
-            return Error;
-        }
+    if (this->PrepareStatement(sql, &stmt) != SQLITE_OK) {
+        sqlite3_finalize(stmt);
+        return Error;
     }
 
     const int error = this->StepStatement(stmt);
@@ -147,6 +142,20 @@ void Connection::Interrupt() {
     sqlite3_interrupt(this->connection);
 }
 
+int Connection::PrepareStatement(const char* sql, sqlite3_stmt** stmt) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    const int result = sqlite3_prepare_v2(this->connection, sql, -1, stmt, nullptr);
+    return this->RecordResult(result);
+}
+
 int Connection::StepStatement(sqlite3_stmt *stmt) noexcept {
-    return sqlite3_step(stmt);
+    const int result = sqlite3_step(stmt);
+    return this->RecordResult(result);
+}
+
+int Connection::RecordResult(int result) noexcept {
+    if (result != SQLITE_OK && result != SQLITE_ROW && result != SQLITE_DONE) {
+        this->errors.fetch_add(1, std::memory_order_relaxed);
+    }
+    return result;
 }
