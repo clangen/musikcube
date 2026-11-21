@@ -198,3 +198,24 @@ The application now tracks input polling requests per window, so releasing one r
 Replacing the terminal input timeout with an event-driven wait is deferred.
 
 The major release accepts the older-server embedded lyrics limitation.
+
+## Daemon and Unix export boundary
+
+`musikcubed` now runs a managed public context. libev wakes the owner loop for
+dispatch and handles termination and rescan signals. The daemon selects the
+local catalog on startup without changing the catalog saved by the app.
+
+The Unix linkers enforce the checked-in core C ABI list and each plugin's
+declared entry points. Both shipped executables export no symbols. Tests that
+need private core code link a test-only archive built from the same objects.
+The Linux Zig Release suite checks the built binaries, the installed SDK, and
+the foreground daemon lifecycle. Native macOS verification is pending.
+
+The review follow-up separates daemon ownership from its ready PID file and
+waits for the child to report readiness on background startup. It removes
+Piggy and its settings. ELF executables and their UI queue objects compile
+as PIC to prevent GNU copy relocations from creating exported definitions.
+
+The server now asks encoder plugins for streaming or blocking interfaces
+through the SDK virtual interface. SDK version 22 requires plugins to be
+rebuilt. This avoids cross-module RTTI while retaining the export boundary.

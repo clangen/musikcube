@@ -1,4 +1,4 @@
-target_precompile_headers(musikcore
+target_precompile_headers(musikcore_objects
   PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:<set$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<vector$<ANGLE-R>>"

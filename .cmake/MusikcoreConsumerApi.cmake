@@ -11,7 +11,7 @@ function(musikcore_add_consumer_api target remote_session_source)
     "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadQueries.cpp"
     "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadBackend.cpp"
   )
-  if(target STREQUAL "musikcore")
+  if(target STREQUAL "musikcore" OR target STREQUAL "musikcore_objects")
     list(APPEND sources "${ffi}/consumer/library-query-backends.cpp")
   else()
     list(APPEND sources "${ffi}/consumer/audio-abi-only.cpp")
@@ -23,9 +23,9 @@ function(musikcore_add_consumer_api target remote_session_source)
   target_link_libraries(${target} PRIVATE Threads::Threads)
 
   get_target_property(kind ${target} TYPE)
-  if(kind STREQUAL "SHARED_LIBRARY")
+  if(kind STREQUAL "SHARED_LIBRARY" OR target STREQUAL "musikcore_objects")
     target_compile_definitions(${target} PRIVATE MC_BUILDING_SHARED INTERFACE MC_USING_SHARED)
-    # Keep façade implementation symbols private without changing legacy exports.
+    # Hide C++ implementation symbols at compile time.
     if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
       set_property(SOURCE ${sources} APPEND PROPERTY COMPILE_OPTIONS
         -fvisibility=hidden -fvisibility-inlines-hidden)

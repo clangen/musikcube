@@ -1,3 +1,8 @@
+set(core_fixture_library musikcore)
+if(TARGET musikcore_internal)
+  set(core_fixture_library musikcore_internal)
+endif()
+
 add_executable(musikcube_seed_library seed-library.cpp host-wakeup.cpp)
 set_target_properties(musikcube_seed_library PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
 target_compile_features(musikcube_seed_library PRIVATE cxx_std_17)
@@ -21,13 +26,18 @@ endif()
 
 if(BUILD_TESTING)
 
-  if(UNIX AND TARGET musikcube AND CMAKE_NM)
-    add_test(NAME musikcube.integration.core_boundary COMMAND "${CMAKE_COMMAND}"
-      "-DNM=${CMAKE_NM}" "-DAPPLE=${APPLE}" "-DAPP=$<TARGET_FILE:musikcube>"
-      "-DSOURCE=${PROJECT_SOURCE_DIR}" -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-cube-boundary.cmake")
-    set_tests_properties(musikcube.integration.core_boundary PROPERTIES
-      LABELS "integration;musikcube;abi;contract")
-    add_dependencies(musikcube_tests musikcube)
+  if(UNIX AND CMAKE_NM)
+    foreach(host IN ITEMS musikcube musikcubed)
+      if(TARGET ${host})
+        add_test(NAME ${host}.integration.core_boundary COMMAND "${CMAKE_COMMAND}"
+          "-DNM=${CMAKE_NM}" "-DAPPLE=${APPLE}" "-DAPP=$<TARGET_FILE:${host}>"
+          "-DSOURCE=${PROJECT_SOURCE_DIR}" "-DHOST=${host}"
+          -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-cube-boundary.cmake")
+        set_tests_properties(${host}.integration.core_boundary PROPERTIES
+          LABELS "integration;${host};abi;contract")
+        add_dependencies(musikcube_tests ${host})
+      endif()
+    endforeach()
   endif()
 
   add_executable(musikcore_example_remote
@@ -41,7 +51,7 @@ if(BUILD_TESTING)
   add_executable(musikcore_remote_query_transport_test ../integration/transport/remote-query-transport.cpp fixture-library.cpp)
   target_include_directories(musikcore_remote_query_transport_test PRIVATE
     "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
-  target_link_libraries(musikcore_remote_query_transport_test PRIVATE musikcore Threads::Threads)
+  target_link_libraries(musikcore_remote_query_transport_test PRIVATE ${core_fixture_library} Threads::Threads)
   set_target_properties(musikcore_remote_query_transport_test PROPERTIES
     DISABLE_PRECOMPILE_HEADERS ON)
   if(WIN32)
@@ -71,7 +81,7 @@ if(BUILD_TESTING)
       "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
     set_target_properties(musikcore_production_api_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
     target_compile_features(musikcore_production_api_test PRIVATE cxx_std_17)
-    target_link_libraries(musikcore_production_api_test PRIVATE musikcore Threads::Threads)
+    target_link_libraries(musikcore_production_api_test PRIVATE ${core_fixture_library} Threads::Threads)
     if(WIN32)
       target_link_libraries(musikcore_production_api_test PRIVATE musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
     endif()
@@ -149,7 +159,7 @@ if(BUILD_TESTING)
       add_executable(musikcore_playback_pcm_test ../integration/transport/playback-pcm.cpp)
       target_include_directories(musikcore_playback_pcm_test PRIVATE
         "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
-      target_link_libraries(musikcore_playback_pcm_test PRIVATE musikcore Threads::Threads ${CMAKE_DL_LIBS})
+      target_link_libraries(musikcore_playback_pcm_test PRIVATE ${core_fixture_library} Threads::Threads ${CMAKE_DL_LIBS})
       set_target_properties(musikcore_playback_pcm_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
       add_dependencies(musikcore_playback_pcm_test musikcore_pcm_capture_output ffmpegdecoder)
       add_dependencies(musikcube_tests musikcore_playback_pcm_test)
@@ -171,7 +181,7 @@ if(BUILD_TESTING)
       target_include_directories(musikcore_plugin_playback_test PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
       set_target_properties(musikcore_plugin_playback_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
-      target_link_libraries(musikcore_plugin_playback_test PRIVATE musikcore Threads::Threads)
+      target_link_libraries(musikcore_plugin_playback_test PRIVATE ${core_fixture_library} Threads::Threads)
       add_dependencies(musikcore_plugin_playback_test nullout musikcube_seed_library)
       add_dependencies(musikcube_tests musikcore_plugin_playback_test)
       add_dependencies(musikcube_integration_tests musikcore_plugin_playback_test)
@@ -277,7 +287,7 @@ endif()
 add_executable(musikcore_runtime_hardening_test ../integration/musikcore/runtime-hardening.cpp host-wakeup.cpp)
 target_include_directories(musikcore_runtime_hardening_test PRIVATE "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/src/3rdparty/include/sqlite" ${VENDOR_INCLUDE_DIRECTORIES})
-target_link_libraries(musikcore_runtime_hardening_test PRIVATE musikcore Threads::Threads)
+target_link_libraries(musikcore_runtime_hardening_test PRIVATE ${core_fixture_library} Threads::Threads)
 set_target_properties(musikcore_runtime_hardening_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
 if(WIN32)
   target_link_libraries(musikcore_runtime_hardening_test PRIVATE musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
@@ -291,6 +301,22 @@ foreach(case IN ITEMS registry startup owner read_isolation locked_read_shutdown
   set_tests_properties(musikcore.integration.runtime.${case} PROPERTIES
     LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
 endforeach()
+
+if(UNIX AND CMAKE_NM)
+  musikcube_restrict_exports(musikcore_runtime_hardening_test)
+  get_property(export_targets GLOBAL PROPERTY MUSIKCUBE_RESTRICTED_TARGETS)
+  list(REMOVE_ITEM export_targets musikcore_abi0)
+  foreach(target IN LISTS export_targets)
+    add_dependencies(musikcube_tests ${target})
+    add_dependencies(musikcube_integration_tests ${target})
+    add_test(NAME musikcore.integration.binary.exports.${target} COMMAND "${CMAKE_COMMAND}"
+      "-DAPPLE=${APPLE}" "-DNM=${CMAKE_NM}" "-DLIBRARY=$<TARGET_FILE:${target}>"
+      "-DALLOWLIST=$<TARGET_PROPERTY:${target},MUSIKCUBE_EXPORT_ALLOWLIST>"
+      -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-exports.cmake")
+    set_tests_properties(musikcore.integration.binary.exports.${target} PROPERTIES
+      LABELS "integration;musikcore;packaging;contract" TIMEOUT 10)
+  endforeach()
+endif()
 
 # Two independent legacy providers fail the same hook in the same session.
 foreach(name IN ITEMS First Second)

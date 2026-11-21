@@ -10,6 +10,8 @@ if(POLICY CMP0091)
 endif()
 project(musikcube)
 
+include(.cmake/RestrictExports.cmake)
+
 find_package(Threads REQUIRED)
 include(.cmake/MusikcoreConsumerApi.cmake)
 include(.cmake/VerifyCoreBoundary.cmake)
@@ -151,33 +153,36 @@ add_subdirectory(src/musikcore)
 add_subdirectory(src/musikcube)
 add_subdirectory(src/musikcubed)
 
+musikcube_restrict_exports(musikcube)
+musikcube_restrict_exports(musikcubed)
+
 add_dependencies(musikcube musikcore)
 add_dependencies(musikcubed musikcore)
 
 # tag readers
-add_plugin("src/plugins/taglib_plugin" "taglibreader")
+add_plugin("src/plugins/taglib_plugin" "taglibreader" GetTagReader)
 # outputs
-add_plugin("src/plugins/alsaout" "alsaout")
-add_plugin("src/plugins/coreaudioout" "coreaudioout")
-add_plugin("src/plugins/nullout" "nullout")
-add_plugin("src/plugins/pipewireout" "pipewireout")
-add_plugin("src/plugins/portaudioout" "portaudioout")
-add_plugin("src/plugins/pulseout" "pulseout")
-add_plugin("src/plugins/sndioout" "sndioout")
+add_plugin("src/plugins/alsaout" "alsaout" GetAudioOutput SetPreferences)
+add_plugin("src/plugins/coreaudioout" "coreaudioout" GetAudioOutput SetPreferences)
+add_plugin("src/plugins/nullout" "nullout" GetAudioOutput GetSchema SetPreferences)
+add_plugin("src/plugins/pipewireout" "pipewireout" GetAudioOutput GetSchema SetDebug SetPreferences)
+add_plugin("src/plugins/portaudioout" "portaudioout" GetAudioOutput GetSchema SetDebug SetPreferences)
+add_plugin("src/plugins/pulseout" "pulseout" GetAudioOutput SetPreferences)
+add_plugin("src/plugins/sndioout" "sndioout" GetAudioOutput SetPreferences)
 # remotes
-add_plugin("src/plugins/macosmediakeys" "macosmediakeys")
-add_plugin("src/plugins/mpris" "mpris")
-add_plugin("src/plugins/server" "server")
+add_plugin("src/plugins/macosmediakeys" "macosmediakeys" GetPlaybackRemote SetDebug)
+add_plugin("src/plugins/mpris" "mpris" GetPlaybackRemote SetEnvironment)
+add_plugin("src/plugins/server" "server" GetPlaybackRemote SetDebug SetEnvironment SetMetadataProxy SetPreferences)
 # streams
-add_plugin("src/plugins/httpdatastream" "httpdatastream")
+add_plugin("src/plugins/httpdatastream" "httpdatastream" GetDataStreamFactory GetSchema SetEnvironment SetPreferences)
 # decoders
-add_plugin("src/plugins/ffmpegdecoder" "ffmpegdecoder")
-add_plugin("src/plugins/gmedecoder" "gmedecoder")
-add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder")
+add_plugin("src/plugins/ffmpegdecoder" "ffmpegdecoder" GetDecoderFactory SetDebug)
+add_plugin("src/plugins/gmedecoder" "gmedecoder" GetDataStreamFactory GetDecoderFactory GetIndexerSource GetSchema SetDebug SetEnvironment SetPreferences)
+add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder" GetDataStreamFactory GetDecoderFactory GetIndexerSource GetSchema SetDebug SetEnvironment SetPreferences)
 # encoders
-add_plugin("src/plugins/stockencoders" "stockencoders")
+add_plugin("src/plugins/stockencoders" "stockencoders" GetEncoderFactory SetDebug SetEnvironment)
 # dsps
-add_plugin("src/plugins/supereqdsp" "supereqdsp")
+add_plugin("src/plugins/supereqdsp" "supereqdsp" GetDSP SetPreferences)
 
 add_subdirectory(tests/support EXCLUDE_FROM_ALL)
 

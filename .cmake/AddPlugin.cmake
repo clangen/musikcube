@@ -2,6 +2,7 @@ macro(add_plugin plugin_dir plugin_name)
     add_subdirectory(${plugin_dir})
     get_property(PLUGIN_DISABLED GLOBAL PROPERTY "DISABLE_${plugin_name}")
     if (NOT PLUGIN_DISABLED STREQUAL "true")
+        musikcube_restrict_exports(${plugin_name} GetPlugin ${ARGN})
         # Standalone plugins resolve vendor libraries in the sibling lib directory.
         if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND BUILD_STANDALONE)
             set_target_properties(${plugin_name} PROPERTIES INSTALL_RPATH "$ORIGIN:$ORIGIN/../lib")

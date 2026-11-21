@@ -1382,7 +1382,12 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
 ### Phase 10: migration cleanup and ABI v1 freeze
 
 - [ ] **FIN-001** Confirm musikcube and musikcubed have no private core link
-  dependencies.
+  dependencies. Both use the public C ABI on Unix. Their
+  `integration.core_boundary` tests check actual imports. Linux verified.
+  Native macOS and Windows verification is pending.
+  `musikcore.integration.binary.exports.*` checks the shipped Unix core,
+  executable, and plugin export lists, including symbols pulled in by static
+  libraries.
 - [ ] **FIN-002** Confirm every shipped plugin has left the C++ SDK ABI.
 - [x] **FIN-003** Remove or archive `musikcore_c.h`, `c_context.cpp`, and
   `c_interface_wrappers.cpp` after their consumers are gone. The fixture
