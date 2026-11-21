@@ -390,7 +390,7 @@ namespace {
         mc_result offThread = MC_OK;
         std::thread scheduler([&] { offThread = Indexer(context).Schedule(MC_INDEXER_SCAN_LOCAL); });
         scheduler.join();
-        if (offThread != MC_ERROR_BUSY) {
+        if (offThread != MC_ERROR_WRONG_THREAD) {
             std::fputs("Indexer admitted scheduling off the dispatcher thread\n", stderr);
             return false;
         }

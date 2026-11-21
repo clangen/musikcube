@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <stdexcept>
 #include "Playback.h"
 #include <musikcore/library/query/PersistedPlayQueueQuery.h>
 #include <musikcore/sdk/constants.h>
@@ -96,13 +97,13 @@ namespace musik {
                 playback.SetPosition(playback.GetPosition() - moveBy);
             }
 
-            void LoadPlaybackContext(ILibraryPtr library, PlaybackService& playback) {
+            void LoadPlaybackContext(ILibraryPtr library, PlaybackService& playback, bool synchronous) {
                 if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
                     auto prefs = Session();
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
                         PersistedPlayQueueQuery::Restore(library, playback));
 
-                    library->Enqueue(query, [&playback, prefs, query](auto q) {
+                    const auto restored = [&playback, prefs, query](auto q) {
                         int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
                         if (index >= 0) {
                             double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
@@ -114,7 +115,17 @@ namespace musik {
                                 playback.GetTransport().Resume();
                             }
                         }
-                    });
+                    };
+                    if (synchronous) {
+                        library->EnqueueAndWait(query);
+                        if (query->GetStatus() != db::IQuery::Finished) {
+                            throw std::runtime_error("Could not restore playback context");
+                        }
+                        restored(query);
+                    }
+                    else {
+                        library->Enqueue(query, restored);
+                    }
                 }
             }
 

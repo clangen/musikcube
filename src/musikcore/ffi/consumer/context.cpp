@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <condition_variable>
 #include <cstring>
+#include <system_error>
 #include <list>
 #include <memory>
 #include <mutex>
@@ -103,6 +104,11 @@ mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback
         musik::core::ffi::ContextRuntime* runtime;
         {
             std::lock_guard<std::mutex> lock(context->mutex);
+            if (context->dispatcher != std::thread::id {} &&
+                context->dispatcher != std::this_thread::get_id())
+            {
+                return MC_ERROR_WRONG_THREAD;
+            }
             if (context->stopping) {
                 return MC_ERROR_BUSY;
             }
@@ -395,7 +401,10 @@ mc_result MC_CALL mc_context_set_playlist_changed_callback(
     }
     return musik::core::ffi::exception_barrier(nullptr, [&] {
         std::lock_guard<std::mutex> lock(context->mutex);
-        if (context->stopping || !is_dispatcher(*context)) {
+        if (!is_dispatcher(*context)) {
+            return MC_ERROR_WRONG_THREAD;
+        }
+        if (context->stopping) {
             return MC_ERROR_BUSY;
         }
         ++context->playlistSubscription;
@@ -425,7 +434,10 @@ mc_result MC_CALL mc_context_set_equalizer_changed_callback(
     }
     return musik::core::ffi::exception_barrier(nullptr, [&] {
         std::lock_guard<std::mutex> lock(context->mutex);
-        if (context->stopping || !is_dispatcher(*context)) {
+        if (!is_dispatcher(*context)) {
+            return MC_ERROR_WRONG_THREAD;
+        }
+        if (context->stopping) {
             return MC_ERROR_BUSY;
         }
         ++context->equalizerSubscription;
@@ -444,7 +456,10 @@ mc_result MC_CALL mc_context_reconnect_remote_library(mc_context* context) {
         musik::core::ffi::ContextRuntime* runtime;
         {
             std::lock_guard<std::mutex> lock(context->mutex);
-            if (context->stopping || !is_dispatcher(*context)) {
+            if (!is_dispatcher(*context)) {
+                return MC_ERROR_WRONG_THREAD;
+            }
+            if (context->stopping) {
                 return MC_ERROR_BUSY;
             }
             runtime = context->runtime.get();
@@ -467,7 +482,10 @@ namespace {
             musik::core::ffi::ContextRuntime* runtime;
             {
                 std::lock_guard<std::mutex> lock(context->mutex);
-                if (context->stopping || !is_dispatcher(*context)) {
+                if (!is_dispatcher(*context)) {
+                    return MC_ERROR_WRONG_THREAD;
+                }
+                if (context->stopping) {
                     return MC_ERROR_BUSY;
                 }
                 runtime = context->runtime.get();
@@ -541,7 +559,10 @@ mc_result MC_CALL mc_indexer_set_callback(mc_context* context, mc_indexer_event_
     if (!context->runtime) {
         return MC_ERROR_UNSUPPORTED;
     }
-    if (!is_dispatcher(*context) || (context->stopping && callback)) {
+    if (!is_dispatcher(*context)) {
+        return MC_ERROR_WRONG_THREAD;
+    }
+    if (context->stopping && callback) {
         return MC_ERROR_BUSY;
     }
 
@@ -561,7 +582,10 @@ mc_result MC_CALL mc_context_select_library(mc_context* context, mc_library_kind
         musik::core::ffi::ContextRuntime* runtime;
         {
             std::lock_guard<std::mutex> lock(context->mutex);
-            if (context->stopping || !is_dispatcher(*context)) {
+            if (!is_dispatcher(*context)) {
+                return MC_ERROR_WRONG_THREAD;
+            }
+            if (context->stopping) {
                 return MC_ERROR_BUSY;
             }
             runtime = context->runtime.get();
@@ -599,7 +623,10 @@ mc_result MC_CALL mc_context_set_library_changed_callback(
     }
 
     std::lock_guard<std::mutex> lock(context->mutex);
-    if (!is_dispatcher(*context) || (context->stopping && callback)) {
+    if (!is_dispatcher(*context)) {
+        return MC_ERROR_WRONG_THREAD;
+    }
+    if (context->stopping && callback) {
         return MC_ERROR_BUSY;
     }
     context->libraryChanged = callback;
@@ -758,14 +785,27 @@ mc_result MC_CALL mc_context_create(
                     offsetof(mc_context_options, log_user_data));
                 context->runtime->Start(*context, context->plugin_directory, (flags & MC_CONTEXT_ENABLE_LOGGING) != 0, log, logData);
             }
+            catch (const std::system_error& error) {
+                auto* failed = context.release();
+                if (mc_context_destroy(&failed) != MC_OK) {
+                    mc_context_destroy(&failed);
+                }
+                return fail(MC_ERROR_IO, error.what(), out_error);
+            }
             catch (const std::invalid_argument& error) {
                 auto* failed = context.release();
-                mc_context_destroy(&failed);
+                if (mc_context_destroy(&failed) != MC_OK) {
+                    /* cleanup ran to completion; retry only releases the stopped owner. */
+                    mc_context_destroy(&failed);
+                }
                 return fail(MC_ERROR_INVALID_ARGUMENT, error.what(), out_error);
             }
             catch (...) {
                 auto* failed = context.release();
-                mc_context_destroy(&failed);
+                if (mc_context_destroy(&failed) != MC_OK) {
+                    /* cleanup ran to completion; retry only releases the stopped owner. */
+                    mc_context_destroy(&failed);
+                }
                 throw;
             }
         }
@@ -780,7 +820,12 @@ mc_result MC_CALL mc_context_dispatch(mc_context *context) {
         if (!context) return MC_ERROR_INVALID_ARGUMENT;
 
         std::unique_lock<std::mutex> lock(context->mutex);
-        if (!enter_dispatch(*context)) return MC_ERROR_BUSY;
+        if (!is_dispatcher(*context)) {
+            return MC_ERROR_WRONG_THREAD;
+        }
+        if (!enter_dispatch(*context)) {
+            return MC_ERROR_BUSY;
+        }
         auto* runtime = context->stopping ? nullptr : context->runtime.get();
         mc_result status = MC_OK;
         if (runtime) {
@@ -835,7 +880,12 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
         if (!context) return MC_ERROR_INVALID_ARGUMENT;
 
         std::unique_lock<std::mutex> lock(context->mutex);
-        if (!enter_dispatch(*context)) return MC_ERROR_BUSY;
+        if (!is_dispatcher(*context)) {
+            return MC_ERROR_WRONG_THREAD;
+        }
+        if (!enter_dispatch(*context)) {
+            return MC_ERROR_BUSY;
+        }
         context->stopping = true;
         if (context->active_cancel) {
             context->active_cancel->store(true);
@@ -864,14 +914,17 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
         if (context->worker.joinable()) {
             context->worker.join();
         }
-        if (context->runtime) {
-            context->runtime->Stop();
-        }
+        const auto stopped = musik::core::ffi::exception_barrier(nullptr, [&] {
+            if (context->runtime) {
+                context->runtime->Stop();
+            }
+            return MC_OK;
+        });
         lock.lock();
         context->changed.wait(lock, [&] { return context->wakeups_in_flight == 0; });
 
         deliver_ready(*context, lock);
-        return MC_OK;
+        return stopped;
     });
 }
 

@@ -152,7 +152,7 @@ MC_API mc_result MC_CALL mc_playback_set_changed_callback(
 /* Apply a command to an existing playback session on its owner thread.
    Value is seconds for SET_POSITION, or a fraction from zero to one for SET_VOLUME.
    Other commands ignore value.
-   Returns MC_ERROR_BUSY on another thread or MC_ERROR_NOT_FOUND after the session ends. */
+   returns MC_ERROR_WRONG_THREAD on another thread or MC_ERROR_NOT_FOUND after the session ends. */
 MC_API mc_result MC_CALL mc_playback_control(mc_playback *playback, mc_playback_command command, double value);
 
 /* Replace the queue with the ordered result and play from row on the owner thread.

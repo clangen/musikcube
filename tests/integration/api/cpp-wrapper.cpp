@@ -462,9 +462,9 @@ namespace {
             bool queueBusy = false;
             std::thread observer([&] {
                 try { playback->Snapshot(); }
-                catch (const api::Error& error) { snapshotBusy = error.Result() == MC_ERROR_BUSY; }
+                catch (const api::Error& error) { snapshotBusy = error.Result() == MC_ERROR_WRONG_THREAD; }
                 try { playback->Queue(); }
-                catch (const api::Error& error) { queueBusy = error.Result() == MC_ERROR_BUSY; }
+                catch (const api::Error& error) { queueBusy = error.Result() == MC_ERROR_WRONG_THREAD; }
             });
             observer.join();
             if (!snapshotBusy || !queueBusy) return playbackFailure(__LINE__);
@@ -722,7 +722,7 @@ namespace {
                 otherThread = otherHandle.Control(MC_PLAYBACK_STOP);
             });
             caller.join();
-            if (otherOpen != MC_ERROR_BUSY || otherThread != MC_ERROR_BUSY ||
+            if (otherOpen != MC_ERROR_WRONG_THREAD || otherThread != MC_ERROR_WRONG_THREAD ||
                 otherHandle.Control(MC_PLAYBACK_STOP) != MC_OK)
             {
                 return playbackFailure(__LINE__);

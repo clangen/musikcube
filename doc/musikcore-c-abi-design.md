@@ -415,7 +415,8 @@ MC_API mc_result MC_CALL mc_context_shutdown(mc_context *context);
 or notification poll establishes the dispatcher thread. Dispatch invokes ready
 completion callbacks inline. Worker threads enqueue results.
 Callbacks run outside internal locks and may submit or cancel requests.
-Nested dispatch and dispatch from another thread return `MC_ERROR_BUSY`. Shutdown and
+Nested dispatch returns `MC_ERROR_BUSY`; dispatch from another thread returns
+`MC_ERROR_WRONG_THREAD`. Shutdown and
 destruction must be called outside a callback, on the dispatcher thread once
 one is established.
 

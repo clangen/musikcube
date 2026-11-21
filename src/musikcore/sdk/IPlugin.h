@@ -36,6 +36,9 @@
 
 namespace musik { namespace core { namespace sdk {
 
+    /* core-owned service pointers remain valid until their hooks are cleared.
+    clearing a hook must stop its use before returning. Release must finish
+    provider-owned work and release resources without throwing. */
     class IPlugin {
         public:
             virtual void Release() = 0;

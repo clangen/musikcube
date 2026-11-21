@@ -251,3 +251,46 @@ if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGE
     endforeach()
   endif()
 endif()
+
+# Keep runtime hardening coverage native on macOS and Linux, without devices.
+add_executable(musikcore_runtime_hardening_test ../integration/musikcore/runtime-hardening.cpp host-wakeup.cpp)
+target_include_directories(musikcore_runtime_hardening_test PRIVATE "${PROJECT_SOURCE_DIR}/src"
+  "${PROJECT_SOURCE_DIR}/src/3rdparty/include/sqlite" ${VENDOR_INCLUDE_DIRECTORIES})
+target_link_libraries(musikcore_runtime_hardening_test PRIVATE musikcore Threads::Threads)
+set_target_properties(musikcore_runtime_hardening_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+if(WIN32)
+  target_link_libraries(musikcore_runtime_hardening_test PRIVATE musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+endif()
+add_dependencies(musikcube_tests musikcore_runtime_hardening_test)
+add_dependencies(musikcube_integration_tests musikcore_runtime_hardening_test)
+foreach(case IN ITEMS registry startup owner read_isolation database_failure)
+  add_test(NAME musikcore.integration.runtime.${case} COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage ${case})
+  set_tests_properties(musikcore.integration.runtime.${case} PROPERTIES
+    LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
+endforeach()
+
+# Two independent legacy providers fail the same hook in the same session.
+foreach(name IN ITEMS First Second)
+  add_library(musikcore_runtime_failure_${name} MODULE ../integration/musikcore/runtime-failure-plugin.cpp)
+  target_include_directories(musikcore_runtime_failure_${name} PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+  target_compile_definitions(musikcore_runtime_failure_${name} PRIVATE RUNTIME_FIXTURE_NAME="RuntimeFailure${name}")
+  set_target_properties(musikcore_runtime_failure_${name} PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-failure"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-failure"
+    DISABLE_PRECOMPILE_HEADERS ON)
+  if(APPLE)
+    set_target_properties(musikcore_runtime_failure_${name} PROPERTIES SUFFIX ".dylib")
+  endif()
+  add_dependencies(musikcore_runtime_hardening_test musikcore_runtime_failure_${name})
+endforeach()
+foreach(case IN ITEMS failure caches)
+  add_test(NAME musikcore.integration.runtime.${case} COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage
+    --plugin "$<TARGET_FILE:musikcore_runtime_failure_First>"
+    --plugin "$<TARGET_FILE:musikcore_runtime_failure_Second>" ${case})
+  set_tests_properties(musikcore.integration.runtime.${case} PROPERTIES
+    LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
+endforeach()

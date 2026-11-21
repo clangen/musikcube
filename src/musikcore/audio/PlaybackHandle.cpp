@@ -548,7 +548,9 @@ private:
     }
 
     mc_result CheckSession() const {
-        if (std::this_thread::get_id() != this->owner) return MC_ERROR_BUSY;
+        if (std::this_thread::get_id() != this->owner) {
+            return MC_ERROR_WRONG_THREAD;
+        }
         const auto events = this->events.lock();
         return events && events->active.load() ? MC_OK : MC_ERROR_NOT_FOUND;
     }
@@ -567,7 +569,7 @@ mc_result PlaybackService::OpenHandle(mc_playback** out) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     if (std::this_thread::get_id() != this->apiOwner) {
-        return MC_ERROR_BUSY;
+        return MC_ERROR_WRONG_THREAD;
     }
     return ffi::exception_barrier(nullptr, [&] {
         *out = new PlaybackHandle(*this);

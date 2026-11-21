@@ -5,6 +5,8 @@
 
 namespace musik { namespace core { namespace library { namespace query {
     namespace {
+        constexpr int readBusyTimeoutMs = 10000;
+
         using Database = std::unique_ptr<sqlite3, decltype(&sqlite3_close)>;
 
         /* Each read gets its own transaction, isolated from the app's shared connection. */
@@ -27,9 +29,16 @@ namespace musik { namespace core { namespace library { namespace query {
         private:
             Database Open() const {
                 sqlite3* raw = nullptr;
-                const int opened = sqlite3_open_v2(this->path.c_str(), &raw, SQLITE_OPEN_READONLY, nullptr);
+                const int opened = sqlite3_open_v2(this->path.c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_PRIVATECACHE, nullptr);
                 Database database(raw, sqlite3_close);
-                if (opened != SQLITE_OK) database.reset();
+                if (opened != SQLITE_OK) {
+                    database.reset();
+                }
+                else {
+                    /* isolate reads from the legacy connection's shared-cache
+                    table locks; bound waits for ordinary startup/schema locks. */
+                    sqlite3_busy_timeout(database.get(), readBusyTimeoutMs);
+                }
                 return database;
             }
 

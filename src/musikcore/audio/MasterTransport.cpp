@@ -46,7 +46,7 @@ using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 
-MasterTransport::MasterTransport() noexcept
+MasterTransport::MasterTransport()
 : prefs(Preferences::ForComponent(components::Playback)) {
     this->type = static_cast<Type>(this->prefs->GetInt(
         keys::Transport, static_cast<int>(Type::Gapless)));

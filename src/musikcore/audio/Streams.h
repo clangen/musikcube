@@ -47,6 +47,9 @@
 namespace musik { namespace core { namespace audio {
 
     namespace streams {
+        /* retire session factories after decoder/encoder users have stopped. */
+        void Shutdown();
+
         std::shared_ptr<musik::core::sdk::IDecoder>
             GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
 

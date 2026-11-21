@@ -1213,6 +1213,35 @@ legacy list for actions that still require it.
   `musikcore.integration.api.remote_audio` exercises the real loopback server,
   HTTP stream, decoder, and headless output on Linux.
 
+#### Managed runtime hardening reconciliation
+
+The startup/teardown protections from the earlier `f83bbb028` implementation
+are adapted to the managed runtime rather than replacing its public API. The process-owned plugin registry remains unchanged;
+session factories and visualizers retire after workers stop. This does not
+claim module-unload support or per-context configuration-root isolation.
+
+- [x] **RTH-001** Keep distinct persisted catalog IDs and stable lookup by name.
+  `musikcore.integration.runtime.registry` guards both contracts.
+- [x] **RTH-002** Restore local saved playback state before publishing the engine.
+  `musikcore.integration.runtime.startup` checks that first dispatch cannot
+  overwrite an immediately submitted volume command. Remote restore stays async.
+- [x] **RTH-003** Distinguish wrong-thread use from reentrancy and preserve owner
+  recovery. `musikcore.integration.runtime.owner`, `musikcore.abi.dispatch`, and
+  production `playback_commands` require `MC_ERROR_WRONG_THREAD`.
+- [x] **RTH-004** Finish all provider teardown hooks after a failure and drain
+  accepted callbacks before reporting it. `musikcore.integration.runtime.failure`
+  uses two throwing providers and verifies startup rollback and destruction retry.
+- [x] **RTH-005** Isolate public read snapshots from legacy shared-cache writers.
+  `musikcore.integration.runtime.read_isolation` holds an uncommitted WAL write
+  while the public API must read the previously committed title.
+- [x] **RTH-006** Synchronize stream-factory discovery and retire stream/codec
+  caches after workers stop, even when a hook throws.
+  `musikcore.integration.runtime.caches` checks concurrent lookup and balanced
+  acquisition/release counts for each provider.
+- [x] **RTH-007** Reject failed database opens and corrupt schemas transactionally.
+  `musikcore.integration.runtime.database_failure` checks `MC_ERROR_IO`, an empty
+  context output, and successful retry after repairing the same path.
+
 #### Phase 7 gate
 
 - [ ] **GATE-700** musikcube builds and passes smoke and integration tests

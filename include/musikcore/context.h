@@ -135,7 +135,7 @@ MC_API mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_p
 
 /* For a managed runtime, create binds the dispatcher thread. Otherwise, the
    first dispatch or shutdown binds its thread. Ready callbacks run inline,
-   outside internal locks. Nested/concurrent dispatch returns MC_ERROR_BUSY.
+   outside internal locks. reentrant dispatch returns MC_ERROR_BUSY; other threads return MC_ERROR_WRONG_THREAD.
    Callbacks may submit/cancel requests, but cannot shut down or destroy the context.
    Rejected submissions set out_request to zero and never invoke the callback.
    Accepted submissions deliver exactly one completion, including on shutdown.

@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <sqlite3.h>
 #include "musikcore/sdk/Filesystem.h"
 
 #include <musikcore/library/LocalLibrary.h>
@@ -108,7 +109,11 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue)
 
     this->identifier = std::to_string(id);
 
-    this->db.Open(this->GetDatabaseFilename().c_str());
+    const auto filename = this->GetDatabaseFilename();
+    if (this->db.Open(filename) != SQLITE_OK || sqlite3_db_readonly(this->db.NativeHandle(), "main") != 0) {
+        throw fs::filesystem_error("Could not open writable library database", fs::u8path(filename),
+            std::make_error_code(std::errc::io_error));
+    }
     LocalLibrary::CreateDatabase(this->db);
 
     this->indexer = new core::Indexer(
@@ -425,7 +430,7 @@ static void setVersion(db::Connection& db, int version) {
 
 void LocalLibrary::CreateDatabase(db::Connection &db){
     /* tracks */
-    db.Execute(
+    const int created = db.Execute(
         "CREATE TABLE IF NOT EXISTS tracks ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "track INTEGER DEFAULT 0,"
@@ -451,6 +456,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "play_count INTEGER DEFAULT 0,"
             "date_added REAL DEFAULT null,"
             "date_updated REAL DEFAULT null)");
+
+    if (created != SQLITE_OK) {
+        throw fs::filesystem_error("Could not initialize library schema", std::make_error_code(std::errc::io_error));
+    }
 
     /* genres tables */
     db.Execute(

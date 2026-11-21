@@ -23,3 +23,17 @@ Sharing the host's queue would preserve the private attachment and require the h
 Musikcube starts core services through the same public entry point as other production clients. Its UI queue is separate. Local and remote selection use concrete catalogs, and a playback queue resets when its catalog changes. The readiness thread adds one thread per managed context and performs no delivery.
 
 The public-only managed-runtime test covers startup, delayed wakeups, restart, and retained handles. The managed loopback test covers local and remote selection, stale queue snapshots, and same-endpoint reconnect.
+
+Startup restores local playback preferences and the saved queue before publishing
+the managed context, so later dispatch cannot overwrite caller commands. Remote
+restoration keeps its asynchronous path because the transport needs host dispatch.
+Owner-thread violations have a distinct error from reentrant calls.
+
+Teardown attempts all independent phases and every provider hook after a failure.
+It reports an error after draining callbacks, leaves the stopped owner retryable,
+and destroys provider-defined exceptions before leaving their cleanup phase.
+Rollback and destructors do not throw. This hardening preserves the current
+process-lifetime plugin registry; it does not introduce module unloading.
+Session-scoped stream, codec, and visualizer caches retire after their workers
+stop, so a replacement session rediscovers enabled providers. Concurrent stream
+lookups retain a synchronized cache snapshot through factory use.

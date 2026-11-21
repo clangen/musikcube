@@ -40,6 +40,9 @@
 
 namespace musik { namespace core { namespace io {
 
+    /* call after stream users stop, before plugin modules unload. */
+    void Shutdown();
+
     class DataStreamFactory {
         public:
             using DataStreamPtr = std::shared_ptr<musik::core::sdk::IDataStream>;
@@ -54,7 +57,7 @@ namespace musik { namespace core { namespace io {
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DataStreamFactory)
 
             DataStreamFactory();
-            static DataStreamFactory* Instance();
+            static std::shared_ptr<DataStreamFactory> Instance();
 
             DataStreamFactoryVector dataStreamFactories;
     };

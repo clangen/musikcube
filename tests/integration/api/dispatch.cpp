@@ -87,7 +87,7 @@ namespace {
         std::thread other([&] { wrong_thread = mc_context_dispatch(state.context); });
         other.join();
 
-        if (wrong_thread != MC_ERROR_BUSY) return false;
+        if (wrong_thread != MC_ERROR_WRONG_THREAD) return false;
 
         /* Let the worker finish first and verify its wakeup leaves delivery to dispatch. */
         mc_request_id first = 0;

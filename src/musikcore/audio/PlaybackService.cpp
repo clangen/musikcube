@@ -168,6 +168,15 @@ PlaybackService::~PlaybackService() {
     this->Shutdown();
 }
 
+void PlaybackService::Initialize(bool synchronousRestore) {
+    this->messageQueue.Remove(this, MESSAGE_LOAD_PLAYBACK_CONTEXT);
+    loadPreferences(*this->transport, *this, *playbackPrefs);
+    /* remote work needs the host dispatcher; never wait on an unconnected catalog. */
+    playback::LoadPlaybackContext(library, *this,
+        synchronousRestore && this->library->GetType() == ILibrary::Type::Local);
+    this->InitRemotes();
+}
+
 void PlaybackService::Shutdown() {
     if (this->stopped) {
         return;
@@ -347,9 +356,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         DeliverPlaybackNotification(message);
     }
     else if (type == MESSAGE_LOAD_PLAYBACK_CONTEXT) {
-        loadPreferences(*this->transport, *this, *playbackPrefs);
-        playback::LoadPlaybackContext(library, *this);
-        this->InitRemotes();
+        this->Initialize();
     }
     else if (type == MESSAGE_MARK_TRACK_PLAYED) {
         this->lastFm.Scrobble(this->playingTrack);

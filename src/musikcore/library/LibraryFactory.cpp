@@ -33,6 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <limits>
+#include <stdexcept>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
@@ -149,32 +151,28 @@ ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, ILibrary::Typ
     std::vector<std::string> libraries;
     prefs->GetKeys(libraries);
 
-    /* ensure the library doesn't already exist, and figure out a
-    new unique identifier for this one... */
-
-    int existingId = -1;
-    int nextId = 0; /* we start at 1 because we always have. */
-    for (size_t i = 0; i < libraries.size(); i++) {
-        std::string n = libraries.at(i);
-        int id = prefs->GetInt(name);
-
-        if (n == name) {
-            /* we already created a library with this name, let's go ahead
-            and look it up and return it. */
+    /* scan every persisted ID before assigning one, including when a previous
+    session only initialized its local library. names sharing an old ID are repaired. */
+    int existingId = 0;
+    int nextId = 0;
+    for (const auto& key : libraries) {
+        const int id = prefs->GetInt(key);
+        nextId = std::max(nextId, id);
+        if (key == name) {
             existingId = id;
-            break;
-        }
-
-        if (id > nextId) {
-            nextId = id;
         }
     }
-
-    if (existingId != -1) {
-        auto library = this->GetLibrary(existingId);
+    if (existingId > 0) {
+        const auto library = this->GetLibrary(existingId);
         if (!library) {
             return this->AddLibrary(existingId, type, name);
         }
+        if (library->Name() == name) {
+            return library;
+        }
+    }
+    if (nextId == std::numeric_limits<int>::max()) {
+        throw std::overflow_error("Library identifiers exhausted");
     }
 
     ++nextId; /* unique */

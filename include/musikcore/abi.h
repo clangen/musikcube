@@ -52,7 +52,9 @@ enum {
     MC_ERROR_QUEUE_FULL = 10,
     MC_ERROR_STALE_SNAPSHOT = 11,
     MC_ERROR_IN_FLIGHT = 12,
-    MC_ERROR_OUTCOME_UNKNOWN = 13
+    MC_ERROR_OUTCOME_UNKNOWN = 13,
+    /* the operation requires its owner thread; no state was changed. */
+    MC_ERROR_WRONG_THREAD = 14
 };
 
 /* Non-owning UTF-8 view. Keep the backing storage alive while using it.

@@ -106,6 +106,9 @@ namespace musik { namespace core { namespace audio {
 
             virtual ~PlaybackService();
 
+            /* finish local saved-state restoration before publishing a managed engine. */
+            void Initialize(bool synchronousRestore = false);
+
             /* IMessageTarget */
             void ProcessMessage(musik::core::runtime::IMessage &message) override;
 

@@ -91,6 +91,9 @@ void vis::Shutdown() {
     if (auto* selected = selectedVisualizer.exchange(nullptr)) {
         selected->Hide();
     }
+    /* worker users have stopped; the next session rediscovers enabled providers. */
+    visualizers.clear();
+    initialized = false;
 }
 
 mc_result MC_CALL mc_visualizer_list(mc_visualizer_list_fn read, void* data) {

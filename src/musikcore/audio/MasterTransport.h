@@ -46,7 +46,7 @@ namespace musik { namespace core { namespace audio {
         public:
             using Type = musik::core::sdk::TransportType;
 
-            MasterTransport() noexcept;
+            MasterTransport();
 
             void Start(const std::string& uri, Gain gain, StartMode mode) override;
             void PrepareNextTrack(const std::string& uri, Gain gain) override;

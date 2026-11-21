@@ -53,14 +53,25 @@ DataStreamFactory::DataStreamFactory() {
         .QueryInterface<PluginType, Deleter>("GetDataStreamFactory");
 }
 
-DataStreamFactory* DataStreamFactory::Instance() {
-    static DataStreamFactory* instance = NULL;
+namespace {
+    std::mutex factoryMutex;
+    std::shared_ptr<DataStreamFactory> factoryInstance;
+}
 
-    if (instance == NULL) {
-        instance = new DataStreamFactory();
+std::shared_ptr<DataStreamFactory> DataStreamFactory::Instance() {
+    std::lock_guard<std::mutex> lock(factoryMutex);
+    if (!factoryInstance) {
+        factoryInstance.reset(new DataStreamFactory());
     }
+    return factoryInstance;
+}
 
-    return instance;
+void musik::core::io::Shutdown() {
+    std::shared_ptr<DataStreamFactory> retired;
+    {
+        std::lock_guard<std::mutex> lock(factoryMutex);
+        retired.swap(factoryInstance);
+    }
 }
 
 IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlags flags) {
@@ -68,7 +79,8 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlags flags)
 
     if (uri) {
         /* plugins get the first crack at the uri */
-        for (const auto factory : DataStreamFactory::Instance()->dataStreamFactories) {
+        const auto providers = DataStreamFactory::Instance();
+        for (const auto& factory : providers->dataStreamFactories) {
             if (factory->CanRead(uri)) {
                 IDataStream* dataStream = factory->Open(uri, flags);
 

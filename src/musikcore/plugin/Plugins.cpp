@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <stdexcept>
 #include "Plugins.h"
 #include "PluginFactory.h"
 #include <musikcore/equalizer.h>
@@ -518,38 +519,51 @@ namespace musik { namespace core { namespace plugin {
         return environment;
     }
 
+    /* finish independent teardown phases even when a legacy hook throws. */
+    template<typename Work>
+    static void cleanup(Work&& work, bool& failure) noexcept {
+        try {
+            work();
+        }
+        catch (...) {
+            /* retain the failure, not an exception owned by provider code. */
+            failure = true;
+        }
+    }
+
     void Shutdown() {
-        /* preferences */
-        Preferences::SavePluginPreferences();
+        bool failure = false;
+        cleanup([] { Preferences::SavePluginPreferences(); }, failure);
 
-        /* data providers */
-        PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
-            "SetMetadataProxy",
-            [](musik::core::sdk::IPlugin* plugin, SetMetadataProxy func) {
-                func(nullptr);
-            }, PluginFactory::FunctionSelection::Session);
-
-        /* indexer */
-        PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
-            "SetIndexerNotifier",
-                [](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
-                func(nullptr);
-            }, PluginFactory::FunctionSelection::Session);
-
-        /* environment */
-        PluginFactory::Instance().QueryFunction<SetEnvironment>(
-            "SetEnvironment",
-            [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
-                func(nullptr);
-            }, PluginFactory::FunctionSelection::Session);
-
-        /* debug */
-        PluginFactory::Instance().QueryFunction<SetDebug>(
-            "SetDebug",
-            [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
-                func(&nullDebugger);
-            }, PluginFactory::FunctionSelection::Session);
-        PluginFactory::Instance().EndSession();
+        /* isolate each provider so one bad hook cannot strand the others. */
+        cleanup([&] {
+            PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
+                "SetMetadataProxy", [&](musik::core::sdk::IPlugin*, SetMetadataProxy function) {
+                    cleanup([&] { function(nullptr); }, failure);
+                }, PluginFactory::FunctionSelection::Session);
+        }, failure);
+        cleanup([&] {
+            PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
+                "SetIndexerNotifier", [&](musik::core::sdk::IPlugin*, SetIndexerNotifier function) {
+                    cleanup([&] { function(nullptr); }, failure);
+                }, PluginFactory::FunctionSelection::Session);
+        }, failure);
+        cleanup([&] {
+            PluginFactory::Instance().QueryFunction<SetEnvironment>(
+                "SetEnvironment", [&](musik::core::sdk::IPlugin*, SetEnvironment function) {
+                    cleanup([&] { function(nullptr); }, failure);
+                }, PluginFactory::FunctionSelection::Session);
+        }, failure);
+        cleanup([&] {
+            PluginFactory::Instance().QueryFunction<SetDebug>(
+                "SetDebug", [&](musik::core::sdk::IPlugin*, SetDebug function) {
+                    cleanup([&] { function(&nullDebugger); }, failure);
+                }, PluginFactory::FunctionSelection::Session);
+        }, failure);
+        /* workers have stopped, so cached factories can release provider state. */
+        cleanup([] { musik::core::audio::streams::Shutdown(); }, failure);
+        cleanup([] { musik::core::io::Shutdown(); }, failure);
+        cleanup([] { PluginFactory::Instance().EndSession(); }, failure);
 
         delete metadataProxy;
         ::messageQueue = nullptr;
@@ -557,6 +571,9 @@ namespace musik { namespace core { namespace plugin {
         ::defaultLibrary.reset();
         ::playbackService = nullptr;
         ::playbackPrefs.reset();
+        if (failure) {
+            throw std::runtime_error("Plugin service shutdown failed");
+        }
     }
 
 } } }

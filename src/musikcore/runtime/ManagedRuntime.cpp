@@ -19,6 +19,7 @@
 #include <musikcore/support/Messages.h>
 
 #include <condition_variable>
+#include <stdexcept>
 
 namespace musik { namespace core { namespace ffi {
     /* Owns text until dispatcher delivery. Copyable and movable. */
@@ -124,7 +125,12 @@ namespace musik { namespace core { namespace ffi {
     class ManagedRuntime final : public ContextRuntime, public sigslot::has_slots<> {
     public:
         ~ManagedRuntime() override {
-            this->Stop();
+            try {
+                this->Stop();
+            }
+            catch (...) {
+                /* explicit shutdown reports failure; destruction must not throw. */
+            }
         }
 
         void Start(mc_context& context, const std::string& pluginDirectory,
@@ -161,6 +167,7 @@ namespace musik { namespace core { namespace ffi {
 
             /* The plugin metadata proxy and indexer always serve the local catalog. */
             plugin::Start(this->queue.get(), this->playback.get(), this->local);
+            this->playback->Initialize(true);
 
             this->notifier = std::thread([this, &context] {
                 std::unique_lock lock(this->mutex);
@@ -218,8 +225,9 @@ namespace musik { namespace core { namespace ffi {
                 this->notifier.join();
             }
 
+            bool failure = false;
             if (this->indexer) {
-                this->indexer->Shutdown();
+                Cleanup([&] { this->indexer->Shutdown(); }, failure);
                 this->indexer->Started.disconnect(this);
                 this->indexer->Progress.disconnect(this);
                 this->indexer->Finished.disconnect(this);
@@ -232,31 +240,31 @@ namespace musik { namespace core { namespace ffi {
                 this->queue->UnregisterForBroadcasts(this->notifications.get());
                 this->notifications.reset();
             }
-            /* Stop playback while provider services and catalogs remain available. */
+            /* stop players while provider services and catalogs remain available. */
             if (this->playback) {
-                this->playback->Shutdown();
-                audio::Player::WaitForWorkers();
+                Cleanup([&] { this->playback->Shutdown(); }, failure);
+                Cleanup([] { audio::Player::WaitForWorkers(); }, failure);
             }
 
             if (this->initialized) {
-                audio::vis::Shutdown();
                 this->initialized = false;
-                exception_barrier(nullptr, [] {
-                    plugin::Shutdown();
-                    return MC_OK;
-                });
-                this->playback.reset();
-                LibraryFactory::Shutdown();
+                Cleanup([] { audio::vis::Shutdown(); }, failure);
+                Cleanup([] { plugin::Shutdown(); }, failure);
+                Cleanup([&] { this->playback.reset(); }, failure);
+                Cleanup([] { LibraryFactory::Shutdown(); }, failure);
             }
-            this->queue->Close();
+            Cleanup([&] { this->queue->Close(); }, failure);
 
             if (this->ownsLogging) {
-                debug::Shutdown();
                 this->ownsLogging = false;
+                Cleanup([] { debug::Shutdown(); }, failure);
             }
             if (this->piggy) {
-                net::PiggyWebSocketClient::Shutdown();
                 this->piggy = false;
+                Cleanup([] { net::PiggyWebSocketClient::Shutdown(); }, failure);
+            }
+            if (failure) {
+                throw std::runtime_error("Managed runtime shutdown failed");
             }
         }
 
@@ -274,6 +282,17 @@ namespace musik { namespace core { namespace ffi {
         }
 
     private:
+        /* record failures without retaining provider-defined exception objects. */
+        template<typename Work>
+        static void Cleanup(Work&& work, bool& failure) noexcept {
+            try {
+                work();
+            }
+            catch (...) {
+                failure = true;
+            }
+        }
+
         void StartLogging(bool observe) {
             std::vector<std::unique_ptr<debug::IBackend>> backends;
             backends.push_back(std::make_unique<debug::SimpleFileBackend>());

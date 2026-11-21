@@ -50,7 +50,8 @@ namespace musik {
 
             void LoadPlaybackContext(
                 musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback);
+                musik::core::audio::PlaybackService& playback,
+                bool synchronous = false);
 
             void SavePlaybackContext(
                 musik::core::ILibraryPtr library,

@@ -54,39 +54,50 @@ using DspList = std::vector<std::shared_ptr<IDSP>>;
 using Deleter = PluginFactory::ReleaseDeleter<IDecoder>;
 using DecoderPtr = std::shared_ptr<IDecoder>;
 
-static std::mutex initLock;
-static DecoderFactoryList decoders;
-static EncoderFactoryList encoders;
+namespace {
+    /* one provider generation is retained by each in-flight factory lookup. */
+    struct FactoryCache {
+        DecoderFactoryList decoders;
+        EncoderFactoryList encoders;
+    };
 
-static void init() {
-    std::unique_lock<std::mutex> lock(initLock);
+    std::mutex initLock;
+    std::shared_ptr<const FactoryCache> factories;
 
-    if (!decoders.size()) {
-        using Deleter = PluginFactory::ReleaseDeleter<IDecoderFactory>;
-
-        decoders = PluginFactory::Instance()
-            .QueryInterface<IDecoderFactory, Deleter>("GetDecoderFactory");
-    }
-
-    if (!encoders.size()) {
-        using Deleter = PluginFactory::ReleaseDeleter<IEncoderFactory>;
-
-        encoders = PluginFactory::Instance()
-            .QueryInterface<IEncoderFactory, Deleter>("GetEncoderFactory");
+    std::shared_ptr<const FactoryCache> getFactories() {
+        std::lock_guard<std::mutex> lock(initLock);
+        if (!factories) {
+            const auto cache = std::make_shared<FactoryCache>();
+            cache->decoders = PluginFactory::Instance()
+                .QueryInterface<IDecoderFactory, PluginFactory::ReleaseDeleter<IDecoderFactory>>("GetDecoderFactory");
+            cache->encoders = PluginFactory::Instance()
+                .QueryInterface<IEncoderFactory, PluginFactory::ReleaseDeleter<IEncoderFactory>>("GetEncoderFactory");
+            factories = cache;
+        }
+        return factories;
     }
 }
 
 namespace musik { namespace core { namespace audio {
 
     namespace streams {
+        void Shutdown() {
+            std::shared_ptr<const FactoryCache> retired;
+            {
+                std::lock_guard<std::mutex> lock(initLock);
+                retired.swap(factories);
+            }
+            /* provider Release may reenter core; do not hold the cache mutex. */
+        }
+
         IDecoder* GetDecoderForDataStream(IDataStream* dataStream) {
-            init();
+            const auto cache = getFactories();
 
             IDecoder* decoder = nullptr;
 
-            /* find a DecoderFactory we can use for this type of data*/
-            DecoderFactoryList::iterator factories = decoders.begin();
-            DecoderFactoryList::iterator end = decoders.end();
+            /* find a DecoderFactory we can use for this type of data */
+            auto factories = cache->decoders.begin();
+            const auto end = cache->decoders.end();
             std::shared_ptr<IDecoderFactory> factory;
 
             for (; factories != end && !factory; ++factories) {
@@ -125,9 +136,9 @@ namespace musik { namespace core { namespace audio {
         }
 
         IEncoder* GetEncoderForType(const char* type) {
-            init();
+            const auto cache = getFactories();
 
-            for (auto factory : encoders) {
+            for (const auto& factory : cache->encoders) {
                 if (factory->CanHandle(type)) {
                     return factory->CreateEncoder(type);
                 }

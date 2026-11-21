@@ -37,7 +37,9 @@ Late replies cannot deliver twice or address a destroyed context. Callbacks run
 without internal queue locks, and may submit or cancel work. They cannot shut
 down or destroy the context currently delivering them.
 
-Bind dispatch/shutdown to one thread and reject nested or concurrent dispatch.
+Bind dispatch/shutdown to one thread. Reject owner-thread violations with
+`MC_ERROR_WRONG_THREAD` and nested dispatch with `MC_ERROR_BUSY`, so callers can
+distinguish a permanent calling error from temporary reentrancy.
 This provides a serial delivery contract instead of making callers tolerate
 reentrant teardown. Unsolicited notifications are a separate planned surface;
 request completion does not depend on notification polling.
