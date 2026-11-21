@@ -341,6 +341,11 @@ namespace {
             return failure(__LINE__);
         }
 
+        /* Search rows and playback must share the selected backend. */
+        if (playback.ReplaceQueue(tracks) != MC_OK || service.Count() != tracks.Size()) {
+            return failure(__LINE__);
+        }
+
         /* Switch before releasing a cancelled remote read. The next remote request stays on its origin. */
         const auto pending = ReadTracks(context, tracks, range, receive);
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));

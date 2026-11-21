@@ -72,18 +72,15 @@ static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preference
 }
 
 TrackSearchLayout::TrackSearchLayout(
-    musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library,
+    std::shared_ptr<TrackListView> trackList,
     std::shared_ptr<musik::core::api::Context> apiContext,
     std::shared_ptr<const musik::core::api::Library> apiLibrary)
 : LayoutBase()
-, playback(playback)
-, library(library)
+, trackList(std::move(trackList))
 , apiContext(std::move(apiContext))
 , apiLibrary(std::move(apiLibrary))
 {
     this->prefs = Preferences::ForComponent(components::Settings);
-    this->library->Indexer()->Finished.connect(this, &TrackSearchLayout::OnIndexerFinished);
     this->InitializeWindows();
 }
 
@@ -141,7 +138,6 @@ void TrackSearchLayout::InitializeWindows() {
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
-    this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
     this->trackList->SetApiLibrary(this->apiContext, this->apiLibrary);
     this->trackList->MouseEvent.connect(this, &TrackSearchLayout::OnWindowMouseEvent);
     this->trackList->SetFocusOrder(1);
@@ -156,7 +152,7 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
         this->Requery();
     }
     else {
-        this->CancelLocalSearch();
+        this->CancelSearch();
         this->SaveSession();
         this->input->SetText("");
         this->trackList->Reset();
@@ -171,7 +167,7 @@ void TrackSearchLayout::FocusInput() {
 void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
-    this->CancelLocalSearch();
+    this->CancelSearch();
 
     if (!this->apiLibrary) {
         return;
@@ -180,10 +176,10 @@ void TrackSearchLayout::Requery() {
     try {
         const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
         const auto hash = std::hash<std::string> {}(filter);
-        this->localSearchRequest = api::OpenTrackSearch(*this->apiContext, *this->apiLibrary,
+        this->searchRequest = api::OpenTrackSearch(*this->apiContext, *this->apiLibrary,
             api::TrackSearch { filter, mode, static_cast<mc_track_search_order>(sortOrder) },
             this->searchWork.Begin([this, sortOrder, hash](mc_result status, api::TrackResult result, std::string_view) {
-                this->localSearchRequest = 0;
+                this->searchRequest = 0;
                 if (status == MC_ERROR_BUSY) {
                     this->Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
                 }
@@ -201,15 +197,15 @@ void TrackSearchLayout::Requery() {
 }
 
 void TrackSearchLayout::CancelSearchRequests() {
-    this->CancelLocalSearch();
+    this->CancelSearch();
     this->trackList->CancelTrackRequests();
 }
 
-void TrackSearchLayout::CancelLocalSearch() {
+void TrackSearchLayout::CancelSearch() {
     this->searchWork.Invalidate();
-    if (this->localSearchRequest) {
-        this->apiContext->Cancel(this->localSearchRequest);
-        this->localSearchRequest = 0;
+    if (this->searchRequest) {
+        this->apiContext->Cancel(this->searchRequest);
+        this->searchRequest = 0;
     }
 }
 

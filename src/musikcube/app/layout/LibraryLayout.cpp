@@ -220,16 +220,19 @@ void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::api::Co
     this->nowPlayingLayout = std::make_shared<NowPlayingLayout>(this->playback, this->library, apiContext, apiLibrary);
     this->categorySearchLayout = std::make_shared<CategorySearchLayout>(this->playback, this->library);
     this->categorySearchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnCategorySearchResultSelected);
-    /* Keep the search view and its playback rows bound to one backend. */
+    /* Bind legacy row actions and index notifications at the layout boundary. */
+    const auto backend = selection.Wrapped();
+    auto searchRows = std::make_shared<TrackListView>(this->playback, backend);
     this->trackSearchLayout = std::make_shared<TrackSearchLayout>(
-        this->playback, selection.Wrapped(), apiContext, apiLibrary);
+        std::move(searchRows), apiContext, apiLibrary);
+    backend->Indexer()->Finished.connect(this->trackSearchLayout.get(), &TrackSearchLayout::OnIndexerFinished);
     if (apiLibrary) {
         const std::weak_ptr<api::Context> context = apiContext;
         const auto token = this->playlistWork.CurrentToken();
         const auto addTrack = [context, apiLibrary, token](int64_t id) {
             PlayQueueOverlays::ShowAddToPlaylistPicker(context, apiLibrary, token, { id });
         };
-        const auto addCategory = [context, apiLibrary, token, backend = selection.Wrapped()](const std::string& field, const std::string& value, int64_t id) {
+        const auto addCategory = [context, apiLibrary, token, backend](const std::string& field, const std::string& value, int64_t id) {
             PlayQueueOverlays::ShowAddCategoryToPlaylistPicker(context, apiLibrary, token, backend, field, value, id);
         };
         this->browseLayout->SetAddToPlaylistCallbacks(addTrack, addCategory);

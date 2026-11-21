@@ -43,7 +43,6 @@
 
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/context.h>
-#include <musikcore/library/ILibrary.h>
 #include <musikcore/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
@@ -61,14 +60,14 @@ namespace musik { namespace cube {
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackSearchLayout)
 
             TrackSearchLayout(
-                musik::core::audio::PlaybackService& playback,
-                musik::core::ILibraryPtr library,
+                std::shared_ptr<TrackListView> trackList,
                 std::shared_ptr<musik::core::api::Context> apiContext,
                 std::shared_ptr<const musik::core::api::Library> apiLibrary);
 
             virtual ~TrackSearchLayout();
 
             void CancelSearchRequests();
+            void OnIndexerFinished(int);
             void SetAddToPlaylistCallbacks(TrackListView::AddTrackToPlaylist track,
                 TrackListView::AddCategoryToPlaylist category)
             {
@@ -91,9 +90,8 @@ namespace musik { namespace cube {
             void SaveSession();
             void InitializeWindows();
             void Requery();
-            void CancelLocalSearch();
+            void CancelSearch();
             void SetSearchTitle(const std::string& order);
-            void OnIndexerFinished(int);
 
             void OnWindowMouseEvent(
                 cursespp::Window* window,
@@ -109,14 +107,12 @@ namespace musik { namespace cube {
             void SetMatchType(MatchType matchType);
             void ShowTrackSortOverlay();
 
-            musik::core::audio::PlaybackService& playback;
-            const musik::core::ILibraryPtr library;
             MatchType matchType { MatchType::Substring };
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<TrackListView> trackList;
             std::shared_ptr<cursespp::TextInput> input;
             AsyncCallbackScope searchWork;
-            mc_request_id localSearchRequest = 0;
+            mc_request_id searchRequest = 0;
             std::shared_ptr<musik::core::api::Context> apiContext;
             std::shared_ptr<const musik::core::api::Library> apiLibrary;
     };

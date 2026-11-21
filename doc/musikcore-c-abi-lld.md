@@ -618,7 +618,13 @@ release-candidate quality.
   connect, state access, disconnect, and generation-bound library opening.
   `musikcore.integration.api.backend_parity` uses the public session for
   loopback queries and checks retained results across reconnect.
-- [ ] Migrate app bootstrap and playback selection to public library ownership.
+- [x] Supply Track Search with the same public library interface for either
+  backend. The app binds its selected backend at the API boundary.
+  `musikcore.abi.remote_query_transport` verifies that search results can
+  replace the playback queue and that switching libraries invalidates old
+  playback references.
+- [ ] Migrate remaining app bootstrap and playback selection to public library
+  ownership.
 
 ## Foundation validation and baselines
 
