@@ -120,7 +120,7 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ShowEqualizer, kn)) {
-        EqualizerOverlay::ShowOverlay();
+        EqualizerOverlay::ShowOverlay(this->musikcore);
         return true;
     }
 

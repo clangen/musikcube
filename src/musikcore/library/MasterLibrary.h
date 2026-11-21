@@ -41,7 +41,6 @@
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/library/QueryBase.h>
-#include <musikcore/runtime/IMessageTarget.h>
 
 #include <mutex>
 
@@ -52,11 +51,7 @@ namespace musik { namespace core { namespace audio { class PlaybackService; } } 
 
 namespace musik { namespace core { namespace library {
 
-    class MasterLibrary:
-        public ILibrary,
-        public runtime::IMessageTarget,
-        public sigslot::has_slots<>
-    {
+    class MasterLibrary: public ILibrary, public sigslot::has_slots<> {
         public:
             MasterLibrary();
             virtual ~MasterLibrary();
@@ -73,7 +68,6 @@ namespace musik { namespace core { namespace library {
             ConnectionState GetConnectionState() const override;
             Type GetType() const override;
             void Close() override;
-            void ProcessMessage(runtime::IMessage& message) override;
 
             ILibraryPtr Wrapped() const noexcept { return this->wrappedLibrary; }
 

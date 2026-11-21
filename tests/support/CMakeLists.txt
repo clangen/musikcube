@@ -122,8 +122,14 @@ if(BUILD_TESTING)
       add_dependencies(musikcore_managed_runtime_test nullout musikcube_seed_library)
       add_dependencies(musikcube_tests musikcore_managed_runtime_test)
       add_dependencies(musikcube_integration_tests musikcore_managed_runtime_test)
+      set(managed_runtime_plugins)
+      if(TARGET supereqdsp)
+        add_dependencies(musikcore_managed_runtime_test supereqdsp)
+        list(APPEND managed_runtime_plugins "-DEQUALIZER_PLUGIN=$<TARGET_FILE:supereqdsp>")
+      endif()
       add_test(NAME musikcore.integration.api.managed_runtime COMMAND "${CMAKE_COMMAND}"
         ${indexed_arguments} "-DMANAGED_RUNTIME_TEST=$<TARGET_FILE:musikcore_managed_runtime_test>"
+        ${managed_runtime_plugins}
         "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
       set_tests_properties(musikcore.integration.api.managed_runtime PROPERTIES
         LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)

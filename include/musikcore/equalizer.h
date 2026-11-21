@@ -1,7 +1,7 @@
 #ifndef MUSIKCORE_EQUALIZER_H
 #define MUSIKCORE_EQUALIZER_H
 
-#include <musikcore/abi.h>
+#include <musikcore/context.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -34,6 +34,13 @@ MC_API mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state);
 MC_API mc_result MC_CALL mc_equalizer_set_enabled(bool enabled);
 /* Supply exactly MC_EQUALIZER_BAND_COUNT finite gains between -20 and +20 dB. */
 MC_API mc_result MC_CALL mc_equalizer_set_gains(const double* gains, size_t count);
+
+typedef void (MC_CALL *mc_equalizer_changed_fn)(void* user_data);
+
+/* Register on the dispatcher thread. Dispatch coalesces updates. Pass NULL
+   to remove the observer and discard any queued update. */
+MC_API mc_result MC_CALL mc_context_set_equalizer_changed_callback(
+    mc_context* context, mc_equalizer_changed_fn callback, void* user_data);
 
 #ifdef __cplusplus
 }

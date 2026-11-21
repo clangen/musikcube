@@ -1164,11 +1164,15 @@ legacy list for actions that still require it.
   The visualizer chooser and hotkey use the public visualizer API.
   `musikcore.integration.plugin.playback_reload` and `musikcube.ui.browse`
   cover an installation without a visualizer plugin.
+  The equalizer overlay subscribes to public dispatch for live updates.
+  `musikcore.integration.api.managed_runtime` verifies coalesced changes
+  using the equalizer plugin.
 - [ ] **MIG-009** Remove private musikcore headers from musikcube targets.
 - [ ] **MIG-010** Make the normal migration build link ABI0 only.
   `musikcore.integration.api.managed_runtime` starts production services
   through public headers, exercises blocking-host wakeups and delayed playback
   work, then destroys and restarts the runtime with a retained catalog handle.
+  Cube now starts those services through the same public context option.
 
 #### Phase 7 gate
 

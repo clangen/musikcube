@@ -244,9 +244,9 @@ async function checkTrackSearch(runtime, database, screenshots,
         await terminal.expect('play queue', { absent: 'new playlist name' });
 
         terminal.send('\x1bx');
+        await terminal.expect('delete playlist');
         await terminal.expect(playlistName + ' revised');
-        /* A painted picker must already own input; no focus-delay sleep is needed. */
-        terminal.send(END + '\r');
+        terminal.send('\r');
         await terminal.expect('are you sure you want to delete');
         terminal.send('\r');
         await terminal.expect('play queue', { absent: 'are you sure you want to delete' });

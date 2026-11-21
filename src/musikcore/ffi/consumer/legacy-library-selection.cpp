@@ -13,21 +13,63 @@
 #include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Messages.h>
 
 #include <condition_variable>
 
 namespace musik { namespace core { namespace ffi {
+    /* Borrows the context for the lifetime of its runtime broadcasts. Neither copyable nor movable. */
+    class CoreNotifications final : public runtime::IMessageTarget {
+    public:
+        explicit CoreNotifications(mc_context& context) : context(context) {}
+        CoreNotifications(const CoreNotifications&) = delete;
+        CoreNotifications(CoreNotifications&&) = delete;
+
+        CoreNotifications& operator=(const CoreNotifications&) = delete;
+        CoreNotifications& operator=(CoreNotifications&&) = delete;
+
+        void ProcessMessage(runtime::IMessage& input) override {
+            mc_playlist_event event;
+            switch (input.Type()) {
+                case message::EqualizerUpdated:
+                    publish_equalizer_event(this->context);
+                    return;
+                case message::PlaylistModified:
+                    event = MC_PLAYLIST_CONTENTS_CHANGED;
+                    break;
+                case message::PlaylistCreated:
+                    event = MC_PLAYLIST_CREATED;
+                    break;
+                case message::PlaylistRenamed:
+                    event = MC_PLAYLIST_RENAMED;
+                    break;
+                case message::PlaylistDeleted:
+                    event = MC_PLAYLIST_DELETED;
+                    break;
+                default:
+                    return;
+            }
+
+            publish_playlist_event(this->context, event, input.UserData1());
+        }
+
+    private:
+        mc_context& context;
+    };
+
     ILibraryPtr CreateLegacyLibrary() {
         return std::make_shared<library::MasterLibrary>();
     }
 
     void AttachLegacyLibrary(mc_context& context, const ILibraryPtr& library, audio::PlaybackService& playback) {
         auto* adapter = static_cast<library::MasterLibrary*>(library.get());
+        auto& queue = adapter->GetMessageQueue();
+        const auto notifications = std::make_shared<CoreNotifications>(context);
 
         /* Detach the engine and context references before releasing the adapter. */
-        std::shared_ptr<library::MasterLibrary> bound(adapter, [library](auto*) {
+        std::shared_ptr<library::MasterLibrary> bound(adapter, [library, notifications, &queue](auto*) {
             auto& selected = static_cast<musik::core::library::MasterLibrary&>(*library);
-            selected.GetMessageQueue().UnregisterForBroadcasts(&selected);
+            queue.UnregisterForBroadcasts(notifications.get());
             selected.AttachContext(nullptr, nullptr);
         });
         auto& factory = LibraryFactory::Instance();
@@ -45,7 +87,7 @@ namespace musik { namespace core { namespace ffi {
             },
             *factory.DefaultLocalLibrary()->Indexer());
         adapter->AttachContext(&context, &playback);
-        adapter->GetMessageQueue().RegisterForBroadcasts(std::static_pointer_cast<library::MasterLibrary>(library));
+        queue.RegisterForBroadcasts(notifications);
     }
 
     static void startServices(mc_context& context, runtime::IMessageQueue& queue) {
@@ -55,19 +97,6 @@ namespace musik { namespace core { namespace ffi {
         audio::AttachPlayback(context, *playback);
         AttachLegacyLibrary(context, library, *playback);
         plugin::Start(&queue, playback.get(), library);
-    }
-
-    void StartLegacyApp(api::Context& musikcore, runtime::IMessageQueue& queue) {
-        LibraryFactory::Initialize(queue);
-        startServices(*musikcore.Get(), queue);
-    }
-
-    void StopLegacyIndexing() {
-        LibraryFactory::Instance().DefaultLocalLibrary()->Indexer()->Shutdown();
-    }
-
-    void ShutdownLegacyLibraries() {
-        LibraryFactory::Instance().Shutdown();
     }
 
     /* Owns the core queue and its readiness thread. Neither copyable nor movable. */

@@ -66,3 +66,5 @@ Core selection and playback now capture backend identity directly. They no longe
 The production C API can start the configured catalog, playback engine, and plugins through context creation. The context owns the runtime queue and wakes a blocking host for both immediate and delayed work. Shutdown stops producers before releasing the queue, and retained catalogs keep their closed backend storage valid.
 
 The public-only integration test started playback through Null output, delivered a delayed reload on the owner thread, and restarted the runtime while retaining a catalog handle. It passed five consecutive runs. Cube startup still uses the legacy entry point pending the equalizer notification cutover.
+
+Cube now also uses the managed context for startup and core shutdown. The equalizer overlay subscribes to context dispatch, allowing the core and UI queues to run separately. All 46 Linux Release tests passed. The managed runtime, Browse, and playlist cases each passed six consecutive focused runs.

@@ -1,4 +1,5 @@
 #include <musikcore/context.h>
+#include <musikcore/equalizer.h>
 
 #include "../common/error.h"
 #include "../common/primitives.h"
@@ -68,6 +69,10 @@ struct mc_context {
     void* playlistChangedData = nullptr;
     uint64_t playlistSubscription = 0;
     std::vector<std::pair<mc_playlist_event, int64_t>> playlistEvents;
+    mc_equalizer_changed_fn equalizerChanged = nullptr;
+    void* equalizerChangedData = nullptr;
+    uint64_t equalizerSubscription = 0;
+    bool equalizerNotificationPending = false;
     mc_library_changed_fn libraryChanged = nullptr;
     void* libraryChangedData = nullptr;
     bool libraryNotificationPending = false;
@@ -232,6 +237,11 @@ namespace {
         std::vector<std::pair<mc_playlist_event, int64_t>> playlistEvents;
         playlistEvents.swap(context.playlistEvents);
 
+        const auto notifyEqualizer = context.equalizerNotificationPending ? context.equalizerChanged : nullptr;
+        auto* const equalizerData = context.equalizerChangedData;
+        const auto equalizerSubscription = context.equalizerSubscription;
+        context.equalizerNotificationPending = false;
+
         /* Rearm before invoking callbacks so concurrent producers can wake the next dispatch. */
         context.wakeup_pending = false;
         lock.unlock();
@@ -265,6 +275,17 @@ namespace {
                 notifyPlaylist(playlistData, event.first, event.second);
                 return MC_OK;
             });
+        }
+        if (notifyEqualizer) {
+            lock.lock();
+            const bool subscribed = context.equalizerSubscription == equalizerSubscription;
+            lock.unlock();
+            if (subscribed) {
+                musik::core::ffi::exception_barrier(nullptr, [&] {
+                    notifyEqualizer(equalizerData);
+                    return MC_OK;
+                });
+            }
         }
         for (const auto &request : ready) {
             musik::core::ffi::exception_barrier(nullptr, [&] {
@@ -409,6 +430,36 @@ mc_result MC_CALL mc_context_set_playlist_changed_callback(
         context->playlistEvents.clear();
         context->playlistChanged = callback;
         context->playlistChangedData = callback ? data : nullptr;
+        return MC_OK;
+    });
+}
+
+void musik::core::ffi::publish_equalizer_event(mc_context& context) {
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        if (context.stopping || !context.equalizerChanged) {
+            return;
+        }
+        context.equalizerNotificationPending = true;
+    }
+    wake_context(context);
+}
+
+mc_result MC_CALL mc_context_set_equalizer_changed_callback(
+    mc_context* context, mc_equalizer_changed_fn callback, void* data)
+{
+    if (!context) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&] {
+        std::lock_guard<std::mutex> lock(context->mutex);
+        if (context->stopping || !is_dispatcher(*context)) {
+            return MC_ERROR_BUSY;
+        }
+        ++context->equalizerSubscription;
+        context->equalizerNotificationPending = false;
+        context->equalizerChanged = callback;
+        context->equalizerChangedData = callback ? data : nullptr;
         return MC_OK;
     });
 }

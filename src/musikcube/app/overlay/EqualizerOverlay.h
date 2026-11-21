@@ -43,6 +43,8 @@
 #include <sigslot/sigslot.h>
 #include <memory>
 
+namespace musik { namespace core { namespace api { class Context; } } }
+
 namespace musik {
     namespace cube {
         class EqualizerOverlay:
@@ -50,14 +52,13 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                explicit EqualizerOverlay(const mc_equalizer_state& state);
+                EqualizerOverlay(musik::core::api::Context& musikcore, const mc_equalizer_state& state);
                 virtual ~EqualizerOverlay();
 
-                static void ShowOverlay();
+                static void ShowOverlay(musik::core::api::Context& musikcore);
 
                 virtual void Layout() override;
                 virtual bool KeyPress(const std::string& key) override;
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             private:
                 class BandsAdapter : public cursespp::ScrollAdapterBase {
@@ -76,6 +77,7 @@ namespace musik {
 
                 void OnEnabledChanged(cursespp::Checkbox* cb, bool checked);
 
+                musik::core::api::Context& musikcore;
                 mc_equalizer_state state;
                 std::shared_ptr<BandsAdapter> adapter;
                 std::shared_ptr<cursespp::Checkbox> enabledCb;

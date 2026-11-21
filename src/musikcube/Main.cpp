@@ -49,14 +49,10 @@
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 
-#include <musikcore/audio/Player.h>
-#include <musikcore/audio/Visualizer.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/debug.h>
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/indexer.hpp>
-#include <musikcore/ffi/consumer/legacy-library-selection.h>
-#include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/support/Common.h>
@@ -128,8 +124,6 @@ int main(int argc, char* argv[]) {
 
     debug::Start(debuggerBackends);
 
-    plugin::Init();
-
 #if defined(BUILD_STANDALONE) && !defined(__APPLE__)
     /* when we build a standalone binary we make sure to also package the terminfo used
     by the version of ncurses we compile against. if the target system has ncurses5, the
@@ -141,6 +135,7 @@ int main(int argc, char* argv[]) {
     {
         /* The context outlives the app and every view that borrows it. */
         mc_context_options apiOptions = MC_CONTEXT_OPTIONS_DEFAULT;
+        apiOptions.flags = MC_CONTEXT_MANAGED_RUNTIME;
         apiOptions.wakeup_user_data = &Window::MessageQueue();
         apiOptions.wakeup = [](void* data) {
             auto& queue = *static_cast<runtime::IMessageQueue*>(data);
@@ -148,8 +143,6 @@ int main(int argc, char* argv[]) {
         };
         api::Context musikcore(apiOptions);
         Window::SetNavigationKeys(Hotkeys::NavigationKeys());
-
-        core::ffi::StartLegacyApp(musikcore, Window::MessageQueue());
 
 #ifdef WIN32
         auto font = GetApplicationDirectory() + "fonts/SourceCodePro-Medium.ttf";
@@ -232,15 +225,9 @@ int main(int argc, char* argv[]) {
 #ifdef WIN32
         win32::HideMainWindow();
 #endif
-
-        core::ffi::StopLegacyIndexing();
     }
 
-    Player::WaitForWorkers();
     PiggyWebSocketClient::Shutdown();
-    core::ffi::ShutdownLegacyLibraries();
-    vis::Shutdown();
-    plugin::Shutdown();
     debug::Shutdown();
 
     return 0;

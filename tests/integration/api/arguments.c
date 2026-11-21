@@ -69,6 +69,7 @@ int main(void) {
     CHECK(mc_context_read_library_status(context, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_set_library_changed_callback(NULL, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_set_playlist_changed_callback(NULL, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_context_set_equalizer_changed_callback(NULL, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_reconnect_remote_library(context) == MC_ERROR_UNSUPPORTED);
     mc_indexer_state indexer_state = MC_INDEXER_IDLE;
     CHECK(mc_indexer_get_state(context, &indexer_state) == MC_ERROR_UNSUPPORTED);

@@ -54,7 +54,34 @@ namespace {
         return false;
     }
 
-    bool checkRuntime(const mc_context_options& options, Host& host, std::optional<Library>& retained) {
+    bool checkEqualizer(Context& context, Host& host) {
+        const auto before = ReadEqualizer();
+        if (!before) {
+            return false;
+        }
+
+        unsigned updates = 0;
+        if (SetEqualizerChangedCallback(context, [](void* data) {
+            ++*static_cast<unsigned*>(data);
+        }, &updates) != MC_OK)
+        {
+            return false;
+        }
+
+        auto gains = EqualizerGains {};
+        gains.front() = 1.0;
+        const bool updated = SetEqualizerEnabled(!before->enabled) == MC_OK &&
+            SetEqualizerGains(gains) == MC_OK &&
+            waitFor(context, host, [&] { return updates != 0; });
+        const auto unsubscribed = SetEqualizerChangedCallback(context, nullptr);
+        const auto after = ReadEqualizer();
+        return updated && unsubscribed == MC_OK && updates == 1 && after &&
+            before->enabled != after->enabled && after->bands[0].gain == gains.front();
+    }
+
+    bool checkRuntime(
+        const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer)
+    {
         TrackResult tracks;
         mc_result complete = MC_ERROR_BUSY;
         bool wrongThread = false;
@@ -71,6 +98,10 @@ namespace {
         retained = context.GetLibrary();
         if (!retained || ReadOutputConfiguration().selectedDriver != "Null") {
             std::fputs("Managed startup did not load the catalog and headless output\n", stderr);
+            return false;
+        }
+        if (equalizer && !checkEqualizer(context, host)) {
+            std::fputs("Equalizer updates did not reach the public dispatcher\n", stderr);
             return false;
         }
 
@@ -111,14 +142,14 @@ namespace {
     }
 }
 
-int main() {
+int main(int argc, char**) {
     Host host;
     auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
     options.flags = MC_CONTEXT_MANAGED_RUNTIME;
     options.wakeup = Host::Wake;
     options.wakeup_user_data = &host;
     std::optional<Library> oldLibrary;
-    if (!checkRuntime(options, host, oldLibrary)) {
+    if (!checkRuntime(options, host, oldLibrary, argc > 1)) {
         return 1;
     }
 

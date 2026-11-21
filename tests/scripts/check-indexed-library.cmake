@@ -17,9 +17,14 @@ get_filename_component(config_directory "${directory}/../.." ABSOLUTE)
 # Each selected case gets its own catalog and process so an earlier assertion
 # cannot hide a later contract or leak preferences into another test.
 if(DEFINED MANAGED_RUNTIME_TEST)
+  if(DEFINED EQUALIZER_PLUGIN)
+    set(managed_runtime_plugins --plugin "${EQUALIZER_PLUGIN}")
+    set(managed_runtime_options --check-equalizer)
+  endif()
   execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
     "${BUILD_DIR}/tests/bin/isolated" "${MANAGED_RUNTIME_TEST}" --stage
-    --headless-output "${NULL_OUTPUT}" --config-root "${config_directory}"
+    --headless-output "${NULL_OUTPUT}" ${managed_runtime_plugins}
+    --config-root "${config_directory}" ${managed_runtime_options}
     RESULT_VARIABLE status)
   if(NOT status STREQUAL "0")
     message(FATAL_ERROR "Managed runtime test failed (${status}); fixture: ${directory}")

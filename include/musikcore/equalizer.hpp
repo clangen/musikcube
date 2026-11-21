@@ -28,6 +28,12 @@ namespace musik { namespace core { namespace api {
     inline mc_result SetEqualizerGains(const EqualizerGains& gains) {
         return mc_equalizer_set_gains(gains.data(), gains.size());
     }
+
+    inline mc_result SetEqualizerChangedCallback(
+        Context& context, mc_equalizer_changed_fn callback, void* userData = nullptr)
+    {
+        return mc_context_set_equalizer_changed_callback(context.Get(), callback, userData);
+    }
 } } }
 
 #endif

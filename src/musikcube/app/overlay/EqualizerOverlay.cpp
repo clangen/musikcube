@@ -90,8 +90,9 @@ static std::string formatBandRow(size_t width, const std::string& band, double d
     return text::Align(leftText, text::AlignLeft, u8cols(leftText) + remain) + rightText;
 }
 
-EqualizerOverlay::EqualizerOverlay(const mc_equalizer_state& state)
+EqualizerOverlay::EqualizerOverlay(api::Context& musikcore, const mc_equalizer_state& state)
 : OverlayBase()
+, musikcore(musikcore)
 , state(state)
 {
     this->enabledCb = std::make_shared<Checkbox>();
@@ -127,17 +128,23 @@ EqualizerOverlay::EqualizerOverlay(const mc_equalizer_state& state)
     style(*this->enabledCb);
     style(*this->listView);
     this->listView->SetFrameVisible(true);
+
+    const auto status = api::SetEqualizerChangedCallback(musikcore, [](void* data) {
+        static_cast<EqualizerOverlay*>(data)->Refresh();
+    }, this);
+    if (status != MC_OK) {
+        throw api::Error(status);
+    }
 }
 
 EqualizerOverlay::~EqualizerOverlay() {
-    MessageQueue().UnregisterForBroadcasts(this);
+    api::SetEqualizerChangedCallback(this->musikcore, nullptr);
 }
 
-void EqualizerOverlay::ShowOverlay() {
+void EqualizerOverlay::ShowOverlay(api::Context& musikcore) {
     if (const auto state = api::ReadEqualizer()) {
-        auto overlay = std::make_shared<EqualizerOverlay>(*state);
+        auto overlay = std::make_shared<EqualizerOverlay>(musikcore, *state);
         App::Overlays().Push(overlay);
-        MessageQueue().RegisterForBroadcasts(overlay);
     }
 }
 
@@ -196,15 +203,6 @@ void EqualizerOverlay::Refresh() {
         this->state = *updated;
         this->enabledCb->SetChecked(this->state.enabled);
         this->listView->OnAdapterChanged();
-    }
-}
-
-void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage& message) {
-    if (message.Type() == musik::core::message::EqualizerUpdated) {
-        this->Refresh();
-    }
-    else {
-        OverlayBase::ProcessMessage(message);
     }
 }
 
