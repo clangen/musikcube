@@ -72,6 +72,8 @@ int main(void) {
     CHECK(mc_output_read_configuration(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_output_select_driver(name) == MC_ERROR_UNSUPPORTED);
     CHECK(mc_output_select_device(name, malformed) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_output_set_transport(MC_OUTPUT_GAPLESS) == MC_ERROR_UNSUPPORTED);
+    CHECK(mc_output_set_transport((mc_output_transport) -1) == MC_ERROR_INVALID_ARGUMENT);
     mc_equalizer_state equalizer = MC_EQUALIZER_STATE_DEFAULT;
     CHECK(mc_equalizer_get_state(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_equalizer_get_state(&equalizer) == MC_ERROR_UNSUPPORTED);

@@ -48,6 +48,15 @@ namespace {
             return false;
         }
 
+        if (api::SetOutputTransport(MC_OUTPUT_CROSSFADE) != MC_OK ||
+            api::ReadOutputConfiguration().transport != MC_OUTPUT_CROSSFADE ||
+            api::SetOutputTransport(MC_OUTPUT_GAPLESS) != MC_OK ||
+            api::ReadOutputConfiguration().transport != MC_OUTPUT_GAPLESS)
+        {
+            std::fputs("Output configuration did not preserve the selected transport\n", stderr);
+            return false;
+        }
+
         GaplessTransport transport;
         if (!startPlayback(transport, media)) {
             std::fputs("Playback did not start with the headless output\n", stderr);

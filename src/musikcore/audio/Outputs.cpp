@@ -238,6 +238,18 @@ namespace musik {
 }
 
 namespace {
+    mc_output_transport configuredTransport() {
+        const auto settings = Preferences::ForComponent(components::Playback);
+        return settings->GetInt(keys::Transport, static_cast<int>(TransportType::Gapless)) ==
+                static_cast<int>(TransportType::Crossfade)
+            ? MC_OUTPUT_CROSSFADE
+            : MC_OUTPUT_GAPLESS;
+    }
+
+    bool supportedTransport(mc_output_transport transport, std::string_view driver) {
+        return transport != MC_OUTPUT_CROSSFADE || driver != "WaveOut";
+    }
+
     mc_string_view outputText(const char* value) {
         return { value, value ? std::char_traits<char>::length(value) : 0 };
     }
@@ -274,7 +286,8 @@ mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, 
 
         const mc_output_configuration configuration {
             drivers.data(), drivers.size(), outputText(selected->Name()),
-            devices.data(), devices.size(), device ? deviceInfo(*device) : mc_output_device {}
+            devices.data(), devices.size(), device ? deviceInfo(*device) : mc_output_device {},
+            configuredTransport()
         };
         read(data, &configuration);
         return MC_OK;
@@ -290,6 +303,9 @@ mc_result MC_CALL mc_output_select_driver(mc_string_view driver) {
         const auto output = outputs::findByName(std::string(driver.data, driver.length), outputs::GetAllOutputs());
         if (!output) {
             return MC_ERROR_NOT_FOUND;
+        }
+        if (!supportedTransport(configuredTransport(), output->Name())) {
+            return MC_ERROR_UNSUPPORTED;
         }
         outputs::SelectOutput(output);
         return MC_OK;
@@ -309,5 +325,20 @@ mc_result MC_CALL mc_output_select_device(mc_string_view driver, mc_string_view 
 
         const std::string id(deviceId.data ? deviceId.data : "", deviceId.length);
         return output->SetDefaultDevice(id.c_str()) ? MC_OK : MC_ERROR_NOT_FOUND;
+    });
+}
+
+mc_result MC_CALL mc_output_set_transport(mc_output_transport transport) {
+    if (transport != MC_OUTPUT_GAPLESS && transport != MC_OUTPUT_CROSSFADE) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        if (!supportedTransport(transport, outputs::SelectedOutput()->Name())) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        const auto type = transport == MC_OUTPUT_CROSSFADE ? TransportType::Crossfade : TransportType::Gapless;
+        Preferences::ForComponent(components::Playback)->SetInt(keys::Transport, static_cast<int>(type));
+        return MC_OK;
     });
 }

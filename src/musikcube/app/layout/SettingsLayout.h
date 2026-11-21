@@ -47,7 +47,6 @@
 #include <cursespp/ITopLevelLayout.h>
 
 #include <musikcore/playback.hpp>
-#include <musikcore/audio/MasterTransport.h>
 #include <musikcore/context.hpp>
 #include <musikcore/support/Preferences.h>
 

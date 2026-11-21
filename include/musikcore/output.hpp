@@ -19,6 +19,7 @@ namespace musik { namespace core { namespace api {
         std::string selectedDriver;
         std::vector<OutputDevice> devices;
         OutputDevice selectedDevice;
+        mc_output_transport transport = MC_OUTPUT_GAPLESS;
     };
 
     inline OutputConfiguration ReadOutputConfiguration() {
@@ -26,6 +27,7 @@ namespace musik { namespace core { namespace api {
         const auto result = mc_output_read_configuration([](void* data, const mc_output_configuration* value) {
             auto& output = *static_cast<OutputConfiguration*>(data);
             output.selectedDriver = AsStringView(value->selected_driver);
+            output.transport = value->transport;
             output.drivers.reserve(value->driver_count);
             for (size_t i = 0; i < value->driver_count; ++i) {
                 output.drivers.emplace_back(AsStringView(value->drivers[i]));
@@ -53,6 +55,10 @@ namespace musik { namespace core { namespace api {
 
     inline mc_result SelectOutputDevice(std::string_view driver, std::string_view id) {
         return mc_output_select_device({ driver.data(), driver.size() }, { id.data(), id.size() });
+    }
+
+    inline mc_result SetOutputTransport(mc_output_transport transport) {
+        return mc_output_set_transport(transport);
     }
 } } }
 

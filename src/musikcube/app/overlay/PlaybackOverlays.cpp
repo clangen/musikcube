@@ -53,7 +53,6 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace cursespp;
 
-static std::set<std::string> invalidCrossfadeOutputs = { "WaveOut" };
 
 static void showNoOutputPluginsMessage() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -90,10 +89,7 @@ static void showOutputCannotCrossfadeMessage(const std::string& outputName) {
 PlaybackOverlays::PlaybackOverlays() {
 }
 
-void PlaybackOverlays::ShowOutputDriverOverlay(
-    MasterTransport::Type transportType,
-    std::function<void()> callback)
-{
+void PlaybackOverlays::ShowOutputDriverOverlay(std::function<void()> callback) {
     auto output = api::ReadOutputConfiguration();
     if (output.drivers.empty()) {
         showNoOutputPluginsMessage();
@@ -123,17 +119,16 @@ void PlaybackOverlays::ShowOutputDriverOverlay(
         .SetTitle(_TSTR("playback_overlay_output_plugins_title"))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [callback, transportType, drivers = std::move(output.drivers)](ListOverlay*, IScrollAdapterPtr, size_t index) {
+            [callback, drivers = std::move(output.drivers)](ListOverlay*, IScrollAdapterPtr, size_t index) {
                 if (index >= drivers.size()) {
                     return;
                 }
                 const auto& driver = drivers[index];
-                if (transportType == MasterTransport::Type::Crossfade && invalidCrossfadeOutputs.count(driver)) {
+                const auto status = api::SelectOutputDriver(driver);
+                if (status == MC_ERROR_UNSUPPORTED) {
                     showOutputCannotCrossfadeMessage(driver);
-                    return;
                 }
-
-                if (api::SelectOutputDriver(driver) == MC_OK && callback) {
+                else if (status == MC_OK && callback) {
                     callback();
                 }
             });
@@ -189,10 +184,7 @@ void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
     cursespp::App::Overlays().Push(dialog);
 }
 
-void PlaybackOverlays::ShowTransportOverlay(
-    MasterTransport::Type transportType,
-    std::function<void(MasterTransport::Type)> callback)
-{
+void PlaybackOverlays::ShowTransportOverlay(std::function<void()> callback) {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
@@ -201,7 +193,8 @@ void PlaybackOverlays::ShowTransportOverlay(
     adapter->AddEntry(_TSTR("settings_transport_type_crossfade"));
     adapter->SetSelectable(true);
 
-    size_t selectedIndex = (transportType == MasterTransport::Type::Gapless) ? 0 : 1;
+    const auto transport = api::ReadOutputConfiguration().transport;
+    const size_t selectedIndex = transport == MC_OUTPUT_GAPLESS ? 0 : 1;
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -209,20 +202,21 @@ void PlaybackOverlays::ShowTransportOverlay(
         .SetTitle(_TSTR("playback_overlay_transport_title"))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                auto result = (index == 0)
-                    ? MasterTransport::Type::Gapless
-                    : MasterTransport::Type::Crossfade;
-
-                const auto output = api::ReadOutputConfiguration().selectedDriver;
-
-                if (result == MasterTransport::Type::Crossfade &&
-                    invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end())
-                {
-                    showOutputCannotCrossfadeMessage(output);
+            [callback](ListOverlay*, IScrollAdapterPtr adapter, size_t index) {
+                if (index >= adapter->GetEntryCount()) {
+                    return;
                 }
-                else if (callback) {
-                    callback(result);
+                const auto output = api::ReadOutputConfiguration();
+                const auto selected = index == 0 ? MC_OUTPUT_GAPLESS : MC_OUTPUT_CROSSFADE;
+                if (selected == output.transport) {
+                    return;
+                }
+                const auto status = api::SetOutputTransport(selected);
+                if (status == MC_ERROR_UNSUPPORTED) {
+                    showOutputCannotCrossfadeMessage(output.selectedDriver);
+                }
+                else if (status == MC_OK && callback) {
+                    callback();
                 }
             });
 

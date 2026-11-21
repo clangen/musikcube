@@ -35,21 +35,16 @@
 #pragma once
 
 #include <functional>
-#include <musikcore/audio/MasterTransport.h>
 
 namespace musik {
     namespace cube {
         class PlaybackOverlays {
             public:
-                static void ShowOutputDriverOverlay(
-                    musik::core::audio::MasterTransport::Type transportType,
-                    std::function<void()> callback);
+                static void ShowOutputDriverOverlay(std::function<void()> callback);
 
                 static void ShowOutputDeviceOverlay(std::function<void()> callback);
 
-                static void ShowTransportOverlay(
-                    musik::core::audio::MasterTransport::Type transportType,
-                    std::function<void(musik::core::audio::MasterTransport::Type)> callback);
+                static void ShowTransportOverlay(std::function<void()> callback);
 
                 static void ShowReplayGainOverlay(std::function<void()> callback);
 

@@ -14,6 +14,12 @@ typedef struct mc_output_device {
     mc_string_view name;
 } mc_output_device;
 
+typedef uint32_t mc_output_transport;
+enum {
+    MC_OUTPUT_GAPLESS,
+    MC_OUTPUT_CROSSFADE
+};
+
 typedef struct mc_output_configuration {
     /* Available driver names. */
     const mc_string_view* drivers;
@@ -27,6 +33,8 @@ typedef struct mc_output_configuration {
     size_t device_count;
     /* Current default device. Empty fields indicate the system default. */
     mc_output_device selected_device;
+    /* Configured playback transport. */
+    mc_output_transport transport;
 } mc_output_configuration;
 
 typedef void (MC_CALL *mc_output_configuration_fn)(void* user_data, const mc_output_configuration* configuration);
@@ -39,6 +47,8 @@ MC_API mc_result MC_CALL mc_output_select_driver(mc_string_view driver);
 /* Select a device on the effective driver. An empty ID restores its default.
    Returns MC_ERROR_NOT_FOUND if the driver changed or the device is unavailable. */
 MC_API mc_result MC_CALL mc_output_select_device(mc_string_view driver, mc_string_view device_id);
+/* Configure the next output reload. Unsupported driver combinations are rejected. */
+MC_API mc_result MC_CALL mc_output_set_transport(mc_output_transport transport);
 
 #ifdef __cplusplus
 }

@@ -1141,6 +1141,9 @@ legacy list for actions that still require it.
   The equalizer overlay reads and updates the SDK band snapshot.
   `musikcube.ui.browse` exercises a band edit and reset with the real
   equalizer plugin and checks that Settings displays the headless output.
+  The same scenario switches from gapless to crossfade in Settings.
+  `musikcore.integration.plugin.playback_reload` verifies transport mode
+  round trips through the SDK.
 - [ ] **PUB-008** Add advanced consumer stream/decoder/encoder APIs only for
   approved use cases.
 - [ ] **PUB-009** Add contract and integration tests with every public feature

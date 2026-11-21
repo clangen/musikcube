@@ -79,7 +79,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/audio/CrossfadeTransport.h>
 #include <musikcore/audio/GaplessTransport.h>
 #include <musikcore/audio/IStream.h>
-#include <musikcore/audio/MasterTransport.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/Stream.h>
 #include <musikcore/audio/Streams.h>

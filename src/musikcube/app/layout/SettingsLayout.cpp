@@ -136,18 +136,6 @@ static std::string getOutputDeviceName(const api::OutputConfiguration& output) {
         : output.selectedDevice.name;
 }
 
-static TransportType getTransportType() {
-    auto playback = Preferences::ForComponent(core::prefs::components::Playback);
-
-    return (TransportType) playback->GetInt(
-        core::prefs::keys::Transport, (int)TransportType::Gapless);
-}
-
-static void setTransportType(TransportType type) {
-    auto playback = Preferences::ForComponent(core::prefs::components::Playback);
-    playback->SetInt(core::prefs::keys::Transport, static_cast<int>(type));
-}
-
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
     api::Context& musikcore)
@@ -212,7 +200,6 @@ void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label)
     const auto currentName = api::ReadOutputConfiguration().selectedDriver;
 
     PlaybackOverlays::ShowOutputDriverOverlay(
-        getTransportType(),
         [this, currentName] {
             const auto newName = api::ReadOutputConfiguration().selectedDriver;
 
@@ -239,17 +226,10 @@ void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
-    const MasterTransport::Type current = getTransportType();
-
-    PlaybackOverlays::ShowTransportOverlay(
-        current,
-        [this, current](MasterTransport::Type selected) {
-            if (selected != current) {
-                setTransportType(selected);
-                this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
-                this->LoadPreferences();
-            }
-        });
+    PlaybackOverlays::ShowTransportOverlay([this] {
+        this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
+        this->LoadPreferences();
+    });
 }
 
 void SettingsLayout::OnLastFmDropdownActivate(cursespp::TextLabel* label) {
@@ -605,7 +585,7 @@ void SettingsLayout::LoadPreferences() {
 
     /* transport type */
     std::string transportName =
-        getTransportType() == MasterTransport::Type::Gapless
+        output.transport == MC_OUTPUT_GAPLESS
             ? _TSTR("settings_transport_type_gapless")
             : _TSTR("settings_transport_type_crossfade");
 

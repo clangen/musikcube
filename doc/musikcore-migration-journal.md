@@ -30,3 +30,7 @@ Verified all 44 Linux Release tests. The headless plugin test exercises SDK driv
 The existing equalizer overlay now reads and writes public band snapshots. Core reuses the same preferences and reload path for the public ABI and the plugin environment. The overlay no longer looks up the plugin or edits its preference store.
 
 All 44 Linux Release tests passed. In three consecutive focused runs, the Browse TUI scenario loaded the real equalizer plugin, changed a band, reset the gains, and opened Settings with the headless output selected. The C ABI fixture verifies the missing-plugin and invalid-gain cases.
+
+## Playback transport
+
+Settings and the existing playback chooser use the public SDK to select gapless or crossfade. Core enforces the WaveOut restriction when changing either the driver or the mode. Linux tests exercise the SDK mode round trip, ABI argument validation, and a headless Settings interaction that switches to crossfade.

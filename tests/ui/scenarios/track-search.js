@@ -325,6 +325,15 @@ async function checkTrackSearch(runtime, database, screenshots,
       if (staged.some(name => name.startsWith('libnullout.'))) {
         terminal.send('s');
         await terminal.expect('output driver: Null');
+        await terminal.expect('playback mode: gapless');
+        const rows = terminal.screen.text().split('\n');
+        const y = rows.findIndex(row => row.includes('playback mode: gapless'));
+        const x = rows[y].indexOf('playback mode: gapless');
+        const click = `\x1b[<0;${x + 1};${y + 1}`;
+        terminal.send(click + 'M' + click + 'm');
+        await terminal.expect('crossfade');
+        terminal.send(DOWN + '\r');
+        await terminal.expect('playback mode: crossfade');
       }
     }
     /* The driver must observe a clean application exit, not just a screen that

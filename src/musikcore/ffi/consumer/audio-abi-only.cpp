@@ -19,6 +19,12 @@ mc_result MC_CALL mc_output_select_device(mc_string_view driver, mc_string_view 
         : MC_ERROR_INVALID_ARGUMENT;
 }
 
+mc_result MC_CALL mc_output_set_transport(mc_output_transport transport) {
+    return (transport == MC_OUTPUT_GAPLESS || transport == MC_OUTPUT_CROSSFADE)
+        ? MC_ERROR_UNSUPPORTED
+        : MC_ERROR_INVALID_ARGUMENT;
+}
+
 mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
     return state && state->struct_size >= sizeof(*state) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }
