@@ -110,6 +110,29 @@ mc_result MC_CALL mc_context_get_services(const mc_context* context, mc_services
     return MC_OK;
 }
 
+mc_result MC_CALL mc_player_create(mc_context* context, mc_player** out_player) {
+    if (!context || !out_player || *out_player) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        musik::core::ffi::ContextRuntime* runtime;
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            if (context->dispatcher != std::thread::id {} && context->dispatcher != std::this_thread::get_id()) {
+                return MC_ERROR_WRONG_THREAD;
+            }
+            if (context->stopping) {
+                return MC_ERROR_BUSY;
+            }
+            if (!(context->services & MC_SERVICE_PLUGINS)) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            runtime = context->runtime.get();
+        }
+        return runtime ? runtime->CreatePlayer(out_player) : MC_ERROR_UNSUPPORTED;
+    });
+}
+
 mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback** out_playback) {
     if (!context || !out_playback || *out_playback) {
         return MC_ERROR_INVALID_ARGUMENT;

@@ -1,5 +1,6 @@
 #include <musikcore/ffi/consumer/library-query-backends.h>
 #include <musikcore/ffi/consumer/request.h>
+#include <musikcore/ffi/consumer/player-handle.h>
 #include <musikcore/ffi/common/error.h>
 
 #include <musikcore/audio/PlaybackService.h>
@@ -179,7 +180,7 @@ namespace musik { namespace core { namespace ffi {
 
             /* metadata and optional scanner bindings always use the local catalog.
             legacy playback remotes attach only when playback is selected. */
-            if (this->pluginsInitialized && this->local) {
+            if (this->pluginsInitialized) {
                 musik::core::plugin::BindServices(this->queue.get(), this->playback.get(), this->local);
             }
             if (this->playback) {
@@ -221,6 +222,18 @@ namespace musik { namespace core { namespace ffi {
             this->changed.notify_all();
         }
 
+        mc_result CreatePlayer(mc_player** out) override {
+            if (!this->pluginsInitialized) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            /* allocate the registry slot before publishing an owned handle. */
+            this->players.erase(std::remove_if(this->players.begin(), this->players.end(),
+                [](const auto& player) { return player.expired(); }), this->players.end());
+            this->players.emplace_back();
+            this->players.back() = CreateUriPlayer(this->queue, out);
+            return MC_OK;
+        }
+
         mc_result OpenPlayback(mc_playback** out) override {
             return this->playback ? this->playback->OpenHandle(out) : MC_ERROR_UNSUPPORTED;
         }
@@ -252,6 +265,12 @@ namespace musik { namespace core { namespace ffi {
             }
 
             bool failure = false;
+            for (auto& weak : this->players) {
+                if (const auto player = weak.lock()) {
+                    Cleanup([&] { player->Shutdown(); }, failure);
+                }
+            }
+            this->players.clear();
             if (this->indexer) {
                 Cleanup([&] { this->indexer->Shutdown(); }, failure);
                 this->indexer->Started.disconnect(this);
@@ -369,6 +388,7 @@ namespace musik { namespace core { namespace ffi {
         std::shared_ptr<CoreNotifications> notifications;
         mc_context* context = nullptr;
         std::unique_ptr<audio::PlaybackService> playback;
+        std::vector<std::weak_ptr<UriPlayerSession>> players;
         std::mutex mutex;
         std::condition_variable changed;
         uint64_t dispatches = 0;

@@ -329,6 +329,11 @@ does not require indexing. An explicit empty set retains request processing
 for caller-owned catalogs/sessions. See [the lifecycle contract](musikcore-c-abi-design.md#context-and-runtime-lifecycle)
 and [ADR-0005](../docs/adr/0005-context-owned-production-runtime.md).
 
+Explicit URI player resources can be constructed within a Plugins-only context,
+without Library or Indexer. Their transport lifetime ends at explicit destruction
+or context shutdown; catalog playback remains a separate origin-bound contract.
+See [ADR-0007](../docs/adr/0007-explicit-uri-player-resources.md).
+
 ### Plugin host
 
 The plugin host owns:

@@ -7,6 +7,7 @@ set(windows_core_sources
   src/musikcore/runtime/ManagedRuntime.cpp
   src/musikcore/ffi/consumer/online.cpp
   src/musikcore/audio/PlaybackHandle.cpp
+  src/musikcore/audio/UriPlayer.cpp
   src/musikcore/audio/MasterTransport.cpp
   src/musikcore/audio/Streams.cpp
   src/musikcore/audio/Visualizer.cpp

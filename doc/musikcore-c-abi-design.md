@@ -394,8 +394,9 @@ discovery or constructing an indexer. Its configured status still reflects saved
 If an upgrade requires reindexing, the catalog records that requirement durably;
 a later context with Indexer enabled resumes the scan automatically. This does
 not enable Indexer implicitly in a library-only or playback-only context.
-Plugins alone initialize discovery; legacy metadata/environment bindings require
-Library, and playback remotes require Playback. They do not implicitly start
+Plugins alone initialize discovery and the generic provider environment (paths,
+buffers, codecs, diagnostics). Legacy metadata/indexer bindings require Library,
+and playback remotes require Playback. They do not implicitly start
 missing host services. Service selection controls context-owned startup; it does
 not disable existing process-wide configuration/discovery functions or unload
 previously discovered modules. Explicit caller-owned remote sessions remain independent
@@ -432,6 +433,42 @@ Working C and header-only C++ examples:
 - [`core-query.c`](../examples/core-query.c) and
   [`core-query.cpp`](../examples/core-query.cpp): no engine, explicitly opened catalog.
 - [`core-remote.c`](../examples/core-remote.c): no engine, caller-owned remote session.
+
+### Explicit URI players
+
+`mc_player_create(context, &player)` constructs an owned player with a separate
+transport/output. It requires Plugins and never enables Library, Indexer, or the
+catalog Playback service. A Plugins-only context therefore supports playback
+without creating a database. `mc_player_play_uri` copies a filesystem path or
+provider URI and accepts an asynchronous open; sample state or observe changes
+through context dispatch. State includes buffering, playing, paused, finished,
+and failed. Snapshot position/duration use seconds, and volume is normalized. Seeking
+returns BUSY during buffering and resumes paused playback, following the existing
+transport semantics.
+
+Local `file://` URIs support an empty or `localhost` authority and percent-encoded
+paths. Provider schemes such as HTTP/HTTPS require the corresponding plugin.
+Internal credential-bearing `musikcore:` catalog URIs are rejected: catalog
+playback retains its origin/session checks. URI players carry no library track
+identity, play queue, metadata indexing, or scrobbling behavior.
+
+Unlike releasing a `mc_playback` handle, `mc_player_destroy` stops the owned
+resource and waits for its workers. It requires the creating thread outside its
+callback; reentrant destruction returns BUSY without consuming the handle.
+Destroying one player does not stop or wait on other players. Context shutdown
+stops all children before provider teardown, unregisters callbacks, and leaves
+retained handles safely invalidated (NOT_FOUND) but still destroyable. Callbacks
+are coalesced current-state notifications, dispatched only on the host thread;
+callback state must remain alive through removal or shutdown. Preferences and
+provider discovery remain process-wide; distinct players do not promise mixing
+or isolated hardware clocks.
+
+Legacy providers may opt into cancellable opens by exporting `CreateDataStream`,
+returning an unopened owned `IDataStream`. The core publishes it before `Open`
+so shutdown can call `Interrupt` while opening. This adds no virtual methods and
+preserves the old `GetDataStreamFactory`/`Open` path. Legacy providers lacking the
+hook must bound their blocking `Open` work; interruption becomes available once
+that method returns. The stock HTTP provider supports the hook.
 
 ### Async requests and dispatch
 

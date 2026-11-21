@@ -74,6 +74,16 @@ int main(void) {
     CHECK(services == UINT32_MAX);
     CHECK(mc_context_get_services(context, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_get_services(context, &services) == MC_OK && services == MC_SERVICE_NONE);
+    /* URI resources require providers and preserve output slots on rejection. */
+    mc_player* uri_player = NULL;
+    CHECK(mc_player_create(context, &uri_player) == MC_ERROR_UNSUPPORTED && !uri_player);
+    CHECK(mc_player_create(NULL, &uri_player) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_player_destroy(&uri_player) == MC_OK && !uri_player);
+    CHECK(mc_player_play_uri(NULL, name) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_player_pause(NULL) == MC_ERROR_INVALID_ARGUMENT);
+    mc_player_snapshot uri_snapshot = MC_PLAYER_SNAPSHOT_DEFAULT;
+    CHECK(mc_player_get_snapshot(NULL, &uri_snapshot) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(uri_snapshot.state == MC_PLAYER_STOPPED);
     mc_playback* playback = NULL;
     CHECK(mc_context_get_playback(context, &playback) == MC_ERROR_UNSUPPORTED && !playback);
     CHECK(mc_context_select_library(context, MC_LIBRARY_LOCAL) == MC_ERROR_UNSUPPORTED);

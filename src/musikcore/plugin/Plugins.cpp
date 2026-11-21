@@ -489,17 +489,19 @@ namespace musik { namespace core { namespace plugin {
 
         /* even if the local client is connected to a remote server, the metadata proxy
         always uses the default local library. */
-        ::metadataProxy = new LocalMetadataProxy(library);
+        ::metadataProxy = library ? new LocalMetadataProxy(library) : nullptr;
 
-        PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
-            "SetMetadataProxy",
-            [](musik::core::sdk::IPlugin* plugin, SetMetadataProxy func) {
-                func(metadataProxy);
-            }, PluginFactory::FunctionSelection::Session);
+        if (library) {
+            PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
+                "SetMetadataProxy",
+                [](musik::core::sdk::IPlugin* plugin, SetMetadataProxy func) {
+                    func(metadataProxy);
+                }, PluginFactory::FunctionSelection::Session);
+        }
 
         /* indexer */
         IIndexerNotifier* indexerNotifier =
-            dynamic_cast<IIndexerNotifier*>(library->Indexer());
+            library ? dynamic_cast<IIndexerNotifier*>(library->Indexer()) : nullptr;
 
         PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
             "SetIndexerNotifier",

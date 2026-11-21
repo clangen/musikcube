@@ -10,6 +10,7 @@ set(CORE_SOURCES
   ./runtime/ManagedRuntime.cpp
   ./ffi/consumer/online.cpp
   ./audio/PlaybackHandle.cpp
+  ./audio/UriPlayer.cpp
   ./audio/Player.cpp
   ./audio/Stream.cpp
   ./audio/Streams.cpp

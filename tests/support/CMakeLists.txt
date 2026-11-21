@@ -297,6 +297,26 @@ if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGE
   endif()
 endif()
 
+# exercise URI resources through the actual shared C boundary without catalogs.
+if(TARGET nullout AND TARGET ffmpegdecoder)
+  add_executable(musikcore_uri_player_test ../integration/musikcore/uri-player.cpp host-wakeup.cpp)
+  target_link_libraries(musikcore_uri_player_test PRIVATE musikcore Threads::Threads)
+  set_target_properties(musikcore_uri_player_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+  add_dependencies(musikcore_uri_player_test nullout ffmpegdecoder)
+  add_dependencies(musikcube_tests musikcore_uri_player_test)
+  add_dependencies(musikcube_integration_tests musikcore_uri_player_test)
+  set(uri_http)
+  if(TARGET httpdatastream)
+    add_dependencies(musikcore_uri_player_test httpdatastream)
+    set(uri_http "$<TARGET_FILE:httpdatastream>")
+  endif()
+  add_test(NAME musikcore.integration.api.uri_player COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/check-uri-player.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcore_uri_player_test>" "$<TARGET_FILE:nullout>" ${uri_http})
+  set_tests_properties(musikcore.integration.api.uri_player PROPERTIES
+    LABELS "integration;musikcore;playback;contract" TIMEOUT 40)
+endif()
+
 # Keep runtime hardening coverage native on macOS and Linux, without devices.
 add_executable(musikcore_runtime_hardening_test ../integration/musikcore/runtime-hardening.cpp host-wakeup.cpp)
 target_include_directories(musikcore_runtime_hardening_test PRIVATE "${PROJECT_SOURCE_DIR}/src"

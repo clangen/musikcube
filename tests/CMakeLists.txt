@@ -223,8 +223,8 @@ if(APPLE)
 endif()
 
 # Compile each public header in its own translation unit using public includes only.
-set(public_c_headers abi context library playback output equalizer indexer visualizer preferences server plugins paths locale log online musikcore)
-set(public_cpp_headers context library playback output equalizer indexer visualizer preferences server plugins paths locale log online musikcore track-result-window detail/async detail/track-page-cache)
+set(public_c_headers abi context library playback player output equalizer indexer visualizer preferences server plugins paths locale log online musikcore)
+set(public_cpp_headers context library playback player output equalizer indexer visualizer preferences server plugins paths locale log online musikcore track-result-window detail/async detail/track-page-cache)
 set(header_sources)
 foreach(header IN LISTS public_c_headers)
   foreach(language IN ITEMS c cpp)

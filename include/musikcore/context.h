@@ -78,7 +78,7 @@ typedef uint32_t mc_services;
 enum {
     MC_SERVICE_NONE = 0,
     MC_SERVICE_LIBRARY = 1,
-    /* provider discovery/session; legacy host bindings attach only with MC_SERVICE_LIBRARY. */
+    /* provider session/environment; catalog bindings require MC_SERVICE_LIBRARY. */
     MC_SERVICE_PLUGINS = 2,
     MC_SERVICE_INDEXER = 4,
     MC_SERVICE_PLAYBACK = 8,

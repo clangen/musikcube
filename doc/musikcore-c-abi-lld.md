@@ -1267,6 +1267,38 @@ The pre-existing parity fixture deferred playback initialization until after its
 commands; it now finishes initialization first and disables unrelated session
 restoration. Logs are under `build/services-*.log`.
 
+#### Explicit URI playback
+
+Maintainer-approved core API slice: provide manually constructed URI players
+without catalogs/indexing, using native macOS validation while platform parity
+remains deferred. This does not begin the new plugin C SDK. See
+[ADR-0007](../docs/adr/0007-explicit-uri-player-resources.md).
+
+- [x] **API-URI-001** Add the public `mc_player` ownership, control, snapshot, and
+  dispatch callback contract, plus a strictly header-only movable C++ wrapper.
+  Validate absence/malformed inputs in `musikcore.abi.arguments` and headers/
+  exports/inventory through the existing ABI boundary checks.
+- [x] **API-URI-002** Supply a generic provider environment without a catalog and
+  scope worker completion to individual transports. Stop URI resources before
+  retiring the context's provider session; retained handles remain safely inert.
+- [x] **API-URI-003** Harden opening/publication and cancellation. Preserve the
+  legacy provider vtable with optional `CreateDataStream` discovery; stock HTTP
+  supports interrupted opens and WAV MIME types. Legacy blocking opens without
+  that hook remain bounded by their provider implementation.
+- [x] **API-URI-004** Exercise real local/file/HTTP decoding without a database,
+  pause/seek/EOF/failure, wrong-thread and callback destruction rejection,
+  independent players, early close, observer replacement within a detached
+  dispatch batch, empty HTTP failures, sustained HTTP readiness before EOF,
+  and retained handles in `musikcore.integration.api.uri_player` using headless output and loopback HTTP.
+- [ ] **API-URI-005** Ship C/C++ example apps and verify their public-only builds
+  and playback against the relocated SDK in `musikcore.integration.api.installed_sdk`.
+
+Native macOS arm64 validation: full Release and ASan/UBSan Debug suites pass
+94/94; ABI-only Debug passes 29/29. Independent C++ review reproduced and helped
+close stale observer delivery and HTTP readiness lost-wakeup bugs. Both have
+regressions in the URI integration case. Logs: `build/uri-final-tests-release.log`,
+`build/uri-final-tests-debug.log`, and `build/uri-final-abi-debug.log`.
+
 #### Managed runtime hardening reconciliation
 
 The startup/teardown protections from the earlier `f83bbb028` implementation and
