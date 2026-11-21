@@ -463,12 +463,14 @@ callback state must remain alive through removal or shutdown. Preferences and
 provider discovery remain process-wide; distinct players do not promise mixing
 or isolated hardware clocks.
 
-Legacy providers may opt into cancellable opens by exporting `CreateDataStream`,
-returning an unopened owned `IDataStream`. The core publishes it before `Open`
-so shutdown can call `Interrupt` while opening. This adds no virtual methods and
-preserves the old `GetDataStreamFactory`/`Open` path. Legacy providers lacking the
-hook must bound their blocking `Open` work; interruption becomes available once
-that method returns. The stock HTTP provider supports the hook.
+The current C++ plugin SDK requires `IDataStreamFactory::Create()` and
+`IEnvironment::CreateDataStream(uri)` to return owned, unopened streams without
+blocking I/O. The caller retains/publishes the resource before calling `Open`,
+so shutdown can call `Interrupt` during startup. Stream implementations must
+handle interruption before and during `Open`, and release safely without opening.
+SDK 23 replaces the old factory `Open` and environment `GetDataStream` contracts;
+plugins built against SDK 22 must be rebuilt. There is no optional creation export
+or compatibility fallback. The experimental public C ABI version is unchanged.
 
 [`core-player.c`](../examples/core-player.c) and
 [`core-player.cpp`](../examples/core-player.cpp) demonstrate an event-driven host.

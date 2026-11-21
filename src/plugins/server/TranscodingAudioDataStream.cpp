@@ -69,7 +69,11 @@ TranscodingAudioDataStream::TranscodingAudioDataStream(
     this->detachTolerance = 0;
     this->format = format;
 
-    this->input = context.environment->GetDataStream(uri.c_str(), OpenFlags::Read);
+    this->input = context.environment->CreateDataStream(uri.c_str());
+    if (this->input && !this->input->Open(uri.c_str(), OpenFlags::Read)) {
+        this->input->Release();
+        this->input = nullptr;
+    }
     if (this->input) {
         this->decoder = context.environment->GetDecoder(this->input);
         if (this->decoder) {

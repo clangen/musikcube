@@ -463,9 +463,17 @@ int HttpServer::HandleAudioTrackRequest(
             format = getStringUrlParam(connection, "format", "mp3");
         }
 
-        IDataStream* file = (bitrate == 0)
-            ? server->context.environment->GetDataStream(filename.c_str(), OpenFlags::Read)
-            : Transcoder::Transcode(server->context, filename, bitrate, format);
+        IDataStream* file = nullptr;
+        if (bitrate == 0) {
+            file = server->context.environment->CreateDataStream(filename.c_str());
+            if (file && !file->Open(filename.c_str(), OpenFlags::Read)) {
+                file->Release();
+                file = nullptr;
+            }
+        }
+        else {
+            file = Transcoder::Transcode(server->context, filename, bitrate, format);
+        }
 
         const char* rangeVal = MHD_lookup_connection_value(
             connection, MHD_HEADER_KIND, "Range");
@@ -618,7 +626,11 @@ int HttpServer::HandleThumbnailRequest(
 
     if (strlen(pathBuffer)) {
         std::string path = std::string(pathBuffer) + "thumbs/" + pathParts.at(1) + ".jpg";
-        IDataStream* file = server->context.environment->GetDataStream(path.c_str(), OpenFlags::Read);
+        IDataStream* file = server->context.environment->CreateDataStream(path.c_str());
+        if (file && !file->Open(path.c_str(), OpenFlags::Read)) {
+            file->Release();
+            file = nullptr;
+        }
 
         if (file) {
             long length = file->Length();

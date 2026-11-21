@@ -15,6 +15,9 @@ inspect the private factory because its numeric identity is not a public API. */
 #include <sqlite3.h>
 #include "../../support/host-wakeup.h"
 #include <string_view>
+#include <cstdlib>
+#include <iterator>
+#include <musikcore/plugin/Plugins.h>
 #include <algorithm>
 
 namespace {
@@ -317,6 +320,112 @@ namespace {
         count = 99;
         return TEST_CHECK(mc_visualizer_list(read, &count) == MC_OK && count == 0) &&
             TEST_CHECK(mc_visualizer_show(0) == MC_ERROR_NOT_FOUND);
+    }
+
+    /* validate the SDK break through actual module discovery, then exercise
+    create-before-open ownership through the environment and shared core path. */
+    bool checkStreamSdkContract() {
+        const auto directory = api::ReadPath(MC_PATH_DATA);
+#ifdef WIN32
+        _putenv_s("MUSIKCUBE_SDK_TEST_MARKERS", directory.c_str());
+#else
+        setenv("MUSIKCUBE_SDK_TEST_MARKERS", directory.c_str(), 1);
+#endif
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_PLUGINS;
+        api::Context context(options);
+        /* unload observations survive after the obsolete module is gone. */
+        const auto readMarker = [&](const char* name) {
+            std::ifstream file(std::filesystem::u8path(directory) / name);
+            return std::string(std::istreambuf_iterator<char>(file), {});
+        };
+        if (!TEST_CHECK(readMarker("CurrentSdk.log") == "G") ||
+            !TEST_CHECK(readMarker("ObsoleteSdk.log") == "GRU"))
+        {
+            return false;
+        }
+
+        const auto path = std::filesystem::u8path(directory) / "not-opened-yet.bin";
+        const auto encoded = path.u8string();
+        const std::string filename(reinterpret_cast<const char*>(encoded.data()), encoded.size());
+        auto& environment = musik::core::plugin::Environment();
+        /* own unopened streams too, including early assertion failures. */
+        const auto release = [](sdk::IDataStream* stream) {
+            if (stream) {
+                stream->Release();
+            }
+        };
+        std::unique_ptr<sdk::IDataStream, decltype(release)> source(
+            environment.CreateDataStream(filename.c_str()), release);
+        if (!TEST_CHECK(bool(source)) || !TEST_CHECK(!std::filesystem::exists(path))) {
+            return false;
+        }
+
+        /* abort publication before any Open call, including writable streams. */
+        bool published = false;
+        const auto cancelled = io::DataStreamFactory::OpenSharedDataStream(filename.c_str(), sdk::OpenFlags::Write,
+            [&](const auto& pending) {
+                published = bool(pending);
+                pending->Interrupt();
+                return false;
+            });
+        if (!TEST_CHECK(published && !cancelled && !std::filesystem::exists(path))) {
+            return false;
+        }
+
+        /* creation did not choose flags or touch disk; the caller opens its
+        already-owned resource explicitly and retains normal write behavior. */
+        const char bytes[] = "sdk23";
+        if (!TEST_CHECK(source->Open(filename.c_str(), sdk::OpenFlags::Write)) ||
+            !TEST_CHECK(source->Write((void*) bytes, sizeof(bytes)) == sizeof(bytes)) ||
+            !TEST_CHECK(source->Close()) || !TEST_CHECK(std::filesystem::file_size(path) == sizeof(bytes)))
+        {
+            return false;
+        }
+        source.reset();
+
+        /* nested adapters must release unopened streams and forward cancellation
+        that arrives before their child is opened. successful Open first proves
+        provider selection, rather than accidentally testing a local-path fallback. */
+        const auto checkNested = [&](const char* prefix, const char* name) -> bool {
+            const auto child = std::filesystem::u8path(directory) / name;
+            std::filesystem::copy_file(path, child);
+            const auto childEncoded = child.u8string();
+            const std::string uri = std::string(prefix) + "://0/" +
+                std::string(reinterpret_cast<const char*>(childEncoded.data()), childEncoded.size());
+            std::unique_ptr<sdk::IDataStream, decltype(release)> unopened(
+                environment.CreateDataStream(uri.c_str()), release);
+            if (!TEST_CHECK(bool(unopened))) {
+                return false;
+            }
+            unopened.reset();
+            std::unique_ptr<sdk::IDataStream, decltype(release)> opened(
+                environment.CreateDataStream(uri.c_str()), release);
+            if (!TEST_CHECK(opened && opened->Open(uri.c_str(), sdk::OpenFlags::Read)) ||
+                !TEST_CHECK(opened->Close()))
+            {
+                return false;
+            }
+            opened.reset();
+            std::unique_ptr<sdk::IDataStream, decltype(release)> interrupted(
+                environment.CreateDataStream(uri.c_str()), release);
+            if (!TEST_CHECK(bool(interrupted))) {
+                return false;
+            }
+            interrupted->Interrupt();
+            return TEST_CHECK(!interrupted->Open(uri.c_str(), sdk::OpenFlags::Read));
+        };
+#ifdef TEST_STREAM_gmedecoder
+        if (!checkNested("gme", "nested.spc")) {
+            return false;
+        }
+#endif
+#ifdef TEST_STREAM_openmptdecoder
+        if (!checkNested("libopenmpt", "nested.mod")) {
+            return false;
+        }
+#endif
+        return TEST_CHECK(context.Close() == MC_OK);
     }
 
     /* a repeated name must keep its origin, while different catalogs need
@@ -651,6 +760,9 @@ int main(int argc, char** argv) {
         return 1;
     }
     const std::string_view mode(argv[1]);
+    if (mode == "stream_sdk_contract") {
+        return checkStreamSdkContract() ? 0 : 1;
+    }
     if (mode == "migration_prepare") {
         return prepareMigration() ? 0 : 1;
     }

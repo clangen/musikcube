@@ -43,6 +43,8 @@ namespace musik { namespace core { namespace sdk {
     class IDataStream {
         public:
             virtual ~IDataStream() {}
+            /* the owner may call Interrupt before or during Open. blocking
+            implementations must latch cancellation and wake pending reads/opens. */
             virtual bool Open(const char *uri, OpenFlags flags) = 0;
             virtual bool Close() = 0;
             virtual void Interrupt() = 0;

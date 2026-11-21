@@ -36,6 +36,7 @@
 
 #include <musikcore/sdk/IDataStream.h>
 #include <string>
+#include <mutex>
 
 class GmeDataStream: public musik::core::sdk::IDataStream {
     public:
@@ -71,5 +72,7 @@ class GmeDataStream: public musik::core::sdk::IDataStream {
         int trackNumber { 0 };
         std::string filename;
         musik::core::sdk::IDataStream* stream { nullptr };
-        bool releaseStream{ true };
+        bool releaseStream { true };
+        std::mutex streamMutex;
+        bool interrupted = false;
 };

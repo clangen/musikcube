@@ -98,7 +98,7 @@ namespace {
             std::unique_lock lock(this->mutex);
             this->sourceOpening = true;
             this->changed.notify_all();
-            this->changed.wait(lock, [&] { return this->releaseSource; });
+            this->changed.wait(lock, [&] { return this->releaseSource || this->sourceInterrupted; });
         }
 
         void ReleaseSourceOpen() {
@@ -262,7 +262,11 @@ namespace {
 
     class GatedSource final : public IDataStream {
     public:
-        bool Open(const char*, OpenFlags) override { return true; }
+        /* block only after publication, so Interrupt can wake this open gate. */
+        bool Open(const char*, OpenFlags) override {
+            capture().GateSourceOpen();
+            return true;
+        }
         bool Close() override { return true; }
         void Interrupt() override { capture().InterruptSource(); }
         void Release() override { delete this; }
@@ -283,10 +287,8 @@ namespace {
     class GatedSourceFactory final : public IDataStreamFactory {
     public:
         bool CanRead(const char* uri) override { return std::string_view(uri) == stalledSource; }
-        IDataStream* Open(const char*, OpenFlags) override {
-            capture().GateSourceOpen();
-            return new GatedSource();
-        }
+        /* SDK 23 creation must return before any blocking provider work. */
+        IDataStream* Create() override { return new GatedSource(); }
         void Release() override { delete this; }
     };
 

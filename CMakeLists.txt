@@ -174,7 +174,7 @@ add_plugin("src/plugins/macosmediakeys" "macosmediakeys" GetPlaybackRemote SetDe
 add_plugin("src/plugins/mpris" "mpris" GetPlaybackRemote SetEnvironment)
 add_plugin("src/plugins/server" "server" GetPlaybackRemote SetDebug SetEnvironment SetMetadataProxy SetPreferences)
 # streams
-add_plugin("src/plugins/httpdatastream" "httpdatastream" CreateDataStream GetDataStreamFactory GetSchema SetEnvironment SetPreferences)
+add_plugin("src/plugins/httpdatastream" "httpdatastream" GetDataStreamFactory GetSchema SetEnvironment SetPreferences)
 # decoders
 add_plugin("src/plugins/ffmpegdecoder" "ffmpegdecoder" GetDecoderFactory SetDebug)
 add_plugin("src/plugins/gmedecoder" "gmedecoder" GetDataStreamFactory GetDecoderFactory GetIndexerSource GetSchema SetDebug SetEnvironment SetPreferences)

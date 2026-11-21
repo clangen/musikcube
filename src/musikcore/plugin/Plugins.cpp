@@ -298,8 +298,8 @@ static class Environment: public IEnvironment {
             return CopyString(path, dst, size);
         }
 
-        IDataStream* GetDataStream(const char* uri, OpenFlags flags) override {
-            return DataStreamFactory::OpenDataStream(uri, flags);
+        IDataStream* CreateDataStream(const char* uri) override {
+            return DataStreamFactory::CreateDataStream(uri);
         }
 
         IDecoder* GetDecoder(IDataStream* stream) override {

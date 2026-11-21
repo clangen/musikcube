@@ -36,7 +36,6 @@
 #include "OpenMptDataStream.h"
 #include <musikcore/sdk/IIndexerSource.h>
 #include <musikcore/sdk/IEnvironment.h>
-#include <musikcore/sdk/IIndexerSource.h>
 #include <cassert>
 
 using namespace musik::core::sdk;
@@ -55,17 +54,25 @@ OpenMptDataStream::OpenMptDataStream(musik::core::sdk::IDataStream* stream)
 OpenMptDataStream::~OpenMptDataStream() {
 }
 
-bool OpenMptDataStream::Open(const char *uri, OpenFlags flags) {
+bool OpenMptDataStream::Open(const char* uri, OpenFlags flags) {
     assert(this->stream == nullptr);
-    if (this->Parse(uri)) {
-        if (environment) {
-            this->stream = environment->GetDataStream(this->filename.c_str(), flags);
-            if (this->stream) {
-                return true;
-            }
-        }
+    if (!environment || !this->Parse(uri)) {
+        return false;
     }
-    return false;
+
+    auto* source = environment->CreateDataStream(this->filename.c_str());
+    {
+        std::lock_guard<std::mutex> lock(this->streamMutex);
+        if (this->interrupted) {
+            if (source) {
+                source->Release();
+            }
+            return false;
+        }
+        /* publish before opening so Interrupt reaches nested provider work. */
+        this->stream = source;
+    }
+    return source && source->Open(this->filename.c_str(), flags);
 }
 
 bool OpenMptDataStream::Parse(const char* uri) {
@@ -77,11 +84,15 @@ bool OpenMptDataStream::Parse(const char* uri) {
 }
 
 bool OpenMptDataStream::Close() {
-    return this->stream->Close();
+    return !this->stream || this->stream->Close();
 }
 
 void OpenMptDataStream::Interrupt() {
-    this->stream->Interrupt();
+    std::lock_guard<std::mutex> lock(this->streamMutex);
+    this->interrupted = true;
+    if (this->stream) {
+        this->stream->Interrupt();
+    }
 }
 
 void OpenMptDataStream::Release() {

@@ -372,6 +372,40 @@ add_test(NAME musikcore.integration.runtime.visualizer_session COMMAND "${MUSIKC
 set_tests_properties(musikcore.integration.runtime.visualizer_session PROPERTIES
   LABELS "integration;musikcore;runtime;visualizer;contract" TIMEOUT 30)
 
+# SDK 22 objects must retire before unload, without querying their factories.
+foreach(name IN ITEMS CurrentSdk ObsoleteSdk)
+  add_library(musikcore_sdk_${name} MODULE ../integration/musikcore/sdk-version-plugin.cpp)
+  target_include_directories(musikcore_sdk_${name} PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+  target_compile_definitions(musikcore_sdk_${name} PRIVATE SDK_FIXTURE_NAME="${name}")
+  if(name STREQUAL "ObsoleteSdk")
+    target_compile_definitions(musikcore_sdk_${name} PRIVATE SDK_FIXTURE_OBSOLETE)
+  endif()
+  set_target_properties(musikcore_sdk_${name} PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/sdk-version"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/sdk-version"
+    DISABLE_PRECOMPILE_HEADERS ON)
+  if(APPLE)
+    set_target_properties(musikcore_sdk_${name} PROPERTIES SUFFIX ".dylib")
+  endif()
+  add_dependencies(musikcore_runtime_hardening_test musikcore_sdk_${name})
+endforeach()
+# Exercise nested stream adapters only when their actual providers are built.
+set(stream_sdk_plugins)
+foreach(provider IN ITEMS gmedecoder openmptdecoder)
+  if(TARGET ${provider})
+    list(APPEND stream_sdk_plugins --plugin "$<TARGET_FILE:${provider}>")
+    target_compile_definitions(musikcore_runtime_hardening_test PRIVATE TEST_STREAM_${provider})
+    add_dependencies(musikcore_runtime_hardening_test ${provider})
+  endif()
+endforeach()
+add_test(NAME musikcore.integration.runtime.stream_sdk_contract COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage
+  --plugin "$<TARGET_FILE:musikcore_sdk_CurrentSdk>"
+  --plugin "$<TARGET_FILE:musikcore_sdk_ObsoleteSdk>" ${stream_sdk_plugins} stream_sdk_contract)
+set_tests_properties(musikcore.integration.runtime.stream_sdk_contract PROPERTIES
+  LABELS "integration;musikcore;plugin;runtime;contract" TIMEOUT 30)
+
 if(UNIX AND CMAKE_NM)
   musikcube_restrict_exports(musikcore_runtime_hardening_test)
   get_property(export_targets GLOBAL PROPERTY MUSIKCUBE_RESTRICTED_TARGETS)

@@ -156,6 +156,7 @@ void PluginFactory::LoadPlugins() {
                             }
                             else {
                                 musik::debug::error(TAG, "plugin with invalid version: " + filename);
+                                plugin->Release();
                                 FreeLibrary(dll);
                             }
                         }
@@ -197,11 +198,12 @@ void PluginFactory::LoadPlugins() {
                             auto plugin = getPluginCall();
                             if (plugin->SdkVersion() == musik::core::sdk::SdkVersion) {
                                 musik::debug::info(TAG, "loaded: " + filename);
-                                descriptor->plugin = getPluginCall();
+                                descriptor->plugin = plugin;
                                 descriptor->nativeHandle = dll;
                                 this->plugins.push_back(descriptor);
                             }
                             else {
+                                plugin->Release();
                                 dlclose(dll);
                             }
                         }

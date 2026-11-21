@@ -29,7 +29,7 @@ namespace {
     class StreamFactory final : public musik::core::sdk::IDataStreamFactory {
     public:
         bool CanRead(const char*) override { return false; }
-        musik::core::sdk::IDataStream* Open(const char*, OpenFlags) override { return nullptr; }
+        musik::core::sdk::IDataStream* Create() override { return nullptr; }
         void Release() override { mark(16); acquire("stream_releases"); }
     } streamFactory;
 

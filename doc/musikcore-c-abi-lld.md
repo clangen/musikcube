@@ -1281,10 +1281,10 @@ remains deferred. This does not begin the new plugin C SDK. See
 - [x] **API-URI-002** Supply a generic provider environment without a catalog and
   scope worker completion to individual transports. Stop URI resources before
   retiring the context's provider session; retained handles remain safely inert.
-- [x] **API-URI-003** Harden opening/publication and cancellation. Preserve the
-  legacy provider vtable with optional `CreateDataStream` discovery; stock HTTP
-  supports interrupted opens and WAV MIME types. Legacy blocking opens without
-  that hook remain bounded by their provider implementation.
+- [x] **API-URI-003** Harden opening/publication and cancellation. Require
+  create-before-open through SDK 23 factory/environment contracts, including
+  nested GME/OpenMPT streams; remove optional exports and compatibility paths.
+  Stock HTTP supports interrupted opens and WAV MIME types.
 - [x] **API-URI-004** Exercise real local/file/HTTP decoding without a database,
   pause/seek/EOF/failure, wrong-thread and callback destruction rejection,
   independent players, early close, observer replacement within a detached
@@ -1292,12 +1292,28 @@ remains deferred. This does not begin the new plugin C SDK. See
   and retained handles in `musikcore.integration.api.uri_player` using headless output and loopback HTTP.
 - [x] **API-URI-005** Ship C/C++ example apps and verify their public-only builds
   and playback against the relocated SDK in `musikcore.integration.api.installed_sdk`.
+- [x] **API-URI-006** Migrate in-tree stream factories and environment callers to
+  SDK 23. In `musikcore.integration.runtime.stream_sdk_contract`, verify creation
+  leaves disk untouched, cancelled publication prevents opening, explicit opening
+  still writes correctly, accepted plugins are acquired once, and SDK 22 plugins
+  are released before unload without querying incompatible factories. Real GME
+  and OpenMPT providers also cover unopened release, successful nested opening,
+  and cancellation before opening. Windows
+  CDDA sources are migrated; Windows/Linux runtime validation remains deferred.
+- [ ] **API-URI-007** Implement and validate Windows CDDA device cancellation.
+  Its existing `Interrupt` is a no-op; SDK 23 creation now exposes the stream
+  before opening, but does not by itself cancel its synchronous device I/O.
+  Audit pre-open cancellation and blocked device reads on Windows hardware.
 
 Native macOS arm64 validation: full Release and ASan/UBSan Debug suites pass
-94/94; ABI-only Debug passes 29/29. Independent C++ review reproduced and helped
-close stale observer delivery and HTTP readiness lost-wakeup bugs. Both have
-regressions in the URI integration case. Logs: `build/uri-final-tests-release.log`,
-`build/uri-final-tests-debug.log`, and `build/uri-final-abi-debug.log`.
+95/95, including playback, remote transcoding, installed SDK, and UI cases. The
+expanded SDK test additionally passes Release with both nested providers loaded.
+Logs: `build/stream-contract-tests-release.log` and
+`build/stream-contract-tests-debug.log`. The earlier ABI-only Debug validation
+passed 29/29 (`build/uri-final-abi-debug.log`); the SDK 23 change does not modify
+the public C ABI. Independent C++ review of the initial URI slice reproduced and
+helped close stale observer delivery and HTTP readiness lost-wakeup bugs; both
+have regressions in the URI integration case.
 
 #### Managed runtime hardening reconciliation
 

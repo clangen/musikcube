@@ -49,18 +49,15 @@ namespace musik { namespace core { namespace io {
             using DataStreamPtr = std::shared_ptr<musik::core::sdk::IDataStream>;
             using OpenFlags = musik::core::sdk::OpenFlags;
 
-            /* publish before Open when a provider supports CreateDataStream, allowing
-            cancellation while its open is blocked. false stops the attempt. */
+            /* publish every stream before Open so cancellation can reach its
+            startup work. false stops the attempt without opening it. */
             static DataStreamPtr OpenSharedDataStream(const char *uri, OpenFlags flags,
                 std::function<bool(const DataStreamPtr&)> publish = {});
-            static musik::core::sdk::IDataStream* OpenDataStream(const char* uri, OpenFlags flags);
+            /* caller owns the unopened stream and must Release it. */
+            static musik::core::sdk::IDataStream* CreateDataStream(const char* uri);
 
         private:
-            struct Provider {
-                std::shared_ptr<musik::core::sdk::IDataStreamFactory> factory;
-                musik::core::sdk::CreateDataStream create = nullptr;
-            };
-            using DataStreamFactoryVector = std::vector<Provider>;
+            using DataStreamFactoryVector = std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory>>;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DataStreamFactory)
 

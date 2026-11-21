@@ -222,7 +222,12 @@ IDataStream* Transcoder::TranscodeOnDemand(
 
     if (fs::exists(fs::u8path(expectedFilename))) {
         touch(expectedFilename);
-        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
+        auto* stream = context.environment->CreateDataStream(expectedFilename.c_str());
+        if (stream && !stream->Open(expectedFilename.c_str(), OpenFlags::Read)) {
+            stream->Release();
+            stream = nullptr;
+        }
+        return stream;
     }
 
     /* if it doesn't exist, check to see if the cache is enabled. */
@@ -276,7 +281,12 @@ IDataStream* Transcoder::TranscodeAndWait(
     /* already exists? */
     if (fs::exists(fs::u8path(expectedFilename))) {
         touch(expectedFilename);
-        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
+        auto* stream = context.environment->CreateDataStream(expectedFilename.c_str());
+        if (stream && !stream->Open(expectedFilename.c_str(), OpenFlags::Read)) {
+            stream->Release();
+            stream = nullptr;
+        }
+        return stream;
     }
 
     IStreamingEncoder* audioStreamEncoder = encoder->AsStreaming();
@@ -300,7 +310,12 @@ IDataStream* Transcoder::TranscodeAndWait(
 
         transcoderStream->Release();
         PruneTranscodeCache(context);
-        return context.environment->GetDataStream(uri.c_str(), OpenFlags::Read);
+        auto* stream = context.environment->CreateDataStream(uri.c_str());
+        if (stream && !stream->Open(uri.c_str(), OpenFlags::Read)) {
+            stream->Release();
+            stream = nullptr;
+        }
+        return stream;
     }
     else {
         IBlockingEncoder* blockingEncoder = encoder->AsBlocking();
@@ -346,7 +361,12 @@ IDataStream* Transcoder::TranscodeAndWait(
         }
 
         PruneTranscodeCache(context);
-        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
+        auto* stream = context.environment->CreateDataStream(expectedFilename.c_str());
+        if (stream && !stream->Open(expectedFilename.c_str(), OpenFlags::Read)) {
+            stream->Release();
+            stream = nullptr;
+        }
+        return stream;
     }
 }
 

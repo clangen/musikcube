@@ -55,15 +55,8 @@ bool HttpDataStreamFactory::CanRead(const char *uri) {
         str.find(HttpDataStream::kRemoteTrackHost) == 0;
 }
 
-IDataStream* HttpDataStreamFactory::Open(const char *uri, OpenFlags flags) {
-    HttpDataStream* stream = new HttpDataStream();
-
-    if (stream->Open(uri, flags)) {
-        return stream;
-    }
-
-    delete stream;
-    return nullptr;
+IDataStream* HttpDataStreamFactory::Create() {
+    return new HttpDataStream();
 }
 
 void HttpDataStreamFactory::Release() {

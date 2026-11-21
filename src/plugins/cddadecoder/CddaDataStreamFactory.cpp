@@ -49,15 +49,8 @@ bool CddaDataStreamFactory::CanRead(const char *uri) {
     return (extension == ".cda");
 }
 
-IDataStream* CddaDataStreamFactory::Open(const char *uri, OpenFlags flags) {
-    CddaDataStream* stream = new CddaDataStream();
-
-    if (stream->Open(uri, flags)) {
-        return stream;
-    }
-
-    delete stream;
-    return NULL;
+IDataStream* CddaDataStreamFactory::Create() {
+    return new CddaDataStream();
 }
 
 void CddaDataStreamFactory::Release() {

@@ -92,8 +92,6 @@ class OpenMptDecoderFactory: public IDecoderFactory {
 
 class OpenMptDataStreamFactory : public IDataStreamFactory {
     public:
-        using OpenFlags = musik::core::sdk::OpenFlags;
-
         bool CanRead(const char *uri) override {
             std::string fn;
             int track;
@@ -105,13 +103,8 @@ class OpenMptDataStreamFactory : public IDataStreamFactory {
             return false;
         }
 
-        IDataStream* Open(const char *uri, OpenFlags flags) override {
-            auto result = new OpenMptDataStream();
-            if (result->Open(uri, flags)) {
-                return result;
-            }
-            result->Release();
-            return nullptr;
+        IDataStream* Create() override {
+            return new OpenMptDataStream();
         }
 
         void Release() override {
