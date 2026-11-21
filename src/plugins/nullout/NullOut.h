@@ -37,6 +37,7 @@
 #include "config.h"
 
 #include <musikcore/sdk/IOutput.h>
+#include <atomic>
 
 using namespace musik::core::sdk;
 
@@ -70,6 +71,6 @@ class NullOut : public IOutput {
             StatePlaying
         };
 
-        State state;
-        double volume;
+        std::atomic<State> state;
+        std::atomic<double> volume;
 };

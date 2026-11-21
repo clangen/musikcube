@@ -3,7 +3,7 @@
    The native executable performs the assertions; failed runs retain their files. */
 const { spawnSync } = require('child_process');
 const { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } = require('fs');
-const { basename, dirname, join, resolve } = require('path');
+const { basename, dirname, extname, join, resolve } = require('path');
 const { stageTestRuntime } = require('./test-runtime');
 
 const [parent, executable, ...args] = process.argv.slice(2);
@@ -33,9 +33,11 @@ if (args[0] === '--locale') {
 if (args[0] === '--headless-output') {
   args.shift();
   const plugins = join(dirname(command), 'plugins');
-  copyFileSync(args.shift(), join(plugins, 'libnullout.so'));
+  const output = args.shift();
+  const extension = extname(output);
+  copyFileSync(output, join(plugins, basename(output)));
   /* Exercise dlopen failure alongside the working headless output. */
-  writeFileSync(join(plugins, 'libunavailable-output.so'), 'Invalid shared library\n');
+  writeFileSync(join(plugins, `libunavailable-output${extension}`), 'Invalid shared library\n');
 }
 
 while (args[0] === '--plugin') {

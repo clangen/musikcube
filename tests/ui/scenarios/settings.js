@@ -52,6 +52,10 @@ async function checkSettings(terminal, { staged, hasServer }) {
     await terminal.expect('configure plugins');
     terminal.send('\t'.repeat(hasServer ? 7 : 11) + '\r');
     await terminal.expect('Null IOutput');
+    /* a PTY update may end midway through the name; wait for its whole row
+    before deriving a navigation index from the rendered plugin list. */
+    await terminal.waitFor(() => terminal.screen.text().split('\n').some(
+      row => row.includes('Null IOutput') && row.includes('[v')), 'complete Null plugin row');
     const pluginRows = terminal.screen.text().split('\n').filter(row => row.includes('[v'));
     const nullRow = pluginRows.findIndex(row => row.includes('Null IOutput'));
     terminal.send(HOME + DOWN.repeat(nullRow) + '\r');

@@ -1215,8 +1215,9 @@ legacy list for actions that still require it.
 
 #### Managed runtime hardening reconciliation
 
-The startup/teardown protections from the earlier `f83bbb028` implementation
-are adapted to the managed runtime rather than replacing its public API. The process-owned plugin registry remains unchanged;
+The startup/teardown protections from the earlier `f83bbb028` implementation and
+plugin fixes from `ebda8eb12` are adapted to the managed runtime rather than
+replacing its public API. The process-owned plugin registry remains unchanged;
 session factories and visualizers retire after workers stop. This does not
 claim module-unload support or per-context configuration-root isolation.
 
@@ -1237,17 +1238,34 @@ claim module-unload support or per-context configuration-root isolation.
 - [x] **RTH-006** Synchronize stream-factory discovery and retire stream/codec
   caches after workers stop, even when a hook throws.
   `musikcore.integration.runtime.caches` checks concurrent lookup and balanced
-  acquisition/release counts for each provider.
+  acquisition/release counts for each provider. Null output state is atomic;
+  FFmpeg frames copy owned channel-layout storage. Existing PCM, reload, and
+  managed-runtime checks exercise real plugin playback.
 - [x] **RTH-007** Reject failed database opens and corrupt schemas transactionally.
   `musikcore.integration.runtime.database_failure` checks `MC_ERROR_IO`, an empty
   context output, and successful retry after repairing the same path.
+
+The managed, plugin-reload, captured-PCM, remote-HTTP-audio, and transport TUI
+checks run natively on macOS and Linux using platform-correct staged filenames.
+Failure-provider modules stay under the build's test fixtures, outside normal
+app plugin discovery. Browse waits for a complete plugin row before navigation,
+so split PTY writes cannot produce a negative row index.
+
+Native validation on 2026-11-21: macOS arm64 Release 63/63, Debug 63/63
+(with ASan/UBSan), and ABI-only Debug 28/28 through
+`tests/scripts/run-tests.js`. The seven runtime-hardening cases also pass five
+consecutive Debug repetitions each. These are device-free tests; they do not
+claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
 
 #### Phase 7 gate
 
 - [ ] **GATE-700** musikcube builds and passes smoke and integration tests
   using the public C ABI and header-only wrapper. Linux Release passed
   `musikcube.integration.core_boundary` and all four headless scenarios.
-  Native macOS verification is pending. Windows is deferred.
+  Native macOS Debug/Release validation also passes the frontend import guard,
+  installed consumers, managed local/remote sessions, remote HTTP audio, captured
+  gapless/crossfade PCM, and six TUI scenarios. Windows remains deferred; this
+  gate does not claim native Windows acceptance.
 
 ### Phase 8: expand and migrate the provider SDK
 
@@ -1389,9 +1407,10 @@ the probe.
 
 ## Active next steps
 
-1. Run native macOS verification for `GATE-700`. Windows remains deferred.
-   Linux verification passed with Cube using only the C ABI and public
-   header-only wrapper. Keep the Linux build, test, and package checks in place.
+1. Complete remaining native platform/release acceptance for `GATE-700`.
+   macOS Debug/Release and Linux Release verify Cube using the C ABI and public
+   header-only wrapper. Windows remains deferred. Keep Linux package checks and
+   the native macOS managed/plugin/PCM coverage in place.
 2. Finish the remaining platform acceptance and release documentation for the
    core consumer SDK.
 3. Begin the provider walking skeleton and SDK migration in a separate pass.

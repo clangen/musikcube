@@ -469,6 +469,10 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket* packet) {
             this->codecContext->sample_fmt,
             this->codecContext->sample_rate);
 
+        if (!this->decodedFrame) {
+            logError("could not allocate a decoded frame");
+            return false;
+        }
         error = avcodec_receive_frame(this->codecContext, this->decodedFrame);
         if (error >= 0) {
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
@@ -480,6 +484,10 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket* packet) {
                 RESOLVE_SAMPLE_RATE(),
                 this->decodedFrame->nb_samples);
 
+            if (!this->resampledFrame) {
+                logError("could not allocate a resampled frame");
+                return false;
+            }
             error = swr_convert_frame(
                 this->resampler,
                 this->resampledFrame,
@@ -647,7 +655,11 @@ AVFrame* FfmpegDecoder::AllocFrame(AVFrame* original, AVSampleFormat format, int
         }
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
         original = av_frame_alloc();
-        original->ch_layout = this->codecContext->ch_layout;
+        /* custom layouts own a channel map; frames need an independent copy. */
+        if (!original || av_channel_layout_copy(&original->ch_layout, &this->codecContext->ch_layout) < 0) {
+            av_frame_free(&original);
+            return nullptr;
+        }
 #else
         const int channelLayout = this->codecContext->channel_layout == 0
             ? av_get_default_channel_layout(this->codecContext->channels)

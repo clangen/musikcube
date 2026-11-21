@@ -52,8 +52,8 @@ using namespace musik::core::sdk;
 #define PREF_MULTIPLIER "playback_speed_multiplier"
 #define PREF_DEFAULT_SAMPLE_RATE "default_sample_rate"
 
-static int defaultSampleRate = 48000;
-static float speedMultiplier = 1.0f;
+static std::atomic<int> defaultSampleRate { 48000 };
+static std::atomic<float> speedMultiplier { 1.0f };
 static IPreferences* prefs = nullptr;
 
 static void reloadMultiplier() {

@@ -128,7 +128,7 @@ if(BUILD_TESTING)
     set_tests_properties(musikcore.integration.api.backend_parity PROPERTIES
       LABELS "integration;musikcore;api;transport;contract" TIMEOUT 90)
 
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET ffmpegdecoder)
+    if(UNIX AND TARGET ffmpegdecoder)
       add_library(musikcore_pcm_capture_output MODULE pcm-capture-output.cpp)
       target_include_directories(musikcore_pcm_capture_output PRIVATE "${PROJECT_SOURCE_DIR}/src")
       target_compile_features(musikcore_pcm_capture_output PRIVATE cxx_std_20)
@@ -136,6 +136,10 @@ if(BUILD_TESTING)
       set_target_properties(musikcore_pcm_capture_output PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures"
         DISABLE_PRECOMPILE_HEADERS ON)
+
+      if(APPLE)
+        set_target_properties(musikcore_pcm_capture_output PROPERTIES SUFFIX ".dylib")
+      endif()
 
       add_executable(musikcore_playback_pcm_test ../integration/transport/playback-pcm.cpp)
       target_include_directories(musikcore_playback_pcm_test PRIVATE
@@ -157,7 +161,7 @@ if(BUILD_TESTING)
       endforeach()
     endif()
 
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET nullout AND TARGET ffmpegdecoder AND TARGET taglibreader)
+    if(UNIX AND TARGET nullout AND TARGET ffmpegdecoder AND TARGET taglibreader)
       add_executable(musikcore_plugin_playback_test ../integration/musikcore/plugin-playback.cpp)
       target_include_directories(musikcore_plugin_playback_test PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
