@@ -1,6 +1,6 @@
 # musikcore C ABI modernization: low-level design and task plan
 
-Status: active migration; native foundation validation complete, release gates open
+Status: core consumer integration implemented; release acceptance and provider work remain open
 
 The [core C API foundation gate](#core-c-api-foundation-gate) supersedes
 the original phase ordering below. Additional application feature migrations
@@ -28,9 +28,17 @@ state, not design intent.
 
 Status legend:
 
-- `[ ]` not started or not merged
-- `[x]` complete in the current branch
-- A task annotated `blocked by` must not begin until its dependency gate passes
+- `[ ]` acceptance remains open; accompanying text identifies partial work,
+  deferred scope, or a platform dependency.
+- `[x]` implemented and validated in the stated scope. An explicitly `retired`
+  task records a superseded migration route, not an implementation claim.
+- Platform gates remain open until their native acceptance passes or the
+  foundation gate records a maintainer-approved exception.
+- A task annotated `blocked by` must not begin until its dependency gate passes.
+
+The active next steps at the end of this document identify the core consumer
+release backlog. Historical phase numbers and deferred expansion tasks do not
+make provider work eligible or require adding unused public APIs.
 
 ## Related documents
 
@@ -143,59 +151,46 @@ separation is:
   and validation.
 - `ffi/provider` contains the plugin host and private provider adapters.
 - Public C++ convenience wrappers are header-only and use public C declarations.
-- Temporary library/playback binding adapters remain private and removable
-  when public API ownership replaces them.
+- Library/playback attachment adapters have been removed from Cube. Test-only
+  probes stay out of standalone production builds.
 
 ## CMake target topology
 
-### Before the minimal ABI exists
+### Current build topology
 
-Preserve the current `musikcore` target behavior. Add testing support without
-changing Windows from static to shared.
+Unix production builds compile `CORE_SOURCES` from
+`src/musikcore/CMakeLists.txt` into position-independent `musikcore_objects`.
+Those objects supply the shared, C-export-only production `musikcore`. With
+`BUILD_TESTING`, they also supply private static `musikcore_internal` for tests
+that need implementation access. The normal musikcube and musikcubed targets
+use the production public C ABI; they do not link the private test archive.
 
-### Experimental transition topology
+Windows builds `musikcore_objects` from `.cmake/WindowsSources.cmake`, then
+shares `musikcore.dll` between console and GUI frontends. Private integration
+tests reuse `musikcore_internal` without widening the DLL exports. The reduced
+`musikcore_abi0` shared target remains separate. Native Windows Debug/Release
+checks cover PE exports, both frontend import tables, installed consumers, and
+runtime placement; retain the recorded revision/scope of that evidence.
 
-Once the shared ABI foundation passes static tests, introduce these conceptual
-targets:
+`musikcore_abi0` is a reduced standalone contract-test runtime, not a second
+production engine or the target used by Cube. It shares consumer ABI sources
+through `.cmake/MusikcoreConsumerApi.cmake`, supplies SQLite reads, and rejects
+unsupported production-service operations. `musikcore_cpp_abi0` is its public
+header-only C++ interface target. Its runtime files remain under `bin/abi0`.
 
-```text
-musikcore_impl_objects
-    |
-    +--> musikcore_legacy
-    |        Windows: STATIC
-    |        Unix:    current internal SHARED behavior
-    |
-    +--> musikcore_abi0
-             all platforms: SHARED
-             exports: new C ABI only
-
-musikcore_cpp_abi0 --> INTERFACE --> musikcore_abi0
-```
-
-`musikcore_impl_objects` excludes both the legacy C boundary and the new public
-façade. It is position-independent where required.
-
-`musikcore_legacy` includes `c_context.cpp`, `c_interface_wrappers.cpp`, and any
-other existing boundary sources. Existing application targets continue to link
-this target during early migration.
-
-`musikcore_abi0` includes the new public and provider ABI sources. Its output
-name is distinct, for example:
-
-- Linux: `libmusikcore-abi0.so`
-- macOS: `libmusikcore-abi0.dylib`
-- Windows: `musikcore-abi0.dll`
-
-The experimental target is not installed as the final supported artifact.
+The earlier proposal to introduce `musikcore_legacy` was superseded by this
+layout. There is no target or retired C boundary to preserve under that name.
+Common production source lists are still duplicated between Unix and Windows;
+BLD-001 tracks consolidation separately from the implemented Unix object reuse.
 
 ### Process isolation rule
 
 Implement the single-core-per-process decision in
 [ADR-0001](../docs/adr/0001-c-abi-and-core-first-refactor.md) with
 `.cmake/VerifyCoreBoundary.cmake` and the positive/negative `link_boundary`
-fixtures. Both targets compile the consumer API sources; production uses its
-SQLite implementation and extensions, while ABI0 has a strict export allowlist.
-The indexed-query suite exercises both targets in separate processes.
+fixtures. A consumer must not combine production `musikcore`, the reduced
+`musikcore_abi0`, or `musikcore_internal`. Each test selects one implementation;
+shared-library consumers use only its exported C functions.
 
 ### Final topology
 
@@ -208,8 +203,10 @@ musikcube              --> musikcore_cpp
 plugins                --> public plugin headers only
 ```
 
-`musikcore_legacy` and `musikcore_abi0` are removed. The final shared target
-uses ABI-major platform naming and installs headers plus package metadata.
+The reduced `musikcore_abi0` test runtime is retired when production-bound
+contract fixtures replace its remaining uses. No `musikcore_legacy` target
+exists to remove. The final shared target uses ABI-major platform naming and
+installs headers plus package metadata.
 
 ## Export control
 
@@ -236,17 +233,15 @@ A packaging test compares actual exports with the allowlist.
 Lifecycle and delivery decisions are in
 [ADR-0002](../docs/adr/0002-host-dispatch-and-request-lifetime.md).
 
-The target context owns or coordinates the following services; this is the
-future runtime layout, not a list of services already exposed by ABI0:
+The production context owns the managed runtime, request registry, dispatch
+queue, selected library, playback service, and explicit URI-player children.
+Creation selects a fixed service mask; prerequisites expand automatically and
+the default enables all services. Library and plugin services are independent;
+indexing and catalog playback each add both. URI players require plugins only.
 
-- Runtime/global initialization reference.
-- Library/database instance.
-- Plugin registry.
-- Completion and notification queues.
-- Async request registry.
-- Playback and indexer services.
-- Context-scoped preferences and paths.
-- Shutdown state.
+Plugin discovery, service registries, preferences, and path configuration retain
+process-level constraints; this is not isolated multi-engine hosting. The
+reduced `musikcore_abi0` target does not instantiate the production runtime.
 
 Current ABI0 permits one context. A second create returns `MC_ERROR_BUSY`;
 only successful destruction releases the slot.
@@ -319,17 +314,27 @@ immutable `mc_track_page` storage containing:
 
 - Row count.
 - Requested field descriptors or stable field ordering.
-- Fixed-width row identity and numeric storage.
-- One page-owned UTF-8 arena or equivalent compact backing storage.
-- Offsets/lengths into the arena.
+- Fixed-width row identities; numeric album durations live on search results.
+- Page-owned field names and rows of UTF-8 string values.
+- Stable views into that storage for the page lifetime.
+
+`query::ProjectedTrackPage` currently owns vectors of strings. It is immutable
+once published but is not a packed arena with offsets. LIB-002 retains the
+compact-storage optimization as deferred work; current zero-copy access and
+cache budgets do not require that representation.
 
 Reads create new pages rather than mutating published storage. Future
-invalidation events can signal database changes; there is no public notification
-surface yet. Current lifetime/error details are recorded below and in headers.
+track-metadata invalidation events remain unimplemented. Existing library,
+playlist, indexer, and playback callbacks do not provide a general metadata
+invalidation stream. Current lifetime/error details are recorded below and in headers.
 
 ### Plugin registry
 
-Each loaded plugin record contains:
+The following registry/table design belongs to the deferred C provider SDK.
+The existing SDK 23 C++ plugin loader does not implement these C tables or
+per-instance unload accounting.
+
+Each future C plugin record contains:
 
 - Native library handle.
 - Negotiated ABI version and table size.
@@ -439,15 +444,17 @@ never sleeps.
 
 ## Current experimental core contracts
 
-The supported standalone and production-bound surfaces are summarized in the
+The supported reduced-test and production surfaces are summarized in the
 [HLD](musikcore-c-abi-hld.md#current-experimental-scope). Unsupported operations
 reject admission with `MC_ERROR_UNSUPPORTED` and deliver no callback.
-`plugin_directory` is copied but does not start a plugin loader.
+In production, `plugin_directory` is copied and used when Plugins is selected;
+that service starts provider discovery. The reduced ABI-only target supplies
+no production plugin loader.
 
 ### Declarations and validation
 
-Public C declarations live in independently compilable `abi.h`, `context.h`,
-`library.h`, and `playback.h`; `musikcore.h` is the application umbrella. They
+Public C declarations live in independently compilable subsystem headers under
+`include/musikcore`; `musikcore.h` is the application umbrella. They
 contain parameter-level nullability, units, defaults, ownership, and lifetimes.
 The `musikcore.abi.inventory` test compares declarations with
 `src/musikcore/ffi/exports.txt`; `exports` checks the actual binary. Generate a
@@ -570,6 +577,9 @@ Windows runs the shared smoke scenarios through the native ConPTY driver with
 an isolated runtime and profile. Emoji/ZWJ and terminal-specific glyph
 presentation remain explicit screen-model limits. Add further tests alongside
 the code being changed.
+Recorded Linux results establish their stated revision and scope; this rebase
+adds no new native Linux/Windows execution. New checks remain tied to the
+platform evidence recorded below.
 
 ## Core C API foundation gate
 
@@ -672,11 +682,21 @@ release-candidate quality.
 
 ## Foundation validation and baselines
 
-Native evidence on 2026-11-20: macOS 26.6.2, Apple M4/arm64, AppleClang
-21.0.0.21000101. The current full Debug and Release app builds and all 44 CTest
-entries pass, including four independently selected 1,000-track production UI
-scenarios.
-Clean standalone ABI-only Debug and Release workflows pass all 26 entries.
+Native macOS arm64 validation at `1f8283ea7`: full Release and Debug suites
+pass 104/104, including installed consumers, application import guards,
+subscription cross-library delivery, URI players, remote audio/transcoding,
+PCM transport stress, and UI scenarios. Logs:
+`build/subscription-scope-tests-release.log` and
+`build/subscription-scope-tests-debug.log`.
+
+Production Debug core objects use ASan/UBSan; direct ABI-only/dispatch targets
+currently do not (API-013).
+
+The mixed C/C++ disconnect regression passes three consecutive focused Release
+runs. The same current test compiled against the pre-fix `c17cf1d45` C++ header
+hits a five-second deadlock deadline, confirming the cross-library seam rather
+than only exercising two header-local publishers. This does not establish
+Windows DLL behavior or full callback-state draining during reentrant disconnect.
 Earlier production TUI validation used 10,000 tracks across three runs.
 
 Native Linux evidence on 2026-11-20: Arch Linux x86-64, Zig 0.17.1 with
@@ -777,12 +797,15 @@ separate.
   Request completions use callbacks. A separate unsolicited-notification polling
   surface remains planned and is not implemented by the current headers.
 - [ ] **DEC-005** Decide whether public and provider ABI versions advance
-  together through v1.
+  together through v1. Deferred to C provider design; the current public ABI
+  remains experimental 0.3 and the existing C++ plugin SDK is version 23.
 - [x] **DEC-006** Retain CTest, existing named native harnesses, shared C11
   diagnostics, and Node's test runner. ADR-0004 records why a new C++ framework
   is not necessary now; any future framework must be pinned and test-only.
-- [ ] **DEC-007** Decide whether raw database access is removed or moved into
-  an explicitly unstable extension.
+- [ ] **DEC-007** Decide whether raw database access is removed from the
+  proposed public surface or reserved for an explicitly unstable extension.
+  The current consumer API exposes no database handle; do not add one merely
+  to satisfy this unresolved design question.
 
 #### Decision gate
 
@@ -807,21 +830,26 @@ recorded before the experimental shared façade is introduced.
   timeout diagnostics.
   `tests/support/host-wakeup`, `tests/support/ApiHost.h`, and query wait helpers
   drive `result_contracts`, `remote_query_transport`, and `indexed_query`.
-- [ ] **TST-007** Add a deterministic memory stream and fake/null output for
-  component tests.
-  Fake transport and deterministic in-memory WAV generation cover current core
-  API tests. An `IDataStream`/provider fixture remains deferred with plugin work.
-- [ ] **TST-008** Add sanitizer CMake options for ASan/UBSan without changing
-  release defaults.
-- [ ] **TST-009** Add an initial internal smoke/unit test to prove CTest on
-  Windows, macOS, and Linux.
+- [x] **TST-007** Supply deterministic stream and output fixtures for the core
+  tests. Generated WAVs, fake/null output, paced PCM capture, and its gated
+  `IDataStream` exercise decoding, cancellation, and buffer/worker teardown in
+  `musikcore.integration.transport.*_pcm` and `musikcore.integration.api.uri_player`.
+  A general memory-provider fixture is deferred until a C SDK use case needs it.
+- [ ] **TST-008** Add explicit sanitizer CMake options without changing release
+  defaults. Unix Debug currently enables ASan/UBSan through
+  `.cmake/ConfigureCompilerFlags.cmake`; configurable sanitizer selection and
+  equivalent Windows/ABI-only coverage are not implemented by that flag setup.
+- [x] **TST-009** Native unit/contract tests run on Windows, macOS, and Linux.
+  The foundation gate records Windows Debug/Release 87/87 and the native Unix
+  evidence; newer changes still require their own platform validation.
 - [x] **TST-010** Document the standard local configure, build, and CTest
   commands.
 
 #### Phase 0 gate
 
-- [ ] **GATE-000** CTest runs an isolated test on all three platforms while
-  Windows musikcube still links the current static core.
+- [x] **GATE-000** CTest runs isolated tests on all three supported platforms.
+  The initial Windows static-link constraint is superseded by the validated
+  production DLL migration; native evidence is in the foundation gate.
 
 ### Phase 1: shared ABI foundation, still tested without a new DLL
 
@@ -855,21 +883,25 @@ recorded before the experimental shared façade is introduced.
 
 #### Phase 1 gate
 
-- [ ] **GATE-100** Shared ABI primitives pass static/internal tests and their
-  layouts and ownership rules are approved before any Windows DLL conversion.
+- [x] **GATE-100** Shared ABI primitives, layouts, and ownership pass the
+  foundation gate's named native tests. FND-WINDOWS closes the former Windows
+  exception and includes production DLL/import-library validation.
 
 ### Phase 2: source manifest and experimental shared façade
 
 - [ ] **BLD-001** Move the common core source manifest out of duplicated Unix
   and Windows lists into a shared CMake include.
-- [ ] **BLD-002** Separate legacy boundary sources from private implementation
-  sources in that manifest.
-- [ ] **BLD-003** Introduce `musikcore_impl_objects` or an equivalent private
-  reusable target with PIC where required.
-- [ ] **BLD-004** Preserve `musikcore_legacy` with current Windows static and
-  Unix internal shared behavior.
-- [ ] **BLD-005** Relink existing applications against `musikcore_legacy`
-  without changing runtime behavior.
+- [x] **BLD-002** Remove the retired C boundary and keep consumer ABI sources
+  separate through `.cmake/MusikcoreConsumerApi.cmake`. Source-manifest
+  consolidation across production platforms remains BLD-001.
+- [x] **BLD-003** Introduce the private PIC `musikcore_objects` target on Unix;
+  production shared core and test-only `musikcore_internal` reuse its objects.
+  `musikcore.integration.binary.exports.*` and the frontend import guards verify
+  that reuse does not export or link private implementation into consumers.
+- [x] **BLD-004** Retired: do not introduce `musikcore_legacy`. Windows and
+  Unix production now export the public C ABI through a shared core.
+- [x] **BLD-005** Retired: the intermediate application relink to
+  `musikcore_legacy` is superseded by MIG-009/MIG-010 and their boundary tests.
 - [x] **BLD-006** Add `musikcore_abi0` as a distinct shared target on all
   platforms.
 - [x] **BLD-007** Ensure `musikcore_abi0` excludes legacy C boundary sources.
@@ -881,8 +913,8 @@ recorded before the experimental shared façade is introduced.
   `musikcore.abi.exports` checks the complete PE, ELF and Mach-O export lists.
   `musikcube.integration.windows_core_dll` checks production PE exports and
   both frontend import tables.
-- [x] **BLD-011** Add a build/link check preventing one executable from linking
-  legacy and ABI0 targets together.
+- [x] **BLD-011** Prevent one executable from linking multiple production,
+  reduced ABI0, or private test-core implementations together.
   `.cmake/VerifyCoreBoundary.cmake` traverses target dependencies; the positive
   and negative `musikcore.abi.link_boundary` configure fixtures exercise it.
 - [x] **BLD-012** Give ABI0 separate runtime output and plugin directories.
@@ -902,7 +934,10 @@ recorded before the experimental shared façade is introduced.
 ### Phase 3: public runtime walking skeleton
 
 - [x] **API-001** Create `include/musikcore/musikcore.h`.
-- [ ] **API-002** Implement `mc_abi_version` and initial feature discovery.
+- [x] **API-002** Implement `mc_abi_version` and requested-version validation.
+  `musikcore.abi.header`, `shared_c`, and `arguments` exercise version behavior.
+  A general capability-discovery API remains deferred; it is not implied by
+  version reporting or service-mask selection.
 - [x] **API-003** Define context options for ABI version validation,
   dispatch wakeups, query limits, and a copied provider-discovery root. Database
   directories belong to explicit library identities rather than context-global
@@ -911,26 +946,38 @@ recorded before the experimental shared façade is introduced.
 - [x] **API-005** Implement context shutdown states and
   `mc_context_destroy`.
 - [x] **API-006** Implement the request ID generator and registry.
-- [ ] **API-007** Implement caller-thread completion dispatch and notification polling.
-  Completion dispatch is implemented and tested by `dispatch`; notification
-  polling is a future feature and must not be inferred from context creation.
-- [ ] **API-008** Implement completion payload ownership and owned notifications.
-  Current page/result completion ownership is verified by `query` and
-  `result_contracts`; owned unsolicited notifications remain unimplemented.
+- [x] **API-007** Implement owner-thread completion dispatch and wakeup
+  integration, verified by `musikcore.abi.dispatch` and managed runtime tests.
+  Unsolicited polling is tracked separately by API-014.
+- [x] **API-008** Implement callback-scoped errors and owned page/result completion
+  payloads, verified by `musikcore.abi.query` and `result_contracts`.
+  Owned polled notifications are tracked separately by API-015.
 - [x] **API-009** Implement cancellation and exactly-once terminal completion.
 - [x] **API-010** Implement wakeup coalescing and dispatcher-thread shutdown draining.
 - [x] **API-011** Reject unsupported second contexts according to DEC-003.
-- [ ] **API-012** Add C contract tests for version, context, errors, events,
-  cancellation, and teardown.
-- [ ] **API-013** Add repeated create/destroy and failure-injection tests under
-  ASan/UBSan.
+- [x] **API-012** Cover current C version, context, errors, callback delivery,
+  cancellation, and teardown contracts in `shared_c`, `arguments`, and `dispatch`.
+  Future polled-event tests belong with API-014/API-015.
+- [ ] **API-013** Complete ASan/UBSan instrumentation of direct ABI lifecycle
+  and allocation-failure fixtures, then rerun `dispatch`, `result_contracts`,
+  `shared_c`, and `subscriptions`. Production runtime/URI cases already run with
+  instrumented core objects on native macOS Debug. The reduced `musikcore_abi0`
+  and direct `dispatch` target currently compile with `-g` alone, so a green
+  full Debug run does not prove those seams were sanitizer-checked. Use TST-008
+  to apply explicit instrumentation consistently; native Windows remains open.
+- [ ] **API-014** Deferred expansion: unsolicited notification polling. Existing
+  host-dispatched subsystem callbacks serve current application consumers.
+- [ ] **API-015** Deferred expansion: owned polled notification payloads and
+  their lifecycle tests; blocked by API-014.
 
 #### Phase 3 gate
 
-- [ ] **GATE-300** The C contract executable creates an ABI0 context, completes
-  and cancels synthetic requests through callbacks, consumes notifications,
-  and shuts down without leaks
-  or arbitrary sleeps.
+- [ ] **GATE-300** Complete direct runtime contract acceptance under API-013
+  instrumentation. Functional create, dispatch/cancel, callback ownership, and
+  shutdown already pass `shared_c`, `dispatch`, and `result_contracts`.
+  Platform acceptance remains in the foundation gate; unimplemented polled
+  notifications are separately deferred under API-014/API-015.
+
 
 ### Phase 4: C SDK walking skeleton
 
@@ -960,55 +1007,59 @@ recorded before the experimental shared façade is introduced.
 
 - [x] **LIB-001** Define query options with copied field and filter inputs.
   `musikcore.abi.query` mutates both after submission and verifies the original inputs.
-- [ ] **LIB-002** Implement immutable page arena storage.
-- [ ] **LIB-003** Implement row identity, string, numeric, and missing-value
-  accessors.
+- [ ] **LIB-002** Deferred optimization: replace immutable page-owned vectors
+  with a packed arena if allocation measurements justify it. Current
+  `ProjectedTrackPage` storage and stable string views pass `result_contracts`
+  and the recorded allocation/cache budgets; immutable page ownership is done.
+- [x] **LIB-003** Implement row identity, projected string/multivalue, missing,
+  and explicit-empty accessors, verified by `musikcore.abi.result_contracts`.
+  Search results expose numeric album durations; generic numeric metadata
+  accessors are not part of the current consumer surface and remain deferred.
 - [x] **LIB-004** Implement async query submission and per-request completion callbacks.
 - [x] **LIB-005** Implement owned page transfer to the completion callback.
 - [x] **LIB-006** Define track identity/list handles without eager metadata.
   Exercised by `musikcore.abi.query` and `musikcore.abi.indexed_query`.
 - [x] **LIB-007** Implement async visible-range/cache-window requests.
   Exercised by the same ABI tests, including removal during paging.
-- [ ] **LIB-008** Implement metadata state and invalidation events.
-- [ ] **LIB-009** Implement batch track-list edits with defined atomicity.
-- [ ] **LIB-010** Add C contract tests for paging, ordering, Unicode, long
-  strings, snapshots, invalidation, and cancellation.
+- [ ] **LIB-008** Deferred expansion: general track-metadata state/invalidation
+  events. Selection, playlists, indexer, and playback already have callbacks;
+  published pages stay immutable and later reads can observe current metadata.
+- [ ] **LIB-009** Deferred expansion: atomic batch track-list edits. Current
+  ordered queue edits and playlist writes are implemented under PUB-005.
+- [x] **LIB-010** Cover current paging, ordering, Unicode, long strings,
+  immutable pages, retained results, missing rows, and cancellation in
+  `musikcore.abi.query`, `result_contracts`, and `library_switch`.
+  A general invalidation-event contract must be tested when LIB-008 is added.
 - [x] **LIB-011** Add SQLite integration tests with isolated databases.
   `musikcore.abi.query`, `musikcore.abi.indexed_query`, and
   `musikcore.abi.library_switch` use fixtures under the build tree.
-- [ ] **LIB-012** Add scrolling/cache pressure tests without sleeps.
+- [x] **LIB-012** Exercise pending reads, viewport changes, invalidation, and
+  stale completions in `musikcore.integration.api.production.result_windows`.
+  `tests/integration/performance/core-api.cpp` separately measures bounded
+  three-page cache growth over 100 pages through `run-baseline.js`.
 - [x] **LIB-013** Move dispatch and shutdown to one app-owned context.
   Add an owning C++ wrapper around the library handle and bind search
   results and track references to the originating library. Test switching
   between libraries with a request in flight in `musikcore.abi.library_switch`.
-- [ ] **LIB-014** Route Track Search and projected range reads through the
-  selected library's typed query dispatcher. Local dispatch is exercised
-  through the app binding in `musikcore.abi.indexed_query`. Retain remote
-  ordered IDs and album boundaries on the client and fetch pages through
-  the legacy typed metadata batch query. Preserve row positions when a
-  track is deleted between reads. Server snapshots are deferred.
-  The app search projection is wired for both backends. Remote arbitrary
-  and multivalued tags still require a projected query.
-- [ ] **LIB-015** Add a real loopback contract test with a controllably
-  delayed page reply. Race the reply with cancellation, library switching,
-  and disconnect. Assert exactly one completion, no stale repaint, and
-  no change to the target of a retained track reference. Cover reconnect
-  and retained handles from the old connection.
-  `musikcore.abi.remote_query_transport` covers the wire and ABI seams,
-  including a delayed page across selection and cancellation, missing IDs,
-  disconnect with an unanswered read, and rejection of an old reference
-  after reconnect. View-level and playback coverage remain separate.
-- [ ] **LIB-016** Route playback media through the track's originating
-  library and verify that playing from a search position preserves the
-  snapshot order. Verify remote search and streaming separately.
-  Track Search play-from-row installs the ordered result directly in the
-  engine queue. The command requires the result's originating library
-  session to still be selected. Single-track queue actions use an origin-bound
-  track reference. The playback tests check rejection after a library switch
-  and after reconnecting to a remote library that returns the same track ID.
-- [ ] **CPP-001** Create initial RAII C++ context, event, request, page, and list
-  wrappers.
-  Context, query submission, and page ownership are implemented.
+- [x] **LIB-014** Dispatch local and remote ordered search/range reads through
+  typed library queries. Modern remote batch projections retain arbitrary and
+  multivalued tags and NULL/empty distinctions; legacy-server fallback limitations
+  are explicit. `musikcore.abi.remote_query_transport` and
+  `musikcore.integration.api.backend_parity` cover routing and projection parity.
+- [x] **LIB-015** Hold socket replies across cancellation, library selection,
+  disconnect, and reconnect in `musikcore.abi.remote_query_transport`. Verify
+  exactly-once completion and retained origin. Stale viewport delivery is covered
+  separately by `musikcore.integration.api.production.result_windows`; this is
+  not a claim of a single combined remote-TUI fault-injection scenario.
+- [x] **LIB-016** Preserve originating-library validation and result order in
+  queue/result commands. `musikcore.abi.remote_query_transport` checks remote
+  result insertion and stale origins; production `playback_commands` checks
+  play-from-result. `remote_audio` and `remote_transcode.*` separately exercise
+  actual remote media streaming through the production server and decoder.
+- [x] **CPP-001** Supply owning public-only Context, Library, TrackPage,
+  TrackResult, and TrackRef wrappers plus async request submission/cancellation.
+  `public_headers`, `result_contracts`, and `installed_sdk` validate these
+  consumers. Requests use IDs; owned polled-event wrappers await API-014/API-015.
 - [x] **CPP-002** Add C++ wrapper tests that use no private core headers.
 - [x] **MIG-001** Select one musikcube search/list vertical slice for the pilot.
   Start with the track-search results view in `TrackSearchLayout`.
@@ -1021,57 +1072,31 @@ recorded before the experimental shared façade is introduced.
 
 #### Track Search migration
 
-The pilot resolves a selected row through a move-only `TrackRef`. The
-reference owns local library identity and can outlive the search result.
-Resolving a hidden or removed track fails with `MC_ERROR_NOT_FOUND`.
-The next playback slice needs two distinct operations: act on one track by
-identity, and play from a result position in snapshot order.
+Production `TrackSearchLayout` uses the public context and the same
+`TrackResultWindow` for local and remote search. An owned result freezes row
+order and album boundaries; visible-range reads preserve positions when rows
+are removed. Generation checks discard obsolete callbacks, and bounded cached
+pages retain metadata only for the working viewport. Retained TrackViews can
+extend individual page lifetimes explicitly.
 
-Production Track Search opens local and remote results through the C++
-wrapper in `libmusikcore`. Production and the pilot share
-`TrackResultWindow` for paging. `TrackListView` materializes an ordered
-legacy list for actions that still require it.
+Playback and playlist actions use origin-bound results/references through the
+public API. The earlier private backend bindings and legacy action-list
+materialization are no longer required by Cube. MIG-009/MIG-010 and the frontend
+boundary checks cover removal of private core dependencies.
 
-1. Add an async C operation that opens a search result with a stable row
-   order, a count, and track identities. Specify the current search modes,
-   supported sort orders, and album grouping in the contract. The handle
-   owns the result order so a later database update cannot shift page
-   offsets. Keep the existing title-query API available for callers that
-   only need an ad hoc page.
-2. Add async metadata reads by visible range on that result. Return owned
-   pages with the requested fields, and preserve row positions when a track
-   disappears. Batch metadata reads by ID within a read transaction. A
-   refresh opens a new result. Metadata already returned in a page stays
-   valid until its owner releases it.
-3. Add header-only move-only wrappers for the search result and page. In the
-   ABI0-only pilot, cache the current viewport and up to one viewport on
-   either side. Show loading rows on misses and keep navigation responsive.
-   Keep one window request in flight and retain the latest requested range.
-   Cancel obsolete work when the search changes and discard stale
-   completions using a search generation. Use the context wakeup hook to
-   schedule dispatch on the UI thread.
-4. Test scrolling across cold and warm windows, jumping to a distant row,
-   rapid filter changes, and index updates during paging. Verify search
-   parity against the legacy view before wiring it into production. Move
-   playback and menu actions to track identities once their ABI operations
-   exist. Production remote Track Search uses the same wrapper with
-   the existing search and batch query protocol. Verify reconnect and
-   playback against the production server.
-5. Benchmark both implementations on the same seeded database. Measure
-   search submission to the first usable window and cold-window scrolling
-   separately from the keystroke-to-render scenario. Include a broad query
-   that crosses several cache windows and report median and p95. Use the
-   same debounce, visible rows, result ordering, and projected fields in
-   the before/after comparison.
+`result_windows`, `result_contracts`, `remote_query_transport`, and the search
+TUI scenario cover their respective seams. PERF-001 and the stored allocation
+baselines distinguish API/cache budgets from observed keystroke-to-render timing.
+This completed pilot is not a second migration backlog.
 
 #### Phase 5 gate
 
-- [ ] **GATE-500** The pilot musikcube view uses ABI0 exclusively, scrolling
-  remains nonblocking, metadata pages remain stable, and benchmark regression
-  is within an agreed threshold.
-- [ ] **GATE-510** Production Track Search uses the same wrapper for local
-  and remote libraries. The library-switch and loopback contract tests pass
-  before migrating other library views.
+- [x] **GATE-500** The pilot is superseded by production public-ABI Track Search.
+  Page lifetime/cache/window tests and recorded PERF-001 budgets pass in the
+  accepted foundation scope. No private-core frontend dependency remains.
+- [x] **GATE-510** Production local and remote Track Search share the wrapper;
+  library-switch and loopback contracts cover origin/session changes. Native
+  Windows application acceptance remains GATE-700/FND-WINDOWS.
   [Remote library routing proposal](musikcore-remote-library-proposal.md)
 
 ### Phase 6: decoder SDK vertical slice
@@ -1187,8 +1212,9 @@ legacy list for actions that still require it.
   validation. `musikcube.ui.browse` also changes replay gain to track mode.
 - [ ] **PUB-008** Add advanced consumer stream/decoder/encoder APIs only for
   approved use cases.
-- [ ] **PUB-009** Add contract and integration tests with every public feature
-  family.
+- [x] **PUB-009** Cover implemented public feature families with their named
+  contract/integration tests below. Every future family still requires tests
+  alongside implementation; deferred APIs are not claimed as covered.
 - [x] **CPP-003** Wrap the public feature families used by Cube.
   `musikcore.public_headers` builds each wrapper as a standalone include.
 - [x] **MIG-003** Migrate preferences and settings consumers.
@@ -1340,15 +1366,12 @@ remains deferred. This does not begin the new plugin C SDK. See
   before opening, but does not by itself cancel its synchronous device I/O.
   Audit pre-open cancellation and blocked device reads on Windows hardware.
 
-Native macOS arm64 validation: full Release and ASan/UBSan Debug suites pass
-95/95, including playback, remote transcoding, installed SDK, and UI cases. The
-expanded SDK test additionally passes Release with both nested providers loaded.
-Logs: `build/stream-contract-tests-release.log` and
-`build/stream-contract-tests-debug.log`. The earlier ABI-only Debug validation
-passed 29/29 (`build/uri-final-abi-debug.log`); the SDK 23 change does not modify
-the public C ABI. Independent C++ review of the initial URI slice reproduced and
-helped close stale observer delivery and HTTP readiness lost-wakeup bugs; both
-have regressions in the URI integration case.
+Native URI-player validation is included in the full-suite results above.
+The initial independent C++ review reproduced stale observer delivery and HTTP
+readiness lost-wakeup bugs; both have regressions in the URI integration case.
+SDK 23 tests load real GME/OpenMPT providers for nested create/open/interrupt
+behavior. Windows CDDA device cancellation and native platform acceptance remain
+explicitly open rather than inferred from these device-free macOS checks.
 
 #### Managed runtime hardening reconciliation
 
@@ -1391,11 +1414,28 @@ Failure-provider modules stay under the build's test fixtures, outside normal
 app plugin discovery. Browse waits for a complete plugin row before navigation,
 so split PTY writes cannot produce a negative row index.
 
-Native validation on 2026-11-21: macOS arm64 Release 63/63, Debug 63/63
-(with ASan/UBSan), and ABI-only Debug 28/28 through
-`tests/scripts/run-tests.js`. The seven runtime-hardening cases also pass five
-consecutive Debug repetitions each. These are device-free tests; they do not
-claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
+The named runtime regressions run in the native macOS full suite recorded
+above; earlier focused runtime-hardening cases also passed repeated Debug runs.
+These are device-free checks and do not establish physical CoreAudio or native
+Windows behavior. Recorded Linux results apply only to their stated revision.
+
+#### Core consumer release acceptance
+
+- [ ] **CORE-RC-001** Add one minimal non-C++ foreign-runtime consumer of the
+  installed shared library. Exercise async query submission, retained callback
+  state, owner-thread dispatch, and shutdown against an isolated catalog.
+  Register a named integration case alongside it; use existing runtime tools or
+  a standard-library FFI before considering another dependency.
+- [ ] **CORE-RC-002** Review installed headers/examples for service selection,
+  owner-thread rules, request/output ownership, cancellation, and teardown.
+  Verify the documented examples through `installed_sdk` and CORE-RC-001.
+- [ ] **CORE-RC-003** Confirm consumer release acceptance before beginning the
+  C provider SDK: API-013 instrumentation, CORE-RC-001/CORE-RC-002, GATE-700,
+  and the consumer/application portions of PKG-001 and PKG-005 through PKG-009.
+  Use currently shipped SDK 23 plugins for runtime smoke tests. Pure-C provider
+  installation/loading (PKG-003/PKG-004) and combined GATE-900 follow provider
+  implementation, so they cannot be prerequisites for starting it. Keep approved
+  platform exceptions explicit rather than treating them as passing results.
 
 #### Phase 7 gate
 
@@ -1482,7 +1522,7 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
 - [x] **SYS-003** Add musikcubed startup/readiness/shutdown smoke test.
   `musikcubed.integration.lifecycle` covers concurrent starts, foreground
   scan completion, background readiness and startup failure, and shutdown.
-  Native macOS verification is pending.
+  Native macOS Debug/Release runs pass.
 - [x] **PKG-001** Install headers, shared library, platform import library,
   and package metadata into a temporary prefix. Unix and Windows supply the
   relocatable `musikcore::musikcore` CMake target. On Windows,
@@ -1490,7 +1530,8 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
   builds and runs the installed C and C++ consumers, including managed
   runtime and playback against the installed DLL and plugins.
 - [x] **PKG-002** Build external C and C++ consumers against the installed prefix
-  on Linux. `musikcore.integration.api.installed_sdk` relocates the prefix,
+  on native Linux, macOS, and Windows. `musikcore.integration.api.installed_sdk`
+  relocates the prefix,
   builds both query examples independently, and runs them against indexed media.
   A public-only C consumer switches from a remote catalog with a withheld reply
   to the local fixture. It checks retained track origin, dispatcher thread
@@ -1501,7 +1542,11 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
 - [x] **PKG-005** Validate ELF SONAME/RPATH and symbol versions. Linux Release
   installed with the expected `libmusikcore.so` SONAME and relative runtime
   paths. The complete runtime passed `script/scan-standalone.js` at glibc 2.28.
-- [ ] **PKG-006** Validate Mach-O install names and exported symbols.
+- [ ] **PKG-006** Complete a named packaged Mach-O install-name/RPATH/dependency
+  audit. Export allowlists already pass `musikcore.abi.exports` and
+  `musikcore.integration.binary.exports.*`; relocated installed consumers pass
+  `musikcore.integration.api.installed_sdk`. Those checks do not replace a full
+  standalone archive audit.
 - [x] **PKG-007** Validate Windows DLL/import-library/plugin placement.
   Visual Studio 2026 x64 Debug and Release stage `musikcore.dll` beside both
   frontends, the import library under the configuration's build library directory,
@@ -1527,10 +1572,10 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
 
 ### Phase 10: migration cleanup and ABI v1 freeze
 
-- [ ] **FIN-001** Confirm musikcube and musikcubed have no private core link
-  dependencies. Both use the public C ABI on Unix. Their
-  `integration.core_boundary` tests check actual imports. Linux verified.
-  Native macOS and Windows verification is pending.
+- [ ] **FIN-001** Complete the final frontend private-dependency audit. Unix
+  musikcube/musikcubed pass their `integration.core_boundary` import checks;
+  `musikcube.integration.windows_core_dll` checks production Windows PE exports
+  and console/GUI imports. Preserve this evidence through final cleanup.
   `musikcore.integration.binary.exports.*` checks the shipped Unix core,
   executable, and plugin export lists, including symbols pulled in by static
   libraries.
@@ -1542,9 +1587,12 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
   include paths.
 - [x] **FIN-005** Replace `core_c_demo` with maintained C and C++ examples.
   `musikcore.abi.indexed_query` runs both query examples against an indexed fixture.
-- [ ] **FIN-006** Remove `musikcore_legacy`.
-- [ ] **FIN-007** Rename `musikcore_abi0` to the final `musikcore` target and
-  output names.
+- [x] **FIN-006** Retired: no `musikcore_legacy` target was introduced.
+  FIN-003 removed the old C boundary; current private test archives are not
+  legacy public libraries and remain isolated by `link_boundary`.
+- [ ] **FIN-007** Retire the reduced `musikcore_abi0` runtime after its contract
+  fixtures can use the production boundary. Unix production already uses the
+  `musikcore` name; Windows now supplies the production DLL too.
 - [ ] **FIN-008** Assign ABI major version 1 and platform SONAME/install-name/DLL
   versioning.
 - [ ] **FIN-009** Freeze and publish the export allowlist and public layout
@@ -1570,14 +1618,44 @@ the probe.
 
 ## Active next steps
 
-1. Complete remaining native platform/release acceptance for `GATE-700`.
-   macOS Debug/Release and Linux Release verify Cube using the C ABI and public
-   header-only wrapper. Windows Debug/Release covers the shared DLL, installed
-   SDK, playback, and console UI. Keep these checks in the native platform suites.
-2. Finish the remaining platform acceptance and release documentation for the
-   core consumer SDK.
-3. Begin the provider walking skeleton and SDK migration in a separate pass.
-   Finish combined packaging and compatibility gates before the ABI v1 freeze.
+Core consumer implementation and application migration are complete in the
+stated scope. Remaining work is acceptance, external-use ergonomics, and release
+preparation; it is not a request to add every deferred API below.
+
+1. Keep shared subscription scope and URI lifecycle regressions green. The
+   subscription fix centralizes delivery depth in the exported C implementation;
+   it does not move typed callback storage into C or make callback-local
+   disconnect wait for all admitted calls. `musikcore.unit.subscriptions` checks
+   cross-library C/C++ disconnect and ordinary external-thread draining.
+2. Complete direct ABI sanitizer coverage (TST-008/API-013). Production core
+   Debug objects use ASan/UBSan, but the reduced shared runtime and standalone
+   dispatch fixture currently do not. Verify compile/link instrumentation as
+   well as test results.
+3. Complete CORE-RC-001/CORE-RC-002: exercise one non-C++ installed-library
+   consumer and close documentation for service selection, dispatch, ownership,
+   cancellation, and teardown. Reuse installed headers/examples as the contract.
+4. Complete macOS standalone acceptance under PKG-006/PKG-008/PKG-009: stage and
+   relocate the app/daemon/SDK, exercise external consumers and normal app entry
+   points, and audit install names, runtime paths, exports, and dependencies.
+   Installed-prefix relocation already passes; archive acceptance remains open.
+5. Preserve recorded native Windows DLL, installed-SDK, playback, and ConPTY
+   checks and the existing Linux results. Validate subsequent changes in their
+   native platform sessions; the macOS sanitizer change does not establish new
+   Windows/Linux coverage. Finish the remaining release gates without reopening
+   foundation checks that already have native evidence.
+6. Once CORE-RC-003 passes, begin the C provider walking skeleton and migration
+   in a separate pass. Finish combined packaging and compatibility gates before
+   ABI v1 freeze.
+
+Deferred expansion includes polling/owned unsolicited events (API-014/API-015),
+general metadata invalidation and atomic batch edits (LIB-008/LIB-009), generic
+numeric metadata access and capability discovery, and advanced consumer
+stream/codec APIs (PUB-008). Packed page storage (LIB-002) is measurement-driven.
+These items are not prerequisites for existing application parity. Source-list
+consolidation (BLD-001), sanitizer options/coverage (TST-008/API-013), and CI
+jobs remain explicit build/test backlog; none is silently completed by a passing
+local suite. API-013 is part of consumer release acceptance; source-list cleanup
+and a packed arena do not need to precede external-consumer ergonomics work.
 
 Historical phase numbers and completed implementation boxes do not override
 this dependency order or imply an unchecked cross-platform gate has passed.
