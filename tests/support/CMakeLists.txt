@@ -91,6 +91,14 @@ if(BUILD_TESTING)
     set_tests_properties(musikcore.abi.indexed_query PROPERTIES
       LABELS "integration;musikcore;api;contract" TIMEOUT 90)
 
+    if(UNIX AND CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME AND
+        CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
+      add_test(NAME musikcore.integration.api.installed_sdk COMMAND "${CMAKE_COMMAND}"
+        ${indexed_arguments} "-DINSTALLED_SDK_SOURCE=${PROJECT_SOURCE_DIR}" -P "${indexed_script}")
+      set_tests_properties(musikcore.integration.api.installed_sdk PROPERTIES
+        LABELS "integration;musikcore;api;packaging;contract" TIMEOUT 90)
+    endif()
+
     # Preserve the public-only consumer and production adapter as separate
     # processes while reporting each behavior independently through CTest.
     foreach(mode IN ITEMS cpp production)

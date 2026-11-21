@@ -132,3 +132,7 @@ Lyrics lookup and Last.fm registration use the context dispatcher and the existi
 Core's precompiled headers are private to its build. Cube drops legacy playback, database, networking, and plugin implementation headers. The rebuilt Linux executable has no dynamic imports from the private C++ core. All 47 Linux Release tests passed through the rebuilt frontend.
 
 The frontend boundary test checks source includes and the real executable's dynamic import table. The playback contract now inspects public queue snapshots, so the last raw queue-list accessor could be deleted. All 48 Linux Release tests passed. The Linux production build also built the daemon and configured plugins.
+
+## Installed application SDK
+
+The Unix install now includes public C and C++ headers and a relocatable CMake target named `musikcore::musikcore`. Install rules use the configured runtime directory so an out-of-tree build packages its own binaries. All 49 Linux Release tests passed. The installed-SDK test relocates its prefix, builds external C and C++ consumers, and runs both against an indexed catalog. The standalone scan also passed for the full installed library and plugin set at glibc 2.28.

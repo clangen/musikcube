@@ -1,18 +1,19 @@
 # plugin dynamic libraries
 if (APPLE)
-  file(GLOB plugins "bin/plugins/*.dylib")
-  install(FILES ${plugins} DESTINATION share/musikcube/plugins)
+  set(plugin_extension dylib)
 else ()
-  file(GLOB plugins "bin/plugins/*.so")
-  install(FILES ${plugins} DESTINATION share/musikcube/plugins)
+  set(plugin_extension so)
 endif ()
 
 if (${BUILD_STANDALONE} MATCHES "true")
-  file(GLOB libraries "bin/lib/*")
-  install(FILES ${libraries} DESTINATION share/musikcube/lib)
-  file(GLOB_RECURSE share "bin/share/*")
-  install(FILES ${share} DESTINATION share/musikcube/share)
+  install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/lib/"
+    DESTINATION share/musikcube/lib COMPONENT MusikcoreSDK OPTIONAL)
+  install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/share/"
+    DESTINATION share/musikcube/share OPTIONAL)
 endif()
+
+install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/plugins/"
+  DESTINATION share/musikcube/plugins OPTIONAL FILES_MATCHING PATTERN "*.${plugin_extension}")
 
 # sdk header files
 file(GLOB sdk_headers "src/musikcore/sdk/*.h")
@@ -39,16 +40,29 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   install(FILES ${linux_share_icons_128} DESTINATION share/icons/hicolor/128x128/apps/)
 endif()
 
-# libmusikcore shared library
-if (APPLE)
-  install(FILES "bin/libmusikcore.dylib" DESTINATION share/musikcube)
-else()
-  install(FILES "bin/libmusikcore.so" DESTINATION share/musikcube)
-endif()
+# Application SDK uses the same shared runtime as the installed frontend.
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+set(MUSIKCORE_INSTALL_RUNTIME_DIR share/musikcube)
+set(MUSIKCORE_LIBRARY_FILENAME "${CMAKE_SHARED_LIBRARY_PREFIX}musikcore${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(musikcore_config_dir "${CMAKE_INSTALL_LIBDIR}/cmake/musikcore")
+configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/musikcoreConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/musikcoreConfig.cmake"
+  INSTALL_DESTINATION "${musikcore_config_dir}"
+  PATH_VARS CMAKE_INSTALL_INCLUDEDIR MUSIKCORE_INSTALL_RUNTIME_DIR)
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/musikcoreConfigVersion.cmake"
+  VERSION "${musikcube_VERSION}" COMPATIBILITY ExactVersion)
+
+install(FILES "$<TARGET_FILE:musikcore>" DESTINATION "${MUSIKCORE_INSTALL_RUNTIME_DIR}" COMPONENT MusikcoreSDK)
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/musikcore" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  COMPONENT MusikcoreSDK FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/musikcoreConfig.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/musikcoreConfigVersion.cmake"
+  DESTINATION "${musikcore_config_dir}" COMPONENT MusikcoreSDK)
 
 # executable and shell script for musikcube
 install(
-  FILES bin/musikcube
+  FILES "$<TARGET_FILE:musikcube>"
   DESTINATION share/musikcube
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
@@ -65,7 +79,7 @@ install(
 
 # executable and shell script for daemon
 install(
-  FILES bin/musikcubed
+  FILES "$<TARGET_FILE:musikcubed>"
   DESTINATION share/musikcube
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE

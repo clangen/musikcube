@@ -1,0 +1,14 @@
+@PACKAGE_INIT@
+
+if(NOT TARGET musikcore::musikcore)
+  set_and_check(musikcore_include_dir "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+  set_and_check(musikcore_library "@PACKAGE_MUSIKCORE_INSTALL_RUNTIME_DIR@/@MUSIKCORE_LIBRARY_FILENAME@")
+  add_library(musikcore::musikcore SHARED IMPORTED)
+  set_target_properties(musikcore::musikcore PROPERTIES
+    IMPORTED_LOCATION "${musikcore_library}"
+    INTERFACE_INCLUDE_DIRECTORIES "${musikcore_include_dir}")
+  unset(musikcore_include_dir)
+  unset(musikcore_library)
+endif()
+
+check_required_components(musikcore)

@@ -1276,11 +1276,16 @@ legacy list for actions that still require it.
 - [ ] **SYS-002** Cover valid, unset, and unparseable `TERM` behavior.
 - [ ] **SYS-003** Add musikcubed startup/readiness/shutdown smoke test.
 - [ ] **PKG-001** Install headers, shared library, import library, and package
-  metadata into a temporary prefix.
-- [ ] **PKG-002** Build an external C consumer against the installed prefix.
+  metadata into a temporary prefix. The Unix install supplies public headers
+  and the relocatable `musikcore::musikcore` CMake target. Windows is deferred.
+- [x] **PKG-002** Build external C and C++ consumers against the installed prefix
+  on Linux. `musikcore.integration.api.installed_sdk` relocates the prefix,
+  builds both query examples independently, and runs them against indexed media.
 - [ ] **PKG-003** Build an external C decoder plugin against the installed SDK.
 - [ ] **PKG-004** Load and run the installed external plugin.
-- [ ] **PKG-005** Validate ELF SONAME/RPATH and symbol versions.
+- [x] **PKG-005** Validate ELF SONAME/RPATH and symbol versions. Linux Release
+  installed with the expected `libmusikcore.so` SONAME and relative runtime
+  paths. The complete runtime passed `script/scan-standalone.js` at glibc 2.28.
 - [ ] **PKG-006** Validate Mach-O install names and exported symbols.
 - [ ] **PKG-007** Validate Windows DLL/import-library/plugin placement.
 - [ ] **PKG-008** Run consumer, plugin, and application smoke tests from staged

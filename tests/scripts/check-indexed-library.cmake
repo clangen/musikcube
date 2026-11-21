@@ -16,7 +16,14 @@ get_filename_component(config_directory "${directory}/../.." ABSOLUTE)
 
 # Each selected case gets its own catalog and process so an earlier assertion
 # cannot hide a later contract or leak preferences into another test.
-if(DEFINED MANAGED_RUNTIME_TEST)
+if(DEFINED INSTALLED_SDK_SOURCE)
+  execute_process(COMMAND "${CMAKE_COMMAND}" "-DBUILD_DIR=${BUILD_DIR}" "-DSOURCE=${INSTALLED_SDK_SOURCE}"
+    "-DCATALOG=${directory}" -P "${CMAKE_CURRENT_LIST_DIR}/check-installed-core.cmake"
+    RESULT_VARIABLE status)
+  if(NOT status STREQUAL "0")
+    message(FATAL_ERROR "Installed SDK test failed (${status}); fixture: ${directory}")
+  endif()
+elseif(DEFINED MANAGED_RUNTIME_TEST)
   if(DEFINED EQUALIZER_PLUGIN)
     set(managed_runtime_plugins --plugin "${EQUALIZER_PLUGIN}")
     set(managed_runtime_options --check-equalizer)

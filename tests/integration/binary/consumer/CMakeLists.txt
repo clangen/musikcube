@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.16)
+project(musikcore_installed_consumers LANGUAGES C CXX)
+
+find_package(musikcore CONFIG REQUIRED)
+find_package(Threads REQUIRED)
+
+foreach(language IN ITEMS c cpp)
+  add_executable(query_${language} "${EXAMPLES}/core-query.${language}" "${SUPPORT}/host-wakeup.cpp")
+  target_include_directories(query_${language} PRIVATE "${SUPPORT}")
+  target_link_libraries(query_${language} PRIVATE musikcore::musikcore Threads::Threads)
+  set_target_properties(query_${language} PROPERTIES
+    C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+    CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+endforeach()
