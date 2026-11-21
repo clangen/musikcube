@@ -196,3 +196,5 @@ Lyrics uses playback's loaded title and artist and requests only embedded lyrics
 The application now tracks input polling requests per window, so releasing one request leaves other visible page loads responsive. The skeptical review caught the polling registry's destruction order, duplicate startup notifications, and remote lyrics support. Regression coverage includes stale selection replies, startup cancellation, remote lyrics projection, and headless lyrics changes through playback and stop.
 
 Replacing the terminal input timeout with an event-driven wait is deferred.
+
+The major release accepts the older-server embedded lyrics limitation.

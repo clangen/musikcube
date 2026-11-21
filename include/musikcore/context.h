@@ -125,7 +125,8 @@ MC_API mc_result MC_CALL mc_context_read_library_status(
     const mc_context* context, mc_library_status_fn read, void* user_data);
 /* Register on the dispatcher thread. Deliver changes on dispatch before request
    completions. Changes may be coalesced. Pass NULL to remove the observer and
-   discard queued notification. Keep user_data alive through callback delivery. */
+   discard queued notification. The observer may remove itself. Keep user_data
+   alive through callback delivery. */
 MC_API mc_result MC_CALL mc_context_set_library_changed_callback(
     mc_context* context, mc_library_changed_fn callback, void* user_data);
 
@@ -135,8 +136,10 @@ MC_API mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_p
 
 /* For a managed runtime, create binds the dispatcher thread. Otherwise, the
    first dispatch or shutdown binds its thread. Ready callbacks run inline,
-   outside internal locks. reentrant dispatch returns MC_ERROR_BUSY; other threads return MC_ERROR_WRONG_THREAD.
-   Callbacks may submit/cancel requests, but cannot shut down or destroy the context.
+   outside internal locks. reentrant dispatch returns MC_ERROR_BUSY. dispatch
+   from another thread after binding returns MC_ERROR_WRONG_THREAD.
+   callbacks may submit or cancel requests. shutdown and destruction from a
+   callback return MC_ERROR_BUSY.
    Rejected submissions set out_request to zero and never invoke the callback.
    Accepted submissions deliver exactly one completion, including on shutdown.
    Handles must remain valid for the duration of concurrent calls using them. */
@@ -144,9 +147,11 @@ MC_API mc_result MC_CALL mc_context_dispatch(mc_context *context);
 /* Selects cancellation if no terminal result exists. A mutation already
    submitted to its backend returns MC_ERROR_IN_FLIGHT and still completes. */
 MC_API mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id request);
-/* Stops the managed runtime and invalidates its playback handles. Settles
-   requests on the dispatcher thread and waits for context-owned work and wakeup
-   hooks to stop. Caller-owned sessions have their own lifetime. */
+/* use on the dispatcher thread outside callbacks. returns MC_ERROR_BUSY
+   during reentrant dispatch and MC_ERROR_WRONG_THREAD on another thread after
+   binding. stops the managed runtime, invalidates its playback handles,
+   settles requests, and waits for context-owned work and wakeup hooks to stop.
+   caller-owned sessions have their own lifetime. */
 MC_API mc_result MC_CALL mc_context_shutdown(mc_context *context);
 
 /* Shuts down on the dispatcher thread and clears the slot on success. Null is accepted.

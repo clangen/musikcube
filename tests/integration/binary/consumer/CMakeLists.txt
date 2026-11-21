@@ -16,3 +16,10 @@ endforeach()
 add_executable(managed managed.c)
 target_link_libraries(managed PRIVATE musikcore::musikcore)
 set_target_properties(managed PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+
+add_executable(session session.c "${SUPPORT}/host-wakeup.cpp")
+target_include_directories(session PRIVATE "${SUPPORT}")
+target_link_libraries(session PRIVATE musikcore::musikcore Threads::Threads)
+set_target_properties(session PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+  CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)

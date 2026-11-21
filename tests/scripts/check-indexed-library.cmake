@@ -24,7 +24,8 @@ get_filename_component(config_directory "${directory}/../.." ABSOLUTE)
 # cannot hide a later contract or leak preferences into another test.
 if(DEFINED INSTALLED_SDK_SOURCE)
   execute_process(COMMAND "${CMAKE_COMMAND}" "-DBUILD_DIR=${BUILD_DIR}" "-DSOURCE=${INSTALLED_SDK_SOURCE}"
-    "-DCATALOG=${directory}" "-DINSTALLED_TEST_PLUGIN=${INSTALLED_TEST_PLUGIN}" -P "${CMAKE_CURRENT_LIST_DIR}/check-installed-core.cmake"
+    "-DCATALOG=${directory}" "-DINSTALLED_TEST_PLUGIN=${INSTALLED_TEST_PLUGIN}"
+    "-DNODE=${NODE}" "-DREMOTE_TEST=${REMOTE_TEST}" -P "${CMAKE_CURRENT_LIST_DIR}/check-installed-core.cmake"
     RESULT_VARIABLE status)
   if(NOT status STREQUAL "0")
     message(FATAL_ERROR "Installed SDK test failed (${status}); fixture: ${directory}")

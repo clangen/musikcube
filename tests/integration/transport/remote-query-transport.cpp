@@ -34,6 +34,7 @@
 #include <thread>
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 
 namespace {
     /* Print the failed contract's source line while preserving the fixture's boolean assertion flow. */
@@ -136,7 +137,9 @@ namespace {
                             reply["options"]["raw_query_data"] =
                                 R"({"result":{"42":{"id":42,"title":"Origin","replayGain":{}}}})";
                         }
-                        if (++this->requests >= 3) {
+                        const bool heldSearch = query.at("name") == SearchTrackListQuery::kQueryName &&
+                            query.at("options").at("filter") == kHeldSearch;
+                        if (++this->requests >= 3 || heldSearch) {
                             /* Keep replies pending until the test selects cancellation,
                                a reconnect, or shutdown; timing sleeps cannot establish
                                those races reliably. */
@@ -1126,6 +1129,18 @@ namespace {
 /* Run parity, managed runtime, or malformed-response scenarios in an isolated runtime. */
 int main(int argc, char** argv) {
     try {
+        if (argc == 2 && std::strcmp(argv[1], "--serve-installed") == 0) {
+            Server server(true);
+            std::printf("%u\n", static_cast<unsigned>(server.Port()));
+            std::fflush(stdout);
+
+            std::string command;
+            if (!std::getline(std::cin, command) || command != "release" || !server.ReleaseHeld(false)) {
+                return 1;
+            }
+            /* Keep the socket alive for the installed client's retained-track read. */
+            return std::getline(std::cin, command) ? 1 : 0;
+        }
         if (argc > 1 && std::strcmp(argv[1], "--parity") == 0) {
             return argc == 3 && checkBackendParity(argv[2]) ? 0 : 1;
         }

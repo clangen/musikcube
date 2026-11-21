@@ -1344,6 +1344,10 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
 - [x] **PKG-002** Build external C and C++ consumers against the installed prefix
   on Linux. `musikcore.integration.api.installed_sdk` relocates the prefix,
   builds both query examples independently, and runs them against indexed media.
+  A public-only C consumer switches from a remote catalog with a withheld reply
+  to the local fixture. It checks retained track origin, dispatcher thread
+  ownership, self-unsubscription, rejected callback shutdown and destruction,
+  and cancellation during owner-thread shutdown.
 - [ ] **PKG-003** Build an external C decoder plugin against the installed SDK.
 - [ ] **PKG-004** Load and run the installed external plugin.
 - [x] **PKG-005** Validate ELF SONAME/RPATH and symbol versions. Linux Release

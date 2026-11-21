@@ -31,12 +31,16 @@ foreach(language IN ITEMS c cpp)
   endif()
 endforeach()
 
+file(MAKE_DIRECTORY "${root}/config")
+run("${CMAKE_COMMAND}" -E env "HOME=${root}/config" "XDG_CONFIG_HOME=${root}/config"
+  "${NODE}" "${CMAKE_CURRENT_LIST_DIR}/run-installed-session.js"
+  "${REMOTE_TEST}" "${root}/consumer/session" "${CATALOG}")
+
 if(INSTALLED_TEST_PLUGIN)
   # Discover only the installed headless plugin. Optional servers must stay off.
   set(plugins "${relocated}/share/musikcube/managed-test-plugins")
   file(MAKE_DIRECTORY "${plugins}")
   file(RENAME "${relocated}/share/musikcube/plugins/${INSTALLED_TEST_PLUGIN}" "${plugins}/${INSTALLED_TEST_PLUGIN}")
-  file(MAKE_DIRECTORY "${root}/config")
   run("${CMAKE_COMMAND}" -E env "HOME=${root}/config" "XDG_CONFIG_HOME=${root}/config"
     "${root}/consumer/managed" "${plugins}")
 endif()
