@@ -1174,6 +1174,9 @@ legacy list for actions that still require it.
   The equalizer overlay subscribes to public dispatch for live updates.
   `musikcore.integration.api.managed_runtime` verifies coalesced changes
   using the equalizer plugin.
+  Server settings use a typed snapshot and configuration call.
+  The managed runtime test checks the real plugin with both listeners disabled,
+  and `musikcube.ui.browse` opens the original server setup overlay.
 - [ ] **MIG-009** Remove private musikcore headers from musikcube targets.
 - [ ] **MIG-010** Make the normal migration build link ABI0 only.
   `musikcore.integration.api.managed_runtime` starts production services

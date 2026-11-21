@@ -29,7 +29,7 @@ const PAGE_DOWN = '\x1b[6~';
 const DISTANT_PAGE = 12;
 
 /* Stage the production app/assets with only the plugins required to index the generated fixture. */
-function stageRuntime(runtime, binaryDir, testAudioSettings) {
+function stageRuntime(runtime, binaryDir, testSettings) {
   for (const name of fs.readdirSync(binaryDir)) {
     if (['lib', 'locales', 'share', 'themes'].includes(name) || name.startsWith('libmusikcore')) {
       fs.symlinkSync(fs.realpathSync(join(binaryDir, name)), join(runtime, name));
@@ -43,7 +43,7 @@ function stageRuntime(runtime, binaryDir, testAudioSettings) {
   fs.mkdirSync(join(runtime, 'plugins'));
   for (const name of fs.readdirSync(join(binaryDir, 'plugins'))) {
     if (/^lib(?:taglibreader|ffmpegdecoder)\./.test(name) ||
-        (testAudioSettings && /^lib(?:nullout|supereqdsp)\./.test(name))) {
+        (testSettings && /^lib(?:nullout|supereqdsp|server)\./.test(name))) {
       fs.symlinkSync(fs.realpathSync(join(binaryDir, 'plugins', name)), join(runtime, 'plugins', name));
     }
   }
@@ -97,6 +97,11 @@ async function checkTrackSearch(runtime, database, screenshots,
   preferences.SyncOnStartup = false;
   preferences.FirstRunSettingsDisplayed = true;
   fs.writeFileSync(settings, JSON.stringify(preferences));
+  const hasServer = !pilot && fs.readdirSync(join(runtime, 'plugins')).some(name => name.startsWith('libserver.'));
+  if (hasServer) {
+    fs.writeFileSync(join(fixture, 'musikcube', 'plugin_musikcubeserver(wss,http).json'),
+      JSON.stringify({ websocket_server_enabled: false, http_server_enabled: false }));
+  }
 
   const env = {
     ...process.env, HOME: fixture, XDG_CONFIG_HOME: fixture, TERM: 'xterm-256color',
@@ -332,15 +337,20 @@ async function checkTrackSearch(runtime, database, screenshots,
         await terminal.expect('no visualizers found!');
         terminal.send('\r');
         await terminal.expect('Browse fixture revised', { absent: 'no visualizers found!' });
+        if (hasServer) {
+          await terminal.resize(28, 140);
+        }
         terminal.send('s');
         await terminal.expect('output driver: Null');
-        const label = 'playback mode: gapless';
-        await terminal.expect(label);
-        const rows = terminal.screen.text().split('\n');
-        const y = rows.findIndex(row => row.includes(label));
-        const x = rows[y].indexOf(label);
-        const click = `\x1b[<0;${x + 1};${y + 1}`;
-        terminal.send(click + 'M' + click + 'm');
+        const clickLabel = async label => {
+          await terminal.expect(label);
+          const rows = terminal.screen.text().split('\n');
+          const y = rows.findIndex(row => row.includes(label));
+          const x = rows[y].indexOf(label);
+          const click = `\x1b[<0;${x + 1};${y + 1}`;
+          terminal.send(click + 'M' + click + 'm');
+        };
+        await clickLabel('playback mode: gapless');
         await terminal.expect('crossfade');
         terminal.send(DOWN + '\r');
         await terminal.expect('playback mode: crossfade');
@@ -353,6 +363,13 @@ async function checkTrackSearch(runtime, database, screenshots,
         await terminal.expect('replaygain: track');
         terminal.send('\x1b');
         await terminal.expect('playback mode: crossfade', { absent: 'preamp gain (dB):' });
+        if (hasServer) {
+          await terminal.expect('server setup');
+          terminal.send('\t'.repeat(5) + '\r');
+          await terminal.expect('audio streaming enabled');
+          terminal.send('\x1b');
+          await terminal.expect('playback mode: crossfade', { absent: 'audio streaming enabled' });
+        }
       }
     }
     /* The driver must observe a clean application exit, not just a screen that

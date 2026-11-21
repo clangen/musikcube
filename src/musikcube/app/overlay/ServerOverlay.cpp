@@ -36,10 +36,7 @@
 
 #include "ServerOverlay.h"
 
-#include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/i18n/Locale.h>
-
-#include <app/util/PreferenceKeys.h>
 
 #include <cursespp/App.h>
 #include <cursespp/DialogOverlay.h>
@@ -51,17 +48,6 @@ using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
 
-static const std::string WEBSOCKET_PLUGIN_GUID = "9fc897a3-dfd5-4524-a0fc-b02f46aea4a9";
-static const char* KEY_METADATA_SERVER_ENABLED = "websocket_server_enabled";
-static const char* KEY_METADATA_SERVER_PORT = "websocket_server_port";
-static const char* KEY_AUDIO_SERVER_ENABLED = "http_server_enabled";
-static const char* KEY_AUDIO_SERVER_PORT = "http_server_port";
-static const char* KEY_TRANSCODER_CACHE_COUNT = "transcoder_cache_count";
-static const char* KEY_MAX_TRANSCODER_MAX_ACTIVE_COUNT = "transcoder_max_active_count";
-static const char* KEY_TRANSCODER_SYNCHRONOUS = "transcoder_synchronous";
-static const char* KEY_USE_IPV6 = "use_ipv6";
-static const char* KEY_PASSWORD = "password";
-
 #define VERTICAL_PADDING 2
 #define DEFAULT_HEIGHT 20
 #define DEFAULT_WIDTH 45
@@ -69,24 +55,13 @@ static const char* KEY_PASSWORD = "password";
 #define RIGHT(x) (x->GetX() + x->GetWidth())
 #define TEXT_WIDTH(x) ((int) u8cols(x->GetText()))
 
-using Callback = ServerOverlay::Callback;
-using Prefs = ServerOverlay::Prefs;
-
-static std::string settingIntToString(Prefs prefs, const std::string& key, int defaultValue) {
-    return std::to_string(prefs->GetInt(key, defaultValue));
-}
-
-static void showInvalidDialog(Callback cb = Callback()) {
+static void showInvalidDialog() {
     auto dialog = std::make_shared<DialogOverlay>();
 
     (*dialog)
         .SetTitle(_TSTR("settings_server_invalid_settings_title"))
         .SetMessage(_TSTR("settings_server_invalid_settings_message"))
-        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"), [cb](std::string key) {
-        if (cb) {
-            cb();
-        }
-    });
+        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
 
     App::Overlays().Push(dialog);
 }
@@ -104,14 +79,12 @@ static int getIntFromTextInput(TextInput* input, int defaultValue = -1) {
     return defaultValue;
 }
 
-ServerOverlay::ServerOverlay(Callback callback, Plugin plugin)
-: OverlayBase() {
-    this->callback = callback;
-    this->plugin = plugin;
-    this->prefs = Preferences::ForPlugin(plugin->Name());
+ServerOverlay::ServerOverlay(const api::ServerConfiguration& configuration)
+: OverlayBase()
+{
     this->width = this->height = 0;
     this->InitViews();
-    this->Load();
+    this->Load(configuration);
 }
 
 void ServerOverlay::InitViews() {
@@ -259,53 +232,44 @@ void ServerOverlay::Layout() {
     this->pwInput->MoveAndResize(pwLabelWidth + 2, y, clientWidth - pwLabelWidth - 1, 1);
 }
 
-void ServerOverlay::Show(Callback callback) {
-    Plugin plugin = FindServerPlugin();
-    std::shared_ptr<ServerOverlay> overlay(new ServerOverlay(callback, plugin));
-    App::Overlays().Push(overlay);
+void ServerOverlay::ShowOverlay() {
+    if (const auto configuration = api::ReadServerConfiguration()) {
+        App::Overlays().Push(std::shared_ptr<ServerOverlay>(new ServerOverlay(*configuration)));
+    }
 }
 
-std::shared_ptr<IPlugin> ServerOverlay::FindServerPlugin() {
-    return PluginFactory::Instance().QueryGuid(WEBSOCKET_PLUGIN_GUID);
+bool ServerOverlay::Available() {
+    return api::ReadServerConfiguration().has_value();
 }
 
-void ServerOverlay::Load() {
-    this->enableWssCb->SetChecked(prefs->GetBool(KEY_METADATA_SERVER_ENABLED, false));
-    this->enableHttpCb->SetChecked(prefs->GetBool(KEY_AUDIO_SERVER_ENABLED, false));
-    this->enableSyncTransCb->SetChecked(prefs->GetBool(KEY_TRANSCODER_SYNCHRONOUS, false));
+void ServerOverlay::Load(const api::ServerConfiguration& configuration) {
+    this->enableWssCb->SetChecked(configuration.metadataEnabled);
+    this->enableHttpCb->SetChecked(configuration.audioEnabled);
+    this->enableSyncTransCb->SetChecked(configuration.synchronousTranscoding);
 
-    this->wssPortInput->SetText(settingIntToString(prefs, KEY_METADATA_SERVER_PORT, 7905));
-    this->httpPortInput->SetText(settingIntToString(prefs, KEY_AUDIO_SERVER_PORT, 7906));
-    this->ipv6Cb->SetChecked(prefs->GetBool(KEY_USE_IPV6, false));
-    this->transCacheInput->SetText(settingIntToString(prefs, KEY_TRANSCODER_CACHE_COUNT, 50));
-    this->maxTransInput->SetText(settingIntToString(prefs, KEY_MAX_TRANSCODER_MAX_ACTIVE_COUNT, 4));
-    this->pwInput->SetText(prefs->GetString(KEY_PASSWORD, ""));
+    this->wssPortInput->SetText(std::to_string(configuration.metadataPort));
+    this->httpPortInput->SetText(std::to_string(configuration.audioPort));
+    this->ipv6Cb->SetChecked(configuration.ipv6);
+    this->transCacheInput->SetText(std::to_string(configuration.cacheCount));
+    this->maxTransInput->SetText(std::to_string(configuration.activeTranscodeLimit));
+    this->pwInput->SetText(configuration.password);
 }
 
 bool ServerOverlay::Save() {
-    const int wssPort = getIntFromTextInput(this->wssPortInput.get(), 7905);
-    const int httpPort = getIntFromTextInput(this->httpPortInput.get(), 7906);
-    const int cacheCount = getIntFromTextInput(this->transCacheInput.get(), 50);
-    const int maxTransCount = getIntFromTextInput(this->maxTransInput.get(), 4);
+    const int wssPort = getIntFromTextInput(this->wssPortInput.get(), MC_SERVER_DEFAULT_METADATA_PORT);
+    const int httpPort = getIntFromTextInput(this->httpPortInput.get(), MC_SERVER_DEFAULT_AUDIO_PORT);
+    const int cacheCount = getIntFromTextInput(this->transCacheInput.get(), MC_SERVER_DEFAULT_CACHE_COUNT);
+    const int maxTransCount = getIntFromTextInput(this->maxTransInput.get(), MC_SERVER_DEFAULT_ACTIVE_TRANSCODE_LIMIT);
 
-    if (wssPort <= 0 || httpPort <= 0 || cacheCount < 0) {
+    if (wssPort <= 0 || wssPort > UINT16_MAX || httpPort <= 0 || httpPort > UINT16_MAX) {
         return false;
     }
 
-    this->prefs->SetBool(KEY_METADATA_SERVER_ENABLED, this->enableWssCb->IsChecked());
-    this->prefs->SetBool(KEY_AUDIO_SERVER_ENABLED, this->enableHttpCb->IsChecked());
-    this->prefs->SetBool(KEY_USE_IPV6, this->ipv6Cb->IsChecked());
-    this->prefs->SetBool(KEY_TRANSCODER_SYNCHRONOUS, this->enableSyncTransCb->IsChecked());
-    this->prefs->SetInt(KEY_METADATA_SERVER_PORT, wssPort);
-    this->prefs->SetInt(KEY_AUDIO_SERVER_PORT, httpPort);
-    this->prefs->SetInt(KEY_TRANSCODER_CACHE_COUNT, cacheCount);
-    this->prefs->SetInt(KEY_MAX_TRANSCODER_MAX_ACTIVE_COUNT, maxTransCount);
-    this->prefs->SetString(KEY_PASSWORD, this->pwInput->GetText().c_str());
-
-    this->prefs->Save();
-    this->plugin->Reload();
-
-    return true;
+    return api::ConfigureServer({
+        this->enableWssCb->IsChecked(), this->enableHttpCb->IsChecked(), this->ipv6Cb->IsChecked(),
+        this->enableSyncTransCb->IsChecked(), static_cast<uint16_t>(wssPort), static_cast<uint16_t>(httpPort),
+        cacheCount, maxTransCount, this->pwInput->GetText()
+    }) == MC_OK;
 }
 
 bool ServerOverlay::KeyPress(const std::string& key) {

@@ -37,29 +37,20 @@
 #include <string>
 #include <unordered_map>
 #include "Util.h"
+#include <musikcore/support/ServerPreferences.h>
+
+namespace serverprefs = musik::core::serverprefs;
 
 //#define ENABLE_DEBUG 1
 
 namespace defaults {
-    static const int websocket_server_port = 7905;
-    static const int http_server_port = 7906;
     static const std::string password = "";
-    static const int transcoder_cache_count = 50;
-    static const int transcoder_max_active_count = 4;
     static const bool use_ipv6 = false;
     static const bool transcoder_synchronous = false;
     static const bool transcoder_synchronous_fallback = false;
 }
 
 namespace prefs {
-    static const std::string websocket_server_enabled = "websocket_server_enabled";
-    static const std::string websocket_server_port = "websocket_server_port";
-    static const std::string http_server_enabled = "http_server_enabled";
-    static const std::string http_server_port = "http_server_port";
-    static const std::string use_ipv6 = "use_ipv6";
-    static const std::string transcoder_cache_count = "transcoder_cache_count";
-    static const std::string transcoder_max_active_count = "transcoder_max_active_count";
-    static const std::string transcoder_synchronous = "transcoder_synchronous";
     static const std::string transcoder_synchronous_fallback = "transcoder_synchronous_fallback";
 }
 

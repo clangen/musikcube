@@ -13,5 +13,6 @@
 #include <musikcore/track-result-window.hpp>
 #include <musikcore/visualizer.hpp>
 #include <musikcore/preferences.hpp>
+#include <musikcore/server.hpp>
 
 #endif

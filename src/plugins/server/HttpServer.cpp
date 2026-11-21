@@ -267,7 +267,7 @@ static bool isAuthenticated(MHD_Connection *connection, Context& context) {
                 std::string decoded = websocketpp::base64_decode(encoded);
                 std::vector<std::string> userPass = str::Split(decoded, ":");
                 if (userPass.size() == 2) {
-                    std::string password = GetPreferenceString(context.prefs, key::password, defaults::password);
+                    std::string password = GetPreferenceString(context.prefs, serverprefs::Password, defaults::password);
                     return userPass[0] == "default" && userPass[1] == password;
                 }
             }
@@ -299,7 +299,7 @@ bool HttpServer::Start() {
         Transcoder::RemoveTempTranscodeFiles(this->context);
 
         MHD_FLAG ipVersion = MHD_NO_FLAG;
-        if (context.prefs->GetBool(prefs::use_ipv6.c_str(), defaults::use_ipv6)) {
+        if (context.prefs->GetBool(serverprefs::UseIpv6.c_str(), defaults::use_ipv6)) {
             ipVersion = MHD_USE_IPv6;
         }
 
@@ -311,7 +311,7 @@ bool HttpServer::Start() {
 #endif
 
         int serverPort =
-            context.prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port);
+            context.prefs->GetInt(serverprefs::AudioPort.c_str(), serverprefs::DefaultAudioPort);
 
         httpServer = MHD_start_daemon(
             serverFlags,
@@ -427,8 +427,8 @@ int HttpServer::HandleAudioTrackRequest(
 {
     size_t bitrate = getUnsignedUrlParam(connection, "bitrate", 0);
     int maxActiveTranscoders = server->context.prefs->GetInt(
-        prefs::transcoder_max_active_count.c_str(),
-        defaults::transcoder_max_active_count);
+        serverprefs::ActiveTranscodeLimit.c_str(),
+        serverprefs::DefaultActiveTranscodeLimit);
 
     if (bitrate != 0 && Transcoder::GetActiveCount() >= maxActiveTranscoders) {
         response = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);

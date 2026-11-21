@@ -144,8 +144,8 @@ void Transcoder::PruneTranscodeCache(Context& context) {
     });
 
     int maxSize = context.prefs->GetInt(
-        prefs::transcoder_cache_count.c_str(),
-        defaults::transcoder_cache_count);
+        serverprefs::CacheCount.c_str(),
+        serverprefs::DefaultCacheCount);
 
     int extra = (int) sorted.size() - (maxSize - 1);
     auto it = sorted.begin();
@@ -185,7 +185,7 @@ IDataStream* Transcoder::Transcode(
     const std::string& format)
 {
     if (context.prefs->GetBool(
-        prefs::transcoder_synchronous.c_str(),
+        serverprefs::SynchronousTranscoding.c_str(),
         defaults::transcoder_synchronous))
     {
         return TranscodeAndWait(context, getEncoder(context, format), uri, bitrate, format);
@@ -228,8 +228,8 @@ IDataStream* Transcoder::TranscodeOnDemand(
 
     /* if it doesn't exist, check to see if the cache is enabled. */
     int cacheCount = context.prefs->GetInt(
-        prefs::transcoder_cache_count.c_str(),
-        defaults::transcoder_cache_count);
+        serverprefs::CacheCount.c_str(),
+        serverprefs::DefaultCacheCount);
 
     TranscodingAudioDataStream* transcoderStream = nullptr;
 

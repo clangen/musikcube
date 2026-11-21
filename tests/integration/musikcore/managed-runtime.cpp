@@ -115,6 +115,29 @@ namespace {
             before->enabled != after->enabled && after->bands[0].gain == gains.front();
     }
 
+    bool checkServerConfiguration(bool expectedAvailable) {
+        ServerConfiguration updated {
+            false, false, false, false, MC_SERVER_DEFAULT_METADATA_PORT, MC_SERVER_DEFAULT_AUDIO_PORT,
+            MC_SERVER_DEFAULT_CACHE_COUNT + 1, MC_SERVER_DEFAULT_ACTIVE_TRANSCODE_LIMIT, "runtime fixture"
+        };
+        if (!expectedAvailable) {
+            return !ReadServerConfiguration() && ConfigureServer(updated) == MC_ERROR_UNSUPPORTED;
+        }
+        if (ConfigureServer(updated) != MC_OK) {
+            return false;
+        }
+
+        const auto actual = ReadServerConfiguration();
+        if (!actual || actual->metadataEnabled || actual->audioEnabled ||
+            actual->password != updated.password || actual->cacheCount != updated.cacheCount)
+        {
+            return false;
+        }
+
+        updated.metadataPort = 0;
+        return ConfigureServer(updated) == MC_ERROR_INVALID_ARGUMENT;
+    }
+
     bool checkRuntime(
         const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer)
     {
@@ -178,19 +201,32 @@ namespace {
     }
 }
 
-int main(int argc, char**) {
+int main(int argc, char** argv) {
     if (!checkPreferences()) {
         std::fputs("Preference values did not round trip atomically through the public API\n", stderr);
         return 1;
     }
 
     Host host;
+    bool equalizer = false;
+    bool server = false;
+    for (int i = 1; i < argc; ++i) {
+        const std::string_view option(argv[i]);
+        equalizer |= option == "--check-equalizer";
+        server |= option == "--check-server";
+    }
+    /* Persist disabled listeners before starting the isolated plugin runtime. */
+    if (!checkServerConfiguration(server)) {
+        std::fputs("Server configuration did not round trip through the public API\n", stderr);
+        return 1;
+    }
+
     auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
     options.flags = MC_CONTEXT_MANAGED_RUNTIME;
     options.wakeup = Host::Wake;
     options.wakeup_user_data = &host;
     std::optional<Library> oldLibrary;
-    if (!checkRuntime(options, host, oldLibrary, argc > 1)) {
+    if (!checkRuntime(options, host, oldLibrary, equalizer)) {
         return 1;
     }
 

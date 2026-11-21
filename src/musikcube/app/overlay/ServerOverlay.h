@@ -34,10 +34,7 @@
 
 #pragma once
 
-#include <functional>
-
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/server.hpp>
 
 #include <cursespp/Checkbox.h>
 #include <cursespp/TextInput.h>
@@ -52,27 +49,20 @@ namespace musik {
             public sigslot::has_slots<>
     {
         public:
-            using Callback = std::function<void()>;
-            using Plugin = std::shared_ptr<musik::core::sdk::IPlugin>;
-            using Prefs = std::shared_ptr<musik::core::Preferences>;
-
-            static void Show(Callback callback);
-            static std::shared_ptr<musik::core::sdk::IPlugin> FindServerPlugin();
+            static void ShowOverlay();
+            static bool Available();
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
 
         private:
-            ServerOverlay(Callback callback, Plugin plugin);
+            explicit ServerOverlay(const musik::core::api::ServerConfiguration& configuration);
 
             void RecalculateSize();
             void InitViews();
             bool Save();
-            void Load();
+            void Load(const musik::core::api::ServerConfiguration& configuration);
 
-            Callback callback;
-            Plugin plugin;
-            Prefs prefs;
             int width, height, x, y;
 
             std::shared_ptr<cursespp::TextLabel> titleLabel;

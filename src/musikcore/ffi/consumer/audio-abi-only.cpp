@@ -9,6 +9,7 @@
 #include "../common/primitives.h"
 #include "request.h"
 #include "preferences-shape.h"
+#include "server-shape.h"
 
 std::unique_ptr<musik::core::ffi::ContextRuntime> musik::core::ffi::make_context_runtime() {
     return {};
@@ -34,6 +35,14 @@ mc_result MC_CALL mc_preferences_write(mc_preference_scope scope, const mc_prefe
 
 mc_result MC_CALL mc_preferences_save(mc_preference_scope scope) {
     return musik::core::ffi::valid_preference_scope(scope) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_server_read_configuration(mc_server_configuration_fn read, void*) {
+    return read ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_server_configure(const mc_server_configuration* configuration) {
+    return musik::core::ffi::valid_server_configuration(configuration) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }
 
 mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void*) {

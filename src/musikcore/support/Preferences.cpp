@@ -121,11 +121,24 @@ void Preferences::LoadPluginPreferences() {
 }
 
 void Preferences::SavePluginPreferences() {
-    pluginCache.clear(); /* dtors will save */
+    std::vector<std::shared_ptr<Preferences>> stores;
+    {
+        std::lock_guard lock(cacheMutex);
+        stores.reserve(pluginCache.size());
+        for (const auto& [name, store] : pluginCache) {
+            stores.push_back(store);
+        }
+    }
+
+    /* Providers keep borrowed preference pointers until their modules unload. */
+    for (const auto& store : stores) {
+        store->Save();
+    }
 }
 
 std::shared_ptr<Preferences> Preferences::ForPlugin(const std::string& pluginName) {
     std::string name = pluginFilename(pluginName);
+    std::lock_guard lock(cacheMutex);
 
     if (pluginCache.find(name) == pluginCache.end()) {
         pluginCache[name] = std::shared_ptr<Preferences>(
@@ -258,11 +271,17 @@ void Preferences::SetString(const std::string& key, const char* value) {
     json[key] = value;
 }
 
-void Preferences::SetValues(const nlohmann::json& values) {
+bool Preferences::SetValues(const nlohmann::json& values, bool persist) {
     std::lock_guard lock(this->mutex);
     auto updated = this->json.is_object() ? this->json : json::object();
     updated.update(values);
+    if (persist && (this->mode == ModeReadOnly ||
+        (this->mode != ModeTransient && !stringToFile(FILENAME(this->component), updated.dump(2)))))
+    {
+        return false;
+    }
     this->json.swap(updated);
+    return true;
 }
 
 void Preferences::GetKeys(std::vector<std::string>& target) {

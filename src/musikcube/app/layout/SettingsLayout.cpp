@@ -243,7 +243,7 @@ void SettingsLayout::OnHotkeyDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
-    ServerOverlay::Show([this]() noexcept { });
+    ServerOverlay::ShowOverlay();
 }
 
 void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
@@ -609,5 +609,5 @@ void SettingsLayout::LoadPreferences() {
 }
 
 void SettingsLayout::UpdateServerAvailability() {
-    this->serverAvailable = !!ServerOverlay::FindServerPlugin().get();
+    this->serverAvailable = ServerOverlay::Available();
 }

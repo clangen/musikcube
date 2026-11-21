@@ -10,5 +10,6 @@
 #include <musikcore/indexer.h>
 #include <musikcore/visualizer.h>
 #include <musikcore/preferences.h>
+#include <musikcore/server.h>
 
 #endif

@@ -127,10 +127,10 @@ static class PlaybackRemote : public IPlaybackRemote {
         }
 
         void Start() {
-            if (context.prefs->GetBool(prefs::http_server_enabled.c_str(), true)) {
+            if (context.prefs->GetBool(serverprefs::AudioEnabled.c_str(), true)) {
                 httpServer.Start();
             }
-            if (context.prefs->GetBool(prefs::websocket_server_enabled.c_str(), true)) {
+            if (context.prefs->GetBool(serverprefs::MetadataEnabled.c_str(), true)) {
                 webSocketServer.Start();
             }
         }
@@ -153,7 +153,7 @@ static class Plugin : public IPlugin {
         virtual const char* Name() { return "musikcube Server (wss, http)"; }
         virtual const char* Version() { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
         virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "9fc897a3-dfd5-4524-a0fc-b02f46aea4a9"; }
+        virtual const char* Guid() { return serverprefs::PluginGuid; }
         virtual bool Configurable() { return false; }
         virtual void Configure() { }
         virtual void Reload() { remote.Reload(); }
@@ -179,13 +179,13 @@ extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs)
     context.prefs = prefs;
 
     if (prefs) {
-        prefs->GetBool(prefs::websocket_server_enabled.c_str(), true);
-        prefs->GetInt(prefs::websocket_server_port.c_str(), defaults::websocket_server_port);
-        prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port);
-        prefs->GetBool(prefs::http_server_enabled.c_str(), true);
-        prefs->GetString(key::password.c_str(), nullptr, 0, defaults::password.c_str());
-        prefs->GetInt(prefs::transcoder_cache_count.c_str(), defaults::transcoder_cache_count);
-        prefs->GetBool(prefs::transcoder_synchronous.c_str(), defaults::transcoder_synchronous);
+        prefs->GetBool(serverprefs::MetadataEnabled.c_str(), true);
+        prefs->GetInt(serverprefs::MetadataPort.c_str(), serverprefs::DefaultMetadataPort);
+        prefs->GetInt(serverprefs::AudioPort.c_str(), serverprefs::DefaultAudioPort);
+        prefs->GetBool(serverprefs::AudioEnabled.c_str(), true);
+        prefs->GetString(serverprefs::Password.c_str(), nullptr, 0, defaults::password.c_str());
+        prefs->GetInt(serverprefs::CacheCount.c_str(), serverprefs::DefaultCacheCount);
+        prefs->GetBool(serverprefs::SynchronousTranscoding.c_str(), defaults::transcoder_synchronous);
         prefs->GetBool(prefs::transcoder_synchronous_fallback.c_str(), defaults::transcoder_synchronous_fallback);
         prefs->Save();
     }

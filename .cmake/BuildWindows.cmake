@@ -167,6 +167,7 @@ windows_plugin(nullout NullOut.cpp nullout_plugin.cpp)
 windows_plugin(server BlockingTranscoder.cpp HttpServer.cpp main.cpp Snapshots.cpp
   Transcoder.cpp TranscodingAudioDataStream.cpp Util.cpp WebSocketServer.cpp)
 target_compile_definitions(server PRIVATE MHD_W32LIB BUILDING_MHD_LIB)
+target_include_directories(server PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(server PRIVATE vendor::zlib vendor::microhttpd ws2_32)
 
 windows_plugin(stockencoders FfmpegEncoder.cpp LameEncoder.cpp main.cpp)

@@ -132,6 +132,10 @@ if(BUILD_TESTING)
         add_dependencies(musikcore_managed_runtime_test supereqdsp)
         list(APPEND managed_runtime_plugins "-DEQUALIZER_PLUGIN=$<TARGET_FILE:supereqdsp>")
       endif()
+      if(TARGET server)
+        add_dependencies(musikcore_managed_runtime_test server)
+        list(APPEND managed_runtime_plugins "-DSERVER_PLUGIN=$<TARGET_FILE:server>")
+      endif()
       add_test(NAME musikcore.integration.api.managed_runtime COMMAND "${CMAKE_COMMAND}"
         ${indexed_arguments} "-DMANAGED_RUNTIME_TEST=$<TARGET_FILE:musikcore_managed_runtime_test>"
         ${managed_runtime_plugins}

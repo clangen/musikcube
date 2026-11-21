@@ -37,6 +37,7 @@
 #include "PluginFactory.h"
 #include <musikcore/equalizer.h>
 #include "../ffi/common/error.h"
+#include "../ffi/consumer/server-shape.h"
 #include <cmath>
 
 #include <musikcore/debug.h>
@@ -49,6 +50,7 @@
 #include <musikcore/audio/Outputs.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/ServerPreferences.h>
 #include <musikcore/library/LocalMetadataProxy.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/runtime/Message.h>
@@ -65,6 +67,74 @@ using namespace musik::core::library::query;
 using namespace musik::core::io;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
+
+static uint16_t serverPort(Preferences& prefs, const std::string& key, int fallback) {
+    const auto port = prefs.GetInt(key, fallback);
+    return static_cast<uint16_t>(port > 0 && port <= UINT16_MAX ? port : fallback);
+}
+
+mc_result MC_CALL mc_server_read_configuration(mc_server_configuration_fn read, void* data) {
+    if (!read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto server = PluginFactory::Instance().QueryGuid(serverprefs::PluginGuid);
+        if (!server) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+
+        const auto settings = Preferences::ForPlugin(server->Name());
+        const auto password = settings->GetString(serverprefs::Password);
+        const mc_server_configuration configuration {
+            settings->GetBool(serverprefs::MetadataEnabled, false),
+            settings->GetBool(serverprefs::AudioEnabled, false),
+            settings->GetBool(serverprefs::UseIpv6, false),
+            settings->GetBool(serverprefs::SynchronousTranscoding, false),
+            serverPort(*settings, serverprefs::MetadataPort, serverprefs::DefaultMetadataPort),
+            serverPort(*settings, serverprefs::AudioPort, serverprefs::DefaultAudioPort),
+            std::max(0, settings->GetInt(serverprefs::CacheCount, serverprefs::DefaultCacheCount)),
+            std::max(0, settings->GetInt(serverprefs::ActiveTranscodeLimit, serverprefs::DefaultActiveTranscodeLimit)),
+            { password.data(), password.size() }
+        };
+        read(data, &configuration);
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_server_configure(const mc_server_configuration* configuration) {
+    if (!ffi::valid_server_configuration(configuration)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto server = PluginFactory::Instance().QueryGuid(serverprefs::PluginGuid);
+        if (!server) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+
+        const auto& options = *configuration;
+        const auto settings = Preferences::ForPlugin(server->Name());
+        const auto password = std::string(options.password.data ? options.password.data : "", options.password.length);
+        if (!settings->SetValues({
+            { serverprefs::MetadataEnabled, options.metadata_enabled },
+            { serverprefs::AudioEnabled, options.audio_enabled },
+            { serverprefs::UseIpv6, options.ipv6 },
+            { serverprefs::SynchronousTranscoding, options.synchronous_transcoding },
+            { serverprefs::MetadataPort, options.metadata_port },
+            { serverprefs::AudioPort, options.audio_port },
+            { serverprefs::CacheCount, options.cache_count },
+            { serverprefs::ActiveTranscodeLimit, options.active_transcode_limit },
+            { serverprefs::Password, password }
+        }, true))
+        {
+            return MC_ERROR_IO;
+        }
+
+        server->Reload();
+        return MC_OK;
+    });
+}
 
 typedef void(*SetEnvironment)(IEnvironment*);
 typedef void(*SetDebug)(IDebug*);

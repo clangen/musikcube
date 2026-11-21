@@ -100,3 +100,5 @@ mc_context_set_equalizer_changed_callback
 mc_preferences_read
 mc_preferences_write
 mc_preferences_save
+mc_server_read_configuration
+mc_server_configure

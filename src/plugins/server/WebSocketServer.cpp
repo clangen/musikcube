@@ -115,8 +115,8 @@ static std::shared_ptr<IValue*> jsonToPredicateList(json& arr) {
 
 static json getEnvironment(Context& context) {
     return {
-        { prefs::http_server_enabled, context.prefs->GetBool(prefs::http_server_enabled.c_str()) },
-        { prefs::http_server_port, context.prefs->GetInt(prefs::http_server_port.c_str()) },
+        { serverprefs::AudioEnabled, context.prefs->GetBool(serverprefs::AudioEnabled.c_str()) },
+        { serverprefs::AudioPort, context.prefs->GetInt(serverprefs::AudioPort.c_str()) },
         { key::sdk_version, musik::core::sdk::SdkVersion },
         { key::app_version, context.environment->GetAppVersion() },
         { key::api_version, ApiVersion }
@@ -168,10 +168,10 @@ void WebSocketServer::ThreadProc() {
         using namespace websocketpp::lib::asio::ip;
 
         const int port = context.prefs->GetInt(
-            prefs::websocket_server_port.c_str(), defaults::websocket_server_port);
+            serverprefs::MetadataPort.c_str(), serverprefs::DefaultMetadataPort);
 
         const bool ipv6 = context.prefs->GetBool(
-            prefs::use_ipv6.c_str(), defaults::use_ipv6);
+            serverprefs::UseIpv6.c_str(), defaults::use_ipv6);
 
         wss->init_asio();
         wss->set_reuse_addr(true);
@@ -248,7 +248,7 @@ void WebSocketServer::HandleAuthentication(connection_hdl connection, json& requ
         std::string sent = request[message::options][key::password];
 
         std::string actual = GetPreferenceString(
-            context.prefs, key::password, defaults::password);
+            context.prefs, serverprefs::Password, defaults::password);
 
         if (sent == actual) {
             this->connections[connection] = true; /* mark as authed */

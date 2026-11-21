@@ -12,6 +12,7 @@ add_library(server SHARED ${server_SOURCES})
 
 target_include_directories(server BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/include")
 target_include_directories(server BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
+target_include_directories(server PRIVATE "${PROJECT_SOURCE_DIR}/include")
 
 if (${BUILD_STANDALONE} MATCHES "true")
   find_vendor_library(LIBMICROHTTPD microhttpd)

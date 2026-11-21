@@ -21,6 +21,10 @@ if(DEFINED MANAGED_RUNTIME_TEST)
     set(managed_runtime_plugins --plugin "${EQUALIZER_PLUGIN}")
     set(managed_runtime_options --check-equalizer)
   endif()
+  if(DEFINED SERVER_PLUGIN)
+    list(APPEND managed_runtime_plugins --plugin "${SERVER_PLUGIN}")
+    list(APPEND managed_runtime_options --check-server)
+  endif()
   execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
     "${BUILD_DIR}/tests/bin/isolated" "${MANAGED_RUNTIME_TEST}" --stage
     --headless-output "${NULL_OUTPUT}" ${managed_runtime_plugins}
