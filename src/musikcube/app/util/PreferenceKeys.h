@@ -72,5 +72,9 @@ namespace musik { namespace cube { namespace prefs {
         extern const bool DisableWindowTitleUpdates;
     }
 
+    /* Persisted search modes predate the public ABI values. */
+    inline constexpr int SearchSubstring = 1;
+    inline constexpr int SearchRegex = 2;
+
 } } }
 

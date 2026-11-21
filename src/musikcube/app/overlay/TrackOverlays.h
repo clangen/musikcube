@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/library/query/util/TrackSort.h>
+#include <musikcore/library.h>
 
 #include <cstdint>
 #include <functional>
@@ -43,12 +43,11 @@ namespace musik {
     namespace cube {
         class TrackOverlays {
             public:
-                using TrackSortType = musik::core::library::query::TrackSortType;
+                static std::string TrackSortName(mc_track_search_order order);
 
                 static void ShowTrackSearchSortOverlay(
-                    TrackSortType currentSortType,
-                    const std::map<TrackSortType, std::string>& availableSortTypes,
-                    std::function<void(TrackSortType)> callback);
+                    mc_track_search_order currentSortType,
+                    std::function<void(mc_track_search_order)> callback);
 
                 static void ShowRateTrackOverlay(
                     int currentRating, std::function<void(uint32_t)> callback);

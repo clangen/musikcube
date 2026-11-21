@@ -184,6 +184,11 @@ async function checkTrackSearch(runtime, database, screenshots,
     if (pilot && windows) {
       terminal.send(HOME + 'j\r');
       await terminal.expect(`Selected track: ${FIRST_ALBUM} - Track 02`);
+    } else if (!pilot && scenario === 'search') {
+      terminal.send('\x1bs');
+      await terminal.expect('select sort order');
+      terminal.send(DOWN + '\r');
+      await terminal.expect('tracks (sorted by track title)', { absent: 'select sort order' });
     } else if (!pilot && ['all', 'queue', 'playlists'].includes(scenario)) {
       /* Append the selected search result through its track actions menu. */
       terminal.send('\x1b\r');

@@ -38,7 +38,6 @@
 #include <cursespp/Screen.h>
 
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/query/util/TrackSort.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/i18n/Locale.h>
@@ -56,7 +55,6 @@ using namespace musik;
 using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;
@@ -106,10 +104,11 @@ static inline std::string getTitleForCategory(const std::string& fieldName) {
         ? _TSTR(fieldName) : _TSTR(FIELD_TO_TITLE[fieldName]);
 }
 
-static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
-    return (TrackSortType)prefs->GetInt(
+static mc_track_search_order getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
+    const auto sort = (mc_track_search_order) prefs->GetInt(
         keys::CategoryTrackListSortOrder,
-        static_cast<int>(TrackSortType::Album));
+        static_cast<int>(MC_TRACK_SEARCH_ALBUM));
+    return sort <= MC_TRACK_SEARCH_GENRE ? sort : MC_TRACK_SEARCH_ALBUM;
 }
 
 BrowseLayout::BrowseLayout(
@@ -288,26 +287,25 @@ void BrowseLayout::OnIndexerProgress(int count) {
 }
 
 void BrowseLayout::UpdateTrackTitle() {
-    std::string sortByDisplayString = kTrackListOrderByToDisplayKey
-        .find(getDefaultTrackSort(this->prefs))->second;
+    const auto sortName = TrackOverlays::TrackSortName(getDefaultTrackSort(this->prefs));
 
     this->trackList->SetFrameTitle(u8fmt(
         _TSTR("browse_title_tracks"),
-        _TSTR(sortByDisplayString).c_str()));
+        sortName.c_str()));
 }
 
 void BrowseLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
         const int64_t selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
-            const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
+            const mc_track_search_order sortOrder = getDefaultTrackSort(this->prefs);
             const auto column = this->categoryList->GetFieldName();
             const auto hash = std::hash<std::string>{}(column + ":" + std::to_string(selectedId) +
                 ":" + std::to_string(static_cast<int>(sortOrder)));
             this->trackList->RequeryTracks(hash, [column, selectedId, sortOrder]
                 (api::Context& context, api::TrackSearchCompletion completion) {
                     return api::OpenCategory(context, column, selectedId,
-                        static_cast<mc_track_search_order>(sortOrder), std::move(completion));
+                        sortOrder, std::move(completion));
                 });
             this->UpdateTrackTitle();
         }
@@ -379,8 +377,7 @@ void BrowseLayout::SetOnHeaderClicked(HeaderClickHandler handler) {
 void BrowseLayout::ShowTrackSortOverlay() {
     TrackOverlays::ShowTrackSearchSortOverlay(
         getDefaultTrackSort(this->prefs),
-        kTrackListOrderByToDisplayKey,
-        [this](TrackSortType type) {
+        [this](mc_track_search_order type) {
             this->prefs->SetInt(keys::CategoryTrackListSortOrder, static_cast<int>(type));
             this->RequeryTrackList(this->categoryList.get());
         });

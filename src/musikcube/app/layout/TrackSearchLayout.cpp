@@ -52,7 +52,6 @@
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
@@ -65,10 +64,10 @@ namespace components = musik::core::prefs::components;
 constexpr int kSearchHeight = 3;
 constexpr int kRequeryIntervalMs = 300;
 
-static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
-    const auto sort = (TrackSortType) prefs->GetInt(
-        keys::TrackSearchSortOrder, (int) TrackSortType::Album);
-    return kTrackListOrderByToDisplayKey.count(sort) ? sort : TrackSortType::Album;
+static mc_track_search_order getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
+    const auto sort = (mc_track_search_order) prefs->GetInt(
+        keys::TrackSearchSortOrder, (int) MC_TRACK_SEARCH_ALBUM);
+    return sort <= MC_TRACK_SEARCH_GENRE ? sort : MC_TRACK_SEARCH_ALBUM;
 }
 
 TrackSearchLayout::TrackSearchLayout(
@@ -95,15 +94,16 @@ void TrackSearchLayout::LoadLastSession() {
         this->input->SetText(lastFilter);
     }
 
-    this->matchType = static_cast<MatchType>(session->GetInt(
-        keys::LastTrackFilterMatchType,
-        static_cast<int>(MatchType::Substring)));
+    this->matchType = session->GetInt(keys::LastTrackFilterMatchType, musik::cube::prefs::SearchSubstring) == musik::cube::prefs::SearchRegex
+        ? MC_TRACK_SEARCH_REGEX
+        : MC_TRACK_SEARCH_SUBSTRING;
 }
 
 void TrackSearchLayout::SaveSession() {
     auto session = Preferences::ForComponent(components::Session);
     session->SetString(keys::LastTrackFilter, this->input->GetText().c_str());
-    session->SetInt(keys::LastTrackFilterMatchType, static_cast<int>(this->matchType));
+    session->SetInt(keys::LastTrackFilterMatchType,
+        this->matchType == MC_TRACK_SEARCH_REGEX ? musik::cube::prefs::SearchRegex : musik::cube::prefs::SearchSubstring);
 }
 
 void TrackSearchLayout::OnLayout() {
@@ -114,7 +114,7 @@ void TrackSearchLayout::OnLayout() {
     const int inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, y, cx / 2, kSearchHeight);
 
-    const bool inputIsRegex = this->matchType == MatchType::Regex;
+    const bool inputIsRegex = this->matchType == MC_TRACK_SEARCH_REGEX;
     this->input->SetHint(_TSTR(inputIsRegex ? "search_regex_hint" : "search_filter_hint"));
     this->input->SetFocusedFrameColor(inputIsRegex ? Color::FrameImportant : Color::FrameFocused);
 
@@ -163,15 +163,14 @@ void TrackSearchLayout::FocusInput() {
 
 void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
-    const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
+    const mc_track_search_order sortOrder = getDefaultTrackSort(this->prefs);
     this->CancelSearch();
 
 
     try {
-        const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
         const auto hash = std::hash<std::string> {}(filter);
         this->searchRequest = api::OpenTrackSearch(this->musikcore,
-            api::TrackSearch { filter, mode, static_cast<mc_track_search_order>(sortOrder) },
+            api::TrackSearch { filter, this->matchType, sortOrder },
             this->searchWork.Begin([this, sortOrder, hash](mc_result status, api::TrackResult result, std::string_view) {
                 this->searchRequest = 0;
                 if (status == MC_ERROR_BUSY) {
@@ -182,7 +181,7 @@ void TrackSearchLayout::Requery() {
                 }
 
                 this->trackList->SetTrackResult(std::move(result), hash);
-                this->SetSearchTitle(_TSTR(kTrackListOrderByToDisplayKey.at(sortOrder)));
+                this->SetSearchTitle(TrackOverlays::TrackSortName(sortOrder));
             }));
     }
     catch (const api::Error& error) {
@@ -244,19 +243,18 @@ void TrackSearchLayout::OnWindowMouseEvent(Window* window, const IMouseHandler::
 void TrackSearchLayout::ShowTrackSortOverlay() {
     TrackOverlays::ShowTrackSearchSortOverlay(
         getDefaultTrackSort(this->prefs),
-        kTrackListOrderByToDisplayKey,
-        [this](TrackSortType type) {
+        [this](mc_track_search_order type) {
             this->prefs->SetInt(keys::TrackSearchSortOrder, (int) type);
             this->Requery();
         });
 }
 
 void TrackSearchLayout::ToggleMatchType() {
-    const bool isRegex = this->matchType == MatchType::Regex;
-    this->SetMatchType(isRegex ? MatchType::Substring : MatchType::Regex);
+    const bool isRegex = this->matchType == MC_TRACK_SEARCH_REGEX;
+    this->SetMatchType(isRegex ? MC_TRACK_SEARCH_SUBSTRING : MC_TRACK_SEARCH_REGEX);
 }
 
-void TrackSearchLayout::SetMatchType(MatchType matchType) {
+void TrackSearchLayout::SetMatchType(mc_track_search_mode matchType) {
     if (matchType != this->matchType) {
         this->matchType = matchType;
         this->Layout();

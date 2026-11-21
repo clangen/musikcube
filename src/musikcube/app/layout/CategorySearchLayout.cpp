@@ -92,15 +92,16 @@ void CategorySearchLayout::LoadLastSession() {
         this->input->SetText(lastFilter);
     }
 
-    this->matchType = static_cast<MatchType>(session->GetInt(
-        keys::LastCategoryFilterMatchType,
-        static_cast<int>(MatchType::Substring)));
+    this->matchType = session->GetInt(keys::LastCategoryFilterMatchType, musik::cube::prefs::SearchSubstring) == musik::cube::prefs::SearchRegex
+        ? MC_TRACK_SEARCH_REGEX
+        : MC_TRACK_SEARCH_SUBSTRING;
 }
 
 void CategorySearchLayout::SaveSession() {
     auto session = Preferences::ForComponent(components::Session);
     session->SetString(keys::LastCategoryFilter, this->input->GetText().c_str());
-    session->SetInt(keys::LastCategoryFilterMatchType, static_cast<int>(this->matchType));
+    session->SetInt(keys::LastCategoryFilterMatchType,
+        this->matchType == MC_TRACK_SEARCH_REGEX ? musik::cube::prefs::SearchRegex : musik::cube::prefs::SearchSubstring);
 }
 
 void CategorySearchLayout::OnLayout() {
@@ -111,7 +112,7 @@ void CategorySearchLayout::OnLayout() {
     const int inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, 0, cx / 2, kSearchHeight);
 
-    const bool inputIsRegex = this->matchType == MatchType::Regex;
+    const bool inputIsRegex = this->matchType == MC_TRACK_SEARCH_REGEX;
     this->input->SetHint(_TSTR(inputIsRegex ? "search_regex_hint" : "search_filter_hint"));
     this->input->SetFocusedFrameColor(inputIsRegex ? Color::FrameImportant : Color::FrameFocused);
 
@@ -232,11 +233,11 @@ void CategorySearchLayout::ProcessMessage(IMessage &message) {
 }
 
 void CategorySearchLayout::ToggleMatchType() {
-    const bool isRegex = this->matchType == MatchType::Regex;
-    this->SetMatchType(isRegex ? MatchType::Substring : MatchType::Regex);
+    const bool isRegex = this->matchType == MC_TRACK_SEARCH_REGEX;
+    this->SetMatchType(isRegex ? MC_TRACK_SEARCH_SUBSTRING : MC_TRACK_SEARCH_REGEX);
 }
 
-void CategorySearchLayout::SetMatchType(MatchType matchType) {
+void CategorySearchLayout::SetMatchType(mc_track_search_mode matchType) {
     if (matchType != this->matchType) {
         this->matchType = matchType;
         this->Layout();

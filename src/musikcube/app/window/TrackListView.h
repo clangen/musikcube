@@ -64,8 +64,6 @@ namespace musik {
             };
 
             public:
-                typedef musik::core::TrackPtr TrackPtr;
-
                 /* types */
                 using RowDecorator = std::function<cursespp::Color(size_t)>;
                 using Headers = std::shared_ptr<std::set<size_t>>;

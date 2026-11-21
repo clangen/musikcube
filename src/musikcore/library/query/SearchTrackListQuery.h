@@ -51,7 +51,6 @@ namespace musik { namespace core { namespace library { namespace query {
                 const std::string& filter,
                 TrackSortType sort);
 
-            std::string GetSortDisplayString();
 
             /* IQuery */
             std::string Name() override { return kQueryName; }
@@ -76,7 +75,6 @@ namespace musik { namespace core { namespace library { namespace query {
         private:
             musik::core::ILibraryPtr library;
             MatchType matchType;
-            std::string displayString;
             size_t hash;
 
             /* serialized query fields */

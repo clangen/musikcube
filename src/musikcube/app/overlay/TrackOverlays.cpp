@@ -35,34 +35,53 @@
 #include <stdafx.h>
 
 #include "TrackOverlays.h"
-#include <musikcore/library/query/util/TrackSort.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
 #include <cursespp/App.h>
 #include <app/util/Rating.h>
+#include <map>
 #include <set>
 
 using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
 using namespace musik::core::db;
-using namespace musik::core::library::query;
 
 static const int kDefaultSortOverlayWidth = 32;
 static const int kDefaultRatingOverlayWidth = 24;
 
+static const std::map<mc_track_search_order, std::string> sortDisplayKeys = {
+    { MC_TRACK_SEARCH_TITLE, "track_list_sort_title" },
+    { MC_TRACK_SEARCH_ALBUM, "track_list_sort_album" },
+    { MC_TRACK_SEARCH_ARTIST, "track_list_sort_artist" },
+    { MC_TRACK_SEARCH_DATE_ADDED_ASC, "track_list_sort_date_added_asc" },
+    { MC_TRACK_SEARCH_DATE_ADDED_DESC, "track_list_sort_date_added_desc" },
+    { MC_TRACK_SEARCH_DATE_UPDATED_ASC, "track_list_sort_date_updated_asc" },
+    { MC_TRACK_SEARCH_DATE_UPDATED_DESC, "track_list_sort_date_updated_desc" },
+    { MC_TRACK_SEARCH_LAST_PLAYED_ASC, "track_list_sort_last_played_asc" },
+    { MC_TRACK_SEARCH_LAST_PLAYED_DESC, "track_list_sort_last_played_desc" },
+    { MC_TRACK_SEARCH_RATING_ASC, "track_list_sort_rating_asc" },
+    { MC_TRACK_SEARCH_RATING_DESC, "track_list_sort_rating_desc" },
+    { MC_TRACK_SEARCH_PLAY_COUNT_ASC, "track_list_sort_play_count_asc" },
+    { MC_TRACK_SEARCH_PLAY_COUNT_DESC, "track_list_sort_play_count_desc" },
+    { MC_TRACK_SEARCH_GENRE, "track_list_sort_genre" },
+};
+
+std::string TrackOverlays::TrackSortName(mc_track_search_order order) {
+    return _TSTR(sortDisplayKeys.at(order));
+}
+
 void TrackOverlays::ShowTrackSearchSortOverlay(
-    TrackSortType sortType,
-    const std::map<TrackSortType, std::string>& availableSortTypes,
-    std::function<void(TrackSortType)> callback)
+    mc_track_search_order sortType,
+    std::function<void(mc_track_search_order)> callback)
 {
     size_t i = 0;
     size_t selectedIndex = 0;
-    std::vector<TrackSortType> allKeys;
+    std::vector<mc_track_search_order> allKeys;
     auto adapter = std::make_shared<SimpleScrollAdapter>();
     adapter->SetSelectable(true);
-    for (auto it : availableSortTypes) {
+    for (auto it : sortDisplayKeys) {
         allKeys.push_back(it.first);
         adapter->AddEntry(_TSTR(it.second));
         if (it.first == sortType) {

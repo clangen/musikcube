@@ -42,10 +42,8 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/ScrollAdapterBase.h>
 
-#include <musikcore/library/query/CategoryListQuery.h>
 
 #include <musikcore/playback.hpp>
-#include <musikcore/library/IQuery.h>
 #include <musikcore/runtime/IMessage.h>
 
 #include <mutex>
@@ -61,7 +59,6 @@ namespace musik {
                 void SetAddToPlaylistCallback(AddToPlaylist callback) {
                     this->addToPlaylist = std::move(callback);
                 }
-                using MatchType = musik::core::library::query::QueryBase::MatchType;
 
                 CategoryListView(
                     musik::core::api::Context& musikcore,
@@ -70,7 +67,7 @@ namespace musik {
                 virtual ~CategoryListView();
 
                 void RequeryWithField(
-                    MatchType matchType,
+                    mc_track_search_mode matchType,
                     const std::string& fieldName,
                     const std::string& filter = "",
                     const int64_t selectAfterQuery = -1LL);
@@ -81,7 +78,7 @@ namespace musik {
                     const int64_t selectAfterQuery = -1LL);
 
                 void Requery(
-                    MatchType matchType,
+                    mc_track_search_mode matchType,
                     const std::string& filter = "",
                     const int64_t selectAfterQuery = -1LL);
 
@@ -148,7 +145,7 @@ namespace musik {
 
                 std::string fieldName, fieldIdColumn;
                 std::string filter;
-                MatchType matchType{ MatchType::Substring };
+                mc_track_search_mode matchType{ MC_TRACK_SEARCH_SUBSTRING };
                 int64_t selectAfterQuery;
                 std::vector<musik::core::api::CategoryEntry> metadata;
         };

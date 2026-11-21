@@ -57,23 +57,6 @@ namespace musik { namespace core { namespace library { namespace query {
         Genre = 13,
     };
 
-    static const std::map<TrackSortType, std::string> kTrackListOrderByToDisplayKey = {
-        { TrackSortType::Title, "track_list_sort_title" },
-        { TrackSortType::Album, "track_list_sort_album" },
-        { TrackSortType::Artist, "track_list_sort_artist" },
-        { TrackSortType::DateAddedAsc, "track_list_sort_date_added_asc" },
-        { TrackSortType::DateAddedDesc, "track_list_sort_date_added_desc" },
-        { TrackSortType::DateUpdatedAsc, "track_list_sort_date_updated_asc" },
-        { TrackSortType::DateUpdatedDesc, "track_list_sort_date_updated_desc" },
-        { TrackSortType::LastPlayedAsc, "track_list_sort_last_played_asc" },
-        { TrackSortType::LastPlayedDesc, "track_list_sort_last_played_desc" },
-        { TrackSortType::RatingAsc, "track_list_sort_rating_asc" },
-        { TrackSortType::RatingDesc, "track_list_sort_rating_desc" },
-        { TrackSortType::PlayCountAsc, "track_list_sort_play_count_asc" },
-        { TrackSortType::PlayCountDesc, "track_list_sort_play_count_desc" },
-        { TrackSortType::Genre, "track_list_sort_genre" },
-    };
-
     static const std::map<TrackSortType, std::string> kTrackListSortOrderBy = {
         { TrackSortType::Title, "tracks.title, ar.name, al.name" },
         { TrackSortType::Album, "al.name, disc, track, ar.name" },

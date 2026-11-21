@@ -38,3 +38,7 @@ Settings and the existing playback chooser use the public SDK to select gapless 
 ## Preamp and replay gain
 
 The preamp and replay gain overlays and the transport indicator use the public playback settings API. Playback and the API share the same configured gain values. Linux coverage includes settings round trips and rejection of invalid gains, and the Browse TUI scenario selects and displays track replay gain.
+
+## Search and browse query types
+
+The layouts now pass public match and sort values directly. Existing session files retain their stored match values. Sort labels live in the existing sort overlay, and cube no longer includes internal query headers. All 44 Linux Release tests passed, including selecting track-title sort from the headless Search view.

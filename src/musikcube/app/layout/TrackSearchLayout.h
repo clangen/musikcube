@@ -83,7 +83,6 @@ namespace musik { namespace cube {
             void OnLayout() override;
 
         private:
-            using MatchType = musik::core::library::query::QueryBase::MatchType;
 
             void SaveSession();
             void InitializeWindows();
@@ -102,10 +101,10 @@ namespace musik { namespace cube {
             void OnEnterPressed(cursespp::TextInput* sender);
 
             void ToggleMatchType();
-            void SetMatchType(MatchType matchType);
+            void SetMatchType(mc_track_search_mode matchType);
             void ShowTrackSortOverlay();
 
-            MatchType matchType { MatchType::Substring };
+            mc_track_search_mode matchType { MC_TRACK_SEARCH_SUBSTRING };
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<TrackListView> trackList;
             std::shared_ptr<cursespp::TextInput> input;

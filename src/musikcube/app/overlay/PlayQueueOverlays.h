@@ -34,8 +34,6 @@
 
 #pragma once
 
-#include <musikcore/library/track/Track.h>
-#include <musikcore/library/query/TrackListQueryBase.h>
 #include <app/window/TrackListView.h>
 #include <app/util/AsyncCallbackScope.h>
 

@@ -49,7 +49,6 @@
 
 using namespace musik::core;
 using namespace musik::core::db;
-using namespace musik::core::library::query;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::cube;
@@ -109,7 +108,7 @@ void CategoryListView::OnParentVisibilityChanged(bool visible) {
 }
 
 void CategoryListView::RequeryWithField(
-    MatchType matchType,
+    mc_track_search_mode matchType,
     const std::string& fieldName,
     const std::string& filter,
     const int64_t selectAfterQuery)
@@ -124,9 +123,8 @@ void CategoryListView::RequeryWithField(
     }
     this->selectAfterQuery = selectAfterQuery;
     this->filter = filter;
-    const auto mode = matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
     try {
-        this->activeQuery = api::ListCategories(this->musikcore, fieldName, filter, mode,
+        this->activeQuery = api::ListCategories(this->musikcore, fieldName, filter, matchType,
             this->categoryWork.Wrap([this](mc_result status, std::vector<api::CategoryEntry> categories, std::string_view) {
                 this->activeQuery = 0;
                 if (status == MC_OK) {
@@ -150,7 +148,7 @@ void CategoryListView::RequeryWithField(
 }
 
 void CategoryListView::Requery(
-    MatchType matchType,
+    mc_track_search_mode matchType,
     const std::string& filter,
     const int64_t selectAfterQuery)
 {

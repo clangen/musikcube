@@ -72,7 +72,6 @@ namespace musik {
                 void ProcessMessage(musik::core::runtime::IMessage& message) override;
 
             private:
-                using MatchType = musik::core::library::query::QueryBase::MatchType;
 
                 void InitializeWindows();
 
@@ -95,10 +94,10 @@ namespace musik {
                 void Requery();
                 void SaveSession();
                 void ToggleMatchType();
-                void SetMatchType(MatchType matchType);
+                void SetMatchType(mc_track_search_mode matchType);
 
                 musik::core::api::Context& musikcore;
-                MatchType matchType{ MatchType::Substring };
+                mc_track_search_mode matchType{ MC_TRACK_SEARCH_SUBSTRING };
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<CategoryListView> albums;
                 std::shared_ptr<CategoryListView> artists;

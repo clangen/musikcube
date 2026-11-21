@@ -63,7 +63,6 @@ SearchTrackListQuery::SearchTrackListQuery(
     this->sortType = sort;
     this->filter = filter;
 
-    this->displayString = _TSTR(kTrackListOrderByToDisplayKey.at(sort));
     this->result = std::make_shared<TrackList>(library);
     this->headers = std::make_shared<std::set<size_t>>();
     this->durations = std::make_shared<std::map<size_t, size_t>>();
@@ -85,10 +84,6 @@ SearchTrackListQuery::Durations SearchTrackListQuery::GetDurations() noexcept {
 size_t SearchTrackListQuery::GetQueryHash() noexcept {
     this->hash = std::hash<std::string>()(this->filter);
     return this->hash;
-}
-
-std::string SearchTrackListQuery::GetSortDisplayString() {
-    return this->displayString;
 }
 
 bool SearchTrackListQuery::OnRun(Connection& db) {
