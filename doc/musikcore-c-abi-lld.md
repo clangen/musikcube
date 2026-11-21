@@ -1235,6 +1235,8 @@ claim module-unload support or per-context configuration-root isolation.
 - [x] **RTH-005** Isolate public read snapshots from legacy shared-cache writers.
   `musikcore.integration.runtime.read_isolation` holds an uncommitted WAL write
   while the public API must read the previously committed title.
+  `musikcore.integration.runtime.locked_read_shutdown` holds an exclusive
+  SQLite lock through shutdown and checks prompt cancellation.
 - [x] **RTH-006** Synchronize stream-factory discovery and retire stream/codec
   caches after workers stop, even when a hook throws.
   `musikcore.integration.runtime.caches` checks concurrent lookup and balanced
@@ -1243,7 +1245,8 @@ claim module-unload support or per-context configuration-root isolation.
   managed-runtime checks exercise real plugin playback.
 - [x] **RTH-007** Reject failed database opens and corrupt schemas transactionally.
   `musikcore.integration.runtime.database_failure` checks `MC_ERROR_IO`, an empty
-  context output, and successful retry after repairing the same path.
+  context output, rollback of partial schema changes, and successful retry
+  after repairing the catalog.
 
 The managed, plugin-reload, captured-PCM, remote-HTTP-audio, and transport TUI
 checks run natively on macOS and Linux using platform-correct staged filenames.

@@ -77,12 +77,21 @@ bool PersistedPlayQueueQuery::OnRun(musik::core::db::Connection &db) {
         }
     }
     else if (this->type == Type::Restore) {
+        /* read the full queue before changing playback. */
+        std::vector<int64_t> ids;
+        Statement query("SELECT track_id FROM last_session_play_queue ORDER BY id ASC", db);
+        int step;
+        while ((step = query.Step()) == db::Row) {
+            ids.push_back(query.ColumnInt64(0));
+        }
+        if (step != db::Done) {
+            return false;
+        }
+
         auto editor = this->playback.Edit();
         editor.Clear();
-
-        Statement query("SELECT track_id FROM last_session_play_queue ORDER BY id ASC", db);
-        while (query.Step() == db::Row) {
-            editor.Add(query.ColumnInt64(0));
+        for (const auto id : ids) {
+            editor.Add(id);
         }
     }
 

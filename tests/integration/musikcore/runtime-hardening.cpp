@@ -8,6 +8,7 @@ inspect the private factory because its numeric identity is not a public API. */
 #include <musikcore/audio/Streams.h>
 #include "../../support/check.h"
 #include <thread>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <sqlite3.h>
@@ -120,6 +121,45 @@ namespace {
         return TEST_CHECK(state.committed);
     }
 
+    bool checkLockedReadShutdown() {
+        using namespace std::chrono;
+        const auto directory = api::ReadPath(MC_PATH_DATA);
+        const auto filename = std::filesystem::u8path(directory) / "musik.db";
+        std::unique_ptr<sqlite3, decltype(&sqlite3_close)> writer(nullptr, sqlite3_close);
+        sqlite3* raw = nullptr;
+        const auto opened = sqlite3_open(filename.string().c_str(), &raw);
+        writer.reset(raw);
+        if (!TEST_CHECK(opened == SQLITE_OK && sqlite3_exec(writer.get(),
+            "PRAGMA journal_mode=DELETE;"
+            "CREATE TABLE tracks(id INTEGER PRIMARY KEY, title TEXT, visible INTEGER);"
+            "BEGIN EXCLUSIVE;",
+            nullptr, nullptr, nullptr) == SQLITE_OK))
+        {
+            return false;
+        }
+
+        const std::unique_ptr<test_host_event, decltype(&test_host_event_destroy)> event(
+            test_host_event_create(), test_host_event_destroy);
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.wakeup = test_host_event_signal;
+        options.wakeup_user_data = event.get();
+        std::optional<mc_result> status;
+        api::Context context(options);
+        api::Library library(directory);
+        api::QueryTracks(context, library, {}, [&](mc_result result, api::TrackPage, std::string_view) {
+            status = result;
+        });
+
+        /* hold the lock through shutdown; a normal read cannot finish first. */
+        if (!TEST_CHECK(!test_host_event_wait_for(event.get(), 150))) {
+            return false;
+        }
+        const auto started = steady_clock::now();
+        return TEST_CHECK(context.Shutdown() == MC_OK) &&
+            TEST_CHECK(status == MC_ERROR_CANCELLED) &&
+            TEST_CHECK(steady_clock::now() - started < seconds(2));
+    }
+
     /* failed opens and corrupt schemas must not publish a partial engine or
     strand the single-context slot; retry after repairing the same directory. */
     bool checkDatabaseFailure() {
@@ -146,6 +186,49 @@ namespace {
             return false;
         }
         std::filesystem::remove(filename);
+
+        /* a failed migration must preserve the original catalog and version. */
+        {
+            sqlite3* raw = nullptr;
+            const auto opened = sqlite3_open(filename.string().c_str(), &raw);
+            const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> database(raw, sqlite3_close);
+            if (!TEST_CHECK(opened == SQLITE_OK && sqlite3_exec(database.get(),
+                "CREATE TABLE version(version INTEGER); INSERT INTO version VALUES(9);"
+                "CREATE TABLE last_session_play_queue(id INTEGER PRIMARY KEY, unexpected INTEGER);",
+                nullptr, nullptr, nullptr) == SQLITE_OK))
+            {
+                return false;
+            }
+        }
+        result = mc_context_create(&options, &context, nullptr);
+        const bool schemaRejected = result == MC_ERROR_IO && !context;
+        mc_context_destroy(&context);
+        if (!TEST_CHECK(schemaRejected)) {
+            return false;
+        }
+        {
+            sqlite3* raw = nullptr;
+            const auto opened = sqlite3_open(filename.string().c_str(), &raw);
+            const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> database(raw, sqlite3_close);
+            int original = 0;
+            if (!TEST_CHECK(opened == SQLITE_OK && sqlite3_exec(database.get(),
+                "SELECT version FROM version WHERE version=9 AND NOT EXISTS "
+                "(SELECT 1 FROM sqlite_master WHERE name='tracks');",
+                [](void* data, int, char**, char**) {
+                    ++*static_cast<int*>(data);
+                    return 0;
+                }, &original, nullptr) == SQLITE_OK && original == 1))
+            {
+                return false;
+            }
+            if (!TEST_CHECK(sqlite3_exec(database.get(),
+                "DROP TABLE last_session_play_queue;"
+                "CREATE TABLE last_session_play_queue(id INTEGER PRIMARY KEY, track_id INTEGER);",
+                nullptr, nullptr, nullptr) == SQLITE_OK))
+            {
+                return false;
+            }
+        }
         api::Context recovered(options);
         return TEST_CHECK(recovered.GetLibrary().has_value());
     }
@@ -256,6 +339,9 @@ int main(int argc, char** argv) {
     }
     if (mode == "read_isolation") {
         return checkReadIsolation() ? 0 : 1;
+    }
+    if (mode == "locked_read_shutdown") {
+        return checkLockedReadShutdown() ? 0 : 1;
     }
     if (mode == "database_failure") {
         return checkDatabaseFailure() ? 0 : 1;

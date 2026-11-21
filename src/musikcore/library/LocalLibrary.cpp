@@ -45,6 +45,7 @@
 #include <common/runtime/Message.h>
 #include <musikcore/debug.h>
 
+#include <initializer_list>
 #include <limits>
 #include <filesystem>
 
@@ -103,10 +104,6 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue)
 , id(id)
 , exit(false)
 , messageQueue(messageQueue) {
-    if (this->messageQueue) {
-        this->messageQueue->Register(this);
-    }
-
     this->identifier = std::to_string(id);
 
     const auto filename = this->GetDatabaseFilename();
@@ -116,15 +113,28 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue)
     }
     LocalLibrary::CreateDatabase(this->db);
 
-    this->indexer = new core::Indexer(
+    auto indexer = std::make_unique<core::Indexer>(
         this->GetLibraryDirectory(),
         this->GetDatabaseFilename());
 
     if (scheduleSyncDueToDbUpgrade) {
-        this->indexer->Schedule(IIndexer::SyncType::Local);
+        indexer->Schedule(IIndexer::SyncType::Local);
     }
 
-    this->thread = new std::thread(std::bind(&LocalLibrary::ThreadProc, this));
+    /* register only once schema and indexer startup have succeeded. */
+    if (this->messageQueue) {
+        this->messageQueue->Register(this);
+    }
+    try {
+        this->thread = new std::thread(std::bind(&LocalLibrary::ThreadProc, this));
+    }
+    catch (...) {
+        if (this->messageQueue) {
+            this->messageQueue->Unregister(this);
+        }
+        throw;
+    }
+    this->indexer = indexer.release();
 }
 
 LocalLibrary::~LocalLibrary() {
@@ -328,41 +338,58 @@ musik::core::IIndexer* LocalLibrary::Indexer() {
     return this->indexer;
 }
 
+static void requireSchema(bool valid) {
+    if (!valid) {
+        throw fs::filesystem_error("Could not initialize library schema", std::make_error_code(std::errc::io_error));
+    }
+}
+
+static void executeSchema(db::Connection& db, const char* sql) {
+    requireSchema(db.Execute(sql) == db::Okay);
+}
+
+static bool hasColumn(db::Connection& db, const char* table, const char* column) {
+    return sqlite3_table_column_metadata(db.NativeHandle(), "main", table, column,
+        nullptr, nullptr, nullptr, nullptr, nullptr) == SQLITE_OK;
+}
+
 static void upgradeV1toV2(db::Connection &db) {
     /* ensure each track has an external_id */
     {
-        db::ScopedTransaction transaction(db);
-
-        int64_t id;
-
+        int step;
         db::Statement update("UPDATE tracks SET external_id=? WHERE id=?", db);
         db::Statement query("SELECT id FROM tracks WHERE coalesce(external_id, '') == ''", db);
-        while (query.Step() == db::Row) {
-            id = query.ColumnInt64(0);
+        while ((step = query.Step()) == db::Row) {
+            const auto id = query.ColumnInt64(0);
             update.Reset();
             update.BindText(0, "local://" + std::to_string(id));
             update.BindInt64(1, id);
-            update.Step();
+            requireSchema(update.Step() == db::Done);
         }
+        requireSchema(step == db::Done);
     }
 
     /* update playlist_tracks.track_external_id */
-    std::string externalIdUpdate =
+    if (!hasColumn(db, "playlist_tracks", "track_id")) {
+        return;
+    }
+
+    const char* externalIdUpdate =
         "UPDATE playlist_tracks "
-        "SET track_external_id = ( "
+        "SET track_external_id = coalesce(( "
         "  SELECT tracks.external_id"
         "  FROM tracks"
-        "  WHERE playlist_tracks.track_id = tracks.id);";
+        "  WHERE playlist_tracks.track_id = tracks.id), track_external_id);";
 
-    db::Statement update(externalIdUpdate.c_str(), db);
-    update.Step();
+    db::Statement update(externalIdUpdate, db);
+    requireSchema(update.Step() == db::Done);
 }
 
 static void upgradeV2ToV3(db::Connection& db) {
-    db.Execute("DROP TABLE IF EXISTS albums");
-    db.Execute("DELETE from tracks");
+    executeSchema(db, "DROP TABLE IF EXISTS albums");
+    executeSchema(db, "DELETE from tracks");
 
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS albums ("
         "id INTEGER PRIMARY KEY,"
         "name TEXT default '',"
@@ -373,20 +400,20 @@ static void upgradeV2ToV3(db::Connection& db) {
 }
 
 static void upgradeV3ToV4(db::Connection& db) {
-    db.Execute("UPDATE tracks SET filetime=0");
+    executeSchema(db, "UPDATE tracks SET filetime=0");
     scheduleSyncDueToDbUpgrade = true;
 }
 
 static void upgradeV4ToV5(db::Connection& db) {
-    db.Execute("UPDATE tracks SET filetime=0");
-    db.Execute("UPDATE playlist_tracks SET sort_order=sort_order-1");
+    executeSchema(db, "UPDATE tracks SET filetime=0");
+    executeSchema(db, "UPDATE playlist_tracks SET sort_order=sort_order-1");
     scheduleSyncDueToDbUpgrade = true;
 }
 
 static void upgradeV5ToV6(db::Connection& db) {
-    db.Execute("UPDATE tracks SET filetime=0");
+    executeSchema(db, "UPDATE tracks SET filetime=0");
 
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS replay_gain ("
         "id INTEGER PRIMARY KEY,"
         "track_id INTEGER DEFAULT 0,"
@@ -399,38 +426,51 @@ static void upgradeV5ToV6(db::Connection& db) {
 }
 
 static void upgradeV6ToV7(db::Connection& db) {
-    LocalLibrary::InvalidateTrackMetadata(db);
+    requireSchema(LocalLibrary::InvalidateTrackMetadata(db));
     scheduleSyncDueToDbUpgrade = true;
 }
 
 static void upgradeV7ToV8(db::Connection& db) {
-    db.Execute("ALTER TABLE tracks ADD COLUMN directory_id INTEGER");
-    LocalLibrary::InvalidateTrackMetadata(db);
+    if (!hasColumn(db, "tracks", "directory_id")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN directory_id INTEGER");
+    }
+    requireSchema(LocalLibrary::InvalidateTrackMetadata(db));
     scheduleSyncDueToDbUpgrade = true;
 }
 
 static void upgradeV8ToV9(db::Connection& db) {
-    db.Execute("ALTER TABLE tracks ADD COLUMN rating INTEGER DEFAULT 0");
-    db.Execute("ALTER TABLE tracks ADD COLUMN last_played REAL DEFAULT null");
-    db.Execute("ALTER TABLE tracks ADD COLUMN play_count INTEGER DEFAULT 0");
-    db.Execute("ALTER TABLE tracks ADD COLUMN date_added REAL DEFAULT null");
-    db.Execute("ALTER TABLE tracks ADD COLUMN date_updated REAL DEFAULT null");
+    if (!hasColumn(db, "tracks", "rating")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN rating INTEGER DEFAULT 0");
+    }
+    if (!hasColumn(db, "tracks", "last_played")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN last_played REAL DEFAULT null");
+    }
+    if (!hasColumn(db, "tracks", "play_count")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN play_count INTEGER DEFAULT 0");
+    }
+    if (!hasColumn(db, "tracks", "date_added")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN date_added REAL DEFAULT null");
+    }
+    if (!hasColumn(db, "tracks", "date_updated")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN date_updated REAL DEFAULT null");
+    }
 }
 
 static void upgradeV9ToV10(db::Connection& db) {
-    db.Execute("UPDATE tracks set disc=1 where disc is null or disc like \"\"");
+    executeSchema(db, "UPDATE tracks set disc=1 where disc is null or disc like \"\"");
 }
 
 static void setVersion(db::Connection& db, int version) {
-    db.Execute("DELETE FROM version");
+    executeSchema(db, "DELETE FROM version");
     db::Statement stmt("INSERT INTO version VALUES(?)", db);
     stmt.BindInt32(0, version);
-    stmt.Step();
+    requireSchema(stmt.Step() == db::Done);
 }
 
-void LocalLibrary::CreateDatabase(db::Connection &db){
+static void createSchema(db::Connection& db) {
+    const bool existing = hasColumn(db, "tracks", "id");
     /* tracks */
-    const int created = db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS tracks ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "track INTEGER DEFAULT 0,"
@@ -457,59 +497,55 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "date_added REAL DEFAULT null,"
             "date_updated REAL DEFAULT null)");
 
-    if (created != SQLITE_OK) {
-        throw fs::filesystem_error("Could not initialize library schema", std::make_error_code(std::errc::io_error));
-    }
-
     /* genres tables */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS genres ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
             "aggregated INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0)");
 
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS track_genres ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "track_id INTEGER DEFAULT 0,"
             "genre_id INTEGER DEFAULT 0)");
 
     /* artist tables */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS artists ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
             "aggregated INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0)");
 
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS track_artists ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "track_id INTEGER DEFAULT 0,"
             "artist_id INTEGER DEFAULT 0)");
 
     /* arbitrary metadata */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS meta_keys ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT)");
 
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS meta_values ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "meta_key_id INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0,"
             "content TEXT)");
 
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS track_meta ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "track_id INTEGER DEFAULT 0,"
             "meta_value_id INTEGER DEFAULT 0)");
 
     /* albums */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS albums ("
             "id INTEGER PRIMARY KEY,"
             "name TEXT default '',"
@@ -517,19 +553,19 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "sort_order INTEGER DEFAULT 0)");
 
     /* indexer paths */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS paths ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "path TEXT default '')");
 
     /* browse directories */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS directories ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "name TEXT NOT NULL)");
 
     /* thumbnails */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS thumbnails ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "filename TEXT DEFAULT '',"
@@ -538,7 +574,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             ")");
 
     /* playlists */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS playlists ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT default '',"
@@ -546,7 +582,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             ")");
 
     /* playlist tracks */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS playlist_tracks ("
             "playlist_id INTEGER DEFAULT 0,"
             "track_external_id TEXT NOT NULL DEFAULT '',"
@@ -555,7 +591,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             ")");
 
     /* replay gain */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS replay_gain ("
         "id INTEGER PRIMARY KEY,"
         "track_id INTEGER DEFAULT 0,"
@@ -565,42 +601,35 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
         "track_peak REAL default 1.0)");
 
     /* version */
-    db.Execute("CREATE TABLE IF NOT EXISTS version (version INTEGER default 1)");
+    executeSchema(db, "CREATE TABLE IF NOT EXISTS version (version INTEGER default 1)");
 
-    int lastVersion = 1;
-
+    int lastVersion = existing ? 1 : DATABASE_VERSION;
     {
-        db::Statement stmt("SELECT * FROM version", db);
-
-        if (stmt.Step() != db::Row) {
-            /* create the initial version if one doesn't exist */
-            db::Statement insert("INSERT INTO version VALUES(1)", db);
-            insert.Step();
-        }
-        else {
-            lastVersion = stmt.ColumnInt32(0);
+        db::Statement statement("SELECT version FROM version", db);
+        const auto step = statement.Step();
+        requireSchema(step == db::Row || step == db::Done);
+        if (step == db::Row) {
+            lastVersion = statement.ColumnInt32(0);
         }
     }
 
-    /* upgrade 1: add "source_id", "visible", and "external_id" columns to tracks table */
-    int result = db.Execute("ALTER TABLE tracks ADD COLUMN source_id INTEGER DEFAULT 0");
-
-    if (result == db::Okay) {
-        db.Execute("UPDATE tracks SET source_id=0 WHERE source_id is null");
+    /* older catalogs can already contain some migration columns. */
+    if (!hasColumn(db, "tracks", "source_id")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN source_id INTEGER DEFAULT 0");
+        executeSchema(db, "UPDATE tracks SET source_id=0 WHERE source_id is null");
     }
-
-    result = db.Execute("ALTER TABLE tracks ADD COLUMN visible INTEGER DEFAULT 1");
-
-    if (result == db::Okay) {
-        db.Execute("UPDATE tracks SET visible=1 WHERE visible is null");
+    if (!hasColumn(db, "tracks", "visible")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN visible INTEGER DEFAULT 1");
+        executeSchema(db, "UPDATE tracks SET visible=1 WHERE visible is null");
     }
-
-    result = db.Execute("ALTER TABLE tracks ADD COLUMN external_id TEXT DEFAULT null");
+    if (!hasColumn(db, "tracks", "external_id")) {
+        executeSchema(db, "ALTER TABLE tracks ADD COLUMN external_id TEXT DEFAULT null");
+    }
 
     /* create our simplified, de-normalized track table view */
-    db.Execute("DROP VIEW IF EXISTS tracks_view");
+    executeSchema(db, "DROP VIEW IF EXISTS tracks_view");
 
-    db.Execute(
+    executeSchema(db,
         "CREATE VIEW tracks_view AS "
         "SELECT DISTINCT "
             " t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, "
@@ -615,11 +644,16 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             " t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ");
 
     /* ensure the 'track_external_id' column exists, then create the indexes */
-    db.Execute("ALTER TABLE playlist_tracks ADD COLUMN track_external_id TEXT NOT NULL DEFAULT ''");
-    db.Execute("ALTER TABLE playlist_tracks ADD COLUMN source_id INTEGER DEFAULT 0");
+    if (!hasColumn(db, "playlist_tracks", "track_external_id")) {
+        executeSchema(db, "ALTER TABLE playlist_tracks ADD COLUMN track_external_id TEXT NOT NULL DEFAULT ''");
+    }
+    if (!hasColumn(db, "playlist_tracks", "source_id")) {
+        executeSchema(db, "ALTER TABLE playlist_tracks ADD COLUMN source_id INTEGER DEFAULT 0");
+    }
 
-    /* add the extended metadata track view */
-    db.Execute(
+    /* rebuild the extended metadata track view. */
+    executeSchema(db, "DROP VIEW IF EXISTS extended_metadata");
+    executeSchema(db,
         "CREATE VIEW extended_metadata AS "
         "SELECT DISTINCT "
             "tracks.id, tracks.external_id, tracks.source_id, meta_keys.id AS meta_key_id, track_meta.meta_value_id, "
@@ -632,7 +666,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "meta_values.meta_key_id == meta_keys.id ");
 
     /* session play queue table */
-    db.Execute(
+    executeSchema(db,
         "CREATE TABLE IF NOT EXISTS last_session_play_queue ( "
             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
             "track_id INTEGER)");
@@ -674,10 +708,26 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
         upgradeV9ToV10(db);
     }
 
-    /* ensure our version is set correctly */
+    /* verify persisted queue and views before advancing the schema version. */
+    executeSchema(db, "SELECT track_id FROM last_session_play_queue ORDER BY id LIMIT 0");
+    executeSchema(db, "SELECT * FROM tracks_view LIMIT 0");
+    executeSchema(db, "SELECT * FROM extended_metadata LIMIT 0");
+    requireSchema(LocalLibrary::CreateIndexes(db));
     setVersion(db, DATABASE_VERSION);
+}
 
-    CreateIndexes(db);
+void LocalLibrary::CreateDatabase(db::Connection& db) {
+    const bool previousSync = scheduleSyncDueToDbUpgrade;
+    executeSchema(db, "BEGIN IMMEDIATE");
+    try {
+        createSchema(db);
+        executeSchema(db, "COMMIT");
+    }
+    catch (...) {
+        db.Execute("ROLLBACK");
+        scheduleSyncDueToDbUpgrade = previousSync;
+        throw;
+    }
 }
 
 void LocalLibrary::DropIndexes(db::Connection &db) {
@@ -708,41 +758,55 @@ void LocalLibrary::DropIndexes(db::Connection &db) {
     db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_3");
 }
 
-void LocalLibrary::CreateIndexes(db::Connection &db) {
-    db.Execute("CREATE INDEX IF NOT EXISTS paths_index ON paths (path)");
-
-    db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
-
-    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index2 ON track_genres (genre_id,track_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index1 ON track_artists (track_id,artist_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index2 ON track_artists (artist_id,track_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metakey_index2 ON meta_keys (id, name)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index2 ON meta_values (content)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index3 ON meta_values (id, meta_key_id, content)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index4 ON meta_values (id, content)");
-
-    db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS tracks_filename_index ON tracks (filename)");
-    db.Execute("CREATE INDEX IF NOT EXISTS tracks_dirty_index ON tracks (id, filename, filesize, filetime)");
-    db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_filetime_index ON tracks (external_id, filetime)");
-    db.Execute("CREATE INDEX IF NOT EXISTS tracks_by_source_index ON tracks (id, external_id, filename, source_id)");
-
-    db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_1 ON playlist_tracks (track_external_id,playlist_id,sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_2 ON playlist_tracks (track_external_id,sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_3 ON playlist_tracks (track_external_id)");
+static bool executeAll(db::Connection& db, std::initializer_list<const char*> statements) {
+    bool okay = true;
+    for (const auto* sql : statements) {
+        if (db.Execute(sql) != db::Okay) {
+            okay = false;
+        }
+    }
+    return okay;
 }
 
-void LocalLibrary::InvalidateTrackMetadata(db::Connection& db) {
-    db.Execute("UPDATE tracks SET filetime=0");
-    db.Execute("DELETE FROM track_meta;");
-    db.Execute("DELETE FROM meta_keys;");
-    db.Execute("DELETE FROM meta_values;");
+bool LocalLibrary::CreateIndexes(db::Connection &db) {
+    return executeAll(db, {
+        "CREATE INDEX IF NOT EXISTS paths_index ON paths (path)",
+
+        "CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)",
+        "CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)",
+        "CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)",
+        "CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)",
+
+        "CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)",
+        "CREATE INDEX IF NOT EXISTS trackgenre_index2 ON track_genres (genre_id,track_id)",
+        "CREATE INDEX IF NOT EXISTS trackartist_index1 ON track_artists (track_id,artist_id)",
+        "CREATE INDEX IF NOT EXISTS trackartist_index2 ON track_artists (artist_id,track_id)",
+        "CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)",
+        "CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)",
+        "CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)",
+        "CREATE INDEX IF NOT EXISTS metakey_index2 ON meta_keys (id, name)",
+        "CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)",
+        "CREATE INDEX IF NOT EXISTS metavalues_index2 ON meta_values (content)",
+        "CREATE INDEX IF NOT EXISTS metavalues_index3 ON meta_values (id, meta_key_id, content)",
+        "CREATE INDEX IF NOT EXISTS metavalues_index4 ON meta_values (id, content)",
+
+        "CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)",
+        "CREATE INDEX IF NOT EXISTS tracks_filename_index ON tracks (filename)",
+        "CREATE INDEX IF NOT EXISTS tracks_dirty_index ON tracks (id, filename, filesize, filetime)",
+        "CREATE INDEX IF NOT EXISTS tracks_external_id_filetime_index ON tracks (external_id, filetime)",
+        "CREATE INDEX IF NOT EXISTS tracks_by_source_index ON tracks (id, external_id, filename, source_id)",
+
+        "CREATE INDEX IF NOT EXISTS playlist_tracks_index_1 ON playlist_tracks (track_external_id,playlist_id,sort_order)",
+        "CREATE INDEX IF NOT EXISTS playlist_tracks_index_2 ON playlist_tracks (track_external_id,sort_order)",
+        "CREATE INDEX IF NOT EXISTS playlist_tracks_index_3 ON playlist_tracks (track_external_id)",
+    });
+}
+
+bool LocalLibrary::InvalidateTrackMetadata(db::Connection& db) {
+    return executeAll(db, {
+        "UPDATE tracks SET filetime=0",
+        "DELETE FROM track_meta;",
+        "DELETE FROM meta_keys;",
+        "DELETE FROM meta_values;",
+    });
 }

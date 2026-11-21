@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include <stdexcept>
+#include <system_error>
 #include "Playback.h"
 #include <musikcore/library/query/PersistedPlayQueueQuery.h>
 #include <musikcore/sdk/constants.h>
@@ -103,7 +103,10 @@ namespace musik {
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
                         PersistedPlayQueueQuery::Restore(library, playback));
 
-                    const auto restored = [&playback, prefs, query](auto q) {
+                    const auto restored = [&playback, prefs](const auto& query) {
+                        if (query->GetStatus() != db::IQuery::Finished) {
+                            return;
+                        }
                         int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
                         if (index >= 0) {
                             double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
@@ -119,7 +122,8 @@ namespace musik {
                     if (synchronous) {
                         library->EnqueueAndWait(query);
                         if (query->GetStatus() != db::IQuery::Finished) {
-                            throw std::runtime_error("Could not restore playback context");
+                            throw std::system_error(std::make_error_code(std::errc::io_error),
+                                "Could not restore playback context");
                         }
                         restored(query);
                     }

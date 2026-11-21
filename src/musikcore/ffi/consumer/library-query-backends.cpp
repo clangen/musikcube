@@ -181,8 +181,9 @@ namespace {
     template<typename Query, typename Result>
     class TrackReadCommand final : public query::QueryBase {
     public:
-        TrackReadCommand(const query::TrackReadBackend& backend, const Query& query, Result& result)
-            : backend(backend), query(query), result(result) {
+        TrackReadCommand(const query::TrackReadBackend& backend, const Query& query, Result& result,
+            const std::atomic_bool& canceled)
+            : backend(backend), query(query), result(result), canceled(canceled) {
             this->SetOptions(SuppressCompletionBroadcast);
         }
 
@@ -190,12 +191,13 @@ namespace {
 
     private:
         bool OnRun(musik::core::db::Connection&) override {
-            return this->backend.Run(this->query, this->result);
+            return this->backend.Run(this->query, this->result, this->canceled);
         }
 
         const query::TrackReadBackend& backend;
         const Query& query;
         Result& result;
+        const std::atomic_bool& canceled;
     };
 
     /* Inherits noncopyable and nonmovable ownership. */
@@ -204,12 +206,14 @@ namespace {
         explicit LocalTrackReadBackend(std::shared_ptr<musik::core::library::LocalLibrary> library)
             : library(std::move(library)), reader(query::OpenTrackReadBackend(this->library->GetDatabaseFilename())) {}
 
-        bool Run(const query::TrackSearchQuery& query, query::TrackSearchRows& rows) const override {
-            return this->Dispatch(query, rows);
+        bool Run(const query::TrackSearchQuery& query, query::TrackSearchRows& rows,
+            const std::atomic_bool& canceled) const override {
+            return this->Dispatch(query, rows, canceled);
         }
 
-        bool Run(const query::TrackPageQuery& query, query::ProjectedTrackPage& page) const override {
-            return this->Dispatch(query, page);
+        bool Run(const query::TrackPageQuery& query, query::ProjectedTrackPage& page,
+            const std::atomic_bool& canceled) const override {
+            return this->Dispatch(query, page, canceled);
         }
 
         bool Matches(const musik::core::ILibrary* selected) const override {
@@ -288,8 +292,8 @@ namespace {
 
     private:
         template<typename Query, typename Result>
-        bool Dispatch(const Query& query, Result& result) const {
-            const auto command = std::make_shared<TrackReadCommand<Query, Result>>(*this->reader, query, result);
+        bool Dispatch(const Query& query, Result& result, const std::atomic_bool& canceled) const {
+            const auto command = std::make_shared<TrackReadCommand<Query, Result>>(*this->reader, query, result, canceled);
             return this->library->EnqueueAndWait(command, musik::core::kWaitIndefinite) >= 0 &&
                 command->GetStatus() == musik::core::db::IQuery::Finished;
         }

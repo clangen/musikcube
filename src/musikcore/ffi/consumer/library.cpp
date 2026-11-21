@@ -20,10 +20,11 @@ namespace {
     mc_result submitLibraryRequest(mc_context *context, Work work, Completion completion,
         void *user_data, mc_request_id *out_request) {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
-        return submit_request(context, [=] { return work(*output); }, [=](mc_result result, void *data) {
+        const auto canceled = std::make_shared<std::atomic_bool>(false);
+        return submit_request(context, [=] { return work(*output, *canceled); }, [=](mc_result result, void *data) {
             const CompletionError error(result);
             completion(result, result == MC_OK ? output->release() : nullptr, error.Get(), data);
-        }, user_data, out_request);
+        }, user_data, out_request, canceled);
     }
 
     bool copyFields(const mc_string_view *fields, size_t count, size_t maximum,
@@ -38,19 +39,19 @@ namespace {
     }
 
     mc_result readPage(const LibraryIdentity &library, const query::TrackPageQuery &query,
-        std::unique_ptr<mc_track_page> &output) {
+        std::unique_ptr<mc_track_page> &output, const std::atomic_bool& canceled) {
         if (!library.backend) return MC_ERROR_UNSUPPORTED;
         auto page = std::unique_ptr<mc_track_page>(new mc_track_page);
-        if (!library.backend->Run(query, *page)) return MC_ERROR_IO;
+        if (!library.backend->Run(query, *page, canceled)) return MC_ERROR_IO;
         for (const auto& row : page->rows) if (row.id <= 0) return MC_ERROR_IO;
         output = std::move(page);
         return MC_OK;
     }
 
     mc_result openSearch(const std::shared_ptr<const LibraryIdentity> &library, const query::TrackSearchQuery &query,
-        std::unique_ptr<mc_track_result> &output) {
+        std::unique_ptr<mc_track_result> &output, const std::atomic_bool& canceled) {
         auto result = std::make_shared<TrackResultData>();
-        if (!library->backend->Run(query, *result)) return MC_ERROR_IO;
+        if (!library->backend->Run(query, *result, canceled)) return MC_ERROR_IO;
         if (!valid_ids(result->ids.data(), result->ids.size())) return MC_ERROR_IO;
         result->library = library;
         output.reset(new mc_track_result{ std::move(result) });
@@ -383,8 +384,8 @@ mc_result MC_CALL mc_library_query_tracks_async(
         std::vector<std::string> names;
         if (!copyFields(fields, count, limits.max_fields, names)) return MC_ERROR_INVALID_ARGUMENT;
         return submitLibraryRequest<mc_track_page>(context,
-            [=](std::unique_ptr<mc_track_page> &page) {
-                return readPage(*identity, { term, names, offset, page_limit }, page);
+            [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) {
+                return readPage(*identity, { term, names, offset, page_limit }, page, canceled);
             }, completion, user_data, out_request);
     });
 }
@@ -417,9 +418,9 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
         if (!identity->backend) return MC_ERROR_UNSUPPORTED;
 
         return submitLibraryRequest<mc_track_result>(context,
-            [=](std::unique_ptr<mc_track_result> &result) {
+            [=](std::unique_ptr<mc_track_result> &result, const std::atomic_bool& canceled) {
                 return openSearch(identity, { term, mode == MC_TRACK_SEARCH_REGEX,
-                    static_cast<query::TrackSortType>(order) }, result);
+                    static_cast<query::TrackSortType>(order) }, result, canceled);
             }, completion, user_data, out_request);
     });
 }
@@ -474,8 +475,8 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
                 std::move(names), true, completion, user_data, out_request);
         }
         return submitLibraryRequest<mc_track_page>(context,
-            [=](std::unique_ptr<mc_track_page> &page) -> mc_result {
-                if (size) return readPage(*data->library, { "", names, 0, size, data->ids.data() + start }, page);
+            [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) -> mc_result {
+                if (size) return readPage(*data->library, { "", names, 0, size, data->ids.data() + start }, page, canceled);
                 page.reset(new mc_track_page);
                 page->names = names;
                 return MC_OK;
@@ -528,9 +529,9 @@ mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_re
                 false, completion, user_data, out_request);
         }
         return submitLibraryRequest<mc_track_page>(context,
-            [=](std::unique_ptr<mc_track_page> &page) -> mc_result {
+            [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) -> mc_result {
                 /* A direct identity lookup distinguishes a removed row from missing tags. */
-                const auto status = readPage(*identity.library, { "", names, 0, 1, &identity.id, false }, page);
+                const auto status = readPage(*identity.library, { "", names, 0, 1, &identity.id, false }, page, canceled);
                 if (status != MC_OK) return status;
                 return page->rows.empty() ? MC_ERROR_NOT_FOUND : MC_OK;
             }, completion, user_data, out_request);

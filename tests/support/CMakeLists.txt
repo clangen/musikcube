@@ -272,7 +272,7 @@ if(WIN32)
 endif()
 add_dependencies(musikcube_tests musikcore_runtime_hardening_test)
 add_dependencies(musikcube_integration_tests musikcore_runtime_hardening_test)
-foreach(case IN ITEMS registry startup owner read_isolation database_failure)
+foreach(case IN ITEMS registry startup owner read_isolation locked_read_shutdown database_failure)
   add_test(NAME musikcore.integration.runtime.${case} COMMAND "${MUSIKCORE_TEST_NODE}"
     "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
     "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage ${case})
