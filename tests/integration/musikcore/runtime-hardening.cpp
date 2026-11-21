@@ -15,6 +15,7 @@ inspect the private factory because its numeric identity is not a public API. */
 #include <sqlite3.h>
 #include "../../support/host-wakeup.h"
 #include <string_view>
+#include <algorithm>
 
 namespace {
     using namespace musik::core;
@@ -135,6 +136,118 @@ namespace {
         std::filesystem::create_directories(directory);
         api::Context recovered(options);
         return TEST_CHECK(recovered.Services() == MC_SERVICE_PLUGINS) && TEST_CHECK(recovered.Close() == MC_OK);
+    }
+
+    /* use the same isolated catalog in separate processes so process-local
+    migration flags cannot accidentally make a restart test pass. */
+    std::string migrationFilename() {
+        const auto encoded = (std::filesystem::u8path(api::ReadPath(MC_PATH_DATA)) / "1" / "musik.db").u8string();
+        return std::string(reinterpret_cast<const char*>(encoded.data()), encoded.size());
+    }
+
+    /* inspect committed state through a private-cache WAL reader. joining the
+    legacy shared cache could block the very completion write being tested. */
+    int readMigrationValue(const char* sql) {
+        sqlite3* raw = nullptr;
+        const auto opened = sqlite3_open_v2(migrationFilename().c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_PRIVATECACHE, nullptr);
+        const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> database(raw, sqlite3_close);
+        if (!TEST_CHECK(opened == SQLITE_OK)) {
+            return -1;
+        }
+        sqlite3_busy_timeout(raw, 2000);
+        sqlite3_stmt* statement = nullptr;
+        const auto prepared = sqlite3_prepare_v2(raw, sql, -1, &statement, nullptr);
+        const std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)> owned(statement, sqlite3_finalize);
+        if (!TEST_CHECK(prepared == SQLITE_OK && sqlite3_step(statement) == SQLITE_ROW)) {
+            return -1;
+        }
+        return sqlite3_column_int(statement, 0);
+    }
+
+    /* seed fixed migration/failure state without adding test-only core APIs. */
+    bool editMigrationDatabase(const char* sql) {
+        sqlite3* raw = nullptr;
+        const auto opened = sqlite3_open_v2(migrationFilename().c_str(), &raw, SQLITE_OPEN_READWRITE, nullptr);
+        const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> database(raw, sqlite3_close);
+        return TEST_CHECK(opened == SQLITE_OK) &&
+            TEST_CHECK(sqlite3_exec(raw, sql, nullptr, nullptr, nullptr) == SQLITE_OK);
+    }
+
+    /* migrate without Indexer, then exit while the required scan remains pending.
+    a current-schema fixture with an older version exercises the real v6->v10
+    migration path without duplicating its full historical schema in tests. */
+    bool prepareMigration() {
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_LIBRARY;
+        {
+            api::Context fresh(options);
+        }
+        if (!editMigrationDatabase("UPDATE version SET version=6")) {
+            return false;
+        }
+        {
+            api::Context migrated(options);
+            mc_indexer_state state = MC_INDEXER_IDLE;
+            if (!TEST_CHECK(mc_indexer_get_state(migrated.Get(), &state) == MC_ERROR_UNSUPPORTED)) {
+                return false;
+            }
+        }
+        return TEST_CHECK(readMigrationValue("SELECT version FROM version") == 10) &&
+            TEST_CHECK(readMigrationValue("SELECT count(*) FROM pending_migration_scan") == 1);
+    }
+
+    /* start only Indexer and let startup resume pending work, without an explicit
+    scan request. a failed completion write must preserve the marker for another
+    process; successful retry must clear it in the committed scan transaction. */
+    bool resumeMigration(bool failCompletion) {
+        if (failCompletion) {
+            if (!editMigrationDatabase(
+                "CREATE TABLE migration_scan_attempts(count INTEGER);"
+                "INSERT INTO migration_scan_attempts VALUES(0);"
+                "CREATE TRIGGER defer_migration_scan BEFORE DELETE ON pending_migration_scan BEGIN "
+                "UPDATE migration_scan_attempts SET count=count+1;"
+                "SELECT RAISE(FAIL, 'test completion failure'); END;"))
+            {
+                return false;
+            }
+        }
+        else if (!editMigrationDatabase("DROP TRIGGER defer_migration_scan")) {
+            return false;
+        }
+
+        const std::unique_ptr<test_host_event, decltype(&test_host_event_destroy)> event(
+            test_host_event_create(), test_host_event_destroy);
+        if (!TEST_CHECK(bool(event))) {
+            return false;
+        }
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_INDEXER;
+        options.wakeup = test_host_event_signal;
+        options.wakeup_user_data = event.get();
+        api::Context context(options);
+        const auto complete = [&] {
+            return failCompletion
+                ? readMigrationValue("SELECT count FROM migration_scan_attempts") > 0
+                : readMigrationValue("SELECT count(*) FROM pending_migration_scan") == 0;
+        };
+        while (!complete()) {
+            if (!TEST_CHECK(test_host_event_wait(event.get())) || !TEST_CHECK(context.Dispatch() == MC_OK)) {
+                return false;
+            }
+        }
+        return TEST_CHECK(context.Shutdown() == MC_OK) &&
+            TEST_CHECK(readMigrationValue("SELECT count(*) FROM pending_migration_scan") == (failCompletion ? 1 : 0));
+    }
+
+    /* once completed, a fresh scanner stays stopped until a caller requests work;
+    the migration marker must not cause a perpetual scan on every startup. */
+    bool verifyMigrationComplete() {
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_INDEXER;
+        api::Context context(options);
+        mc_indexer_state state = MC_INDEXER_IDLE;
+        return TEST_CHECK(mc_indexer_get_state(context.Get(), &state) == MC_OK && state == MC_INDEXER_STOPPED) &&
+            TEST_CHECK(readMigrationValue("SELECT count(*) FROM pending_migration_scan") == 0);
     }
 
     /* a repeated name must keep its origin, while different catalogs need
@@ -350,7 +463,8 @@ namespace {
             int original = 0;
             if (!TEST_CHECK(opened == SQLITE_OK && sqlite3_exec(database.get(),
                 "SELECT version FROM version WHERE version=9 AND NOT EXISTS "
-                "(SELECT 1 FROM sqlite_master WHERE name='tracks');",
+                "(SELECT 1 FROM sqlite_master WHERE name='tracks') AND NOT EXISTS "
+                "(SELECT 1 FROM sqlite_master WHERE name='pending_migration_scan');",
                 [](void* data, int, char**, char**) {
                     ++*static_cast<int*>(data);
                     return 0;
@@ -468,6 +582,18 @@ int main(int argc, char** argv) {
         return 1;
     }
     const std::string_view mode(argv[1]);
+    if (mode == "migration_prepare") {
+        return prepareMigration() ? 0 : 1;
+    }
+    if (mode == "migration_fail_completion") {
+        return resumeMigration(true) ? 0 : 1;
+    }
+    if (mode == "migration_resume") {
+        return resumeMigration(false) ? 0 : 1;
+    }
+    if (mode == "migration_verify") {
+        return verifyMigrationComplete() ? 0 : 1;
+    }
     if (mode == "plugin_directory") {
         return checkPluginDirectory() ? 0 : 1;
     }

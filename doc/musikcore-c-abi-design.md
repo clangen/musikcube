@@ -391,6 +391,9 @@ For example, `options.services = MC_SERVICE_PLAYBACK;` starts playback, catalogs
 and providers, but indexing calls return `MC_ERROR_UNSUPPORTED`. A library-only
 context opens the writable configured catalog without initiating provider
 discovery or constructing an indexer. Its configured status still reflects saved scan roots.
+If an upgrade requires reindexing, the catalog records that requirement durably;
+a later context with Indexer enabled resumes the scan automatically. This does
+not enable Indexer implicitly in a library-only or playback-only context.
 Plugins alone initialize discovery; legacy metadata/environment bindings require
 Library, and playback remotes require Playback. They do not implicitly start
 missing host services. Service selection controls context-owned startup; it does

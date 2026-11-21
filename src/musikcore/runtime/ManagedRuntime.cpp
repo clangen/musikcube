@@ -185,6 +185,12 @@ namespace musik { namespace core { namespace ffi {
             if (this->playback) {
                 this->playback->Initialize(true);
             }
+            if (this->indexer) {
+                /* automatic scans must see fully constructed catalogs, provider
+                bindings, and event subscriptions before their workers start. */
+                std::static_pointer_cast<library::LocalLibrary>(this->local)->ResumePendingMigrationScan();
+            }
+
             this->notifier = std::thread([this, &context] {
                 std::unique_lock lock(this->mutex);
                 while (!this->stopping.load()) {

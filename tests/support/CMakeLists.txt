@@ -308,6 +308,13 @@ foreach(case IN ITEMS services plugin_directory registry startup owner read_isol
     LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
 endforeach()
 
+# separate processes are essential: a static migration flag cannot survive them.
+add_test(NAME musikcore.integration.runtime.migration_scan COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/check-migration-scan.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_runtime_hardening_test>")
+set_tests_properties(musikcore.integration.runtime.migration_scan PROPERTIES
+  LABELS "integration;musikcore;runtime;indexer;contract" TIMEOUT 45)
+
 if(UNIX AND CMAKE_NM)
   musikcube_restrict_exports(musikcore_runtime_hardening_test)
   get_property(export_targets GLOBAL PROPERTY MUSIKCUBE_RESTRICTED_TARGETS)

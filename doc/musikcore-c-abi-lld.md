@@ -1236,13 +1236,19 @@ legacy list for actions that still require it.
   Compile/run both against the relocated shared SDK in
   `musikcore.integration.api.installed_sdk`; retain daemon lifecycle and TUI tests.
 
+- [x] **API-SERVICES-004** Persist migration-required scanning with the catalog
+  transaction; resume it after service bindings/subscriptions are ready. Keep the
+  marker through failed completion writes and remove it with scan commit.
+  `musikcore.integration.runtime.migration_scan` runs library-only migration,
+  failed completion, successful retry, and no-repeat startup in separate processes.
+  `musikcore.integration.runtime.database_failure` checks schema/marker rollback.
 Selection is immutable for the context lifetime; ordinary scan and playback
 commands remain available. The dependency graph and rationale are in
 [ADR-0005](../docs/adr/0005-context-owned-production-runtime.md). Validation for
 this slice targets native macOS; Linux/Windows parity remains deferred by the
 maintainer. No plugin C SDK work is included.
 
-Native macOS arm64 validation: full Debug and Release suites pass 91/91;
+Native macOS arm64 validation: full Debug and Release suites pass 92/92;
 ABI-only Debug passes 29/29. These include daemon lifecycle, real headless
 plugin playback, local/remote parity, TUI scenarios, installed/relocated C/C++
 examples, standalone testing-disabled configuration, and exact binary exports.

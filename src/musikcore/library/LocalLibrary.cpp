@@ -40,6 +40,7 @@
 #include <musikcore/config.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/query/ConfiguredPathsQuery.h>
+#include <musikcore/library/query/MigrationScanQuery.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/library/Indexer.h>
@@ -51,7 +52,6 @@
 #include <filesystem>
 
 static const std::string TAG = "LocalLibrary";
-static bool scheduleSyncDueToDbUpgrade = false;
 
 using musik::core::sdk::fs::pathToUtf8;
 
@@ -119,9 +119,6 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue,
     std::unique_ptr<core::Indexer> indexer;
     if (enableIndexer) {
         indexer = std::make_unique<core::Indexer>(this->GetLibraryDirectory(), this->GetDatabaseFilename());
-        if (scheduleSyncDueToDbUpgrade) {
-            indexer->Schedule(IIndexer::SyncType::Local);
-        }
     }
 
     /* register only once schema and optional indexer startup have succeeded. */
@@ -176,6 +173,21 @@ void LocalLibrary::Close() {
         this->queueCondition.notify_all();
         thread->join();
         delete thread;
+    }
+}
+
+void LocalLibrary::ResumePendingMigrationScan() {
+    if (!this->indexer) {
+        return;
+    }
+
+    auto pending = std::make_shared<query::MigrationScanQuery>();
+    this->EnqueueAndWait(pending);
+    if (pending->GetStatus() != db::IQuery::Finished) {
+        throw std::system_error(std::make_error_code(std::errc::io_error), "Could not read pending migration scan");
+    }
+    if (pending->IsPending()) {
+        this->indexer->Schedule(IIndexer::SyncType::Local);
     }
 }
 
@@ -358,6 +370,12 @@ static void executeSchema(db::Connection& db, const char* sql) {
     requireSchema(db.Execute(sql) == db::Okay);
 }
 
+/* every migration requiring metadata repair records it in the same transaction. */
+static void requireMigrationScan(db::Connection& db) {
+    query::MigrationScanQuery pending(query::MigrationScanQuery::Operation::Require);
+    requireSchema(pending.Run(db));
+}
+
 static bool hasColumn(db::Connection& db, const char* table, const char* column) {
     return sqlite3_table_column_metadata(db.NativeHandle(), "main", table, column,
         nullptr, nullptr, nullptr, nullptr, nullptr) == SQLITE_OK;
@@ -406,18 +424,18 @@ static void upgradeV2ToV3(db::Connection& db) {
         "thumbnail_id INTEGER default 0,"
         "sort_order INTEGER DEFAULT 0)");
 
-    scheduleSyncDueToDbUpgrade = true;
+    requireMigrationScan(db);
 }
 
 static void upgradeV3ToV4(db::Connection& db) {
     executeSchema(db, "UPDATE tracks SET filetime=0");
-    scheduleSyncDueToDbUpgrade = true;
+    requireMigrationScan(db);
 }
 
 static void upgradeV4ToV5(db::Connection& db) {
     executeSchema(db, "UPDATE tracks SET filetime=0");
     executeSchema(db, "UPDATE playlist_tracks SET sort_order=sort_order-1");
-    scheduleSyncDueToDbUpgrade = true;
+    requireMigrationScan(db);
 }
 
 static void upgradeV5ToV6(db::Connection& db) {
@@ -432,12 +450,12 @@ static void upgradeV5ToV6(db::Connection& db) {
         "track_gain REAL default 1.0,"
         "track_peak REAL default 1.0)");
 
-    scheduleSyncDueToDbUpgrade = true;
+    requireMigrationScan(db);
 }
 
 static void upgradeV6ToV7(db::Connection& db) {
     requireSchema(LocalLibrary::InvalidateTrackMetadata(db));
-    scheduleSyncDueToDbUpgrade = true;
+    requireMigrationScan(db);
 }
 
 static void upgradeV7ToV8(db::Connection& db) {
@@ -445,7 +463,7 @@ static void upgradeV7ToV8(db::Connection& db) {
         executeSchema(db, "ALTER TABLE tracks ADD COLUMN directory_id INTEGER");
     }
     requireSchema(LocalLibrary::InvalidateTrackMetadata(db));
-    scheduleSyncDueToDbUpgrade = true;
+    requireMigrationScan(db);
 }
 
 static void upgradeV8ToV9(db::Connection& db) {
@@ -479,6 +497,10 @@ static void setVersion(db::Connection& db, int version) {
 
 static void createSchema(db::Connection& db) {
     const bool existing = hasColumn(db, "tracks", "id");
+
+    /* the marker commits with destructive migrations and survives hosts that
+    open catalogs without indexing services. schema creation itself needs no scan. */
+    executeSchema(db, "CREATE TABLE IF NOT EXISTS pending_migration_scan (id INTEGER PRIMARY KEY CHECK(id=1))");
 
     /* tracks */
     executeSchema(db,
@@ -728,7 +750,6 @@ static void createSchema(db::Connection& db) {
 }
 
 void LocalLibrary::CreateDatabase(db::Connection& db) {
-    const bool previousSync = scheduleSyncDueToDbUpgrade;
     executeSchema(db, "BEGIN IMMEDIATE");
     try {
         createSchema(db);
@@ -736,7 +757,6 @@ void LocalLibrary::CreateDatabase(db::Connection& db) {
     }
     catch (...) {
         db.Execute("ROLLBACK");
-        scheduleSyncDueToDbUpgrade = previousSync;
         throw;
     }
 }

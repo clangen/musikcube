@@ -57,3 +57,10 @@ process-lifetime plugin registry; it does not introduce module unloading.
 Session-scoped stream, codec, and visualizer caches retire after their workers
 stop, so a replacement session rediscovers enabled providers. Concurrent stream
 lookups retain a synchronized cache snapshot through factory use.
+
+Migration-required indexing belongs to the catalog rather than a process-local
+startup flag. A schema upgrade records that work transactionally even when
+Indexer is absent; a later indexing session resumes it after host bindings and
+subscriptions are ready. Completion retires the record with the scan transaction,
+so shutdown or a failed completion write cannot lose required work across
+processes.

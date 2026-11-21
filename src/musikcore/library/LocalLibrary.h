@@ -78,6 +78,8 @@ namespace musik { namespace core { namespace library {
             IResourceLocator& GetResourceLocator() override;
             bool IsConfigured() override;
 
+            /* call after provider bindings and catalog ownership are ready. */
+            void ResumePendingMigrationScan();
             ConnectionState GetConnectionState() const override { return ConnectionState::Connected; }
             Type GetType() const override { return Type::Local; }
             void Close() override;

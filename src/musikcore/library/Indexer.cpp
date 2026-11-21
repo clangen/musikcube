@@ -43,6 +43,7 @@
 #include <musikcore/library/track/IndexerTrack.h>
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/query/TrackMetadataQuery.h>
+#include <musikcore/library/query/MigrationScanQuery.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/db/Connection.h>
@@ -660,6 +661,15 @@ void Indexer::ThreadLoop() {
 
         this->FinalizeSync(context);
 
+        /* retire the requirement in the scan's final transaction. interrupted
+        or source-only scans cannot satisfy a local metadata migration. a failed
+        write leaves it pending for a later startup rather than losing the work. */
+        if (!this->Bail() && context.type != SyncType::Sources && context.sourceId == 0) {
+            library::query::MigrationScanQuery completed(library::query::MigrationScanQuery::Operation::Complete);
+            if (!completed.Run(this->dbConnection)) {
+                musik::debug::warning(TAG, "could not clear pending migration scan");
+            }
+        }
         this->trackTransaction.reset();
 
         this->dbConnection.Close();
