@@ -184,3 +184,15 @@ Transport and the window title now consume the playback engine's loaded track me
 Transport now uses the stream and playback snapshot for its caption. Immediate starts stay in buffering until audio is consumed. An intentionally prepared track still shows paused. The separate buffering timer is removed, and a buffering track can expose loaded metadata before playback starts. French, Italian, and Japanese now substitute the live state in their captions.
 
 The headless transport scenarios for both playback modes hold output for 900 ms and checks buffering with the title, playing, pause, resume, and stop. A test-only paced PCM output also verifies sample continuity at a gapless boundary and opposing gain envelopes during an automatic crossfade. All 55 Linux Release tests passed.
+
+## Track result and request review
+
+Browse and Directories submit typed category and path selections. A shared app request helper carries the selected catalog across retries, cancels replaced requests, and ignores stale replies. The request test delivers the older reply last and covers submission rejection, completion retry, and teardown. TrackListView retains selection and viewport presentation.
+
+Search now uses the same request lifecycle. Typing invalidates the previous completion immediately, and the input debounce starts the replacement query. Browse and Directories use one TrackListView::Show entry point with typed sources. Now Playing keeps the existing origin-bound queue snapshot and revision comparison.
+
+Lyrics uses playback's loaded title and artist and requests only embedded lyrics from the catalog. Playback separates track changes from stream progress and clears canceled startup tracks. Local and remote projection parity includes embedded lyrics. Older servers that omit projections may return no embedded lyrics and use the online fallback.
+
+The application now tracks input polling requests per window, so releasing one request leaves other visible page loads responsive. The skeptical review caught the polling registry's destruction order, duplicate startup notifications, and remote lyrics support. Regression coverage includes stale selection replies, startup cancellation, remote lyrics projection, and headless lyrics changes through playback and stop.
+
+Replacing the terminal input timeout with an event-driven wait is deferred.

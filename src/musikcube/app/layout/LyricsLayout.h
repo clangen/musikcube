@@ -19,6 +19,7 @@ namespace musik { namespace cube {
             DELETE_CLASS_DEFAULTS(LyricsLayout)
 
             explicit LyricsLayout(musik::core::api::Context& musikcore);
+            ~LyricsLayout() override;
 
             /* IWindow */
             void OnLayout() override;
@@ -33,17 +34,19 @@ namespace musik { namespace cube {
 
             void SetState(State state);
             void LoadLyricsForCurrentTrack();
+            void CancelLyrics();
             void UpdateAdapter();
 
             State state { State::NotPlaying };
             musik::core::api::Context& musikcore;
             musik::core::api::Playback playback;
             AsyncCallbackScope lyricsWork;
+            mc_request_id lyricsRequest {};
+            bool refreshLyrics { true };
             std::shared_ptr<cursespp::SimpleScrollAdapter> adapter;
             std::shared_ptr<cursespp::ListWindow> listView;
             std::shared_ptr<cursespp::TextLabel> infoText;
             cursespp::ShortcutsWindow* shortcuts;
-            int64_t currentTrackId;
             std::string currentLyrics;
             std::string trackTitle, trackArtist;
     };

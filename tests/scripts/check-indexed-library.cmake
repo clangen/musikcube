@@ -3,7 +3,10 @@
 if(DEFINED HTTP_DATASTREAM_PLUGIN)
   set(seed_duration --seconds 4)
 endif()
-execute_process(COMMAND "${NODE}" "${SEED_SCRIPT}" ${seed_duration} --indexer "${INDEXER}" "${BUILD_DIR}"
+if(BACKEND_PARITY)
+  set(seed_metadata --embedded-lyrics)
+endif()
+execute_process(COMMAND "${NODE}" "${SEED_SCRIPT}" ${seed_duration} ${seed_metadata} --indexer "${INDEXER}" "${BUILD_DIR}"
   RESULT_VARIABLE status OUTPUT_VARIABLE output ERROR_VARIABLE error
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(NOT status STREQUAL "0")

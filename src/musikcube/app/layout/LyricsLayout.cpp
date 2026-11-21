@@ -53,7 +53,6 @@ using namespace cursespp;
 
 LyricsLayout::LyricsLayout(api::Context& musikcore)
 : LayoutBase()
-, currentTrackId(-1LL)
 , musikcore(musikcore)
 , playback(musikcore.GetPlayback()) {
 
@@ -69,14 +68,20 @@ LyricsLayout::LyricsLayout(api::Context& musikcore)
 
     this->playback.SetChangedCallback([](void* data, mc_playback_event) {
         auto& view = *static_cast<LyricsLayout*>(data);
-        view.currentTrackId = -1;
+        /* A playback notification supersedes the old track, even across equal catalog IDs. */
+        view.refreshLyrics = true;
         if (view.IsVisible()) {
             view.LoadLyricsForCurrentTrack();
         }
         else {
-            view.lyricsWork.Invalidate();
+            view.CancelLyrics();
         }
     }, this, { MC_PLAYBACK_CHANGED_TRACK });
+}
+
+LyricsLayout::~LyricsLayout() {
+    this->playback.SetChangedCallback(nullptr);
+    this->CancelLyrics();
 }
 
 void LyricsLayout::OnLayout() {
@@ -104,7 +109,6 @@ void LyricsLayout::OnLyricsLoaded(std::string lyrics) {
 
 bool LyricsLayout::KeyPress(const std::string& kn) {
     if (Hotkeys::Is(Hotkeys::LyricsRetry, kn)) {
-        this->currentTrackId = -1;
         this->LoadLyricsForCurrentTrack();
         return true;
     }
@@ -127,45 +131,58 @@ bool LyricsLayout::KeyPress(const std::string& kn) {
 void LyricsLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
     if (visible) {
-        this->LoadLyricsForCurrentTrack();
+        if (this->refreshLyrics || this->state == State::Failed) {
+            this->LoadLyricsForCurrentTrack();
+        }
         this->FocusFirst();
+    }
+    else if (this->state == State::Loading) {
+        this->CancelLyrics();
+        this->refreshLyrics = true;
+    }
+}
+
+void LyricsLayout::CancelLyrics() {
+    this->lyricsWork.Invalidate();
+    if (this->lyricsRequest) {
+        this->musikcore.Cancel(std::exchange(this->lyricsRequest, 0));
     }
 }
 
 void LyricsLayout::LoadLyricsForCurrentTrack() {
+    this->CancelLyrics();
+    this->refreshLyrics = false;
+
     try {
         const auto track = this->playback.CurrentTrack();
         if (!track) {
-            this->lyricsWork.Invalidate();
             this->SetState(State::NotPlaying);
             return;
         }
-        if (track->Id() == this->currentTrackId) {
-            return;
-        }
 
-        this->currentTrackId = track->Id();
-        this->lyricsWork.Begin();
+        /* The engine already has the display tags. Only lyrics need a catalog read. */
+        const auto metadata = this->playback.CurrentTrackMetadata();
+        this->trackTitle = metadata ? metadata->Title() : std::string_view {};
+        this->trackArtist = metadata ? metadata->Artist() : std::string_view {};
         this->SetState(State::Loading);
-        api::ReadTrack(this->musikcore, *track, { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_LYRICS },
+        this->lyricsRequest = api::ReadTrack(this->musikcore, *track, { MC_TRACK_FIELD_LYRICS },
             this->lyricsWork.Wrap([this](mc_result status, api::TrackPage page, std::string_view) {
+                this->lyricsRequest = 0;
                 if (status != MC_OK || !page.Size()) {
                     this->SetState(State::Failed);
                     return;
                 }
 
-                const auto metadata = page.Track(0);
-                this->trackTitle = metadata.Title();
-                this->trackArtist = metadata.Artist();
-                const auto lyrics = metadata.Value(MC_TRACK_FIELD_LYRICS);
+                const auto lyrics = page.Track(0).Value(MC_TRACK_FIELD_LYRICS);
                 if (!lyrics.empty()) {
                     this->OnLyricsLoaded(std::string(lyrics));
                     return;
                 }
 
                 try {
-                    api::FindLyrics(this->musikcore, this->trackArtist, this->trackTitle,
+                    this->lyricsRequest = api::FindLyrics(this->musikcore, this->trackArtist, this->trackTitle,
                         this->lyricsWork.Wrap([this](mc_result status, std::string_view text) {
+                            this->lyricsRequest = 0;
                             this->OnLyricsLoaded(status == MC_OK ? std::string(text) : std::string{});
                         }));
                 }
@@ -193,12 +210,12 @@ void LyricsLayout::UpdateAdapter() {
 }
 
 void LyricsLayout::SetState(State state) {
+    this->state = state;
     switch (state) {
         case State::NotPlaying: {
                 this->listView->Hide();
                 this->infoText->Show();
                 this->infoText->SetText(_TSTR("lyrics_not_playing"));
-                this->currentTrackId = -1LL;
             }
             break;
         case State::Loading: {
@@ -221,7 +238,6 @@ void LyricsLayout::SetState(State state) {
                 this->infoText->SetText(u8fmt(
                     _TSTR("lyrics_lookup_failed"),
                     Hotkeys::Get(Hotkeys::LyricsRetry).c_str()));
-                this->currentTrackId = -1LL;
             }
             break;
     }

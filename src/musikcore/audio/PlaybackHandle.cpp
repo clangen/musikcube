@@ -260,9 +260,7 @@ public:
         std::lock_guard lock(this->service.playlistMutex);
         const auto& origin = this->service.playingOrigin;
         const auto& playing = this->service.playingTrack;
-        if (!playing || !origin || this->service.GetPlaybackState() == PlaybackState::Stopped ||
-            !this->service.MatchesOrigin(*origin))
-        {
+        if (!this->PlayingTrackAvailable(playing, origin)) {
             return MC_ERROR_NOT_FOUND;
         }
 
@@ -281,12 +279,7 @@ public:
             std::lock_guard lock(this->service.playlistMutex);
             const auto& origin = this->service.playingOrigin;
             playing = this->service.playingTrack;
-            const auto stream = this->service.GetTransport().GetStreamState();
-            const bool starting = stream == StreamState::Buffering || stream == StreamState::Buffered;
-            if (!playing || !origin ||
-                (this->service.GetPlaybackState() == PlaybackState::Stopped && !starting) ||
-                !this->service.MatchesOrigin(*origin))
-            {
+            if (!this->PlayingTrackAvailable(playing, origin)) {
                 return MC_ERROR_NOT_FOUND;
             }
         }
@@ -460,6 +453,15 @@ public:
     }
 
 private:
+    bool PlayingTrackAvailable(const TrackPtr& track, const std::shared_ptr<const LibraryIdentity>& origin) const {
+        if (!track || !origin || !this->service.MatchesOrigin(*origin)) {
+            return false;
+        }
+        const auto stream = this->service.GetTransport().GetStreamState();
+        return stream == StreamState::Buffering || stream == StreamState::Buffered ||
+            this->service.GetPlaybackState() != PlaybackState::Stopped;
+    }
+
     bool QueueOriginAvailable() const {
         const auto& origin = this->service.queueOrigin;
         return !origin || this->service.MatchesOrigin(*origin);
@@ -574,12 +576,19 @@ mc_result PlaybackService::OpenHandle(mc_playback** out) {
 }
 
 void PlaybackService::InvalidateDisconnectedCatalog() {
-    std::lock_guard lock(this->playlistMutex);
-    if (!this->queueOrigin || this->MatchesOrigin(*this->queueOrigin)) {
-        return;
+    {
+        std::lock_guard lock(this->playlistMutex);
+        const bool staleQueue = this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin);
+        const bool staleTrack = this->playingOrigin && !this->MatchesOrigin(*this->playingOrigin);
+        if (!staleQueue && !staleTrack) {
+            return;
+        }
+
+        /* Reconnecting does not make a prior connection's queue IDs valid. */
+        this->Stop();
+        this->Edit().Clear();
     }
 
-    /* Reconnecting does not make a prior connection's queue IDs valid. */
-    this->Stop();
-    this->Edit().Clear();
+    /* A terminal stream event can be filtered once its catalog is disconnected. */
+    this->OnTrackChanged(SIZE_MAX, {});
 }

@@ -231,6 +231,13 @@ if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGE
     set_tests_properties(musikcube.ui.${scenario} PROPERTIES
       LABELS "ui;musikcube;${scenario}" TIMEOUT 90)
   endforeach()
+  if(TARGET nullout)
+    add_test(NAME musikcube.ui.lyrics COMMAND "${MUSIKCORE_TEST_NODE}"
+      "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/lyrics.js"
+      --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:musikcube>" --tracks 20)
+    set_tests_properties(musikcube.ui.lyrics PROPERTIES
+      LABELS "ui;musikcube;lyrics" TIMEOUT 30)
+  endif()
   if(TARGET musikcore_pcm_capture_output)
     add_dependencies(musikcube_ui_tests musikcore_pcm_capture_output)
     foreach(mode IN ITEMS gapless crossfade)

@@ -953,6 +953,41 @@ namespace {
             {
                 return playbackFailure(__LINE__);
             }
+
+            /* Cancel an immediate start before the transport ever enters Playing. */
+            stateTransport->PlaybackEvent(sdk::PlaybackState::Stopped);
+            stateMessages.Dispatch();
+            stateMessages.Dispatch();
+            unsigned trackChanges = 0;
+            const mc_playback_event trackEvent = MC_PLAYBACK_CHANGED_TRACK;
+            if (mc_playback_set_changed_callback(statePlayback.Get(), [](void* data, mc_playback_event) {
+                ++*static_cast<unsigned*>(data);
+            }, &trackChanges, &trackEvent, 1) != MC_OK || statePlayback.Play(result, 1) != MC_OK)
+            {
+                return playbackFailure(__LINE__);
+            }
+
+            stateTransport->state = sdk::PlaybackState::Stopped;
+            for (const auto stream : { sdk::StreamState::Buffering, sdk::StreamState::Buffered }) {
+                stateTransport->stream = stream;
+                stateTransport->StreamEvent(stream, stateTransport->Uri());
+                stateMessages.Dispatch();
+                stateMessages.Dispatch();
+                if (trackChanges != 1 || !statePlayback.CurrentTrack()) {
+                    return playbackFailure(__LINE__);
+                }
+            }
+
+            if (statePlayback.Control(MC_PLAYBACK_STOP) != MC_OK) {
+                return playbackFailure(__LINE__);
+            }
+            stateTransport->StreamEvent(sdk::StreamState::Stopped, stateTransport->Uri());
+            stateMessages.Dispatch();
+            stateMessages.Dispatch();
+            if (trackChanges != 2 || statePlayback.CurrentTrack() || stateService.GetPlaying()) {
+                return playbackFailure(__LINE__);
+            }
+            statePlayback.SetChangedCallback(nullptr);
         }
         return playback->Control(MC_PLAYBACK_STOP) == MC_ERROR_NOT_FOUND &&
             playback->SetChangedCallback(nullptr) == MC_ERROR_NOT_FOUND &&

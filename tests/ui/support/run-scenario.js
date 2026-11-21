@@ -14,6 +14,7 @@ const TRACK_COUNT = 10000;
 const { FIRST_TRACK, SECOND_TRACK, FILTERED_LAST, DISTANT_TRACK, DOWN } = require('./catalog');
 const { checkSearch, checkSortOrder } = require('../scenarios/track-search');
 const { stageLocale, checkLocale } = require('../scenarios/locale');
+const { checkLyrics } = require('../scenarios/lyrics');
 const { appendToQueue, checkQueue } = require('../scenarios/queue');
 const { checkTransport } = require('../scenarios/transport');
 const { checkPlaylists } = require('../scenarios/playlists');
@@ -21,7 +22,7 @@ const { checkBrowse } = require('../scenarios/browse');
 const { checkSettings } = require('../scenarios/settings');
 
 /* Stage the production app/assets with only the plugins required to index the generated fixture. */
-function stageRuntime(runtime, binaryDir, testSettings) {
+function stageRuntime(runtime, binaryDir, { settings, lyrics }) {
   for (const name of fs.readdirSync(binaryDir)) {
     if (['lib', 'locales', 'share', 'themes'].includes(name) || name.startsWith('libmusikcore')) {
       fs.symlinkSync(fs.realpathSync(join(binaryDir, name)), join(runtime, name));
@@ -35,20 +36,22 @@ function stageRuntime(runtime, binaryDir, testSettings) {
   fs.mkdirSync(join(runtime, 'plugins'));
   for (const name of fs.readdirSync(join(binaryDir, 'plugins'))) {
     if (/^lib(?:taglibreader|ffmpegdecoder)\./.test(name) ||
-        (testSettings && /^lib(?:nullout|supereqdsp|server)\./.test(name))) {
+        (settings && /^lib(?:nullout|supereqdsp|server)\./.test(name)) ||
+        (lyrics && /^libnullout\./.test(name))) {
       fs.symlinkSync(fs.realpathSync(join(binaryDir, 'plugins', name)), join(runtime, 'plugins', name));
     }
   }
 }
 
 /* Run the production indexer with a retained log and resolve its generated database path. */
-async function seedLibrary(runtime, build, tracks) {
+async function seedLibrary(runtime, build, tracks, lyrics) {
   const log = join(runtime, 'indexer.log');
   const output = fs.openSync(log, 'w');
   try {
     const child = spawn(process.execPath, [
       join(SOURCE, 'tests/scripts/seed-test-library.js'),
       '--tracks', String(tracks),
+      ...(lyrics ? ['--embedded-lyrics', '--seconds', '8'] : []),
       '--indexer', join(runtime, 'musikcube_seed_library'),
       '--fixture-dir', runtime, build,
     ], { timeout: 330000, stdio: ['ignore', output, output] });
@@ -170,6 +173,7 @@ async function checkWorkflow(runtime, database, screenshots,
       await checkSettings(terminal, { staged, hasServer });
     }
     if (!pilot && scenario === 'locale') await checkLocale(terminal);
+    if (!pilot && scenario === 'lyrics') await checkLyrics(terminal);
 
     /* The driver must observe a clean application exit, not just a screen that
        happened to match before a shutdown crash. */
@@ -206,14 +210,14 @@ async function main(defaultScenario) {
   });
 
   if (values.help) {
-    console.log(`Usage: node ${basename(process.argv[1])} [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|settings|locale|transport|all] [--capture-output <path>] [--playback-mode gapless|crossfade] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]`);
+    console.log(`Usage: node ${basename(process.argv[1])} [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|settings|locale|lyrics|transport|all] [--capture-output <path>] [--playback-mode gapless|crossfade] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]`);
     return;
   }
   if (!['linux', 'darwin'].includes(process.platform)) {
     throw new Error('This test requires script on Linux or macOS');
   }
 
-  if (!['search', 'queue', 'playlists', 'browse', 'settings', 'locale', 'transport', 'all'].includes(values.scenario)) {
+  if (!['search', 'queue', 'playlists', 'browse', 'settings', 'locale', 'lyrics', 'transport', 'all'].includes(values.scenario)) {
     throw new Error('Unknown UI scenario: ' + values.scenario);
   }
   if (values.scenario === 'transport' && !values['capture-output']) {
@@ -262,7 +266,8 @@ async function main(defaultScenario) {
   await withRuntime(runtime, async () => {
     /* Stage each implementation separately to prevent loading the wrong core
        library while retaining the same catalog for comparison runs. */
-    stageRuntime(runtime, resolve(values['bin-dir']), ['all', 'settings'].includes(values.scenario));
+    const lyrics = values.scenario === 'lyrics';
+    stageRuntime(runtime, resolve(values['bin-dir']), { settings: ['all', 'settings'].includes(values.scenario), lyrics });
     if (values.scenario === 'locale') stageLocale(runtime);
     if (values.scenario === 'transport') {
       const output = fs.realpathSync(values['capture-output']);
@@ -285,7 +290,7 @@ async function main(defaultScenario) {
     /* Index once outside measured interactions; reseeding per launch would
        dominate runtime and make cache/viewport comparisons harder to interpret. */
     const started = performance.now();
-    const database = await seedLibrary(runtime, build, tracks);
+    const database = await seedLibrary(runtime, build, tracks, lyrics);
     const fixture = dirname(dirname(dirname(database)));
     const seedMs = performance.now() - started;
 

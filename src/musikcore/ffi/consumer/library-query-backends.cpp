@@ -434,7 +434,8 @@ namespace {
             for (const auto &field : fields) {
                 if (field != MC_TRACK_FIELD_ID && field != MC_TRACK_FIELD_TITLE && field != MC_TRACK_FIELD_ARTIST &&
                     field != MC_TRACK_FIELD_ALBUM && field != MC_TRACK_FIELD_DURATION &&
-                    field != MC_TRACK_FIELD_TRACK && field != MC_TRACK_FIELD_RATING) return MC_ERROR_UNSUPPORTED;
+                    field != MC_TRACK_FIELD_TRACK && field != MC_TRACK_FIELD_RATING &&
+                    field != MC_TRACK_FIELD_LYRICS) return MC_ERROR_UNSUPPORTED;
             }
 
             if (ids.empty()) {

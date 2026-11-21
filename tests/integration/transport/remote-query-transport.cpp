@@ -772,6 +772,30 @@ namespace {
                 return failure(__LINE__);
             }
         }
+        /* Embedded lyrics use the same projected query across the socket. */
+        for (bool overRemote : { false, true }) {
+            const auto& tracks = overRemote ? remoteTracks : localTracks;
+            auto& page = overRemote ? remotePage : localPage;
+            const auto expected = calls + 1;
+            ReadTracks(context, tracks, { 0, 2, { MC_TRACK_FIELD_LYRICS } }, receivePage(page));
+            if (!dispatch(expected) || page.Size() != 2) {
+                return failure(__LINE__);
+            }
+        }
+        size_t lyricsCount = 0;
+        for (size_t row = 0; row < localPage.Size(); ++row) {
+            const auto value = localPage.Track(row).Value(MC_TRACK_FIELD_LYRICS);
+            if (value != remotePage.Track(row).Value(MC_TRACK_FIELD_LYRICS) ||
+                (!value.empty() && value != "Fixture lyrics for track 1"))
+            {
+                return failure(__LINE__);
+            }
+            lyricsCount += !value.empty();
+        }
+        if (lyricsCount != 1) {
+            return failure(__LINE__);
+        }
+
         const auto beforeUnsupported = calls;
         const auto emptyRemote = MakeTrackResult(*remote, nullptr, 0);
         try {
@@ -942,6 +966,33 @@ namespace {
         report("local_playlist_10000", localPlaylistTimes);
         report("remote_playlist_10000", remotePlaylistTimes);
         report("replace_queue_10000", queueTimes);
+
+        /* A lost catalog must clear a buffering track even without a stop event. */
+        unsigned trackChanges = 0;
+        const std::vector trackEvents { MC_PLAYBACK_CHANGED_TRACK };
+        if (playback.SetChangedCallback([](void* data, mc_playback_event) {
+                ++*static_cast<unsigned*>(data);
+            }, &trackChanges, trackEvents) != MC_OK ||
+            playback.Play(queueTracks, 0) != MC_OK || transport->Uri().empty())
+        {
+            return failure(__LINE__);
+        }
+        transport->state = sdk::PlaybackState::Stopped;
+        transport->stream = sdk::StreamState::Buffering;
+        transport->StreamEvent(sdk::StreamState::Buffering, transport->Uri());
+        playbackMessages.Dispatch();
+        playbackMessages.Dispatch();
+        if (trackChanges != 1 || !playback.CurrentTrack()) {
+            return failure(__LINE__);
+        }
+        appRemote->Disconnect();
+        service.InvalidateDisconnectedCatalog();
+        playbackMessages.Dispatch();
+        playbackMessages.Dispatch();
+        if (trackChanges != 2 || playback.CurrentTrack() || service.GetPlaying()) {
+            return failure(__LINE__);
+        }
+        playback.SetChangedCallback(nullptr);
 
         /* Hold a reply across disconnect and reconnect before opening the replacement library. */
         TrackResult lateTracks;

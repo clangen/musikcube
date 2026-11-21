@@ -113,8 +113,8 @@ typedef struct mc_playback_snapshot {
 /* Sample the session on its owner thread. On failure, snapshot remains unchanged. */
 MC_API mc_result MC_CALL mc_playback_get_snapshot(const mc_playback *playback, mc_playback_snapshot *snapshot);
 
-/* Return an owned reference to the current track in an empty output slot.
-   Returns MC_ERROR_NOT_FOUND when stopped or when the track's origin is unavailable. */
+/* Return an owned reference to the active or buffering track in an empty output
+   slot. Returns MC_ERROR_NOT_FOUND if the track or its origin is unavailable. */
 MC_API mc_result MC_CALL mc_playback_get_current_track(const mc_playback* playback, mc_track_ref** out_track);
 
 /* On the owner thread, copy the active or buffering track's loaded title, artist,
@@ -126,6 +126,7 @@ MC_API mc_result MC_CALL mc_playback_get_current_track_metadata(const mc_playbac
     mc_track_page** out_page);
 
 typedef enum mc_playback_event {
+    /* The active track changed or became unavailable. Stream progress has its own event. */
     MC_PLAYBACK_CHANGED_TRACK = 1,
     MC_PLAYBACK_CHANGED_STATE,
     MC_PLAYBACK_CHANGED_STREAM,

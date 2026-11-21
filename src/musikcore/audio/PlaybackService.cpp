@@ -198,12 +198,14 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
         this->messageQueue.Remove(this, type);
     }
 
+    bool hadPlayingTrack;
     {
         std::lock_guard lock(this->playlistMutex);
         this->playlist.ResetForLibrary(library);
         this->unshuffled.ResetForLibrary(library);
         this->queueOrigin.reset();
         this->playingOrigin.reset();
+        hadPlayingTrack = bool(this->playingTrack);
         this->playingTrack.reset();
         this->index = this->nextIndex = NO_POSITION;
         this->seekPosition = -1.0;
@@ -211,6 +213,9 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
         ++this->queueRevision;
     }
 
+    if (hadPlayingTrack) {
+        this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_TRACK);
+    }
     this->library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
     POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
 }
@@ -405,6 +410,14 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
 
         if (raiseStreamEvent) {
+            const auto stream = this->transport->GetStreamState();
+            if (this->transport->GetPlaybackState() == PlaybackState::Stopped &&
+                (stream == StreamState::Destroyed || stream == StreamState::Stopped ||
+                 stream == StreamState::OpenFailed))
+            {
+                /* Canceling startup can end the stream without a playback-state change. */
+                this->OnTrackChanged(NO_POSITION, {});
+            }
             this->StreamStateChanged(eventType);
             this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_STREAM);
         }
@@ -561,10 +574,12 @@ void PlaybackService::NotifyRemotesModeChanged() {
 }
 
 void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
+    bool changed;
     {
         std::lock_guard lock(this->playlistMutex);
         /* Keep the track's origin across queue edits and legacy backend switches. */
-        if (this->playingTrack != track) {
+        changed = this->playingTrack != track;
+        if (changed) {
             this->playingOrigin = track
                 ? (this->queueOrigin ? this->queueOrigin : this->CaptureOrigin(track->LibraryId()))
                 : nullptr;
@@ -572,7 +587,9 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
         }
     }
     this->TrackChanged(this->index, track);
-    this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_TRACK);
+    if (changed) {
+        this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_TRACK);
+    }
     this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYED);
     this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYING);
 

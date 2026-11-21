@@ -45,16 +45,20 @@ function chunk(id, data) {
 
 /* Encode one ID3v2.3 text frame, including its encoding byte and big-endian payload length. */
 function id3TextFrame(id, value) {
-  const text = Buffer.from(value);
-  const header = Buffer.alloc(11);
+  return id3Frame(id, Buffer.concat([Buffer.alloc(1), Buffer.from(value)]));
+}
+
+function id3Frame(id, payload) {
+  const header = Buffer.alloc(10);
   header.write(id);
-  header.writeUInt32BE(text.length + 1, 4);
-  return Buffer.concat([header, text]);
+  header.writeUInt32BE(payload.length, 4);
+  return Buffer.concat([header, payload]);
 }
 
 /* Build deterministic optional metadata so indexed fixtures exercise present, absent, and multivalue tags. */
-function id3Tag(album, track) {
+function id3Tag(album, track, lyrics) {
   const frames = [id3TextFrame('TALB', album)];
+  if (lyrics) frames.push(id3Frame('USLT', Buffer.from('\0eng\0' + lyrics)));
   for (const [index, [id, values]] of extraTags.entries()) {
     if ((track + index) % 4 === 0) continue;
     const value = Array.isArray(values) ? values[(track - 1) % values.length] : values;
@@ -69,7 +73,7 @@ function id3Tag(album, track) {
 }
 
 /* Generate a silent WAV in memory with RIFF and ID3 tags read by the production indexer. */
-function wave({ title, artist, album, genre, track }, seconds) {
+function wave({ title, artist, album, genre, track, lyrics }, seconds) {
   const format = Buffer.alloc(16);
   format.writeUInt16LE(1, 0);
   format.writeUInt16LE(1, 2);
@@ -89,15 +93,16 @@ function wave({ title, artist, album, genre, track }, seconds) {
   ]);
   return chunk('RIFF', Buffer.concat([
     Buffer.from('WAVE'), chunk('fmt ', format), chunk('LIST', info),
-    chunk('ID3 ', id3Tag(album, track)), chunk('data', Buffer.alloc(16000 * seconds)),
+    chunk('ID3 ', id3Tag(album, track, lyrics)), chunk('data', Buffer.alloc(16000 * seconds)),
   ]));
 }
 
 /* Write either the small named contract fixture or a larger deterministic artist/album catalog. */
-function writeMedia(media, count, seconds) {
+function writeMedia(media, count, seconds, embeddedLyrics) {
   if (count === 2) {
     writeFileSync(join(media, '01-morning.wav'), wave({
       title: 'Morning Light', artist: 'Fixture Artist', album: 'Fixture Album', genre: 'Ambient', track: 1,
+      lyrics: embeddedLyrics ? 'Fixture lyrics for track 1' : undefined,
     }, seconds));
     writeFileSync(join(media, '02-evening.wav'), wave({
       title: 'Evening Flight', artist: 'Fixture Artist', album: 'Fixture Album', genre: 'Electronic', track: 2,
@@ -118,8 +123,9 @@ function writeMedia(media, count, seconds) {
     for (let i = start; i < Math.min(count, start + tracksPerAlbum); ++i) {
       const track = i - start + 1;
       const title = `${album} - Track ${String(track).padStart(2, '0')}`;
+      const lyrics = embeddedLyrics ? `Fixture lyrics for track ${track}` : undefined;
       writeFileSync(join(directory, `${String(track).padStart(2, '0')}.wav`),
-        wave({ title, artist, album, genre, track }, seconds));
+        wave({ title, artist, album, genre, track, lyrics }, seconds));
     }
   }
 }
@@ -141,6 +147,7 @@ function main() {
     options: {
       tracks: { type: 'string', default: '2' },
       seconds: { type: 'string', default: '1' },
+      'embedded-lyrics': { type: 'boolean' },
       indexer: { type: 'string' },
       'fixture-dir': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
@@ -148,7 +155,7 @@ function main() {
     allowPositionals: true,
   });
   if (values.help) {
-    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--seconds <duration>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
+    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--seconds <duration>] [--embedded-lyrics] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
     return;
   }
 
@@ -180,7 +187,7 @@ function main() {
   mkdirSync(media);
 
   console.log(`Generating ${count} fixture tracks under ${root}`);
-  writeMedia(media, count, seconds);
+  writeMedia(media, count, seconds, values['embedded-lyrics']);
 
   /* Stage plugins and redirect preferences before starting production code so
      indexing cannot discover user paths or unrelated installed audio plugins. */
