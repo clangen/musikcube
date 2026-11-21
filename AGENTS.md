@@ -25,11 +25,15 @@
 - Use the root `.clang-format` for incremental C/C++ formatting of selected files. Review the diff, including inserted braces. Preserve the spaced nested-namespace closings required below; clang-format currently compacts those closings. Its indented-access-label setting also adds an extra level to structs without explicit access labels.
 - Reuse existing helpers and follow the surrounding code's conventions. Introduce an abstraction when it simplifies real callers.
 - Write nested C++ namespace declarations on one line, such as `namespace musik { namespace core { namespace audio {`. Indent the body once and close with `} } }` on one line.
+- Expose process-service lifecycle through namespace-level functions and fully qualify lifecycle calls at their call sites. Keep calls on owned instances explicit through their owning object.
+- Use `Initialize` and `Shutdown` for service lifecycle methods. Name separate service attachment phases `BindServices` and `UnbindServices`.
 - Use PascalCase for C++ member functions, including private members. Follow the surrounding code for file-local helpers, which commonly use lower camelCase. Keep exported C ABI functions in snake_case.
 - Let the code explain what it does. As you write or revise longer functions, add terse, technical comments at phase boundaries and branching handoffs to make the flow easy to follow. Explain decisions where the reason is otherwise unclear.
 - Use blank lines to separate distinct steps in a function. Keep closely related statements together and give transitions between phases room to stand out.
 - Name constants for public keys, limits, sentinel values, and positional indices whose meaning matters. Reuse the same definition across callers. Keep local constants near their use, and leave obvious literals inline.
 - Group related message IDs in one place. Declare class-scoped message IDs together near the top of the class definition in its header.
+- Write comment prose in lowercase with normal punctuation. Preserve symbol names verbatim. Align wrapped comment text with the opening `/*`, without extra continuation indentation.
+- Prefer `musik::debug` for production diagnostics when available. Keep direct stderr output for test assertions or boundaries that cannot depend on that logger.
 - Use `/* comment */` where the language supports block comments. Use `//` only when necessary and the language's native syntax where block comments are unavailable.
 - Keep platform and compiler differences near setup. Pass the resulting options into shared build and application code.
 - Make ownership, cleanup, and error handling explicit at resource and thread boundaries.
@@ -40,7 +44,9 @@
 - Protect all database operations from SQL injection. Use prepared statements and bind every variable value, including each value in an `IN` list. Select SQL identifiers and syntax from fixed fragments or explicit allowlists. Use direct execution only for fixed SQL with no variable values.
 - Verify changes through their normal entry point. Add tests as you go for useful contracts and regressions that existing tests miss. Each test should protect behavior that matters.
 - After a major C or C++ refactor, ask whether the user wants an independent critical C/C++ reviewer. Run the review when the user requests it, including on demand outside a refactor. Require concrete pros and cons, before-and-after examples, and meaningful measurements where available. Identify remaining risks and gaps in verification. For each substantive criticism, propose a practical improvement when possible and explain its tradeoffs. An overall verdict alone is insufficient.
-- When completing a backlog section, capture meaningful architectural discussions and decisions as individual, numbered Markdown ADRs under `docs/adr/`, linked from the relevant design document. Explain the goal and problem that led to the decision, relevant alternatives, why the chosen approach fits, how it will be introduced, and its consequences; include status. Keep implementation tasks and routine progress in the LLD/checklist. Do not split one cohesive decision into several policy notes or duplicate decisions already recorded.
+- When completing a backlog section, capture meaningful architectural discussions and decisions as individual, numbered Markdown ADRs under `docs/adr/`, linked from the relevant design document. Explain the goal and problem that led to the decision, relevant alternatives, why the chosen approach fits, and its architectural consequences; include status. Keep implementation tasks and routine progress in the LLD/checklist. Do not split one cohesive decision into several policy notes or duplicate decisions already recorded.
+
+- Keep ADRs focused on architectural choices and their rationale. Put transitional implementation routes, temporary workarounds, build/artifact wiring, validation exceptions, and progress in the LLD. Update an accepted ADR when the architectural decision changes, not whenever its implementation plan changes.
 
 ## Build scripts
 
