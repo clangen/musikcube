@@ -9,7 +9,6 @@
 #include <string>
 
 struct LibraryIdentity;
-namespace musik { namespace core { namespace audio { class PlaybackService; } } }
 namespace musik { namespace core { class IIndexer; } }
 
 namespace musik { namespace core { namespace ffi {
@@ -29,6 +28,7 @@ namespace musik { namespace core { namespace ffi {
         virtual void Start(mc_context& context) = 0;
         virtual void Dispatch() = 0;
         virtual void AcknowledgeDispatch() = 0;
+        virtual mc_result OpenPlayback(mc_playback** out) = 0;
         virtual void Stop() = 0;
     };
 
@@ -54,9 +54,6 @@ namespace musik { namespace core { namespace ffi {
     void publish_equalizer_event(mc_context& context);
     mc_result publish_library_selection(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
         LibraryStatus status, bool selectionChanged);
-    using OpenPlayback = mc_result (*)(audio::PlaybackService&, mc_playback**);
-    mc_result attach_context_playback(mc_context& context, audio::PlaybackService& playback, OpenPlayback open);
-    void own_context_playback(mc_context& context, std::shared_ptr<audio::PlaybackService> playback);
 
     using RequestCompletion = std::function<void(mc_result, void *)>;
 

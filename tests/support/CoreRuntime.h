@@ -1,8 +1,10 @@
 #pragma once
 
 #include <musikcore/debug.h>
+#include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library.hpp>
+#include <musikcore/playback.hpp>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/runtime/MessageQueue.h>
 
@@ -53,4 +55,13 @@ inline std::shared_ptr<const musik::core::api::Library> OpenFixtureLibrary(
     }
     musik::core::api::Library library(handle);
     return std::make_shared<const musik::core::api::Library>(std::move(library));
+}
+
+inline musik::core::api::Playback OpenFixturePlayback(musik::core::audio::PlaybackService& service) {
+    mc_playback* handle = nullptr;
+    const auto result = service.OpenHandle(&handle);
+    if (result != MC_OK) {
+        throw musik::core::api::Error(result);
+    }
+    return musik::core::api::Playback(handle);
 }

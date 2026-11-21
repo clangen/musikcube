@@ -44,7 +44,7 @@
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/IMessageQueue.h>
-#include <musikcore/playback.hpp>
+#include <musikcore/playback.h>
 
 #include <mutex>
 #include <thread>
@@ -149,6 +149,8 @@ namespace musik { namespace core { namespace audio {
             void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetPlaying();
             void SelectLibrary(musik::core::ILibraryPtr library);
+            void InvalidateDisconnectedCatalog();
+            mc_result OpenHandle(mc_playback** out);
 
             musik::core::audio::ITransport& GetTransport() noexcept {
                 return *this->transport.get();
@@ -219,22 +221,22 @@ namespace musik { namespace core { namespace audio {
             void PlayAt(size_t index, ITransport::StartMode mode);
 
             musik::core::TrackPtr TrackAtIndexWithTimeout(size_t index);
-            friend void DiscardUnavailablePlaybackQueue(PlaybackService& playback);
-            friend api::Playback CreatePlaybackHandle(PlaybackService& playback);
-            friend void AttachPlayback(mc_context& context, PlaybackService& playback);
-            class PlaybackServiceBinding;
+            class PlaybackHandle;
             struct PlaybackEvents;
 
             std::string UriAtIndex(size_t index);
             musik::core::audio::ITransport::Gain GainAtIndex(size_t index);
             static std::shared_ptr<PlaybackEvents> CreatePlaybackEvents();
+            void ClosePlaybackHandles();
             void NotifyPlaybackChanged(mc_playback_event event);
+            void DeliverPlaybackNotification(runtime::IMessage& message);
+            bool MatchesOrigin(const LibraryIdentity& origin) const;
+            std::shared_ptr<const LibraryIdentity> CaptureOrigin(int libraryId) const;
 
             musik::core::TrackList playlist;
             uint64_t queueRevision = 0;
             std::shared_ptr<const LibraryIdentity> queueOrigin;
             std::shared_ptr<const LibraryIdentity> playingOrigin;
-            std::shared_ptr<int> apiLifetime = std::make_shared<int>(0);
             std::shared_ptr<PlaybackEvents> apiEvents;
             const std::thread::id apiOwner = std::this_thread::get_id();
             musik::core::TrackList unshuffled;

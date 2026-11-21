@@ -94,3 +94,7 @@ The server overlay uses the public configuration API. Core and the provider shar
 Cube uses public copied metadata and typed schema values for plugin discovery, enablement, and configuration. The existing schema overlay also renders advanced app preferences through the SDK. All 47 Linux Release tests passed. The headless Browse scenario edits the real Null plugin's sample rate and opens advanced settings.
 
 Hotkeys now load and save through their public preference scope. The Browse scenario opens search with a fixture-specific override. Cube no longer includes the private preferences, plugin factory, or schema headers. All 47 Linux Release tests passed.
+
+## Playback ownership
+
+The managed runtime owns one playback engine directly. The engine opens its own public handles, and one registry tracks both handle validity and playback event subscriptions. Removed the private playback attachment and its duplicate lifetime token. All 47 Linux Release tests passed, including thread ownership, subscription lifecycle, and stale handle checks.

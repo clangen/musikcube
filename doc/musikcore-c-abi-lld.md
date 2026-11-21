@@ -1322,8 +1322,7 @@ legacy list for actions that still require it.
 
 | Bridge | Remove when |
 | --- | --- |
-| `src/musikcore/ffi/consumer/playback-binding.h` and `legacy-playback-binding.cpp`, plus the friendship and lifetime token in `PlaybackService` | The public playback API creates and owns the session directly. Carry forward the owner-thread rules, queue origin checks, and dispatcher notifications. |
-| `TrackListView::GetTrackList()` and legacy track and playlist action overlays | Hot-swap, playlist drafts, and the remaining overlays can consume ordered results and track references directly. |
+| `PlaybackService::GetTrackList()` | The older playback tests can assert against public queue snapshots. |
 
 #### Final gate
 

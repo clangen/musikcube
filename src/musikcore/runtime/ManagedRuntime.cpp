@@ -1,5 +1,4 @@
 #include <musikcore/ffi/consumer/library-query-backends.h>
-#include <musikcore/ffi/consumer/playback-binding.h>
 #include <musikcore/ffi/consumer/request.h>
 #include <musikcore/ffi/common/error.h>
 
@@ -61,6 +60,7 @@ namespace musik { namespace core { namespace ffi {
     public:
         ~ManagedRuntime() override {
             this->Stop();
+            this->playback.reset();
             audio::Player::WaitForWorkers();
             audio::vis::Shutdown();
             LibraryFactory::Shutdown();
@@ -82,10 +82,7 @@ namespace musik { namespace core { namespace ffi {
             const auto catalog = prefs->GetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
             this->active = catalog == static_cast<int>(ILibrary::Type::Remote) ? ILibraryPtr(this->remote) : this->local;
 
-            auto engine = std::make_shared<audio::PlaybackService>(*this->queue, this->active);
-            this->playback = engine.get();
-            own_context_playback(context, engine);
-            audio::AttachPlayback(context, *engine);
+            this->playback = std::make_unique<audio::PlaybackService>(*this->queue, this->active);
 
             this->notifications = std::make_shared<CoreNotifications>(context);
             this->queue->RegisterForBroadcasts(this->notifications);
@@ -104,7 +101,7 @@ namespace musik { namespace core { namespace ffi {
             this->PublishSelection(true);
 
             /* The plugin metadata proxy and indexer always serve the local catalog. */
-            plugin::Start(this->queue.get(), engine.get(), this->local);
+            plugin::Start(this->queue.get(), this->playback.get(), this->local);
 
             this->notifier = std::thread([this, &context] {
                 std::unique_lock lock(this->mutex);
@@ -134,6 +131,10 @@ namespace musik { namespace core { namespace ffi {
             std::lock_guard lock(this->mutex);
             ++this->dispatches;
             this->changed.notify_all();
+        }
+
+        mc_result OpenPlayback(mc_playback** out) override {
+            return this->playback->OpenHandle(out);
         }
 
         void Stop() override {
@@ -192,7 +193,7 @@ namespace musik { namespace core { namespace ffi {
 
         void OnRemoteStateChanged(ILibrary::ConnectionState) {
             if (this->active == this->remote) {
-                audio::DiscardUnavailablePlaybackQueue(*this->playback);
+                this->playback->InvalidateDisconnectedCatalog();
                 this->PublishSelection(false);
             }
         }
@@ -215,7 +216,7 @@ namespace musik { namespace core { namespace ffi {
         ILibraryPtr active;
         std::shared_ptr<CoreNotifications> notifications;
         mc_context* context = nullptr;
-        audio::PlaybackService* playback = nullptr;
+        std::unique_ptr<audio::PlaybackService> playback;
         std::mutex mutex;
         std::condition_variable changed;
         uint64_t dispatches = 0;

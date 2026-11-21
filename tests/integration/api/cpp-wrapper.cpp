@@ -3,7 +3,6 @@
 #ifdef MUSIKCORE_TEST_APP_BINDING
 #include "../../support/TestTransport.h"
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/ffi/consumer/playback-binding.h>
 #include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/library/LibraryFactory.h>
@@ -414,7 +413,7 @@ namespace {
         {
             audio::PlaybackService service(queue, local, transport);
             queue.Dispatch();
-            playback.emplace(musik::core::audio::CreatePlaybackHandle(service));
+            playback.emplace(OpenFixturePlayback(service));
             mc_play_queue* rawQueue = nullptr;
             if (mc_playback_get_queue(playback->Get(), &rawQueue) != MC_OK) return playbackFailure(__LINE__);
             const auto originalRaw = rawQueue;
@@ -570,13 +569,13 @@ namespace {
                 unsigned replacementCalls = 0;
                 mc_result subscribed = MC_ERROR_INTERNAL;
                 mc_result unsubscribed = MC_ERROR_INTERNAL;
-            } observers{service, *playback, audio::CreatePlaybackHandle(service)};
+            } observers{service, *playback, OpenFixturePlayback(service)};
             const auto countCall = [](void* data) { ++*static_cast<unsigned*>(data); };
             const auto replacePeer = [](void* data) {
                 auto& state = *static_cast<Observers*>(data);
                 ++state.primaryCalls;
                 state.peer.reset();
-                state.peer.emplace(audio::CreatePlaybackHandle(state.service));
+                state.peer.emplace(OpenFixturePlayback(state.service));
                 state.subscribed = state.peer->SetQueueChangedCallback(
                     [](void* count) { ++*static_cast<unsigned*>(count); }, &state.replacementCalls);
                 state.unsubscribed = state.primary.SetQueueChangedCallback(nullptr);
@@ -694,20 +693,27 @@ namespace {
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || !removed) return playbackFailure(__LINE__);
 
             mc_result otherThread = MC_OK;
-            std::optional<api::Playback> otherHandle;
+            auto otherHandle = OpenFixturePlayback(service);
+            mc_result otherOpen = MC_OK;
             std::thread caller([&] {
-                otherHandle.emplace(musik::core::audio::CreatePlaybackHandle(service));
-                otherThread = otherHandle->Control(MC_PLAYBACK_STOP);
+                mc_playback* offThread = nullptr;
+                otherOpen = service.OpenHandle(&offThread);
+                mc_playback_destroy(&offThread);
+                otherThread = otherHandle.Control(MC_PLAYBACK_STOP);
             });
             caller.join();
-            if (otherThread != MC_ERROR_BUSY || otherHandle->Control(MC_PLAYBACK_STOP) != MC_OK) return playbackFailure(__LINE__);
+            if (otherOpen != MC_ERROR_BUSY || otherThread != MC_ERROR_BUSY ||
+                otherHandle.Control(MC_PLAYBACK_STOP) != MC_OK)
+            {
+                return playbackFailure(__LINE__);
+            }
 
             /* A fresh service has no queued edit events from earlier scenarios. */
             runtime::MessageQueue stateMessages;
             const auto stateTransport = std::make_shared<TestTransport>();
             audio::PlaybackService stateService(stateMessages, local, stateTransport);
             stateMessages.Dispatch();
-            auto statePlayback = audio::CreatePlaybackHandle(stateService);
+            auto statePlayback = OpenFixturePlayback(stateService);
             struct LiveEvents {
                 std::vector<mc_playback_event> received;
             } live;
@@ -733,19 +739,19 @@ namespace {
             LiveEvents scoped;
             const auto owner = std::this_thread::get_id();
             bool deliveredOnOwner = true;
-            api::PlaybackEventSubscription subscriber(audio::CreatePlaybackHandle(stateService),
+            api::PlaybackEventSubscription subscriber(OpenFixturePlayback(stateService),
                 [&](mc_playback_event event) {
                     deliveredOnOwner &= std::this_thread::get_id() == owner;
                     record(&scoped, event);
                 });
             LiveEvents filtered;
             std::vector filter { MC_PLAYBACK_CHANGED_TRACK, MC_PLAYBACK_CHANGED_VOLUME };
-            api::PlaybackEventSubscription filteredSubscriber(audio::CreatePlaybackHandle(stateService),
+            api::PlaybackEventSubscription filteredSubscriber(OpenFixturePlayback(stateService),
                 [&](mc_playback_event event) { record(&filtered, event); }, filter);
             std::fill(filter.begin(), filter.end(), MC_PLAYBACK_CHANGED_MODE);
 
             unsigned destroyedCalls = 0;
-            auto destroyed = std::make_unique<api::PlaybackEventSubscription>(audio::CreatePlaybackHandle(stateService),
+            auto destroyed = std::make_unique<api::PlaybackEventSubscription>(OpenFixturePlayback(stateService),
                 [&](mc_playback_event) { ++destroyedCalls; });
 
             if (statePlayback.Play(result, 1) != MC_OK) return playbackFailure(__LINE__);
@@ -795,7 +801,7 @@ namespace {
 
             std::unique_ptr<api::PlaybackEventSubscription> self;
             size_t selfCalls = 0;
-            self = std::make_unique<api::PlaybackEventSubscription>(audio::CreatePlaybackHandle(stateService),
+            self = std::make_unique<api::PlaybackEventSubscription>(OpenFixturePlayback(stateService),
                 [&](mc_playback_event) {
                     self.reset();
                     ++selfCalls;
@@ -912,6 +918,7 @@ namespace {
             }
         }
         return playback->Control(MC_PLAYBACK_STOP) == MC_ERROR_NOT_FOUND &&
+            playback->SetChangedCallback(nullptr) == MC_ERROR_NOT_FOUND &&
             !playback->Snapshot() && !playback->Queue() && !playback->CurrentTrack();
     }
 

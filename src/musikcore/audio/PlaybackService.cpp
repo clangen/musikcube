@@ -47,7 +47,6 @@
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Playback.h>
-#include <musikcore/ffi/consumer/playback-binding.h>
 #include <thread>
 #include <utility>
 #include <cmath>
@@ -166,7 +165,7 @@ PlaybackService::PlaybackService(
 }
 
 PlaybackService::~PlaybackService() {
-    this->apiLifetime.reset();
+    this->ClosePlaybackHandles();
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
     savePreferences(*this, *playbackPrefs);
@@ -557,7 +556,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
         /* Keep the track's origin across queue edits and legacy backend switches. */
         if (this->playingTrack != track) {
             this->playingOrigin = track
-                ? (this->queueOrigin ? this->queueOrigin : CapturePlaybackOrigin(this->library, track->LibraryId()))
+                ? (this->queueOrigin ? this->queueOrigin : this->CaptureOrigin(track->LibraryId()))
                 : nullptr;
             this->playingTrack = track;
         }
@@ -591,7 +590,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
 
 void PlaybackService::MarkTrackAsPlayed(int64_t trackId) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    if (this->queueOrigin && !MatchesPlaybackOrigin(*this->queueOrigin, this->library)) return;
+    if (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)) return;
     this->library->Enqueue(std::make_shared<MarkTrackPlayedQuery>(trackId));
 }
 
@@ -931,7 +930,7 @@ ITrack* PlaybackService::GetTrack(size_t index) {
         return nullptr;
     }
 
-    if (this->queueOrigin && !MatchesPlaybackOrigin(*this->queueOrigin, this->library)) return nullptr;
+    if (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)) return nullptr;
 
     const size_t count = this->playlist.Count();
 
@@ -966,7 +965,7 @@ TrackPtr PlaybackService::TrackAtIndexWithTimeout(size_t index) {
         return TrackPtr();
     }
 
-    if (this->queueOrigin && !MatchesPlaybackOrigin(*this->queueOrigin, this->library)) return {};
+    if (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)) return {};
 
     if (index >= this->playlist.Count()) {
         return TrackPtr();

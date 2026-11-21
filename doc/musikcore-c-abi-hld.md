@@ -472,3 +472,4 @@ The modernization is complete when:
 - [ADR-0002: host dispatch and request lifetime](../docs/adr/0002-host-dispatch-and-request-lifetime.md)
 - [ADR-0003: origin-bound results and paged metadata](../docs/adr/0003-origin-bound-results-and-paged-metadata.md)
 - [ADR-0004: testing at the public boundary](../docs/adr/0004-test-the-public-boundary-first.md)
+- [ADR-0005: context-owned production runtime](../docs/adr/0005-context-owned-production-runtime.md)

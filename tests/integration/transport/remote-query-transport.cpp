@@ -1,5 +1,4 @@
 #include "TestTransport.h"
-#include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
@@ -903,7 +902,7 @@ namespace {
         transport->state = sdk::PlaybackState::Stopped;
         runtime::MessageQueue playbackMessages;
         audio::PlaybackService service(playbackMessages, appRemote, transport);
-        auto playback = audio::CreatePlaybackHandle(service);
+        auto playback = OpenFixturePlayback(service);
         for (unsigned sample = 0; sample < 7; ++sample) {
             for (bool overRemote : { false, true }) {
                 ProfilePhase profile(sample == 6 ? (overRemote ? "remote_playlist_10000" : "local_playlist_10000") : nullptr);

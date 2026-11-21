@@ -8,7 +8,7 @@ set(CORE_SOURCES
   ./audio/Outputs.cpp
   ./audio/PlaybackService.cpp
   ./runtime/ManagedRuntime.cpp
-  ./ffi/consumer/legacy-playback-binding.cpp
+  ./audio/PlaybackHandle.cpp
   ./audio/Player.cpp
   ./audio/Stream.cpp
   ./audio/Streams.cpp

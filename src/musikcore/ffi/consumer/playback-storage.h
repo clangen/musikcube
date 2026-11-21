@@ -12,7 +12,7 @@ enum class QueueEdit { Move, Remove, Clear };
 
 struct mc_play_queue {
     std::vector<int64_t> ids;
-    std::weak_ptr<int> lifetime;
+    std::weak_ptr<const void> lifetime;
     uint64_t revision = 0;
     size_t currentRow = SIZE_MAX;
     size_t retainedRow = SIZE_MAX;

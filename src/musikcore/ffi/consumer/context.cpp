@@ -57,7 +57,6 @@ struct mc_context {
     std::shared_ptr<const LibraryIdentity> library;
     musik::core::ffi::LibraryStatus libraryStatus;
     std::unique_ptr<musik::core::ffi::ContextRuntime> runtime;
-    std::shared_ptr<musik::core::audio::PlaybackService> ownedPlayback;
     std::function<mc_result(mc_library_kind)> selectLibrary;
     std::function<void()> reconnectRemote;
     musik::core::IIndexer* indexer = nullptr;
@@ -77,8 +76,6 @@ struct mc_context {
     void* libraryChangedData = nullptr;
     bool libraryNotificationPending = false;
     bool librarySelectionChanged = false;
-    musik::core::audio::PlaybackService* playback = nullptr;
-    musik::core::ffi::OpenPlayback open_playback = nullptr;
 
     std::list<Request> requests;
     std::list<Request> dispatch_batch;
@@ -96,41 +93,20 @@ std::shared_ptr<const LibraryIdentity> musik::core::ffi::context_library(const m
     return context.library;
 }
 
-mc_result musik::core::ffi::attach_context_playback(
-    mc_context& context, audio::PlaybackService& playback, OpenPlayback open)
-{
-    std::lock_guard<std::mutex> lock(context.mutex);
-    if (context.stopping || context.playback) {
-        return MC_ERROR_BUSY;
-    }
-    context.playback = &playback;
-    context.open_playback = open;
-    return MC_OK;
-}
-
-void musik::core::ffi::own_context_playback(
-    mc_context& context, std::shared_ptr<audio::PlaybackService> playback)
-{
-    std::lock_guard<std::mutex> lock(context.mutex);
-    context.ownedPlayback = std::move(playback);
-}
-
 mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback** out_playback) {
     if (!context || !out_playback || *out_playback) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        musik::core::audio::PlaybackService* playback;
-        musik::core::ffi::OpenPlayback open;
+        musik::core::ffi::ContextRuntime* runtime;
         {
             std::lock_guard<std::mutex> lock(context->mutex);
             if (context->stopping) {
                 return MC_ERROR_BUSY;
             }
-            playback = context->playback;
-            open = context->open_playback;
+            runtime = context->runtime.get();
         }
-        return open ? open(*playback, out_playback) : MC_ERROR_UNSUPPORTED;
+        return runtime ? runtime->OpenPlayback(out_playback) : MC_ERROR_UNSUPPORTED;
     });
 }
 
@@ -880,7 +856,6 @@ void MC_CALL mc_context_destroy(mc_context **context) {
             selector.swap((*context)->selectLibrary);
         }
         selector = nullptr;
-        (*context)->ownedPlayback.reset();
         (*context)->runtime.reset();
         delete *context;
         *context = nullptr;

@@ -5,7 +5,7 @@ set(windows_core_sources
   src/musikcore/audio/Outputs.cpp
   src/musikcore/audio/PlaybackService.cpp
   src/musikcore/runtime/ManagedRuntime.cpp
-  src/musikcore/ffi/consumer/legacy-playback-binding.cpp
+  src/musikcore/audio/PlaybackHandle.cpp
   src/musikcore/audio/MasterTransport.cpp
   src/musikcore/audio/Streams.cpp
   src/musikcore/audio/Visualizer.cpp

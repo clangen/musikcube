@@ -1,16 +1,13 @@
-#include "playback-binding.h"
-#include "library-query-backends.h"
-#include <musikcore/library.hpp>
+#include "PlaybackService.h"
 
-#include "library-storage.h"
-#include "request.h"
-#include "playback-storage.h"
-#include "../common/error.h"
-#include <musikcore/audio/PlaybackService.h>
-#include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/ffi/common/error.h>
+#include <musikcore/ffi/consumer/library-query-backends.h>
+#include <musikcore/ffi/consumer/library-storage.h>
+#include <musikcore/ffi/consumer/playback-storage.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Playback.h>
 
+#include <atomic>
 #include <algorithm>
 #include <mutex>
 #include <utility>
@@ -77,6 +74,7 @@ namespace {
 }
 
 struct PlaybackService::PlaybackEvents {
+    std::atomic<bool> active { true };
     std::mutex mutex;
     std::vector<std::weak_ptr<LiveObserver>> observers;
 
@@ -96,7 +94,15 @@ std::shared_ptr<PlaybackService::PlaybackEvents> PlaybackService::CreatePlayback
     return std::make_shared<PlaybackEvents>();
 }
 
+void PlaybackService::ClosePlaybackHandles() {
+    this->apiEvents->active.store(false);
+}
+
 void PlaybackService::NotifyPlaybackChanged(mc_playback_event event) {
+    if (!this->apiEvents->active.load()) {
+        return;
+    }
+
     /* Release the registry lock before touching any subscription. */
     for (const auto& weak : this->apiEvents->Subscribers()) {
         const auto observer = weak.lock();
@@ -123,37 +129,34 @@ void PlaybackService::NotifyPlaybackChanged(mc_playback_event event) {
     }
 }
 
-void musik::core::audio::DeliverPlaybackNotification(IMessage& message) {
+void PlaybackService::DeliverPlaybackNotification(IMessage& message) {
     static_cast<PlaybackNotification&>(message).deliver();
 }
 
-bool musik::core::audio::MatchesPlaybackOrigin(const LibraryIdentity& origin, const ILibraryPtr& library) {
-    return origin.playbackOrigin && origin.playbackOrigin->Matches(library.get());
+bool PlaybackService::MatchesOrigin(const LibraryIdentity& origin) const {
+    return origin.playbackOrigin && origin.playbackOrigin->Matches(this->library.get());
 }
 
-std::shared_ptr<const LibraryIdentity> musik::core::audio::CapturePlaybackOrigin(
-    const ILibraryPtr& library, int libraryId)
-{
-    if (!library || library->Id() != libraryId) {
+std::shared_ptr<const LibraryIdentity> PlaybackService::CaptureOrigin(int libraryId) const {
+    if (this->library->Id() != libraryId) {
         return {};
     }
 
     std::shared_ptr<const LibraryIdentity> origin;
     ffi::exception_barrier(nullptr, [&] {
-        origin = ffi::CaptureLibrary(library);
+        origin = ffi::CaptureLibrary(this->library);
         return MC_OK;
     });
     return origin;
 }
 
-/* Bridge the public handle to the existing engine until the API owns playback sessions. */
 /* Borrows the owner-thread service. Neither copyable nor movable. */
-class PlaybackService::PlaybackServiceBinding final : public mc_playback, public sigslot::has_slots<> {
+class PlaybackService::PlaybackHandle final : public mc_playback, public sigslot::has_slots<> {
 public:
-    explicit PlaybackServiceBinding(PlaybackService& service)
-        : service(service), lifetime(service.apiLifetime), owner(service.apiOwner), events(service.apiEvents) {}
+    explicit PlaybackHandle(PlaybackService& service)
+        : service(service), owner(service.apiOwner), events(service.apiEvents) {}
 
-    ~PlaybackServiceBinding() override {
+    ~PlaybackHandle() override {
         if (this->liveObserver) {
             this->liveObserver->Set(nullptr, nullptr);
         }
@@ -257,7 +260,7 @@ public:
         const auto& origin = this->service.playingOrigin;
         const auto& playing = this->service.playingTrack;
         if (!playing || !origin || this->service.GetPlaybackState() == PlaybackState::Stopped ||
-            !MatchesPlaybackOrigin(*origin, this->service.library))
+            !this->service.MatchesOrigin(*origin))
         {
             return MC_ERROR_NOT_FOUND;
         }
@@ -278,7 +281,7 @@ public:
         if (status != MC_OK) return status;
 
         std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
-        queue.lifetime = this->lifetime;
+        queue.lifetime = this->events;
         queue.revision = this->service.queueRevision;
         if (!this->QueueOriginAvailable()) return MC_OK;
 
@@ -300,7 +303,7 @@ public:
         if (!result.library->playbackOrigin) return MC_ERROR_UNSUPPORTED;
 
         std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
-        if (!MatchesPlaybackOrigin(*result.library, this->service.library)) return MC_ERROR_NOT_FOUND;
+        if (!this->service.MatchesOrigin(*result.library)) return MC_ERROR_NOT_FOUND;
 
         /* Preserve the legacy playlist-load behavior, including any active transport. */
         const TrackList replacement(this->service.library, result.ids.data(), result.ids.size());
@@ -319,7 +322,7 @@ public:
         }
 
         std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
-        if (row >= result.ids.size() || !MatchesPlaybackOrigin(*result.library, this->service.library)) {
+        if (row >= result.ids.size() || !this->service.MatchesOrigin(*result.library)) {
             return MC_ERROR_NOT_FOUND;
         }
 
@@ -336,8 +339,8 @@ public:
         if (status != MC_OK) return status;
 
         if (callback && !this->observingQueue) {
-            this->service.QueueEdited.connect(this, &PlaybackServiceBinding::OnQueueChanged);
-            this->service.TrackChanged.connect(this, &PlaybackServiceBinding::OnTrackChanged);
+            this->service.QueueEdited.connect(this, &PlaybackHandle::OnQueueChanged);
+            this->service.TrackChanged.connect(this, &PlaybackHandle::OnTrackChanged);
             this->observingQueue = true;
         }
         /* Replacing a subscription invalidates any delivery posted for its user data. */
@@ -349,7 +352,7 @@ public:
         std::vector<mc_playback_event> filter) override
     {
         const auto events = this->events.lock();
-        if (!events) {
+        if (!events || !events->active.load()) {
             return MC_ERROR_NOT_FOUND;
         }
 
@@ -413,12 +416,12 @@ public:
 private:
     bool QueueOriginAvailable() const {
         const auto& origin = this->service.queueOrigin;
-        return !origin || MatchesPlaybackOrigin(*origin, this->service.library);
+        return !origin || this->service.MatchesOrigin(*origin);
     }
 
     /* Check under the same lock used for the positional action. */
     bool QueueIsCurrent(const mc_play_queue& queue) const {
-        return queue.lifetime.lock() == this->service.apiLifetime &&
+        return queue.lifetime.lock() == this->service.apiEvents &&
             queue.revision == this->service.queueRevision && this->QueueOriginAvailable();
     }
 
@@ -449,7 +452,7 @@ private:
             return MC_ERROR_UNSUPPORTED;
         }
         auto editor = this->service.Edit();
-        if (!MatchesPlaybackOrigin(*origin, this->service.library) || !this->QueueOriginAvailable()) {
+        if (!this->service.MatchesOrigin(*origin) || !this->QueueOriginAvailable()) {
             return MC_ERROR_NOT_FOUND;
         }
         if (!count) {
@@ -479,7 +482,7 @@ private:
     mc_result PlayOrderedIds(const std::shared_ptr<const LibraryIdentity>& origin,
         const int64_t* ids, size_t count, size_t row) {
         if (!origin->playbackOrigin) return MC_ERROR_UNSUPPORTED;
-        if (!MatchesPlaybackOrigin(*origin, this->service.library)) return MC_ERROR_NOT_FOUND;
+        if (!this->service.MatchesOrigin(*origin)) return MC_ERROR_NOT_FOUND;
 
         /* Install the snapshot directly in the engine's queue. */
         TrackList replacement(this->service.library, ids, count);
@@ -498,12 +501,11 @@ private:
 
     mc_result CheckSession() const {
         if (std::this_thread::get_id() != this->owner) return MC_ERROR_BUSY;
-        if (this->lifetime.expired()) return MC_ERROR_NOT_FOUND;
-        return MC_OK;
+        const auto events = this->events.lock();
+        return events && events->active.load() ? MC_OK : MC_ERROR_NOT_FOUND;
     }
 
     PlaybackService& service;
-    const std::weak_ptr<int> lifetime;
     const std::thread::id owner;
     const std::weak_ptr<PlaybackEvents> events;
     std::mutex liveRegistrationMutex;
@@ -512,29 +514,26 @@ private:
     bool observingQueue = false;
 };
 
-musik::core::api::Playback musik::core::audio::CreatePlaybackHandle(PlaybackService& playback) {
-    return api::Playback(new PlaybackService::PlaybackServiceBinding(playback));
-}
-
-void musik::core::audio::AttachPlayback(mc_context& context, PlaybackService& playback) {
-    const auto status = ffi::attach_context_playback(context, playback,
-        [](PlaybackService& playback, mc_playback** out) -> mc_result {
-            if (std::this_thread::get_id() != playback.apiOwner) {
-                return MC_ERROR_BUSY;
-            }
-            *out = new PlaybackService::PlaybackServiceBinding(playback);
-            return MC_OK;
-        });
-    if (status != MC_OK) {
-        throw api::Error(status);
+mc_result PlaybackService::OpenHandle(mc_playback** out) {
+    if (!out || *out) {
+        return MC_ERROR_INVALID_ARGUMENT;
     }
+    if (std::this_thread::get_id() != this->apiOwner) {
+        return MC_ERROR_BUSY;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        *out = new PlaybackHandle(*this);
+        return MC_OK;
+    });
 }
 
-void musik::core::audio::DiscardUnavailablePlaybackQueue(PlaybackService& playback) {
-    std::unique_lock<std::recursive_mutex> lock(playback.playlistMutex);
-    if (!playback.queueOrigin || MatchesPlaybackOrigin(*playback.queueOrigin, playback.library)) return;
+void PlaybackService::InvalidateDisconnectedCatalog() {
+    std::lock_guard lock(this->playlistMutex);
+    if (!this->queueOrigin || this->MatchesOrigin(*this->queueOrigin)) {
+        return;
+    }
 
-    /* The legacy queue has one library. Its IDs cannot be used after the origin changes. */
-    playback.Stop();
-    playback.Edit().Clear();
+    /* Reconnecting does not make a prior connection's queue IDs valid. */
+    this->Stop();
+    this->Edit().Clear();
 }
