@@ -25,7 +25,7 @@ namespace musik { namespace core { namespace ffi {
         ContextRuntime& operator=(const ContextRuntime&) = delete;
         ContextRuntime& operator=(ContextRuntime&&) = delete;
 
-        virtual void Start(mc_context& context) = 0;
+        virtual void Start(mc_context& context, bool logging, mc_log_fn log, void* logData) = 0;
         virtual void Dispatch() = 0;
         virtual void AcknowledgeDispatch() = 0;
         virtual mc_result OpenPlayback(mc_playback** out) = 0;

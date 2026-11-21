@@ -46,6 +46,8 @@ namespace musik {
             static const int EnvironmentUpdated     = First + 5;
             static const int EqualizerUpdated       = First + 6;
 
+            static const int LogRecord              = First + 7;
+
             static const int User                   = 4096;
         }
     }

@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include <musikcore/library.h>
 #include "TrackListView.h"
@@ -47,7 +48,6 @@
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/overlay/TrackOverlays.h>
-#include <musikcore/debug.h>
 
 static constexpr int kTrackPagePollIntervalMs = 2;
 static constexpr int kTrackPageRetryMs = 25;
@@ -142,7 +142,7 @@ void TrackListView::SubmitTrackRequest() {
         }
         else {
             this->pendingTrackQuery = {};
-            musik::debug::error("TrackListView", error.what());
+            musik::core::api::WriteLog(MC_LOG_ERROR, "TrackListView", error.what());
         }
     }
 }
@@ -220,7 +220,7 @@ void TrackListView::UpdatePagePolling(bool pending) {
 void TrackListView::HandlePageStatus(mc_result status) {
     if (status == MC_ERROR_BUSY) this->Debounce(LoadTrackPageMessage, 0, 0, kTrackPageRetryMs);
     else if (status != MC_OK && status != MC_ERROR_CANCELLED) {
-        musik::debug::error("TrackListView", api::Error(status).what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "TrackListView", api::Error(status).what());
     }
 }
 
@@ -425,13 +425,13 @@ void TrackListView::ShowRatingOverlay() {
                                 }));
                         }
                         catch (const api::Error& error) {
-                            musik::debug::error("TrackListView", error.what());
+                            musik::core::api::WriteLog(MC_LOG_ERROR, "TrackListView", error.what());
                         }
                     });
                 }));
     }
     catch (const api::Error& error) {
-        musik::debug::error("TrackListView", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "TrackListView", error.what());
     }
 }
 
@@ -513,7 +513,7 @@ void TrackListView::RefreshPlayingTrack() {
         this->playingId = id;
     }
     catch (const api::Error& error) {
-        musik::debug::error("TrackListView", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "TrackListView", error.what());
         return;
     }
 

@@ -1,88 +1,49 @@
 #include <stdafx.h>
 #include <app/util/ConsoleLogger.h>
-#include <cursespp/SimpleScrollAdapter.h>
+#include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
-#include <common/runtime/Message.h>
-#include <app/util/Messages.h>
-#include <time.h>
+#include <musikcore/context.hpp>
+#include <ctime>
 
-using namespace musik;
-using namespace musik::core::runtime;
 using namespace musik::cube;
 using namespace cursespp;
 
 static std::string timestamp() {
-    time_t rawtime = { 0 };
-    char buffer[64] = { 0 };
-    time(&rawtime);
+    const auto now = std::time(nullptr);
+    std::tm local {};
+    char buffer[64] {};
 #ifdef WIN32
-    struct tm timeinfo = { 0 };
-    localtime_s(&timeinfo, &rawtime);
-    strftime(buffer, sizeof(buffer), "%T", &timeinfo);
+    localtime_s(&local, &now);
 #else
-    struct tm* timeinfo = localtime(&rawtime);
-    strftime(buffer, sizeof(buffer), "%T", timeinfo);
+    localtime_r(&now, &local);
 #endif
-    return std::string(buffer);
+    std::strftime(buffer, sizeof(buffer), "%T", &local);
+    return buffer;
 }
 
-struct LogMessage: public Message {
-    std::string logValue;
-    Color color;
-
-    LogMessage(IMessageTarget* target, const std::string& value, const Color color)
-    : Message(target, message::DebugLog, 0, 0) {
-        this->logValue = value;
-        this->color = color;
-    }
-};
-
-ConsoleLogger::ConsoleLogger(IMessageQueue& messageQueue)
-: messageQueue(messageQueue) {
-    messageQueue.Register(this);
-    this->adapter = std::make_shared<SimpleScrollAdapter>();
+ConsoleLogger::ConsoleLogger()
+    : adapter(std::make_shared<SimpleScrollAdapter>()) {
     this->adapter->SetMaxEntries(1000);
     this->adapter->SetSelectable(true);
 }
 
-ConsoleLogger::~ConsoleLogger() {
-    this->messageQueue.Unregister(this);
-}
-
-void ConsoleLogger::verbose(const std::string& tag, const std::string& string) {
-    this->FormatAndDispatch(tag, "v", string, Color::Default);
-}
-
-void ConsoleLogger::info(const std::string& tag, const std::string& string) {
-    this->FormatAndDispatch(tag, "i", string, Color::Default);
-}
-
-void ConsoleLogger::warning(const std::string& tag, const std::string& string) {
-    this->FormatAndDispatch(tag, "w", string, Color::TextWarning);
-}
-
-void ConsoleLogger::error(const std::string& tag, const std::string& string) {
-    this->FormatAndDispatch(tag, "e", string, Color::TextError);
-}
-
-void ConsoleLogger::FormatAndDispatch(
-    const std::string& tag, const std::string& level, const std::string& str, Color color)
-{
-    const std::string formatted = u8fmt(
-        "%s [%s] [%s] %s", timestamp().c_str(), level.c_str(), tag.c_str(), str.c_str());
-
-    this->messageQueue.Post(std::make_shared<LogMessage>(this, formatted, color));
-}
-
-void ConsoleLogger::ProcessMessage(IMessage& message) {
-    if (message.Type() == message::DebugLog) {
-        auto log = static_cast<LogMessage*>(&message);
-        auto entry = std::make_shared<SingleLineEntry>(log->logValue);
-        entry->SetAttrs(log->color);
-        this->adapter->AddEntry(entry);
+void MC_CALL ConsoleLogger::OnLog(void* data, mc_log_level level, mc_string_view tag, mc_string_view text) {
+    static constexpr char labels[] { 'v', 'i', 'w', 'e' };
+    if (level > MC_LOG_ERROR) {
+        return;
     }
+
+    const auto color = level == MC_LOG_ERROR ? Color::TextError
+        : level == MC_LOG_WARNING ? Color::TextWarning : Color::Default;
+
+    const auto tagText = std::string(musik::core::api::AsStringView(tag));
+    const auto message = std::string(musik::core::api::AsStringView(text));
+    auto entry = std::make_shared<SingleLineEntry>(u8fmt(
+        "%s [%c] [%s] %s", timestamp().c_str(), labels[level], tagText.c_str(), message.c_str()));
+    entry->SetAttrs(color);
+    static_cast<ConsoleLogger*>(data)->adapter->AddEntry(entry);
 }
 
-ConsoleLogger::AdapterPtr ConsoleLogger::Adapter() {
+ConsoleLogger::AdapterPtr ConsoleLogger::Adapter() const {
     return this->adapter;
 }

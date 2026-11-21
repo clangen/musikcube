@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 #include "Hotkeys.h"
 #include <musikcore/preferences.hpp>
 #include <unordered_map>
@@ -272,7 +273,7 @@ static void loadPreferences() {
         savePreferences();
     }
     catch (...) {
-        musik::debug::error(TAG, "failed to load hotkeys.json! default hotkeys selected.");
+        musik::core::api::WriteLog(MC_LOG_ERROR, TAG, "failed to load hotkeys.json! default hotkeys selected.");
         customIdToKey.clear();
     }
 }

@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 #include <app/layout/LyricsLayout.h>
 #include <app/util/Messages.h>
 #include <app/util/Locale.h>
@@ -195,7 +196,7 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
             }));
     }
     catch (const api::Error& error) {
-        musik::debug::error("LyricsLayout", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "LyricsLayout", error.what());
         this->SetState(State::Failed);
     }
 }

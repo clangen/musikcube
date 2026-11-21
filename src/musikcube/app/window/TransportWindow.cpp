@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include <musikcore/library.h>
 #include "TransportWindow.h"
@@ -43,7 +44,6 @@
 
 #include <musikcore/support/Duration.h>
 
-#include <musikcore/debug.h>
 #include <common/runtime/Message.h>
 #include <musikcore/support/Playback.h>
 
@@ -585,7 +585,7 @@ void TransportWindow::RefreshTrack() {
             }));
     }
     catch (const api::Error& error) {
-        musik::debug::error("TransportWindow", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "TransportWindow", error.what());
     }
 }
 

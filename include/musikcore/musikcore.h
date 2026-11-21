@@ -15,5 +15,6 @@
 
 #include <musikcore/paths.h>
 #include <musikcore/locale.h>
+#include <musikcore/log.h>
 
 #endif

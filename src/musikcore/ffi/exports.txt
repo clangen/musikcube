@@ -114,3 +114,4 @@ mc_locale_read_selected
 mc_locale_select
 mc_locale_translate
 mc_locale_dimension
+mc_log_write

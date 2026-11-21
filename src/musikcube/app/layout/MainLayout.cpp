@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include <musikcore/preferences.hpp>
 
@@ -360,7 +361,7 @@ void MainLayout::UpdateWindowTitle() {
             }));
     }
     catch (const api::Error& error) {
-        musik::debug::error("MainLayout", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "MainLayout", error.what());
     }
 }
 

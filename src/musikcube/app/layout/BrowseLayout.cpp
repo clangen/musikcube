@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include <musikcore/library.h>
 
@@ -436,7 +437,7 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
             auto ids = this->trackList->TrackIds();
             auto saved = this->playlistWork.Wrap([this, selected, ids](mc_result status, int64_t, std::string_view error) {
                 if (status != MC_OK) {
-                    musik::debug::error("BrowseLayout", std::string(error));
+                    musik::core::api::WriteLog(MC_LOG_ERROR, "BrowseLayout", std::string(error));
                 }
                 else if (this->categoryList->GetSelectedId() == selected && this->trackList->TrackIds() == ids) {
                     this->ShowModifiedLabel(false);
@@ -445,7 +446,7 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
             api::SavePlaylist(this->musikcore, selected, {}, ids, std::move(saved));
         }
         catch (const api::Error& error) {
-            musik::debug::error("BrowseLayout", error.what());
+            musik::core::api::WriteLog(MC_LOG_ERROR, "BrowseLayout", error.what());
         }
         return true;
     }

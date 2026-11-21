@@ -33,11 +33,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include <cursespp/Colors.h>
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
-#include <musikcore/debug.h>
 #include "NowPlayingLayout.h"
 
 #include <set>
@@ -228,7 +228,7 @@ void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
             }));
     }
     catch (const api::Error& error) {
-        musik::debug::error("NowPlayingLayout", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "NowPlayingLayout", error.what());
     }
 }
 
@@ -269,7 +269,7 @@ void NowPlayingLayout::ShowPlaylistPicker(PlaylistAction action) {
             });
     }
     catch (const api::Error& error) {
-        musik::debug::error("NowPlayingLayout", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "NowPlayingLayout", error.what());
     }
 }
 

@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include "BrowseOverlays.h"
 #include <app/util/MagicConstants.h>
@@ -109,7 +110,7 @@ void BrowseOverlays::ShowCategoryChooser(api::Context& musikcore, AsyncCallbackS
             });
     }
     catch (const api::Error& error) {
-        musik::debug::error("BrowseOverlays", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "BrowseOverlays", error.what());
     }
 }
 

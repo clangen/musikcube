@@ -1,6 +1,7 @@
 #include <musikcore/musikcore.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <filesystem>
 #include <chrono>
 #include <condition_variable>
@@ -178,8 +179,26 @@ namespace {
             std::get<int32_t>(setting->value) == configuredRate;
     }
 
+    struct LogProbe {
+        static constexpr char tag[] = "managed-runtime-fixture";
+        static constexpr char text[] = "worker emitted diagnostics";
+        const std::thread::id owner = std::this_thread::get_id();
+        std::atomic<bool> received { false };
+        std::atomic<bool> correctThread { false };
+
+        static void MC_CALL Receive(void* data, mc_log_level level, mc_string_view tag, mc_string_view text) {
+            auto& probe = *static_cast<LogProbe*>(data);
+            if (level == MC_LOG_WARNING && AsStringView(tag) == LogProbe::tag &&
+                AsStringView(text) == LogProbe::text)
+            {
+                probe.correctThread.store(std::this_thread::get_id() == probe.owner);
+                probe.received.store(true);
+            }
+        }
+    };
+
     bool checkRuntime(
-        const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer)
+        const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer, LogProbe& log)
     {
         TrackResult tracks;
         mc_result complete = MC_ERROR_BUSY;
@@ -194,6 +213,17 @@ namespace {
             std::fputs("Managed startup did not publish the local library and a wakeup\n", stderr);
             return false;
         }
+        std::thread producer([] {
+            WriteLog(MC_LOG_WARNING, LogProbe::tag, LogProbe::text);
+        });
+        producer.join();
+        if (log.received.load() || !waitFor(context, host, [&] { return log.received.load(); }) ||
+            !log.correctThread.load())
+        {
+            std::fputs("Diagnostics were not delivered on the dispatcher thread\n", stderr);
+            return false;
+        }
+
         retained = context.GetLibrary();
         if (!retained || ReadOutputConfiguration().selectedDriver != "Null") {
             std::fputs("Managed startup did not load the catalog and headless output\n", stderr);
@@ -288,12 +318,15 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    LogProbe log;
     auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-    options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+    options.flags = MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING;
+    options.log = LogProbe::Receive;
+    options.log_user_data = &log;
     options.wakeup = Host::Wake;
     options.wakeup_user_data = &host;
     std::optional<Library> oldLibrary;
-    if (!checkRuntime(options, host, oldLibrary, equalizer)) {
+    if (!checkRuntime(options, host, oldLibrary, equalizer, log)) {
         return 1;
     }
 

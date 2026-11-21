@@ -267,6 +267,11 @@ async function checkTrackSearch(runtime, database, screenshots,
     }
 
     if (!pilot && ['all', 'browse'].includes(scenario)) {
+      terminal.send('`');
+      await terminal.expect('debug logs');
+      await terminal.expect('LocalLibrary');
+      terminal.send('a');
+      await terminal.expect('tracks (sorted by');
       terminal.send('\x12');
       await terminal.expect('metadata indexer');
       terminal.send('\x1b');

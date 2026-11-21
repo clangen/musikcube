@@ -176,3 +176,10 @@ mc_result MC_CALL mc_locale_translate(mc_string_view key, mc_locale_text_fn read
 int MC_CALL mc_locale_dimension(mc_string_view, int fallback) {
     return fallback;
 }
+
+mc_result MC_CALL mc_log_write(mc_log_level level, mc_string_view tag, mc_string_view text) {
+    using namespace musik::core::ffi;
+    return level <= MC_LOG_ERROR && valid_text(tag) && valid_text(text)
+        ? MC_ERROR_UNSUPPORTED
+        : MC_ERROR_INVALID_ARGUMENT;
+}

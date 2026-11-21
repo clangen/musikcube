@@ -2,6 +2,7 @@
 #define MUSIKCORE_CONTEXT_H
 
 #include <musikcore/abi.h>
+#include <musikcore/log.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -65,7 +66,8 @@ enum {
 };
 
 enum {
-    MC_CONTEXT_MANAGED_RUNTIME = 1
+    MC_CONTEXT_MANAGED_RUNTIME = 1,
+    MC_CONTEXT_ENABLE_LOGGING = 2
 };
 
 typedef struct mc_context_options {
@@ -77,6 +79,7 @@ typedef struct mc_context_options {
     mc_string_view plugin_directory;
     /* MC_CONTEXT_MANAGED_RUNTIME starts playback, plugins, and the configured
        library in a production build. Zero creates a request dispatcher. */
+    /* MC_CONTEXT_ENABLE_LOGGING enables diagnostics in the managed runtime. */
     uint32_t flags;
     /* Optional hook that signals the host loop. May run on a worker thread. */
     mc_wakeup_fn wakeup;
@@ -88,10 +91,14 @@ typedef struct mc_context_options {
     int32_t track_query_max_limit;
     /* Maximum metadata field count. Nonpositive uses MC_TRACK_QUERY_MAX_FIELDS. */
     int32_t track_query_max_fields;
+    /* Optional observer of managed runtime diagnostics. Zero disables delivery. */
+    mc_log_fn log;
+    /* Caller-owned observer argument. Keep it valid until shutdown returns. */
+    void* log_user_data;
 } mc_context_options;
 
 #define MC_CONTEXT_OPTIONS_DEFAULT \
-    { sizeof(mc_context_options), 0, { NULL, 0 }, 0, NULL, NULL, 0, 0, 0 }
+    { sizeof(mc_context_options), 0, { NULL, 0 }, 0, NULL, NULL, 0, 0, 0, NULL, NULL }
 
 /* Null options use defaults. Callers own directory storage and may release it on return.
    out_context is required. out_error is optional; initialize both supplied slots

@@ -86,7 +86,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/db/ScopedTransaction.h>
 #include <musikcore/db/SqliteExtensions.h>
 #include <musikcore/db/Statement.h>
-#include <musikcore/debug.h>
 #include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/io/LocalFileStream.h>
 #include <musikcore/net/RawWebSocketClient.h>

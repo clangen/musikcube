@@ -9,6 +9,10 @@
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/plugin/Plugins.h>
 #include <common/runtime/MessageQueue.h>
+#include <common/runtime/Message.h>
+#include <musikcore/debug.h>
+#include <musikcore/net/PiggyWebSocketClient.h>
+#include <musikcore/support/PiggyDebugBackend.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
@@ -16,10 +20,63 @@
 #include <condition_variable>
 
 namespace musik { namespace core { namespace ffi {
+    /* Owns text until dispatcher delivery. Copyable and movable. */
+    class LogRecord final : public runtime::Message {
+    public:
+        LogRecord(mc_log_level level, const std::string& tag, const std::string& text)
+            : runtime::Message(nullptr, message::LogRecord, 0, 0), level(level), tag(tag), text(text) {}
+
+        void Deliver(mc_log_fn callback, void* data) const {
+            exception_barrier(nullptr, [&] {
+                callback(data, this->level, { this->tag.data(), this->tag.size() },
+                    { this->text.data(), this->text.size() });
+                return MC_OK;
+            });
+        }
+
+    private:
+        mc_log_level level;
+        std::string tag;
+        std::string text;
+    };
+
+    /* Borrows a queue that outlives the logging thread. */
+    class DispatchLogBackend final : public debug::IBackend {
+    public:
+        explicit DispatchLogBackend(runtime::MessageQueue& queue) : queue(queue) {}
+
+        void verbose(const std::string& tag, const std::string& text) override {
+            this->Post(MC_LOG_VERBOSE, tag, text);
+        }
+
+        void info(const std::string& tag, const std::string& text) override {
+            this->Post(MC_LOG_INFO, tag, text);
+        }
+
+        void warning(const std::string& tag, const std::string& text) override {
+            this->Post(MC_LOG_WARNING, tag, text);
+        }
+
+        void error(const std::string& tag, const std::string& text) override {
+            this->Post(MC_LOG_ERROR, tag, text);
+        }
+
+    private:
+        void Post(mc_log_level level, const std::string& tag, const std::string& text) {
+            exception_barrier(nullptr, [&] {
+                this->queue.Broadcast(std::make_shared<LogRecord>(level, tag, text));
+                return MC_OK;
+            });
+        }
+
+        runtime::MessageQueue& queue;
+    };
+
     /* Borrows the context for the lifetime of its runtime broadcasts. Neither copyable nor movable. */
     class CoreNotifications final : public runtime::IMessageTarget {
     public:
-        explicit CoreNotifications(mc_context& context) : context(context) {}
+        CoreNotifications(mc_context& context, mc_log_fn log, void* logData)
+            : context(context), log(log), logData(logData) {}
         CoreNotifications(const CoreNotifications&) = delete;
         CoreNotifications(CoreNotifications&&) = delete;
 
@@ -29,6 +86,11 @@ namespace musik { namespace core { namespace ffi {
         void ProcessMessage(runtime::IMessage& input) override {
             mc_playlist_event event;
             switch (input.Type()) {
+                case message::LogRecord:
+                    if (this->log) {
+                        static_cast<const LogRecord&>(input).Deliver(this->log, this->logData);
+                    }
+                    return;
                 case message::EqualizerUpdated:
                     publish_equalizer_event(this->context);
                     return;
@@ -53,6 +115,8 @@ namespace musik { namespace core { namespace ffi {
 
     private:
         mc_context& context;
+        const mc_log_fn log;
+        void* const logData;
     };
 
     /* Owns the core queue and its readiness thread. Neither copyable nor movable. */
@@ -67,8 +131,14 @@ namespace musik { namespace core { namespace ffi {
             this->queue->Close();
         }
 
-        void Start(mc_context& context) override {
+        void Start(mc_context& context, bool logging, mc_log_fn log, void* logData) override {
             this->context = &context;
+            this->notifications = std::make_shared<CoreNotifications>(context, log, logData);
+            this->queue->RegisterForBroadcasts(this->notifications);
+            if (logging) {
+                this->StartLogging(log != nullptr);
+            }
+
             this->initialized = true;
             plugin::Init();
             LibraryFactory::Initialize(this->queue);
@@ -83,9 +153,6 @@ namespace musik { namespace core { namespace ffi {
             this->active = catalog == static_cast<int>(ILibrary::Type::Remote) ? ILibraryPtr(this->remote) : this->local;
 
             this->playback = std::make_unique<audio::PlaybackService>(*this->queue, this->active);
-
-            this->notifications = std::make_shared<CoreNotifications>(context);
-            this->queue->RegisterForBroadcasts(this->notifications);
 
             this->remote->ConnectionStateChanged.connect(this, &ManagedRuntime::OnRemoteStateChanged);
             this->indexer->Started.connect(this, &ManagedRuntime::OnIndexStarted);
@@ -171,6 +238,14 @@ namespace musik { namespace core { namespace ffi {
                     return MC_OK;
                 });
             }
+            if (this->ownsLogging) {
+                debug::Shutdown();
+                this->ownsLogging = false;
+            }
+            if (this->piggy) {
+                net::PiggyWebSocketClient::Shutdown();
+                this->piggy = false;
+            }
         }
 
         mc_result SelectLibrary(mc_library_kind kind) override {
@@ -187,6 +262,24 @@ namespace musik { namespace core { namespace ffi {
         }
 
     private:
+        void StartLogging(bool observe) {
+            std::vector<std::unique_ptr<debug::IBackend>> backends;
+            backends.push_back(std::make_unique<debug::SimpleFileBackend>());
+            if (observe) {
+                backends.push_back(std::make_unique<DispatchLogBackend>(*this->queue));
+            }
+
+            const auto prefs = Preferences::ForComponent(prefs::components::Settings);
+            if (prefs->GetBool(prefs::keys::PiggyEnabled, false)) {
+                auto client = net::PiggyWebSocketClient::Instance(this->queue.get());
+                this->piggy = true;
+                client->Connect(prefs->GetString(prefs::keys::PiggyHostname, "localhost"));
+                backends.push_back(std::make_unique<PiggyDebugBackend>(std::move(client)));
+            }
+
+            this->ownsLogging = debug::TryStart(std::move(backends));
+        }
+
         void PublishSelection(bool selectionChanged) {
             auto status = CaptureLibraryStatus(this->active);
             auto identity = status.state == MC_LIBRARY_CONNECTED ? CaptureLibrary(this->active) : nullptr;
@@ -224,6 +317,8 @@ namespace musik { namespace core { namespace ffi {
         uint64_t dispatches = 0;
         IIndexer* indexer = nullptr;
         bool initialized = false;
+        bool ownsLogging = false;
+        bool piggy = false;
         std::atomic<bool> stopping { false };
         std::thread notifier;
     };

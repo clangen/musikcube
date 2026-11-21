@@ -1,44 +1,27 @@
 #pragma once
 
-#include <musikcore/debug.h>
-#include <common/runtime/IMessageQueue.h>
-#include <cursespp/Colors.h>
+#include <musikcore/log.h>
 #include <cursespp/SimpleScrollAdapter.h>
-#include <sigslot/sigslot.h>
 
 namespace musik { namespace cube {
 
-    class ConsoleLogger:
-        public musik::debug::IBackend,
-        public musik::core::runtime::IMessageTarget,
-        public sigslot::has_slots<>
-    {
-        public:
-            using AdapterPtr = std::shared_ptr<cursespp::SimpleScrollAdapter>;
+    /* Owns the console's log rows. Neither copyable nor movable. */
+    class ConsoleLogger {
+    public:
+        using AdapterPtr = std::shared_ptr<cursespp::SimpleScrollAdapter>;
 
-            ConsoleLogger(musik::core::runtime::IMessageQueue& messageQueue);
-            ConsoleLogger(const ConsoleLogger& other) = delete;
-            ConsoleLogger& operator=(const ConsoleLogger& other) = delete;
-            virtual ~ConsoleLogger();
+        ConsoleLogger();
+        ConsoleLogger(const ConsoleLogger&) = delete;
+        ConsoleLogger(ConsoleLogger&&) = delete;
 
-            virtual void verbose(const std::string& tag, const std::string& string) override;
-            virtual void info(const std::string& tag, const std::string& string) override;
-            virtual void warning(const std::string& tag, const std::string& string) override;
-            virtual void error(const std::string& tag, const std::string& string) override;
+        ConsoleLogger& operator=(const ConsoleLogger&) = delete;
+        ConsoleLogger& operator=(ConsoleLogger&&) = delete;
 
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+        static void MC_CALL OnLog(void* data, mc_log_level level, mc_string_view tag, mc_string_view text);
+        AdapterPtr Adapter() const;
 
-            AdapterPtr Adapter();
-
-        private:
-            void FormatAndDispatch(
-                const std::string& tag,
-                const std::string& level,
-                const std::string& str,
-                cursespp::Color color);
-
-            AdapterPtr adapter;
-            musik::core::runtime::IMessageQueue& messageQueue;
+    private:
+        AdapterPtr adapter;
     };
 
 } }

@@ -33,6 +33,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <pch.hpp>
+#include <musikcore/log.h>
+#include <musikcore/ffi/common/error.h>
+#include <musikcore/ffi/common/primitives.h>
 #include <musikcore/debug.h>
 #include <musikcore/support/Common.h>
 #include <functional>
@@ -54,7 +57,6 @@ static std::vector<std::unique_ptr<musik::debug::IBackend>> backends;
 static std::thread* thread = nullptr;
 static log_queue* queue = nullptr;
 static std::recursive_mutex mutex;
-static volatile bool cancel = true;
 static bool shutdownRegistered = false;
 
 enum class debug_level {
@@ -76,9 +78,6 @@ class log_queue {
             debug_level level;
             std::string tag;
             std::string message;
-        };
-
-        class stopped_exception {
         };
 
         log_queue() {
@@ -134,43 +133,45 @@ class log_queue {
         std::queue<log_entry*> queue;
         std::condition_variable wait_for_next_item_condition;
         std::mutex queue_mutex;
-        volatile bool active;
+        bool active;
 };
 
 static void thread_proc() {
-    try {
-        while (!cancel) {
-            log_queue::log_entry* entry = queue->pop_top();
-            if (entry) {
-                for (auto& backend : backends) {
-                    switch (entry->level) {
-                        case debug_level::verbose:
-                            backend->verbose(entry->tag, entry->message);
-                            break;
-                        case debug_level::info:
-                            backend->info(entry->tag, entry->message);
-                            break;
-                        case debug_level::warning:
-                            backend->warning(entry->tag, entry->message);
-                            break;
-                        case debug_level::error:
-                            backend->error(entry->tag, entry->message);
-                            break;
-                    }
-                }
-                delete entry;
+    while (auto* item = queue->pop_top()) {
+        const std::unique_ptr<log_queue::log_entry> entry(item);
+        for (auto& backend : backends) {
+            switch (entry->level) {
+                case debug_level::verbose:
+                    backend->verbose(entry->tag, entry->message);
+                    break;
+                case debug_level::info:
+                    backend->info(entry->tag, entry->message);
+                    break;
+                case debug_level::warning:
+                    backend->warning(entry->tag, entry->message);
+                    break;
+                case debug_level::error:
+                    backend->error(entry->tag, entry->message);
+                    break;
             }
         }
-    }
-    catch (log_queue::stopped_exception&) {
     }
 }
 
 void musik::debug::Start(std::vector<musik::debug::IBackend*> backends) {
+    std::vector<std::unique_ptr<IBackend>> owned;
+    owned.reserve(backends.size());
+    for (auto* backend : backends) {
+        owned.emplace_back(backend);
+    }
+    TryStart(std::move(owned));
+}
+
+bool musik::debug::TryStart(std::vector<std::unique_ptr<IBackend>> backends) {
     std::unique_lock<std::recursive_mutex> lock(mutex);
 
     if (queue || thread) {
-        return;
+        return false;
     }
 
     /* Libraries such as ncurses can call exit() during initialization. Ensure
@@ -179,21 +180,26 @@ void musik::debug::Start(std::vector<musik::debug::IBackend*> backends) {
         shutdownRegistered = true;
     }
 
-    for (auto backend : backends) {
-        ::backends.push_back(std::unique_ptr<musik::debug::IBackend>(backend));
+    auto pending = std::make_unique<log_queue>();
+    ::backends = std::move(backends);
+    queue = pending.get();
+
+    try {
+        thread = new std::thread(thread_proc);
+    }
+    catch (...) {
+        queue = nullptr;
+        ::backends.clear();
+        throw;
     }
 
-    cancel = false;
-    queue = new log_queue();
-    thread = new std::thread(std::bind(&thread_proc));
-
+    pending.release();
     info("LOG SESSION", "---------- START ----------");
+    return true;
 }
 
 void musik::debug::Shutdown() {
     std::unique_lock<std::recursive_mutex> lock(mutex);
-
-    cancel = true;
 
     if (thread && queue) {
         queue->stop();
@@ -349,4 +355,17 @@ namespace musik {
         writeTo(std::cerr, "error", tag, string);
     }
 
+}
+
+mc_result MC_CALL mc_log_write(mc_log_level level, mc_string_view tag, mc_string_view text) {
+    using namespace musik::core::ffi;
+    if (level > MC_LOG_ERROR || !valid_text(tag) || !valid_text(text)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return exception_barrier(nullptr, [&] {
+        enqueue(static_cast<debug_level>(level), std::string(tag.data ? tag.data : "", tag.length),
+            std::string(text.data ? text.data : "", text.length));
+        return MC_OK;
+    });
 }

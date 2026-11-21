@@ -114,3 +114,7 @@ Cube loads and selects the existing locale resources through the public SDK. Que
 ## UI message queue
 
 The application and core compile the same generic queue implementation, with a local copy in the Unix frontend. Cube no longer imports message queue methods from libmusikcore. All 47 Linux Release tests passed, including the queue unit contracts and four headless UI scenarios.
+
+## Diagnostics
+
+The managed runtime owns file logging and optional Piggy output. It delivers console logs on the context dispatcher through public callbacks. Cube's console consumes those records directly. All 47 Linux Release tests passed. The managed-runtime test checks delivery of a worker-thread log on the owner thread, and Browse opens the console and verifies a real library log is visible.

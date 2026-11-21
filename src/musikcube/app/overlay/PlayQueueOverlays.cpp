@@ -33,9 +33,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include <musikcore/library.h>
-#include <musikcore/debug.h>
 
 #include <chrono>
 
@@ -152,7 +152,7 @@ static void readCategoryId(api::Context& musikcore, const api::TrackRef& track,
                         resolved(id);
                     }
                     catch (const api::Error& error) {
-                        musik::debug::error("PlayQueueOverlays", error.what());
+                        musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
                     }
                 }
             }
@@ -279,7 +279,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
                     }
                 }
                 catch (const api::Error& error) {
-                    musik::debug::error("PlayQueueOverlays", error.what());
+                    musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
                 }
             });
 
@@ -368,7 +368,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
                         });
                 }
                 catch (const api::Error& error) {
-                    musik::debug::error("PlayQueueOverlays", error.what());
+                    musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
                 }
             });
 
@@ -446,7 +446,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
                         });
                 }
                 catch (const api::Error& error) {
-                    musik::debug::error("PlayQueueOverlays", error.what());
+                    musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
                 }
             });
 
@@ -504,7 +504,7 @@ void PlayQueueOverlays::ShowAddToPlaylistPicker(api::Context& musikcore,
             }
         }
         catch (const api::Error& error) {
-            musik::debug::error("PlayQueueOverlays", error.what());
+            musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
         }
     };
 
@@ -521,7 +521,7 @@ void PlayQueueOverlays::ShowAddToPlaylistPicker(api::Context& musikcore,
             }, lastOperationExpired() ? 0 : lastPlaylistId);
     }
     catch (const api::Error& error) {
-        musik::debug::error("PlayQueueOverlays", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
     }
 }
 
@@ -548,7 +548,7 @@ void PlayQueueOverlays::ShowAddCategoryToPlaylistPicker(api::Context& musikcore,
         openCategoryTracks(musikcore, field, value, id, selected);
     }
     catch (const api::Error& error) {
-        musik::debug::error("PlayQueueOverlays", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
     }
 }
 
@@ -560,7 +560,7 @@ static api::PlaylistWriteCompletion playlistCompletion(AsyncCallbackScope::Token
             return;
         }
         if (status != MC_OK) {
-            musik::debug::error("PlayQueueOverlays", std::string(error));
+            musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", std::string(error));
         }
         else if (succeeded) {
             succeeded(id);
@@ -579,7 +579,7 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(api::Context& musikcore, AsyncCa
                 api::SavePlaylist(musikcore, id, name, tracks, completed);
             }
             catch (const api::Error& error) {
-                musik::debug::error("PlayQueueOverlays", error.what());
+                musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
             }
         }
     };
@@ -604,7 +604,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(api::Context& musikcore, Async
                     api::RenamePlaylist(musikcore, id, name, completed);
                 }
                 catch (const api::Error& error) {
-                    musik::debug::error("PlayQueueOverlays", error.what());
+                    musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
                 }
             }
         });
@@ -620,7 +620,7 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(api::Context& musikcore, Async
                     api::DeletePlaylist(musikcore, id, completed);
                 }
                 catch (const api::Error& error) {
-                    musik::debug::error("PlayQueueOverlays", error.what());
+                    musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
                 }
             }
         });

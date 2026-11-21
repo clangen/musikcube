@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include <musikcore/library.h>
 #include <cursespp/Colors.h>
@@ -240,7 +241,7 @@ void CategoryListView::RefreshPlayingCategory() {
             }));
     }
     catch (const api::Error& error) {
-        musik::debug::error("CategoryListView", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "CategoryListView", error.what());
     }
 }
 

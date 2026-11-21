@@ -45,7 +45,6 @@
 #include <musikcore/preferences.hpp>
 #include <common/runtime/IMessageTarget.h>
 #include <musikcore/indexer.hpp>
-#include <musikcore/net/PiggyWebSocketClient.h>
 
 #include <app/util/ConsoleLogger.h>
 #include <app/util/UpdateCheck.h>

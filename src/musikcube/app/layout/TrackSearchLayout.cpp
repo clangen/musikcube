@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/log.hpp>
 
 #include <cursespp/Colors.h>
 #include <cursespp/App.h>
@@ -180,7 +181,7 @@ void TrackSearchLayout::Requery() {
             }));
     }
     catch (const api::Error& error) {
-        musik::debug::error("TrackSearchLayout", error.what());
+        musik::core::api::WriteLog(MC_LOG_ERROR, "TrackSearchLayout", error.what());
     }
 }
 

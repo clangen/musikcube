@@ -53,13 +53,10 @@
 #include <app/util/PreferenceKeys.h>
 
 #include <common/runtime/Message.h>
-#include <musikcore/debug.h>
 #include <app/util/Locale.h>
 #include <musikcore/indexer.hpp>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/net/PiggyWebSocketClient.h>
-#include <musikcore/support/PiggyDebugBackend.h>
 
 #ifdef WIN32
 #include <cursespp/Win32Util.h>
@@ -112,20 +109,6 @@ int main(int argc, char* argv[]) {
 
     auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
-    auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
-
-    std::vector<debug::IBackend*> debuggerBackends = {
-        new debug::SimpleFileBackend(), consoleLogger
-    };
-
-    if (prefs.GetBool(MC_PREFERENCE_KEY_PIGGY_ENABLED, false)) {
-        auto piggyClient = PiggyWebSocketClient::Instance(&Window::MessageQueue());
-        piggyClient->Connect(prefs.GetString(MC_PREFERENCE_KEY_PIGGY_HOSTNAME, "localhost"));
-        debuggerBackends.push_back(new PiggyDebugBackend(piggyClient));
-    }
-
-    debug::Start(debuggerBackends);
-
 #if defined(BUILD_STANDALONE) && !defined(__APPLE__)
     /* when we build a standalone binary we make sure to also package the terminfo used
     by the version of ncurses we compile against. if the target system has ncurses5, the
@@ -136,8 +119,11 @@ int main(int argc, char* argv[]) {
 
     {
         /* The context outlives the app and every view that borrows it. */
+        ConsoleLogger consoleLogger;
         mc_context_options apiOptions = MC_CONTEXT_OPTIONS_DEFAULT;
-        apiOptions.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        apiOptions.flags = MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING;
+        apiOptions.log = ConsoleLogger::OnLog;
+        apiOptions.log_user_data = &consoleLogger;
         apiOptions.wakeup_user_data = &Window::MessageQueue();
         apiOptions.wakeup = [](void* data) {
             auto& queue = *static_cast<runtime::IMessageQueue*>(data);
@@ -205,7 +191,7 @@ int main(int argc, char* argv[]) {
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
 
         /* main layout */
-        auto mainLayout = std::make_shared<MainLayout>(app, consoleLogger, musikcore);
+        auto mainLayout = std::make_shared<MainLayout>(app, &consoleLogger, musikcore);
         GlobalHotkeys globalHotkeys(musikcore);
 
         mainLayout->Start();
@@ -228,9 +214,6 @@ int main(int argc, char* argv[]) {
         win32::HideMainWindow();
 #endif
     }
-
-    PiggyWebSocketClient::Shutdown();
-    debug::Shutdown();
 
     return 0;
 }
