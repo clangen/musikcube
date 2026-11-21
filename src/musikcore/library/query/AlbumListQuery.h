@@ -38,7 +38,7 @@
 #include <musikcore/library/query/util/CategoryQueryUtil.h>
 #include <musikcore/library/metadata/MetadataMapList.h>
 #include <musikcore/db/Connection.h>
-#include <musikcore/support/DeleteDefaults.h>
+#include <common/DeleteDefaults.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 

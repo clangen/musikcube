@@ -1,7 +1,7 @@
 #include <app/util/OpenUrl.h>
 
 #ifdef WIN32
-#include <musikcore/utfutil.h>
+#include <common/Utf8.h>
 #include <windows.h>
 #include <shellapi.h>
 #else

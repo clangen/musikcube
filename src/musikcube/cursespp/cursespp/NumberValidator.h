@@ -36,7 +36,7 @@
 #pragma once
 
 #include <cursespp/InputOverlay.h>
-#include <musikcore/utfutil.h>
+#include <common/Utf8.h>
 #include <app/util/Locale.h>
 #include <cmath>
 #include <limits>

@@ -42,7 +42,7 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/QueryRegistry.h>
 #include <common/runtime/Message.h>
-#include <musikcore/support/NarrowCast.h>
+#include <common/NarrowCast.h>
 #include <musikcore/debug.h>
 
 #include <chrono>

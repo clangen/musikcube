@@ -55,7 +55,6 @@
 #include <common/runtime/Message.h>
 #include <app/util/Locale.h>
 #include <musikcore/indexer.hpp>
-#include <musikcore/sdk/constants.h>
 
 #ifdef WIN32
 #include <cursespp/Win32Util.h>

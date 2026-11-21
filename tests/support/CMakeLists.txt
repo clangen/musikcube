@@ -17,6 +17,15 @@ else()
 endif()
 
 if(BUILD_TESTING)
+  if(UNIX AND TARGET musikcube AND CMAKE_NM)
+    add_test(NAME musikcube.integration.core_boundary COMMAND "${CMAKE_COMMAND}"
+      "-DNM=${CMAKE_NM}" "-DAPPLE=${APPLE}" "-DAPP=$<TARGET_FILE:musikcube>"
+      "-DSOURCE=${PROJECT_SOURCE_DIR}" -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-cube-boundary.cmake")
+    set_tests_properties(musikcube.integration.core_boundary PROPERTIES
+      LABELS "integration;musikcube;abi;contract")
+    add_dependencies(musikcube_tests musikcube)
+  endif()
+
   add_executable(musikcore_example_remote
     "${PROJECT_SOURCE_DIR}/examples/core-remote.c" host-wakeup.cpp)
   target_include_directories(musikcore_example_remote PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -53,7 +62,7 @@ if(BUILD_TESTING)
   if(MUSIKCUBE_TEST_NODE)
     add_executable(musikcore_production_api_test
       ../integration/api/cpp-wrapper.cpp ../integration/api/query-support.cpp)
-    target_compile_definitions(musikcore_production_api_test PRIVATE MUSIKCORE_TEST_APP_BINDING)
+    target_compile_definitions(musikcore_production_api_test PRIVATE MUSIKCORE_TEST_PRODUCTION_RUNTIME)
     target_include_directories(musikcore_production_api_test PRIVATE
       "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
     set_target_properties(musikcore_production_api_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)

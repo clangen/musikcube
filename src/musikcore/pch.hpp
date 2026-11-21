@@ -169,12 +169,12 @@
 #include <musikcore/sdk/String.h>
 #include <musikcore/support/Auddio.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/support/DeleteDefaults.h>
+#include <common/DeleteDefaults.h>
 #include <musikcore/support/LastFm.h>
 #include <musikcore/support/Messages.h>
-#include <musikcore/support/NarrowCast.h>
+#include <common/NarrowCast.h>
 #include <musikcore/support/Playback.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
-#include <musikcore/utfutil.h>
+#include <common/Utf8.h>
 #include <musikcore/sdk/version.h>

@@ -46,7 +46,7 @@
 #include <musikcore/support/Common.h>
 #include <musikcore/config.h>
 #include <musikcore/debug.h>
-#include <musikcore/utfutil.h>
+#include <common/Utf8.h>
 #include <algorithm>
 #include <iostream>
 #include <filesystem>

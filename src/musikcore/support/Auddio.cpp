@@ -35,7 +35,7 @@
 #include "pch.hpp"
 #include "Auddio.h"
 #include "Common.h"
-#include <musikcore/support/NarrowCast.h>
+#include <common/NarrowCast.h>
 #include <musikcore/sdk/HttpClient.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>

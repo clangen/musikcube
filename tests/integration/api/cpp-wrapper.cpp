@@ -1,6 +1,6 @@
 #include <musikcore/musikcore.hpp>
 
-#ifdef MUSIKCORE_TEST_APP_BINDING
+#ifdef MUSIKCORE_TEST_PRODUCTION_RUNTIME
 #include "../../support/TestTransport.h"
 #include <musikcore/audio/PlaybackService.h>
 #include <common/runtime/MessageQueue.h>
@@ -52,7 +52,7 @@ namespace {
 
     /* Open the same fixture through either the public standalone identity or the production library adapter. */
     std::shared_ptr<const Library> openLibrary(const char *directory) {
-#ifdef MUSIKCORE_TEST_APP_BINDING
+#ifdef MUSIKCORE_TEST_PRODUCTION_RUNTIME
         return OpenFixtureLibrary();
 #else
         return std::make_shared<const Library>(directory);
@@ -308,7 +308,7 @@ namespace {
             changes == before + 1 && latest == MC_OK &&
             window.CachedRow(0) && window.CachedRow(1);
     }
-#ifdef MUSIKCORE_TEST_APP_BINDING
+#ifdef MUSIKCORE_TEST_PRODUCTION_RUNTIME
     /* Reenter the queue during payload destruction to catch cleanup-under-lock deadlocks and delivery to
        unregistered targets. */
     bool checkMessageCleanup() {
@@ -469,13 +469,23 @@ namespace {
             observer.join();
             if (!snapshotBusy || !queueBusy) return playbackFailure(__LINE__);
 
+            const auto queueHas = [&](std::initializer_list<int64_t> expected) {
+                const auto queue = playback->Queue();
+                if (!queue) {
+                    return false;
+                }
+
+                size_t count = 0;
+                const auto ids = queue->Ids(count);
+                return count == expected.size() && std::equal(expected.begin(), expected.end(), ids);
+            };
+
             if (playback->Play(result, 2) != MC_ERROR_NOT_FOUND ||
                 playback->Play(result, 1) != MC_OK || service.GetIndex() != 1 ||
-                service.GetTrackList()->GetId(0) != result.Id(0) ||
-                service.GetTrackList()->GetId(1) != result.Id(1)) return playbackFailure(__LINE__);
+                !queueHas({ result.Id(0), result.Id(1) })) return playbackFailure(__LINE__);
             const auto original = playback->Queue();
             if (!original || playback->Move(*original, 1, 0) != MC_OK ||
-                service.GetTrackList()->GetId(0) != result.Id(1) ||
+                !queueHas({ result.Id(1), result.Id(0) }) ||
                 playback->Remove(*original, 1) != MC_ERROR_NOT_FOUND) return playbackFailure(__LINE__);
             const auto reordered = playback->Queue();
             if (!reordered || playback->Remove(*reordered, 1) != MC_OK || service.Count() != 1 ||
@@ -484,16 +494,14 @@ namespace {
 
             const auto first = result.Track(0);
             const auto second = result.Track(1);
-            const auto trackList = service.GetTrackList();
             if (playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NOW) != MC_OK ||
                 transport->state != sdk::PlaybackState::Playing ||
-                service.Count() != 1 || trackList->GetId(0) != first.Id() ||
+                !queueHas({ first.Id() }) ||
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
                 playback->UseTrack(second, MC_PLAYBACK_TRACK_PLAY_NEXT) != MC_OK ||
-                service.Count() != 3 ||
-                trackList->GetId(1) != second.Id() || trackList->GetId(2) != first.Id() ||
+                !queueHas({ first.Id(), second.Id(), first.Id() }) ||
                 playback->UseTrack(second, MC_PLAYBACK_TRACK_PREPEND) != MC_OK ||
-                service.Count() != 4 || trackList->GetId(0) != second.Id()) return playbackFailure(__LINE__);
+                !queueHas({ second.Id(), first.Id(), second.Id(), first.Id() })) return playbackFailure(__LINE__);
 
             if (playback->UseTrack({}, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_INVALID_ARGUMENT ||
                 playback->UseTrack(first, 0) != MC_ERROR_UNSUPPORTED) return playbackFailure(__LINE__);
@@ -646,8 +654,12 @@ namespace {
                 playback->Control(MC_PLAYBACK_STOP) != MC_OK) return playbackFailure(__LINE__);
             const auto stopped = playback->Queue();
             if (!stopped || stopped->RetainedRow() != 0 || stopped->CurrentRow() != SIZE_MAX ||
-                playback->UseTrack(second, MC_PLAYBACK_TRACK_PLAY_NEXT) != MC_OK ||
-                trackList->GetId(1) != second.Id() || trackList->GetId(2) != first.Id()) return playbackFailure(__LINE__);
+                playback->UseTrack(second, MC_PLAYBACK_TRACK_PLAY_NEXT) != MC_OK) return playbackFailure(__LINE__);
+            const auto afterPlayNext = playback->Queue();
+            size_t afterPlayNextCount = 0;
+            const auto afterPlayNextIds = afterPlayNext ? afterPlayNext->Ids(afterPlayNextCount) : nullptr;
+            if (afterPlayNextCount < 3 || afterPlayNextIds[1] != second.Id() ||
+                afterPlayNextIds[2] != first.Id()) return playbackFailure(__LINE__);
 
             /* Switch after the request becomes ready but before dispatching its result. */
             wake = query_test_wakeup_count();
@@ -1092,14 +1104,14 @@ int main(int argc, char** argv) {
         query_test_release_wakeup();
     }
     try {
-#ifdef MUSIKCORE_TEST_APP_BINDING
+#ifdef MUSIKCORE_TEST_PRODUCTION_RUNTIME
         CoreRuntime runtime;
 #endif
         const std::pair<const char*, std::function<bool()>> cases[] = {
             { "query", [&] { return checkQuery(argv[1]); } },
             { "search", [&] { return checkSearch(argv[1]); } },
             { "result_windows", [&] { return checkResultWindows(argv[1]); } },
-#ifdef MUSIKCORE_TEST_APP_BINDING
+#ifdef MUSIKCORE_TEST_PRODUCTION_RUNTIME
             { "message_cleanup", [] { return checkMessageCleanup(); } },
             { "playback_commands", [] { return checkPlaybackCommands(); } },
             { "remote_payloads", [] { return checkRemoteQueryPayloads(); } },

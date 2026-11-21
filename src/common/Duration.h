@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include <musikcore/support/NarrowCast.h>
-#include <musikcore/utfutil.h>
+#include <common/NarrowCast.h>
+#include <common/Utf8.h>
 #include <cmath>
 #include <string>
 

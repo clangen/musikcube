@@ -40,7 +40,7 @@
 
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/db/Connection.h>
-#include <musikcore/support/DeleteDefaults.h>
+#include <common/DeleteDefaults.h>
 
 namespace musik { namespace core { namespace db {
 

@@ -129,13 +129,13 @@ target_precompile_headers(musikcore
     "$<$<COMPILE_LANGUAGE:CXX>:sdk/version.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Auddio.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Common.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:support/DeleteDefaults.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:../common/DeleteDefaults.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/LastFm.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Messages.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:support/NarrowCast.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:../common/NarrowCast.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Playback.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/PreferenceKeys.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Preferences.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:utfutil.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:../common/Utf8.h>"
 )
 

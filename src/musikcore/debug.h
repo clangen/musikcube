@@ -38,7 +38,7 @@
 #include <vector>
 #include <fstream>
 #include <memory>
-#include "utfutil.h"
+#include <common/Utf8.h>
 
 namespace musik {
     class debug {

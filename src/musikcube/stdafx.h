@@ -49,12 +49,6 @@
     #include <windows.h>
 #endif
 
-/* curses defines a timeout() method that causes issues with
-asio's streambuf. include it up front so work around this */
-#pragma warning(push, 0)
-#include <asio/basic_socket_streambuf.hpp>
-#pragma warning(pop)
-
 #include <set>
 #include <vector>
 #include <map>
@@ -78,12 +72,11 @@ asio's streambuf. include it up front so work around this */
 #include <common/runtime/IMessageTarget.h>
 #include <common/runtime/Message.h>
 #include <common/runtime/MessageQueue.h>
-#include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/Filesystem.h>
 #include <musikcore/sdk/String.h>
-#include <musikcore/support/DeleteDefaults.h>
-#include <musikcore/support/NarrowCast.h>
-#include <musikcore/utfutil.h>
+#include <common/DeleteDefaults.h>
+#include <common/NarrowCast.h>
+#include <common/Utf8.h>
 #include <musikcore/sdk/version.h>
 
 #include <cursespp/cursespp/App.h>

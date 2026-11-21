@@ -130,3 +130,5 @@ Lyrics lookup and Last.fm registration use the context dispatcher and the existi
 ## Frontend linkage
 
 Core's precompiled headers are private to its build. Cube drops legacy playback, database, networking, and plugin implementation headers. The rebuilt Linux executable has no dynamic imports from the private C++ core. All 47 Linux Release tests passed through the rebuilt frontend.
+
+The frontend boundary test checks source includes and the real executable's dynamic import table. The playback contract now inspects public queue snapshots, so the last raw queue-list accessor could be deleted. All 48 Linux Release tests passed. The Linux production build also built the daemon and configured plugins.

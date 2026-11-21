@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/support/DeleteDefaults.h>
+#include <common/DeleteDefaults.h>
 #include <musikcore/sdk/ITagStore.h>
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/sdk/ITrack.h>

@@ -36,7 +36,7 @@
 #include "PluginOverlay.h"
 
 #include <musikcore/plugins.hpp>
-#include <musikcore/utfutil.h>
+#include <common/Utf8.h>
 
 #include <cursespp/App.h>
 #include <cursespp/DialogOverlay.h>

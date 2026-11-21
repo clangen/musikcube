@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/support/DeleteDefaults.h>
+#include <common/DeleteDefaults.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/query/util/SdkWrappers.h>
 #include <musikcore/sdk/IValueList.h>

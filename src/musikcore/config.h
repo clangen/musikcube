@@ -34,13 +34,13 @@
 
 #pragma once
 
-#include "utfutil.h"
+#include <common/Utf8.h>
 #include "sdk/constants.h"
 
 #include <memory>
 
-#include <musikcore/support/NarrowCast.h>
-#include <musikcore/support/DeleteDefaults.h>
+#include <common/NarrowCast.h>
+#include <common/DeleteDefaults.h>
 
 #ifdef WIN32
     #ifndef WINVER

@@ -37,7 +37,7 @@
 #include <cursespp/SchemaOverlay.h>
 
 #include <app/util/Locale.h>
-#include <musikcore/utfutil.h>
+#include <common/Utf8.h>
 
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>

@@ -39,7 +39,7 @@
 #include <musikcore/sdk/String.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/i18n/Locale.h>
-#include <musikcore/utfutil.h>
+#include <common/Utf8.h>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;

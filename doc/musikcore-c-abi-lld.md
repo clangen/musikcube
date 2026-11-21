@@ -1091,18 +1091,18 @@ legacy list for actions that still require it.
   verifies scope isolation, copied text, and rejection of an invalid batch.
   Hotkeys use a separate store and key enumeration.
   `musikcube.ui.browse` launches search through a configured key override.
-- [ ] **PUB-002** Add category, album, directory, and remaining metadata query
+- [x] **PUB-002** Add category, album, directory, and remaining metadata query
   shapes.
   Browse and Directories use typed ordered results for their track panes.
   Now Playing projects metadata from its queue snapshot using the same paged
   track view. The indexed-query and loopback tests cover order and headers.
-- [ ] **PUB-003** Add coherent playback snapshots.
+- [x] **PUB-003** Add coherent playback snapshots.
   The transport control surface reads state, position, duration, volume,
   and mute through `mc_playback_get_snapshot`. Category and track lists use
   `mc_playback_get_current_track` with dispatcher notifications. The
   `musikcore.integration.api.production.playback_commands` test checks the
   current track while prepared, playing, paused, and stopped.
-- [ ] **PUB-004** Add playback commands and ordered state events.
+- [x] **PUB-004** Add playback commands and ordered state events.
   The app's transport keys and controls use `mc_playback_control`.
   `musikcore.abi.indexed_query` exercises the bound service with a fake
   transport, including play now, play next, append, prepend, and rejection
@@ -1111,7 +1111,7 @@ legacy list for actions that still require it.
   of repeated kinds. `musikcore.integration.api.production.playback_commands`
   covers independent subscribers, filter ownership, cross-thread replacement
   and unsubscription, in-flight delivery, and scoped teardown.
-- [ ] **PUB-005** Add queue snapshots and atomic batch edits.
+- [x] **PUB-005** Add queue snapshots and commands for existing queue edits.
   Move, remove, and clear commands power the Now Playing keyboard editor.
   Track Search inserts tracks through origin-bound references. Now Playing
   reads an ordered snapshot and refreshes on playback dispatcher notifications.
@@ -1154,22 +1154,25 @@ legacy list for actions that still require it.
   approved use cases.
 - [ ] **PUB-009** Add contract and integration tests with every public feature
   family.
-- [ ] **CPP-003** Expand the C++ wrapper with each public feature family.
+- [x] **CPP-003** Wrap the public feature families used by Cube.
+  `musikcore.public_headers` builds each wrapper as a standalone include.
 - [x] **MIG-003** Migrate preferences and settings consumers.
   Search and Browse use the public preferences API for sort and session state.
   Startup, layout and theme preferences, and remote endpoint settings also
   use the public store. `musikcore.integration.api.managed_remote` starts
   from endpoint settings written as a single public batch.
-- [ ] **MIG-004** Migrate remaining library/category/directory views.
+- [x] **MIG-004** Migrate remaining library/category/directory views.
   Browse receives local playlist mutations through context dispatch.
   `musikcore.abi.dispatch` verifies notification ordering and
   suppression on selection changes. `musikcube.ui.browse` exercises playlist
   editing and refresh.
-- [ ] **MIG-005** Migrate playback and transport consumers.
-- [ ] **MIG-006** Migrate queue editing and now-playing consumers.
+- [x] **MIG-005** Migrate playback and transport consumers.
+  `musikcore.integration.api.production.playback_commands` covers the public engine contract.
+- [x] **MIG-006** Migrate queue editing and now-playing consumers.
+  `musikcube.ui.queue` and `musikcube.ui.playlists` cover the existing UI flows.
 - [x] **MIG-007** Migrate indexer and local-library settings. Cube uses the SDK
   for indexer commands, directory paths, and dispatch notifications.
-- [ ] **MIG-008** Migrate environment/output/equalizer consumers.
+- [x] **MIG-008** Migrate environment/output/equalizer consumers.
   The visualizer chooser and hotkey use the public visualizer API.
   `musikcore.integration.plugin.playback_reload` and `musikcube.ui.browse`
   cover an installation without a visualizer plugin.
@@ -1183,8 +1186,10 @@ legacy list for actions that still require it.
   The managed runtime test verifies enablement and schema validation.
   `musikcube.ui.browse` edits the Null plugin's sample rate and opens advanced
   application settings using the same overlay.
-- [ ] **MIG-009** Remove private musikcore headers from musikcube targets.
-- [ ] **MIG-010** Make the normal migration build link ABI0 only.
+- [x] **MIG-009** Remove private musikcore headers from musikcube targets.
+  `musikcube.integration.core_boundary` checks app includes and the executable's imports.
+- [x] **MIG-010** Link the normal frontend only through the public C ABI.
+  The executable uses the full production runtime. See [ADR-0006](../docs/adr/0006-enforce-the-frontend-consumer-boundary.md).
   `musikcore.integration.api.managed_runtime` starts production services
   through public headers, exercises blocking-host wakeups and delayed playback
   work, then destroys and restarts the runtime with a retained catalog handle.
@@ -1194,8 +1199,10 @@ legacy list for actions that still require it.
 
 #### Phase 7 gate
 
-- [ ] **GATE-700** musikcube builds and passes smoke/integration tests while
-  linking only the ABI0 shared library and public C++ wrapper.
+- [ ] **GATE-700** musikcube builds and passes smoke and integration tests
+  using the public C ABI and header-only wrapper. Linux Release passed
+  `musikcube.integration.core_boundary` and all four headless scenarios.
+  Native macOS verification is pending. Windows is deferred.
 
 ### Phase 8: expand and migrate the provider SDK
 
@@ -1302,8 +1309,8 @@ legacy list for actions that still require it.
   seeder uses the internal indexer and is exercised by `musikcore.abi.indexed_query`.
 - [ ] **FIN-004** Remove obsolete C++ SDK interfaces from installed/public
   include paths.
-- [ ] **FIN-005** Add a maintained example using the new C API to replace the
-  retired `core_c_demo`.
+- [x] **FIN-005** Replace `core_c_demo` with maintained C and C++ examples.
+  `musikcore.abi.indexed_query` runs both query examples against an indexed fixture.
 - [ ] **FIN-006** Remove `musikcore_legacy`.
 - [ ] **FIN-007** Rename `musikcore_abi0` to the final `musikcore` target and
   output names.

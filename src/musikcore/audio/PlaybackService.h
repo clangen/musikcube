@@ -156,11 +156,6 @@ namespace musik { namespace core { namespace audio {
                 return *this->transport.get();
             }
 
-            std::shared_ptr<const musik::core::TrackList> GetTrackList() noexcept {
-                return std::shared_ptr<const musik::core::TrackList>(
-                    &this->playlist, [](const musik::core::TrackList*) {});
-            }
-
             /* required to make changes to the playlist. this little data structure
             privately owns a lock to the internal data structure and will release
             that lock when it's destructed. */

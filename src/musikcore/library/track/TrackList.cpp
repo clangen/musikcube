@@ -44,7 +44,7 @@
 #include <musikcore/library/query/util/SdkWrappers.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
-#include <musikcore/support/NarrowCast.h>
+#include <common/NarrowCast.h>
 #include <unordered_set>
 #include <map>
 #include <random>
