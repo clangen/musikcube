@@ -4,6 +4,8 @@ set(windows_core_sources
   src/musikcore/audio/GaplessTransport.cpp
   src/musikcore/audio/Outputs.cpp
   src/musikcore/audio/PlaybackService.cpp
+  src/musikcore/ffi/consumer/legacy-library-selection.cpp
+  src/musikcore/ffi/consumer/legacy-playback-binding.cpp
   src/musikcore/audio/MasterTransport.cpp
   src/musikcore/audio/Streams.cpp
   src/musikcore/audio/Visualizer.cpp
