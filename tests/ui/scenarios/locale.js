@@ -17,13 +17,13 @@ function stageLocale(runtime) {
 
 async function checkLocale(terminal) {
   terminal.send(DOWN + '\x1bs');
-  await terminal.expect('select sort order');
-  const titleRow = terminal.screen.text().split('\n').find(row => row.includes('select sort order'));
   const left = Math.floor(terminal.screen.columns / 2) - SORT_OVERLAY_WIDTH / 2;
   const right = left + SORT_OVERLAY_WIDTH - 1;
-  if (!/[│x]/.test(titleRow[left]) || titleRow[right] !== titleRow[left]) {
-    throw new Error('Sort overlay did not use the locale-specific width');
-  }
+  /* the PTY can deliver the title before the rest of its frame. */
+  await terminal.waitFor(() => {
+    const row = terminal.screen.text().split('\n').find(line => line.includes('select sort order'));
+    return row && /[│x]/.test(row[left]) && row[right] === row[left];
+  }, 'sort overlay with locale-specific width');
   terminal.send('\x1b');
   await terminal.expect('tracks (sorted by', { absent: 'select sort order' });
 }
