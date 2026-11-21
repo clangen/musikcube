@@ -331,20 +331,6 @@ namespace musik { namespace core {
         return path;
     }
 
-    bool CopyFile(const std::string& from, const std::string& to) {
-        if (from.size() && to.size() && from != to) {
-            std::ifstream in(from);
-            if (in.is_open()) {
-                std::ofstream out(to);
-                if (out.is_open()) {
-                    out << in.rdbuf();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
 } }
 
 mc_result MC_CALL mc_path_read(mc_path_kind kind, mc_path_fn read, void* userData) {

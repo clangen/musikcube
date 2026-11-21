@@ -15,6 +15,9 @@ else()
 endif()
 
 if(BUILD_TESTING)
+  # Fixture-only access to native transports and catalog snapshots.
+  target_sources(musikcore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixture-library.cpp")
+
   if(UNIX AND TARGET musikcube AND CMAKE_NM)
     add_test(NAME musikcube.integration.core_boundary COMMAND "${CMAKE_COMMAND}"
       "-DNM=${CMAKE_NM}" "-DAPPLE=${APPLE}" "-DAPP=$<TARGET_FILE:musikcube>"
@@ -89,7 +92,8 @@ if(BUILD_TESTING)
     set_tests_properties(musikcore.abi.indexed_query PROPERTIES
       LABELS "integration;musikcore;api;contract" TIMEOUT 90)
 
-    if(UNIX AND CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME AND
+    if(UNIX AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16 AND
+        CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME AND
         CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
       add_test(NAME musikcore.integration.api.installed_sdk COMMAND "${CMAKE_COMMAND}"
         ${indexed_arguments} "-DINSTALLED_SDK_SOURCE=${PROJECT_SOURCE_DIR}" -P "${indexed_script}")

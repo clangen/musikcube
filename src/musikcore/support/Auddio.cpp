@@ -79,10 +79,6 @@ static std::string getApiToken() {
 }
 
 namespace musik { namespace core { namespace auddio {
-    bool Available() {
-        return getApiToken().size() > 0;
-    }
-
     void FindLyrics(std::string artist, std::string title, LyricsCallback callback) {
         std::string apiToken = getApiToken();
 

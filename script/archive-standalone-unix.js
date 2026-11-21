@@ -53,6 +53,7 @@ function buildApp(config, clean) {
       '-DCMAKE_BUILD_TYPE=Release',
       '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
       '-DBUILD_STANDALONE=true',
+      '-DBUILD_TESTING=OFF',
       '-DENABLE_PCH=true',
       ...config.packageCmake,
     ];

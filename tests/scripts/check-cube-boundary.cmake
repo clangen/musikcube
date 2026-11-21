@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.12)
 
 # Read the production executable's actual dynamic imports.
 if(APPLE)

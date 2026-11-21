@@ -1334,9 +1334,10 @@ legacy list for actions that still require it.
 
 #### Legacy binding cleanup inventory
 
-| Bridge | Remove when |
-| --- | --- |
-| `PlaybackService::GetTrackList()` | The older playback tests can assert against public queue snapshots. |
+Cube no longer has library or playback attachment bindings. Playback tests
+inspect public queue snapshots. The native fault-injection fixture opens
+catalogs through a probe compiled only in test builds. Standalone builds omit
+the probe.
 
 #### Final gate
 
@@ -1345,15 +1346,13 @@ legacy list for actions that still require it.
 
 ## Active next steps
 
-1. Finish the core application API and its real consumers: the remaining
-   runtime/query gaps, `PUB-*`, `CPP-003`, and `MIG-003` through `MIG-010`.
-   Remove temporary bindings only when public ownership replaces them.
-2. Pass `GATE-700` with musikcube using only the C API and public header-only
-   wrapper. Validate core consumer installation, runtime paths, dependencies,
-   and application packages on supported platforms to reach core
-   release-candidate quality. Plugin-specific package tasks remain deferred.
-4. Then begin the provider walking skeleton and SDK migration tasks. Finish
-   combined packaging/compatibility gates before the final ABI v1 freeze.
+1. Run native macOS verification for `GATE-700`. Windows remains deferred.
+   Linux verification passed with Cube using only the C ABI and public
+   header-only wrapper. Keep the Linux build, test, and package checks in place.
+2. Finish the remaining platform acceptance and release documentation for the
+   core consumer SDK.
+3. Begin the provider walking skeleton and SDK migration in a separate pass.
+   Finish combined packaging and compatibility gates before the ABI v1 freeze.
 
 Historical phase numbers and completed implementation boxes do not override
 this dependency order or imply an unchecked cross-platform gate has passed.

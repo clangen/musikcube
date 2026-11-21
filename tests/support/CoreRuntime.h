@@ -42,20 +42,8 @@ private:
     musik::core::runtime::MessageQueue queue;
 };
 
-inline std::shared_ptr<const musik::core::api::Library> OpenFixtureLibrary(
-    musik::core::ILibrary::Type kind = musik::core::ILibrary::Type::Local)
-{
-    mc_library* handle = nullptr;
-    const auto result = musik::core::LibraryFactory::Instance().OpenLibrary(kind, &handle);
-    if (result == MC_ERROR_IO || result == MC_ERROR_NOT_FOUND) {
-        return {};
-    }
-    if (result != MC_OK) {
-        throw musik::core::api::Error(result);
-    }
-    musik::core::api::Library library(handle);
-    return std::make_shared<const musik::core::api::Library>(std::move(library));
-}
+std::shared_ptr<const musik::core::api::Library> OpenFixtureLibrary(
+    musik::core::ILibrary::Type kind = musik::core::ILibrary::Type::Local);
 
 inline musik::core::api::Playback OpenFixturePlayback(musik::core::audio::PlaybackService& service) {
     mc_playback* handle = nullptr;

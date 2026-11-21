@@ -46,7 +46,6 @@ namespace musik { namespace core {
     std::string GetPath(const std::string &sFile);
     std::string GetPluginDirectory();
     std::string NormalizeDir(std::string path);
-    bool CopyFile(const std::string& from, const std::string& to);
     int64_t Checksum(char *data,unsigned int bytes);
     size_t CopyString(const std::string& src, char* dst, size_t size);
     bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);

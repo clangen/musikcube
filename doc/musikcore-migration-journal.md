@@ -148,3 +148,7 @@ A 20-run benchmark used the installed Linux Release app and 30,000 tracks. Media
 ## Loopback audio
 
 The Linux loopback test starts the real server, selects the remote catalog, and plays an indexed WAV through the HTTP stream and Null output. It checks that playback position advances. It also verifies that the log records the remote stream without its credential-bearing URI payload. All 50 Linux Release tests passed.
+
+## Bridge cleanup
+
+Removed the final fixture-only library opener from LibraryFactory. Its fault-injection probe lives with the tests and is compiled only when test targets are enabled. Standalone archives disable test targets. The unused raw file-copy and lyrics-availability helpers are also gone. All 50 Linux Release tests passed after this cleanup.
