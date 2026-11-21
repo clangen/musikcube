@@ -7,7 +7,6 @@
 #include <musikcore/runtime/MessageQueue.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/QueryRegistry.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/query/CategoryListQuery.h>
@@ -55,8 +54,7 @@ namespace {
     /* Open the same fixture through either the public standalone identity or the production library adapter. */
     std::shared_ptr<const Library> openLibrary(const char *directory) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
-        musik::core::library::MasterLibrary selection;
-        return OpenSelectedLibrary(selection);
+        return OpenFixtureLibrary();
 #else
         return std::make_shared<const Library>(directory);
 #endif
@@ -392,8 +390,10 @@ namespace {
        queue-state drift are detected without hardware. */
     bool checkPlaybackCommands() {
         using namespace musik::core;
-        const auto selection = std::make_shared<library::MasterLibrary>();
-        const auto source = OpenSelectedLibrary(*selection);
+        auto& factory = LibraryFactory::Instance();
+        const auto local = factory.DefaultLocalLibrary();
+        const auto remote = factory.DefaultRemoteLibrary();
+        const auto source = OpenFixtureLibrary();
         if (!source) return playbackFailure(__LINE__);
         api::TrackResult result;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
@@ -412,7 +412,7 @@ namespace {
             ->SetBool(musik::core::prefs::keys::SaveSessionOnExit, false);
         std::optional<api::Playback> playback;
         {
-            audio::PlaybackService service(queue, selection, transport);
+            audio::PlaybackService service(queue, local, transport);
             queue.Dispatch();
             playback.emplace(musik::core::audio::CreatePlaybackHandle(service));
             mc_play_queue* rawQueue = nullptr;
@@ -544,9 +544,7 @@ namespace {
             const auto current = playback->Queue();
             if (!current || playback->PlayQueueRow(*current, 2) != MC_OK) return playbackFailure(__LINE__);
 
-            const auto prefs = Preferences::ForComponent(musik::core::prefs::components::Settings);
-            prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
-            selection->LoadDefaultLibrary();
+            service.SelectLibrary(remote);
             const auto unavailable = playback->Queue();
             const bool rejected = unavailable && !unavailable->Size() &&
                 playback->PlayQueueRow(*current, 0) == MC_ERROR_NOT_FOUND &&
@@ -556,11 +554,9 @@ namespace {
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NEXT) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_APPEND) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PREPEND) == MC_ERROR_NOT_FOUND &&
-                service.Count() == 4 && trackList->GetId(0) == second.Id();
-            audio::DiscardUnavailablePlaybackQueue(service);
+                service.Count() == 0;
             const bool cleared = service.Count() == 0 && transport->state == sdk::PlaybackState::Stopped;
-            prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
-            selection->LoadDefaultLibrary();
+            service.SelectLibrary(local);
             if (!rejected || !cleared || !captureMatches()) return playbackFailure(__LINE__);
 
             /* Reenter subscription from the real dispatcher and destroy a peer with pending delivery. */
@@ -658,13 +654,14 @@ namespace {
             wake = query_test_wakeup_count();
             api::OpenPlaylist(context, *source, playlistId, load);
             if (!query_test_wait_for_wakeup(wake + 1)) return playbackFailure(__LINE__);
-            prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
-            selection->LoadDefaultLibrary();
+            service.SelectLibrary(remote);
             const bool ignored = context.Dispatch() == MC_OK && loaded == MC_ERROR_NOT_FOUND &&
-                service.Count() == savedIds.size() + 1;
-            prefs->SetInt(musik::core::prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
-            selection->LoadDefaultLibrary();
-            if (!ignored) return playbackFailure(__LINE__);
+                service.Count() == 0;
+            service.SelectLibrary(local);
+            if (!ignored || playback->Play(result, 0) != MC_OK || playback->UseTrack(second, MC_PLAYBACK_TRACK_APPEND) != MC_OK) {
+                return playbackFailure(__LINE__);
+            }
+            const auto preservedQueueSize = service.Count();
 
             /* Rename and delete the selected playlist, leaving the active queue alone. */
             constexpr auto renamedName = "Renamed Queue Fixture";
@@ -687,7 +684,7 @@ namespace {
             mutation = MC_ERROR_INTERNAL;
             api::DeletePlaylist(context, *source, playlistId, mutated);
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || mutation != MC_OK ||
-                service.Count() != savedIds.size() + 1) return playbackFailure(__LINE__);
+                service.Count() != preservedQueueSize) return playbackFailure(__LINE__);
             wake = query_test_wakeup_count();
             bool removed = false;
             api::ListPlaylists(context, *source, [&](mc_result status, auto entries, std::string_view) {
@@ -708,7 +705,7 @@ namespace {
             /* A fresh service has no queued edit events from earlier scenarios. */
             runtime::MessageQueue stateMessages;
             const auto stateTransport = std::make_shared<TestTransport>();
-            audio::PlaybackService stateService(stateMessages, selection, stateTransport);
+            audio::PlaybackService stateService(stateMessages, local, stateTransport);
             stateMessages.Dispatch();
             auto statePlayback = audio::CreatePlaybackHandle(stateService);
             struct LiveEvents {
@@ -924,8 +921,7 @@ namespace {
         using namespace musik::core::library;
         using namespace musik::core::library::query;
 
-        MasterLibrary selection;
-        const auto local = selection.Wrapped();
+        const auto local = LibraryFactory::Instance().DefaultLocalLibrary();
         const auto remote = LibraryFactory::Instance().DefaultRemoteLibrary();
         const auto roundTrip = [&](db::ISerializableQuery& remoteQuery) {
             const auto server = QueryRegistry::CreateLocalQueryFor(
@@ -980,8 +976,8 @@ namespace {
     /* Compare category/directory selections and read reordered duplicate IDs through the selected backend. */
     bool checkBrowseReads(const char* directory) {
         using namespace musik::core;
-        library::MasterLibrary selected;
-        const auto source = OpenSelectedLibrary(selected);
+        const auto selected = LibraryFactory::Instance().DefaultLocalLibrary();
+        const auto source = OpenFixtureLibrary();
         if (!source) return false;
 
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
@@ -1000,7 +996,7 @@ namespace {
             std::pair{MC_TRACK_FIELD_ALBUM, &album}, std::pair{MC_TRACK_FIELD_ARTIST, &artist}}) {
             using Categories = library::query::CategoryListQuery;
             const auto categories = std::make_shared<Categories>(Categories::MatchType::Substring, key);
-            if (selected.EnqueueAndWait(categories, kWaitIndefinite) < 0 || !categories->GetResult()->Count()) return false;
+            if (selected->EnqueueAndWait(categories, kWaitIndefinite) < 0 || !categories->GetResult()->Count()) return false;
             api::OpenCategory(context, *source, key, categories->GetResult()->At(0)->GetId(),
                 MC_TRACK_SEARCH_ALBUM, receive(*result));
             if (!query_test_wait_for_wakeup(++wake) || context.Dispatch() != MC_OK ||
@@ -1043,8 +1039,7 @@ namespace {
         using namespace musik::core::api;
 
         using namespace musik::core;
-        library::MasterLibrary selection;
-        const auto library = OpenSelectedLibrary(selection);
+        const auto library = OpenFixtureLibrary();
         if (!library) return false;
         mc_result completed = MC_OK;
         TrackResult tracks;
@@ -1053,13 +1048,11 @@ namespace {
         Context context(options);
         const auto wakes = query_test_wakeup_count();
 
-        /* A retained handle keeps its local backend when the app selects remote. */
-        const auto preferences = Preferences::ForComponent(prefs::components::Settings);
-        preferences->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
-        selection.LoadDefaultLibrary();
-        const bool selectedRemote = selection.GetType() == ILibrary::Type::Remote;
-        preferences->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
-        if (!selectedRemote) return false;
+        /* A retained handle keeps its backend after the current selection clears. */
+        context.SetLibrary(*library);
+        if (mc_context_set_library(context.Get(), nullptr) != MC_OK || context.GetLibrary()) {
+            return false;
+        }
 
         OpenTrackSearch(context, *library, TrackSearch{ "Fixture Artist" },
             [&](mc_result status, TrackResult result, std::string_view) {
@@ -1068,8 +1061,7 @@ namespace {
         if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || tracks.Size() != 2) return false;
 
         /* Closing the origin rejects reads even while its database file is present. */
-        selection.LoadDefaultLibrary();
-        selection.Close();
+        LibraryFactory::Instance().DefaultLocalLibrary()->Close();
         OpenTrackSearch(context, *library, TrackSearch{ "Fixture Artist" },
             [&](mc_result status, TrackResult, std::string_view) { completed = status; });
         return query_test_wait_for_wakeup(wakes + 2) && context.Dispatch() == MC_OK && completed == MC_ERROR_IO;

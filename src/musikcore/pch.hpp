@@ -82,7 +82,6 @@
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/LocalMetadataProxy.h>
-#include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/metadata/MetadataMap.h>
 #include <musikcore/library/metadata/MetadataMapList.h>
 #include <musikcore/library/query/AlbumListQuery.h>

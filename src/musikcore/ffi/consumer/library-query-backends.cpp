@@ -1,22 +1,9 @@
-/*
- * Adapt the app's existing LocalLibrary and RemoteLibrary instances to the
- * consumer ABI. During migration, the app still creates and selects libraries
- * through MasterLibrary. The ABI uses those same instances to run typed queries
- * and deliver completions through its context.
- *
- * Each handle retains the backend selected at creation. A search can finish
- * after a library switch, and a retained reference to track 42 must still
- * resolve in its original library. Remote handles also capture the connection
- * generation so a reconnect cannot redirect a read from an old reference.
- *
- * Origin binding is already implemented for search and metadata reads. The
- * loopback test musikcore.abi.remote_query_transport exercises cancellation,
- * library switching, and rejection of an old track reference after reconnect.
- * Remove this bridge once core creates and selects ABI-native library handles
- * whose backends own query dispatch and connection lifetimes.
- */
+/* Typed library queries retain the catalog and, for remote reads, the
+   connection generation. A retained search result or track reference can
+   therefore survive selection changes without resolving in a new catalog. */
 
-#include "library-binding.h"
+#include "library-query-backends.h"
+#include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/library/query/GetPlaylistQuery.h>
 #include <musikcore/library/query/CategoryTrackListQuery.h>
@@ -209,9 +196,9 @@ namespace {
     };
 
     /* Inherits noncopyable and nonmovable ownership. */
-    class AppTrackReadBackend final : public query::TrackReadBackend, public PlaybackOrigin, public LibraryQueries {
+    class LocalTrackReadBackend final : public query::TrackReadBackend, public PlaybackOrigin, public LibraryQueries {
     public:
-        explicit AppTrackReadBackend(std::shared_ptr<musik::core::library::LocalLibrary> library)
+        explicit LocalTrackReadBackend(std::shared_ptr<musik::core::library::LocalLibrary> library)
             : library(std::move(library)), reader(query::OpenTrackReadBackend(this->library->GetDatabaseFilename())) {}
 
         bool Run(const query::TrackSearchQuery& query, query::TrackSearchRows& rows) const override {
@@ -338,9 +325,9 @@ namespace {
     }
 
     /* Neither copyable nor movable. Retains one remote library and connection generation. */
-    class RemoteTrackReader final : public AsyncTrackReader, public LibraryQueries {
+    class RemoteTrackReadBackend final : public AsyncTrackReader, public LibraryQueries {
     public:
-        RemoteTrackReader(std::shared_ptr<musik::core::library::RemoteLibrary> library, uint64_t generation)
+        RemoteTrackReadBackend(std::shared_ptr<musik::core::library::RemoteLibrary> library, uint64_t generation)
             : library(std::move(library)), generation(generation) {}
 
         bool Matches(const musik::core::ILibrary* selected) const override {
@@ -498,7 +485,7 @@ namespace {
 
 std::shared_ptr<const LibraryIdentity> musik::core::ffi::CaptureLibrary(const ILibraryPtr& selected) {
     if (const auto library = std::dynamic_pointer_cast<library::LocalLibrary>(selected)) {
-        const auto backend = std::make_shared<AppTrackReadBackend>(library);
+        const auto backend = std::make_shared<LocalTrackReadBackend>(library);
         return std::make_shared<LibraryIdentity>(LibraryIdentity {
             library->GetLibraryDirectory(), backend, {}, backend, backend });
     }
@@ -509,7 +496,7 @@ std::shared_ptr<const LibraryIdentity> musik::core::ffi::CaptureLibrary(const IL
         }
 
         auto identity = std::make_shared<LibraryIdentity>();
-        const auto reader = std::make_shared<RemoteTrackReader>(library, generation);
+        const auto reader = std::make_shared<RemoteTrackReadBackend>(library, generation);
         identity->async = reader;
         identity->playbackOrigin = reader;
         identity->queries = reader;
@@ -519,21 +506,7 @@ std::shared_ptr<const LibraryIdentity> musik::core::ffi::CaptureLibrary(const IL
     return {};
 }
 
-mc_result musik::core::ffi::BindLocalLibrary(const std::shared_ptr<library::LocalLibrary>& library,
-    mc_library** out)
-{
-    return exception_barrier(nullptr, [&]() -> mc_result {
-        if (!library || !out || *out) {
-            return MC_ERROR_INVALID_ARGUMENT;
-        }
-        *out = new mc_library { CaptureLibrary(library) };
-        return MC_OK;
-    });
-}
-
-mc_result musik::core::ffi::BindRemoteLibrary(const std::shared_ptr<library::RemoteLibrary>& library,
-    mc_library** out)
-{
+mc_result musik::core::ffi::OpenLibraryHandle(const ILibraryPtr& library, mc_library** out) {
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!library || !out || *out) {
             return MC_ERROR_INVALID_ARGUMENT;

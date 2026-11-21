@@ -3,7 +3,7 @@
 #include "../common/error.h"
 #include "../common/primitives.h"
 
-#include "library-binding.h"
+#include "library-query-backends.h"
 #include "request.h"
 
 #include <musikcore/library/RemoteLibrary.h>
@@ -191,5 +191,5 @@ mc_result MC_CALL mc_remote_session_open_library(const mc_remote_session *sessio
     if (!session || !out_library || *out_library) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return BindRemoteLibrary(session->library, out_library);
+    return OpenLibraryHandle(session->library, out_library);
 }

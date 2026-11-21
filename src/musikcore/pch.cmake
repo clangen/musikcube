@@ -43,7 +43,6 @@ target_precompile_headers(musikcore
     "$<$<COMPILE_LANGUAGE:CXX>:library/LocalLibrary.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:library/LocalLibraryConstants.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:library/LocalMetadataProxy.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:library/MasterLibrary.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:library/metadata/MetadataMap.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:library/metadata/MetadataMapList.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:library/query/AlbumListQuery.h>"

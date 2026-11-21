@@ -76,3 +76,5 @@ The managed loopback test exposed a no-op when reconnecting to an unchanged addr
 The managed context selects concrete local or remote catalogs. Playback switches its queue and caches to the selected catalog, invalidates old queue snapshots, and clears delayed work tied to the previous catalog. Plugin metadata and indexing use the local catalog. `MasterLibrary` remains in older integration fixtures.
 
 All 47 Linux Release tests passed. The managed loopback, runtime, and Browse cases each passed four additional runs, including the new stale queue snapshot checks.
+
+Removed `MasterLibrary` and the legacy selection source after migrating the integration fixtures. The remote transport contract now exercises the managed context directly, and playlist notification ordering remains covered in the dispatcher contract. All 47 Linux Release tests passed.

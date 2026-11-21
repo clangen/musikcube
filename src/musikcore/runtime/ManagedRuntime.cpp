@@ -1,13 +1,11 @@
-#include "legacy-library-selection.h"
-#include "library-binding.h"
-#include "playback-binding.h"
-#include "request.h"
-#include "../common/error.h"
+#include <musikcore/ffi/consumer/library-query-backends.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
+#include <musikcore/ffi/consumer/request.h>
+#include <musikcore/ffi/common/error.h>
 
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/Visualizer.h>
-#include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/plugin/Plugins.h>
@@ -57,40 +55,6 @@ namespace musik { namespace core { namespace ffi {
     private:
         mc_context& context;
     };
-
-    ILibraryPtr CreateLegacyLibrary() {
-        return std::make_shared<library::MasterLibrary>();
-    }
-
-    void AttachLegacyLibrary(mc_context& context, const ILibraryPtr& library, audio::PlaybackService& playback) {
-        auto* adapter = static_cast<library::MasterLibrary*>(library.get());
-        auto& queue = adapter->GetMessageQueue();
-        const auto notifications = std::make_shared<CoreNotifications>(context);
-
-        /* Detach the engine and context references before releasing the adapter. */
-        std::shared_ptr<library::MasterLibrary> bound(adapter, [library, notifications, &queue](auto*) {
-            auto& selected = static_cast<musik::core::library::MasterLibrary&>(*library);
-            queue.UnregisterForBroadcasts(notifications.get());
-            selected.AttachContext(nullptr, nullptr);
-        });
-        auto& factory = LibraryFactory::Instance();
-        attach_library_selector(context,
-            [bound](mc_library_kind kind) {
-                const auto type = kind == MC_LIBRARY_LOCAL ? ILibrary::Type::Local : ILibrary::Type::Remote;
-                bound->Select(type);
-                Preferences::ForComponent(prefs::components::Settings)
-                    ->SetInt(prefs::keys::LibraryType, static_cast<int>(type));
-                return MC_OK;
-            },
-            [&factory] {
-                const auto remote = std::static_pointer_cast<library::RemoteLibrary>(factory.DefaultRemoteLibrary());
-                remote->Disconnect();
-                remote->Connect();
-            },
-            *factory.DefaultLocalLibrary()->Indexer());
-        adapter->AttachContext(&context, &playback);
-        queue.RegisterForBroadcasts(notifications);
-    }
 
     /* Owns the core queue and its readiness thread. Neither copyable nor movable. */
     class ManagedRuntime final : public ContextRuntime, public sigslot::has_slots<> {

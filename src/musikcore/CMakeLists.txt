@@ -7,7 +7,7 @@ set(CORE_SOURCES
   ./audio/MasterTransport.cpp
   ./audio/Outputs.cpp
   ./audio/PlaybackService.cpp
-  ./ffi/consumer/legacy-library-selection.cpp
+  ./runtime/ManagedRuntime.cpp
   ./ffi/consumer/legacy-playback-binding.cpp
   ./audio/Player.cpp
   ./audio/Stream.cpp
@@ -24,7 +24,6 @@ set(CORE_SOURCES
   ./library/LibraryFactory.cpp
   ./library/LocalLibrary.cpp
   ./library/LocalMetadataProxy.cpp
-  ./library/MasterLibrary.cpp
   ./library/QueryRegistry.cpp
   ./library/RemoteLibrary.cpp
   ./library/query/AlbumListQuery.cpp

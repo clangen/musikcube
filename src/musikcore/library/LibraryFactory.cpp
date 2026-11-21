@@ -37,6 +37,7 @@
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/db/Connection.h>
+#include <musikcore/ffi/consumer/library-query-backends.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -142,6 +143,10 @@ void LibraryFactory::Shutdown() {
     }
     ownedQueue.reset();
     ::messageQueue = nullptr;
+}
+
+mc_result LibraryFactory::OpenLibrary(ILibrary::Type type, mc_library** out) {
+    return ffi::OpenLibraryHandle(this->DefaultLibrary(type), out);
 }
 
 ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, ILibrary::Type type) {

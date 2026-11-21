@@ -1,5 +1,5 @@
 #include "playback-binding.h"
-#include "library-binding.h"
+#include "library-query-backends.h"
 #include <musikcore/library.hpp>
 
 #include "library-storage.h"
@@ -7,7 +7,6 @@
 #include "playback-storage.h"
 #include "../common/error.h"
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Playback.h>
@@ -129,23 +128,19 @@ void musik::core::audio::DeliverPlaybackNotification(IMessage& message) {
 }
 
 bool musik::core::audio::MatchesPlaybackOrigin(const LibraryIdentity& origin, const ILibraryPtr& library) {
-    const auto master = std::dynamic_pointer_cast<MasterLibrary>(library);
-    const auto selected = master ? master->Wrapped() : library;
-    return origin.playbackOrigin && origin.playbackOrigin->Matches(selected.get());
+    return origin.playbackOrigin && origin.playbackOrigin->Matches(library.get());
 }
 
 std::shared_ptr<const LibraryIdentity> musik::core::audio::CapturePlaybackOrigin(
     const ILibraryPtr& library, int libraryId)
 {
-    const auto master = std::dynamic_pointer_cast<MasterLibrary>(library);
-    const auto selected = master ? master->Wrapped() : library;
-    if (!selected || selected->Id() != libraryId) {
+    if (!library || library->Id() != libraryId) {
         return {};
     }
 
     std::shared_ptr<const LibraryIdentity> origin;
     ffi::exception_barrier(nullptr, [&] {
-        origin = ffi::CaptureLibrary(selected);
+        origin = ffi::CaptureLibrary(library);
         return MC_OK;
     });
     return origin;

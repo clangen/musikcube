@@ -632,8 +632,8 @@ release-candidate quality.
 - [x] Drive app selection, status, and notifications through the SDK context.
   `musikcore.abi.remote_query_transport` verifies selection and notification
   across local/remote switches and reconnects.
-- [ ] Retire the core `MasterLibrary` adapter once playback and plugins no
-  longer consume the legacy `ILibrary` interface.
+- [x] Retire the core `MasterLibrary` adapter. Playback uses the concrete
+  selected catalog, and plugin metadata and indexing use the local catalog.
 - [x] Query category rows through the context and insert category or directory
   results through public playback. `musikcore.integration.api.backend_parity`
   covers category queries. `musikcore.abi.remote_query_transport` covers
@@ -1153,7 +1153,7 @@ legacy list for actions that still require it.
 - [ ] **MIG-003** Migrate preferences and settings consumers.
 - [ ] **MIG-004** Migrate remaining library/category/directory views.
   Browse receives local playlist mutations through context dispatch.
-  `musikcore.abi.remote_query_transport` verifies notification ordering and
+  `musikcore.abi.dispatch` verifies notification ordering and
   suppression on selection changes. `musikcube.ui.browse` exercises playlist
   editing and refresh.
 - [ ] **MIG-005** Migrate playback and transport consumers.
@@ -1306,7 +1306,6 @@ legacy list for actions that still require it.
 
 | Bridge | Remove when |
 | --- | --- |
-| `src/musikcore/ffi/consumer/legacy-library-selection.*`, `library-binding.h` and `legacy-library-binding.cpp`, plus `MasterLibrary::OpenLibrary()` | The public library API creates and owns local and remote backends directly. The app now receives its selection through the context. `musikcore.abi.remote_query_transport` covers context selection on switch, disconnect, and reconnect. Retained requests, results, and references must still preserve their originating backend and connection generation. |
 | `src/musikcore/ffi/consumer/playback-binding.h` and `legacy-playback-binding.cpp`, plus the friendship and lifetime token in `PlaybackService` | The public playback API creates and owns the session directly. Carry forward the owner-thread rules, queue origin checks, and dispatcher notifications. |
 | `TrackListView::GetTrackList()` and legacy track and playlist action overlays | Hot-swap, playlist drafts, and the remaining overlays can consume ordered results and track references directly. |
 
@@ -1317,12 +1316,10 @@ legacy list for actions that still require it.
 
 ## Active next steps
 
-1. Move app selection and playback from `MasterLibrary` to the public library
-   selector. Finish native Windows acceptance before release.
-2. Finish the core application API and its real consumers: the remaining
+1. Finish the core application API and its real consumers: the remaining
    runtime/query gaps, `PUB-*`, `CPP-003`, and `MIG-003` through `MIG-010`.
    Remove temporary bindings only when public ownership replaces them.
-3. Pass `GATE-700` with musikcube using only the C API and public header-only
+2. Pass `GATE-700` with musikcube using only the C API and public header-only
    wrapper. Validate core consumer installation, runtime paths, dependencies,
    and application packages on supported platforms to reach core
    release-candidate quality. Plugin-specific package tasks remain deferred.

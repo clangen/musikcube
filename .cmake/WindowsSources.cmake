@@ -4,7 +4,7 @@ set(windows_core_sources
   src/musikcore/audio/GaplessTransport.cpp
   src/musikcore/audio/Outputs.cpp
   src/musikcore/audio/PlaybackService.cpp
-  src/musikcore/ffi/consumer/legacy-library-selection.cpp
+  src/musikcore/runtime/ManagedRuntime.cpp
   src/musikcore/ffi/consumer/legacy-playback-binding.cpp
   src/musikcore/audio/MasterTransport.cpp
   src/musikcore/audio/Streams.cpp
@@ -18,7 +18,6 @@ set(windows_core_sources
   src/musikcore/library/LocalLibrary.cpp
   src/musikcore/library/LibraryFactory.cpp
   src/musikcore/library/LocalMetadataProxy.cpp
-  src/musikcore/library/MasterLibrary.cpp
   src/musikcore/library/metadata/MetadataMap.cpp
   src/musikcore/library/metadata/MetadataMapList.cpp
   src/musikcore/library/QueryRegistry.cpp

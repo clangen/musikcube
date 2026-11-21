@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 bool context_test_allocation_failures();
 
@@ -357,6 +358,45 @@ static bool check_terminal_races(State &state) {
     return true;
 }
 
+static bool check_playlist_dispatch(State& state) {
+    using namespace musik::core::ffi;
+    using Event = std::pair<mc_playlist_event, int64_t>;
+    std::vector<Event> events;
+    auto& context = *state.context;
+    if (mc_context_set_playlist_changed_callback(&context, [](void* data, mc_playlist_event event, int64_t id) {
+        static_cast<std::vector<Event>*>(data)->emplace_back(event, id);
+    }, &events) != MC_OK)
+    {
+        return false;
+    }
+
+    const auto select = [&](mc_library_kind kind) {
+        LibraryStatus status;
+        status.kind = kind;
+        return publish_library_selection(context, {}, std::move(status), true) == MC_OK;
+    };
+
+    constexpr int64_t playlist = 7;
+    const bool remote = select(MC_LIBRARY_REMOTE);
+    publish_playlist_event(context, MC_PLAYLIST_CREATED, playlist);
+    const bool remoteSuppressed = mc_context_dispatch(&context) == MC_OK && events.empty();
+
+    const bool local = select(MC_LIBRARY_LOCAL);
+    publish_playlist_event(context, MC_PLAYLIST_RENAMED, playlist);
+    publish_playlist_event(context, MC_PLAYLIST_CONTENTS_CHANGED, playlist);
+    const bool ordered = events.empty() && mc_context_dispatch(&context) == MC_OK &&
+        events == std::vector<Event> {
+            { MC_PLAYLIST_RENAMED, playlist }, { MC_PLAYLIST_CONTENTS_CHANGED, playlist }
+        };
+
+    publish_playlist_event(context, MC_PLAYLIST_DELETED, playlist);
+    const bool switched = select(MC_LIBRARY_REMOTE);
+    const bool staleSuppressed = mc_context_dispatch(&context) == MC_OK && events.size() == 2;
+
+    return mc_context_set_playlist_changed_callback(&context, nullptr, nullptr) == MC_OK &&
+        remote && remoteSuppressed && local && ordered && switched && staleSuppressed;
+}
+
 /* Run each lifecycle case independently so context/thread state cannot leak between scenarios. */
 int main() {
     return context_test_allocation_failures() &&
@@ -367,5 +407,6 @@ int main() {
         run_check("shutdown and destroy during callback", check_callback_lifecycle) &&
         run_check("cancel peer request during callback", check_callback_cancellation) &&
         run_check("completion and cancellation terminal selection races", check_terminal_races) &&
-        run_check("external reply after cancellation and destruction", check_external_reply) ? 0 : 1;
+        run_check("external reply after cancellation and destruction", check_external_reply) &&
+        run_check("playlist order and selection changes", check_playlist_dispatch) ? 0 : 1;
 }

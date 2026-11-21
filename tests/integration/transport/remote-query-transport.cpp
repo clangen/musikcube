@@ -1,4 +1,3 @@
-#include <musikcore/ffi/consumer/legacy-library-selection.h>
 #include "TestTransport.h"
 #include <musikcore/ffi/consumer/playback-binding.h>
 
@@ -12,7 +11,6 @@
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/DeletePlaylistQuery.h>
 #include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/MasterLibrary.h>
 #include <musikcore/musikcore.hpp>
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/plugin/Plugins.h>
@@ -23,12 +21,10 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/runtime/MessageQueue.h>
-#include <musikcore/runtime/Message.h>
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/support/Messages.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
@@ -292,25 +288,22 @@ namespace {
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
         settings->SetBool(prefs::keys::SaveSessionOnExit, false);
-        CoreRuntime coreRuntime;
-        /* This fixture exercises routing, not indexing; drain the lazy local
-           database-upgrade scan before using it during the remote handoff. */
-        LibraryFactory::Instance().DefaultLocalLibrary()->Indexer()->Shutdown();
-
-        const auto libraryBackend = ffi::CreateLegacyLibrary();
-        runtime::MessageQueue messageQueue;
-        audio::PlaybackService service(messageQueue, libraryBackend, std::make_shared<TestTransport>());
-        const auto wait = [&](auto ready) { return AwaitTestHost(coreRuntime.Queue(), ready); };
-
         struct SelectionNotice {
             Context* context = nullptr;
             bool local = false;
         } notice;
         std::vector<mc_indexer_event> indexEvents;
-        Context context(TestHostOptions(coreRuntime.Queue()));
+        runtime::MessageQueue host;
+        auto options = TestHostOptions(host);
+        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        Context context(options);
         notice.context = &context;
-        ffi::AttachLegacyLibrary(*context.Get(), libraryBackend, service);
-        audio::AttachPlayback(*context.Get(), service);
+        const auto wait = [&](auto ready) {
+            return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && ready(); });
+        };
+
+        /* Drain the lazy database-upgrade scan before scheduling the test scan. */
+        LibraryFactory::Instance().DefaultLocalLibrary()->Indexer()->Shutdown();
         if (!wait([&] { return context.GetLibrary().has_value(); }) ||
             context.GetLibraryStatus().kind != MC_LIBRARY_REMOTE ||
             context.GetLibraryStatus().state != MC_LIBRARY_CONNECTED ||
@@ -351,27 +344,21 @@ namespace {
             return failure(__LINE__);
         }
 
-        std::vector<std::pair<mc_playlist_event, int64_t>> playlistEvents;
-        if (SetPlaylistChangedCallback(context, [](void* data, mc_playlist_event event, int64_t id) {
-            static_cast<decltype(playlistEvents)*>(data)->emplace_back(event, id);
-        }, &playlistEvents) != MC_OK)
-        {
-            return failure(__LINE__);
-        }
-        const auto postLocalPlaylistChange = [&](int type) {
-            coreRuntime.Queue().Broadcast(runtime::Message::Create(nullptr, type, kPlaylistId));
-            coreRuntime.Queue().Dispatch();
-        };
-        postLocalPlaylistChange(message::PlaylistCreated);
-        if (context.Dispatch() != MC_OK || !playlistEvents.empty()) {
-            return failure(__LINE__);
-        }
-
         TrackResult tracks;
         TrackPage page;
         unsigned calls = 0;
         mc_result status = MC_ERROR_INTERNAL;
         auto playback = context.GetPlayback();
+        const auto queueSize = [&] {
+            const auto queue = playback.Queue();
+            return queue ? queue->Size() : SIZE_MAX;
+        };
+        const auto queueId = [&](size_t row) {
+            const auto queue = playback.Queue();
+            size_t count = 0;
+            const auto* ids = queue ? queue->Ids(count) : nullptr;
+            return ids && row < count ? ids[row] : int64_t {};
+        };
         const auto dispatch = [&](unsigned expected) {
             return wait([&] { return context.Dispatch() == MC_OK && calls == expected; });
         };
@@ -403,16 +390,16 @@ namespace {
 
         const auto reference = tracks.Track(0);
         if (playback.UseTrack(reference, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
-            service.Count() != 1)
+            queueSize() != 1)
         {
             return failure(__LINE__);
         }
 
         /* Search rows and playback must share the selected backend. */
-        if (playback.ReplaceQueue(tracks) != MC_OK || service.Count() != tracks.Size()) {
+        if (playback.ReplaceQueue(tracks) != MC_OK || queueSize() != tracks.Size()) {
             return failure(__LINE__);
         }
-        if (playback.HotSwapQueue(tracks, 0) != MC_OK || service.Count() != tracks.Size()) {
+        if (playback.HotSwapQueue(tracks, 0) != MC_OK || queueSize() != tracks.Size()) {
             return failure(__LINE__);
         }
         if (playback.InsertResult(tracks, MC_PLAYBACK_TRACK_APPEND) != MC_OK) {
@@ -443,19 +430,10 @@ namespace {
         if (playback.InsertResult(tracks, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND) {
             return failure(__LINE__);
         }
-        audio::DiscardUnavailablePlaybackQueue(service);
-        if (service.Count() != 0) {
+        if (queueSize() != 0) {
             return failure(__LINE__);
         }
         if (context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL || !context.GetLibrary()) {
-            return failure(__LINE__);
-        }
-        postLocalPlaylistChange(message::PlaylistRenamed);
-        postLocalPlaylistChange(message::PlaylistModified);
-        if (!playlistEvents.empty() || context.Dispatch() != MC_OK ||
-            playlistEvents != std::vector<std::pair<mc_playlist_event, int64_t>> {
-                { MC_PLAYLIST_RENAMED, kPlaylistId }, { MC_PLAYLIST_CONTENTS_CHANGED, kPlaylistId } })
-        {
             return failure(__LINE__);
         }
         QueryTracks(context, TrackQuery { "" }, receive);
@@ -477,10 +455,7 @@ namespace {
         /* Reconnecting creates a new generation even when the endpoint stays the same. */
         const auto remote = std::dynamic_pointer_cast<library::RemoteLibrary>(LibraryFactory::Instance().DefaultRemoteLibrary());
         remote->Connect();
-        postLocalPlaylistChange(message::PlaylistDeleted);
-        if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK || context.Dispatch() != MC_OK ||
-            playlistEvents.size() != 2 || SetPlaylistChangedCallback(context, nullptr) != MC_OK)
-        {
+        if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK) {
             return failure(__LINE__);
         }
         std::optional<Library> reconnected;
@@ -502,7 +477,7 @@ namespace {
             tracks.Id(0) != 42 || tracks.Id(1) != 17 || tracks.Id(2) != 42 ||
             tracks.AlbumDurationSeconds(0) != 0 ||
             playback.ReplaceQueue(tracks) != MC_OK ||
-            service.Count() != 3 || service.GetTrackList()->GetId(2) != 42)
+            queueSize() != 3 || queueId(2) != 42)
         {
             return failure(__LINE__);
         }
@@ -515,7 +490,7 @@ namespace {
         if (current.Id() != reference.Id() ||
             playback.UseTrack(current, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
             playback.UseTrack(reference, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND ||
-            service.Count() != 1 || service.GetTrackList()->GetId(0) != current.Id())
+            queueSize() != 1 || queueId(0) != current.Id())
         {
             return failure(__LINE__);
         }
@@ -586,10 +561,10 @@ namespace {
         {
             return failure(__LINE__);
         }
-        const auto queueSize = service.Count();
+        const auto preservedSize = queueSize();
         if (playback.Play(album, 0) != MC_ERROR_NOT_FOUND ||
             playback.InsertResult(album, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND ||
-            service.Count() != queueSize)
+            queueSize() != preservedSize)
         {
             return failure(__LINE__);
         }
@@ -647,9 +622,7 @@ namespace {
         auto& host = runtime.Queue();
         const auto settings = Preferences::ForComponent(prefs::components::Settings);
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
-        const auto master = std::make_shared<library::MasterLibrary>();
-        master->LoadDefaultLibrary();
-        const auto local = OpenSelectedLibrary(*master);
+        const auto local = OpenFixtureLibrary();
         if (!local) {
             return failure(__LINE__);
         }
@@ -913,11 +886,11 @@ namespace {
         settings->SetString(prefs::keys::RemoteLibraryHostname, loopback.data());
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
-        std::dynamic_pointer_cast<library::RemoteLibrary>(LibraryFactory::Instance().DefaultRemoteLibrary())
-            ->Connect();
-        master->LoadDefaultLibrary();
+        const auto appRemote = std::static_pointer_cast<library::RemoteLibrary>(
+            LibraryFactory::Instance().DefaultRemoteLibrary());
+        appRemote->Connect();
         std::shared_ptr<const Library> playbackLibrary;
-        if (!AwaitTestHost(host, [&] { return bool(playbackLibrary = OpenSelectedLibrary(*master)); })) {
+        if (!AwaitTestHost(host, [&] { return bool(playbackLibrary = OpenFixtureLibrary(ILibrary::Type::Remote)); })) {
             return failure(__LINE__);
         }
         TrackResult queueTracks;
@@ -929,7 +902,7 @@ namespace {
         const auto transport = std::make_shared<TestTransport>();
         transport->state = sdk::PlaybackState::Stopped;
         runtime::MessageQueue playbackMessages;
-        audio::PlaybackService service(playbackMessages, master, transport);
+        audio::PlaybackService service(playbackMessages, appRemote, transport);
         auto playback = audio::CreatePlaybackHandle(service);
         for (unsigned sample = 0; sample < 7; ++sample) {
             for (bool overRemote : { false, true }) {
