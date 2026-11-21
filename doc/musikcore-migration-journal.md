@@ -60,3 +60,9 @@ The core queue can wait for due work independently of dispatch. Public remote se
 ## Library identity capture
 
 Core selection and playback now capture backend identity directly. They no longer construct SDK wrappers or allocate temporary C handles to recover the identity. All 45 Linux Release tests passed, including the backend switch and remote generation tests.
+
+## Managed runtime
+
+The production C API can start the configured catalog, playback engine, and plugins through context creation. The context owns the runtime queue and wakes a blocking host for both immediate and delayed work. Shutdown stops producers before releasing the queue, and retained catalogs keep their closed backend storage valid.
+
+The public-only integration test started playback through Null output, delivered a delayed reload on the owner thread, and restarted the runtime while retaining a catalog handle. It passed five consecutive runs. Cube startup still uses the legacy entry point pending the equalizer notification cutover.

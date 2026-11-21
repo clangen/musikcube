@@ -7,6 +7,11 @@
 #include <cmath>
 
 #include "../common/primitives.h"
+#include "request.h"
+
+std::unique_ptr<musik::core::ffi::ContextRuntime> musik::core::ffi::make_context_runtime() {
+    return {};
+}
 
 mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void*) {
     return read ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;

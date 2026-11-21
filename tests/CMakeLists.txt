@@ -49,6 +49,7 @@ add_executable(musikcore_abi_dispatch_test
   integration/api/dispatch.cpp
   integration/api/context-allocation.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer/context.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer/audio-abi-only.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp"
 )
 target_include_directories(musikcore_abi_dispatch_test PRIVATE

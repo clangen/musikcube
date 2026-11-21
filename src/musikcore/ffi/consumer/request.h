@@ -14,6 +14,27 @@ namespace musik { namespace core { class IIndexer; } }
 
 namespace musik { namespace core { namespace ffi {
 
+    /* Owns production services and their wakeup pump. Neither copyable nor movable. */
+    class ContextRuntime {
+    public:
+        ContextRuntime() = default;
+        ContextRuntime(const ContextRuntime&) = delete;
+        ContextRuntime(ContextRuntime&&) = delete;
+
+        virtual ~ContextRuntime() = default;
+
+        ContextRuntime& operator=(const ContextRuntime&) = delete;
+        ContextRuntime& operator=(ContextRuntime&&) = delete;
+
+        virtual void Start(mc_context& context) = 0;
+        virtual void Dispatch() = 0;
+        virtual void AcknowledgeDispatch() = 0;
+        virtual void Stop() = 0;
+    };
+
+    std::unique_ptr<ContextRuntime> make_context_runtime();
+    void wake_context(mc_context& context);
+
     struct LibraryStatus {
         mc_library_kind kind = MC_LIBRARY_NONE;
         mc_library_connection_state state = MC_LIBRARY_DISCONNECTED;

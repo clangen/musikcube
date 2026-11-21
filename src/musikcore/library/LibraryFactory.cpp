@@ -44,7 +44,15 @@
 using namespace musik::core;
 
 static LibraryFactory::IMessageQueue* messageQueue = nullptr;
+static std::shared_ptr<LibraryFactory::IMessageQueue> ownedQueue;
 static std::shared_ptr<LibraryFactory> instance;
+
+namespace {
+    struct LibraryLifetime {
+        std::shared_ptr<LibraryFactory::IMessageQueue> queue;
+        ILibraryPtr library;
+    };
+}
 
 static library::RemoteLibrary::ConnectionOptions remoteOptionsFromPreferences() {
     using Remote = library::RemoteLibrary;
@@ -77,6 +85,11 @@ void LibraryFactory::Initialize(IMessageQueue& messageQueue) {
     ::messageQueue = &messageQueue;
 }
 
+void LibraryFactory::Initialize(std::shared_ptr<IMessageQueue> messageQueue) {
+    ownedQueue = std::move(messageQueue);
+    ::messageQueue = ownedQueue.get();
+}
+
 LibraryFactory& LibraryFactory::Instance() {
     if (!instance) {
         instance = std::shared_ptr<LibraryFactory>(new LibraryFactory());
@@ -105,6 +118,11 @@ ILibraryPtr LibraryFactory::AddLibrary(int id, ILibrary::Type type, const std::s
     }
 
     if (library) {
+        if (ownedQueue) {
+            /* Handles may retain a closed library past the context's shutdown. */
+            const auto lifetime = std::make_shared<LibraryLifetime>(LibraryLifetime { ownedQueue, library });
+            library = ILibraryPtr(lifetime, library.get());
+        }
         this->libraries.push_back(library);
         this->libraryMap[id] = library;
         this->LibrariesUpdated();
@@ -120,7 +138,10 @@ void LibraryFactory::Shutdown() {
         }
         instance->libraries.clear();
         instance->libraryMap.clear();
+        instance.reset();
     }
+    ownedQueue.reset();
+    ::messageQueue = nullptr;
 }
 
 ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, ILibrary::Type type) {

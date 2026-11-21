@@ -49,9 +49,12 @@ MessageQueue::MessageQueue() noexcept {
 }
 
 MessageQueue::~MessageQueue() {
+    this->Close();
+}
+
+void MessageQueue::Close() {
     /* Payload destructors can call back into this queue. Detach entries under
-       the lock, then destroy them unlocked while queue members still exist.
-       Producers and dispatch must already be stopped before destruction. */
+       the lock, then destroy them unlocked while queue members still exist. */
     std::list<EnqueuedMessage*> pending;
     {
         LockT lock(this->queueMutex);
@@ -61,6 +64,7 @@ MessageQueue::~MessageQueue() {
         this->targets.clear();
         this->receivers.clear();
         this->nextMessageTime.store(-1);
+        this->waitForDispatch.notify_all();
     }
 
     for (auto entry : pending) {
@@ -103,7 +107,7 @@ void MessageQueue::WaitAndDispatch(int64_t timeoutMillis) {
 
 bool MessageQueue::WaitForReady(const std::atomic<bool>& stop) {
     LockT lock(this->queueMutex);
-    while (!stop.load()) {
+    while (!this->stopping && !stop.load()) {
         if (this->queue.empty()) {
             this->waitForDispatch.wait(lock);
         }

@@ -115,6 +115,18 @@ if(BUILD_TESTING)
         "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
       set_tests_properties(musikcore.integration.plugin.playback_reload PROPERTIES
         LABELS "integration;musikcore;plugin;playback" TIMEOUT 30)
+
+      add_executable(musikcore_managed_runtime_test ../integration/musikcore/managed-runtime.cpp)
+      set_target_properties(musikcore_managed_runtime_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+      target_link_libraries(musikcore_managed_runtime_test PRIVATE musikcore Threads::Threads)
+      add_dependencies(musikcore_managed_runtime_test nullout musikcube_seed_library)
+      add_dependencies(musikcube_tests musikcore_managed_runtime_test)
+      add_dependencies(musikcube_integration_tests musikcore_managed_runtime_test)
+      add_test(NAME musikcore.integration.api.managed_runtime COMMAND "${CMAKE_COMMAND}"
+        ${indexed_arguments} "-DMANAGED_RUNTIME_TEST=$<TARGET_FILE:musikcore_managed_runtime_test>"
+        "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
+      set_tests_properties(musikcore.integration.api.managed_runtime PROPERTIES
+        LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
     endif()
   endif()
 endif()

@@ -220,7 +220,7 @@ namespace musik { namespace core { namespace audio {
             musik::core::TrackPtr TrackAtIndexWithTimeout(size_t index);
             friend void DiscardUnavailablePlaybackQueue(PlaybackService& playback);
             friend api::Playback CreatePlaybackHandle(PlaybackService& playback);
-            friend void AttachPlayback(api::Context& context, PlaybackService& playback);
+            friend void AttachPlayback(mc_context& context, PlaybackService& playback);
             class PlaybackServiceBinding;
             struct PlaybackEvents;
 

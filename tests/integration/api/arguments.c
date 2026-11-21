@@ -55,6 +55,10 @@ int main(void) {
     const int64_t invalid_ids[] = {1, -2};
     size_t count = 99;
 
+    mc_context_options runtime_options = MC_CONTEXT_OPTIONS_DEFAULT;
+    runtime_options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+    CHECK(mc_context_create(&runtime_options, &context, NULL) == MC_ERROR_UNSUPPORTED && !context);
+
     /* Null lifecycle inputs and the reserved zero request ID must fail before
        touching thread-binding or request-registry state. */
     CHECK(mc_context_create(NULL, &context, NULL) == MC_OK);

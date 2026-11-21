@@ -309,8 +309,8 @@ namespace {
         std::vector<mc_indexer_event> indexEvents;
         Context context(TestHostOptions(coreRuntime.Queue()));
         notice.context = &context;
-        ffi::AttachLegacyLibrary(context, libraryBackend, service);
-        audio::AttachPlayback(context, service);
+        ffi::AttachLegacyLibrary(*context.Get(), libraryBackend, service);
+        audio::AttachPlayback(*context.Get(), service);
         if (!wait([&] { return context.GetLibrary().has_value(); }) ||
             context.GetLibraryStatus().kind != MC_LIBRARY_REMOTE ||
             context.GetLibraryStatus().state != MC_LIBRARY_CONNECTED ||

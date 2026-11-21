@@ -71,6 +71,8 @@ namespace musik { namespace core { namespace runtime {
                the waiters before joining a thread blocked here. */
             bool WaitForReady(const std::atomic<bool>& stop);
             void WakeWaiters();
+            /* Discard undelivered messages after dispatch has stopped. */
+            void Close();
 
         protected:
             int64_t GetNextMessageTime() noexcept {

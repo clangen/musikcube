@@ -521,8 +521,8 @@ musik::core::api::Playback musik::core::audio::CreatePlaybackHandle(PlaybackServ
     return api::Playback(new PlaybackService::PlaybackServiceBinding(playback));
 }
 
-void musik::core::audio::AttachPlayback(api::Context& context, PlaybackService& playback) {
-    const auto status = ffi::attach_context_playback(*context.Get(), playback,
+void musik::core::audio::AttachPlayback(mc_context& context, PlaybackService& playback) {
+    const auto status = ffi::attach_context_playback(context, playback,
         [](PlaybackService& playback, mc_playback** out) -> mc_result {
             if (std::this_thread::get_id() != playback.apiOwner) {
                 return MC_ERROR_BUSY;

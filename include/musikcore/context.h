@@ -64,6 +64,10 @@ enum {
     MC_TRACK_QUERY_MAX_FIELDS = 64
 };
 
+enum {
+    MC_CONTEXT_MANAGED_RUNTIME = 1
+};
+
 typedef struct mc_context_options {
     /* Size of this struct in bytes. */
     uint32_t struct_size;
@@ -71,7 +75,8 @@ typedef struct mc_context_options {
     uint32_t requested_abi_version;
     /* Reserved UTF-8 plugin root, copied at creation. The standalone ABI does not load plugins yet. */
     mc_string_view plugin_directory;
-    /* Reserved for context options. Must be zero. */
+    /* MC_CONTEXT_MANAGED_RUNTIME starts playback, plugins, and the configured
+       library in a production build. Zero creates a request dispatcher. */
     uint32_t flags;
     /* Optional hook that signals the host loop. May run on a worker thread. */
     mc_wakeup_fn wakeup;
@@ -120,7 +125,8 @@ MC_API mc_result MC_CALL mc_context_set_library_changed_callback(
    not stop playback. Contexts without an engine return MC_ERROR_UNSUPPORTED. */
 MC_API mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback** out_playback);
 
-/* The first dispatch or shutdown binds its thread. Ready callbacks run inline,
+/* For a managed runtime, create binds the dispatcher thread. Otherwise, the
+   first dispatch or shutdown binds its thread. Ready callbacks run inline,
    outside internal locks. Nested/concurrent dispatch returns MC_ERROR_BUSY.
    Callbacks may submit/cancel requests, but cannot shut down or destroy the context.
    Rejected submissions set out_request to zero and never invoke the callback.

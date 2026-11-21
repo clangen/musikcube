@@ -55,6 +55,7 @@ struct mc_context {
     std::thread::id dispatcher;
     std::shared_ptr<const LibraryIdentity> library;
     musik::core::ffi::LibraryStatus libraryStatus;
+    std::unique_ptr<musik::core::ffi::ContextRuntime> runtime;
     std::shared_ptr<musik::core::audio::PlaybackService> ownedPlayback;
     std::function<mc_result(mc_library_kind)> selectLibrary;
     std::function<void()> reconnectRemote;
@@ -281,6 +282,17 @@ namespace {
         return musik::core::ffi::valid_text(directory);
     }
 
+}
+
+void musik::core::ffi::wake_context(mc_context& context) {
+    bool notify;
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        notify = select_wakeup(context);
+    }
+    if (notify) {
+        signal_host(context);
+    }
 }
 
 namespace {
@@ -662,7 +674,8 @@ mc_result MC_CALL mc_context_create(
             return fail(MC_ERROR_UNSUPPORTED, "Unsupported ABI version", out_error);
         }
 
-        if (read_option(options, &mc_context_options::flags, offsetof(mc_context_options, flags))) {
+        const auto flags = read_option(options, &mc_context_options::flags, offsetof(mc_context_options, flags));
+        if (flags & ~MC_CONTEXT_MANAGED_RUNTIME) {
             return fail(MC_ERROR_UNSUPPORTED, "Unsupported context flags", out_error);
         }
 
@@ -700,6 +713,23 @@ mc_result MC_CALL mc_context_create(
             return fail(MC_ERROR_BUSY, "A context is already active", out_error);
         }
 
+        if (flags & MC_CONTEXT_MANAGED_RUNTIME) {
+            try {
+                context->runtime = musik::core::ffi::make_context_runtime();
+                if (!context->runtime) {
+                    context_active.store(false);
+                    return fail(MC_ERROR_UNSUPPORTED, "This build has no managed runtime", out_error);
+                }
+                context->dispatcher = std::this_thread::get_id();
+                context->runtime->Start(*context);
+            }
+            catch (...) {
+                auto* failed = context.release();
+                mc_context_destroy(&failed);
+                throw;
+            }
+        }
+
         *out_context = context.release();
         return MC_OK;
     });
@@ -711,8 +741,22 @@ mc_result MC_CALL mc_context_dispatch(mc_context *context) {
 
         std::unique_lock<std::mutex> lock(context->mutex);
         if (!enter_dispatch(*context)) return MC_ERROR_BUSY;
+        auto* runtime = context->stopping ? nullptr : context->runtime.get();
+        mc_result status = MC_OK;
+        if (runtime) {
+            lock.unlock();
+            status = musik::core::ffi::exception_barrier(nullptr, [&] {
+                runtime->Dispatch();
+                return MC_OK;
+            });
+            lock.lock();
+        }
         deliver_ready(*context, lock);
-        return MC_OK;
+        lock.unlock();
+        if (runtime) {
+            runtime->AcknowledgeDispatch();
+        }
+        return status;
     });
 }
 
@@ -755,6 +799,9 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
 
         /* Let the worker and in-flight wakeups finish before calling host code. */
         lock.unlock();
+        if (context->runtime) {
+            context->runtime->Stop();
+        }
         if (context->worker.joinable()) context->worker.join();
         lock.lock();
         context->changed.wait(lock, [&] { return context->wakeups_in_flight == 0; });
@@ -782,6 +829,8 @@ void MC_CALL mc_context_destroy(mc_context **context) {
             selector.swap((*context)->selectLibrary);
         }
         selector = nullptr;
+        (*context)->ownedPlayback.reset();
+        (*context)->runtime.reset();
         delete *context;
         *context = nullptr;
         context_active.store(false);
