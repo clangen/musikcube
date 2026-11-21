@@ -69,8 +69,13 @@ namespace musik { namespace core { namespace audio {
                 bool peakValid;
             };
 
+            /* A receiver owns its callback lifetime. Neither copyable nor movable. */
             struct EventListener {
-                virtual ~EventListener() { }
+                EventListener() = default;
+                virtual ~EventListener() = default;
+                EventListener(const EventListener&) = delete;
+                EventListener& operator=(const EventListener&) = delete;
+
                 virtual void OnPlayerBuffered(Player* player) { }
                 virtual void OnPlayerStarted(Player* player) { }
                 virtual void OnPlayerStreamEof(Player* player) { }
@@ -78,6 +83,20 @@ namespace musik { namespace core { namespace audio {
                 virtual void OnPlayerOpenFailed(Player* player) { }
                 virtual void OnPlayerDestroying(Player* player) { }
                 virtual void OnPlayerMixPoint(Player* player, int id, double time) { }
+
+            protected:
+                /* Call after detaching players, outside callback-visible locks and callbacks. */
+                void CloseCallbacks();
+
+            private:
+                friend class Player;
+                struct CallbackState {
+                    std::mutex mutex;
+                    std::condition_variable idle;
+                    unsigned running {};
+                    bool closed {};
+                };
+                const std::shared_ptr<CallbackState> callbacks = std::make_shared<CallbackState>();
             };
 
             static Player* Create(
@@ -106,7 +125,7 @@ namespace musik { namespace core { namespace audio {
 
             std::string GetUrl() const { return this->url; }
 
-            musik::core::sdk::StreamState GetStreamState() noexcept { return this->streamState; }
+            musik::core::sdk::StreamState GetStreamState() noexcept { return this->streamState.load(); }
 
         private:
             friend void playerThreadLoop(Player* player);
@@ -134,7 +153,15 @@ namespace musik { namespace core { namespace audio {
 
             using MixPointPtr = std::shared_ptr<MixPoint>;
             using MixPointList = std::list<MixPointPtr>;
-            using ListenerList = std::list<EventListener*>;
+            struct ListenerRegistration {
+                explicit ListenerRegistration(EventListener& listener)
+                    : listener(&listener), callbacks(listener.callbacks) {}
+                EventListener* const listener;
+                const std::shared_ptr<EventListener::CallbackState> callbacks;
+                std::atomic_bool attached { true };
+            };
+
+            using ListenerList = std::list<std::shared_ptr<ListenerRegistration>>;
             using OutputPtr = std::shared_ptr<musik::core::sdk::IOutput>;
 
             typedef enum {
@@ -144,8 +171,10 @@ namespace musik { namespace core { namespace audio {
             } InternalState;
 
             bool Exited();
+            void ReturnUnusedBuffer(musik::core::sdk::IBuffer* buffer);
             int State();
-            ListenerList Listeners();
+            template<class Notify>
+            void NotifyListeners(Notify notify);
 
             std::thread* thread;
 
@@ -154,7 +183,6 @@ namespace musik { namespace core { namespace audio {
             ListenerList listeners;
             MixPointList pendingMixPoints;
             MixPointList processedMixPoints;
-            MixPointList mixPointsHitTemp; /* so we don't have to keep alloc'ing it */
 
             void UpdateNextMixPointTime();
 

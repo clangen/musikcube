@@ -61,7 +61,9 @@ CrossfadeTransport::CrossfadeTransport()
 
 CrossfadeTransport::~CrossfadeTransport() {
     this->Stop();
+    this->CloseCallbacks();
     this->crossfader.Drain();
+    this->crossfader.Shutdown();
 }
 
 PlaybackState CrossfadeTransport::GetPlaybackState() {
@@ -320,6 +322,9 @@ void CrossfadeTransport::OnPlayerFinished(Player* player) {
     this->RaiseStreamEvent(StreamState::Finished, player);
 
     Lock lock(this->stateMutex);
+    if (player != this->active.player && player != this->next.player) {
+        return;
+    }
 
     /* in normal situations OnPlayerMixPoint will deal with the stream switch over,
     but it will not if (1) the stream is too short and there is no mixpoint, or (2)
@@ -347,6 +352,9 @@ void CrossfadeTransport::OnPlayerOpenFailed(Player* player) {
         }
         else if (player == next.player) {
             next.Reset();
+        }
+        else {
+            return;
         }
     }
     this->RaiseStreamEvent(StreamState::OpenFailed, player);

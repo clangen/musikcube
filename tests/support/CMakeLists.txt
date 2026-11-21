@@ -165,7 +165,14 @@ if(BUILD_TESTING)
       add_dependencies(musikcube_tests musikcore_playback_pcm_test)
       add_dependencies(musikcube_integration_tests musikcore_playback_pcm_test)
 
-      foreach(mode IN ITEMS gapless crossfade)
+      add_custom_target(musikcube_playback_benchmark
+        COMMAND "${MUSIKCUBE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/benchmark-playback.js"
+          "${PROJECT_BINARY_DIR}" "$<TARGET_FILE:musikcore_playback_pcm_test>"
+          "$<TARGET_FILE:musikcore_pcm_capture_output>"
+        DEPENDS musikcore_playback_pcm_test
+        USES_TERMINAL VERBATIM)
+
+      foreach(mode IN ITEMS gapless crossfade teardown seek completion detach_listener replace_next paused_crossfade cancel_open)
         add_test(NAME musikcore.integration.transport.${mode}_pcm COMMAND "${MUSIKCUBE_TEST_NODE}"
           "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
           "$<TARGET_FILE:musikcore_playback_pcm_test>" --stage
@@ -174,6 +181,7 @@ if(BUILD_TESTING)
         set_tests_properties(musikcore.integration.transport.${mode}_pcm PROPERTIES
           LABELS "integration;musikcore;transport;playback" TIMEOUT 35)
       endforeach()
+      set_tests_properties(musikcore.integration.transport.paused_crossfade_pcm PROPERTIES TIMEOUT 12)
     endif()
 
     if(UNIX AND TARGET nullout AND TARGET ffmpegdecoder AND TARGET taglibreader)

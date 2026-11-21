@@ -899,6 +899,28 @@ enables separate transport scenarios for gapless and crossfade.
 Windows requires a native PTY backend before these app scenarios can be enabled;
 registration on macOS does not establish Windows/Linux acceptance.
 
+The native PCM capture fixture can hold a buffer completion at a known boundary.
+The transport tests use this to force overlapping seeks, stop and output reload
+with buffers outstanding, and replacement of a prepared next track. Other cases
+block a player notification during teardown, detach a receiver after the player
+has copied its listener list, destroy a paused crossfade, and cancel a source
+while its provider is still opening it. These tests exercise
+the production player and decoder with a synthetic output clock.
+
+Run `cmake --build <build-dir> --target musikcube_playback_benchmark` for the
+headless Linux/macOS playback baseline. Each sample runs in a fresh process
+and plays two local WAV tracks gaplessly. CPU time covers playback and worker
+cleanup. Peak RSS is the process high-water mark, including startup. The
+capture sink counts rendered frames without retaining the PCM history.
+Results are saved to `<build-dir>/playback-benchmark/results.json`. Use
+`tests/scripts/benchmark-playback.js` with `--baseline` to compare medians from
+the same machine and build configuration. Optional `--max-cpu-increase` and
+`--max-rss-increase` percentages make a comparison fail when it exceeds a budget.
+For small changes, pass `--compare-binary` and `--compare-plugin` for the
+reference build. The runner alternates the order of the two builds and reports
+the median and range of paired changes. Comparing a build with itself first
+shows how much the metric moves under the same workload.
+
 ```sh
 node tests/ui/scenarios/playlists.js --build-dir build/test --bin-dir build/test/bin
 node tests/ui/scenarios/standalone.js --build-dir build/test --bin-dir build/test/bin --tracks 1000 --windows

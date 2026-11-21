@@ -56,9 +56,8 @@ GaplessTransport::GaplessTransport()
 }
 
 GaplessTransport::~GaplessTransport() {
-    LockT lock(this->stateMutex);
-    this->ResetNextPlayer();
-    this->ResetActivePlayer();
+    this->StopInternal(true, true);
+    this->CloseCallbacks();
 }
 
 PlaybackState GaplessTransport::GetPlaybackState() {
@@ -72,24 +71,19 @@ StreamState GaplessTransport::GetStreamState() {
 }
 
 void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
-    bool startNext = false;
-    {
-        LockT lock(this->stateMutex);
+    LockT lock(this->stateMutex);
 
-        this->ResetNextPlayer();
+    this->ResetNextPlayer();
 
-        if (uri.size()) {
-            this->nextPlayer = Player::Create(
-                uri,
-                this->output, Player::DestroyMode::NoDrain,
-                this,
-                gain);
-            startNext = this->nextCanStart;
+    if (uri.size()) {
+        this->nextPlayer = Player::Create(
+            uri,
+            this->output, Player::DestroyMode::NoDrain,
+            this,
+            gain);
+        if (this->nextCanStart) {
+            this->StartWithPlayer(this->nextPlayer);
         }
-    }
-
-    if (startNext) {
-        this->StartWithPlayer(this->nextPlayer);
     }
 }
 
@@ -318,10 +312,14 @@ void GaplessTransport::OnPlayerStarted(Player* player) {
 }
 
 void GaplessTransport::OnPlayerStreamEof(Player* player) {
-    this->SetNextCanStart(true);
-
     {
         LockT lock(this->stateMutex);
+
+        /* EOF can arrive after a seek, stop, or a replacement player. */
+        if (player != this->activePlayer) {
+            return;
+        }
+        this->nextCanStart = true;
 
         /* if another component configured a next player while we were playing,
         go ahead and get it started now. */
@@ -424,8 +422,8 @@ void GaplessTransport::RaiseStreamEvent(StreamState type, Player const* player) 
 void GaplessTransport::ResetNextPlayer() {
     if (this->nextPlayer) {
         this->nextPlayer->Detach(this);
-        this->nextPlayer->Destroy();
         this->RaiseStreamEvent(StreamState::Destroyed, this->nextPlayer);
+        this->nextPlayer->Destroy();
         this->nextPlayer = nullptr;
     }
 }
@@ -433,8 +431,8 @@ void GaplessTransport::ResetNextPlayer() {
 void GaplessTransport::ResetActivePlayer() {
     if (this->activePlayer) {
         this->activePlayer->Detach(this);
-        this->activePlayer->Destroy();
         this->RaiseStreamEvent(StreamState::Destroyed, this->activePlayer);
+        this->activePlayer->Destroy();
         this->activePlayer = nullptr;
     }
 }

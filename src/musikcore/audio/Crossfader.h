@@ -73,6 +73,7 @@ namespace musik { namespace core { namespace audio {
             void Resume();
             void Stop();
             void Drain();
+            void Shutdown();
 
         private:
             void ThreadLoop();

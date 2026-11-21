@@ -46,6 +46,7 @@
 
 #include <deque>
 #include <list>
+#include <mutex>
 
 namespace musik { namespace core { namespace audio {
 
@@ -99,6 +100,8 @@ namespace musik { namespace core { namespace audio {
             long decoderChannels;
             std::string uri;
             musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
+            std::mutex sourceMutex;
+            bool sourceInterrupted {};
 
             BufferList recycledBuffers;
             BufferList filledBuffers;

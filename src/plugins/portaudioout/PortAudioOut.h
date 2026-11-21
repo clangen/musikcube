@@ -38,10 +38,12 @@
 
 #include <musikcore/sdk/IOutput.h>
 #include <portaudio.h>
-#include <deque>
+#include <atomic>
+#include <list>
+#include <semaphore>
+#include <thread>
 #include <mutex>
 #include <memory>
-#include <condition_variable>
 
 using namespace musik::core::sdk;
 
@@ -111,12 +113,18 @@ class PortAudioOut : public IOutput {
             float gain { -1.0 };
         };
 
+        void RetireBuffers(std::stop_token stop);
+        void SignalRetirement();
+
         std::recursive_mutex mutex;
-        std::condition_variable_any bufferEvent;
         PaStream* paStream { nullptr };
         IDeviceList* deviceList { nullptr };
-        std::deque<std::shared_ptr<BufferContext>> buffers;
+        std::list<std::shared_ptr<BufferContext>> buffers;
+        std::list<std::shared_ptr<BufferContext>> retired;
+        std::binary_semaphore retirementReady { 0 };
+        std::atomic_bool retirementSignaled { false };
         FormatContext formatContext;
         State state;
         double volume;
+        std::jthread retirementWorker;
 };

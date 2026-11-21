@@ -33,15 +33,17 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "PortAudioOut.h"
+#include "PcmFrames.h"
 
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/IDebug.h>
 
-#include <cmath>
 
 using namespace musik::core::sdk;
+using musik::core::audio::copyPcmFrames;
+using musik::core::audio::silencePcmFrames;
 
 #ifdef WIN32
     #include <Windows.h>
@@ -92,29 +94,29 @@ int portAudioStreamCallback(
     void *userData)
 {
     PortAudioOut* self = static_cast<PortAudioOut*>(userData);
-    std::vector<std::shared_ptr<PortAudioOut::BufferContext>> consumed;
+    const auto channels = self->formatContext.channels;
     bool complete = false;
+    bool retired = false;
 
     {
         unsigned long remainingFrameCount = frameCount;
         float* target = static_cast<float*>(output);
 
-        while (true) {
-            std::unique_lock<decltype(self->mutex)> lock(self->mutex);
-            while (
-                self->state == PortAudioOut::StatePlaying &&
-                self->buffers.size() == 0)
-            {
-                self->bufferEvent.wait(lock);
-            }
+        /* Device deadlines take priority over waiting for the producer. */
+        std::unique_lock lock(self->mutex, std::try_to_lock);
+        if (!lock) {
+            silencePcmFrames(target, frameCount, channels);
+            return paContinue;
+        }
+        if (self->state == PortAudioOut::StatePaused ||
+            self->state == PortAudioOut::StateStopped)
+        {
+            silencePcmFrames(target, frameCount, channels);
+            return paAbort;
+        }
 
-            if (self->state == PortAudioOut::StatePaused ||
-                self->state == PortAudioOut::StateStopped)
-            {
-                return paAbort;
-            }
-
-            auto context = self->buffers.front();
+        while (remainingFrameCount && !self->buffers.empty()) {
+            const auto& context = self->buffers.front();
             auto buffer = context->buffer;
             auto audio = buffer->BufferPointer();
             auto const samples = buffer->Samples();
@@ -122,11 +124,7 @@ int portAudioStreamCallback(
             if (context->gain == -1) {
                 context->gain = self->volume;
                 if (self->volume != 1.0f) {
-                    float gain = 0.0;
-                    if (self->volume > 0) {
-                        float dB = 20.0 * std::log(self->volume / 1.0);
-                        gain = std::pow(10.0, dB / 20.0);
-                    }
+                    const auto gain = static_cast<float>(std::max(0.0, self->volume));
                     for (size_t i = 0; i < samples; i++) {
                         (*audio) *= gain;
                         ++audio;
@@ -135,34 +133,25 @@ int portAudioStreamCallback(
             }
 
             auto framesToWrite = std::min(remainingFrameCount, context->remainingFrameCount);
-            audio = buffer->BufferPointer() + (2 * context->framesWritten);
-
-            memcpy(target, audio, framesToWrite * 2 * sizeof(float));
+            copyPcmFrames(target, buffer->BufferPointer(), context->framesWritten, framesToWrite, channels);
 
             context->framesWritten += framesToWrite;
             context->remainingFrameCount -= framesToWrite;
             if (context->remainingFrameCount == 0) {
-                self->buffers.pop_front();
-                consumed.push_back(context);
+                /* Move the existing node so completion and deallocation run on the worker. */
+                self->retired.splice(self->retired.end(), self->buffers, self->buffers.begin());
+                retired = true;
             }
 
-            target += (framesToWrite * 2);
+            target += framesToWrite * channels;
             remainingFrameCount -= framesToWrite;
-
-            if (self->state == PortAudioOut::State::StateDraining &&
-                self->buffers.size() == 0)
-            {
-                complete = true;
-            }
-
-            if (complete || remainingFrameCount == 0) {
-                break;
-            }
         }
+        silencePcmFrames(target, remainingFrameCount, channels);
+        complete = self->state == PortAudioOut::StateDraining && self->buffers.empty();
     }
 
-    for (auto c : consumed) {
-        c->provider->OnBufferProcessed(c->buffer);
+    if (retired) {
+        self->SignalRetirement();
     }
 
     return complete ? paComplete : paContinue;
@@ -194,16 +183,49 @@ PortAudioOut::PortAudioOut() {
     this->volume = 1.0f;
     this->state = StateStopped;
     logPaError("Pa_Initialize", Pa_Initialize());
+    this->retirementWorker = std::jthread([this](std::stop_token stop) { this->RetireBuffers(stop); });
 }
 
 PortAudioOut::~PortAudioOut() {
     this->Stop();
+    this->retirementWorker.request_stop();
+    this->SignalRetirement();
+    this->retirementWorker.join();
     logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
     logPaError("Pa_CloseStream", Pa_CloseStream(this->paStream));
     logPaError("Pa_Terminate", Pa_Terminate());
     if (this->deviceList) {
         this->deviceList->Release();
         this->deviceList = nullptr;
+    }
+}
+
+void PortAudioOut::RetireBuffers(std::stop_token stop) {
+    while (true) {
+        this->retirementReady.acquire();
+        this->retirementSignaled.store(false);
+        decltype(this->retired) completed;
+        {
+            std::unique_lock lock(this->mutex);
+            if (stop.stop_requested() && this->retired.empty()) {
+                return;
+            }
+            completed.splice(completed.end(), this->retired);
+        }
+
+        for (const auto& context : completed) {
+            context->provider->OnBufferProcessed(context->buffer);
+        }
+        if (stop.stop_requested()) {
+            /* Stop may have queued another batch during a completion callback. */
+            this->SignalRetirement();
+        }
+    }
+}
+
+void PortAudioOut::SignalRetirement() {
+    if (!this->retirementSignaled.exchange(true)) {
+        this->retirementReady.release();
     }
 }
 
@@ -216,7 +238,6 @@ void PortAudioOut::Pause() {
     if (this->paStream) {
         logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
         this->state = StatePaused;
-        this->bufferEvent.notify_all();
     }
 }
 
@@ -229,15 +250,16 @@ void PortAudioOut::Resume() {
 }
 
 void PortAudioOut::SetVolume(double volume) {
+    std::unique_lock lock(this->mutex);
     this->volume = volume;
 }
 
 double PortAudioOut::GetVolume() {
+    std::unique_lock lock(this->mutex);
     return this->volume;
 }
 
 void PortAudioOut::Stop() {
-    decltype(this->buffers) swap;
     {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
         if (this->paStream) {
@@ -246,19 +268,14 @@ void PortAudioOut::Stop() {
             this->paStream = nullptr;
         }
         this->state = StateStopped;
-        this->buffers.swap(swap);
+        this->retired.splice(this->retired.end(), this->buffers);
     }
-    for (auto b : swap) {
-        b->provider->OnBufferProcessed(b->buffer);
-    }
-    this->buffers.clear();
-    this->bufferEvent.notify_all();
+    this->SignalRetirement();
 }
 
 void PortAudioOut::Drain() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     this->state = StateDraining;
-    this->bufferEvent.notify_all();
 }
 
 IDeviceList* PortAudioOut::GetDeviceList() {
@@ -310,7 +327,7 @@ OutputState PortAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             return OutputState::InvalidState;
         }
 
-        if (this->buffers.size() >= MAX_BUFFER_COUNT) {
+        if (this->buffers.size() + this->retired.size() >= MAX_BUFFER_COUNT) {
             int retryMs = buffer->SampleRate() / buffer->Samples();
             return static_cast<OutputState>(retryMs);
         }
@@ -350,7 +367,6 @@ OutputState PortAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         this->state = StatePlaying;
         this->buffers.push_back(std::make_shared<BufferContext>(buffer, provider));
-        this->bufferEvent.notify_all();
         return OutputState::BufferWritten;
     }
 

@@ -287,3 +287,11 @@ if(APPLE)
 endif()
 set_tests_properties(${driver_tests} PROPERTIES
   ENVIRONMENT "MUSIKCUBE_TEST_ARTIFACT_ROOT=${CMAKE_CURRENT_BINARY_DIR}/bin/driver")
+
+add_executable(musikcore_playback_math_test unit/musikcore/playback-math.cpp)
+target_include_directories(musikcore_playback_math_test PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_compile_features(musikcore_playback_math_test PRIVATE cxx_std_20)
+add_dependencies(musikcube_tests musikcore_playback_math_test)
+add_dependencies(musikcube_unit_tests musikcore_playback_math_test)
+add_test(NAME musikcore.unit.playback_math COMMAND musikcore_playback_math_test)
+set_tests_properties(musikcore.unit.playback_math PROPERTIES LABELS "unit;musikcore;playback")

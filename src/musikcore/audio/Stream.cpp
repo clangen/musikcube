@@ -35,6 +35,7 @@
 #include "pch.hpp"
 
 #include "Stream.h"
+#include <musikcore/audio/PlaybackMath.h>
 #include "Streams.h"
 #include <musikcore/debug.h>
 
@@ -123,14 +124,29 @@ bool Stream::OpenStream(std::string uri, IOutput* output) {
 
     /* use our file stream abstraction to open the data at the
     specified URI */
-    this->dataStream = DataStreamFactory::OpenSharedDataStream(uri.c_str(), OpenFlags::Read);
+    auto source = DataStreamFactory::OpenSharedDataStream(uri.c_str(), OpenFlags::Read);
 
-    if (!this->dataStream) {
+    if (!source) {
         musik::debug::error(TAG, "failed to open " + uri);
         return false;
     }
 
-    this->decoder = streams::GetDecoderForDataStream(this->dataStream);
+    bool interrupted;
+    {
+        std::lock_guard lock(this->sourceMutex);
+        interrupted = this->sourceInterrupted;
+        if (!interrupted) {
+            this->dataStream = source;
+        }
+    }
+
+    /* A stop during provider open must reach the source before decoder probing. */
+    if (interrupted) {
+        source->Interrupt();
+        return false;
+    }
+
+    this->decoder = streams::GetDecoderForDataStream(source);
 
     if (this->decoder) {
         /* if the output has a default/preferred sample rate, let the decoder know
@@ -142,7 +158,7 @@ bool Stream::OpenStream(std::string uri, IOutput* output) {
                 this->decoder->SetPreferredSampleRate(defaultOutputSampleRate);
             }
         }
-        if (this->dataStream->CanPrefetch()) {
+        if (source->CanPrefetch()) {
             this->capabilities |= (int) musik::core::sdk::Capability::Prebuffer;
             this->RefillInternalBuffers();
         }
@@ -153,8 +169,18 @@ bool Stream::OpenStream(std::string uri, IOutput* output) {
 }
 
 void Stream::Interrupt() {
-    if (this->dataStream) {
-        this->dataStream->Interrupt();
+    DataStreamFactory::DataStreamPtr source;
+    {
+        std::lock_guard lock(this->sourceMutex);
+        if (this->sourceInterrupted) {
+            return;
+        }
+        this->sourceInterrupted = true;
+        source = this->dataStream;
+    }
+
+    if (source) {
+        source->Interrupt();
     }
 }
 
@@ -174,8 +200,8 @@ bool Stream::GetNextBufferFromDecoder() {
         this->decoderChannels = this->decoderBuffer->Channels();
         this->samplesPerBuffer = samplesPerChannel * decoderChannels;
 
-        this->bufferCount = std::max(MIN_BUFFER_COUNT, (int)(this->bufferLengthSeconds *
-            (double)(this->decoderSampleRate / this->samplesPerBuffer)));
+        this->bufferCount = pcmBufferCount(this->bufferLengthSeconds, this->decoderSampleRate,
+            this->samplesPerChannel, MIN_BUFFER_COUNT);
 
         this->rawBuffer = new float[bufferCount * this->samplesPerBuffer];
         int offset = 0;

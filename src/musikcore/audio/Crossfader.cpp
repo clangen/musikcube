@@ -73,9 +73,18 @@ Crossfader::Crossfader(ITransport& transport)
 }
 
 Crossfader::~Crossfader() {
+    this->Shutdown();
+}
+
+void Crossfader::Shutdown() {
+    if (!this->thread) {
+        return;
+    }
     this->quit = true;
     this->messageQueue.Post(Message::Create(this, MESSAGE_QUIT, 0, 0));
     this->thread->join();
+    this->thread.reset();
+    this->CloseCallbacks();
     this->messageQueue.Unregister(this);
 }
 
@@ -128,17 +137,20 @@ void Crossfader::Stop() {
     }
 
     this->contextList.clear();
+    this->drainCondition.notify_all();
 }
 
 void Crossfader::Drain() {
     LOCK(this->contextListLock);
 
-    if (this->contextList.size()) {
-        for (FadeContextPtr context : this->contextList) {
-            context->direction = FadeOut;
-        }
+    for (const auto& context : this->contextList) {
+        context->direction = FadeOut;
+    }
 
-        this->drainCondition.wait(lock);
+    this->drainCondition.wait(lock, [&] { return this->contextList.empty() || this->paused; });
+    if (!this->contextList.empty()) {
+        /* Paused fades cannot drain. Return their buffers during teardown. */
+        this->Stop();
     }
 }
 
@@ -201,6 +213,7 @@ void Crossfader::Pause() {
     }
 
     this->messageQueue.Remove(this, MESSAGE_TICK);
+    this->drainCondition.notify_all();
 }
 
 void Crossfader::Resume() {
@@ -225,6 +238,11 @@ void Crossfader::ProcessMessage(IMessage &message) {
 
             {
                 LOCK(this->contextListLock);
+
+                /* A tick can have left the queue just before Pause removes it. */
+                if (this->paused) {
+                    return;
+                }
 
                 auto it = this->contextList.begin();
                 auto globalVolume = this->transport.Volume();

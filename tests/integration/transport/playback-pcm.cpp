@@ -3,21 +3,27 @@
 
 #include <musikcore/audio/CrossfadeTransport.h>
 #include <musikcore/audio/GaplessTransport.h>
+#include <musikcore/audio/Outputs.h>
+#include <musikcore/audio/Stream.h>
 #include <musikcore/output.hpp>
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cmath>
+#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <dlfcn.h>
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <mutex>
 #include <string_view>
 #include <thread>
 #include <vector>
+#include <sys/resource.h>
 
 namespace {
     using namespace musik::core;
@@ -192,6 +198,286 @@ namespace {
 
         return true;
     }
+
+    bool stressPlayback(std::string_view mode, const std::filesystem::path& file,
+        ReadCapture read, HoldCompletion hold, WaitCapture wait, CountCapture outstanding)
+    {
+        constexpr unsigned deadlineMs = 3000;
+        constexpr int repetitions = 12;
+        constexpr int seekSeconds = 4;
+        const auto track = [](auto frame) {
+            return StereoFrame { static_cast<int16_t>(frame < seekSeconds * sampleRate ? signalLevel : -signalLevel), 0 };
+        };
+        if (!writeWave(file, crossfadeLength, track)) {
+            return false;
+        }
+
+        GaplessTransport transport;
+        for (int iteration = 0; iteration < (mode == "seek" ? 1 : repetitions); ++iteration) {
+            hold(true);
+            transport.Start(file.string(), ITransport::Gain {}, ITransport::StartMode::Immediate);
+            if (!wait(CaptureEvent::HeldCompletion, deadlineMs)) {
+                hold(false);
+                std::fputs("Output never held a buffer completion\n", stderr);
+                return false;
+            }
+
+            if (mode == "seek") {
+                transport.SetPosition(1);
+                if (!wait(CaptureEvent::Stop, deadlineMs)) {
+                    hold(false);
+                    std::fputs("First seek did not reach the output flush\n", stderr);
+                    return false;
+                }
+                transport.SetPosition(seekSeconds);
+                const auto before = read(nullptr, 0);
+                hold(false);
+                if (!wait(CaptureEvent::Resumed, deadlineMs)) {
+                    std::fputs("Output did not resume after the latest seek\n", stderr);
+                    return false;
+                }
+                std::vector<CapturedFrame> frames(read(nullptr, 0));
+                read(frames.data(), frames.size());
+                if (frames.size() <= before ||
+                    std::abs(frames[before].left + static_cast<float>(signalLevel) / pcmScale) > sampleTolerance)
+                {
+                    std::fputs("PCM from the superseded seek reached output\n", stderr);
+                    return false;
+                }
+                transport.Stop();
+            }
+            else {
+                /* Alternate retaining the output and replacing it with a completion outstanding. */
+                if (iteration % 2 == 0) {
+                    transport.Stop();
+                }
+                else {
+                    transport.ReloadOutput();
+                }
+                hold(false);
+            }
+            Player::WaitForWorkers();
+            if (!wait(CaptureEvent::Balanced, deadlineMs) || outstanding() != 0) {
+                std::fprintf(stderr, "Output still owns PCM after iteration %d\n", iteration);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool stopDuringNotification(const std::filesystem::path& file, bool detachFollower = false) {
+        /* A single buffer lets teardown reach the final completion even while
+           the listener is blocked. The player must outlive that listener call. */
+        struct Listener final : Player::EventListener {
+            void OnPlayerStarted(Player*) override {
+                std::unique_lock lock(this->mutex);
+                this->started = true;
+                this->changed.notify_all();
+                this->changed.wait(lock, [&] { return this->released; });
+            }
+
+            void OnPlayerDestroying(Player*) override {
+                std::lock_guard lock(this->mutex);
+                this->destroying = true;
+                this->changed.notify_all();
+            }
+
+            std::mutex mutex;
+            std::condition_variable changed;
+            bool started {};
+            bool released {};
+            bool destroying {};
+        } listener;
+
+        struct Follower final : Player::EventListener {
+            void OnPlayerStarted(Player*) override { this->called = true; }
+            std::atomic_bool called {};
+        } follower;
+
+        if (!writeWave(file, 137, ramp)) {
+            return false;
+        }
+
+        auto output = outputs::SelectedOutput();
+        output->Resume();
+        auto* player = Player::Create(file.string(), output, Player::DestroyMode::NoDrain, &listener, {});
+        if (detachFollower) {
+            player->Attach(&follower);
+        }
+        player->Play();
+
+        std::unique_lock lock(listener.mutex);
+        const bool started = listener.changed.wait_for(lock, 3s, [&] { return listener.started; });
+        lock.unlock();
+
+        if (started) {
+            if (detachFollower) {
+                /* The first callback proves the output worker already snapshotted the listeners. */
+                player->Detach(&follower);
+            }
+            else {
+                player->Destroy();
+            }
+        }
+        output->Stop();
+
+        lock.lock();
+        const bool destroyedEarly = started && !detachFollower &&
+            listener.changed.wait_for(lock, 50ms, [&] { return listener.destroying; });
+        listener.released = true;
+        listener.changed.notify_all();
+        lock.unlock();
+        Player::WaitForWorkers();
+
+        if (!started || destroyedEarly) {
+            std::fputs("Player did not stay alive through its completion notification\n", stderr);
+            return false;
+        }
+        if (follower.called) {
+            std::fputs("Detached listener was called from a stale snapshot\n", stderr);
+            return false;
+        }
+        return true;
+    }
+
+    bool replacePreparedTrack(const std::filesystem::path& directory, ReadCapture read,
+        HoldCompletion hold, WaitCapture wait, WaitCaptureFrames waitFrames)
+    {
+        constexpr unsigned deadlineMs = 5000;
+        constexpr std::size_t firstFrames = sampleRate + 137;
+        constexpr std::size_t nextFrames = sampleRate / 2;
+        const auto first = directory / "current.wav";
+        const auto superseded = directory / "superseded.wav";
+        const auto next = directory / "next.wav";
+        if (!writeWave(first, firstFrames, [](auto) { return StereoFrame { signalLevel, 0 }; }) ||
+            !writeWave(superseded, nextFrames, [](auto) { return StereoFrame { -signalLevel, 0 }; }) ||
+            !writeWave(next, nextFrames, [](auto) { return StereoFrame { 0, signalLevel }; }))
+        {
+            return false;
+        }
+
+        GaplessTransport transport;
+        hold(true);
+        transport.Start(first.string(), {}, ITransport::StartMode::Immediate);
+        if (!wait(CaptureEvent::HeldCompletion, deadlineMs)) {
+            hold(false);
+            return false;
+        }
+
+        /* The bounded output queue keeps the current track away from EOF
+           while both commands replace the next player. */
+        transport.PrepareNextTrack(superseded.string(), {});
+        transport.PrepareNextTrack(next.string(), {});
+        hold(false);
+        const bool captured = waitFrames(firstFrames + nextFrames, deadlineMs);
+        transport.Stop();
+        Player::WaitForWorkers();
+        if (!captured) {
+            return false;
+        }
+
+        std::vector<CapturedFrame> frames(read(nullptr, 0));
+        read(frames.data(), frames.size());
+        const float level = static_cast<float>(signalLevel) / pcmScale;
+        for (std::size_t i = 0; i < firstFrames + nextFrames; ++i) {
+            const bool current = i < firstFrames;
+            if (frames[i].underrun ||
+                std::abs(frames[i].left - (current ? level : 0.0f)) > sampleTolerance ||
+                std::abs(frames[i].right - (current ? 0.0f : level)) > sampleTolerance)
+            {
+                std::fprintf(stderr, "Superseded track or discontinuity at frame %zu\n", i);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    double milliseconds(timeval value) {
+        return value.tv_sec * 1000.0 + value.tv_usec / 1000.0;
+    }
+
+    std::size_t peakRssBytes(const rusage& usage) {
+#ifdef __APPLE__
+        return usage.ru_maxrss;
+#else
+        return static_cast<std::size_t>(usage.ru_maxrss) * 1024;
+#endif
+    }
+
+    bool benchmarkPlayback(const std::filesystem::path& first, const std::filesystem::path& second,
+        StoreCapture store, WaitCaptureFrames waitFrames, CountCapture audible)
+    {
+        constexpr unsigned deadlineMs = 10000;
+        constexpr auto frames = gaplessFirst + gaplessSecond;
+        store(false);
+        rusage before {};
+        if (getrusage(RUSAGE_SELF, &before) != 0) {
+            return false;
+        }
+        const auto started = Clock::now();
+        {
+            GaplessTransport transport;
+            transport.Start(first.string(), {}, ITransport::StartMode::Immediate);
+            transport.PrepareNextTrack(second.string(), {});
+            if (!waitFrames(frames, deadlineMs)) {
+                transport.Stop();
+                Player::WaitForWorkers();
+                return false;
+            }
+            transport.Stop();
+            /* Player notifications may already be in flight when Stop returns. */
+            Player::WaitForWorkers();
+        }
+        const auto elapsed = std::chrono::duration<double, std::milli>(Clock::now() - started).count();
+        rusage after {};
+        if (getrusage(RUSAGE_SELF, &after) != 0 || audible() != frames) {
+            std::fprintf(stderr, "Benchmark rendered %zu of %zu expected PCM frames\n", audible(), frames);
+            return false;
+        }
+        const auto userMs = milliseconds(after.ru_utime) - milliseconds(before.ru_utime);
+        const auto systemMs = milliseconds(after.ru_stime) - milliseconds(before.ru_stime);
+        std::printf("playback-benchmark {\"frames\":%zu,\"wallMs\":%.3f,\"cpuMs\":%.3f,"
+            "\"userMs\":%.3f,\"systemMs\":%.3f,\"startPeakRssBytes\":%zu,\"peakRssBytes\":%zu}\n",
+            frames, elapsed, userMs + systemMs, userMs, systemMs, peakRssBytes(before), peakRssBytes(after));
+        return true;
+    }
+
+    bool destroyPausedCrossfade(const std::filesystem::path& first, const std::filesystem::path& second,
+        WaitCapture wait)
+    {
+        constexpr unsigned overlapDeadlineMs = 9000;
+        {
+            CrossfadeTransport transport;
+            transport.Start(first.string(), {}, ITransport::StartMode::Immediate);
+            transport.PrepareNextTrack(second.string(), {});
+            if (!wait(CaptureEvent::Overlap, overlapDeadlineMs) || !transport.Pause()) {
+                std::fputs("Could not pause two overlapping tracks\n", stderr);
+                return false;
+            }
+            std::fputs("Destroying the transport with both fades paused\n", stderr);
+        }
+        Player::WaitForWorkers();
+        return true;
+    }
+
+    bool cancelSourceOpen(WaitCapture wait, void (*release)()) {
+        constexpr unsigned deadlineMs = 3000;
+        auto stream = Stream::Create();
+        bool opened = false;
+        std::thread loader([&] { opened = stream->OpenStream(stalledSource, nullptr); });
+        const bool opening = wait(CaptureEvent::SourceOpening, deadlineMs);
+        if (opening) {
+            stream->Interrupt();
+        }
+        release();
+        loader.join();
+
+        if (!opening || opened || !wait(CaptureEvent::SourceInterrupted, 0)) {
+            std::fputs("Cancellation did not reach the source published after Interrupt\n", stderr);
+            return false;
+        }
+        return true;
+    }
 }
 
 int main(int argc, char** argv) {
@@ -201,7 +487,12 @@ int main(int argc, char** argv) {
 
     const std::string_view mode(argv[1]);
     const bool crossfade = mode == "crossfade";
-    if (!crossfade && mode != "gapless") {
+    const bool stress = mode == "teardown" || mode == "seek" || mode == "completion" ||
+        mode == "detach_listener" || mode == "replace_next";
+    const bool benchmark = mode == "benchmark";
+    const bool pausedFade = mode == "paused_crossfade";
+    const bool sourceOpen = mode == "cancel_open";
+    if (!crossfade && mode != "gapless" && !stress && !benchmark && !pausedFade && !sourceOpen) {
         return 1;
     }
 
@@ -219,7 +510,7 @@ int main(int argc, char** argv) {
 
     const auto first = std::filesystem::path(argv[3]) / "first.wav";
     const auto second = std::filesystem::path(argv[3]) / "second.wav";
-    if (!prepareMedia(first, second, crossfade)) {
+    if (!stress && !sourceOpen && !prepareMedia(first, second, crossfade || pausedFade)) {
         std::fputs("Could not generate the PCM fixtures\n", stderr);
         return 1;
     }
@@ -229,6 +520,38 @@ int main(int argc, char** argv) {
     if (api::ReadOutputConfiguration().selectedDriver != driver) {
         std::fputs("Capture output was not selected\n", stderr);
         return 1;
+    }
+
+    if (benchmark) {
+        const auto store = reinterpret_cast<StoreCapture>(dlsym(module.get(), "StorePcmCapture"));
+        const auto waitFrames = reinterpret_cast<WaitCaptureFrames>(dlsym(module.get(), "WaitPcmCaptureFrames"));
+        const auto audible = reinterpret_cast<CountCapture>(dlsym(module.get(), "AudiblePcmCapture"));
+        return store && waitFrames && audible && benchmarkPlayback(first, second, store, waitFrames, audible) ? 0 : 1;
+    }
+
+    if (pausedFade) {
+        const auto wait = reinterpret_cast<WaitCapture>(dlsym(module.get(), "WaitPcmCapture"));
+        return wait && destroyPausedCrossfade(first, second, wait) ? 0 : 1;
+    }
+
+    if (sourceOpen) {
+        const auto wait = reinterpret_cast<WaitCapture>(dlsym(module.get(), "WaitPcmCapture"));
+        const auto release = reinterpret_cast<void (*)()>(dlsym(module.get(), "ReleasePcmSourceOpen"));
+        return wait && release && cancelSourceOpen(wait, release) ? 0 : 1;
+    }
+
+    if (stress) {
+        if (mode == "completion" || mode == "detach_listener") {
+            return stopDuringNotification(first, mode == "detach_listener") ? 0 : 1;
+        }
+        const auto hold = reinterpret_cast<HoldCompletion>(dlsym(module.get(), "HoldPcmCompletion"));
+        const auto wait = reinterpret_cast<WaitCapture>(dlsym(module.get(), "WaitPcmCapture"));
+        if (mode == "replace_next") {
+            const auto frames = reinterpret_cast<WaitCaptureFrames>(dlsym(module.get(), "WaitPcmCaptureFrames"));
+            return hold && wait && frames && replacePreparedTrack(argv[3], read, hold, wait, frames) ? 0 : 1;
+        }
+        const auto outstanding = reinterpret_cast<CountCapture>(dlsym(module.get(), "OutstandingPcmCapture"));
+        return hold && wait && outstanding && stressPlayback(mode, first, read, hold, wait, outstanding) ? 0 : 1;
     }
 
     bool played;
