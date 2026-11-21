@@ -36,6 +36,7 @@ namespace musik { namespace core { namespace api {
         std::string_view Filename() const noexcept { return Value(MC_TRACK_FIELD_FILENAME); }
         std::optional<int64_t> TrackNumber() const noexcept { return Number(MC_TRACK_FIELD_TRACK); }
         std::optional<int64_t> DiscNumber() const noexcept { return Number(MC_TRACK_FIELD_DISC); }
+        std::optional<int64_t> Rating() const noexcept { return Number(MC_TRACK_FIELD_RATING); }
         std::optional<std::chrono::seconds> Duration() const noexcept {
             const auto seconds = Number(MC_TRACK_FIELD_DURATION);
             if (!seconds || *seconds < 0) return std::nullopt;
@@ -161,6 +162,7 @@ namespace musik { namespace core { namespace api {
 
         explicit operator bool() const noexcept { return static_cast<bool>(identity); }
         int64_t Id() const noexcept { return mc_track_ref_get_id(Get()); }
+        Library Origin() const;
         const mc_track_ref *Get() const noexcept { return identity.get(); }
 
     private:
@@ -316,6 +318,49 @@ namespace musik { namespace core { namespace api {
         std::unique_ptr<mc_library, Deleter> library;
     };
 
+    inline Library TrackRef::Origin() const {
+        mc_library* library = nullptr;
+        const auto status = mc_track_ref_get_library(this->Get(), &library);
+        if (status != MC_OK) {
+            throw Error(status);
+        }
+        return Library(library);
+    }
+
+    inline void Context::SetLibrary(const Library& library) {
+        const auto status = mc_context_set_library(this->context, library.Get());
+        if (status != MC_OK) {
+            throw Error(status);
+        }
+    }
+
+    inline void Context::ClearLibrary() {
+        const auto status = mc_context_set_library(this->context, nullptr);
+        if (status != MC_OK) {
+            throw Error(status);
+        }
+    }
+
+    inline std::optional<Library> Context::GetLibrary() const {
+        mc_library* library = nullptr;
+        const auto status = mc_context_get_library(this->context, &library);
+        if (status == MC_ERROR_NOT_FOUND) {
+            return std::nullopt;
+        }
+        if (status != MC_OK) {
+            throw Error(status);
+        }
+        return Library(library);
+    }
+
+    namespace detail {
+        /* Passing a null handle lets the C entry point capture the active identity. */
+        inline const Library& activeLibrary() {
+            static const Library library(static_cast<mc_library*>(nullptr));
+            return library;
+        }
+    }
+
     /* Owns one independently configured remote connection. Move-only.
        OpenLibrary returns the same wrapper used for a local catalog. */
     class RemoteSession {
@@ -375,6 +420,20 @@ namespace musik { namespace core { namespace api {
        requests return an ID for Context::Cancel and deliver status/value during
        Context::Dispatch or shutdown. Input strings/arrays are copied during
        submission; callback error strings are valid only until the callback returns. */
+
+    using LibraryCompletion = std::function<void(mc_result, std::string_view)>;
+
+    inline mc_request_id SetTrackRating(Context& context, const TrackRef& track, uint32_t rating,
+        LibraryCompletion completion)
+    {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_track_set_rating_async(context.Get(), track.Get(), rating,
+                [](mc_result status, const mc_error* error, void* data) {
+                    const std::unique_ptr<LibraryCompletion> done(static_cast<LibraryCompletion*>(data));
+                    (*done)(status, AsStringView(mc_error_get_message(error)));
+                }, state, request);
+        });
+    }
 
     /* Fetch one metadata page for a literal title filter. Use OpenTrackSearch
        instead when ordering and membership must stay fixed across later reads. */
@@ -471,6 +530,49 @@ namespace musik { namespace core { namespace api {
         }
     }
 
+    /* Owns the category name. Copyable and movable. */
+    struct CategoryEntry {
+        int64_t id;
+        std::string value;
+    };
+
+    using CategoryListCompletion = std::function<void(mc_result, std::vector<CategoryEntry>, std::string_view)>;
+
+    using CategoryFieldsCompletion = std::function<void(mc_result, std::vector<std::string>, std::string_view)>;
+
+    inline mc_request_id ListCategoryFields(Context& context, CategoryFieldsCompletion completion) {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_list_category_fields_async(context.Get(), nullptr,
+                [](mc_result status, const mc_string_view* fields, size_t count, const mc_error* error, void* data) {
+                    const std::unique_ptr<CategoryFieldsCompletion> callback(static_cast<CategoryFieldsCompletion*>(data));
+                    std::vector<std::string> names;
+                    names.reserve(count);
+                    for (size_t i = 0; i < count; ++i) {
+                        names.emplace_back(AsStringView(fields[i]));
+                    }
+                    (*callback)(status, std::move(names), AsStringView(mc_error_get_message(error)));
+                }, state, request);
+        });
+    }
+
+    inline mc_request_id ListCategories(Context& context, std::string_view field, std::string_view filter,
+        mc_track_search_mode mode, CategoryListCompletion completion)
+    {
+        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_list_categories_async(context.Get(), nullptr,
+                { field.data(), field.size() }, { filter.data(), filter.size() }, mode,
+                [](mc_result status, const mc_category_entry* entries, size_t count, const mc_error* error, void* data) {
+                    const std::unique_ptr<CategoryListCompletion> callback(static_cast<CategoryListCompletion*>(data));
+                    std::vector<CategoryEntry> categories;
+                    categories.reserve(count);
+                    for (size_t row = 0; row < count; ++row) {
+                        categories.push_back({ entries[row].id, std::string(AsStringView(entries[row].value)) });
+                    }
+                    (*callback)(status, std::move(categories), AsStringView(mc_error_get_message(error)));
+                }, state, request);
+        });
+    }
+
     /* List saved playlists for a picker or later edits. Copies the C callback's
        temporary names into PlaylistEntry values that can outlive the callback. */
     inline mc_request_id ListPlaylists(Context& context, const Library& library, PlaylistListCompletion completion) {
@@ -530,6 +632,54 @@ namespace musik { namespace core { namespace api {
 
     /* Load current metadata for positions in an existing stable result. Use for
        visible list rows; removed tracks keep their positions with no values. */
+    inline mc_request_id QueryTracks(Context& context, const TrackQuery& query, TrackQueryCompletion completion) {
+        return QueryTracks(context, detail::activeLibrary(), query, std::move(completion));
+    }
+
+    inline mc_request_id OpenTrackSearch(Context& context, const TrackSearch& search, TrackSearchCompletion completion) {
+        return OpenTrackSearch(context, detail::activeLibrary(), search, std::move(completion));
+    }
+
+    inline mc_request_id OpenPlaylist(Context& context, int64_t id, TrackSearchCompletion completion) {
+        return OpenPlaylist(context, detail::activeLibrary(), id, std::move(completion));
+    }
+
+    inline mc_request_id OpenCategory(Context& context, std::string_view category, int64_t id,
+        mc_track_search_order order, TrackSearchCompletion completion)
+    {
+        return OpenCategory(context, detail::activeLibrary(), category, id, order, std::move(completion));
+    }
+
+    inline mc_request_id OpenDirectory(Context& context, std::string_view directory, TrackSearchCompletion completion) {
+        return OpenDirectory(context, detail::activeLibrary(), directory, std::move(completion));
+    }
+
+    inline mc_request_id ListPlaylists(Context& context, PlaylistListCompletion completion) {
+        return ListPlaylists(context, detail::activeLibrary(), std::move(completion));
+    }
+
+    inline mc_request_id SavePlaylist(Context& context, int64_t id, std::string_view name,
+        const std::vector<int64_t>& tracks, PlaylistWriteCompletion completion)
+    {
+        return SavePlaylist(context, detail::activeLibrary(), id, name, tracks, std::move(completion));
+    }
+
+    inline mc_request_id AppendPlaylist(Context& context, int64_t id,
+        const std::vector<int64_t>& tracks, PlaylistWriteCompletion completion)
+    {
+        return AppendPlaylist(context, detail::activeLibrary(), id, tracks, std::move(completion));
+    }
+
+    inline mc_request_id RenamePlaylist(Context& context, int64_t id,
+        std::string_view name, PlaylistWriteCompletion completion)
+    {
+        return RenamePlaylist(context, detail::activeLibrary(), id, name, std::move(completion));
+    }
+
+    inline mc_request_id DeletePlaylist(Context& context, int64_t id, PlaylistWriteCompletion completion) {
+        return DeletePlaylist(context, detail::activeLibrary(), id, std::move(completion));
+    }
+
     inline mc_request_id ReadTracks(Context &context, const TrackResult &tracks,
         const TrackRange &range, TrackQueryCompletion completion) {
         const auto fields = detail::fieldViews(range.fields);

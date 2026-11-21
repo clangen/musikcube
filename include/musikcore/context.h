@@ -2,13 +2,58 @@
 #define MUSIKCORE_CONTEXT_H
 
 #include <musikcore/abi.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct mc_context mc_context;
+typedef struct mc_library mc_library;
+typedef struct mc_playback mc_playback;
 typedef uint64_t mc_request_id;
+
+typedef uint32_t mc_library_kind;
+enum {
+    MC_LIBRARY_LOCAL = 0,
+    MC_LIBRARY_REMOTE = 1,
+    MC_LIBRARY_NONE = 2
+};
+
+typedef uint32_t mc_library_connection_state;
+enum {
+    MC_LIBRARY_DISCONNECTED = 0,
+    MC_LIBRARY_CONNECTING,
+    MC_LIBRARY_CONNECTED,
+    MC_LIBRARY_AUTHENTICATION_FAILED
+};
+
+typedef uint32_t mc_library_connection_error;
+enum {
+    MC_LIBRARY_CONNECTION_OK = 0,
+    MC_LIBRARY_CONNECTION_FAILED,
+    MC_LIBRARY_CONNECTION_CLOSED,
+    MC_LIBRARY_CONNECTION_INVALID_PASSWORD,
+    MC_LIBRARY_CONNECTION_INCOMPATIBLE_VERSION
+};
+
+typedef struct mc_library_status {
+    /* Kind of the selected catalog, including while disconnected. */
+    mc_library_kind kind;
+    /* Current connectivity of the selected catalog. */
+    mc_library_connection_state state;
+    /* Last remote connection error. */
+    mc_library_connection_error error;
+    /* Whether the selected catalog is configured. */
+    bool configured;
+    /* Callback-scoped remote endpoint. Empty for a local catalog. */
+    mc_string_view endpoint;
+    /* Callback-scoped version reported by the remote server. */
+    mc_string_view server_version;
+} mc_library_status;
+
+typedef void (MC_CALL *mc_library_status_fn)(void *user_data, const mc_library_status *status);
+typedef void (MC_CALL *mc_library_changed_fn)(void *user_data, bool selection_changed);
 /* Signal the host loop promptly. May run on a worker or submitting thread.
    Do not dispatch, shut down, or destroy the context from this hook. */
 typedef void (MC_CALL *mc_wakeup_fn)(void *user_data);
@@ -49,6 +94,31 @@ typedef struct mc_context_options {
    A successful context is owned by the caller until destroy succeeds. */
 MC_API mc_result MC_CALL mc_context_create(
     const mc_context_options *options, mc_context **out_context, mc_error **out_error);
+
+/* Select a caller-owned library for later submissions. Null clears it.
+   Host-managed contexts use mc_context_select_library instead. Previously
+   accepted requests and retained handles keep their original library. */
+MC_API mc_result MC_CALL mc_context_set_library(mc_context* context, const mc_library* library);
+/* Return an owned library in an empty output slot. An empty selection returns MC_ERROR_NOT_FOUND. */
+MC_API mc_result MC_CALL mc_context_get_library(const mc_context* context, mc_library** out_library);
+
+/* Select a host-configured catalog on the dispatcher thread. Contexts without
+   host-configured catalogs return MC_ERROR_UNSUPPORTED. */
+MC_API mc_result MC_CALL mc_context_select_library(mc_context* context, mc_library_kind kind);
+/* Reconnect the host-configured remote catalog using its current settings. */
+MC_API mc_result MC_CALL mc_context_reconnect_remote_library(mc_context* context);
+/* Read a snapshot inline. The status and its strings are valid through the call. */
+MC_API mc_result MC_CALL mc_context_read_library_status(
+    const mc_context* context, mc_library_status_fn read, void* user_data);
+/* Register on the dispatcher thread. Deliver changes on dispatch before request
+   completions. Changes may be coalesced. Pass NULL to remove the observer and
+   discard queued notification. Keep user_data alive through callback delivery. */
+MC_API mc_result MC_CALL mc_context_set_library_changed_callback(
+    mc_context* context, mc_library_changed_fn callback, void* user_data);
+
+/* Open an owned handle on the playback engine's thread. Releasing a handle does
+   not stop playback. Contexts without an engine return MC_ERROR_UNSUPPORTED. */
+MC_API mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback** out_playback);
 
 /* The first dispatch or shutdown binds its thread. Ready callbacks run inline,
    outside internal locks. Nested/concurrent dispatch returns MC_ERROR_BUSY.

@@ -15,10 +15,13 @@
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include <musikcore/plugin/Plugins.h>
 #include "../../support/CoreRuntime.h"
+#include "../../support/ApiHost.h"
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <algorithm>
 #include <array>
+#include <chrono>
+#include <condition_variable>
 #include <filesystem>
 #include <limits>
 #include <set>
@@ -708,22 +711,211 @@ namespace {
             audio::PlaybackService stateService(stateMessages, selection, stateTransport);
             stateMessages.Dispatch();
             auto statePlayback = audio::CreatePlaybackHandle(stateService);
+            struct LiveEvents {
+                std::vector<mc_playback_event> received;
+            } live;
+            const auto record = [](void* data, mc_playback_event event) {
+                auto& events = *static_cast<LiveEvents*>(data);
+                events.received.push_back(event);
+            };
+            mc_result subscribed = MC_ERROR_INTERNAL;
+            std::thread subscribe([&] { subscribed = statePlayback.SetChangedCallback(record, &live); });
+            subscribe.join();
+            if (subscribed != MC_OK) {
+                return playbackFailure(__LINE__);
+            }
+            constexpr auto invalidEvent = static_cast<mc_playback_event>(0);
+            if (mc_playback_set_changed_callback(statePlayback.Get(), record, &live, nullptr, 1) !=
+                    MC_ERROR_INVALID_ARGUMENT ||
+                mc_playback_set_changed_callback(statePlayback.Get(), record, &live, &invalidEvent, 1) !=
+                    MC_ERROR_INVALID_ARGUMENT)
+            {
+                return playbackFailure(__LINE__);
+            }
+
+            LiveEvents scoped;
+            const auto owner = std::this_thread::get_id();
+            bool deliveredOnOwner = true;
+            api::PlaybackEventSubscription subscriber(audio::CreatePlaybackHandle(stateService),
+                [&](mc_playback_event event) {
+                    deliveredOnOwner &= std::this_thread::get_id() == owner;
+                    record(&scoped, event);
+                });
+            LiveEvents filtered;
+            std::vector filter { MC_PLAYBACK_CHANGED_TRACK, MC_PLAYBACK_CHANGED_VOLUME };
+            api::PlaybackEventSubscription filteredSubscriber(audio::CreatePlaybackHandle(stateService),
+                [&](mc_playback_event event) { record(&filtered, event); }, filter);
+            std::fill(filter.begin(), filter.end(), MC_PLAYBACK_CHANGED_MODE);
+
+            unsigned destroyedCalls = 0;
+            auto destroyed = std::make_unique<api::PlaybackEventSubscription>(audio::CreatePlaybackHandle(stateService),
+                [&](mc_playback_event) { ++destroyedCalls; });
+
             if (statePlayback.Play(result, 1) != MC_OK) return playbackFailure(__LINE__);
             stateTransport->state = sdk::PlaybackState::Prepared;
             stateTransport->PlaybackEvent(sdk::PlaybackState::Prepared);
+            stateTransport->stream = sdk::StreamState::Buffered;
+            stateTransport->StreamEvent(sdk::StreamState::Buffered, stateTransport->Uri());
+            stateTransport->VolumeChanged();
+            stateTransport->VolumeChanged();
+            stateTransport->TimeChanged(0);
+            stateService.SetRepeatMode(sdk::RepeatMode::Track);
+
+            /* Deliver each distinct event once, with the registration filter copied at subscribe time. */
             stateMessages.Dispatch();
+            if (!live.received.empty() || !scoped.received.empty() || !filtered.received.empty() || destroyedCalls) {
+                return playbackFailure(__LINE__);
+            }
+            std::thread destroy([subscription = std::move(destroyed)]() mutable { subscription.reset(); });
+            destroy.join();
+            stateMessages.Dispatch();
+            const std::vector allEvents {
+                MC_PLAYBACK_CHANGED_TRACK, MC_PLAYBACK_CHANGED_STATE, MC_PLAYBACK_CHANGED_STREAM,
+                MC_PLAYBACK_CHANGED_VOLUME, MC_PLAYBACK_CHANGED_POSITION, MC_PLAYBACK_CHANGED_MODE
+            };
+            const std::vector filteredEvents { MC_PLAYBACK_CHANGED_TRACK, MC_PLAYBACK_CHANGED_VOLUME };
+            const auto liveSnapshot = statePlayback.Snapshot();
+            if (live.received != allEvents || scoped.received != allEvents || destroyedCalls ||
+                filtered.received != filteredEvents ||
+                !liveSnapshot || liveSnapshot->stream != MC_PLAYBACK_STREAM_BUFFERED ||
+                liveSnapshot->repeat != MC_PLAYBACK_REPEAT_TRACK)
+            {
+                return playbackFailure(__LINE__);
+            }
+
+            /* Replace a queued callback from another thread and drop its delivery. */
+            stateTransport->VolumeChanged();
+            stateMessages.Dispatch();
+            LiveEvents replacement;
+            std::thread replace([&] { subscribed = statePlayback.SetChangedCallback(record, &replacement); });
+            replace.join();
+            stateMessages.Dispatch();
+            if (subscribed != MC_OK || live.received != allEvents || !replacement.received.empty() ||
+                scoped.received.size() != allEvents.size() + 1)
+            {
+                return playbackFailure(__LINE__);
+            }
+
+            std::unique_ptr<api::PlaybackEventSubscription> self;
+            size_t selfCalls = 0;
+            self = std::make_unique<api::PlaybackEventSubscription>(audio::CreatePlaybackHandle(stateService),
+                [&](mc_playback_event) {
+                    self.reset();
+                    ++selfCalls;
+                });
+            stateTransport->VolumeChanged();
+            stateTransport->TimeChanged(0);
+            stateMessages.Dispatch();
+            stateMessages.Dispatch();
+            const std::vector selfBatch { MC_PLAYBACK_CHANGED_VOLUME, MC_PLAYBACK_CHANGED_POSITION };
+            if (self || selfCalls != 1 || replacement.received != selfBatch ||
+                scoped.received.size() != allEvents.size() + 3)
+            {
+                return playbackFailure(__LINE__);
+            }
+
+            /* A worker can unsubscribe while delivery is in progress. It must wait for the callback. */
+            struct InFlight {
+                std::mutex mutex;
+                std::condition_variable changed;
+                bool entered = false;
+                bool attempting = false;
+                bool returned = false;
+                bool waited = false;
+                size_t calls = 0;
+            } inFlight;
+            const auto block = [](void* data, mc_playback_event) {
+                auto& state = *static_cast<InFlight*>(data);
+                std::unique_lock lock(state.mutex);
+                ++state.calls;
+                state.entered = true;
+                state.changed.notify_one();
+                if (!state.changed.wait_for(lock, std::chrono::seconds(2), [&] { return state.attempting; })) {
+                    return;
+                }
+                state.waited = !state.changed.wait_for(lock, std::chrono::milliseconds(30),
+                    [&] { return state.returned; });
+            };
+            if (statePlayback.SetChangedCallback(block, &inFlight) != MC_OK) {
+                return playbackFailure(__LINE__);
+            }
+            stateTransport->VolumeChanged();
+            stateMessages.Dispatch();
+            std::thread unsubscribe([&] {
+                {
+                    std::unique_lock lock(inFlight.mutex);
+                    if (!inFlight.changed.wait_for(lock, std::chrono::seconds(2), [&] { return inFlight.entered; })) {
+                        return;
+                    }
+                    inFlight.attempting = true;
+                    inFlight.changed.notify_one();
+                }
+                subscribed = statePlayback.SetChangedCallback(nullptr);
+                {
+                    std::lock_guard lock(inFlight.mutex);
+                    inFlight.returned = true;
+                    inFlight.changed.notify_one();
+                }
+            });
+            stateMessages.Dispatch();
+            unsubscribe.join();
+            stateTransport->VolumeChanged();
+            stateMessages.Dispatch();
+            stateMessages.Dispatch();
+            if (subscribed != MC_OK || !inFlight.waited || !inFlight.returned ||
+                inFlight.calls != 1 || scoped.received.size() != allEvents.size() + 5 ||
+                selfCalls != 1 || !deliveredOnOwner)
+            {
+                return playbackFailure(__LINE__);
+            }
+
             for (const auto state : {sdk::PlaybackState::Paused, sdk::PlaybackState::Prepared, sdk::PlaybackState::Playing}) {
                 stateTransport->state = state;
                 const auto stateQueue = statePlayback.Queue();
-                if (!stateQueue || stateQueue->CurrentRow() != 1 || stateQueue->RetainedRow() != 1) return playbackFailure(__LINE__);
+                const auto current = statePlayback.CurrentTrack();
+                if (!stateQueue || stateQueue->CurrentRow() != 1 || stateQueue->RetainedRow() != 1 ||
+                    !current || current->Id() != result.Id(1))
+                {
+                    return playbackFailure(__LINE__);
+                }
             }
-            if (statePlayback.Control(MC_PLAYBACK_STOP) != MC_OK) return playbackFailure(__LINE__);
+            const auto retainedTrack = statePlayback.CurrentTrack();
+            auto engineTrack = stateService.GetPlaying();
+            const auto initialGain = engineTrack->GetReplayGain();
+            engineTrack->SetReplayGain({ 1.0f, 0.5f, 1.0f, 1.0f });
+            const auto gainSnapshot = statePlayback.Snapshot();
+            engineTrack->SetReplayGain(initialGain);
+            if (!gainSnapshot || !gainSnapshot->has_replay_gain) {
+                return playbackFailure(__LINE__);
+            }
+            if (!retainedTrack || statePlayback.Control(MC_PLAYBACK_STOP) != MC_OK) {
+                return playbackFailure(__LINE__);
+            }
             const auto stoppedBeforeNotification = statePlayback.Queue();
             if (!stoppedBeforeNotification || stoppedBeforeNotification->CurrentRow() != SIZE_MAX ||
-                stoppedBeforeNotification->RetainedRow() != 1 || !stateService.GetPlaying()) return playbackFailure(__LINE__);
+                stoppedBeforeNotification->RetainedRow() != 1 || !stateService.GetPlaying() ||
+                statePlayback.CurrentTrack())
+            {
+                return playbackFailure(__LINE__);
+            }
+            const auto trackWake = query_test_wakeup_count();
+            bool readCurrent = false;
+            api::ReadTrack(context, *retainedTrack, { MC_TRACK_FIELD_ALBUM_ID },
+                [&](mc_result status, api::TrackPage page, std::string_view) {
+                    readCurrent = status == MC_OK && page.Size() == 1 && page.Id(0) == retainedTrack->Id() &&
+                        !page.Value(0, 0).empty();
+                });
+            if (!query_test_wait_for_wakeup(trackWake + 1) || context.Dispatch() != MC_OK || !readCurrent) {
+                return playbackFailure(__LINE__);
+            }
+            if (statePlayback.Control(MC_PLAYBACK_RELOAD_OUTPUT) != MC_OK ||
+                !AwaitTestHost(stateMessages, [&] { return stateTransport->reloads == 1; }))
+            {
+                return playbackFailure(__LINE__);
+            }
         }
         return playback->Control(MC_PLAYBACK_STOP) == MC_ERROR_NOT_FOUND &&
-            !playback->Snapshot() && !playback->Queue();
+            !playback->Snapshot() && !playback->Queue() && !playback->CurrentTrack();
     }
 
     /* Verify typed remote query serialization preserves ordering/grouping and rejects malformed payloads. */
@@ -816,6 +1008,16 @@ namespace {
                 result->AlbumDurationSeconds(0) != 2) return false;
         }
         const auto path = (std::filesystem::path(directory) / ".." / ".." / "media").lexically_normal();
+        context.SetLibrary(*source);
+        bool fieldsListed = false;
+        api::ListCategoryFields(context, [&](mc_result status, std::vector<std::string> fields, std::string_view) {
+            fieldsListed = status == MC_OK &&
+                std::ranges::find(fields, MC_TRACK_FIELD_ALBUM) != fields.end() &&
+                std::ranges::find(fields, MC_TRACK_FIELD_ARTIST) != fields.end();
+        });
+        if (!query_test_wait_for_wakeup(++wake) || context.Dispatch() != MC_OK || !fieldsListed) {
+            return false;
+        }
         api::OpenDirectory(context, *source, path.string(), receive(folder));
         if (!query_test_wait_for_wakeup(++wake) || context.Dispatch() != MC_OK ||
             folder.Size() != 2 || !folder.StartsAlbum(0) || folder.AlbumDurationSeconds(0) != 2 ||

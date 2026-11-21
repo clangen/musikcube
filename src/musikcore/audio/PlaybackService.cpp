@@ -145,6 +145,7 @@ PlaybackService::PlaybackService(
 , nextIndex(NO_POSITION)
 , playbackPrefs(Preferences::ForComponent(components::Playback))
 , appPrefs(Preferences::ForComponent(components::Settings)) {
+    this->apiEvents = CreatePlaybackEvents();
     transport->StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
     transport->PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     transport->VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
@@ -293,8 +294,8 @@ void PlaybackService::ToggleShuffle() {
 
 void PlaybackService::ProcessMessage(IMessage &message) {
     const int type = message.Type();
-    if (type == MESSAGE_NOTIFY_API_QUEUE_CHANGED) {
-        DeliverPlaybackQueueNotification(message);
+    if (type == MESSAGE_NOTIFY_API_CHANGED) {
+        DeliverPlaybackNotification(message);
     }
     else if (type == MESSAGE_LOAD_PLAYBACK_CONTEXT) {
         loadPreferences(*this->transport, *this, *playbackPrefs);
@@ -361,6 +362,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
 
         if (raiseStreamEvent) {
             this->StreamStateChanged(eventType);
+            this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_STREAM);
         }
     }
     else if (type == MESSAGE_PLAYBACK_EVENT) {
@@ -388,6 +390,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
 
         this->PlaybackStateChanged(static_cast<PlaybackState>(eventType));
+        this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_STATE);
     }
     else if (type == MESSAGE_NEXT_TRACK_EDITED) {
         if (transport->GetPlaybackState() != PlaybackState::Stopped) {
@@ -422,17 +425,21 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             it->OnVolumeChanged(volume);
         }
         this->VolumeChanged();
+        this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_VOLUME);
     }
     else if (type == MESSAGE_MODE_CHANGED) {
         this->NotifyRemotesModeChanged();
         this->ModeChanged();
+        this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_MODE);
     }
     else if (type == MESSAGE_SHUFFLED) {
         this->NotifyRemotesModeChanged();
         this->Shuffled(!!message.UserData1());
+        this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_MODE);
     }
     else if (type == MESSAGE_TIME_CHANGED) {
         this->TimeChanged(transport->Position());
+        this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_POSITION);
         const double volume = transport->Volume();
         for (auto remote : this->remotes) {
             remote->OnPlaybackTimeChanged(transport->Position());
@@ -510,8 +517,18 @@ void PlaybackService::NotifyRemotesModeChanged() {
 }
 
 void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
-    this->playingTrack = track;
+    {
+        std::lock_guard lock(this->playlistMutex);
+        /* Keep the track's origin across queue edits and legacy backend switches. */
+        if (this->playingTrack != track) {
+            this->playingOrigin = track
+                ? (this->queueOrigin ? this->queueOrigin : CapturePlaybackOrigin(this->library, track->LibraryId()))
+                : nullptr;
+            this->playingTrack = track;
+        }
+    }
     this->TrackChanged(this->index, track);
+    this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_TRACK);
     this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYED);
     this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYING);
 
@@ -841,6 +858,7 @@ void PlaybackService::SetPosition(double seconds) {
         seconds = std::max(seconds, (double) 0.0);
         this->seekPosition = seconds;
         this->TimeChanged(seconds);
+        this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_POSITION);
         messageQueue.Debounce(Message::Create(this, MESSAGE_SEEK), 500);
     }
     else { /* TimeChangeMode::Scrub */

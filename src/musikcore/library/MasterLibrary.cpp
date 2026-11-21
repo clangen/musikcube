@@ -37,6 +37,9 @@
 #include "MasterLibrary.h"
 #include "LibraryFactory.h"
 #include <musikcore/ffi/consumer/library-binding.h>
+#include <musikcore/ffi/consumer/library-storage.h>
+#include <musikcore/ffi/consumer/playback-binding.h>
+#include <musikcore/ffi/consumer/request.h>
 #include <musikcore/library.hpp>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -124,36 +127,121 @@ std::shared_ptr<const api::Library> MasterLibrary::OpenApiLibrary() const {
 }
 
 void MasterLibrary::LoadDefaultLibrary() {
-    std::unique_lock<decltype(this->libraryMutex)> lock(this->libraryMutex);
-
-    auto prevWrappedLibrary = this->wrappedLibrary;
-
     auto prefs = Preferences::ForComponent(prefs::components::Settings);
+    const auto type = prefs->GetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
+    this->Select(type == static_cast<int>(ILibrary::Type::Remote) ? Type::Remote : Type::Local);
+}
 
-    auto libraryType = (ILibrary::Type) prefs->GetInt(
-        prefs::keys::LibraryType, (int) ILibrary::Type::Local);
-
-    this->wrappedLibrary = LibraryFactory::Instance().DefaultLibrary(libraryType);
-
-    if (prevWrappedLibrary != wrappedLibrary) {
-        if (prevWrappedLibrary) {
-            prevWrappedLibrary->QueryCompleted.disconnect(this);
-            prevWrappedLibrary->ConnectionStateChanged.disconnect(this);
-        }
-
-        if (this->wrappedLibrary) {
-            this->wrappedLibrary->QueryCompleted.connect(this, &MasterLibrary::OnQueryCompleted);
-            this->wrappedLibrary->ConnectionStateChanged.connect(this, &MasterLibrary::OnConectionStateChanged);
-        }
-
-        this->LibraryChanged(prevWrappedLibrary, this->wrappedLibrary);
+void MasterLibrary::Select(Type type) {
+    std::lock_guard lock(this->libraryMutex);
+    auto selected = LibraryFactory::Instance().DefaultLibrary(type);
+    if (selected == this->wrappedLibrary) {
+        return;
     }
+
+    if (this->wrappedLibrary) {
+        this->wrappedLibrary->QueryCompleted.disconnect(this);
+        this->wrappedLibrary->ConnectionStateChanged.disconnect(this);
+    }
+
+    this->wrappedLibrary = std::move(selected);
+    this->wrappedLibrary->QueryCompleted.connect(this, &MasterLibrary::OnQueryCompleted);
+    this->wrappedLibrary->ConnectionStateChanged.connect(this, &MasterLibrary::OnConnectionStateChanged);
+    this->PublishSelection(true);
+}
+
+void MasterLibrary::AttachContext(mc_context* context, audio::PlaybackService* playback) {
+    std::lock_guard lock(this->libraryMutex);
+    auto* indexer = LibraryFactory::Instance().DefaultLocalLibrary()->Indexer();
+    if (this->context) {
+        indexer->Started.disconnect(this);
+        indexer->Progress.disconnect(this);
+        indexer->Finished.disconnect(this);
+    }
+    this->context = context;
+    this->playback = playback;
+    if (context) {
+        indexer->Started.connect(this, &MasterLibrary::OnIndexStarted);
+        indexer->Progress.connect(this, &MasterLibrary::OnIndexProgress);
+        indexer->Finished.connect(this, &MasterLibrary::OnIndexFinished);
+    }
+    this->PublishSelection(false);
+}
+
+void MasterLibrary::OnIndexStarted() {
+    ffi::publish_indexer_event(*this->context, MC_INDEXER_STARTED, 0);
+}
+
+void MasterLibrary::OnIndexProgress(int updates) {
+    ffi::publish_indexer_event(*this->context, MC_INDEXER_PROGRESS, updates);
+}
+
+void MasterLibrary::OnIndexFinished(int updates) {
+    ffi::publish_indexer_event(*this->context, MC_INDEXER_FINISHED, updates);
+}
+
+void MasterLibrary::PublishSelection(bool selectionChanged) {
+    if (!this->context) {
+        return;
+    }
+
+    /* Invalidate playback before the dispatcher makes the new selection visible to views. */
+    if (selectionChanged) {
+        this->playback->Stop();
+    }
+    audio::DiscardUnavailablePlaybackQueue(*this->playback);
+
+    ffi::LibraryStatus status;
+    status.kind = this->GetType() == Type::Local ? MC_LIBRARY_LOCAL : MC_LIBRARY_REMOTE;
+    status.configured = this->IsConfigured();
+    switch (this->GetConnectionState()) {
+        case ConnectionState::Disconnected:
+            status.state = MC_LIBRARY_DISCONNECTED;
+            break;
+        case ConnectionState::Connecting:
+            status.state = MC_LIBRARY_CONNECTING;
+            break;
+        case ConnectionState::Connected:
+            status.state = MC_LIBRARY_CONNECTED;
+            break;
+        case ConnectionState::AuthenticationFailure:
+            status.state = MC_LIBRARY_AUTHENTICATION_FAILED;
+            break;
+    }
+    if (const auto remote = std::dynamic_pointer_cast<RemoteLibrary>(this->wrappedLibrary)) {
+        const auto& socket = remote->WebSocketClient();
+        status.endpoint = socket.Uri();
+        status.serverVersion = socket.LastServerVersion();
+        using Error = net::WebSocketClient::ConnectionError;
+        switch (socket.LastConnectionError()) {
+            case Error::None:
+                break;
+            case Error::ClosedByServer:
+                status.error = MC_LIBRARY_CONNECTION_CLOSED;
+                break;
+            case Error::ConnectionFailed:
+                status.error = MC_LIBRARY_CONNECTION_FAILED;
+                break;
+            case Error::InvalidPassword:
+                status.error = MC_LIBRARY_CONNECTION_INVALID_PASSWORD;
+                break;
+            case Error::IncompatibleVersion:
+                status.error = MC_LIBRARY_CONNECTION_INCOMPATIBLE_VERSION;
+                break;
+        }
+    }
+
+    const auto library = status.state == MC_LIBRARY_CONNECTED ? this->OpenApiLibrary() : nullptr;
+    ffi::publish_library_selection(*this->context, library ? library->Get()->identity : nullptr,
+        std::move(status), selectionChanged);
 }
 
 void MasterLibrary::OnQueryCompleted(musik::core::db::IQuery* query) {
     this->QueryCompleted(query);
 }
 
-void MasterLibrary::OnConectionStateChanged(ConnectionState state) {
+void MasterLibrary::OnConnectionStateChanged(ConnectionState state) {
+    std::lock_guard lock(this->libraryMutex);
+    this->PublishSelection(false);
     this->ConnectionStateChanged(state);
 }

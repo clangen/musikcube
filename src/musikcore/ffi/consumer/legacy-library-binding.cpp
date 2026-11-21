@@ -22,8 +22,10 @@
 #include <musikcore/library/query/CategoryTrackListQuery.h>
 #include <musikcore/library/query/DirectoryTrackListQuery.h>
 #include <musikcore/library/query/CategoryListQuery.h>
+#include <musikcore/library/query/AllCategoriesQuery.h>
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/DeletePlaylistQuery.h>
+#include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
@@ -38,18 +40,33 @@ namespace {
     using namespace musik::core::ffi;
     using musik::core::ILibraryPtr;
 
-    struct PlaylistEntries {
+    template<typename Entry>
+    struct LibraryEntries {
         std::vector<std::string> names;
-        std::vector<mc_playlist_entry> entries;
+        std::vector<Entry> entries;
     };
+
+    using PlaylistEntries = LibraryEntries<mc_playlist_entry>;
+    using CategoryEntries = LibraryEntries<mc_category_entry>;
+
+    auto deliverStatus(mc_library_completion_fn completion) {
+        return [completion](mc_result result, bool*, const mc_error* error, void* data) {
+            completion(result, error, data);
+        };
+    }
+
+    mc_result commandSucceeded(const query::QueryBase&, std::unique_ptr<bool>&) {
+        return MC_OK;
+    }
 
     auto listPlaylistsCommand() {
         return std::make_shared<query::CategoryListQuery>(query::CategoryListQuery::MatchType::Substring,
             musik::core::library::constants::Playlists::TABLE_NAME);
     }
 
-    mc_result collectPlaylists(query::CategoryListQuery& command, std::unique_ptr<PlaylistEntries>& output) {
-        auto list = std::make_unique<PlaylistEntries>();
+    template<typename Entries>
+    mc_result collectEntries(query::CategoryListQuery& command, std::unique_ptr<Entries>& output) {
+        auto list = std::make_unique<Entries>();
         const auto result = command.GetResult();
         list->names.reserve(result->Count());
         list->entries.reserve(result->Count());
@@ -62,10 +79,37 @@ namespace {
         return MC_OK;
     }
 
-    auto deliverPlaylists(mc_playlist_list_completion_fn completion) {
-        return [completion](mc_result status, PlaylistEntries* list, const mc_error* error, void* data) {
-            const std::unique_ptr<PlaylistEntries> owned(list);
+    template<typename Entries, typename Completion>
+    auto deliverEntries(Completion completion) {
+        return [completion](mc_result status, Entries* list, const mc_error* error, void* data) {
+            const std::unique_ptr<Entries> owned(list);
             completion(status, list ? list->entries.data() : nullptr, list ? list->entries.size() : 0, error, data);
+        };
+    }
+
+    using CategoryFields = std::vector<std::string>;
+
+    mc_result collectFields(query::AllCategoriesQuery& command, std::unique_ptr<CategoryFields>& output) {
+        output = std::make_unique<CategoryFields>();
+        const auto result = command.GetResult();
+        output->reserve(result->Count());
+        for (size_t i = 0; i < result->Count(); ++i) {
+            output->push_back(result->At(i)->ToString());
+        }
+        return MC_OK;
+    }
+
+    auto deliverFields(mc_category_fields_completion_fn completion) {
+        return [completion](mc_result status, CategoryFields* fields, const mc_error* error, void* data) {
+            const std::unique_ptr<CategoryFields> owned(fields);
+            std::vector<mc_string_view> views;
+            if (fields) {
+                views.reserve(fields->size());
+                for (const auto& field : *fields) {
+                    views.push_back({ field.data(), field.size() });
+                }
+            }
+            completion(status, views.data(), views.size(), error, data);
         };
     }
 
@@ -182,6 +226,8 @@ namespace {
             return selected == this->library.get();
         }
 
+        ILibraryPtr Backend() const override { return this->library; }
+
         mc_result OpenPlaylist(mc_context* context, const std::shared_ptr<const LibraryIdentity>& identity,
             int64_t id, mc_track_search_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitLocal<mc_track_result>(context, this->library,
@@ -200,10 +246,28 @@ namespace {
                 completion, data, request);
         }
 
+        mc_result ListCategoryFields(mc_context* context, mc_category_fields_completion_fn completion,
+            void* data, mc_request_id* request) const override
+        {
+            return submitLocal<CategoryFields>(context, this->library,
+                std::make_shared<query::AllCategoriesQuery>(), collectFields, deliverFields(completion), data, request);
+        }
+
+        mc_result ListCategories(mc_context* context, std::string field, std::string filter,
+            mc_track_search_mode mode, mc_category_list_completion_fn completion,
+            void* data, mc_request_id* request) const override
+        {
+            using MatchType = query::CategoryListQuery::MatchType;
+            const auto match = mode == MC_TRACK_SEARCH_REGEX ? MatchType::Regex : MatchType::Substring;
+            const auto command = std::make_shared<query::CategoryListQuery>(match, field, filter);
+            return submitLocal<CategoryEntries>(context, this->library, command,
+                collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
+        }
+
         mc_result ListPlaylists(mc_context* context, mc_playlist_list_completion_fn completion,
             void* data, mc_request_id* request) const override {
             return submitLocal<PlaylistEntries>(context, this->library, listPlaylistsCommand(),
-                collectPlaylists, deliverPlaylists(completion), data, request);
+                collectEntries<PlaylistEntries>, deliverEntries<PlaylistEntries>(completion), data, request);
         }
 
         mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids, bool append,
@@ -222,6 +286,14 @@ namespace {
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitLocal<int64_t>(context, this->library, std::make_shared<query::DeletePlaylistQuery>(this->library, id),
                 collectDeletedPlaylistId(id), deliverPlaylistWrite(completion), data, request);
+        }
+
+        mc_result SetTrackRating(mc_context* context, int64_t id, uint32_t rating,
+            mc_library_completion_fn completion, void* data, mc_request_id* request) const override
+        {
+            return submitLocal<bool>(context, this->library,
+                std::make_shared<query::SetTrackRatingQuery>(id, static_cast<int>(rating)),
+                commandSucceeded, deliverStatus(completion), data, request);
         }
 
     private:
@@ -276,6 +348,8 @@ namespace {
                 this->library->WebSocketClient().ConnectionGeneration() == this->generation;
         }
 
+        ILibraryPtr Backend() const override { return this->library; }
+
         mc_result OpenPlaylist(mc_context* context, const std::shared_ptr<const LibraryIdentity>& identity,
             int64_t id, mc_track_search_completion_fn completion, void* data, mc_request_id* request) const override {
             const auto command = std::make_shared<query::GetPlaylistQuery>(this->library, id);
@@ -306,10 +380,28 @@ namespace {
                 }, completion, user_data, out_request);
         }
 
+        mc_result ListCategoryFields(mc_context* context, mc_category_fields_completion_fn completion,
+            void* data, mc_request_id* request) const override
+        {
+            return submitRemote<CategoryFields>(context, this->library, this->generation,
+                std::make_shared<query::AllCategoriesQuery>(), collectFields, deliverFields(completion), data, request);
+        }
+
+        mc_result ListCategories(mc_context* context, std::string field, std::string filter,
+            mc_track_search_mode mode, mc_category_list_completion_fn completion,
+            void* data, mc_request_id* request) const override
+        {
+            using MatchType = query::CategoryListQuery::MatchType;
+            const auto match = mode == MC_TRACK_SEARCH_REGEX ? MatchType::Regex : MatchType::Substring;
+            const auto command = std::make_shared<query::CategoryListQuery>(match, field, filter);
+            return submitRemote<CategoryEntries>(context, this->library, this->generation, command,
+                collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
+        }
+
         mc_result ListPlaylists(mc_context* context, mc_playlist_list_completion_fn completion,
             void* data, mc_request_id* request) const override {
             return submitRemote<PlaylistEntries>(context, this->library, this->generation, listPlaylistsCommand(),
-                collectPlaylists, deliverPlaylists(completion), data, request);
+                collectEntries<PlaylistEntries>, deliverEntries<PlaylistEntries>(completion), data, request);
         }
 
         mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids, bool append,
@@ -331,6 +423,14 @@ namespace {
             return submitRemote<int64_t>(context, this->library, this->generation,
                 std::make_shared<query::DeletePlaylistQuery>(this->library, id),
                 collectDeletedPlaylistId(id), deliverPlaylistWrite(completion), data, request);
+        }
+
+        mc_result SetTrackRating(mc_context* context, int64_t id, uint32_t rating,
+            mc_library_completion_fn completion, void* data, mc_request_id* request) const override
+        {
+            return submitRemote<bool>(context, this->library, this->generation,
+                std::make_shared<query::SetTrackRatingQuery>(id, static_cast<int>(rating)),
+                commandSucceeded, deliverStatus(completion), data, request);
         }
 
         mc_result ReadPage(mc_context *context, std::vector<int64_t> ids,
@@ -420,6 +520,7 @@ mc_result musik::core::ffi::BindRemoteLibrary(const std::shared_ptr<library::Rem
         identity->async = reader;
         identity->playbackOrigin = reader;
         identity->queries = reader;
+        identity->kind = MC_LIBRARY_REMOTE;
         *out = new mc_library{ std::move(identity) };
         return MC_OK;
     });

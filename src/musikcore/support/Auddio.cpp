@@ -83,16 +83,16 @@ namespace musik { namespace core { namespace auddio {
         return getApiToken().size() > 0;
     }
 
-    void FindLyrics(TrackPtr track, LyricsCallback callback) {
+    void FindLyrics(std::string artist, std::string title, LyricsCallback callback) {
         std::string apiToken = getApiToken();
 
         if (!apiToken.size()) {
-            callback(track, "");
+            callback({});
             return;
         }
 
-        std::string artist = encode(track->GetString("artist"));
-        std::string title = encode(track->GetString("title"));
+        artist = encode(std::move(artist));
+        title = encode(std::move(title));
         std::string url =
             "https://api.audd.io/findLyrics/?q=" +
             artist + "%20" + title +
@@ -101,7 +101,7 @@ namespace musik { namespace core { namespace auddio {
         auto client = createClient();
         client->Url(url)
             .Mode(AuddioClient::Thread::Background)
-            .Run([track, callback](AuddioClient* client, int statusCode, CURLcode curlCode) {
+            .Run([callback = std::move(callback)](AuddioClient* client, int statusCode, CURLcode curlCode) {
                 std::string lyrics;
                 if (statusCode == 200) {
                     try {
@@ -116,7 +116,7 @@ namespace musik { namespace core { namespace auddio {
                     }
                 }
 
-                callback(track, lyrics);
+                callback(std::move(lyrics));
         });
     }
 } } }

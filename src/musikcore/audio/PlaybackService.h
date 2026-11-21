@@ -74,7 +74,7 @@ namespace musik { namespace core { namespace audio {
             MESSAGE_MARK_TRACK_PLAYED = 1012,
             MESSAGE_NEXT_TRACK_EDITED = 1013,
             MESSAGE_MARK_TRACK_PLAYING = 1014,
-            MESSAGE_NOTIFY_API_QUEUE_CHANGED = 1015,
+            MESSAGE_NOTIFY_API_CHANGED = 1015,
         };
 
         class StreamMessage;
@@ -220,15 +220,21 @@ namespace musik { namespace core { namespace audio {
             musik::core::TrackPtr TrackAtIndexWithTimeout(size_t index);
             friend void DiscardUnavailablePlaybackQueue(PlaybackService& playback);
             friend api::Playback CreatePlaybackHandle(PlaybackService& playback);
+            friend void AttachPlayback(api::Context& context, PlaybackService& playback);
             class PlaybackServiceBinding;
+            struct PlaybackEvents;
 
             std::string UriAtIndex(size_t index);
             musik::core::audio::ITransport::Gain GainAtIndex(size_t index);
+            static std::shared_ptr<PlaybackEvents> CreatePlaybackEvents();
+            void NotifyPlaybackChanged(mc_playback_event event);
 
             musik::core::TrackList playlist;
             uint64_t queueRevision = 0;
             std::shared_ptr<const LibraryIdentity> queueOrigin;
+            std::shared_ptr<const LibraryIdentity> playingOrigin;
             std::shared_ptr<int> apiLifetime = std::make_shared<int>(0);
+            std::shared_ptr<PlaybackEvents> apiEvents;
             const std::thread::id apiOwner = std::this_thread::get_id();
             musik::core::TrackList unshuffled;
             std::recursive_mutex playlistMutex;

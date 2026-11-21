@@ -3,6 +3,7 @@
 #include "../common/error.h"
 #include "../common/primitives.h"
 #include "request.h"
+#include <musikcore/library/IIndexer.h>
 
 #include <atomic>
 #include <algorithm>
@@ -14,6 +15,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 namespace {
     enum class RequestState { queued, running, ready };
@@ -47,10 +49,26 @@ struct mc_context {
     mc_wakeup_fn wakeup;
     void *wakeup_user_data;
 
-    std::mutex mutex;
+    mutable std::mutex mutex;
     std::condition_variable changed;
     std::thread worker;
     std::thread::id dispatcher;
+    std::shared_ptr<const LibraryIdentity> library;
+    musik::core::ffi::LibraryStatus libraryStatus;
+    std::shared_ptr<musik::core::audio::PlaybackService> ownedPlayback;
+    std::function<mc_result(mc_library_kind)> selectLibrary;
+    std::function<void()> reconnectRemote;
+    musik::core::IIndexer* indexer = nullptr;
+    mc_indexer_event_fn indexerCallback = nullptr;
+    void* indexerData = nullptr;
+    uint64_t indexerSubscription = 0;
+    std::vector<std::pair<mc_indexer_event, int>> indexerEvents;
+    mc_library_changed_fn libraryChanged = nullptr;
+    void* libraryChangedData = nullptr;
+    bool libraryNotificationPending = false;
+    bool librarySelectionChanged = false;
+    musik::core::audio::PlaybackService* playback = nullptr;
+    musik::core::ffi::OpenPlayback open_playback = nullptr;
 
     std::list<Request> requests;
     std::list<Request> dispatch_batch;
@@ -62,6 +80,49 @@ struct mc_context {
     bool wakeup_pending = false;
     size_t wakeups_in_flight = 0;
 };
+
+std::shared_ptr<const LibraryIdentity> musik::core::ffi::context_library(const mc_context& context) {
+    std::lock_guard<std::mutex> lock(context.mutex);
+    return context.library;
+}
+
+mc_result musik::core::ffi::attach_context_playback(
+    mc_context& context, audio::PlaybackService& playback, OpenPlayback open)
+{
+    std::lock_guard<std::mutex> lock(context.mutex);
+    if (context.stopping || context.playback) {
+        return MC_ERROR_BUSY;
+    }
+    context.playback = &playback;
+    context.open_playback = open;
+    return MC_OK;
+}
+
+void musik::core::ffi::own_context_playback(
+    mc_context& context, std::shared_ptr<audio::PlaybackService> playback)
+{
+    std::lock_guard<std::mutex> lock(context.mutex);
+    context.ownedPlayback = std::move(playback);
+}
+
+mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback** out_playback) {
+    if (!context || !out_playback || *out_playback) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        musik::core::audio::PlaybackService* playback;
+        musik::core::ffi::OpenPlayback open;
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            if (context->stopping) {
+                return MC_ERROR_BUSY;
+            }
+            playback = context->playback;
+            open = context->open_playback;
+        }
+        return open ? open(*playback, out_playback) : MC_ERROR_UNSUPPORTED;
+    });
+}
 
 namespace {
     std::atomic<bool> context_active{ false };
@@ -146,10 +207,42 @@ namespace {
             if (entry->state == RequestState::ready) ready.splice(ready.end(), context.requests, entry);
         }
 
+        const auto notifyLibrary = context.libraryNotificationPending
+            ? context.libraryChanged
+            : nullptr;
+        const auto selectionChanged = context.librarySelectionChanged;
+        auto* const libraryData = context.libraryChangedData;
+        context.libraryNotificationPending = false;
+        context.librarySelectionChanged = false;
+
+        const auto notifyIndexer = context.indexerCallback;
+        auto* const indexerData = context.indexerData;
+        const auto indexerSubscription = context.indexerSubscription;
+        std::vector<std::pair<mc_indexer_event, int>> indexerEvents;
+        indexerEvents.swap(context.indexerEvents);
+
         /* Rearm before invoking callbacks so concurrent producers can wake the next dispatch. */
         context.wakeup_pending = false;
         lock.unlock();
 
+        if (notifyLibrary) {
+            musik::core::ffi::exception_barrier(nullptr, [&] {
+                notifyLibrary(libraryData, selectionChanged);
+                return MC_OK;
+            });
+        }
+        for (const auto& event : indexerEvents) {
+            lock.lock();
+            const bool subscribed = notifyIndexer && context.indexerSubscription == indexerSubscription;
+            lock.unlock();
+            if (!subscribed) {
+                break;
+            }
+            musik::core::ffi::exception_barrier(nullptr, [&] {
+                notifyIndexer(indexerData, event.first, event.second);
+                return MC_OK;
+            });
+        }
         for (const auto &request : ready) {
             musik::core::ffi::exception_barrier(nullptr, [&] {
                 request.completion(request.result, request.user_data);
@@ -166,6 +259,256 @@ namespace {
         return musik::core::ffi::valid_text(directory);
     }
 
+}
+
+namespace {
+    mc_result update_library(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
+        musik::core::ffi::LibraryStatus status, bool managed, bool selectionChanged)
+    {
+        bool wake = false;
+        {
+            std::lock_guard<std::mutex> lock(context.mutex);
+            if (context.stopping) {
+                return MC_ERROR_BUSY;
+            }
+            if (!managed && context.selectLibrary) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            if (!managed && context.library == library) {
+                return MC_OK;
+            }
+
+            /* Release the previous identity after dropping the context lock. */
+            context.library.swap(library);
+            context.libraryStatus = std::move(status);
+            if (context.libraryChanged) {
+                context.libraryNotificationPending = true;
+                context.librarySelectionChanged |= selectionChanged;
+                wake = select_wakeup(context);
+            }
+        }
+        if (wake) {
+            signal_host(context);
+        }
+        return MC_OK;
+    }
+
+    bool is_dispatcher(const mc_context& context) {
+        return context.dispatcher == std::thread::id {} || context.dispatcher == std::this_thread::get_id();
+    }
+}
+
+mc_result musik::core::ffi::set_context_library(mc_context& context,
+    std::shared_ptr<const LibraryIdentity> library, LibraryStatus status)
+{
+    return update_library(context, std::move(library), std::move(status), false, true);
+}
+
+mc_result musik::core::ffi::publish_library_selection(mc_context& context,
+    std::shared_ptr<const LibraryIdentity> library, LibraryStatus status, bool selectionChanged)
+{
+    return update_library(context, std::move(library), std::move(status), true, selectionChanged);
+}
+
+void musik::core::ffi::attach_library_selector(mc_context& context,
+    std::function<mc_result(mc_library_kind)> selector, std::function<void()> reconnect, IIndexer& indexer)
+{
+    std::lock_guard<std::mutex> lock(context.mutex);
+    context.selectLibrary = std::move(selector);
+    context.reconnectRemote = std::move(reconnect);
+    context.indexer = &indexer;
+}
+
+void musik::core::ffi::publish_indexer_event(mc_context& context, mc_indexer_event event, int updates) {
+    bool wake = false;
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        if (context.stopping || !context.indexerCallback) {
+            return;
+        }
+        if (event == MC_INDEXER_PROGRESS && !context.indexerEvents.empty() &&
+            context.indexerEvents.back().first == event)
+        {
+            context.indexerEvents.back().second = updates;
+        }
+        else {
+            context.indexerEvents.emplace_back(event, updates);
+        }
+        wake = select_wakeup(context);
+    }
+    if (wake) {
+        signal_host(context);
+    }
+}
+
+mc_result MC_CALL mc_context_reconnect_remote_library(mc_context* context) {
+    if (!context) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        std::function<void()> reconnect;
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            if (context->stopping || !is_dispatcher(*context)) {
+                return MC_ERROR_BUSY;
+            }
+            reconnect = context->reconnectRemote;
+        }
+        if (!reconnect) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        reconnect();
+        return MC_OK;
+    });
+}
+
+namespace {
+    template<typename Operation>
+    mc_result with_indexer(const mc_context* context, Operation operation) {
+        if (!context) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+            musik::core::IIndexer* indexer;
+            {
+                std::lock_guard<std::mutex> lock(context->mutex);
+                indexer = context->indexer;
+            }
+            if (!indexer) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            operation(*indexer);
+            return MC_OK;
+        });
+    }
+}
+
+mc_result MC_CALL mc_indexer_get_state(const mc_context* context, mc_indexer_state* state) {
+    if (!state) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
+        *state = static_cast<mc_indexer_state>(indexer.GetState());
+    });
+}
+
+mc_result MC_CALL mc_indexer_read_paths(const mc_context* context, mc_indexer_paths_fn read, void* userData) {
+    if (!read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
+        std::vector<std::string> paths;
+        indexer.GetPaths(paths);
+        std::vector<mc_string_view> views;
+        views.reserve(paths.size());
+        for (const auto& path : paths) {
+            views.push_back({ path.data(), path.size() });
+        }
+        read(userData, views.data(), views.size());
+    });
+}
+
+mc_result MC_CALL mc_indexer_add_path(mc_context* context, mc_string_view path) {
+    if (!musik::core::ffi::valid_text(path, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
+        indexer.AddPath(std::string(path.data, path.length));
+    });
+}
+
+mc_result MC_CALL mc_indexer_remove_path(mc_context* context, mc_string_view path) {
+    if (!musik::core::ffi::valid_text(path, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
+        indexer.RemovePath(std::string(path.data, path.length));
+    });
+}
+
+mc_result MC_CALL mc_indexer_schedule(mc_context* context, mc_indexer_scan scan) {
+    if (scan > MC_INDEXER_REBUILD) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
+        indexer.Schedule(static_cast<musik::core::IIndexer::SyncType>(scan));
+    });
+}
+
+mc_result MC_CALL mc_indexer_set_callback(mc_context* context, mc_indexer_event_fn callback, void* userData) {
+    if (!context) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    std::lock_guard<std::mutex> lock(context->mutex);
+    if (!context->indexer) {
+        return MC_ERROR_UNSUPPORTED;
+    }
+    if (!is_dispatcher(*context) || (context->stopping && callback)) {
+        return MC_ERROR_BUSY;
+    }
+
+    context->indexerCallback = callback;
+    context->indexerData = userData;
+    ++context->indexerSubscription;
+    context->indexerEvents.clear();
+    return MC_OK;
+}
+
+mc_result MC_CALL mc_context_select_library(mc_context* context, mc_library_kind kind) {
+    if (!context || (kind != MC_LIBRARY_LOCAL && kind != MC_LIBRARY_REMOTE)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        std::function<mc_result(mc_library_kind)> select;
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            if (context->stopping || !is_dispatcher(*context)) {
+                return MC_ERROR_BUSY;
+            }
+            select = context->selectLibrary;
+        }
+        return select ? select(kind) : MC_ERROR_UNSUPPORTED;
+    });
+}
+
+mc_result MC_CALL mc_context_read_library_status(const mc_context* context, mc_library_status_fn read, void* userData) {
+    if (!context || !read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return musik::core::ffi::exception_barrier(nullptr, [&] {
+        musik::core::ffi::LibraryStatus status;
+        {
+            std::lock_guard<std::mutex> lock(context->mutex);
+            status = context->libraryStatus;
+        }
+        const mc_library_status snapshot {
+            status.kind, status.state, status.error, status.configured,
+            { status.endpoint.data(), status.endpoint.size() },
+            { status.serverVersion.data(), status.serverVersion.size() }
+        };
+        read(userData, &snapshot);
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_context_set_library_changed_callback(
+    mc_context* context, mc_library_changed_fn callback, void* userData)
+{
+    if (!context) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    std::lock_guard<std::mutex> lock(context->mutex);
+    if (!is_dispatcher(*context) || (context->stopping && callback)) {
+        return MC_ERROR_BUSY;
+    }
+    context->libraryChanged = callback;
+    context->libraryChangedData = userData;
+    context->libraryNotificationPending = false;
+    context->librarySelectionChanged = false;
+    return MC_OK;
 }
 
 namespace musik { namespace core { namespace ffi {
@@ -371,6 +714,14 @@ void MC_CALL mc_context_destroy(mc_context **context) {
             std::lock_guard<std::mutex> lock((*context)->external->mutex);
             (*context)->external->context = nullptr;
         }
+
+        /* Detach backend and indexer signal sources before destroying context state. */
+        std::function<mc_result(mc_library_kind)> selector;
+        {
+            std::lock_guard<std::mutex> lock((*context)->mutex);
+            selector.swap((*context)->selectLibrary);
+        }
+        selector = nullptr;
         delete *context;
         *context = nullptr;
         context_active.store(false);

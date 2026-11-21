@@ -4,11 +4,24 @@
 #include <musikcore/context.h>
 
 #include <stdexcept>
+#include <optional>
 #include <string>
 #include <string_view>
 
 namespace musik { namespace core { namespace api {
 
+    /* Owns a selection snapshot and its diagnostic strings. Copyable and movable. */
+    struct LibraryStatus {
+        mc_library_kind kind = MC_LIBRARY_NONE;
+        mc_library_connection_state state = MC_LIBRARY_DISCONNECTED;
+        mc_library_connection_error error = MC_LIBRARY_CONNECTION_OK;
+        bool configured = false;
+        std::string endpoint;
+        std::string serverVersion;
+    };
+
+    class Library;
+    class Playback;
     /* Adapt a C string view for C++ readers without copying. Use only while the
        supplying API's owner is alive; this conversion does not retain storage. */
     inline std::string_view AsStringView(mc_string_view value) noexcept {
@@ -58,6 +71,33 @@ namespace musik { namespace core { namespace api {
         mc_result Dispatch() { return mc_context_dispatch(context); }
         mc_result Cancel(mc_request_id request) { return mc_request_cancel(context, request); }
         mc_result Shutdown() { return mc_context_shutdown(context); }
+
+        void SetLibrary(const Library& library);
+        void ClearLibrary();
+        std::optional<Library> GetLibrary() const;
+        mc_result SelectLibrary(mc_library_kind kind) { return mc_context_select_library(this->context, kind); }
+        mc_result ReconnectRemoteLibrary() { return mc_context_reconnect_remote_library(this->context); }
+        LibraryStatus GetLibraryStatus() const {
+            LibraryStatus status;
+            const auto result = mc_context_read_library_status(this->context,
+                [](void* data, const mc_library_status* value) {
+                    auto& status = *static_cast<LibraryStatus*>(data);
+                    status.kind = value->kind;
+                    status.state = value->state;
+                    status.error = value->error;
+                    status.configured = value->configured;
+                    status.endpoint = std::string(AsStringView(value->endpoint));
+                    status.serverVersion = std::string(AsStringView(value->server_version));
+                }, &status);
+            if (result != MC_OK) {
+                throw Error(result);
+            }
+            return status;
+        }
+        mc_result SetLibraryChangedCallback(mc_library_changed_fn callback, void* data = nullptr) {
+            return mc_context_set_library_changed_callback(this->context, callback, data);
+        }
+        Playback GetPlayback() const;
 
     private:
         explicit Context(const mc_context_options *options) {

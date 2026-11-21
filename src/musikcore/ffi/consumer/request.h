@@ -2,10 +2,37 @@
 #define MUSIKCORE_FFI_CONSUMER_REQUEST_H
 
 #include <musikcore/context.h>
+#include <musikcore/indexer.h>
 #include <functional>
+#include <memory>
 #include <string>
 
+struct LibraryIdentity;
+namespace musik { namespace core { namespace audio { class PlaybackService; } } }
+namespace musik { namespace core { class IIndexer; } }
+
 namespace musik { namespace core { namespace ffi {
+
+    struct LibraryStatus {
+        mc_library_kind kind = MC_LIBRARY_NONE;
+        mc_library_connection_state state = MC_LIBRARY_DISCONNECTED;
+        mc_library_connection_error error = MC_LIBRARY_CONNECTION_OK;
+        bool configured = false;
+        std::string endpoint;
+        std::string serverVersion;
+    };
+
+    std::shared_ptr<const LibraryIdentity> context_library(const mc_context& context);
+    mc_result set_context_library(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
+        LibraryStatus status);
+    void attach_library_selector(mc_context& context, std::function<mc_result(mc_library_kind)> selector,
+        std::function<void()> reconnect, IIndexer& indexer);
+    void publish_indexer_event(mc_context& context, mc_indexer_event event, int updates);
+    mc_result publish_library_selection(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
+        LibraryStatus status, bool selectionChanged);
+    using OpenPlayback = mc_result (*)(audio::PlaybackService&, mc_playback**);
+    mc_result attach_context_playback(mc_context& context, audio::PlaybackService& playback, OpenPlayback open);
+    void own_context_playback(mc_context& context, std::shared_ptr<audio::PlaybackService> playback);
 
     using RequestCompletion = std::function<void(mc_result, void *)>;
 

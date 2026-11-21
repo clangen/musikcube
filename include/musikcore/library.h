@@ -9,12 +9,21 @@ extern "C" {
 #endif
 
 typedef struct mc_track_page mc_track_page;
-typedef struct mc_library mc_library;
 typedef struct mc_track_result mc_track_result;
 typedef struct mc_track_ref mc_track_ref;
 typedef struct mc_remote_session mc_remote_session;
 
+enum {
+    MC_REMOTE_DEFAULT_WEBSOCKET_PORT = 7905,
+    MC_REMOTE_DEFAULT_HTTP_PORT = 7906
+};
+
+typedef void (MC_CALL *mc_library_completion_fn)(mc_result status, const mc_error* error, void* user_data);
+enum { MC_TRACK_RATING_MAX = 5 };
+
 /* Required handles/options/callbacks/output slots are non-null; user_data may be null.
+   Library requests that take a context accept a null library to use its selection.
+   They capture that identity at submission and return MC_ERROR_NOT_FOUND if empty.
    A pointer with a count may be null only when count is zero.
    New handle output slots must be initialized to null. Occupied slots are rejected
    without modification. Destroy accepts null slots and clears owned handles.
@@ -28,12 +37,6 @@ typedef struct mc_remote_session mc_remote_session;
    Async callbacks use status, payload, callback-scoped error, user_data order.
    Error details may be null on allocation failure; status is authoritative.
    Error is null on success and otherwise valid only during the callback. */
-
-typedef uint32_t mc_library_kind;
-enum {
-    MC_LIBRARY_LOCAL = 0,
-    MC_LIBRARY_REMOTE = 1
-};
 
 typedef struct mc_library_options {
     /* Size of this struct in bytes. */
@@ -52,6 +55,11 @@ typedef struct mc_library_options {
 MC_API mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_library **out_library);
 /* Release the handle. Accepted requests and derived identities retain their library. */
 MC_API void MC_CALL mc_library_destroy(mc_library **library);
+
+/* Set a track's rating from zero through five in its originating library.
+   Zero clears the rating. Completion runs on the context dispatcher. */
+MC_API mc_result MC_CALL mc_track_set_rating_async(mc_context* context, const mc_track_ref* track, uint32_t rating,
+    mc_library_completion_fn completion, void* user_data, mc_request_id* out_request);
 
 typedef uint32_t mc_remote_state;
 enum {
@@ -174,6 +182,7 @@ typedef void (MC_CALL *mc_track_search_completion_fn)(
 #define MC_TRACK_FIELD_SOURCE_ID "source_id"
 #define MC_TRACK_FIELD_EXTERNAL_ID "external_id"
 #define MC_TRACK_FIELD_RATING "rating"
+#define MC_TRACK_FIELD_LYRICS "lyrics"
 #define MC_TRACK_FIELD_LAST_PLAYED "last_played"
 #define MC_TRACK_FIELD_PLAY_COUNT "play_count"
 #define MC_TRACK_FIELD_DATE_ADDED "date_added"
@@ -239,6 +248,28 @@ typedef struct mc_playlist_entry {
     mc_string_view name;
 } mc_playlist_entry;
 
+typedef struct mc_category_entry {
+    /* ID scoped to the library and category field. */
+    int64_t id;
+    /* UTF-8 category name, valid only during the completion callback. */
+    mc_string_view value;
+} mc_category_entry;
+
+/* Entries are borrowed for the duration of the callback. */
+typedef void (MC_CALL *mc_category_list_completion_fn)(mc_result status, const mc_category_entry* entries,
+    size_t count, const mc_error* error, void* user_data);
+
+typedef void (MC_CALL *mc_category_fields_completion_fn)(mc_result status, const mc_string_view* fields,
+    size_t count, const mc_error* error, void* user_data);
+/* List available metadata fields. Entries live through the completion callback. */
+MC_API mc_result MC_CALL mc_library_list_category_fields_async(mc_context* context, const mc_library* library,
+    mc_category_fields_completion_fn completion, void* user_data, mc_request_id* out_request);
+
+/* List values for a metadata field, filtered by substring or regular expression. */
+MC_API mc_result MC_CALL mc_library_list_categories_async(mc_context* context, const mc_library* library,
+    mc_string_view field, mc_string_view filter, mc_track_search_mode mode,
+    mc_category_list_completion_fn completion, void* user_data, mc_request_id* out_request);
+
 /* Core owns entries, names, and error; valid only during the callback. Failure yields null
    entries and zero count. */
 typedef void (MC_CALL *mc_playlist_list_completion_fn)(
@@ -292,6 +323,8 @@ MC_API mc_result MC_CALL mc_track_result_get_ref(
     const mc_track_result *tracks, size_t row, mc_track_ref **out_track);
 /* The ID is scoped to the originating library. Null returns zero. */
 MC_API int64_t MC_CALL mc_track_ref_get_id(const mc_track_ref *track);
+/* Return an owned handle to the track's originating library in an empty output slot. */
+MC_API mc_result MC_CALL mc_track_ref_get_library(const mc_track_ref* track, mc_library** out_library);
 MC_API void MC_CALL mc_track_ref_destroy(mc_track_ref **track);
 /* Resolve against the originating library. Missing tracks return MC_ERROR_NOT_FOUND.
    Local reads also treat hidden tracks as missing. Remote reads use the range projection above.

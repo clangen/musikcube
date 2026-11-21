@@ -4,6 +4,7 @@
 #include <musikcore/library/LocalLibrary.h>
 
 namespace musik { namespace core { namespace library { class RemoteLibrary; } } }
+namespace musik { namespace core { namespace api { class Library; class Context; } } }
 
 namespace musik { namespace core { namespace ffi {
 
@@ -37,4 +38,5 @@ namespace musik { namespace core { namespace ffi {
 
     /* Capture the active connection generation so reconnect cannot retarget retained handles. */
     mc_result BindRemoteLibrary(const std::shared_ptr<library::RemoteLibrary>& library, mc_library** out);
+
 } } }

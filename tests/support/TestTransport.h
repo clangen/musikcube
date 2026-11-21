@@ -38,15 +38,16 @@ public:
     /* Record mute changes without touching hardware. */
     void SetMuted(bool value) override { muted = value; }
     /* Ignore device reload requests because this fixture has no physical output. */
-    void ReloadOutput() override {}
+    void ReloadOutput() override { ++reloads; }
     /* Expose the transport state manipulated by commands and lifecycle cases. */
     PlaybackState GetPlaybackState() override { return state; }
-    /* Keep stream activity stopped; no decoder or stream worker runs in this fake. */
-    StreamState GetStreamState() override { return StreamState::Stopped; }
+    StreamState GetStreamState() override { return stream; }
 
     PlaybackState state = PlaybackState::Playing;
+    StreamState stream = StreamState::Stopped;
     double position = 0;
     double volume = 0.5;
     bool muted = false;
+    unsigned reloads = 0;
     std::string uri;
 };

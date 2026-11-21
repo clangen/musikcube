@@ -53,6 +53,8 @@ add_executable(musikcore_abi_dispatch_test
 )
 target_include_directories(musikcore_abi_dispatch_test PRIVATE
   "${PROJECT_SOURCE_DIR}/include"
+  "${PROJECT_SOURCE_DIR}/src"
+  "${PROJECT_SOURCE_DIR}/src/3rdparty/include"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer"
 )
 target_link_libraries(musikcore_abi_dispatch_test PRIVATE Threads::Threads)
@@ -200,8 +202,8 @@ if(APPLE)
 endif()
 
 # Compile each public header in its own translation unit using public includes only.
-set(public_c_headers abi context library playback musikcore)
-set(public_cpp_headers context library playback musikcore track-result-window detail/track-page-cache)
+set(public_c_headers abi context library playback indexer musikcore)
+set(public_cpp_headers context library playback indexer musikcore track-result-window detail/track-page-cache)
 set(header_sources)
 foreach(header IN LISTS public_c_headers)
   foreach(language IN ITEMS c cpp)

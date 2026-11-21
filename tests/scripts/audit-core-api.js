@@ -4,7 +4,7 @@
 const { readFileSync } = require('fs');
 const { resolve, join } = require('path');
 const root = resolve(__dirname, '../..');
-const headers = ['abi.h', 'context.h', 'library.h', 'playback.h', 'musikcore.h'];
+const headers = ['abi.h', 'context.h', 'indexer.h', 'library.h', 'playback.h', 'musikcore.h'];
 const exportedSymbols = readFileSync(join(root, 'src/musikcore/ffi/exports.txt'), 'utf8').trim().split(/\s+/).sort();
 const declared = [];
 const inventory = [];
@@ -20,7 +20,7 @@ for (const header of headers) {
 
   /* Both enum members and macros are public constants worth reviewing even
      though they do not appear as dynamic-library exports. */
-  const enumConstants = [...text.matchAll(/enum\s*\{([\s\S]*?)\}/g)]
+  const enumConstants = [...text.matchAll(/enum(?:\s+\w+)?\s*\{([\s\S]*?)\}/g)]
     .flatMap(match => [...match[1].matchAll(/\b(MC_[A-Z0-9_]+)/g)].map(value => value[1]));
   const constants = [...new Set([...enumConstants,
     ...[...text.matchAll(/^#define (MC_[A-Z0-9_]+)/gm)].map(match => match[1])])].sort();

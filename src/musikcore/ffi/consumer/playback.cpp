@@ -4,6 +4,21 @@
 
 #include <cmath>
 
+mc_result MC_CALL mc_playback_get_current_track(const mc_playback* playback, mc_track_ref** out_track) {
+    if (!playback || !out_track || *out_track) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        mc_track_ref track {};
+        const auto status = playback->CurrentTrack(track);
+        if (status == MC_OK) {
+            *out_track = new mc_track_ref(std::move(track));
+        }
+        return status;
+    });
+}
+
 mc_result MC_CALL mc_playback_get_snapshot(const mc_playback *playback, mc_playback_snapshot *snapshot) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         if (!playback || !snapshot || snapshot->struct_size < sizeof(*snapshot)) return MC_ERROR_INVALID_ARGUMENT;
@@ -21,7 +36,7 @@ mc_result MC_CALL mc_playback_get_snapshot(const mc_playback *playback, mc_playb
 mc_result MC_CALL mc_playback_control(mc_playback *playback, mc_playback_command command, double value) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         if (!playback) return MC_ERROR_INVALID_ARGUMENT;
-        if (command < MC_PLAYBACK_TOGGLE_PAUSE || command > MC_PLAYBACK_SET_VOLUME) {
+        if (command < MC_PLAYBACK_TOGGLE_PAUSE || command > MC_PLAYBACK_RELOAD_OUTPUT) {
             return MC_ERROR_UNSUPPORTED;
         }
         if ((command == MC_PLAYBACK_SET_POSITION || command == MC_PLAYBACK_SET_VOLUME) &&
@@ -74,6 +89,29 @@ mc_result MC_CALL mc_playback_replace_queue(mc_playback *playback, const mc_trac
     });
 }
 
+mc_result MC_CALL mc_playback_hot_swap_queue(mc_playback* playback, const mc_track_result* result, size_t row) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!playback || !result) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return playback->HotSwapQueue(*result->data, row);
+    });
+}
+
+mc_result MC_CALL mc_playback_insert_result(mc_playback* playback, const mc_track_result* result,
+    mc_playback_track_action action)
+{
+    if (!playback || !result ||
+        (action != MC_PLAYBACK_TRACK_PREPEND && action != MC_PLAYBACK_TRACK_APPEND &&
+            action != MC_PLAYBACK_TRACK_PLAY_NEXT))
+    {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        return playback->InsertResult(*result->data, action);
+    });
+}
+
 mc_result MC_CALL mc_playback_set_queue_changed_callback(
     mc_playback *playback, mc_play_queue_changed_fn callback, void *user_data) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
@@ -86,6 +124,27 @@ void MC_CALL mc_playback_destroy(mc_playback **playback) {
     if (!playback) return;
     delete *playback;
     *playback = nullptr;
+}
+
+mc_result MC_CALL mc_playback_set_changed_callback(
+    mc_playback* playback, mc_playback_changed_fn callback, void* user_data,
+    const mc_playback_event* events, size_t event_count)
+{
+    if (!playback || (event_count && !events)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        std::vector<mc_playback_event> filter;
+        for (size_t i = 0; i < event_count; ++i) {
+            const auto event = events[i];
+            if (event < MC_PLAYBACK_CHANGED_TRACK || event > MC_PLAYBACK_CHANGED_MODE) {
+                return MC_ERROR_INVALID_ARGUMENT;
+            }
+            filter.push_back(event);
+        }
+        return playback->SetChangedCallback(callback, user_data, std::move(filter));
+    });
 }
 
 mc_result MC_CALL mc_playback_play_result(mc_playback *playback, const mc_track_result *result, size_t row) {

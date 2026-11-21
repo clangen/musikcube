@@ -16,6 +16,7 @@ struct PlaybackOrigin {
     PlaybackOrigin& operator=(const PlaybackOrigin&) = delete;
 
     virtual bool Matches(const musik::core::ILibrary* selected) const = 0;
+    virtual std::shared_ptr<musik::core::ILibrary> Backend() const = 0;
 };
 
 /* Inherits origin ownership. Network reads complete without using the context worker. */
@@ -42,6 +43,11 @@ struct LibraryQueries {
         mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;
     virtual mc_result DeletePlaylist(mc_context*, int64_t,
         mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;
+    virtual mc_result SetTrackRating(mc_context*, int64_t, uint32_t, mc_library_completion_fn,
+        void*, mc_request_id*) const = 0;
+    virtual mc_result ListCategoryFields(mc_context*, mc_category_fields_completion_fn, void*, mc_request_id*) const = 0;
+    virtual mc_result ListCategories(mc_context*, std::string, std::string, mc_track_search_mode,
+        mc_category_list_completion_fn, void*, mc_request_id*) const = 0;
 };
 
 struct LibraryIdentity {
@@ -50,6 +56,7 @@ struct LibraryIdentity {
     std::shared_ptr<const AsyncTrackReader> async;
     std::shared_ptr<const PlaybackOrigin> playbackOrigin;
     std::shared_ptr<const LibraryQueries> queries;
+    mc_library_kind kind = MC_LIBRARY_LOCAL;
 };
 
 struct mc_library {

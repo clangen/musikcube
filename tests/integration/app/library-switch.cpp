@@ -49,7 +49,6 @@ namespace {
         }
 
         auto generation = std::make_unique<musik::cube::AsyncCallbackScope>();
-        Library selected(origin);
         TrackResult initial;
         TrackRef reference;
         TrackResult visible;
@@ -61,9 +60,17 @@ namespace {
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
         options.wakeup = query_test_wakeup;
         Context context(options);
+        if (context.GetLibrary()) {
+            return false;
+        }
+        context.SetLibrary(Library(origin));
+        const auto pinned = context.GetLibrary();
+        if (!pinned) {
+            return false;
+        }
         query_test_release_wakeup();
 
-        OpenTrackSearch(context, selected, TrackSearch { originTitle },
+        OpenTrackSearch(context, TrackSearch { originTitle },
             [&](mc_result status, TrackResult result, std::string_view) {
                 if (status == MC_OK) {
                     initial = std::move(result);
@@ -76,7 +83,7 @@ namespace {
 
         const auto search = [&](std::string_view title) {
             const auto token = generation->CurrentToken();
-            return OpenTrackSearch(context, selected, TrackSearch { title },
+            return OpenTrackSearch(context, TrackSearch { title },
                 [&, token](mc_result status, TrackResult result, std::string_view) {
                     if (!token.IsCurrent()) {
                         if (status == MC_OK) {
@@ -98,7 +105,7 @@ namespace {
         if (context.Cancel(old) != MC_ERROR_NOT_FOUND) {
             return false;
         }
-        selected = Library(destination);
+        context.SetLibrary(Library(destination));
         if (context.Dispatch() != MC_OK || stale != 1 || rendered != 0 || visible) {
             return false;
         }
@@ -138,6 +145,11 @@ namespace {
         }
 
         /* A ready callback also loses permission to update a destroyed view. */
+        context.ClearLibrary();
+        if (context.GetLibrary()) {
+            return false;
+        }
+        context.SetLibrary(Library(destination));
         search(destinationTitle);
         if (!query_test_wait_for_wakeup(++wakes)) {
             return false;

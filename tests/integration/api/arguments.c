@@ -58,6 +58,17 @@ int main(void) {
     /* Null lifecycle inputs and the reserved zero request ID must fail before
        touching thread-binding or request-registry state. */
     CHECK(mc_context_create(NULL, &context, NULL) == MC_OK);
+    mc_playback* playback = NULL;
+    CHECK(mc_context_get_playback(context, &playback) == MC_ERROR_UNSUPPORTED && !playback);
+    CHECK(mc_context_select_library(context, MC_LIBRARY_LOCAL) == MC_ERROR_UNSUPPORTED);
+    CHECK(mc_context_select_library(context, MC_LIBRARY_NONE) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_context_read_library_status(context, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_context_set_library_changed_callback(NULL, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_context_reconnect_remote_library(context) == MC_ERROR_UNSUPPORTED);
+    mc_indexer_state indexer_state = MC_INDEXER_IDLE;
+    CHECK(mc_indexer_get_state(context, &indexer_state) == MC_ERROR_UNSUPPORTED);
+    CHECK(indexer_state == MC_INDEXER_IDLE);
+    CHECK(mc_indexer_schedule(context, MC_INDEXER_REBUILD + 1) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_dispatch(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_shutdown(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_request_cancel(NULL, 1) == MC_ERROR_INVALID_ARGUMENT);
@@ -82,7 +93,7 @@ int main(void) {
     /* Each required input is checked independently. Rejection must reset an
        existing request value so callers cannot accidentally cancel older work. */
     REJECT(mc_library_query_tracks_async(NULL, library, &query, page_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
-    REJECT(mc_library_query_tracks_async(context, NULL, &query, page_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
+    REJECT(mc_library_query_tracks_async(context, NULL, &query, page_done, NULL, &request), MC_ERROR_NOT_FOUND);
     REJECT(mc_library_query_tracks_async(context, library, NULL, page_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
     REJECT(mc_library_query_tracks_async(context, library, &query, NULL, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_library_query_tracks_async(context, library, &query, page_done, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
@@ -141,6 +152,8 @@ int main(void) {
     /* Standalone consumers may have no playback session. Every command must
        reject null safely rather than assuming an app-created engine exists. */
     CHECK(mc_playback_get_snapshot(NULL, &snapshot) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_playback_get_current_track(NULL, &track) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_playback_set_changed_callback(NULL, NULL, NULL, NULL, 0) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_playback_get_queue(NULL, &queue) == MC_ERROR_INVALID_ARGUMENT && !queue);
     CHECK(mc_playback_control(NULL, MC_PLAYBACK_STOP, 0) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_playback_play_result(NULL, tracks, 0) == MC_ERROR_INVALID_ARGUMENT);

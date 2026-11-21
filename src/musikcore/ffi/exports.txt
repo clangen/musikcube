@@ -2,6 +2,12 @@ mc_abi_version
 mc_context_create
 mc_context_destroy
 mc_context_dispatch
+mc_context_get_library
+mc_context_get_playback
+mc_context_set_library
+mc_context_select_library
+mc_context_read_library_status
+mc_context_set_library_changed_callback
 mc_context_shutdown
 mc_error_destroy
 mc_error_get_code
@@ -10,6 +16,7 @@ mc_library_append_playlist_async
 mc_library_create
 mc_library_delete_playlist_async
 mc_library_destroy
+mc_library_list_categories_async
 mc_library_list_playlists_async
 mc_library_make_track_result
 mc_library_open_category_async
@@ -28,6 +35,9 @@ mc_playback_control
 mc_playback_destroy
 mc_playback_get_queue
 mc_playback_get_snapshot
+mc_playback_get_current_track
+mc_playback_hot_swap_queue
+mc_playback_insert_result
 mc_playback_play_queue_row
 mc_playback_play_result
 mc_playback_queue_clear
@@ -35,6 +45,7 @@ mc_playback_queue_move
 mc_playback_queue_remove
 mc_playback_replace_queue
 mc_playback_set_queue_changed_callback
+mc_playback_set_changed_callback
 mc_playback_use_track
 mc_remote_session_connect_async
 mc_remote_session_create
@@ -61,3 +72,13 @@ mc_track_result_get_id
 mc_track_result_get_ref
 mc_track_result_read_async
 mc_track_result_starts_album
+mc_track_set_rating_async
+mc_indexer_get_state
+mc_indexer_read_paths
+mc_indexer_add_path
+mc_indexer_remove_path
+mc_indexer_schedule
+mc_indexer_set_callback
+mc_context_reconnect_remote_library
+mc_library_list_category_fields_async
+mc_track_ref_get_library

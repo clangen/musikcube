@@ -7,6 +7,7 @@ set(CORE_SOURCES
   ./audio/MasterTransport.cpp
   ./audio/Outputs.cpp
   ./audio/PlaybackService.cpp
+  ./ffi/consumer/legacy-library-selection.cpp
   ./ffi/consumer/legacy-playback-binding.cpp
   ./audio/Player.cpp
   ./audio/Stream.cpp

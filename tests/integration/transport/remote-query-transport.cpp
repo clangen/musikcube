@@ -1,3 +1,4 @@
+#include <musikcore/ffi/consumer/legacy-library-selection.h>
 #include "TestTransport.h"
 #include <musikcore/ffi/consumer/playback-binding.h>
 
@@ -7,6 +8,7 @@
 #include <musikcore/library/query/CategoryTrackListQuery.h>
 #include <musikcore/library/query/DirectoryTrackListQuery.h>
 #include <musikcore/library/query/CategoryListQuery.h>
+#include <musikcore/library/query/AllCategoriesQuery.h>
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/DeletePlaylistQuery.h>
 #include <musikcore/library/LibraryFactory.h>
@@ -24,6 +26,7 @@
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
+#include <musikcore/support/Common.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
@@ -113,6 +116,10 @@ namespace {
                             reply["options"]["raw_query_data"] = nlohmann::json {
                                 { "result", { { { "id", kPlaylistId }, { "value", "Loopback Playlist" }, { "type", "playlists" } } } }
                             }.dump();
+                        }
+                        else if (query.at("name") == musik::core::library::query::AllCategoriesQuery::kQueryName) {
+                            reply["options"]["raw_query_data"] =
+                                R"({"result":[{"id":0,"value":"album","type":"category"},{"id":0,"value":"genre","type":"category"}]})";
                         }
                         else if (query.at("name") == musik::core::library::query::SavePlaylistQuery::kQueryName) {
                             const auto& options = query.at("options");
@@ -288,15 +295,57 @@ namespace {
            database-upgrade scan before using it during the remote handoff. */
         LibraryFactory::Instance().DefaultLocalLibrary()->Indexer()->Shutdown();
 
-        const auto master = std::make_shared<library::MasterLibrary>();
-        auto& selection = *master;
+        const auto libraryBackend = ffi::CreateLegacyLibrary();
         runtime::MessageQueue messageQueue;
-        audio::PlaybackService service(messageQueue, master, std::make_shared<TestTransport>());
-        auto playback = musik::core::audio::CreatePlaybackHandle(service);
+        audio::PlaybackService service(messageQueue, libraryBackend, std::make_shared<TestTransport>());
         const auto wait = [&](auto ready) { return AwaitTestHost(coreRuntime.Queue(), ready); };
 
-        std::shared_ptr<const Library> origin;
-        if (!wait([&] { return bool(origin = selection.OpenApiLibrary()); })) {
+        struct SelectionNotice {
+            Context* context = nullptr;
+            bool local = false;
+        } notice;
+        std::vector<mc_indexer_event> indexEvents;
+        Context context(TestHostOptions(coreRuntime.Queue()));
+        notice.context = &context;
+        ffi::AttachLegacyLibrary(context, libraryBackend, service);
+        audio::AttachPlayback(context, service);
+        if (!wait([&] { return context.GetLibrary().has_value(); }) ||
+            context.GetLibraryStatus().kind != MC_LIBRARY_REMOTE ||
+            context.GetLibraryStatus().state != MC_LIBRARY_CONNECTED ||
+            context.GetLibraryStatus().endpoint.empty())
+        {
+            return failure(__LINE__);
+        }
+
+        /* The local indexer remains addressable with a remote catalog selected. */
+        Indexer indexer(context);
+        const auto originalPaths = indexer.Paths();
+        const auto testPath = GetDataDirectory() + "/indexer-contract-path";
+        if (indexer.AddPath(testPath) != MC_OK) {
+            return failure(__LINE__);
+        }
+        const auto addedPaths = indexer.Paths();
+        if (std::find(addedPaths.begin(), addedPaths.end(), testPath) == addedPaths.end() ||
+            indexer.RemovePath(testPath) != MC_OK || indexer.Paths() != originalPaths ||
+            indexer.SetCallback([](void* data, mc_indexer_event event, int) {
+                static_cast<std::vector<mc_indexer_event>*>(data)->push_back(event);
+            }, &indexEvents) != MC_OK ||
+            indexer.Schedule(MC_INDEXER_SCAN_LOCAL) != MC_OK ||
+            !wait([&] {
+                return context.Dispatch() == MC_OK && !indexEvents.empty() &&
+                    indexEvents.back() == MC_INDEXER_FINISHED;
+            }) || indexEvents.front() != MC_INDEXER_STARTED || indexer.SetCallback(nullptr) != MC_OK)
+        {
+            return failure(__LINE__);
+        }
+
+        if (context.SetLibraryChangedCallback([](void* data, bool selectionChanged) {
+            auto& notice = *static_cast<SelectionNotice*>(data);
+            if (selectionChanged && notice.context->GetLibraryStatus().kind == MC_LIBRARY_LOCAL) {
+                notice.local = notice.context->GetLibrary().has_value();
+            }
+        }, &notice) != MC_OK || mc_context_set_library(context.Get(), nullptr) != MC_ERROR_UNSUPPORTED)
+        {
             return failure(__LINE__);
         }
 
@@ -304,12 +353,12 @@ namespace {
         TrackPage page;
         unsigned calls = 0;
         mc_result status = MC_ERROR_INTERNAL;
-        Context context(TestHostOptions(coreRuntime.Queue()));
+        auto playback = context.GetPlayback();
         const auto dispatch = [&](unsigned expected) {
             return wait([&] { return context.Dispatch() == MC_OK && calls == expected; });
         };
 
-        OpenTrackSearch(context, *origin, TrackSearch { "Origin" },
+        OpenTrackSearch(context, TrackSearch { "Origin" },
             [&](mc_result result, TrackResult found, std::string_view) {
                 status = result;
                 tracks = std::move(found);
@@ -345,23 +394,45 @@ namespace {
         if (playback.ReplaceQueue(tracks) != MC_OK || service.Count() != tracks.Size()) {
             return failure(__LINE__);
         }
+        if (playback.HotSwapQueue(tracks, 0) != MC_OK || service.Count() != tracks.Size()) {
+            return failure(__LINE__);
+        }
+        if (playback.InsertResult(tracks, MC_PLAYBACK_TRACK_APPEND) != MC_OK) {
+            return failure(__LINE__);
+        }
+        const auto queue = context.GetPlayback().Queue();
+        size_t queued = 0;
+        const auto ids = queue ? queue->Ids(queued) : nullptr;
+        if (!ids || queued != tracks.Size() * 2 ||
+            !std::equal(ids, ids + tracks.Size(), ids + tracks.Size()))
+        {
+            return failure(__LINE__);
+        }
 
         /* Switch before releasing a cancelled remote read. The next remote request stays on its origin. */
         const auto pending = ReadTracks(context, tracks, range, receive);
-        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
-        selection.LoadDefaultLibrary();
+        if (context.SelectLibrary(MC_LIBRARY_LOCAL) != MC_OK || notice.local ||
+            context.Dispatch() != MC_OK || !notice.local)
+        {
+            return failure(__LINE__);
+        }
         if (playback.UseTrack(reference, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND) {
+            return failure(__LINE__);
+        }
+        if (playback.HotSwapQueue(tracks, 0) != MC_ERROR_NOT_FOUND) {
+            return failure(__LINE__);
+        }
+        if (playback.InsertResult(tracks, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND) {
             return failure(__LINE__);
         }
         audio::DiscardUnavailablePlaybackQueue(service);
         if (service.Count() != 0) {
             return failure(__LINE__);
         }
-        const auto local = selection.OpenApiLibrary();
-        if (!local) {
+        if (context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL || !context.GetLibrary()) {
             return failure(__LINE__);
         }
-        QueryTracks(context, *local, TrackQuery { "" }, receive);
+        QueryTracks(context, TrackQuery { "" }, receive);
         if (!dispatch(3) || status != MC_OK) {
             std::fprintf(stderr, "Local handoff: status=%d calls=%u\n", status, calls);
             return failure(__LINE__);
@@ -380,10 +451,11 @@ namespace {
         /* Reconnecting creates a new generation even when the endpoint stays the same. */
         const auto remote = std::dynamic_pointer_cast<library::RemoteLibrary>(LibraryFactory::Instance().DefaultRemoteLibrary());
         remote->Connect();
-        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
-        selection.LoadDefaultLibrary();
-        std::shared_ptr<const Library> reconnected;
-        if (!wait([&] { return bool(reconnected = selection.OpenApiLibrary()); })) {
+        if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK) {
+            return failure(__LINE__);
+        }
+        std::optional<Library> reconnected;
+        if (!wait([&] { return bool(reconnected = context.GetLibrary()); })) {
             return failure(__LINE__);
         }
         ReadTrack(context, reference, { MC_TRACK_FIELD_TITLE }, receive);
@@ -452,6 +524,7 @@ namespace {
         {
             return failure(__LINE__);
         }
+        const auto album = std::move(tracks);
         OpenDirectory(context, *reconnected, "/remote/music", receiveSelection);
         if (!server.ReleaseHeld(false) || !dispatch(12) || status != MC_OK || tracks.Size() != 3 ||
             tracks.Id(0) != 42 || tracks.Id(1) != 17 || tracks.Id(2) != 42 || !tracks.StartsAlbum(0))
@@ -461,6 +534,46 @@ namespace {
 
         OpenTrackSearch(context, *reconnected, TrackSearch { "Invalid IDs" }, receiveSelection);
         if (!server.ReleaseHeld(false) || !dispatch(13) || status != MC_ERROR_IO || tracks) {
+            return failure(__LINE__);
+        }
+
+        /* Album menu replies and previously loaded albums cannot edit the queue after reconnect. */
+        OpenCategory(context, *reconnected, MC_TRACK_FIELD_ALBUM, 1, MC_TRACK_SEARCH_ALBUM, receiveSelection);
+        if (!server.WaitForHeldReply()) {
+            return failure(__LINE__);
+        }
+        const auto generation = remote->WebSocketClient().ConnectionGeneration();
+        remote->Disconnect();
+        if (!wait([&] { return !context.GetLibrary(); }) ||
+            context.GetLibraryStatus().state == MC_LIBRARY_CONNECTED)
+        {
+            return failure(__LINE__);
+        }
+        remote->Connect();
+        if (!wait([&] {
+            const auto connected = remote->WebSocketClient().ConnectionGeneration();
+            return connected && connected != generation && (reconnected = context.GetLibrary());
+        }) || !server.ReleaseHeld(false) || !dispatch(14) || status != MC_ERROR_IO || tracks)
+        {
+            return failure(__LINE__);
+        }
+        const auto queueSize = service.Count();
+        if (playback.Play(album, 0) != MC_ERROR_NOT_FOUND ||
+            playback.InsertResult(album, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND ||
+            service.Count() != queueSize)
+        {
+            return failure(__LINE__);
+        }
+
+        std::vector<std::string> fields;
+        ListCategoryFields(context, [&](mc_result result, std::vector<std::string> values, std::string_view) {
+            if (result == MC_OK) {
+                fields = std::move(values);
+            }
+        });
+        if (!server.ReleaseHeld(false) || !wait([&] { return context.Dispatch() == MC_OK && !fields.empty(); }) ||
+            fields != std::vector<std::string> { MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_GENRE })
+        {
             return failure(__LINE__);
         }
 
@@ -535,6 +648,22 @@ namespace {
             return failure(__LINE__);
         }
         const auto remote = std::make_shared<const Library>(session.OpenLibrary());
+
+        for (const auto& library : { local, remote }) {
+            context.SetLibrary(*library);
+            auto matches = std::make_shared<std::optional<bool>>();
+            ListCategories(context, MC_TRACK_FIELD_ARTIST, "Fixture", MC_TRACK_SEARCH_SUBSTRING,
+                [matches](mc_result status, std::vector<CategoryEntry> categories, std::string_view) {
+                    *matches = status == MC_OK && categories.size() == 1 &&
+                        categories.front().value == "Fixture Artist";
+                });
+            if (!AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && matches->has_value(); }) ||
+                !matches->value())
+            {
+                return failure(__LINE__);
+            }
+        }
+        context.ClearLibrary();
 
         TrackResult localTracks, remoteTracks;
         TrackPage localPage, remotePage;
@@ -720,6 +849,26 @@ namespace {
             return failure(__LINE__);
         }
 
+        /* A write through either backend is visible through the other. */
+        for (bool overRemote : { false, true }) {
+            const uint32_t rating = overRemote ? MC_TRACK_RATING_MAX : 0;
+            const auto expectedRating = calls + 1;
+            SetTrackRating(context, (overRemote ? remoteTracks : localTracks).Track(0), rating,
+                [&](mc_result result, std::string_view) {
+                    status = result;
+                    ++calls;
+                });
+            if (!dispatch(expectedRating)) {
+                return failure(__LINE__);
+            }
+            const auto expectedRead = calls + 1;
+            ReadTrack(context, (overRemote ? localTracks : remoteTracks).Track(0),
+                { MC_TRACK_FIELD_RATING }, receivePage(localPage));
+            if (!dispatch(expectedRead) || localPage.Track(0).Rating() != rating) {
+                return failure(__LINE__);
+            }
+        }
+
         const std::vector<int64_t> ids(10000, localTracks.Id(0));
         {
             ProfilePhase profile("save_playlist_10000");
@@ -811,6 +960,19 @@ namespace {
         {
             return failure(__LINE__);
         }
+
+        const auto staleWriteExpected = calls + 1;
+        SetTrackRating(context, remoteTracks.Track(0), 0,
+            [&](mc_result result, std::string_view) {
+                status = result;
+                ++calls;
+            });
+        if (!AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && calls == staleWriteExpected; }) ||
+            status != MC_ERROR_IO)
+        {
+            return failure(__LINE__);
+        }
+
         const auto newLibrary = session.OpenLibrary();
         const auto newExpected = calls + 1;
         OpenTrackSearch(context, newLibrary, {}, receiveResult(remoteTracks));

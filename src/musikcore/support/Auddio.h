@@ -35,10 +35,10 @@
 #pragma once
 
 #include <functional>
-#include <musikcore/library/track/Track.h>
+#include <string>
 
 namespace musik { namespace core { namespace auddio {
-    using LyricsCallback = std::function<void(musik::core::TrackPtr track, std::string)>;
+    using LyricsCallback = std::function<void(std::string)>;
     extern bool Available();
-    extern void FindLyrics(musik::core::TrackPtr track, LyricsCallback callback);
+    extern void FindLyrics(std::string artist, std::string title, LyricsCallback callback);
 } } }

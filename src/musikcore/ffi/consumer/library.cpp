@@ -73,7 +73,10 @@ mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_librar
 
         std::string target(locator.data, locator.length);
         auto backend = kind == MC_LIBRARY_LOCAL ? query::OpenTrackReadBackend(target + "/musik.db") : nullptr;
-        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{ std::move(target), std::move(backend), {}, {}, {} });
+        auto identity = std::make_shared<LibraryIdentity>();
+        identity->locator = std::move(target);
+        identity->backend = std::move(backend);
+        identity->kind = kind;
         *out_library = new mc_library{ std::move(identity) };
         return MC_OK;
     });
@@ -85,13 +88,68 @@ void MC_CALL mc_library_destroy(mc_library **library) {
     *library = nullptr;
 }
 
+mc_result MC_CALL mc_context_set_library(mc_context* context, const mc_library* library) {
+    if (!context) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        musik::core::ffi::LibraryStatus status;
+        if (library) {
+            status.kind = library->identity->kind;
+            status.configured = true;
+            if (status.kind == MC_LIBRARY_LOCAL ||
+                (library->identity->async && library->identity->async->Matches(library->identity->async->Backend().get())))
+            {
+                status.state = MC_LIBRARY_CONNECTED;
+            }
+        }
+        return musik::core::ffi::set_context_library(*context, library ? library->identity : nullptr, std::move(status));
+    });
+}
+
+mc_result MC_CALL mc_context_get_library(const mc_context* context, mc_library** out_library) {
+    if (!context || !out_library || *out_library) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        auto identity = musik::core::ffi::context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        *out_library = new mc_library { std::move(identity) };
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_track_set_rating_async(mc_context* context, const mc_track_ref* track, uint32_t rating,
+    mc_library_completion_fn completion, void* user_data, mc_request_id* out_request)
+{
+    if (!out_request) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    *out_request = 0;
+    if (!context || !track || !completion || rating > MC_TRACK_RATING_MAX) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        const auto& queries = track->library->queries;
+        return queries ? queries->SetTrackRating(context, track->id, rating, completion, user_data, out_request)
+            : MC_ERROR_UNSUPPORTED;
+    });
+}
+
 mc_result MC_CALL mc_library_open_playlist_async(mc_context *context, const mc_library *library,
     int64_t playlist_id, mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request) {
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
         *out_request = 0;
-        if (!context || !library || !completion || playlist_id <= 0) return MC_ERROR_INVALID_ARGUMENT;
-        const auto identity = library->identity;
+        if (!context || !completion || playlist_id <= 0) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
         if (!identity->queries) return MC_ERROR_UNSUPPORTED;
         return identity->queries->OpenPlaylist(context, identity, playlist_id, completion, user_data, out_request);
     });
@@ -103,12 +161,15 @@ static mc_result openSelection(mc_context *context, const mc_library *library, m
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !library || !completion || int(order) < 0 || order > MC_TRACK_SEARCH_GENRE) {
+        if (!context || !completion || int(order) < 0 || order > MC_TRACK_SEARCH_GENRE) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
         const auto input = category.length ? category : directory;
         if (!valid_text(input, false)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto identity = library->identity;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
         if (!identity->queries) return MC_ERROR_UNSUPPORTED;
         return identity->queries->OpenSelection(context, identity,
             std::string(category.data ? category.data : "", category.length),
@@ -141,13 +202,76 @@ mc_result MC_CALL mc_library_make_track_result(const mc_library *library, const 
     });
 }
 
+mc_result MC_CALL mc_library_list_category_fields_async(mc_context* context, const mc_library* library,
+    mc_category_fields_completion_fn completion, void* data, mc_request_id* request)
+{
+    if (!request) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    *request = 0;
+    if (!context || !completion) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        return identity->queries
+            ? identity->queries->ListCategoryFields(context, completion, data, request)
+            : MC_ERROR_UNSUPPORTED;
+    });
+}
+
+mc_result MC_CALL mc_track_ref_get_library(const mc_track_ref* track, mc_library** out_library) {
+    if (!track || !out_library || *out_library) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return exception_barrier(nullptr, [&] {
+        *out_library = new mc_library { track->library };
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_library_list_categories_async(mc_context* context, const mc_library* library,
+    mc_string_view field, mc_string_view filter, mc_track_search_mode mode,
+    mc_category_list_completion_fn completion, void* user_data, mc_request_id* out_request)
+{
+    if (!out_request) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    *out_request = 0;
+    if (!context || !completion || !valid_text(field, false) || !valid_text(filter) ||
+        mode > MC_TRACK_SEARCH_REGEX)
+    {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        if (!identity->queries) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        return identity->queries->ListCategories(context, std::string(field.data, field.length),
+            std::string(filter.data ? filter.data : "", filter.length), mode, completion, user_data, out_request);
+    });
+}
+
 mc_result MC_CALL mc_library_list_playlists_async(mc_context *context, const mc_library *library,
     mc_playlist_list_completion_fn completion, void *data, mc_request_id *request) {
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !library || !completion) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->queries;
+        if (!context || !completion) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const auto& reader = identity->queries;
         return reader ? reader->ListPlaylists(context, completion, data, request) : MC_ERROR_UNSUPPORTED;
     });
 }
@@ -158,9 +282,13 @@ mc_result MC_CALL mc_library_save_playlist_async(mc_context *context, const mc_l
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !library || !completion || id < 0 || (!id && !name.length) ||
+        if (!context || !completion || id < 0 || (!id && !name.length) ||
             !valid_text(name) || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->queries;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const auto& reader = identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->SavePlaylist(context, id, std::string(name.data ? name.data : "", name.length),
             count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, false, completion, data, request);
@@ -173,8 +301,12 @@ mc_result MC_CALL mc_library_append_playlist_async(mc_context *context, const mc
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !library || !completion || id <= 0 || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->queries;
+        if (!context || !completion || id <= 0 || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const auto& reader = identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->SavePlaylist(context, id, {},
             count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, true, completion, data, request);
@@ -186,8 +318,12 @@ mc_result MC_CALL mc_library_rename_playlist_async(mc_context *context, const mc
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !library || !completion || id <= 0 || !valid_text(name, false)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->queries;
+        if (!context || !completion || id <= 0 || !valid_text(name, false)) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const auto& reader = identity->queries;
         if (!reader) return MC_ERROR_UNSUPPORTED;
         return reader->RenamePlaylist(context, id, std::string(name.data, name.length), completion, data, request);
     });
@@ -198,8 +334,12 @@ mc_result MC_CALL mc_library_delete_playlist_async(mc_context *context, const mc
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !library || !completion || id <= 0) return MC_ERROR_INVALID_ARGUMENT;
-        const auto reader = library->identity->queries;
+        if (!context || !completion || id <= 0) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const auto& reader = identity->queries;
         return reader ? reader->DeletePlaylist(context, id, completion, data, request) : MC_ERROR_UNSUPPORTED;
     });
 }
@@ -210,7 +350,7 @@ mc_result MC_CALL mc_library_query_tracks_async(
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
         *out_request = 0;
-        if (!context || !library || !query || !completion || query->struct_size < sizeof(query->struct_size)) {
+        if (!context || !query || !completion || query->struct_size < sizeof(query->struct_size)) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
 
@@ -229,11 +369,16 @@ mc_result MC_CALL mc_library_query_tracks_async(
         const auto offset = read_option(query, &mc_track_query::offset, offsetof(mc_track_query, offset));
         const auto limit = read_option(query, &mc_track_query::limit, offsetof(mc_track_query, limit));
         if (offset > INT64_MAX || limit > limits.max_limit) return MC_ERROR_INVALID_ARGUMENT;
-        if (!library->identity->backend) return MC_ERROR_UNSUPPORTED;
         const auto page_limit = limit ? limit : limits.default_limit;
 
         /* Snapshot inputs before submission. Cancellation leaves worker-owned data alone. */
-        const auto identity = library->identity;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        if (!identity->backend) {
+            return MC_ERROR_UNSUPPORTED;
+        }
         const std::string term(search.length ? search.data : "", search.length);
         std::vector<std::string> names;
         if (!copyFields(fields, count, limits.max_fields, names)) return MC_ERROR_INVALID_ARGUMENT;
@@ -250,7 +395,7 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
         *out_request = 0;
-        if (!context || !library || !search || !completion || search->struct_size < sizeof(search->struct_size)) {
+        if (!context || !search || !completion || search->struct_size < sizeof(search->struct_size)) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
 
@@ -259,7 +404,10 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
         const auto order = read_option(search, &mc_track_search::order, offsetof(mc_track_search, order));
         if (mode > MC_TRACK_SEARCH_REGEX || order > MC_TRACK_SEARCH_GENRE) return MC_ERROR_UNSUPPORTED;
         if (!valid_text(text)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto identity = library->identity;
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
         const std::string term(text.length ? text.data : "", text.length);
         if (identity->async) {
             return identity->async->Search(context, identity,

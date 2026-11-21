@@ -45,15 +45,15 @@
 #include <mutex>
 
 #include <sigslot/sigslot.h>
+#include <musikcore/context.h>
 
 namespace musik { namespace core { namespace api { class Library; } } }
+namespace musik { namespace core { namespace audio { class PlaybackService; } } }
 
 namespace musik { namespace core { namespace library {
 
     class MasterLibrary: public ILibrary, public sigslot::has_slots<> {
         public:
-            sigslot::signal2<ILibraryPtr, ILibraryPtr> LibraryChanged;
-
             MasterLibrary();
             virtual ~MasterLibrary();
 
@@ -74,14 +74,22 @@ namespace musik { namespace core { namespace library {
 
             std::shared_ptr<const musik::core::api::Library> OpenApiLibrary() const;
             void LoadDefaultLibrary();
+            void Select(Type type);
+            void AttachContext(mc_context* context, audio::PlaybackService* playback);
 
         private:
 
             void OnQueryCompleted(musik::core::db::IQuery* query);
-            void OnConectionStateChanged(ConnectionState state);
+            void OnConnectionStateChanged(ConnectionState state);
+            void PublishSelection(bool selectionChanged);
+            void OnIndexStarted();
+            void OnIndexProgress(int updates);
+            void OnIndexFinished(int updates);
 
             ILibraryPtr wrappedLibrary;
             mutable std::recursive_mutex libraryMutex;
+            mc_context* context = nullptr;
+            audio::PlaybackService* playback = nullptr;
     };
 
 } } }

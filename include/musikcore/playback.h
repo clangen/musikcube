@@ -9,10 +9,8 @@
 extern "C" {
 #endif
 
-/* An app-supplied playback session handle. The standalone library has no playback engine. */
-typedef struct mc_playback mc_playback;
-
-/* Playback calls require the session's owner thread. Required handles and output
+/* Playback operations require the session's owner thread unless documented
+   otherwise. Required handles and output
    slots are non-null. New queue output slots must be initialized to null and
    remain unchanged on failure. Destroy functions accept null slots and clear
    owned handles. Snapshot accessors accept null and return empty sentinels.
@@ -34,7 +32,8 @@ enum {
     MC_PLAYBACK_TOGGLE_REPEAT,
     MC_PLAYBACK_TOGGLE_SHUFFLE,
     MC_PLAYBACK_SET_POSITION,
-    MC_PLAYBACK_SET_VOLUME
+    MC_PLAYBACK_SET_VOLUME,
+    MC_PLAYBACK_RELOAD_OUTPUT
 };
 
 typedef uint32_t mc_playback_state;
@@ -43,6 +42,25 @@ enum {
     MC_PLAYBACK_PAUSED,
     MC_PLAYBACK_PREPARED,
     MC_PLAYBACK_PLAYING
+};
+
+typedef uint32_t mc_playback_stream_state;
+enum {
+    MC_PLAYBACK_STREAM_STOPPED = 0,
+    MC_PLAYBACK_STREAM_BUFFERING,
+    MC_PLAYBACK_STREAM_BUFFERED,
+    MC_PLAYBACK_STREAM_PLAYING,
+    MC_PLAYBACK_STREAM_ALMOST_DONE,
+    MC_PLAYBACK_STREAM_FINISHED,
+    MC_PLAYBACK_STREAM_DESTROYED,
+    MC_PLAYBACK_STREAM_OPEN_FAILED
+};
+
+typedef uint32_t mc_playback_repeat_mode;
+enum {
+    MC_PLAYBACK_REPEAT_OFF = 0,
+    MC_PLAYBACK_REPEAT_TRACK,
+    MC_PLAYBACK_REPEAT_LIST
 };
 
 typedef struct mc_playback_snapshot {
@@ -58,12 +76,48 @@ typedef struct mc_playback_snapshot {
     double volume;
     /* True when output is muted. */
     bool muted;
+    /* Current stream state. */
+    mc_playback_stream_state stream;
+    /* Current repeat mode. */
+    mc_playback_repeat_mode repeat;
+    /* True when the queue is shuffled. */
+    bool shuffled;
+    /* True when the current track carries non-default replay gain or peak data. */
+    bool has_replay_gain;
 } mc_playback_snapshot;
 
-#define MC_PLAYBACK_SNAPSHOT_DEFAULT { sizeof(mc_playback_snapshot), MC_PLAYBACK_STOPPED, 0, 0, 0, false }
+#define MC_PLAYBACK_SNAPSHOT_DEFAULT { sizeof(mc_playback_snapshot), MC_PLAYBACK_STOPPED, 0, 0, 0, false, \
+    MC_PLAYBACK_STREAM_STOPPED, MC_PLAYBACK_REPEAT_OFF, false, false }
 
 /* Sample the session on its owner thread. On failure, snapshot remains unchanged. */
 MC_API mc_result MC_CALL mc_playback_get_snapshot(const mc_playback *playback, mc_playback_snapshot *snapshot);
+
+/* Return an owned reference to the current track in an empty output slot.
+   Returns MC_ERROR_NOT_FOUND when stopped or when the track's origin is unavailable. */
+MC_API mc_result MC_CALL mc_playback_get_current_track(const mc_playback* playback, mc_track_ref** out_track);
+
+typedef enum mc_playback_event {
+    MC_PLAYBACK_CHANGED_TRACK = 1,
+    MC_PLAYBACK_CHANGED_STATE,
+    MC_PLAYBACK_CHANGED_STREAM,
+    MC_PLAYBACK_CHANGED_POSITION,
+    MC_PLAYBACK_CHANGED_VOLUME,
+    MC_PLAYBACK_CHANGED_MODE
+} mc_playback_event;
+
+typedef void (MC_CALL *mc_playback_changed_fn)(void *user_data, mc_playback_event event);
+/* Register, replace, or unsubscribe from any thread. Pass NULL to unsubscribe.
+   Each handle has its own subscription, independent of queue notifications.
+   An empty event list subscribes to all kinds. A nonempty list is copied
+   during registration. Repeated pending events of one kind may be coalesced.
+   Each callback receives one event kind indicating which state to reread. Callbacks run
+   outside engine locks on the owner thread and may call playback APIs.
+   Replacement, unsubscription, and handle destruction discard queued delivery
+   and wait for a callback running on another thread. A callback can unsubscribe
+   itself. Keep user_data alive through any invocation that has already started. */
+MC_API mc_result MC_CALL mc_playback_set_changed_callback(
+    mc_playback *playback, mc_playback_changed_fn callback, void *user_data,
+    const mc_playback_event *events, size_t event_count);
 
 /* Apply a command to an existing playback session on its owner thread.
    Value is seconds for SET_POSITION, or a fraction from zero to one for SET_VOLUME.
@@ -102,6 +156,12 @@ MC_API size_t MC_CALL mc_play_queue_get_current_row(const mc_play_queue *queue);
 MC_API size_t MC_CALL mc_play_queue_get_retained_row(const mc_play_queue *queue);
 /* Load an ordered result from the selected library on the owner thread without starting playback. */
 MC_API mc_result MC_CALL mc_playback_replace_queue(mc_playback *playback, const mc_track_result *result);
+
+/* Replace the queue while retaining active playback. Use row as a hint when locating the playing track. */
+MC_API mc_result MC_CALL mc_playback_hot_swap_queue(mc_playback* playback, const mc_track_result* result, size_t row);
+/* Insert the ordered result using prepend, append, or play next. Duplicates are preserved. */
+MC_API mc_result MC_CALL mc_playback_insert_result(mc_playback* playback, const mc_track_result* result,
+    mc_playback_track_action action);
 MC_API bool MC_CALL mc_play_queue_is_shuffled(const mc_play_queue *queue);
 /* Request playback of a row in the supplied snapshot on the owner thread.
    Returns MC_ERROR_NOT_FOUND for a stale snapshot or unavailable row. */
