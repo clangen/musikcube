@@ -14,6 +14,11 @@ else()
   endforeach()
 endif()
 
+# Keep the seeder available independently; everything below is test-only.
+if(NOT BUILD_TESTING)
+  return()
+endif()
+
 if(BUILD_TESTING)
 
   if(UNIX AND TARGET musikcube AND CMAKE_NM)

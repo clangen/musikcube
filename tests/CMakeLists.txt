@@ -94,6 +94,15 @@ add_test(NAME musikcore.abi.link_boundary COMMAND "${CMAKE_COMMAND}"
   "-DGUARD=${PROJECT_SOURCE_DIR}/.cmake/VerifyCoreBoundary.cmake"
   -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-link-boundary.cmake")
 set_tests_properties(musikcore.abi.link_boundary PROPERTIES LABELS "integration;musikcore;abi;contract")
+# Configure the real support targets without production/vendor dependencies.
+# A tests-disabled build must not require or create the test aggregate targets.
+add_test(NAME musikcore.integration.binary.testing_disabled COMMAND "${CMAKE_COMMAND}"
+  -S "${CMAKE_CURRENT_SOURCE_DIR}/integration/binary/testing-disabled"
+  -B "${CMAKE_CURRENT_BINARY_DIR}/bin/testing-disabled"
+  "-DSUPPORT=${PROJECT_SOURCE_DIR}/tests/support")
+set_tests_properties(musikcore.integration.binary.testing_disabled PROPERTIES
+  LABELS "integration;musikcore;binary;build;contract" TIMEOUT 30)
+
 add_test(NAME musikcore.abi.query COMMAND "${MUSIKCORE_TEST_NODE}" "${isolated_test}"
   "${isolated_root}" "$<TARGET_FILE:musikcore_abi_query_test>" @origin)
 set_tests_properties(musikcore.abi.query PROPERTIES LABELS "integration;musikcore;abi;contract" TIMEOUT 20)
