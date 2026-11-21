@@ -1173,6 +1173,8 @@ legacy list for actions that still require it.
   through public headers, exercises blocking-host wakeups and delayed playback
   work, then destroys and restarts the runtime with a retained catalog handle.
   Cube now starts those services through the same public context option.
+  `musikcore.integration.api.managed_remote` covers local/remote switching
+  and same-endpoint reconnection through that startup path.
 
 #### Phase 7 gate
 

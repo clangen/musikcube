@@ -68,3 +68,5 @@ The production C API can start the configured catalog, playback engine, and plug
 The public-only integration test started playback through Null output, delivered a delayed reload on the owner thread, and restarted the runtime while retaining a catalog handle. It passed five consecutive runs. Cube startup still uses the legacy entry point pending the equalizer notification cutover.
 
 Cube now also uses the managed context for startup and core shutdown. The equalizer overlay subscribes to context dispatch, allowing the core and UI queues to run separately. All 46 Linux Release tests passed. The managed runtime, Browse, and playlist cases each passed six consecutive focused runs.
+
+The managed loopback test exposed a no-op when reconnecting to an unchanged address. Reconnect now replaces that connection. The test proves playback rejects a reference after switching libraries, reads still use the retained origin while its connection remains open, and reconnect invalidates the old generation. All 47 Linux Release tests passed.

@@ -83,6 +83,7 @@ namespace musik { namespace core { namespace ffi {
             },
             [&factory] {
                 const auto remote = std::static_pointer_cast<library::RemoteLibrary>(factory.DefaultRemoteLibrary());
+                remote->Disconnect();
                 remote->Connect();
             },
             *factory.DefaultLocalLibrary()->Indexer());

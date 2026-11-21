@@ -1010,13 +1010,93 @@ namespace {
         }
         return context.Shutdown() == MC_OK;
     }
+    bool checkManagedRemote() {
+        using namespace musik::core;
+        using namespace musik::core::api;
+
+        Server server(true);
+        auto settings = Preferences::ForComponent(prefs::components::Settings);
+        settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
+        settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
+        settings->SetBool(prefs::keys::RemoteLibraryViewed, true);
+
+        TrackResult tracks;
+        TrackPage page;
+        std::optional<mc_result> completed;
+        runtime::MessageQueue host;
+        auto options = TestHostOptions(host);
+        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        Context context(options);
+        const auto wait = [&](auto ready) {
+            return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && ready(); });
+        };
+        const auto remoteReady = [&] {
+            const auto status = context.GetLibraryStatus();
+            return status.kind == MC_LIBRARY_REMOTE && status.state == MC_LIBRARY_CONNECTED;
+        };
+
+        if (context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL ||
+            context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK || !wait(remoteReady))
+        {
+            return failure(__LINE__);
+        }
+        OpenTrackSearch(context, {}, [&](mc_result result, TrackResult selection, std::string_view) {
+            completed = result;
+            tracks = std::move(selection);
+        });
+        if (!wait([&] { return completed.has_value(); }) || completed != MC_OK || tracks.Size() != 2) {
+            return failure(__LINE__);
+        }
+
+        auto origin = tracks.Track(0);
+        auto playback = context.GetPlayback();
+        if (playback.UseTrack(origin, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
+            context.SelectLibrary(MC_LIBRARY_LOCAL) != MC_OK ||
+            context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL ||
+            playback.UseTrack(origin, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND)
+        {
+            return failure(__LINE__);
+        }
+
+        const auto readOrigin = [&] {
+            completed.reset();
+            ReadTrack(context, origin, { MC_TRACK_FIELD_TITLE },
+                [&](mc_result result, TrackPage found, std::string_view) {
+                    completed = result;
+                    page = std::move(found);
+                });
+            return wait([&] { return completed.has_value(); });
+        };
+        if (!readOrigin() || completed != MC_OK || page.Size() != 1 || page.Track(0).Title() != "Origin") {
+            return failure(__LINE__);
+        }
+
+        /* A new connection to the same address must still invalidate old references. */
+        if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK || context.ReconnectRemoteLibrary() != MC_OK) {
+            return failure(__LINE__);
+        }
+        if (!wait(remoteReady)) {
+            return failure(__LINE__);
+        }
+        if (!readOrigin() || completed != MC_ERROR_IO) {
+            std::fprintf(stderr, "Retained remote read completed with %d\n", completed.value_or(MC_ERROR_BUSY));
+            return failure(__LINE__);
+        }
+        if (playback.UseTrack(origin, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND) {
+            return failure(__LINE__);
+        }
+        return context.Shutdown() == MC_OK;
+    }
 }
 
-/* Run real-backend parity mode or malformed-response and lifecycle scenarios in an isolated runtime. */
+/* Run parity, managed runtime, or malformed-response scenarios in an isolated runtime. */
 int main(int argc, char** argv) {
     try {
         if (argc > 1 && std::strcmp(argv[1], "--parity") == 0) {
             return argc == 3 && checkBackendParity(argv[2]) ? 0 : 1;
+        }
+        if (argc > 1 && std::strcmp(argv[1], "--managed") == 0) {
+            return checkManagedRemote() ? 0 : 1;
         }
         Server server;
         Listener listener;
