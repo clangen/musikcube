@@ -46,7 +46,7 @@ async function main() {
     response.writeHead(200, headers);
     if (request.url.startsWith('/blocked')) {
       response.flushHeaders();
-      client.stdin.write('close\n');
+      client.stdin.write(request.url + '\n');
     } else if (request.url === '/live.wav') {
       /* provide enough for decoder probing/prebuffering while retaining a live
       tail. readiness must not depend on HTTP completion; close interrupts it. */

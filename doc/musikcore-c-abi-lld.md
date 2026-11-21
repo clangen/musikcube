@@ -1294,7 +1294,8 @@ remains deferred. This does not begin the new plugin C SDK. See
   pause/seek/EOF/failure, wrong-thread and callback destruction rejection,
   independent players, early close, observer replacement within a detached
   dispatch batch, empty HTTP failures, sustained HTTP readiness before EOF,
-  and retained handles in `musikcore.integration.api.uri_player` using headless output and loopback HTTP.
+  stop and replacement during a blocked HTTP open, and retained handles in
+  `musikcore.integration.api.uri_player` using headless output and loopback HTTP.
 - [x] **API-URI-005** Ship C/C++ example apps and verify their public-only builds
   and playback against the relocated SDK in `musikcore.integration.api.installed_sdk`.
 - [x] **API-URI-006** Migrate in-tree stream factories and environment callers to

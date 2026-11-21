@@ -132,6 +132,39 @@ namespace {
         return TEST_CHECK(state.oldCalls == 0 && state.newCalls == 1);
     }
 
+    bool checkInterruptedOpen(api::Context& context, test_host_event* event,
+        mc_player* player, const std::string& path, const std::string& http)
+    {
+        /* Gate on a request whose response body the server never sends. */
+        auto openBlocked = [&](const std::string& route) {
+            const auto url = http + route;
+            std::string ready;
+            return TEST_CHECK(mc_player_play_uri(player, { url.data(), url.size() }) == MC_OK) &&
+                TEST_CHECK(bool(std::getline(std::cin, ready)) && ready == route) &&
+                TEST_CHECK(state(player) == MC_PLAYER_BUFFERING) &&
+                TEST_CHECK(mc_player_seek(player, 0.1) == MC_ERROR_BUSY);
+        };
+
+        if (!openBlocked("/blocked-stop.wav")) {
+            return false;
+        }
+        auto before = Clock::now();
+        if (!TEST_CHECK(mc_player_stop(player) == MC_OK) ||
+            !TEST_CHECK(Clock::now() - before < std::chrono::seconds(3)) ||
+            !TEST_CHECK(context.Dispatch() == MC_OK) ||
+            !TEST_CHECK(state(player) == MC_PLAYER_STOPPED) ||
+            !openBlocked("/blocked-replace.wav")) {
+            return false;
+        }
+
+        /* Reuse the same handle while the old decoder is still waiting for data. */
+        before = Clock::now();
+        return TEST_CHECK(mc_player_play_uri(player, { path.data(), path.size() }) == MC_OK) &&
+            TEST_CHECK(Clock::now() - before < std::chrono::seconds(3)) &&
+            await(context, event, [&] { return state(player) == MC_PLAYER_PLAYING; }, "replacement playing") &&
+            await(context, event, [&] { return state(player) == MC_PLAYER_FINISHED; }, "replacement EOF");
+    }
+
     /* control, independent lifetime, EOF, failure, and context-owned teardown
     all use the same production URI player rather than a mock transport. */
     bool check(const std::string& path, const std::string& http) {
@@ -246,6 +279,10 @@ namespace {
             }
         }
         if (!http.empty()) {
+            if (!checkInterruptedOpen(context, event.get(), players.first, path, http)) {
+                return false;
+            }
+
             const auto url = http + "/tone.wav";
             if (!TEST_CHECK(mc_player_play_uri(players.first, { url.data(), url.size() }) == MC_OK) ||
                 !await(context, event.get(), [&] {
@@ -280,7 +317,7 @@ namespace {
             /* the parent signals only after the blocked request reaches its
             loopback server; closing must interrupt the decoder's blocked read. */
             std::string ready;
-            if (!TEST_CHECK(bool(std::getline(std::cin, ready)))) {
+            if (!TEST_CHECK(bool(std::getline(std::cin, ready)) && ready == "/blocked.wav")) {
                 return false;
             }
             before = Clock::now();
@@ -312,7 +349,7 @@ namespace {
         }
         if (!http.empty()) {
             std::string ready;
-            if (!TEST_CHECK(bool(std::getline(std::cin, ready)))) {
+            if (!TEST_CHECK(bool(std::getline(std::cin, ready)) && ready == "/blocked-context.wav")) {
                 return false;
             }
         }
