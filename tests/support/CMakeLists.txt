@@ -17,6 +17,14 @@ else()
 endif()
 
 if(BUILD_TESTING)
+  add_executable(musikcore_example_remote
+    "${PROJECT_SOURCE_DIR}/examples/core-remote.c" host-wakeup.cpp)
+  target_include_directories(musikcore_example_remote PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(musikcore_example_remote PRIVATE musikcore Threads::Threads)
+  set_target_properties(musikcore_example_remote PROPERTIES
+    C_STANDARD 11 C_STANDARD_REQUIRED ON DISABLE_PRECOMPILE_HEADERS ON)
+  add_dependencies(musikcube_tests musikcore_example_remote)
+
   add_executable(musikcore_remote_query_transport_test ../integration/transport/remote-query-transport.cpp)
   target_include_directories(musikcore_remote_query_transport_test PRIVATE
     "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})

@@ -568,11 +568,10 @@ being changed; this work does not authorize a broad legacy-test backfill.
 
 ## Core C API foundation gate
 
-Status: current-surface implementation and native macOS and Linux validation
-complete. Windows acceptance is deferred. This gate blocks new feature
-families and further application migration. Fixes, tests, documentation, and
-refactoring of the existing surface remain in scope. Provider work
-additionally waits for core application release-candidate quality.
+Status: native macOS and Linux foundation validation complete. The maintainer
+approved deferring native Windows acceptance on 2026-11-20 so remote-session
+work can proceed using the verified Linux and macOS contracts as interim
+evidence. Native Windows acceptance remains a release requirement.
 
 The completed work below groups the former foundation checklist; detailed
 feature tasks remain in the task list rather than a second parallel checklist.
@@ -607,14 +606,19 @@ Remaining acceptance:
   host; project maintainer owns native execution.
 - [x] **FND-LINUX** Run clean native Linux Debug/Release tests and verify ELF
   SONAME/RUNPATH and actual exports.
-- [ ] **GATE-FOUNDATION** Record passing clean Debug/Release contract,
+- [x] **GATE-FOUNDATION** Record passing clean Debug/Release contract,
   integration, export, external-consumer and baseline validation on all named
   platforms, or an explicitly approved exception with owner, rationale, and
   replacement validation. Native macOS results do not establish DLL/ELF behavior.
 
-Only after this gate passes may additional core feature/application migration
-work resume. The provider phases remain blocked until the migrated core API
-reaches release-candidate quality.
+The provider phases remain blocked until the migrated core API reaches
+release-candidate quality.
+
+- [x] **REMOTE-SESSION** Add explicit session configuration, asynchronous
+  connect, state access, disconnect, and generation-bound library opening.
+  `musikcore.integration.api.backend_parity` uses the public session for
+  loopback queries and checks retained results across reconnect.
+- [ ] Migrate app bootstrap and playback selection to public library ownership.
 
 ## Foundation validation and baselines
 

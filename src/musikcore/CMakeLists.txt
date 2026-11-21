@@ -82,7 +82,7 @@ include_directories(
 )
 
 add_library(musikcore SHARED ${CORE_SOURCES})
-musikcore_add_consumer_api(musikcore)
+musikcore_add_consumer_api(musikcore "${CMAKE_CURRENT_SOURCE_DIR}/ffi/consumer/remote-session.cpp")
 
 set_target_properties(musikcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}")
 target_link_libraries(musikcore PUBLIC ${musikcube_LINK_LIBS})

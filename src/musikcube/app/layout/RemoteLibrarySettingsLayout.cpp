@@ -268,7 +268,7 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     auto library = LibraryFactory::Instance().DefaultRemoteLibrary();
     auto remoteLibrary = std::dynamic_pointer_cast<RemoteLibrary>(library);
     if (remoteLibrary) {
-        remoteLibrary->ReloadConnectionFromPreferences();
+        remoteLibrary->Connect();
     }
 }
 

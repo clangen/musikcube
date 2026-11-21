@@ -47,6 +47,7 @@
 #include <condition_variable>
 #include <unordered_map>
 #include <string>
+#include <functional>
 
 namespace musik { namespace core { namespace library {
 
@@ -65,10 +66,26 @@ namespace musik { namespace core { namespace library {
             using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
             using MessageQueue = musik::core::runtime::IMessageQueue;
 
-            static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue);
+            struct ConnectionOptions {
+                std::string host;
+                std::string password;
+                unsigned short websocketPort = DefaultWebSocketPort;
+                unsigned short httpPort = DefaultHttpPort;
+                bool websocketTls = false;
+                bool httpTls = false;
+                bool configured = true;
+                int latencyTimeoutMs = Client::DefaultLatencyTimeoutMs;
+                bool ignoreVersionMismatch = false;
+                int transcoderBitrate = 0;
+                std::string transcoderFormat;
+            };
 
-            RemoteLibrary(std::string name, int id, MessageQueue* messageQueue);
+            using OptionsProvider = std::function<ConnectionOptions()>;
+
+            RemoteLibrary(std::string name, int id, MessageQueue* messageQueue,
+                OptionsProvider options, bool reconnect);
             RemoteLibrary(const RemoteLibrary&) = delete;
+
             virtual ~RemoteLibrary();
 
             /* ILibrary */
@@ -98,7 +115,8 @@ namespace musik { namespace core { namespace library {
             std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
 
             /* RemoteLibrary */
-            void ReloadConnectionFromPreferences();
+            void Connect();
+            void Disconnect();
             const musik::core::net::WebSocketClient& WebSocketClient() const;
             enum class ConnectionQueryStatus { Accepted, Busy, Unavailable };
             ConnectionQueryStatus EnqueueForConnection(Query query, uint64_t generation, Callback callback);
@@ -128,6 +146,8 @@ namespace musik { namespace core { namespace library {
             void ThreadProc();
             QueryContextPtr GetNextQuery();
 
+            const OptionsProvider options;
+            const bool reconnect;
             QueryList queryQueue;
 
             musik::core::runtime::IMessageQueue* messageQueue;

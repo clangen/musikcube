@@ -1,4 +1,4 @@
-function(musikcore_add_consumer_api target)
+function(musikcore_add_consumer_api target remote_session_source)
   set(ffi "${PROJECT_SOURCE_DIR}/src/musikcore/ffi")
   set(sources
     "${ffi}/common/version.cpp"
@@ -6,6 +6,7 @@ function(musikcore_add_consumer_api target)
     "${ffi}/common/error.cpp"
     "${ffi}/consumer/context.cpp"
     "${ffi}/consumer/library.cpp"
+    "${remote_session_source}"
     "${ffi}/consumer/playback.cpp"
     "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadQueries.cpp"
     "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadBackend.cpp"

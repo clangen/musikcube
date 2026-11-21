@@ -94,11 +94,15 @@ namespace musik { namespace core { namespace net {
             WebSocketClient(const WebSocketClient&) = delete;
             virtual ~WebSocketClient();
 
+            static constexpr int DefaultLatencyTimeoutMs = 5000;
+
             void Connect(
                 const std::string& host,
                 unsigned short port,
                 const std::string& password,
-                bool useTls);
+                bool useTls,
+                int latencyTimeoutMs = DefaultLatencyTimeoutMs,
+                bool ignoreVersionMismatch = false);
 
             void Reconnect();
             void Disconnect();
@@ -127,6 +131,8 @@ namespace musik { namespace core { namespace net {
             std::unique_ptr<std::thread> thread;
             mutable std::recursive_mutex mutex;
             bool useTls{ false };
+            int latencyTimeoutMs = DefaultLatencyTimeoutMs;
+            bool ignoreVersionMismatch = false;
             std::string uri, password;
             std::unordered_map<std::string, Query> messageIdToQuery;
             std::atomic<bool> quit{ false };

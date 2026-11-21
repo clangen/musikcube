@@ -43,6 +43,7 @@ namespace {
     }
     constexpr int64_t kPlaylistId = 7;
     constexpr int kAppendPlaylistOperation = 4;
+    constexpr char kHeldSearch[] = "Held remote search";
     using musik::core::net::WebSocketClient;
     using musik::core::library::query::SearchTrackListQuery;
     using musik::core::library::query::TrackSortType;
@@ -81,6 +82,12 @@ namespace {
                             return;
                         }
                         reply["options"]["raw_query_data"] = command->SerializeResult();
+                        if (query.at("name") == SearchTrackListQuery::kQueryName &&
+                            query.at("options").at("filter") == kHeldSearch)
+                        {
+                            this->HoldReply(connection, reply);
+                            return;
+                        }
                         this->Send(connection, reply);
                     }
                     else if (catalog) {
@@ -129,16 +136,7 @@ namespace {
                             /* Keep replies pending until the test selects cancellation,
                                a reconnect, or shutdown; timing sleeps cannot establish
                                those races reliably. */
-                            std::lock_guard<std::mutex> lock(this->heldMutex);
-                            this->held = [this, connection, reply](bool disconnect) {
-                                if (disconnect) {
-                                    this->socket.close(connection, websocketpp::close::status::going_away, "");
-                                }
-                                else {
-                                    this->Send(connection, reply);
-                                }
-                            };
-                            this->heldChanged.notify_all();
+                            this->HoldReply(connection, reply);
                             return;
                         }
                         this->Send(connection, reply);
@@ -173,6 +171,13 @@ namespace {
             /* Expose the dynamically allocated listener port for isolated client preferences. */
             unsigned short Port() const { return this->port; }
 
+            bool WaitForHeldReply() {
+                std::unique_lock<std::mutex> lock(this->heldMutex);
+                return this->heldChanged.wait_for(lock, std::chrono::seconds(5), [this] {
+                    return bool(this->held);
+                });
+            }
+
             /* Wait for a withheld response, then send it or disconnect on the server's own event loop. */
             bool ReleaseHeld(bool disconnect) {
                 std::unique_lock<std::mutex> lock(this->heldMutex);
@@ -186,6 +191,20 @@ namespace {
             }
 
         private:
+            void HoldReply(websocketpp::connection_hdl connection, const nlohmann::json& reply) {
+                std::lock_guard<std::mutex> lock(this->heldMutex);
+                this->held = [this, connection, reply](bool disconnect) {
+                    if (disconnect) {
+                        this->socket.close(connection, websocketpp::close::status::going_away, "");
+                    }
+                    else {
+                        websocketpp::lib::error_code error;
+                        this->socket.send(connection, reply.dump(), websocketpp::frame::opcode::text, error);
+                    }
+                };
+                this->heldChanged.notify_all();
+            }
+
             /* Serialize one protocol response onto the accepted loopback websocket. */
             void Send(websocketpp::connection_hdl connection, const nlohmann::json& reply) {
                 this->socket.send(connection, reply.dump(), websocketpp::frame::opcode::text);
@@ -355,7 +374,7 @@ namespace {
 
         /* Reconnecting creates a new generation even when the endpoint stays the same. */
         const auto remote = std::dynamic_pointer_cast<library::RemoteLibrary>(LibraryFactory::Instance().DefaultRemoteLibrary());
-        remote->ReloadConnectionFromPreferences();
+        remote->Connect();
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
         selection.LoadDefaultLibrary();
         std::shared_ptr<const Library> reconnected;
@@ -488,23 +507,35 @@ namespace {
             return failure(__LINE__);
         }
         Server server(false, LibraryFactory::Instance().DefaultLocalLibrary());
-        settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-        settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
-        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
-        std::dynamic_pointer_cast<library::RemoteLibrary>(LibraryFactory::Instance().DefaultRemoteLibrary())
-            ->ReloadConnectionFromPreferences();
-        master->LoadDefaultLibrary();
-        std::shared_ptr<const Library> remote;
-        if (!AwaitTestHost(host, [&] { return bool(remote = master->OpenApiLibrary()); })) {
+        mc_remote_state connectionState = MC_REMOTE_DISCONNECTED;
+        Context context(TestHostOptions(host));
+        mc_remote_options options = MC_REMOTE_OPTIONS_DEFAULT;
+        constexpr std::string_view loopback = "127.0.0.1";
+        options.host = { loopback.data(), loopback.size() };
+        options.websocket_port = server.Port();
+        RemoteSession session(options);
+
+        const auto connect = [&] {
+            connectionState = MC_REMOTE_CONNECTING;
+            const auto request = session.Connect(context,
+                [&](mc_result result, mc_remote_state state, std::string_view) {
+                    connectionState = result == MC_OK ? state : MC_REMOTE_DISCONNECTED;
+                });
+            const bool completed = request && AwaitTestHost(host, [&] {
+                return context.Dispatch() == MC_OK && connectionState != MC_REMOTE_CONNECTING;
+            });
+            return completed && connectionState == MC_REMOTE_CONNECTED && session.State() == MC_REMOTE_CONNECTED;
+        };
+        if (!connect()) {
             return failure(__LINE__);
         }
+        const auto remote = std::make_shared<const Library>(session.OpenLibrary());
 
         TrackResult localTracks, remoteTracks;
         TrackPage localPage, remotePage;
         mc_result status = MC_ERROR_INTERNAL;
         unsigned calls = 0;
         int64_t playlist = 0;
-        Context context(TestHostOptions(host));
         const auto dispatch = [&](unsigned expected) {
             return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && calls == expected; }) && status == MC_OK;
         };
@@ -695,6 +726,23 @@ namespace {
             }
         }
         std::vector<double> localPlaylistTimes, remotePlaylistTimes, queueTimes;
+        /* Playback still binds to the app's selected backend. */
+        settings->SetString(prefs::keys::RemoteLibraryHostname, loopback.data());
+        settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
+        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
+        std::dynamic_pointer_cast<library::RemoteLibrary>(LibraryFactory::Instance().DefaultRemoteLibrary())
+            ->Connect();
+        master->LoadDefaultLibrary();
+        std::shared_ptr<const Library> playbackLibrary;
+        if (!AwaitTestHost(host, [&] { return bool(playbackLibrary = master->OpenApiLibrary()); })) {
+            return failure(__LINE__);
+        }
+        TrackResult queueTracks;
+        const auto queueExpected = calls + 1;
+        OpenPlaylist(context, *playbackLibrary, playlist, receiveResult(queueTracks));
+        if (!dispatch(queueExpected)) {
+            return failure(__LINE__);
+        }
         const auto transport = std::make_shared<TestTransport>();
         transport->state = sdk::PlaybackState::Stopped;
         runtime::MessageQueue playbackMessages;
@@ -716,7 +764,7 @@ namespace {
             }
             ProfilePhase profile(sample == 6 ? "replace_queue_10000" : nullptr);
             const auto start = Clock::now();
-            if (playback.ReplaceQueue(remoteTracks) != MC_OK || service.Count() != ids.size()) {
+            if (playback.ReplaceQueue(queueTracks) != MC_OK || service.Count() != ids.size()) {
                 return failure(__LINE__);
             }
             queueTimes.push_back(micros(start));
@@ -739,6 +787,31 @@ namespace {
         report("local_playlist_10000", localPlaylistTimes);
         report("remote_playlist_10000", remotePlaylistTimes);
         report("replace_queue_10000", queueTimes);
+
+        /* Hold a reply across disconnect and reconnect before opening the replacement library. */
+        TrackResult lateTracks;
+        const auto lateExpected = calls + 1;
+        OpenTrackSearch(context, *remote, { kHeldSearch }, receiveResult(lateTracks));
+        if (!server.WaitForHeldReply() || session.Disconnect() != MC_OK || !connect() ||
+            !server.ReleaseHeld(false) || calls != lateExpected || status != MC_ERROR_IO || lateTracks)
+        {
+            return failure(__LINE__);
+        }
+
+        /* A retained result must stay bound to the connection that produced it. */
+        const auto staleExpected = calls + 1;
+        ReadTracks(context, remoteTracks, { 0, 1, { MC_TRACK_FIELD_TITLE } }, receivePage(remotePage));
+        if (!AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && calls == staleExpected; }) ||
+            status != MC_ERROR_IO || remotePage)
+        {
+            return failure(__LINE__);
+        }
+        const auto newLibrary = session.OpenLibrary();
+        const auto newExpected = calls + 1;
+        OpenTrackSearch(context, newLibrary, {}, receiveResult(remoteTracks));
+        if (!dispatch(newExpected) || !remoteTracks) {
+            return failure(__LINE__);
+        }
         return context.Shutdown() == MC_OK;
     }
 }

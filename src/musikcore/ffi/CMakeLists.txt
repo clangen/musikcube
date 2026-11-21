@@ -17,7 +17,7 @@ set_target_properties(musikcore_abi0_sqlite PROPERTIES
 )
 
 add_library(musikcore_abi0 SHARED ../db/SqliteExtensions.cpp)
-musikcore_add_consumer_api(musikcore_abi0)
+musikcore_add_consumer_api(musikcore_abi0 "${CMAKE_CURRENT_SOURCE_DIR}/consumer/remote-session-abi-only.cpp")
 target_include_directories(musikcore_abi0 PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/src/3rdparty/include")
 target_link_libraries(musikcore_abi0 PRIVATE musikcore_abi0_sqlite)
 add_library(musikcore_cpp_abi0 INTERFACE)

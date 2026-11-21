@@ -467,10 +467,16 @@ Queries return immutable result pages rather than requiring many calls through
 live track objects. A query specifies the desired metadata fields and paging
 parameters:
 
-A library handle identifies a local database directory or a remote endpoint.
-Local queries read `musik.db` through a read-only SQLite connection. Requests,
-results, and track references retain the originating library identity after
-the caller releases its library handle. Remote query execution is pending. Pages contain visible tracks in ascending ID order. Search
+A library handle identifies a local database or one remote connection
+generation. Hosts configure a remote session with endpoint settings and
+receive the connect completion through context dispatch. The session opens
+the same library handle used by local callers. Disconnect and reconnect
+invalidate the old generation. Requests, results, and track references retain
+their origin after the caller releases its library handle. The public C example
+`examples/core-remote.c` connects and runs an ordered track search.
+
+The standalone local reader opens `musik.db` through a read-only SQLite
+connection. Its direct query pages contain visible tracks in ascending ID order. Search
 matches a literal case-sensitive title substring. By default, request up to 64 field
 names in result order. An empty field list requests `title`. Core fields
 use their existing metadata names and take precedence over tags of the same

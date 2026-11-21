@@ -46,6 +46,33 @@ using namespace musik::core;
 static LibraryFactory::IMessageQueue* messageQueue = nullptr;
 static std::shared_ptr<LibraryFactory> instance;
 
+static library::RemoteLibrary::ConnectionOptions remoteOptionsFromPreferences() {
+    using Remote = library::RemoteLibrary;
+    using namespace musik::core::prefs;
+    const auto prefs = Preferences::ForComponent(components::Settings);
+    const auto port = [&](const std::string& key, unsigned short fallback) {
+        const auto value = prefs->GetInt(key, fallback);
+        return value > 0 && value <= UINT16_MAX ? static_cast<unsigned short>(value) : fallback;
+    };
+
+    Remote::ConnectionOptions options;
+    options.host = prefs->GetString(keys::RemoteLibraryHostname, "127.0.0.1");
+    options.password = prefs->GetString(keys::RemoteLibraryPassword, "");
+    options.websocketPort = port(keys::RemoteLibraryWssPort, Remote::DefaultWebSocketPort);
+    options.httpPort = port(keys::RemoteLibraryHttpPort, Remote::DefaultHttpPort);
+    options.websocketTls = prefs->GetBool(keys::RemoteLibraryWssTls, false);
+    options.httpTls = prefs->GetBool(keys::RemoteLibraryHttpTls, false);
+    options.configured = prefs->GetBool(keys::RemoteLibraryViewed, false);
+    options.latencyTimeoutMs = prefs->GetInt(keys::RemoteLibraryLatencyTimeoutMs,
+        Remote::Client::DefaultLatencyTimeoutMs);
+    options.ignoreVersionMismatch = prefs->GetInt(keys::RemoteLibraryIgnoreVersionMismatch, false);
+    if (prefs->GetBool(keys::RemoteLibraryTranscoderEnabled)) {
+        options.transcoderBitrate = prefs->GetInt(keys::RemoteLibraryTranscoderBitrate);
+        options.transcoderFormat = prefs->GetString(keys::RemoteLibraryTranscoderFormat);
+    }
+    return options;
+}
+
 void LibraryFactory::Initialize(IMessageQueue& messageQueue) {
     ::messageQueue = &messageQueue;
 }
@@ -66,9 +93,16 @@ LibraryFactory::~LibraryFactory() {
 }
 
 ILibraryPtr LibraryFactory::AddLibrary(int id, ILibrary::Type type, const std::string& name) {
-    ILibraryPtr library = (type == ILibrary::Type::Local)
-        ? library::LocalLibrary::Create(name, id, messageQueue)
-        : library::RemoteLibrary::Create(name, id, messageQueue);
+    ILibraryPtr library;
+    if (type == ILibrary::Type::Local) {
+        library = library::LocalLibrary::Create(name, id, messageQueue);
+    }
+    else {
+        auto remote = std::make_shared<library::RemoteLibrary>(name, id, messageQueue,
+            remoteOptionsFromPreferences, true);
+        remote->Connect();
+        library = std::move(remote);
+    }
 
     if (library) {
         this->libraries.push_back(library);

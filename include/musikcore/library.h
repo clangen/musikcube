@@ -12,6 +12,7 @@ typedef struct mc_track_page mc_track_page;
 typedef struct mc_library mc_library;
 typedef struct mc_track_result mc_track_result;
 typedef struct mc_track_ref mc_track_ref;
+typedef struct mc_remote_session mc_remote_session;
 
 /* Required handles/options/callbacks/output slots are non-null; user_data may be null.
    A pointer with a count may be null only when count is zero.
@@ -51,6 +52,52 @@ typedef struct mc_library_options {
 MC_API mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_library **out_library);
 /* Release the handle. Accepted requests and derived identities retain their library. */
 MC_API void MC_CALL mc_library_destroy(mc_library **library);
+
+typedef uint32_t mc_remote_state;
+enum {
+    MC_REMOTE_DISCONNECTED = 0,
+    MC_REMOTE_CONNECTING = 1,
+    MC_REMOTE_CONNECTED = 2,
+    MC_REMOTE_AUTHENTICATION_FAILED = 3
+};
+
+typedef struct mc_remote_options {
+    /* Size of this struct in bytes. */
+    uint32_t struct_size;
+    /* UTF-8 hostname or address. Copied. */
+    mc_string_view host;
+    /* UTF-8 server password. Copied. Empty means no password. */
+    mc_string_view password;
+    /* WebSocket port. Zero selects the default. */
+    uint16_t websocket_port;
+    /* Audio HTTP port. Zero selects the default. */
+    uint16_t http_port;
+    /* Enable TLS for the WebSocket connection. Defaults to false. */
+    bool websocket_tls;
+    /* Enable TLS for audio requests. Defaults to false. */
+    bool http_tls;
+} mc_remote_options;
+
+#define MC_REMOTE_OPTIONS_DEFAULT { sizeof(mc_remote_options), { NULL, 0 }, { NULL, 0 }, 0, 0, false, false }
+
+typedef void (MC_CALL *mc_remote_connect_fn)(mc_result status, mc_remote_state state,
+    const mc_error *error, void *user_data);
+
+/* Own a remote connection independently of app preferences. Use session operations on one
+   host thread. The ABI-only build returns MC_ERROR_UNSUPPORTED. */
+MC_API mc_result MC_CALL mc_remote_session_create(const mc_remote_options *options, mc_remote_session **out_session);
+/* Disconnect and release the session. Existing library handles retain their original generation. */
+MC_API void MC_CALL mc_remote_session_destroy(mc_remote_session **session);
+/* Report the latest connection state. */
+MC_API mc_remote_state MC_CALL mc_remote_session_state(const mc_remote_session *session);
+/* Complete on context dispatch when the connection succeeds or fails. Cancelling
+   delivery does not disconnect the session. Only one connection attempt may be active. */
+MC_API mc_result MC_CALL mc_remote_session_connect_async(mc_context *context, mc_remote_session *session,
+    mc_remote_connect_fn completion, void *user_data, mc_request_id *out_request);
+/* Disconnect and invalidate previously opened library handles for future requests. */
+MC_API mc_result MC_CALL mc_remote_session_disconnect(mc_remote_session *session);
+/* Open the currently connected library. Use the same library APIs as for a local catalog. */
+MC_API mc_result MC_CALL mc_remote_session_open_library(const mc_remote_session *session, mc_library **out_library);
 
 typedef uint32_t mc_track_search_mode;
 enum {

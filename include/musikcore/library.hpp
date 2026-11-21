@@ -316,6 +316,61 @@ namespace musik { namespace core { namespace api {
         std::unique_ptr<mc_library, Deleter> library;
     };
 
+    /* Owns one independently configured remote connection. Move-only.
+       OpenLibrary returns the same wrapper used for a local catalog. */
+    class RemoteSession {
+    public:
+        using ConnectCompletion = std::function<void(mc_result, mc_remote_state, std::string_view)>;
+
+        explicit RemoteSession(const mc_remote_options& options) {
+            mc_remote_session* handle = nullptr;
+            const auto result = mc_remote_session_create(&options, &handle);
+            if (result != MC_OK) {
+                throw Error(result);
+            }
+            this->session.reset(handle);
+        }
+
+        RemoteSession(const RemoteSession&) = delete;
+        RemoteSession(RemoteSession&&) noexcept = default;
+        RemoteSession& operator=(const RemoteSession&) = delete;
+        RemoteSession& operator=(RemoteSession&&) noexcept = default;
+
+        mc_request_id Connect(Context& context, ConnectCompletion completion) {
+            return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+                return mc_remote_session_connect_async(context.Get(), this->session.get(),
+                    CompleteConnect, state, request);
+            });
+        }
+
+        mc_remote_state State() const noexcept { return mc_remote_session_state(this->session.get()); }
+        mc_result Disconnect() { return mc_remote_session_disconnect(this->session.get()); }
+
+        Library OpenLibrary() const {
+            mc_library* library = nullptr;
+            const auto result = mc_remote_session_open_library(this->session.get(), &library);
+            if (result != MC_OK) {
+                throw Error(result);
+            }
+            return Library(library);
+        }
+
+    private:
+        /* Stateless. Copying and moving the deleter leave ownership with unique_ptr. */
+        struct Deleter {
+            void operator()(mc_remote_session* handle) const noexcept { mc_remote_session_destroy(&handle); }
+        };
+
+        static void MC_CALL CompleteConnect(mc_result status, mc_remote_state state,
+            const mc_error* error, void* data)
+        {
+            const std::unique_ptr<ConnectCompletion> completion(static_cast<ConnectCompletion*>(data));
+            (*completion)(status, state, AsStringView(mc_error_get_message(error)));
+        }
+
+        std::unique_ptr<mc_remote_session, Deleter> session;
+    };
+
     /* Async helpers below throw Error if submission is rejected. Accepted
        requests return an ID for Context::Cancel and deliver status/value during
        Context::Dispatch or shutdown. Input strings/arrays are copied during

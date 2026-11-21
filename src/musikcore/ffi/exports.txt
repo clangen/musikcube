@@ -6,8 +6,8 @@ mc_context_shutdown
 mc_error_destroy
 mc_error_get_code
 mc_error_get_message
-mc_library_create
 mc_library_append_playlist_async
+mc_library_create
 mc_library_delete_playlist_async
 mc_library_destroy
 mc_library_list_playlists_async
@@ -36,6 +36,12 @@ mc_playback_queue_remove
 mc_playback_replace_queue
 mc_playback_set_queue_changed_callback
 mc_playback_use_track
+mc_remote_session_connect_async
+mc_remote_session_create
+mc_remote_session_destroy
+mc_remote_session_disconnect
+mc_remote_session_open_library
+mc_remote_session_state
 mc_request_cancel
 mc_track_page_destroy
 mc_track_page_get_count
