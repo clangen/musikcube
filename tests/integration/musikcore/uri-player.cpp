@@ -207,7 +207,8 @@ namespace {
             !TEST_CHECK(mc_player_play_uri(players.first, { "file:///x%00y", 13 }) == MC_ERROR_INVALID_ARGUMENT) ||
             !TEST_CHECK(mc_player_play_uri(players.first, { "musikcore:private", 17 }) == MC_ERROR_UNSUPPORTED) ||
             !TEST_CHECK(mc_player_set_volume(players.first, std::numeric_limits<double>::quiet_NaN()) == MC_ERROR_INVALID_ARGUMENT) ||
-            !TEST_CHECK(mc_player_seek(players.first, -1) == MC_ERROR_INVALID_ARGUMENT)) {
+            !TEST_CHECK(mc_player_seek(players.first, -1) == MC_ERROR_INVALID_ARGUMENT) ||
+            !TEST_CHECK(mc_player_seek(players.first, 0) == MC_ERROR_NOT_FOUND)) {
             return false;
         }
 
@@ -247,7 +248,9 @@ namespace {
             return false;
         }
         auto snapshot = mc_player_snapshot MC_PLAYER_SNAPSHOT_DEFAULT;
-        if (!TEST_CHECK(mc_player_get_snapshot(players.first, &snapshot) == MC_OK && snapshot.volume == 0.25)) {
+        if (!TEST_CHECK(mc_player_get_snapshot(players.first, &snapshot) == MC_OK && snapshot.volume == 0.25) ||
+            !TEST_CHECK(mc_player_seek(players.first, 0) == MC_ERROR_NOT_FOUND) ||
+            !TEST_CHECK(state(players.first) == MC_PLAYER_FINISHED)) {
             return false;
         }
 
@@ -280,6 +283,21 @@ namespace {
         }
         if (!http.empty()) {
             if (!checkInterruptedOpen(context, event.get(), players.first, path, http)) {
+                return false;
+            }
+
+            /* Exercise teardown after the server has rejected an open with 429. */
+            const auto retry = http + "/retry.wav";
+            std::string ready;
+            if (!TEST_CHECK(mc_player_create(context.Get(), &players.second) == MC_OK) ||
+                !TEST_CHECK(mc_player_play_uri(players.second, { retry.data(), retry.size() }) == MC_OK) ||
+                !TEST_CHECK(bool(std::getline(std::cin, ready)) && ready == "/retry.wav")) {
+                return false;
+            }
+
+            before = Clock::now();
+            if (!TEST_CHECK(mc_player_destroy(&players.second) == MC_OK) ||
+                !TEST_CHECK(Clock::now() - before < std::chrono::seconds(3))) {
                 return false;
             }
 
@@ -316,7 +334,6 @@ namespace {
             }
             /* the parent signals only after the blocked request reaches its
             loopback server; closing must interrupt the decoder's blocked read. */
-            std::string ready;
             if (!TEST_CHECK(bool(std::getline(std::cin, ready)) && ready == "/blocked.wav")) {
                 return false;
             }

@@ -51,7 +51,8 @@ MC_API mc_result MC_CALL mc_player_play_uri(mc_player* player, mc_string_view ur
 MC_API mc_result MC_CALL mc_player_pause(mc_player* player);
 MC_API mc_result MC_CALL mc_player_resume(mc_player* player);
 MC_API mc_result MC_CALL mc_player_stop(mc_player* player);
-/* finite nonnegative seconds; BUSY while buffering. seeking resumes playback,
+/* finite nonnegative seconds; BUSY while buffering, NOT_FOUND with no active
+track. seeking resumes playback,
 including from pause. seek support depends on the source/decoder. */
 MC_API mc_result MC_CALL mc_player_seek(mc_player* player, double seconds);
 /* finite normalized volume in [0,1], independent of other player instances. */

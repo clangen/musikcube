@@ -98,7 +98,7 @@ namespace musik { namespace core { namespace ffi {
                 , owner(std::this_thread::get_id())
                 , transport(new audio::GaplessTransport()) {
                     this->connections.stream = this->transport->StreamEvent.Subscribe(
-                        [this](auto state, std::string uri) { this->OnStream(state, std::move(uri)); });
+                        [this](auto, const std::string&) { this->Notify(); });
                     this->connections.playback = this->transport->PlaybackEvent.Subscribe(
                         [this](auto state) { this->OnPlayback(state); });
                     this->queue->Register(this);
@@ -151,7 +151,6 @@ namespace musik { namespace core { namespace ffi {
                         return normalized;
                     }
                     this->transport->Stop();
-                    this->terminal.store(MC_PLAYER_STOPPED);
                     this->transport->Start(uri, {}, audio::ITransport::StartMode::Immediate);
                     this->Notify();
                     return MC_OK;
@@ -175,14 +174,17 @@ namespace musik { namespace core { namespace ffi {
                             break;
                         case PlayerCommand::Stop:
                             this->transport->Stop();
-                            this->terminal.store(MC_PLAYER_STOPPED);
                             break;
-                        case PlayerCommand::Seek:
-                            if (this->transport->GetStreamState() == sdk::StreamState::Buffering) {
+                        case PlayerCommand::Seek: {
+                            const auto seek = this->transport->Seek(value);
+                            if (seek == audio::GaplessTransport::SeekResult::Buffering) {
                                 return MC_ERROR_BUSY;
                             }
-                            this->transport->SetPosition(value);
-                            break;
+                            if (seek == audio::GaplessTransport::SeekResult::NoTrack) {
+                                return MC_ERROR_NOT_FOUND;
+                            }
+                        }
+                        break;
                         case PlayerCommand::Volume:
                             this->transport->SetVolume(value);
                             break;
@@ -196,29 +198,27 @@ namespace musik { namespace core { namespace ffi {
                     if (status != MC_OK) {
                         return status;
                     }
-                    result.state = this->terminal.load();
-                    if (result.state == MC_PLAYER_STOPPED) {
-                        const auto state = this->transport->GetPlaybackState();
-                        const auto stream = this->transport->GetStreamState();
-                        if (state == sdk::PlaybackState::Paused) {
-                            result.state = MC_PLAYER_PAUSED;
-                        }
-                        else if (state == sdk::PlaybackState::Playing) {
-                            result.state = MC_PLAYER_PLAYING;
-                        }
-                        else if (stream == sdk::StreamState::Buffering || stream == sdk::StreamState::Buffered) {
-                            result.state = MC_PLAYER_BUFFERING;
-                        }
+                    const auto snapshot = this->transport->ReadSnapshot();
+                    if (snapshot.terminal == sdk::StreamState::Finished) {
+                        result.state = MC_PLAYER_FINISHED;
                     }
-                    result.position = this->transport->Position();
-                    const auto stream = this->transport->GetStreamState();
-                    /* decoder metadata is published by Buffered; reading it during
-                    Open would race decoder construction or block on network I/O. */
-                    if (stream == sdk::StreamState::Buffered || stream == sdk::StreamState::Playing ||
-                        stream == sdk::StreamState::AlmostDone || stream == sdk::StreamState::Finished) {
-                        result.duration = this->transport->GetDuration();
+                    else if (snapshot.terminal == sdk::StreamState::OpenFailed) {
+                        result.state = MC_PLAYER_FAILED;
                     }
-                    result.volume = this->transport->Volume();
+                    else if (snapshot.playback == sdk::PlaybackState::Paused) {
+                        result.state = MC_PLAYER_PAUSED;
+                    }
+                    else if (snapshot.playback == sdk::PlaybackState::Playing) {
+                        result.state = MC_PLAYER_PLAYING;
+                    }
+                    else if (snapshot.stream == sdk::StreamState::Buffering ||
+                        snapshot.stream == sdk::StreamState::Buffered)
+                    {
+                        result.state = MC_PLAYER_BUFFERING;
+                    }
+                    result.position = snapshot.position;
+                    result.duration = snapshot.duration;
+                    result.volume = snapshot.volume;
                     return MC_OK;
                 }
 
@@ -266,15 +266,6 @@ namespace musik { namespace core { namespace ffi {
                         this->pending = true;
                     }
                 }
-                void OnStream(sdk::StreamState state, std::string) {
-                    if (state == sdk::StreamState::Finished) {
-                        this->terminal.store(MC_PLAYER_FINISHED);
-                    }
-                    else if (state == sdk::StreamState::OpenFailed) {
-                        this->terminal.store(MC_PLAYER_FAILED);
-                    }
-                    this->Notify();
-                }
                 void OnPlayback(sdk::PlaybackState) { this->Notify(); }
 
                 const std::shared_ptr<runtime::MessageQueue> queue;
@@ -285,7 +276,6 @@ namespace musik { namespace core { namespace ffi {
                 std::mutex notificationMutex;
                 uint64_t generation = 0;
                 bool pending = false;
-                std::atomic<mc_player_state> terminal { MC_PLAYER_STOPPED };
                 mc_player_changed_fn callback = nullptr;
                 void* data = nullptr;
                 bool delivering = false;

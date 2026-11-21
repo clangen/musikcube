@@ -38,6 +38,15 @@ async function main() {
   writeFileSync(filename, media);
   let client;
   const server = createServer((request, response) => {
+    if (request.url === '/retry.wav') {
+      response.writeHead(429, { 'Content-Length': 0 });
+      /* Give the downloader time to enter the backoff after receiving the response. */
+      response.end(() => setTimeout(() => {
+        if (!client.stdin.destroyed) client.stdin.write('/retry.wav\n');
+      }, 200));
+      return;
+    }
+
     const body = request.url === '/empty.wav' ? Buffer.alloc(0)
       : request.url === '/live.wav' ? liveMedia : media;
     const headers = { 'Content-Type': 'audio/wav' };

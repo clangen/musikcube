@@ -58,11 +58,8 @@
 
 #ifdef WIN32
 #include <Windows.h>
-#define sleepMs(x) Sleep(x);
 #define DLLEXPORT __declspec(dllexport)
 #else
-#include <unistd.h>
-#define sleepMs(x) usleep(x * 1000)
 #define DLLEXPORT
 #endif
 
@@ -355,8 +352,6 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
         // }
 
         curl_easy_setopt(this->curlEasy, CURLOPT_NOSIGNAL, 1);
-        curl_easy_setopt(this->curlEasy, CURLOPT_SSL_VERIFYPEER, 0);
-        curl_easy_setopt(this->curlEasy, CURLOPT_SSL_VERIFYHOST, 0);
 
         /* append parsed headers, if any */
         if (requestHeaders.size()) {
@@ -406,6 +401,11 @@ void HttpDataStream::ThreadProc() {
     if (this->curlEasy) {
         static const int kMaxRetries = 10;
         int retryCount = 0; /* note: weighted based on failure type */
+        const auto waitForRetry = [this](seconds delay) {
+            std::unique_lock<std::mutex> lock(this->stateMutex);
+            this->startedContition.wait_for(lock, delay, [this] { return this->interrupted.load(); });
+        };
+
         while (this->state != State::Downloaded && !this->interrupted) {
             auto const curlCode = curl_easy_perform(this->curlEasy);
             long httpStatusCode = 0;
@@ -424,10 +424,10 @@ void HttpDataStream::ThreadProc() {
                 }
             }
             else {
-                if (httpStatusCode == 429) { /* too many requests */
-                     this->state = State::Retrying;
+                if (httpStatusCode == 429 && retryCount < kMaxRetries) {
+                    this->state = State::Retrying;
                     retryCount += 1;
-                    sleepMs(5000);
+                    waitForRetry(seconds(5));
                 }
                 else if ((httpStatusCode < 400 || httpStatusCode >= 500) && retryCount < kMaxRetries) {
                     {
@@ -436,7 +436,7 @@ void HttpDataStream::ThreadProc() {
                     }
                     this->state = State::Retrying;
                     retryCount += 2;
-                    sleepMs(2000);
+                    waitForRetry(seconds(2));
                 }
                 else {
                     this->state = State::Error;

@@ -50,6 +50,17 @@ namespace musik { namespace core { namespace audio {
         private Player::EventListener
     {
         public:
+            enum class SeekResult { Accepted, NoTrack, Buffering };
+
+            struct Snapshot {
+                musik::core::sdk::PlaybackState playback;
+                musik::core::sdk::StreamState stream;
+                musik::core::sdk::StreamState terminal;
+                double position;
+                double duration;
+                double volume;
+            };
+
             GaplessTransport();
             virtual ~GaplessTransport();
 
@@ -64,6 +75,8 @@ namespace musik { namespace core { namespace audio {
 
             double Position() override;
             void SetPosition(double seconds) override;
+            SeekResult Seek(double seconds);
+            Snapshot ReadSnapshot();
 
             double Volume() noexcept override;
             void SetVolume(double volume) override;
@@ -82,6 +95,7 @@ namespace musik { namespace core { namespace audio {
             using LockT = std::unique_lock<std::recursive_mutex>;
 
             void StartWithPlayer(Player* player, StartMode mode = StartMode::Immediate);
+            SeekResult SetPositionInternal(double seconds, bool requireReady);
 
             void StopInternal(
                 bool suppressStopEvent,
@@ -105,6 +119,7 @@ namespace musik { namespace core { namespace audio {
 
             musik::core::sdk::PlaybackState playbackState;
             musik::core::sdk::StreamState activePlayerState { musik::core::sdk::StreamState::Stopped };
+            musik::core::sdk::StreamState terminalState { musik::core::sdk::StreamState::Stopped };
             StartMode activeStartMode { StartMode::Immediate };
             std::recursive_mutex stateMutex;
             std::shared_ptr<musik::core::sdk::IOutput> output;
