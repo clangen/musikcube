@@ -315,6 +315,24 @@ add_test(NAME musikcore.integration.runtime.migration_scan COMMAND "${MUSIKCORE_
 set_tests_properties(musikcore.integration.runtime.migration_scan PROPERTIES
   LABELS "integration;musikcore;runtime;indexer;contract" TIMEOUT 45)
 
+# a headless provider makes cache retirement testable without platform UI plugins.
+add_library(musikcore_runtime_visualizer MODULE ../integration/musikcore/runtime-visualizer-plugin.cpp)
+target_include_directories(musikcore_runtime_visualizer PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+set_target_properties(musikcore_runtime_visualizer PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-visualizer"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-visualizer"
+  DISABLE_PRECOMPILE_HEADERS ON)
+if(APPLE)
+  set_target_properties(musikcore_runtime_visualizer PROPERTIES SUFFIX ".dylib")
+endif()
+add_dependencies(musikcore_runtime_hardening_test musikcore_runtime_visualizer)
+add_test(NAME musikcore.integration.runtime.visualizer_session COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage
+  --plugin "$<TARGET_FILE:musikcore_runtime_visualizer>" visualizer_session)
+set_tests_properties(musikcore.integration.runtime.visualizer_session PROPERTIES
+  LABELS "integration;musikcore;runtime;visualizer;contract" TIMEOUT 30)
+
 if(UNIX AND CMAKE_NM)
   musikcube_restrict_exports(musikcore_runtime_hardening_test)
   get_property(export_targets GLOBAL PROPERTY MUSIKCUBE_RESTRICTED_TARGETS)

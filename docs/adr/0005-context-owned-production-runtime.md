@@ -63,4 +63,5 @@ startup flag. A schema upgrade records that work transactionally even when
 Indexer is absent; a later indexing session resumes it after host bindings and
 subscriptions are ready. Completion retires the record with the scan transaction,
 so shutdown or a failed completion write cannot lose required work across
-processes.
+processes. Provider cache teardown follows the provider session's lifetime,
+including visualizers acquired without a playback engine.

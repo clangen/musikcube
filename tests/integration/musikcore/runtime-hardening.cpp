@@ -250,6 +250,38 @@ namespace {
             TEST_CHECK(readMigrationValue("SELECT count(*) FROM pending_migration_scan") == 0);
     }
 
+    /* public visualizer APIs work with Plugins alone. session shutdown must hide
+    and release providers before a disabled replacement session rediscovers them. */
+    bool checkVisualizerSession() {
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_PLUGINS;
+        auto preferences = Preferences::ForPlugin("RuntimeVisualizer");
+        api::Context context(options);
+        size_t count = 0;
+        const auto read = [](void* data, const mc_string_view*, size_t size) {
+            *static_cast<size_t*>(data) = size;
+        };
+        if (!TEST_CHECK(mc_visualizer_list(read, &count) == MC_OK && count == 1) ||
+            !TEST_CHECK(mc_visualizer_show(0) == MC_OK) ||
+            !TEST_CHECK(context.Close() == MC_OK) ||
+            !TEST_CHECK(preferences->GetInt("hides") == 1 && preferences->GetInt("releases") == 1) ||
+            !TEST_CHECK(mc_visualizer_hide() == MC_ERROR_NOT_FOUND))
+        {
+            return false;
+        }
+        const auto plugins = api::ListPlugins();
+        const auto plugin = std::find_if(plugins.begin(), plugins.end(), [](const auto& item) {
+            return item.name == "RuntimeVisualizer";
+        });
+        if (!TEST_CHECK(plugin != plugins.end()) || !TEST_CHECK(api::SetPluginEnabled(plugin->filename, false) == MC_OK)) {
+            return false;
+        }
+        api::Context reopened(options);
+        count = 99;
+        return TEST_CHECK(mc_visualizer_list(read, &count) == MC_OK && count == 0) &&
+            TEST_CHECK(mc_visualizer_show(0) == MC_ERROR_NOT_FOUND);
+    }
+
     /* a repeated name must keep its origin, while different catalogs need
     distinct persisted IDs even when the settings file starts empty. */
     bool checkRegistry() {
@@ -593,6 +625,9 @@ int main(int argc, char** argv) {
     }
     if (mode == "migration_verify") {
         return verifyMigrationComplete() ? 0 : 1;
+    }
+    if (mode == "visualizer_session") {
+        return checkVisualizerSession() ? 0 : 1;
     }
     if (mode == "plugin_directory") {
         return checkPluginDirectory() ? 0 : 1;

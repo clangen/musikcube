@@ -272,10 +272,10 @@ namespace musik { namespace core { namespace ffi {
                 Cleanup([] { audio::Player::WaitForWorkers(); }, failure);
             }
 
-            if (this->playback) {
-                Cleanup([] { musik::core::audio::vis::Shutdown(); }, failure);
-            }
             if (this->pluginsInitialized) {
+                /* visualizer APIs can acquire providers without Playback. retire
+                their cache for every provider session, after any player workers. */
+                Cleanup([] { musik::core::audio::vis::Shutdown(); }, failure);
                 this->pluginsInitialized = false;
                 Cleanup([] { musik::core::plugin::Shutdown(); }, failure);
             }

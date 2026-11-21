@@ -1242,16 +1242,26 @@ legacy list for actions that still require it.
   `musikcore.integration.runtime.migration_scan` runs library-only migration,
   failed completion, successful retry, and no-repeat startup in separate processes.
   `musikcore.integration.runtime.database_failure` checks schema/marker rollback.
+- [x] **API-SERVICES-005** Retire visualizer state for every provider session,
+  including Plugins-only contexts. `musikcore.integration.runtime.visualizer_session`
+  uses a headless legacy provider to check hide/release and disabled-provider
+  rediscovery after context destruction.
+
 Selection is immutable for the context lifetime; ordinary scan and playback
 commands remain available. The dependency graph and rationale are in
 [ADR-0005](../docs/adr/0005-context-owned-production-runtime.md). Validation for
 this slice targets native macOS; Linux/Windows parity remains deferred by the
 maintainer. No plugin C SDK work is included.
 
-Native macOS arm64 validation: full Debug and Release suites pass 92/92;
+Native macOS arm64 validation: full Debug and Release suites pass 93/93;
 ABI-only Debug passes 29/29. These include daemon lifecycle, real headless
 plugin playback, local/remote parity, TUI scenarios, installed/relocated C/C++
 examples, standalone testing-disabled configuration, and exact binary exports.
+The migration, visualizer-session, and schema-rollback cases also pass three
+consecutive Release runs and a focused independent rerun. Migration completion
+preserves the indexer's existing best-effort per-file/provider semantics;
+interrupted/source-only exclusions are explicit in code, without new dedicated
+marker-retention fixtures for those paths.
 The pre-existing parity fixture deferred playback initialization until after its
 commands; it now finishes initialization first and disables unrelated session
 restoration. Logs are under `build/services-*.log`.
