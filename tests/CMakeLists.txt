@@ -169,7 +169,8 @@ add_test(NAME musikcore.abi.result_contracts COMMAND "${MUSIKCORE_TEST_NODE}" "$
   "${isolated_root}" "$<TARGET_FILE:musikcore_result_contracts_test>" @origin)
 set_tests_properties(musikcore.abi.result_contracts PROPERTIES LABELS "integration;musikcore;abi;contract" TIMEOUT 20)
 
-add_executable(musikcore_abi_cpp_test integration/api/cpp-wrapper.cpp integration/api/query-support.cpp)
+add_executable(musikcore_abi_cpp_test
+  integration/api/cpp-wrapper.cpp integration/api/cpp-wrapper-query.cpp integration/api/query-support.cpp)
 target_link_libraries(musikcore_abi_cpp_test PRIVATE musikcore_cpp_abi0 Threads::Threads)
 set_target_properties(musikcore_abi_cpp_test PROPERTIES
   CXX_EXTENSIONS OFF

@@ -75,7 +75,12 @@ if(BUILD_TESTING)
   find_program(MUSIKCUBE_TEST_NODE NAMES node)
   if(MUSIKCUBE_TEST_NODE)
     add_executable(musikcore_production_api_test
-      ../integration/api/cpp-wrapper.cpp ../integration/api/query-support.cpp fixture-library.cpp)
+      ../integration/api/cpp-wrapper.cpp
+      ../integration/api/cpp-wrapper-query.cpp
+      ../integration/api/cpp-wrapper-playback.cpp
+      ../integration/api/cpp-wrapper-production.cpp
+      ../integration/api/query-support.cpp
+      fixture-library.cpp)
     target_compile_definitions(musikcore_production_api_test PRIVATE MUSIKCORE_TEST_PRODUCTION_RUNTIME)
     target_include_directories(musikcore_production_api_test PRIVATE
       "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
@@ -324,7 +329,12 @@ if(TARGET nullout AND TARGET ffmpegdecoder)
 endif()
 
 # Keep runtime hardening coverage native on macOS and Linux, without devices.
-add_executable(musikcore_runtime_hardening_test ../integration/musikcore/runtime-hardening.cpp host-wakeup.cpp)
+add_executable(musikcore_runtime_hardening_test
+  ../integration/musikcore/runtime-hardening.cpp
+  ../integration/musikcore/runtime-hardening-context.cpp
+  ../integration/musikcore/runtime-hardening-database.cpp
+  ../integration/musikcore/runtime-hardening-plugins.cpp
+  host-wakeup.cpp)
 target_include_directories(musikcore_runtime_hardening_test PRIVATE "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/src/3rdparty/include/sqlite" ${VENDOR_INCLUDE_DIRECTORIES})
 target_link_libraries(musikcore_runtime_hardening_test PRIVATE ${core_fixture_library} Threads::Threads)
