@@ -58,6 +58,7 @@ namespace {
         unsigned wakes = 0;
 
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         options.wakeup = query_test_wakeup;
         Context context(options);
         if (context.GetLibrary()) {

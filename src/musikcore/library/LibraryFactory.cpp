@@ -48,6 +48,7 @@ using namespace musik::core;
 static LibraryFactory::IMessageQueue* messageQueue = nullptr;
 static std::shared_ptr<LibraryFactory::IMessageQueue> ownedQueue;
 static std::shared_ptr<LibraryFactory> instance;
+static bool enableIndexer = true;
 
 namespace {
     struct LibraryLifetime {
@@ -84,10 +85,12 @@ static library::RemoteLibrary::ConnectionOptions remoteOptionsFromPreferences() 
 }
 
 void LibraryFactory::Initialize(IMessageQueue& messageQueue) {
+    enableIndexer = true;
     ::messageQueue = &messageQueue;
 }
 
-void LibraryFactory::Initialize(std::shared_ptr<IMessageQueue> messageQueue) {
+void LibraryFactory::Initialize(std::shared_ptr<IMessageQueue> messageQueue, bool enableIndexer) {
+    ::enableIndexer = enableIndexer;
     ownedQueue = std::move(messageQueue);
     ::messageQueue = ownedQueue.get();
 }
@@ -110,7 +113,7 @@ LibraryFactory::~LibraryFactory() {
 ILibraryPtr LibraryFactory::AddLibrary(int id, ILibrary::Type type, const std::string& name) {
     ILibraryPtr library;
     if (type == ILibrary::Type::Local) {
-        library = library::LocalLibrary::Create(name, id, messageQueue);
+        library = library::LocalLibrary::Create(name, id, messageQueue, enableIndexer);
     }
     else {
         auto remote = std::make_shared<library::RemoteLibrary>(name, id, messageQueue,
@@ -144,6 +147,7 @@ void LibraryFactory::Shutdown() {
     }
     ownedQueue.reset();
     ::messageQueue = nullptr;
+    enableIndexer = true;
 }
 
 ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, ILibrary::Type type) {

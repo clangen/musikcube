@@ -41,9 +41,9 @@
 
 namespace musik { namespace core { namespace plugin {
 
-    void Init();
+    void Initialize();
 
-    void Start(
+    void BindServices(
         musik::core::runtime::IMessageQueue* messageQueue,
         musik::core::sdk::IPlaybackService* playback,
         musik::core::ILibraryPtr library);

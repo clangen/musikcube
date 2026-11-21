@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
         /* The context outlives the app and every view that borrows it. */
         ConsoleLogger consoleLogger;
         mc_context_options apiOptions = MC_CONTEXT_OPTIONS_DEFAULT;
-        apiOptions.flags = MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING;
+        apiOptions.flags = MC_CONTEXT_ENABLE_LOGGING;
         apiOptions.log = ConsoleLogger::OnLog;
         apiOptions.log_user_data = &consoleLogger;
         apiOptions.wakeup_user_data = &Window::MessageQueue();

@@ -66,10 +66,23 @@ enum {
 };
 
 enum {
-    MC_CONTEXT_MANAGED_RUNTIME = 1,
     MC_CONTEXT_ENABLE_LOGGING = 2,
-    /* Start with the local catalog without writing the saved selection. */
+    /* start with the local catalog without writing the saved selection. */
     MC_CONTEXT_START_LOCAL = 4
+};
+
+/* services are selected once at creation. prerequisites are added automatically:
+library and plugins have none; indexing and playback each require library
+and plugins. playback does not require indexing. */
+typedef uint32_t mc_services;
+enum {
+    MC_SERVICE_NONE = 0,
+    MC_SERVICE_LIBRARY = 1,
+    /* provider discovery/session; legacy host bindings attach only with MC_SERVICE_LIBRARY. */
+    MC_SERVICE_PLUGINS = 2,
+    MC_SERVICE_INDEXER = 4,
+    MC_SERVICE_PLAYBACK = 8,
+    MC_SERVICE_ALL = MC_SERVICE_LIBRARY | MC_SERVICE_PLUGINS | MC_SERVICE_INDEXER | MC_SERVICE_PLAYBACK
 };
 
 typedef struct mc_context_options {
@@ -77,12 +90,11 @@ typedef struct mc_context_options {
     uint32_t struct_size;
     /* Requested ABI version. Zero selects the current version. */
     uint32_t requested_abi_version;
-    /* Managed plugin directory, copied at creation. Empty uses the host default.
-       Set before plugin discovery. The directory is fixed for the process. */
+    /* provider directory, copied at creation; used when MC_SERVICE_PLUGINS is
+    selected. empty uses the host default. discovery fixes it for the process. */
     mc_string_view plugin_directory;
-    /* MC_CONTEXT_MANAGED_RUNTIME starts playback, plugins, and the configured
-       library in a production build. Zero creates a request dispatcher.
-       MC_CONTEXT_ENABLE_LOGGING and MC_CONTEXT_START_LOCAL require managed runtime. */
+    /* optional MC_CONTEXT_* flags; zero uses normal startup. logging requires
+    at least one service; START_LOCAL requires MC_SERVICE_LIBRARY after dependency expansion. */
     uint32_t flags;
     /* Optional hook that signals the host loop. May run on a worker thread. */
     mc_wakeup_fn wakeup;
@@ -94,14 +106,19 @@ typedef struct mc_context_options {
     int32_t track_query_max_limit;
     /* Maximum metadata field count. Nonpositive uses MC_TRACK_QUERY_MAX_FIELDS. */
     int32_t track_query_max_fields;
-    /* Optional observer of managed runtime diagnostics. Zero disables delivery. */
+    /* optional observer of context runtime diagnostics. null disables delivery. */
     mc_log_fn log;
     /* Caller-owned observer argument. Keep it valid until shutdown returns. */
     void* log_user_data;
+    /* requested MC_SERVICE_* bits, fixed for this context's lifetime. defaults
+    to MC_SERVICE_ALL when options or this field are absent. explicitly use
+    MC_SERVICE_NONE for only request processing with caller-owned libraries or
+    remote sessions. a zero-filled full struct therefore requests no services. */
+    mc_services services;
 } mc_context_options;
 
 #define MC_CONTEXT_OPTIONS_DEFAULT \
-    { sizeof(mc_context_options), 0, { NULL, 0 }, 0, NULL, NULL, 0, 0, 0, NULL, NULL }
+    { sizeof(mc_context_options), 0, { NULL, 0 }, 0, NULL, NULL, 0, 0, 0, NULL, NULL, MC_SERVICE_ALL }
 
 /* Null options use defaults. Callers own directory storage and may release it on return.
    out_context is required. out_error is optional; initialize both supplied slots
@@ -110,8 +127,13 @@ typedef struct mc_context_options {
 MC_API mc_result MC_CALL mc_context_create(
     const mc_context_options *options, mc_context **out_context, mc_error **out_error);
 
+/* read the immutable service set, including automatic prerequisites. remains
+available after shutdown; it describes configuration rather than running state.
+safe on any thread while context remains alive. out_services is required. */
+MC_API mc_result MC_CALL mc_context_get_services(const mc_context* context, mc_services* out_services);
+
 /* Select a caller-owned library for later submissions. Null clears it.
-   Host-managed contexts use mc_context_select_library instead. Previously
+   Contexts owning MC_SERVICE_LIBRARY use mc_context_select_library instead. Previously
    accepted requests and retained handles keep their original library. */
 MC_API mc_result MC_CALL mc_context_set_library(mc_context* context, const mc_library* library);
 /* Return an owned library in an empty output slot. An empty selection returns MC_ERROR_NOT_FOUND. */
@@ -133,10 +155,10 @@ MC_API mc_result MC_CALL mc_context_set_library_changed_callback(
     mc_context* context, mc_library_changed_fn callback, void* user_data);
 
 /* Open an owned handle on the playback engine's thread. Releasing a handle does
-   not stop playback. Contexts without an engine return MC_ERROR_UNSUPPORTED. */
+   not stop playback. contexts without MC_SERVICE_PLAYBACK return MC_ERROR_UNSUPPORTED. */
 MC_API mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback** out_playback);
 
-/* For a managed runtime, create binds the dispatcher thread. Otherwise, the
+/* When services are selected, create binds the dispatcher thread. Otherwise, the
    first dispatch or shutdown binds its thread. Ready callbacks run inline,
    outside internal locks. reentrant dispatch returns MC_ERROR_BUSY. dispatch
    from another thread after binding returns MC_ERROR_WRONG_THREAD.

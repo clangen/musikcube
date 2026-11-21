@@ -56,7 +56,7 @@ namespace musik { namespace core {
             ~LibraryFactory();
 
             static void Initialize(IMessageQueue& messageQueue);
-            static void Initialize(std::shared_ptr<IMessageQueue> messageQueue);
+            static void Initialize(std::shared_ptr<IMessageQueue> messageQueue, bool enableIndexer = true);
             static LibraryFactory& Instance();
             static void Shutdown();
 

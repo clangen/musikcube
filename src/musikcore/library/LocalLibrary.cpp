@@ -39,6 +39,7 @@
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/config.h>
 #include <musikcore/library/QueryBase.h>
+#include <musikcore/library/query/ConfiguredPathsQuery.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/library/Indexer.h>
@@ -94,16 +95,17 @@ class LocalLibrary::QueryCompletedMessage: public Message {
         QueryContextPtr context;
 };
 
-ILibraryPtr LocalLibrary::Create(std::string name, int id, MessageQueue* messageQueue) {
-    ILibraryPtr lib(new LocalLibrary(name, id, messageQueue));
+ILibraryPtr LocalLibrary::Create(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer) {
+    ILibraryPtr lib(new LocalLibrary(name, id, messageQueue, enableIndexer));
     return lib;
 }
 
-LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue)
+LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer)
 : name(name)
 , id(id)
 , exit(false)
-, messageQueue(messageQueue) {
+, messageQueue(messageQueue)
+, indexer(nullptr) {
     this->identifier = std::to_string(id);
 
     const auto filename = this->GetDatabaseFilename();
@@ -113,15 +115,16 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue)
     }
     LocalLibrary::CreateDatabase(this->db);
 
-    auto indexer = std::make_unique<core::Indexer>(
-        this->GetLibraryDirectory(),
-        this->GetDatabaseFilename());
-
-    if (scheduleSyncDueToDbUpgrade) {
-        indexer->Schedule(IIndexer::SyncType::Local);
+    /* querying an existing catalog must not start scanners or load providers. */
+    std::unique_ptr<core::Indexer> indexer;
+    if (enableIndexer) {
+        indexer = std::make_unique<core::Indexer>(this->GetLibraryDirectory(), this->GetDatabaseFilename());
+        if (scheduleSyncDueToDbUpgrade) {
+            indexer->Schedule(IIndexer::SyncType::Local);
+        }
     }
 
-    /* register only once schema and indexer startup have succeeded. */
+    /* register only once schema and optional indexer startup have succeeded. */
     if (this->messageQueue) {
         this->messageQueue->Register(this);
     }
@@ -177,9 +180,16 @@ void LocalLibrary::Close() {
 }
 
 bool LocalLibrary::IsConfigured() {
-    std::vector<std::string> paths;
-    Indexer()->GetPaths(paths);
-    return paths.size() > 0;
+    if (this->indexer) {
+        std::vector<std::string> paths;
+        this->indexer->GetPaths(paths);
+        return !paths.empty();
+    }
+
+    /* saved scan roots still describe the catalog when no scanner is running. */
+    auto query = std::make_shared<query::ConfiguredPathsQuery>();
+    this->EnqueueAndWait(query);
+    return query->GetResult();
 }
 
 std::string LocalLibrary::GetLibraryDirectory() {
@@ -469,6 +479,7 @@ static void setVersion(db::Connection& db, int version) {
 
 static void createSchema(db::Connection& db) {
     const bool existing = hasColumn(db, "tracks", "id");
+
     /* tracks */
     executeSchema(db,
         "CREATE TABLE IF NOT EXISTS tracks ("

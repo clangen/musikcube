@@ -80,6 +80,7 @@ namespace musik { namespace core {
 
             virtual int Enqueue(QueryPtr query, Callback cb = Callback()) = 0;
             virtual int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
+            /* null when this catalog was opened without indexing services. */
             virtual IIndexer *Indexer() = 0;
             virtual int Id() = 0;
             virtual const std::string& Name() = 0;

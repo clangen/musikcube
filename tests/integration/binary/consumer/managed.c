@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 
     mc_context* context = NULL;
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-    options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+    options.services = MC_SERVICE_ALL;
     options.plugin_directory = (mc_string_view) { argv[1], strlen(argv[1]) };
     if (mc_context_create(&options, &context, NULL) != MC_OK) {
         return 1;

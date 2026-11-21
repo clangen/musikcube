@@ -883,7 +883,7 @@ recorded before the experimental shared façade is introduced.
 - [x] **API-001** Create `include/musikcore/musikcore.h`.
 - [ ] **API-002** Implement `mc_abi_version` and initial feature discovery.
 - [x] **API-003** Define context options for ABI version validation,
-  dispatch wakeups, query limits, and a reserved copied plugin root. Database
+  dispatch wakeups, query limits, and a copied provider-discovery root. Database
   directories belong to explicit library identities rather than context-global
   data roots. `shared_c` and `arguments` verify these contracts.
 - [x] **API-004** Implement transactional `mc_context_create`.
@@ -1214,6 +1214,41 @@ legacy list for actions that still require it.
   HTTP stream, decoder, and headless output on Linux.
   `musikcore.integration.api.remote_transcode.*` also loads the stock
   encoders and exercises streaming MP3 and blocking FLAC.
+
+#### Creation-time service selection
+
+- [x] **API-SERVICES-001** Replace the managed-runtime flag with fixed creation-time
+  Library/Plugins/Indexer/Playback selection and full-engine defaults. Add the
+  immutable expanded-set getter in C and the header-only wrapper. Cover omitted
+  fields, explicit none, all combinations, invalid masks, thread ownership, and
+  restart in `musikcore.integration.runtime.services` and `musikcore.abi.arguments`.
+  `musikcore.integration.runtime.plugin_directory` guards failed-discovery rollback.
+- [x] **API-SERVICES-002** Decouple catalog construction from indexing and playback
+  from scanner subscriptions. Request only Indexer in the media seeder; exercise
+  real provider playback without Indexer in
+  `musikcore.integration.api.playback_without_indexer`. Both that test and
+  `musikcore.integration.api.managed_runtime` reopen the indexed catalog with
+  only Library, checking configured status and queries without a new scanner or
+  provider session. Preserve rollback and shutdown regressions in the existing
+  runtime and plugin suites.
+- [x] **API-SERVICES-003** Update Cube/daemon startup, comments, lifecycle contract,
+  and C/C++ examples for both context-owned engine and caller-owned catalog modes.
+  Compile/run both against the relocated shared SDK in
+  `musikcore.integration.api.installed_sdk`; retain daemon lifecycle and TUI tests.
+
+Selection is immutable for the context lifetime; ordinary scan and playback
+commands remain available. The dependency graph and rationale are in
+[ADR-0005](../docs/adr/0005-context-owned-production-runtime.md). Validation for
+this slice targets native macOS; Linux/Windows parity remains deferred by the
+maintainer. No plugin C SDK work is included.
+
+Native macOS arm64 validation: full Debug and Release suites pass 91/91;
+ABI-only Debug passes 29/29. These include daemon lifecycle, real headless
+plugin playback, local/remote parity, TUI scenarios, installed/relocated C/C++
+examples, standalone testing-disabled configuration, and exact binary exports.
+The pre-existing parity fixture deferred playback initialization until after its
+commands; it now finishes initialization first and disables unrelated session
+restoration. Logs are under `build/services-*.log`.
 
 #### Managed runtime hardening reconciliation
 

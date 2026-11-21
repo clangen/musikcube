@@ -43,14 +43,20 @@ namespace {
 
 struct mc_context {
     mc_context(std::string plugins, mc_wakeup_fn signal, void *signal_data,
-        musik::core::ffi::TrackQueryLimits query_limits)
-        : plugin_directory(std::move(plugins)),
-          track_query_limits(query_limits), wakeup(signal), wakeup_user_data(signal_data) {
+        musik::core::ffi::TrackQueryLimits query_limits, mc_services services)
+    : plugin_directory(std::move(plugins))
+    , track_query_limits(query_limits)
+    , services(services)
+    , wakeup(signal)
+    , wakeup_user_data(signal_data)
+    {
         external->context = this;
     }
 
     std::string plugin_directory;
     const musik::core::ffi::TrackQueryLimits track_query_limits;
+
+    const mc_services services;
 
     mc_wakeup_fn wakeup;
     void *wakeup_user_data;
@@ -94,6 +100,14 @@ struct mc_context {
 std::shared_ptr<const LibraryIdentity> musik::core::ffi::context_library(const mc_context& context) {
     std::lock_guard<std::mutex> lock(context.mutex);
     return context.library;
+}
+
+mc_result MC_CALL mc_context_get_services(const mc_context* context, mc_services* out_services) {
+    if (!context || !out_services) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    *out_services = context->services;
+    return MC_OK;
 }
 
 mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback** out_playback) {
@@ -313,7 +327,7 @@ namespace {
             if (context.stopping) {
                 return MC_ERROR_BUSY;
             }
-            if (!managed && context.runtime) {
+            if (!managed && (context.services & MC_SERVICE_LIBRARY)) {
                 return MC_ERROR_UNSUPPORTED;
             }
             if (!managed && context.library == library) {
@@ -467,8 +481,7 @@ mc_result MC_CALL mc_context_reconnect_remote_library(mc_context* context) {
         if (!runtime) {
             return MC_ERROR_UNSUPPORTED;
         }
-        runtime->ReconnectRemote();
-        return MC_OK;
+        return runtime->ReconnectRemote();
     });
 }
 
@@ -490,10 +503,10 @@ namespace {
                 }
                 runtime = context->runtime.get();
             }
-            if (!runtime) {
+            if (!runtime || !runtime->LocalIndexer()) {
                 return MC_ERROR_UNSUPPORTED;
             }
-            operation(runtime->LocalIndexer());
+            operation(*runtime->LocalIndexer());
             return MC_OK;
         });
     }
@@ -556,7 +569,7 @@ mc_result MC_CALL mc_indexer_set_callback(mc_context* context, mc_indexer_event_
         return MC_ERROR_INVALID_ARGUMENT;
     }
     std::lock_guard<std::mutex> lock(context->mutex);
-    if (!context->runtime) {
+    if (!(context->services & MC_SERVICE_INDEXER)) {
         return MC_ERROR_UNSUPPORTED;
     }
     if (!is_dispatcher(*context)) {
@@ -730,15 +743,27 @@ mc_result MC_CALL mc_context_create(
         }
 
         const auto flags = read_option(options, &mc_context_options::flags, offsetof(mc_context_options, flags));
-        if (flags & ~(MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING | MC_CONTEXT_START_LOCAL)) {
+        if (flags & ~(MC_CONTEXT_ENABLE_LOGGING | MC_CONTEXT_START_LOCAL)) {
             return fail(MC_ERROR_UNSUPPORTED, "Unsupported context flags", out_error);
         }
 
-        if ((flags & MC_CONTEXT_ENABLE_LOGGING) && !(flags & MC_CONTEXT_MANAGED_RUNTIME)) {
-            return fail(MC_ERROR_UNSUPPORTED, "Logging requires a managed runtime", out_error);
+        /* an omitted field preserves the ergonomic full-engine default; explicit
+        zero opts out. expansion happens before validating dependent options. */
+        mc_services services = MC_SERVICE_ALL;
+        if (options && options->struct_size >= offsetof(mc_context_options, services) + sizeof(options->services)) {
+            services = options->services;
         }
-        if ((flags & MC_CONTEXT_START_LOCAL) && !(flags & MC_CONTEXT_MANAGED_RUNTIME)) {
-            return fail(MC_ERROR_UNSUPPORTED, "Local startup requires a managed runtime", out_error);
+        if (services & ~MC_SERVICE_ALL) {
+            return fail(MC_ERROR_UNSUPPORTED, "Unsupported context services", out_error);
+        }
+        if (services & (MC_SERVICE_INDEXER | MC_SERVICE_PLAYBACK)) {
+            services |= MC_SERVICE_LIBRARY | MC_SERVICE_PLUGINS;
+        }
+        if ((flags & MC_CONTEXT_ENABLE_LOGGING) && !services) {
+            return fail(MC_ERROR_UNSUPPORTED, "Logging requires a context service", out_error);
+        }
+        if ((flags & MC_CONTEXT_START_LOCAL) && !(services & MC_SERVICE_LIBRARY)) {
+            return fail(MC_ERROR_UNSUPPORTED, "Local startup requires the library service", out_error);
         }
 
         /* Check that the optional plugin directory can be copied. */
@@ -769,13 +794,13 @@ mc_result MC_CALL mc_context_create(
             std::string(plugins.length ? plugins.data : "", plugins.length),
             read_option(options, &mc_context_options::wakeup, offsetof(mc_context_options, wakeup)),
             read_option(options, &mc_context_options::wakeup_user_data, offsetof(mc_context_options, wakeup_user_data)),
-            { std::min(default_rows, row_cap), row_cap, field_cap }
+            { std::min(default_rows, row_cap), row_cap, field_cap }, services
         });
         if (context_active.exchange(true)) {
             return fail(MC_ERROR_BUSY, "A context is already active", out_error);
         }
 
-        if (flags & MC_CONTEXT_MANAGED_RUNTIME) {
+        if (services != MC_SERVICE_NONE) {
             try {
                 context->runtime = musik::core::ffi::make_context_runtime();
                 if (!context->runtime) {
@@ -786,7 +811,7 @@ mc_result MC_CALL mc_context_create(
                 const auto log = read_option(options, &mc_context_options::log, offsetof(mc_context_options, log));
                 const auto logData = read_option(options, &mc_context_options::log_user_data,
                     offsetof(mc_context_options, log_user_data));
-                context->runtime->Start(*context, context->plugin_directory, flags, log, logData);
+                context->runtime->Start(*context, context->plugin_directory, services, flags, log, logData);
             }
             catch (const std::system_error& error) {
                 auto* failed = context.release();

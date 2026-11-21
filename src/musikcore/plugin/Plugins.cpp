@@ -383,13 +383,13 @@ static class Environment: public IEnvironment {
         }
 
         void ReindexMetadata() override {
-            if (::defaultLibrary) {
+            if (::defaultLibrary && ::defaultLibrary->Indexer()) {
                 ::defaultLibrary->Indexer()->Schedule(IIndexer::SyncType::Local);
             }
         }
 
         void RebuildMetadata() override {
-            if (::defaultLibrary) {
+            if (::defaultLibrary && ::defaultLibrary->Indexer()) {
                 ::defaultLibrary->Indexer()->Schedule(IIndexer::SyncType::Rebuild);
             }
         }
@@ -465,7 +465,7 @@ static class Environment: public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void Init() {
+    void Initialize() {
         PluginFactory::Instance().BeginSession();
 
         /* preferences */
@@ -479,7 +479,7 @@ namespace musik { namespace core { namespace plugin {
         }, PluginFactory::FunctionSelection::Session);
     }
 
-    void Start(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
+    void BindServices(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
         /* metadata proxies */
         delete metadataProxy;
         ::messageQueue = messageQueue;
@@ -489,7 +489,7 @@ namespace musik { namespace core { namespace plugin {
 
         /* even if the local client is connected to a remote server, the metadata proxy
         always uses the default local library. */
-        ::metadataProxy = new LocalMetadataProxy(LibraryFactory::Instance().DefaultLocalLibrary());
+        ::metadataProxy = new LocalMetadataProxy(library);
 
         PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
             "SetMetadataProxy",

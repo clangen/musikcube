@@ -132,9 +132,8 @@ namespace musik { namespace core { namespace ffi {
         }
 
         void Start(mc_context& context, const std::string& pluginDirectory,
-            uint32_t flags, mc_log_fn log, void* logData) override
+            mc_services services, uint32_t flags, mc_log_fn log, void* logData) override
         {
-            PluginFactory::Instance(pluginDirectory);
             this->context = &context;
             this->notifications = std::make_shared<CoreNotifications>(context, log, logData);
             this->queue->RegisterForBroadcasts(this->notifications);
@@ -142,33 +141,50 @@ namespace musik { namespace core { namespace ffi {
                 this->StartLogging(log != nullptr);
             }
 
-            this->initialized = true;
-            plugin::Init();
-            LibraryFactory::Initialize(this->queue);
+            /* provider discovery precedes indexer/decoder creation. a registry-only
+            context does not attach application hosts to legacy plugins. */
+            if (services & MC_SERVICE_PLUGINS) {
+                musik::core::PluginFactory::Instance(pluginDirectory);
+                /* only session initialization needs plugin rollback. discovery
+                rejection must not initialize the default registry during cleanup. */
+                this->pluginsInitialized = true;
+                musik::core::plugin::Initialize();
+            }
+            if (services & MC_SERVICE_LIBRARY) {
+                this->librariesInitialized = true;
+                musik::core::LibraryFactory::Initialize(this->queue, (services & MC_SERVICE_INDEXER) != 0);
+                auto& factory = musik::core::LibraryFactory::Instance();
+                this->local = factory.DefaultLocalLibrary();
+                this->remote = std::static_pointer_cast<library::RemoteLibrary>(factory.DefaultRemoteLibrary());
+                this->indexer = this->local->Indexer();
 
-            auto& factory = LibraryFactory::Instance();
-            this->local = factory.DefaultLocalLibrary();
-            this->remote = std::static_pointer_cast<library::RemoteLibrary>(factory.DefaultRemoteLibrary());
-            this->indexer = this->local->Indexer();
+                const auto prefs = Preferences::ForComponent(prefs::components::Settings);
+                const auto catalog = prefs->GetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
+                const bool selectRemote = !(flags & MC_CONTEXT_START_LOCAL) &&
+                    catalog == static_cast<int>(ILibrary::Type::Remote);
+                this->active = selectRemote ? ILibraryPtr(this->remote) : this->local;
+                this->remote->ConnectionStateChanged.connect(this, &ManagedRuntime::OnRemoteStateChanged);
+            }
+            if (services & MC_SERVICE_PLAYBACK) {
+                this->playback = std::make_unique<audio::PlaybackService>(*this->queue, this->active);
+            }
+            if (this->indexer) {
+                this->indexer->Started.connect(this, &ManagedRuntime::OnIndexStarted);
+                this->indexer->Progress.connect(this, &ManagedRuntime::OnIndexProgress);
+                this->indexer->Finished.connect(this, &ManagedRuntime::OnIndexFinished);
+            }
+            if (this->active) {
+                this->PublishSelection(true);
+            }
 
-            const auto prefs = Preferences::ForComponent(prefs::components::Settings);
-            const auto catalog = prefs->GetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
-            const bool selectRemote = !(flags & MC_CONTEXT_START_LOCAL) &&
-                catalog == static_cast<int>(ILibrary::Type::Remote);
-            this->active = selectRemote ? ILibraryPtr(this->remote) : this->local;
-
-            this->playback = std::make_unique<audio::PlaybackService>(*this->queue, this->active);
-
-            this->remote->ConnectionStateChanged.connect(this, &ManagedRuntime::OnRemoteStateChanged);
-            this->indexer->Started.connect(this, &ManagedRuntime::OnIndexStarted);
-            this->indexer->Progress.connect(this, &ManagedRuntime::OnIndexProgress);
-            this->indexer->Finished.connect(this, &ManagedRuntime::OnIndexFinished);
-            this->PublishSelection(true);
-
-            /* The plugin metadata proxy and indexer always serve the local catalog. */
-            plugin::Start(this->queue.get(), this->playback.get(), this->local);
-            this->playback->Initialize(true);
-
+            /* metadata and optional scanner bindings always use the local catalog.
+            legacy playback remotes attach only when playback is selected. */
+            if (this->pluginsInitialized && this->local) {
+                musik::core::plugin::BindServices(this->queue.get(), this->playback.get(), this->local);
+            }
+            if (this->playback) {
+                this->playback->Initialize(true);
+            }
             this->notifier = std::thread([this, &context] {
                 std::unique_lock lock(this->mutex);
                 while (!this->stopping.load()) {
@@ -200,16 +216,20 @@ namespace musik { namespace core { namespace ffi {
         }
 
         mc_result OpenPlayback(mc_playback** out) override {
-            return this->playback->OpenHandle(out);
+            return this->playback ? this->playback->OpenHandle(out) : MC_ERROR_UNSUPPORTED;
         }
 
-        void ReconnectRemote() override {
+        mc_result ReconnectRemote() override {
+            if (!this->remote) {
+                return MC_ERROR_UNSUPPORTED;
+            }
             this->remote->Disconnect();
             this->remote->Connect();
+            return MC_OK;
         }
 
-        IIndexer& LocalIndexer() const override {
-            return *this->local->Indexer();
+        IIndexer* LocalIndexer() const override {
+            return this->indexer;
         }
 
         void Stop() override {
@@ -246,12 +266,17 @@ namespace musik { namespace core { namespace ffi {
                 Cleanup([] { audio::Player::WaitForWorkers(); }, failure);
             }
 
-            if (this->initialized) {
-                this->initialized = false;
-                Cleanup([] { audio::vis::Shutdown(); }, failure);
-                Cleanup([] { plugin::Shutdown(); }, failure);
-                Cleanup([&] { this->playback.reset(); }, failure);
-                Cleanup([] { LibraryFactory::Shutdown(); }, failure);
+            if (this->playback) {
+                Cleanup([] { musik::core::audio::vis::Shutdown(); }, failure);
+            }
+            if (this->pluginsInitialized) {
+                this->pluginsInitialized = false;
+                Cleanup([] { musik::core::plugin::Shutdown(); }, failure);
+            }
+            Cleanup([&] { this->playback.reset(); }, failure);
+            if (this->librariesInitialized) {
+                this->librariesInitialized = false;
+                Cleanup([] { musik::core::LibraryFactory::Shutdown(); }, failure);
             }
             Cleanup([&] { this->queue->Close(); }, failure);
 
@@ -265,9 +290,14 @@ namespace musik { namespace core { namespace ffi {
         }
 
         mc_result SelectLibrary(mc_library_kind kind) override {
+            if (!this->local) {
+                return MC_ERROR_UNSUPPORTED;
+            }
             const ILibraryPtr selected = kind == MC_LIBRARY_LOCAL ? this->local : this->remote;
             if (this->active != selected) {
-                this->playback->SelectLibrary(selected);
+                if (this->playback) {
+                    this->playback->SelectLibrary(selected);
+                }
                 this->active = selected;
                 this->PublishSelection(true);
             }
@@ -307,7 +337,9 @@ namespace musik { namespace core { namespace ffi {
 
         void OnRemoteStateChanged(ILibrary::ConnectionState) {
             if (this->active == this->remote) {
-                this->playback->InvalidateDisconnectedCatalog();
+                if (this->playback) {
+                    this->playback->InvalidateDisconnectedCatalog();
+                }
                 this->PublishSelection(false);
             }
         }
@@ -335,7 +367,8 @@ namespace musik { namespace core { namespace ffi {
         std::condition_variable changed;
         uint64_t dispatches = 0;
         IIndexer* indexer = nullptr;
-        bool initialized = false;
+        bool pluginsInitialized = false;
+        bool librariesInitialized = false;
         bool ownsLogging = false;
         std::atomic<bool> stopping { false };
         std::thread notifier;

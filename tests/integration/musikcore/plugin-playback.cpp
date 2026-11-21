@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
     }
 
     CoreRuntime runtime;
-    plugin::Start(&runtime.Queue(), nullptr, LibraryFactory::Instance().DefaultLocalLibrary());
+    musik::core::plugin::BindServices(&runtime.Queue(), nullptr, LibraryFactory::Instance().DefaultLocalLibrary());
     const bool passed = reloadDuringPlayback(argv[1]);
     Player::WaitForWorkers();
     return passed ? 0 : 1;

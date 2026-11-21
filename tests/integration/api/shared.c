@@ -45,6 +45,7 @@ cleanup:
 /* Verify version negotiation, sized-option defaults, singleton admission, and repeatable teardown. */
 static int check_context_lifecycle(void) {
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.services = MC_SERVICE_NONE;
     mc_context *context = NULL;
     mc_context *second = NULL;
     mc_error *error = NULL;
@@ -85,8 +86,13 @@ static int check_context_lifecycle(void) {
     options.plugin_directory.length = 1;
     if (mc_context_create(&options, &context, NULL) != MC_ERROR_INVALID_ARGUMENT || context) goto cleanup;
 
-    /* Older callers omit fields past the reported size. */
-    options.struct_size = offsetof(mc_context_options, plugin_directory);
+    /* omitted service selection defaults to a full engine, which this ABI-only
+    fixture deliberately does not provide. failure must release the process slot. */
+    options.struct_size = offsetof(mc_context_options, services);
+    options.plugin_directory.length = 0;
+    if (mc_context_create(&options, &context, NULL) != MC_ERROR_UNSUPPORTED || context) goto cleanup;
+    options.struct_size = sizeof(options);
+    options.services = MC_SERVICE_NONE;
     if (mc_context_create(&options, &context, &error) != MC_OK || !context || error) goto cleanup;
     /* A second context cannot silently share process-global services. The
        original remains valid and releasing it makes admission possible again. */
@@ -96,7 +102,7 @@ static int check_context_lifecycle(void) {
     mc_context_destroy(&context);
     if (context) goto cleanup;
 
-    if (mc_context_create(NULL, &context, &error) != MC_OK || !context || error) goto cleanup;
+    if (mc_context_create(&options, &context, &error) != MC_OK || !context || error) goto cleanup;
     if (mc_context_dispatch(context) != MC_OK ||
         mc_request_cancel(context, 1) != MC_ERROR_NOT_FOUND ||
         mc_context_shutdown(context) != MC_OK) goto cleanup;
@@ -107,7 +113,7 @@ static int check_context_lifecycle(void) {
        otherwise successful shutdown/destroy calls. */
     passed = !context;
     for (unsigned cycle = 0; passed && cycle < 100; ++cycle) {
-        passed = mc_context_create(NULL, &context, NULL) == MC_OK &&
+        passed = mc_context_create(&options, &context, NULL) == MC_OK &&
             mc_context_dispatch(context) == MC_OK && mc_context_shutdown(context) == MC_OK;
         mc_context_destroy(&context);
         passed = passed && !context;

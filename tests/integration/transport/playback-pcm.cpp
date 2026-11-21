@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
     }
 
     CoreRuntime runtime;
-    plugin::Start(&runtime.Queue(), nullptr, LibraryFactory::Instance().DefaultLocalLibrary());
+    musik::core::plugin::BindServices(&runtime.Queue(), nullptr, LibraryFactory::Instance().DefaultLocalLibrary());
     if (api::ReadOutputConfiguration().selectedDriver != driver) {
         std::fputs("Capture output was not selected\n", stderr);
         return 1;

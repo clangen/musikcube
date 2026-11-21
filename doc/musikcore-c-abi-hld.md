@@ -322,6 +322,13 @@ The application-facing runtime owns:
 - Indexer and preferences.
 - Advanced audio handles where justified.
 
+The default context starts the complete engine. Callers can select a fixed set
+of Library, Plugins, Indexer, and Playback services at creation; prerequisite
+expansion starts Library and Plugins for either Indexer or Playback. Playback
+does not require indexing. An explicit empty set retains request processing
+for caller-owned catalogs/sessions. See [the lifecycle contract](musikcore-c-abi-design.md#context-and-runtime-lifecycle)
+and [ADR-0005](../docs/adr/0005-context-owned-production-runtime.md).
+
 ### Plugin host
 
 The plugin host owns:

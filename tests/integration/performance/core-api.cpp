@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
             event(test_host_event_create(), test_host_event_destroy);
         if (!event) return 1;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         options.wakeup = test_host_event_signal;
         options.wakeup_user_data = event.get();
 

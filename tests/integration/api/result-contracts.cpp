@@ -54,6 +54,7 @@ namespace {
         unsigned calls = 0;
         mc_result status = MC_ERROR_INTERNAL;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         options.wakeup = test_host_event_signal;
         options.wakeup_user_data = event.get();
         options.track_query_default_limit = 2;

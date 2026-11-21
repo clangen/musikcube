@@ -370,6 +370,12 @@ namespace {
             return false;
         }
 
+        mc_indexer_state scannerState = MC_INDEXER_IDLE;
+        const auto scannerStatus = mc_indexer_get_state(context.Get(), &scannerState);
+        if (scannerStatus != ((context.Services() & MC_SERVICE_INDEXER) ? MC_OK : MC_ERROR_UNSUPPORTED)) {
+            std::fputs("Indexer availability did not match the selected services\n", stderr);
+            return false;
+        }
         auto playback = context.GetPlayback();
         const auto inState = [&](mc_playback_state state) {
             const auto snapshot = playback.Snapshot();
@@ -475,12 +481,14 @@ int main(int argc, char** argv) {
     bool equalizer = false;
     bool server = false;
     bool remoteAudio = false;
+    bool playbackOnly = false;
     std::string_view transcodeFormat;
     for (int i = 1; i < argc; ++i) {
         const std::string_view option(argv[i]);
         equalizer |= option == "--check-equalizer";
         server |= option == "--check-server";
         remoteAudio |= option == "--check-remote-audio";
+        playbackOnly |= option == "--playback-only";
         constexpr std::string_view transcodeOption = "--transcode=";
         if (option.starts_with(transcodeOption)) {
             transcodeFormat = option.substr(transcodeOption.size());
@@ -499,7 +507,10 @@ int main(int argc, char** argv) {
 
     LogProbe log;
     auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-    options.flags = MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING;
+    /* reuse the real decoder/output lifecycle contract without a scanner.
+    this catches accidental Indexer dependencies during playback or teardown. */
+    options.services = playbackOnly ? MC_SERVICE_PLAYBACK : MC_SERVICE_ALL;
+    options.flags = MC_CONTEXT_ENABLE_LOGGING;
     options.log = LogProbe::Receive;
     options.log_user_data = &log;
     options.wakeup = Host::Wake;
@@ -521,8 +532,23 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    /* A retained catalog pins its closed backend safely across runtime restart. */
+    /* a retained catalog pins its closed backend safely across a restart with
+    fewer services. saved scan roots must still report configured without an
+    indexer, and catalog reads must work without a new provider session. */
+    options.services = MC_SERVICE_LIBRARY;
     Context reopened(options);
     oldLibrary.reset();
-    return reopened.GetLibrary().has_value() ? 0 : 1;
+    if (!reopened.GetLibrary() || !reopened.GetLibraryStatus().configured ||
+        reopened.Services() != MC_SERVICE_LIBRARY)
+    {
+        return 1;
+    }
+    std::optional<mc_result> readStatus;
+    OpenTrackSearch(reopened, TrackSearch { "Morning Light" },
+        [&](mc_result status, TrackResult tracks, std::string_view) {
+            readStatus = status == MC_OK && tracks.Size() ? MC_OK : MC_ERROR_INTERNAL;
+        });
+    const bool read = waitFor(reopened, host, [&] { return readStatus.has_value(); });
+    const auto stopped = reopened.Shutdown();
+    return read && readStatus == MC_OK && stopped == MC_OK ? 0 : 1;
 }

@@ -7,6 +7,7 @@
 /* Wake the real host queue for ABI completions, without polling or sleeping. */
 inline mc_context_options TestHostOptions(musik::core::runtime::MessageQueue& queue) {
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.services = MC_SERVICE_NONE;
     options.wakeup_user_data = &queue;
     options.wakeup = [](void* data) {
         auto& host = *static_cast<musik::core::runtime::MessageQueue*>(data);

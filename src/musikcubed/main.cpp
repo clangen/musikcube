@@ -328,7 +328,7 @@ int main(int argc, char** argv) {
 
         DaemonLoop loop;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING | MC_CONTEXT_START_LOCAL;
+        options.flags = MC_CONTEXT_ENABLE_LOGGING | MC_CONTEXT_START_LOCAL;
         options.wakeup = DaemonLoop::Wake;
         options.wakeup_user_data = &loop;
         options.log = foreground ? logToConsole : nullptr;

@@ -191,6 +191,7 @@ static int check_metadata(const mc_track_page *page) {
 /* Read real generated/indexed media tags through C and retain the page after context/library teardown. */
 static int check_indexed_library(const char *directory) {
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.services = MC_SERVICE_NONE;
     options.wakeup = query_test_wakeup;
     options.track_query_default_limit = -1;
     options.track_query_max_fields = -1;
@@ -257,6 +258,7 @@ int main(int argc, char **argv) {
     if (argc != 2 || !prepare_fixture(argv[1])) return 1;
 
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.services = MC_SERVICE_NONE;
     options.wakeup = query_test_wakeup;
     options.track_query_default_limit = 3;
     options.track_query_max_limit = 2;

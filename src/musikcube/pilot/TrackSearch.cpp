@@ -106,6 +106,7 @@ namespace {
 
     mc_context_options options(Wakeup &wakeup) {
         mc_context_options value = MC_CONTEXT_OPTIONS_DEFAULT;
+        value.services = MC_SERVICE_NONE;
         value.wakeup = Wakeup::Signal;
         value.wakeup_user_data = &wakeup;
         return value;

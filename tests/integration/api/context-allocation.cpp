@@ -26,6 +26,7 @@ void operator delete[](void* memory) noexcept { std::free(memory); }
 bool context_test_allocation_failures() {
     const std::string directory(512, 'x');
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.services = MC_SERVICE_NONE;
     options.plugin_directory = {directory.data(), directory.size()};
     unsigned failures = 0;
     unsigned successes = 0;
@@ -46,7 +47,7 @@ bool context_test_allocation_failures() {
         }
         mc_context_destroy(&context);
         /* A failed constructor must never consume the process context slot. */
-        if (mc_context_create(nullptr, &context, nullptr) != MC_OK) return false;
+        if (mc_context_create(&options, &context, nullptr) != MC_OK) return false;
         mc_context_destroy(&context);
     }
     return failures >= 3 && successes != 0;

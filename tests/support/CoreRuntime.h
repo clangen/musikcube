@@ -16,7 +16,7 @@ public:
     CoreRuntime() {
         musik::debug::Start();
         try {
-            musik::core::plugin::Init();
+            musik::core::plugin::Initialize();
             musik::core::LibraryFactory::Initialize(this->queue);
         }
         catch (...) {

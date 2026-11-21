@@ -49,11 +49,12 @@ namespace musik { namespace core { namespace api {
         mc_result resultCode;
     };
 
-    /* Owns request processing and callback dispatch. Keep a Context in the host
-       event loop and call Dispatch after wakeups; it must outlive its users.
-       Neither copyable nor movable. Dispatch, shutdown, and destruction use the
-       dispatcher thread. Destruction drains callbacks, so their state must
-       still be alive when the Context is destroyed. */
+    /* owns engine services, request processing, and callback dispatch. select a
+    fixed subset through mc_context_options::services, or MC_SERVICE_NONE for
+    caller-owned catalogs. keep a Context in the host event loop and call
+    Dispatch after wakeups; it must outlive its users. neither copyable nor
+    movable. dispatch, shutdown, and destruction use the dispatcher thread.
+    destruction drains callbacks, so their state must still be alive. */
     class Context {
     public:
         Context() : Context(nullptr) {}
@@ -76,6 +77,16 @@ namespace musik { namespace core { namespace api {
         void SetLibrary(const Library& library);
         void ClearLibrary();
         std::optional<Library> GetLibrary() const;
+        /* includes automatically selected prerequisites; fixed at creation. */
+        mc_services Services() const {
+            mc_services services = MC_SERVICE_NONE;
+            const auto result = mc_context_get_services(this->context, &services);
+            if (result != MC_OK) {
+                throw Error(result);
+            }
+            return services;
+        }
+
         mc_result SelectLibrary(mc_library_kind kind) { return mc_context_select_library(this->context, kind); }
         mc_result ReconnectRemoteLibrary() { return mc_context_reconnect_remote_library(this->context); }
         LibraryStatus GetLibraryStatus() const {

@@ -1,3 +1,7 @@
+/* explicitly select MC_SERVICE_NONE when supplying an existing read-only
+catalog or remote session. the context still owns asynchronous requests,
+cancellation, wakeups, and callback dispatch; it starts no engine services.
+use core-engine.c/cpp instead to let the context own the configured engine. */
 #include <musikcore/musikcore.h>
 #include "host-wakeup.h"
 
@@ -53,6 +57,7 @@ int main(int argc, char** argv) {
     }
 
     mc_context_options host = MC_CONTEXT_OPTIONS_DEFAULT;
+    host.services = MC_SERVICE_NONE;
     host.wakeup = test_host_event_signal;
     host.wakeup_user_data = event;
     mc_remote_options endpoint = MC_REMOTE_OPTIONS_DEFAULT;

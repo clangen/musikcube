@@ -361,39 +361,74 @@ versions.
 
 The public entry point is an owned context:
 
-```c
-typedef void (MC_CALL *mc_wakeup_fn)(void *user_data);
+Initialize `mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;`, then override
+fields. Null options and omitted sized fields use defaults. A zero requested
+ABI version selects the current version; explicit requests must match the
+current major and specify a minor no newer than the library's. Plugin directory
+storage is copied during creation; discovery fixes that directory for the process.
+[`context.h`](../include/musikcore/context.h) defines the complete options layout.
 
-typedef struct mc_context_options {
-    uint32_t struct_size;
-    uint32_t requested_abi_version;
-    mc_string_view plugin_directory;
-    uint32_t flags;
-    mc_wakeup_fn wakeup;
-    void *wakeup_user_data;
-} mc_context_options;
+The context owns all engine services by default. Set `options.services` to the
+services the host needs; prerequisite expansion is automatic and acyclic:
 
-MC_API mc_result MC_CALL mc_context_create(
-    const mc_context_options *options,
-    mc_context **out_context,
-    mc_error **out_error);
+| Requested service | Automatic prerequisites | What starts |
+| --- | --- | --- |
+| `MC_SERVICE_NONE` | None | Request processing, cancellation, wakeups, and dispatch only |
+| `MC_SERVICE_LIBRARY` | None | Configured local/remote catalogs and their query work |
+| `MC_SERVICE_PLUGINS` | None | Provider discovery, preferences, and a provider session |
+| `MC_SERVICE_INDEXER` | Library, Plugins | Local scanner and its providers |
+| `MC_SERVICE_PLAYBACK` | Library, Plugins | Player and its providers; no scanner |
+| `MC_SERVICE_ALL` (default) | All above | Full engine used by musikcube and musikcubed |
 
-MC_API mc_result MC_CALL mc_context_destroy(mc_context **context);
-```
+Combine bits with `|`. `mc_context_get_services` / C++ `Context::Services()` reports
+the expanded immutable configuration, including after shutdown. It is safe to
+read from another thread while the context remains alive. It is not a readiness
+or running-state query. Services cannot be added or removed during a context's
+lifetime; destroy and create a context to choose a different set. Playback and
+scan commands operate normally within the selected services.
 
-Global initialization should be hidden behind context reference counting. A
-consumer should not need to coordinate a separate process-wide environment
-lifecycle. Multiple contexts are supported only if the implementation can
-define their database, plugin, audio-device, and global preference isolation.
-Otherwise, creation of a second context returns `MC_ERROR_BUSY` until true
-multi-context semantics are implemented.
+For example, `options.services = MC_SERVICE_PLAYBACK;` starts playback, catalogs,
+and providers, but indexing calls return `MC_ERROR_UNSUPPORTED`. A library-only
+context opens the writable configured catalog without initiating provider
+discovery or constructing an indexer. Its configured status still reflects saved scan roots.
+Plugins alone initialize discovery; legacy metadata/environment bindings require
+Library, and playback remotes require Playback. They do not implicitly start
+missing host services. Service selection controls context-owned startup; it does
+not disable existing process-wide configuration/discovery functions or unload
+previously discovered modules. Explicit caller-owned remote sessions remain independent
+of the configured catalog service.
 
-Initialize explicit options with `mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;`
-before overriding fields. ABI0 accepts null options and defaults omitted fields. A zero requested
-version selects the current ABI. Explicit requests must match the current
-major and specify a minor no newer than the library's. Directory views are
-copied during creation. The first lifecycle slice stores these roots for
-later runtime initialization.
+`MC_SERVICE_NONE` allows callers to open an existing read-only `mc_library` or
+`mc_remote_session` and attach a library with `mc_context_set_library`. A context
+owning Library uses `mc_context_select_library` instead. Without Library, managed
+catalog selection and reconnect return `MC_ERROR_UNSUPPORTED`; without Playback,
+opening a playback handle does likewise. Logging requires at least one service.
+`MC_CONTEXT_START_LOCAL` requires Library after expansion, selects the local
+catalog initially, and leaves the saved catalog selection unchanged.
+
+The default macro and a zero-filled full options struct intentionally differ:
+the macro selects all services; an explicit zero `services` field selects none.
+An older sized prefix that omits `services` selects all, just as null options do.
+The experimental `MC_CONTEXT_MANAGED_RUNTIME` flag is removed; rebuild consumers
+against these headers. The experimental ABI version remains unchanged.
+
+Creation with services binds the calling thread as dispatcher. With no services,
+the first dispatch or shutdown binds the thread. Engine creation is transactional:
+a failure publishes no context and rolls back started services. Shutdown stops
+producers, settles accepted requests, and invalidates playback handles. Service
+selection never authorizes concurrent lifecycle calls: dispatch/shutdown/destruction
+still run on the dispatcher thread. Only one context may exist per process; a
+second create returns `MC_ERROR_BUSY` until successful destruction releases it.
+The ABI-only test library supports `MC_SERVICE_NONE`; engine requests there return
+`MC_ERROR_UNSUPPORTED` rather than silently degrading.
+
+Working C and header-only C++ examples:
+
+- [`core-engine.c`](../examples/core-engine.c) and
+  [`core-engine.cpp`](../examples/core-engine.cpp): context-owned startup and shutdown.
+- [`core-query.c`](../examples/core-query.c) and
+  [`core-query.cpp`](../examples/core-query.cpp): no engine, explicitly opened catalog.
+- [`core-remote.c`](../examples/core-remote.c): no engine, caller-owned remote session.
 
 ### Async requests and dispatch
 

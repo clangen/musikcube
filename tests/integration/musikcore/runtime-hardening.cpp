@@ -19,11 +19,129 @@ inspect the private factory because its numeric identity is not a public API. */
 namespace {
     using namespace musik::core;
 
+    /* exercise every selection in one process: omitted prerequisites must be
+    added, disabled services must stay absent, and teardown must permit a
+    different selection next time without retaining scanner/player state. */
+    bool checkServices() {
+        for (mc_services requested = MC_SERVICE_NONE; requested <= MC_SERVICE_ALL; ++requested) {
+            auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+            options.services = requested;
+            api::Context context(options);
+            const auto effective = requested & (MC_SERVICE_PLAYBACK | MC_SERVICE_INDEXER)
+                ? requested | MC_SERVICE_LIBRARY | MC_SERVICE_PLUGINS
+                : requested;
+            if (!TEST_CHECK(context.Services() == effective)) {
+                return false;
+            }
+
+            /* a library remains queryable/configurable without a scanner. */
+            const bool library = (effective & MC_SERVICE_LIBRARY) != 0;
+            if (!TEST_CHECK(context.GetLibrary().has_value() == library) ||
+                !TEST_CHECK(context.SelectLibrary(MC_LIBRARY_LOCAL) == (library ? MC_OK : MC_ERROR_UNSUPPORTED)))
+            {
+                return false;
+            }
+            if (library && !TEST_CHECK(bool(LibraryFactory::Instance().DefaultLocalLibrary()->Indexer()) ==
+                bool(effective & MC_SERVICE_INDEXER)))
+            {
+                return false;
+            }
+
+            /* unavailable service calls reject cleanly, including subscriptions. */
+            mc_playback* playback = nullptr;
+            const bool player = (effective & MC_SERVICE_PLAYBACK) != 0;
+            mc_indexer_state state = MC_INDEXER_IDLE;
+            const auto scanner = effective & MC_SERVICE_INDEXER ? MC_OK : MC_ERROR_UNSUPPORTED;
+            if (!TEST_CHECK(mc_context_get_playback(context.Get(), &playback) == (player ? MC_OK : MC_ERROR_UNSUPPORTED)) ||
+                !TEST_CHECK(mc_indexer_get_state(context.Get(), &state) == scanner) ||
+                !TEST_CHECK(mc_indexer_set_callback(context.Get(), nullptr, nullptr) == scanner))
+            {
+                mc_playback_destroy(&playback);
+                return false;
+            }
+            mc_playback_destroy(&playback);
+
+            /* selections are fixed and safe to inspect from a non-owner thread;
+            service operations remain restricted to the creating thread. */
+            bool offThread = false;
+            std::thread reader([&] {
+                mc_services observed = MC_SERVICE_NONE;
+                offThread = mc_context_get_services(context.Get(), &observed) == MC_OK && observed == effective;
+                if (effective) {
+                    offThread = offThread && mc_context_shutdown(context.Get()) == MC_ERROR_WRONG_THREAD;
+                }
+            });
+            reader.join();
+            if (!TEST_CHECK(offThread) || !TEST_CHECK(context.Dispatch() == MC_OK) ||
+                !TEST_CHECK(context.Shutdown() == MC_OK) || !TEST_CHECK(context.Services() == effective) ||
+                !TEST_CHECK(context.Close() == MC_OK))
+            {
+                return false;
+            }
+        }
+
+        /* NULL and an older sized prefix select the full engine. poisoned tail
+        bytes must never override defaults when outside the advertised size. */
+        mc_context* context = nullptr;
+        mc_services services = MC_SERVICE_NONE;
+        if (!TEST_CHECK(mc_context_create(nullptr, &context, nullptr) == MC_OK) ||
+            !TEST_CHECK(mc_context_get_services(context, &services) == MC_OK && services == MC_SERVICE_ALL) ||
+            !TEST_CHECK(mc_context_destroy(&context) == MC_OK))
+        {
+            mc_context_destroy(&context);
+            return false;
+        }
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.struct_size = offsetof(mc_context_options, services);
+        options.services = UINT32_MAX;
+        api::Context prefix(options);
+        if (!TEST_CHECK(prefix.Services() == MC_SERVICE_ALL) || !TEST_CHECK(prefix.Close() == MC_OK)) {
+            return false;
+        }
+
+        /* invalid combinations must fail before reserving process services. */
+        options.struct_size = sizeof(options);
+        if (!TEST_CHECK(mc_context_create(&options, &context, nullptr) == MC_ERROR_UNSUPPORTED && !context)) {
+            return false;
+        }
+        options.services = MC_SERVICE_PLUGINS;
+        options.flags = MC_CONTEXT_START_LOCAL;
+        if (!TEST_CHECK(mc_context_create(&options, &context, nullptr) == MC_ERROR_UNSUPPORTED && !context)) {
+            return false;
+        }
+        options.services = MC_SERVICE_NONE;
+        options.flags = MC_CONTEXT_ENABLE_LOGGING;
+        if (!TEST_CHECK(mc_context_create(&options, &context, nullptr) == MC_ERROR_UNSUPPORTED && !context)) {
+            return false;
+        }
+        options.flags = 0;
+        api::Context recovered(options);
+        return TEST_CHECK(recovered.Services() == MC_SERVICE_NONE);
+    }
+
+    /* rejecting a directory before first discovery must not pin the default
+    directory as a side effect of rollback. a later valid custom root must work. */
+    bool checkPluginDirectory() {
+        const auto directory = std::filesystem::u8path(api::ReadPath(MC_PATH_DATA)) / "custom-plugins";
+        const auto encoded = directory.u8string();
+        const std::string path(reinterpret_cast<const char*>(encoded.data()), encoded.size());
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_PLUGINS;
+        options.plugin_directory = { path.data(), path.size() };
+        mc_context* failed = nullptr;
+        if (!TEST_CHECK(mc_context_create(&options, &failed, nullptr) == MC_ERROR_INVALID_ARGUMENT && !failed)) {
+            return false;
+        }
+        std::filesystem::create_directories(directory);
+        api::Context recovered(options);
+        return TEST_CHECK(recovered.Services() == MC_SERVICE_PLUGINS) && TEST_CHECK(recovered.Close() == MC_OK);
+    }
+
     /* a repeated name must keep its origin, while different catalogs need
     distinct persisted IDs even when the settings file starts empty. */
     bool checkRegistry() {
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        options.services = MC_SERVICE_ALL;
         api::Context context(options);
         auto& factory = LibraryFactory::Instance();
         const auto local = factory.DefaultLocalLibrary();
@@ -41,7 +159,8 @@ namespace {
         settings->SetInt(prefs::keys::LibraryType, remote);
 
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_START_LOCAL;
+        options.services = MC_SERVICE_ALL;
+        options.flags = MC_CONTEXT_START_LOCAL;
         api::Context context(options);
         if (!TEST_CHECK(context.GetLibraryStatus().kind == MC_LIBRARY_LOCAL) ||
             !TEST_CHECK(settings->GetInt(prefs::keys::LibraryType, -1) == remote))
@@ -97,6 +216,7 @@ namespace {
             bool committed = false;
         } state;
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         options.wakeup = test_host_event_signal;
         options.wakeup_user_data = event.get();
         api::Context context(options);
@@ -151,6 +271,7 @@ namespace {
         const std::unique_ptr<test_host_event, decltype(&test_host_event_destroy)> event(
             test_host_event_create(), test_host_event_destroy);
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         options.wakeup = test_host_event_signal;
         options.wakeup_user_data = event.get();
         std::optional<mc_result> status;
@@ -175,21 +296,27 @@ namespace {
     bool checkDatabaseFailure() {
         const auto filename = std::filesystem::u8path(api::ReadPath(MC_PATH_DATA)) / "1" / "musik.db";
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        options.services = MC_SERVICE_ALL;
         std::filesystem::create_directories(filename);
         mc_context* context = nullptr;
-        auto result = mc_context_create(&options, &context, nullptr);
-        const bool directoryRejected = result == MC_ERROR_IO && !context;
-        mc_context_destroy(&context);
-        if (!TEST_CHECK(directoryRejected)) {
-            return false;
+        /* each catalog-owning subset must roll back independently, including
+        library-only startup where no plugin session exists to clean up. */
+        for (auto services : { MC_SERVICE_LIBRARY, MC_SERVICE_INDEXER, MC_SERVICE_PLAYBACK, MC_SERVICE_ALL }) {
+            options.services = services;
+            const auto result = mc_context_create(&options, &context, nullptr);
+            const bool rejected = result == MC_ERROR_IO && !context;
+            mc_context_destroy(&context);
+            if (!TEST_CHECK(rejected)) {
+                return false;
+            }
         }
+        options.services = MC_SERVICE_ALL;
         std::filesystem::remove_all(filename);
         {
             std::ofstream corrupt(filename, std::ios::binary);
             corrupt << "this is not a SQLite database";
         }
-        result = mc_context_create(&options, &context, nullptr);
+        auto result = mc_context_create(&options, &context, nullptr);
         const bool corruptionRejected = result == MC_ERROR_IO && !context;
         mc_context_destroy(&context);
         if (!TEST_CHECK(corruptionRejected)) {
@@ -247,7 +374,7 @@ namespace {
     owner; distinguish this contract violation from transient reentrancy. */
     bool checkOwner() {
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        options.services = MC_SERVICE_ALL;
         api::Context context(options);
         auto playback = context.GetPlayback();
         bool correct = false;
@@ -270,7 +397,7 @@ namespace {
     shutdown reports failure, drains requests, and leaves destruction retryable. */
     bool checkFailure(bool caches = false) {
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        options.services = MC_SERVICE_ALL;
         auto first = Preferences::ForPlugin("RuntimeFailureFirst");
         auto second = Preferences::ForPlugin("RuntimeFailureSecond");
         {
@@ -341,6 +468,12 @@ int main(int argc, char** argv) {
         return 1;
     }
     const std::string_view mode(argv[1]);
+    if (mode == "plugin_directory") {
+        return checkPluginDirectory() ? 0 : 1;
+    }
+    if (mode == "services") {
+        return checkServices() ? 0 : 1;
+    }
     if (mode == "registry") {
         return checkRegistry() ? 0 : 1;
     }

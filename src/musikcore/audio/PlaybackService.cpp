@@ -152,7 +152,9 @@ PlaybackService::PlaybackService(
     transport->PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
     transport->VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
     transport->TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
-    library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
+    if (auto* indexer = library->Indexer()) {
+        indexer->Finished.connect(this, &PlaybackService::OnIndexerFinished);
+    }
     messageQueue.Register(this);
     messageQueue.Post(Message::Create(this, MESSAGE_LOAD_PLAYBACK_CONTEXT));
 }
@@ -183,6 +185,9 @@ void PlaybackService::Shutdown() {
     }
     this->stopped = true;
 
+    if (auto* indexer = this->library->Indexer()) {
+        indexer->Finished.disconnect(this);
+    }
     this->ClosePlaybackHandles();
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
@@ -200,7 +205,9 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
 
     /* Stop old stream work before resetting the queue's track identifiers. */
     this->Stop();
-    previous->Indexer()->Finished.disconnect(this);
+    if (auto* indexer = previous->Indexer()) {
+        indexer->Finished.disconnect(this);
+    }
     for (const auto type : { MESSAGE_STREAM_EVENT, MESSAGE_PREPARE_NEXT_TRACK,
         MESSAGE_NEXT_TRACK_EDITED, MESSAGE_SEEK, MESSAGE_MARK_TRACK_PLAYED, MESSAGE_MARK_TRACK_PLAYING })
     {
@@ -225,7 +232,9 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
     if (hadPlayingTrack) {
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_TRACK);
     }
-    this->library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
+    if (auto* indexer = this->library->Indexer()) {
+        indexer->Finished.connect(this, &PlaybackService::OnIndexerFinished);
+    }
     POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
 }
 

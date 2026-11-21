@@ -56,12 +56,24 @@ int main(void) {
     size_t count = 99;
 
     mc_context_options runtime_options = MC_CONTEXT_OPTIONS_DEFAULT;
-    runtime_options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+    runtime_options.services = MC_SERVICE_ALL;
     CHECK(mc_context_create(&runtime_options, &context, NULL) == MC_ERROR_UNSUPPORTED && !context);
 
     /* Null lifecycle inputs and the reserved zero request ID must fail before
        touching thread-binding or request-registry state. */
-    CHECK(mc_context_create(NULL, &context, NULL) == MC_OK);
+    CHECK(mc_context_create(NULL, &context, NULL) == MC_ERROR_UNSUPPORTED && !context);
+    /* a full zero-filled struct explicitly opts out of services; unlike a
+    missing options struct it must stay usable in this ABI-only build. */
+    mc_context_options dispatcher_options = { 0 };
+    dispatcher_options.struct_size = sizeof(dispatcher_options);
+    CHECK(mc_context_create(&dispatcher_options, &context, NULL) == MC_OK);
+    /* immutable service discovery validates both arguments and reports the
+    explicit no-services configuration without starting any production state. */
+    mc_services services = UINT32_MAX;
+    CHECK(mc_context_get_services(NULL, &services) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(services == UINT32_MAX);
+    CHECK(mc_context_get_services(context, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_context_get_services(context, &services) == MC_OK && services == MC_SERVICE_NONE);
     mc_playback* playback = NULL;
     CHECK(mc_context_get_playback(context, &playback) == MC_ERROR_UNSUPPORTED && !playback);
     CHECK(mc_context_select_library(context, MC_LIBRARY_LOCAL) == MC_ERROR_UNSUPPORTED);

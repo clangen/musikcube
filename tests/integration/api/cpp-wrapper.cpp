@@ -74,6 +74,7 @@ namespace {
 
         {
             mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+            options.services = MC_SERVICE_NONE;
             auto library = openLibrary(directory);
             if (!library) return false;
             options.wakeup = query_test_wakeup;
@@ -138,6 +139,7 @@ namespace {
         unsigned stale = 0;
         mc_result result = MC_ERROR_INTERNAL;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         auto library = openLibrary(directory);
         if (!library) return false;
         options.wakeup = query_test_wakeup;
@@ -203,6 +205,7 @@ namespace {
         TrackResult tracks;
         TrackPage page;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         auto library = openLibrary(directory);
         if (!library) return false;
         options.wakeup = query_test_wakeup;
@@ -396,6 +399,7 @@ namespace {
         if (!source) return playbackFailure(__LINE__);
         api::TrackResult result;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         options.wakeup = query_test_wakeup;
         api::Context context(options);
         const auto wakes = query_test_wakeup_count();
@@ -1060,6 +1064,7 @@ namespace {
         if (!source) return false;
 
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         options.wakeup = query_test_wakeup;
         api::Context context(options);
         api::TrackResult album;
@@ -1123,6 +1128,7 @@ namespace {
         mc_result completed = MC_OK;
         TrackResult tracks;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_NONE;
         options.wakeup = query_test_wakeup;
         Context context(options);
         const auto wakes = query_test_wakeup_count();

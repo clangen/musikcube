@@ -27,13 +27,13 @@ namespace musik { namespace core { namespace ffi {
         ContextRuntime& operator=(ContextRuntime&&) = delete;
 
         virtual void Start(mc_context& context, const std::string& pluginDirectory,
-            uint32_t flags, mc_log_fn log, void* logData) = 0;
+            mc_services services, uint32_t flags, mc_log_fn log, void* logData) = 0;
         virtual void Dispatch() = 0;
         virtual void AcknowledgeDispatch() = 0;
         virtual mc_result OpenPlayback(mc_playback** out) = 0;
         virtual mc_result SelectLibrary(mc_library_kind kind) = 0;
-        virtual void ReconnectRemote() = 0;
-        virtual IIndexer& LocalIndexer() const = 0;
+        virtual mc_result ReconnectRemote() = 0;
+        virtual IIndexer* LocalIndexer() const = 0;
         virtual void Stop() = 0;
     };
 

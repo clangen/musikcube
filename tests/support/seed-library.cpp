@@ -54,7 +54,9 @@ namespace {
         mc_result result = MC_ERROR_BUSY;
         size_t count = 0;
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        /* indexing adds Library and Plugins without constructing a playback
+        engine; every media fixture exercises this independent service path. */
+        options.services = MC_SERVICE_INDEXER;
         options.wakeup = test_host_event_signal;
         options.wakeup_user_data = event.get();
         Context context(options);

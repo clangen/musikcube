@@ -62,7 +62,7 @@ namespace musik { namespace core { namespace library {
             using MessageQueue = musik::core::runtime::IMessageQueue;
             using IIndexer = musik::core::IIndexer;
 
-            static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue);
+            static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer = true);
 
             LocalLibrary(const LocalLibrary&) = delete;
             virtual ~LocalLibrary();
@@ -77,6 +77,7 @@ namespace musik { namespace core { namespace library {
             MessageQueue& GetMessageQueue() override { return *messageQueue; }
             IResourceLocator& GetResourceLocator() override;
             bool IsConfigured() override;
+
             ConnectionState GetConnectionState() const override { return ConnectionState::Connected; }
             Type GetType() const override { return Type::Local; }
             void Close() override;
@@ -106,7 +107,7 @@ namespace musik { namespace core { namespace library {
             using QueryContextPtr = std::shared_ptr<QueryContext>;
             using QueryList = std::list<QueryContextPtr>;
 
-            LocalLibrary(std::string name, int id, MessageQueue* messageQueue); /* ctor */
+            LocalLibrary(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer); /* ctor */
 
             void RunQuery(QueryContextPtr context, bool notify = true);
             void ThreadProc();

@@ -212,6 +212,12 @@ if(BUILD_TESTING)
         "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
       set_tests_properties(musikcore.integration.api.managed_runtime PROPERTIES
         LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
+      add_test(NAME musikcore.integration.api.playback_without_indexer COMMAND "${CMAKE_COMMAND}"
+        ${indexed_arguments} "-DMANAGED_RUNTIME_TEST=$<TARGET_FILE:musikcore_managed_runtime_test>"
+        ${managed_runtime_plugins} -DPLAYBACK_ONLY=ON
+        "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
+      set_tests_properties(musikcore.integration.api.playback_without_indexer PROPERTIES
+        LABELS "integration;musikcore;runtime;playback;contract" TIMEOUT 30)
       if(TARGET server AND TARGET httpdatastream)
         add_dependencies(musikcore_managed_runtime_test httpdatastream)
         add_test(NAME musikcore.integration.api.remote_audio COMMAND "${CMAKE_COMMAND}"
@@ -294,7 +300,7 @@ if(WIN32)
 endif()
 add_dependencies(musikcube_tests musikcore_runtime_hardening_test)
 add_dependencies(musikcube_integration_tests musikcore_runtime_hardening_test)
-foreach(case IN ITEMS registry startup owner read_isolation locked_read_shutdown database_failure)
+foreach(case IN ITEMS services plugin_directory registry startup owner read_isolation locked_read_shutdown database_failure)
   add_test(NAME musikcore.integration.runtime.${case} COMMAND "${MUSIKCORE_TEST_NODE}"
     "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
     "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage ${case})

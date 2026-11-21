@@ -36,13 +36,24 @@ run("${CMAKE_COMMAND}" -E env "HOME=${root}/config" "XDG_CONFIG_HOME=${root}/con
   "${NODE}" "${CMAKE_CURRENT_LIST_DIR}/run-installed-session.js"
   "${REMOTE_TEST}" "${root}/consumer/session" "${CATALOG}")
 
+# use an empty isolated directory even in builds without an output provider.
+set(plugins "${relocated}/share/musikcube/managed-test-plugins")
+file(MAKE_DIRECTORY "${plugins}")
 if(INSTALLED_TEST_PLUGIN)
   # Discover only the installed headless plugin. Optional servers must stay off.
-  set(plugins "${relocated}/share/musikcube/managed-test-plugins")
-  file(MAKE_DIRECTORY "${plugins}")
   file(RENAME "${relocated}/share/musikcube/plugins/${INSTALLED_TEST_PLUGIN}" "${plugins}/${INSTALLED_TEST_PLUGIN}")
   run("${CMAKE_COMMAND}" -E env "HOME=${root}/config" "XDG_CONFIG_HOME=${root}/config"
     "${root}/consumer/managed" "${plugins}")
 endif()
+
+# share the indexed fixture, but isolate preferences and load only null output.
+get_filename_component(config_directory "${CATALOG}/../.." ABSOLUTE)
+foreach(language IN ITEMS c cpp)
+  run("${CMAKE_COMMAND}" -E env "HOME=${config_directory}" "XDG_CONFIG_HOME=${config_directory}"
+    "${root}/consumer/engine_${language}" "${plugins}")
+  if(NOT last_output MATCHES "Morning Light")
+    message(FATAL_ERROR "Installed engine ${language} did not read the configured catalog at ${root}\n${last_output}")
+  endif()
+endforeach()
 
 file(REMOVE_RECURSE "${root}")

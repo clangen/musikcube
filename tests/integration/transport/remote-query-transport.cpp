@@ -297,7 +297,7 @@ namespace {
         std::vector<mc_indexer_event> indexEvents;
         runtime::MessageQueue host;
         auto options = TestHostOptions(host);
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        options.services = MC_SERVICE_ALL;
         Context context(options);
         notice.context = &context;
         const auto wait = [&](auto ready) {
@@ -928,7 +928,12 @@ namespace {
         const auto transport = std::make_shared<TestTransport>();
         transport->state = sdk::PlaybackState::Stopped;
         runtime::MessageQueue playbackMessages;
+        /* this fixture supplies its own queue; finish startup before submitting
+        commands, as the production context does. session restoration is outside
+        the parity contract and must not replace the queue on first dispatch. */
+        settings->SetBool(prefs::keys::SaveSessionOnExit, false);
         audio::PlaybackService service(playbackMessages, appRemote, transport);
+        service.Initialize();
         auto playback = OpenFixturePlayback(service);
         for (unsigned sample = 0; sample < 7; ++sample) {
             for (bool overRemote : { false, true }) {
@@ -1053,7 +1058,7 @@ namespace {
         std::optional<mc_result> completed;
         runtime::MessageQueue host;
         auto options = TestHostOptions(host);
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        options.services = MC_SERVICE_ALL;
         Context context(options);
         const auto wait = [&](auto ready) {
             return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && ready(); });

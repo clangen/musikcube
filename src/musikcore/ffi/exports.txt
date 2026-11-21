@@ -2,6 +2,7 @@ mc_abi_version
 mc_context_create
 mc_context_destroy
 mc_context_dispatch
+mc_context_get_services
 mc_context_get_library
 mc_context_get_playback
 mc_context_set_library

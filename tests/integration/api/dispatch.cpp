@@ -238,6 +238,7 @@ namespace {
 static bool run_check(const char *name, bool (*check)(State &)) {
     State state;
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.services = MC_SERVICE_NONE;
     options.wakeup = dispatch_test_wakeup;
     options.wakeup_user_data = &state;
     if (mc_context_create(&options, &state.context, nullptr) != MC_OK) return false;

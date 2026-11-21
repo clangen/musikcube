@@ -118,6 +118,7 @@ int main(int argc, char** argv) {
     pthread_t worker;
 
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.services = MC_SERVICE_NONE;
     options.wakeup = test_host_event_signal;
     options.wakeup_user_data = state.event;
     CHECK(state.event && mc_context_create(&options, &state.context, NULL) == MC_OK);
