@@ -62,6 +62,29 @@ namespace {
         return false;
     }
 
+    bool checkLocaleIntegers(const std::string& originalDirectory) {
+        namespace fs = std::filesystem;
+        const auto directory = fs::u8path(ReadPath(MC_PATH_DATA)) / "test-locales";
+        fs::create_directories(directory);
+        std::ofstream(directory / "en_US.json") <<
+            R"({"integers":{"limit":10,"fallback":12,"overflow":13,"wrong_type":14}})";
+        std::ofstream(directory / "fixture.json") <<
+            R"({"integers":{"limit":-3,"overflow":18446744073709551615,"wrong_type":2.5}})";
+
+        constexpr mc_string_view missing { "missing", sizeof("missing") - 1 };
+        int32_t unchanged = 17;
+        const bool passed = LoadLocales(directory.string()) == MC_OK &&
+            SelectLocale("fixture") == MC_OK &&
+            LocaleInteger("limit", 0) == -3 &&
+            LocaleInteger("fallback", 0) == 12 &&
+            LocaleInteger("overflow", 0) == 13 &&
+            LocaleInteger("wrong_type", 0) == 14 &&
+            mc_locale_read_integer(missing, &unchanged) == MC_ERROR_NOT_FOUND && unchanged == 17;
+
+        const bool restored = SelectLocale("en_US") == MC_OK && LoadLocales(originalDirectory) == MC_OK;
+        return passed && restored;
+    }
+
     bool checkPreferences() {
         constexpr char name[] = "RuntimeFixtureName";
         constexpr char length[] = "RuntimeFixtureLength";
@@ -430,7 +453,7 @@ int main(int argc, char** argv) {
         SelectLocale("unavailable-locale") != MC_ERROR_NOT_FOUND ||
         Translate("settings_selected_locale") == "settings_selected_locale" ||
         Translate("missing-fixture-key") != "missing-fixture-key" ||
-        LocaleDimension("missing-fixture-key", 17) != 17)
+        !checkLocaleIntegers(localeDirectory))
     {
         std::fprintf(stderr, "public locale contract failed\n");
         return 1;

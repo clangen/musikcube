@@ -47,7 +47,6 @@
 #include "Locale.h"
 
 #define KEY_STRINGS "strings"
-#define KEY_DIMENSIONS "dimensions"
 #define DEFAULT_LOCALE "en_US"
 
 using musik::core::sdk::fs::pathToUtf8;
@@ -184,23 +183,37 @@ std::string Locale::Translate(const char* key) {
     return key;
 }
 
-int Locale::Dimension(const char* key, int defaultValue) {
+bool Locale::ReadInteger(const std::string& key, int32_t& value) {
     std::lock_guard lock(this->mutex);
 
-    if (!this->localeData.is_null()) { /* current locale */
-        const nlohmann::json& dimens = this->localeData.value(KEY_DIMENSIONS, empty);
-        auto it = dimens.find(key);
-        if (it != dimens.end()) {
-            return it.value();
+    for (const auto* resource : { &this->localeData, &this->defaultLocaleData }) {
+        const auto integers = resource->find("integers");
+        if (integers == resource->end() || !integers->is_object()) {
+            continue;
         }
+
+        const auto entry = integers->find(key);
+        if (entry == integers->end() || !entry->is_number_integer()) {
+            continue;
+        }
+
+        if (entry->is_number_unsigned()) {
+            if (entry->get<uint64_t>() > INT32_MAX) {
+                continue;
+            }
+        }
+        else {
+            const auto number = entry->get<int64_t>();
+            if (number < INT32_MIN || number > INT32_MAX) {
+                continue;
+            }
+        }
+
+        value = entry->get<int32_t>();
+        return true;
     }
 
-    if (!this->defaultLocaleData.is_null()) { /* fall back to default */
-        const nlohmann::json& dimens = this->defaultLocaleData.value(KEY_DIMENSIONS, empty);
-        return dimens.value(key, defaultValue);
-    }
-
-    return defaultValue; /* not found anywhere */
+    return false;
 }
 
 namespace {
@@ -262,13 +275,13 @@ mc_result MC_CALL mc_locale_translate(mc_string_view key, mc_locale_text_fn read
     });
 }
 
-int MC_CALL mc_locale_dimension(mc_string_view key, int fallback) {
-    int value = fallback;
-    if (ffi::valid_text(key, false)) {
-        ffi::exception_barrier(nullptr, [&] {
-            value = Locale::Instance().Dimension(std::string(key.data, key.length).c_str(), fallback);
-            return MC_OK;
-        });
+mc_result MC_CALL mc_locale_read_integer(mc_string_view key, int32_t* value) {
+    if (!value || !ffi::valid_text(key, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
     }
-    return value;
+
+    return ffi::exception_barrier(nullptr, [&] {
+        return Locale::Instance().ReadInteger(std::string(key.data, key.length), *value)
+            ? MC_OK : MC_ERROR_NOT_FOUND;
+    });
 }

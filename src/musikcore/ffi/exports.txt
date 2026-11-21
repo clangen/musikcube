@@ -116,7 +116,7 @@ mc_locale_list
 mc_locale_read_selected
 mc_locale_select
 mc_locale_translate
-mc_locale_dimension
+mc_locale_read_integer
 mc_log_write
 mc_lyrics_find_async
 mc_lastfm_request_link_async

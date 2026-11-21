@@ -174,8 +174,9 @@ mc_result MC_CALL mc_locale_translate(mc_string_view key, mc_locale_text_fn read
     return MC_OK;
 }
 
-int MC_CALL mc_locale_dimension(mc_string_view, int fallback) {
-    return fallback;
+mc_result MC_CALL mc_locale_read_integer(mc_string_view key, int32_t* value) {
+    return value && musik::core::ffi::valid_text(key, false)
+        ? MC_ERROR_NOT_FOUND : MC_ERROR_INVALID_ARGUMENT;
 }
 
 mc_result MC_CALL mc_log_write(mc_log_level level, mc_string_view tag, mc_string_view text) {

@@ -36,6 +36,7 @@
 
 #include <musikcore/config.h>
 #include <musikcore/support/Preferences.h>
+#include <cstdint>
 #include <mutex>
 
 #pragma warning(push, 0)
@@ -61,8 +62,7 @@ namespace musik { namespace core { namespace i18n {
 
             std::string Translate(const std::string& key);
             std::string Translate(const char* key);
-
-            int Dimension(const char* key, int defaultValue);
+            bool ReadInteger(const std::string& key, int32_t& value);
 
         private:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Locale)
@@ -83,7 +83,6 @@ namespace musik { namespace core { namespace i18n {
 
     #define _TSTR(KEY) (musik::core::i18n::Locale::Instance().Translate(KEY))
     #define _TCP(KEY) (musik::core::i18n::Locale::Instance().Translate(KEY).c_str())
-    #define _DIMEN(KEY, DEFAULT) (musik::core::i18n::Locale::Instance().Dimension(KEY, DEFAULT))
 
 } } }
 

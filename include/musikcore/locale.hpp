@@ -44,8 +44,10 @@ namespace musik { namespace core { namespace api {
         return text;
     }
 
-    inline int LocaleDimension(std::string_view key, int fallback) {
-        return mc_locale_dimension({ key.data(), key.size() }, fallback);
+    inline int32_t LocaleInteger(std::string_view key, int32_t fallback) {
+        int32_t value = fallback;
+        mc_locale_read_integer({ key.data(), key.size() }, &value);
+        return value;
     }
 
 } } }
