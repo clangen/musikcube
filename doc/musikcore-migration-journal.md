@@ -44,3 +44,7 @@ The preamp and replay gain overlays and the transport indicator use the public p
 The layouts now pass public match and sort values directly. Existing session files retain their stored match values. Sort labels live in the existing sort overlay, and cube no longer includes internal query headers. All 44 Linux Release tests passed, including selecting track-title sort from the headless Search view.
 
 Browse, category search, and the playlist overlays use public metadata and category keys. Cube no longer includes the local database schema header. All 44 Linux Release tests passed.
+
+## Visualizers
+
+The chooser and hotkey use the SDK for discovery, show, and hide. Playback workers read one atomic selection and borrow plugin instances held by the registry. All 44 Linux Release tests passed, including the missing-plugin dialog and the standalone ABI export checks. The shipped Windows visualizer still needs native verification.

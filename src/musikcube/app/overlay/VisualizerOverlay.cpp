@@ -36,7 +36,7 @@
 
 #include "VisualizerOverlay.h"
 
-#include <musikcore/audio/Visualizer.h>
+#include <musikcore/visualizer.hpp>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -44,7 +44,7 @@
 #include <cursespp/DialogOverlay.h>
 
 using namespace musik::cube;
-using namespace musik::core::audio;
+using namespace musik::core;
 using namespace cursespp;
 
 static void showNoVisualizersMessage() {
@@ -65,7 +65,8 @@ VisualizerOverlay::VisualizerOverlay() {
 }
 
 void VisualizerOverlay::Show() {
-    if (!vis::VisualizerCount()) {
+    const auto visualizers = api::ListVisualizers();
+    if (visualizers.empty()) {
         showNoVisualizersMessage();
         return;
     }
@@ -75,8 +76,8 @@ void VisualizerOverlay::Show() {
 
     std::shared_ptr<Adapter> adapter(new Adapter());
 
-    for (size_t i = 0; i < vis::VisualizerCount(); i++) {
-        adapter->AddEntry(vis::GetVisualizer(i)->Name());
+    for (const auto& name : visualizers) {
+        adapter->AddEntry(name);
     }
 
     adapter->SetSelectable(true);
@@ -86,9 +87,8 @@ void VisualizerOverlay::Show() {
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("visualizer_overlay_title"))
         .SetItemSelectedCallback(
-            [](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                vis::SetSelectedVisualizer(vis::GetVisualizer(index));
-                vis::SelectedVisualizer()->Show();
+            [](ListOverlay*, IScrollAdapterPtr, size_t index) {
+                api::ShowVisualizer(index);
             });
 
     cursespp::App::Overlays().Push(dialog);

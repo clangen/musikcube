@@ -1157,6 +1157,9 @@ legacy list for actions that still require it.
 - [x] **MIG-007** Migrate indexer and local-library settings. Cube uses the SDK
   for indexer commands, directory paths, and dispatch notifications.
 - [ ] **MIG-008** Migrate environment/output/equalizer consumers.
+  The visualizer chooser and hotkey use the public visualizer API.
+  `musikcore.integration.plugin.playback_reload` and `musikcube.ui.browse`
+  cover an installation without a visualizer plugin.
 - [ ] **MIG-009** Remove private musikcore headers from musikcube targets.
 - [ ] **MIG-010** Make the normal migration build link ABI0 only.
 

@@ -3,6 +3,7 @@
 #include <musikcore/audio/GaplessTransport.h>
 #include <musikcore/output.hpp>
 #include <musikcore/playback.hpp>
+#include <musikcore/visualizer.hpp>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 
@@ -33,6 +34,13 @@ namespace {
     }
 
     bool reloadDuringPlayback(const char* media) {
+        if (!api::ListVisualizers().empty() || api::ShowVisualizer(0) != MC_ERROR_NOT_FOUND ||
+            api::HideVisualizer() != MC_ERROR_NOT_FOUND)
+        {
+            std::fputs("An empty visualizer registry did not return empty results\n", stderr);
+            return false;
+        }
+
         const auto output = api::ReadOutputConfiguration();
         if (output.drivers.size() != 1 || output.drivers.front() != nullOutput ||
             output.selectedDriver != nullOutput)

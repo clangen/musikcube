@@ -8,5 +8,6 @@
 #include <musikcore/output.h>
 #include <musikcore/equalizer.h>
 #include <musikcore/indexer.h>
+#include <musikcore/visualizer.h>
 
 #endif

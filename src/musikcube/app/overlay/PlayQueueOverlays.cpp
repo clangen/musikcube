@@ -41,7 +41,6 @@
 
 #include "PlayQueueOverlays.h"
 
-#include <musikcore/audio/Visualizer.h>
 
 #include <musikcore/runtime/Message.h>
 

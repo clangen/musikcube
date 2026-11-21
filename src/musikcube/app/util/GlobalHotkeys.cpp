@@ -40,7 +40,7 @@
 #include <app/overlay/EqualizerOverlay.h>
 #include <app/overlay/VisualizerOverlay.h>
 
-#include <musikcore/audio/Visualizer.h>
+#include <musikcore/visualizer.hpp>
 #include <musikcore/support/Playback.h>
 
 using namespace musik::core;
@@ -114,11 +114,7 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleVisualizer, kn)) {
-        std::shared_ptr<IVisualizer> selected = vis::SelectedVisualizer();
-        if (selected && selected->Visible()) {
-            selected->Hide();
-        }
-        else {
+        if (api::HideVisualizer() == MC_ERROR_NOT_FOUND) {
             VisualizerOverlay::Show();
         }
         return true;

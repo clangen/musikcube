@@ -92,3 +92,6 @@ mc_output_set_transport
 mc_playback_get_gain_settings
 mc_playback_set_preamp
 mc_playback_set_replay_gain
+mc_visualizer_list
+mc_visualizer_show
+mc_visualizer_hide

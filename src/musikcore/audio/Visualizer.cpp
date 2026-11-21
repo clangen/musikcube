@@ -34,108 +34,109 @@
 
 #include "pch.hpp"
 #include "Visualizer.h"
+
+#include <musikcore/ffi/common/error.h>
 #include <musikcore/plugin/PluginFactory.h>
+#include <musikcore/visualizer.h>
 
-#include <atomic>
 #include <algorithm>
+#include <atomic>
+#include <cctype>
+#include <string_view>
 
+using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 
-static std::vector<std::shared_ptr<IVisualizer > > visualizers;
-static std::atomic<bool> initialized;
+namespace {
+    /* Keep registry entries alive while playback workers use borrowed pointers. */
+    std::vector<std::shared_ptr<IVisualizer>> visualizers;
+    std::atomic<IVisualizer*> selectedVisualizer { nullptr };
+    bool initialized = false;
 
-static std::shared_ptr<IVisualizer> selectedVisualizer;
-static ISpectrumVisualizer* spectrumVisualizer = nullptr;
-static IPcmVisualizer* pcmVisualizer = nullptr;
-
-#define LOWER(x) std::transform(x.begin(), x.end(), x.begin(), tolower);
-
-namespace musik {
-    namespace core {
-        namespace audio {
-            namespace vis {
-                static void init() {
-                    /* spectrum visualizers */
-                    typedef PluginFactory::ReleaseDeleter<ISpectrumVisualizer> SpectrumDeleter;
-                    std::vector<std::shared_ptr<ISpectrumVisualizer> > spectrum;
-
-                    spectrum = PluginFactory::Instance()
-                        .QueryInterface<ISpectrumVisualizer, SpectrumDeleter>("GetSpectrumVisualizer");
-
-                    for (auto it = spectrum.begin(); it != spectrum.end(); it++) {
-                        visualizers.push_back(*it);
-                    }
-
-                    /* pcm visualizers */
-                    typedef PluginFactory::ReleaseDeleter<IPcmVisualizer> PcmDeleter;
-                    std::vector<std::shared_ptr<IPcmVisualizer> > pcm;
-
-                    pcm = PluginFactory::Instance()
-                        .QueryInterface<IPcmVisualizer, PcmDeleter>("GetPcmVisualizer");
-
-                    for (auto it = pcm.begin(); it != pcm.end(); it++) {
-                        visualizers.push_back(*it);
-                    }
-
-                    /* sort 'em by name */
-                    using V = std::shared_ptr<IVisualizer>;
-
-                    std::sort(
-                        visualizers.begin(),
-                        visualizers.end(),
-                        [](V left, V right) -> bool {
-                            std::string l = left->Name();
-                            LOWER(l);
-                            std::string r = right->Name();
-                            LOWER(r);
-                            return l < r;
-                        });
-
-                    initialized = true;
-                }
-
-                void HideSelectedVisualizer() {
-                    if (selectedVisualizer) {
-                        selectedVisualizer->Hide();
-                        SetSelectedVisualizer(std::shared_ptr<IVisualizer>());
-                    }
-                }
-
-                void Shutdown() {
-                    HideSelectedVisualizer();
-                }
-
-                ISpectrumVisualizer* SpectrumVisualizer() {
-                    return spectrumVisualizer;
-                }
-
-                IPcmVisualizer* PcmVisualizer() {
-                    return pcmVisualizer;
-                }
-
-                std::shared_ptr<IVisualizer> GetVisualizer(size_t index) {
-                    return visualizers.at(index);
-                }
-
-                size_t VisualizerCount() {
-                    if (!initialized) {
-                        init();
-                    }
-
-                    return visualizers.size();
-                }
-
-                void SetSelectedVisualizer(std::shared_ptr<IVisualizer> visualizer) {
-                    selectedVisualizer = visualizer;
-                    pcmVisualizer = dynamic_cast<IPcmVisualizer*>(visualizer.get());
-                    spectrumVisualizer = dynamic_cast<ISpectrumVisualizer*>(visualizer.get());
-                }
-
-                std::shared_ptr<IVisualizer> SelectedVisualizer() {
-                    return selectedVisualizer;
-                }
-            }
-        }
+    std::string normalizedName(IVisualizer& visualizer) {
+        std::string name = visualizer.Name();
+        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        return name;
     }
+
+    void initializeVisualizers() {
+        if (initialized) {
+            return;
+        }
+
+        auto& factory = PluginFactory::Instance();
+        auto spectrum = factory.QueryInterface<ISpectrumVisualizer,
+            PluginFactory::ReleaseDeleter<ISpectrumVisualizer>>("GetSpectrumVisualizer");
+        auto pcm = factory.QueryInterface<IPcmVisualizer,
+            PluginFactory::ReleaseDeleter<IPcmVisualizer>>("GetPcmVisualizer");
+
+        std::vector<std::shared_ptr<IVisualizer>> discovered(spectrum.begin(), spectrum.end());
+        discovered.insert(discovered.end(), pcm.begin(), pcm.end());
+        std::sort(discovered.begin(), discovered.end(), [](const auto& left, const auto& right) {
+            return normalizedName(*left) < normalizedName(*right);
+        });
+        visualizers = std::move(discovered);
+        initialized = true;
+    }
+}
+
+IVisualizer* vis::SelectedVisualizer() {
+    return selectedVisualizer.load();
+}
+
+void vis::Shutdown() {
+    if (auto* selected = selectedVisualizer.exchange(nullptr)) {
+        selected->Hide();
+    }
+}
+
+mc_result MC_CALL mc_visualizer_list(mc_visualizer_list_fn read, void* data) {
+    if (!read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        initializeVisualizers();
+        std::vector<mc_string_view> names;
+        names.reserve(visualizers.size());
+        for (const auto& visualizer : visualizers) {
+            const std::string_view name(visualizer->Name());
+            names.push_back({ name.data(), name.size() });
+        }
+        read(data, names.data(), names.size());
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_visualizer_show(size_t index) {
+    return ffi::exception_barrier(nullptr, [&] {
+        initializeVisualizers();
+        if (index >= visualizers.size()) {
+            return MC_ERROR_NOT_FOUND;
+        }
+
+        auto* visualizer = visualizers[index].get();
+        auto* previous = selectedVisualizer.exchange(nullptr);
+        if (previous && previous != visualizer && previous->Visible()) {
+            previous->Hide();
+        }
+        visualizer->Show();
+        selectedVisualizer.store(visualizer);
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_visualizer_hide() {
+    return ffi::exception_barrier(nullptr, [&] {
+        auto* selected = selectedVisualizer.exchange(nullptr);
+        if (!selected || !selected->Visible()) {
+            return MC_ERROR_NOT_FOUND;
+        }
+
+        selected->Hide();
+        return MC_OK;
+    });
 }

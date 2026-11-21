@@ -82,7 +82,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/Stream.h>
 #include <musikcore/audio/Streams.h>
-#include <musikcore/audio/Visualizer.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/ScopedTransaction.h>
 #include <musikcore/db/SqliteExtensions.h>

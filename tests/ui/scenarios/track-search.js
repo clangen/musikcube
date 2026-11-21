@@ -328,6 +328,10 @@ async function checkTrackSearch(runtime, database, screenshots,
         await terminal.expect('Browse fixture revised', { absent: 'frequency bands' });
       }
       if (staged.some(name => name.startsWith('libnullout.'))) {
+        terminal.send('v');
+        await terminal.expect('no visualizers found!');
+        terminal.send('\r');
+        await terminal.expect('Browse fixture revised', { absent: 'no visualizers found!' });
         terminal.send('s');
         await terminal.expect('output driver: Null');
         const label = 'playback mode: gapless';

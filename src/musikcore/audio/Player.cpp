@@ -567,8 +567,9 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
 
     /* process visualizer data, and write to the selected plugin, if applicable */
 
-    ISpectrumVisualizer* specVis = vis::SpectrumVisualizer();
-    IPcmVisualizer* pcmVis = vis::PcmVisualizer();
+    auto* visualizer = vis::SelectedVisualizer();
+    auto* specVis = dynamic_cast<ISpectrumVisualizer*>(visualizer);
+    auto* pcmVis = dynamic_cast<IPcmVisualizer*>(visualizer);
 
     if (specVis && specVis->Visible()) {
         if (!fftContext) {
@@ -576,11 +577,11 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         }
 
         if (performFft(buffer, fftContext, spectrum, FFT_N / 2)) {
-            vis::SpectrumVisualizer()->Write(spectrum, FFT_N / 2);
+            specVis->Write(spectrum, FFT_N / 2);
         }
     }
     else if (pcmVis && pcmVis->Visible()) {
-        vis::PcmVisualizer()->Write(buffer);
+        pcmVis->Write(buffer);
     }
 
     /* release the buffer back to the stream, find mixpoints */

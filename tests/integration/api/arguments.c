@@ -79,6 +79,9 @@ int main(void) {
     CHECK(mc_playback_set_preamp(-21.0) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_playback_set_replay_gain(MC_REPLAY_GAIN_TRACK) == MC_ERROR_UNSUPPORTED);
     CHECK(mc_playback_set_replay_gain((mc_replay_gain_mode) -1) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_visualizer_list(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_visualizer_show(0) == MC_ERROR_NOT_FOUND);
+    CHECK(mc_visualizer_hide() == MC_ERROR_NOT_FOUND);
     mc_equalizer_state equalizer = MC_EQUALIZER_STATE_DEFAULT;
     CHECK(mc_equalizer_get_state(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_equalizer_get_state(&equalizer) == MC_ERROR_UNSUPPORTED);

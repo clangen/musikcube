@@ -1,6 +1,8 @@
 #include <musikcore/output.h>
 #include <musikcore/equalizer.h>
 #include <musikcore/playback.h>
+#include <musikcore/visualizer.h>
+#include "../common/error.h"
 
 #include <cmath>
 
@@ -40,6 +42,24 @@ mc_result MC_CALL mc_playback_set_replay_gain(mc_replay_gain_mode mode) {
     return (mode == MC_REPLAY_GAIN_DISABLED || mode == MC_REPLAY_GAIN_TRACK || mode == MC_REPLAY_GAIN_ALBUM)
         ? MC_ERROR_UNSUPPORTED
         : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_visualizer_list(mc_visualizer_list_fn read, void* data) {
+    if (!read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&] {
+        read(data, nullptr, 0);
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_visualizer_show(size_t) {
+    return MC_ERROR_NOT_FOUND;
+}
+
+mc_result MC_CALL mc_visualizer_hide() {
+    return MC_ERROR_NOT_FOUND;
 }
 
 mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
