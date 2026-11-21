@@ -33,6 +33,7 @@
 - Use `/* comment */` where the language supports block comments. Use `//` only when necessary and the language's native syntax where block comments are unavailable.
 - Keep platform and compiler differences near setup. Pass the resulting options into shared build and application code.
 - Make ownership, cleanup, and error handling explicit at resource and thread boundaries.
+- Prefer direct ownership and borrow by reference when the owner outlives the caller. Use smart pointers when the lifetime requires shared ownership, independent transfer, or a weak reference.
 - Keep SQL wrappers such as `db::Connection` generic. Do not add application-, library-, or query-specific types, declarations, or friendships to them. Expose a generic database operation or access mechanism when query implementations need additional capabilities.
 - Route library operations through typed queries dispatched by the selected library backend. Reuse an existing query where possible, or add one when needed. Keep ad-hoc SQL for cases that require it, and keep library SQL inside the local typed-query implementation so the same operation can run against local and remote libraries.
 - Protect all database operations from SQL injection. Use prepared statements and bind every variable value, including each value in an `IN` list. Select SQL identifiers and syntax from fixed fragments or explicit allowlists. Use direct execution only for fixed SQL with no variable values.
