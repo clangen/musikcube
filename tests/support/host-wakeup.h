@@ -13,6 +13,7 @@ void test_host_event_destroy(test_host_event* event);
 void MC_CALL test_host_event_signal(void* event);
 /* Consume one pending wakeup; return zero after a bounded wait instead of hanging. */
 int test_host_event_wait(test_host_event* event);
+int test_host_event_wait_for(test_host_event* event, unsigned timeout_ms);
 #ifdef __cplusplus
 }
 #endif

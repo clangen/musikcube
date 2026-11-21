@@ -1311,7 +1311,7 @@ legacy list for actions that still require it.
 - [ ] **FIN-002** Confirm every shipped plugin has left the C++ SDK ABI.
 - [x] **FIN-003** Remove or archive `musikcore_c.h`, `c_context.cpp`, and
   `c_interface_wrappers.cpp` after their consumers are gone. The fixture
-  seeder uses the internal indexer and is exercised by `musikcore.abi.indexed_query`.
+  seeder uses the public indexer and is exercised by `musikcore.abi.indexed_query`.
 - [ ] **FIN-004** Remove obsolete C++ SDK interfaces from installed/public
   include paths.
 - [x] **FIN-005** Replace `core_c_demo` with maintained C and C++ examples.

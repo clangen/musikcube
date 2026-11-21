@@ -136,3 +136,7 @@ The frontend boundary test checks source includes and the real executable's dyna
 ## Installed application SDK
 
 The Unix install now includes public C and C++ headers and a relocatable CMake target named `musikcore::musikcore`. Install rules use the configured runtime directory so an out-of-tree build packages its own binaries. All 49 Linux Release tests passed. The installed-SDK test relocates its prefix, builds external C and C++ consumers, and runs both against an indexed catalog. The standalone scan also passed for the full installed library and plugin set at glibc 2.28.
+
+## Fixture seeder
+
+The seeder starts the public managed context, waits on public indexer callbacks, and verifies the catalog through a public typed search. It no longer starts private services or builds a query directly. All 49 Linux Release tests passed. The ABI-only Debug build also passed all 26 ASan/UBSan tests after making the fault-injection fixture use matching allocation and destruction.

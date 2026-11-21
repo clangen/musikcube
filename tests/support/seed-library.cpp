@@ -1,111 +1,105 @@
-#include <musikcore/debug.h>
-#include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/query/SearchTrackListQuery.h>
-#include <musikcore/plugin/Plugins.h>
-#include <common/runtime/Message.h>
-#include <common/runtime/MessageQueue.h>
+#include <musikcore/musikcore.hpp>
+#include "host-wakeup.h"
 
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
-#include "CoreRuntime.h"
+#include <memory>
 
 namespace {
-    using namespace musik::core;
-    using namespace musik::core::runtime;
-    using namespace musik::core::library::query;
+    using namespace musik::core::api;
     using Clock = std::chrono::steady_clock;
+    using namespace std::chrono_literals;
 
-    /* Delivers the indexer signal to the fixture's dispatcher. Neither copyable nor movable. */
-    class IndexCompletion final : public IMessageTarget, public sigslot::has_slots<> {
-    public:
-        /* Register the host target and connect the indexer's completion signal for the requested scan. */
-        IndexCompletion(MessageQueue& queue, IIndexer& indexer, int expectedScanned)
-        : queue(queue)
-        , expectedScanned(expectedScanned) {
-            this->queue.Register(this);
-            indexer.Finished.connect(this, &IndexCompletion::OnFinished);
-        }
-
-        /* Unregister queued notifications before the observer's storage goes away. */
-        ~IndexCompletion() { this->queue.Unregister(this); }
-        IndexCompletion(const IndexCompletion&) = delete;
-        IndexCompletion& operator=(const IndexCompletion&) = delete;
-
-        /* Pump the host queue until the requested index scan finishes or its deadline expires. */
-        bool Wait() {
-            const auto deadline = Clock::now() + std::chrono::minutes(5);
-            while (!this->finished) {
-                const auto remaining = deadline - Clock::now();
-                if (remaining <= Clock::duration::zero()) return false;
-                this->queue.WaitAndDispatch(std::chrono::ceil<std::chrono::milliseconds>(remaining).count());
+    template<class Ready>
+    bool dispatchUntil(Context& context, test_host_event& event, Ready ready) {
+        const auto deadline = Clock::now() + 5min;
+        while (!ready()) {
+            if (context.Dispatch() != MC_OK) {
+                return false;
             }
-            return true;
-        }
+            if (ready()) {
+                return true;
+            }
 
-        /* Mark completion only on the host thread after the indexer's signal has been marshalled. */
-        void ProcessMessage(IMessage&) override { this->finished = true; }
-
-    private:
-        /* Post a host notification only for a scan that includes the expected number of fixture files. */
-        void OnFinished(int scanned) {
-            /* A database upgrade may have already scheduled an empty scan. Wait
-            for the scan that includes the fixture media instead of accepting
-            the first generic Finished notification. */
-            if (scanned >= this->expectedScanned) {
-                this->queue.Post(Message::Create(this, 0, 0, 0));
+            const auto remaining = std::chrono::ceil<std::chrono::milliseconds>(deadline - Clock::now());
+            if (remaining <= 0ms || !test_host_event_wait_for(&event, static_cast<unsigned>(remaining.count()))) {
+                return false;
             }
         }
+        return true;
+    }
 
-        MessageQueue& queue;
-        int expectedScanned;
-        bool finished = false;
+    struct SeedState {
+        int64_t expected;
+        bool indexed = false;
+
+        static void MC_CALL OnIndexEvent(void* data, mc_indexer_event event, int scanned) {
+            auto& state = *static_cast<SeedState*>(data);
+            /* An upgrade can finish its own scan before the requested media scan. */
+            if (event == MC_INDEXER_FINISHED && scanned >= state.expected) {
+                state.indexed = true;
+            }
+        }
     };
 
-    /* Drain startup indexing, run the requested scan, then verify committed visible tracks with a typed
-       query. */
-    bool seed(MessageQueue& queue, const ILibraryPtr& library, const char* media, int64_t expected) {
-        auto& indexer = *library->Indexer();
-        /* Drain the initialization/upgrade scan before observing this requested scan. */
-        indexer.Shutdown();
-        IndexCompletion completion(queue, indexer, static_cast<int>(expected));
-        indexer.AddPath(media);
-        indexer.Schedule(IIndexer::SyncType::Local);
+    bool seed(const char* media, int64_t expected) {
+        std::unique_ptr<test_host_event, decltype(&test_host_event_destroy)>
+            event(test_host_event_create(), test_host_event_destroy);
+        if (!event) {
+            return false;
+        }
 
-        /* Wait for the indexer to commit before inspecting its results. */
-        const bool finished = completion.Wait();
-        indexer.Shutdown();
-        if (!finished) {
+        SeedState state { expected };
+        mc_result result = MC_ERROR_BUSY;
+        size_t count = 0;
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        options.wakeup = test_host_event_signal;
+        options.wakeup_user_data = event.get();
+        Context context(options);
+        Indexer indexer(context);
+        if (context.SelectLibrary(MC_LIBRARY_LOCAL) != MC_OK ||
+            indexer.SetCallback(SeedState::OnIndexEvent, &state) != MC_OK ||
+            indexer.AddPath(media) != MC_OK || indexer.Schedule(MC_INDEXER_SCAN_LOCAL) != MC_OK ||
+            !dispatchUntil(context, *event, [&] { return state.indexed; }))
+        {
             std::fputs("Indexer did not finish\n", stderr);
             return false;
         }
 
-        const auto query = std::make_shared<SearchTrackListQuery>(
-            library, SearchTrackListQuery::MatchType::Substring, "", TrackSortType::Title);
-        if (library->EnqueueAndWait(query) < 0 || query->GetStatus() != db::IQuery::Finished) {
+        /* Read the committed catalog through the same typed search used by Cube. */
+        OpenTrackSearch(context, TrackSearch {}, [&](mc_result status, TrackResult tracks, std::string_view) {
+            result = status;
+            count = tracks.Size();
+        });
+        if (!dispatchUntil(context, *event, [&] { return result != MC_ERROR_BUSY; }) || result != MC_OK) {
             std::fputs("Could not verify indexed tracks\n", stderr);
             return false;
         }
-
-        const auto count = query->GetResult()->Count();
-        if (expected < 0 || count != static_cast<uint64_t>(expected)) {
-            std::fprintf(stderr, "Expected %lld visible tracks, indexed %zu\n",
-                static_cast<long long>(expected), count);
+        if (count != static_cast<uint64_t>(expected)) {
+            std::fprintf(stderr, "Expected %lld visible tracks, indexed %zu\n", static_cast<long long>(expected), count);
             return false;
         }
         return true;
     }
 }
 
-/* Start production services/plugins, index generated media, and tear down in production order. */
 int main(int argc, char** argv) {
-    if (argc != 3) return 1;
+    if (argc != 3) {
+        return 1;
+    }
 
-    CoreRuntime runtime;
-    auto& queue = runtime.Queue();
-    const auto library = LibraryFactory::Instance().DefaultLocalLibrary();
-    plugin::Start(&queue, nullptr, library);
-    const bool populated = seed(queue, library, argv[1], std::strtoll(argv[2], nullptr, 10));
+    const auto expected = std::strtoll(argv[2], nullptr, 10);
+    if (expected < 0) {
+        return 1;
+    }
 
-    return populated ? 0 : 1;
+    try {
+        return seed(argv[1], expected) ? 0 : 1;
+    }
+    catch (const Error& error) {
+        std::fprintf(stderr, "Seeder failed: %s\n", error.what());
+        return 1;
+    }
 }
