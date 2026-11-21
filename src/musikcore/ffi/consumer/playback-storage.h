@@ -29,6 +29,7 @@ struct mc_playback {
     virtual mc_result Control(mc_playback_command command, double value) = 0;
     virtual mc_result Snapshot(mc_playback_snapshot& snapshot) const = 0;
     virtual mc_result CurrentTrack(mc_track_ref& track) const = 0;
+    virtual mc_result CurrentTrackMetadata(mc_track_page& page) const = 0;
     virtual mc_result QueueSnapshot(mc_play_queue& queue) const = 0;
     virtual mc_result SetQueueChangedCallback(mc_play_queue_changed_fn callback, void* data) = 0;
     virtual mc_result SetChangedCallback(mc_playback_changed_fn callback, void* data,

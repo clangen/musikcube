@@ -68,8 +68,8 @@ LibraryTrack::~LibraryTrack() {
 
 std::string LibraryTrack::GetString(const char* metakey) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    MetadataMap::iterator metavalue = this->metadata.find(metakey);
-    while (metavalue != this->metadata.end()) {
+    auto [metavalue, end] = this->metadata.equal_range(metakey);
+    while (metavalue != end) {
         if (metavalue->second.size() > 0) {
             return metavalue->second;
         }

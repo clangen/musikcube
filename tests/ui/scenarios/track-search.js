@@ -4,7 +4,7 @@
 
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
-const { dirname, join, resolve } = require('node:path');
+const { basename, dirname, join, resolve } = require('node:path');
 const { performance } = require('node:perf_hooks');
 const { parseArgs } = require('node:util');
 const { sampleVariants, printMetrics, cpuMillisecondsPerTick } = require('../support/benchmark');
@@ -89,7 +89,7 @@ function stagePilot(runtime, binaryDir) {
 
 /* Drive search/paging and production queue/playlist/browse workflows, measuring only selected interactions. */
 async function checkTrackSearch(runtime, database, screenshots,
-  { pilot = false, windows = false, cache, scenario = 'all' } = {}) {
+  { pilot = false, windows = false, cache, scenario = 'all', playbackMode = 'gapless' } = {}) {
   const fixture = dirname(dirname(dirname(database)));
   /* Keep startup from reindexing the fixture. */
   const settings = join(fixture, 'musikcube', 'settings.json');
@@ -98,6 +98,10 @@ async function checkTrackSearch(runtime, database, screenshots,
   preferences.FirstRunSettingsDisplayed = true;
   delete preferences.TrackSearchSortOrder;
   fs.writeFileSync(settings, JSON.stringify(preferences));
+  if (scenario === 'transport') {
+    const transport = playbackMode === 'crossfade' ? 1 : 0;
+    fs.writeFileSync(join(fixture, 'musikcube', 'playback.json'), JSON.stringify({ Transport: transport }));
+  }
   const openSearch = !pilot && scenario === 'browse' ? 'T' : 't';
   if (openSearch !== 't') {
     fs.writeFileSync(join(fixture, 'musikcube', 'hotkeys.json'),
@@ -115,6 +119,9 @@ async function checkTrackSearch(runtime, database, screenshots,
     LC_ALL: process.platform === 'darwin' ? 'en_US.UTF-8' : 'C.UTF-8',
   };
   delete env.LANGUAGE;
+  if (scenario === 'transport') {
+    env.MUSIKCORE_TEST_OUTPUT_DELAY_MS = '900';
+  }
   if (pilot) {
     delete env.MUSIKCUBE_SEARCH_CACHE_PAGES;
     delete env.MUSIKCUBE_SEARCH_PREFETCH_PAGES;
@@ -200,7 +207,7 @@ async function checkTrackSearch(runtime, database, screenshots,
       await terminal.expect('select sort order');
       terminal.send(DOWN + '\r');
       await terminal.expect('tracks (sorted by track title)', { absent: 'select sort order' });
-    } else if (!pilot && ['all', 'queue', 'playlists'].includes(scenario)) {
+    } else if (!pilot && ['all', 'queue', 'playlists', 'transport'].includes(scenario)) {
       /* Append the selected search result through its track actions menu. */
       terminal.send('\x1b\r');
       await terminal.expect('play now');
@@ -209,7 +216,58 @@ async function checkTrackSearch(runtime, database, screenshots,
       const queuedTrack = windows ? DISTANT_TRACK : FILTERED_LAST;
       await terminal.expect(queuedTrack, { absent: 'tracks (sorted by' });
 
-      if (scenario !== 'queue') {
+      if (scenario === 'transport') {
+        const states = [];
+        const observe = () => {
+          const line = terminal.screen.text().split('\n').find(row => /\bshuffle\s*$/.test(row));
+          const status = line?.match(/^\s*(buffering|paused|playing)\b/);
+          if (status) {
+            const state = line.includes(queuedTrack) ? status[1] : 'missing metadata';
+            if (states.at(-1) !== state) states.push(state);
+          }
+        };
+        terminal.events.on('update', observe);
+        try {
+          terminal.send('\r');
+          await terminal.expect('buffering ' + queuedTrack);
+          await terminal.expect('playing ' + queuedTrack);
+        } finally {
+          terminal.events.off('update', observe);
+        }
+        if (states.join(',') !== 'buffering,playing') {
+          throw new Error('Unexpected transport transition: ' + states.join(' → '));
+        }
+
+        terminal.send('\x10');
+        await terminal.expect('paused ' + queuedTrack);
+        terminal.send('\x10');
+        await terminal.expect('playing ' + queuedTrack);
+        terminal.send('\x18');
+        await terminal.expect('playback is stopped');
+      } else if (scenario === 'queue' &&
+          fs.readdirSync(join(runtime, 'plugins')).some(name => name.startsWith('libnullout.'))) {
+        /* Capture transient output before the async metadata response repaints it. */
+        const formatToken = /\$(?:title|artist|album|state)\b/;
+        const danglingSeparators = /\b(?:buffer(?:ing)?|playing|paused)\s+by\s+from\b/i;
+        let leaked = false;
+        const observe = () => {
+          const screen = terminal.screen.text();
+          leaked ||= formatToken.test(terminal.transcript.toString()) ||
+            formatToken.test(screen) || danglingSeparators.test(screen);
+        };
+        terminal.events.on('update', observe);
+        try {
+          terminal.send('\r');
+          await terminal.expect('playing ' + queuedTrack);
+          if (leaked) {
+            throw new Error('Transport displayed an incomplete metadata format');
+          }
+        } finally {
+          terminal.events.off('update', observe);
+        }
+      }
+
+      if (scenario !== 'queue' && scenario !== 'transport') {
         /* Save the queue, then add a track from Search. Reloading must show both
            writes in order, even though they came through different UI paths. */
         const playlistName = `Fixture ${Date.now()}`;
@@ -437,6 +495,8 @@ async function main() {
     options: {
       'build-dir': { type: 'string', default: SOURCE },
       'bin-dir': { type: 'string', default: join(SOURCE, 'bin') },
+      'capture-output': { type: 'string' },
+      'playback-mode': { type: 'string', default: 'gapless' },
       screenshots: { type: 'string' },
       tracks: { type: 'string', default: String(TRACK_COUNT) },
       runs: { type: 'string', default: '1' },
@@ -451,15 +511,21 @@ async function main() {
   });
 
   if (values.help) {
-    console.log('Usage: node tests/ui/scenarios/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|all] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
+    console.log('Usage: node tests/ui/scenarios/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|transport|all] [--capture-output <path>] [--playback-mode gapless|crossfade] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
     return;
   }
   if (!['linux', 'darwin'].includes(process.platform)) {
     throw new Error('This test requires script on Linux or macOS');
   }
 
-  if (!['search', 'queue', 'playlists', 'browse', 'all'].includes(values.scenario)) {
-    throw new Error('Choose scenario search, queue, playlists, browse, or all');
+  if (!['search', 'queue', 'playlists', 'browse', 'transport', 'all'].includes(values.scenario)) {
+    throw new Error('Choose scenario search, queue, playlists, browse, transport, or all');
+  }
+  if (values.scenario === 'transport' && !values['capture-output']) {
+    throw new Error('The transport scenario requires --capture-output');
+  }
+  if (!['gapless', 'crossfade'].includes(values['playback-mode'])) {
+    throw new Error('Choose playback mode gapless or crossfade');
   }
 
   const build = resolve(values['build-dir']);
@@ -501,7 +567,11 @@ async function main() {
   await withRuntime(runtime, async () => {
     /* Stage each implementation separately to prevent loading the wrong core
        library while retaining the same catalog for comparison runs. */
-    stageRuntime(runtime, resolve(values['bin-dir']), ['all', 'browse'].includes(values.scenario));
+    stageRuntime(runtime, resolve(values['bin-dir']), ['all', 'browse', 'queue'].includes(values.scenario));
+    if (values.scenario === 'transport') {
+      const output = fs.realpathSync(values['capture-output']);
+      fs.symlinkSync(output, join(runtime, 'plugins', basename(output)));
+    }
     let control = { name: 'Production', runtime, pilot: false };
     if (controlDir !== undefined) {
       const controlRuntime = join(runtime, 'control');
@@ -526,7 +596,9 @@ async function main() {
     const results = await sampleVariants(variants, runs, async variant => {
       try {
         return await checkTrackSearch(variant.runtime, database,
-          variant.pilot ? undefined : screenshots, { pilot: variant.pilot, windows, cache, scenario: values.scenario });
+          variant.pilot ? undefined : screenshots, {
+            pilot: variant.pilot, windows, cache, scenario: values.scenario, playbackMode: values['playback-mode']
+          });
       } finally {
         fs.rmSync(join(fixture, 'musikcube', 'session.json'), { force: true });
       }

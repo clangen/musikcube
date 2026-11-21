@@ -194,6 +194,7 @@ public:
         const auto status = this->CheckSession();
         if (status != MC_OK) return status;
 
+        const auto stream = this->service.GetTransport().GetStreamState();
         switch (this->service.GetPlaybackState()) {
             case PlaybackState::Stopped: snapshot.state = MC_PLAYBACK_STOPPED; break;
             case PlaybackState::Paused: snapshot.state = MC_PLAYBACK_PAUSED; break;
@@ -221,7 +222,7 @@ public:
                 snapshot.repeat = MC_PLAYBACK_REPEAT_LIST;
                 break;
         }
-        switch (this->service.GetTransport().GetStreamState()) {
+        switch (stream) {
             case StreamState::Stopped:
                 snapshot.stream = MC_PLAYBACK_STREAM_STOPPED;
                 break;
@@ -266,6 +267,44 @@ public:
         }
 
         track = { origin, playing->GetId() };
+        return MC_OK;
+    }
+
+    mc_result CurrentTrackMetadata(mc_track_page& page) const override {
+        const auto status = this->CheckSession();
+        if (status != MC_OK) {
+            return status;
+        }
+
+        TrackPtr playing;
+        {
+            std::lock_guard lock(this->service.playlistMutex);
+            const auto& origin = this->service.playingOrigin;
+            playing = this->service.playingTrack;
+            const auto stream = this->service.GetTransport().GetStreamState();
+            const bool starting = stream == StreamState::Buffering || stream == StreamState::Buffered;
+            if (!playing || !origin ||
+                (this->service.GetPlaybackState() == PlaybackState::Stopped && !starting) ||
+                !this->service.MatchesOrigin(*origin))
+            {
+                return MC_ERROR_NOT_FOUND;
+            }
+        }
+
+        /* Project the track playback loaded before publishing the change event. */
+        page.names = { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION };
+        query::ProjectedTrackPage::Row row { playing->GetId(), {} };
+        row.fields.reserve(page.names.size());
+        for (const auto& field : page.names) {
+            auto value = playing->GetString(field.c_str());
+            if (value.empty()) {
+                row.fields.emplace_back();
+            }
+            else {
+                row.fields.push_back({ std::move(value) });
+            }
+        }
+        page.rows.push_back(std::move(row));
         return MC_OK;
     }
 

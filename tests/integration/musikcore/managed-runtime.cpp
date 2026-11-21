@@ -211,6 +211,14 @@ namespace {
             std::fputs("Remote HTTP audio did not reach the headless output\n", stderr);
             return false;
         }
+
+        const auto metadata = playback.CurrentTrackMetadata();
+        if (!metadata || metadata->Id() != remoteTrack.Id(0) ||
+            metadata->Title().find("Morning Light") == std::string_view::npos)
+        {
+            std::fputs("Playback did not retain the remote track's loaded metadata\n", stderr);
+            return false;
+        }
         return true;
     }
 

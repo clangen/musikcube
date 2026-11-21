@@ -62,6 +62,7 @@ using namespace musik::core;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::cube;
+using namespace musik::cube::transport;
 using namespace std::chrono;
 using namespace cursespp;
 
@@ -77,11 +78,6 @@ using namespace cursespp;
 
 #define ON(w, a) if (a != Color::Default) { wattron(w, a); }
 #define OFF(w, a) if (a != Color::Default) { wattroff(w, a); }
-
-static const std::string kStateToken = "$state";
-static const std::string kTitleToken = "$title";
-static const std::string kArtistToken = "$artist";
-static const std::string kAlbumToken = "$album";
 
 struct Token {
     enum Type { Normal, Placeholder };
@@ -170,6 +166,7 @@ static struct StringCache {
 /* ~~~~~~~~~~ TransportWindow::DisplayCache ~~~~~~~~~~ */
 
 void TransportWindow::DisplayCache::Reset() {
+    metadataReady = false;
     trackDuration = 0;
     title = album = artist = "";
     titleCols = albumCols = artistCols = 0;
@@ -201,6 +198,7 @@ void TransportWindow::DisplayCache::SetTrack(const api::TrackView& track) {
     albumCols = narrow_cast<int>(u8cols(album));
     artistCols = narrow_cast<int>(u8cols(artist));
     trackDuration = static_cast<int>(track.Duration().value_or(std::chrono::seconds::zero()).count());
+    metadataReady = true;
 }
 
 void TransportWindow::DisplayCache::Update(double duration) {
@@ -254,17 +252,22 @@ bool TransportWindow::Position::Contains(const IMouseHandler::Event& event) noex
 
 /* writes the colorized formatted string to the specified window. accounts for
 utf8 characters and ellipsizing */
-size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width, mc_playback_state state) {
+size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width, Status status) {
     this->metadataFieldToPosition.clear();
 
     TokenList tokens;
-    tokenize(Strings.PLAYING_FORMAT, tokens);
+    tokenize(PlayingFormat(displayCache.metadataReady, Strings.PLAYING_FORMAT), tokens);
 
     int x = 0, y = 0;
     const Color dim = Color::TextDisabled;
     const Color gb = Color::TextActive;
     const Color warn = Color::TextWarning;
     size_t remaining = width;
+    const MetadataFields metadata {
+        { displayCache.title, displayCache.titleCols },
+        { displayCache.artist, displayCache.artistCols },
+        { displayCache.album, displayCache.albumCols }
+    };
 
     auto it = tokens.begin();
     while (it != tokens.end() && remaining > 0) {
@@ -274,36 +277,29 @@ size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width, mc_playback_
         std::string value;
         size_t cols = 0;
 
-        if (token->type == Token::Placeholder) {
-            if (token->value == kStateToken) {
-                if (buffering) {
-                    attr = warn;
-                    value = Strings.BUFFERING;
-                }
-                else {
-                    bool const paused = (state != MC_PLAYBACK_PLAYING);
-                    value = paused ? Strings.PAUSED : Strings.PLAYING;
-                }
-                cols = u8len(value);
-            }
-            if (token->value == kTitleToken) {
-                attr = gb;
-                value = displayCache.title;
-                cols = displayCache.titleCols;
-            }
-            else if (token->value == kAlbumToken) {
-                attr = gb;
-                value = displayCache.album;
-                cols = displayCache.albumCols;
-            }
-            else if (token->value == kArtistToken) {
-                attr = gb;
-                value = displayCache.artist;
-                cols = displayCache.artistCols;
-            }
-        }
+        const bool placeholder = token->type == Token::Placeholder;
+        const auto* field = placeholder ? metadata.Find(token->value) : nullptr;
 
-        if (!value.size()) {
+        if (field) {
+            if (field->text.empty()) {
+                ++it;
+                continue;
+            }
+            attr = gb;
+            value = field->text;
+            cols = field->columns;
+        }
+        else if (placeholder && token->value == kStateToken) {
+            if (status == Status::Buffering) {
+                attr = warn;
+                value = Strings.BUFFERING;
+            }
+            else {
+                value = status == Status::Playing ? Strings.PLAYING : Strings.PAUSED;
+            }
+            cols = u8len(value);
+        }
+        else {
             value = token->value;
             cols = displayCache.Columns(value);
         }
@@ -358,13 +354,11 @@ TransportWindow::TransportWindow(api::Context& musikcore)
     this->apiPlayback.SetChangedCallback([](void* data, mc_playback_event event) {
         static_cast<TransportWindow*>(data)->OnPlaybackChanged(event);
     }, this);
-    this->paused = false;
     this->lastTime = DEFAULT_TIME;
     this->shufflePos.y = 0;
     this->repeatPos.y = 1;
     this->volumePos.y = 1;
     this->timeBarPos.y = 1;
-    this->displayCache.Reset();
     this->RefreshTrack();
 }
 
@@ -519,41 +513,23 @@ void TransportWindow::ProcessMessage(IMessage &message) {
             DEBOUNCE_REFRESH(TimeMode::Smooth, REFRESH_INTERVAL_MS)
         }
     }
-    else if (type == message::TransportBuffering) {
-        this->buffering = true;
-        this->Update();
-    }
     else {
         Window::ProcessMessage(message);
     }
 }
 
 void TransportWindow::OnPlaybackChanged(mc_playback_event event) {
-    const auto snapshot = this->apiPlayback.Snapshot();
-    if (!snapshot) {
-        return;
-    }
-
     if (event == MC_PLAYBACK_CHANGED_TRACK) {
         this->RefreshTrack();
         this->lastTime = DEFAULT_TIME;
-        this->buffering = snapshot->stream == MC_PLAYBACK_STREAM_BUFFERING;
+    }
+    else if (!this->displayCache.metadataReady &&
+        (event == MC_PLAYBACK_CHANGED_STREAM || event == MC_PLAYBACK_CHANGED_STATE))
+    {
+        this->RefreshTrack();
     }
 
-    /* Keep the delay before displaying transient buffering. */
-    if (event == MC_PLAYBACK_CHANGED_STREAM) {
-        if (snapshot->stream == MC_PLAYBACK_STREAM_BUFFERING) {
-            this->Debounce(message::TransportBuffering, 0, 0, 250);
-        }
-        else {
-            this->Remove(message::TransportBuffering);
-            this->buffering = false;
-        }
-    }
-
-    if (event != MC_PLAYBACK_CHANGED_STREAM || snapshot->stream != MC_PLAYBACK_STREAM_BUFFERING) {
-        DEBOUNCE_REFRESH(TimeMode::Sync, 0);
-    }
+    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 
 void TransportWindow::OnRedraw() {
@@ -561,24 +537,13 @@ void TransportWindow::OnRedraw() {
 }
 
 void TransportWindow::RefreshTrack() {
-    this->trackWork.Invalidate();
     this->trackMenuWork.Invalidate();
     this->displayCache.Reset();
 
     try {
-        const auto track = this->apiPlayback.CurrentTrack();
-        if (!track) {
-            return;
+        if (const auto track = this->apiPlayback.CurrentTrackMetadata()) {
+            this->displayCache.SetTrack(*track);
         }
-
-        api::ReadTrack(this->musikcore, *track,
-            { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_DURATION },
-            this->trackWork.Wrap([this](mc_result status, api::TrackPage page, std::string_view) {
-                if (status == MC_OK && page.Size()) {
-                    this->displayCache.SetTrack(page.Track(0));
-                    this->Update(TimeMode::Sync);
-                }
-            }));
     }
     catch (const api::Error& error) {
         musik::core::api::WriteLog(MC_LOG_ERROR, "TransportWindow", error.what());
@@ -609,6 +574,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     const bool prepared = snapshot->state == MC_PLAYBACK_PREPARED;
     const bool stopped = snapshot->state == MC_PLAYBACK_STOPPED;
     const bool muted = snapshot->muted;
+    const auto status = PlaybackStatus(snapshot->state, snapshot->stream);
     const bool replayGainEnabled = api::ReadPlaybackGainSettings().replay_gain != MC_REPLAY_GAIN_DISABLED;
 
     Color const gb = Color::TextActive;
@@ -633,7 +599,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* playing SONG TITLE from ALBUM NAME */
 
-    if (stopped && !this->buffering) {
+    if (status == Status::Stopped) {
         ON(c, disabled);
         checked_wprintw(c, "%s", Strings.STOPPED.c_str());
         displayCache.Reset();
@@ -641,7 +607,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
     else {
         displayCache.Update(snapshot->duration);
-        this->WritePlayingFormat(c, cx - shuffleWidth, snapshot->state);
+        this->WritePlayingFormat(c, cx - shuffleWidth, status);
     }
 
     /* draw the "shuffle" label */
@@ -715,7 +681,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     only works if REFRESH_INTERVAL_MS is 1000. */
     int secondsCurrent = static_cast<int>(round(this->lastTime)); /* mode == TimeLast */
 
-    if (!this->buffering && timeMode == TimeMode::Smooth) {
+    if (status == Status::Playing && timeMode == TimeMode::Smooth) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
         double const actualTime = snapshot->position;
 

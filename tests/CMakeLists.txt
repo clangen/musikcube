@@ -131,6 +131,16 @@ add_dependencies(musikcube_tests musikcube_async_callback_scope_test)
 add_test(NAME musikcube.unit.async_callback_scope COMMAND musikcube_async_callback_scope_test)
 set_tests_properties(musikcube.unit.async_callback_scope PROPERTIES LABELS "unit;musikcube;app" TIMEOUT 10)
 
+add_executable(musikcube_transport_format_test unit/musikcube/transport-format.cpp)
+target_include_directories(musikcube_transport_format_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/src/musikcube" "${PROJECT_SOURCE_DIR}/include")
+set_target_properties(musikcube_transport_format_test PROPERTIES
+  CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcube_transport_format_test)
+add_test(NAME musikcube.unit.transport_format COMMAND musikcube_transport_format_test)
+set_tests_properties(musikcube.unit.transport_format PROPERTIES LABELS "unit;musikcube;transport" TIMEOUT 10)
+
 add_executable(musikcore_abi_arguments_test integration/api/arguments.c)
 target_link_libraries(musikcore_abi_arguments_test PRIVATE musikcore_abi0)
 set_target_properties(musikcore_abi_arguments_test PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
@@ -253,7 +263,8 @@ set_tests_properties(musikcube.unit.ui_artifacts PROPERTIES
 
 # Level-specific targets keep a quick unit run from building the full app.
 add_custom_target(musikcube_unit_tests DEPENDS musikcore_abi_header_test
-  musikcore_message_queue_test musikcube_async_callback_scope_test musikcore_public_headers)
+  musikcore_message_queue_test musikcube_async_callback_scope_test musikcube_transport_format_test
+  musikcore_public_headers)
 add_custom_target(musikcube_integration_tests DEPENDS musikcore_abi0_c_test
   musikcore_abi_dispatch_test musikcore_abi_query_test musikcore_abi_arguments_test
   musikcore_result_contracts_test musikcore_abi_cpp_test musikcore_typed_track_queries_test

@@ -104,7 +104,8 @@ namespace musik { namespace core { namespace audio {
             void ResetNextPlayer();
 
             musik::core::sdk::PlaybackState playbackState;
-            musik::core::sdk::StreamState activePlayerState;
+            musik::core::sdk::StreamState activePlayerState { musik::core::sdk::StreamState::Stopped };
+            StartMode activeStartMode { StartMode::Immediate };
             std::recursive_mutex stateMutex;
             std::shared_ptr<musik::core::sdk::IOutput> output;
             Player* activePlayer;

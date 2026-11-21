@@ -138,7 +138,7 @@ namespace musik { namespace core { namespace audio {
             void OnPlayerDestroying(Player* player) override;
 
             musik::core::sdk::PlaybackState playbackState;
-            musik::core::sdk::StreamState activePlayerState;
+            musik::core::sdk::StreamState activePlayerState { musik::core::sdk::StreamState::Stopped };
             std::recursive_mutex stateMutex;
             Crossfader crossfader;
             PlayerContext active;

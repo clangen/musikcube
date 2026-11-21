@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "TransportFormat.h"
 #include <cursespp/Window.h>
 #include <cursespp/IKeyHandler.h>
 #include <app/util/AsyncCallbackScope.h>
@@ -103,29 +104,27 @@ namespace musik {
                     void Update(double duration);
 
                     int trackDuration = 0;
+                    bool metadataReady { false };
                     std::string title, album, artist, totalTime;
                     int secondsTotal;
                     int titleCols, albumCols, artistCols, totalTimeCols;
                     std::map<std::string, size_t> stringToColumns;
                 };
 
-                size_t WritePlayingFormat(WINDOW* w, size_t width, mc_playback_state state);
+                size_t WritePlayingFormat(WINDOW* w, size_t width, transport::Status status);
 
                 void Update(TimeMode mode = TimeMode::Smooth);
 
                 void OnPlaybackChanged(mc_playback_event event);
                 void RefreshTrack();
 
-                bool paused;
                 Position shufflePos, repeatPos, volumePos, currentTimePos, timeBarPos;
                 std::map<std::string, Position> metadataFieldToPosition;
                 musik::core::api::Context& musikcore;
                 AsyncCallbackScope trackMenuWork;
                 musik::core::api::Playback apiPlayback;
-                AsyncCallbackScope trackWork;
                 FocusTarget focus, lastFocus;
                 DisplayCache displayCache;
-                bool buffering{ false };
                 double lastTime;
         };
     }

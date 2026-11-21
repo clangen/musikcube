@@ -108,6 +108,19 @@ namespace musik { namespace core { namespace api {
             return TrackRef(track);
         }
 
+        std::optional<TrackView> CurrentTrackMetadata() const {
+            mc_track_page* page = nullptr;
+            const auto status = mc_playback_get_current_track_metadata(this->handle.get(), &page);
+            if (status == MC_ERROR_NOT_FOUND) {
+                return std::nullopt;
+            }
+            if (status != MC_OK) {
+                throw Error(status);
+            }
+            const TrackPage metadata(page);
+            return metadata.Track(0);
+        }
+
         mc_result SetQueueChangedCallback(mc_play_queue_changed_fn callback, void* data = nullptr) {
             return mc_playback_set_queue_changed_callback(this->handle.get(), callback, data);
         }

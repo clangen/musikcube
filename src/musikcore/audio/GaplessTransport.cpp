@@ -120,6 +120,7 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
 
             this->nextPlayer = nullptr;
             this->activePlayer = newPlayer;
+            this->activeStartMode = mode;
 
             if (newPlayer) {
                 this->RaiseStreamEvent(newPlayer->GetStreamState(), newPlayer);
@@ -135,6 +136,14 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
 
             if (mode == StartMode::Immediate) {
                 newPlayer->Play();
+                if (this->playbackState == PlaybackState::Paused ||
+                    this->playbackState == PlaybackState::Prepared)
+                {
+                    this->SetPlaybackState(PlaybackState::Playing);
+                }
+            }
+            else if (this->activePlayerState == StreamState::Buffered) {
+                this->SetPlaybackState(PlaybackState::Prepared);
             }
         }
     }
@@ -210,6 +219,7 @@ bool GaplessTransport::Resume() {
         LockT lock(this->stateMutex);
 
         if (this->activePlayer) {
+            this->activeStartMode = StartMode::Immediate;
             this->activePlayer->Play();
         }
     }
@@ -290,15 +300,21 @@ void GaplessTransport::SetNextCanStart(bool nextCanStart) {
 }
 
 void GaplessTransport::OnPlayerBuffered(Player* player) {
+    LockT lock(this->stateMutex);
     if (player == this->activePlayer) {
         this->RaiseStreamEvent(StreamState::Buffered, player);
-        this->SetPlaybackState(PlaybackState::Prepared);
+        if (this->activeStartMode == StartMode::Wait) {
+            this->SetPlaybackState(PlaybackState::Prepared);
+        }
     }
 }
 
 void GaplessTransport::OnPlayerStarted(Player* player) {
-    this->RaiseStreamEvent(StreamState::Playing, player);
-    this->SetPlaybackState(PlaybackState::Playing);
+    LockT lock(this->stateMutex);
+    if (player == this->activePlayer) {
+        this->RaiseStreamEvent(StreamState::Playing, player);
+        this->SetPlaybackState(PlaybackState::Playing);
+    }
 }
 
 void GaplessTransport::OnPlayerStreamEof(Player* player) {

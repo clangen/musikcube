@@ -1101,7 +1101,11 @@ legacy list for actions that still require it.
   and mute through `mc_playback_get_snapshot`. Category and track lists use
   `mc_playback_get_current_track` with dispatcher notifications. The
   `musikcore.integration.api.production.playback_commands` test checks the
-  current track while prepared, playing, paused, and stopped.
+  current track while prepared, playing, paused, and stopped. Transport and
+  the window title read loaded metadata through
+  `mc_playback_get_current_track_metadata`. The indexed playback contract
+  checks that the snapshot reflects playback's in-memory tags during buffering,
+  preserves empty fields, and remains readable after stop.
 - [x] **PUB-004** Add playback commands and ordered state events.
   The app's transport keys and controls use `mc_playback_control`.
   `musikcore.abi.indexed_query` exercises the bound service with a fake
@@ -1147,6 +1151,10 @@ legacy list for actions that still require it.
   `musikcube.ui.browse` exercises a band edit and reset with the real
   equalizer plugin and checks that Settings displays the headless output.
   The same scenario switches from gapless to crossfade in Settings.
+  `musikcube.ui.transport.*` holds the first output buffer and checks that the
+  title stays visible through buffering, playing, pause, resume, and stop.
+  The gapless and crossfade PCM integration tests check the actual audio
+  transitions using the same paced output fixture.
   `musikcore.integration.plugin.playback_reload` verifies transport mode
   and playback gain round trips through the SDK, including preamp range
   validation. `musikcube.ui.browse` also changes replay gain to track mode.

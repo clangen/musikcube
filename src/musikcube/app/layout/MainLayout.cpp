@@ -218,7 +218,6 @@ void MainLayout::Start() {
 
 void MainLayout::Shutdown() {
     this->playback.SetChangedCallback(nullptr);
-    this->titleWork.Invalidate();
     api::Indexer(this->musikcore).SetCallback(nullptr);
     this->musikcore.SetLibraryChangedCallback(nullptr);
     api::SetPlaylistChangedCallback(this->musikcore, nullptr);
@@ -332,7 +331,6 @@ void MainLayout::OnIndexerEvent(mc_indexer_event event, int updates) {
 }
 
 void MainLayout::UpdateWindowTitle() {
-    this->titleWork.Invalidate();
     if (prefs.GetBool(cube::prefs::keys::DisableWindowTitleUpdates,
         cube::prefs::defaults::DisableWindowTitleUpdates))
     {
@@ -340,23 +338,14 @@ void MainLayout::UpdateWindowTitle() {
     }
 
     try {
-        const auto track = this->playback.CurrentTrack();
+        const auto track = this->playback.CurrentTrackMetadata();
         if (!track) {
             App::Instance().SetTitle("musikcube");
             return;
         }
 
-        api::ReadTrack(this->musikcore, *track, { MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_TITLE },
-            this->titleWork.Wrap([](mc_result status, api::TrackPage page, std::string_view) {
-                if (status != MC_OK || !page.Size()) {
-                    App::Instance().SetTitle("musikcube");
-                    return;
-                }
-
-                const auto track = page.Track(0);
-                App::Instance().SetTitle("musikcube [" + std::string(track.Artist()) +
-                    " - " + std::string(track.Title()) + "]");
-            }));
+        App::Instance().SetTitle("musikcube [" + std::string(track->Artist()) +
+            " - " + std::string(track->Title()) + "]");
     }
     catch (const api::Error& error) {
         musik::core::api::WriteLog(MC_LOG_ERROR, "MainLayout", error.what());

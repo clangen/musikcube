@@ -225,4 +225,16 @@ if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGE
     set_tests_properties(musikcube.ui.${scenario} PROPERTIES
       LABELS "ui;musikcube;${scenario}" TIMEOUT 90)
   endforeach()
+  if(TARGET musikcore_pcm_capture_output)
+    add_dependencies(musikcube_ui_tests musikcore_pcm_capture_output)
+    foreach(mode IN ITEMS gapless crossfade)
+      add_test(NAME musikcube.ui.transport.${mode} COMMAND "${MUSIKCORE_TEST_NODE}"
+        "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/track-search.js"
+        --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:musikcube>"
+        --tracks 1000 --windows --scenario transport --playback-mode "${mode}"
+        --capture-output "$<TARGET_FILE:musikcore_pcm_capture_output>")
+      set_tests_properties(musikcube.ui.transport.${mode} PROPERTIES
+        LABELS "ui;musikcube;transport" TIMEOUT 90)
+    endforeach()
+  endif()
 endif()

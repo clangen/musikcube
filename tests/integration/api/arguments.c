@@ -194,6 +194,7 @@ int main(void) {
        reject null safely rather than assuming an app-created engine exists. */
     CHECK(mc_playback_get_snapshot(NULL, &snapshot) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_playback_get_current_track(NULL, &track) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_playback_get_current_track_metadata(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_playback_set_changed_callback(NULL, NULL, NULL, NULL, 0) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_playback_get_queue(NULL, &queue) == MC_ERROR_INVALID_ARGUMENT && !queue);
     CHECK(mc_playback_control(NULL, MC_PLAYBACK_STOP, 0) == MC_ERROR_INVALID_ARGUMENT);

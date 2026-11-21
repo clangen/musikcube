@@ -53,7 +53,6 @@ namespace musik {
             static const int RequeryTrackList       = First + 5;
             static const int RequeryCategoryList    = First + 6;
             static const int RefreshTransport       = First + 7;
-            static const int TransportBuffering     = First + 8;
             static const int RefreshLogs            = First + 9;
             static const int UpdateCheckFinished    = First + 10;
             static const int JumpToConsole          = First + 11;

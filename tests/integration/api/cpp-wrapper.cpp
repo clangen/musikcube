@@ -904,6 +904,22 @@ namespace {
             }
             const auto retainedTrack = statePlayback.CurrentTrack();
             auto engineTrack = stateService.GetPlaying();
+
+            /* In-memory metadata can differ from the catalog row. */
+            constexpr auto playbackTitle = "$Playback metadata";
+            engineTrack->ClearValue(MC_TRACK_FIELD_TITLE);
+            engineTrack->SetValue(MC_TRACK_FIELD_TITLE, playbackTitle);
+            engineTrack->ClearValue(MC_TRACK_FIELD_ALBUM);
+            stateTransport->state = sdk::PlaybackState::Stopped;
+            stateTransport->stream = sdk::StreamState::Buffered;
+            const auto metadata = statePlayback.CurrentTrackMetadata();
+            if (!metadata || metadata->Id() != result.Id(1) ||
+                metadata->Title() != playbackTitle || !metadata->Album().empty())
+            {
+                return playbackFailure(__LINE__);
+            }
+            stateTransport->state = sdk::PlaybackState::Playing;
+
             const auto initialGain = engineTrack->GetReplayGain();
             engineTrack->SetReplayGain({ 1.0f, 0.5f, 1.0f, 1.0f });
             const auto gainSnapshot = statePlayback.Snapshot();
@@ -917,7 +933,8 @@ namespace {
             const auto stoppedBeforeNotification = statePlayback.Queue();
             if (!stoppedBeforeNotification || stoppedBeforeNotification->CurrentRow() != SIZE_MAX ||
                 stoppedBeforeNotification->RetainedRow() != 1 || !stateService.GetPlaying() ||
-                statePlayback.CurrentTrack())
+                statePlayback.CurrentTrack() || statePlayback.CurrentTrackMetadata() ||
+                metadata->Title() != playbackTitle)
             {
                 return playbackFailure(__LINE__);
             }

@@ -92,6 +92,7 @@ void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode
         if (this->next.player && this->next.player->GetUrl() == uri) {
             this->active.Reset();
             this->next.TransferTo(this->active);
+            this->active.startImmediate = immediate;
 
             if (this->active.player) {
                 this->RaiseStreamEvent(
@@ -102,14 +103,24 @@ void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode
             if (immediate) {
                 this->active.Start(this->volume);
             }
+            else if (this->activePlayerState == StreamState::Buffered) {
+                this->SetPlaybackState(PlaybackState::Prepared);
+            }
         }
         else {
             this->active.Reset(uri, this, gain, immediate);
             this->next.Stop();
+            if (this->active.player) {
+                this->RaiseStreamEvent(StreamState::Buffering, this->active.player);
+            }
+        }
+
+        if (immediate && (this->playbackState == PlaybackState::Paused ||
+            this->playbackState == PlaybackState::Prepared))
+        {
+            this->SetPlaybackState(PlaybackState::Playing);
         }
     }
-
-    this->RaiseStreamEvent(StreamState::Buffering, this->active.player);
 }
 
 std::string CrossfadeTransport::Uri() {
@@ -281,24 +292,28 @@ void CrossfadeTransport::OnPlayerBuffered(Player* player) {
 
         if (player == active.player) {
             active.canFade = canFade;
+            this->RaiseStreamEvent(StreamState::Buffered, player);
             if (active.startImmediate) {
-                active.Start(this->volume);
+                if (!active.started) {
+                    active.Start(this->volume);
+                }
+            }
+            else {
+                this->SetPlaybackState(PlaybackState::Prepared);
             }
         }
         else if (player == next.player) {
             next.canFade = canFade;
         }
     }
-
-    if (player == this->active.player) {
-        this->RaiseStreamEvent(StreamState::Buffered, player);
-        this->SetPlaybackState(PlaybackState::Prepared);
-    }
 }
 
 void CrossfadeTransport::OnPlayerStarted(Player* player) {
-    this->RaiseStreamEvent(StreamState::Playing, player);
-    this->SetPlaybackState(PlaybackState::Playing);
+    Lock lock(this->stateMutex);
+    if (player == this->active.player) {
+        this->RaiseStreamEvent(StreamState::Playing, player);
+        this->SetPlaybackState(PlaybackState::Playing);
+    }
 }
 
 void CrossfadeTransport::OnPlayerFinished(Player* player) {

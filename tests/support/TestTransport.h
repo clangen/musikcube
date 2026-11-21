@@ -18,7 +18,10 @@ public:
     /* Return the last started URI so the playback service can associate its current track. */
     std::string Uri() override { return uri; }
     /* Model an immediate stopped transport; engine notifications remain under the test's control. */
-    void Stop() override { state = PlaybackState::Stopped; }
+    void Stop() override {
+        state = PlaybackState::Stopped;
+        stream = StreamState::Stopped;
+    }
     /* Model a successful pause without asynchronous device work. */
     bool Pause() override { state = PlaybackState::Paused; return true; }
     /* Model a successful resume without asynchronous device work. */

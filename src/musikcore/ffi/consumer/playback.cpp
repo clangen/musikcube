@@ -19,6 +19,21 @@ mc_result MC_CALL mc_playback_get_current_track(const mc_playback* playback, mc_
     });
 }
 
+mc_result MC_CALL mc_playback_get_current_track_metadata(const mc_playback* playback, mc_track_page** out_page) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!playback || !out_page || *out_page) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+
+        auto page = std::unique_ptr<mc_track_page>(new mc_track_page);
+        const auto status = playback->CurrentTrackMetadata(*page);
+        if (status == MC_OK) {
+            *out_page = page.release();
+        }
+        return status;
+    });
+}
+
 mc_result MC_CALL mc_playback_get_snapshot(const mc_playback *playback, mc_playback_snapshot *snapshot) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         if (!playback || !snapshot || snapshot->struct_size < sizeof(*snapshot)) return MC_ERROR_INVALID_ARGUMENT;

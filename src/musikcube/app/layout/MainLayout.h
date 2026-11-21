@@ -48,7 +48,6 @@
 
 #include <app/util/ConsoleLogger.h>
 #include <app/util/UpdateCheck.h>
-#include <app/util/AsyncCallbackScope.h>
 
 #include <sigslot/sigslot.h>
 
@@ -103,7 +102,6 @@ namespace musik {
                 bool shortcutsFocused;
                 int syncUpdateCount;
                 musik::core::api::Context& musikcore;
-                AsyncCallbackScope titleWork;
                 UpdateCheck updateCheck;
         };
     }

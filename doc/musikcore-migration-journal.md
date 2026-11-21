@@ -172,3 +172,15 @@ Category field results prepare borrowed views before dispatch. Online requests c
 Context destruction now returns its status and keeps the handle intact when shutdown fails. Request queue saturation and stale playback snapshots have distinct statuses.
 
 Now Playing compares queue revisions and reads an origin-bound track result from the queue snapshot. The result shares the snapshot's ordered IDs, including duplicates. Cube no longer compares ID arrays or resolves queue rows against the currently selected catalog.
+
+## Transport metadata rendering
+
+Transport shows only playback state while the async track read is pending. A successful read restores the localized metadata format, with fallbacks for empty fields. The format test covers pending fields, separators, and dollar-prefixed metadata. The queue TUI test monitors startup for incomplete metadata output. All 51 Linux Release tests passed.
+
+Transport and the window title now consume the playback engine's loaded track metadata through the public API. That restores mainline's data flow and removes the catalog reads after each track notification. A track change also respects the buffering display debounce. The indexed playback test covers in-memory tags, missing fields, and snapshot lifetime. The remote audio test verifies that the engine retains metadata during streamed playback. All 51 Linux Release tests passed.
+
+## Transport transitions and PCM coverage
+
+Transport now uses the stream and playback snapshot for its caption. Immediate starts stay in buffering until audio is consumed. An intentionally prepared track still shows paused. The separate buffering timer is removed, and a buffering track can expose loaded metadata before playback starts. French, Italian, and Japanese now substitute the live state in their captions.
+
+The headless transport scenarios for both playback modes hold output for 900 ms and checks buffering with the title, playing, pause, resume, and stop. A test-only paced PCM output also verifies sample continuity at a gapless boundary and opposing gain envelopes during an automatic crossfade. All 55 Linux Release tests passed.

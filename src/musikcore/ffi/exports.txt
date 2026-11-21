@@ -38,6 +38,7 @@ mc_playback_destroy
 mc_playback_get_queue
 mc_playback_get_snapshot
 mc_playback_get_current_track
+mc_playback_get_current_track_metadata
 mc_playback_hot_swap_queue
 mc_playback_insert_result
 mc_playback_play_queue_row
