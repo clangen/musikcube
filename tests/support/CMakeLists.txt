@@ -210,6 +210,18 @@ if(BUILD_TESTING)
           "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
         set_tests_properties(musikcore.integration.api.remote_audio PROPERTIES
           LABELS "integration;musikcore;transport;playback;contract" TIMEOUT 30)
+        if(TARGET stockencoders)
+          add_dependencies(musikcore_managed_runtime_test stockencoders)
+          foreach(format IN ITEMS mp3 flac)
+            add_test(NAME musikcore.integration.api.remote_transcode.${format} COMMAND "${CMAKE_COMMAND}"
+              ${indexed_arguments} "-DMANAGED_RUNTIME_TEST=$<TARGET_FILE:musikcore_managed_runtime_test>"
+              "-DSERVER_PLUGIN=$<TARGET_FILE:server>" "-DHTTP_DATASTREAM_PLUGIN=$<TARGET_FILE:httpdatastream>"
+              "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" "-DENCODER_PLUGIN=$<TARGET_FILE:stockencoders>"
+              "-DTRANSCODE_FORMAT=${format}" -P "${indexed_script}")
+            set_tests_properties(musikcore.integration.api.remote_transcode.${format} PROPERTIES
+              LABELS "integration;musikcore;transport;playback;contract" TIMEOUT 30)
+          endforeach()
+        endif()
       endif()
     endif()
   endif()

@@ -68,11 +68,10 @@ static IEncoder* getEncoder(Context& context, const std::string& format) {
     return context.environment->GetEncoder(extension.c_str());
 }
 
-template <typename T>
-static T* getTypedEncoder(Context& context, const std::string& format) {
+static IStreamingEncoder* getStreamingEncoder(Context& context, const std::string& format) {
     IEncoder* encoder = getEncoder(context, format);
     if (encoder) {
-        T* typedEncoder = dynamic_cast<T*>(encoder);
+        auto* typedEncoder = encoder->AsStreaming();
         if (typedEncoder) {
             return typedEncoder;
         }
@@ -193,7 +192,7 @@ IDataStream* Transcoder::Transcode(
 
     /* on-demand is the default. however, on-demand transcoding is only available
     for `IStreamingEncoder` types.  */
-    IStreamingEncoder* audioStreamEncoder = getTypedEncoder<IStreamingEncoder>(context, format);
+    IStreamingEncoder* audioStreamEncoder = getStreamingEncoder(context, format);
     if (audioStreamEncoder) {
         return TranscodeOnDemand(context, audioStreamEncoder, uri, bitrate, format);
     }
@@ -211,7 +210,7 @@ IDataStream* Transcoder::TranscodeOnDemand(
     /* the caller can specify an encoder; if it is not specified, go ahead and
     create one here */
     if (!encoder) {
-        encoder = getTypedEncoder<IStreamingEncoder>(context, format);
+        encoder = getStreamingEncoder(context, format);
         if (!encoder) {
             return nullptr;
         }
@@ -280,7 +279,7 @@ IDataStream* Transcoder::TranscodeAndWait(
         return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 
-    IStreamingEncoder* audioStreamEncoder = dynamic_cast<IStreamingEncoder*>(encoder);
+    IStreamingEncoder* audioStreamEncoder = encoder->AsStreaming();
     if (audioStreamEncoder) {
         TranscodingAudioDataStream* transcoderStream = new TranscodingAudioDataStream(
             context, audioStreamEncoder, uri, tempFilename, expectedFilename, bitrate, format);
@@ -304,7 +303,7 @@ IDataStream* Transcoder::TranscodeAndWait(
         return context.environment->GetDataStream(uri.c_str(), OpenFlags::Read);
     }
     else {
-        IBlockingEncoder* blockingEncoder = dynamic_cast<IBlockingEncoder*>(encoder);
+        IBlockingEncoder* blockingEncoder = encoder->AsBlocking();
         if (blockingEncoder) {
             bool alreadyTranscoding = false;
             {

@@ -170,7 +170,7 @@ namespace {
         return ConfigureServer(updated) == MC_ERROR_INVALID_ARGUMENT;
     }
 
-    bool configureLoopbackAudio() {
+    bool configureLoopbackAudio(std::string_view format) {
         auto configuration = ReadServerConfiguration();
         if (!configuration) {
             return false;
@@ -199,7 +199,10 @@ namespace {
             Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT, static_cast<int32_t>(configuration->metadataPort)),
             Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_PORT, static_cast<int32_t>(configuration->audioPort)),
             Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD, configuration->password),
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_VIEWED, true)
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_VIEWED, true),
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED, !format.empty()),
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE, format.empty() ? 0 : 128),
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT, format)
         });
         return true;
     }
@@ -472,11 +475,16 @@ int main(int argc, char** argv) {
     bool equalizer = false;
     bool server = false;
     bool remoteAudio = false;
+    std::string_view transcodeFormat;
     for (int i = 1; i < argc; ++i) {
         const std::string_view option(argv[i]);
         equalizer |= option == "--check-equalizer";
         server |= option == "--check-server";
         remoteAudio |= option == "--check-remote-audio";
+        constexpr std::string_view transcodeOption = "--transcode=";
+        if (option.starts_with(transcodeOption)) {
+            transcodeFormat = option.substr(transcodeOption.size());
+        }
     }
     /* Persist disabled listeners before starting the isolated plugin runtime. */
     if (!checkServerConfiguration(server)) {
@@ -484,7 +492,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (remoteAudio && !configureLoopbackAudio()) {
+    if (remoteAudio && !configureLoopbackAudio(transcodeFormat)) {
         std::fputs("Could not configure the loopback server\n", stderr);
         return 1;
     }

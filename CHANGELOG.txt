@@ -1,6 +1,8 @@
 Unreleased
 
 * remove Piggy remote diagnostics and its settings
+* bump the plugin SDK to 22 for explicit streaming and blocking encoder queries
+* fix FFmpeg channel layout and sample-rate selection for FLAC transcoding
 
 --------------------------------------------------------------------------------
 

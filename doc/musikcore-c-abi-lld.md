@@ -1212,6 +1212,8 @@ legacy list for actions that still require it.
   and same-endpoint reconnection through that startup path.
   `musikcore.integration.api.remote_audio` exercises the real loopback server,
   HTTP stream, decoder, and headless output on Linux.
+  `musikcore.integration.api.remote_transcode.*` also loads the stock
+  encoders and exercises streaming MP3 and blocking FLAC.
 
 #### Managed runtime hardening reconciliation
 

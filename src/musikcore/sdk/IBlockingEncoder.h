@@ -43,6 +43,8 @@ namespace musik { namespace core { namespace sdk {
 
     class IBlockingEncoder: public IEncoder {
         public:
+            IBlockingEncoder* AsBlocking() final { return this; }
+
             virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) = 0;
             virtual bool Encode(const IBuffer* pcm) = 0;
             virtual void Finalize() = 0;

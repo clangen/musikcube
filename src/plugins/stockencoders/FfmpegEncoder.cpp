@@ -151,8 +151,12 @@ static int resolveSampleRate(AVCodecContext* context, AVCodecCompat* codec, int 
         &configs,
         &count);
 
-    if (result < 0 || count <= 0) {
+    if (result < 0) {
         return DEFAULT_SAMPLE_RATE;
+    }
+    /* FFmpeg leaves the list empty when the codec accepts the input rate. */
+    if (!configs || count <= 0) {
+        return preferredSampleRate;
     }
 
     int highestRate = 0;
@@ -170,7 +174,7 @@ static int resolveSampleRate(AVCodecContext* context, AVCodecCompat* codec, int 
     const int *p;
     int highestRate = 0;
     if (!codec->supported_samplerates) {
-        return DEFAULT_SAMPLE_RATE;
+        return preferredSampleRate;
     }
     p = codec->supported_samplerates;
     while (*p) {
@@ -347,8 +351,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     }
 
 #ifdef USE_FFMPEG6_CHANNEL_LAYOUT
-    this->outputContext->ch_layout.nb_channels = (int)channels;
-    this->outputContext->ch_layout.order = AV_CHANNEL_ORDER_NATIVE;
+    av_channel_layout_default(&this->outputContext->ch_layout, static_cast<int>(channels));
 #else
     this->outputContext->channels = (int)channels;
     this->outputContext->channel_layout = resolveChannelLayout(channels);

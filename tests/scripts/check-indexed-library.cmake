@@ -43,6 +43,10 @@ elseif(DEFINED MANAGED_RUNTIME_TEST)
     list(APPEND managed_runtime_plugins --plugin "${HTTP_DATASTREAM_PLUGIN}")
     list(APPEND managed_runtime_options --check-remote-audio)
   endif()
+  if(DEFINED ENCODER_PLUGIN)
+    list(APPEND managed_runtime_plugins --plugin "${ENCODER_PLUGIN}")
+    list(APPEND managed_runtime_options "--transcode=${TRANSCODE_FORMAT}")
+  endif()
   execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
     "${BUILD_DIR}/tests/bin/isolated" "${MANAGED_RUNTIME_TEST}" --stage
     --locale "${CMAKE_CURRENT_LIST_DIR}/../../src/musikcube/data/locales/en_US.json"

@@ -39,9 +39,16 @@
 
 namespace musik { namespace core { namespace sdk {
 
+    class IStreamingEncoder;
+    class IBlockingEncoder;
+
     class IEncoder {
         public:
             virtual void Release() = 0;
+
+            /* Borrowed interface. Valid until Release(). */
+            virtual IStreamingEncoder* AsStreaming() { return nullptr; }
+            virtual IBlockingEncoder* AsBlocking() { return nullptr; }
      };
 
 } } }
