@@ -1,5 +1,6 @@
 #include <musikcore/output.h>
 #include <musikcore/equalizer.h>
+#include <musikcore/playback.h>
 
 #include <cmath>
 
@@ -21,6 +22,22 @@ mc_result MC_CALL mc_output_select_device(mc_string_view driver, mc_string_view 
 
 mc_result MC_CALL mc_output_set_transport(mc_output_transport transport) {
     return (transport == MC_OUTPUT_GAPLESS || transport == MC_OUTPUT_CROSSFADE)
+        ? MC_ERROR_UNSUPPORTED
+        : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_playback_get_gain_settings(mc_playback_gain_settings* settings) {
+    return settings ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_playback_set_preamp(double decibels) {
+    return std::isfinite(decibels) && decibels >= -20.0 && decibels <= 20.0
+        ? MC_ERROR_UNSUPPORTED
+        : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_playback_set_replay_gain(mc_replay_gain_mode mode) {
+    return (mode == MC_REPLAY_GAIN_DISABLED || mode == MC_REPLAY_GAIN_TRACK || mode == MC_REPLAY_GAIN_ALBUM)
         ? MC_ERROR_UNSUPPORTED
         : MC_ERROR_INVALID_ARGUMENT;
 }

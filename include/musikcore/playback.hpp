@@ -189,6 +189,22 @@ namespace musik { namespace core { namespace api {
         Playback playback;
     };
 
+    inline mc_playback_gain_settings ReadPlaybackGainSettings() {
+        mc_playback_gain_settings settings {};
+        const auto result = mc_playback_get_gain_settings(&settings);
+        if (result != MC_OK && result != MC_ERROR_UNSUPPORTED) {
+            throw Error(result);
+        }
+        return settings;
+    }
+
+    inline mc_result SetPreamp(double decibels) {
+        return mc_playback_set_preamp(decibels);
+    }
+
+    inline mc_result SetReplayGain(mc_replay_gain_mode mode) {
+        return mc_playback_set_replay_gain(mode);
+    }
 } } }
 
 #endif

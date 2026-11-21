@@ -37,8 +37,7 @@
 #include "PlaybackOverlays.h"
 
 #include <musikcore/output.hpp>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/playback.hpp>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -233,22 +232,17 @@ void PlaybackOverlays::ShowReplayGainOverlay(std::function<void()> callback) {
     adapter->AddEntry(_TSTR("settings_replay_gain_mode_album"));
     adapter->SetSelectable(true);
 
-    auto prefs = Preferences::ForComponent(core::prefs::components::Playback);
-
-    auto selectedIndex = prefs->GetInt(
-        core::prefs::keys::ReplayGainMode.c_str(),
-        (int) ReplayGainMode::Disabled);
+    const auto mode = api::ReadPlaybackGainSettings().replay_gain;
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("settings_replay_gain_title"))
-        .SetSelectedIndex((size_t) selectedIndex)
+        .SetSelectedIndex(mode)
         .SetItemSelectedCallback(
-            [callback, selectedIndex, prefs](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                prefs->SetInt(core::prefs::keys::ReplayGainMode.c_str(), (int) index);
-                prefs->Save();
-                if (selectedIndex != index && callback) {
+            [callback, mode](ListOverlay*, IScrollAdapterPtr, size_t index) {
+                const auto selected = static_cast<mc_replay_gain_mode>(index);
+                if (selected != mode && api::SetReplayGain(selected) == MC_OK && callback) {
                     callback();
                 }
             });

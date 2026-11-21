@@ -37,10 +37,7 @@
 #include "PreampOverlay.h"
 #include "PlaybackOverlays.h"
 
-#include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/i18n/Locale.h>
-
-#include <musikcore/support/PreferenceKeys.h>
 
 #include <cursespp/App.h>
 #include <cursespp/DialogOverlay.h>
@@ -51,7 +48,6 @@
 
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
 
@@ -64,20 +60,13 @@ using namespace cursespp;
 #define RIGHT(x) (x->GetX() + x->GetWidth())
 #define TEXT_WIDTH(x) ((int) u8cols(x->GetText()))
 #define INVALID_PREAMP_GAIN -999.9f
-#define MIN_PREAMP_GAIN -20.0f
-#define MAX_PREAMP_GAIN 20.0f
 
 using Callback = PreampOverlay::Callback;
 
-static std::string getReplayGainMode(std::shared_ptr<Preferences> prefs) {
-    ReplayGainMode mode = (ReplayGainMode)prefs->GetInt(
-        core::prefs::keys::ReplayGainMode.c_str(),
-        (int)ReplayGainMode::Disabled);
-
+static std::string getReplayGainMode(mc_replay_gain_mode mode) {
     switch (mode) {
-        case ReplayGainMode::Disabled: return _TSTR("settings_replay_gain_mode_disabled");
-        case ReplayGainMode::Album: return _TSTR("settings_replay_gain_mode_album");
-        case ReplayGainMode::Track: return _TSTR("settings_replay_gain_mode_track");
+        case MC_REPLAY_GAIN_ALBUM: return _TSTR("settings_replay_gain_mode_album");
+        case MC_REPLAY_GAIN_TRACK: return _TSTR("settings_replay_gain_mode_track");
     }
 
     return _TSTR("settings_replay_gain_mode_disabled");
@@ -118,7 +107,6 @@ PreampOverlay::PreampOverlay(api::Playback playback, Callback callback)
 : OverlayBase(), playback(std::move(playback))
 {
     this->callback = callback;
-    this->prefs = Preferences::ForComponent(core::prefs::components::Playback);
     this->width = this->height = 0;
 
     this->SetFrameVisible(true);
@@ -152,9 +140,7 @@ void PreampOverlay::InitViews() {
     this->preampInput->SetTruncate(true);
 
     /* replay gain */
-    std::string mode = getReplayGainMode(this->prefs);
     this->replayGainDropdown.reset(new TextLabel());
-    this->replayGainDropdown->SetText(ARROW + _TSTR("settings_replay_gain") + mode);
     this->replayGainDropdown->Activated.connect(this, &PreampOverlay::OnReplayGainPressed);
 
     /* style 'em */
@@ -211,8 +197,8 @@ void PreampOverlay::Show(api::Playback playback, Callback callback) {
 }
 
 void PreampOverlay::Load() {
-    std::string preampDb = strToFloat(
-        prefs->GetDouble(core::prefs::keys::PreampDecibels.c_str(), 0.0f));
+    const auto settings = api::ReadPlaybackGainSettings();
+    std::string preampDb = strToFloat(settings.preamp_db);
 
     if (preampDb.size() > INPUT_LENGTH) {
         preampDb = preampDb.substr(0, INPUT_LENGTH);
@@ -220,7 +206,7 @@ void PreampOverlay::Load() {
 
     this->preampInput->SetText(preampDb);
 
-    std::string mode = getReplayGainMode(this->prefs);
+    std::string mode = getReplayGainMode(settings.replay_gain);
     this->replayGainDropdown->SetText(ARROW + _TSTR("settings_replay_gain") + mode);
 
     this->Layout();
@@ -229,13 +215,10 @@ void PreampOverlay::Load() {
 bool PreampOverlay::Save() {
     float preampGain = getFloatFromTextInput(this->preampInput.get());
 
-    if (preampGain > MAX_PREAMP_GAIN || preampGain < MIN_PREAMP_GAIN) {
+    if (api::SetPreamp(preampGain) != MC_OK) {
         showInvalidGainDialog();
         return false;
     }
-
-    this->prefs->SetDouble(core::prefs::keys::PreampDecibels.c_str(), preampGain);
-    this->prefs->Save();
 
     return true;
 }

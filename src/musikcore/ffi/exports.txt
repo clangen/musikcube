@@ -89,3 +89,6 @@ mc_equalizer_get_state
 mc_equalizer_set_enabled
 mc_equalizer_set_gains
 mc_output_set_transport
+mc_playback_get_gain_settings
+mc_playback_set_preamp
+mc_playback_set_replay_gain

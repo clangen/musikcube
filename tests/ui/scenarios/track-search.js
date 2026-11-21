@@ -325,15 +325,25 @@ async function checkTrackSearch(runtime, database, screenshots,
       if (staged.some(name => name.startsWith('libnullout.'))) {
         terminal.send('s');
         await terminal.expect('output driver: Null');
-        await terminal.expect('playback mode: gapless');
+        const label = 'playback mode: gapless';
+        await terminal.expect(label);
         const rows = terminal.screen.text().split('\n');
-        const y = rows.findIndex(row => row.includes('playback mode: gapless'));
-        const x = rows[y].indexOf('playback mode: gapless');
+        const y = rows.findIndex(row => row.includes(label));
+        const x = rows[y].indexOf(label);
         const click = `\x1b[<0;${x + 1};${y + 1}`;
         terminal.send(click + 'M' + click + 'm');
         await terminal.expect('crossfade');
         terminal.send(DOWN + '\r');
         await terminal.expect('playback mode: crossfade');
+        terminal.send('\x1b[Z\r');
+        await terminal.expect('preamp gain (dB):');
+        await terminal.expect('replaygain: disabled');
+        terminal.send('\t\r');
+        await terminal.expect('replaygain mode');
+        terminal.send(DOWN + '\r');
+        await terminal.expect('replaygain: track');
+        terminal.send('\x1b');
+        await terminal.expect('playback mode: crossfade', { absent: 'preamp gain (dB):' });
       }
     }
     /* The driver must observe a clean application exit, not just a screen that

@@ -34,3 +34,7 @@ All 44 Linux Release tests passed. In three consecutive focused runs, the Browse
 ## Playback transport
 
 Settings and the existing playback chooser use the public SDK to select gapless or crossfade. Core enforces the WaveOut restriction when changing either the driver or the mode. Linux tests exercise the SDK mode round trip, ABI argument validation, and a headless Settings interaction that switches to crossfade.
+
+## Preamp and replay gain
+
+The preamp and replay gain overlays and the transport indicator use the public playback settings API. Playback and the API share the same configured gain values. Linux coverage includes settings round trips and rejection of invalid gains, and the Browse TUI scenario selects and displays track replay gain.

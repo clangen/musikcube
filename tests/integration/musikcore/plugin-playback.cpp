@@ -2,6 +2,7 @@
 
 #include <musikcore/audio/GaplessTransport.h>
 #include <musikcore/output.hpp>
+#include <musikcore/playback.hpp>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 
@@ -58,6 +59,19 @@ namespace {
         }
 
         GaplessTransport transport;
+        if (api::SetPreamp(3.5) != MC_OK || api::SetReplayGain(MC_REPLAY_GAIN_ALBUM) != MC_OK) {
+            std::fputs("Could not configure playback gain\n", stderr);
+            return false;
+        }
+        const auto gain = api::ReadPlaybackGainSettings();
+        if (api::SetPreamp(21.0) != MC_ERROR_INVALID_ARGUMENT ||
+            gain.preamp_db != 3.5 || gain.replay_gain != MC_REPLAY_GAIN_ALBUM ||
+            api::ReadPlaybackGainSettings().preamp_db != gain.preamp_db)
+        {
+            std::fputs("Playback gain did not round trip or reject an invalid value\n", stderr);
+            return false;
+        }
+
         if (!startPlayback(transport, media)) {
             std::fputs("Playback did not start with the headless output\n", stderr);
             return false;

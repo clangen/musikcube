@@ -38,7 +38,6 @@
 
 #include <musikcore/sdk/IPlugin.h>
 #include <musikcore/playback.hpp>
-#include <musikcore/support/Preferences.h>
 
 #include <cursespp/Checkbox.h>
 #include <cursespp/TextInput.h>
@@ -78,7 +77,6 @@ namespace musik {
             int width, height, x, y;
 
             musik::core::api::Playback playback;
-            std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<cursespp::TextLabel> titleLabel, preampLabel, replayGainDropdown;
             std::shared_ptr<cursespp::TextInput> preampInput;
             std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;

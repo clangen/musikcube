@@ -36,6 +36,8 @@
 
 #include "PlaybackService.h"
 
+#include <musikcore/playback.h>
+#include <musikcore/ffi/common/error.h>
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/track/Track.h>
@@ -48,6 +50,7 @@
 #include <musikcore/ffi/consumer/playback-binding.h>
 #include <thread>
 #include <utility>
+#include <cmath>
 #include <musikcore/support/LastFm.h>
 
 using namespace musik::core::library;
@@ -1183,26 +1186,71 @@ ITrackList* PlaybackService::Clone() {
     return to->GetSdkValue();
 }
 
+static mc_playback_gain_settings readGainSettings(Preferences& prefs) {
+    const auto mode = prefs.GetInt(keys::ReplayGainMode, static_cast<int>(ReplayGainMode::Disabled));
+    mc_replay_gain_mode replayGain = MC_REPLAY_GAIN_DISABLED;
+    if (mode == static_cast<int>(ReplayGainMode::Album)) {
+        replayGain = MC_REPLAY_GAIN_ALBUM;
+    }
+    else if (mode != static_cast<int>(ReplayGainMode::Disabled)) {
+        replayGain = MC_REPLAY_GAIN_TRACK;
+    }
+    return { prefs.GetDouble(keys::PreampDecibels, 0.0), replayGain };
+}
+
+mc_result MC_CALL mc_playback_get_gain_settings(mc_playback_gain_settings* settings) {
+    if (!settings) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        *settings = readGainSettings(*Preferences::ForComponent(components::Playback));
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_playback_set_preamp(double decibels) {
+    if (!std::isfinite(decibels) || decibels < -20.0 || decibels > 20.0) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto prefs = Preferences::ForComponent(components::Playback);
+        prefs->SetDouble(keys::PreampDecibels, decibels);
+        prefs->Save();
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_playback_set_replay_gain(mc_replay_gain_mode mode) {
+    if (mode != MC_REPLAY_GAIN_DISABLED && mode != MC_REPLAY_GAIN_TRACK && mode != MC_REPLAY_GAIN_ALBUM) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    static_assert(static_cast<int>(ReplayGainMode::Disabled) == MC_REPLAY_GAIN_DISABLED);
+    static_assert(static_cast<int>(ReplayGainMode::Track) == MC_REPLAY_GAIN_TRACK);
+    static_assert(static_cast<int>(ReplayGainMode::Album) == MC_REPLAY_GAIN_ALBUM);
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto prefs = Preferences::ForComponent(components::Playback);
+        prefs->SetInt(keys::ReplayGainMode, static_cast<int>(mode));
+        prefs->Save();
+        return MC_OK;
+    });
+}
+
 ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
-    using Mode = ReplayGainMode;
-
     ITransport::Gain result;
+    const auto settings = readGainSettings(*playbackPrefs);
 
-    const float preampDb = static_cast<float>(
-        playbackPrefs->GetDouble(keys::PreampDecibels.c_str(), 0.0f));
+    const float preampDb = static_cast<float>(settings.preamp_db);
 
     result.preamp = powf(10.0f, (preampDb / 20.0f));
     result.peakValid = false;
 
-    const Mode mode = static_cast<Mode>(playbackPrefs->GetInt(
-        keys::ReplayGainMode.c_str(), (int) Mode::Disabled));
-
-    if (mode != Mode::Disabled && index < this->playlist.Count()) {
+    if (settings.replay_gain != MC_REPLAY_GAIN_DISABLED && index < this->playlist.Count()) {
         auto track = TrackAtIndexWithTimeout(index);
         if (track) {
             const auto rg = track->GetReplayGain();
-            const float gain = (mode == Mode::Album) ? rg.albumGain : rg.trackGain;
-            const float peak = (mode == Mode::Album) ? rg.albumPeak : rg.trackPeak;
+            const bool album = settings.replay_gain == MC_REPLAY_GAIN_ALBUM;
+            const float gain = album ? rg.albumGain : rg.trackGain;
+            const float peak = album ? rg.albumPeak : rg.trackPeak;
             if (gain != 1.0f) {
                 /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
                 result.gain = powf(10.0f, (gain / 20.0f));

@@ -16,6 +16,27 @@ extern "C" {
    owned handles. Snapshot accessors accept null and return empty sentinels.
    Releasing a snapshot or handle never stops the playback session. */
 
+typedef uint32_t mc_replay_gain_mode;
+enum {
+    MC_REPLAY_GAIN_DISABLED,
+    MC_REPLAY_GAIN_TRACK,
+    MC_REPLAY_GAIN_ALBUM
+};
+
+typedef struct mc_playback_gain_settings {
+    /* Gain adjustment in decibels. Defaults to 0 dB. */
+    double preamp_db;
+    /* Replay gain normalization mode. Defaults to disabled. */
+    mc_replay_gain_mode replay_gain;
+} mc_playback_gain_settings;
+
+/* Read configured gain settings. Changes apply to subsequent track loads. */
+MC_API mc_result MC_CALL mc_playback_get_gain_settings(mc_playback_gain_settings* settings);
+/* Persist a finite preamp adjustment between -20 and 20 dB. */
+MC_API mc_result MC_CALL mc_playback_set_preamp(double decibels);
+/* Persist a replay gain normalization mode. */
+MC_API mc_result MC_CALL mc_playback_set_replay_gain(mc_replay_gain_mode mode);
+
 typedef uint32_t mc_playback_command;
 enum {
     MC_PLAYBACK_TOGGLE_PAUSE = 1,

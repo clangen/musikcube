@@ -1129,7 +1129,7 @@ legacy list for actions that still require it.
 - [x] **PUB-006** Add local indexer paths, scan commands, state, progress, and
   terminal events. `musikcore.abi.remote_query_transport` verifies local path
   editing and scan notifications while a remote catalog is selected.
-- [ ] **PUB-007** Add output selection, replay gain, equalizer, and transport
+- [x] **PUB-007** Add output selection, replay gain, equalizer, and transport
   settings required by musikcube.
   Cube reloads output through `mc_playback_control` and reads replay-gain
   availability from the playback snapshot. The
@@ -1143,7 +1143,8 @@ legacy list for actions that still require it.
   equalizer plugin and checks that Settings displays the headless output.
   The same scenario switches from gapless to crossfade in Settings.
   `musikcore.integration.plugin.playback_reload` verifies transport mode
-  round trips through the SDK.
+  and playback gain round trips through the SDK, including preamp range
+  validation. `musikcube.ui.browse` also changes replay gain to track mode.
 - [ ] **PUB-008** Add advanced consumer stream/decoder/encoder APIs only for
   approved use cases.
 - [ ] **PUB-009** Add contract and integration tests with every public feature

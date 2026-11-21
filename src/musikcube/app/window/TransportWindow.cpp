@@ -613,9 +613,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     const bool prepared = snapshot->state == MC_PLAYBACK_PREPARED;
     const bool stopped = snapshot->state == MC_PLAYBACK_STOPPED;
     const bool muted = snapshot->muted;
-    const auto replayGainMode = Preferences::ForComponent(core::prefs::components::Playback)->GetInt(
-        core::prefs::keys::ReplayGainMode, static_cast<int>(ReplayGainMode::Disabled));
-    const bool replayGainEnabled = replayGainMode != static_cast<int>(ReplayGainMode::Disabled);
+    const bool replayGainEnabled = api::ReadPlaybackGainSettings().replay_gain != MC_REPLAY_GAIN_DISABLED;
 
     Color const gb = Color::TextActive;
     Color const disabled = Color::TextDisabled;
