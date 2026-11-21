@@ -35,10 +35,16 @@ MC_API mc_result MC_CALL mc_event_source_publish(mc_event_source *source, const 
 
 /* Disconnects and clears the slot. Outside a subscription callback this waits
    for admitted calls, so release any locks they need first. Inside a callback
-   delivered by mc_event_source_publish it skips the wait to prevent deadlocks.
+   delivered by the C or C++ subscription APIs it skips the wait to prevent deadlocks.
    In that case keep user_data alive until all admitted calls have finished.
    Synchronize access to an individual handle slot separately. */
 MC_API void MC_CALL mc_subscription_destroy(mc_subscription **subscription);
+
+/* Delivery scope used by the header-only C++ subscription implementation.
+   Enter and leave must be paired on the publishing thread. */
+MC_API void MC_CALL mc_subscription_delivery_enter(void);
+MC_API void MC_CALL mc_subscription_delivery_leave(void);
+MC_API int MC_CALL mc_subscription_delivery_active(void);
 
 #ifdef __cplusplus
 }

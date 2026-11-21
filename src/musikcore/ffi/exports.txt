@@ -115,6 +115,9 @@ mc_remote_session_state
 mc_request_cancel
 mc_server_configure
 mc_server_read_configuration
+mc_subscription_delivery_active
+mc_subscription_delivery_enter
+mc_subscription_delivery_leave
 mc_subscription_destroy
 mc_track_page_destroy
 mc_track_page_get_count

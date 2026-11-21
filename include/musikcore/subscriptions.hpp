@@ -1,5 +1,6 @@
 #pragma once
 
+#include <musikcore/subscriptions.h>
 #include <algorithm>
 #include <condition_variable>
 #include <functional>
@@ -9,13 +10,6 @@
 #include <vector>
 
 namespace musik { namespace core { namespace api {
-
-    namespace detail {
-        inline unsigned& SubscriptionDeliveryDepth() {
-            static thread_local unsigned depth = 0;
-            return depth;
-        }
-    }
 
     /* Owns a typed list of callbacks. Neither copyable nor movable. Delivery
        runs in registration order on the publisher thread. Concurrent publishes
@@ -38,11 +32,11 @@ namespace musik { namespace core { namespace api {
         /* Tracks reentrant disconnect without holding any lock during a callback. */
         struct Invocation {
             explicit Invocation(Slot& slot) : slot(slot) {
-                ++detail::SubscriptionDeliveryDepth();
+                mc_subscription_delivery_enter();
             }
 
             ~Invocation() {
-                --detail::SubscriptionDeliveryDepth();
+                mc_subscription_delivery_leave();
                 std::lock_guard<std::mutex> lock(this->slot.mutex);
                 if (--this->slot.running == 0) {
                     this->slot.idle.notify_all();
@@ -57,7 +51,7 @@ namespace musik { namespace core { namespace api {
     public:
         /* Move-only owner. Reset waits for admitted callbacks, so call it
            outside locks those callbacks need. Reset inside a callback delivered
-           by Subscriptions in the same binary skips the wait to prevent cyclic
+           by the C or C++ subscription APIs skips the wait to prevent cyclic
            waits. An admitted callback may still be running on another thread.
            Synchronize access to the same Connection separately. */
         class Connection {
@@ -85,7 +79,7 @@ namespace musik { namespace core { namespace api {
 
                 std::unique_lock<std::mutex> lock(slot->mutex);
                 slot->connected = false;
-                if (detail::SubscriptionDeliveryDepth() != 0) {
+                if (slot->running == 0 || mc_subscription_delivery_active()) {
                     return;
                 }
                 slot->idle.wait(lock, [&] { return slot->running == 0; });
@@ -105,7 +99,7 @@ namespace musik { namespace core { namespace api {
         Subscriptions& operator=(const Subscriptions&) = delete;
         Subscriptions& operator=(Subscriptions&&) = delete;
 
-        Connection Subscribe(Callback callback) {
+        [[nodiscard]] Connection Subscribe(Callback callback) {
             if (!callback) {
                 return {};
             }

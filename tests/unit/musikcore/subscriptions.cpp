@@ -1,6 +1,7 @@
 #include "../../support/check.h"
 
 #include <musikcore/subscriptions.hpp>
+#include <musikcore/subscriptions.h>
 
 #include <atomic>
 #include <barrier>
@@ -113,9 +114,49 @@ namespace {
         events.Publish();
         return TEST_CHECK(propagated);
     }
+
+    bool crossSharedLibraryDisconnect() {
+        struct State {
+            std::barrier<> running { 2 };
+            Subscriptions<>::Connection typed;
+            mc_subscription* erased = nullptr;
+            std::atomic<int> calls { 0 };
+
+            static void MC_CALL Callback(void* data, const void*) {
+                auto& state = *static_cast<State*>(data);
+                ++state.calls;
+                state.running.arrive_and_wait();
+                state.typed.Reset();
+            }
+        } state;
+
+        mc_event_source* source = nullptr;
+        if (!TEST_CHECK(mc_event_source_create(&source) == MC_OK)) {
+            return false;
+        }
+        if (!TEST_CHECK(mc_event_source_subscribe(source, State::Callback, &state, &state.erased) == MC_OK)) {
+            mc_event_source_destroy(&source);
+            return false;
+        }
+
+        Subscriptions<> events;
+        state.typed = events.Subscribe([&] {
+            ++state.calls;
+            state.running.arrive_and_wait();
+            mc_subscription_destroy(&state.erased);
+        });
+        auto publisher = std::async(std::launch::async, [&] { return mc_event_source_publish(source, nullptr); });
+        events.Publish();
+        const auto status = publisher.get();
+
+        events.Publish();
+        const auto second = mc_event_source_publish(source, nullptr);
+        mc_event_source_destroy(&source);
+        return TEST_CHECK(status == MC_OK && second == MC_OK && state.calls == 2);
+    }
 }
 
 int main() {
     return changesDuringDelivery() && waitsForRunningCallback() && crossDisconnect() &&
-        releasesCallbackThatThrows() ? 0 : 1;
+        releasesCallbackThatThrows() && crossSharedLibraryDisconnect() ? 0 : 1;
 }

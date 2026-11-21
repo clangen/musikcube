@@ -285,7 +285,8 @@ while a completion can remain queued.
 
 - [x] Replace core sigslot usage and expose caller-owned subscriptions in C
   and header-only C++. `musikcore.unit.subscriptions` covers reentrant and
-  concurrent disconnect. `musikcore.abi.shared_c` covers C handle ownership and
+  concurrent disconnect, including mixed C/C++ delivery across a shared library.
+  `musikcore.abi.shared_c` covers C handle ownership and
   self-disconnect across the shared-library boundary.
 
 Completion producers enqueue terminal records for the host-selected dispatcher.

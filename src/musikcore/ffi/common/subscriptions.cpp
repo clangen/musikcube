@@ -6,6 +6,15 @@
 using musik::core::api::Subscriptions;
 using musik::core::ffi::exception_barrier;
 
+namespace {
+    /* One scope per thread for both shared-library and consumer callbacks. */
+    thread_local unsigned deliveryDepth = 0;
+}
+
+void MC_CALL mc_subscription_delivery_enter(void) { ++deliveryDepth; }
+void MC_CALL mc_subscription_delivery_leave(void) { --deliveryDepth; }
+int MC_CALL mc_subscription_delivery_active(void) { return deliveryDepth != 0; }
+
 struct mc_event_source {
     Subscriptions<const void*> callbacks;
 };
