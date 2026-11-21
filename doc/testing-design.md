@@ -676,6 +676,36 @@ Supported configurations should include:
 - Platform-native diagnostics on Windows where compiler sanitizer coverage is
   insufficient.
 
+Unix Clang/GCC Debug builds default to AddressSanitizer and
+UndefinedBehaviorSanitizer for all repository C/C++ targets, including the
+reduced ABI library, SQLite, direct dispatch fixtures, applications, and plugins.
+Configuration happens before targets are created. Instrumentation is Debug-only;
+Release builds and standalone release packages stay uninstrumented. Prebuilt
+vendor archives are not rebuilt by this option.
+
+Select `MUSIKCUBE_SANITIZERS=address,undefined`, `address`, `undefined`, or `none`
+when configuring CMake. The test runner forwards `--sanitizers` and preserves a
+cached selection when that argument is omitted:
+
+```sh
+node tests/scripts/run-tests.js --build-dir build/tests-abi-sanitizers --config Debug --abi-only --sanitizers address,undefined
+node tests/scripts/run-tests.js --build-dir build/tests-abi-plain --config Debug --abi-only --sanitizers none
+```
+
+Both sanitizers fail the process on a detected error. The
+`musikcore.integration.binary.sanitizers.c` and `.cpp` cases prove this using
+ordinary execution followed by deliberate heap overflow and signed overflow in
+child processes. These cases are registered only for instrumented Debug builds.
+On macOS, `musikcore.integration.binary.sanitizer_reload` additionally checks
+repeated module unload/reload and a real global overflow after reload.
+AppleClang 21 needs narrowly scoped image-global unregister cleanup to avoid
+stale shadow-memory reports after `dlclose`; this keeps global checks enabled.
+
+Windows sanitizer configuration and native execution remain deferred. This
+profile rejects explicitly requested unsupported compiler/platform combinations
+instead of silently claiming coverage. ThreadSanitizer remains a separate future
+configuration; it cannot be combined with AddressSanitizer.
+
 Sanitizer runs should use dynamically linked test paths representative of
 release behavior. Suppressions must be narrow, documented, and preferably
 limited to known third-party code.

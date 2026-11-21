@@ -16,6 +16,7 @@
 #include <condition_variable>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -499,16 +500,28 @@ namespace {
         WaitCapture wait)
     {
         constexpr unsigned overlapDeadlineMs = 18000;
-        {
-            CrossfadeTransport transport;
-            transport.Start(first.string(), {}, ITransport::StartMode::Immediate);
-            transport.PrepareNextTrack(second.string(), {});
-            if (!wait(CaptureEvent::Overlap, overlapDeadlineMs) || !transport.Pause()) {
-                std::fputs("Could not pause two overlapping tracks\n", stderr);
-                return false;
-            }
-            std::fputs("Destroying the transport with both fades paused\n", stderr);
+        auto transport = std::make_unique<CrossfadeTransport>();
+        transport->Start(first.string(), {}, ITransport::StartMode::Immediate);
+        transport->PrepareNextTrack(second.string(), {});
+        if (!wait(CaptureEvent::Overlap, overlapDeadlineMs) || !transport->Pause()) {
+            std::fputs("Could not pause two overlapping tracks\n", stderr);
+            return false;
         }
+
+        /* give paused teardown its own deadline. plugin startup and paced audio
+        must not consume the time reserved for detecting a shutdown deadlock. */
+        std::mutex teardownMutex;
+        std::condition_variable_any teardownChanged;
+        std::jthread deadline([&](std::stop_token stop) {
+            std::unique_lock lock(teardownMutex);
+            teardownChanged.wait_for(lock, stop, 3s, [] { return false; });
+            if (!stop.stop_requested()) {
+                std::fputs("Paused crossfade teardown exceeded its deadline\n", stderr);
+                std::abort();
+            }
+        });
+        std::fputs("Destroying the transport with both fades paused\n", stderr);
+        transport.reset();
         Player::WaitForWorkers();
         return true;
     }

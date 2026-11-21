@@ -317,3 +317,45 @@ add_dependencies(musikcube_tests musikcore_subscriptions_test)
 add_dependencies(musikcube_unit_tests musikcore_subscriptions_test)
 add_test(NAME musikcore.unit.subscriptions COMMAND musikcore_subscriptions_test)
 set_tests_properties(musikcore.unit.subscriptions PROPERTIES LABELS "unit;musikcore;playback;contract" TIMEOUT 10)
+
+# Deliberate faults must fail in both languages; successful probes stay quiet.
+if(MUSIKCUBE_SANITIZERS_LIST AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+  foreach(language IN ITEMS c cpp)
+    add_executable(musikcore_sanitizer_probe_${language} integration/binary/sanitizers/probe.${language})
+    set_target_properties(musikcore_sanitizer_probe_${language} PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+    add_dependencies(musikcube_tests musikcore_sanitizer_probe_${language})
+    add_dependencies(musikcube_integration_tests musikcore_sanitizer_probe_${language})
+    add_test(NAME musikcore.integration.binary.sanitizers.${language}
+      COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/check-sanitizers.js"
+      "$<TARGET_FILE:musikcore_sanitizer_probe_${language}>" ${MUSIKCUBE_SANITIZERS_LIST})
+    set_tests_properties(musikcore.integration.binary.sanitizers.${language} PROPERTIES
+      LABELS "integration;musikcore;binary;sanitizer;contract" TIMEOUT 30)
+  endforeach()
+endif()
+
+# Repeated dlclose must not leave stale global redzones, and an actual overflow
+# after reload must still fail. This isolates the AppleClang 21 runtime defect.
+if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug" AND "address" IN_LIST MUSIKCUBE_SANITIZERS_LIST)
+  foreach(name IN ITEMS short long)
+    add_library(musikcore_sanitizer_${name} MODULE integration/binary/sanitizers/module.c)
+    set_target_properties(musikcore_sanitizer_${name} PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/sanitizers")
+    musikcube_restrict_exports(musikcore_sanitizer_${name} module_name module_byte)
+    add_dependencies(musikcube_tests musikcore_sanitizer_${name})
+    add_dependencies(musikcube_integration_tests musikcore_sanitizer_${name})
+  endforeach()
+  target_compile_definitions(musikcore_sanitizer_long PRIVATE
+    MODULE_NAME="the considerably longer name of the second instrumented module")
+  add_executable(musikcore_sanitizer_reload_test integration/binary/sanitizers/reload.cpp)
+  set_target_properties(musikcore_sanitizer_reload_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  add_dependencies(musikcube_tests musikcore_sanitizer_reload_test)
+  add_dependencies(musikcube_integration_tests musikcore_sanitizer_reload_test)
+  add_test(NAME musikcore.integration.binary.sanitizer_reload COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/check-sanitizer-reload.js"
+    "$<TARGET_FILE:musikcore_sanitizer_reload_test>" "$<TARGET_FILE:musikcore_sanitizer_short>"
+    "$<TARGET_FILE:musikcore_sanitizer_long>")
+  set_tests_properties(musikcore.integration.binary.sanitizer_reload PROPERTIES
+    LABELS "integration;musikcore;binary;sanitizer;contract" TIMEOUT 45)
+endif()

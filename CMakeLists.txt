@@ -14,6 +14,8 @@ set (musikcube_VERSION_MINOR 0)
 set (musikcube_VERSION_PATCH 5)
 set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 
+include(.cmake/ConfigureSanitizers.cmake)
+
 include(.cmake/RestrictExports.cmake)
 
 find_package(Threads REQUIRED)
@@ -28,6 +30,7 @@ endif()
 
 option(MUSIKCORE_ABI_ONLY "Build the standalone experimental C API and its contract tests" OFF)
 if(MUSIKCORE_ABI_ONLY)
+  musikcube_finalize_sanitizers("${CMAKE_CURRENT_SOURCE_DIR}")
   musikcore_verify_core_boundary("${CMAKE_CURRENT_SOURCE_DIR}")
   return()
 endif()
@@ -35,6 +38,7 @@ endif()
 if(WIN32)
   include("${CMAKE_CURRENT_SOURCE_DIR}/.cmake/BuildWindows.cmake")
   add_subdirectory(tests/support EXCLUDE_FROM_ALL)
+  musikcube_finalize_sanitizers("${CMAKE_CURRENT_SOURCE_DIR}")
   musikcore_verify_core_boundary("${CMAKE_CURRENT_SOURCE_DIR}")
   return()
 endif()
@@ -199,4 +203,5 @@ add_custom_command(
 
 include(InstallFiles)
 include(GeneratePackage)
+musikcube_finalize_sanitizers("${CMAKE_CURRENT_SOURCE_DIR}")
 musikcore_verify_core_boundary("${CMAKE_CURRENT_SOURCE_DIR}")

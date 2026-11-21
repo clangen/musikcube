@@ -689,8 +689,19 @@ PCM transport stress, and UI scenarios. Logs:
 `build/subscription-scope-tests-release.log` and
 `build/subscription-scope-tests-debug.log`.
 
-Production Debug core objects use ASan/UBSan; direct ABI-only/dispatch targets
-currently do not (API-013).
+With TST-008/API-013 instrumentation enabled before all targets, native macOS
+full Debug passes 109/109, ABI-only Debug passes 34/34, and plain Release
+passes 104/104. This includes C and
+C++ fault-detection probes, fatal UBSan, shared-library ownership/dispatch,
+allocation failures, and the AppleClang 21 unload regression. The latter fails
+without image-global cleanup but still diagnoses a real global overflow after
+cleanup. Logs: `build/sanitizers-full-tests-debug-final.log`,
+`build/sanitizers-abi-only-final.log`, and
+`build/sanitizers-tests-release-final.log`. ASan-only and UBSan-only probe selections
+also pass; Release and `none` compile/link commands contain no sanitizer flags.
+The paused-crossfade test uses separate readiness and teardown deadlines after
+concurrent Release/Debug runs exposed its shared 12-second budget. Paused
+teardown and worker completion now have their own three-second watchdog.
 
 The mixed C/C++ disconnect regression passes three consecutive focused Release
 runs. The same current test compiled against the pre-fix `c17cf1d45` C++ header
@@ -729,7 +740,7 @@ cmake -S . -B build/foundation-full-release -DCMAKE_BUILD_TYPE=Release -DBUILD_T
 cmake --build build/foundation-full-release --target musikcube_tests musikcube -j6
 ctest --test-dir build/foundation-full-release -C Release --output-on-failure -j6
 
-node tests/scripts/run-tests.js --build-dir build/foundation-debug --config Debug --abi-only
+node tests/scripts/run-tests.js --build-dir build/foundation-debug --config Debug --abi-only --sanitizers address,undefined
 node tests/scripts/run-tests.js --build-dir build/foundation-release --config Release --abi-only
 node tests/ui/scenarios/track-search.js --build-dir build/foundation-full-release --bin-dir build/foundation-full-release/bin --tracks 10000 --windows --runs 3
 ```
@@ -835,10 +846,15 @@ recorded before the experimental shared façade is introduced.
   `IDataStream` exercise decoding, cancellation, and buffer/worker teardown in
   `musikcore.integration.transport.*_pcm` and `musikcore.integration.api.uri_player`.
   A general memory-provider fixture is deferred until a C SDK use case needs it.
-- [ ] **TST-008** Add explicit sanitizer CMake options without changing release
-  defaults. Unix Debug currently enables ASan/UBSan through
-  `.cmake/ConfigureCompilerFlags.cmake`; configurable sanitizer selection and
-  equivalent Windows/ABI-only coverage are not implemented by that flag setup.
+- [x] **TST-008** Configure Debug instrumentation before any targets through
+  `.cmake/ConfigureSanitizers.cmake`. `MUSIKCUBE_SANITIZERS` selects
+  `address,undefined` (Unix Clang/GCC default), either one, or `none`; the test
+  runner forwards `--sanitizers`. C/C++ compilation and executable/shared/module
+  linking are covered, including ABI-only fixtures. Release remains plain.
+  `musikcore.integration.binary.sanitizers.c` and `.cpp` verify actual fault
+  detection and fatal UBSan behavior; both fail before the configuration fix.
+  `sanitizer_reload` protects AppleClang 21 image-global cleanup and verifies
+  that real global overflows remain diagnosed. Windows support is deferred.
 - [x] **TST-009** Native unit/contract tests run on Windows, macOS, and Linux.
   The foundation gate records Windows Debug/Release 87/87 and the native Unix
   evidence; newer changes still require their own platform validation.
@@ -958,13 +974,12 @@ recorded before the experimental shared façade is introduced.
 - [x] **API-012** Cover current C version, context, errors, callback delivery,
   cancellation, and teardown contracts in `shared_c`, `arguments`, and `dispatch`.
   Future polled-event tests belong with API-014/API-015.
-- [ ] **API-013** Complete ASan/UBSan instrumentation of direct ABI lifecycle
-  and allocation-failure fixtures, then rerun `dispatch`, `result_contracts`,
-  `shared_c`, and `subscriptions`. Production runtime/URI cases already run with
-  instrumented core objects on native macOS Debug. The reduced `musikcore_abi0`
-  and direct `dispatch` target currently compile with `-g` alone, so a green
-  full Debug run does not prove those seams were sanitizer-checked. Use TST-008
-  to apply explicit instrumentation consistently; native Windows remains open.
+- [x] **API-013** Instrument and validate direct ABI lifecycle/allocation-failure
+  paths on native macOS with ASan/UBSan, including `dispatch`, `result_contracts`,
+  `shared_c`, and `subscriptions`. Full Debug and ABI-only Debug suites pass;
+  actual C/C++ compile and driver-link flags contain the selected sanitizers.
+  TST-008's negative probes prevent a plain Debug build from silently claiming
+  instrumentation. Native Linux/Windows acceptance for this change stays open.
 - [ ] **API-014** Deferred expansion: unsolicited notification polling. Existing
   host-dispatched subsystem callbacks serve current application consumers.
 - [ ] **API-015** Deferred expansion: owned polled notification payloads and
@@ -972,12 +987,12 @@ recorded before the experimental shared façade is introduced.
 
 #### Phase 3 gate
 
-- [ ] **GATE-300** Complete direct runtime contract acceptance under API-013
-  instrumentation. Functional create, dispatch/cancel, callback ownership, and
-  shutdown already pass `shared_c`, `dispatch`, and `result_contracts`.
-  Platform acceptance remains in the foundation gate; unimplemented polled
-  notifications are separately deferred under API-014/API-015.
-
+- [x] **GATE-300** Current create, dispatch/cancel, callback ownership, and
+  shutdown contracts pass `shared_c`, `dispatch`, and `result_contracts` with
+  native macOS ASan/UBSan instrumentation (API-013). Cross-platform acceptance
+  remains in the foundation gate, where native Windows acceptance is complete;
+  this result does not claim new Linux/Windows sanitizer execution. Polled
+  notifications remain separately deferred under API-014/API-015.
 
 ### Phase 4: C SDK walking skeleton
 
@@ -1627,10 +1642,9 @@ preparation; it is not a request to add every deferred API below.
    it does not move typed callback storage into C or make callback-local
    disconnect wait for all admitted calls. `musikcore.unit.subscriptions` checks
    cross-library C/C++ disconnect and ordinary external-thread draining.
-2. Complete direct ABI sanitizer coverage (TST-008/API-013). Production core
-   Debug objects use ASan/UBSan, but the reduced shared runtime and standalone
-   dispatch fixture currently do not. Verify compile/link instrumentation as
-   well as test results.
+2. Preserve TST-008/API-013 instrumentation and fault-detection probes when
+   adding targets. Debug now covers direct ABI and production paths; Release
+   stays uninstrumented. Linux/Windows execution remains separately owned.
 3. Complete CORE-RC-001/CORE-RC-002: exercise one non-C++ installed-library
    consumer and close documentation for service selection, dispatch, ownership,
    cancellation, and teardown. Reuse installed headers/examples as the contract.
@@ -1652,10 +1666,11 @@ general metadata invalidation and atomic batch edits (LIB-008/LIB-009), generic
 numeric metadata access and capability discovery, and advanced consumer
 stream/codec APIs (PUB-008). Packed page storage (LIB-002) is measurement-driven.
 These items are not prerequisites for existing application parity. Source-list
-consolidation (BLD-001), sanitizer options/coverage (TST-008/API-013), and CI
-jobs remain explicit build/test backlog; none is silently completed by a passing
-local suite. API-013 is part of consumer release acceptance; source-list cleanup
-and a packed arena do not need to precede external-consumer ergonomics work.
+consolidation (BLD-001) and CI jobs remain explicit build/test backlog; neither
+is silently completed by a passing local suite. TST-008/API-013 are complete
+in the stated native macOS scope, with other platform execution still deferred.
+Source-list cleanup and a packed arena need not precede external-consumer
+ergonomics work.
 
 Historical phase numbers and completed implementation boxes do not override
 this dependency order or imply an unchecked cross-platform gate has passed.

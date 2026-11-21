@@ -32,6 +32,7 @@ function main() {
       'build-dir': { type: 'string' },
       config: { type: 'string', default: 'Debug' },
       'abi-only': { type: 'boolean', default: false },
+      sanitizers: { type: 'string' },
       suite: { type: 'string', default: 'all' },
       jobs: { type: 'string', default: '6' },
       list: { type: 'boolean', default: false },
@@ -42,7 +43,7 @@ function main() {
 
   /* Help exits before configuring a build or changing its cached options. */
   if (values.help) {
-    console.log('Usage: node tests/scripts/run-tests.js [--build-dir <path>] [--config <name>] [--abi-only] [--suite unit|integration|ui|all] [--jobs <count>] [--list] [-- <ctest args>]');
+    console.log('Usage: node tests/scripts/run-tests.js [--build-dir <path>] [--config <name>] [--abi-only] [--sanitizers address,undefined|address|undefined|none] [--suite unit|integration|ui|all] [--jobs <count>] [--list] [-- <ctest args>]');
     return;
   }
 
@@ -63,9 +64,16 @@ function main() {
   /* Keep Debug/Release selection and runtime placement consistent across
      configure, build, and CTest; ABI-only mode avoids production dependencies. */
   const preset = process.platform === 'win32' ? ['--preset', 'windows-x64'] : [];
-  run('cmake', [...preset, '-S', source, '-B', build, '-DBUILD_TESTING=ON',
+  const configure = [...preset, '-S', source, '-B', build, '-DBUILD_TESTING=ON',
     `-DMUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY=${resolve(build, 'bin')}`,
-    `-DCMAKE_BUILD_TYPE=${values.config}`, `-DMUSIKCORE_ABI_ONLY=${values['abi-only'] ? 'ON' : 'OFF'}`], source);
+    `-DCMAKE_BUILD_TYPE=${values.config}`, `-DMUSIKCORE_ABI_ONLY=${values['abi-only'] ? 'ON' : 'OFF'}`];
+
+  /* an omitted option preserves the cached selection; explicit none disables
+     Debug checks without changing Release behavior. */
+  if (values.sanitizers !== undefined) {
+    configure.push(`-DMUSIKCUBE_SANITIZERS=${values.sanitizers}`);
+  }
+  run('cmake', configure, source);
 
   const selection = values.suite === 'all' ? [] : ['-L', `^${values.suite}$`];
   if (values.suite !== 'all') {
