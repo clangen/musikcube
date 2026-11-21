@@ -25,7 +25,6 @@ namespace musik { namespace cube {
             void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
             bool KeyPress(const std::string& kn) override;
             void OnVisibilityChanged(bool visible) override;
-            void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
         private:
             enum class State: int { NotPlaying, Loading, Loaded, Failed };

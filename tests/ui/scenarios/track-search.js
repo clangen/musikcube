@@ -399,6 +399,11 @@ async function checkTrackSearch(runtime, database, screenshots,
         await terminal.expect('AutoHideCommandBar');
         terminal.send('\x1b');
         await terminal.expect('configure plugins', { absent: 'AutoHideCommandBar' });
+
+        terminal.send('\x1b[Z'.repeat(hasServer ? 11 : 10) + '\r');
+        await terminal.expect('no last.fm account registered');
+        terminal.send('\x1b');
+        await terminal.expect('configure plugins', { absent: 'last.fm registration' });
       }
     }
     /* The driver must observe a clean application exit, not just a screen that

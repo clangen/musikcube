@@ -224,6 +224,23 @@ namespace {
             return false;
         }
 
+        /* The isolated fixture has no online credentials. It must complete
+           through the dispatcher without attempting a network request. */
+        Preferences { MC_PREFERENCE_SETTINGS }.SetString(MC_PREFERENCE_KEY_AUDDIO_API_TOKEN, "");
+        std::optional<mc_result> lyricsStatus;
+        const auto lyricsRequest = FindLyrics(context, "Fixture artist", "Fixture title",
+            [&](mc_result status, std::string_view text) {
+                lyricsStatus = text.empty() ? status : MC_ERROR_INTERNAL;
+            });
+        if (!lyricsRequest || lyricsStatus ||
+            !waitFor(context, host, [&] { return lyricsStatus.has_value(); }) ||
+            *lyricsStatus != MC_ERROR_NOT_FOUND ||
+            ReadLastFmAccount() || UnlinkLastFmAccount() != MC_OK || ReadLastFmAccount())
+        {
+            std::fputs("Online services did not handle an unconfigured account\n", stderr);
+            return false;
+        }
+
         retained = context.GetLibrary();
         if (!retained || ReadOutputConfiguration().selectedDriver != "Null") {
             std::fputs("Managed startup did not load the catalog and headless output\n", stderr);

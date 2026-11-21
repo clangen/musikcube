@@ -137,6 +137,8 @@ static std::string generateSignedUrl(
     return URL_BASE + "?" + gernateSignedUrlParams(method, std::move(params));
 }
 
+static std::mutex sessionMutex;
+
 static inline Prefs settings() {
     return Preferences::ForComponent(components::Settings);
 }
@@ -150,8 +152,8 @@ namespace musik { namespace core { namespace lastfm {
         client->Url(url)
             .Mode(LastFmClient::Thread::Background)
             .Run([callback](LastFmClient* client, int statusCode, CURLcode curlCode) {
+                std::string token;
                 if (statusCode == 200) {
-                    std::string token;
                     try {
                         auto json = nlohmann::json::parse(client->Stream().str());
                         token = json.value("token", "");
@@ -159,8 +161,8 @@ namespace musik { namespace core { namespace lastfm {
                     catch (...) {
                         /* not much we can do... */
                     }
-                    callback(token);
                 }
+                callback(std::move(token));
         });
     }
 
@@ -196,6 +198,7 @@ namespace musik { namespace core { namespace lastfm {
     }
 
     Session LoadSession() {
+        std::lock_guard lock(sessionMutex);
         namespace keys = core::prefs::keys;
         auto prefs = settings();
         Session session;
@@ -206,17 +209,17 @@ namespace musik { namespace core { namespace lastfm {
         return session;
     }
 
-    void SaveSession(const Session& session) {
-        namespace keys = core::prefs::keys;
-        auto prefs = settings();
-        prefs->SetString(keys::LastFmToken.c_str(), session.token.c_str());
-        prefs->SetString(keys::LastFmSessionId.c_str(), session.sessionId.c_str());
-        prefs->SetString(keys::LastFmUsername.c_str(), session.username.c_str());
+    bool SaveSession(const Session& session) {
+        std::lock_guard lock(sessionMutex);
+        return settings()->SetValues({
+            { keys::LastFmToken, session.token },
+            { keys::LastFmSessionId, session.sessionId },
+            { keys::LastFmUsername, session.username }
+        }, true);
     }
 
-    void ClearSession() {
-        Session session;
-        SaveSession(session);
+    bool ClearSession() {
+        return SaveSession({});
     }
 
     void Scrobble(musik::core::TrackPtr track) {

@@ -35,10 +35,11 @@
 #pragma once
 
 #include <cursespp/DialogOverlay.h>
+#include <musikcore/context.hpp>
+#include <app/util/AsyncCallbackScope.h>
 
 namespace musik { namespace cube {
-    /* in general we probably shouldn't subclass DialogOverlay because
-    callers can mutate the title and body... but... meh. this is easy. */
+    /* Runs the browser authorization flow for a borrowed context. Neither copyable nor movable. */
     class LastFmOverlay : public cursespp::DialogOverlay {
         public:
             enum class State {
@@ -51,26 +52,24 @@ namespace musik { namespace cube {
                 RegisterError = 6
             };
 
-            static void Start();
-
-            virtual ~LastFmOverlay();
-
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+            static void Start(musik::core::api::Context& musikcore);
 
         private:
-            LastFmOverlay();
+            explicit LastFmOverlay(musik::core::api::Context& musikcore);
 
             void LoadDefaultState();
             void UpdateMessage();
             void UpdateButtons();
 
             void SetState(State state);
-            void PostState(State state);
 
             void GetLinkToken();
             void CreateSession();
 
-            State state{ State::Unregistered };
+            musik::core::api::Context& musikcore;
+            AsyncCallbackScope work;
+            State state { State::Unregistered };
             std::string linkToken;
+            std::string linkUrl;
     };
 } }

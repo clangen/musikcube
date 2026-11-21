@@ -241,7 +241,7 @@ void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnLastFmDropdownActivate(cursespp::TextLabel* label) {
-    LastFmOverlay::Start();
+    LastFmOverlay::Start(this->musikcore);
 }
 
 void SettingsLayout::OnPluginsDropdownActivate(cursespp::TextLabel* label) {

@@ -2,6 +2,7 @@
 #define MUSIKCORE_LIBRARY_HPP
 
 #include <musikcore/context.hpp>
+#include <musikcore/detail/async.hpp>
 #include <musikcore/library.h>
 
 #include <charconv>
@@ -262,21 +263,6 @@ namespace musik { namespace core { namespace api {
             (*completion)(result, std::move(owned), AsStringView(mc_error_get_message(error)));
         }
 
-        /* Shared submission adapter. Keep callback state owned locally until
-           C admission succeeds, then release it to the terminal callback. */
-        template<typename Completion, typename Start>
-        mc_request_id submitLibraryRequest(Completion completion, Start start) {
-            if (!completion) throw Error(MC_ERROR_INVALID_ARGUMENT);
-
-            /* An accepted request owns the callback state until its terminal callback. */
-            auto state = std::make_unique<Completion>(std::move(completion));
-            mc_request_id request = 0;
-            const auto result = start(state.get(), &request);
-            if (result != MC_OK) throw Error(result);
-            state.release();
-            return request;
-        }
-
         /* Build the C field array for a submission. It does not copy string
            bytes; the C API copies them before the submitting call returns. */
         inline std::vector<mc_string_view> fieldViews(const std::vector<std::string_view> &names) {
@@ -387,7 +373,7 @@ namespace musik { namespace core { namespace api {
         RemoteSession& operator=(RemoteSession&&) noexcept = default;
 
         mc_request_id Connect(Context& context, ConnectCompletion completion) {
-            return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
                 return mc_remote_session_connect_async(context.Get(), this->session.get(),
                     CompleteConnect, state, request);
             });
@@ -431,7 +417,7 @@ namespace musik { namespace core { namespace api {
     inline mc_request_id SetTrackRating(Context& context, const TrackRef& track, uint32_t rating,
         LibraryCompletion completion)
     {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_track_set_rating_async(context.Get(), track.Get(), rating,
                 [](mc_result status, const mc_error* error, void* data) {
                     const std::unique_ptr<LibraryCompletion> done(static_cast<LibraryCompletion*>(data));
@@ -453,7 +439,7 @@ namespace musik { namespace core { namespace api {
         options.offset = query.offset;
         options.limit = query.limit;
 
-        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+        return detail::submitRequest(std::move(completion), [&](void *state, mc_request_id *request) {
             return mc_library_query_tracks_async(context.Get(), library.Get(), &options,
                 detail::completeLibraryRequest<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
         });
@@ -467,7 +453,7 @@ namespace musik { namespace core { namespace api {
         options.text = { search.text.data(), search.text.size() };
         options.mode = search.mode;
         options.order = search.order;
-        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+        return detail::submitRequest(std::move(completion), [&](void *state, mc_request_id *request) {
             return mc_library_open_track_search_async(context.Get(), library.Get(), &options,
                 detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
         });
@@ -477,7 +463,7 @@ namespace musik { namespace core { namespace api {
        repeated tracks. Use for display, metadata paging, or queue replacement. */
     inline mc_request_id OpenPlaylist(Context &context, const Library &library, int64_t playlistId,
         TrackSearchCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+        return detail::submitRequest(std::move(completion), [&](void *state, mc_request_id *request) {
             return mc_library_open_playlist_async(context.Get(), library.Get(), playlistId,
                 detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
         });
@@ -487,7 +473,7 @@ namespace musik { namespace core { namespace api {
        catalog ID. Use the same ordered-result flow as search and playlists. */
     inline mc_request_id OpenCategory(Context& context, const Library& library, std::string_view category,
         int64_t id, mc_track_search_order order, TrackSearchCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_open_category_async(context.Get(), library.Get(), {category.data(), category.size()}, id,
                 order, detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
         });
@@ -497,7 +483,7 @@ namespace musik { namespace core { namespace api {
        view. The backend resolves the path; the wrapper does not scan files. */
     inline mc_request_id OpenDirectory(Context& context, const Library& library, std::string_view directory,
         TrackSearchCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_open_directory_async(context.Get(), library.Get(), {directory.data(), directory.size()},
                 detail::completeLibraryRequest<mc_track_result, TrackResult, TrackSearchCompletion>, state, request);
         });
@@ -546,7 +532,7 @@ namespace musik { namespace core { namespace api {
     using CategoryFieldsCompletion = std::function<void(mc_result, std::vector<std::string>, std::string_view)>;
 
     inline mc_request_id ListCategoryFields(Context& context, CategoryFieldsCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_list_category_fields_async(context.Get(), nullptr,
                 [](mc_result status, const mc_string_view* fields, size_t count, const mc_error* error, void* data) {
                     const std::unique_ptr<CategoryFieldsCompletion> callback(static_cast<CategoryFieldsCompletion*>(data));
@@ -563,7 +549,7 @@ namespace musik { namespace core { namespace api {
     inline mc_request_id ListCategories(Context& context, std::string_view field, std::string_view filter,
         mc_track_search_mode mode, CategoryListCompletion completion)
     {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_list_categories_async(context.Get(), nullptr,
                 { field.data(), field.size() }, { filter.data(), filter.size() }, mode,
                 [](mc_result status, const mc_category_entry* entries, size_t count, const mc_error* error, void* data) {
@@ -581,7 +567,7 @@ namespace musik { namespace core { namespace api {
     /* List saved playlists for a picker or later edits. Copies the C callback's
        temporary names into PlaylistEntry values that can outlive the callback. */
     inline mc_request_id ListPlaylists(Context& context, const Library& library, PlaylistListCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_list_playlists_async(context.Get(), library.Get(),
                 [](mc_result status, const mc_playlist_entry* entries, size_t count, const mc_error* error, void* data) {
                     std::unique_ptr<PlaylistListCompletion> callback(static_cast<PlaylistListCompletion*>(data));
@@ -599,7 +585,7 @@ namespace musik { namespace core { namespace api {
        name; a positive ID replaces its tracks. Use RenamePlaylist to rename. */
     inline mc_request_id SavePlaylist(Context& context, const Library& library, int64_t id,
         std::string_view name, const std::vector<int64_t>& tracks, PlaylistWriteCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_save_playlist_async(context.Get(), library.Get(), id, {name.data(), name.size()},
                 tracks.data(), tracks.size(),
                 detail::completePlaylistWrite, state, request);
@@ -610,7 +596,7 @@ namespace musik { namespace core { namespace api {
        tracks. Use for an Add to Playlist action; order/duplicates are preserved. */
     inline mc_request_id AppendPlaylist(Context& context, const Library& library, int64_t id,
         const std::vector<int64_t>& tracks, PlaylistWriteCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_append_playlist_async(context.Get(), library.Get(), id, tracks.data(), tracks.size(),
                 detail::completePlaylistWrite, state, request);
         });
@@ -619,7 +605,7 @@ namespace musik { namespace core { namespace api {
     /* Change a saved playlist's name while keeping its track sequence intact. */
     inline mc_request_id RenamePlaylist(Context& context, const Library& library, int64_t id,
         std::string_view name, PlaylistWriteCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_rename_playlist_async(context.Get(), library.Get(), id, {name.data(), name.size()},
                 detail::completePlaylistWrite, state, request);
         });
@@ -629,7 +615,7 @@ namespace musik { namespace core { namespace api {
        files. Use after any confirmation required by the caller's UI. */
     inline mc_request_id DeletePlaylist(Context& context, const Library& library, int64_t id,
         PlaylistWriteCompletion completion) {
-        return detail::submitLibraryRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
             return mc_library_delete_playlist_async(context.Get(), library.Get(), id,
                 detail::completePlaylistWrite, state, request);
         });
@@ -693,7 +679,7 @@ namespace musik { namespace core { namespace api {
         options.limit = range.limit;
         options.fields = fields.data();
         options.field_count = fields.size();
-        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+        return detail::submitRequest(std::move(completion), [&](void *state, mc_request_id *request) {
             return mc_track_result_read_async(context.Get(), tracks.Get(), &options,
                 detail::completeLibraryRequest<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
         });
@@ -704,7 +690,7 @@ namespace musik { namespace core { namespace api {
     inline mc_request_id ReadTrack(Context &context, const TrackRef &track,
         const std::vector<std::string_view> &names, TrackQueryCompletion completion) {
         const auto fields = detail::fieldViews(names);
-        return detail::submitLibraryRequest(std::move(completion), [&](void *state, mc_request_id *request) {
+        return detail::submitRequest(std::move(completion), [&](void *state, mc_request_id *request) {
             return mc_track_ref_read_async(context.Get(), track.Get(), fields.data(), fields.size(),
                 detail::completeLibraryRequest<mc_track_page, TrackPage, TrackQueryCompletion>, state, request);
         });

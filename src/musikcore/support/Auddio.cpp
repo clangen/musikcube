@@ -58,10 +58,10 @@ static std::shared_ptr<AuddioClient> createClient() {
 }
 
 static std::string encode(std::string value) {
-    static CURL* curl = curl_easy_init();
-    if (curl && value.c_str()) {
+    const std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), &curl_easy_cleanup);
+    if (curl) {
         char* encoded = curl_easy_escape(
-            curl,
+            curl.get(),
             value.c_str(),
             narrow_cast<int>(value.size()));
 

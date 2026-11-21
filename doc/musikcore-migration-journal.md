@@ -122,3 +122,7 @@ The managed runtime owns file logging and optional Piggy output. It delivers con
 ## Frontend utilities
 
 Duration formatting is shared source and linked locally. Cube opens HTTP(S) links with the native desktop opener and passes the URL as one argument. Windows startup reads the plugin directory through the public paths API. All 47 Linux Release tests passed. Tests leave the system browser closed.
+
+## Online features
+
+Lyrics lookup and Last.fm registration use the context dispatcher and the existing HTTP implementations. The views no longer post private completion messages or receive callbacks from network workers. Last.fm error responses now complete the request, and linked credentials persist together. All 47 Linux Release tests passed, including unconfigured lyrics lookup and headless Last.fm dialog navigation. Live account authorization was outside the isolated fixture.

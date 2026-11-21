@@ -35,8 +35,7 @@
 #include <stdafx.h>
 #include <app/util/OpenUrl.h>
 #include "LastFmOverlay.h"
-#include <app/util/Messages.h>
-#include <musikcore/support/LastFm.h>
+#include <musikcore/online.hpp>
 #include <musikcore/sdk/String.h>
 #include <cursespp/App.h>
 #include <map>
@@ -58,58 +57,53 @@ static std::map<LastFmOverlay::State, std::string> stateToText = {
     { LastFmOverlay::State::RegisterError, "settings_last_fm_dialog_message_register_error" }
 };
 
-void LastFmOverlay::Start() {
-    std::shared_ptr<LastFmOverlay> overlay(new LastFmOverlay());
+void LastFmOverlay::Start(api::Context& musikcore) {
+    auto overlay = std::shared_ptr<LastFmOverlay>(new LastFmOverlay(musikcore));
     App::Overlays().Push(overlay);
 }
 
-static lastfm::Session session() {
-    return lastfm::LoadSession();
-}
-
-LastFmOverlay::LastFmOverlay()
-: DialogOverlay() {
+LastFmOverlay::LastFmOverlay(api::Context& musikcore)
+    : musikcore(musikcore) {
     this->SetTitle(_TSTR("settings_last_fm_dialog_title"));
     this->SetAutoDismiss(false);
     this->LoadDefaultState();
 }
 
-LastFmOverlay::~LastFmOverlay() {
-
-}
-
 void LastFmOverlay::LoadDefaultState() {
-    this->SetState(session().valid ? State::Registered : State::Unregistered);
+    this->SetState(api::ReadLastFmAccount().has_value() ? State::Registered : State::Unregistered);
 }
 
 void LastFmOverlay::GetLinkToken() {
     this->SetState(State::ObtainingToken);
-    lastfm::CreateAccountLinkToken([this](std::string token) {
-        this->linkToken = token;
-        if (token.size()) {
-            this->PostState(State::WaitingForUser);
-        }
-        else {
-            this->PostState(State::LinkError);
-        }
-    });
+    try {
+        api::RequestLastFmLink(this->musikcore, this->work.Begin(
+            [this](mc_result status, std::string_view token, std::string_view url) {
+                if (status != MC_OK) {
+                    this->SetState(State::LinkError);
+                    return;
+                }
+
+                this->linkToken.assign(token);
+                this->linkUrl.assign(url);
+                this->SetState(State::WaitingForUser);
+            }));
+    }
+    catch (const api::Error&) {
+        this->SetState(State::LinkError);
+    }
 }
 
 void LastFmOverlay::CreateSession() {
     this->SetState(State::RegisteringSession);
-    lastfm::CreateSession(this->linkToken, [this](lastfm::Session session) {
-        if (session.valid) {
-            lastfm::SaveSession(session);
-            this->PostState(State::Registered);
-        }
-        else {
-            this->PostState(State::RegisterError);
-        }
-    });
-}
-
-void LastFmOverlay::PostState(State state) {
-    this->Post(message::SetLastFmState, (int64_t) state);
+    try {
+        api::CompleteLastFmLink(this->musikcore, this->linkToken, this->work.Begin(
+            [this](mc_result status, std::string_view) {
+                this->SetState(status == MC_OK ? State::Registered : State::RegisterError);
+            }));
+    }
+    catch (const api::Error&) {
+        this->SetState(State::RegisterError);
+    }
 }
 
 void LastFmOverlay::SetState(State state) {
@@ -123,15 +117,14 @@ void LastFmOverlay::UpdateMessage() {
 
     switch (this->state) {
         case State::Registered: {
-            auto session = lastfm::LoadSession();
-            str::ReplaceAll(message, "{{username}}", session.username.c_str());
+            const auto account = api::ReadLastFmAccount().value_or("");
+            str::ReplaceAll(message, "{{username}}", account.c_str());
             break;
         }
 
         case State::WaitingForUser:
         case State::RegisterError: {
-            std::string url = lastfm::CreateAccountLinkUrl(this->linkToken);
-            str::ReplaceAll(message, "{{link}}", url.c_str());
+            str::ReplaceAll(message, "{{link}}", this->linkUrl.c_str());
             break;
         }
 
@@ -165,7 +158,7 @@ void LastFmOverlay::UpdateButtons() {
             this->AddButton(
                 "u", "u", _TSTR("button_unregister"),
                 [this](std::string key) {
-                    lastfm::ClearSession();
+                    api::UnlinkLastFmAccount();
                     this->LoadDefaultState();
                 });
 
@@ -182,7 +175,7 @@ void LastFmOverlay::UpdateButtons() {
             this->AddButton(
                 "o", "o", _TSTR("button_open_url"),
                 [this](std::string key) {
-                    musik::cube::OpenUrl(lastfm::CreateAccountLinkUrl(this->linkToken));
+                    musik::cube::OpenUrl(this->linkUrl);
                 });
 
 
@@ -216,14 +209,5 @@ void LastFmOverlay::UpdateButtons() {
 
         default:
             break;
-    }
-}
-
-void LastFmOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
-    if (message.Type() == message::SetLastFmState) {
-        this->SetState((State) message.UserData1());
-    }
-    else {
-        DialogOverlay::ProcessMessage(message);
     }
 }

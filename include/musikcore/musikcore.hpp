@@ -19,5 +19,6 @@
 #include <musikcore/paths.hpp>
 #include <musikcore/locale.hpp>
 #include <musikcore/log.hpp>
+#include <musikcore/online.hpp>
 
 #endif

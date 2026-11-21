@@ -52,7 +52,7 @@ namespace musik { namespace core { namespace lastfm {
     void UpdateNowPlaying(musik::core::TrackPtr track);
 
     Session LoadSession();
-    void SaveSession(const Session& session);
-    void ClearSession();
+    bool SaveSession(const Session& session);
+    bool ClearSession();
 } } }
 

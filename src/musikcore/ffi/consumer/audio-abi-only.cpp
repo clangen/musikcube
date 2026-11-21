@@ -5,6 +5,7 @@
 #include <musikcore/plugins.h>
 #include <musikcore/paths.h>
 #include <musikcore/locale.h>
+#include <musikcore/online.h>
 #include "../common/error.h"
 
 #include <cmath>
@@ -182,4 +183,33 @@ mc_result MC_CALL mc_log_write(mc_log_level level, mc_string_view tag, mc_string
     return level <= MC_LOG_ERROR && valid_text(tag) && valid_text(text)
         ? MC_ERROR_UNSUPPORTED
         : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_lyrics_find_async(mc_context* context, mc_string_view artist, mc_string_view title,
+    mc_online_text_fn complete, void*, mc_request_id* request)
+{
+    using namespace musik::core::ffi;
+    return context && complete && request && valid_text(artist) && valid_text(title, false)
+        ? MC_ERROR_UNSUPPORTED
+        : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_lastfm_request_link_async(mc_context* context, mc_lastfm_link_fn complete, void*, mc_request_id* request) {
+    return context && complete && request ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_lastfm_complete_link_async(mc_context* context, mc_string_view token,
+    mc_online_text_fn complete, void*, mc_request_id* request)
+{
+    return context && complete && request && musik::core::ffi::valid_text(token, false)
+        ? MC_ERROR_UNSUPPORTED
+        : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_lastfm_read_account(mc_online_text_fn read, void*) {
+    return read ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_lastfm_unlink(void) {
+    return MC_ERROR_UNSUPPORTED;
 }
