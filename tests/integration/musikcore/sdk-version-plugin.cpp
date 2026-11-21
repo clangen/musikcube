@@ -18,11 +18,16 @@ namespace {
         }
     }
 
+#ifdef __linux__
+    /* Use the ELF finalizer so Zig builds record the dlclose boundary. */
+    __attribute__((destructor)) void markUnload() { mark('U'); }
+#else
     /* an unloaded module cannot report counters through an exported function. */
     struct UnloadMarker {
         /* observe unload after the rejected object's Release call. */
         ~UnloadMarker() { mark('U'); }
     } unloaded;
+#endif
 
     /* identity stays ABI-compatible; the version prevents querying the changed
     stream-factory vtable. each GetPlugin call creates one owned object. */
