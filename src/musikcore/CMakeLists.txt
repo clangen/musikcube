@@ -59,7 +59,6 @@ set(CORE_SOURCES
   ../common/runtime/Message.cpp
   ../common/runtime/MessageQueue.cpp
   ./support/Auddio.cpp
-  ./support/Duration.cpp
   ./support/Common.cpp
   ./support/LastFm.cpp
   ./support/PiggyDebugBackend.cpp

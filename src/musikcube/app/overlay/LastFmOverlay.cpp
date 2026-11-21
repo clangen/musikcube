@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <app/util/OpenUrl.h>
 #include "LastFmOverlay.h"
 #include <app/util/Messages.h>
 #include <musikcore/support/LastFm.h>
@@ -181,7 +182,7 @@ void LastFmOverlay::UpdateButtons() {
             this->AddButton(
                 "o", "o", _TSTR("button_open_url"),
                 [this](std::string key) {
-                    core::OpenFile(lastfm::CreateAccountLinkUrl(this->linkToken));
+                    musik::cube::OpenUrl(lastfm::CreateAccountLinkUrl(this->linkToken));
                 });
 
 

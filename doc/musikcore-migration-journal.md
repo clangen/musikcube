@@ -118,3 +118,7 @@ The application and core compile the same generic queue implementation, with a l
 ## Diagnostics
 
 The managed runtime owns file logging and optional Piggy output. It delivers console logs on the context dispatcher through public callbacks. Cube's console consumes those records directly. All 47 Linux Release tests passed. The managed-runtime test checks delivery of a worker-thread log on the owner thread, and Browse opens the console and verifies a real library log is visible.
+
+## Frontend utilities
+
+Duration formatting is shared source and linked locally. Cube opens HTTP(S) links with the native desktop opener and passes the URL as one argument. Windows startup reads the plugin directory through the public paths API. All 47 Linux Release tests passed. Tests leave the system browser closed.

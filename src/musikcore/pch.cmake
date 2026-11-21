@@ -132,7 +132,6 @@ target_precompile_headers(musikcore
     "$<$<COMPILE_LANGUAGE:CXX>:support/Auddio.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Common.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/DeleteDefaults.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:support/Duration.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/LastFm.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Messages.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/NarrowCast.h>"

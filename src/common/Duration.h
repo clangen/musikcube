@@ -34,14 +34,59 @@
 
 #pragma once
 
+#include <musikcore/support/NarrowCast.h>
+#include <musikcore/utfutil.h>
+#include <cmath>
 #include <string>
 
-namespace musik { namespace core { namespace duration {
+namespace musik { namespace duration { namespace detail {
 
-    std::string Duration(const std::string& str);
-    std::string Duration(int seconds);
-    std::string Duration(size_t seconds);
-    std::string Duration(double seconds);
-    std::string DurationWithHours(size_t seconds);
+    template <typename N>
+    inline std::string formatDuration(N seconds) {
+        N mins = (seconds / 60);
+        N secs = seconds - (mins * 60);
+        return u8fmt("%d:%02d", narrow_cast<int>(mins), narrow_cast<int>(secs));
+    }
+
+    template <typename N>
+    inline std::string formatDurationWithHours(N seconds) {
+        N hours = (seconds / 3600);
+        seconds -= hours * 3600;
+        N mins = (seconds / 60);
+        N secs = seconds - (mins * 60);
+        return u8fmt("%d:%02d:%02d", narrow_cast<int>(hours), narrow_cast<int>(mins), narrow_cast<int>(secs));
+    }
 
 } } }
+
+namespace musik { namespace duration {
+
+    inline std::string Duration(int seconds) {
+        return detail::formatDuration(seconds);
+    }
+
+    inline std::string Duration(size_t seconds) {
+        return detail::formatDuration(seconds);
+    }
+
+    inline std::string Duration(double seconds) {
+        return Duration((int) std::round(seconds));
+    }
+
+    inline std::string Duration(const std::string& str) {
+        if (str.size()) {
+            int seconds = std::stoi(str);
+            return Duration(seconds);
+        }
+
+        return "0:00";
+    }
+
+    inline std::string DurationWithHours(size_t seconds) {
+        if (seconds < 3600) {
+            return detail::formatDuration(seconds);
+        }
+        return detail::formatDurationWithHours(seconds);
+    }
+
+} }

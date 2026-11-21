@@ -40,7 +40,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
-#include <musikcore/support/Duration.h>
+#include <common/Duration.h>
 #include <app/util/Rating.h>
 #include <app/util/PreferenceKeys.h>
 #include <math.h>
@@ -136,7 +136,7 @@ namespace AlbumSort {
         }
 
         std::string duration = text::Align(
-            musik::core::duration::Duration(static_cast<size_t>(track->Duration().value_or(std::chrono::seconds::zero()).count())),
+            musik::duration::Duration(static_cast<size_t>(track->Duration().value_or(std::chrono::seconds::zero()).count())),
             text::AlignRight,
             kDurationColWidth);
 
@@ -222,7 +222,7 @@ namespace NowPlaying {
         std::string rating = getRatingForTrack(*track, width);
 
         std::string duration = text::Align(
-            duration::Duration(static_cast<size_t>(track->Duration().value_or(std::chrono::seconds::zero()).count())),
+            musik::duration::Duration(static_cast<size_t>(track->Duration().value_or(std::chrono::seconds::zero()).count())),
             text::AlignRight,
             kDurationColWidth);
 

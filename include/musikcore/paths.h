@@ -11,7 +11,8 @@ typedef uint32_t mc_path_kind;
 enum {
     MC_PATH_APPLICATION,
     MC_PATH_HOME,
-    MC_PATH_DATA
+    MC_PATH_DATA,
+    MC_PATH_PLUGINS
 };
 
 typedef void (MC_CALL *mc_path_fn)(void* user_data, mc_string_view path);

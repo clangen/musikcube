@@ -146,7 +146,7 @@ mc_result MC_CALL mc_equalizer_set_gains(const double* gains, size_t count) {
 }
 
 mc_result MC_CALL mc_path_read(mc_path_kind kind, mc_path_fn read, void*) {
-    return read && kind <= MC_PATH_DATA ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+    return read && kind <= MC_PATH_PLUGINS ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }
 
 mc_result MC_CALL mc_locale_load(mc_string_view directory) {

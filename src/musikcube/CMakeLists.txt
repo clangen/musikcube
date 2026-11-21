@@ -37,6 +37,7 @@ set (CUBE_SRCS
     ./app/util/PreferenceKeys.cpp
     ./app/util/Rating.cpp
     ./app/util/TrackRowRenderers.cpp
+    ./app/util/OpenUrl.cpp
     ./app/util/UpdateCheck.cpp
     ./app/util/WindowUtil.cpp
     ./app/window/CategoryListView.cpp

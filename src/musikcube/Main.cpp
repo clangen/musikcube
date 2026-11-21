@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     api::LoadLocales(api::ReadPath(MC_PATH_APPLICATION) + "/locales/");
 
 #ifdef WIN32
-    AddDllDirectory(u8to16(core::GetPluginDirectory()).c_str());
+    AddDllDirectory(u8to16(api::ReadPath(MC_PATH_PLUGINS)).c_str());
     #ifdef __PDCURSES__
         PDC_set_resize_limits(MIN_HEIGHT, 1000, MIN_WIDTH, 1000);
         resize_term(26, 100); /* must be before app init */

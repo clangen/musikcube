@@ -170,7 +170,6 @@
 #include <musikcore/support/Auddio.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/DeleteDefaults.h>
-#include <musikcore/support/Duration.h>
 #include <musikcore/support/LastFm.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/support/NarrowCast.h>

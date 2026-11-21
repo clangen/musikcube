@@ -43,7 +43,7 @@
 #include <cursespp/Text.h>
 #include <cursespp/ToastOverlay.h>
 
-#include <musikcore/support/Duration.h>
+#include <common/Duration.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -662,7 +662,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
 
             const auto duration = this->parent.headers.DurationFromAdapterIndex(rawIndex);
             if (duration > 0) {
-                album += " - " + core::duration::DurationWithHours(duration);
+                album += " - " + musik::duration::DurationWithHours(duration);
             }
 
             album = text::Ellipsize(album, this->GetWidth());

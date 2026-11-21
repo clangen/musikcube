@@ -60,7 +60,6 @@ set(windows_core_sources
   src/common/runtime/MessageQueue.cpp
   src/musikcore/support/Auddio.cpp
   src/musikcore/support/Common.cpp
-  src/musikcore/support/Duration.cpp
   src/musikcore/support/LastFm.cpp
   src/musikcore/support/PiggyDebugBackend.cpp
   src/musikcore/support/Playback.cpp
@@ -105,6 +104,7 @@ set(windows_app_sources
   src/musikcube/app/util/PreferenceKeys.cpp
   src/musikcube/app/util/Rating.cpp
   src/musikcube/app/util/TrackRowRenderers.cpp
+  src/musikcube/app/util/OpenUrl.cpp
   src/musikcube/app/util/UpdateCheck.cpp
   src/musikcube/app/util/WindowUtil.cpp
   src/musikcube/app/window/CategoryListView.cpp

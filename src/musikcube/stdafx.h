@@ -137,7 +137,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/support/Auddio.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/DeleteDefaults.h>
-#include <musikcore/support/Duration.h>
 #include <musikcore/support/LastFm.h>
 #include <musikcore/support/NarrowCast.h>
 #include <musikcore/support/Playback.h>

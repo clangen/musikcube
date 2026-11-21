@@ -37,7 +37,7 @@
 #include <common/runtime/Message.h>
 #include <musikcore/library/query/local/SearchTrackListQuery.h>
 #include <musikcore/support/Playback.h>
-#include <musikcore/support/Duration.h>
+#include <common/Duration.h>
 
 using namespace musik::win;
 using namespace musik::core;
@@ -111,7 +111,7 @@ class MainController::TrackListModel : public ListView::Model, public sigslot::h
                     value = u8to16(track->GetString(constants::Track::TITLE));
                 }
                 else if (column == sDurationColumn) {
-                    value = u8to16(duration::Duration(track->GetString(constants::Track::DURATION)));
+                    value = u8to16(musik::duration::Duration(track->GetString(constants::Track::DURATION)));
                 }
                 else if (column == sAlbumColumn) {
                     value = u8to16(track->GetString(constants::Track::ALBUM));

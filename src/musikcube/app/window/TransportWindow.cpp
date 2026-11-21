@@ -42,7 +42,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
 
-#include <musikcore/support/Duration.h>
+#include <common/Duration.h>
 
 #include <common/runtime/Message.h>
 #include <musikcore/support/Playback.h>
@@ -194,7 +194,7 @@ std::string TransportWindow::DisplayCache::CurrentTime(int secondsCurrent) {
     if (secondsTotal != INT_MIN) {
         secondsCurrent = std::max(0, std::min(secondsCurrent, secondsTotal));
     }
-    return musik::core::duration::Duration(secondsCurrent);
+    return musik::duration::Duration(secondsCurrent);
 }
 
 void TransportWindow::DisplayCache::SetTrack(const api::TrackView& track) {
@@ -212,7 +212,7 @@ void TransportWindow::DisplayCache::Update(double duration) {
     if (updatedTotal != secondsTotal) {
         secondsTotal = updatedTotal;
         if (secondsTotal >= 0) {
-            totalTime = musik::core::duration::Duration(secondsTotal);
+            totalTime = musik::duration::Duration(secondsTotal);
         }
         else {
             totalTime = "∞";

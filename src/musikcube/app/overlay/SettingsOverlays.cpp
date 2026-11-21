@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <app/util/OpenUrl.h>
 
 #include "SettingsOverlays.h"
 
@@ -205,7 +206,7 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
                 "o",
                 _TSTR("button_open_url"),
                 [](std::string key) {
-                    musik::core::OpenFile(kTlsInfoUrl);
+                    musik::cube::OpenUrl(kTlsInfoUrl);
                 })
             .AddButton(
                 "d",

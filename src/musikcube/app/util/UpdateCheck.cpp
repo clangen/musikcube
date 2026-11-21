@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <app/util/OpenUrl.h>
 
 #include <musikcore/preferences.hpp>
 #include "UpdateCheck.h"
@@ -192,7 +193,7 @@ void UpdateCheck::ShowUpgradeAvailableOverlay(
         dialog->AddButton(
             "o", "o", _TSTR("button_open_url"),
             [url](std::string key) {
-                core::OpenFile(url);
+                musik::cube::OpenUrl(url);
             });
 
         if (silent) {

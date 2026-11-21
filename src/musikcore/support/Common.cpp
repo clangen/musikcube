@@ -53,13 +53,11 @@
 #include <utf8/utf8.h>
 #pragma warning(pop)
 
-#ifdef WIN32
-    #include <shellapi.h>
-#elif __APPLE__
+#if defined(__APPLE__)
     #include <mach-o/dyld.h>
-#elif __HAIKU__
+#elif defined(__HAIKU__)
     #include <kernel/image.h>
-#else
+#elif !defined(WIN32)
     #include <sys/types.h>
     #include <unistd.h>
     #include <sys/stat.h>
@@ -333,18 +331,6 @@ namespace musik { namespace core {
         return path;
     }
 
-    void OpenFile(const std::string& path) {
-    #ifdef WIN32
-        ShellExecuteA(nullptr, nullptr, path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-    #elif __APPLE__
-        std::string command = "open '" + path + "' > /dev/null 2> /dev/null";
-        system(command.c_str());
-    #else
-        std::string command = "xdg-open '" + path + "' > /dev/null 2> /dev/null";
-        system(command.c_str());
-    #endif
-    }
-
     bool CopyFile(const std::string& from, const std::string& to) {
         if (from.size() && to.size() && from != to) {
             std::ifstream in(from);
@@ -362,7 +348,7 @@ namespace musik { namespace core {
 } }
 
 mc_result MC_CALL mc_path_read(mc_path_kind kind, mc_path_fn read, void* userData) {
-    if (!read || kind > MC_PATH_DATA) {
+    if (!read || kind > MC_PATH_PLUGINS) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
 
@@ -377,6 +363,9 @@ mc_result MC_CALL mc_path_read(mc_path_kind kind, mc_path_fn read, void* userDat
                 break;
             case MC_PATH_DATA:
                 path = musik::core::GetDataDirectory();
+                break;
+            case MC_PATH_PLUGINS:
+                path = musik::core::GetPluginDirectory();
                 break;
         }
 
