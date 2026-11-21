@@ -80,7 +80,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/audio/GaplessTransport.h>
 #include <musikcore/audio/IStream.h>
 #include <musikcore/audio/MasterTransport.h>
-#include <musikcore/audio/Outputs.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/Stream.h>
 #include <musikcore/audio/Streams.h>
@@ -145,7 +144,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/sdk/IDebug.h>
 #include <musikcore/sdk/IDecoder.h>
 #include <musikcore/sdk/IDecoderFactory.h>
-#include <musikcore/sdk/IDevice.h>
 #include <musikcore/sdk/IDSP.h>
 #include <musikcore/sdk/IEncoder.h>
 #include <musikcore/sdk/IEncoderFactory.h>
@@ -156,7 +154,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/sdk/IMap.h>
 #include <musikcore/sdk/IMapList.h>
 #include <musikcore/sdk/IMetadataProxy.h>
-#include <musikcore/sdk/IOutput.h>
 #include <musikcore/sdk/IPcmVisualizer.h>
 #include <musikcore/sdk/IPlaybackRemote.h>
 #include <musikcore/sdk/IPlugin.h>

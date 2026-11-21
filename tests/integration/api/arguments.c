@@ -69,6 +69,9 @@ int main(void) {
     CHECK(mc_indexer_get_state(context, &indexer_state) == MC_ERROR_UNSUPPORTED);
     CHECK(indexer_state == MC_INDEXER_IDLE);
     CHECK(mc_indexer_schedule(context, MC_INDEXER_REBUILD + 1) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_output_read_configuration(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_output_select_driver(name) == MC_ERROR_UNSUPPORTED);
+    CHECK(mc_output_select_device(name, malformed) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_dispatch(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_context_shutdown(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_request_cancel(NULL, 1) == MC_ERROR_INVALID_ARGUMENT);

@@ -5,6 +5,7 @@
 #include <musikcore/context.h>
 #include <musikcore/library.h>
 #include <musikcore/playback.h>
+#include <musikcore/output.h>
 #include <musikcore/indexer.h>
 
 #endif

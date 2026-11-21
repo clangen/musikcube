@@ -18,3 +18,9 @@ The Windows core target was missing the two playback and selection sources used 
 - Finish the app-facing settings, output, and runtime APIs, keeping view and overlay behavior in its existing subsystem.
 - Make core runtime ownership and selection native to the public context. Remove the legacy startup and playback/library bindings as their responsibilities move into core.
 - Verify that cube uses public headers and symbols, and run consumer, switch/reconnect, playback, and native acceptance tests.
+
+## Output selection
+
+Added driver and device discovery and selection to the public C ABI and header-only SDK. The C entry points live in the existing output implementation. Settings and the playback chooser overlays now consume copied names and device IDs instead of holding plugin objects. Selection rejects a stale driver name before applying a device change.
+
+Verified all 44 Linux Release tests. The headless plugin test exercises SDK driver discovery, invalid selection, and fallback while reloading playback. The standalone ABI fixture verifies argument validation without an output runtime.

@@ -1135,6 +1135,9 @@ legacy list for actions that still require it.
   availability from the playback snapshot. The
   `musikcore.integration.api.production.playback_commands` test verifies
   both against the engine boundary.
+  Output driver and device choices use the C ABI in the existing playback
+  overlays. `musikcore.integration.plugin.playback_reload` verifies output
+  discovery, driver validation, and fallback during playback reload.
 - [ ] **PUB-008** Add advanced consumer stream/decoder/encoder APIs only for
   approved use cases.
 - [ ] **PUB-009** Add contract and integration tests with every public feature

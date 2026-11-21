@@ -1,7 +1,7 @@
 #include "CoreRuntime.h"
 
 #include <musikcore/audio/GaplessTransport.h>
-#include <musikcore/audio/Outputs.h>
+#include <musikcore/output.hpp>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 
@@ -32,13 +32,22 @@ namespace {
     }
 
     bool reloadDuringPlayback(const char* media) {
-        const auto available = outputs::GetAllOutputs();
-        if (available.size() != 1 || available.front()->Name() != nullOutput) {
+        const auto output = api::ReadOutputConfiguration();
+        if (output.drivers.size() != 1 || output.drivers.front() != nullOutput ||
+            output.selectedDriver != nullOutput)
+        {
             std::fputs("Expected only the headless output plugin\n", stderr);
             return false;
         }
 
-        outputs::SelectOutput(available.front());
+        if (api::SelectOutputDriver(nullOutput) != MC_OK ||
+            api::SelectOutputDriver(unavailableOutput) != MC_ERROR_NOT_FOUND ||
+            api::SelectOutputDevice(unavailableOutput, {}) != MC_ERROR_NOT_FOUND)
+        {
+            std::fputs("Output selection accepted an unavailable driver\n", stderr);
+            return false;
+        }
+
         GaplessTransport transport;
         if (!startPlayback(transport, media)) {
             std::fputs("Playback did not start with the headless output\n", stderr);
@@ -50,7 +59,7 @@ namespace {
         prefs->SetString(prefs::keys::OutputPlugin, unavailableOutput);
         transport.ReloadOutput();
         if (transport.GetPlaybackState() != State::Stopped ||
-            outputs::SelectedOutput()->Name() != nullOutput)
+            api::ReadOutputConfiguration().selectedDriver != nullOutput)
         {
             std::fputs("Reload did not stop playback and select the fallback output\n", stderr);
             return false;

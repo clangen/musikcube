@@ -45,7 +45,7 @@
 
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/audio/Outputs.h>
+#include <musikcore/output.hpp>
 #include <musikcore/support/Messages.h>
 #include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/version.h>
@@ -130,19 +130,10 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     return schema;
 }
 
-static std::string getOutputDeviceName() {
-    std::string deviceName = _TSTR("settings_output_device_default");
-
-    std::shared_ptr<IOutput> output = outputs::SelectedOutput();
-    if (output) {
-        IDevice* device = output->GetDefaultDevice();
-        if (device) {
-            deviceName = device->Name();
-            device->Release();
-        }
-    }
-
-    return deviceName;
+static std::string getOutputDeviceName(const api::OutputConfiguration& output) {
+    return output.selectedDevice.name.empty()
+        ? _TSTR("settings_output_device_default")
+        : output.selectedDevice.name;
 }
 
 static TransportType getTransportType() {
@@ -218,16 +209,12 @@ void SettingsLayout::OnLocaleDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label) {
-    std::string currentName;
-    std::shared_ptr<IOutput> currentPlugin = outputs::SelectedOutput();
-    currentName = currentPlugin ? currentPlugin->Name() : currentName;
+    const auto currentName = api::ReadOutputConfiguration().selectedDriver;
 
     PlaybackOverlays::ShowOutputDriverOverlay(
         getTransportType(),
         [this, currentName] {
-            std::string newName;
-            std::shared_ptr<IOutput> newPlugin = outputs::SelectedOutput();
-            newName = newPlugin ? newPlugin->Name() : newName;
+            const auto newName = api::ReadOutputConfiguration().selectedDriver;
 
             if (currentName != newName) {
                 this->LoadPreferences();
@@ -237,10 +224,10 @@ void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label)
 }
 
 void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label) {
-    std::string currentName = getOutputDeviceName();
-    PlaybackOverlays::ShowOutputDeviceOverlay([this, currentName] {
-        std::string newName = getOutputDeviceName();
-        if (currentName != newName) {
+    const auto currentDevice = api::ReadOutputConfiguration().selectedDevice;
+    PlaybackOverlays::ShowOutputDeviceOverlay([this, currentDevice] {
+        const auto selected = api::ReadOutputConfiguration().selectedDevice;
+        if (currentDevice.id != selected.id) {
             this->LoadPreferences();
             this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
         }
@@ -606,13 +593,11 @@ void SettingsLayout::LoadPreferences() {
     this->saveSessionCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SaveSessionOnExit, true));
 
     /* output driver */
-    std::shared_ptr<IOutput> output = outputs::SelectedOutput();
-    if (output) {
-        this->outputDriverDropdown->SetText(arrow + _TSTR("settings_output_driver") + output->Name());
-    }
+    const auto output = api::ReadOutputConfiguration();
+    this->outputDriverDropdown->SetText(arrow + _TSTR("settings_output_driver") + output.selectedDriver);
 
     /* output device */
-    std::string deviceName = getOutputDeviceName();
+    const auto deviceName = getOutputDeviceName(output);
     this->outputDeviceDropdown->SetText(arrow + _TSTR("settings_output_device") + deviceName);
 
     /* replay gain */

@@ -82,3 +82,6 @@ mc_indexer_set_callback
 mc_context_reconnect_remote_library
 mc_library_list_category_fields_async
 mc_track_ref_get_library
+mc_output_read_configuration
+mc_output_select_driver
+mc_output_select_device

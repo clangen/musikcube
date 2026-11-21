@@ -36,7 +36,7 @@
 
 #include "PlaybackOverlays.h"
 
-#include <musikcore/audio/Outputs.h>
+#include <musikcore/output.hpp>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 
@@ -53,15 +53,7 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace cursespp;
 
-static std::vector<std::shared_ptr<IOutput> > plugins;
 static std::set<std::string> invalidCrossfadeOutputs = { "WaveOut" };
-
-template <typename T>
-struct ReleaseDeleter {
-    void operator()(T* t) {
-        if (t) t->Release();
-    }
-};
 
 static void showNoOutputPluginsMessage() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -102,9 +94,8 @@ void PlaybackOverlays::ShowOutputDriverOverlay(
     MasterTransport::Type transportType,
     std::function<void()> callback)
 {
-    plugins = outputs::GetAllOutputs();
-
-    if (!plugins.size()) {
+    auto output = api::ReadOutputConfiguration();
+    if (output.drivers.empty()) {
         showNoOutputPluginsMessage();
         return;
     }
@@ -112,15 +103,14 @@ void PlaybackOverlays::ShowOutputDriverOverlay(
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
-    std::string currentOutput = outputs::SelectedOutput()->Name();
     size_t selectedIndex = 0;
 
     std::shared_ptr<Adapter> adapter(new Adapter());
-    for (size_t i = 0; i < plugins.size(); i++) {
-        const std::string name = plugins[i]->Name();
+    for (size_t i = 0; i < output.drivers.size(); i++) {
+        const auto& name = output.drivers[i];
         adapter->AddEntry(name);
 
-        if (name == currentOutput) {
+        if (name == output.selectedDriver) {
             selectedIndex = i;
         }
     }
@@ -133,19 +123,17 @@ void PlaybackOverlays::ShowOutputDriverOverlay(
         .SetTitle(_TSTR("playback_overlay_output_plugins_title"))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [callback, transportType](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-
-                if (transportType == MasterTransport::Type::Crossfade) {
-                    std::string output = outputs::GetAllOutputs().at(index)->Name();
-                    if (invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end()) {
-                        showOutputCannotCrossfadeMessage(output);
-                        return;
-                    }
+            [callback, transportType, drivers = std::move(output.drivers)](ListOverlay*, IScrollAdapterPtr, size_t index) {
+                if (index >= drivers.size()) {
+                    return;
+                }
+                const auto& driver = drivers[index];
+                if (transportType == MasterTransport::Type::Crossfade && invalidCrossfadeOutputs.count(driver)) {
+                    showOutputCannotCrossfadeMessage(driver);
+                    return;
                 }
 
-                outputs::SelectOutput(plugins[index]);
-
-                if (callback) {
+                if (api::SelectOutputDriver(driver) == MC_OK && callback) {
                     callback();
                 }
             });
@@ -154,22 +142,10 @@ void PlaybackOverlays::ShowOutputDriverOverlay(
 }
 
 void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
-    auto output = outputs::SelectedOutput();
-    if (!output) {
+    auto output = api::ReadOutputConfiguration();
+    if (output.drivers.empty()) {
         showNoOutputPluginsMessage();
         return;
-    }
-
-    std::string currentDeviceName = _TSTR("settings_output_device_default");
-
-    std::shared_ptr<IDeviceList> deviceList = std::shared_ptr<IDeviceList>(
-        output->GetDeviceList(), ReleaseDeleter<IDeviceList>());
-
-    std::shared_ptr<IDevice> device = std::shared_ptr<IDevice>(
-        output->GetDefaultDevice(), ReleaseDeleter<IDevice>());
-
-    if (device) {
-        currentDeviceName = device->Name();
     }
 
     using Adapter = cursespp::SimpleScrollAdapter;
@@ -181,16 +157,13 @@ void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry(_TSTR("settings_output_device_default"));
 
-    if (deviceList) {
-        for (size_t i = 0; i < deviceList->Count(); i++) {
-            const std::string name = deviceList->At(i)->Name();
-            adapter->AddEntry(name);
+    for (size_t i = 0; i < output.devices.size(); ++i) {
+        const auto& device = output.devices[i];
+        adapter->AddEntry(device.name);
+        width = std::max(width, u8cols(device.name));
 
-            width = std::max(width, u8cols(name));
-
-            if (name == currentDeviceName) {
-                selectedIndex = i + 1;
-            }
+        if (device.id == output.selectedDevice.id) {
+            selectedIndex = i + 1;
         }
     }
 
@@ -203,15 +176,12 @@ void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
         .SetSelectedIndex(selectedIndex)
         .SetWidth(narrow_cast<int>(width))
         .SetItemSelectedCallback(
-            [output, deviceList, callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                if (index == 0) {
-                    output->SetDefaultDevice("");
+            [output = std::move(output), callback](ListOverlay*, IScrollAdapterPtr, size_t index) {
+                if (index > output.devices.size()) {
+                    return;
                 }
-                else {
-                    output->SetDefaultDevice(deviceList->At(index - 1)->Id());
-                }
-
-                if (callback) {
+                const std::string_view id = index == 0 ? std::string_view {} : output.devices[index - 1].id;
+                if (api::SelectOutputDevice(output.selectedDriver, id) == MC_OK && callback) {
                     callback();
                 }
             });
@@ -244,7 +214,7 @@ void PlaybackOverlays::ShowTransportOverlay(
                     ? MasterTransport::Type::Gapless
                     : MasterTransport::Type::Crossfade;
 
-                std::string output = outputs::SelectedOutput()->Name();
+                const auto output = api::ReadOutputConfiguration().selectedDriver;
 
                 if (result == MasterTransport::Type::Crossfade &&
                     invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end())

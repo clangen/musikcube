@@ -34,6 +34,9 @@
 
 #include "pch.hpp"
 #include "Outputs.h"
+#include <musikcore/output.h>
+#include "../ffi/common/error.h"
+#include "../ffi/common/primitives.h"
 #include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -202,11 +205,9 @@ namespace musik {
                     return output == nullptr ? new NoOutput() : output;
                 }
 
-                Output SelectedOutput() {
+                static Output selectedOutput(const OutputList& plugins) {
                     std::shared_ptr<Preferences> prefs =
                         Preferences::ForComponent(components::Playback);
-
-                    const OutputList plugins = queryOutputs<ReleaseDeleter>();
 
                     if (plugins.size()) {
                         /* try to find the user selected plugin first */
@@ -227,7 +228,86 @@ namespace musik {
 
                     return Output(new NoOutput());
                 }
+
+                Output SelectedOutput() {
+                    return selectedOutput(GetAllOutputs());
+                }
             }
         }
     }
+}
+
+namespace {
+    mc_string_view outputText(const char* value) {
+        return { value, value ? std::char_traits<char>::length(value) : 0 };
+    }
+
+    mc_output_device deviceInfo(const IDevice& device) {
+        return { outputText(device.Id()), outputText(device.Name()) };
+    }
+}
+
+mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void* data) {
+    if (!read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto available = outputs::GetAllOutputs();
+        const auto selected = outputs::selectedOutput(available);
+        std::vector<mc_string_view> drivers;
+        drivers.reserve(available.size());
+        for (const auto& output : available) {
+            drivers.push_back(outputText(output->Name()));
+        }
+
+        /* Device storage belongs to the plugin and stays alive through the callback. */
+        const std::unique_ptr<IDeviceList, PluginFactory::ReleaseDeleter<IDeviceList>> list(selected->GetDeviceList());
+        const std::unique_ptr<IDevice, PluginFactory::ReleaseDeleter<IDevice>> device(selected->GetDefaultDevice());
+        std::vector<mc_output_device> devices;
+        if (list) {
+            devices.reserve(list->Count());
+            for (size_t i = 0; i < list->Count(); ++i) {
+                devices.push_back(deviceInfo(*list->At(i)));
+            }
+        }
+
+        const mc_output_configuration configuration {
+            drivers.data(), drivers.size(), outputText(selected->Name()),
+            devices.data(), devices.size(), device ? deviceInfo(*device) : mc_output_device {}
+        };
+        read(data, &configuration);
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_output_select_driver(mc_string_view driver) {
+    if (!ffi::valid_text(driver, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto output = outputs::findByName(std::string(driver.data, driver.length), outputs::GetAllOutputs());
+        if (!output) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        outputs::SelectOutput(output);
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_output_select_device(mc_string_view driver, mc_string_view deviceId) {
+    if (!ffi::valid_text(driver, false) || !ffi::valid_text(deviceId)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto output = outputs::SelectedOutput();
+        if (std::string_view(driver.data, driver.length) != output->Name()) {
+            return MC_ERROR_NOT_FOUND;
+        }
+
+        const std::string id(deviceId.data ? deviceId.data : "", deviceId.length);
+        return output->SetDefaultDevice(id.c_str()) ? MC_OK : MC_ERROR_NOT_FOUND;
+    });
 }
