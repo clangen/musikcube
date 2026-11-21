@@ -5,8 +5,23 @@
 #include <musikcore/preferences.h>
 
 #include <initializer_list>
+#include <variant>
+#include <vector>
 
 namespace musik { namespace core { namespace api {
+    using PreferenceValue = std::variant<bool, int32_t, double, std::string>;
+
+    /* Owns an editable setting and its constraints. Copyable and movable. */
+    struct PreferenceField {
+        std::string key;
+        PreferenceValue value;
+        double minimum = 0;
+        double maximum = 0;
+        int32_t precision = 0;
+        std::vector<std::string> choices;
+        bool allowEmpty = false;
+    };
+
     /* The entry borrows key and text storage through the enclosing write. */
     inline mc_preference_entry Preference(std::string_view key, bool value) {
         mc_preference_entry entry { { key.data(), key.size() }, { MC_PREFERENCE_BOOLEAN, {} } };

@@ -41,7 +41,7 @@ namespace musik {
                 static void Show();
 
             private:
-                PluginOverlay();
+                PluginOverlay() = delete;
         };
     }
 }

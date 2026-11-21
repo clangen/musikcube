@@ -102,3 +102,7 @@ mc_preferences_write
 mc_preferences_save
 mc_server_read_configuration
 mc_server_configure
+mc_plugins_list
+mc_plugin_set_enabled
+mc_plugin_read_settings
+mc_plugin_write_setting

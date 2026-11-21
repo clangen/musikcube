@@ -88,3 +88,7 @@ Startup, session navigation, theme, and remote settings now use public preferenc
 ## Server settings
 
 The server overlay uses the public configuration API. Core and the provider share preference keys and defaults, and provider preference storage remains alive through shutdown. The native test verifies a configuration round trip with both listeners disabled. The Browse TUI test opens and dismisses the server overlay. All 47 Linux Release tests passed.
+
+## Plugin catalog and settings
+
+Cube uses public copied metadata and typed schema values for plugin discovery, enablement, and configuration. The existing schema overlay also renders advanced app preferences through the SDK. All 47 Linux Release tests passed. The headless Browse scenario edits the real Null plugin's sample rate and opens advanced settings.

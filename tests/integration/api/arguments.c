@@ -95,6 +95,9 @@ int main(void) {
     CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, &preference, SIZE_MAX) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_server_read_configuration(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_server_configure(NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_plugins_list(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_plugin_set_enabled(name, false) == MC_ERROR_NOT_FOUND);
+    CHECK(mc_plugin_write_setting(name, &preference) == MC_ERROR_NOT_FOUND);
     mc_equalizer_state equalizer = MC_EQUALIZER_STATE_DEFAULT;
     CHECK(mc_equalizer_get_state(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_equalizer_get_state(&equalizer) == MC_ERROR_UNSUPPORTED);

@@ -34,55 +34,18 @@
 
 #pragma once
 
-#include <musikcore/support/Preferences.h>
-#include <musikcore/sdk/ISchema.h>
+#include <musikcore/preferences.hpp>
+
+#include <functional>
 
 namespace cursespp {
     class SchemaOverlay {
-        public:
-            using Prefs = musik::core::Preferences;
-            using ISchema = musik::core::sdk::ISchema;
-            using SchemaPtr = std::shared_ptr<ISchema>;
-            using PrefsPtr = std::shared_ptr<Prefs>;
+    public:
+        using Field = musik::core::api::PreferenceField;
+        using Value = musik::core::api::PreferenceValue;
+        using Write = std::function<mc_result(std::string_view, const Value&)>;
 
-            static void Show(
-                const std::string& title,
-                PrefsPtr prefs,
-                SchemaPtr schema,
-                std::function<void(bool)> callback);
-
-            static void ShowListOverlay(
-                const std::string& title,
-                std::vector<std::string>& items,
-                const std::string defaultValue,
-                std::function<void(std::string)> cb);
-
-            static void ShowBoolOverlay(
-                const ISchema::BoolEntry* entry,
-                PrefsPtr prefs,
-                std::function<void(std::string)> callback);
-
-            static void ShowIntOverlay(
-                const ISchema::IntEntry* entry,
-                PrefsPtr prefs,
-                std::function<void(std::string)> callback);
-
-            static void ShowDoubleOverlay(
-                const ISchema::DoubleEntry* entry,
-                PrefsPtr prefs,
-                std::function<void(std::string)> callback);
-
-            static void ShowStringOverlay(
-                const ISchema::StringEntry* entry,
-                PrefsPtr prefs,
-                std::function<void(std::string)> callback);
-
-            static void ShowEnumOverlay(
-                const ISchema::EnumEntry* entry,
-                PrefsPtr prefs,
-                std::function<void(std::string)> callback);
-
-        private:
-            SchemaOverlay();
+        static void Show(const std::string& title, std::vector<Field> fields, Write write,
+            std::function<void(bool)> completed = {});
     };
 }

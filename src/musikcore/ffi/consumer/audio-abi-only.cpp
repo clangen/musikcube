@@ -2,6 +2,7 @@
 #include <musikcore/equalizer.h>
 #include <musikcore/playback.h>
 #include <musikcore/visualizer.h>
+#include <musikcore/plugins.h>
 #include "../common/error.h"
 
 #include <cmath>
@@ -43,6 +44,25 @@ mc_result MC_CALL mc_server_read_configuration(mc_server_configuration_fn read, 
 
 mc_result MC_CALL mc_server_configure(const mc_server_configuration* configuration) {
     return musik::core::ffi::valid_server_configuration(configuration) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_plugins_list(mc_plugin_info_fn read, void*) {
+    return read ? MC_OK : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_plugin_set_enabled(mc_string_view filename, bool) {
+    return musik::core::ffi::valid_text(filename, false) ? MC_ERROR_NOT_FOUND : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_fn read, void*) {
+    return read && musik::core::ffi::valid_text(id, false) ? MC_ERROR_NOT_FOUND : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference_entry* entry) {
+    using namespace musik::core::ffi;
+    return entry && valid_text(id, false) && valid_preference_entries(entry, 1)
+        ? MC_ERROR_NOT_FOUND
+        : MC_ERROR_INVALID_ARGUMENT;
 }
 
 mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void*) {

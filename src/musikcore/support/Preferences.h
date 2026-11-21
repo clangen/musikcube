@@ -39,6 +39,7 @@
 #include <mutex>
 
 #include <musikcore/config.h>
+#include <musikcore/preferences.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/sdk/IPreferences.h>
 
@@ -89,6 +90,9 @@ namespace musik { namespace core {
             int GetInt(const std::string& key, int defaultValue = 0);
             double GetDouble(const std::string& key, double defaultValue = 0.0f);
             std::string GetString(const std::string& key, const std::string& defaultValue = "");
+            /* Text values borrow the caller's output storage. */
+            mc_preference_value ReadValue(const std::string& key, mc_preference_value fallback, std::string& text);
+            static nlohmann::json EncodeValue(const mc_preference_value& value);
 
             void SetBool(const std::string& key, bool value);
             void SetInt(const std::string& key, int value);

@@ -33,168 +33,93 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <musikcore/sdk/Filesystem.h>
-
 #include "PluginOverlay.h"
 
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/plugin/PluginFactory.h>
-#include <musikcore/sdk/ISchema.h>
-#include <musikcore/sdk/String.h>
+#include <musikcore/plugins.hpp>
+#include <musikcore/utfutil.h>
 
 #include <cursespp/App.h>
 #include <cursespp/DialogOverlay.h>
 #include <cursespp/ListOverlay.h>
+#include <cursespp/SchemaOverlay.h>
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/SingleLineEntry.h>
-#include <cursespp/SchemaOverlay.h>
 
-#include <filesystem>
+#include <algorithm>
+#include <cctype>
 
-namespace std {
-    namespace fs = std::filesystem;
-}
-using namespace musik;
 using namespace musik::core;
-using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
 
-static const std::string unchecked = "[ ]";
-static const std::string checked = "[x]";
+namespace {
+    void showNoSchemaDialog(const std::string& name) {
+        auto dialog = std::make_shared<DialogOverlay>();
+        auto message = _TSTR("settings_no_plugin_config_message");
+        u8replace(message, "{{name}}", name);
 
-struct PluginInfo {
-    IPlugin* plugin;
-    std::string fn;
-    std::string version;
-    bool enabled;
-};
+        dialog->SetTitle(_TSTR("settings_no_plugin_config_title"))
+            .SetMessage(message)
+            .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
+        App::Overlays().Push(dialog);
+    }
 
-using PluginInfoPtr = std::shared_ptr<PluginInfo>;
-using PluginList = std::vector<PluginInfoPtr>;
-using SinglePtr = std::shared_ptr<SingleLineEntry>;
-using SchemaPtr = std::shared_ptr<ISchema>;
+    std::string sortKey(std::string name) {
+        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        return name;
+    }
 
-static void showConfigureOverlay(IPlugin* plugin, SchemaPtr schema) {
-    std::string title = _TSTR("settings_configure_plugin_title");
-    str::ReplaceAll(title, "{{name}}", plugin->Name());
-    auto prefs = Preferences::ForPlugin(plugin->Name());
-    SchemaOverlay::Show(title, prefs, schema, [](bool) {});
-}
-
-static void showNoSchemaDialog(const std::string& name) {
-    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
-
-    std::string message = _TSTR("settings_no_plugin_config_message");
-    str::ReplaceAll(message, "{{name}}", name.c_str());
-
-    (*dialog)
-        .SetTitle(_TSTR("settings_no_plugin_config_title"))
-        .SetMessage(message)
-        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
-
-    App::Overlays().Push(dialog);
-}
-
-class PluginListAdapter : public ScrollAdapterBase {
+    class PluginListAdapter final : public ScrollAdapterBase {
     public:
-        PluginListAdapter() {
-            this->prefs = Preferences::ForComponent(core::prefs::components::Plugins);
-            this->Refresh();
-        }
-
-        virtual ~PluginListAdapter() {
-            this->prefs->Save();
-        }
-
-        void configure(size_t index) {
-            SchemaPtr schema;
-
-            using Deleter = PluginFactory::ReleaseDeleter<ISchema>;
-            std::string guid = plugins[index]->plugin->Guid();
-            PluginFactory::Instance().QueryInterface<ISchema, Deleter>(
-                "GetSchema",
-                [guid, &schema](IPlugin* raw, SchemaPtr plugin, const std::string& fn) {
-                    if (raw->Guid() == guid) {
-                        schema = plugin;
-                    }
-                });
-
-            if (schema) {
-                showConfigureOverlay(plugins[index]->plugin, schema);
-            }
-            else {
-                showNoSchemaDialog(plugins[index]->plugin->Name());
-            }
-        }
-
-        void toggleEnabled(size_t index) {
-            PluginInfoPtr plugin = this->plugins.at(index);
-            plugin->enabled = !plugin->enabled;
-            this->prefs->SetBool(plugin->fn, plugin->enabled);
-        }
-
-        virtual size_t GetEntryCount() override {
-            return plugins.size();
-        }
-
-        virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override {
-            PluginInfoPtr info = plugins.at(index);
-
-            std::string display =
-                " " +
-                (info->enabled ? checked : unchecked) + " " +
-                info->plugin->Name() + " (" + info->fn + ") [v" + info->version + "]";
-
-            SinglePtr result = SinglePtr(new SingleLineEntry(text::Ellipsize(display, this->GetWidth())));
-
-            result->SetAttrs(Color::Default);
-            if (index == window->GetScrollPosition().logicalIndex) {
-                result->SetAttrs(Color::ListItemHighlighted);
-            }
-
-            return result;
-        }
-
-    private:
-        static std::string SortKey(const std::string& input) {
-            std::string name = input;
-            std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-            return name;
-        }
-
-        void Refresh() {
-            plugins.clear();
-
-            PluginList& plugins = this->plugins;
-            auto prefs = this->prefs;
-
-            using Deleter = PluginFactory::NullDeleter<IPlugin>;
-            using Plugin = std::shared_ptr<IPlugin>;
-
-            PluginFactory::Instance().QueryInterface<IPlugin, Deleter>(
-                "GetPlugin",
-                [&plugins, prefs](IPlugin* raw, Plugin plugin, const std::string& fn) {
-                    PluginInfoPtr info(new PluginInfo());
-                    info->plugin = raw;
-                    info->fn = musik::core::sdk::fs::pathToUtf8(std::fs::u8path(fn).filename());
-                    info->version = plugin->Version();
-                    info->enabled = prefs->GetBool(info->fn, true);
-                    plugins.push_back(info);
-                });
-
-            std::sort(plugins.begin(), plugins.end(), [](PluginInfoPtr p1, PluginInfoPtr p2) -> bool {
-                return SortKey(p1->plugin->Name()) < SortKey(p2->plugin->Name());
+        PluginListAdapter() : plugins(api::ListPlugins()) {
+            std::sort(this->plugins.begin(), this->plugins.end(), [](const auto& left, const auto& right) {
+                return sortKey(left.name) < sortKey(right.name);
             });
         }
 
-        std::shared_ptr<Preferences> prefs;
-        PluginList plugins;
-};
+        void Configure(size_t index) {
+            const auto& plugin = this->plugins.at(index);
+            auto fields = api::ReadPluginSettings(plugin.id);
+            if (!fields) {
+                showNoSchemaDialog(plugin.name);
+                return;
+            }
 
-PluginOverlay::PluginOverlay() {
+            auto title = _TSTR("settings_configure_plugin_title");
+            u8replace(title, "{{name}}", plugin.name);
+            SchemaOverlay::Show(title, std::move(*fields),
+                [id = plugin.id](std::string_view key, const api::PreferenceValue& value) {
+                    return api::WritePluginSetting(id, key, value);
+                });
+        }
 
+        void ToggleEnabled(size_t index) {
+            auto& plugin = this->plugins.at(index);
+            if (api::SetPluginEnabled(plugin.filename, !plugin.enabled) == MC_OK) {
+                plugin.enabled = !plugin.enabled;
+            }
+        }
+
+        size_t GetEntryCount() override {
+            return this->plugins.size();
+        }
+
+        EntryPtr GetEntry(ScrollableWindow* window, size_t index) override {
+            const auto& plugin = this->plugins.at(index);
+            const auto display = (plugin.enabled ? " [x] " : " [ ] ") +
+                plugin.name + " (" + plugin.filename + ") [v" + plugin.version + "]";
+            auto entry = std::make_shared<SingleLineEntry>(text::Ellipsize(display, this->GetWidth()));
+            entry->SetAttrs(index == window->GetScrollPosition().logicalIndex
+                ? Color::ListItemHighlighted
+                : Color::Default);
+            return entry;
+        }
+
+    private:
+        std::vector<api::PluginInfo> plugins;
+    };
 }
 
 void PluginOverlay::Show() {
@@ -210,7 +135,7 @@ void PluginOverlay::Show() {
                 if (key == " ") {
                     size_t index = overlay->GetSelectedIndex();
                     if (index != ListWindow::NO_SELECTION) {
-                        pluginAdapter->toggleEnabled(index);
+                        pluginAdapter->ToggleEnabled(index);
                         overlay->RefreshAdapter();
                         return true;
                     }
@@ -219,7 +144,7 @@ void PluginOverlay::Show() {
             })
         .SetItemSelectedCallback(
             [pluginAdapter](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                pluginAdapter->configure(index);
+                pluginAdapter->Configure(index);
             });
 
     cursespp::App::Overlays().Push(dialog);

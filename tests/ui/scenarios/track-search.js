@@ -337,9 +337,7 @@ async function checkTrackSearch(runtime, database, screenshots,
         await terminal.expect('no visualizers found!');
         terminal.send('\r');
         await terminal.expect('Browse fixture revised', { absent: 'no visualizers found!' });
-        if (hasServer) {
-          await terminal.resize(28, 140);
-        }
+        await terminal.resize(28, 140);
         terminal.send('s');
         await terminal.expect('output driver: Null');
         const clickLabel = async label => {
@@ -370,6 +368,27 @@ async function checkTrackSearch(runtime, database, screenshots,
           terminal.send('\x1b');
           await terminal.expect('playback mode: crossfade', { absent: 'audio streaming enabled' });
         }
+
+        await terminal.expect('configure plugins');
+        terminal.send('\t'.repeat(hasServer ? 7 : 11) + '\r');
+        await terminal.expect('Null IOutput');
+        const pluginRows = terminal.screen.text().split('\n').filter(row => row.includes('[v'));
+        const nullRow = pluginRows.findIndex(row => row.includes('Null IOutput'));
+        terminal.send(HOME + DOWN.repeat(nullRow) + '\r');
+        await terminal.expect('default_sample_rate');
+        terminal.send(DOWN + '\r');
+        await terminal.expect('4096 - 192000');
+        terminal.send(END + '\x7f'.repeat(5) + '44100\r');
+        await terminal.expect('44100', { absent: '4096 - 192000' });
+        terminal.send('\x1b');
+        await terminal.expect('Null IOutput', { absent: 'default_sample_rate' });
+        terminal.send('\x1b');
+        await terminal.expect('configure plugins', { absent: 'Null IOutput' });
+
+        terminal.send('\t\r');
+        await terminal.expect('AutoHideCommandBar');
+        terminal.send('\x1b');
+        await terminal.expect('configure plugins', { absent: 'AutoHideCommandBar' });
       }
     }
     /* The driver must observe a clean application exit, not just a screen that

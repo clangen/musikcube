@@ -380,19 +380,41 @@ namespace {
         return std::string(view.data ? view.data : "", view.length);
     }
 
-    json preferenceJson(const mc_preference_value& value) {
-        switch (value.type) {
-            case MC_PREFERENCE_BOOLEAN:
-                return value.data.boolean;
-            case MC_PREFERENCE_INTEGER:
-                return value.data.integer;
-            case MC_PREFERENCE_NUMBER:
-                return value.data.number;
-            case MC_PREFERENCE_TEXT:
-                return preferenceText(value.data.text);
-        }
-        return nullptr;
+}
+
+json Preferences::EncodeValue(const mc_preference_value& value) {
+    switch (value.type) {
+        case MC_PREFERENCE_BOOLEAN:
+            return value.data.boolean;
+        case MC_PREFERENCE_INTEGER:
+            return value.data.integer;
+        case MC_PREFERENCE_NUMBER:
+            return value.data.number;
+        case MC_PREFERENCE_TEXT:
+            return preferenceText(value.data.text);
     }
+    return nullptr;
+}
+
+mc_preference_value Preferences::ReadValue(
+    const std::string& key, mc_preference_value value, std::string& text)
+{
+    switch (value.type) {
+        case MC_PREFERENCE_BOOLEAN:
+            value.data.boolean = this->GetBool(key, value.data.boolean);
+            break;
+        case MC_PREFERENCE_INTEGER:
+            value.data.integer = this->GetInt(key, value.data.integer);
+            break;
+        case MC_PREFERENCE_NUMBER:
+            value.data.number = this->GetDouble(key, value.data.number);
+            break;
+        case MC_PREFERENCE_TEXT:
+            text = this->GetString(key, preferenceText(value.data.text));
+            value.data.text = { text.data(), text.size() };
+            break;
+    }
+    return value;
 }
 
 mc_result MC_CALL mc_preferences_read(mc_preference_scope scope, mc_string_view key,
@@ -406,25 +428,8 @@ mc_result MC_CALL mc_preferences_read(mc_preference_scope scope, mc_string_view 
 
     return ffi::exception_barrier(nullptr, [&] {
         auto& store = preferenceStore(scope);
-        const auto name = preferenceText(key);
-        auto value = *fallback;
         std::string text;
-        switch (value.type) {
-            case MC_PREFERENCE_BOOLEAN:
-                value.data.boolean = store.GetBool(name, value.data.boolean);
-                break;
-            case MC_PREFERENCE_INTEGER:
-                value.data.integer = store.GetInt(name, value.data.integer);
-                break;
-            case MC_PREFERENCE_NUMBER:
-                value.data.number = store.GetDouble(name, value.data.number);
-                break;
-            case MC_PREFERENCE_TEXT:
-                text = store.GetString(name, preferenceText(value.data.text));
-                value.data.text = { text.data(), text.size() };
-                break;
-        }
-
+        const auto value = store.ReadValue(preferenceText(key), *fallback, text);
         read(data, &value);
         return MC_OK;
     });
@@ -441,7 +446,7 @@ mc_result MC_CALL mc_preferences_write(mc_preference_scope scope, const mc_prefe
     return ffi::exception_barrier(nullptr, [&] {
         auto values = json::object();
         for (size_t i = 0; i < count; ++i) {
-            values[preferenceText(entries[i].key)] = preferenceJson(entries[i].value);
+            values[preferenceText(entries[i].key)] = Preferences::EncodeValue(entries[i].value);
         }
         preferenceStore(scope).SetValues(values);
         return MC_OK;

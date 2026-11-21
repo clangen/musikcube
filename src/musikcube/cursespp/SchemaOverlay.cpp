@@ -46,372 +46,194 @@
 #include <cursespp/ListOverlay.h>
 #include <cursespp/NumberValidator.h>
 #include <cursespp/Screen.h>
-#include <cursespp/ScrollAdapterBase.h>
+#include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
 
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 
-using namespace musik::core::sdk;
-using namespace musik::core::i18n;
 using namespace cursespp;
 
-using SchemaPtr = SchemaOverlay::SchemaPtr;
-using PrefsPtr = SchemaOverlay::PrefsPtr;
-using SinglePtr = std::shared_ptr<SingleLineEntry>;
+namespace {
+    using Field = SchemaOverlay::Field;
+    using Value = SchemaOverlay::Value;
+    using Input = std::function<void(std::string)>;
 
-#define DEFAULT(type) reinterpret_cast<const ISchema::type*>(entry)->defaultValue
-
-static size_t DEFAULT_INPUT_WIDTH = 26;
-static size_t MINIMUM_OVERLAY_WIDTH = 16;
-
-static int overlayWidth() {
-    return (int)(0.8f * (float) Screen::GetWidth());
-}
-
-static std::string stringValueForDouble(const double value, const int precision = 2) {
-    std::ostringstream out;
-    out << std::fixed << std::setprecision(precision) << value;
-    return out.str();
-}
-
-static std::function<std::string(int)> intFormatter =
-[](int value) -> std::string {
-    return std::to_string(value);
-};
-
-static std::function<std::string(double)> doubleFormatter(int precision) {
-    return [precision](double value) -> std::string {
-        return stringValueForDouble(value, precision);
-    };
-}
-
-template <typename T>
-std::string numberInputTitle(
-    std::string keyName,
-    T minimum,
-    T maximum,
-    std::function<std::string(T)> formatter)
-{
-    if (NumberValidator<T>::bounded(minimum, maximum)) {
-        return keyName + " (" + formatter(minimum)
-            + " - " + formatter(maximum) + ")";
+    int overlayWidth() {
+        return static_cast<int>(0.8f * Screen::GetWidth());
     }
-    return keyName;
-}
 
-template <typename T>
-static std::string stringValueFor(
-    PrefsPtr prefs,
-    const T* entry,
-    ISchema::Type type,
-    const std::string& name)
-{
-    switch (type) {
-        case ISchema::Type::Bool:
-            return prefs->GetBool(name, DEFAULT(BoolEntry)) ? "true" : "false";
-        case ISchema::Type::Int:
-            return std::to_string(prefs->GetInt(name, DEFAULT(IntEntry)));
-        case ISchema::Type::Double: {
-            auto doubleEntry = reinterpret_cast<const ISchema::DoubleEntry*>(entry);
-            auto defaultValue = doubleEntry->defaultValue;
-            auto precision = doubleEntry->precision;
-            return stringValueForDouble(prefs->GetDouble(name, defaultValue), precision);
-        }
-        case ISchema::Type::String: {
-            return prefs->GetString(name, DEFAULT(StringEntry));
-        }
-        case ISchema::Type::Enum:
-            return prefs->GetString(name, DEFAULT(EnumEntry));
+    std::string formatNumber(double value, int precision) {
+        std::ostringstream text;
+        text << std::fixed << std::setprecision(precision) << value;
+        return text.str();
     }
-    throw std::runtime_error("invalid type passed to stringValueFor!");
-}
 
-template <typename T>
-static std::string stringValueFor(PrefsPtr prefs, const T* entry) {
-    return stringValueFor(prefs, entry, entry->entry.type, entry->entry.name);
-}
-
-static std::string stringValueFor(PrefsPtr prefs, const ISchema::Entry* entry) {
-    return stringValueFor(prefs, entry, entry->type, entry->name);
-}
-
-class StringListAdapter : public ScrollAdapterBase {
-    public:
-        StringListAdapter(std::vector<std::string>& items) : items(items) { }
-        std::string At(const size_t index) { return items[index]; }
-        virtual ~StringListAdapter() { }
-        virtual size_t GetEntryCount() override { return items.size(); }
-        virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override {
-            auto entry = std::make_shared<SingleLineEntry>(
-                text::Ellipsize(items[index], window->GetWidth()));
-
-            entry->SetAttrs(Color(Color::Default));
-            if (index == window->GetScrollPosition().logicalIndex) {
-                entry->SetAttrs(Color(Color::ListItemHighlighted));
+    std::string displayValue(const Field& field) {
+        return std::visit([&](const auto& value) -> std::string {
+            using T = std::decay_t<decltype(value)>;
+            if constexpr (std::is_same_v<T, bool>) {
+                return value ? "true" : "false";
             }
+            else if constexpr (std::is_same_v<T, int32_t>) {
+                return std::to_string(value);
+            }
+            else if constexpr (std::is_same_v<T, double>) {
+                return formatNumber(value, field.precision);
+            }
+            else {
+                return value;
+            }
+        }, field.value);
+    }
 
-            return entry;
+    void showChoices(const Field& field, const std::vector<std::string>& choices, Input submit) {
+        auto adapter = std::make_shared<SimpleScrollAdapter>();
+        adapter->SetSelectable(true);
+        const auto current = displayValue(field);
+        size_t selected = 0;
+        for (size_t i = 0; i < choices.size(); ++i) {
+            adapter->AddEntry(choices[i]);
+            if (choices[i] == current) {
+                selected = i;
+            }
         }
-    private:
-        std::vector<std::string> items;
-};
 
-class SchemaAdapter: public ScrollAdapterBase {
+        auto dialog = std::make_shared<ListOverlay>();
+        dialog->SetAdapter(adapter)
+            .SetTitle(field.key)
+            .SetWidth(overlayWidth())
+            .SetSelectedIndex(selected)
+            .SetItemSelectedCallback([choices, submit = std::move(submit)](ListOverlay*, IScrollAdapterPtr, size_t index) {
+                if (index < choices.size()) {
+                    submit(choices[index]);
+                }
+            });
+        App::Overlays().Push(dialog);
+    }
+
+    template<typename T>
+    void showNumber(const Field& field, typename NumberValidator<T>::Formatter format, Input submit) {
+        const auto minimum = static_cast<T>(field.minimum);
+        const auto maximum = static_cast<T>(field.maximum);
+        auto title = field.key;
+        if (NumberValidator<T>::bounded(minimum, maximum)) {
+            title += " (" + format(minimum) + " - " + format(maximum) + ")";
+        }
+
+        auto dialog = std::make_shared<InputOverlay>();
+        dialog->SetTitle(title)
+            .SetText(displayValue(field))
+            .SetValidator(std::make_shared<NumberValidator<T>>(minimum, maximum, std::move(format)))
+            .SetWidth(overlayWidth())
+            .SetInputAcceptedCallback(std::move(submit));
+        App::Overlays().Push(dialog);
+    }
+
+    void showText(const Field& field, Input submit) {
+        auto dialog = std::make_shared<InputOverlay>();
+        dialog->SetTitle(field.key)
+            .SetText(displayValue(field))
+            .SetWidth(overlayWidth())
+            .SetAllowEmptyValue(field.allowEmpty)
+            .SetInputAcceptedCallback(std::move(submit));
+        App::Overlays().Push(dialog);
+    }
+
+    /* Nested editors keep the field snapshot alive until their callback returns. */
+    class SchemaAdapter final :
+        public ScrollAdapterBase,
+        public std::enable_shared_from_this<SchemaAdapter>
+    {
     public:
-        SchemaAdapter(PrefsPtr prefs, SchemaPtr schema): prefs(prefs), schema(schema) {
-            onChanged = [this](std::string value) {
-                this->changed = true;
-            };
-        }
-
-        virtual ~SchemaAdapter() {
-        }
+        SchemaAdapter(std::vector<Field> fields, SchemaOverlay::Write write)
+            : fields(std::move(fields)), write(std::move(write)) {}
 
         bool Changed() const {
             return this->changed;
         }
 
-        virtual size_t GetEntryCount() override {
-            return schema->Count();
+        size_t GetEntryCount() override {
+            return this->fields.size();
         }
 
-        virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override {
-            auto entry = schema->At(index);
-
-            std::string name = entry->name;
-            std::string value = stringValueFor(prefs, entry);
-            int width = window->GetContentWidth();
-            int avail = std::max(0, width - int(u8cols(name)) - 1 - 1);
-            auto display = " " + name + " " + text::Align(value + " ", text::AlignRight, avail);
-
-            auto result = std::make_shared<SingleLineEntry>(text::Ellipsize(display, width));
-
-            result->SetAttrs(Color(Color::Default));
-            if (index == window->GetScrollPosition().logicalIndex) {
-                result->SetAttrs(Color(Color::ListItemHighlighted));
-            }
-
+        EntryPtr GetEntry(ScrollableWindow* window, size_t index) override {
+            const auto& field = this->fields.at(index);
+            const auto width = window->GetContentWidth();
+            const auto available = std::max(0, width - static_cast<int>(u8cols(field.key)) - 2);
+            const auto text = " " + field.key + " " + text::Align(displayValue(field) + " ", text::AlignRight, available);
+            auto result = std::make_shared<SingleLineEntry>(text::Ellipsize(text, width));
+            result->SetAttrs(index == window->GetScrollPosition().logicalIndex
+                ? Color::ListItemHighlighted
+                : Color::Default);
             return result;
         }
 
-        void ShowOverlay(size_t index) {
-            auto entry = schema->At(index);
-            switch (entry->type) {
-                case ISchema::Type::Bool:
-                    return ShowBoolOverlay(reinterpret_cast<const ISchema::BoolEntry*>(entry));
-                case ISchema::Type::Int:
-                    return ShowIntOverlay(reinterpret_cast<const ISchema::IntEntry*>(entry));
-                case ISchema::Type::Double:
-                    return ShowDoubleOverlay(reinterpret_cast<const ISchema::DoubleEntry*>(entry));
-                case ISchema::Type::String:
-                    return ShowStringOverlay(reinterpret_cast<const ISchema::StringEntry*>(entry));
-                case ISchema::Type::Enum:
-                    return ShowEnumOverlay(reinterpret_cast<const ISchema::EnumEntry*>(entry));
+        void Edit(size_t index) {
+            const auto& field = this->fields.at(index);
+            auto submit = [self = this->shared_from_this(), index](Value value) {
+                self->Submit(index, std::move(value));
+            };
+
+            if (std::holds_alternative<bool>(field.value)) {
+                showChoices(field, { "false", "true" }, [submit](const std::string& text) { submit(text == "true"); });
+            }
+            else if (std::holds_alternative<int32_t>(field.value)) {
+                showNumber<int32_t>(field, [](int32_t value) { return std::to_string(value); },
+                    [submit](const std::string& text) { submit(static_cast<int32_t>(std::stod(text))); });
+            }
+            else if (std::holds_alternative<double>(field.value)) {
+                showNumber<double>(field, [precision = field.precision](double value) {
+                    return formatNumber(value, precision);
+                }, [submit](const std::string& text) { submit(std::stod(text)); });
+            }
+            else if (!field.choices.empty()) {
+                showChoices(field, field.choices, [submit](std::string text) { submit(std::move(text)); });
+            }
+            else {
+                showText(field, [submit](std::string text) { submit(std::move(text)); });
             }
         }
 
     private:
-        void ShowBoolOverlay(const ISchema::BoolEntry* entry) {
-            SchemaOverlay::ShowBoolOverlay(entry, prefs, onChanged);
+        void Submit(size_t index, Value value) {
+            auto& field = this->fields.at(index);
+            if (this->write(field.key, value) == MC_OK) {
+                field.value = std::move(value);
+                this->changed = true;
+                return;
+            }
+
+            auto dialog = std::make_shared<DialogOverlay>();
+            dialog->SetTitle(_TSTR("settings_server_invalid_settings_title"))
+                .SetMessage(_TSTR("settings_server_invalid_settings_message"))
+                .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
+            App::Overlays().Push(dialog);
         }
 
-        void ShowIntOverlay(const ISchema::IntEntry* entry) {
-            SchemaOverlay::ShowIntOverlay(entry, prefs, onChanged);
-        }
-
-        void ShowDoubleOverlay(const ISchema::DoubleEntry* entry) {
-            SchemaOverlay::ShowDoubleOverlay(entry, prefs, onChanged);
-        }
-
-        void ShowStringOverlay(const ISchema::StringEntry* entry) {
-            SchemaOverlay::ShowStringOverlay(entry, prefs, onChanged);
-        }
-
-        void ShowEnumOverlay(const ISchema::EnumEntry* entry) {
-            SchemaOverlay::ShowEnumOverlay(entry, prefs, onChanged);
-        }
-
-        std::function<void(std::string)> onChanged;
-        PrefsPtr prefs;
-        SchemaPtr schema;
-        bool changed{false};
-};
-
-void SchemaOverlay::ShowListOverlay(
-    const std::string& title,
-    std::vector<std::string>& items,
-    const std::string defaultValue,
-    std::function<void(std::string)> cb)
-{
-    auto stringAdapter = std::make_shared<StringListAdapter>(items);
-    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
-
-    size_t index = 0;
-    for (size_t i = 0; i < items.size(); i++) {
-        auto current = items[i];
-        if (current == defaultValue) {
-            index = i;
-        }
-    }
-
-    dialog->SetAdapter(stringAdapter)
-        .SetTitle(title)
-        .SetWidth(overlayWidth())
-        .SetSelectedIndex(index)
-        .SetAutoDismiss(true)
-        .SetItemSelectedCallback(
-            [cb, stringAdapter](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                if (cb) {
-                    cb(stringAdapter->At(index));
-                }
-            });
-
-    cursespp::App::Overlays().Push(dialog);
-}
-
-void SchemaOverlay::ShowBoolOverlay(
-    const ISchema::BoolEntry* entry,
-    PrefsPtr prefs,
-    std::function<void(std::string)> callback)
-{
-    std::string name(entry->entry.name);
-    std::vector<std::string> items = { "true", "false" };
-
-    auto handler = [prefs, name, callback](std::string value) {
-        prefs->SetBool(name, value == "true");
-        if (callback) { callback(value); }
+        std::vector<Field> fields;
+        SchemaOverlay::Write write;
+        bool changed = false;
     };
-
-    ShowListOverlay(name, items, stringValueFor(prefs, entry), handler);
 }
 
-void SchemaOverlay::ShowIntOverlay(
-    const ISchema::IntEntry* entry,
-    PrefsPtr prefs,
-    std::function<void(std::string)> callback)
+void SchemaOverlay::Show(const std::string& title, std::vector<Field> fields, Write write,
+    std::function<void(bool)> completed)
 {
-    std::string name(entry->entry.name);
-
-    auto title = numberInputTitle(
-        name, entry->minValue, entry->maxValue, intFormatter);
-
-    auto validator = std::make_shared<NumberValidator<int>>(
-        entry->minValue,  entry->maxValue, intFormatter);
-
-    auto handler = [prefs, name, callback](std::string value) {
-        prefs->SetInt(name, (int) std::stod(value));
-        if (callback) { callback(value); }
-    };
-
-    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
-
-    dialog->SetTitle(title)
-        .SetText(stringValueFor(prefs, entry))
-        .SetValidator(validator)
-        .SetWidth(overlayWidth())
-        .SetInputAcceptedCallback(handler);
-
-    App::Overlays().Push(dialog);
-}
-
-void SchemaOverlay::ShowDoubleOverlay(
-    const ISchema::DoubleEntry* entry,
-    PrefsPtr prefs,
-    std::function<void(std::string)> callback)
-{
-    std::string name(entry->entry.name);
-
-    auto formatter = doubleFormatter(entry->precision);
-
-    auto title = numberInputTitle(
-        name, entry->minValue, entry->maxValue, formatter);
-
-    auto validator = std::make_shared<NumberValidator<double>>(
-        entry->minValue, entry->maxValue, formatter);
-
-    auto handler = [prefs, name, callback](std::string value) {
-        prefs->SetDouble(name, std::stod(value));
-        if (callback) { callback(value); }
-    };
-
-    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
-
-    dialog->SetTitle(title)
-        .SetText(stringValueFor(prefs, entry))
-        .SetValidator(validator)
-        .SetWidth(overlayWidth())
-        .SetInputAcceptedCallback(handler);
-
-    App::Overlays().Push(dialog);
-}
-
-void SchemaOverlay::ShowStringOverlay(
-    const ISchema::StringEntry* entry,
-    PrefsPtr prefs,
-    std::function<void(std::string)> callback)
-{
-    std::string name(entry->entry.name);
-
-    auto handler = [prefs, name, callback](std::string value) {
-        prefs->SetString(name, value.c_str());
-        if (callback) { callback(value); }
-    };
-
-    std::shared_ptr<InputOverlay> dialog(new InputOverlay());
-
-    dialog->SetTitle(name)
-        .SetText(stringValueFor(prefs, entry))
-        .SetWidth(overlayWidth())
-        .SetAllowEmptyValue(entry->defaultValue && strlen(entry->defaultValue))
-        .SetInputAcceptedCallback(handler);
-
-    App::Overlays().Push(dialog);
-}
-
-void SchemaOverlay::ShowEnumOverlay(
-    const ISchema::EnumEntry* entry,
-    PrefsPtr prefs,
-    std::function<void(std::string)> callback)
-{
-    std::string name(entry->entry.name);
-    std::vector<std::string> items;
-
-    for (size_t i = 0; i < entry->count; i++) {
-        items.push_back(entry->values[i]);
-    }
-
-    auto handler = [prefs, name, callback](std::string value) {
-        prefs->SetString(name, value.c_str());
-        if (callback) { callback(value); }
-    };
-
-    ShowListOverlay(name, items, stringValueFor(prefs, entry), handler);
-}
-
-void SchemaOverlay::Show(
-    const std::string& title,
-    PrefsPtr prefs,
-    SchemaPtr schema,
-    std::function<void(bool)> callback)
-{
-    std::shared_ptr<SchemaAdapter> schemaAdapter(new SchemaAdapter(prefs, schema));
-    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
-
-    dialog->SetAdapter(schemaAdapter)
+    auto adapter = std::make_shared<SchemaAdapter>(std::move(fields), std::move(write));
+    auto dialog = std::make_shared<ListOverlay>();
+    dialog->SetAdapter(adapter)
         .SetTitle(title)
         .SetWidthPercent(80)
         .SetAutoDismiss(false)
-        .SetItemSelectedCallback(
-            [schemaAdapter](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                schemaAdapter->ShowOverlay(index);
-            })
-        .SetDismissedCallback([callback, schemaAdapter](ListOverlay* overlay) {
-                if (callback) {
-                    callback(schemaAdapter->Changed());
-                }
-            });
-
-    cursespp::App::Overlays().Push(dialog);
+        .SetItemSelectedCallback([adapter](ListOverlay*, IScrollAdapterPtr, size_t index) {
+            adapter->Edit(index);
+        })
+        .SetDismissedCallback([adapter, completed = std::move(completed)](ListOverlay*) {
+            if (completed) {
+                completed(adapter->Changed());
+            }
+        });
+    App::Overlays().Push(dialog);
 }

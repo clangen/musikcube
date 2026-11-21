@@ -48,7 +48,7 @@
 
 #include <musikcore/playback.hpp>
 #include <musikcore/context.hpp>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/preferences.hpp>
 
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
@@ -110,7 +110,7 @@ namespace musik { namespace cube {
             musik::core::api::Context& musikcore;
             musik::core::api::Playback playback;
 
-            std::shared_ptr<musik::core::Preferences> prefs;
+            musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
 
             using Text = std::shared_ptr<cursespp::TextLabel>;
             Text libraryTypeDropdown;

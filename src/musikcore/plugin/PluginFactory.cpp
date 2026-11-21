@@ -36,6 +36,10 @@
 #include "musikcore/sdk/Filesystem.h"
 
 #include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/ISchema.h>
+#include <musikcore/plugins.h>
+#include <musikcore/ffi/common/error.h>
+#include <musikcore/ffi/consumer/preferences-shape.h>
 #include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -43,8 +47,10 @@
 #include <musikcore/config.h>
 #include <musikcore/debug.h>
 #include <musikcore/utfutil.h>
+#include <algorithm>
 #include <iostream>
 #include <filesystem>
+#include <string_view>
 
 static const std::string TAG = "PluginFactory";
 static std::mutex instanceMutex;
@@ -187,4 +193,241 @@ void PluginFactory::LoadPlugins() {
     }
     catch(...) {
     }
+}
+
+namespace {
+    using musik::core::sdk::IPlugin;
+    using musik::core::sdk::ISchema;
+
+    struct PluginDetails {
+        std::string id;
+        std::string name;
+        std::string version;
+        std::string filename;
+        bool enabled;
+    };
+
+    std::vector<PluginDetails> pluginCatalog() {
+        const auto settings = Preferences::ForComponent(prefs::components::Plugins);
+        std::vector<PluginDetails> plugins;
+        PluginFactory::Instance().QueryInterface<IPlugin, PluginFactory::ReleaseDeleter<IPlugin>>(
+            "GetPlugin", [&](IPlugin*, const std::shared_ptr<IPlugin>& plugin, const std::string& path) {
+                const auto filename = pathToUtf8(fs::u8path(path).filename());
+                plugins.push_back({
+                    plugin->Guid(), plugin->Name(), plugin->Version(),
+                    filename, settings->GetBool(filename, true)
+                });
+            });
+        return plugins;
+    }
+
+    mc_string_view pluginView(std::string_view text) {
+        return { text.data(), text.size() };
+    }
+
+    mc_string_view pluginView(const char* text) {
+        return text ? pluginView(std::string_view(text)) : mc_string_view {};
+    }
+
+    std::string_view pluginText(mc_string_view text) {
+        return std::string_view(text.data ? text.data : "", text.length);
+    }
+
+    std::shared_ptr<ISchema> pluginSchema(std::string_view id) {
+        std::shared_ptr<ISchema> schema;
+        PluginFactory::Instance().QueryInterface<ISchema, PluginFactory::ReleaseDeleter<ISchema>>(
+            "GetSchema", [&](IPlugin* plugin, const std::shared_ptr<ISchema>& found, const std::string&) {
+                if (plugin->Guid() == id) {
+                    schema = found;
+                }
+            });
+        return schema;
+    }
+
+    struct SettingDescription {
+        mc_preference_value fallback {};
+        double minimum = 0.0;
+        double maximum = 0.0;
+        int32_t precision = 0;
+        const char** choices = nullptr;
+        size_t choiceCount = 0;
+    };
+
+    SettingDescription describeSetting(const ISchema::Entry& entry) {
+        SettingDescription result;
+        switch (entry.type) {
+            case ISchema::Type::Bool: {
+                const auto& item = reinterpret_cast<const ISchema::BoolEntry&>(entry);
+                result.fallback.type = MC_PREFERENCE_BOOLEAN;
+                result.fallback.data.boolean = item.defaultValue;
+            }
+            break;
+            case ISchema::Type::Int: {
+                const auto& item = reinterpret_cast<const ISchema::IntEntry&>(entry);
+                result.fallback.type = MC_PREFERENCE_INTEGER;
+                result.fallback.data.integer = item.defaultValue;
+                result.minimum = item.minValue;
+                result.maximum = item.maxValue;
+            }
+            break;
+            case ISchema::Type::Double: {
+                const auto& item = reinterpret_cast<const ISchema::DoubleEntry&>(entry);
+                result.fallback.type = MC_PREFERENCE_NUMBER;
+                result.fallback.data.number = item.defaultValue;
+                result.minimum = item.minValue == std::numeric_limits<double>::min()
+                    ? std::numeric_limits<double>::lowest()
+                    : item.minValue;
+                result.maximum = item.maxValue;
+                result.precision = item.precision;
+            }
+            break;
+            case ISchema::Type::String: {
+                const auto& item = reinterpret_cast<const ISchema::StringEntry&>(entry);
+                result.fallback.type = MC_PREFERENCE_TEXT;
+                result.fallback.data.text = pluginView(item.defaultValue);
+            }
+            break;
+            case ISchema::Type::Enum: {
+                const auto& item = reinterpret_cast<const ISchema::EnumEntry&>(entry);
+                result.fallback.type = MC_PREFERENCE_TEXT;
+                result.fallback.data.text = pluginView(item.defaultValue);
+                result.choices = item.values;
+                result.choiceCount = item.count;
+            }
+            break;
+        }
+        return result;
+    }
+
+    bool settingValueAllowed(const SettingDescription& field, const mc_preference_value& value) {
+        if (field.fallback.type != value.type) {
+            return false;
+        }
+        switch (value.type) {
+            case MC_PREFERENCE_BOOLEAN:
+                return true;
+            case MC_PREFERENCE_INTEGER:
+                return value.data.integer >= field.minimum && value.data.integer <= field.maximum;
+            case MC_PREFERENCE_NUMBER:
+                return value.data.number >= field.minimum && value.data.number <= field.maximum;
+            case MC_PREFERENCE_TEXT:
+                return !field.choices || std::find(field.choices, field.choices + field.choiceCount,
+                    pluginText(value.data.text)) != field.choices + field.choiceCount;
+        }
+        return false;
+    }
+}
+
+mc_result MC_CALL mc_plugins_list(mc_plugin_info_fn read, void* data) {
+    if (!read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        for (const auto& plugin : pluginCatalog()) {
+            const mc_plugin_info row {
+                pluginView(plugin.id), pluginView(plugin.name), pluginView(plugin.version),
+                pluginView(plugin.filename), plugin.enabled
+            };
+            read(data, &row);
+        }
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_plugin_set_enabled(mc_string_view filename, bool enabled) {
+    if (!ffi::valid_text(filename, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        auto key = pluginText(filename);
+        const auto plugins = pluginCatalog();
+        if (!std::ranges::any_of(plugins, [key](const auto& plugin) { return plugin.filename == key; })) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        auto prefs = Preferences::ForComponent(prefs::components::Plugins);
+        return prefs->SetValues({ { std::string(key), enabled } }, true) ? MC_OK : MC_ERROR_IO;
+    });
+}
+
+mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_fn read, void* data) {
+    if (!read || !ffi::valid_text(id, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto pluginId = pluginText(id);
+        const auto plugin = PluginFactory::Instance().QueryGuid(std::string(pluginId));
+        if (!plugin) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const auto schema = pluginSchema(pluginId);
+        if (!schema) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+
+        const auto settings = Preferences::ForPlugin(plugin->Name());
+        for (size_t i = 0; i < schema->Count(); ++i) {
+            const auto entry = schema->At(i);
+            if (!entry || !entry->name) {
+                return MC_ERROR_PLUGIN;
+            }
+
+            const auto description = describeSetting(*entry);
+            std::string text;
+            const auto value = settings->ReadValue(entry->name, description.fallback, text);
+            if (description.choiceCount && !description.choices) {
+                return MC_ERROR_PLUGIN;
+            }
+
+            std::vector<mc_string_view> choices;
+            choices.reserve(description.choiceCount);
+            for (size_t index = 0; index < description.choiceCount; ++index) {
+                choices.emplace_back(pluginView(description.choices[index]));
+            }
+            const mc_plugin_setting row {
+                pluginView(entry->name), value, description.minimum, description.maximum,
+                description.precision, choices.data(), choices.size(),
+                entry->type == ISchema::Type::String && description.fallback.data.text.length != 0
+            };
+            read(data, &row);
+        }
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference_entry* entry) {
+    if (!entry || !ffi::valid_text(id, false) || !ffi::valid_preference_entries(entry, 1)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        const auto pluginId = pluginText(id);
+        const auto plugin = PluginFactory::Instance().QueryGuid(std::string(pluginId));
+        if (!plugin) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const auto schema = pluginSchema(pluginId);
+        if (!schema) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+
+        const auto key = pluginText(entry->key);
+        for (size_t i = 0; i < schema->Count(); ++i) {
+            const auto field = schema->At(i);
+            if (!field || !field->name) {
+                return MC_ERROR_PLUGIN;
+            }
+            if (field->name != key) {
+                continue;
+            }
+            if (!settingValueAllowed(describeSetting(*field), entry->value)) {
+                return MC_ERROR_INVALID_ARGUMENT;
+            }
+
+            const auto settings = Preferences::ForPlugin(plugin->Name());
+            auto stored = Preferences::EncodeValue(entry->value);
+            return settings->SetValues({ { std::string(key), std::move(stored) } }, true)
+                ? MC_OK
+                : MC_ERROR_IO;
+        }
+        return MC_ERROR_NOT_FOUND;
+    });
 }

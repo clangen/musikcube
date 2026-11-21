@@ -46,7 +46,6 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/output.hpp>
 #include <musikcore/support/Messages.h>
-#include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/version.h>
 
 #include <app/util/Hotkeys.h>
@@ -100,32 +99,46 @@ using EntryPtr = IScrollAdapter::EntryPtr;
 
 static const std::string arrow = "> ";
 
-static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
-    auto schema = std::make_shared<TSchema<>>();
+static std::vector<api::PreferenceField> advancedSettings(const api::Preferences& prefs) {
+    std::vector<api::PreferenceField> fields;
+    const auto addBool = [&](const std::string& key, bool fallback) {
+        fields.push_back({ key, prefs.GetBool(key, fallback) });
+    };
+    const auto addInt = [&](const std::string& key, int32_t fallback) {
+        fields.push_back({ key, prefs.GetInt(key, fallback),
+            static_cast<double>(std::numeric_limits<int32_t>::min()),
+            static_cast<double>(std::numeric_limits<int32_t>::max()) });
+    };
+    const auto addText = [&](const std::string& key, std::string_view fallback) {
+        api::PreferenceField field { key, prefs.GetString(key, fallback) };
+        field.allowEmpty = !fallback.empty();
+        fields.push_back(std::move(field));
+    };
+
 #ifndef DISABLE_UPDATE_CHECK
-    schema->AddBool(cube::prefs::keys::AutoUpdateCheck, false);
+    addBool(cube::prefs::keys::AutoUpdateCheck, false);
 #endif
 #ifdef ENABLE_MINIMIZE_TO_TRAY
-    schema->AddBool(cube::prefs::keys::MinimizeToTray, false);
-    schema->AddBool(cube::prefs::keys::StartMinimized, false);
+    addBool(cube::prefs::keys::MinimizeToTray, false);
+    addBool(cube::prefs::keys::StartMinimized, false);
 #endif
-    schema->AddBool(cube::prefs::keys::AutoHideCommandBar, false);
-    schema->AddInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
-    schema->AddBool(core::prefs::keys::RemoteLibraryIgnoreVersionMismatch, false);
-    schema->AddInt(core::prefs::keys::PlaybackTrackQueryTimeoutMs, 5000);
-    schema->AddBool(core::prefs::keys::AsyncTrackListQueries, true);
-    schema->AddBool(cube::prefs::keys::DisableRatingColumn, false);
-    schema->AddBool(cube::prefs::keys::DisableWindowTitleUpdates, cube::prefs::defaults::DisableWindowTitleUpdates);
-    schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());
-    schema->AddString(cube::prefs::keys::RatingNegativeChar, kEmptyStar.c_str());
-    schema->AddBool(core::prefs::keys::IndexerLogEnabled, false);
-    schema->AddInt(core::prefs::keys::IndexerThreadCount, DEFAULT_MAX_INDEXER_THREADS);
-    schema->AddInt(core::prefs::keys::IndexerTransactionInterval, 300);
-    schema->AddString(core::prefs::keys::AuddioApiToken, "");
-    schema->AddBool(core::prefs::keys::ResumePlaybackOnStartup, false);
-    schema->AddBool(core::prefs::keys::PiggyEnabled, false);
-    schema->AddString(core::prefs::keys::PiggyHostname, "localhost");
-    return schema;
+    addBool(cube::prefs::keys::AutoHideCommandBar, false);
+    addInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
+    addBool(core::prefs::keys::RemoteLibraryIgnoreVersionMismatch, false);
+    addInt(core::prefs::keys::PlaybackTrackQueryTimeoutMs, 5000);
+    addBool(core::prefs::keys::AsyncTrackListQueries, true);
+    addBool(cube::prefs::keys::DisableRatingColumn, false);
+    addBool(cube::prefs::keys::DisableWindowTitleUpdates, cube::prefs::defaults::DisableWindowTitleUpdates);
+    addText(cube::prefs::keys::RatingPositiveChar, kFilledStar);
+    addText(cube::prefs::keys::RatingNegativeChar, kEmptyStar);
+    addBool(core::prefs::keys::IndexerLogEnabled, false);
+    addInt(core::prefs::keys::IndexerThreadCount, DEFAULT_MAX_INDEXER_THREADS);
+    addInt(core::prefs::keys::IndexerTransactionInterval, 300);
+    addText(core::prefs::keys::AuddioApiToken, "");
+    addBool(core::prefs::keys::ResumePlaybackOnStartup, false);
+    addBool(core::prefs::keys::PiggyEnabled, false);
+    addText(core::prefs::keys::PiggyHostname, "localhost");
+    return fields;
 }
 
 static std::string getOutputDeviceName(const api::OutputConfiguration& output) {
@@ -141,7 +154,6 @@ SettingsLayout::SettingsLayout(
 , app(app)
 , musikcore(musikcore)
 , playback(musikcore.GetPlayback()) {
-    this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->UpdateServerAvailability();
     this->InitializeWindows();
 }
@@ -152,12 +164,12 @@ SettingsLayout::~SettingsLayout() {
 
 void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     if (cb == syncOnStartupCheckbox.get()) {
-        this->prefs->SetBool(core::prefs::keys::SyncOnStartup, checked);
-        this->prefs->Save();
+        this->prefs.SetBool(core::prefs::keys::SyncOnStartup, checked);
+        this->prefs.Save();
     }
     else if (cb == removeCheckbox.get()) {
-        this->prefs->SetBool(core::prefs::keys::RemoveMissingFiles, checked);
-        this->prefs->Save();
+        this->prefs.SetBool(core::prefs::keys::RemoveMissingFiles, checked);
+        this->prefs.Save();
     }
     else if (cb == dotfileCheckbox.get()) {
         this->localLibraryLayout->ToggleShowDotFiles();
@@ -172,12 +184,12 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     }
     else if (cb == enableTransparencyCheckbox.get()) {
         auto bgType = checked ? Colors::Inherit : Colors::Theme;
-        prefs->SetBool(cube::prefs::keys::InheritBackgroundColor, checked);
+        prefs.SetBool(cube::prefs::keys::InheritBackgroundColor, checked);
         app.SetColorBackgroundType(bgType);
     }
 #endif
     else if (cb == saveSessionCheckbox.get()) {
-        this->prefs->SetBool(core::prefs::keys::SaveSessionOnExit, checked);
+        this->prefs.SetBool(core::prefs::keys::SaveSessionOnExit, checked);
     }
 }
 
@@ -249,13 +261,21 @@ void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
 void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
     SchemaOverlay::Show(
         _TSTR("settings_advanced_settings"),
-        this->prefs,
-        AdvancedSettingsSchema(),
+        advancedSettings(this->prefs),
+        [this](std::string_view key, const api::PreferenceValue& value) {
+            try {
+                this->prefs.Write({ std::visit([key](const auto& item) { return api::Preference(key, item); }, value) });
+                return this->prefs.Save();
+            }
+            catch (const api::Error& error) {
+                return error.Result();
+            }
+        },
         [this](bool) {
             auto prefs = this->prefs;
             namespace keys = cube::prefs::keys;
-            this->app.SetMinimizeToTray(prefs->GetBool(keys::MinimizeToTray, false));
-            const bool autoHideCommandBar = prefs->GetBool(keys::AutoHideCommandBar, false);
+            this->app.SetMinimizeToTray(prefs.GetBool(keys::MinimizeToTray, false));
+            const bool autoHideCommandBar = prefs.GetBool(keys::AutoHideCommandBar, false);
             dynamic_cast<AppLayout*>(this->app.GetLayout().get())->SetAutoHideCommandBar(autoHideCommandBar);
             updateDefaultRatingSymbols();
         });
@@ -538,15 +558,15 @@ void SettingsLayout::OnRemovedFromParent(IWindow* parent) {
 }
 
 void SettingsLayout::LoadPreferences() {
-    this->syncOnStartupCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SyncOnStartup, true));
-    this->removeCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
+    this->syncOnStartupCheckbox->SetChecked(this->prefs.GetBool(core::prefs::keys::SyncOnStartup, true));
+    this->removeCheckbox->SetChecked(this->prefs.GetBool(core::prefs::keys::RemoveMissingFiles, true));
 
     /* locale */
     this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + i18n::Locale::Instance().GetSelectedLocale());
 
     /* color theme */
-    const bool disableCustomColors = this->prefs->GetBool(cube::prefs::keys::DisableCustomColors);
-    std::string colorTheme = this->prefs->GetString(cube::prefs::keys::ColorTheme);
+    const bool disableCustomColors = this->prefs.GetBool(cube::prefs::keys::DisableCustomColors);
+    std::string colorTheme = this->prefs.GetString(cube::prefs::keys::ColorTheme);
 
     if (colorTheme == "" && !disableCustomColors) {
         colorTheme = _TSTR("settings_default_theme_name");
@@ -561,14 +581,14 @@ void SettingsLayout::LoadPreferences() {
 
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->CheckChanged.disconnect(this);
-    this->paletteCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::UsePaletteColors, true));
+    this->paletteCheckbox->SetChecked(this->prefs.GetBool(cube::prefs::keys::UsePaletteColors, true));
     this->paletteCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 
-    this->enableTransparencyCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::InheritBackgroundColor, false));
+    this->enableTransparencyCheckbox->SetChecked(this->prefs.GetBool(cube::prefs::keys::InheritBackgroundColor, false));
     this->enableTransparencyCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 #endif
 
-    this->saveSessionCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SaveSessionOnExit, true));
+    this->saveSessionCheckbox->SetChecked(this->prefs.GetBool(core::prefs::keys::SaveSessionOnExit, true));
 
     /* output driver */
     const auto output = api::ReadOutputConfiguration();

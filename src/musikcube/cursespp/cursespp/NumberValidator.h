@@ -38,6 +38,9 @@
 #include <cursespp/InputOverlay.h>
 #include <musikcore/utfutil.h>
 #include <musikcore/i18n/Locale.h>
+#include <cmath>
+#include <limits>
+#include <stdexcept>
 
 namespace cursespp {
 
@@ -51,15 +54,16 @@ namespace cursespp {
 
         bool IsValid(const std::string& input) const override {
             try {
-                double result = std::stod(input);
-                if (bounded(minimum, maximum) && (result < minimum || result > maximum)) {
-                    return false;
-                }
+                size_t consumed = 0;
+                const auto result = std::stod(input, &consumed);
+                return consumed == input.size() && std::isfinite(result) && result >= minimum && result <= maximum;
             }
-            catch (std::invalid_argument) {
+            catch (const std::invalid_argument&) {
                 return false;
             }
-            return true;
+            catch (const std::out_of_range&) {
+                return false;
+            }
         }
 
         const std::string ErrorMessage() const override {

@@ -1177,6 +1177,10 @@ legacy list for actions that still require it.
   Server settings use a typed snapshot and configuration call.
   The managed runtime test checks the real plugin with both listeners disabled,
   and `musikcube.ui.browse` opens the original server setup overlay.
+  Cube lists plugins and edits exposed settings through the public catalog.
+  The managed runtime test verifies enablement and schema validation.
+  `musikcube.ui.browse` edits the Null plugin's sample rate and opens advanced
+  application settings using the same overlay.
 - [ ] **MIG-009** Remove private musikcore headers from musikcube targets.
 - [ ] **MIG-010** Make the normal migration build link ABI0 only.
   `musikcore.integration.api.managed_runtime` starts production services

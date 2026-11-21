@@ -1,5 +1,6 @@
 #include <musikcore/musikcore.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
@@ -138,6 +139,43 @@ namespace {
         return ConfigureServer(updated) == MC_ERROR_INVALID_ARGUMENT;
     }
 
+    bool checkPluginSettings() {
+        static constexpr char nullPlugin[] = "Null IOutput";
+        static constexpr char sampleRate[] = "default_sample_rate";
+        constexpr int32_t configuredRate = 44100;
+
+        const auto catalog = ListPlugins();
+        const auto null = std::ranges::find_if(catalog, [](const auto& plugin) {
+            return plugin.name == nullPlugin;
+        });
+        if (null == catalog.end() || !null->enabled ||
+            SetPluginEnabled(null->filename, false) != MC_OK)
+        {
+            return false;
+        }
+        const auto disabled = ListPlugins();
+        const auto disabledPlugin = std::ranges::find_if(disabled,
+            [&](const auto& plugin) { return plugin.filename == null->filename; });
+        if (disabledPlugin == disabled.end() || disabledPlugin->enabled ||
+            SetPluginEnabled(null->filename, true) != MC_OK)
+        {
+            return false;
+        }
+
+        if (WritePluginSetting(null->id, sampleRate, configuredRate) != MC_OK ||
+            WritePluginSetting(null->id, sampleRate, int32_t { -1 }) != MC_ERROR_INVALID_ARGUMENT)
+        {
+            return false;
+        }
+        const auto schema = ReadPluginSettings(null->id);
+        if (!schema) {
+            return false;
+        }
+        const auto setting = std::ranges::find_if(*schema, [](const auto& field) { return field.key == sampleRate; });
+        return setting != schema->end() && std::holds_alternative<int32_t>(setting->value) &&
+            std::get<int32_t>(setting->value) == configuredRate;
+    }
+
     bool checkRuntime(
         const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer)
     {
@@ -208,6 +246,10 @@ int main(int argc, char** argv) {
     }
 
     Host host;
+    if (!checkPluginSettings()) {
+        std::fputs("Plugin metadata or schema setting did not round trip through the public API\n", stderr);
+        return 1;
+    }
     bool equalizer = false;
     bool server = false;
     for (int i = 1; i < argc; ++i) {
