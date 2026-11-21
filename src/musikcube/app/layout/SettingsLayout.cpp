@@ -44,6 +44,7 @@
 #include <cursespp/AppLayout.h>
 
 #include <musikcore/output.hpp>
+#include <musikcore/locale.hpp>
 #include <musikcore/sdk/version.h>
 
 #include <app/util/Hotkeys.h>
@@ -62,9 +63,7 @@
 
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::audio;
 using namespace musik::core::sdk;
-using namespace musik::core::net;
 using namespace musik::cube;
 using namespace cursespp;
 
@@ -560,7 +559,7 @@ void SettingsLayout::LoadPreferences() {
     this->removeCheckbox->SetChecked(this->prefs.GetBool(MC_PREFERENCE_KEY_REMOVE_MISSING_FILES, true));
 
     /* locale */
-    this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + i18n::Locale::Instance().GetSelectedLocale());
+    this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + musik::core::api::ReadSelectedLocale());
 
     /* color theme */
     const bool disableCustomColors = this->prefs.GetBool(cube::prefs::keys::DisableCustomColors);

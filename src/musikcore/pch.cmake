@@ -11,8 +11,6 @@ target_precompile_headers(musikcore
     "$<$<COMPILE_LANGUAGE:CXX>:<string$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<nlohmann/json.hpp$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<sigslot/sigslot.h$<ANGLE-R>>"
-
-  PUBLIC
     "$<$<COMPILE_LANGUAGE:CXX>:config.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:i18n/Locale.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:audio/Buffer.h>"

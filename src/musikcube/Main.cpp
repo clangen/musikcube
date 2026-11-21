@@ -56,7 +56,6 @@
 #include <app/util/Locale.h>
 #include <musikcore/indexer.hpp>
 #include <musikcore/sdk/constants.h>
-#include <musikcore/support/Common.h>
 
 #ifdef WIN32
 #include <cursespp/Win32Util.h>
@@ -65,8 +64,6 @@
 
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::net;
 using namespace musik::cube;
 using namespace cursespp;
 

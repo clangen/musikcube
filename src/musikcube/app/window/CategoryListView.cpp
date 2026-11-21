@@ -50,7 +50,6 @@
 #include "CategoryListView.h"
 
 using namespace musik::core;
-using namespace musik::core::db;
 using namespace musik::core::runtime;
 using namespace musik::cube;
 using namespace cursespp;

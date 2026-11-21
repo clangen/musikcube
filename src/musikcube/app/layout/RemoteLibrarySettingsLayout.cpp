@@ -47,7 +47,6 @@
 
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::library;
 using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;

@@ -50,14 +50,11 @@
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/MagicConstants.h>
-#include <musikcore/support/Playback.h>
 
 #include "LibraryLayout.h"
 
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::library;
 using namespace musik::cube;
 using namespace musik::core::runtime;
 using namespace cursespp;

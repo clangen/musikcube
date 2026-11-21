@@ -46,7 +46,6 @@
 using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
-using namespace musik::core::db;
 
 static const int kDefaultSortOverlayWidth = 32;
 static const int kDefaultRatingOverlayWidth = 24;

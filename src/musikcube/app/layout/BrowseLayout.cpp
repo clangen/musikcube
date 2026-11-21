@@ -53,8 +53,6 @@
 
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;
 
@@ -389,7 +387,7 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (
-        this->categoryList->GetFieldName() != musik::core::sdk::category::Playlist &&
+        this->categoryList->GetFieldName() != MC_LIBRARY_CATEGORY_PLAYLISTS &&
         Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key))
     {
         this->ShowTrackSortOverlay();

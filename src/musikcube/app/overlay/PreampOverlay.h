@@ -36,7 +36,6 @@
 
 #include <functional>
 
-#include <musikcore/sdk/IPlugin.h>
 #include <musikcore/playback.hpp>
 
 #include <cursespp/Checkbox.h>

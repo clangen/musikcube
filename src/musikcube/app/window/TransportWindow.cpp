@@ -45,7 +45,6 @@
 #include <common/Duration.h>
 
 #include <common/runtime/Message.h>
-#include <musikcore/support/Playback.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -60,9 +59,6 @@
 #include <map>
 
 using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::library;
-using namespace musik::core::db;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::cube;

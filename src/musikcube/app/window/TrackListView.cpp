@@ -53,7 +53,6 @@ static constexpr int kTrackPagePollIntervalMs = 2;
 static constexpr int kTrackPageRetryMs = 25;
 
 using namespace musik::core;
-using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 using namespace musik::cube;

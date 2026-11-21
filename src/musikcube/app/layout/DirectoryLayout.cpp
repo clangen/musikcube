@@ -49,8 +49,6 @@ namespace fs = std::filesystem;
 
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;
 

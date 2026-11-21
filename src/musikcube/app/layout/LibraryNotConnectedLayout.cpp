@@ -45,7 +45,6 @@
 
 using namespace musik::cube;
 using namespace musik::core;
-using namespace musik::core::net;
 using namespace cursespp;
 
 static inline std::string resolveErrorMessage(const api::LibraryStatus& library) {

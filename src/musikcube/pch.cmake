@@ -9,8 +9,6 @@ target_precompile_headers(musikcube
     "$<$<COMPILE_LANGUAGE:CXX>:<thread$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<cmath$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<string$<ANGLE-R>>"
-
-  PUBLIC
     "$<$<COMPILE_LANGUAGE:CXX>:<asio/basic_socket_streambuf.hpp$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<musikcore/utfutil.h$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<musikcore/support/DeleteDefaults.h$<ANGLE-R>>"

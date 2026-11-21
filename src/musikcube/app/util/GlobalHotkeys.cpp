@@ -41,10 +41,8 @@
 #include <app/overlay/VisualizerOverlay.h>
 
 #include <musikcore/visualizer.hpp>
-#include <musikcore/support/Playback.h>
 
 using namespace musik::core;
-using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::cube;
 

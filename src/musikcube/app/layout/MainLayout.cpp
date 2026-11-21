@@ -42,7 +42,6 @@
 #include <cursespp/ToastOverlay.h>
 
 #include <common/runtime/Message.h>
-#include <musikcore/support/Auddio.h>
 #include <musikcore/sdk/version.h>
 
 #include <app/util/Messages.h>
@@ -63,7 +62,6 @@
 using namespace musik;
 using namespace musik::cube;
 using namespace musik::core;
-using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace cursespp;
 

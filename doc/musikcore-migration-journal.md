@@ -126,3 +126,7 @@ Duration formatting is shared source and linked locally. Cube opens HTTP(S) link
 ## Online features
 
 Lyrics lookup and Last.fm registration use the context dispatcher and the existing HTTP implementations. The views no longer post private completion messages or receive callbacks from network workers. Last.fm error responses now complete the request, and linked credentials persist together. All 47 Linux Release tests passed, including unconfigured lyrics lookup and headless Last.fm dialog navigation. Live account authorization was outside the isolated fixture.
+
+## Frontend linkage
+
+Core's precompiled headers are private to its build. Cube drops legacy playback, database, networking, and plugin implementation headers. The rebuilt Linux executable has no dynamic imports from the private C++ core. All 47 Linux Release tests passed through the rebuilt frontend.
