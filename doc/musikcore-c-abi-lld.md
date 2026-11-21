@@ -623,8 +623,33 @@ release-candidate quality.
   `musikcore.abi.remote_query_transport` verifies that search results can
   replace the playback queue and that switching libraries invalidates old
   playback references.
-- [ ] Migrate remaining app bootstrap and playback selection to public library
-  ownership.
+- [x] Put library selection on the public context. App views submit reads
+  through that context. `musikcore.abi.library_switch` verifies that
+  changing and clearing the selection preserve previously opened identities.
+- [x] Attach playback before constructing the app's views. The views borrow
+  the context. `musikcore.abi.remote_query_transport` verifies that handles
+  opened through the context operate on the same playback queue.
+- [x] Drive app selection, status, and notifications through the SDK context.
+  `musikcore.abi.remote_query_transport` verifies selection and notification
+  across local/remote switches and reconnects.
+- [ ] Retire the core `MasterLibrary` adapter once playback and plugins no
+  longer consume the legacy `ILibrary` interface.
+- [x] Query category rows through the context and insert category or directory
+  results through public playback. `musikcore.integration.api.backend_parity`
+  covers category queries. `musikcore.abi.remote_query_transport` covers
+  ordered insertion and stale origin rejection.
+- [x] Route cube indexer events and single-track and album actions through
+  public operations. Remove the private backend resolver.
+  `musikcube.ui.browse` verifies album insertion and category discovery
+  through the TUI.
+- [x] Pass one public library handle to Browse, Directory, Track Search and
+  Now Playing track lists. Browse playlist writes and track rating use the
+  public API. `musikcore.integration.api.backend_parity` covers rating
+  writes in both directions and rejects writes from a stale connection.
+  `musikcore.abi.remote_query_transport` checks hot swap origin validation.
+  Album-divider Play and Add use a generation-bound category result.
+  `musikcube.ui.browse` exercises album queue insertion, and
+  `musikcore.abi.remote_query_transport` holds an album reply across a reconnect.
 
 ## Foundation validation and baselines
 
@@ -1068,13 +1093,19 @@ legacy list for actions that still require it.
   track view. The indexed-query and loopback tests cover order and headers.
 - [ ] **PUB-003** Add coherent playback snapshots.
   The transport control surface reads state, position, duration, volume,
-  and mute through `mc_playback_get_snapshot`. Queue and current-track
-  identity still use the legacy service.
+  and mute through `mc_playback_get_snapshot`. Category and track lists use
+  `mc_playback_get_current_track` with dispatcher notifications. The
+  `musikcore.integration.api.production.playback_commands` test checks the
+  current track while prepared, playing, paused, and stopped.
 - [ ] **PUB-004** Add playback commands and ordered state events.
   The app's transport keys and controls use `mc_playback_control`.
   `musikcore.abi.indexed_query` exercises the bound service with a fake
   transport, including play now, play next, append, prepend, and rejection
-  after switching libraries. Ordered playback events remain open.
+  after switching libraries. Live playback subscriptions deliver one event
+  kind per callback on the owner thread with optional filters and coalescing
+  of repeated kinds. `musikcore.integration.api.production.playback_commands`
+  covers independent subscribers, filter ownership, cross-thread replacement
+  and unsubscription, in-flight delivery, and scoped teardown.
 - [ ] **PUB-005** Add queue snapshots and atomic batch edits.
   Move, remove, and clear commands power the Now Playing keyboard editor.
   Track Search inserts tracks through origin-bound references. Now Playing
@@ -1095,10 +1126,15 @@ legacy list for actions that still require it.
   playlist picker and typed save or append commands. The indexed-query test
   verifies that an ordered append keeps duplicates and leaves prior rows in place.
   Atomic batch edits are deferred beyond parity.
-- [ ] **PUB-006** Add indexer paths, commands, snapshots, progress, and terminal
-  events.
+- [x] **PUB-006** Add local indexer paths, scan commands, state, progress, and
+  terminal events. `musikcore.abi.remote_query_transport` verifies local path
+  editing and scan notifications while a remote catalog is selected.
 - [ ] **PUB-007** Add output selection, replay gain, equalizer, and transport
   settings required by musikcube.
+  Cube reloads output through `mc_playback_control` and reads replay-gain
+  availability from the playback snapshot. The
+  `musikcore.integration.api.production.playback_commands` test verifies
+  both against the engine boundary.
 - [ ] **PUB-008** Add advanced consumer stream/decoder/encoder APIs only for
   approved use cases.
 - [ ] **PUB-009** Add contract and integration tests with every public feature
@@ -1108,7 +1144,8 @@ legacy list for actions that still require it.
 - [ ] **MIG-004** Migrate remaining library/category/directory views.
 - [ ] **MIG-005** Migrate playback and transport consumers.
 - [ ] **MIG-006** Migrate queue editing and now-playing consumers.
-- [ ] **MIG-007** Migrate indexer and local-library settings.
+- [x] **MIG-007** Migrate indexer and local-library settings. Cube uses the SDK
+  for indexer commands, directory paths, and dispatch notifications.
 - [ ] **MIG-008** Migrate environment/output/equalizer consumers.
 - [ ] **MIG-009** Remove private musikcore headers from musikcube targets.
 - [ ] **MIG-010** Make the normal migration build link ABI0 only.
@@ -1243,7 +1280,7 @@ legacy list for actions that still require it.
 
 | Bridge | Remove when |
 | --- | --- |
-| `src/musikcore/ffi/consumer/library-binding.h` and `legacy-library-binding.cpp`, plus `MasterLibrary::OpenApiLibrary()` | The public library API creates and owns local and remote backends directly. Retained requests, results, and references must still preserve their originating backend and connection generation. |
+| `src/musikcore/ffi/consumer/legacy-library-selection.*`, `library-binding.h` and `legacy-library-binding.cpp`, plus `MasterLibrary::OpenApiLibrary()` | The public library API creates and owns local and remote backends directly. The app now receives its selection through the context. `musikcore.abi.remote_query_transport` covers context selection on switch, disconnect, and reconnect. Retained requests, results, and references must still preserve their originating backend and connection generation. |
 | `src/musikcore/ffi/consumer/playback-binding.h` and `legacy-playback-binding.cpp`, plus the friendship and lifetime token in `PlaybackService` | The public playback API creates and owns the session directly. Carry forward the owner-thread rules, queue origin checks, and dispatcher notifications. |
 | `TrackListView::GetTrackList()` and legacy track and playlist action overlays | Hot-swap, playlist drafts, and the remaining overlays can consume ordered results and track references directly. |
 
@@ -1254,8 +1291,8 @@ legacy list for actions that still require it.
 
 ## Active next steps
 
-1. Resolve `FND-WINDOWS`, `FND-LINUX`, and `GATE-FOUNDATION` before extending the
-   current surface. Preserve the user's separate-session Linux deferral.
+1. Move app selection and playback from `MasterLibrary` to the public library
+   selector. Finish native Windows acceptance before release.
 2. Finish the core application API and its real consumers: the remaining
    runtime/query gaps, `PUB-*`, `CPP-003`, and `MIG-003` through `MIG-010`.
    Remove temporary bindings only when public ownership replaces them.

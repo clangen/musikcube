@@ -475,6 +475,16 @@ invalidate the old generation. Requests, results, and track references retain
 their origin after the caller releases its library handle. The public C example
 `examples/core-remote.c` connects and runs an ordered track search.
 
+The context retains its active catalog. A query can use that selection or an
+explicit library handle. Both capture the library identity at submission.
+Reading the selection returns an owned handle. Switching or clearing the
+selection leaves previously accepted requests and results bound to their
+original catalog.
+
+An application context supplies playback on the engine's owner thread.
+Playback handles borrow that engine and have independent notification
+subscriptions. The app keeps the engine alive until the context is destroyed.
+
 The standalone local reader opens `musik.db` through a read-only SQLite
 connection. Its direct query pages contain visible tracks in ascending ID order. Search
 matches a literal case-sensitive title substring. By default, request up to 64 field
