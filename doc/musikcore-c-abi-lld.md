@@ -1196,6 +1196,8 @@ legacy list for actions that still require it.
   Cube now starts those services through the same public context option.
   `musikcore.integration.api.managed_remote` covers local/remote switching
   and same-endpoint reconnection through that startup path.
+  `musikcore.integration.api.remote_audio` exercises the real loopback server,
+  HTTP stream, decoder, and headless output on Linux.
 
 #### Phase 7 gate
 

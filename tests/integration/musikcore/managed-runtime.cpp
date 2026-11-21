@@ -1,12 +1,17 @@
 #include <musikcore/musikcore.hpp>
+#include <asio/io_context.hpp>
+#include <asio/ip/tcp.hpp>
 
 #include <algorithm>
 #include <atomic>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
 #include <mutex>
+#include <random>
 #include <thread>
 
 namespace {
@@ -142,6 +147,73 @@ namespace {
         return ConfigureServer(updated) == MC_ERROR_INVALID_ARGUMENT;
     }
 
+    bool configureLoopbackAudio() {
+        auto configuration = ReadServerConfiguration();
+        if (!configuration) {
+            return false;
+        }
+
+        /* Ask the kernel for distinct ports so tests can run concurrently. */
+        asio::io_context sockets;
+        using Tcp = asio::ip::tcp;
+        const Tcp::endpoint loopback(asio::ip::address_v4::loopback(), 0);
+        Tcp::acceptor metadata(sockets, loopback);
+        Tcp::acceptor audio(sockets, loopback);
+        configuration->metadataPort = metadata.local_endpoint().port();
+        configuration->audioPort = audio.local_endpoint().port();
+        configuration->metadataEnabled = true;
+        configuration->audioEnabled = true;
+        configuration->password = std::to_string(std::random_device{}());
+        metadata.close();
+        audio.close();
+
+        auto settings = Preferences { MC_PREFERENCE_SETTINGS };
+        if (ConfigureServer(*configuration) != MC_OK) {
+            return false;
+        }
+        settings.Write({
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HOSTNAME, "127.0.0.1"),
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT, static_cast<int32_t>(configuration->metadataPort)),
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_PORT, static_cast<int32_t>(configuration->audioPort)),
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD, configuration->password),
+            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_VIEWED, true)
+        });
+        return true;
+    }
+
+    bool checkRemoteAudio(Context& context, Host& host, Playback& playback) {
+        if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK ||
+            !waitFor(context, host, [&] { return context.GetLibraryStatus().state == MC_LIBRARY_CONNECTED; }))
+        {
+            std::fputs("Could not connect to the local server plugin\n", stderr);
+            return false;
+        }
+
+        TrackResult remoteTrack;
+        std::optional<mc_result> opened;
+        OpenTrackSearch(context, TrackSearch { "Morning Light" },
+            [&](mc_result status, TrackResult result, std::string_view) {
+                opened = status;
+                remoteTrack = std::move(result);
+            });
+        if (!waitFor(context, host, [&] { return opened.has_value(); }) ||
+            opened != MC_OK || remoteTrack.Size() != 1 || playback.Play(remoteTrack, 0) != MC_OK)
+        {
+            std::fputs("Could not start the remote track\n", stderr);
+            return false;
+        }
+
+        /* Position advances only when decoded audio reaches the Null output. */
+        if (!waitFor(context, host, [&] {
+            const auto snapshot = playback.Snapshot();
+            return snapshot && snapshot->state == MC_PLAYBACK_PLAYING && snapshot->position > 0;
+        })) {
+            std::fputs("Remote HTTP audio did not reach the headless output\n", stderr);
+            return false;
+        }
+        return true;
+    }
+
     bool checkPluginSettings() {
         static constexpr char nullPlugin[] = "Null IOutput";
         static constexpr char sampleRate[] = "default_sample_rate";
@@ -198,7 +270,7 @@ namespace {
     };
 
     bool checkRuntime(
-        const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer, LogProbe& log)
+        const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer, bool remoteAudio, LogProbe& log)
     {
         TrackResult tracks;
         mc_result complete = MC_ERROR_BUSY;
@@ -284,7 +356,7 @@ namespace {
             return false;
         }
 
-        return context.Shutdown() == MC_OK;
+        return (!remoteAudio || checkRemoteAudio(context, host, playback)) && context.Shutdown() == MC_OK;
     }
 }
 
@@ -324,14 +396,21 @@ int main(int argc, char** argv) {
     }
     bool equalizer = false;
     bool server = false;
+    bool remoteAudio = false;
     for (int i = 1; i < argc; ++i) {
         const std::string_view option(argv[i]);
         equalizer |= option == "--check-equalizer";
         server |= option == "--check-server";
+        remoteAudio |= option == "--check-remote-audio";
     }
     /* Persist disabled listeners before starting the isolated plugin runtime. */
     if (!checkServerConfiguration(server)) {
         std::fputs("Server configuration did not round trip through the public API\n", stderr);
+        return 1;
+    }
+
+    if (remoteAudio && !configureLoopbackAudio()) {
+        std::fputs("Could not configure the loopback server\n", stderr);
         return 1;
     }
 
@@ -343,8 +422,20 @@ int main(int argc, char** argv) {
     options.wakeup = Host::Wake;
     options.wakeup_user_data = &host;
     std::optional<Library> oldLibrary;
-    if (!checkRuntime(options, host, oldLibrary, equalizer, log)) {
+    if (!checkRuntime(options, host, oldLibrary, equalizer, remoteAudio, log)) {
         return 1;
+    }
+
+    if (remoteAudio) {
+        std::ifstream logFile(std::filesystem::u8path(ReadPath(MC_PATH_DATA) + "log.txt"));
+        const std::string recorded(std::istreambuf_iterator<char>(logFile), {});
+        if (recorded.find("musikcore://remote-track/[redacted]") == std::string::npos ||
+            recorded.find(R"("password":)") != std::string::npos)
+        {
+            std::fputs("Remote playback logs did not redact the URI payload\n", stderr);
+            return 1;
+        }
+        return 0;
     }
 
     /* A retained catalog pins its closed backend safely across runtime restart. */

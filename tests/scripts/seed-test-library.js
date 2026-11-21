@@ -68,8 +68,8 @@ function id3Tag(album, track) {
   return Buffer.concat([header, payload]);
 }
 
-/* Generate a silent one-second WAV in memory with RIFF and ID3 tags read by the production indexer. */
-function wave({ title, artist, album, genre, track }) {
+/* Generate a silent WAV in memory with RIFF and ID3 tags read by the production indexer. */
+function wave({ title, artist, album, genre, track }, seconds) {
   const format = Buffer.alloc(16);
   format.writeUInt16LE(1, 0);
   format.writeUInt16LE(1, 2);
@@ -89,19 +89,19 @@ function wave({ title, artist, album, genre, track }) {
   ]);
   return chunk('RIFF', Buffer.concat([
     Buffer.from('WAVE'), chunk('fmt ', format), chunk('LIST', info),
-    chunk('ID3 ', id3Tag(album, track)), chunk('data', Buffer.alloc(16000)),
+    chunk('ID3 ', id3Tag(album, track)), chunk('data', Buffer.alloc(16000 * seconds)),
   ]));
 }
 
 /* Write either the small named contract fixture or a larger deterministic artist/album catalog. */
-function writeMedia(media, count) {
+function writeMedia(media, count, seconds) {
   if (count === 2) {
     writeFileSync(join(media, '01-morning.wav'), wave({
       title: 'Morning Light', artist: 'Fixture Artist', album: 'Fixture Album', genre: 'Ambient', track: 1,
-    }));
+    }, seconds));
     writeFileSync(join(media, '02-evening.wav'), wave({
       title: 'Evening Flight', artist: 'Fixture Artist', album: 'Fixture Album', genre: 'Electronic', track: 2,
-    }));
+    }, seconds));
     return;
   }
 
@@ -119,7 +119,7 @@ function writeMedia(media, count) {
       const track = i - start + 1;
       const title = `${album} - Track ${String(track).padStart(2, '0')}`;
       writeFileSync(join(directory, `${String(track).padStart(2, '0')}.wav`),
-        wave({ title, artist, album, genre, track }));
+        wave({ title, artist, album, genre, track }, seconds));
     }
   }
 }
@@ -140,6 +140,7 @@ function main() {
   const { values, positionals: [buildDir, ...extra] } = parseArgs({
     options: {
       tracks: { type: 'string', default: '2' },
+      seconds: { type: 'string', default: '1' },
       indexer: { type: 'string' },
       'fixture-dir': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
@@ -147,7 +148,7 @@ function main() {
     allowPositionals: true,
   });
   if (values.help) {
-    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
+    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--seconds <duration>] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
     return;
   }
 
@@ -155,6 +156,11 @@ function main() {
   const count = Number(values.tracks);
   if (!/^\d+$/.test(values.tracks) || !Number.isSafeInteger(count) || count < 1) {
     throw new Error('--tracks requires a positive integer.');
+  }
+
+  const seconds = Number(values.seconds);
+  if (!/^\d+$/.test(values.seconds) || !Number.isInteger(seconds) || seconds < 1 || seconds > 30) {
+    throw new Error('--seconds requires an integer from 1 to 30.');
   }
 
   /* An explicitly supplied indexer is already built by its caller (CTest or
@@ -166,7 +172,7 @@ function main() {
     run('cmake', ['--build', build, '--config', config, '--target', 'musikcube_seed_library']);
   }
 
-  /* Give the legacy indexer a fresh config root and deterministic local media. */
+  /* Give the indexer a fresh config root and deterministic local media. */
   const fixtures = values['fixture-dir'] ? resolve(values['fixture-dir']) : join(build, 'tests', 'bin', 'library-fixtures');
   mkdirSync(fixtures, { recursive: true });
   const root = mkdtempSync(join(fixtures, 'library-'));
@@ -174,7 +180,7 @@ function main() {
   mkdirSync(media);
 
   console.log(`Generating ${count} fixture tracks under ${root}`);
-  writeMedia(media, count);
+  writeMedia(media, count, seconds);
 
   /* Stage plugins and redirect preferences before starting production code so
      indexing cannot discover user paths or unrelated installed audio plugins. */

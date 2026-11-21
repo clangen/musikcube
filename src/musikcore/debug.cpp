@@ -40,6 +40,7 @@
 #include <musikcore/support/Common.h>
 #include <functional>
 #include <string>
+#include <string_view>
 #include <queue>
 #include <thread>
 #include <mutex>
@@ -69,11 +70,8 @@ enum class debug_level {
 class log_queue {
     public:
         struct log_entry {
-            log_entry(debug_level l, const std::string& t, const std::string& m) {
-                level = l;
-                tag = t;
-                message = m;
-            }
+            log_entry(debug_level level, const std::string& tag, std::string message)
+                : level(level), tag(tag), message(std::move(message)) {}
 
             debug_level level;
             std::string tag;
@@ -215,15 +213,23 @@ void musik::debug::Shutdown() {
 }
 
 static void enqueue(debug_level level, const std::string& tag, const std::string& string) noexcept {
+    static constexpr std::string_view remoteTrackPrefix = "musikcore://remote-track/";
+    const auto remoteTrack = string.find(remoteTrackPrefix);
+
     try {
         std::unique_lock<std::recursive_mutex> lock(mutex);
 
         if (queue) {
-            queue->push(new log_queue::log_entry(level, tag, string));
+            /* A remote track URI embeds its server credentials in the payload. */
+            auto text = remoteTrack == std::string::npos
+                ? string
+                : string.substr(0, remoteTrack + remoteTrackPrefix.size()) + "[redacted]";
+            queue->push(new log_queue::log_entry(level, tag, std::move(text)));
         }
     }
     catch (...) {
-        fprintf(stderr, "[%d] [%s] %s", static_cast<int>(level), tag.c_str(), string.c_str());
+        fprintf(stderr, "[%d] [%s] %s", static_cast<int>(level), tag.c_str(),
+            remoteTrack == std::string::npos ? string.c_str() : "[redacted remote track URI]");
     }
 }
 

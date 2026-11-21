@@ -1,6 +1,9 @@
 # Index generated media so these cases cover production tag readers and schema,
 # rather than only the small hand-written databases in API tests.
-execute_process(COMMAND "${NODE}" "${SEED_SCRIPT}" --indexer "${INDEXER}" "${BUILD_DIR}"
+if(DEFINED HTTP_DATASTREAM_PLUGIN)
+  set(seed_duration --seconds 4)
+endif()
+execute_process(COMMAND "${NODE}" "${SEED_SCRIPT}" ${seed_duration} --indexer "${INDEXER}" "${BUILD_DIR}"
   RESULT_VARIABLE status OUTPUT_VARIABLE output ERROR_VARIABLE error
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 if(NOT status STREQUAL "0")
@@ -31,6 +34,10 @@ elseif(DEFINED MANAGED_RUNTIME_TEST)
   if(DEFINED SERVER_PLUGIN)
     list(APPEND managed_runtime_plugins --plugin "${SERVER_PLUGIN}")
     list(APPEND managed_runtime_options --check-server)
+  endif()
+  if(DEFINED HTTP_DATASTREAM_PLUGIN)
+    list(APPEND managed_runtime_plugins --plugin "${HTTP_DATASTREAM_PLUGIN}")
+    list(APPEND managed_runtime_options --check-remote-audio)
   endif()
   execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
     "${BUILD_DIR}/tests/bin/isolated" "${MANAGED_RUNTIME_TEST}" --stage

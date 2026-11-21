@@ -144,3 +144,7 @@ The seeder starts the public managed context, waits on public indexer callbacks,
 ## Linux search benchmark
 
 A 20-run benchmark used the installed Linux Release app and 30,000 tracks. Median and p95 in milliseconds were open 85.3/85.5, filter 380.7/380.9, next viewport 0.7/1.0, warm return 0.3/0.4, and cold jump 4.6/4.7. Median CPU stayed at 70 ms and median peak RSS was 32,620 KiB, 396 KiB above the historical paged run. Each benchmark launch resets the saved sort choice so earlier runs cannot change the fixture.
+
+## Loopback audio
+
+The Linux loopback test starts the real server, selects the remote catalog, and plays an indexed WAV through the HTTP stream and Null output. It checks that playback position advances. It also verifies that the log records the remote stream without its credential-bearing URI payload. All 50 Linux Release tests passed.

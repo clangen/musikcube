@@ -157,6 +157,15 @@ if(BUILD_TESTING)
         "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
       set_tests_properties(musikcore.integration.api.managed_runtime PROPERTIES
         LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
+      if(TARGET server AND TARGET httpdatastream)
+        add_dependencies(musikcore_managed_runtime_test httpdatastream)
+        add_test(NAME musikcore.integration.api.remote_audio COMMAND "${CMAKE_COMMAND}"
+          ${indexed_arguments} "-DMANAGED_RUNTIME_TEST=$<TARGET_FILE:musikcore_managed_runtime_test>"
+          "-DSERVER_PLUGIN=$<TARGET_FILE:server>" "-DHTTP_DATASTREAM_PLUGIN=$<TARGET_FILE:httpdatastream>"
+          "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" -P "${indexed_script}")
+        set_tests_properties(musikcore.integration.api.remote_audio PROPERTIES
+          LABELS "integration;musikcore;transport;playback;contract" TIMEOUT 30)
+      endif()
     endif()
   endif()
 endif()
