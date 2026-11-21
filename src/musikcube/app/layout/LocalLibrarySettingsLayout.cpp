@@ -41,9 +41,7 @@
 #include <cursespp/Screen.h>
 #include <cursespp/SingleLineEntry.h>
 
-#include <musikcore/library/Indexer.h>
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/LibraryFactory.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
 
@@ -62,10 +60,9 @@ using namespace cursespp;
 using EntryPtr = IScrollAdapter::EntryPtr;
 static bool showDotfiles = false;
 
-LocalLibrarySettingsLayout::LocalLibrarySettingsLayout()
+LocalLibrarySettingsLayout::LocalLibrarySettingsLayout(api::Context& musikcore)
 : LayoutBase()
-, library(LibraryFactory::Instance().DefaultLocalLibrary())
-, indexer(library->Indexer()) {
+, indexer(musikcore) {
     this->browseAdapter = std::make_shared<DirectoryAdapter>();
     this->addedPathsAdapter = std::make_shared<SimpleScrollAdapter>();
     this->SetFocusMode(FocusModeTerminating);
@@ -86,8 +83,7 @@ void LocalLibrarySettingsLayout::OnLayout() {
 void LocalLibrarySettingsLayout::LoadPreferences() {
     this->addedPathsAdapter->Clear();
 
-    std::vector<std::string> paths;
-    this->indexer->GetPaths(paths);
+    const auto paths = this->indexer.Paths();
 
     for (size_t i = 0; i < paths.size(); i++) {
         auto v = paths.at(i);
@@ -160,21 +156,20 @@ void LocalLibrarySettingsLayout::AddSelectedDirectory() {
     std::string path = this->browseAdapter->GetFullPathAt(index);
 
     if (path.size()) {
-        this->indexer->AddPath(path);
+        this->indexer.AddPath(path);
         this->LoadPreferences();
-        this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
+        this->indexer.Schedule(MC_INDEXER_SCAN_LOCAL);
     }
 }
 
 void LocalLibrarySettingsLayout::RemoveSelectedDirectory() {
-    std::vector<std::string> paths;
-    this->indexer->GetPaths(paths);
+    const auto paths = this->indexer.Paths();
 
     const size_t index = this->addedPathsList->GetSelectedIndex();
-    if (index != ListWindow::NO_SELECTION) {
-        this->indexer->RemovePath(paths.at(index));
+    if (index < paths.size()) {
+        this->indexer.RemovePath(paths.at(index));
         this->LoadPreferences();
-        this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
+        this->indexer.Schedule(MC_INDEXER_SCAN_LOCAL);
     }
 }
 

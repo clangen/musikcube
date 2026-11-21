@@ -39,9 +39,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/util/AsyncCallbackScope.h>
-#include <musikcore/audio/PlaybackService.h>
 
-#include <musikcore/library/ILibrary.h>
 
 namespace musik { namespace cube {
     class NowPlayingLayout : public cursespp::LayoutBase {
@@ -49,10 +47,7 @@ namespace musik { namespace cube {
             DELETE_CLASS_DEFAULTS(NowPlayingLayout)
 
             NowPlayingLayout(
-                musik::core::audio::PlaybackService& playback,
-                musik::core::ILibraryPtr library,
-                std::shared_ptr<musik::core::api::Context> context,
-                std::shared_ptr<const musik::core::api::Library> apiLibrary);
+                musik::core::api::Context& musikcore);
 
             ~NowPlayingLayout() override;
 
@@ -74,13 +69,13 @@ namespace musik { namespace cube {
                 Delete
             };
 
-            void InitializeWindows(musik::core::audio::PlaybackService& playback);
+            void InitializeWindows();
             void RequeryTrackList();
             void SelectQueueRow();
             bool ProcessEditOperation(const std::string& key);
 
             /* callbacks */
-            cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
+            cursespp::Color RowDecorator(size_t index);
             void OnPlaylistSelected(int64_t playlistId);
             void ShowPlaylistPicker(PlaylistAction action);
             void SaveQueueToPlaylist(const musik::core::api::PlaylistEntry& playlist);
@@ -88,12 +83,10 @@ namespace musik { namespace cube {
             void DeletePlaylist(const musik::core::api::PlaylistEntry& playlist);
 
             musik::core::api::Playback apiPlayback;
-            musik::core::ILibraryPtr library;
             std::shared_ptr<TrackListView> trackListView;
             std::optional<musik::core::api::PlayQueue> queue;
             int reselectIndex; /* sigh... */
-            std::shared_ptr<musik::core::api::Context> context;
-            std::shared_ptr<const musik::core::api::Library> apiLibrary;
+            musik::core::api::Context& musikcore;
             AsyncCallbackScope playlistWork;
             mc_request_id playlistRequest = 0;
     };

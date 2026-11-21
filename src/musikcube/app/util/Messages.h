@@ -50,9 +50,7 @@ namespace musik {
             }
 
             static const int JumpToCategory         = First + 1;
-            static const int IndexerStarted         = First + 2;
             static const int IndexerProgress        = First + 3;
-            static const int IndexerFinished        = First + 4;
             static const int RequeryTrackList       = First + 5;
             static const int RequeryCategoryList    = First + 6;
             static const int RefreshTransport       = First + 7;

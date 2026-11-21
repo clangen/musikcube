@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <musikcore/context.h>
+
 #include <functional>
 
 namespace musik { namespace cube {
@@ -42,7 +44,7 @@ namespace musik { namespace cube {
 
         void ShowLocaleOverlay(std::function<void()> callback);
 
-        void ShowLibraryTypeOverlay(std::function<void()> callback);
+        void ShowLibraryTypeOverlay(mc_library_kind current, std::function<void(mc_library_kind)> callback);
 
         void CheckShowFirstRunDialog();
 

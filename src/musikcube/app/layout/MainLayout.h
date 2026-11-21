@@ -34,38 +34,37 @@
 
 #pragma once
 
-#include <musikcore/context.hpp>
+#include <musikcore/library.hpp>
 
 #include <cursespp/App.h>
 #include <cursespp/AppLayout.h>
 #include <cursespp/TextInput.h>
 #include <cursespp/TextLabel.h>
 
-#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/playback.hpp>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/IMessageTarget.h>
-#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/indexer.hpp>
 #include <musikcore/net/PiggyWebSocketClient.h>
 
 #include <app/util/ConsoleLogger.h>
 #include <app/util/UpdateCheck.h>
+#include <app/util/AsyncCallbackScope.h>
 
 #include <sigslot/sigslot.h>
 
 namespace musik {
     namespace cube {
         class LibraryLayout;
+        class LibraryNotConnectedLayout;
         class MainLayout : public cursespp::AppLayout {
             public:
-                using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
-
                 DELETE_CLASS_DEFAULTS(MainLayout)
 
                 MainLayout(
                     cursespp::App& app,
                     ConsoleLogger* logger,
-                    musik::core::audio::PlaybackService& playback,
-                    MasterLibraryPtr library);
+                    musik::core::api::Context& musikcore);
 
                 virtual ~MainLayout();
 
@@ -78,12 +77,9 @@ namespace musik {
                 void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             private:
-                void OnIndexerStarted();
-                void OnIndexerProgress(int count);
-                void OnIndexerFinished(int count);
-                void OnTrackChanged(size_t index, musik::core::TrackPtr track);
-                void OnLibraryConnectionStateChanged(musik::core::ILibrary::ConnectionState state);
-                void OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr);
+                void OnIndexerEvent(mc_indexer_event event, int updates);
+                void UpdateWindowTitle();
+                void OnLibraryChanged(bool selectionChanged);
 
                 bool IsLibraryConnected();
 
@@ -95,21 +91,20 @@ namespace musik {
                 bool ShowTopBanner();
                 void UpdateTopBannerText();
 
-                void RebindIndexerEventHandlers(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr);
 
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<cursespp::TextLabel> topBanner;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout;
                 std::shared_ptr<LibraryLayout> libraryLayout;
-                std::shared_ptr<cursespp::LayoutBase> libraryNotConnectedLayout;
+                std::shared_ptr<LibraryNotConnectedLayout> libraryNotConnectedLayout;
                 std::shared_ptr<cursespp::LayoutBase> settingsLayout;
                 std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;
                 std::shared_ptr<cursespp::LayoutBase> lyricsLayout;
-                musik::core::audio::PlaybackService& playback;
-                MasterLibraryPtr library;
+                musik::core::api::Playback playback;
                 bool shortcutsFocused;
                 int syncUpdateCount;
-                std::shared_ptr<musik::core::api::Context> apiContext;
+                musik::core::api::Context& musikcore;
+                AsyncCallbackScope titleWork;
                 UpdateCheck updateCheck;
         };
     }

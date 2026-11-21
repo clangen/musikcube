@@ -171,7 +171,7 @@ InputOverlay& InputOverlay::SetValidator(std::shared_ptr<IValidator> validator) 
 }
 
 InputOverlay& InputOverlay::SetInputAcceptedCallback(InputAcceptedCallback cb) {
-    this->inputAcceptedCallback = cb;
+    this->inputAcceptedCallback = std::move(cb);
     return *this;
 }
 

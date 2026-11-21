@@ -43,7 +43,6 @@
 #include <cursespp/SchemaOverlay.h>
 #include <cursespp/AppLayout.h>
 
-#include <musikcore/library/Indexer.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/audio/Outputs.h>
@@ -160,13 +159,11 @@ static void setTransportType(TransportType type) {
 
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
-    MasterLibraryPtr library,
-    musik::core::audio::PlaybackService& playback)
+    api::Context& musikcore)
 : LayoutBase()
 , app(app)
-, library(library)
-, indexer(library->Indexer())
-, playback(playback) {
+, musikcore(musikcore)
+, playback(musikcore.GetPlayback()) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->UpdateServerAvailability();
     this->InitializeWindows();
@@ -208,10 +205,12 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
 }
 
 void SettingsLayout::OnLibraryTypeDropdownActivated(cursespp::TextLabel* label) {
-    SettingsOverlays::ShowLibraryTypeOverlay([this]() {
-        this->LoadPreferences();
-        this->library->LoadDefaultLibrary();
-    });
+    SettingsOverlays::ShowLibraryTypeOverlay(this->musikcore.GetLibraryStatus().kind,
+        [this](mc_library_kind kind) {
+            if (this->musikcore.SelectLibrary(kind) == MC_OK) {
+                this->LoadPreferences();
+            }
+        });
 }
 
 void SettingsLayout::OnLocaleDropdownActivate(cursespp::TextLabel* label) {
@@ -232,7 +231,7 @@ void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label)
 
             if (currentName != newName) {
                 this->LoadPreferences();
-                this->playback.ReloadOutput();
+                this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
             }
         });
 }
@@ -243,13 +242,13 @@ void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label)
         std::string newName = getOutputDeviceName();
         if (currentName != newName) {
             this->LoadPreferences();
-            this->playback.ReloadOutput();
+            this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
         }
     });
 }
 
 void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
-    PreampOverlay::Show(this->playback, [this]() { this->LoadPreferences(); });
+    PreampOverlay::Show(this->musikcore.GetPlayback(), [this]() { this->LoadPreferences(); });
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
@@ -260,7 +259,7 @@ void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
         [this, current](MasterTransport::Type selected) {
             if (selected != current) {
                 setTransportType(selected);
-                this->playback.ReloadOutput();
+                this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
                 this->LoadPreferences();
             }
         });
@@ -323,7 +322,7 @@ void SettingsLayout::OnLayout() {
     this->libraryTypeDropdown->MoveAndResize(1, 1, cx - 1, kLabelHeight);
     std::shared_ptr<LayoutBase> libraryLayout;
     static const int kLibraryTypePadding = 3;
-    if (this->library->GetType() == ILibrary::Type::Local) {
+    if (this->musikcore.GetLibraryStatus().kind == MC_LIBRARY_LOCAL) {
         const int libraryLayoutHeight = std::min(10, cy / 2);
         this->localLibraryLayout->MoveAndResize(
             kLibraryTypePadding,
@@ -394,8 +393,8 @@ void SettingsLayout::InitializeWindows() {
     this->libraryTypeDropdown = std::make_shared<TextLabel>();
     this->libraryTypeDropdown->Activated.connect(this, &SettingsLayout::OnLibraryTypeDropdownActivated);
 
-    this->localLibraryLayout = std::make_shared<LocalLibrarySettingsLayout>();
-    this->remoteLibraryLayout = std::make_shared<RemoteLibrarySettingsLayout>();
+    this->localLibraryLayout = std::make_shared<LocalLibrarySettingsLayout>(this->musikcore);
+    this->remoteLibraryLayout = std::make_shared<RemoteLibrarySettingsLayout>(this->musikcore);
 
     this->localeDropdown = std::make_shared<TextLabel>();
     this->localeDropdown->Activated.connect(this, &SettingsLayout::OnLocaleDropdownActivate);
@@ -628,12 +627,9 @@ void SettingsLayout::LoadPreferences() {
     this->transportDropdown->SetText(arrow + _TSTR("settings_transport_type") + transportName);
 
     /* library type */
-    const auto libraryType = static_cast<ILibrary::Type>(
-        prefs->GetInt(
-            core::prefs::keys::LibraryType,
-            static_cast<int>(ILibrary::Type::Local)));
+    const auto libraryType = this->musikcore.GetLibraryStatus().kind;
 
-    std::string libraryTypeLabel = libraryType == ILibrary::Type::Local
+    std::string libraryTypeLabel = libraryType == MC_LIBRARY_LOCAL
         ? _TSTR("settings_library_type_local")
         : _TSTR("settings_library_type_remote");
 

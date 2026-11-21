@@ -34,6 +34,9 @@
 
 #pragma once
 
+#include <musikcore/library.hpp>
+#include <app/util/AsyncCallbackScope.h>
+
 #include <sigslot/sigslot.h>
 
 #include <cursespp/ListWindow.h>
@@ -41,9 +44,8 @@
 
 #include <musikcore/library/query/CategoryListQuery.h>
 
-#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/playback.hpp>
 #include <musikcore/library/IQuery.h>
-#include <musikcore/library/ILibrary.h>
 #include <musikcore/runtime/IMessage.h>
 
 #include <mutex>
@@ -62,8 +64,7 @@ namespace musik {
                 using MatchType = musik::core::library::query::QueryBase::MatchType;
 
                 CategoryListView(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
+                    musik::core::api::Context& musikcore,
                     const std::string& fieldName);
 
                 virtual ~CategoryListView();
@@ -93,6 +94,7 @@ namespace musik {
                 void Requery();
 
                 void Reset();
+                void CancelQuery();
 
                 int64_t GetSelectedId();
                 std::string GetSelectedValue();
@@ -103,13 +105,14 @@ namespace musik {
                 /* IWindow */
                 bool KeyPress(const std::string& key) override;
                 void OnVisibilityChanged(bool visible) override;
+                void OnParentVisibilityChanged(bool visible) override;
 
             protected:
                 /* IListWindow */
                 cursespp::IScrollAdapter& GetScrollAdapter() override;
                 bool OnEntryContextMenu(size_t index) override;
 
-                void OnQueryCompleted(musik::core::db::IQuery* query);
+                void ApplyCategories(std::vector<musik::core::api::CategoryEntry> categories);
                 void ShowContextMenu();
                 class Adapter : public cursespp::ScrollAdapterBase {
                 public:
@@ -127,22 +130,27 @@ namespace musik {
 
             private:
                 AddToPlaylist addToPlaylist;
-                void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+                void RefreshPlayingCategory();
+                bool IsPlayingCategory(const musik::core::api::CategoryEntry& entry) const;
                 void ScrollToPlaying();
 
-                musik::core::audio::PlaybackService& playback;
                 Adapter *adapter;
 
-                std::shared_ptr<musik::core::library::query::CategoryListQuery> activeQuery;
+                musik::core::api::Context& musikcore;
+                musik::core::api::Playback playback;
+                AsyncCallbackScope categoryWork;
+                AsyncCallbackScope playingWork;
+                mc_request_id activeQuery = 0;
 
-                musik::core::ILibraryPtr library;
-                musik::core::TrackPtr playing;
+                mc_request_id playingQuery = 0;
+                std::optional<int64_t> playingCategoryId;
+                std::string playingCategoryName;
 
                 std::string fieldName, fieldIdColumn;
                 std::string filter;
                 MatchType matchType{ MatchType::Substring };
                 int64_t selectAfterQuery;
-                musik::core::library::query::CategoryListQuery::Result metadata;
+                std::vector<musik::core::api::CategoryEntry> metadata;
         };
     }
 }

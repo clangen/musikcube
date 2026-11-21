@@ -79,10 +79,8 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/audio/CrossfadeTransport.h>
 #include <musikcore/audio/GaplessTransport.h>
 #include <musikcore/audio/IStream.h>
-#include <musikcore/audio/ITransport.h>
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/audio/Outputs.h>
-#include <musikcore/audio/PlaybackService.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/Stream.h>
 #include <musikcore/audio/Streams.h>
@@ -94,15 +92,8 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/debug.h>
 #include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/io/LocalFileStream.h>
-#include <musikcore/library/IIndexer.h>
-#include <musikcore/library/ILibrary.h>
-#include <musikcore/library/Indexer.h>
 #include <musikcore/library/IQuery.h>
-#include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/LocalMetadataProxy.h>
-#include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/metadata/MetadataMap.h>
 #include <musikcore/library/metadata/MetadataMapList.h>
 #include <musikcore/library/query/AlbumListQuery.h>
@@ -130,11 +121,8 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/library/query/util/TrackSort.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/QueryRegistry.h>
-#include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/library/track/IndexerTrack.h>
-#include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/track/Track.h>
-#include <musikcore/library/track/TrackList.h>
 #include <musikcore/net/RawWebSocketClient.h>
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/plugin/PluginFactory.h>
@@ -171,7 +159,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/sdk/IOutput.h>
 #include <musikcore/sdk/IPcmVisualizer.h>
 #include <musikcore/sdk/IPlaybackRemote.h>
-#include <musikcore/sdk/IPlaybackService.h>
 #include <musikcore/sdk/IPlugin.h>
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/IResource.h>
@@ -277,7 +264,6 @@ asio's streambuf. include it up front so work around this */
 #include <app/util/Hotkeys.h>
 #include <app/util/MagicConstants.h>
 #include <app/util/Messages.h>
-#include <app/util/Playback.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/Rating.h>
 #include <app/util/TrackRowRenderers.h>

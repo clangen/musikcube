@@ -33,7 +33,6 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
@@ -41,7 +40,6 @@
 
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Auddio.h>
-#include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/sdk/version.h>
 
 #include <app/util/Messages.h>
@@ -66,8 +64,6 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace cursespp;
 
-using MasterLibraryPtr = MainLayout::MasterLibraryPtr;
-
 static inline void updateSyncingText(TextLabel* label, int updates) {
     try {
         if (updates <= 0) {
@@ -86,10 +82,9 @@ static inline void updateSyncingText(TextLabel* label, int updates) {
     }
 }
 
-static inline void updateRemoteLibraryConnectedText(TextLabel* label, MasterLibraryPtr library) {
-    RemoteLibrary* remoteLibrary = dynamic_cast<RemoteLibrary*>(library->Wrapped().get());
-    if (remoteLibrary) {
-        std::string host = remoteLibrary->WebSocketClient().Uri();
+static inline void updateRemoteLibraryConnectedText(TextLabel* label, const api::LibraryStatus& library) {
+    auto host = library.endpoint;
+    if (!host.empty()) {
         if (host.find("ws://") == 0) { host = host.substr(5); }
         auto value = u8fmt(_TSTR("library_remote_connected_banner"), host.c_str());
         label->SetText(value, cursespp::text::AlignCenter);
@@ -99,35 +94,20 @@ static inline void updateRemoteLibraryConnectedText(TextLabel* label, MasterLibr
 MainLayout::MainLayout(
     cursespp::App& app,
     musik::cube::ConsoleLogger* logger,
-    musik::core::audio::PlaybackService& playback,
-    MasterLibraryPtr library)
+    api::Context& musikcore)
 : shortcutsFocused(false)
 , syncUpdateCount(0)
-, library(library)
-, playback(playback)
+, playback(musikcore.GetPlayback())
+, musikcore(musikcore)
 , AppLayout(app) {
-    /* Deliver core completions through the app's UI message queue. */
-    mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
-    options.wakeup = [](void* data) {
-        static_cast<MainLayout*>(data)->Post(message::DispatchCoreRequests);
-    };
-    options.wakeup_user_data = this;
-    this->apiContext = std::make_shared<api::Context>(options);
-
     this->prefs = Preferences::ForComponent("settings");
-
-    library->ConnectionStateChanged.connect(this, &MainLayout::OnLibraryConnectionStateChanged);
-    library->LibraryChanged.connect(this, &MainLayout::OnLibraryChanged);
-    playback.TrackChanged.connect(this, &MainLayout::OnTrackChanged);
-
-    this->RebindIndexerEventHandlers(ILibraryPtr(), this->library);
 
     /* note we don't create `libraryLayout` here; instead we do it lazily once we're sure
     it has been connected. see SwitchToLibraryLayout() */
-    this->libraryNotConnectedLayout = std::make_shared<LibraryNotConnectedLayout>(library);
-    this->lyricsLayout = std::make_shared<LyricsLayout>(playback, library);
+    this->libraryNotConnectedLayout = std::make_shared<LibraryNotConnectedLayout>(musikcore);
+    this->lyricsLayout = std::make_shared<LyricsLayout>(musikcore);
     this->consoleLayout = std::make_shared<ConsoleLayout>(logger);
-    this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
+    this->settingsLayout = std::make_shared<SettingsLayout>(app, musikcore);
     this->hotkeysLayout = std::make_shared<HotkeysLayout>();
 
     this->topBanner = std::make_shared<TextLabel>();
@@ -149,23 +129,20 @@ MainLayout::~MainLayout() {
 }
 
 bool MainLayout::ShowTopBanner() {
-    const auto libraryType = this->library->GetType();
-    if (libraryType == ILibrary::Type::Local) {
-        return this->library->Indexer()->GetState() == IIndexer::StateIndexing;
+    const auto status = this->musikcore.GetLibraryStatus();
+    if (status.kind == MC_LIBRARY_LOCAL) {
+        return api::Indexer(this->musikcore).State() == MC_INDEXER_INDEXING;
     }
-    else if (libraryType == ILibrary::Type::Remote) {
-        return this->library->GetConnectionState() == ILibrary::ConnectionState::Connected;
-    }
-    return false;
+    return status.kind == MC_LIBRARY_REMOTE && status.state == MC_LIBRARY_CONNECTED;
 }
 
 void MainLayout::UpdateTopBannerText() {
-    const auto libraryType = this->library->GetType();
-    if (libraryType == ILibrary::Type::Local) {
+    const auto status = this->musikcore.GetLibraryStatus();
+    if (status.kind == MC_LIBRARY_LOCAL) {
         updateSyncingText(this->topBanner.get(), this->syncUpdateCount);
     }
-    else if (libraryType == ILibrary::Type::Remote) {
-        updateRemoteLibraryConnectedText(this->topBanner.get(), this->library);
+    else if (status.kind == MC_LIBRARY_REMOTE) {
+        updateRemoteLibraryConnectedText(this->topBanner.get(), status);
     }
 }
 
@@ -220,12 +197,27 @@ bool MainLayout::KeyPress(const std::string& key) {
 
 void MainLayout::Start() {
     MessageQueue().RegisterForBroadcasts(this->shared_from_this());
+    this->musikcore.SetLibraryChangedCallback([](void* data, bool selectionChanged) {
+        static_cast<MainLayout*>(data)->OnLibraryChanged(selectionChanged);
+    }, this);
+    this->playback.SetChangedCallback([](void* data, mc_playback_event) {
+        static_cast<MainLayout*>(data)->UpdateWindowTitle();
+    }, this, { MC_PLAYBACK_CHANGED_TRACK });
+    api::Indexer(this->musikcore).SetCallback([](void* data, mc_indexer_event event, int updates) {
+        static_cast<MainLayout*>(data)->OnIndexerEvent(event, updates);
+    }, this);
+    this->UpdateWindowTitle();
+    this->musikcore.Dispatch();
 }
 
 void MainLayout::Shutdown() {
+    this->playback.SetChangedCallback(nullptr);
+    this->titleWork.Invalidate();
+    api::Indexer(this->musikcore).SetCallback(nullptr);
+    this->musikcore.SetLibraryChangedCallback(nullptr);
     if (this->libraryLayout) this->libraryLayout->CancelLibraryRequests();
-    this->apiContext->Shutdown();
-    MessageQueue().Remove(this, message::DispatchCoreRequests);
+    this->musikcore.Shutdown();
+    MessageQueue().Remove(nullptr, message::DispatchCoreRequests);
     MessageQueue().UnregisterForBroadcasts(this);
 }
 
@@ -233,7 +225,7 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     const int type = message.Type();
 
     if (type == message::DispatchCoreRequests) {
-        this->apiContext->Dispatch();
+        this->musikcore.Dispatch();
     }
     else if (type == message::JumpToConsole) {
         this->SetLayout(consoleLayout);
@@ -253,32 +245,17 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     else if (type == message::JumpToPlayQueue) {
         this->SwitchToPlayQueue();
     }
-    else if (type == message::IndexerStarted) {
-        this->syncUpdateCount = 0;
-        this->Layout();
-    }
-    else if (type == message::IndexerFinished) {
-        this->Layout();
-    }
-    else if (type == message::IndexerProgress) {
-        this->syncUpdateCount = narrow_cast<int>(message.UserData1());
-        this->UpdateTopBannerText();
-        if (!topBanner->IsVisible()) {
-            this->Layout();
-        }
-    }
     else {
         LayoutBase::ProcessMessage(message);
     }
 }
 
 bool MainLayout::IsLibraryConnected() {
-    using State = ILibrary::ConnectionState;
-    return library->GetConnectionState()  == State::Connected;
+    return this->musikcore.GetLibraryStatus().state == MC_LIBRARY_CONNECTED;
 }
 
 void MainLayout::SetInitialLayout() {
-    if (library->IsConfigured()) {
+    if (this->musikcore.GetLibraryStatus().configured) {
         this->SwitchToLibraryLayout();
     }
     else {
@@ -296,7 +273,13 @@ void MainLayout::SwitchToPlayQueue() {
 void MainLayout::SwitchToLibraryLayout() {
     if (IsLibraryConnected()) {
         if (!this->libraryLayout) {
-            this->libraryLayout = std::make_shared<LibraryLayout>(playback, library, this->apiContext);
+            const auto selected = this->musikcore.GetLibrary();
+            if (!selected) {
+                this->SetLayout(this->libraryNotConnectedLayout);
+                return;
+            }
+            this->libraryLayout = std::make_shared<LibraryLayout>(
+                this->musikcore);
         }
         this->SetLayout(libraryLayout);
     }
@@ -306,74 +289,70 @@ void MainLayout::SwitchToLibraryLayout() {
     }
 }
 
-void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state) {
-    audio::DiscardUnavailablePlaybackQueue(this->playback);
+void MainLayout::OnLibraryChanged(bool) {
     const auto currentLayout = this->GetLayout();
     const bool showingLibrary = currentLayout == this->libraryLayout ||
         currentLayout == this->libraryNotConnectedLayout;
 
-    /* A view retained behind Settings must also release handles from the old connection. */
-    if (state != ILibrary::ConnectionState::Connected && this->libraryLayout) {
+    /* Disconnect and reconnect may arrive together. Retire the old view either way. */
+    if (this->libraryLayout) {
         this->libraryLayout->CancelLibraryRequests();
         this->libraryLayout.reset();
     }
-    if (showingLibrary) this->SwitchToLibraryLayout();
-}
 
-void MainLayout::OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr) {
-    this->playback.Stop();
-    audio::DiscardUnavailablePlaybackQueue(this->playback);
-    const auto currentLayout = this->GetLayout();
-    const bool wasShowingLibrary = currentLayout == this->libraryLayout ||
-        currentLayout == this->libraryNotConnectedLayout;
-    if (this->libraryLayout) this->libraryLayout->CancelLibraryRequests();
-    this->libraryLayout.reset();
-    if (wasShowingLibrary) this->SwitchToLibraryLayout();
-    this->RebindIndexerEventHandlers(prev, curr);
+    this->libraryNotConnectedLayout->UpdateErrorText();
+    if (showingLibrary) {
+        this->SwitchToLibraryLayout();
+    }
     this->Layout();
 }
 
-void MainLayout::RebindIndexerEventHandlers(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr) {
-    if (prev) {
-        prev->Indexer()->Started.disconnect(this);
-        prev->Indexer()->Finished.disconnect(this);
-        prev->Indexer()->Progress.disconnect(this);
+void MainLayout::OnIndexerEvent(mc_indexer_event event, int updates) {
+    if (this->musikcore.GetLibraryStatus().kind != MC_LIBRARY_LOCAL) {
+        return;
     }
-    if (curr) {
-        curr->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
-        curr->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
-        curr->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
+
+    if (this->libraryLayout) {
+        this->libraryLayout->OnIndexerEvent(event, updates);
     }
+    if (event == MC_INDEXER_STARTED) {
+        this->syncUpdateCount = 0;
+    }
+    else if (event == MC_INDEXER_PROGRESS) {
+        this->syncUpdateCount = updates;
+    }
+    this->Layout();
 }
 
-void MainLayout::OnIndexerStarted() {
-    this->Post(message::IndexerStarted);
-}
-
-void MainLayout::OnIndexerProgress(int count) {
-    this->Post(message::IndexerProgress, count);
-}
-
-void MainLayout::OnIndexerFinished(int count) {
-    this->Post(message::IndexerFinished);
-}
-
-void MainLayout::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
-    if (prefs->GetBool(
-            cube::prefs::keys::DisableWindowTitleUpdates,
-            cube::prefs::defaults::DisableWindowTitleUpdates))
+void MainLayout::UpdateWindowTitle() {
+    this->titleWork.Invalidate();
+    if (prefs->GetBool(cube::prefs::keys::DisableWindowTitleUpdates,
+        cube::prefs::defaults::DisableWindowTitleUpdates))
     {
         return;
     }
 
-    if (!track) {
-        App::Instance().SetTitle("musikcube");
+    try {
+        const auto track = this->playback.CurrentTrack();
+        if (!track) {
+            App::Instance().SetTitle("musikcube");
+            return;
+        }
+
+        api::ReadTrack(this->musikcore, *track, { MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_TITLE },
+            this->titleWork.Wrap([](mc_result status, api::TrackPage page, std::string_view) {
+                if (status != MC_OK || !page.Size()) {
+                    App::Instance().SetTitle("musikcube");
+                    return;
+                }
+
+                const auto track = page.Track(0);
+                App::Instance().SetTitle("musikcube [" + std::string(track.Artist()) +
+                    " - " + std::string(track.Title()) + "]");
+            }));
     }
-    else {
-        App::Instance().SetTitle(u8fmt(
-            "musikcube [%s - %s]",
-            track->GetString("artist").c_str(),
-            track->GetString("title").c_str()));
+    catch (const api::Error& error) {
+        musik::debug::error("MainLayout", error.what());
     }
 }
 

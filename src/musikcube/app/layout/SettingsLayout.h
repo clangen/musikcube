@@ -46,14 +46,15 @@
 #include <cursespp/DialogOverlay.h>
 #include <cursespp/ITopLevelLayout.h>
 
-#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/playback.hpp>
 #include <musikcore/audio/MasterTransport.h>
-#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/context.hpp>
 #include <musikcore/support/Preferences.h>
 
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
 #include <app/util/UpdateCheck.h>
+#include <app/util/AsyncCallbackScope.h>
 
 #include <sigslot/sigslot.h>
 
@@ -67,14 +68,11 @@ namespace musik { namespace cube {
         public sigslot::has_slots<>
     {
         public:
-            using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
-
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(SettingsLayout)
 
             SettingsLayout(
                 cursespp::App& app,
-                MasterLibraryPtr library,
-                musik::core::audio::PlaybackService& playback);
+                musik::core::api::Context& musikcore);
 
             virtual ~SettingsLayout();
 
@@ -110,9 +108,8 @@ namespace musik { namespace cube {
             void OnAdvancedSettingsActivate(cursespp::TextLabel* label);
 
             cursespp::App& app;
-            MasterLibraryPtr library;
-            musik::core::IIndexer* indexer;
-            musik::core::audio::PlaybackService& playback;
+            musik::core::api::Context& musikcore;
+            musik::core::api::Playback playback;
 
             std::shared_ptr<musik::core::Preferences> prefs;
 

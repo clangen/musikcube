@@ -40,7 +40,6 @@
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/sdk/String.h>
-#include <musikcore/library/ILibrary.h>
 
 #include <musikcube/app/util/PreferenceKeys.h>
 #include <musikcube/app/util/Hotkeys.h>
@@ -128,12 +127,9 @@ void musik::cube::SettingsOverlays::ShowLocaleOverlay(std::function<void()> call
     cursespp::App::Overlays().Push(dialog);
 }
 
-void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(std::function<void()> callback) {
-    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
-
-    const auto libraryType = static_cast<ILibrary::Type>(prefs->GetInt(
-        core::prefs::keys::LibraryType, (int) ILibrary::Type::Local));
-
+void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(
+    mc_library_kind current, std::function<void(mc_library_kind)> callback)
+{
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
@@ -142,7 +138,7 @@ void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(std::function<void()>
     adapter->AddEntry(_TSTR("settings_library_type_local"));
     adapter->AddEntry(_TSTR("settings_library_type_remote"));
 
-    const int selectedIndex = libraryType == ILibrary::Type::Local ? 0 : 1;
+    const int selectedIndex = current == MC_LIBRARY_LOCAL ? 0 : 1;
 
     auto dialog = std::make_shared<ListOverlay>();
 
@@ -150,11 +146,8 @@ void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(std::function<void()>
         .SetTitle(_TSTR("settings_library_type_overlay_title"))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [prefs, callback]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                const auto updatedType = index == 0 ? ILibrary::Type::Local : ILibrary::Type::Remote;
-                prefs->SetInt(core::prefs::keys::LibraryType, narrow_cast<int>(updatedType));
-                callback();
+            [callback](ListOverlay*, IScrollAdapterPtr, size_t index) {
+                callback(index == 0 ? MC_LIBRARY_LOCAL : MC_LIBRARY_REMOTE);
             });
 
     cursespp::App::Overlays().Push(dialog);

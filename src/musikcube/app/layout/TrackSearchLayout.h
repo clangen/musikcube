@@ -41,7 +41,6 @@
 
 #include <app/window/TrackListView.h>
 
-#include <musikcore/audio/PlaybackService.h>
 #include <musikcore/context.h>
 #include <musikcore/support/Preferences.h>
 
@@ -61,8 +60,7 @@ namespace musik { namespace cube {
 
             TrackSearchLayout(
                 std::shared_ptr<TrackListView> trackList,
-                std::shared_ptr<musik::core::api::Context> apiContext,
-                std::shared_ptr<const musik::core::api::Library> apiLibrary);
+                musik::core::api::Context& musikcore);
 
             virtual ~TrackSearchLayout();
 
@@ -113,7 +111,6 @@ namespace musik { namespace cube {
             std::shared_ptr<cursespp::TextInput> input;
             AsyncCallbackScope searchWork;
             mc_request_id searchRequest = 0;
-            std::shared_ptr<musik::core::api::Context> apiContext;
-            std::shared_ptr<const musik::core::api::Library> apiLibrary;
+            musik::core::api::Context& musikcore;
     };
 } }

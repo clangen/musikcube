@@ -37,7 +37,7 @@
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/SimpleScrollAdapter.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/indexer.hpp>
 #include <app/model/DirectoryAdapter.h>
 
 namespace musik { namespace cube {
@@ -45,7 +45,7 @@ namespace musik { namespace cube {
         public:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(LocalLibrarySettingsLayout)
 
-            LocalLibrarySettingsLayout();
+            explicit LocalLibrarySettingsLayout(musik::core::api::Context& musikcore);
 
             void ToggleShowDotFiles();
             void LoadPreferences();
@@ -66,8 +66,7 @@ namespace musik { namespace cube {
                 size_t line,
                 cursespp::IScrollAdapter::EntryPtr entry);
 
-            musik::core::ILibraryPtr library;
-            musik::core::IIndexer* indexer;
+            musik::core::api::Indexer indexer;
 
             std::shared_ptr<cursespp::ListWindow> browseList;
             std::shared_ptr<cursespp::ListWindow> addedPathsList;

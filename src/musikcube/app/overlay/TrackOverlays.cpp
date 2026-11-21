@@ -36,7 +36,6 @@
 
 #include "TrackOverlays.h"
 #include <musikcore/library/query/util/TrackSort.h>
-#include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
@@ -85,14 +84,7 @@ void TrackOverlays::ShowTrackSearchSortOverlay(
     cursespp::App::Overlays().Push(dialog);
 }
 
-void TrackOverlays::ShowRateTrackOverlay(
-    musik::core::TrackPtr track,
-    musik::core::ILibraryPtr library,
-    std::function<void(bool)> callback)
-{
-    int64_t trackId = track->GetId();
-    int currentRating = track->GetInt32("rating", 0);
-
+void TrackOverlays::ShowRateTrackOverlay(int currentRating, std::function<void(uint32_t)> callback) {
     currentRating = std::max(0, std::min(5, currentRating));
     auto adapter = std::make_shared<SimpleScrollAdapter>();
     adapter->SetSelectable(true);
@@ -102,12 +94,10 @@ void TrackOverlays::ShowRateTrackOverlay(
 
     auto dialog = std::make_shared<ListOverlay>();
 
-    auto updateRatingInLibrary = [track, library, callback, dialog](int index) {
-        auto query = std::make_shared<SetTrackRatingQuery>(track->GetId(), (int) index);
-        library->Enqueue(query, [dialog, callback](auto q) {
-            dialog->Dismiss();
-            callback(true);
-        });
+    auto selectRating = [callback = std::move(callback)](ListOverlay* overlay, uint32_t rating) {
+        const auto selected = callback;
+        overlay->Dismiss();
+        selected(rating);
     };
 
     dialog->SetAdapter(adapter)
@@ -115,19 +105,17 @@ void TrackOverlays::ShowRateTrackOverlay(
         .SetWidth(_DIMEN("track_list_rate_track_width", kDefaultRatingOverlayWidth))
         .SetSelectedIndex((int) currentRating)
         .SetKeyInterceptorCallback(
-            [updateRatingInLibrary](ListOverlay* overlay, std::string key) -> bool {
-                if (key == "0") { updateRatingInLibrary(0); return true; }
-                if (key == "1") { updateRatingInLibrary(1); return true; }
-                if (key == "2") { updateRatingInLibrary(2); return true; }
-                if (key == "3") { updateRatingInLibrary(3); return true; }
-                if (key == "4") { updateRatingInLibrary(4); return true; }
-                if (key == "5") { updateRatingInLibrary(5); return true; }
+            [selectRating](ListOverlay* overlay, std::string key) -> bool {
+                if (key.size() == 1 && key.front() >= '0' && key.front() <= '5') {
+                    selectRating(overlay, static_cast<uint32_t>(key.front() - '0'));
+                    return true;
+                }
                 return false;
             })
         .SetItemSelectedCallback(
-            [updateRatingInLibrary]
+            [selectRating]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                updateRatingInLibrary((int) index);
+                selectRating(overlay, static_cast<uint32_t>(index));
             });
 
     cursespp::App::Overlays().Push(dialog);

@@ -35,7 +35,7 @@
 #pragma once
 
 #include <cursespp/LayoutBase.h>
-#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/context.hpp>
 #include <cursespp/ITopLevelLayout.h>
 #include <cursespp/TextLabel.h>
 #include <cursespp/ShortcutsWindow.h>
@@ -48,11 +48,9 @@ namespace musik { namespace cube {
         public sigslot::has_slots<>
     {
         public:
-            using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
-
             DELETE_CLASS_DEFAULTS(LibraryNotConnectedLayout)
 
-            LibraryNotConnectedLayout(MasterLibraryPtr library);
+            LibraryNotConnectedLayout(musik::core::api::Context& musikcore);
 
             /* IWindow */
             void OnLayout() override;
@@ -60,13 +58,11 @@ namespace musik { namespace cube {
             void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
             void OnVisibilityChanged(bool visible) override;
 
-        protected:
-            void OnLibraryStateChanged(musik::core::ILibrary::ConnectionState state);
-
-        private:
             void UpdateErrorText();
 
-            MasterLibraryPtr library;
+        private:
+
+            musik::core::api::Context& musikcore;
             std::shared_ptr<cursespp::TextLabel> messageText;
             std::shared_ptr<cursespp::TextLabel> errorText;
             std::shared_ptr<cursespp::TextLabel> helpText;

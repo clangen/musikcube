@@ -48,7 +48,6 @@
 #include "CategoryListView.h"
 
 using namespace musik::core;
-using namespace musik::core::audio;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 using namespace musik::core::library::constants;
@@ -69,31 +68,44 @@ static std::string getFieldIdColumn(const std::string& fieldId) {
 }
 
 CategoryListView::CategoryListView(
-    musik::core::audio::PlaybackService& playback,
-    ILibraryPtr library,
+    api::Context& musikcore,
     const std::string& fieldName)
 : ListWindow(nullptr)
-, playback(playback) {
+, musikcore(musikcore)
+, playback(musikcore.GetPlayback())
+{
     this->selectAfterQuery = -1LL;
-    this->library = library;
-    this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
     this->fieldName = fieldName;
     this->fieldIdColumn = getFieldIdColumn(fieldName);
     this->adapter = new Adapter(*this);
-    this->playback.TrackChanged.connect(this, &CategoryListView::OnTrackChanged);
-    this->playing = playback.GetPlaying();
+    this->playback.SetQueueChangedCallback([](void* data) {
+        static_cast<CategoryListView*>(data)->RefreshPlayingCategory();
+    }, this);
+    this->RefreshPlayingCategory();
 }
 
 CategoryListView::~CategoryListView() {
+    this->playback.SetQueueChangedCallback(nullptr);
+    this->CancelQuery();
+    this->playingWork.Invalidate();
+    if (this->playingQuery) {
+        this->musikcore.Cancel(this->playingQuery);
+    }
     delete adapter;
 }
 
 void CategoryListView::OnVisibilityChanged(bool visible) {
     ListWindow::OnVisibilityChanged(visible);
 
+    this->RefreshPlayingCategory();
     if (visible && !this->activeQuery) {
         this->Requery(this->GetSelectedId());
     }
+}
+
+void CategoryListView::OnParentVisibilityChanged(bool visible) {
+    ListWindow::OnParentVisibilityChanged(visible);
+    this->RefreshPlayingCategory();
 }
 
 void CategoryListView::RequeryWithField(
@@ -102,17 +114,31 @@ void CategoryListView::RequeryWithField(
     const std::string& filter,
     const int64_t selectAfterQuery)
 {
-    if (this->activeQuery) {
-        this->activeQuery->Cancel();
-    }
+    this->CancelQuery();
 
     this->matchType = matchType;
-    this->fieldName = fieldName;
-    this->fieldIdColumn = getFieldIdColumn(fieldName);
+    if (this->fieldName != fieldName) {
+        this->fieldName = fieldName;
+        this->fieldIdColumn = getFieldIdColumn(fieldName);
+        this->RefreshPlayingCategory();
+    }
     this->selectAfterQuery = selectAfterQuery;
     this->filter = filter;
-    this->activeQuery = std::make_shared<CategoryListQuery>(matchType, fieldName, filter);
-    this->library->Enqueue(activeQuery);
+    const auto mode = matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
+    try {
+        this->activeQuery = api::ListCategories(this->musikcore, fieldName, filter, mode,
+            this->categoryWork.Wrap([this](mc_result status, std::vector<api::CategoryEntry> categories, std::string_view) {
+                this->activeQuery = 0;
+                if (status == MC_OK) {
+                    this->ApplyCategories(std::move(categories));
+                }
+            }));
+    }
+    catch (const api::Error& error) {
+        if (error.Result() == MC_ERROR_NOT_FOUND) {
+            this->ApplyCategories({});
+        }
+    }
 }
 
 void CategoryListView::RequeryWithField(
@@ -144,23 +170,23 @@ void CategoryListView::Requery() {
 }
 
 void CategoryListView::Reset() {
-    this->metadata = std::make_shared<SdkValueList>(); /* ugh */
+    this->CancelQuery();
+    this->metadata.clear();
     this->OnAdapterChanged();
 }
 
 int64_t CategoryListView::GetSelectedId() {
     size_t index = this->GetSelectedIndex();
-    if (index != NO_SELECTION && this->metadata && index < this->metadata->Count()) {
-        return this->metadata->At(index)->GetId();
+    if (index != NO_SELECTION && index < this->metadata.size()) {
+        return this->metadata[index].id;
     }
-    const bool isEmpty = this->metadata && this->metadata->Count();
-    return isEmpty || this->selectAfterQuery == -1LL == 0 ? -1LL : this->selectAfterQuery;
+    return this->metadata.empty() ? this->selectAfterQuery : -1LL;
 }
 
 std::string CategoryListView::GetSelectedValue() {
     size_t index = this->GetSelectedIndex();
-    if (index != NO_SELECTION && this->metadata && index < this->metadata->Count()) {
-        return this->metadata->At(index)->ToString();
+    if (index != NO_SELECTION && index < this->metadata.size()) {
+        return this->metadata[index].value;
     }
     return "";
 }
@@ -173,9 +199,57 @@ std::string CategoryListView::GetFilter() {
     return this->filter;
 }
 
-void CategoryListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
-    this->playing = track;
+void CategoryListView::RefreshPlayingCategory() {
+    this->playingWork.Invalidate();
+    if (this->playingQuery) {
+        this->musikcore.Cancel(std::exchange(this->playingQuery, 0));
+    }
+    this->playingCategoryId.reset();
+    this->playingCategoryName.clear();
     this->OnAdapterChanged();
+
+    /* Read the category from the playing track's library, even if selection changes. */
+    try {
+        const auto track = this->playback.CurrentTrack();
+        if (!track || !this->IsVisible() || !this->IsParentVisible()) {
+            return;
+        }
+
+        const auto& field = this->fieldIdColumn.empty() ? this->fieldName : this->fieldIdColumn;
+        this->playingQuery = api::ReadTrack(this->musikcore, *track, { field },
+            this->playingWork.Wrap([this](mc_result status, api::TrackPage page, std::string_view) {
+                this->playingQuery = 0;
+                if (status != MC_OK || !page.Size()) {
+                    return;
+                }
+
+                const auto track = page.Track(0);
+                if (this->fieldIdColumn.empty()) {
+                    this->playingCategoryName = track.Value(this->fieldName);
+                }
+                else {
+                    const auto value = track.Value(this->fieldIdColumn);
+                    if (!value.empty()) {
+                        int64_t id = 0;
+                        const auto end = value.data() + value.size();
+                        const auto parsed = std::from_chars(value.data(), end, id);
+                        if (parsed.ec == std::errc{} && parsed.ptr == end) {
+                            this->playingCategoryId = id;
+                        }
+                    }
+                }
+                this->OnAdapterChanged();
+            }));
+    }
+    catch (const api::Error& error) {
+        musik::debug::error("CategoryListView", error.what());
+    }
+}
+
+bool CategoryListView::IsPlayingCategory(const api::CategoryEntry& entry) const {
+    return this->fieldIdColumn.empty()
+        ? !this->playingCategoryName.empty() && entry.value == this->playingCategoryName
+        : this->playingCategoryId == entry.id;
 }
 
 void CategoryListView::SetFieldName(const std::string& fieldName) {
@@ -185,44 +259,17 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
         this->SetSelectedIndex(0);
         this->ScrollToTop();
 
-        if (this->metadata) {
-            this->metadata.reset();
-        }
+        this->metadata.clear();
 
         this->Requery(this->matchType, this->filter);
     }
 }
 
 void CategoryListView::ScrollToPlaying() {
-    if (this->playing) {
-        size_t selected = this->GetSelectedIndex();
-
-        /* by ID: preferred. */
-        if (fieldIdColumn.size()) {
-            int64_t id = this->playing->GetInt64(fieldIdColumn.c_str(), 0);
-            for (size_t i = 0; i < this->metadata->Count(); i++) {
-                if (this->metadata->At(i)->GetId() == id) {
-                    selected = i;
-                    break;
-                }
-            }
-        }
-        /* by name: slower. also, not currently used, but will be in the near
-        future when we open up category browsing to other types of metadata */
-        else {
-            std::string value = this->playing->GetString(this->fieldName.c_str());
-            if (value.size()) {
-                /* binary search would be better, but need to research if sqlite
-                properly sorts utf8 strings. */
-                for (size_t i = 0; i < this->metadata->Count(); i++) {
-                    if (this->metadata->At(i)->ToString() == value) {
-                        selected = i;
-                        break;
-                    }
-                }
-            }
-        }
-
+    const auto playing = std::find_if(this->metadata.begin(), this->metadata.end(),
+        [this](const auto& entry) { return this->IsPlayingCategory(entry); });
+    if (playing != this->metadata.end()) {
+        const auto selected = static_cast<size_t>(playing - this->metadata.begin());
         this->SetSelectedIndex(selected);
         this->ScrollTo(selected);
     }
@@ -252,46 +299,35 @@ void CategoryListView::ShowContextMenu() {
 
     if (id != -1LL) {
         PlayQueueOverlays::ShowAddCategoryOverlay(
-            this->playback,
-            this->library,
+            this->musikcore,
+            this->categoryWork.CurrentToken(),
             this->fieldName,
             this->GetSelectedValue(),
             id, this->addToPlaylist);
     }
 }
 
-void CategoryListView::OnQueryCompleted(IQuery* query) {
-    auto active = this->activeQuery;
-    if (active && query == active.get()) {
-        int selectedIndex = -1;
-        if (this->selectAfterQuery != -1LL) {
-            selectedIndex = active->GetIndexOf(this->selectAfterQuery);
-            if (selectedIndex == -1) {
-                selectedIndex = 0;
-            }
-        }
+void CategoryListView::CancelQuery() {
+    this->categoryWork.Invalidate();
+    if (this->activeQuery) {
+        this->musikcore.Cancel(std::exchange(this->activeQuery, 0));
+    }
+}
 
-        if (this->activeQuery &&
-            this->activeQuery->GetId() == query->GetId() &&
-            this->activeQuery->GetStatus() == IQuery::Finished)
-        {
-            this->metadata = activeQuery->GetResult();
-            activeQuery.reset();
-
-            if (selectedIndex >= 0) {
-                this->SetSelectedIndex(selectedIndex);
-
-                /* scroll down just a bit more to reveal the item above so
-                there's indication the user can scroll. */
-                if (!this->IsEntryVisible(selectedIndex)) {
-                    this->ScrollTo(selectedIndex == 0 ? selectedIndex : selectedIndex - 1);
-                }
-            }
-
-            this->OnAdapterChanged();
-            this->OnInvalidated();
+void CategoryListView::ApplyCategories(std::vector<api::CategoryEntry> categories) {
+    this->metadata = std::move(categories);
+    if (this->selectAfterQuery != -1LL) {
+        const auto selected = std::find_if(this->metadata.begin(), this->metadata.end(), [this](const auto& entry) {
+            return entry.id == this->selectAfterQuery;
+        });
+        const auto index = selected == this->metadata.end() ? 0 : std::distance(this->metadata.begin(), selected);
+        this->SetSelectedIndex(index);
+        if (!this->IsEntryVisible(index)) {
+            this->ScrollTo(index == 0 ? 0 : index - 1);
         }
     }
+    this->OnAdapterChanged();
+    this->OnInvalidated();
 }
 
 IScrollAdapter& CategoryListView::GetScrollAdapter() {
@@ -303,24 +339,13 @@ CategoryListView::Adapter::Adapter(CategoryListView &parent)
 }
 
 size_t CategoryListView::Adapter::GetEntryCount() {
-    return parent.metadata ? parent.metadata->Count() : 0;
+    return parent.metadata.size();
 }
 
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
-    std::string value = parent.metadata->At(index)->ToString();
+    std::string value = parent.metadata[index].value;
 
-    bool playing = false;
-
-    if (parent.playing) {
-        /* we should generally be able to match by ID; if not, fall back to by name */
-        if (parent.fieldIdColumn.size()) {
-            auto playingId = parent.playing->GetInt64(parent.fieldIdColumn.c_str(), 0);
-            playing = (playingId == parent.metadata->At(index)->GetId());
-        }
-        else {
-            playing = parent.playing->GetString(parent.fieldName.c_str()) == value;
-        }
-    }
+    const bool playing = parent.IsPlayingCategory(parent.metadata[index]);
 
     bool selected = (index == parent.GetSelectedIndex());
     Color attrs = selected ? Color::ListItemHighlighted : Color::Default;

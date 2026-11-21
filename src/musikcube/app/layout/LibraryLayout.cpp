@@ -39,7 +39,6 @@
 #include <cursespp/Screen.h>
 
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/MasterLibrary.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -85,17 +84,14 @@ namespace type {
     const std::string NowPlaying = "NowPlaying";
 };
 
-LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback,
-    std::shared_ptr<MasterLibrary> library,
-    std::shared_ptr<musik::core::api::Context> apiContext)
+LibraryLayout::LibraryLayout(musik::core::api::Context& musikcore)
 : LayoutBase()
-, playback(playback)
+, playback(musikcore.GetPlayback())
+, musikcore(musikcore)
 , shortcuts(nullptr)
-, transport(playback.GetTransport())
 {
-    this->library = library;
     this->prefs = Preferences::ForComponent(components::Settings);
-    this->InitializeWindows(apiContext, *library);
+    this->InitializeWindows(musikcore);
 }
 
 void LibraryLayout::OnLayout() {
@@ -118,9 +114,8 @@ void LibraryLayout::OnLayout() {
 void LibraryLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
-    if (visible &&
-        library->GetType() == ILibrary::Type::Remote &&
-        library->GetConnectionState() == ILibrary::ConnectionState::Connected) {
+    const auto status = this->musikcore.GetLibraryStatus();
+    if (visible && status.kind == MC_LIBRARY_REMOTE && status.state == MC_LIBRARY_CONNECTED) {
         prefs->SetBool(core::prefs::keys::RemoteLibraryViewed, true);
     }
 }
@@ -202,43 +197,37 @@ void LibraryLayout::ShowDirectories(const std::string& directory) {
 void LibraryLayout::CancelLibraryRequests() {
     this->playlistWork.Invalidate();
     this->trackSearchLayout->CancelSearchRequests();
+    this->categorySearchLayout->CancelSearchRequests();
     this->browseLayout->CancelTrackRequests();
     this->directoryLayout->CancelTrackRequests();
     this->nowPlayingLayout->CancelPlaylistLoad();
 }
 
-void LibraryLayout::InitializeWindows(const std::shared_ptr<musik::core::api::Context>& apiContext,
-    const MasterLibrary& selection)
-{
-    this->browseLayout = std::make_shared<BrowseLayout>(this->playback, this->library);
+void LibraryLayout::InitializeWindows(musik::core::api::Context& musikcore) {
+    this->browseLayout = std::make_shared<BrowseLayout>(musikcore);
     this->browseLayout->SetOnHeaderClicked([this]() { this->ShowCategoryChooser(); });
 
-    this->directoryLayout = std::make_shared<DirectoryLayout>(this->playback, this->library);
-    const auto apiLibrary = selection.OpenApiLibrary();
-    this->browseLayout->SetTrackLibrary(apiContext, apiLibrary);
-    this->directoryLayout->SetTrackLibrary(apiContext, apiLibrary);
-    this->nowPlayingLayout = std::make_shared<NowPlayingLayout>(this->playback, this->library, apiContext, apiLibrary);
-    this->categorySearchLayout = std::make_shared<CategorySearchLayout>(this->playback, this->library);
+    this->directoryLayout = std::make_shared<DirectoryLayout>(musikcore);
+
+    /* Legacy indexer signals stay at the layout boundary until the SDK exposes them. */
+    this->nowPlayingLayout = std::make_shared<NowPlayingLayout>(musikcore);
+    this->categorySearchLayout = std::make_shared<CategorySearchLayout>(musikcore);
     this->categorySearchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnCategorySearchResultSelected);
     /* Bind legacy row actions and index notifications at the layout boundary. */
-    const auto backend = selection.Wrapped();
-    auto searchRows = std::make_shared<TrackListView>(this->playback, backend);
+    auto searchRows = std::make_shared<TrackListView>(musikcore);
     this->trackSearchLayout = std::make_shared<TrackSearchLayout>(
-        std::move(searchRows), apiContext, apiLibrary);
-    backend->Indexer()->Finished.connect(this->trackSearchLayout.get(), &TrackSearchLayout::OnIndexerFinished);
-    if (apiLibrary) {
-        const std::weak_ptr<api::Context> context = apiContext;
-        const auto token = this->playlistWork.CurrentToken();
-        const auto addTrack = [context, apiLibrary, token](int64_t id) {
-            PlayQueueOverlays::ShowAddToPlaylistPicker(context, apiLibrary, token, { id });
-        };
-        const auto addCategory = [context, apiLibrary, token, backend](const std::string& field, const std::string& value, int64_t id) {
-            PlayQueueOverlays::ShowAddCategoryToPlaylistPicker(context, apiLibrary, token, backend, field, value, id);
-        };
-        this->browseLayout->SetAddToPlaylistCallbacks(addTrack, addCategory);
-        this->trackSearchLayout->SetAddToPlaylistCallbacks(addTrack, addCategory);
-    }
-    this->transportView = std::make_shared<TransportWindow>(this->library, this->playback);
+        std::move(searchRows), musikcore);
+    const auto token = this->playlistWork.CurrentToken();
+    const auto addTrack = [&musikcore, token](int64_t id) {
+        PlayQueueOverlays::ShowAddToPlaylistPicker(musikcore, token, { id });
+    };
+    const auto addCategory = [&musikcore, token](const std::string& field, const std::string& value, int64_t id) {
+        PlayQueueOverlays::ShowAddCategoryToPlaylistPicker(musikcore, token, field, value, id);
+    };
+    this->browseLayout->SetAddToPlaylistCallbacks(addTrack, addCategory);
+    this->trackSearchLayout->SetAddToPlaylistCallbacks(addTrack, addCategory);
+
+    this->transportView = std::make_shared<TransportWindow>(musikcore);
 
     this->AddWindow(this->transportView);
     this->LoadLastSession();
@@ -252,8 +241,9 @@ void LibraryLayout::LoadLastSession() {
             const std::string lastDirectoryRoot =
                 session->GetString(keys::LastBrowseDirectoryRoot, "");
 
-            std::vector<std::string> paths;
-            this->library->Indexer()->GetPaths(paths);
+            const auto paths = this->musikcore.GetLibraryStatus().kind == MC_LIBRARY_LOCAL
+                ? api::Indexer(this->musikcore).Paths()
+                : std::vector<std::string> {};
             for (auto p : paths) {
                 if (p == lastDirectoryRoot) {
                     this->ShowDirectories(p);
@@ -441,9 +431,19 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage& message) {
     LayoutBase::ProcessMessage(message);
 }
 
+void LibraryLayout::OnIndexerEvent(mc_indexer_event event, int updates) {
+    if (event == MC_INDEXER_PROGRESS || event == MC_INDEXER_FINISHED) {
+        this->browseLayout->OnIndexerProgress(updates);
+        this->directoryLayout->OnIndexerProgress(updates);
+    }
+    if (event == MC_INDEXER_FINISHED) {
+        this->trackSearchLayout->OnIndexerFinished(updates);
+    }
+}
+
 void LibraryLayout::ShowDirectoryChooser() {
     BrowseOverlays::ShowDirectoryChooser(
-        this->library,
+        this->musikcore, this->playlistWork.CurrentToken(),
         [this](std::string directory) {
             this->ShowDirectories(directory);
         });
@@ -451,7 +451,7 @@ void LibraryLayout::ShowDirectoryChooser() {
 
 void LibraryLayout::ShowCategoryChooser() {
     BrowseOverlays::ShowCategoryChooser(
-        this->library,
+        this->musikcore, this->playlistWork.CurrentToken(),
         [this](std::string category, std::string type) {
             if (type == MagicConstants::DirectoryCategoryType) {
                 this->ShowDirectoryChooser();
@@ -541,7 +541,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == " " || key == "M- ") {
-        musik::core::playback::PauseOrResume(this->transport);
+        this->playback.Control(MC_PLAYBACK_TOGGLE_PAUSE);
         return true;
     }
 

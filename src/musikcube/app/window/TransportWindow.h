@@ -36,11 +36,11 @@
 
 #include <cursespp/Window.h>
 #include <cursespp/IKeyHandler.h>
-#include <musikcore/library/track/Track.h>
+#include <app/util/AsyncCallbackScope.h>
+#include <musikcore/sdk/constants.h>
 #include <musikcore/runtime/IMessage.h>
-#include <musikcore/audio/PlaybackService.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <sigslot/sigslot.h>
+#include <musikcore/playback.hpp>
 
 namespace musik {
     namespace cube {
@@ -48,8 +48,7 @@ namespace musik {
 
         class TransportWindow:
             public cursespp::Window,
-            public cursespp::IKeyHandler,
-            public sigslot::has_slots<>
+            public cursespp::IKeyHandler
         {
             public:
                 enum FocusTarget {
@@ -58,9 +57,7 @@ namespace musik {
                     FocusTime = 2
                 };
 
-                TransportWindow(
-                    musik::core::ILibraryPtr library,
-                    musik::core::audio::PlaybackService& playback);
+                explicit TransportWindow(musik::core::api::Context& musikcore);
 
                 virtual ~TransportWindow();
 
@@ -104,38 +101,30 @@ namespace musik {
                     void Reset();
                     size_t Columns(const std::string& str);
                     std::string CurrentTime(int secondsCurrent);
-                    void Update(musik::core::audio::ITransport& transport, musik::core::TrackPtr track);
+                    void SetTrack(const musik::core::api::TrackView& track);
+                    void Update(double duration);
 
-                    musik::core::TrackPtr track;
+                    int trackDuration = 0;
                     std::string title, album, artist, totalTime;
                     int secondsTotal;
                     int titleCols, albumCols, artistCols, totalTimeCols;
                     std::map<std::string, size_t> stringToColumns;
                 };
 
-                size_t WritePlayingFormat(WINDOW* w, size_t width);
+                size_t WritePlayingFormat(WINDOW* w, size_t width, mc_playback_state state);
 
                 void Update(TimeMode mode = TimeMode::Smooth);
 
-                void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
-                void OnPlaybackModeChanged();
-                void OnPlaybackStateChanged(musik::core::sdk::PlaybackState);
-                void OnPlaybackStreamStateChanged(musik::core::sdk::StreamState);
-                void OnTransportVolumeChanged();
-                void OnTransportTimeChanged(double time);
-                void OnPlaybackShuffled(bool shuffled);
-                void UpdateReplayGainState();
+                void OnPlaybackChanged(mc_playback_event event);
+                void RefreshTrack();
 
                 bool paused;
-                bool hasReplayGain;
                 Position shufflePos, repeatPos, volumePos, currentTimePos, timeBarPos;
                 std::map<std::string, Position> metadataFieldToPosition;
-                musik::core::sdk::ReplayGainMode replayGainMode;
-                musik::core::ILibraryPtr library;
-                musik::core::audio::ITransport& transport;
-                musik::core::audio::PlaybackService& playback;
+                musik::core::api::Context& musikcore;
+                AsyncCallbackScope trackMenuWork;
                 musik::core::api::Playback apiPlayback;
-                musik::core::TrackPtr currentTrack;
+                AsyncCallbackScope trackWork;
                 FocusTarget focus, lastFocus;
                 DisplayCache displayCache;
                 bool buffering{ false };

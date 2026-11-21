@@ -216,7 +216,7 @@ ListOverlay& ListOverlay::SetSelectedIndex(size_t index) {
 }
 
 ListOverlay& ListOverlay::SetItemSelectedCallback(ItemSelectedCallback cb) {
-    this->itemSelectedCallback = cb;
+    this->itemSelectedCallback = std::move(cb);
     return *this;
 }
 

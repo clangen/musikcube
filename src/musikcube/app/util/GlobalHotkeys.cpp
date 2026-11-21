@@ -33,14 +33,12 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <musikcore/ffi/consumer/playback-binding.h>
 #include "GlobalHotkeys.h"
 #include "Hotkeys.h"
 
 #include <app/overlay/BrowseOverlays.h>
 #include <app/overlay/EqualizerOverlay.h>
 #include <app/overlay/VisualizerOverlay.h>
-#include <app/util/Playback.h>
 
 #include <musikcore/audio/Visualizer.h>
 #include <musikcore/support/Playback.h>
@@ -50,10 +48,9 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::cube;
 
-GlobalHotkeys::GlobalHotkeys(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
-: playback(musik::core::audio::CreatePlaybackHandle(playback)) {
-    this->library = library;
-}
+GlobalHotkeys::GlobalHotkeys(api::Context& musikcore)
+: musikcore(musikcore)
+, playback(musikcore.GetPlayback()) {}
 
 GlobalHotkeys::~GlobalHotkeys() {
 
@@ -113,7 +110,7 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::RescanMetadata, kn)) {
-        BrowseOverlays::ShowIndexer(this->library);
+        BrowseOverlays::ShowIndexer(this->musikcore);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleVisualizer, kn)) {

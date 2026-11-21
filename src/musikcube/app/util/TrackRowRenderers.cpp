@@ -39,14 +39,12 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/Duration.h>
 #include <app/util/Rating.h>
 #include <app/util/PreferenceKeys.h>
 #include <math.h>
 
 using namespace musik::core;
-using namespace musik::core::library;
 using namespace musik::cube;
 using namespace musik::cube::TrackRowRenderers;
 using namespace cursespp;
@@ -56,11 +54,9 @@ using namespace cursespp;
 constexpr bool kEnableSkeletonRows = true;
 constexpr int kDurationColWidth = 5; /* 00:00 */
 constexpr int kRatingBreakpointWidth = 90;
-static const std::string kSkeletonChar = "-"; // "░";
+static const std::string kSkeletonChar = "-";
 
-/* this method does a couple things slower than it probably should, but it
-shouldn't cause any issues. TODO: make this better? does it matter? */
-static inline std::string getRatingForTrack(TrackPtr track, size_t width) {
+static inline std::string getRatingForTrack(const api::TrackView& track, size_t width) {
     if (width <= kRatingBreakpointWidth) {
         return "";
     }
@@ -68,7 +64,7 @@ static inline std::string getRatingForTrack(TrackPtr track, size_t width) {
     if (p->GetBool(musik::cube::prefs::keys::DisableRatingColumn, false)) {
         return "";
     }
-    const int rating = std::max(0, std::min(5, track->GetInt32("rating", 0)));
+    const int rating = static_cast<int>(std::clamp<int64_t>(track.Rating().value_or(0), 0, 5));
     return "   " + getRatingString(rating);
 }
 
@@ -85,9 +81,7 @@ namespace AlbumSort {
     constexpr int kArtistColWidth = 17;
     constexpr int kRatingColumnWidth = 5;
 
-    static std::string skeleton(TrackPtr track, size_t width) {
-        auto const id = track->GetId();
-
+    static std::string skeleton(int64_t id, size_t width) {
         std::string rating = width <= kRatingBreakpointWidth ? "" : getRatingString(0);
         std::string trackNum = text::Align(placeholder(2), text::AlignRight, kTrackColWidth);
         std::string duration = text::Align("0:00", text::AlignRight, kDurationColWidth);
@@ -117,19 +111,21 @@ namespace AlbumSort {
             artist.c_str());
     }
 
-    static const Renderer renderer = [](TrackPtr track, size_t index, size_t width, TrackNumType type) -> std::string {
-        if (track->GetMetadataState() != musik::core::sdk::MetadataState::Loaded) {
-            return kEnableSkeletonRows ? skeleton(track, width) : std::string(width, ' ');;
+    static const Renderer renderer = [](const musik::core::api::TrackView* track, int64_t id,
+        size_t index, size_t width, TrackNumType type) -> std::string
+    {
+        if (!track) {
+            return kEnableSkeletonRows ? skeleton(id, width) : std::string(width, ' ');
         }
 
         std::string trackNum;
 
-        std::string rating = getRatingForTrack(track, width);
+        std::string rating = getRatingForTrack(*track, width);
 
         int trackColWidth = kTrackColWidth;
         if (type == TrackNumType::Metadata) {
             trackNum = text::Align(
-                track->GetString(constants::Track::TRACK_NUM),
+                std::string(track->Value(MC_TRACK_FIELD_TRACK)),
                 text::AlignRight,
                 kTrackColWidth);
         }
@@ -139,12 +135,12 @@ namespace AlbumSort {
         }
 
         std::string duration = text::Align(
-            musik::core::duration::Duration(track->GetString(constants::Track::DURATION)),
+            musik::core::duration::Duration(static_cast<size_t>(track->Duration().value_or(std::chrono::seconds::zero()).count())),
             text::AlignRight,
             kDurationColWidth);
 
         std::string artist = text::Align(
-            track->GetString(constants::Track::ARTIST),
+            std::string(track->Artist()),
             text::AlignLeft,
             kArtistColWidth);
 
@@ -161,7 +157,7 @@ namespace AlbumSort {
         titleWidth = std::max(0, titleWidth);
 
         std::string title = text::Align(
-            track->GetString(constants::Track::TITLE),
+            std::string(track->Title()),
             text::AlignLeft,
             narrow_cast<int>(titleWidth));
 
@@ -180,9 +176,7 @@ namespace NowPlaying {
     constexpr int kArtistColWidth = 14;
     constexpr int kAlbumColWidth = 14;
 
-    static std::string skeleton(TrackPtr track, size_t width) {
-        auto const id = track->GetId();
-
+    static std::string skeleton(int64_t id, size_t width) {
         std::string rating = width <= kRatingBreakpointWidth ? "" : getRatingString(0);
         std::string trackNum = text::Align(placeholder(2), text::AlignRight, kTrackColWidth);
         std::string duration = text::Align("0:00", text::AlignRight, kDurationColWidth);
@@ -215,27 +209,29 @@ namespace NowPlaying {
             artist.c_str());
     }
 
-    static const Renderer renderer = [](TrackPtr track, size_t index, size_t width, TrackNumType type) -> std::string {
-        if (track->GetMetadataState() != musik::core::sdk::MetadataState::Loaded) {
-            return kEnableSkeletonRows ? skeleton(track, width) : std::string(width, ' ');
+    static const Renderer renderer = [](const musik::core::api::TrackView* track, int64_t id,
+        size_t index, size_t width, TrackNumType type) -> std::string
+    {
+        if (!track) {
+            return kEnableSkeletonRows ? skeleton(id, width) : std::string(width, ' ');
         }
 
         const size_t trackColWidth = std::max(kTrackColWidth, DIGITS(index + 1));
         std::string trackNum = text::Align(std::to_string(index + 1), text::AlignRight, trackColWidth);
-        std::string rating = getRatingForTrack(track, width);
+        std::string rating = getRatingForTrack(*track, width);
 
         std::string duration = text::Align(
-            duration::Duration(track->GetString(constants::Track::DURATION)),
+            duration::Duration(static_cast<size_t>(track->Duration().value_or(std::chrono::seconds::zero()).count())),
             text::AlignRight,
             kDurationColWidth);
 
         std::string album = text::Align(
-            track->GetString(constants::Track::ALBUM),
+            std::string(track->Album()),
             text::AlignLeft,
             kAlbumColWidth);
 
         std::string artist = text::Align(
-            track->GetString(constants::Track::ARTIST),
+            std::string(track->Artist()),
             text::AlignLeft,
             kArtistColWidth);
 
@@ -251,7 +247,7 @@ namespace NowPlaying {
         titleWidth = std::max(0, titleWidth);
 
         std::string title = text::Align(
-            track->GetString(constants::Track::TITLE),
+            std::string(track->Title()),
             text::AlignLeft,
             (int) titleWidth);
 

@@ -34,7 +34,8 @@
 
 #pragma once
 
-#include <musikcore/library/ILibrary.h>
+#include <app/util/AsyncCallbackScope.h>
+#include <musikcore/context.hpp>
 #include <functional>
 
 namespace musik {
@@ -42,14 +43,14 @@ namespace musik {
         class BrowseOverlays {
             public:
                 static void ShowCategoryChooser(
-                    musik::core::ILibraryPtr library,
+                    musik::core::api::Context& musikcore, AsyncCallbackScope::Token token,
                     std::function<void(std::string, std::string)> callback);
 
                 static void ShowDirectoryChooser(
-                    musik::core::ILibraryPtr library,
+                    musik::core::api::Context& musikcore, AsyncCallbackScope::Token token,
                     std::function<void(std::string)> callback);
 
-                static void ShowIndexer(musik::core::ILibraryPtr library);
+                static void ShowIndexer(musik::core::api::Context& musikcore);
         };
     }
 }

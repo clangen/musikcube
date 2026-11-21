@@ -36,7 +36,8 @@
 
 #include "BrowseOverlays.h"
 #include <app/util/MagicConstants.h>
-#include <musikcore/library/query/AllCategoriesQuery.h>
+#include <musikcore/indexer.hpp>
+#include <musikcore/library.hpp>
 #include <musikcore/i18n/Locale.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
@@ -47,8 +48,6 @@
 using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
-using namespace musik::core::db;
-using namespace musik::core::library::query;
 
 static const std::set<std::string> BLACKLIST = { "bitrate", "channels", "lyrics", "path_id", "directory" };
 static std::string lastSelectedCategory, lastSelectedDirectory;
@@ -64,72 +63,66 @@ static void showNoPathsError() {
     App::Overlays().Push(dialog);
 }
 
-void BrowseOverlays::ShowCategoryChooser(
-    musik::core::ILibraryPtr library,
+void BrowseOverlays::ShowCategoryChooser(api::Context& musikcore, AsyncCallbackScope::Token token,
     std::function<void(std::string, std::string)> callback)
 {
-    using Adapter = cursespp::SimpleScrollAdapter;
-    using ListOverlay = cursespp::ListOverlay;
-    using Value = SdkValue::Shared;
+    try {
+        api::ListCategoryFields(musikcore,
+            [token, callback = std::move(callback)](mc_result status, std::vector<std::string> fields, std::string_view) {
+                if (status != MC_OK || !token.IsCurrent()) {
+                    return;
+                }
 
-    auto query = std::make_shared<AllCategoriesQuery>();
-    library->Enqueue(query, [callback, query](auto q) {
-        std::shared_ptr<Adapter> adapter(new Adapter());
-        adapter->SetSelectable(true);
+                std::vector<std::pair<std::string, std::string>> choices;
+                for (auto& field : fields) {
+                    if (!BLACKLIST.count(field)) {
+                        choices.emplace_back(std::move(field), "");
+                    }
+                }
+                choices.emplace_back(_TSTR("browse_title_directory"), MagicConstants::DirectoryCategoryType);
+                std::sort(choices.begin(), choices.end());
 
-        size_t index = 0;
+                auto adapter = std::make_shared<SimpleScrollAdapter>();
+                adapter->SetSelectable(true);
+                size_t selected = 0;
+                for (const auto& choice : choices) {
+                    if (choice.first == lastSelectedCategory) {
+                        selected = adapter->GetEntryCount();
+                    }
+                    adapter->AddEntry(choice.first);
+                }
 
-        auto result = query->GetResult();
-
-        auto filtered = result->Filter([&index, adapter](const Value& value) -> bool {
-            auto str = value->ToString();
-            return BLACKLIST.find(str) == BLACKLIST.end();
-        });
-
-        filtered->Add(std::make_shared<SdkValue>(
-            _TSTR("browse_title_directory"),
-            -1LL,
-            MagicConstants::DirectoryCategoryType));
-
-        filtered->Sort([](const auto a, const auto b) -> bool {
-            return a->ToString() < b->ToString();
-        });
-
-        filtered->Each([&index, adapter](const Value& value) {
-            auto str = value->ToString();
-            adapter->AddEntry(str);
-            if (lastSelectedCategory == str) {
-                index = adapter->GetEntryCount() - 1;
-            }
-        });
-
-        std::shared_ptr<ListOverlay> dialog(new ListOverlay());
-
-        dialog->SetAdapter(adapter)
-            .SetTitle(_TSTR("browse_categories_title"))
-            .SetWidth(_DIMEN("browse_categories_overlay_width", 35))
-            .SetSelectedIndex(index)
-            .SetItemSelectedCallback(
-                [callback, filtered]
-                (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                    auto selected = filtered->At(index);
-                    lastSelectedCategory = selected->ToString();
-                    callback(lastSelectedCategory, selected->GetType());
-                });
-
-        cursespp::App::Overlays().Push(dialog);
-    });
+                auto dialog = std::make_shared<ListOverlay>();
+                dialog->SetAdapter(adapter)
+                    .SetTitle(_TSTR("browse_categories_title"))
+                    .SetWidth(_DIMEN("browse_categories_overlay_width", 35))
+                    .SetSelectedIndex(selected)
+                    .SetItemSelectedCallback(
+                        [token, callback, choices = std::move(choices)](ListOverlay*, IScrollAdapterPtr, size_t index) {
+                            if (token.IsCurrent() && index < choices.size()) {
+                                const auto& choice = choices[index];
+                                lastSelectedCategory = choice.first;
+                                callback(choice.first, choice.second);
+                            }
+                        });
+                App::Overlays().Push(dialog);
+            });
+    }
+    catch (const api::Error& error) {
+        musik::debug::error("BrowseOverlays", error.what());
+    }
 }
 
 void BrowseOverlays::ShowDirectoryChooser(
-    musik::core::ILibraryPtr library,
+    api::Context& musikcore, AsyncCallbackScope::Token token,
     std::function<void(std::string)> callback)
 {
     using StringList = std::vector<std::string>;
     using Adapter = cursespp::SimpleScrollAdapter;
 
-    std::shared_ptr<StringList> paths = std::make_shared<StringList>();
-    library->Indexer()->GetPaths(*paths.get());
+    const auto paths = std::make_shared<StringList>(musikcore.GetLibraryStatus().kind == MC_LIBRARY_LOCAL
+        ? api::Indexer(musikcore).Paths()
+        : StringList {});
 
     if (paths->size() == 0) {
         showNoPathsError();
@@ -159,9 +152,9 @@ void BrowseOverlays::ShowDirectoryChooser(
             .SetWidthPercent(80)
             .SetSelectedIndex(selectedIndex)
             .SetItemSelectedCallback(
-                [paths, callback]
+                [paths, callback, token]
                 (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                    if (callback) {
+                    if (token.IsCurrent() && callback && index < paths->size()) {
                         lastSelectedDirectory = paths->at(index);
                         callback(lastSelectedDirectory);
                     }
@@ -171,7 +164,7 @@ void BrowseOverlays::ShowDirectoryChooser(
     }
 }
 
-void BrowseOverlays::ShowIndexer(musik::core::ILibraryPtr library) {
+void BrowseOverlays::ShowIndexer(api::Context& musikcore) {
     using Adapter = cursespp::SimpleScrollAdapter;
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry(_TSTR("indexer_overlay_reindex"));
@@ -185,11 +178,14 @@ void BrowseOverlays::ShowIndexer(musik::core::ILibraryPtr library) {
         .SetWidth(_DIMEN("indexer_overlay_width", 28))
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
-        [library]
-        (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+        [&musikcore](ListOverlay*, IScrollAdapterPtr, size_t index) {
+            if (musikcore.GetLibraryStatus().kind != MC_LIBRARY_LOCAL) {
+                return;
+            }
+
             switch (index) {
-                case 0: library->Indexer()->Schedule(IIndexer::SyncType::Local); break;
-                case 1: library->Indexer()->Schedule(IIndexer::SyncType::Rebuild); break;
+                case 0: api::Indexer(musikcore).Schedule(MC_INDEXER_SCAN_LOCAL); break;
+                case 1: api::Indexer(musikcore).Schedule(MC_INDEXER_REBUILD); break;
             }
         });
 

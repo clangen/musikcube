@@ -40,9 +40,7 @@
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
-#include <musikcore/audio/PlaybackService.h>
 #include <musikcore/support/Preferences.h>
-#include <musikcore/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>
 
@@ -60,15 +58,15 @@ namespace musik {
                 using HeaderClickHandler = std::function<void()>;
 
                 BrowseLayout(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    musik::core::api::Context& context);
 
                 virtual ~BrowseLayout();
-                void SetTrackLibrary(std::shared_ptr<musik::core::api::Context> context,
-                    std::shared_ptr<const musik::core::api::Library> library) {
-                    this->trackList->SetApiLibrary(std::move(context), std::move(library));
+                void OnIndexerProgress(int count);
+                void CancelTrackRequests() {
+                    this->playlistWork.Invalidate();
+                    this->categoryList->CancelQuery();
+                    this->trackList->CancelTrackRequests();
                 }
-                void CancelTrackRequests() { this->trackList->CancelTrackRequests(); }
                 void SetAddToPlaylistCallbacks(TrackListView::AddTrackToPlaylist track,
                     TrackListView::AddCategoryToPlaylist category) {
                     this->categoryList->SetAddToPlaylistCallback(category);
@@ -95,7 +93,6 @@ namespace musik {
                 void InitializeWindows();
                 void SaveSession();
 
-                void OnIndexerProgress(int count);
                 void RequeryTrackList(cursespp::ListWindow *view);
 
                 void OnCategoryViewSelectionChanged(
@@ -123,8 +120,8 @@ namespace musik {
                 bool playlistModified{ false };
                 bool showCategoryListFilter{ false };
                 std::string currentFilter;
-                musik::core::audio::PlaybackService& playback;
-                musik::core::ILibraryPtr library;
+                musik::core::api::Context& musikcore;
+                AsyncCallbackScope playlistWork;
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<cursespp::TextInput> categoryListFilter;

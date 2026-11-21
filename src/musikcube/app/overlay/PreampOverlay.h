@@ -37,7 +37,7 @@
 #include <functional>
 
 #include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IPlaybackService.h>
+#include <musikcore/playback.hpp>
 #include <musikcore/support/Preferences.h>
 
 #include <cursespp/Checkbox.h>
@@ -56,7 +56,7 @@ namespace musik {
             using Callback = std::function<void()>;
 
             static void Show(
-                musik::core::sdk::IPlaybackService& playback,
+                musik::core::api::Playback playback,
                 Callback callback);
 
             virtual void Layout();
@@ -66,7 +66,7 @@ namespace musik {
 
         private:
             PreampOverlay(
-                musik::core::sdk::IPlaybackService& playback,
+                musik::core::api::Playback playback,
                 Callback callback);
 
             void RecalculateSize();
@@ -77,7 +77,7 @@ namespace musik {
             Callback callback;
             int width, height, x, y;
 
-            musik::core::sdk::IPlaybackService& playback;
+            musik::core::api::Playback playback;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<cursespp::TextLabel> titleLabel, preampLabel, replayGainDropdown;
             std::shared_ptr<cursespp::TextInput> preampInput;

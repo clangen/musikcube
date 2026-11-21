@@ -36,7 +36,6 @@
 
 #include <functional>
 #include <musikcore/audio/MasterTransport.h>
-#include <musikcore/sdk/IPlaybackService.h>
 
 namespace musik {
     namespace cube {

@@ -41,14 +41,13 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/SingleLineEntry.h>
 
-#include <musikcore/audio/PlaybackService.h>
 
 #include <musikcore/runtime/IMessage.h>
-#include <musikcore/library/ILibrary.h>
 
 #include <app/util/TrackRowRenderers.h>
 #include <app/util/AsyncCallbackScope.h>
 #include <musikcore/track-result-window.hpp>
+#include <musikcore/playback.hpp>
 #include <map>
 #include <set>
 
@@ -68,14 +67,13 @@ namespace musik {
                 typedef musik::core::TrackPtr TrackPtr;
 
                 /* types */
-                using RowDecorator = std::function<cursespp::Color(TrackPtr, size_t)>;
+                using RowDecorator = std::function<cursespp::Color(size_t)>;
                 using Headers = std::shared_ptr<std::set<size_t>>;
                 using Durations = std::shared_ptr<std::map<size_t, size_t>>;
 
                 /* ctor, dtor */
                 TrackListView(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library,
+                    musik::core::api::Context& context,
                     RowDecorator decorator = RowDecorator());
                 ~TrackListView() override;
                 void OnParentVisibilityChanged(bool visible) override;
@@ -85,7 +83,8 @@ namespace musik {
                 bool KeyPress(const std::string& key) override;
 
                 /* regular methods */
-                std::shared_ptr<musik::core::TrackList> GetTrackList();
+                std::vector<int64_t> TrackIds() const;
+                bool HasTrackResult() const noexcept { return bool(this->resultWindow); }
                 using AddTrackToPlaylist = std::function<void(int64_t)>;
                 using AddCategoryToPlaylist = std::function<void(const std::string&, const std::string&, int64_t)>;
                 void SetAddToPlaylistCallbacks(AddTrackToPlaylist track, AddCategoryToPlaylist category) {
@@ -95,7 +94,6 @@ namespace musik {
                 void SetQueueActivationCallback(std::function<void(size_t)> callback) {
                     this->activateQueueRow = std::move(callback);
                 }
-                musik::core::TrackPtr GetSelectedTrack();
                 size_t GetSelectedTrackIndex();
                 size_t TrackIndexToAdapterIndex(size_t index);
                 size_t TrackCount() noexcept;
@@ -107,9 +105,7 @@ namespace musik {
 
                 void Reset();
                 using TrackRequest = std::function<mc_request_id(musik::core::api::Context&,
-                    const musik::core::api::Library&, musik::core::api::TrackSearchCompletion)>;
-                void SetApiLibrary(std::shared_ptr<musik::core::api::Context> context,
-                    std::shared_ptr<const musik::core::api::Library> library);
+                    musik::core::api::TrackSearchCompletion)>;
                 void RequeryTracks(size_t hash, TrackRequest request);
                 void SetTrackResult(musik::core::api::TrackResult result, size_t hash);
                 void SetTrackIds(const int64_t* ids, size_t count, size_t hash);
@@ -126,6 +122,10 @@ namespace musik {
                 bool OnEntryActivated(size_t index) override;
                 bool OnEntryContextMenu(size_t index) override;
                 void ShowContextMenu();
+                void ShowRatingOverlay();
+                void OnSelectionChanged(size_t newIndex, size_t oldIndex) override;
+                void OnFocusChanged(bool focused) override;
+                void OnVisibilityChanged(bool visible) override;
 
                 /* this view has headers and track entry types */
                 enum class RowType : char { Track = 't', Separator = 's' };
@@ -160,17 +160,16 @@ namespace musik {
             private:
                 void ApplyQueryResult(Headers headers, Durations durations, size_t hash, bool hadTracks);
                 size_t RowIndex(size_t adapterIndex);
-                TrackPtr DisplayTrack(size_t row);
-                TrackPtr DisplayApiTrack(size_t row);
                 void LoadTrackPage();
                 void UpdatePagePolling(bool pending);
                 void HandlePageStatus(mc_result status);
                 void CancelTrackRequest();
                 void SubmitTrackRequest();
-                std::shared_ptr<musik::core::api::Context> apiContext;
-                std::shared_ptr<const musik::core::api::Library> apiLibrary;
+                musik::core::api::Context& musikcore;
                 std::unique_ptr<musik::core::api::TrackResultWindow> resultWindow;
                 AsyncCallbackScope trackQueryWork;
+                AsyncCallbackScope albumActionWork;
+                AsyncCallbackScope ratingDialogWork;
                 mc_request_id trackRequest = 0;
                 TrackRequest pendingTrackQuery;
                 size_t pendingTrackHash = 0;
@@ -202,18 +201,15 @@ namespace musik {
                         Durations durations;
                 };
 
-                void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+                void RefreshPlayingTrack();
 
                 void ScrollToPlaying();
                 void SelectFirstTrack();
 
-                std::shared_ptr<musik::core::TrackList> tracks;
                 HeaderCalculator headers;
                 std::unique_ptr<Adapter> adapter;
-                musik::core::audio::PlaybackService& playback;
                 musik::core::api::Playback apiPlayback;
-                musik::core::TrackPtr playing;
-                musik::core::ILibraryPtr library;
+                std::optional<int64_t> playingId;
                 size_t lastQueryHash;
                 RowDecorator decorator;
                 TrackRowRenderers::Renderer renderer;

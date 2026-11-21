@@ -67,15 +67,21 @@ constexpr int kRequeryIntervalMs = 300;
     x == this->artists || \
     x == this->genres
 
-CategorySearchLayout::CategorySearchLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
-: LayoutBase() {
-    this->library = library;
+CategorySearchLayout::CategorySearchLayout(api::Context& musikcore)
+: LayoutBase()
+, musikcore(musikcore) {
     this->prefs = Preferences::ForComponent(components::Settings);
-    this->InitializeWindows(playback);
+    this->InitializeWindows();
 }
 
 CategorySearchLayout::~CategorySearchLayout() {
     this->SaveSession();
+}
+
+void CategorySearchLayout::CancelSearchRequests() {
+    this->artists->CancelQuery();
+    this->albums->CancelQuery();
+    this->genres->CancelQuery();
 }
 
 void CategorySearchLayout::LoadLastSession() {
@@ -122,12 +128,11 @@ void CategorySearchLayout::OnLayout() {
 
 void CategorySearchLayout::CreateCategoryView(
     std::shared_ptr<CategoryListView>& view,
-    musik::core::audio::PlaybackService& playback,
     const std::string& title,
     const std::string& type,
     int order)
 {
-    view = std::make_shared<CategoryListView>(playback, library, type);
+    view = std::make_shared<CategoryListView>(this->musikcore, type);
     view->EntryActivated.connect(this, &CategorySearchLayout::OnCategoryEntryActivated);
     view->SetFrameTitle(_TSTR(title));
     view->SetAllowArrowKeyPropagation();
@@ -135,16 +140,16 @@ void CategorySearchLayout::CreateCategoryView(
     this->AddWindow(view);
 }
 
-void CategorySearchLayout::InitializeWindows(musik::core::audio::PlaybackService& playback) {
+void CategorySearchLayout::InitializeWindows() {
     this->input = std::make_shared<TextInput>();
     this->input->TextChanged.connect(this, &CategorySearchLayout::OnInputChanged);
     this->input->EnterPressed.connect(this, &CategorySearchLayout::OnEnterPressed);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
-    this->CreateCategoryView(this->albums, playback, "browse_title_albums", constants::Track::ALBUM, 1);
-    this->CreateCategoryView(this->artists, playback, "browse_title_artists", constants::Track::ARTIST, 2);
-    this->CreateCategoryView(this->genres, playback, "browse_title_genres", constants::Track::GENRE, 3);
+    this->CreateCategoryView(this->albums, "browse_title_albums", constants::Track::ALBUM, 1);
+    this->CreateCategoryView(this->artists, "browse_title_artists", constants::Track::ARTIST, 2);
+    this->CreateCategoryView(this->genres, "browse_title_genres", constants::Track::GENRE, 3);
 }
 
 void CategorySearchLayout::Requery() {

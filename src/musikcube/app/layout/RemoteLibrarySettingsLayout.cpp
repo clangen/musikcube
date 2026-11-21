@@ -38,8 +38,6 @@
 
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
-#include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <app/overlay/SettingsOverlays.h>
 
@@ -75,8 +73,9 @@ static inline int longestStringLength(const std::vector<std::string>&& keys) {
     return max;
 }
 
-RemoteLibrarySettingsLayout::RemoteLibrarySettingsLayout()
-: LayoutBase() {
+RemoteLibrarySettingsLayout::RemoteLibrarySettingsLayout(api::Context& musikcore)
+: LayoutBase()
+, musikcore(musikcore) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->SetFocusMode(FocusModeTerminating);
     this->InitializeWindows();
@@ -203,8 +202,8 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->httpTlsCheckbox->CheckChanged.disconnect(this);
 
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    auto const wssPort = prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, RemoteLibrary::DefaultWebSocketPort);
-    auto const httpPort = prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, RemoteLibrary::DefaultHttpPort);
+    auto const wssPort = prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, MC_REMOTE_DEFAULT_WEBSOCKET_PORT);
+    auto const httpPort = prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, MC_REMOTE_DEFAULT_HTTP_PORT);
     auto const password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
     auto const wssTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
     auto const httpTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
@@ -245,15 +244,15 @@ void RemoteLibrarySettingsLayout::SyncPreferencesAndLayout() {
 
 void RemoteLibrarySettingsLayout::SavePreferences() {
     auto host = this->hostInput->GetText();
-    auto wssPort = getIntFromTextInput(*this->wssPortInput, RemoteLibrary::DefaultWebSocketPort);
-    auto httpPort = getIntFromTextInput(*this->httpPortInput, RemoteLibrary::DefaultHttpPort);
+    auto wssPort = getIntFromTextInput(*this->wssPortInput, MC_REMOTE_DEFAULT_WEBSOCKET_PORT);
+    auto httpPort = getIntFromTextInput(*this->httpPortInput, MC_REMOTE_DEFAULT_HTTP_PORT);
     auto password = this->pwInput->GetText();
     auto const wssTls = this->wssTlsCheckbox->IsChecked();
     auto const httpTls = this->httpTlsCheckbox->IsChecked();
     auto const transcoderEnabled = this->transcoderCheckbox->IsChecked();
 
-    if (wssPort > 65535 || wssPort <= 0) { wssPort = RemoteLibrary::DefaultWebSocketPort; }
-    if (httpPort > 65535 || httpPort <= 0) { httpPort = RemoteLibrary::DefaultHttpPort; }
+    if (wssPort > 65535 || wssPort <= 0) { wssPort = MC_REMOTE_DEFAULT_WEBSOCKET_PORT; }
+    if (httpPort > 65535 || httpPort <= 0) { httpPort = MC_REMOTE_DEFAULT_HTTP_PORT; }
 
     prefs->SetString(core::prefs::keys::RemoteLibraryHostname, host.size() ? host.c_str() : "127.0.0.1");
     prefs->SetInt(core::prefs::keys::RemoteLibraryWssPort, wssPort);
@@ -265,11 +264,7 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
 
     /* note: transcoder format and bitrate settings are saved via SettingsOverlays calls */
 
-    auto library = LibraryFactory::Instance().DefaultRemoteLibrary();
-    auto remoteLibrary = std::dynamic_pointer_cast<RemoteLibrary>(library);
-    if (remoteLibrary) {
-        remoteLibrary->Connect();
-    }
+    this->musikcore.ReconnectRemoteLibrary();
 }
 
 void RemoteLibrarySettingsLayout::OnActivateTranscoderFormat(cursespp::TextLabel* tl) {

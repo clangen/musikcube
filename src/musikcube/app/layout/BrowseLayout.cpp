@@ -38,7 +38,6 @@
 #include <cursespp/Screen.h>
 
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/util/TrackSort.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
@@ -114,14 +113,11 @@ static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preference
 }
 
 BrowseLayout::BrowseLayout(
-    musik::core::audio::PlaybackService& playback,
-    ILibraryPtr library)
+    api::Context& context)
 : LayoutBase()
 , playlistModified(false)
-, playback(playback) {
-    this->library = library;
-    this->library->Indexer()->Progress.connect(this, &BrowseLayout::OnIndexerProgress);
-    this->library->Indexer()->Finished.connect(this, &BrowseLayout::OnIndexerProgress);
+, musikcore(context)
+{
     this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 }
@@ -179,7 +175,8 @@ void BrowseLayout::OnLayout() {
 }
 
 void BrowseLayout::InitializeWindows() {
-    this->categoryList = std::make_shared<CategoryListView>(this->playback, this->library, DEFAULT_CATEGORY);
+    this->categoryList = std::make_shared<CategoryListView>(
+        this->musikcore, DEFAULT_CATEGORY);
     this->categoryList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
     this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
 
@@ -188,7 +185,7 @@ void BrowseLayout::InitializeWindows() {
     this->categoryListFilter->EnterPressed.connect(this, &BrowseLayout::OnCategoryFilterEnterPressed);
     this->categoryListFilter->SetHint(_TSTR("search_filter_hint"));
 
-    this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
+    this->trackList = std::make_shared<TrackListView>(this->musikcore);
     this->trackList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
 
     this->modifiedLabel = std::make_shared<TextLabel>();
@@ -308,8 +305,8 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
             const auto hash = std::hash<std::string>{}(column + ":" + std::to_string(selectedId) +
                 ":" + std::to_string(static_cast<int>(sortOrder)));
             this->trackList->RequeryTracks(hash, [column, selectedId, sortOrder]
-                (api::Context& context, const api::Library& library, api::TrackSearchCompletion completion) {
-                    return api::OpenCategory(context, library, column, selectedId,
+                (api::Context& context, api::TrackSearchCompletion completion) {
+                    return api::OpenCategory(context, column, selectedId,
                         static_cast<mc_track_search_order>(sortOrder), std::move(completion));
                 });
             this->UpdateTrackTitle();
@@ -428,118 +425,104 @@ bool BrowseLayout::IsPlaylist() {
 }
 
 bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
-    if (IsPlaylist()) {
-        if (Hotkeys::Is(Hotkeys::BrowsePlaylistsNew, key)) {
-            /* note: no callback here, will handle this in ProcessMessage so
-            we can still create new playlists from the context menu, out of
-            band. */
-            PlayQueueOverlays::ShowCreatePlaylistOverlay(library);
+    if (!this->IsPlaylist()) {
+        return false;
+    }
+
+    const auto selected = this->categoryList->GetSelectedId();
+    const auto token = this->playlistWork.CurrentToken();
+    const auto refresh = [this](int64_t id) {
+        this->ShowModifiedLabel(false);
+        this->categoryList->Requery(this->categoryList->GetFilter(), id);
+    };
+
+    if (Hotkeys::Is(Hotkeys::BrowsePlaylistsNew, key)) {
+        PlayQueueOverlays::ShowSavePlaylistOverlay(this->musikcore, token, {}, {}, refresh);
+        return true;
+    }
+    if (Hotkeys::Is(Hotkeys::BrowsePlaylistsSave, key) && selected > 0) {
+        if (!this->trackList->HasTrackResult()) {
             return true;
         }
-        else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsSave, key)) {
-            this->ShowModifiedLabel(false);
-            auto tracks = this->trackList->GetTrackList();
-            this->library->Enqueue(
-                SavePlaylistQuery::Replace(
-                    this->library,
-                    this->categoryList->GetSelectedId(),
-                    std::make_shared<TrackList>(tracks)));
-            return true;
-        }
-        else if (this->GetFocus() == this->categoryList) {
-            if (Hotkeys::Is(Hotkeys::BrowsePlaylistsRename, key)) {
-                const auto id = this->categoryList->GetSelectedId();
-                if (id != -1) {
-                    PlayQueueOverlays::ShowRenamePlaylistOverlay(
-                        library, id, this->categoryList->GetSelectedValue(),
-                        [this, id](auto query) {
-                            this->categoryList->Requery(this->categoryList->GetFilter(), id);
-                        });
+        try {
+            auto ids = this->trackList->TrackIds();
+            auto saved = this->playlistWork.Wrap([this, selected, ids](mc_result status, int64_t, std::string_view error) {
+                if (status != MC_OK) {
+                    musik::debug::error("BrowseLayout", std::string(error));
                 }
-                return true;
-            }
-            else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsDelete, key)) {
-                const auto id = this->categoryList->GetSelectedId();
-                if (id != -1) {
-                    PlayQueueOverlays::ShowConfirmDeletePlaylistOverlay(
-                        library, this->categoryList->GetSelectedValue(), id,
-                        [this](auto query) {
-                            this->categoryList->Requery();
-                        });
+                else if (this->categoryList->GetSelectedId() == selected && this->trackList->TrackIds() == ids) {
+                    this->ShowModifiedLabel(false);
                 }
-                return true;
-            }
+            });
+            api::SavePlaylist(this->musikcore, selected, {}, ids, std::move(saved));
         }
+        catch (const api::Error& error) {
+            musik::debug::error("BrowseLayout", error.what());
+        }
+        return true;
+    }
+    if (this->GetFocus() != this->categoryList || selected <= 0) {
+        return false;
+    }
+
+    const api::PlaylistEntry playlist { selected, this->categoryList->GetSelectedValue() };
+    if (Hotkeys::Is(Hotkeys::BrowsePlaylistsRename, key)) {
+        PlayQueueOverlays::ShowRenamePlaylistOverlay(this->musikcore, token, playlist, refresh);
+        return true;
+    }
+    if (Hotkeys::Is(Hotkeys::BrowsePlaylistsDelete, key)) {
+        PlayQueueOverlays::ShowDeletePlaylistOverlay(this->musikcore, token, playlist,
+            [this](int64_t) { this->categoryList->Requery(); });
+        return true;
     }
 
     return false;
 }
 
 bool BrowseLayout::ProcessEditOperation(const std::string& key) {
-    /* we can't cache these statically, unfortunately, because the user
-    can change them at runtime. */
-    std::set<std::string> editKeys;
-        editKeys = {
-            Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
-            Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
-            Hotkeys::Get(Hotkeys::PlayQueueDelete)
-        };
-
-    if (this->GetFocus() != this->trackList || editKeys.find(key) == editKeys.end()) {
+    if (this->GetFocus() != this->trackList || !this->IsPlaylist()) {
         return false;
     }
 
-    if (!this->IsPlaylist()) {
+    const bool up = Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key);
+    const bool down = Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key);
+    const bool erase = Hotkeys::Is(Hotkeys::PlayQueueDelete, key);
+    if (!up && !down && !erase) {
         return false;
     }
 
-    std::shared_ptr<TrackList> tracks = this->trackList->GetTrackList();
-    if (tracks && editKeys.find(key) != editKeys.end()) {
-        const size_t selected = this->trackList->GetSelectedTrackIndex();
-        size_t to = -1;
-        bool modified = this->playlistModified;
+    auto ids = this->trackList->TrackIds();
+    const auto selected = this->trackList->GetSelectedTrackIndex();
+    if (selected >= ids.size()) {
+        return false;
+    }
 
-        if (selected == ListWindow::NO_SELECTION) {
-            return false;
-        }
-
-        if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
-            if (selected > 0) {
-                to = selected - 1;
-                modified |= tracks->Move(selected, to);
-            }
-            else {
-                to = selected;
-            }
-        }
-        else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
-            if (selected < tracks->Count() - 1) {
-                to = selected + 1;
-                modified |= tracks->Move(selected, to);
-            }
-            else {
-                to = selected;
-            }
-        }
-        else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
-            modified |= tracks->Delete(selected);
-            to = selected;
-        }
-
-        const auto ids = tracks->GetIds();
-        this->trackList->SetEditedTrackIds(ids);
-        this->ShowModifiedLabel(modified);
-
-        if (!ids.empty()) {
-            to = trackList->TrackIndexToAdapterIndex(std::min(ids.size() - 1, to));
-            if (!trackList->IsEntryVisible(to)) trackList->ScrollTo(to);
-            trackList->SetSelectedIndex(to);
-        }
-
+    auto to = selected;
+    if (erase) {
+        ids.erase(ids.begin() + selected);
+    }
+    else if (up && selected > 0) {
+        --to;
+        std::swap(ids[selected], ids[to]);
+    }
+    else if (down && selected + 1 < ids.size()) {
+        ++to;
+        std::swap(ids[selected], ids[to]);
+    }
+    else {
         return true;
     }
 
-    return false;
+    this->trackList->SetEditedTrackIds(ids);
+    this->ShowModifiedLabel(true);
+    if (!ids.empty()) {
+        to = this->trackList->TrackIndexToAdapterIndex(std::min(ids.size() - 1, to));
+        if (!this->trackList->IsEntryVisible(to)) {
+            this->trackList->ScrollTo(to);
+        }
+        this->trackList->SetSelectedIndex(to);
+    }
+    return true;
 }
 
 void BrowseLayout::ShowModifiedLabel(bool show) {

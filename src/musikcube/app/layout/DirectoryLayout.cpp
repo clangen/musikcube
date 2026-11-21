@@ -61,16 +61,12 @@ constexpr int kMaxCategoryWidth = 40;
 constexpr int kMinListTitleHeight = 26;
 
 DirectoryLayout::DirectoryLayout(
-    musik::core::audio::PlaybackService& playback,
-    ILibraryPtr library)
+    api::Context& context)
 : LayoutBase()
-, playback(playback)
-, library(library)
+, musikcore(context)
 , queryHash(0)
 , hasSubdirectories(true) {
     this->InitializeWindows();
-    this->library->Indexer()->Progress.connect(this, &DirectoryLayout::OnIndexerProgress);
-    this->library->Indexer()->Finished.connect(this, &DirectoryLayout::OnIndexerProgress);
 }
 
 void DirectoryLayout::OnLayout() {
@@ -109,7 +105,7 @@ void DirectoryLayout::InitializeWindows() {
     this->directoryList->SetAdapter(this->adapter);
     this->directoryList->SetFocusOrder(0);
 
-    this->trackList.reset(new TrackListView(this->playback, this->library));
+    this->trackList.reset(new TrackListView(this->musikcore));
     this->trackList->SetFrameTitle(_TSTR("browse_title_tracks"));
     this->trackList->SetFocusOrder(1);
 
@@ -164,8 +160,8 @@ void DirectoryLayout::RequeryTrackList(ListWindow *view) {
         if (hash != this->queryHash) {
             this->queryHash = hash;
             this->trackList->RequeryTracks(hash, [fullPath]
-                (api::Context& context, const api::Library& library, api::TrackSearchCompletion completion) {
-                    return api::OpenDirectory(context, library, fullPath, std::move(completion));
+                (api::Context& context, api::TrackSearchCompletion completion) {
+                    return api::OpenDirectory(context, fullPath, std::move(completion));
                 });
         }
     }
@@ -252,9 +248,9 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
             size_t index = this->directoryList->GetSelectedIndex();
             if (index != DirectoryAdapter::NO_INDEX) {
                 auto path = this->adapter->GetFullPathAt(index);
-                if (path.size()) {
-                    PlayQueueOverlays::ShowAddDirectoryOverlay(
-                        this->playback, this->library, path);
+                if (!path.empty()) {
+                    PlayQueueOverlays::ShowAddCategoryOverlay(this->musikcore,
+                        this->directoryActions.CurrentToken(), MagicConstants::DirectoryCategoryType, path, -1);
                 }
             }
         }

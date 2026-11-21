@@ -46,15 +46,11 @@
 #include <app/layout/CategorySearchLayout.h>
 #include <app/layout/TrackSearchLayout.h>
 #include <app/window/TransportWindow.h>
-#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/playback.hpp>
 #include <musikcore/support/Preferences.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/indexer.hpp>
 
 #include <sigslot/sigslot.h>
-
-namespace musik { namespace core { namespace library {
-    class MasterLibrary;
-} } }
 
 namespace musik { namespace cube {
     class LibraryLayout : public cursespp::LayoutBase,
@@ -65,11 +61,10 @@ namespace musik { namespace cube {
             DELETE_CLASS_DEFAULTS(LibraryLayout)
 
             LibraryLayout(
-                musik::core::audio::PlaybackService& playback,
-                std::shared_ptr<musik::core::library::MasterLibrary> library,
-                std::shared_ptr<musik::core::api::Context> apiContext);
+                musik::core::api::Context& musikcore);
 
             void CancelLibraryRequests();
+            void OnIndexerEvent(mc_indexer_event event, int updates);
 
             cursespp::IWindowPtr FocusNext() override;
             cursespp::IWindowPtr FocusPrev() override;
@@ -99,8 +94,7 @@ namespace musik { namespace cube {
             void OnMainLayoutFocusTerminated(
                 LayoutBase::FocusDirection direction);
 
-            void InitializeWindows(const std::shared_ptr<musik::core::api::Context>& apiContext,
-                const musik::core::library::MasterLibrary& selection);
+            void InitializeWindows(musik::core::api::Context& musikcore);
 
             void ShowNowPlaying();
             void ShowBrowse(const std::string& category = "");
@@ -115,9 +109,8 @@ namespace musik { namespace cube {
             void UpdateShortcutsWindow();
 
             AsyncCallbackScope playlistWork;
-            musik::core::audio::PlaybackService& playback;
-            musik::core::audio::ITransport& transport;
-            musik::core::ILibraryPtr library;
+            musik::core::api::Playback playback;
+            musik::core::api::Context& musikcore;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<BrowseLayout> browseLayout;
             std::shared_ptr<DirectoryLayout> directoryLayout;

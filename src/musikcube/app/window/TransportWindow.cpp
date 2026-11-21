@@ -33,7 +33,6 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <musikcore/ffi/consumer/playback-binding.h>
 #include "TransportWindow.h"
 
 #include <cursespp/Screen.h>
@@ -175,9 +174,9 @@ static struct StringCache {
 /* ~~~~~~~~~~ TransportWindow::DisplayCache ~~~~~~~~~~ */
 
 void TransportWindow::DisplayCache::Reset() {
-    track.reset();
+    trackDuration = 0;
     title = album = artist = "";
-    titleCols = albumCols = artistCols;
+    titleCols = albumCols = artistCols = 0;
     secondsTotal = 0;
     totalTime = "0:00";
     totalTimeCols = 4;
@@ -198,44 +197,20 @@ std::string TransportWindow::DisplayCache::CurrentTime(int secondsCurrent) {
     return musik::core::duration::Duration(secondsCurrent);
 }
 
-void TransportWindow::DisplayCache::Update(ITransport& transport, TrackPtr track) {
-    /* some params don't update regularly at all, so we can safely
-    cache them as long as the track hasn't actually changed. */
-    if (this->track != track) {
-        this->Reset();
+void TransportWindow::DisplayCache::SetTrack(const api::TrackView& track) {
+    title = track.Title().empty() ? Strings.EMPTY_SONG : std::string(track.Title());
+    album = track.Album().empty() ? Strings.EMPTY_ALBUM : std::string(track.Album());
+    artist = track.Artist().empty() ? Strings.EMPTY_ARTIST : std::string(track.Artist());
+    titleCols = narrow_cast<int>(u8cols(title));
+    albumCols = narrow_cast<int>(u8cols(album));
+    artistCols = narrow_cast<int>(u8cols(artist));
+    trackDuration = static_cast<int>(track.Duration().value_or(std::chrono::seconds::zero()).count());
+}
 
-        this->track = track;
-
-        if (this->track) {
-            title = this->track->GetString(constants::Track::TITLE);
-            title = title.size() ? title : Strings.EMPTY_SONG;
-            titleCols = narrow_cast<int>(u8cols(title));
-
-            album = this->track->GetString(constants::Track::ALBUM);
-            album = album.size() ? album : Strings.EMPTY_ALBUM;
-            albumCols = narrow_cast<int>(u8cols(album));
-
-            artist = this->track->GetString(constants::Track::ARTIST);
-            artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
-            artistCols = narrow_cast<int>(u8cols(artist));
-        }
-    }
-
-    /* we check duration even if the track is the same because
-    looping params may have changed. */
-    auto updatedTotal = static_cast<int>(transport.GetDuration());
+void TransportWindow::DisplayCache::Update(double duration) {
+    const int updatedTotal = duration > 0 || duration == INT_MIN ? static_cast<int>(duration) : trackDuration;
     if (updatedTotal != secondsTotal) {
         secondsTotal = updatedTotal;
-        if (secondsTotal <= 0 && secondsTotal != INT_MIN) {
-            if (this->track) {
-                std::string duration =
-                    this->track->GetString(constants::Track::DURATION);
-                if (duration.size()) {
-                    secondsTotal = std::stoi(duration);
-                }
-            }
-        }
-
         if (secondsTotal >= 0) {
             totalTime = musik::core::duration::Duration(secondsTotal);
         }
@@ -283,7 +258,7 @@ bool TransportWindow::Position::Contains(const IMouseHandler::Event& event) noex
 
 /* writes the colorized formatted string to the specified window. accounts for
 utf8 characters and ellipsizing */
-size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width) {
+size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width, mc_playback_state state) {
     this->metadataFieldToPosition.clear();
 
     TokenList tokens;
@@ -310,8 +285,7 @@ size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width) {
                     value = Strings.BUFFERING;
                 }
                 else {
-                    auto const state = transport.GetPlaybackState();
-                    bool const paused = (state != PlaybackState::Playing);
+                    bool const paused = (state != MC_PLAYBACK_PLAYING);
                     value = paused ? Strings.PAUSED : Strings.PLAYING;
                 }
                 cols = u8len(value);
@@ -378,38 +352,28 @@ static inline bool dec(const std::string& kn) {
     return (Hotkeys::Is(Hotkeys::Left, kn));
 }
 
-TransportWindow::TransportWindow(
-    musik::core::ILibraryPtr library,
-    musik::core::audio::PlaybackService& playback)
+TransportWindow::TransportWindow(api::Context& musikcore)
 : Window(nullptr)
-, library(library)
-, replayGainMode(ReplayGainMode::Disabled)
-, playback(playback)
-, transport(playback.GetTransport())
-, apiPlayback(musik::core::audio::CreatePlaybackHandle(playback))
-, focus(FocusNone)
-, hasReplayGain(false) {
+, musikcore(musikcore)
+, apiPlayback(musikcore.GetPlayback())
+, focus(FocusNone) {
     Strings.Initialize();
     this->SetFrameVisible(false);
-    this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
-    this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
-    this->playback.PlaybackStateChanged.connect(this, &TransportWindow::OnPlaybackStateChanged);
-    this->playback.Shuffled.connect(this, &TransportWindow::OnPlaybackShuffled);
-    this->playback.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
-    this->playback.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
-    this->playback.StreamStateChanged.connect(this, &TransportWindow::OnPlaybackStreamStateChanged);
+    this->apiPlayback.SetChangedCallback([](void* data, mc_playback_event event) {
+        static_cast<TransportWindow*>(data)->OnPlaybackChanged(event);
+    }, this);
     this->paused = false;
     this->lastTime = DEFAULT_TIME;
     this->shufflePos.y = 0;
     this->repeatPos.y = 1;
     this->volumePos.y = 1;
     this->timeBarPos.y = 1;
-    this->currentTrack = playback.GetPlaying();
-    this->UpdateReplayGainState();
+    this->displayCache.Reset();
+    this->RefreshTrack();
 }
 
 TransportWindow::~TransportWindow() {
-    this->disconnect_all();
+    this->apiPlayback.SetChangedCallback(nullptr);
 }
 
 void TransportWindow::SetFocus(FocusTarget target) {
@@ -500,15 +464,11 @@ bool TransportWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
 
         for (auto entry : this->metadataFieldToPosition) {
             if (entry.second.Contains(event)) {
-                const auto track = this->currentTrack;
-                if (track) {
-                    const auto type = entry.first;
-                    if (type == kTitleToken || type == kAlbumToken || type == kArtistToken) {
-                        PlayQueueOverlays::ShowAddTrackOverlay(
-                            this->MessageQueue(),
-                            this->library,
-                            this->playback,
-                            track);
+                const auto type = entry.first;
+                if (type == kTitleToken || type == kAlbumToken || type == kArtistToken) {
+                    if (auto current = this->apiPlayback.CurrentTrack()) {
+                        PlayQueueOverlays::ShowAddTrackOverlay(this->MessageQueue(), this->musikcore,
+                            this->trackMenuWork.Begin(), std::move(*current), false);
                     }
                 }
                 break;
@@ -558,12 +518,12 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     if (type == message::RefreshTransport) {
         this->Update(static_cast<TimeMode>(message.UserData1()));
 
-        if (transport.GetPlaybackState() != PlaybackState::Stopped) {
+        const auto snapshot = this->apiPlayback.Snapshot();
+        if (snapshot && snapshot->state != MC_PLAYBACK_STOPPED) {
             DEBOUNCE_REFRESH(TimeMode::Smooth, REFRESH_INTERVAL_MS)
         }
     }
     else if (type == message::TransportBuffering) {
-        this->currentTrack = this->playback.GetPlaying();
         this->buffering = true;
         this->Update();
     }
@@ -572,68 +532,60 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     }
 }
 
-void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
-    this->currentTrack = track;
-    this->lastTime = DEFAULT_TIME;
-    this->buffering = playback.GetTransport().GetStreamState() == StreamState::Buffering;
-    this->UpdateReplayGainState();
-    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
-}
-
-void TransportWindow::OnPlaybackStreamStateChanged(StreamState state) {
-    if (state == StreamState::Buffering) {
-        this->Debounce(message::TransportBuffering, 0, 0, 250);
+void TransportWindow::OnPlaybackChanged(mc_playback_event event) {
+    const auto snapshot = this->apiPlayback.Snapshot();
+    if (!snapshot) {
+        return;
     }
-    else {
-        this->Remove(message::TransportBuffering);
-        this->buffering = false;
-        this->Update();
+
+    if (event == MC_PLAYBACK_CHANGED_TRACK) {
+        this->RefreshTrack();
+        this->lastTime = DEFAULT_TIME;
+        this->buffering = snapshot->stream == MC_PLAYBACK_STREAM_BUFFERING;
     }
-}
 
-void TransportWindow::OnPlaybackModeChanged() {
-    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
-}
+    /* Keep the delay before displaying transient buffering. */
+    if (event == MC_PLAYBACK_CHANGED_STREAM) {
+        if (snapshot->stream == MC_PLAYBACK_STREAM_BUFFERING) {
+            this->Debounce(message::TransportBuffering, 0, 0, 250);
+        }
+        else {
+            this->Remove(message::TransportBuffering);
+            this->buffering = false;
+        }
+    }
 
-void TransportWindow::OnTransportVolumeChanged() {
-    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
-}
-
-void TransportWindow::OnPlaybackStateChanged(PlaybackState state) {
-    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
-}
-
-void TransportWindow::OnTransportTimeChanged(double time) {
-    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
-}
-
-void TransportWindow::OnPlaybackShuffled(bool shuffled) {
-    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
+    if (event != MC_PLAYBACK_CHANGED_STREAM || snapshot->stream != MC_PLAYBACK_STREAM_BUFFERING) {
+        DEBOUNCE_REFRESH(TimeMode::Sync, 0);
+    }
 }
 
 void TransportWindow::OnRedraw() {
     this->Update();
 }
 
-void TransportWindow::UpdateReplayGainState() {
-    using Mode = ReplayGainMode;
+void TransportWindow::RefreshTrack() {
+    this->trackWork.Invalidate();
+    this->trackMenuWork.Invalidate();
+    this->displayCache.Reset();
 
-    auto preferences = Preferences::ForComponent(core::prefs::components::Playback);
-
-    this->replayGainMode = static_cast<Mode>(
-        preferences->GetInt(
-            core::prefs::keys::ReplayGainMode.c_str(),
-            static_cast<int>(Mode::Disabled)));
-
-    this->hasReplayGain = false;
-
-    if (this->replayGainMode != Mode::Disabled) {
-        if (this->currentTrack) {
-            const ReplayGain gain = this->currentTrack->GetReplayGain();
-            this->hasReplayGain =
-                gain.albumGain != 1.0f || gain.albumPeak != 1.0f ||
-                gain.trackGain != 1.0f || gain.albumPeak != 1.0f;
+    try {
+        const auto track = this->apiPlayback.CurrentTrack();
+        if (!track) {
+            return;
         }
+
+        api::ReadTrack(this->musikcore, *track,
+            { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_DURATION },
+            this->trackWork.Wrap([this](mc_result status, api::TrackPage page, std::string_view) {
+                if (status == MC_OK && page.Size()) {
+                    this->displayCache.SetTrack(page.Track(0));
+                    this->Update(TimeMode::Sync);
+                }
+            }));
+    }
+    catch (const api::Error& error) {
+        musik::debug::error("TransportWindow", error.what());
     }
 }
 
@@ -652,12 +604,18 @@ void TransportWindow::Update(TimeMode timeMode) {
         return;
     }
 
-    auto const state = transport.GetPlaybackState();
-    bool const paused = (state == PlaybackState::Paused);
-    bool const prepared = (state == PlaybackState::Prepared);
-    bool const stopped = (state == PlaybackState::Stopped);
-    bool const muted = transport.IsMuted();
-    bool const replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
+    const auto snapshot = this->apiPlayback.Snapshot();
+    if (!snapshot) {
+        return;
+    }
+
+    const bool paused = snapshot->state == MC_PLAYBACK_PAUSED;
+    const bool prepared = snapshot->state == MC_PLAYBACK_PREPARED;
+    const bool stopped = snapshot->state == MC_PLAYBACK_STOPPED;
+    const bool muted = snapshot->muted;
+    const auto replayGainMode = Preferences::ForComponent(core::prefs::components::Playback)->GetInt(
+        core::prefs::keys::ReplayGainMode, static_cast<int>(ReplayGainMode::Disabled));
+    const bool replayGainEnabled = replayGainMode != static_cast<int>(ReplayGainMode::Disabled);
 
     Color const gb = Color::TextActive;
     Color const disabled = Color::TextDisabled;
@@ -688,14 +646,14 @@ void TransportWindow::Update(TimeMode timeMode) {
         OFF(c, disabled);
     }
     else {
-        displayCache.Update(transport, this->currentTrack);
-        this->WritePlayingFormat(c, cx - shuffleWidth);
+        displayCache.Update(snapshot->duration);
+        this->WritePlayingFormat(c, cx - shuffleWidth, snapshot->state);
     }
 
     /* draw the "shuffle" label */
     const int shuffleOffset = narrow_cast<int>(cx - shuffleWidth);
     wmove(c, 0, shuffleOffset);
-    Color const shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
+    Color const shuffleAttrs = snapshot->shuffled ? gb : disabled;
     ON(c, shuffleAttrs);
     checked_wprintw(c, "%s", shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
@@ -703,7 +661,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* volume slider */
 
-    int const volumePercent = static_cast<int>(round(this->transport.Volume() * 100.0f));
+    int const volumePercent = static_cast<int>(round(snapshot->volume * 100.0f));
     int thumbOffset = std::min(10, (volumePercent * 10) / 100);
 
     std::string volume;
@@ -720,21 +678,20 @@ void TransportWindow::Update(TimeMode timeMode) {
             volume += (i == thumbOffset) ? "■" : "─";
         }
 
-        volume += u8fmt(" %d", static_cast<int>(std::round(this->transport.Volume() * 100)));
+        volume += u8fmt(" %d", volumePercent);
         volume += replayGainEnabled ? "% " : "%  ";
     }
 
     /* repeat mode setup */
 
-    RepeatMode const mode = this->playback.GetRepeatMode();
     std::string repeatModeLabel;
     Color repeatAttrs = Color::Default;
-    switch (mode) {
-        case RepeatMode::List:
+    switch (snapshot->repeat) {
+        case MC_PLAYBACK_REPEAT_LIST:
             repeatModeLabel += Strings.REPEAT_LIST;
             repeatAttrs = gb;
             break;
-        case RepeatMode::Track:
+        case MC_PLAYBACK_REPEAT_TRACK:
             repeatModeLabel += Strings.REPEAT_TRACK;
             repeatAttrs = gb;
             break;
@@ -766,7 +723,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     if (!this->buffering && timeMode == TimeMode::Smooth) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
-        double const actualTime = playback.GetPosition();
+        double const actualTime = snapshot->position;
 
         if (prepared || paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {
             smoothedTime = actualTime;
@@ -778,7 +735,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         secondsCurrent = static_cast<int>(round(smoothedTime));
     }
     else {
-        this->lastTime = std::max(0.0, playback.GetPosition());
+        this->lastTime = std::max(0.0, snapshot->position);
         secondsCurrent = static_cast<int>(round(this->lastTime));
     }
 
@@ -822,7 +779,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     OFF(c, volumeAttrs);
 
     if (replayGainEnabled) {
-        auto const rgStyle = this->hasReplayGain ? gb : disabled;
+        auto const rgStyle = snapshot->has_replay_gain ? gb : disabled;
         checked_wprintw(c, "[");
         ON(c, rgStyle); checked_wprintw(c, "%s", replayGain.c_str()); OFF(c, rgStyle);
         checked_wprintw(c, "]  ");

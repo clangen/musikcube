@@ -38,28 +38,25 @@
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/support/Auddio.h>
 #include <musikcore/sdk/String.h>
-#include <musikcore/library/query/LyricsQuery.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>
 #include <cursespp/SingleLineEntry.h>
 #include <app/util/Hotkeys.h>
+#include <musikcore/runtime/Message.h>
 #include <app/util/Messages.h>
 
 using namespace musik::cube;
 using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::library::query;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 using namespace cursespp;
 
-LyricsLayout::LyricsLayout(PlaybackService& playback, ILibraryPtr library)
+LyricsLayout::LyricsLayout(api::Context& musikcore)
 : LayoutBase()
 , currentTrackId(-1LL)
-, library(library)
-, playback(playback) {
-    this->playback.TrackChanged.connect(this, &LyricsLayout::OnTrackChanged);
+, musikcore(musikcore)
+, playback(musikcore.GetPlayback()) {
 
     this->adapter = std::make_shared<SimpleScrollAdapter>();
     this->adapter->SetSelectable(true);
@@ -71,7 +68,16 @@ LyricsLayout::LyricsLayout(PlaybackService& playback, ILibraryPtr library)
     this->infoText = std::make_shared<TextLabel>("", text::AlignCenter);
     this->AddWindow(this->infoText);
 
-    this->LoadLyricsForCurrentTrack();
+    this->playback.SetChangedCallback([](void* data, mc_playback_event) {
+        auto& view = *static_cast<LyricsLayout*>(data);
+        view.currentTrackId = -1;
+        if (view.IsVisible()) {
+            view.LoadLyricsForCurrentTrack();
+        }
+        else {
+            view.lyricsWork.Invalidate();
+        }
+    }, this, { MC_PLAYBACK_CHANGED_TRACK });
 }
 
 void LyricsLayout::OnLayout() {
@@ -82,30 +88,24 @@ void LyricsLayout::OnLayout() {
     this->infoText->MoveAndResize(1, cy / 2, cx - 2, 1);
 }
 
-void LyricsLayout::OnTrackChanged(size_t index, TrackPtr track) {
-    if (this->IsVisible()) {
-        this->LoadLyricsForCurrentTrack();
+void LyricsLayout::OnLyricsLoaded(std::string lyrics) {
+    if (lyrics.empty()) {
+        this->SetState(State::Failed);
+        return;
     }
-}
 
-void LyricsLayout::OnLyricsLoaded() {
+    this->currentLyrics = std::move(lyrics);
     this->UpdateAdapter();
     this->listView->ScrollTo(0);
     this->listView->SetSelectedIndex(0);
-
-    auto track = this->playback.GetPlaying();
-    if (track) {
-        this->listView->SetFrameTitle(u8fmt(
-            _TSTR("lyrics_list_title"),
-            track->GetString("title").c_str(),
-            track->GetString("artist").c_str()));
-    }
-
+    this->listView->SetFrameTitle(u8fmt(
+        _TSTR("lyrics_list_title"), this->trackTitle.c_str(), this->trackArtist.c_str()));
     this->SetState(State::Loaded);
 }
 
 bool LyricsLayout::KeyPress(const std::string& kn) {
     if (Hotkeys::Is(Hotkeys::LyricsRetry, kn)) {
+        this->currentTrackId = -1;
         this->LoadLyricsForCurrentTrack();
         return true;
     }
@@ -118,7 +118,7 @@ bool LyricsLayout::KeyPress(const std::string& kn) {
         return true;
     }
     else if (kn == " ") { /* ugh... need to generalize this maybe */
-        playback.PauseOrResume();
+        this->playback.Control(MC_PLAYBACK_TOGGLE_PAUSE);
         return true;
     }
 
@@ -133,51 +133,70 @@ void LyricsLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
-#include <iostream>
+namespace {
+    class LyricsLoadedMessage final : public Message {
+    public:
+        LyricsLoadedMessage(IMessageTarget* target, AsyncCallbackScope::Token token, std::string lyrics)
+            : Message(target, musik::cube::message::LyricsLoaded, 0, 0), token(token), lyrics(std::move(lyrics)) {}
 
-void LyricsLayout::ProcessMessage(musik::core::runtime::IMessage &m) {
-    if (m.Type() == message::LyricsLoaded) {
-        const auto state = static_cast<State>(m.UserData1());
-        if (state == State::Loaded && this->currentLyrics.size()) {
-            this->OnLyricsLoaded();
-        }
-        else {
-            this->SetState(state);
+        AsyncCallbackScope::Token token;
+        std::string lyrics;
+    };
+}
+
+void LyricsLayout::ProcessMessage(IMessage& message) {
+    if (message.Type() == message::LyricsLoaded) {
+        auto& result = static_cast<LyricsLoadedMessage&>(message);
+        if (result.token.IsCurrent()) {
+            this->OnLyricsLoaded(std::move(result.lyrics));
         }
     }
     else {
-        LayoutBase::ProcessMessage(m);
+        LayoutBase::ProcessMessage(message);
     }
 }
 
 void LyricsLayout::LoadLyricsForCurrentTrack() {
-    auto track = playback.GetPlaying();
-    if (track && track->GetId() != this->currentTrackId) {
-        this->currentTrackId = track->GetId();
-        this->currentLyrics = "";
+    try {
+        const auto track = this->playback.CurrentTrack();
+        if (!track) {
+            this->lyricsWork.Invalidate();
+            this->SetState(State::NotPlaying);
+            return;
+        }
+        if (track->Id() == this->currentTrackId) {
+            return;
+        }
+
+        this->currentTrackId = track->Id();
+        const auto token = this->lyricsWork.Begin();
         this->SetState(State::Loading);
-        const auto trackExternalId = track->GetString("external_id");
-        auto lyricsDbQuery = std::make_shared<LyricsQuery>(trackExternalId);
-        this->library->Enqueue(lyricsDbQuery, [this, lyricsDbQuery, track](auto q) {
-            auto localLyrics = lyricsDbQuery->GetResult();
-            if (localLyrics.size()) {
-                this->currentLyrics = localLyrics;
-                this->Post(message::LyricsLoaded, static_cast<int64_t>(State::Loaded));
-            }
-            else {
-                auddio::FindLyrics(track, [this](TrackPtr track, std::string remoteLyrics) {
-                    if (this->currentTrackId == track->GetId()) {
-                        this->currentLyrics = remoteLyrics;
-                        const auto state = remoteLyrics.size() ? State::Loaded : State::Failed;
-                        this->Post(message::LyricsLoaded, static_cast<int64_t>(state));
-                    }
+        api::ReadTrack(this->musikcore, *track, { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_LYRICS },
+            this->lyricsWork.Wrap([this, token](mc_result status, api::TrackPage page, std::string_view) {
+                if (status != MC_OK || !page.Size()) {
+                    this->SetState(State::Failed);
+                    return;
+                }
+
+                const auto metadata = page.Track(0);
+                this->trackTitle = metadata.Title();
+                this->trackArtist = metadata.Artist();
+                const auto lyrics = metadata.Value(MC_TRACK_FIELD_LYRICS);
+                if (!lyrics.empty()) {
+                    this->OnLyricsLoaded(std::string(lyrics));
+                    return;
+                }
+
+                /* The HTTP callback only posts data. Check the request token on the UI thread. */
+                auto& queue = this->MessageQueue();
+                auddio::FindLyrics(this->trackArtist, this->trackTitle, [&queue, target = this, token](std::string lyrics) {
+                    queue.Post(std::make_shared<LyricsLoadedMessage>(target, token, std::move(lyrics)));
                 });
-            }
-        });
+            }));
     }
-    else if (!track) {
-        this->currentTrackId = -1LL;
-        this->SetState(State::NotPlaying);
+    catch (const api::Error& error) {
+        musik::debug::error("LyricsLayout", error.what());
+        this->SetState(State::Failed);
     }
 }
 

@@ -36,8 +36,7 @@
 
 #include <stdafx.h>
 
-#include <musikcore/audio/PlaybackService.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/playback.hpp>
 
 namespace musik {
     namespace cube {
@@ -45,17 +44,15 @@ namespace musik {
             public:
                 DELETE_CLASS_DEFAULTS(GlobalHotkeys)
 
-                GlobalHotkeys(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                explicit GlobalHotkeys(musik::core::api::Context& musikcore);
 
                 ~GlobalHotkeys(); /* non-virtual; do not use as a base class */
 
                 bool Handle(const std::string& kn);
 
             private:
+                musik::core::api::Context& musikcore;
                 musik::core::api::Playback playback;
-                musik::core::ILibraryPtr library;
         };
     }
 }

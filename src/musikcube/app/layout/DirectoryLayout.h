@@ -41,9 +41,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
-#include <musikcore/audio/PlaybackService.h>
 
-#include <musikcore/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>
 
@@ -57,15 +55,14 @@ namespace musik {
                 DELETE_CLASS_DEFAULTS(DirectoryLayout)
 
                 DirectoryLayout(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    musik::core::api::Context& context);
 
                 void SetDirectory(const std::string& directory);
-                void SetTrackLibrary(std::shared_ptr<musik::core::api::Context> context,
-                    std::shared_ptr<const musik::core::api::Library> library) {
-                    this->trackList->SetApiLibrary(std::move(context), std::move(library));
+                void OnIndexerProgress(int count);
+                void CancelTrackRequests() {
+                    this->directoryActions.Invalidate();
+                    this->trackList->CancelTrackRequests();
                 }
-                void CancelTrackRequests() { this->trackList->CancelTrackRequests(); }
                 void PlayFromTop();
                 std::string GetDirectory();
 
@@ -94,10 +91,9 @@ namespace musik {
                     size_t newIndex,
                     size_t oldIndex);
 
-                void OnIndexerProgress(int count);
 
-                musik::core::audio::PlaybackService& playback;
-                musik::core::ILibraryPtr library;
+                musik::core::api::Context& musikcore;
+                AsyncCallbackScope directoryActions;
                 std::string rootDirectory;
                 std::shared_ptr<DirectoryAdapter> adapter;
                 std::shared_ptr<cursespp::ListWindow> directoryList;

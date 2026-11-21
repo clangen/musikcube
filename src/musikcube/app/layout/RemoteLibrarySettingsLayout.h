@@ -38,7 +38,7 @@
 #include <cursespp/TextLabel.h>
 #include <cursespp/TextInput.h>
 #include <cursespp/Checkbox.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/context.hpp>
 #include <musikcore/support/Preferences.h>
 
 namespace musik { namespace cube {
@@ -46,7 +46,7 @@ namespace musik { namespace cube {
         public:
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(RemoteLibrarySettingsLayout)
 
-            RemoteLibrarySettingsLayout();
+            explicit RemoteLibrarySettingsLayout(musik::core::api::Context& musikcore);
             virtual ~RemoteLibrarySettingsLayout();
 
             void LoadPreferences();
@@ -63,7 +63,7 @@ namespace musik { namespace cube {
             void OnActivateTranscoderFormat(cursespp::TextLabel* tl);
             void OnActivateTranscoderBitrate(cursespp::TextLabel* tl);
 
-            musik::core::ILibraryPtr library;
+            musik::core::api::Context& musikcore;
 
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<cursespp::TextLabel> httpPortLabel, wssPortLabel, hostLabel, pwLabel;

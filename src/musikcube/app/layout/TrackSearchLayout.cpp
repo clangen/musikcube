@@ -73,12 +73,10 @@ static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preference
 
 TrackSearchLayout::TrackSearchLayout(
     std::shared_ptr<TrackListView> trackList,
-    std::shared_ptr<musik::core::api::Context> apiContext,
-    std::shared_ptr<const musik::core::api::Library> apiLibrary)
+    musik::core::api::Context& musikcore)
 : LayoutBase()
 , trackList(std::move(trackList))
-, apiContext(std::move(apiContext))
-, apiLibrary(std::move(apiLibrary))
+, musikcore(musikcore)
 {
     this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
@@ -138,7 +136,6 @@ void TrackSearchLayout::InitializeWindows() {
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
-    this->trackList->SetApiLibrary(this->apiContext, this->apiLibrary);
     this->trackList->MouseEvent.connect(this, &TrackSearchLayout::OnWindowMouseEvent);
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
@@ -169,14 +166,11 @@ void TrackSearchLayout::Requery() {
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->CancelSearch();
 
-    if (!this->apiLibrary) {
-        return;
-    }
 
     try {
         const auto mode = this->matchType == MatchType::Regex ? MC_TRACK_SEARCH_REGEX : MC_TRACK_SEARCH_SUBSTRING;
         const auto hash = std::hash<std::string> {}(filter);
-        this->searchRequest = api::OpenTrackSearch(*this->apiContext, *this->apiLibrary,
+        this->searchRequest = api::OpenTrackSearch(this->musikcore,
             api::TrackSearch { filter, mode, static_cast<mc_track_search_order>(sortOrder) },
             this->searchWork.Begin([this, sortOrder, hash](mc_result status, api::TrackResult result, std::string_view) {
                 this->searchRequest = 0;
@@ -204,7 +198,7 @@ void TrackSearchLayout::CancelSearchRequests() {
 void TrackSearchLayout::CancelSearch() {
     this->searchWork.Invalidate();
     if (this->searchRequest) {
-        this->apiContext->Cancel(this->searchRequest);
+        this->musikcore.Cancel(this->searchRequest);
         this->searchRequest = 0;
     }
 }

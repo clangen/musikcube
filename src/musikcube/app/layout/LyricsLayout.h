@@ -5,8 +5,8 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/ITopLevelLayout.h>
 #include <cursespp/SimpleScrollAdapter.h>
-#include <musikcore/audio/PlaybackService.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/playback.hpp>
+#include <app/util/AsyncCallbackScope.h>
 
 namespace musik { namespace cube {
 
@@ -18,9 +18,7 @@ namespace musik { namespace cube {
         public:
             DELETE_CLASS_DEFAULTS(LyricsLayout)
 
-            LyricsLayout(
-                musik::core::audio::PlaybackService& playback,
-                musik::core::ILibraryPtr library);
+            explicit LyricsLayout(musik::core::api::Context& musikcore);
 
             /* IWindow */
             void OnLayout() override;
@@ -32,22 +30,23 @@ namespace musik { namespace cube {
         private:
             enum class State: int { NotPlaying, Loading, Loaded, Failed };
 
-            void OnTrackChanged(size_t index, musik::core::TrackPtr track);
-            void OnLyricsLoaded();
+            void OnLyricsLoaded(std::string lyrics);
 
             void SetState(State state);
             void LoadLyricsForCurrentTrack();
             void UpdateAdapter();
 
             State state { State::NotPlaying };
-            musik::core::ILibraryPtr library;
-            musik::core::audio::PlaybackService& playback;
+            musik::core::api::Context& musikcore;
+            musik::core::api::Playback playback;
+            AsyncCallbackScope lyricsWork;
             std::shared_ptr<cursespp::SimpleScrollAdapter> adapter;
             std::shared_ptr<cursespp::ListWindow> listView;
             std::shared_ptr<cursespp::TextLabel> infoText;
             cursespp::ShortcutsWindow* shortcuts;
             int64_t currentTrackId;
             std::string currentLyrics;
+            std::string trackTitle, trackArtist;
     };
 
 } }

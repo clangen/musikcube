@@ -33,7 +33,6 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <musikcore/ffi/consumer/playback-binding.h>
 
 #include <cursespp/Colors.h>
 #include <app/util/Hotkeys.h>
@@ -51,18 +50,13 @@ using namespace cursespp;
 static std::set<std::string> kEditKeys;
 
 NowPlayingLayout::NowPlayingLayout(
-    musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library,
-    std::shared_ptr<musik::core::api::Context> context,
-    std::shared_ptr<const musik::core::api::Library> apiLibrary)
+    musik::core::api::Context& musikcore)
 : LayoutBase()
-, apiPlayback(musik::core::audio::CreatePlaybackHandle(playback))
-, library(library)
+, apiPlayback(musikcore.GetPlayback())
 , reselectIndex(-1)
-, context(std::move(context))
-, apiLibrary(std::move(apiLibrary))
+, musikcore(musikcore)
 {
-    this->InitializeWindows(playback);
+    this->InitializeWindows();
 
     this->apiPlayback.SetQueueChangedCallback(
         [](void* data) {
@@ -87,11 +81,11 @@ NowPlayingLayout::~NowPlayingLayout() {
     this->CancelPlaylistLoad();
 }
 
-Color NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
+Color NowPlayingLayout::RowDecorator(size_t index) {
     const bool selected = index == trackListView->GetSelectedIndex();
 
     Color attrs = selected ? Color::ListItemHighlighted : Color::Default;
-    if (track && this->queue && index == this->queue->CurrentRow()) {
+    if (this->queue && index == this->queue->CurrentRow()) {
         attrs = selected ? Color::ListItemHighlightedSelected : Color::ListItemSelected;
     }
 
@@ -108,18 +102,15 @@ void NowPlayingLayout::OnLayout() {
     this->trackListView->SetFocusOrder(0);
 }
 
-void NowPlayingLayout::InitializeWindows(audio::PlaybackService& playback) {
+void NowPlayingLayout::InitializeWindows() {
     this->trackListView = std::make_shared<TrackListView>(
-        playback,
-        this->library,
+        this->musikcore,
         std::bind(
             &NowPlayingLayout::RowDecorator,
             this,
-            std::placeholders::_1,
-            std::placeholders::_2));
+            std::placeholders::_1));
 
     this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
-    this->trackListView->SetApiLibrary(this->context, this->apiLibrary);
     this->trackListView->SetQueueActivationCallback([this](size_t row) {
         if (this->queue && this->apiPlayback.PlayQueueRow(*this->queue, row) == MC_ERROR_NOT_FOUND) {
             this->RequeryTrackList();
@@ -144,7 +135,7 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
 void NowPlayingLayout::CancelPlaylistLoad() {
     this->playlistWork.Invalidate();
     if (this->playlistRequest) {
-        this->context->Cancel(this->playlistRequest);
+        this->musikcore.Cancel(this->playlistRequest);
         this->playlistRequest = 0;
     }
 }
@@ -226,12 +217,9 @@ void NowPlayingLayout::RequeryTrackList() {
 
 void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
     this->CancelPlaylistLoad();
-    if (!this->apiLibrary) {
-        return;
-    }
 
     try {
-        this->playlistRequest = api::OpenPlaylist(*this->context, *this->apiLibrary, playlistId,
+        this->playlistRequest = api::OpenPlaylist(this->musikcore, playlistId,
             this->playlistWork.Begin([this](mc_result status, api::TrackResult tracks, std::string_view) {
                 this->playlistRequest = 0;
                 if (status == MC_OK && this->apiPlayback.ReplaceQueue(tracks) == MC_OK) {
@@ -245,9 +233,6 @@ void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
 }
 
 void NowPlayingLayout::ShowPlaylistPicker(PlaylistAction action) {
-    if (!this->apiLibrary) {
-        return;
-    }
     const auto token = this->playlistWork.CurrentToken();
     try {
         const char* title = nullptr;
@@ -265,7 +250,7 @@ void NowPlayingLayout::ShowPlaylistPicker(PlaylistAction action) {
                 title = "playqueue_overlay_delete_playlist_title";
                 break;
         }
-        PlayQueueOverlays::ShowPlaylistPicker(*this->context, *this->apiLibrary, _TSTR(title),
+        PlayQueueOverlays::ShowPlaylistPicker(this->musikcore, _TSTR(title),
             action == PlaylistAction::Save, token, [this, action](const api::PlaylistEntry& playlist) {
                 switch (action) {
                     case PlaylistAction::Load:
@@ -296,77 +281,21 @@ void NowPlayingLayout::SaveQueueToPlaylist(const api::PlaylistEntry& playlist) {
 
     size_t count = 0;
     const auto ids = snapshot->Ids(count);
-    auto tracks = std::make_shared<std::vector<int64_t>>();
+    std::vector<int64_t> tracks;
     if (count) {
-        tracks->assign(ids, ids + count);
+        tracks.assign(ids, ids + count);
     }
 
-    /* Keep the selected queue snapshot through the name or overwrite prompt. */
-    const auto token = this->playlistWork.CurrentToken();
-    const auto save = [this, token, tracks, id = playlist.id](const std::string& name) {
-        if (!token.IsCurrent()) {
-            return;
-        }
-        try {
-            api::SavePlaylist(*this->context, *this->apiLibrary, id, name, *tracks,
-                [](mc_result status, int64_t, std::string_view) {
-                    if (status != MC_OK) {
-                        musik::debug::error("NowPlayingLayout", "Could not save playlist");
-                    }
-                });
-        }
-        catch (const api::Error& error) {
-            musik::debug::error("NowPlayingLayout", error.what());
-        }
-    };
-
-    if (playlist.id) {
-        PlayQueueOverlays::ShowPlaylistConfirmation("playqueue_overlay_confirm_overwrite_message", playlist.name,
-            [save] { save({}); });
-    }
-    else {
-        PlayQueueOverlays::ShowPlaylistNameOverlay(_TSTR("playqueue_overlay_playlist_name_title"), {}, save);
-    }
+    PlayQueueOverlays::ShowSavePlaylistOverlay(
+        this->musikcore, this->playlistWork.CurrentToken(), playlist, std::move(tracks));
 }
 
 void NowPlayingLayout::RenamePlaylist(const api::PlaylistEntry& playlist) {
-    const auto token = this->playlistWork.CurrentToken();
-    PlayQueueOverlays::ShowPlaylistNameOverlay(_TSTR("playqueue_overlay_new_playlist_name_title"), playlist.name,
-        [this, token, id = playlist.id](const std::string& name) {
-            if (!token.IsCurrent()) {
-                return;
-            }
-            try {
-                api::RenamePlaylist(*this->context, *this->apiLibrary, id, name, [](mc_result status, int64_t, std::string_view) {
-                    if (status != MC_OK) {
-                        musik::debug::error("NowPlayingLayout", "Could not rename playlist");
-                    }
-                });
-            }
-            catch (const api::Error& error) {
-                musik::debug::error("NowPlayingLayout", error.what());
-            }
-        });
+    PlayQueueOverlays::ShowRenamePlaylistOverlay(this->musikcore, this->playlistWork.CurrentToken(), playlist);
 }
 
 void NowPlayingLayout::DeletePlaylist(const api::PlaylistEntry& playlist) {
-    const auto token = this->playlistWork.CurrentToken();
-    PlayQueueOverlays::ShowPlaylistConfirmation("playqueue_overlay_confirm_delete_message", playlist.name,
-        [this, token, id = playlist.id] {
-            if (!token.IsCurrent()) {
-                return;
-            }
-            try {
-                api::DeletePlaylist(*this->context, *this->apiLibrary, id, [](mc_result status, int64_t, std::string_view) {
-                    if (status != MC_OK) {
-                        musik::debug::error("NowPlayingLayout", "Could not delete playlist");
-                    }
-                });
-            }
-            catch (const api::Error& error) {
-                musik::debug::error("NowPlayingLayout", error.what());
-            }
-        });
+    PlayQueueOverlays::ShowDeletePlaylistOverlay(this->musikcore, this->playlistWork.CurrentToken(), playlist);
 }
 
 bool NowPlayingLayout::KeyPress(const std::string& key) {

@@ -34,7 +34,9 @@
 
 #pragma once
 
-#include <musikcore/library/track/Track.h>
+#include <functional>
+#include <string>
+#include <musikcore/library.hpp>
 
 namespace musik {
     namespace cube {
@@ -50,7 +52,8 @@ namespace musik {
             };
 
             using Renderer = std::function<std::string(
-                musik::core::TrackPtr /*metadata*/,
+                const musik::core::api::TrackView* /*metadata, null while loading*/,
+                int64_t /*id*/,
                 size_t /*index*/,
                 size_t /*width*/,
                 TrackNumType /*type*/

@@ -34,8 +34,7 @@
 
 #pragma once
 
-#include <musikcore/audio/PlaybackService.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/track/Track.h>
 #include <musikcore/library/query/TrackListQueryBase.h>
 #include <app/window/TrackListView.h>
 #include <app/util/AsyncCallbackScope.h>
@@ -43,68 +42,59 @@
 namespace musik { namespace cube {
     class PlayQueueOverlays {
         public:
-            using QueryCallback = musik::core::ILibrary::Callback;
             using AddTrackToPlaylistCallback = std::function<void(int64_t)>;
             using AddCategoryToPlaylistCallback = std::function<void(const std::string&, const std::string&, int64_t)>;
             using PlaylistPickedCallback = std::function<void(const musik::core::api::PlaylistEntry&)>;
 
             static void ShowAddTrackOverlay(
                 musik::core::runtime::IMessageQueue& messageQueue,
-                musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback,
-                musik::core::TrackPtr track,
-                std::shared_ptr<const musik::core::api::TrackRef> trackRef = {},
+                musik::core::api::Context& musikcore,
+                AsyncCallbackScope::Token token,
+                musik::core::api::TrackRef track,
+                bool allowPlayNow,
                 AddTrackToPlaylistCallback addToPlaylist = {});
 
             static void ShowAddCategoryOverlay(
-                musik::core::audio::PlaybackService& playback,
-                musik::core::ILibraryPtr library,
+                musik::core::api::Context& musikcore,
+                AsyncCallbackScope::Token token,
                 const std::string& fieldColumn,
                 const std::string& fieldValue,
                 int64_t fieldId,
                 AddCategoryToPlaylistCallback addToPlaylist = {});
 
-            static void ShowAddDirectoryOverlay(
-                musik::core::audio::PlaybackService& playback,
-                musik::core::ILibraryPtr library,
-                const std::string& directory);
-
             static void ShowAlbumDividerOverlay(
                 musik::core::runtime::IMessageQueue& messageQueue,
-                musik::core::audio::PlaybackService& playback,
-                musik::core::ILibraryPtr library,
-                musik::core::TrackPtr firstTrack,
+                musik::core::api::Context& musikcore,
+                AsyncCallbackScope::Token token,
+                musik::core::api::TrackRef firstTrack,
                 AddCategoryToPlaylistCallback addToPlaylist = {});
 
-            static void ShowPlaylistPicker(musik::core::api::Context& context,
-                const musik::core::api::Library& library, const std::string& title, bool allowCreate,
+            static void ShowPlaylistPicker(musik::core::api::Context& musikcore,
+                const std::string& title, bool allowCreate,
                 AsyncCallbackScope::Token token, PlaylistPickedCallback picked, int64_t preferredId = 0);
+            static void ShowSavePlaylistOverlay(musik::core::api::Context& musikcore,
+                AsyncCallbackScope::Token token, const musik::core::api::PlaylistEntry& playlist,
+                std::vector<int64_t> tracks, std::function<void(int64_t)> saved = {});
+            static void ShowRenamePlaylistOverlay(musik::core::api::Context& musikcore,
+                AsyncCallbackScope::Token token, const musik::core::api::PlaylistEntry& playlist,
+                std::function<void(int64_t)> renamed = {});
+            static void ShowDeletePlaylistOverlay(musik::core::api::Context& musikcore,
+                AsyncCallbackScope::Token token, const musik::core::api::PlaylistEntry& playlist,
+                std::function<void(int64_t)> deleted = {});
+
+            static void ShowAddToPlaylistPicker(musik::core::api::Context& musikcore,
+                AsyncCallbackScope::Token token,
+                std::vector<int64_t> ids);
+            static void ShowAddCategoryToPlaylistPicker(musik::core::api::Context& musikcore,
+                AsyncCallbackScope::Token token,
+                const std::string& field, const std::string& value, int64_t id);
+
+        private:
+            PlayQueueOverlays() noexcept;
+
             static void ShowPlaylistNameOverlay(const std::string& title, const std::string& name,
                 std::function<void(const std::string&)> accepted);
             static void ShowPlaylistConfirmation(const std::string& messageKey, const std::string& name,
                 std::function<void()> accepted);
-            static void ShowAddToPlaylistPicker(std::weak_ptr<musik::core::api::Context> context,
-                std::shared_ptr<const musik::core::api::Library> library, AsyncCallbackScope::Token token,
-                std::vector<int64_t> ids);
-            static void ShowAddCategoryToPlaylistPicker(std::weak_ptr<musik::core::api::Context> context,
-                std::shared_ptr<const musik::core::api::Library> library, AsyncCallbackScope::Token token,
-                musik::core::ILibraryPtr backend, const std::string& field, const std::string& value, int64_t id);
-
-            static void ShowRenamePlaylistOverlay(
-                musik::core::ILibraryPtr library,
-                const int64_t playlistId,
-                const std::string& old,
-                QueryCallback callback = QueryCallback());
-
-            static void ShowConfirmDeletePlaylistOverlay(
-                musik::core::ILibraryPtr library,
-                const std::string& playlistName,
-                const int64_t playlistId,
-                QueryCallback callback = QueryCallback());
-
-            static void ShowCreatePlaylistOverlay(musik::core::ILibraryPtr library);
-
-        private:
-            PlayQueueOverlays() noexcept;
     };
 } }

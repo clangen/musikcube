@@ -35,7 +35,6 @@
 #include <stdafx.h>
 #include <app/layout/LibraryNotConnectedLayout.h>
 #include <musikcore/i18n/Locale.h>
-#include <musikcore/library/RemoteLibrary.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>
@@ -46,57 +45,51 @@
 
 using namespace musik::cube;
 using namespace musik::core;
-using namespace musik::core::library;
 using namespace musik::core::net;
 using namespace cursespp;
 
-using MasterLibraryPtr = LibraryNotConnectedLayout::MasterLibraryPtr;
-
-static inline std::string resolveErrorMessage(MasterLibraryPtr library) {
-    static const std::map<WebSocketClient::ConnectionError, std::string> kStateToErrorString = {
-        { WebSocketClient::ConnectionError::ClosedByServer, "library_error_closed_by_server" },
-        { WebSocketClient::ConnectionError::ConnectionFailed, "library_error_connection_failed" },
-        { WebSocketClient::ConnectionError::InvalidPassword, "library_error_invalid_password" },
-        { WebSocketClient::ConnectionError::IncompatibleVersion, "library_error_incompatible_version" },
+static inline std::string resolveErrorMessage(const api::LibraryStatus& library) {
+    static const std::map<mc_library_connection_error, std::string> kStateToErrorString = {
+        { MC_LIBRARY_CONNECTION_CLOSED, "library_error_closed_by_server" },
+        { MC_LIBRARY_CONNECTION_FAILED, "library_error_connection_failed" },
+        { MC_LIBRARY_CONNECTION_INVALID_PASSWORD, "library_error_invalid_password" },
+        { MC_LIBRARY_CONNECTION_INCOMPATIBLE_VERSION, "library_error_incompatible_version" },
     };
 
-    auto remoteLibrary = dynamic_cast<const RemoteLibrary*>(library->Wrapped().get());
-    if (remoteLibrary) {
-        const auto error = remoteLibrary->WebSocketClient().LastConnectionError();
+    if (library.kind == MC_LIBRARY_REMOTE) {
+        const auto error = library.error;
         const auto it = kStateToErrorString.find(error);
         if (it != kStateToErrorString.end()) {
             std::string value = _TSTR(it->second);
-            if (error == WebSocketClient::ConnectionError::IncompatibleVersion) {
-                value += " (" + remoteLibrary->WebSocketClient().LastServerVersion() + ")";
+            if (error == MC_LIBRARY_CONNECTION_INCOMPATIBLE_VERSION) {
+                value += " (" + library.serverVersion + ")";
             }
             return value;
         }
         return _TSTR("library_error_connection_failed");
     }
 
-    if (library->GetConnectionState() == ILibrary::ConnectionState::AuthenticationFailure) {
+    if (library.state == MC_LIBRARY_AUTHENTICATION_FAILED) {
         return _TSTR("library_error_invalid_password");
     }
 
     return _TSTR("library_error_unknown");
 }
 
-static inline std::string resolveMessageText(MasterLibraryPtr library) {
-    auto remoteLibrary = dynamic_cast<const RemoteLibrary*>(library->Wrapped().get());
-    if (remoteLibrary) {
-        auto host = remoteLibrary->WebSocketClient().Uri();
-        if (host.find("ws://") == 0) { host = host.substr(5); }
-        if (host.size()) {
-            return u8fmt(_TSTR("library_not_connected_with_hostname"), host.c_str());
-        }
+static inline std::string resolveMessageText(const api::LibraryStatus& library) {
+    auto host = library.endpoint;
+    if (host.find("ws://") == 0) {
+        host = host.substr(5);
+    }
+    if (!host.empty()) {
+        return u8fmt(_TSTR("library_not_connected_with_hostname"), host.c_str());
     }
     return _TSTR("library_not_connected");
 }
 
-LibraryNotConnectedLayout::LibraryNotConnectedLayout(MasterLibraryPtr library)
+LibraryNotConnectedLayout::LibraryNotConnectedLayout(api::Context& musikcore)
 : LayoutBase()
-, library(library) {
-    this->library->ConnectionStateChanged.connect(this, &LibraryNotConnectedLayout::OnLibraryStateChanged);
+, musikcore(musikcore) {
     this->messageText = std::make_shared<TextLabel>("", text::AlignCenter);
     this->messageText->SetContentColor(Color::TextError);
     this->errorText = std::make_shared<TextLabel>("", text::AlignCenter);
@@ -119,22 +112,22 @@ void LibraryNotConnectedLayout::OnLayout() {
 
 void LibraryNotConnectedLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
+    if (visible) {
+        this->UpdateErrorText();
+    }
 }
 
 bool LibraryNotConnectedLayout::KeyPress(const std::string& kn) {
     return LayoutBase::KeyPress(kn);
 }
 
-void LibraryNotConnectedLayout::OnLibraryStateChanged(ILibrary::ConnectionState state) {
-    this->UpdateErrorText();
-}
-
 void LibraryNotConnectedLayout::UpdateErrorText() {
-    auto format = this->library->GetConnectionState() == ILibrary::ConnectionState::Connecting
+    const auto status = this->musikcore.GetLibraryStatus();
+    auto format = status.state == MC_LIBRARY_CONNECTING
         ? _TSTR("library_error_format_retrying") : _TSTR("library_error_format");
-    auto error = u8fmt(format, resolveErrorMessage(this->library).c_str());
+    auto error = u8fmt(format, resolveErrorMessage(status).c_str());
     this->errorText->SetText(error);
-    this->messageText->SetText(resolveMessageText(this->library));
+    this->messageText->SetText(resolveMessageText(status));
 }
 
 void LibraryNotConnectedLayout::SetShortcutsWindow(cursespp::ShortcutsWindow* shortcuts) {

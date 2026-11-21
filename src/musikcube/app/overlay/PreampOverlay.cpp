@@ -114,8 +114,8 @@ static float getFloatFromTextInput(TextInput* input) {
     return INVALID_PREAMP_GAIN;
 }
 
-PreampOverlay::PreampOverlay(IPlaybackService& playback, Callback callback)
-: OverlayBase(), playback(playback)
+PreampOverlay::PreampOverlay(api::Playback playback, Callback callback)
+: OverlayBase(), playback(std::move(playback))
 {
     this->callback = callback;
     this->prefs = Preferences::ForComponent(core::prefs::components::Playback);
@@ -200,13 +200,13 @@ void PreampOverlay::Layout() {
 
 void PreampOverlay::OnReplayGainPressed(cursespp::TextLabel* label) {
     PlaybackOverlays::ShowReplayGainOverlay([this]() {
-        this->playback.ReloadOutput();
+        this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
         this->Load();
     });
 }
 
-void PreampOverlay::Show(IPlaybackService& playback, Callback callback) {
-    std::shared_ptr<PreampOverlay> overlay(new PreampOverlay(playback, callback));
+void PreampOverlay::Show(api::Playback playback, Callback callback) {
+    std::shared_ptr<PreampOverlay> overlay(new PreampOverlay(std::move(playback), callback));
     App::Overlays().Push(overlay);
 }
 

@@ -41,8 +41,6 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 
-#include <musikcore/audio/PlaybackService.h>
-#include <musikcore/library/ILibrary.h>
 #include <musikcore/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
@@ -59,12 +57,12 @@ namespace musik {
                 DELETE_CLASS_DEFAULTS(CategorySearchLayout)
 
                 CategorySearchLayout(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    musik::core::api::Context& musikcore);
 
                 virtual ~CategorySearchLayout();
 
                 void FocusInput();
+                void CancelSearchRequests();
                 void LoadLastSession();
 
                 /* IWindow */
@@ -76,11 +74,10 @@ namespace musik {
             private:
                 using MatchType = musik::core::library::query::QueryBase::MatchType;
 
-                void InitializeWindows(musik::core::audio::PlaybackService& playback);
+                void InitializeWindows();
 
                 void CreateCategoryView(
                     std::shared_ptr<CategoryListView>& view,
-                    musik::core::audio::PlaybackService& playback,
                     const std::string& title,
                     const std::string& type,
                     int order);
@@ -100,7 +97,7 @@ namespace musik {
                 void ToggleMatchType();
                 void SetMatchType(MatchType matchType);
 
-                musik::core::ILibraryPtr library;
+                musik::core::api::Context& musikcore;
                 MatchType matchType{ MatchType::Substring };
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<CategoryListView> albums;

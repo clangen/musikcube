@@ -46,15 +46,16 @@
 #include <app/util/ConsoleLogger.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
+#include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 
-#include <musikcore/audio/PlaybackService.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/Visualizer.h>
+#include <musikcore/runtime/Message.h>
 #include <musikcore/debug.h>
 #include <musikcore/i18n/Locale.h>
-#include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/indexer.hpp>
+#include <musikcore/ffi/consumer/legacy-library-selection.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/sdk/constants.h>
@@ -129,9 +130,6 @@ int main(int argc, char* argv[]) {
 
     plugin::Init();
 
-    LibraryFactory::Initialize(Window::MessageQueue());
-    auto library = std::make_shared<library::MasterLibrary>();
-
 #if defined(BUILD_STANDALONE) && !defined(__APPLE__)
     /* when we build a standalone binary we make sure to also package the terminfo used
     by the version of ncurses we compile against. if the target system has ncurses5, the
@@ -141,12 +139,17 @@ int main(int argc, char* argv[]) {
 #endif
 
     {
-        PlaybackService playback(Window::MessageQueue(), library);
-
-        GlobalHotkeys globalHotkeys(playback, library);
+        /* The context outlives the app and every view that borrows it. */
+        mc_context_options apiOptions = MC_CONTEXT_OPTIONS_DEFAULT;
+        apiOptions.wakeup_user_data = &Window::MessageQueue();
+        apiOptions.wakeup = [](void* data) {
+            auto& queue = *static_cast<runtime::IMessageQueue*>(data);
+            queue.Broadcast(runtime::Message::Create(nullptr, cube::message::DispatchCoreRequests));
+        };
+        api::Context musikcore(apiOptions);
         Window::SetNavigationKeys(Hotkeys::NavigationKeys());
 
-        plugin::Start(&Window::MessageQueue(), &playback, library);
+        core::ffi::StartLegacyApp(musikcore, Window::MessageQueue());
 
 #ifdef WIN32
         auto font = GetApplicationDirectory() + "fonts/SourceCodePro-Medium.ttf";
@@ -166,8 +169,10 @@ int main(int argc, char* argv[]) {
         app.SetQuitKey(prefs->GetString(keys::AppQuitKey, "^D"));
 
         /* fire up the indexer if configured to run on startup */
-        if (prefs->GetBool(core::prefs::keys::SyncOnStartup, true)) {
-            library->Indexer()->Schedule(IIndexer::SyncType::All);
+        if (prefs->GetBool(core::prefs::keys::SyncOnStartup, true) &&
+            musikcore.GetLibraryStatus().kind == MC_LIBRARY_LOCAL)
+        {
+            api::Indexer(musikcore).Schedule(MC_INDEXER_SCAN_ALL);
         }
 
         /* set color mode (basic, palette, rgb) */
@@ -205,7 +210,8 @@ int main(int argc, char* argv[]) {
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
 
         /* main layout */
-        auto mainLayout = std::make_shared<MainLayout>(app, consoleLogger, playback, library);
+        auto mainLayout = std::make_shared<MainLayout>(app, consoleLogger, musikcore);
+        GlobalHotkeys globalHotkeys(musikcore);
 
         mainLayout->Start();
 
@@ -227,12 +233,12 @@ int main(int argc, char* argv[]) {
         win32::HideMainWindow();
 #endif
 
-        library->Indexer()->Shutdown();
+        core::ffi::StopLegacyIndexing();
     }
 
     Player::WaitForWorkers();
     PiggyWebSocketClient::Shutdown();
-    LibraryFactory::Instance().Shutdown();
+    core::ffi::ShutdownLegacyLibraries();
     vis::Shutdown();
     plugin::Shutdown();
     debug::Shutdown();
