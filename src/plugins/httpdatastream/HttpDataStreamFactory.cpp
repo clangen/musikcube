@@ -34,6 +34,7 @@
 
 #include <string>
 #include <algorithm>
+#include <cctype>
 #include "HttpDataStreamFactory.h"
 #include "HttpDataStream.h"
 
@@ -47,7 +48,7 @@ HttpDataStreamFactory::~HttpDataStreamFactory() {
 
 bool HttpDataStreamFactory::CanRead(const char *uri) {
     std::string str(uri);
-    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
     return
         str.find("http://") == 0 ||
         str.find("https://") == 0 ||

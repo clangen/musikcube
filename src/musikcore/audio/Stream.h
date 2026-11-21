@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <mutex>
 
 #include <musikcore/config.h>
 #include <musikcore/io/DataStreamFactory.h>

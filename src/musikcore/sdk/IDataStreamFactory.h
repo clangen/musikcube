@@ -37,6 +37,12 @@
 #include "IDataStream.h"
 
 namespace musik { namespace core { namespace sdk {
+    /* optional legacy export: extern "C" IDataStream* CreateDataStream(). return
+    an unopened owned stream promptly; the host can then interrupt Open itself.
+    GetDataStreamFactory/Open remain supported without this hook. no vtable or
+    SDK version change is required. */
+    using CreateDataStream = IDataStream* (*)();
+
     class IDataStreamFactory{
         public:
             using OpenFlags = musik::core::sdk::OpenFlags;

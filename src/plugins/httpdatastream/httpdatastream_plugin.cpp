@@ -35,6 +35,7 @@
 #include "config.h"
 
 #include "HttpDataStreamFactory.h"
+#include "HttpDataStream.h"
 
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPlugin.h>
@@ -68,4 +69,9 @@ extern "C" DLLEXPORT IPlugin* GetPlugin() {
 
 extern "C" DLLEXPORT IDataStreamFactory* GetDataStreamFactory() {
     return new HttpDataStreamFactory();
+}
+
+/* publish an interruptible object before its network open can block. */
+extern "C" DLLEXPORT IDataStream* CreateDataStream() {
+    return new HttpDataStream();
 }

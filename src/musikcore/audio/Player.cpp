@@ -63,6 +63,22 @@ static std::mutex playerWorkersMutex;
 static std::condition_variable playerWorkersChanged;
 static size_t playerWorkers = 0;
 
+void Player::WorkerGroup::Add() {
+    std::lock_guard<std::mutex> lock(this->mutex);
+    ++this->count;
+}
+
+void Player::WorkerGroup::Finish() {
+    std::lock_guard<std::mutex> lock(this->mutex);
+    --this->count;
+    this->changed.notify_all();
+}
+
+void Player::WorkerGroup::Wait() {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    this->changed.wait(lock, [&] { return this->count == 0; });
+}
+
 void Player::WaitForWorkers() {
     std::unique_lock<std::mutex> lock(playerWorkersMutex);
     playerWorkersChanged.wait(lock, [] { return playerWorkers == 0; });
@@ -97,9 +113,9 @@ Player* Player::Create(
     std::shared_ptr<IOutput> output,
     DestroyMode destroyMode,
     EventListener *listener,
-    Gain gain)
+    Gain gain, std::shared_ptr<WorkerGroup> workers)
 {
-    return new Player(url, output, destroyMode, listener, gain);
+    return new Player(url, output, destroyMode, listener, gain, std::move(workers));
 }
 
 Player::Player(
@@ -107,7 +123,7 @@ Player::Player(
     std::shared_ptr<IOutput> output,
     DestroyMode destroyMode,
     EventListener *listener,
-    Gain gain)
+    Gain gain, std::shared_ptr<WorkerGroup> workers)
 : internalState(Player::Idle)
 , streamState(StreamState::Buffering)
 , stream(Stream::Create())
@@ -118,17 +134,19 @@ Player::Player(
 , seekToPosition(-1)
 , nextMixPoint(-1.0)
 , pendingBufferCount(0)
+, workers(std::move(workers))
 , destroyMode(destroyMode)
 , fftContext(nullptr)
 , gain(gain) {
     musik::debug::info(TAG, "new instance created");
 
-    this->spectrum = new float[FFT_N / 2];
-
     if (!this->output) {
         throw std::runtime_error("output cannot be null!");
     }
 
+    /* retain allocation ownership until worker construction succeeds. */
+    std::unique_ptr<float[]> spectrum(new float[FFT_N / 2]);
+    this->spectrum = spectrum.get();
     if (listener) {
         this->Attach(listener);
     }
@@ -142,7 +160,11 @@ Player::Player(
         }
         musik::core::audio::playerThreadLoop(this);
     });
+    if (this->workers) {
+        this->workers->Add();
+    }
     ++playerWorkers;
+    spectrum.release();
 }
 
 Player::~Player() {
@@ -497,7 +519,11 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
     player->Destroy();
 
+    const auto group = player->workers;
     delete player;
+    if (group) {
+        group->Finish();
+    }
 
     /* Stream and output plugin references are released as part of player destruction. */
     std::lock_guard<std::mutex> lock(playerWorkersMutex);

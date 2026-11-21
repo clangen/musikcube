@@ -179,6 +179,7 @@ class FileReadStream {
         void Completed() {
             std::unique_lock<std::mutex> lock(this->mutex);
             this->maxLength = length;
+            this->underflow.notify_all();
         }
 
         PositionType Read(void* buffer, PositionType readBytes) {
@@ -218,7 +219,7 @@ class FileReadStream {
 
     private:
         bool Eof() {
-            return this->maxLength > 0 && this->Position() >= this->maxLength;
+            return this->maxLength >= 0 && this->Position() >= this->maxLength;
         }
 
         FILE* file;
@@ -232,6 +233,7 @@ HttpDataStream::HttpDataStream() {
     this->length = this->totalWritten = this->written = 0;
     this->state = State::NotStarted;
     this->writeFile = nullptr;
+    this->curlEasy = nullptr;
     this->interrupted = false;
     this->instanceId = ++nextInstanceId;
 }
@@ -242,17 +244,12 @@ HttpDataStream::~HttpDataStream() {
 
 void HttpDataStream::Interrupt() {
     std::unique_lock<std::mutex> lock(this->stateMutex);
-
-    auto reader = this->reader;
-    auto downloadThread = this->downloadThread;
-
-    if (reader) {
-        reader->Interrupt();
+    /* latch even before the download thread exists, and wake a blocked Open. */
+    this->interrupted = true;
+    if (this->reader) {
+        this->reader->Interrupt();
     }
-
-    if (downloadThread) {
-        this->interrupted = true;
-    }
+    this->startedContition.notify_all();
 }
 
 bool HttpDataStream::CanPrefetch() {
@@ -273,6 +270,9 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
     {
         std::unique_lock<std::mutex> lock(this->stateMutex);
 
+        if (this->interrupted) {
+            return false;
+        }
         diskCache.Init(cachePath, this->maxCacheFiles);
 
         this->httpUri = rawUri;
@@ -373,9 +373,11 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
 
         /* wait until we have a few hundred k of data */
         std::unique_lock<std::mutex> lock(this->stateMutex);
-        startedContition.wait(lock);
+        startedContition.wait(lock, [&] {
+            return this->interrupted || this->openReady;
+        });
 
-        return this->state != State::Error;
+        return !this->interrupted && this->state != State::Error;
     }
 
     return false;
@@ -443,7 +445,13 @@ void HttpDataStream::ThreadProc() {
             }
         }
 
-        startedContition.notify_all(); /* in case the header write function was never called */
+        /* publish readiness under the waiter's mutex, including short bodies
+        and terminal errors that never reach the precache threshold. */
+        {
+            std::lock_guard<std::mutex> lock(this->stateMutex);
+            this->openReady = true;
+        }
+        startedContition.notify_all();
 
         if (this->curlEasy) {
             curl_easy_cleanup(this->curlEasy);
@@ -464,6 +472,9 @@ void HttpDataStream::ThreadProc() {
 
 bool HttpDataStream::Close() {
     this->Interrupt();
+    if (this->state == State::NotStarted) {
+        return true;
+    }
 
     /* wait for the download thread to stop, this will ensure file writes have
     completed. */
@@ -548,8 +559,12 @@ size_t HttpDataStream::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, v
     if (stream->totalWritten > -1) {
         stream->totalWritten += result;
         if (stream->totalWritten >= stream->precacheSizeBytes) {
+            {
+                std::lock_guard<std::mutex> lock(stream->stateMutex);
+                stream->totalWritten = -1;
+                stream->openReady = true;
+            }
             stream->startedContition.notify_all();
-            stream->totalWritten = -1;
         }
     }
 

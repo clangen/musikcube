@@ -56,7 +56,10 @@ GaplessTransport::GaplessTransport()
 }
 
 GaplessTransport::~GaplessTransport() {
+    /* keep the transport alive until its own callbacks finish, without
+    holding stateMutex or waiting on unrelated transports. */
     this->StopInternal(true, true);
+    this->workers->Wait();
     this->CloseCallbacks();
 }
 
@@ -80,7 +83,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
             uri,
             this->output, Player::DestroyMode::NoDrain,
             this,
-            gain);
+            gain, this->workers);
         if (this->nextCanStart) {
             this->StartWithPlayer(this->nextPlayer);
         }
@@ -88,13 +91,15 @@ void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
 }
 
 void GaplessTransport::Start(const std::string& uri, Gain gain, StartMode mode) {
+    /* publish activePlayer before a fast open failure can destroy the worker. */
+    LockT lock(this->stateMutex);
     musik::debug::info(TAG, "starting track at " + uri);
     Player* newPlayer = Player::Create(
         uri,
         this->output,
         Player::DestroyMode::NoDrain,
         this,
-        gain);
+        gain, this->workers);
     this->StartWithPlayer(newPlayer, mode);
 }
 
@@ -154,6 +159,7 @@ void GaplessTransport::Stop() {
 }
 
 std::string GaplessTransport::Uri() {
+    LockT lock(this->stateMutex);
     const auto player = this->activePlayer;
     return player ? player->GetUrl() : "";
 }
@@ -192,6 +198,7 @@ void GaplessTransport::StopInternal(
 }
 
 bool GaplessTransport::Pause() {
+    LockT lock(this->stateMutex);
     musik::debug::info(TAG, "pause");
 
     this->output->Pause();
@@ -205,6 +212,7 @@ bool GaplessTransport::Pause() {
 }
 
 bool GaplessTransport::Resume() {
+    LockT lock(this->stateMutex);
     musik::debug::info(TAG, "resume");
 
     this->output->Resume();
@@ -332,6 +340,8 @@ void GaplessTransport::OnPlayerStreamEof(Player* player) {
 }
 
 void GaplessTransport::OnPlayerFinished(Player* player) {
+    /* a replacement Start must not interleave with the old stream's stop event. */
+    LockT lock(this->stateMutex);
     this->RaiseStreamEvent(StreamState::Finished, player);
 
     bool stopped = false;
@@ -363,21 +373,17 @@ void GaplessTransport::OnPlayerFinished(Player* player) {
 }
 
 void GaplessTransport::OnPlayerOpenFailed(Player* player) {
-    bool raiseEvents = false;
-    {
-        LockT lock(this->stateMutex);
-        if (player == this->activePlayer) {
-            this->ResetActivePlayer();
-            this->ResetNextPlayer();
-            raiseEvents = true;
-        }
-        else if (player == this->nextPlayer) {
-            this->ResetNextPlayer();
-        }
-    }
-    if (raiseEvents) {
+    LockT lock(this->stateMutex);
+    if (player == this->activePlayer) {
+        /* publish failure while this stream is still selected. serialize its
+        stop event with replacement Start so it cannot stop the new URI. */
         this->RaiseStreamEvent(StreamState::OpenFailed, player);
+        this->ResetActivePlayer();
+        this->ResetNextPlayer();
         this->SetPlaybackState(PlaybackState::Stopped);
+    }
+    else if (player == this->nextPlayer) {
+        this->ResetNextPlayer();
     }
 }
 

@@ -110,6 +110,7 @@ namespace musik { namespace core { namespace audio {
             std::shared_ptr<musik::core::sdk::IOutput> output;
             Player* activePlayer;
             Player* nextPlayer;
+            const std::shared_ptr<Player::WorkerGroup> workers = std::make_shared<Player::WorkerGroup>();
             double volume;
             bool nextCanStart;
             bool muted;

@@ -38,6 +38,7 @@
 #include <musikcore/config.h>
 #include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/io/LocalFileStream.h>
+#include <map>
 
 using namespace musik::core::io;
 using namespace musik::core::sdk;
@@ -49,8 +50,15 @@ DataStreamFactory::DataStreamFactory() {
     typedef IDataStreamFactory PluginType;
     typedef musik::core::PluginFactory::ReleaseDeleter<PluginType> Deleter;
 
-    this->dataStreamFactories = musik::core::PluginFactory::Instance()
-        .QueryInterface<PluginType, Deleter>("GetDataStreamFactory");
+    std::map<IPlugin*, CreateDataStream> creators;
+    auto& plugins = musik::core::PluginFactory::Instance();
+    plugins.QueryFunction<CreateDataStream>("CreateDataStream", [&](IPlugin* plugin, CreateDataStream create) {
+        creators[plugin] = create;
+    });
+    plugins.QueryInterface<PluginType, Deleter>("GetDataStreamFactory",
+        [&](IPlugin* plugin, std::shared_ptr<PluginType> factory, const std::string&) {
+            this->dataStreamFactories.push_back({ std::move(factory), creators[plugin] });
+        });
 }
 
 namespace {
@@ -81,8 +89,8 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlags flags)
         /* plugins get the first crack at the uri */
         const auto providers = DataStreamFactory::Instance();
         for (const auto& factory : providers->dataStreamFactories) {
-            if (factory->CanRead(uri)) {
-                IDataStream* dataStream = factory->Open(uri, flags);
+            if (factory.factory->CanRead(uri)) {
+                IDataStream* dataStream = factory.factory->Open(uri, flags);
 
                 if (dataStream) {
                     return dataStream;
@@ -103,7 +111,35 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlags flags)
     return nullptr;
 }
 
-DataStreamPtr DataStreamFactory::OpenSharedDataStream(const char *uri, OpenFlags flags) {
-    auto stream = OpenDataStream(uri, flags);
-    return stream ? DataStreamPtr(stream, StreamDeleter()) : DataStreamPtr();
+DataStreamPtr DataStreamFactory::OpenSharedDataStream(const char* uri, OpenFlags flags,
+    std::function<bool(const DataStreamPtr&)> publish)
+{
+    if (!publish) {
+        auto stream = OpenDataStream(uri, flags);
+        return stream ? DataStreamPtr(stream, StreamDeleter()) : DataStreamPtr();
+    }
+    if (!uri) {
+        return {};
+    }
+    const auto providers = DataStreamFactory::Instance();
+    for (const auto& provider : providers->dataStreamFactories) {
+        if (!provider.factory->CanRead(uri)) {
+            continue;
+        }
+        DataStreamPtr stream(provider.create ? provider.create() : provider.factory->Open(uri, flags), StreamDeleter());
+        if (!stream) {
+            continue;
+        }
+        if (!publish(stream)) {
+            return {};
+        }
+        if (!provider.create || stream->Open(uri, flags)) {
+            return stream;
+        }
+    }
+    DataStreamPtr stream(new LocalFileStream(), StreamDeleter());
+    if (!publish(stream) || !stream->Open(uri, flags)) {
+        return {};
+    }
+    return stream;
 }

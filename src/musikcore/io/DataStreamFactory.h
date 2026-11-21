@@ -37,6 +37,7 @@
 #include <musikcore/sdk/IDataStream.h>
 #include <musikcore/sdk/IDataStreamFactory.h>
 #include <vector>
+#include <functional>
 
 namespace musik { namespace core { namespace io {
 
@@ -48,11 +49,18 @@ namespace musik { namespace core { namespace io {
             using DataStreamPtr = std::shared_ptr<musik::core::sdk::IDataStream>;
             using OpenFlags = musik::core::sdk::OpenFlags;
 
-            static DataStreamPtr OpenSharedDataStream(const char *uri, OpenFlags flags);
+            /* publish before Open when a provider supports CreateDataStream, allowing
+            cancellation while its open is blocked. false stops the attempt. */
+            static DataStreamPtr OpenSharedDataStream(const char *uri, OpenFlags flags,
+                std::function<bool(const DataStreamPtr&)> publish = {});
             static musik::core::sdk::IDataStream* OpenDataStream(const char* uri, OpenFlags flags);
 
         private:
-            typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector;
+            struct Provider {
+                std::shared_ptr<musik::core::sdk::IDataStreamFactory> factory;
+                musik::core::sdk::CreateDataStream create = nullptr;
+            };
+            using DataStreamFactoryVector = std::vector<Provider>;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DataStreamFactory)
 

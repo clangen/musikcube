@@ -54,7 +54,21 @@ namespace musik { namespace core { namespace audio {
         public:
             enum class DestroyMode: int { Drain = 0, NoDrain = 1 };
 
-            /* Call after stopping playback and before releasing plugins. */
+            /* groups retain completion independently of self-deleting players.
+            use one per transport so shutdown never waits on unrelated playback. */
+            class WorkerGroup {
+            public:
+                void Add();
+                void Finish();
+                void Wait();
+
+            private:
+                std::mutex mutex;
+                std::condition_variable changed;
+                size_t count = 0;
+            };
+
+            /* call after stopping all playback and before releasing plugins. */
             static void WaitForWorkers();
 
             struct Gain {
@@ -103,7 +117,7 @@ namespace musik { namespace core { namespace audio {
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 DestroyMode destroyMode,
                 EventListener *listener,
-                Gain gain = Gain());
+                Gain gain = Gain(), std::shared_ptr<WorkerGroup> workers = {});
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
@@ -136,7 +150,7 @@ namespace musik { namespace core { namespace audio {
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 DestroyMode finishMode,
                 EventListener *listener,
-                Gain gain);
+                Gain gain, std::shared_ptr<WorkerGroup> workers);
 
             virtual ~Player();
 
@@ -199,6 +213,7 @@ namespace musik { namespace core { namespace audio {
             std::atomic<int> internalState;
             bool notifiedStarted;
             float* spectrum;
+            std::shared_ptr<WorkerGroup> workers;
             DestroyMode destroyMode;
             Gain gain;
             int pendingBufferCount;

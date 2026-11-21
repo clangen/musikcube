@@ -124,8 +124,16 @@ bool Stream::OpenStream(std::string uri, IOutput* output) {
 
     /* use our file stream abstraction to open the data at the
     specified URI */
-    auto source = DataStreamFactory::OpenSharedDataStream(uri.c_str(), OpenFlags::Read);
-
+    auto source = DataStreamFactory::OpenSharedDataStream(uri.c_str(), OpenFlags::Read,
+        [this](const DataStreamFactory::DataStreamPtr& source) {
+            std::lock_guard<std::mutex> lock(this->sourceMutex);
+            if (this->sourceInterrupted) {
+                source->Interrupt();
+                return false;
+            }
+            this->dataStream = source;
+            return true;
+        });
     if (!source) {
         musik::debug::error(TAG, "failed to open " + uri);
         return false;
@@ -140,7 +148,7 @@ bool Stream::OpenStream(std::string uri, IOutput* output) {
         }
     }
 
-    /* A stop during provider open must reach the source before decoder probing. */
+    /* a stop during provider open must reach the source before decoder probing. */
     if (interrupted) {
         source->Interrupt();
         return false;

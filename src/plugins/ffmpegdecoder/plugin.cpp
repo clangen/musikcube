@@ -112,7 +112,7 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
             };
 
             supportedTypesWithoutCodec = {
-                ".wav", ".wave", ".aif", ".aiff"
+                ".wav", ".wave", ".aif", ".aiff", "audio/wav", "audio/x-wav", "audio/wave", "audio/aiff", "audio/x-aiff"
             };
 
             void* iterator = nullptr;

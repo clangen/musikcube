@@ -108,6 +108,7 @@ class HttpDataStream : public IDataStream {
 
         std::mutex stateMutex;
         std::condition_variable startedContition;
+        bool openReady = false;
         std::shared_ptr<std::thread> downloadThread;
         std::shared_ptr<FileReadStream> reader;
         int precacheSizeBytes, chunkSizeBytes, maxCacheFiles;
