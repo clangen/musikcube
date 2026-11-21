@@ -67,6 +67,11 @@ namespace musik { namespace core { namespace runtime {
             void WaitAndDispatch(int64_t timeoutMillis = -1) override;
             void Dispatch() override;
 
+            /* Wait for a due message without delivering it. Set stop and wake
+               the waiters before joining a thread blocked here. */
+            bool WaitForReady(const std::atomic<bool>& stop);
+            void WakeWaiters();
+
         protected:
             int64_t GetNextMessageTime() noexcept {
                 return nextMessageTime.load();

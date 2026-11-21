@@ -38,8 +38,8 @@ struct mc_remote_session : sigslot::has_slots<> {
     {
         this->library->ConnectionStateChanged.connect(this, &mc_remote_session::OnState);
         this->pump = std::thread([this] {
-            while (!this->stopping.load()) {
-                this->queue->WaitAndDispatch(100);
+            while (this->queue->WaitForReady(this->stopping)) {
+                this->queue->Dispatch();
             }
         });
     }
@@ -47,6 +47,7 @@ struct mc_remote_session : sigslot::has_slots<> {
     ~mc_remote_session() {
         this->Disconnect();
         this->stopping.store(true);
+        this->queue->WakeWaiters();
         this->pump.join();
         this->library->ConnectionStateChanged.disconnect(this);
         this->library->Close();

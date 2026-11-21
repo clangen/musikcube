@@ -52,3 +52,7 @@ The chooser and hotkey use the SDK for discovery, show, and hide. Playback worke
 ## Playlist notifications
 
 Browse refreshes local playlist edits through public context callbacks. Deletion publishes the list change after the transaction scope closes. All 44 Linux Release tests passed. The loopback test covers event order and discards queued local events when the remote library is selected. Browse still exercises playlist editing through the headless UI.
+
+## Queue readiness
+
+The core queue can wait for due work independently of dispatch. Public remote sessions use this wait instead of polling, and shutdown interrupts it. All 45 Linux Release tests passed. The new queue test covers an earlier post interrupting a deadline, delivery remaining on the dispatcher, and cancellation of the wait.

@@ -101,6 +101,29 @@ void MessageQueue::WaitAndDispatch(int64_t timeoutMillis) {
     this->Dispatch();
 }
 
+bool MessageQueue::WaitForReady(const std::atomic<bool>& stop) {
+    LockT lock(this->queueMutex);
+    while (!stop.load()) {
+        if (this->queue.empty()) {
+            this->waitForDispatch.wait(lock);
+        }
+        else {
+            const auto deadline = system_clock::time_point(this->queue.front()->time);
+            if (system_clock::now() >= deadline) {
+                return true;
+            }
+            this->waitForDispatch.wait_until(lock, deadline);
+        }
+    }
+    return false;
+}
+
+void MessageQueue::WakeWaiters() {
+    /* Synchronize with the stop check before the waiter unlocks and parks. */
+    LockT lock(this->queueMutex);
+    this->waitForDispatch.notify_all();
+}
+
 void MessageQueue::Dispatch() {
     const milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());

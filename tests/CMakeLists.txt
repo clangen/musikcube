@@ -115,7 +115,7 @@ set_target_properties(musikcore_message_queue_test PROPERTIES
 add_dependencies(musikcube_tests musikcore_message_queue_test)
 foreach(case IN ITEMS registration_order filtered_removal unregister_during_dispatch
     reentrant_removal reentrant_handler destructor_cleanup delay_debounce broadcasts
-    shared_payload_lifetime wait_wakeup concurrent_posting)
+    shared_payload_lifetime wait_wakeup wait_ready concurrent_posting)
   add_test(NAME musikcore.runtime.message_queue.${case} COMMAND musikcore_message_queue_test "${case}")
   set_tests_properties(musikcore.runtime.message_queue.${case} PROPERTIES LABELS "unit;musikcore;runtime" TIMEOUT 10)
 endforeach()

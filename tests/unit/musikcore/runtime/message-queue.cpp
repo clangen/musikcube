@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <functional>
+#include <future>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -319,6 +320,37 @@ namespace {
         return true;
     }
 
+    bool checkWaitForReady() {
+        using namespace std::chrono_literals;
+        Target target;
+        Queue queue;
+        queue.Register(&target);
+        queue.Post(Message::Create(&target, 1), 60000);
+        std::atomic<bool> stop { false };
+
+        std::promise<bool> ready;
+        auto outcome = ready.get_future();
+        std::thread waiter([&] { ready.set_value(queue.WaitForReady(stop)); });
+        queue.Post(Message::Create(&target, 2));
+        if (outcome.wait_for(2s) != std::future_status::ready) {
+            stop.store(true);
+            queue.WakeWaiters();
+        }
+        waiter.join();
+        CHECK(outcome.get() && target.seen.empty());
+
+        queue.Dispatch();
+        CHECK(target.seen.size() == 1 && target.seen.front().type == 2 && queue.Contains(&target, 1));
+
+        bool interrupted = false;
+        std::thread stoppingWaiter([&] { interrupted = !queue.WaitForReady(stop); });
+        stop.store(true);
+        queue.WakeWaiters();
+        stoppingWaiter.join();
+        CHECK(interrupted && queue.Contains(&target, 1));
+        return true;
+    }
+
     /* Concurrent producers may change the head while the host drains batches.
        Track every ID to catch dropped or duplicate delivery, not just total count. */
     bool checkConcurrentPosting() {
@@ -376,6 +408,7 @@ int main(int argc, char** argv) {
         {"broadcasts", checkBroadcasts},
         {"shared_payload_lifetime", checkSharedPayloadLifetime},
         {"wait_wakeup", checkWaitAndWakeup},
+        {"wait_ready", checkWaitForReady},
         {"concurrent_posting", checkConcurrentPosting},
     };
     if (argc == 2) {
