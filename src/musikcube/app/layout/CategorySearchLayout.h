@@ -41,7 +41,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 
-#include <musikcore/support/Preferences.h>
+#include <musikcore/preferences.hpp>
 
 #include <sigslot/sigslot.h>
 
@@ -98,7 +98,6 @@ namespace musik {
 
                 musik::core::api::Context& musikcore;
                 mc_track_search_mode matchType{ MC_TRACK_SEARCH_SUBSTRING };
-                std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<CategoryListView> albums;
                 std::shared_ptr<CategoryListView> artists;
                 std::shared_ptr<CategoryListView> genres;

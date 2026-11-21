@@ -8,9 +8,32 @@
 
 #include "../common/primitives.h"
 #include "request.h"
+#include "preferences-shape.h"
 
 std::unique_ptr<musik::core::ffi::ContextRuntime> musik::core::ffi::make_context_runtime() {
     return {};
+}
+
+mc_result MC_CALL mc_preferences_read(mc_preference_scope scope, mc_string_view key,
+    const mc_preference_value* fallback, mc_preference_read_fn read, void*)
+{
+    using namespace musik::core::ffi;
+    return valid_preference_scope(scope) && valid_text(key, false) && read &&
+        fallback && valid_preference_value(*fallback)
+        ? MC_ERROR_UNSUPPORTED
+        : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_preferences_write(mc_preference_scope scope, const mc_preference_entry* entries, size_t count) {
+    using namespace musik::core::ffi;
+    if (!valid_preference_scope(scope) || !valid_preference_entries(entries, count)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return count ? MC_ERROR_UNSUPPORTED : MC_OK;
+}
+
+mc_result MC_CALL mc_preferences_save(mc_preference_scope scope) {
+    return musik::core::ffi::valid_preference_scope(scope) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }
 
 mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void*) {

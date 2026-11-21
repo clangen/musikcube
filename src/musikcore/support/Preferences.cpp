@@ -36,6 +36,9 @@
 
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/Common.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/ffi/consumer/preferences-shape.h>
+#include <musikcore/ffi/common/error.h>
 #include <musikcore/debug.h>
 #include <musikcore/plugin/PluginFactory.h>
 #include <unordered_map>
@@ -94,9 +97,9 @@ static bool stringToFile(const std::string& fn, const std::string& str) {
         return false;
     }
 
-    size_t written = fwrite(str.c_str(), str.size(), 1, f);
-    fclose(f);
-    return (written == str.size());
+    const auto written = fwrite(str.data(), 1, str.size(), f);
+    const auto closed = fclose(f);
+    return written == str.size() && closed == 0;
 }
 
 static std::string pluginFilename(std::string name) {
@@ -255,6 +258,13 @@ void Preferences::SetString(const std::string& key, const char* value) {
     json[key] = value;
 }
 
+void Preferences::SetValues(const nlohmann::json& values) {
+    std::lock_guard lock(this->mutex);
+    auto updated = this->json.is_object() ? this->json : json::object();
+    updated.update(values);
+    this->json.swap(updated);
+}
+
 void Preferences::GetKeys(std::vector<std::string>& target) {
     auto it = json.begin();
     for (; it != json.end(); it++) {
@@ -290,9 +300,15 @@ void Preferences::Save() {
     if (this->mode == ModeReadOnly) {
         throw std::runtime_error("cannot save a ModeReadOnly Preference!");
     }
-    else if (this->mode != ModeTransient) {
-        stringToFile(FILENAME(this->component), this->json.dump(2));
+    this->Flush();
+}
+
+bool Preferences::Flush() {
+    std::lock_guard lock(this->mutex);
+    if (this->mode == ModeReadOnly) {
+        return false;
     }
+    return this->mode == ModeTransient || stringToFile(FILENAME(this->component), this->json.dump(2));
 }
 
 /* SDK IPreferences interface */
@@ -328,4 +344,96 @@ void Preferences::SetDouble(const char* key, double value) {
 
 void Preferences::SetString(const char* key, const char* value) {
     this->SetString(std::string(key), value);
+}
+
+namespace {
+    Preferences& preferenceStore(mc_preference_scope scope) {
+        if (scope == MC_PREFERENCE_SETTINGS) {
+            static const auto settings = Preferences::ForComponent(prefs::components::Settings);
+            return *settings;
+        }
+
+        static const auto session = Preferences::ForComponent(prefs::components::Session);
+        return *session;
+    }
+
+    std::string preferenceText(mc_string_view view) {
+        return std::string(view.data ? view.data : "", view.length);
+    }
+
+    json preferenceJson(const mc_preference_value& value) {
+        switch (value.type) {
+            case MC_PREFERENCE_BOOLEAN:
+                return value.data.boolean;
+            case MC_PREFERENCE_INTEGER:
+                return value.data.integer;
+            case MC_PREFERENCE_NUMBER:
+                return value.data.number;
+            case MC_PREFERENCE_TEXT:
+                return preferenceText(value.data.text);
+        }
+        return nullptr;
+    }
+}
+
+mc_result MC_CALL mc_preferences_read(mc_preference_scope scope, mc_string_view key,
+    const mc_preference_value* fallback, mc_preference_read_fn read, void* data)
+{
+    if (!ffi::valid_preference_scope(scope) || !ffi::valid_text(key, false) || !read ||
+        !fallback || !ffi::valid_preference_value(*fallback))
+    {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        auto& store = preferenceStore(scope);
+        const auto name = preferenceText(key);
+        auto value = *fallback;
+        std::string text;
+        switch (value.type) {
+            case MC_PREFERENCE_BOOLEAN:
+                value.data.boolean = store.GetBool(name, value.data.boolean);
+                break;
+            case MC_PREFERENCE_INTEGER:
+                value.data.integer = store.GetInt(name, value.data.integer);
+                break;
+            case MC_PREFERENCE_NUMBER:
+                value.data.number = store.GetDouble(name, value.data.number);
+                break;
+            case MC_PREFERENCE_TEXT:
+                text = store.GetString(name, preferenceText(value.data.text));
+                value.data.text = { text.data(), text.size() };
+                break;
+        }
+
+        read(data, &value);
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_preferences_write(mc_preference_scope scope, const mc_preference_entry* entries, size_t count) {
+    if (!ffi::valid_preference_scope(scope) || !ffi::valid_preference_entries(entries, count)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    if (!count) {
+        return MC_OK;
+    }
+
+    return ffi::exception_barrier(nullptr, [&] {
+        auto values = json::object();
+        for (size_t i = 0; i < count; ++i) {
+            values[preferenceText(entries[i].key)] = preferenceJson(entries[i].value);
+        }
+        preferenceStore(scope).SetValues(values);
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_preferences_save(mc_preference_scope scope) {
+    if (!ffi::valid_preference_scope(scope)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        return preferenceStore(scope).Flush() ? MC_OK : MC_ERROR_IO;
+    });
 }

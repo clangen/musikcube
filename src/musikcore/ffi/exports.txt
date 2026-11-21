@@ -97,3 +97,6 @@ mc_visualizer_show
 mc_visualizer_hide
 mc_context_set_playlist_changed_callback
 mc_context_set_equalizer_changed_callback
+mc_preferences_read
+mc_preferences_write
+mc_preferences_save

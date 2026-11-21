@@ -57,7 +57,6 @@ using namespace musik::cube;
 using namespace cursespp;
 
 namespace keys = musik::cube::prefs::keys;
-namespace components = musik::core::prefs::components;
 
 constexpr int kSearchHeight = 3;
 constexpr int kRequeryIntervalMs = 300;
@@ -70,7 +69,6 @@ constexpr int kRequeryIntervalMs = 300;
 CategorySearchLayout::CategorySearchLayout(api::Context& musikcore)
 : LayoutBase()
 , musikcore(musikcore) {
-    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 }
 
@@ -85,22 +83,22 @@ void CategorySearchLayout::CancelSearchRequests() {
 }
 
 void CategorySearchLayout::LoadLastSession() {
-    auto session = Preferences::ForComponent(components::Session);
+    api::Preferences session { MC_PREFERENCE_SESSION };
 
-    const std::string lastFilter = session->GetString(keys::LastCategoryFilter);
+    const std::string lastFilter = session.GetString(keys::LastCategoryFilter);
     if (lastFilter.size()) {
         this->input->SetText(lastFilter);
     }
 
-    this->matchType = session->GetInt(keys::LastCategoryFilterMatchType, musik::cube::prefs::SearchSubstring) == musik::cube::prefs::SearchRegex
+    this->matchType = session.GetInt(keys::LastCategoryFilterMatchType, musik::cube::prefs::SearchSubstring) == musik::cube::prefs::SearchRegex
         ? MC_TRACK_SEARCH_REGEX
         : MC_TRACK_SEARCH_SUBSTRING;
 }
 
 void CategorySearchLayout::SaveSession() {
-    auto session = Preferences::ForComponent(components::Session);
-    session->SetString(keys::LastCategoryFilter, this->input->GetText().c_str());
-    session->SetInt(keys::LastCategoryFilterMatchType,
+    api::Preferences session { MC_PREFERENCE_SESSION };
+    session.SetString(keys::LastCategoryFilter, this->input->GetText());
+    session.SetInt(keys::LastCategoryFilterMatchType,
         this->matchType == MC_TRACK_SEARCH_REGEX ? musik::cube::prefs::SearchRegex : musik::cube::prefs::SearchSubstring);
 }
 

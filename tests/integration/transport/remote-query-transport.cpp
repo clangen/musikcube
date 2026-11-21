@@ -283,7 +283,7 @@ namespace {
         using namespace musik::core::api;
 
         Server server(true);
-        const auto settings = Preferences::ForComponent(prefs::components::Settings);
+        const auto settings = musik::core::Preferences::ForComponent(prefs::components::Settings);
         settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
@@ -620,7 +620,7 @@ namespace {
         using namespace musik::core::api;
         CoreRuntime runtime;
         auto& host = runtime.Queue();
-        const auto settings = Preferences::ForComponent(prefs::components::Settings);
+        const auto settings = musik::core::Preferences::ForComponent(prefs::components::Settings);
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
         const auto local = OpenFixtureLibrary();
         if (!local) {
@@ -988,7 +988,7 @@ namespace {
         using namespace musik::core::api;
 
         Server server(true);
-        auto settings = Preferences::ForComponent(prefs::components::Settings);
+        auto settings = musik::core::Preferences::ForComponent(prefs::components::Settings);
         settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetBool(prefs::keys::RemoteLibraryViewed, true);

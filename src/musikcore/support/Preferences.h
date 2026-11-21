@@ -94,6 +94,8 @@ namespace musik { namespace core {
             void SetInt(const std::string& key, int value);
             void SetDouble(const std::string& key, double value);
             void SetString(const std::string& key, const char* value);
+            void SetValues(const nlohmann::json& values);
+            bool Flush();
 
             void GetKeys(std::vector<std::string>& target);
             bool HasKey(const std::string& key);

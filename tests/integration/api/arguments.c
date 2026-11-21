@@ -88,6 +88,10 @@ int main(void) {
     CHECK(mc_visualizer_list(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_visualizer_show(0) == MC_ERROR_NOT_FOUND);
     CHECK(mc_visualizer_hide() == MC_ERROR_NOT_FOUND);
+    const mc_preference_entry preference = { { "test", 4 }, { MC_PREFERENCE_BOOLEAN, { false } } };
+    CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, NULL, 1) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, NULL, 0) == MC_OK);
+    CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, &preference, 1) == MC_ERROR_UNSUPPORTED);
     mc_equalizer_state equalizer = MC_EQUALIZER_STATE_DEFAULT;
     CHECK(mc_equalizer_get_state(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_equalizer_get_state(&equalizer) == MC_ERROR_UNSUPPORTED);

@@ -54,6 +54,42 @@ namespace {
         return false;
     }
 
+    bool checkPreferences() {
+        constexpr char name[] = "RuntimeFixtureName";
+        constexpr char length[] = "RuntimeFixtureLength";
+        constexpr char enabled[] = "RuntimeFixtureEnabled";
+        constexpr char gain[] = "RuntimeFixtureGain";
+        Preferences session { MC_PREFERENCE_SESSION };
+        if (session.GetInt(length, 3) != 3 || session.GetString(name, "default") != "default") {
+            return false;
+        }
+
+        std::string text = "public";
+        mc_preference_entry values[] = {
+            { { name, sizeof(name) - 1 }, { MC_PREFERENCE_TEXT, {} } },
+            { { length, sizeof(length) - 1 }, { MC_PREFERENCE_INTEGER, {} } }
+        };
+        values[0].value.data.text = { text.data(), text.size() };
+        values[1].value.data.integer = 42;
+        if (mc_preferences_write(MC_PREFERENCE_SESSION, values, std::size(values)) != MC_OK) {
+            return false;
+        }
+
+        text[0] = 'X';
+        values[1].value.type = UINT32_MAX;
+        if (mc_preferences_write(MC_PREFERENCE_SESSION, values, std::size(values)) != MC_ERROR_INVALID_ARGUMENT ||
+            session.GetString(name) != "public" || session.GetInt(length) != 42)
+        {
+            return false;
+        }
+
+        session.SetBool(enabled, true);
+        session.SetDouble(gain, 10.25);
+        const Preferences settings { MC_PREFERENCE_SETTINGS };
+        return session.GetBool(enabled) && session.GetDouble(gain) == 10.25 && !settings.GetBool(enabled) &&
+            session.Save() == MC_OK;
+    }
+
     bool checkEqualizer(Context& context, Host& host) {
         const auto before = ReadEqualizer();
         if (!before) {
@@ -143,6 +179,11 @@ namespace {
 }
 
 int main(int argc, char**) {
+    if (!checkPreferences()) {
+        std::fputs("Preference values did not round trip atomically through the public API\n", stderr);
+        return 1;
+    }
+
     Host host;
     auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
     options.flags = MC_CONTEXT_MANAGED_RUNTIME;

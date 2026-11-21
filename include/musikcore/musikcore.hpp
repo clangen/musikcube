@@ -12,5 +12,6 @@
 #include <musikcore/indexer.hpp>
 #include <musikcore/track-result-window.hpp>
 #include <musikcore/visualizer.hpp>
+#include <musikcore/preferences.hpp>
 
 #endif

@@ -9,5 +9,6 @@
 #include <musikcore/equalizer.h>
 #include <musikcore/indexer.h>
 #include <musikcore/visualizer.h>
+#include <musikcore/preferences.h>
 
 #endif

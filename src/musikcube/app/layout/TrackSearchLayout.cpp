@@ -57,13 +57,12 @@ using namespace musik::cube;
 using namespace cursespp;
 
 namespace keys = musik::cube::prefs::keys;
-namespace components = musik::core::prefs::components;
 
 constexpr int kSearchHeight = 3;
 constexpr int kRequeryIntervalMs = 300;
 
-static mc_track_search_order getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
-    const auto sort = (mc_track_search_order) prefs->GetInt(
+static mc_track_search_order getDefaultTrackSort(const api::Preferences& prefs) {
+    const auto sort = (mc_track_search_order) prefs.GetInt(
         keys::TrackSearchSortOrder, (int) MC_TRACK_SEARCH_ALBUM);
     return sort <= MC_TRACK_SEARCH_GENRE ? sort : MC_TRACK_SEARCH_ALBUM;
 }
@@ -75,7 +74,6 @@ TrackSearchLayout::TrackSearchLayout(
 , trackList(std::move(trackList))
 , musikcore(musikcore)
 {
-    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 }
 
@@ -85,22 +83,22 @@ TrackSearchLayout::~TrackSearchLayout() {
 }
 
 void TrackSearchLayout::LoadLastSession() {
-    auto session = Preferences::ForComponent(components::Session);
+    api::Preferences session { MC_PREFERENCE_SESSION };
 
-    const std::string lastFilter = session->GetString(keys::LastTrackFilter);
+    const std::string lastFilter = session.GetString(keys::LastTrackFilter);
     if (lastFilter.size()) {
         this->input->SetText(lastFilter);
     }
 
-    this->matchType = session->GetInt(keys::LastTrackFilterMatchType, musik::cube::prefs::SearchSubstring) == musik::cube::prefs::SearchRegex
+    this->matchType = session.GetInt(keys::LastTrackFilterMatchType, musik::cube::prefs::SearchSubstring) == musik::cube::prefs::SearchRegex
         ? MC_TRACK_SEARCH_REGEX
         : MC_TRACK_SEARCH_SUBSTRING;
 }
 
 void TrackSearchLayout::SaveSession() {
-    auto session = Preferences::ForComponent(components::Session);
-    session->SetString(keys::LastTrackFilter, this->input->GetText().c_str());
-    session->SetInt(keys::LastTrackFilterMatchType,
+    api::Preferences session { MC_PREFERENCE_SESSION };
+    session.SetString(keys::LastTrackFilter, this->input->GetText());
+    session.SetInt(keys::LastTrackFilterMatchType,
         this->matchType == MC_TRACK_SEARCH_REGEX ? musik::cube::prefs::SearchRegex : musik::cube::prefs::SearchSubstring);
 }
 
@@ -242,7 +240,7 @@ void TrackSearchLayout::ShowTrackSortOverlay() {
     TrackOverlays::ShowTrackSearchSortOverlay(
         getDefaultTrackSort(this->prefs),
         [this](mc_track_search_order type) {
-            this->prefs->SetInt(keys::TrackSearchSortOrder, (int) type);
+            this->prefs.SetInt(keys::TrackSearchSortOrder, (int) type);
             this->Requery();
         });
 }

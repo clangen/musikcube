@@ -60,7 +60,6 @@ using namespace musik::cube;
 using namespace cursespp;
 
 namespace keys = musik::cube::prefs::keys;
-namespace components = musik::core::prefs::components;
 
 constexpr int kMaxCategoryWidth = 40;
 constexpr int kMinListTitleHeight = 26;
@@ -104,8 +103,8 @@ static inline std::string getTitleForCategory(const std::string& fieldName) {
         ? _TSTR(fieldName) : _TSTR(FIELD_TO_TITLE[fieldName]);
 }
 
-static mc_track_search_order getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
-    const auto sort = (mc_track_search_order) prefs->GetInt(
+static mc_track_search_order getDefaultTrackSort(const api::Preferences& prefs) {
+    const auto sort = (mc_track_search_order) prefs.GetInt(
         keys::CategoryTrackListSortOrder,
         static_cast<int>(MC_TRACK_SEARCH_ALBUM));
     return sort <= MC_TRACK_SEARCH_GENRE ? sort : MC_TRACK_SEARCH_ALBUM;
@@ -117,7 +116,6 @@ BrowseLayout::BrowseLayout(
 , playlistModified(false)
 , musikcore(context)
 {
-    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 }
 
@@ -205,16 +203,16 @@ void BrowseLayout::InitializeWindows() {
 }
 
 void BrowseLayout::LoadLastSession() {
-    auto session = Preferences::ForComponent(components::Session);
-    const std::string field = session->GetString(keys::LastBrowseCategoryType, "");
-    const int64_t id = static_cast<int64_t>(session->GetDouble(keys::LastBrowseCategoryId, -1.0));
+    api::Preferences session { MC_PREFERENCE_SESSION };
+    const std::string field = session.GetString(keys::LastBrowseCategoryType, "");
+    const int64_t id = static_cast<int64_t>(session.GetDouble(keys::LastBrowseCategoryId, -1.0));
     if (field.size()) {
         this->SwitchCategory(field);
         this->ScrollTo(field, id);
     }
-    this->showCategoryListFilter = session->GetBool(keys::LastBrowseFilterVisible, false);
+    this->showCategoryListFilter = session.GetBool(keys::LastBrowseFilterVisible, false);
     if (this->showCategoryListFilter) {
-        const std::string filter = session->GetString(keys::LastBrowseFilter);
+        const std::string filter = session.GetString(keys::LastBrowseFilter);
         if (filter != this->currentFilter) {
             this->categoryListFilter->SetText(filter);
         }
@@ -222,13 +220,13 @@ void BrowseLayout::LoadLastSession() {
 }
 
 void BrowseLayout::SaveSession() {
-    auto session = Preferences::ForComponent(components::Session);
+    api::Preferences session { MC_PREFERENCE_SESSION };
     const std::string type = this->categoryList->GetFieldName().c_str();
     const double id = static_cast<double>(this->categoryList->GetSelectedId());
-    session->SetString(keys::LastBrowseCategoryType, type.c_str());
-    session->SetDouble(keys::LastBrowseCategoryId, id);
-    session->SetBool(keys::LastBrowseFilterVisible, this->showCategoryListFilter);
-    session->SetString(keys::LastBrowseFilter, this->currentFilter.c_str());
+    session.SetString(keys::LastBrowseCategoryType, type);
+    session.SetDouble(keys::LastBrowseCategoryId, id);
+    session.SetBool(keys::LastBrowseFilterVisible, this->showCategoryListFilter);
+    session.SetString(keys::LastBrowseFilter, this->currentFilter);
 }
 
 void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
@@ -373,7 +371,7 @@ void BrowseLayout::ShowTrackSortOverlay() {
     TrackOverlays::ShowTrackSearchSortOverlay(
         getDefaultTrackSort(this->prefs),
         [this](mc_track_search_order type) {
-            this->prefs->SetInt(keys::CategoryTrackListSortOrder, static_cast<int>(type));
+            this->prefs.SetInt(keys::CategoryTrackListSortOrder, static_cast<int>(type));
             this->RequeryTrackList(this->categoryList.get());
         });
 }

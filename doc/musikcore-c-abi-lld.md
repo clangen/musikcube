@@ -1086,6 +1086,9 @@ legacy list for actions that still require it.
 
 - [ ] **PUB-001** Add preference namespace, typed values, batch updates, and
   persistence contracts.
+  Settings and Session support typed reads, atomic in-memory batches, and
+  explicit saving through the C ABI. `musikcore.integration.api.managed_runtime`
+  verifies scope isolation, copied text, and rejection of an invalid batch.
 - [ ] **PUB-002** Add category, album, directory, and remaining metadata query
   shapes.
   Browse and Directories use typed ordered results for their track panes.
@@ -1151,6 +1154,7 @@ legacy list for actions that still require it.
   family.
 - [ ] **CPP-003** Expand the C++ wrapper with each public feature family.
 - [ ] **MIG-003** Migrate preferences and settings consumers.
+  Search and Browse use the public preferences API for sort and session state.
 - [ ] **MIG-004** Migrate remaining library/category/directory views.
   Browse receives local playlist mutations through context dispatch.
   `musikcore.abi.dispatch` verifies notification ordering and

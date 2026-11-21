@@ -78,3 +78,7 @@ The managed context selects concrete local or remote catalogs. Playback switches
 All 47 Linux Release tests passed. The managed loopback, runtime, and Browse cases each passed four additional runs, including the new stale queue snapshot checks.
 
 Removed `MasterLibrary` and the legacy selection source after migrating the integration fixtures. The remote transport contract now exercises the managed context directly, and playlist notification ordering remains covered in the dispatcher contract. All 47 Linux Release tests passed.
+
+## Typed preferences
+
+Settings and Session now support typed reads and atomic in-memory batch writes through the C ABI, with explicit persistence. Search and Browse use the header-only preferences wrapper and retain their existing on-disk keys. The public runtime test covers scope isolation, text ownership, and invalid-batch rollback. All 47 Linux Release tests passed.
