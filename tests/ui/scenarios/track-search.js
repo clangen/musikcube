@@ -96,6 +96,7 @@ async function checkTrackSearch(runtime, database, screenshots,
   const preferences = fs.existsSync(settings) ? JSON.parse(fs.readFileSync(settings, 'utf8')) : {};
   preferences.SyncOnStartup = false;
   preferences.FirstRunSettingsDisplayed = true;
+  delete preferences.TrackSearchSortOrder;
   fs.writeFileSync(settings, JSON.stringify(preferences));
   const openSearch = !pilot && scenario === 'browse' ? 'T' : 't';
   if (openSearch !== 't') {

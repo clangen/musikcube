@@ -140,3 +140,7 @@ The Unix install now includes public C and C++ headers and a relocatable CMake t
 ## Fixture seeder
 
 The seeder starts the public managed context, waits on public indexer callbacks, and verifies the catalog through a public typed search. It no longer starts private services or builds a query directly. All 49 Linux Release tests passed. The ABI-only Debug build also passed all 26 ASan/UBSan tests after making the fault-injection fixture use matching allocation and destruction.
+
+## Linux search benchmark
+
+A 20-run benchmark used the installed Linux Release app and 30,000 tracks. Median and p95 in milliseconds were open 85.3/85.5, filter 380.7/380.9, next viewport 0.7/1.0, warm return 0.3/0.4, and cold jump 4.6/4.7. Median CPU stayed at 70 ms and median peak RSS was 32,620 KiB, 396 KiB above the historical paged run. Each benchmark launch resets the saved sort choice so earlier runs cannot change the fixture.
