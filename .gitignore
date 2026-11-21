@@ -11,6 +11,8 @@
 /Testing/
 **/Makefile
 **/cmake_install.cmake
+/musikcoreConfig.cmake
+/musikcoreConfigVersion.cmake
 **/install_manifest.txt
 **/Release
 **/Debug
