@@ -1,3 +1,9 @@
+Unreleased
+
+* remove Piggy remote diagnostics and its settings
+
+--------------------------------------------------------------------------------
+
 3.0.5
 
 * add support for ffmpeg 8.x (backwards compatible)

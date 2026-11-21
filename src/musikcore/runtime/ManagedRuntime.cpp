@@ -12,8 +12,6 @@
 #include <common/runtime/MessageQueue.h>
 #include <common/runtime/Message.h>
 #include <musikcore/debug.h>
-#include <musikcore/net/PiggyWebSocketClient.h>
-#include <musikcore/support/PiggyDebugBackend.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
@@ -259,10 +257,6 @@ namespace musik { namespace core { namespace ffi {
                 this->ownsLogging = false;
                 Cleanup([] { debug::Shutdown(); }, failure);
             }
-            if (this->piggy) {
-                this->piggy = false;
-                Cleanup([] { net::PiggyWebSocketClient::Shutdown(); }, failure);
-            }
             if (failure) {
                 throw std::runtime_error("Managed runtime shutdown failed");
             }
@@ -298,14 +292,6 @@ namespace musik { namespace core { namespace ffi {
             backends.push_back(std::make_unique<debug::SimpleFileBackend>());
             if (observe) {
                 backends.push_back(std::make_unique<DispatchLogBackend>(*this->queue));
-            }
-
-            const auto prefs = Preferences::ForComponent(prefs::components::Settings);
-            if (prefs->GetBool(prefs::keys::PiggyEnabled, false)) {
-                auto client = net::PiggyWebSocketClient::Instance(this->queue.get());
-                this->piggy = true;
-                client->Connect(prefs->GetString(prefs::keys::PiggyHostname, "localhost"));
-                backends.push_back(std::make_unique<PiggyDebugBackend>(std::move(client)));
             }
 
             this->ownsLogging = debug::TryStart(std::move(backends));
@@ -349,7 +335,6 @@ namespace musik { namespace core { namespace ffi {
         IIndexer* indexer = nullptr;
         bool initialized = false;
         bool ownsLogging = false;
-        bool piggy = false;
         std::atomic<bool> stopping { false };
         std::thread notifier;
     };

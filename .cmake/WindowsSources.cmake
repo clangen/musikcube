@@ -46,7 +46,6 @@ set(windows_core_sources
   src/musikcore/library/track/LibraryTrack.cpp
   src/musikcore/library/track/Track.cpp
   src/musikcore/library/track/TrackList.cpp
-  src/musikcore/net/PiggyWebSocketClient.cpp
   src/musikcore/net/RawWebSocketClient.cpp
   src/musikcore/net/WebSocketClient.cpp
   src/musikcore/db/Connection.cpp
@@ -62,7 +61,6 @@ set(windows_core_sources
   src/musikcore/support/Auddio.cpp
   src/musikcore/support/Common.cpp
   src/musikcore/support/LastFm.cpp
-  src/musikcore/support/PiggyDebugBackend.cpp
   src/musikcore/support/Playback.cpp
   src/musikcore/support/PreferenceKeys.cpp
   src/musikcore/support/Preferences.cpp

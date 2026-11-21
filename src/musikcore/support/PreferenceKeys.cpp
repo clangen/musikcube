@@ -84,8 +84,6 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::RemoteLibraryTranscoderBitrate = MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE;
     const std::string keys::RemoteLibraryIgnoreVersionMismatch = MC_PREFERENCE_KEY_REMOTE_LIBRARY_IGNORE_VERSION_MISMATCH;
     const std::string keys::AsyncTrackListQueries = MC_PREFERENCE_KEY_ASYNC_TRACK_LIST_QUERIES;
-    const std::string keys::PiggyEnabled = MC_PREFERENCE_KEY_PIGGY_ENABLED;
-    const std::string keys::PiggyHostname = MC_PREFERENCE_KEY_PIGGY_HOSTNAME;
 
 } } }
 

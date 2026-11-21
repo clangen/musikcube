@@ -133,8 +133,6 @@ static std::vector<api::PreferenceField> advancedSettings(const api::Preferences
     addInt(MC_PREFERENCE_KEY_INDEXER_TRANSACTION_INTERVAL, 300);
     addText(MC_PREFERENCE_KEY_AUDDIO_API_TOKEN, "");
     addBool(MC_PREFERENCE_KEY_RESUME_PLAYBACK_ON_STARTUP, false);
-    addBool(MC_PREFERENCE_KEY_PIGGY_ENABLED, false);
-    addText(MC_PREFERENCE_KEY_PIGGY_HOSTNAME, "localhost");
     return fields;
 }
 
