@@ -167,7 +167,7 @@ void TrackSearchLayout::Requery() {
             api::TrackSearch { filter, this->matchType, sortOrder },
             this->searchWork.Begin([this, sortOrder, hash](mc_result status, api::TrackResult result, std::string_view) {
                 this->searchRequest = 0;
-                if (status == MC_ERROR_BUSY) {
+                if (status == MC_ERROR_BUSY || status == MC_ERROR_QUEUE_FULL) {
                     this->Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
                 }
                 if (status != MC_OK) {

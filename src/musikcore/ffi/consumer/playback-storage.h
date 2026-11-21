@@ -11,7 +11,7 @@ struct TrackResultData;
 enum class QueueEdit { Move, Remove, Clear };
 
 struct mc_play_queue {
-    std::vector<int64_t> ids;
+    std::shared_ptr<const TrackResultData> tracks;
     std::weak_ptr<const void> lifetime;
     uint64_t revision = 0;
     size_t currentRow = SIZE_MAX;

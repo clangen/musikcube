@@ -1,4 +1,5 @@
 #include "request.h"
+#include <musikcore/online.h>
 
 #include <chrono>
 #include <condition_variable>
@@ -169,7 +170,7 @@ namespace {
             mc_request_id id = first;
             const auto result = submit_request(state.context, [] { return MC_OK; },
                 dispatch_test_completion, &state, &id);
-            if (result == MC_ERROR_BUSY && !id) break;
+            if (result == MC_ERROR_QUEUE_FULL && !id) break;
             if (result != MC_OK || !id) return false;
             if (accepted == 1) second = id;
         }
@@ -287,7 +288,7 @@ static bool check_callback_lifecycle(State &state) {
     state.after_completion = [&] {
         const auto original = state.context;
         rejected = mc_context_shutdown(original) == MC_ERROR_BUSY;
-        mc_context_destroy(&state.context);
+        rejected = rejected && mc_context_destroy(&state.context) == MC_ERROR_BUSY;
         preserved = state.context == original;
     };
     finish(MC_OK);
@@ -358,6 +359,83 @@ static bool check_terminal_races(State &state) {
     return true;
 }
 
+static bool check_shutdown_cancellable_worker(State& state) {
+    using musik::core::ffi::submit_request;
+    auto cancelled = std::make_shared<std::atomic_bool>(false);
+    std::atomic_bool exited { false };
+    mc_request_id request = 0;
+    if (submit_request(state.context, [&] {
+        {
+            std::lock_guard<std::mutex> lock(state.mutex);
+            state.work_started = true;
+            state.changed.notify_all();
+        }
+        const auto end = std::chrono::steady_clock::now() + deadline;
+        while (!cancelled->load() && std::chrono::steady_clock::now() < end) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        exited.store(cancelled->load());
+        return MC_OK;
+    }, dispatch_test_completion,
+        &state, &request, cancelled) != MC_OK)
+    {
+        return false;
+    }
+
+    const bool started = wait_for_work(state);
+    const auto shutdown = mc_context_shutdown(state.context);
+    return started && shutdown == MC_OK && exited.load() && state.completions == 1 && state.result == MC_ERROR_CANCELLED;
+}
+
+static bool check_mutation_cancellation(State& state) {
+    using namespace musik::core::ffi;
+    mc_request_id request = 0;
+    if (submit_request(state.context, [&] { return block_work(state); },
+        dispatch_test_completion, &state, &request, {}, RequestEffect::Mutation) != MC_OK)
+    {
+        return false;
+    }
+
+    const bool running = wait_for_work(state);
+    const auto cancellation = mc_request_cancel(state.context, request);
+    {
+        std::lock_guard<std::mutex> lock(state.mutex);
+        state.release_work = true;
+        state.changed.notify_all();
+    }
+    if (!running || cancellation != MC_ERROR_IN_FLIGHT || !wait_for_wakeups(state, 1) ||
+        mc_context_dispatch(state.context) != MC_OK || state.result != MC_OK || state.completions != 1)
+    {
+        return false;
+    }
+
+    std::function<void(mc_result)> finish;
+    if (reserve_external_request(state.context, dispatch_test_completion, &state, &request, finish,
+        RequestEffect::Mutation) != MC_OK || mc_request_cancel(state.context, request) != MC_ERROR_IN_FLIGHT)
+    {
+        return false;
+    }
+
+    const auto shutdown = mc_context_shutdown(state.context);
+    finish(MC_OK);
+    return shutdown == MC_OK && state.result == MC_ERROR_OUTCOME_UNKNOWN && state.completions == 2;
+}
+
+static bool check_online_rejection(State& state) {
+    mc_request_id request = 42;
+    auto text = [](mc_result, mc_string_view, void*) {};
+    auto link = [](mc_result, mc_string_view, mc_string_view, void*) {};
+    if (mc_lyrics_find_async(state.context, {}, {}, text, nullptr, &request) != MC_ERROR_INVALID_ARGUMENT || request) {
+        return false;
+    }
+    request = 42;
+    if (mc_lastfm_complete_link_async(state.context, {}, text, nullptr, &request) != MC_ERROR_INVALID_ARGUMENT || request) {
+        return false;
+    }
+    request = 42;
+    return mc_lastfm_request_link_async(nullptr, link, nullptr, &request) == MC_ERROR_INVALID_ARGUMENT && !request;
+}
+
 static bool check_playlist_dispatch(State& state) {
     using namespace musik::core::ffi;
     using Event = std::pair<mc_playlist_event, int64_t>;
@@ -408,5 +486,8 @@ int main() {
         run_check("cancel peer request during callback", check_callback_cancellation) &&
         run_check("completion and cancellation terminal selection races", check_terminal_races) &&
         run_check("external reply after cancellation and destruction", check_external_reply) &&
+        run_check("shutdown cancels and joins active work", check_shutdown_cancellable_worker) &&
+        run_check("mutation cancellation", check_mutation_cancellation) &&
+        run_check("online request rejection", check_online_rejection) &&
         run_check("playlist order and selection changes", check_playlist_dispatch) ? 0 : 1;
 }

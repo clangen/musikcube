@@ -285,12 +285,18 @@ public:
         queue.revision = this->service.queueRevision;
         if (!this->QueueOriginAvailable()) return MC_OK;
 
-        queue.ids = this->service.playlist.GetIds();
+        auto tracks = std::make_shared<TrackResultData>();
+        tracks->ids = this->service.playlist.GetIds();
+        tracks->library = this->service.queueOrigin;
+        if (!tracks->library && !tracks->ids.empty()) {
+            tracks->library = this->service.CaptureOrigin(this->service.library->Id());
+        }
+        queue.tracks = std::move(tracks);
         const auto row = this->service.GetIndex();
-        if (row < queue.ids.size()) queue.retainedRow = row;
+        if (row < queue.tracks->ids.size()) queue.retainedRow = row;
         const auto playing = this->service.GetPlaying();
         if (this->service.GetPlaybackState() != PlaybackState::Stopped &&
-            playing && row < queue.ids.size() && queue.ids[row] == playing->GetId()) {
+            playing && row < queue.tracks->ids.size() && queue.tracks->ids[row] == playing->GetId()) {
             queue.currentRow = row;
         }
         queue.shuffled = this->service.IsShuffled();
@@ -377,7 +383,8 @@ public:
         if (status != MC_OK) return status;
 
         std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
-        if (!this->QueueIsCurrent(queue) || row >= queue.ids.size()) return MC_ERROR_NOT_FOUND;
+        if (!this->QueueIsCurrent(queue)) return MC_ERROR_STALE_SNAPSHOT;
+        if (!queue.tracks || row >= queue.tracks->ids.size()) return MC_ERROR_NOT_FOUND;
         this->service.Play(row);
         return MC_OK;
     }
@@ -408,7 +415,7 @@ public:
             editor.Clear();
             return MC_OK;
         }
-        if (!this->QueueIsCurrent(*queue)) return MC_ERROR_NOT_FOUND;
+        if (!this->QueueIsCurrent(*queue)) return MC_ERROR_STALE_SNAPSHOT;
         const bool changed = edit == QueueEdit::Move ? editor.Move(from, to) : editor.Delete(from);
         return changed ? MC_OK : MC_ERROR_NOT_FOUND;
     }

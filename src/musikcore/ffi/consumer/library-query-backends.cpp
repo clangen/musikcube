@@ -74,14 +74,19 @@ namespace {
         };
     }
 
-    using CategoryFields = std::vector<std::string>;
+    struct CategoryFields {
+        std::vector<std::string> names;
+        std::vector<mc_string_view> views;
+    };
 
     mc_result collectFields(query::AllCategoriesQuery& command, std::unique_ptr<CategoryFields>& output) {
         output = std::make_unique<CategoryFields>();
         const auto result = command.GetResult();
-        output->reserve(result->Count());
+        output->names.reserve(result->Count());
+        output->views.reserve(result->Count());
         for (size_t i = 0; i < result->Count(); ++i) {
-            output->push_back(result->At(i)->ToString());
+            const auto& name = output->names.emplace_back(result->At(i)->ToString());
+            output->views.push_back({ name.data(), name.size() });
         }
         return MC_OK;
     }
@@ -89,14 +94,8 @@ namespace {
     auto deliverFields(mc_category_fields_completion_fn completion) {
         return [completion](mc_result status, CategoryFields* fields, const mc_error* error, void* data) {
             const std::unique_ptr<CategoryFields> owned(fields);
-            std::vector<mc_string_view> views;
-            if (fields) {
-                views.reserve(fields->size());
-                for (const auto& field : *fields) {
-                    views.push_back({ field.data(), field.size() });
-                }
-            }
-            completion(status, views.data(), views.size(), error, data);
+            completion(status, fields ? fields->views.data() : nullptr,
+                fields ? fields->views.size() : 0, error, data);
         };
     }
 
@@ -109,13 +108,13 @@ namespace {
     }
 
     mc_result collectPlaylistId(query::SavePlaylistQuery& command, std::unique_ptr<int64_t>& output) {
-        output = std::make_unique<int64_t>(std::max(int64_t{0}, command.GetPlaylistId()));
+        *output = std::max(int64_t { 0 }, command.GetPlaylistId());
         return MC_OK;
     }
 
     auto collectDeletedPlaylistId(int64_t id) {
         return [id](query::DeletePlaylistQuery&, std::unique_ptr<int64_t>& output) {
-            output = std::make_unique<int64_t>(id);
+            *output = id;
             return MC_OK;
         };
     }
@@ -129,8 +128,12 @@ namespace {
 
     template<typename Result, typename Command, typename Convert, typename Completion>
     mc_result submitLocal(mc_context* context, const ILibraryPtr& library,
-        std::shared_ptr<Command> command, Convert convert, Completion completion, void* data, mc_request_id* request) {
+        std::shared_ptr<Command> command, Convert convert, Completion completion, void* data, mc_request_id* request,
+        RequestEffect effect = RequestEffect::Read) {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
+        if (effect == RequestEffect::Mutation) {
+            *output = std::make_unique<Result>();
+        }
         return submit_request(context, [=]() -> mc_result {
             if (library->EnqueueAndWait(command, musik::core::kWaitIndefinite) < 0 ||
                 command->GetStatus() != musik::core::db::IQuery::Finished) return MC_ERROR_IO;
@@ -138,7 +141,7 @@ namespace {
         }, [=](mc_result status, void* userData) {
             const CompletionError error(status);
             completion(status, status == MC_OK ? output->release() : nullptr, error.Get(), userData);
-        }, data, request);
+        }, data, request, {}, effect);
     }
 
     mc_result makeOrderedResult(query::TrackListQueryBase& command,
@@ -260,19 +263,19 @@ namespace {
         mc_result SavePlaylist(mc_context* context, int64_t id, std::string name, std::vector<int64_t> ids, bool append,
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitLocal<int64_t>(context, this->library, savePlaylistCommand(this->library, id, name, ids, append),
-                collectPlaylistId, deliverPlaylistWrite(completion), data, request);
+                collectPlaylistId, deliverPlaylistWrite(completion), data, request, RequestEffect::Mutation);
         }
 
         mc_result RenamePlaylist(mc_context* context, int64_t id, std::string name,
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitLocal<int64_t>(context, this->library, query::SavePlaylistQuery::Rename(this->library, id, name),
-                collectPlaylistId, deliverPlaylistWrite(completion), data, request);
+                collectPlaylistId, deliverPlaylistWrite(completion), data, request, RequestEffect::Mutation);
         }
 
         mc_result DeletePlaylist(mc_context* context, int64_t id,
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitLocal<int64_t>(context, this->library, std::make_shared<query::DeletePlaylistQuery>(this->library, id),
-                collectDeletedPlaylistId(id), deliverPlaylistWrite(completion), data, request);
+                collectDeletedPlaylistId(id), deliverPlaylistWrite(completion), data, request, RequestEffect::Mutation);
         }
 
         mc_result SetTrackRating(mc_context* context, int64_t id, uint32_t rating,
@@ -280,7 +283,7 @@ namespace {
         {
             return submitLocal<bool>(context, this->library,
                 std::make_shared<query::SetTrackRatingQuery>(id, static_cast<int>(rating)),
-                commandSucceeded, deliverStatus(completion), data, request);
+                commandSucceeded, deliverStatus(completion), data, request, RequestEffect::Mutation);
         }
 
     private:
@@ -298,13 +301,16 @@ namespace {
     template<typename Result, typename Command, typename Convert, typename Completion>
     mc_result submitRemote(mc_context *context, const std::shared_ptr<musik::core::library::RemoteLibrary> &library,
         uint64_t generation, std::shared_ptr<Command> command, Convert convert, Completion completion,
-        void *user_data, mc_request_id *out_request) {
+        void *user_data, mc_request_id *out_request, RequestEffect effect = RequestEffect::Read) {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
+        if (effect == RequestEffect::Mutation) {
+            *output = std::make_unique<Result>();
+        }
         std::function<void(mc_result)> finish;
         const auto status = reserve_external_request(context, [=](mc_result result, void *data) {
             const CompletionError error(result);
             completion(result, result == MC_OK ? output->release() : nullptr, error.Get(), data);
-        }, user_data, out_request, finish);
+        }, user_data, out_request, finish, effect);
         if (status != MC_OK) return status;
 
         /* Backend submission follows admission so even an immediate failure completes on dispatch. */
@@ -312,7 +318,9 @@ namespace {
             const auto admission = library->EnqueueForConnection(command, generation,
                 [=](const auto&) {
                     finish(exception_barrier(nullptr, [&]() -> mc_result {
-                        if (command->GetStatus() != musik::core::db::IQuery::Finished) return MC_ERROR_IO;
+                        if (command->GetStatus() != musik::core::db::IQuery::Finished) {
+                            return effect == RequestEffect::Mutation ? MC_ERROR_OUTCOME_UNKNOWN : MC_ERROR_IO;
+                        }
                         return convert(*command, *output);
                     }));
                 });
@@ -395,21 +403,21 @@ namespace {
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitRemote<int64_t>(context, this->library, this->generation,
                 savePlaylistCommand(this->library, id, name, ids, append), collectPlaylistId,
-                deliverPlaylistWrite(completion), data, request);
+                deliverPlaylistWrite(completion), data, request, RequestEffect::Mutation);
         }
 
         mc_result RenamePlaylist(mc_context* context, int64_t id, std::string name,
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitRemote<int64_t>(context, this->library, this->generation,
                 query::SavePlaylistQuery::Rename(this->library, id, name),
-                collectPlaylistId, deliverPlaylistWrite(completion), data, request);
+                collectPlaylistId, deliverPlaylistWrite(completion), data, request, RequestEffect::Mutation);
         }
 
         mc_result DeletePlaylist(mc_context* context, int64_t id,
             mc_playlist_write_completion_fn completion, void* data, mc_request_id* request) const override {
             return submitRemote<int64_t>(context, this->library, this->generation,
                 std::make_shared<query::DeletePlaylistQuery>(this->library, id),
-                collectDeletedPlaylistId(id), deliverPlaylistWrite(completion), data, request);
+                collectDeletedPlaylistId(id), deliverPlaylistWrite(completion), data, request, RequestEffect::Mutation);
         }
 
         mc_result SetTrackRating(mc_context* context, int64_t id, uint32_t rating,
@@ -417,7 +425,7 @@ namespace {
         {
             return submitRemote<bool>(context, this->library, this->generation,
                 std::make_shared<query::SetTrackRatingQuery>(id, static_cast<int>(rating)),
-                commandSucceeded, deliverStatus(completion), data, request);
+                commandSucceeded, deliverStatus(completion), data, request, RequestEffect::Mutation);
         }
 
         mc_result ReadPage(mc_context *context, std::vector<int64_t> ids,

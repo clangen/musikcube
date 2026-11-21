@@ -286,7 +286,7 @@ static class Environment: public IEnvironment {
                 case PathType::UserHome: path = GetHomeDirectory(); break;
                 case PathType::Data: path = GetDataDirectory(); break;
                 case PathType::Application: path = GetApplicationDirectory(); break;
-                case PathType::Plugins: path = GetPluginDirectory(); break;
+                case PathType::Plugins: path = PluginFactory::Instance().Directory(); break;
                 case PathType::Library: {
                     if (defaultLibrary) {
                         path = GetDataDirectory() + std::to_string(defaultLibrary->Id()) + "/";
@@ -465,6 +465,8 @@ static class Environment: public IEnvironment {
 namespace musik { namespace core { namespace plugin {
 
     void Init() {
+        PluginFactory::Instance().BeginSession();
+
         /* preferences */
         Preferences::LoadPluginPreferences();
 
@@ -473,7 +475,7 @@ namespace musik { namespace core { namespace plugin {
             "SetDebug",
             [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
             func(&debugger);
-        });
+        }, PluginFactory::FunctionSelection::Session);
     }
 
     void Start(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
@@ -492,7 +494,7 @@ namespace musik { namespace core { namespace plugin {
             "SetMetadataProxy",
             [](musik::core::sdk::IPlugin* plugin, SetMetadataProxy func) {
                 func(metadataProxy);
-            });
+            }, PluginFactory::FunctionSelection::Session);
 
         /* indexer */
         IIndexerNotifier* indexerNotifier =
@@ -502,14 +504,14 @@ namespace musik { namespace core { namespace plugin {
             "SetIndexerNotifier",
             [indexerNotifier](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
                 func(indexerNotifier);
-            });
+            }, PluginFactory::FunctionSelection::Session);
 
         /* environment */
         PluginFactory::Instance().QueryFunction<SetEnvironment>(
             "SetEnvironment",
             [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
                 func(&environment);
-            });
+            }, PluginFactory::FunctionSelection::Session);
     }
 
     IEnvironment& Environment() {
@@ -525,7 +527,29 @@ namespace musik { namespace core { namespace plugin {
             "SetMetadataProxy",
             [](musik::core::sdk::IPlugin* plugin, SetMetadataProxy func) {
                 func(nullptr);
-            });
+            }, PluginFactory::FunctionSelection::Session);
+
+        /* indexer */
+        PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
+            "SetIndexerNotifier",
+                [](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
+                func(nullptr);
+            }, PluginFactory::FunctionSelection::Session);
+
+        /* environment */
+        PluginFactory::Instance().QueryFunction<SetEnvironment>(
+            "SetEnvironment",
+            [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
+                func(nullptr);
+            }, PluginFactory::FunctionSelection::Session);
+
+        /* debug */
+        PluginFactory::Instance().QueryFunction<SetDebug>(
+            "SetDebug",
+            [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
+                func(&nullDebugger);
+            }, PluginFactory::FunctionSelection::Session);
+        PluginFactory::Instance().EndSession();
 
         delete metadataProxy;
         ::messageQueue = nullptr;
@@ -533,27 +557,6 @@ namespace musik { namespace core { namespace plugin {
         ::defaultLibrary.reset();
         ::playbackService = nullptr;
         ::playbackPrefs.reset();
-
-        /* indexer */
-        PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
-            "SetIndexerNotifier",
-                [](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
-                func(nullptr);
-            });
-
-        /* environment */
-        PluginFactory::Instance().QueryFunction<SetEnvironment>(
-            "SetEnvironment",
-            [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
-                func(nullptr);
-            });
-
-        /* debug */
-        PluginFactory::Instance().QueryFunction<SetDebug>(
-            "SetDebug",
-            [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
-                func(&nullDebugger);
-            });
     }
 
 } } }

@@ -282,9 +282,9 @@ mc_result MC_CALL mc_library_save_playlist_async(mc_context *context, const mc_l
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !completion || id < 0 || (!id && !name.length) ||
+        if (!context || !library || !completion || id < 0 || (!id && !name.length) ||
             !valid_text(name) || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto identity = library ? library->identity : context_library(*context);
+        const auto identity = library->identity;
         if (!identity) {
             return MC_ERROR_NOT_FOUND;
         }
@@ -301,8 +301,8 @@ mc_result MC_CALL mc_library_append_playlist_async(mc_context *context, const mc
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !completion || id <= 0 || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto identity = library ? library->identity : context_library(*context);
+        if (!context || !library || !completion || id <= 0 || !valid_ids(ids, count)) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library->identity;
         if (!identity) {
             return MC_ERROR_NOT_FOUND;
         }
@@ -318,8 +318,8 @@ mc_result MC_CALL mc_library_rename_playlist_async(mc_context *context, const mc
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !completion || id <= 0 || !valid_text(name, false)) return MC_ERROR_INVALID_ARGUMENT;
-        const auto identity = library ? library->identity : context_library(*context);
+        if (!context || !library || !completion || id <= 0 || !valid_text(name, false)) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library->identity;
         if (!identity) {
             return MC_ERROR_NOT_FOUND;
         }
@@ -334,8 +334,8 @@ mc_result MC_CALL mc_library_delete_playlist_async(mc_context *context, const mc
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !completion || id <= 0) return MC_ERROR_INVALID_ARGUMENT;
-        const auto identity = library ? library->identity : context_library(*context);
+        if (!context || !library || !completion || id <= 0) return MC_ERROR_INVALID_ARGUMENT;
+        const auto identity = library->identity;
         if (!identity) {
             return MC_ERROR_NOT_FOUND;
         }

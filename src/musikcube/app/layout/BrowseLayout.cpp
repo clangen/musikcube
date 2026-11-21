@@ -441,7 +441,9 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
                     this->ShowModifiedLabel(false);
                 }
             });
-            api::SavePlaylist(this->musikcore, selected, {}, ids, std::move(saved));
+            if (const auto library = this->musikcore.GetLibrary()) {
+                api::SavePlaylist(this->musikcore, *library, selected, {}, ids, std::move(saved));
+            }
         }
         catch (const api::Error& error) {
             musik::core::api::WriteLog(MC_LOG_ERROR, "BrowseLayout", error.what());

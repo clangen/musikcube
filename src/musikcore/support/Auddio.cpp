@@ -34,6 +34,7 @@
 
 #include "pch.hpp"
 #include "Auddio.h"
+#include "OnlineTransfer.h"
 #include "Common.h"
 #include <common/NarrowCast.h>
 #include <musikcore/sdk/HttpClient.h>
@@ -79,7 +80,7 @@ static std::string getApiToken() {
 }
 
 namespace musik { namespace core { namespace auddio {
-    void FindLyrics(std::string artist, std::string title, LyricsCallback callback) {
+    void FindLyrics(std::string artist, std::string title, const std::atomic_bool& cancelled, LyricsCallback callback) {
         std::string apiToken = getApiToken();
 
         if (!apiToken.size()) {
@@ -96,7 +97,8 @@ namespace musik { namespace core { namespace auddio {
 
         auto client = createClient();
         client->Url(url)
-            .Mode(AuddioClient::Thread::Background)
+            .Mode(AuddioClient::Thread::Current)
+            .Decorator([&](CURL* curl) { ConfigureOnlineTransfer(curl, cancelled); })
             .Run([callback = std::move(callback)](AuddioClient* client, int statusCode, CURLcode curlCode) {
                 std::string lyrics;
                 if (statusCode == 200) {

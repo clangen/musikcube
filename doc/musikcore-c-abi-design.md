@@ -378,7 +378,7 @@ MC_API mc_result MC_CALL mc_context_create(
     mc_context **out_context,
     mc_error **out_error);
 
-MC_API void MC_CALL mc_context_destroy(mc_context **context);
+MC_API mc_result MC_CALL mc_context_destroy(mc_context **context);
 ```
 
 Global initialization should be hidden behind context reference counting. A

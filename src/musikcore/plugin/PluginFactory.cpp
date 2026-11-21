@@ -69,22 +69,46 @@ typedef musik::core::sdk::IPlugin* (*CallGetPlugin)();
 static void closeNativeHandle(void* dll) { dlclose(dll); }
 #endif
 
-PluginFactory& PluginFactory::Instance() {
+PluginFactory& PluginFactory::Instance(const std::string& directory) {
     std::unique_lock<std::mutex> lock(instanceMutex);
 
     static PluginFactory* instance = NULL;
 
     if (instance == NULL) {
-        instance = new PluginFactory();
+        auto path = fs::u8path(directory.empty() ? GetPluginDirectory() : directory);
+        if (!directory.empty() && !fs::is_directory(path)) {
+            throw std::invalid_argument("Plugin directory does not exist");
+        }
+        instance = new PluginFactory(pathToUtf8(fs::weakly_canonical(path)));
+    }
+    else if (!directory.empty() &&
+        fs::weakly_canonical(fs::u8path(directory)) != fs::u8path(instance->directory))
+    {
+        throw std::invalid_argument("Plugins have already been discovered in another directory");
     }
 
     return *instance;
 }
 
-PluginFactory::PluginFactory() {
+PluginFactory::PluginFactory(std::string directory)
+    : directory(std::move(directory)) {
     this->prefs = Preferences::ForComponent(prefs::components::Plugins);
     musik::debug::info(TAG, "loading plugins");
     this->LoadPlugins();
+}
+
+void PluginFactory::BeginSession() {
+    std::lock_guard lock(this->mutex);
+    for (const auto& descriptor : this->plugins) {
+        descriptor->session = this->prefs->GetBool(descriptor->key.c_str(), true);
+    }
+}
+
+void PluginFactory::EndSession() {
+    std::lock_guard lock(this->mutex);
+    for (const auto& descriptor : this->plugins) {
+        descriptor->session = false;
+    }
 }
 
 PluginFactory::~PluginFactory() {
@@ -98,13 +122,12 @@ PluginFactory::~PluginFactory() {
 void PluginFactory::LoadPlugins() {
 #ifdef WIN32
     {
-        std::wstring wpath = u8to16(GetPluginDirectory());
+        std::wstring wpath = u8to16(this->directory);
         SetDllDirectory(wpath.c_str());
     }
 #endif
 
-    std::string pluginDir(GetPluginDirectory());
-    fs::path dir(fs::u8path(pluginDir));
+    fs::path dir(fs::u8path(this->directory));
 
     try {
         fs::directory_iterator end;

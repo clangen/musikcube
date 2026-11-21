@@ -6,6 +6,7 @@
 #include <musikcore/library.h>
 #include <functional>
 #include <memory>
+#include <atomic>
 #include <string>
 
 struct LibraryIdentity;
@@ -25,7 +26,7 @@ namespace musik { namespace core { namespace ffi {
         ContextRuntime& operator=(const ContextRuntime&) = delete;
         ContextRuntime& operator=(ContextRuntime&&) = delete;
 
-        virtual void Start(mc_context& context, bool logging, mc_log_fn log, void* logData) = 0;
+        virtual void Start(mc_context& context, const std::string& pluginDirectory, bool logging, mc_log_fn log, void* logData) = 0;
         virtual void Dispatch() = 0;
         virtual void AcknowledgeDispatch() = 0;
         virtual mc_result OpenPlayback(mc_playback** out) = 0;
@@ -66,13 +67,17 @@ namespace musik { namespace core { namespace ffi {
 
     const TrackQueryLimits &context_track_query_limits(const mc_context &context);
 
+    enum class RequestEffect { Read, Mutation };
+
     /* Work owns its inputs because cancellation can dispatch before the worker returns. */
     mc_result submit_request(mc_context *context, std::function<mc_result()> work,
-        RequestCompletion completion, void *user_data, mc_request_id *out_request);
+        RequestCompletion completion, void *user_data, mc_request_id *out_request, std::shared_ptr<std::atomic_bool> cancel = {},
+        RequestEffect effect = RequestEffect::Read);
 
     /* Reserves a request for an external producer. Late replies may outlive the context. */
     mc_result reserve_external_request(mc_context *context, RequestCompletion completion,
-        void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish);
+        void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish,
+        RequestEffect effect = RequestEffect::Read);
 
 } } }
 

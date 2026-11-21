@@ -16,6 +16,9 @@ function(run)
 endfunction()
 
 run("${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${installed}" --component MusikcoreSDK)
+if(INSTALLED_TEST_PLUGIN)
+  run("${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${installed}" --component MusikcorePlugins)
+endif()
 file(RENAME "${installed}" "${relocated}")
 run("${CMAKE_COMMAND}" -S "${SOURCE}/tests/integration/binary/consumer" -B "${root}/consumer"
   "-DCMAKE_PREFIX_PATH=${relocated}" "-DEXAMPLES=${SOURCE}/examples" "-DSUPPORT=${SOURCE}/tests/support")
@@ -27,5 +30,15 @@ foreach(language IN ITEMS c cpp)
     message(FATAL_ERROR "Installed ${language} consumer did not read the fixture catalog at ${root}\n${last_output}")
   endif()
 endforeach()
+
+if(INSTALLED_TEST_PLUGIN)
+  # Discover only the installed headless plugin. Optional servers must stay off.
+  set(plugins "${relocated}/share/musikcube/managed-test-plugins")
+  file(MAKE_DIRECTORY "${plugins}")
+  file(RENAME "${relocated}/share/musikcube/plugins/${INSTALLED_TEST_PLUGIN}" "${plugins}/${INSTALLED_TEST_PLUGIN}")
+  file(MAKE_DIRECTORY "${root}/config")
+  run("${CMAKE_COMMAND}" -E env "HOME=${root}/config" "XDG_CONFIG_HOME=${root}/config"
+    "${root}/consumer/managed" "${plugins}")
+endif()
 
 file(REMOVE_RECURSE "${root}")

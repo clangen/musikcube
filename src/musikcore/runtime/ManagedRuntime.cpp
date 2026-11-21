@@ -8,6 +8,7 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/plugin/Plugins.h>
+#include <musikcore/plugin/PluginFactory.h>
 #include <common/runtime/MessageQueue.h>
 #include <common/runtime/Message.h>
 #include <musikcore/debug.h>
@@ -124,14 +125,12 @@ namespace musik { namespace core { namespace ffi {
     public:
         ~ManagedRuntime() override {
             this->Stop();
-            this->playback.reset();
-            audio::Player::WaitForWorkers();
-            audio::vis::Shutdown();
-            LibraryFactory::Shutdown();
-            this->queue->Close();
         }
 
-        void Start(mc_context& context, bool logging, mc_log_fn log, void* logData) override {
+        void Start(mc_context& context, const std::string& pluginDirectory,
+            bool logging, mc_log_fn log, void* logData) override
+        {
+            PluginFactory::Instance(pluginDirectory);
             this->context = &context;
             this->notifications = std::make_shared<CoreNotifications>(context, log, logData);
             this->queue->RegisterForBroadcasts(this->notifications);
@@ -209,7 +208,9 @@ namespace musik { namespace core { namespace ffi {
         void Stop() override {
             {
                 std::lock_guard lock(this->mutex);
-                this->stopping.store(true);
+                if (this->stopping.exchange(true)) {
+                    return;
+                }
                 this->changed.notify_all();
             }
             this->queue->WakeWaiters();
@@ -231,13 +232,24 @@ namespace musik { namespace core { namespace ffi {
                 this->queue->UnregisterForBroadcasts(this->notifications.get());
                 this->notifications.reset();
             }
+            /* Stop playback while provider services and catalogs remain available. */
+            if (this->playback) {
+                this->playback->Shutdown();
+                audio::Player::WaitForWorkers();
+            }
+
             if (this->initialized) {
+                audio::vis::Shutdown();
                 this->initialized = false;
                 exception_barrier(nullptr, [] {
                     plugin::Shutdown();
                     return MC_OK;
                 });
+                this->playback.reset();
+                LibraryFactory::Shutdown();
             }
+            this->queue->Close();
+
             if (this->ownsLogging) {
                 debug::Shutdown();
                 this->ownsLogging = false;

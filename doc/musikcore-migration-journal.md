@@ -156,3 +156,19 @@ Removed the final fixture-only library opener from LibraryFactory. Its fault-inj
 ## Standalone Linux acceptance
 
 A clean Zig Release build with tests disabled passed the public import audit and the glibc 2.28 dependency scan. CPack produced Debian and RPM packages. Both extracted runtimes passed the dependency scan and the combined headless search, queue, playlists, and Browse scenario. C and C++ examples built against the extracted Debian SDK and queried the indexed fixture. The combined scenario now restores the intended view and focus after playlist checks. Native macOS verification remains open. Windows and the provider SDK remain deferred.
+
+## Managed lifecycle audit fixes
+
+Shutdown now invalidates playback handles, saves the playback session before stopping the engine, and joins context-owned online requests and playback reports. Indexer access is dispatcher-thread only. Plugin teardown uses the session's initialized set, including providers disabled while running. The loopback contract checks that disabling the live server and shutting down closes its listener before context destruction.
+
+The installed C consumer now starts a managed context with an explicit plugin directory and discovers the packaged Null output from outside the relocated prefix. The directory is selected before the process first discovers plugins. The native catalog fixture is linked into tests directly.
+
+Remote track pages fetch immediately. Unloaded rows stay blank for 50 ms before rendering skeletons. Loaded rows can render as soon as metadata arrives.
+
+## Async contract audit fixes
+
+Category field results prepare borrowed views before dispatch. Online requests clear the caller's ID on rejection. Playlist mutations require an explicit catalog, and Cube retains the selected catalog through its playlist dialogs. Once mutation work starts, cancellation reports that it is in flight. Shutdown waits for local writes and reports an unknown outcome for remote writes that have no terminal reply.
+
+Context destruction now returns its status and keeps the handle intact when shutdown fails. Request queue saturation and stale playback snapshots have distinct statuses.
+
+Now Playing compares queue revisions and reads an origin-bound track result from the queue snapshot. The result shares the snapshot's ordered IDs, including duplicates. Cube no longer compares ID arrays or resolves queue rows against the currently selected catalog.

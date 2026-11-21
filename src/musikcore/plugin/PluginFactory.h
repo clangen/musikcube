@@ -55,7 +55,11 @@ namespace musik { namespace core {
 
     class PluginFactory {
         public:
-            static PluginFactory& Instance();
+            static PluginFactory& Instance(const std::string& directory = {});
+
+            const std::string& Directory() const noexcept { return this->directory; }
+            void BeginSession();
+            void EndSession();
 
             template <typename T>
             struct ReleaseDeleter {
@@ -113,14 +117,20 @@ namespace musik { namespace core {
                 return plugins;
             }
 
+            enum class FunctionSelection { Enabled, Session };
+
             template <class T> void QueryFunction(
                 const std::string& functionName,
-                std::function<void(musik::core::sdk::IPlugin*, T)> handler)
+                std::function<void(musik::core::sdk::IPlugin*, T)> handler,
+                FunctionSelection selection = FunctionSelection::Enabled)
             {
                 std::unique_lock<std::mutex> lock(this->mutex);
 
                 for (std::shared_ptr<Descriptor> descriptor : this->plugins) {
-                    if (prefs->GetBool(descriptor->key.c_str(), true)) { /* if enabled by prefs */
+                    const bool selected = selection == FunctionSelection::Session
+                        ? descriptor->session
+                        : prefs->GetBool(descriptor->key.c_str(), true);
+                    if (selected) {
                         T funcPtr =
 #ifdef WIN32
                             (T) GetProcAddress((HMODULE)(descriptor->nativeHandle), functionName.c_str());
@@ -154,11 +164,14 @@ namespace musik { namespace core {
                 void* nativeHandle;
                 std::string filename;
                 std::string key;
+                bool session = false;
             };
 
-            PluginFactory();
+            explicit PluginFactory(std::string directory);
             ~PluginFactory();
             void LoadPlugins();
+
+            const std::string directory;
 
             std::vector<std::shared_ptr<Descriptor> > plugins;
             std::mutex mutex;

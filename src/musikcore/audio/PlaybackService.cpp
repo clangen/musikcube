@@ -165,12 +165,22 @@ PlaybackService::PlaybackService(
 }
 
 PlaybackService::~PlaybackService() {
+    this->Shutdown();
+}
+
+void PlaybackService::Shutdown() {
+    if (this->stopped) {
+        return;
+    }
+    this->stopped = true;
+
     this->ClosePlaybackHandles();
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
     savePreferences(*this, *playbackPrefs);
     this->Stop();
     this->ResetRemotes();
+    this->lastFm.Stop();
 }
 
 void PlaybackService::SelectLibrary(ILibraryPtr library) {
@@ -337,11 +347,11 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         this->InitRemotes();
     }
     else if (type == MESSAGE_MARK_TRACK_PLAYED) {
-        lastfm::Scrobble(this->playingTrack);
+        this->lastFm.Scrobble(this->playingTrack);
         this->MarkTrackAsPlayed(message.UserData1()); /* UserData1 is a trackId */
     }
     else if (type == MESSAGE_MARK_TRACK_PLAYING) {
-        lastfm::UpdateNowPlaying(this->playingTrack);
+        this->lastFm.UpdateNowPlaying(this->playingTrack);
     }
     else if (type == MESSAGE_STREAM_EVENT) {
         StreamMessage* streamMessage = dynamic_cast<StreamMessage*>(&message);
@@ -572,8 +582,8 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
         remains playing for > 25% of its duration seconds */
         const double duration = this->transport->GetDuration();
         if (duration > 0 && duration < 10.0) {
-            lastfm::Scrobble(track);
-            lastfm::UpdateNowPlaying(track);
+            this->lastFm.Scrobble(track);
+            this->lastFm.UpdateNowPlaying(track);
             this->MarkTrackAsPlayed(track->GetId());
         }
         else {

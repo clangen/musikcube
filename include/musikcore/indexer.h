@@ -34,6 +34,8 @@ typedef void (MC_CALL *mc_indexer_event_fn)(void* user_data, mc_indexer_event ev
 
 /* Operations target the host's local catalog even when a remote catalog is
    selected. Contexts without a local indexer return MC_ERROR_UNSUPPORTED. */
+/* Use the managed context dispatcher thread for indexer access. Other threads
+   and a stopped runtime return MC_ERROR_BUSY. */
 MC_API mc_result MC_CALL mc_indexer_get_state(const mc_context* context, mc_indexer_state* state);
 /* Deliver an inline snapshot. Path views are valid only during the callback. */
 MC_API mc_result MC_CALL mc_indexer_read_paths(

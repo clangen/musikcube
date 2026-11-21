@@ -70,6 +70,7 @@ namespace musik { namespace core { namespace api {
         const mc_context *Get() const noexcept { return context; }
         mc_result Dispatch() { return mc_context_dispatch(context); }
         mc_result Cancel(mc_request_id request) { return mc_request_cancel(context, request); }
+        mc_result Close() { return mc_context_destroy(&context); }
         mc_result Shutdown() { return mc_context_shutdown(context); }
 
         void SetLibrary(const Library& library);

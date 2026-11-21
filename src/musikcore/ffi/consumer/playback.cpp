@@ -66,8 +66,30 @@ void MC_CALL mc_play_queue_destroy(mc_play_queue **queue) {
 }
 
 const int64_t *MC_CALL mc_play_queue_get_ids(const mc_play_queue *queue, size_t *out_count) {
-    if (out_count) *out_count = queue ? queue->ids.size() : 0;
-    return queue && !queue->ids.empty() ? queue->ids.data() : nullptr;
+    const auto* tracks = queue ? queue->tracks.get() : nullptr;
+    if (out_count) {
+        *out_count = tracks ? tracks->ids.size() : 0;
+    }
+    return tracks && !tracks->ids.empty() ? tracks->ids.data() : nullptr;
+}
+
+bool MC_CALL mc_play_queue_same_rows(const mc_play_queue* queue, const mc_play_queue* previous) {
+    return queue && previous && queue->revision == previous->revision &&
+        static_cast<bool>(queue->tracks) == static_cast<bool>(previous->tracks) &&
+        !queue->lifetime.owner_before(previous->lifetime) && !previous->lifetime.owner_before(queue->lifetime);
+}
+
+mc_result MC_CALL mc_play_queue_get_tracks(const mc_play_queue* queue, mc_track_result** result) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        if (!queue || !result || *result) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!queue->tracks || !queue->tracks->library) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        *result = new mc_track_result { queue->tracks };
+        return MC_OK;
+    });
 }
 
 size_t MC_CALL mc_play_queue_get_current_row(const mc_play_queue *queue) {

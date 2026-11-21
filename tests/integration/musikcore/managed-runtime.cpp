@@ -356,7 +356,51 @@ namespace {
             return false;
         }
 
-        return (!remoteAudio || checkRemoteAudio(context, host, playback)) && context.Shutdown() == MC_OK;
+        mc_result offThread = MC_OK;
+        std::thread scheduler([&] { offThread = Indexer(context).Schedule(MC_INDEXER_SCAN_LOCAL); });
+        scheduler.join();
+        if (offThread != MC_ERROR_BUSY) {
+            std::fputs("Indexer admitted scheduling off the dispatcher thread\n", stderr);
+            return false;
+        }
+
+        if (remoteAudio) {
+            if (!checkRemoteAudio(context, host, playback)) {
+                return false;
+            }
+            const auto plugins = ListPlugins();
+            const auto server = std::find_if(plugins.begin(), plugins.end(), [](const auto& plugin) {
+                return plugin.filename.starts_with("libserver.");
+            });
+            if (server == plugins.end() || SetPluginEnabled(server->filename, false) != MC_OK) {
+                return false;
+            }
+        }
+        else if (playback.Play(tracks, 0) != MC_OK ||
+            !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PLAYING); }))
+        {
+            return false;
+        }
+
+        if (context.Shutdown() != MC_OK || playback.Control(MC_PLAYBACK_STOP) == MC_OK ||
+            Indexer(context).Schedule(MC_INDEXER_SCAN_LOCAL) != MC_ERROR_BUSY)
+        {
+            std::fputs("Shut-down runtime still admitted work\n", stderr);
+            return false;
+        }
+
+        if (remoteAudio) {
+            const auto port = Preferences { MC_PREFERENCE_SETTINGS }.GetInt(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT);
+            asio::io_context sockets;
+            asio::ip::tcp::socket socket(sockets);
+            asio::error_code error;
+            socket.connect({ asio::ip::address_v4::loopback(), static_cast<uint16_t>(port) }, error);
+            if (error != asio::error::connection_refused) {
+                std::fputs("Disabled server still listened after shutdown\n", stderr);
+                return false;
+            }
+        }
+        return true;
     }
 }
 

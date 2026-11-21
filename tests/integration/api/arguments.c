@@ -169,6 +169,10 @@ int main(void) {
     /* An unbound identity has no playlist backend; invalid counts/IDs must
        still be diagnosed before that unsupported-backend path. */
     REJECT(mc_library_list_playlists_async(context, library, list_done, NULL, &request), MC_ERROR_UNSUPPORTED);
+    REJECT(mc_library_save_playlist_async(context, NULL, 0, name, ids, 2, write_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
+    REJECT(mc_library_append_playlist_async(context, NULL, 1, ids, 2, write_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
+    REJECT(mc_library_rename_playlist_async(context, NULL, 1, name, write_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
+    REJECT(mc_library_delete_playlist_async(context, NULL, 1, write_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
     REJECT(mc_library_save_playlist_async(context, library, 0, name, ids, SIZE_MAX, write_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
     REJECT(mc_library_save_playlist_async(context, library, 0, name, invalid_ids, 2, write_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
     REJECT(mc_library_append_playlist_async(context, library, 1, ids, SIZE_MAX, write_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);

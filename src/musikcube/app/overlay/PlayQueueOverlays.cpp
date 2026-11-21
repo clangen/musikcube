@@ -480,12 +480,18 @@ void PlayQueueOverlays::ShowPlaylistPicker(api::Context& musikcore,
 void PlayQueueOverlays::ShowAddToPlaylistPicker(api::Context& musikcore,
     AsyncCallbackScope::Token token, std::vector<int64_t> ids)
 {
+    auto selectedLibrary = musikcore.GetLibrary();
+    if (!selectedLibrary) {
+        return;
+    }
+    auto target = std::make_shared<api::Library>(std::move(*selectedLibrary));
+
 
     if (!token.IsCurrent() || ids.empty()) {
         return;
     }
 
-    auto write = [&musikcore, token, tracks = std::move(ids)](int64_t id, const std::string& name) {
+    auto write = [&musikcore, target, token, tracks = std::move(ids)](int64_t id, const std::string& name) {
 
         if (!token.IsCurrent()) {
             return;
@@ -497,10 +503,10 @@ void PlayQueueOverlays::ShowAddToPlaylistPicker(api::Context& musikcore,
         };
         try {
             if (id) {
-                api::AppendPlaylist(musikcore, id, tracks, complete);
+                api::AppendPlaylist(musikcore, *target, id, tracks, complete);
             }
             else {
-                api::SavePlaylist(musikcore, 0, name, tracks, complete);
+                api::SavePlaylist(musikcore, *target, 0, name, tracks, complete);
             }
         }
         catch (const api::Error& error) {
@@ -571,12 +577,18 @@ static api::PlaylistWriteCompletion playlistCompletion(AsyncCallbackScope::Token
 void PlayQueueOverlays::ShowSavePlaylistOverlay(api::Context& musikcore, AsyncCallbackScope::Token token,
     const api::PlaylistEntry& playlist, std::vector<int64_t> tracks, std::function<void(int64_t)> saved)
 {
+    auto selectedLibrary = musikcore.GetLibrary();
+    if (!selectedLibrary) {
+        return;
+    }
+    auto target = std::make_shared<api::Library>(std::move(*selectedLibrary));
+
     /* Own the track order captured when the prompt opens. */
-    auto save = [&musikcore, token, id = playlist.id, tracks = std::move(tracks),
+    auto save = [&musikcore, target, token, id = playlist.id, tracks = std::move(tracks),
         completed = playlistCompletion(token, std::move(saved))](const std::string& name) {
         if (token.IsCurrent()) {
             try {
-                api::SavePlaylist(musikcore, id, name, tracks, completed);
+                api::SavePlaylist(musikcore, *target, id, name, tracks, completed);
             }
             catch (const api::Error& error) {
                 musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
@@ -596,12 +608,18 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(api::Context& musikcore, AsyncCa
 void PlayQueueOverlays::ShowRenamePlaylistOverlay(api::Context& musikcore, AsyncCallbackScope::Token token,
     const api::PlaylistEntry& playlist, std::function<void(int64_t)> renamed)
 {
+    auto selectedLibrary = musikcore.GetLibrary();
+    if (!selectedLibrary) {
+        return;
+    }
+    auto target = std::make_shared<api::Library>(std::move(*selectedLibrary));
+
     ShowPlaylistNameOverlay(_TSTR("playqueue_overlay_new_playlist_name_title"), playlist.name,
-        [&musikcore, token, id = playlist.id, completed = playlistCompletion(token, std::move(renamed))]
+        [&musikcore, target, token, id = playlist.id, completed = playlistCompletion(token, std::move(renamed))]
         (const std::string& name) {
             if (token.IsCurrent()) {
                 try {
-                    api::RenamePlaylist(musikcore, id, name, completed);
+                    api::RenamePlaylist(musikcore, *target, id, name, completed);
                 }
                 catch (const api::Error& error) {
                     musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());
@@ -613,11 +631,17 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(api::Context& musikcore, Async
 void PlayQueueOverlays::ShowDeletePlaylistOverlay(api::Context& musikcore, AsyncCallbackScope::Token token,
     const api::PlaylistEntry& playlist, std::function<void(int64_t)> deleted)
 {
+    auto selectedLibrary = musikcore.GetLibrary();
+    if (!selectedLibrary) {
+        return;
+    }
+    auto target = std::make_shared<api::Library>(std::move(*selectedLibrary));
+
     ShowPlaylistConfirmation("playqueue_overlay_confirm_delete_message", playlist.name,
-        [&musikcore, token, id = playlist.id, completed = playlistCompletion(token, std::move(deleted))] {
+        [&musikcore, target, token, id = playlist.id, completed = playlistCompletion(token, std::move(deleted))] {
             if (token.IsCurrent()) {
                 try {
-                    api::DeletePlaylist(musikcore, id, completed);
+                    api::DeletePlaylist(musikcore, *target, id, completed);
                 }
                 catch (const api::Error& error) {
                     musik::core::api::WriteLog(MC_LOG_ERROR, "PlayQueueOverlays", error.what());

@@ -35,6 +35,7 @@
 #include "pch.hpp"
 
 #include "LastFm.h"
+#include "OnlineTransfer.h"
 
 #include <musikcore/support/Preferences.h>
 #include <musikcore/sdk/HttpClient.h>
@@ -145,12 +146,13 @@ static inline Prefs settings() {
 
 namespace musik { namespace core { namespace lastfm {
 
-    void CreateAccountLinkToken(TokenCallback callback) {
+    void CreateAccountLinkToken(const std::atomic_bool& cancelled, TokenCallback callback) {
         std::string url = generateSignedUrl(GET_TOKEN);
 
         auto client = createClient();
         client->Url(url)
-            .Mode(LastFmClient::Thread::Background)
+            .Mode(LastFmClient::Thread::Current)
+            .Decorator([&](CURL* curl) { ConfigureOnlineTransfer(curl, cancelled); })
             .Run([callback](LastFmClient* client, int statusCode, CURLcode curlCode) {
                 std::string token;
                 if (statusCode == 200) {
@@ -166,12 +168,13 @@ namespace musik { namespace core { namespace lastfm {
         });
     }
 
-    extern void CreateSession(const std::string& token, SessionCallback callback) {
+    extern void CreateSession(const std::string& token, const std::atomic_bool& cancelled, SessionCallback callback) {
         std::string url = generateSignedUrl(GET_SESSION, { { "token", token } });
 
         auto client = createClient();
         client->Url(url)
-            .Mode(LastFmClient::Thread::Background)
+            .Mode(LastFmClient::Thread::Current)
+            .Decorator([&](CURL* curl) { ConfigureOnlineTransfer(curl, cancelled); })
             .Run([token, callback](LastFmClient* client, int statusCode, CURLcode curlCode) {
                 Session session;
                 session.token = token;
@@ -222,53 +225,71 @@ namespace musik { namespace core { namespace lastfm {
         return SaveSession({});
     }
 
-    void Scrobble(musik::core::TrackPtr track) {
-        if (track) {
-            auto session = LoadSession();
-            if (session.valid) {
-                std::string postBody = gernateSignedUrlParams(UPDATE_RECENT, {
-                    { "track", track->GetString("title") },
-                    { "album", track->GetString("album") },
-                    { "artist", track->GetString("artist") },
-                    { "albumArtist", track->GetString("album_artist") },
-                    { "trackNumber", track->GetString("track") },
-                    { "timestamp", std::to_string(std::time(0)) },
-                    { "sk", session.sessionId }
-                });
-
-                createClient()->Url(URL_BASE)
-                    .Mode(LastFmClient::Thread::Background)
-                    .Header("Content-Type", "application/x-www-form-urlencoded")
-                    .Method(LastFmClient::HttpMethod::Post)
-                    .PostBody(postBody)
-                    .Run();
-
-            }
-        }
+    PlaybackReports::~PlaybackReports() {
+        this->Stop();
     }
 
-    void UpdateNowPlaying(musik::core::TrackPtr track) {
-        if (track) {
-            auto session = LoadSession();
-            if (session.valid) {
-                std::string postBody = gernateSignedUrlParams(UPDATE_NOW_PLAYING, {
-                    { "track", track->GetString("title") },
-                    { "album", track->GetString("album") },
-                    { "artist", track->GetString("artist") },
-                    { "albumArtist", track->GetString("album_artist") },
-                    { "trackNumber", track->GetString("track") },
-                    { "duration", track->GetString("duration") },
-                    { "sk", session.sessionId }
-                });
+    void PlaybackReports::Stop() {
+        std::vector<std::future<void>> transfers;
+        {
+            std::lock_guard lock(this->mutex);
+            this->cancelled.store(true);
+            transfers.swap(this->transfers);
+        }
+        /* Destruction of the saved futures joins the transfers outside the lock. */
+    }
 
+    void PlaybackReports::Scrobble(const TrackPtr& track) {
+        this->Submit(track, true);
+    }
+
+    void PlaybackReports::UpdateNowPlaying(const TrackPtr& track) {
+        this->Submit(track, false);
+    }
+
+    void PlaybackReports::Submit(const TrackPtr& track, bool scrobble) {
+        if (!track || this->cancelled.load()) {
+            return;
+        }
+        const auto session = LoadSession();
+        if (!session.valid) {
+            return;
+        }
+
+        std::map<std::string, std::string> fields {
+            { "track", track->GetString("title") },
+            { "album", track->GetString("album") },
+            { "artist", track->GetString("artist") },
+            { "albumArtist", track->GetString("album_artist") },
+            { "trackNumber", track->GetString("track") },
+            { "sk", session.sessionId }
+        };
+        if (scrobble) {
+            fields.emplace("timestamp", std::to_string(std::time(nullptr)));
+        }
+        else {
+            fields.emplace("duration", track->GetString("duration"));
+        }
+
+        std::lock_guard lock(this->mutex);
+        if (this->cancelled.load()) {
+            return;
+        }
+        std::erase_if(this->transfers, [](const auto& transfer) {
+            return transfer.wait_for(std::chrono::seconds::zero()) == std::future_status::ready;
+        });
+        auto body = gernateSignedUrlParams(scrobble ? UPDATE_RECENT : UPDATE_NOW_PLAYING, std::move(fields));
+        this->transfers.push_back(std::async(std::launch::async, [this, body = std::move(body)] {
+            if (!this->cancelled.load()) {
                 createClient()->Url(URL_BASE)
-                    .Mode(LastFmClient::Thread::Background)
+                    .Mode(LastFmClient::Thread::Current)
+                    .Decorator([this](CURL* curl) { ConfigureOnlineTransfer(curl, this->cancelled); })
                     .Header("Content-Type", "application/x-www-form-urlencoded")
                     .Method(LastFmClient::HttpMethod::Post)
-                    .PostBody(postBody)
+                    .PostBody(body)
                     .Run();
             }
-        }
+        }));
     }
 
 } } }

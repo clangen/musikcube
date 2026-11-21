@@ -34,6 +34,11 @@
 
 #pragma once
 
+#include <atomic>
+#include <future>
+#include <mutex>
+#include <vector>
+
 #include <musikcore/library/track/Track.h>
 
 namespace musik { namespace core { namespace lastfm {
@@ -45,11 +50,25 @@ namespace musik { namespace core { namespace lastfm {
     using TokenCallback = std::function<void(std::string)>;
     using SessionCallback = std::function<void(Session)>;
 
-    void CreateAccountLinkToken(TokenCallback callback);
+    void CreateAccountLinkToken(const std::atomic_bool& cancelled, TokenCallback callback);
     const std::string CreateAccountLinkUrl(const std::string& token);
-    void CreateSession(const std::string& token, SessionCallback session);
-    void Scrobble(musik::core::TrackPtr track);
-    void UpdateNowPlaying(musik::core::TrackPtr track);
+    void CreateSession(const std::string& token, const std::atomic_bool& cancelled, SessionCallback session);
+    /* Owns playback reports until they finish or playback shuts down. */
+    class PlaybackReports {
+    public:
+        ~PlaybackReports();
+
+        void Scrobble(const TrackPtr& track);
+        void UpdateNowPlaying(const TrackPtr& track);
+        void Stop();
+
+    private:
+        void Submit(const TrackPtr& track, bool scrobble);
+
+        std::mutex mutex;
+        std::atomic_bool cancelled { false };
+        std::vector<std::future<void>> transfers;
+    };
 
     Session LoadSession();
     bool SaveSession(const Session& session);

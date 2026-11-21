@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <musikcore/support/LastFm.h>
+
 #include <sigslot/sigslot.h>
 
 #include <musikcore/sdk/IPlaybackService.h>
@@ -111,6 +113,7 @@ namespace musik { namespace core { namespace audio {
             void Play(size_t index) override;
             bool Next() override;
             bool Previous() override;
+            void Shutdown();
             void Stop()  override { transport->Stop(); }
             musik::core::sdk::RepeatMode GetRepeatMode()  override { return this->repeatMode; }
             void SetRepeatMode(musik::core::sdk::RepeatMode mode) override;
@@ -221,13 +224,15 @@ namespace musik { namespace core { namespace audio {
 
             std::string UriAtIndex(size_t index);
             musik::core::audio::ITransport::Gain GainAtIndex(size_t index);
-            static std::shared_ptr<PlaybackEvents> CreatePlaybackEvents();
             void ClosePlaybackHandles();
+            static std::shared_ptr<PlaybackEvents> CreatePlaybackEvents();
             void NotifyPlaybackChanged(mc_playback_event event);
             void DeliverPlaybackNotification(runtime::IMessage& message);
             bool MatchesOrigin(const LibraryIdentity& origin) const;
             std::shared_ptr<const LibraryIdentity> CaptureOrigin(int libraryId) const;
 
+            lastfm::PlaybackReports lastFm;
+            bool stopped = false;
             musik::core::TrackList playlist;
             uint64_t queueRevision = 0;
             std::shared_ptr<const LibraryIdentity> queueOrigin;

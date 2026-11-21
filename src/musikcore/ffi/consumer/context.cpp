@@ -14,6 +14,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <stdexcept>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -33,6 +34,9 @@ namespace {
         void *user_data;
         RequestState state;
         mc_result result;
+        std::shared_ptr<std::atomic_bool> cancel;
+        musik::core::ffi::RequestEffect effect;
+        bool external;
     };
 }
 
@@ -53,6 +57,7 @@ struct mc_context {
     mutable std::mutex mutex;
     std::condition_variable changed;
     std::thread worker;
+    std::shared_ptr<std::atomic_bool> active_cancel;
     std::thread::id dispatcher;
     std::shared_ptr<const LibraryIdentity> library;
     musik::core::ffi::LibraryStatus libraryStatus;
@@ -152,11 +157,14 @@ namespace {
             const auto id = request->id;
             auto work = std::move(request->work);
             request->state = RequestState::running;
+            context.active_cancel = request->cancel;
 
             lock.unlock();
             const auto result = musik::core::ffi::exception_barrier(nullptr, work);
             work = nullptr;
             lock.lock();
+
+            context.active_cancel.reset();
 
             /* Preserve the terminal result if cancellation won during execution. */
             request = find_request(context, id);
@@ -459,7 +467,7 @@ namespace {
             musik::core::ffi::ContextRuntime* runtime;
             {
                 std::lock_guard<std::mutex> lock(context->mutex);
-                if (context->stopping) {
+                if (context->stopping || !is_dispatcher(*context)) {
                     return MC_ERROR_BUSY;
                 }
                 runtime = context->runtime.get();
@@ -608,21 +616,23 @@ namespace musik { namespace core { namespace ffi {
     }
 
     mc_result submit_request(mc_context *context, std::function<mc_result()> work,
-        RequestCompletion completion, void *user_data, mc_request_id *out_request) {
+        RequestCompletion completion, void *user_data, mc_request_id *out_request,
+        std::shared_ptr<std::atomic_bool> cancel, RequestEffect effect)
+    {
         return exception_barrier(nullptr, [&]() -> mc_result {
             if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
             *out_request = 0;
             if (!context || !work || !completion) return MC_ERROR_INVALID_ARGUMENT;
 
             std::lock_guard<std::mutex> lock(context->mutex);
-            if (context->stopping || context->requests.size() >= max_requests ||
-                !context->next_request) return MC_ERROR_BUSY;
+            if (context->stopping) return MC_ERROR_BUSY;
+            if (context->requests.size() >= max_requests || !context->next_request) return MC_ERROR_QUEUE_FULL;
 
             /* Reserve the completion slot before publishing the request ID. */
             if (!context->worker.joinable()) context->worker = std::thread(run_worker, std::ref(*context));
             const auto id = context->next_request;
             context->requests.push_back({ id, std::move(work), std::move(completion), user_data,
-                RequestState::queued, MC_OK });
+                RequestState::queued, MC_OK, std::move(cancel), effect, false });
 
             *out_request = id;
             ++context->next_request;
@@ -632,10 +642,10 @@ namespace musik { namespace core { namespace ffi {
     }
 
     mc_result reserve_external_request(mc_context *context, RequestCompletion completion,
-        void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish) {
+        void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish, RequestEffect effect) {
         std::lock_guard<std::mutex> lock(context->mutex);
-        if (context->stopping || context->requests.size() >= max_requests ||
-            !context->next_request) return MC_ERROR_BUSY;
+        if (context->stopping) return MC_ERROR_BUSY;
+        if (context->requests.size() >= max_requests || !context->next_request) return MC_ERROR_QUEUE_FULL;
 
         const auto id = context->next_request;
         const auto external = context->external;
@@ -658,7 +668,7 @@ namespace musik { namespace core { namespace ffi {
             if (notify) signal_host(*context);
         };
 
-        context->requests.push_back({ id, {}, std::move(completion), user_data, RequestState::running, MC_OK });
+        context->requests.push_back({ id, {}, std::move(completion), user_data, RequestState::running, MC_OK, {}, effect, true });
         *out_request = id;
         ++context->next_request;
         return MC_OK;
@@ -746,7 +756,12 @@ mc_result MC_CALL mc_context_create(
                 const auto log = read_option(options, &mc_context_options::log, offsetof(mc_context_options, log));
                 const auto logData = read_option(options, &mc_context_options::log_user_data,
                     offsetof(mc_context_options, log_user_data));
-                context->runtime->Start(*context, (flags & MC_CONTEXT_ENABLE_LOGGING) != 0, log, logData);
+                context->runtime->Start(*context, context->plugin_directory, (flags & MC_CONTEXT_ENABLE_LOGGING) != 0, log, logData);
+            }
+            catch (const std::invalid_argument& error) {
+                auto* failed = context.release();
+                mc_context_destroy(&failed);
+                return fail(MC_ERROR_INVALID_ARGUMENT, error.what(), out_error);
             }
             catch (...) {
                 auto* failed = context.release();
@@ -795,9 +810,18 @@ mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id id) {
             return MC_ERROR_NOT_FOUND;
         }
 
+        if (request->state == RequestState::running &&
+            request->effect == musik::core::ffi::RequestEffect::Mutation)
+        {
+            return MC_ERROR_IN_FLIGHT;
+        }
+
         /* Select the terminal result under lock, then notify the host outside it. */
         request->state = RequestState::ready;
         request->result = MC_ERROR_CANCELLED;
+        if (request->cancel) {
+            request->cancel->store(true);
+        }
         const bool notify = select_wakeup(*context);
 
         lock.unlock();
@@ -813,21 +837,36 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
         std::unique_lock<std::mutex> lock(context->mutex);
         if (!enter_dispatch(*context)) return MC_ERROR_BUSY;
         context->stopping = true;
+        if (context->active_cancel) {
+            context->active_cancel->store(true);
+        }
 
         /* Preserve terminal results already selected and cancel everything else. */
         for (auto &request : context->requests) {
             if (request.state == RequestState::ready) continue;
+            if (request.state == RequestState::running &&
+                request.effect == musik::core::ffi::RequestEffect::Mutation)
+            {
+                if (!request.external) {
+                    continue; /* Join the worker and deliver the actual write result. */
+                }
+                request.result = MC_ERROR_OUTCOME_UNKNOWN;
+            }
+            else {
+                request.result = MC_ERROR_CANCELLED;
+            }
             request.state = RequestState::ready;
-            request.result = MC_ERROR_CANCELLED;
         }
         context->changed.notify_all();
 
         /* Let the worker and in-flight wakeups finish before calling host code. */
         lock.unlock();
+        if (context->worker.joinable()) {
+            context->worker.join();
+        }
         if (context->runtime) {
             context->runtime->Stop();
         }
-        if (context->worker.joinable()) context->worker.join();
         lock.lock();
         context->changed.wait(lock, [&] { return context->wakeups_in_flight == 0; });
 
@@ -836,8 +875,8 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
     });
 }
 
-void MC_CALL mc_context_destroy(mc_context **context) {
-    musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+mc_result MC_CALL mc_context_destroy(mc_context **context) {
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         if (!context || !*context) return MC_OK;
         const auto status = mc_context_shutdown(*context);
         if (status != MC_OK) return status;

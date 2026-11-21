@@ -12,7 +12,15 @@ namespace musik { namespace core { namespace ffi {
     class CompletionError {
     public:
         explicit CompletionError(mc_result result) noexcept {
-            if (result != MC_OK) fail(result, "Asynchronous operation failed", &this->error);
+            if (result == MC_ERROR_QUEUE_FULL) {
+                fail(result, "The context request queue is full", &this->error);
+            }
+            else if (result == MC_ERROR_OUTCOME_UNKNOWN) {
+                fail(result, "The backend may have applied the mutation. Refresh before retrying", &this->error);
+            }
+            else if (result != MC_OK) {
+                fail(result, "Asynchronous operation failed", &this->error);
+            }
         }
         ~CompletionError() { mc_error_destroy(&this->error); }
         CompletionError(const CompletionError&) = delete;

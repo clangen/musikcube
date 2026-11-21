@@ -48,7 +48,11 @@ enum {
     MC_ERROR_IO = 6,
     MC_ERROR_PLUGIN = 7,
     MC_ERROR_INTERNAL = 8,
-    MC_ERROR_BUFFER_TOO_SMALL = 9
+    MC_ERROR_BUFFER_TOO_SMALL = 9,
+    MC_ERROR_QUEUE_FULL = 10,
+    MC_ERROR_STALE_SNAPSHOT = 11,
+    MC_ERROR_IN_FLIGHT = 12,
+    MC_ERROR_OUTCOME_UNKNOWN = 13
 };
 
 /* Non-owning UTF-8 view. Keep the backing storage alive while using it.

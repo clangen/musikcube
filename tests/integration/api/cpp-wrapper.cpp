@@ -300,7 +300,7 @@ namespace {
         } catch (const Error&) {
             return false;
         }
-        if (window.Load() != MC_ERROR_BUSY || window.Pending()) return false;
+        if (window.Load() != MC_ERROR_QUEUE_FULL || window.Pending()) return false;
         for (const auto id : queued) context.Cancel(id);
         if (context.Dispatch() != MC_OK || window.Load() != MC_OK || !window.Pending()) return false;
 
@@ -486,10 +486,10 @@ namespace {
             const auto original = playback->Queue();
             if (!original || playback->Move(*original, 1, 0) != MC_OK ||
                 !queueHas({ result.Id(1), result.Id(0) }) ||
-                playback->Remove(*original, 1) != MC_ERROR_NOT_FOUND) return playbackFailure(__LINE__);
+                playback->Remove(*original, 1) != MC_ERROR_STALE_SNAPSHOT) return playbackFailure(__LINE__);
             const auto reordered = playback->Queue();
             if (!reordered || playback->Remove(*reordered, 1) != MC_OK || service.Count() != 1 ||
-                playback->Remove(*reordered, 1) != MC_ERROR_NOT_FOUND ||
+                playback->Remove(*reordered, 1) != MC_ERROR_STALE_SNAPSHOT ||
                 playback->ClearQueue() != MC_OK || service.Count() != 0) return playbackFailure(__LINE__);
 
             const auto first = result.Track(0);
@@ -509,11 +509,19 @@ namespace {
             /* Snapshots preserve duplicate IDs and remain valid across subsequent edits. */
             const auto captured = playback->Queue();
             const std::array expected{ second.Id(), first.Id(), second.Id(), first.Id() };
+            const auto sameRevision = playback->Queue();
+            if (!captured || !sameRevision || !sameRevision->SameRows(*captured) ||
+                captured->Tracks().Size() != expected.size())
+            {
+                return playbackFailure(__LINE__);
+            }
+            const auto projection = captured->Tracks();
             const auto captureMatches = [&] {
                 if (!captured) return playbackFailure(__LINE__);
                 size_t count = 0;
                 const auto ids = captured->Ids(count);
-                return count == expected.size() && std::equal(expected.begin(), expected.end(), ids);
+                return count == expected.size() && std::equal(expected.begin(), expected.end(), ids) &&
+                    projection.Id(0) == expected[0] && projection.Id(2) == expected[2];
             };
             if (!captureMatches() ||
                 captured->IsShuffled() || playback->PlayQueueRow(*captured, 2) != MC_OK || service.GetIndex() != 2 ||
@@ -521,7 +529,7 @@ namespace {
 
             if (playback->Control(MC_PLAYBACK_TOGGLE_SHUFFLE) != MC_OK) return playbackFailure(__LINE__);
             const auto shuffled = playback->Queue();
-            if (!shuffled || !shuffled->IsShuffled() || shuffled->Size() != expected.size()) return playbackFailure(__LINE__);
+            if (!shuffled || shuffled->SameRows(*captured) || !shuffled->IsShuffled() || shuffled->Size() != expected.size()) return playbackFailure(__LINE__);
             size_t shuffledCount = 0;
             const auto shuffledIds = shuffled->Ids(shuffledCount);
             std::vector<int64_t> sortedActual(shuffledIds, shuffledIds + shuffledCount);
@@ -544,9 +552,9 @@ namespace {
                 auto edit = service.Edit();
                 if (!edit.Swap(0, 2) || edit.Delete(expected.size())) return playbackFailure(__LINE__);
             }
-            if (playback->PlayQueueRow(*captured, 0) != MC_ERROR_NOT_FOUND ||
-                playback->Move(*captured, 0, 1) != MC_ERROR_NOT_FOUND ||
-                playback->Remove(*captured, 0) != MC_ERROR_NOT_FOUND ||
+            if (playback->PlayQueueRow(*captured, 0) != MC_ERROR_STALE_SNAPSHOT ||
+                playback->Move(*captured, 0, 1) != MC_ERROR_STALE_SNAPSHOT ||
+                playback->Remove(*captured, 0) != MC_ERROR_STALE_SNAPSHOT ||
                 service.Count() != expected.size() || service.GetIndex() != 2) return playbackFailure(__LINE__);
             const auto current = playback->Queue();
             if (!current || playback->PlayQueueRow(*current, 2) != MC_OK) return playbackFailure(__LINE__);
@@ -554,8 +562,8 @@ namespace {
             service.SelectLibrary(remote);
             const auto unavailable = playback->Queue();
             const bool rejected = unavailable && !unavailable->Size() &&
-                playback->PlayQueueRow(*current, 0) == MC_ERROR_NOT_FOUND &&
-                playback->Remove(*current, 0) == MC_ERROR_NOT_FOUND &&
+                playback->PlayQueueRow(*current, 0) == MC_ERROR_STALE_SNAPSHOT &&
+                playback->Remove(*current, 0) == MC_ERROR_STALE_SNAPSHOT &&
                 playback->Play(result, 0) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NOW) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NEXT) == MC_ERROR_NOT_FOUND &&

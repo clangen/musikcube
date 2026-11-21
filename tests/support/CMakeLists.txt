@@ -15,8 +15,6 @@ else()
 endif()
 
 if(BUILD_TESTING)
-  # Fixture-only access to native transports and catalog snapshots.
-  target_sources(musikcore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixture-library.cpp")
 
   if(UNIX AND TARGET musikcube AND CMAKE_NM)
     add_test(NAME musikcube.integration.core_boundary COMMAND "${CMAKE_COMMAND}"
@@ -35,7 +33,7 @@ if(BUILD_TESTING)
     C_STANDARD 11 C_STANDARD_REQUIRED ON DISABLE_PRECOMPILE_HEADERS ON)
   add_dependencies(musikcube_tests musikcore_example_remote)
 
-  add_executable(musikcore_remote_query_transport_test ../integration/transport/remote-query-transport.cpp)
+  add_executable(musikcore_remote_query_transport_test ../integration/transport/remote-query-transport.cpp fixture-library.cpp)
   target_include_directories(musikcore_remote_query_transport_test PRIVATE
     "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
   target_link_libraries(musikcore_remote_query_transport_test PRIVATE musikcore Threads::Threads)
@@ -62,7 +60,7 @@ if(BUILD_TESTING)
   find_program(MUSIKCUBE_TEST_NODE NAMES node)
   if(MUSIKCUBE_TEST_NODE)
     add_executable(musikcore_production_api_test
-      ../integration/api/cpp-wrapper.cpp ../integration/api/query-support.cpp)
+      ../integration/api/cpp-wrapper.cpp ../integration/api/query-support.cpp fixture-library.cpp)
     target_compile_definitions(musikcore_production_api_test PRIVATE MUSIKCORE_TEST_PRODUCTION_RUNTIME)
     target_include_directories(musikcore_production_api_test PRIVATE
       "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
@@ -95,8 +93,13 @@ if(BUILD_TESTING)
     if(UNIX AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16 AND
         CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME AND
         CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
+      set(installed_plugin_args)
+      if(TARGET nullout)
+        list(APPEND installed_plugin_args "-DINSTALLED_TEST_PLUGIN=$<TARGET_FILE_NAME:nullout>")
+        add_dependencies(musikcube_tests nullout)
+      endif()
       add_test(NAME musikcore.integration.api.installed_sdk COMMAND "${CMAKE_COMMAND}"
-        ${indexed_arguments} "-DINSTALLED_SDK_SOURCE=${PROJECT_SOURCE_DIR}" -P "${indexed_script}")
+        ${indexed_arguments} "-DINSTALLED_SDK_SOURCE=${PROJECT_SOURCE_DIR}" ${installed_plugin_args} -P "${indexed_script}")
       set_tests_properties(musikcore.integration.api.installed_sdk PROPERTIES
         LABELS "integration;musikcore;api;packaging;contract" TIMEOUT 90)
     endif()

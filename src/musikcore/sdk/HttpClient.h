@@ -264,10 +264,6 @@ namespace musik { namespace core { namespace sdk {
         curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 7500);
         curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 500);
 
-        if (this->decoratorCb) {
-            this->decoratorCb(this->curl);
-        }
-
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &CurlWriteCallback);
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
@@ -301,6 +297,10 @@ namespace musik { namespace core { namespace sdk {
             if (this->postBody.size()) {
                 curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, this->postBody.c_str());
             }
+        }
+
+        if (this->decoratorCb) {
+            this->decoratorCb(this->curl);
         }
 
         if (mode == Thread::Background) {

@@ -33,6 +33,17 @@ namespace musik { namespace core { namespace api {
             this->Ids(count);
             return count;
         }
+        bool SameRows(const PlayQueue& previous) const noexcept {
+            return mc_play_queue_same_rows(this->queue.get(), previous.queue.get());
+        }
+        TrackResult Tracks() const {
+            mc_track_result* tracks = nullptr;
+            const auto status = mc_play_queue_get_tracks(this->queue.get(), &tracks);
+            if (status != MC_OK && status != MC_ERROR_NOT_FOUND) {
+                throw Error(status);
+            }
+            return TrackResult(tracks);
+        }
         size_t CurrentRow() const noexcept { return mc_play_queue_get_current_row(this->queue.get()); }
         size_t RetainedRow() const noexcept { return mc_play_queue_get_retained_row(this->queue.get()); }
         bool IsShuffled() const noexcept { return mc_play_queue_is_shuffled(this->queue.get()); }

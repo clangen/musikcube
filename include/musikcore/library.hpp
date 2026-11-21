@@ -649,28 +649,6 @@ namespace musik { namespace core { namespace api {
         return ListPlaylists(context, detail::activeLibrary(), std::move(completion));
     }
 
-    inline mc_request_id SavePlaylist(Context& context, int64_t id, std::string_view name,
-        const std::vector<int64_t>& tracks, PlaylistWriteCompletion completion)
-    {
-        return SavePlaylist(context, detail::activeLibrary(), id, name, tracks, std::move(completion));
-    }
-
-    inline mc_request_id AppendPlaylist(Context& context, int64_t id,
-        const std::vector<int64_t>& tracks, PlaylistWriteCompletion completion)
-    {
-        return AppendPlaylist(context, detail::activeLibrary(), id, tracks, std::move(completion));
-    }
-
-    inline mc_request_id RenamePlaylist(Context& context, int64_t id,
-        std::string_view name, PlaylistWriteCompletion completion)
-    {
-        return RenamePlaylist(context, detail::activeLibrary(), id, name, std::move(completion));
-    }
-
-    inline mc_request_id DeletePlaylist(Context& context, int64_t id, PlaylistWriteCompletion completion) {
-        return DeletePlaylist(context, detail::activeLibrary(), id, std::move(completion));
-    }
-
     inline mc_request_id ReadTracks(Context &context, const TrackResult &tracks,
         const TrackRange &range, TrackQueryCompletion completion) {
         const auto fields = detail::fieldViews(range.fields);

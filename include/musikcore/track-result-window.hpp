@@ -140,7 +140,7 @@ namespace musik { namespace core { namespace api {
                 return MC_OK;
             } catch (const Error& error) {
                 /* A full request queue can accept this page on a later Load. */
-                if (error.Result() != MC_ERROR_BUSY) this->failed = next;
+                if (error.Result() != MC_ERROR_BUSY && error.Result() != MC_ERROR_QUEUE_FULL) this->failed = next;
                 return error.Result();
             }
         }
@@ -166,11 +166,11 @@ namespace musik { namespace core { namespace api {
                 if (this->forward) lastPage += prefetchSpan;
                 else firstPage -= prefetchSpan;
                 if (!this->pages.Store(offset, std::move(page), firstPage, lastPage)) count = 0;
-            } else if (status != MC_ERROR_CANCELLED && status != MC_ERROR_BUSY) {
+            } else if (status != MC_ERROR_CANCELLED && status != MC_ERROR_BUSY && status != MC_ERROR_QUEUE_FULL) {
                 this->failed = offset;
             }
 
-            const auto nextStatus = status == MC_ERROR_BUSY ? status : this->Load();
+            const auto nextStatus = (status == MC_ERROR_BUSY || status == MC_ERROR_QUEUE_FULL) ? status : this->Load();
             const auto notify = this->changed;
             if (notify) notify(offset, count, nextStatus == MC_OK ? status : nextStatus);
         }

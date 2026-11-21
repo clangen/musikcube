@@ -301,6 +301,8 @@ typedef void (MC_CALL *mc_playlist_write_completion_fn)(
 MC_API mc_result MC_CALL mc_library_list_playlists_async(
     mc_context *context, const mc_library *library, mc_playlist_list_completion_fn completion,
     void *user_data, mc_request_id *out_request);
+/* Playlist mutations require an explicit library handle. If a remote write
+   returns MC_ERROR_OUTCOME_UNKNOWN, reread the playlist before retrying. */
 /* Zero playlist_id creates a playlist using name. A positive ID overwrites its tracks.
    IDs belong to library. Core copies their order, including duplicates, before returning. */
 MC_API mc_result MC_CALL mc_library_save_playlist_async(

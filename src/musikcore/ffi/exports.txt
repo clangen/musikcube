@@ -29,6 +29,8 @@ mc_library_save_playlist_async
 mc_play_queue_destroy
 mc_play_queue_get_current_row
 mc_play_queue_get_ids
+mc_play_queue_same_rows
+mc_play_queue_get_tracks
 mc_play_queue_get_retained_row
 mc_play_queue_is_shuffled
 mc_playback_control

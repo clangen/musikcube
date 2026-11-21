@@ -171,6 +171,11 @@ MC_API mc_result MC_CALL mc_playback_get_queue(const mc_playback *playback, mc_p
 MC_API void MC_CALL mc_play_queue_destroy(mc_play_queue **queue);
 /* Snapshot-owned track IDs, valid until snapshot destruction. Duplicates are preserved. */
 MC_API const int64_t *MC_CALL mc_play_queue_get_ids(const mc_play_queue *queue, size_t *out_count);
+/* Compare queue revisions. Position changes alone leave rows unchanged. */
+MC_API bool MC_CALL mc_play_queue_same_rows(const mc_play_queue* queue, const mc_play_queue* previous);
+/* Return an owned track result sharing this snapshot's ordered rows and catalog.
+   Returns MC_ERROR_NOT_FOUND when no catalog is available. */
+MC_API mc_result MC_CALL mc_play_queue_get_tracks(const mc_play_queue* queue, mc_track_result** result);
 /* Returns SIZE_MAX when the queue has no current row. */
 MC_API size_t MC_CALL mc_play_queue_get_current_row(const mc_play_queue *queue);
 /* Returns the retained playback position, including after Stop, or SIZE_MAX. */
@@ -185,7 +190,7 @@ MC_API mc_result MC_CALL mc_playback_insert_result(mc_playback* playback, const 
     mc_playback_track_action action);
 MC_API bool MC_CALL mc_play_queue_is_shuffled(const mc_play_queue *queue);
 /* Request playback of a row in the supplied snapshot on the owner thread.
-   Returns MC_ERROR_NOT_FOUND for a stale snapshot or unavailable row. */
+   A stale snapshot returns MC_ERROR_STALE_SNAPSHOT. An unavailable row returns MC_ERROR_NOT_FOUND. */
 MC_API mc_result MC_CALL mc_playback_play_queue_row(
     mc_playback *playback, const mc_play_queue *queue, size_t row);
 
@@ -197,7 +202,7 @@ MC_API mc_result MC_CALL mc_playback_set_queue_changed_callback(
     mc_playback *playback, mc_play_queue_changed_fn callback, void *user_data);
 
 /* Edit zero-based positions from the supplied snapshot on the owner thread.
-   Returns MC_ERROR_NOT_FOUND if the snapshot is stale or a row is unavailable. */
+   A stale snapshot returns MC_ERROR_STALE_SNAPSHOT. An unavailable row returns MC_ERROR_NOT_FOUND. */
 MC_API mc_result MC_CALL mc_playback_queue_move(
     mc_playback *playback, const mc_play_queue *queue, size_t from, size_t to);
 MC_API mc_result MC_CALL mc_playback_queue_remove(

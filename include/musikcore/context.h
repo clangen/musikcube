@@ -75,7 +75,8 @@ typedef struct mc_context_options {
     uint32_t struct_size;
     /* Requested ABI version. Zero selects the current version. */
     uint32_t requested_abi_version;
-    /* Reserved UTF-8 plugin root, copied at creation. The standalone ABI does not load plugins yet. */
+    /* Managed plugin directory, copied at creation. Empty uses the host default.
+       Set before plugin discovery. The directory is fixed for the process. */
     mc_string_view plugin_directory;
     /* MC_CONTEXT_MANAGED_RUNTIME starts playback, plugins, and the configured
        library in a production build. Zero creates a request dispatcher. */
@@ -140,14 +141,17 @@ MC_API mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_p
    Accepted submissions deliver exactly one completion, including on shutdown.
    Handles must remain valid for the duration of concurrent calls using them. */
 MC_API mc_result MC_CALL mc_context_dispatch(mc_context *context);
-/* Selects cancellation if the request still has no terminal result. */
+/* Selects cancellation if no terminal result exists. A mutation already
+   submitted to its backend returns MC_ERROR_IN_FLIGHT and still completes. */
 MC_API mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id request);
-/* Settles requests on the dispatcher thread. Waits for work and wakeup hooks to stop. */
+/* Stops the managed runtime and invalidates its playback handles. Settles
+   requests on the dispatcher thread and waits for context-owned work and wakeup
+   hooks to stop. Caller-owned sessions have their own lifetime. */
 MC_API mc_result MC_CALL mc_context_shutdown(mc_context *context);
 
 /* Shuts down on the dispatcher thread and clears the slot on success. Null is accepted.
-   If shutdown is busy, the handle stays valid. Retry on the dispatcher thread outside callbacks. */
-MC_API void MC_CALL mc_context_destroy(mc_context **context);
+   If shutdown returns an error, the handle stays valid. Retry on the dispatcher thread outside callbacks. */
+MC_API mc_result MC_CALL mc_context_destroy(mc_context **context);
 
 #ifdef __cplusplus
 }

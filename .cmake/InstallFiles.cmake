@@ -13,7 +13,7 @@ if (${BUILD_STANDALONE} MATCHES "true")
 endif()
 
 install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/plugins/"
-  DESTINATION share/musikcube/plugins OPTIONAL FILES_MATCHING PATTERN "*.${plugin_extension}")
+  DESTINATION share/musikcube/plugins COMPONENT MusikcorePlugins OPTIONAL FILES_MATCHING PATTERN "*.${plugin_extension}")
 
 # sdk header files
 file(GLOB sdk_headers "src/musikcore/sdk/*.h")

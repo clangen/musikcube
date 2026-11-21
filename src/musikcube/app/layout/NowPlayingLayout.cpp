@@ -112,7 +112,7 @@ void NowPlayingLayout::InitializeWindows() {
 
     this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
     this->trackListView->SetQueueActivationCallback([this](size_t row) {
-        if (this->queue && this->apiPlayback.PlayQueueRow(*this->queue, row) == MC_ERROR_NOT_FOUND) {
+        if (this->queue && this->apiPlayback.PlayQueueRow(*this->queue, row) == MC_ERROR_STALE_SNAPSHOT) {
             this->RequeryTrackList();
         }
     });
@@ -195,17 +195,12 @@ void NowPlayingLayout::RequeryTrackList() {
         return;
     }
 
-    size_t count = 0;
-    size_t previousCount = 0;
-    const auto ids = updated->Ids(count);
-    const auto previous = this->queue ? this->queue->Ids(previousCount) : nullptr;
-    const bool changed = !this->queue || count != previousCount ||
-        (count && !std::equal(ids, ids + count, previous));
+    const bool changed = !this->queue || !updated->SameRows(*this->queue);
     this->queue = std::move(updated);
 
     /* Playback remains authoritative for duplicate rows, position, and revision. */
     if (changed) {
-        this->trackListView->SetTrackIds(ids, count, 0);
+        this->trackListView->SetTrackResult(this->queue->Tracks(), 0);
     }
     else {
         this->trackListView->Redraw();
@@ -354,7 +349,7 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
             if (status == MC_OK) {
                 this->reselectIndex = narrow_cast<int>(target);
             }
-            if (status == MC_OK || status == MC_ERROR_NOT_FOUND) {
+            if (status == MC_OK || status == MC_ERROR_STALE_SNAPSHOT) {
                 this->RequeryTrackList();
             }
             return true;
