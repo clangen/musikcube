@@ -3,6 +3,7 @@
 
 #include <musikcore/context.h>
 #include <musikcore/indexer.h>
+#include <musikcore/library.h>
 #include <functional>
 #include <memory>
 #include <string>
@@ -28,6 +29,7 @@ namespace musik { namespace core { namespace ffi {
     void attach_library_selector(mc_context& context, std::function<mc_result(mc_library_kind)> selector,
         std::function<void()> reconnect, IIndexer& indexer);
     void publish_indexer_event(mc_context& context, mc_indexer_event event, int updates);
+    void publish_playlist_event(mc_context& context, mc_playlist_event event, int64_t playlistId);
     mc_result publish_library_selection(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
         LibraryStatus status, bool selectionChanged);
     using OpenPlayback = mc_result (*)(audio::PlaybackService&, mc_playback**);

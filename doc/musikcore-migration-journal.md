@@ -48,3 +48,7 @@ Browse, category search, and the playlist overlays use public metadata and categ
 ## Visualizers
 
 The chooser and hotkey use the SDK for discovery, show, and hide. Playback workers read one atomic selection and borrow plugin instances held by the registry. All 44 Linux Release tests passed, including the missing-plugin dialog and the standalone ABI export checks. The shipped Windows visualizer still needs native verification.
+
+## Playlist notifications
+
+Browse refreshes local playlist edits through public context callbacks. Deletion publishes the list change after the transaction scope closes. All 44 Linux Release tests passed. The loopback test covers event order and discards queued local events when the remote library is selected. Browse still exercises playlist editing through the headless UI.

@@ -65,6 +65,7 @@ namespace musik { namespace cube {
 
             void CancelLibraryRequests();
             void OnIndexerEvent(mc_indexer_event event, int updates);
+            void OnPlaylistChanged(mc_playlist_event event, int64_t playlistId);
 
             cursespp::IWindowPtr FocusNext() override;
             cursespp::IWindowPtr FocusPrev() override;

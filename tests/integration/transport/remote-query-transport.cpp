@@ -23,10 +23,12 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/runtime/MessageQueue.h>
+#include <musikcore/runtime/Message.h>
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/Common.h>
+#include <musikcore/support/Messages.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
@@ -349,6 +351,22 @@ namespace {
             return failure(__LINE__);
         }
 
+        std::vector<std::pair<mc_playlist_event, int64_t>> playlistEvents;
+        if (SetPlaylistChangedCallback(context, [](void* data, mc_playlist_event event, int64_t id) {
+            static_cast<decltype(playlistEvents)*>(data)->emplace_back(event, id);
+        }, &playlistEvents) != MC_OK)
+        {
+            return failure(__LINE__);
+        }
+        const auto postLocalPlaylistChange = [&](int type) {
+            coreRuntime.Queue().Broadcast(runtime::Message::Create(nullptr, type, kPlaylistId));
+            coreRuntime.Queue().Dispatch();
+        };
+        postLocalPlaylistChange(message::PlaylistCreated);
+        if (context.Dispatch() != MC_OK || !playlistEvents.empty()) {
+            return failure(__LINE__);
+        }
+
         TrackResult tracks;
         TrackPage page;
         unsigned calls = 0;
@@ -432,6 +450,14 @@ namespace {
         if (context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL || !context.GetLibrary()) {
             return failure(__LINE__);
         }
+        postLocalPlaylistChange(message::PlaylistRenamed);
+        postLocalPlaylistChange(message::PlaylistModified);
+        if (!playlistEvents.empty() || context.Dispatch() != MC_OK ||
+            playlistEvents != std::vector<std::pair<mc_playlist_event, int64_t>> {
+                { MC_PLAYLIST_RENAMED, kPlaylistId }, { MC_PLAYLIST_CONTENTS_CHANGED, kPlaylistId } })
+        {
+            return failure(__LINE__);
+        }
         QueryTracks(context, TrackQuery { "" }, receive);
         if (!dispatch(3) || status != MC_OK) {
             std::fprintf(stderr, "Local handoff: status=%d calls=%u\n", status, calls);
@@ -451,7 +477,10 @@ namespace {
         /* Reconnecting creates a new generation even when the endpoint stays the same. */
         const auto remote = std::dynamic_pointer_cast<library::RemoteLibrary>(LibraryFactory::Instance().DefaultRemoteLibrary());
         remote->Connect();
-        if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK) {
+        postLocalPlaylistChange(message::PlaylistDeleted);
+        if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK || context.Dispatch() != MC_OK ||
+            playlistEvents.size() != 2 || SetPlaylistChangedCallback(context, nullptr) != MC_OK)
+        {
             return failure(__LINE__);
         }
         std::optional<Library> reconnected;

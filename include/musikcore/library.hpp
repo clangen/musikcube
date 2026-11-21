@@ -13,6 +13,11 @@
 #include <vector>
 
 namespace musik { namespace core { namespace api {
+    inline mc_result SetPlaylistChangedCallback(
+        Context& context, mc_playlist_changed_fn callback, void* userData = nullptr)
+    {
+        return mc_context_set_playlist_changed_callback(context.Get(), callback, userData);
+    }
 
     /* Reads one row's metadata by field name. Use when displaying a track or
        keeping a row after its page leaves a cache. Copyable and movable;

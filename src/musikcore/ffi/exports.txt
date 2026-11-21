@@ -95,3 +95,4 @@ mc_playback_set_replay_gain
 mc_visualizer_list
 mc_visualizer_show
 mc_visualizer_hide
+mc_context_set_playlist_changed_callback

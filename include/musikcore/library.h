@@ -251,6 +251,22 @@ typedef struct mc_playlist_entry {
     mc_string_view name;
 } mc_playlist_entry;
 
+typedef uint32_t mc_playlist_event;
+enum {
+    MC_PLAYLIST_CONTENTS_CHANGED,
+    MC_PLAYLIST_CREATED,
+    MC_PLAYLIST_RENAMED,
+    MC_PLAYLIST_DELETED
+};
+
+typedef void (MC_CALL *mc_playlist_changed_fn)(void* user_data, mc_playlist_event event, int64_t playlist_id);
+
+/* Observe local playlist changes while the managed local library is selected.
+   Register on the dispatcher thread. Dispatch delivers changes in order.
+   Pass NULL to unsubscribe and discard queued changes. */
+MC_API mc_result MC_CALL mc_context_set_playlist_changed_callback(
+    mc_context* context, mc_playlist_changed_fn callback, void* user_data);
+
 typedef struct mc_category_entry {
     /* ID scoped to the library and category field. */
     int64_t id;

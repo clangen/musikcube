@@ -200,6 +200,12 @@ void MainLayout::Start() {
     this->musikcore.SetLibraryChangedCallback([](void* data, bool selectionChanged) {
         static_cast<MainLayout*>(data)->OnLibraryChanged(selectionChanged);
     }, this);
+    api::SetPlaylistChangedCallback(this->musikcore, [](void* data, mc_playlist_event event, int64_t id) {
+        auto& layout = *static_cast<MainLayout*>(data);
+        if (layout.libraryLayout) {
+            layout.libraryLayout->OnPlaylistChanged(event, id);
+        }
+    }, this);
     this->playback.SetChangedCallback([](void* data, mc_playback_event) {
         static_cast<MainLayout*>(data)->UpdateWindowTitle();
     }, this, { MC_PLAYBACK_CHANGED_TRACK });
@@ -215,6 +221,7 @@ void MainLayout::Shutdown() {
     this->titleWork.Invalidate();
     api::Indexer(this->musikcore).SetCallback(nullptr);
     this->musikcore.SetLibraryChangedCallback(nullptr);
+    api::SetPlaylistChangedCallback(this->musikcore, nullptr);
     if (this->libraryLayout) this->libraryLayout->CancelLibraryRequests();
     this->musikcore.Shutdown();
     MessageQueue().Remove(nullptr, message::DispatchCoreRequests);

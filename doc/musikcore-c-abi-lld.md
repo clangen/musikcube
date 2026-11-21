@@ -1152,6 +1152,10 @@ legacy list for actions that still require it.
 - [ ] **CPP-003** Expand the C++ wrapper with each public feature family.
 - [ ] **MIG-003** Migrate preferences and settings consumers.
 - [ ] **MIG-004** Migrate remaining library/category/directory views.
+  Browse receives local playlist mutations through context dispatch.
+  `musikcore.abi.remote_query_transport` verifies notification ordering and
+  suppression on selection changes. `musikcube.ui.browse` exercises playlist
+  editing and refresh.
 - [ ] **MIG-005** Migrate playback and transport consumers.
 - [ ] **MIG-006** Migrate queue editing and now-playing consumers.
 - [x] **MIG-007** Migrate indexer and local-library settings. Cube uses the SDK

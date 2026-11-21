@@ -63,6 +63,10 @@ struct mc_context {
     void* indexerData = nullptr;
     uint64_t indexerSubscription = 0;
     std::vector<std::pair<mc_indexer_event, int>> indexerEvents;
+    mc_playlist_changed_fn playlistChanged = nullptr;
+    void* playlistChangedData = nullptr;
+    uint64_t playlistSubscription = 0;
+    std::vector<std::pair<mc_playlist_event, int64_t>> playlistEvents;
     mc_library_changed_fn libraryChanged = nullptr;
     void* libraryChangedData = nullptr;
     bool libraryNotificationPending = false;
@@ -221,6 +225,12 @@ namespace {
         std::vector<std::pair<mc_indexer_event, int>> indexerEvents;
         indexerEvents.swap(context.indexerEvents);
 
+        const auto notifyPlaylist = context.playlistChanged;
+        auto* const playlistData = context.playlistChangedData;
+        const auto playlistSubscription = context.playlistSubscription;
+        std::vector<std::pair<mc_playlist_event, int64_t>> playlistEvents;
+        playlistEvents.swap(context.playlistEvents);
+
         /* Rearm before invoking callbacks so concurrent producers can wake the next dispatch. */
         context.wakeup_pending = false;
         lock.unlock();
@@ -240,6 +250,18 @@ namespace {
             }
             musik::core::ffi::exception_barrier(nullptr, [&] {
                 notifyIndexer(indexerData, event.first, event.second);
+                return MC_OK;
+            });
+        }
+        for (const auto& event : playlistEvents) {
+            lock.lock();
+            const bool subscribed = notifyPlaylist && context.playlistSubscription == playlistSubscription;
+            lock.unlock();
+            if (!subscribed) {
+                break;
+            }
+            musik::core::ffi::exception_barrier(nullptr, [&] {
+                notifyPlaylist(playlistData, event.first, event.second);
                 return MC_OK;
             });
         }
@@ -281,6 +303,10 @@ namespace {
             /* Release the previous identity after dropping the context lock. */
             context.library.swap(library);
             context.libraryStatus = std::move(status);
+            if (selectionChanged) {
+                ++context.playlistSubscription;
+                context.playlistEvents.clear();
+            }
             if (context.libraryChanged) {
                 context.libraryNotificationPending = true;
                 context.librarySelectionChanged |= selectionChanged;
@@ -339,6 +365,40 @@ void musik::core::ffi::publish_indexer_event(mc_context& context, mc_indexer_eve
     if (wake) {
         signal_host(context);
     }
+}
+
+void musik::core::ffi::publish_playlist_event(mc_context& context, mc_playlist_event event, int64_t playlistId) {
+    bool wake = false;
+    {
+        std::lock_guard<std::mutex> lock(context.mutex);
+        if (context.stopping || !context.playlistChanged || context.libraryStatus.kind != MC_LIBRARY_LOCAL) {
+            return;
+        }
+        context.playlistEvents.emplace_back(event, playlistId);
+        wake = select_wakeup(context);
+    }
+    if (wake) {
+        signal_host(context);
+    }
+}
+
+mc_result MC_CALL mc_context_set_playlist_changed_callback(
+    mc_context* context, mc_playlist_changed_fn callback, void* data)
+{
+    if (!context) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&] {
+        std::lock_guard<std::mutex> lock(context->mutex);
+        if (context->stopping || !is_dispatcher(*context)) {
+            return MC_ERROR_BUSY;
+        }
+        ++context->playlistSubscription;
+        context->playlistEvents.clear();
+        context->playlistChanged = callback;
+        context->playlistChangedData = callback ? data : nullptr;
+        return MC_OK;
+    });
 }
 
 mc_result MC_CALL mc_context_reconnect_remote_library(mc_context* context) {

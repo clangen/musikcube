@@ -62,6 +62,7 @@ namespace musik {
 
                 virtual ~BrowseLayout();
                 void OnIndexerProgress(int count);
+                void OnPlaylistChanged(mc_playlist_event event, int64_t playlistId);
                 void CancelTrackRequests() {
                     this->playlistWork.Invalidate();
                     this->categoryList->CancelQuery();

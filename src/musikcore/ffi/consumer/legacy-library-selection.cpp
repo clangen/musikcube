@@ -20,7 +20,9 @@ namespace musik { namespace core { namespace ffi {
 
         /* Detach the engine and context references before releasing the adapter. */
         std::shared_ptr<library::MasterLibrary> bound(adapter, [library](auto*) {
-            static_cast<musik::core::library::MasterLibrary*>(library.get())->AttachContext(nullptr, nullptr);
+            auto& selected = static_cast<musik::core::library::MasterLibrary&>(*library);
+            selected.GetMessageQueue().UnregisterForBroadcasts(&selected);
+            selected.AttachContext(nullptr, nullptr);
         });
         auto& factory = LibraryFactory::Instance();
         attach_library_selector(*musikcore.Get(),
@@ -37,6 +39,7 @@ namespace musik { namespace core { namespace ffi {
             },
             *factory.DefaultLocalLibrary()->Indexer());
         adapter->AttachContext(musikcore.Get(), &playback);
+        adapter->GetMessageQueue().RegisterForBroadcasts(std::static_pointer_cast<library::MasterLibrary>(library));
     }
 
     void StartLegacyApp(api::Context& musikcore, runtime::IMessageQueue& queue) {

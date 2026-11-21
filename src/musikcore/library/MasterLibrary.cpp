@@ -43,6 +43,7 @@
 #include <musikcore/library.hpp>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Messages.h>
 
 using namespace musik::core;
 using namespace musik::core::library;
@@ -101,6 +102,31 @@ MasterLibrary::Type MasterLibrary::GetType() const {
 
 void MasterLibrary::Close() {
     this->wrappedLibrary->Close();
+}
+
+void MasterLibrary::ProcessMessage(IMessage& message) {
+    mc_playlist_event event;
+    switch (message.Type()) {
+        case message::PlaylistModified:
+            event = MC_PLAYLIST_CONTENTS_CHANGED;
+            break;
+        case message::PlaylistCreated:
+            event = MC_PLAYLIST_CREATED;
+            break;
+        case message::PlaylistRenamed:
+            event = MC_PLAYLIST_RENAMED;
+            break;
+        case message::PlaylistDeleted:
+            event = MC_PLAYLIST_DELETED;
+            break;
+        default:
+            return;
+    }
+
+    std::lock_guard lock(this->libraryMutex);
+    if (this->context) {
+        ffi::publish_playlist_event(*this->context, event, message.UserData1());
+    }
 }
 
 std::shared_ptr<const api::Library> MasterLibrary::OpenApiLibrary() const {

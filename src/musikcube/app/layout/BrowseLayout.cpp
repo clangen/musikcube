@@ -240,25 +240,6 @@ void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
             break;
         }
 
-        case core::message::PlaylistModified: {
-            if (this->IsPlaylist() &&
-                this->categoryList->GetSelectedId() == message.UserData1())
-            {
-                this->RequeryTrackList(this->categoryList.get());
-            }
-            break;
-        }
-
-        case core::message::PlaylistCreated:
-        case core::message::PlaylistDeleted:
-        case core::message::PlaylistRenamed: {
-            if (this->IsPlaylist()) {
-                const auto lastId = this->categoryList->GetSelectedId();
-                this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
-            }
-            break;
-        }
-
         case cube::message::FocusBrowseFilter: {
             this->SetFocus(this->categoryListFilter);
             break;
@@ -284,6 +265,20 @@ void BrowseLayout::ScrollTo(const std::string& fieldType, int64_t fieldId) {
 
 void BrowseLayout::OnIndexerProgress(int count) {
     this->Post(message::IndexerProgress);
+}
+
+void BrowseLayout::OnPlaylistChanged(mc_playlist_event event, int64_t playlistId) {
+    if (!this->IsPlaylist()) {
+        return;
+    }
+
+    const auto selectedId = this->categoryList->GetSelectedId();
+    if (event != MC_PLAYLIST_CONTENTS_CHANGED) {
+        this->categoryList->Requery(this->categoryList->GetFilter(), selectedId);
+    }
+    else if (selectedId == playlistId) {
+        this->RequeryTrackList(this->categoryList.get());
+    }
 }
 
 void BrowseLayout::UpdateTrackTitle() {

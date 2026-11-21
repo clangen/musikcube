@@ -63,36 +63,30 @@ DeletePlaylistQuery::DeletePlaylistQuery(musik::core::ILibraryPtr library, int64
 }
 
 bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
-    ScopedTransaction transaction(db);
+    this->result = false;
+    {
+        ScopedTransaction transaction(db);
 
-    /* delete the tracks */
-    Statement deleteTracks(DELETE_PLAYLIST_TRACKS_QUERY.c_str(), db);
-    deleteTracks.BindInt64(0, this->playlistId);
-
-    if (deleteTracks.Step() == db::Error) {
-        transaction.Cancel();
-        this->result = false;
-    }
-    else {
-        /* delete the container */
+        Statement deleteTracks(DELETE_PLAYLIST_TRACKS_QUERY.c_str(), db);
+        deleteTracks.BindInt64(0, this->playlistId);
         Statement deletePlaylist(DELETE_PLAYLIST_QUERY.c_str(), db);
         deletePlaylist.BindInt64(0, this->playlistId);
 
-        if (deletePlaylist.Step() == db::Error) {
+        if (deleteTracks.Step() == db::Error || deletePlaylist.Step() == db::Error) {
             transaction.Cancel();
-            this->result = false;
-        }
-        else {
-            this->SendPlaylistMutationBroadcast();
-            this->result = true;
+            return false;
         }
     }
+
+    /* Refresh readers after both deletions commit. */
+    this->SendPlaylistMutationBroadcast();
+    this->result = true;
     return this->result;
 }
 
 void DeletePlaylistQuery::SendPlaylistMutationBroadcast() {
     this->library->GetMessageQueue().Broadcast(
-        Message::Create(nullptr, message::PlaylistModified, playlistId));
+        Message::Create(nullptr, message::PlaylistDeleted, playlistId));
 }
 
 /* ISerializableQuery */

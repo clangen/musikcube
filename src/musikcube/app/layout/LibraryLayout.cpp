@@ -412,23 +412,15 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage& message) {
         }
         break;
 
-        case core::message::PlaylistModified:
-        case core::message::PlaylistCreated:
-        case core::message::PlaylistRenamed:
-        case core::message::PlaylistDeleted: {
-            MessageQueue().Post(Message::Create(
-                this->browseLayout.get(),
-                message.Type(),
-                message.UserData1(),
-                message.UserData2()));
-        }
-        break;
-
         default:
             break;
     }
 
     LayoutBase::ProcessMessage(message);
+}
+
+void LibraryLayout::OnPlaylistChanged(mc_playlist_event event, int64_t playlistId) {
+    this->browseLayout->OnPlaylistChanged(event, playlistId);
 }
 
 void LibraryLayout::OnIndexerEvent(mc_indexer_event event, int updates) {
