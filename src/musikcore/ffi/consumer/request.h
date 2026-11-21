@@ -29,6 +29,9 @@ namespace musik { namespace core { namespace ffi {
         virtual void Dispatch() = 0;
         virtual void AcknowledgeDispatch() = 0;
         virtual mc_result OpenPlayback(mc_playback** out) = 0;
+        virtual mc_result SelectLibrary(mc_library_kind kind) = 0;
+        virtual void ReconnectRemote() = 0;
+        virtual IIndexer& LocalIndexer() const = 0;
         virtual void Stop() = 0;
     };
 
@@ -47,8 +50,6 @@ namespace musik { namespace core { namespace ffi {
     std::shared_ptr<const LibraryIdentity> context_library(const mc_context& context);
     mc_result set_context_library(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
         LibraryStatus status);
-    void attach_library_selector(mc_context& context, std::function<mc_result(mc_library_kind)> selector,
-        std::function<void()> reconnect, IIndexer& indexer);
     void publish_indexer_event(mc_context& context, mc_indexer_event event, int updates);
     void publish_playlist_event(mc_context& context, mc_playlist_event event, int64_t playlistId);
     void publish_equalizer_event(mc_context& context);

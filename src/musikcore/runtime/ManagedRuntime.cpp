@@ -91,13 +91,6 @@ namespace musik { namespace core { namespace ffi {
             this->indexer->Started.connect(this, &ManagedRuntime::OnIndexStarted);
             this->indexer->Progress.connect(this, &ManagedRuntime::OnIndexProgress);
             this->indexer->Finished.connect(this, &ManagedRuntime::OnIndexFinished);
-            attach_library_selector(context,
-                [this](mc_library_kind kind) { return this->SelectLibrary(kind); },
-                [this] {
-                    this->remote->Disconnect();
-                    this->remote->Connect();
-                },
-                *this->indexer);
             this->PublishSelection(true);
 
             /* The plugin metadata proxy and indexer always serve the local catalog. */
@@ -137,6 +130,15 @@ namespace musik { namespace core { namespace ffi {
             return this->playback->OpenHandle(out);
         }
 
+        void ReconnectRemote() override {
+            this->remote->Disconnect();
+            this->remote->Connect();
+        }
+
+        IIndexer& LocalIndexer() const override {
+            return *this->local->Indexer();
+        }
+
         void Stop() override {
             {
                 std::lock_guard lock(this->mutex);
@@ -171,8 +173,7 @@ namespace musik { namespace core { namespace ffi {
             }
         }
 
-    private:
-        mc_result SelectLibrary(mc_library_kind kind) {
+        mc_result SelectLibrary(mc_library_kind kind) override {
             const ILibraryPtr selected = kind == MC_LIBRARY_LOCAL ? this->local : this->remote;
             if (this->active != selected) {
                 this->playback->SelectLibrary(selected);
@@ -185,6 +186,7 @@ namespace musik { namespace core { namespace ffi {
             return MC_OK;
         }
 
+    private:
         void PublishSelection(bool selectionChanged) {
             auto status = CaptureLibraryStatus(this->active);
             auto identity = status.state == MC_LIBRARY_CONNECTED ? CaptureLibrary(this->active) : nullptr;

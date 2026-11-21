@@ -98,3 +98,5 @@ Hotkeys now load and save through their public preference scope. The Browse scen
 ## Playback ownership
 
 The managed runtime owns one playback engine directly. The engine opens its own public handles, and one registry tracks both handle validity and playback event subscriptions. Removed the private playback attachment and its duplicate lifetime token. All 47 Linux Release tests passed, including thread ownership, subscription lifecycle, and stale handle checks.
+
+Library selection, remote reconnect, and local indexing now use the context-owned runtime directly. Removed the startup callbacks that attached these services to the context. All 47 Linux Release tests passed, including managed loopback and the four TUI scenarios.
