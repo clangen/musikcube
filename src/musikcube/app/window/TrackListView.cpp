@@ -51,6 +51,7 @@
 
 static constexpr int kTrackPagePollIntervalMs = 2;
 static constexpr int kTrackPageRetryMs = 25;
+static constexpr int kRemoteSkeletonDelayMs = 50;
 
 using namespace musik::core;
 using namespace musik::core::runtime;
@@ -125,7 +126,7 @@ void TrackListView::SubmitTrackRequest() {
         this->trackRequest = this->pendingTrackQuery(this->musikcore,
             this->trackQueryWork.Begin([this](mc_result status, api::TrackResult result, std::string_view) {
                 this->trackRequest = 0;
-                if (status == MC_ERROR_BUSY) {
+                if (status == MC_ERROR_BUSY || status == MC_ERROR_QUEUE_FULL) {
                     this->Debounce(RetryTrackRequestMessage, 0, 0, kTrackPageRetryMs);
                     return;
                 }
@@ -136,7 +137,7 @@ void TrackListView::SubmitTrackRequest() {
             }));
     }
     catch (const api::Error& error) {
-        if (error.Result() == MC_ERROR_BUSY) {
+        if (error.Result() == MC_ERROR_BUSY || error.Result() == MC_ERROR_QUEUE_FULL) {
             this->Debounce(RetryTrackRequestMessage, 0, 0, kTrackPageRetryMs);
         }
         else {
@@ -168,6 +169,8 @@ void TrackListView::SetTrackResult(api::TrackResult result, size_t hash) {
     }
 
     this->UpdatePagePolling(false);
+    this->remoteRows = this->musikcore.GetLibraryStatus().kind == MC_LIBRARY_REMOTE;
+    this->DelayRemoteSkeleton();
     this->resultWindow = std::make_unique<api::TrackResultWindow>(this->musikcore,
         std::move(result), std::vector<std::string>{ MC_TRACK_FIELD_ID, MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST,
             MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_RATING },
@@ -217,9 +220,22 @@ void TrackListView::UpdatePagePolling(bool pending) {
 }
 
 void TrackListView::HandlePageStatus(mc_result status) {
-    if (status == MC_ERROR_BUSY) this->Debounce(LoadTrackPageMessage, 0, 0, kTrackPageRetryMs);
+    if (status == MC_ERROR_BUSY || status == MC_ERROR_QUEUE_FULL) this->Debounce(LoadTrackPageMessage, 0, 0, kTrackPageRetryMs);
     else if (status != MC_OK && status != MC_ERROR_CANCELLED) {
         musik::core::api::WriteLog(MC_LOG_ERROR, "TrackListView", api::Error(status).what());
+    }
+}
+
+void TrackListView::DelayRemoteSkeleton() {
+    if (this->remoteRows) {
+        /* Fetch immediately and leave short remote misses blank. */
+        this->skeletonAfter = std::chrono::steady_clock::now() +
+            std::chrono::milliseconds(kRemoteSkeletonDelayMs);
+        this->Debounce(ShowTrackSkeletonMessage, 0, 0, kRemoteSkeletonDelayMs);
+    }
+    else {
+        this->Remove(ShowTrackSkeletonMessage);
+        this->skeletonAfter = {};
     }
 }
 
@@ -286,12 +302,14 @@ void TrackListView::Reset() {
     this->CancelTrackRequest();
     this->UpdatePagePolling(false);
     this->resultWindow.reset();
+    this->Remove(ShowTrackSkeletonMessage);
     this->headers.Reset();
     this->OnAdapterChanged();
 }
 
 void TrackListView::InvalidateData() {
     if (this->resultWindow) {
+        this->DelayRemoteSkeleton();
         this->resultWindow->Clear();
         this->Post(LoadTrackPageMessage);
     }
@@ -340,6 +358,12 @@ void TrackListView::ScrollToPlaying() {
 }
 
 void TrackListView::ProcessMessage(IMessage &message) {
+    if (message.Type() == ShowTrackSkeletonMessage) {
+        if (this->resultWindow && this->resultWindow->Pending() && this->IsParentVisible()) {
+            this->Redraw();
+        }
+        return;
+    }
     if (message.Type() == LoadTrackPageMessage) {
         this->LoadTrackPage();
     }
@@ -629,6 +653,13 @@ size_t TrackListView::Adapter::GetEntryCount() noexcept {
 }
 
 void TrackListView::Adapter::DrawPage(ScrollableWindow* window, size_t index, ScrollPosition& result) {
+    const int height = parent.GetContentHeight();
+    if (parent.remoteRows && (parent.skeletonScrollIndex != index || parent.skeletonViewportHeight != height)) {
+        parent.skeletonScrollIndex = index;
+        parent.skeletonViewportHeight = height;
+        parent.DelayRemoteSkeleton();
+    }
+
     ScrollAdapterBase::DrawPage(window, index, result);
     if (parent.resultWindow && result.visibleEntryCount) {
         const auto first = result.firstVisibleEntryIndex;
@@ -644,6 +675,7 @@ void TrackListView::Adapter::DrawPage(ScrollableWindow* window, size_t index, Sc
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t rawIndex) {
     const bool selected = (rawIndex == parent.GetSelectedIndex());
+    const bool showSkeleton = !parent.remoteRows || std::chrono::steady_clock::now() >= parent.skeletonAfter;
 
     if (this->parent.headers.HeaderAt(rawIndex)) {
         /* the next track at the next logical index will have the album
@@ -654,6 +686,10 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
             std::string album = track && track->Value(MC_TRACK_FIELD_ID).data()
                 ? std::string(track->Album())
                 : "-";
+
+            if ((!track || !track->Value(MC_TRACK_FIELD_ID).data()) && !showSkeleton) {
+                return std::make_shared<SingleLineEntry>("");
+            }
 
             if (!album.size()) {
                 album = _TSTR("tracklist_unknown_album");
@@ -710,8 +746,10 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         attrs = Color::TextDisabled;
     }
 
-    std::string text = parent.renderer(
-        loaded ? &*track : nullptr, id, rawIndex, this->GetWidth(), parent.trackNumType);
+    std::string text;
+    if (loaded || showSkeleton) {
+        text = parent.renderer(loaded ? &*track : nullptr, id, rawIndex, this->GetWidth(), parent.trackNumType);
+    }
 
     auto entry = std::make_shared<TrackListEntry>(
         text, narrow_cast<int>(trackIndex), RowType::Track);

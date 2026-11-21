@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include <cursespp/curses_config.h>
 #include <cursespp/Colors.h>
 #include <cursespp/ScrollAdapterBase.h>
@@ -60,7 +62,8 @@ namespace musik {
             enum MessageType {
                 ScrollToPlayingMessage = 1003,
                 LoadTrackPageMessage = 1004,
-                RetryTrackRequestMessage = 1005
+                RetryTrackRequestMessage = 1005,
+                ShowTrackSkeletonMessage = 1006
             };
 
             public:
@@ -159,6 +162,7 @@ namespace musik {
                 void ApplyQueryResult(Headers headers, Durations durations, size_t hash, bool hadTracks);
                 size_t RowIndex(size_t adapterIndex);
                 void LoadTrackPage();
+                void DelayRemoteSkeleton();
                 void UpdatePagePolling(bool pending);
                 void HandlePageStatus(mc_result status);
                 void CancelTrackRequest();
@@ -171,6 +175,10 @@ namespace musik {
                 mc_request_id trackRequest = 0;
                 TrackRequest pendingTrackQuery;
                 size_t pendingTrackHash = 0;
+                size_t skeletonScrollIndex = 0;
+                int skeletonViewportHeight = 0;
+                bool remoteRows = false;
+                std::chrono::steady_clock::time_point skeletonAfter {};
                 bool pollingPages = false;
                 AddTrackToPlaylist addTrackToPlaylist;
                 AddCategoryToPlaylist addCategoryToPlaylist;
