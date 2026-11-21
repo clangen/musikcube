@@ -4,6 +4,7 @@ inspect the private factory because its numeric identity is not a public API. */
 #include <musikcore/musikcore.hpp>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/support/Preferences.h>
+#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/audio/Streams.h>
 #include "../../support/check.h"
@@ -35,9 +36,18 @@ namespace {
     /* successful startup must finish restoring preferences before a caller
     changes playback; dispatch must not silently overwrite that new command. */
     bool checkStartup() {
+        const auto settings = Preferences::ForComponent(prefs::components::Settings);
+        const auto remote = static_cast<int>(ILibrary::Type::Remote);
+        settings->SetInt(prefs::keys::LibraryType, remote);
+
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-        options.flags = MC_CONTEXT_MANAGED_RUNTIME;
+        options.flags = MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_START_LOCAL;
         api::Context context(options);
+        if (!TEST_CHECK(context.GetLibraryStatus().kind == MC_LIBRARY_LOCAL) ||
+            !TEST_CHECK(settings->GetInt(prefs::keys::LibraryType, -1) == remote))
+        {
+            return false;
+        }
         auto playback = context.GetPlayback();
         if (!TEST_CHECK(playback.Control(MC_PLAYBACK_SET_VOLUME, 0.375) == MC_OK) ||
             !TEST_CHECK(context.Dispatch() == MC_OK))

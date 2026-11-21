@@ -4,106 +4,95 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdio>
+#include <cerrno>
+#include <filesystem>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <cstdlib>
 #include <csignal>
+#include <ctime>
+#include <stdexcept>
+#include <utility>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <ev++.h>
 
-#include <musikcore/audio/PlaybackService.h>
-#include <musikcore/audio/Player.h>
-#include <musikcore/audio/MasterTransport.h>
-#include <musikcore/debug.h>
-#include <musikcore/library/LibraryFactory.h>
-#include <musikcore/plugin/Plugins.h>
-#include <common/runtime/MessageQueue.h>
-#include <common/runtime/Message.h>
-#include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/Common.h>
-
+#include <musikcore/musikcore.hpp>
 #include "../musikcore/sdk/version.h"
 
-using namespace musik;
-using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::runtime;
+namespace api = musik::core::api;
 
 static const char* DEFAULT_LOCKFILE = "/tmp/musikcubed.lock";
 static const char* LOCKFILE_OVERRIDE = "MUSIKCUBED_LOCKFILE_OVERRIDE";
-static const short EVENT_DISPATCH = 1;
-static const short EVENT_QUIT = 2;
 static const pid_t NOT_RUNNING = (pid_t) -1;
-static int pipeFd[2] = { 0 };
 static bool foreground = false;
 
 static void printHelp();
 static void handleCommandLine(int argc, char** argv);
-static void exitIfRunning();
 static pid_t getDaemonPid();
-static void initForeground();
-static void initDaemon();
 static void stopDaemon();
-static void initUtf8();
-static void run();
 
-class EvMessageQueue: public MessageQueue {
+/* Owns the event loop and its watchers. Neither copyable nor movable. */
+class DaemonLoop {
     public:
-        void Post(IMessagePtr message, int64_t delayMs) {
-            MessageQueue::Post(message, delayMs);
-
-            if (delayMs <= 0) {
-                write(pipeFd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
-            }
-            else {
-                double delayTs = (double) delayMs / 1000.0;
-                loop.once<
-                    EvMessageQueue,
-                    &EvMessageQueue::DelayedDispatch
-                >(-1, ev::TIMER, (ev::tstamp) delayTs, this);
-            }
+        DaemonLoop() {
+            this->wakeup.set<DaemonLoop, &DaemonLoop::Dispatch>(this);
+            this->interrupt.set<DaemonLoop, &DaemonLoop::Quit>(this);
+            this->terminate.set<DaemonLoop, &DaemonLoop::Quit>(this);
+            this->rescan.set<DaemonLoop, &DaemonLoop::Rescan>(this);
+            this->wakeup.start();
+            this->interrupt.start(SIGINT);
+            this->terminate.start(SIGTERM);
+            this->rescan.start(SIGUSR1);
         }
 
-        void DelayedDispatch(int revents) {
-            this->Dispatch();
+        static void MC_CALL Wake(void* data) {
+            static_cast<DaemonLoop*>(data)->wakeup.send();
         }
 
-        static void SignalQuit(ev::sig& signal, int revents) {
-            write(pipeFd[1], &EVENT_QUIT, sizeof(EVENT_QUIT));
-        }
-
-        void ReadCallback(ev::io& watcher, int revents) {
-            short type;
-            if (read(pipeFd[0], &type, sizeof(type)) == 0) {
-                std::cerr << "read() failed.\n";
-                exit(EXIT_FAILURE);
-            }
-            switch (type) {
-                case EVENT_DISPATCH: this->Dispatch(); break;
-                case EVENT_QUIT: loop.break_loop(ev::ALL); break;
-            }
-        }
-
-        void Run() {
-            io.set(loop);
-            io.set(pipeFd[0], ev::READ);
-            io.set<EvMessageQueue, &EvMessageQueue::ReadCallback>(this);
-            io.start();
-
-            sio.set(loop);
-            sio.set<&EvMessageQueue::SignalQuit>();
-            sio.start(SIGTERM);
-
-            write(pipeFd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
-
-            loop.run(0);
+        int Run(api::Context& context) {
+            this->context = &context;
+            this->wakeup.send();
+            this->loop.run();
+            this->context = nullptr;
+            return this->status == MC_OK ? EXIT_SUCCESS : EXIT_FAILURE;
         }
 
     private:
-        ev::dynamic_loop loop;
-        ev::io io;
-        ev::sig sio;
+        void Dispatch(ev::async&, int) {
+            this->status = this->context->Dispatch();
+            if (this->status != MC_OK) {
+                this->loop.break_loop(ev::ALL);
+            }
+        }
+
+        void Quit(ev::sig&, int) { this->loop.break_loop(ev::ALL); }
+
+        void Rescan(ev::sig&, int) {
+            const auto status = api::Indexer(*this->context).Schedule(MC_INDEXER_SCAN_ALL);
+            if (status == MC_OK) {
+                api::WriteLog(MC_LOG_INFO, "daemon", "received SIGUSR1, rescanning the library");
+            }
+            else {
+                api::WriteLog(MC_LOG_ERROR, "daemon", "could not schedule a library rescan");
+            }
+        }
+
+        ev::default_loop loop;
+        ev::async wakeup { this->loop };
+        ev::sig interrupt { this->loop };
+        ev::sig terminate { this->loop };
+        ev::sig rescan { this->loop };
+        api::Context* context {};
+        mc_result status { MC_OK };
 };
+
+static void MC_CALL logToConsole(void*, mc_log_level, mc_string_view tag, mc_string_view text) {
+    std::cerr << api::AsStringView(tag) << ": " << api::AsStringView(text) << '\n';
+}
 
 static void printHelp() {
     std::cout << "\n  musikcubed:\n";
@@ -151,7 +140,7 @@ static void handleCommandLine(int argc, char** argv) {
 static std::string getLockfileFn() {
     std::string result = DEFAULT_LOCKFILE;
     const char* userLock = std::getenv(LOCKFILE_OVERRIDE);
-    if (userLock && strlen(userLock)) {
+    if (userLock && *userLock) {
         result = userLock;
     }
     return result;
@@ -168,7 +157,7 @@ static void stopDaemon() {
         int count = 0;
         bool dead = false;
         while (!dead && count++ < 7) { /* try for 7 seconds */
-            if (kill(pid, 0) == 0) {
+            if (getDaemonPid() == pid) {
                 std::cout << ".";
                 std::cout.flush();
                 usleep(500000);
@@ -185,125 +174,196 @@ static void stopDaemon() {
 }
 
 static pid_t getDaemonPid() {
-    std::ifstream lock(getLockfileFn());
+    const auto path = getLockfileFn();
+    const auto guard = path + ".guard";
+    const int fd = open(guard.c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+    if (fd == -1) {
+        return NOT_RUNNING;
+    }
+
+    const bool owned = flock(fd, LOCK_SH | LOCK_NB) == -1 && errno == EWOULDBLOCK;
+    close(fd);
+    if (!owned) {
+        return NOT_RUNNING;
+    }
+
+    std::ifstream lock(path);
     if (lock.good()) {
-        int pid;
-        lock >> pid;
-        if (kill((pid_t) pid, 0) == 0) {
+        pid_t pid {};
+        if ((lock >> pid) && pid > 0 && kill(pid, 0) == 0) {
             return pid;
         }
     }
     return NOT_RUNNING;
 }
 
-static void exitIfRunning() {
-    if (getDaemonPid() != NOT_RUNNING) {
-        std::cerr << "\n musikcubed is already running!\n\n";
-        exit(EXIT_SUCCESS);
+/* Owns the daemon guard. Neither copyable nor movable.
+   The guard inode stays in place so every starter locks the same file.
+   The PID file is published separately once the runtime can accept work. */
+class DaemonLock {
+    public:
+        explicit DaemonLock(std::string path) : path(std::move(path)) {
+            const auto guard = this->path + ".guard";
+            this->fd = open(guard.c_str(), O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, 0600);
+            if (this->fd == -1) {
+                throw std::runtime_error("could not open daemon ownership lock");
+            }
+
+            if (flock(this->fd, LOCK_EX | LOCK_NB) == -1) {
+                const auto error = errno;
+                close(this->fd);
+                this->fd = -1;
+                if (error != EWOULDBLOCK) {
+                    throw std::runtime_error("could not acquire daemon ownership lock");
+                }
+            }
+        else if (unlink(this->path.c_str()) == -1 && errno != ENOENT) {
+            close(this->fd);
+            throw std::runtime_error("could not clear stale daemon PID file");
+        }
+        }
+
+        ~DaemonLock() {
+            if (this->fd != -1) {
+                if (this->published) {
+                    unlink(this->path.c_str());
+                }
+                close(this->fd);
+            }
+        }
+
+        DaemonLock(const DaemonLock&) = delete;
+        DaemonLock& operator=(const DaemonLock&) = delete;
+
+        bool Acquired() const { return this->fd != -1; }
+
+        void Publish() {
+            const auto staging = this->path + ".pid";
+            const int output = open(staging.c_str(),
+                O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC | O_NOFOLLOW, 0600);
+            if (output == -1) {
+                throw std::runtime_error("could not open daemon PID file");
+            }
+
+            const auto pid = std::to_string(getpid());
+            const auto count = write(output, pid.data(), pid.size());
+            close(output);
+            if (count != static_cast<ssize_t>(pid.size()) ||
+                rename(staging.c_str(), this->path.c_str()) == -1)
+            {
+                unlink(staging.c_str());
+                throw std::runtime_error("could not publish daemon PID file");
+            }
+            this->published = true;
+        }
+
+    private:
+        const std::string path;
+        int fd { -1 };
+        bool published {};
+};
+
+/* The parent waits for a readiness byte. Any startup failure closes the pipe. */
+static int initDaemon() {
+    int startup[2];
+    if (pipe(startup) == -1) {
+        throw std::runtime_error("could not create daemon startup pipe");
     }
-    std::cerr << "\n  musikcubed is starting...\n\n";
-}
-
-static void initDaemon() {
-    pid_t pid = fork();
-
-    if (pid < 0) {
-        exit(EXIT_FAILURE);
+    const pid_t pid = fork();
+    if (pid == -1) {
+        close(startup[0]);
+        close(startup[1]);
+        throw std::runtime_error("could not fork daemon");
     }
 
     if (pid > 0) {
+        close(startup[1]);
+        char ready;
+        ssize_t count;
+        do {
+            count = read(startup[0], &ready, sizeof(ready));
+        } while (count == -1 && errno == EINTR);
+        close(startup[0]);
+        if (count != sizeof(ready)) {
+            std::cerr << "musikcubed failed to start\n";
+            exit(EXIT_FAILURE);
+        }
         exit(EXIT_SUCCESS);
     }
 
+    close(startup[0]);
     umask(0);
-
-    pid_t sid = setsid();
-    if (sid < 0) {
-        exit(EXIT_SUCCESS);
-    }
-
-    if (chdir("/") < 0) {
+    const int device = open("/dev/null", O_RDWR);
+    if (setsid() == -1 || chdir("/") == -1 || device == -1 ||
+        dup2(device, STDIN_FILENO) == -1 || dup2(device, STDOUT_FILENO) == -1 ||
+        dup2(device, STDERR_FILENO) == -1)
+    {
+        close(startup[1]);
         exit(EXIT_FAILURE);
     }
-
-    if (pipe(pipeFd) != 0) {
-        std::cerr << "\n  ERROR! couldn't create pipe\n\n";
-        exit(EXIT_FAILURE);
+    if (device > STDERR_FILENO) {
+        close(device);
     }
-
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    freopen("/tmp/musikcube.log", "w", stderr);
-
-    std::ofstream lock(getLockfileFn());
-    if (lock.good()) {
-        lock << std::to_string((int) getpid());
-    }
-
-    debug::Start({
-        new debug::SimpleFileBackend()
-    });
-}
-
-static void initForeground() {
-    if (pipe(pipeFd) != 0) {
-        std::cerr << "\n  ERROR! couldn't create pipe\n\n";
-        exit(EXIT_FAILURE);
-    }
-
-    std::ofstream lock(getLockfileFn());
-    if (lock.good()) {
-        lock << std::to_string((int) getpid());
-    }
-
-    debug::Start({
-        new debug::ConsoleBackend(),
-        new debug::SimpleFileBackend()
-    });
-}
-
-static void rescanHandler(int signal) {
-    debug::info("daemon", "received SIGUSR1, rescanning the library...");
-    auto library = LibraryFactory::Instance().DefaultLocalLibrary();
-    library->Indexer()->Schedule(IIndexer::SyncType::All);
+    return startup[1];
 }
 
 int main(int argc, char** argv) {
     std::cout << "\n  using lockfile at: " << getLockfileFn();
     handleCommandLine(argc, argv);
-    exitIfRunning();
 
-    ::foreground ? initForeground() : initDaemon();
-
-    srand((unsigned int) time(0));
-
-    std::signal(SIGUSR1, rescanHandler);
-
-    plugin::Init();
-
-    EvMessageQueue messageQueue;
-    LibraryFactory::Initialize(messageQueue);
-    auto library = LibraryFactory::Instance().DefaultLocalLibrary();
-
-    {
-        PlaybackService playback(messageQueue, library);
-
-        plugin::Start(&messageQueue, &playback, library);
-
-        auto prefs = Preferences::ForComponent(prefs::components::Settings);
-        if (prefs->GetBool(prefs::keys::SyncOnStartup, true)) {
-            library->Indexer()->Schedule(IIndexer::SyncType::All);
+    int result = EXIT_FAILURE;
+    int startup = -1;
+    try {
+        DaemonLock lock(std::filesystem::absolute(getLockfileFn()).string());
+        if (!lock.Acquired()) {
+            std::cerr << "\n  musikcubed is already starting or running\n";
+            return foreground || getDaemonPid() != NOT_RUNNING ? EXIT_SUCCESS : EXIT_FAILURE;
         }
 
-        messageQueue.Run();
+        /* Keep ownership across fork while the parent waits for readiness. */
+        if (!foreground) {
+            startup = initDaemon();
+        }
+        std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-        library->Indexer()->Shutdown();
+        DaemonLoop loop;
+        mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+        options.flags = MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING | MC_CONTEXT_START_LOCAL;
+        options.wakeup = DaemonLoop::Wake;
+        options.wakeup_user_data = &loop;
+        options.log = foreground ? logToConsole : nullptr;
+        api::Context context(options);
+
+        const api::Preferences prefs { MC_PREFERENCE_SETTINGS };
+        if (prefs.GetBool(MC_PREFERENCE_KEY_SYNC_ON_STARTUP, true)) {
+            api::Indexer(context).Schedule(MC_INDEXER_SCAN_ALL);
+        }
+
+        lock.Publish();
+        if (foreground) {
+            std::cout << "musikcubed ready" << std::endl;
+        }
+        else {
+            const char ready = 1;
+            const auto count = write(startup, &ready, sizeof(ready));
+            close(startup);
+            startup = -1;
+            if (count != sizeof(ready)) {
+                throw std::runtime_error("could not notify daemon starter");
+            }
+        }
+
+        result = loop.Run(context);
+        if (context.Close() != MC_OK) {
+            result = EXIT_FAILURE;
+        }
+    }
+    catch (const std::exception& error) {
+        std::cerr << "musikcubed: " << error.what() << '\n';
     }
 
-    Player::WaitForWorkers();
-    LibraryFactory::Instance().Shutdown();
-    plugin::Shutdown();
-    debug::Shutdown();
-
-    remove(getLockfileFn().c_str());
+    if (startup != -1) {
+        close(startup);
+    }
+    return result;
 }

@@ -18,4 +18,4 @@ else()
   find_library(EVLIB NAMES ev)
 endif()
 
-target_link_libraries(musikcubed ${musikcube_LINK_LIBS} ${EVLIB} musikcore)
+target_link_libraries(musikcubed PRIVATE musikcore ${EVLIB})

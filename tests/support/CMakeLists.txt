@@ -303,3 +303,13 @@ foreach(case IN ITEMS failure caches)
   set_tests_properties(musikcore.integration.runtime.${case} PROPERTIES
     LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
 endforeach()
+
+if(UNIX AND TARGET musikcubed)
+  add_dependencies(musikcube_tests musikcubed)
+  add_dependencies(musikcube_integration_tests musikcubed)
+  add_test(NAME musikcubed.integration.lifecycle COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/check-daemon.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcubed>")
+  set_tests_properties(musikcubed.integration.lifecycle PROPERTIES
+    LABELS "integration;musikcubed;runtime;contract" TIMEOUT 20)
+endif()

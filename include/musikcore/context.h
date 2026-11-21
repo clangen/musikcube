@@ -67,7 +67,9 @@ enum {
 
 enum {
     MC_CONTEXT_MANAGED_RUNTIME = 1,
-    MC_CONTEXT_ENABLE_LOGGING = 2
+    MC_CONTEXT_ENABLE_LOGGING = 2,
+    /* Start with the local catalog without writing the saved selection. */
+    MC_CONTEXT_START_LOCAL = 4
 };
 
 typedef struct mc_context_options {
@@ -79,8 +81,8 @@ typedef struct mc_context_options {
        Set before plugin discovery. The directory is fixed for the process. */
     mc_string_view plugin_directory;
     /* MC_CONTEXT_MANAGED_RUNTIME starts playback, plugins, and the configured
-       library in a production build. Zero creates a request dispatcher. */
-    /* MC_CONTEXT_ENABLE_LOGGING enables diagnostics in the managed runtime. */
+       library in a production build. Zero creates a request dispatcher.
+       MC_CONTEXT_ENABLE_LOGGING and MC_CONTEXT_START_LOCAL require managed runtime. */
     uint32_t flags;
     /* Optional hook that signals the host loop. May run on a worker thread. */
     mc_wakeup_fn wakeup;

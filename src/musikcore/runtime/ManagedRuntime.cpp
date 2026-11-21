@@ -132,13 +132,13 @@ namespace musik { namespace core { namespace ffi {
         }
 
         void Start(mc_context& context, const std::string& pluginDirectory,
-            bool logging, mc_log_fn log, void* logData) override
+            uint32_t flags, mc_log_fn log, void* logData) override
         {
             PluginFactory::Instance(pluginDirectory);
             this->context = &context;
             this->notifications = std::make_shared<CoreNotifications>(context, log, logData);
             this->queue->RegisterForBroadcasts(this->notifications);
-            if (logging) {
+            if (flags & MC_CONTEXT_ENABLE_LOGGING) {
                 this->StartLogging(log != nullptr);
             }
 
@@ -153,7 +153,9 @@ namespace musik { namespace core { namespace ffi {
 
             const auto prefs = Preferences::ForComponent(prefs::components::Settings);
             const auto catalog = prefs->GetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
-            this->active = catalog == static_cast<int>(ILibrary::Type::Remote) ? ILibraryPtr(this->remote) : this->local;
+            const bool selectRemote = !(flags & MC_CONTEXT_START_LOCAL) &&
+                catalog == static_cast<int>(ILibrary::Type::Remote);
+            this->active = selectRemote ? ILibraryPtr(this->remote) : this->local;
 
             this->playback = std::make_unique<audio::PlaybackService>(*this->queue, this->active);
 

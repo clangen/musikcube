@@ -1340,7 +1340,10 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
   `node tests/ui/scenarios/track-search.js` starts the app in a PTY and quits through
   its normal key binding.
 - [ ] **SYS-002** Cover valid, unset, and unparseable `TERM` behavior.
-- [ ] **SYS-003** Add musikcubed startup/readiness/shutdown smoke test.
+- [x] **SYS-003** Add musikcubed startup/readiness/shutdown smoke test.
+  `musikcubed.integration.lifecycle` covers concurrent starts, foreground
+  scan completion, background readiness and startup failure, and shutdown.
+  Native macOS verification is pending.
 - [ ] **PKG-001** Install headers, shared library, import library, and package
   metadata into a temporary prefix. The Unix install supplies public headers
   and the relocatable `musikcore::musikcore` CMake target. Windows is deferred.

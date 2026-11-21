@@ -730,12 +730,15 @@ mc_result MC_CALL mc_context_create(
         }
 
         const auto flags = read_option(options, &mc_context_options::flags, offsetof(mc_context_options, flags));
-        if (flags & ~(MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING)) {
+        if (flags & ~(MC_CONTEXT_MANAGED_RUNTIME | MC_CONTEXT_ENABLE_LOGGING | MC_CONTEXT_START_LOCAL)) {
             return fail(MC_ERROR_UNSUPPORTED, "Unsupported context flags", out_error);
         }
 
         if ((flags & MC_CONTEXT_ENABLE_LOGGING) && !(flags & MC_CONTEXT_MANAGED_RUNTIME)) {
             return fail(MC_ERROR_UNSUPPORTED, "Logging requires a managed runtime", out_error);
+        }
+        if ((flags & MC_CONTEXT_START_LOCAL) && !(flags & MC_CONTEXT_MANAGED_RUNTIME)) {
+            return fail(MC_ERROR_UNSUPPORTED, "Local startup requires a managed runtime", out_error);
         }
 
         /* Check that the optional plugin directory can be copied. */
@@ -783,7 +786,7 @@ mc_result MC_CALL mc_context_create(
                 const auto log = read_option(options, &mc_context_options::log, offsetof(mc_context_options, log));
                 const auto logData = read_option(options, &mc_context_options::log_user_data,
                     offsetof(mc_context_options, log_user_data));
-                context->runtime->Start(*context, context->plugin_directory, (flags & MC_CONTEXT_ENABLE_LOGGING) != 0, log, logData);
+                context->runtime->Start(*context, context->plugin_directory, flags, log, logData);
             }
             catch (const std::system_error& error) {
                 auto* failed = context.release();
