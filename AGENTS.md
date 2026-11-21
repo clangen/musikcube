@@ -7,6 +7,7 @@
 - Keep blocking I/O, allocations, and locks off real-time audio callbacks.
 - Treat application and plugin interfaces as contracts. Make compatibility changes deliberate and document their impact.
 - Define new public interfaces in C. Use C++ internally and generally keep C++ types and symbols out of exported interfaces.
+- Surface problems with existing SDK APIs to the maintainer immediately, with the proposed contract change and compatibility impact. Do not add workarounds, adapters, or legacy compatibility by default; let the maintainer audit and decide those tradeoffs. During explicitly autonomous work, resolve necessary SDK issues within the authorized scope, then report every such decision at completion and wait for maintainer acknowledgment before proceeding beyond that work.
 
 ## Formatting
 
