@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/paths.hpp>
 #include "HotkeysLayout.h"
 #include <musikcore/sdk/String.h>
 #include <cursespp/App.h>
@@ -118,7 +119,7 @@ static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, Callbac
 }
 
 static void backupAndShowDialog() {
-    std::string dir = NormalizeDir(GetDataDirectory());
+    std::string dir = NormalizeDir(musik::core::api::ReadPath(MC_PATH_DATA));
     std::string in = dir + "hotkeys.json";
     std::string out = dir + "hotkeys-" + formattedTime() + ".json";
 

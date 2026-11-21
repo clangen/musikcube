@@ -40,7 +40,6 @@
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Duration.h>
 #include <app/util/Rating.h>
 #include <app/util/PreferenceKeys.h>

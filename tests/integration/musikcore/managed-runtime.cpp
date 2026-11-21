@@ -1,6 +1,7 @@
 #include <musikcore/musikcore.hpp>
 
 #include <algorithm>
+#include <filesystem>
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
@@ -241,6 +242,15 @@ namespace {
 }
 
 int main(int argc, char** argv) {
+    if (!std::filesystem::is_directory(std::filesystem::u8path(ReadPath(MC_PATH_APPLICATION))) ||
+        !std::filesystem::is_directory(std::filesystem::u8path(ReadPath(MC_PATH_DATA))) ||
+        mc_path_read(MC_PATH_HOME, nullptr, nullptr) != MC_ERROR_INVALID_ARGUMENT ||
+        !ReadPath(UINT32_MAX).empty())
+    {
+        std::fprintf(stderr, "public path contract failed\n");
+        return 1;
+    }
+
     if (!checkPreferences()) {
         std::fputs("Preference values did not round trip atomically through the public API\n", stderr);
         return 1;

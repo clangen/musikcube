@@ -36,6 +36,8 @@
 #include "musikcore/sdk/Filesystem.h"
 #include <musikcore/support/Common.h>
 #include <musikcore/config.h>
+#include <musikcore/paths.h>
+#include <musikcore/ffi/common/error.h>
 
 #include <cstdlib>
 #include <iostream>
@@ -179,7 +181,8 @@ namespace musik { namespace core {
         directory.assign(u16to8(buffer));
         delete[] buffer;
     #else
-        directory = std::string(std::getenv("HOME"));
+        const char* home = std::getenv("HOME");
+        directory = home ? home : "";
     #endif
 
         return directory;
@@ -200,7 +203,11 @@ namespace musik { namespace core {
             directory = std::string(result);
         }
         else {
-            directory = std::string(std::getenv("HOME")) + std::string("/.config/");
+            directory = GetHomeDirectory();
+            if (directory.empty()) {
+                return {};
+            }
+            directory += "/.config/";
         }
     #endif
 
@@ -353,3 +360,30 @@ namespace musik { namespace core {
     }
 
 } }
+
+mc_result MC_CALL mc_path_read(mc_path_kind kind, mc_path_fn read, void* userData) {
+    if (!read || kind > MC_PATH_DATA) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    return musik::core::ffi::exception_barrier(nullptr, [&] {
+        std::string path;
+        switch (kind) {
+            case MC_PATH_APPLICATION:
+                path = musik::core::GetApplicationDirectory();
+                break;
+            case MC_PATH_HOME:
+                path = musik::core::GetHomeDirectory();
+                break;
+            case MC_PATH_DATA:
+                path = musik::core::GetDataDirectory();
+                break;
+        }
+
+        if (path.empty()) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        read(userData, { path.data(), path.size() });
+        return MC_OK;
+    });
+}

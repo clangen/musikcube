@@ -143,7 +143,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/support/Messages.h>
 #include <musikcore/support/NarrowCast.h>
 #include <musikcore/support/Playback.h>
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/utfutil.h>
 #include <musikcore/sdk/version.h>
 

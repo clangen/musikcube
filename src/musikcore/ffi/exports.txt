@@ -107,3 +107,4 @@ mc_plugin_set_enabled
 mc_plugin_read_settings
 mc_plugin_write_setting
 mc_preferences_list_keys
+mc_path_read

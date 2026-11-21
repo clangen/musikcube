@@ -15,6 +15,33 @@ enum {
     MC_PREFERENCE_HOTKEYS
 };
 
+/* Persisted settings shared by the core and its consumers. */
+#define MC_PREFERENCE_KEY_ASYNC_TRACK_LIST_QUERIES "AsyncTrackListQueries"
+#define MC_PREFERENCE_KEY_AUDDIO_API_TOKEN "AuddioApiToken"
+#define MC_PREFERENCE_KEY_INDEXER_LOG_ENABLED "IndexerLogEnabled"
+#define MC_PREFERENCE_KEY_INDEXER_THREAD_COUNT "IndexerThreadCount"
+#define MC_PREFERENCE_KEY_INDEXER_TRANSACTION_INTERVAL "IndexerTransactionInterval"
+#define MC_PREFERENCE_KEY_PIGGY_ENABLED "PiggyEnabled"
+#define MC_PREFERENCE_KEY_PIGGY_HOSTNAME "PiggyHostname"
+#define MC_PREFERENCE_KEY_PLAYBACK_TRACK_QUERY_TIMEOUT_MS "PlaybackTrackQueryTimeoutMs"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_HOSTNAME "RemoteLibraryHostname"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_PORT "RemoteLibraryHttpPort"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS "RemoteLibraryHttpTls"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_IGNORE_VERSION_MISMATCH "RemoteLibraryIgnoreVersionMismatch"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_LATENCY_TIMEOUT_MS "RemoteLibraryLatencyTimeoutMs"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD "RemoteLibraryPassword"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_TLS_WARNING_SUPPRESSED "RemoteLibraryTlsWarningSuppressed"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE "RemoteLibraryTranscoderBitrate"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED "RemoteLibraryTranscoderEnabled"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT "RemoteLibraryTranscoderFormat"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_VIEWED "RemoteLibraryViewed"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT "RemoteLibraryWssPort"
+#define MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_TLS "RemoteLibraryWssTls"
+#define MC_PREFERENCE_KEY_REMOVE_MISSING_FILES "RemoveMissingFiles"
+#define MC_PREFERENCE_KEY_RESUME_PLAYBACK_ON_STARTUP "ResumePlaybackOnStartup"
+#define MC_PREFERENCE_KEY_SAVE_SESSION_ON_EXIT "SaveSessionOnExit"
+#define MC_PREFERENCE_KEY_SYNC_ON_STARTUP "SyncOnStartup"
+
 typedef uint32_t mc_preference_type;
 enum {
     MC_PREFERENCE_BOOLEAN,

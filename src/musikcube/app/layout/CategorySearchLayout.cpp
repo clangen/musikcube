@@ -42,7 +42,6 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 
-#include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Messages.h>
 #include <app/util/Hotkeys.h>

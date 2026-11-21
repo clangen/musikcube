@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/paths.hpp>
 
 #include <musikcore/preferences.hpp>
 
@@ -55,7 +56,6 @@
 #include <musikcore/debug.h>
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/indexer.hpp>
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/net/PiggyWebSocketClient.h>
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     srand((unsigned int) time(0));
 
     /* ensure we have the correct locale loaded */
-    core::i18n::Locale::Instance().Initialize(core::GetApplicationDirectory() + "/locales/");
+    core::i18n::Locale::Instance().Initialize(api::ReadPath(MC_PATH_APPLICATION) + "/locales/");
 
 #ifdef WIN32
     AddDllDirectory(u8to16(core::GetPluginDirectory()).c_str());
@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
     #endif
 #endif
 
-    std::string errorFn = core::GetDataDirectory() + "stderr.txt";
+    std::string errorFn = api::ReadPath(MC_PATH_DATA) + "stderr.txt";
 #ifdef WIN32
     _wfreopen(u8to16(errorFn).c_str(), L"w", stderr);
 #else
@@ -118,9 +118,9 @@ int main(int argc, char* argv[]) {
         new debug::SimpleFileBackend(), consoleLogger
     };
 
-    if (prefs.GetBool(core::prefs::keys::PiggyEnabled, false)) {
+    if (prefs.GetBool(MC_PREFERENCE_KEY_PIGGY_ENABLED, false)) {
         auto piggyClient = PiggyWebSocketClient::Instance(&Window::MessageQueue());
-        piggyClient->Connect(prefs.GetString(core::prefs::keys::PiggyHostname, "localhost"));
+        piggyClient->Connect(prefs.GetString(MC_PREFERENCE_KEY_PIGGY_HOSTNAME, "localhost"));
         debuggerBackends.push_back(new PiggyDebugBackend(piggyClient));
     }
 
@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
     /* when we build a standalone binary we make sure to also package the terminfo used
     by the version of ncurses we compile against. if the target system has ncurses5, the
     terminfo format will not be compatible and the app will not run */
-    const std::string terminfo = core::GetApplicationDirectory() + "/share/terminfo/";
+    const std::string terminfo = api::ReadPath(MC_PATH_APPLICATION) + "/share/terminfo/";
     setenv("TERMINFO", terminfo.c_str(), 1);
 #endif
 
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
         Window::SetNavigationKeys(Hotkeys::NavigationKeys());
 
 #ifdef WIN32
-        auto font = GetApplicationDirectory() + "fonts/SourceCodePro-Medium.ttf";
+        auto font = api::ReadPath(MC_PATH_APPLICATION) + "fonts/SourceCodePro-Medium.ttf";
         if (App::RegisterFont(font)) {
             App::SetDefaultFontface("Source Code Pro Medium");
             App::SetDefaultMenuVisibility(false);
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
         app.SetQuitKey(prefs.GetString(keys::AppQuitKey, "^D"));
 
         /* fire up the indexer if configured to run on startup */
-        if (prefs.GetBool(core::prefs::keys::SyncOnStartup, true) &&
+        if (prefs.GetBool(MC_PREFERENCE_KEY_SYNC_ON_STARTUP, true) &&
             musikcore.GetLibraryStatus().kind == MC_LIBRARY_LOCAL)
         {
             api::Indexer(musikcore).Schedule(MC_INDEXER_SCAN_ALL);

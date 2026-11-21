@@ -44,7 +44,6 @@
 
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Messages.h>
-#include <musikcore/support/PreferenceKeys.h>
 
 #include <app/overlay/BrowseOverlays.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -115,7 +114,7 @@ void LibraryLayout::OnVisibilityChanged(bool visible) {
 
     const auto status = this->musikcore.GetLibraryStatus();
     if (visible && status.kind == MC_LIBRARY_REMOTE && status.state == MC_LIBRARY_CONNECTED) {
-        prefs.SetBool(core::prefs::keys::RemoteLibraryViewed, true);
+        prefs.SetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_VIEWED, true);
     }
 }
 
@@ -233,7 +232,7 @@ void LibraryLayout::InitializeWindows(musik::core::api::Context& musikcore) {
 }
 
 void LibraryLayout::LoadLastSession() {
-    if (this->prefs.GetBool(musik::core::prefs::keys::SaveSessionOnExit, true)) {
+    if (this->prefs.GetBool(MC_PREFERENCE_KEY_SAVE_SESSION_ON_EXIT, true)) {
         auto session = api::Preferences { MC_PREFERENCE_SESSION };
         const std::string type = session.GetString(keys::LastLibraryView, type::Browse);
         if (type == type::Directory) {

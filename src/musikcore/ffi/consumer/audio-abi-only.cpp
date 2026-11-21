@@ -3,6 +3,7 @@
 #include <musikcore/playback.h>
 #include <musikcore/visualizer.h>
 #include <musikcore/plugins.h>
+#include <musikcore/paths.h>
 #include "../common/error.h"
 
 #include <cmath>
@@ -141,4 +142,8 @@ mc_result MC_CALL mc_equalizer_set_gains(const double* gains, size_t count) {
         }
     }
     return MC_ERROR_UNSUPPORTED;
+}
+
+mc_result MC_CALL mc_path_read(mc_path_kind kind, mc_path_fn read, void*) {
+    return read && kind <= MC_PATH_DATA ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }

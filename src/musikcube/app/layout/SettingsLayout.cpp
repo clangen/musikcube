@@ -43,7 +43,6 @@
 #include <cursespp/SchemaOverlay.h>
 #include <cursespp/AppLayout.h>
 
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/output.hpp>
 #include <musikcore/support/Messages.h>
 #include <musikcore/sdk/version.h>
@@ -123,21 +122,21 @@ static std::vector<api::PreferenceField> advancedSettings(const api::Preferences
     addBool(cube::prefs::keys::StartMinimized, false);
 #endif
     addBool(cube::prefs::keys::AutoHideCommandBar, false);
-    addInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
-    addBool(core::prefs::keys::RemoteLibraryIgnoreVersionMismatch, false);
-    addInt(core::prefs::keys::PlaybackTrackQueryTimeoutMs, 5000);
-    addBool(core::prefs::keys::AsyncTrackListQueries, true);
+    addInt(MC_PREFERENCE_KEY_REMOTE_LIBRARY_LATENCY_TIMEOUT_MS, 5000);
+    addBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_IGNORE_VERSION_MISMATCH, false);
+    addInt(MC_PREFERENCE_KEY_PLAYBACK_TRACK_QUERY_TIMEOUT_MS, 5000);
+    addBool(MC_PREFERENCE_KEY_ASYNC_TRACK_LIST_QUERIES, true);
     addBool(cube::prefs::keys::DisableRatingColumn, false);
     addBool(cube::prefs::keys::DisableWindowTitleUpdates, cube::prefs::defaults::DisableWindowTitleUpdates);
     addText(cube::prefs::keys::RatingPositiveChar, kFilledStar);
     addText(cube::prefs::keys::RatingNegativeChar, kEmptyStar);
-    addBool(core::prefs::keys::IndexerLogEnabled, false);
-    addInt(core::prefs::keys::IndexerThreadCount, DEFAULT_MAX_INDEXER_THREADS);
-    addInt(core::prefs::keys::IndexerTransactionInterval, 300);
-    addText(core::prefs::keys::AuddioApiToken, "");
-    addBool(core::prefs::keys::ResumePlaybackOnStartup, false);
-    addBool(core::prefs::keys::PiggyEnabled, false);
-    addText(core::prefs::keys::PiggyHostname, "localhost");
+    addBool(MC_PREFERENCE_KEY_INDEXER_LOG_ENABLED, false);
+    addInt(MC_PREFERENCE_KEY_INDEXER_THREAD_COUNT, DEFAULT_MAX_INDEXER_THREADS);
+    addInt(MC_PREFERENCE_KEY_INDEXER_TRANSACTION_INTERVAL, 300);
+    addText(MC_PREFERENCE_KEY_AUDDIO_API_TOKEN, "");
+    addBool(MC_PREFERENCE_KEY_RESUME_PLAYBACK_ON_STARTUP, false);
+    addBool(MC_PREFERENCE_KEY_PIGGY_ENABLED, false);
+    addText(MC_PREFERENCE_KEY_PIGGY_HOSTNAME, "localhost");
     return fields;
 }
 
@@ -164,11 +163,11 @@ SettingsLayout::~SettingsLayout() {
 
 void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     if (cb == syncOnStartupCheckbox.get()) {
-        this->prefs.SetBool(core::prefs::keys::SyncOnStartup, checked);
+        this->prefs.SetBool(MC_PREFERENCE_KEY_SYNC_ON_STARTUP, checked);
         this->prefs.Save();
     }
     else if (cb == removeCheckbox.get()) {
-        this->prefs.SetBool(core::prefs::keys::RemoveMissingFiles, checked);
+        this->prefs.SetBool(MC_PREFERENCE_KEY_REMOVE_MISSING_FILES, checked);
         this->prefs.Save();
     }
     else if (cb == dotfileCheckbox.get()) {
@@ -189,7 +188,7 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     }
 #endif
     else if (cb == saveSessionCheckbox.get()) {
-        this->prefs.SetBool(core::prefs::keys::SaveSessionOnExit, checked);
+        this->prefs.SetBool(MC_PREFERENCE_KEY_SAVE_SESSION_ON_EXIT, checked);
     }
 }
 
@@ -558,8 +557,8 @@ void SettingsLayout::OnRemovedFromParent(IWindow* parent) {
 }
 
 void SettingsLayout::LoadPreferences() {
-    this->syncOnStartupCheckbox->SetChecked(this->prefs.GetBool(core::prefs::keys::SyncOnStartup, true));
-    this->removeCheckbox->SetChecked(this->prefs.GetBool(core::prefs::keys::RemoveMissingFiles, true));
+    this->syncOnStartupCheckbox->SetChecked(this->prefs.GetBool(MC_PREFERENCE_KEY_SYNC_ON_STARTUP, true));
+    this->removeCheckbox->SetChecked(this->prefs.GetBool(MC_PREFERENCE_KEY_REMOVE_MISSING_FILES, true));
 
     /* locale */
     this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + i18n::Locale::Instance().GetSelectedLocale());
@@ -588,7 +587,7 @@ void SettingsLayout::LoadPreferences() {
     this->enableTransparencyCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 #endif
 
-    this->saveSessionCheckbox->SetChecked(this->prefs.GetBool(core::prefs::keys::SaveSessionOnExit, true));
+    this->saveSessionCheckbox->SetChecked(this->prefs.GetBool(MC_PREFERENCE_KEY_SAVE_SESSION_ON_EXIT, true));
 
     /* output driver */
     const auto output = api::ReadOutputConfiguration();

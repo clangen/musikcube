@@ -39,7 +39,6 @@
 #include <app/util/AsyncCallbackScope.h>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/runtime/IMessage.h>
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/playback.hpp>
 
 namespace musik {

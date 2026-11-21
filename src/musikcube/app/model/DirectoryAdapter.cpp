@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/paths.hpp>
 #include <musikcore/sdk/Filesystem.h>
 
 #include <musikcore/support/Common.h>
@@ -153,7 +154,7 @@ static fs::path stringToPath(const std::string& path) {
 DirectoryAdapter::DirectoryAdapter() {
     this->showDotfiles = false;
     this->showRootDirectory = false;
-    this->dir = fs::path(fs::u8path(musik::core::GetHomeDirectory()));
+    this->dir = fs::path(fs::u8path(musik::core::api::ReadPath(MC_PATH_HOME)));
     this->rootDir = kDefaultRoot;
     buildDirectoryList(dir, subdirs, showDotfiles);
 }
@@ -225,7 +226,7 @@ void DirectoryAdapter::SetRootDirectory(const std::string& directory) {
         dir = rootDir = stringToPath(directory);
     }
     else {
-        dir = musik::core::GetHomeDirectory();
+        dir = musik::core::api::ReadPath(MC_PATH_HOME);
         rootDir = kDefaultRoot;
     }
     buildDirectoryList(dir, subdirs, showDotfiles);

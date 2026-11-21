@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <musikcore/paths.hpp>
 #include <musikcore/sdk/Filesystem.h>
 #include <nlohmann/json.hpp>
 #include <cursespp/Colors.h>
@@ -596,8 +597,8 @@ static void indexThemes() {
     if (!::themes.size()) {
         ::themes.push_back(Theme()); /* default */
 
-        indexThemes(GetApplicationDirectory() + "/themes/");
-        indexThemes(GetDataDirectory() + "/themes/");
+        indexThemes(musik::core::api::ReadPath(MC_PATH_APPLICATION) + "/themes/");
+        indexThemes(musik::core::api::ReadPath(MC_PATH_DATA) + "/themes/");
 
         std::sort(
             ::themes.begin(),

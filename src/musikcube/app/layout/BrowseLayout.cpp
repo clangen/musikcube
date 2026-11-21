@@ -39,7 +39,6 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/i18n/Locale.h>
 

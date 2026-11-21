@@ -44,7 +44,6 @@
 #include <musikcore/support/Duration.h>
 
 #include <musikcore/debug.h>
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Playback.h>
 

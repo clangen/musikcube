@@ -13,4 +13,6 @@
 #include <musikcore/server.h>
 #include <musikcore/plugins.h>
 
+#include <musikcore/paths.h>
+
 #endif

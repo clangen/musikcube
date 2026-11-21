@@ -1,3 +1,5 @@
+#include <musikcore/preferences.h>
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2004-2023 musikcube team
@@ -44,46 +46,46 @@ namespace musik { namespace core { namespace prefs {
     const std::string components::Session = "session";
 
     const std::string keys::AutoSyncIntervalMillis = "AutoSyncIntervalMillis";
-    const std::string keys::RemoveMissingFiles = "RemoveMissingFiles";
-    const std::string keys::SyncOnStartup = "SyncOnStartup";
-    const std::string keys::ResumePlaybackOnStartup = "ResumePlaybackOnStartup";
+    const std::string keys::RemoveMissingFiles = MC_PREFERENCE_KEY_REMOVE_MISSING_FILES;
+    const std::string keys::SyncOnStartup = MC_PREFERENCE_KEY_SYNC_ON_STARTUP;
+    const std::string keys::ResumePlaybackOnStartup = MC_PREFERENCE_KEY_RESUME_PLAYBACK_ON_STARTUP;
     const std::string keys::Volume = "Volume";
     const std::string keys::RepeatMode = "RepeatMode";
     const std::string keys::TimeChangeMode = "TimeChangeMode";
     const std::string keys::OutputPlugin = "OutputPlugin";
     const std::string keys::Transport = "Transport";
     const std::string keys::Locale = "Locale";
-    const std::string keys::IndexerLogEnabled = "IndexerLogEnabled";
-    const std::string keys::IndexerThreadCount = "IndexerThreadCount";
-    const std::string keys::IndexerTransactionInterval = "IndexerTransactionInterval";
+    const std::string keys::IndexerLogEnabled = MC_PREFERENCE_KEY_INDEXER_LOG_ENABLED;
+    const std::string keys::IndexerThreadCount = MC_PREFERENCE_KEY_INDEXER_THREAD_COUNT;
+    const std::string keys::IndexerTransactionInterval = MC_PREFERENCE_KEY_INDEXER_TRANSACTION_INTERVAL;
     const std::string keys::ReplayGainMode = "ReplayGainMode";
     const std::string keys::PreampDecibels = "PreampDecibels";
-    const std::string keys::SaveSessionOnExit = "SaveSessionOnExit";
+    const std::string keys::SaveSessionOnExit = MC_PREFERENCE_KEY_SAVE_SESSION_ON_EXIT;
     const std::string keys::LastPlayQueueIndex = "LastPlayQueueIndex";
     const std::string keys::LastPlayQueueTime = "LastPlayQueueTime";
     const std::string keys::LastFmToken = "LastFmToken";
     const std::string keys::LastFmSessionId = "LastFmSessionId";
     const std::string keys::LastFmUsername = "LastFmUsername";
     const std::string keys::DisableAlbumArtistFallback = "DisableAlbumArtistFallback";
-    const std::string keys::AuddioApiToken = "AuddioApiToken";
+    const std::string keys::AuddioApiToken = MC_PREFERENCE_KEY_AUDDIO_API_TOKEN;
     const std::string keys::LibraryType = "LibraryType";
-    const std::string keys::PlaybackTrackQueryTimeoutMs = "PlaybackTrackQueryTimeoutMs";
-    const std::string keys::RemoteLibraryHostname = "RemoteLibraryHostname";
-    const std::string keys::RemoteLibraryWssPort = "RemoteLibraryWssPort";
-    const std::string keys::RemoteLibraryHttpPort = "RemoteLibraryHttpPort";
-    const std::string keys::RemoteLibraryPassword = "RemoteLibraryPassword";
-    const std::string keys::RemoteLibraryViewed = "RemoteLibraryViewed";
-    const std::string keys::RemoteLibraryLatencyTimeoutMs = "RemoteLibraryLatencyTimeoutMs";
-    const std::string keys::RemoteLibraryWssTls = "RemoteLibraryWssTls";
-    const std::string keys::RemoteLibraryHttpTls = "RemoteLibraryHttpTls";
-    const std::string keys::RemoteLibraryTlsWarningSuppressed = "RemoteLibraryTlsWarningSuppressed";
-    const std::string keys::RemoteLibraryTranscoderEnabled = "RemoteLibraryTranscoderEnabled";
-    const std::string keys::RemoteLibraryTranscoderFormat = "RemoteLibraryTranscoderFormat";
-    const std::string keys::RemoteLibraryTranscoderBitrate = "RemoteLibraryTranscoderBitrate";
-    const std::string keys::RemoteLibraryIgnoreVersionMismatch = "RemoteLibraryIgnoreVersionMismatch";
-    const std::string keys::AsyncTrackListQueries = "AsyncTrackListQueries";
-    const std::string keys::PiggyEnabled = "PiggyEnabled";
-    const std::string keys::PiggyHostname = "PiggyHostname";
+    const std::string keys::PlaybackTrackQueryTimeoutMs = MC_PREFERENCE_KEY_PLAYBACK_TRACK_QUERY_TIMEOUT_MS;
+    const std::string keys::RemoteLibraryHostname = MC_PREFERENCE_KEY_REMOTE_LIBRARY_HOSTNAME;
+    const std::string keys::RemoteLibraryWssPort = MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT;
+    const std::string keys::RemoteLibraryHttpPort = MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_PORT;
+    const std::string keys::RemoteLibraryPassword = MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD;
+    const std::string keys::RemoteLibraryViewed = MC_PREFERENCE_KEY_REMOTE_LIBRARY_VIEWED;
+    const std::string keys::RemoteLibraryLatencyTimeoutMs = MC_PREFERENCE_KEY_REMOTE_LIBRARY_LATENCY_TIMEOUT_MS;
+    const std::string keys::RemoteLibraryWssTls = MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_TLS;
+    const std::string keys::RemoteLibraryHttpTls = MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS;
+    const std::string keys::RemoteLibraryTlsWarningSuppressed = MC_PREFERENCE_KEY_REMOTE_LIBRARY_TLS_WARNING_SUPPRESSED;
+    const std::string keys::RemoteLibraryTranscoderEnabled = MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED;
+    const std::string keys::RemoteLibraryTranscoderFormat = MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT;
+    const std::string keys::RemoteLibraryTranscoderBitrate = MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE;
+    const std::string keys::RemoteLibraryIgnoreVersionMismatch = MC_PREFERENCE_KEY_REMOTE_LIBRARY_IGNORE_VERSION_MISMATCH;
+    const std::string keys::AsyncTrackListQueries = MC_PREFERENCE_KEY_ASYNC_TRACK_LIST_QUERIES;
+    const std::string keys::PiggyEnabled = MC_PREFERENCE_KEY_PIGGY_ENABLED;
+    const std::string keys::PiggyHostname = MC_PREFERENCE_KEY_PIGGY_HOSTNAME;
 
 } } }
 

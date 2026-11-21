@@ -16,4 +16,6 @@
 #include <musikcore/server.hpp>
 #include <musikcore/plugins.hpp>
 
+#include <musikcore/paths.hpp>
+
 #endif

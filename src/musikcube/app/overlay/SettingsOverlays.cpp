@@ -38,7 +38,6 @@
 
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/preferences.hpp>
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/sdk/String.h>
 
 #include <musikcube/app/util/PreferenceKeys.h>
@@ -182,7 +181,7 @@ void musik::cube::SettingsOverlays::CheckShowFirstRunDialog() {
 void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
     auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
-    if (!prefs.GetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, false)) {
+    if (!prefs.GetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TLS_WARNING_SUPPRESSED, false)) {
         const int64_t now = duration_cast<milliseconds>(
             system_clock::now().time_since_epoch()).count();
 
@@ -216,7 +215,7 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
                 "d",
                 _TSTR("button_dont_show_again"),
                 [prefs](std::string key) mutable {
-                    prefs.SetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, true);
+                    prefs.SetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TLS_WARNING_SUPPRESSED, true);
                 });
 
         App::Overlays().Push(dialog);
@@ -227,7 +226,7 @@ void musik::cube::SettingsOverlays::ShowTranscoderBitrateOverlay(std::function<v
     auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
     const int currentBitrate = prefs.GetInt(
-        core::prefs::keys::RemoteLibraryTranscoderBitrate,
+        MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE,
         kDefaultTranscoderBitrate);
 
     int selectedIndex = 0;
@@ -252,7 +251,7 @@ void musik::cube::SettingsOverlays::ShowTranscoderBitrateOverlay(std::function<v
             [prefs, callback]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) mutable {
                 prefs.SetInt(
-                    core::prefs::keys::RemoteLibraryTranscoderBitrate,
+                    MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE,
                     kTranscoderBitrates[index]);
                 callback();
             });
@@ -264,7 +263,7 @@ void musik::cube::SettingsOverlays::ShowTranscoderFormatOverlay(std::function<vo
     auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
     std::string const currentFormat = prefs.GetString(
-        core::prefs::keys::RemoteLibraryTranscoderFormat,
+        MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT,
         kDefaultTranscoderFormat);
 
     int selectedIndex = 0;
@@ -289,7 +288,7 @@ void musik::cube::SettingsOverlays::ShowTranscoderFormatOverlay(std::function<vo
             [prefs, callback]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) mutable {
                 std::string const updatedFormat = kTranscoderFormats[index];
-                prefs.SetString(core::prefs::keys::RemoteLibraryTranscoderFormat, updatedFormat.c_str());
+                prefs.SetString(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT, updatedFormat.c_str());
                 callback();
             });
 

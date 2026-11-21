@@ -37,7 +37,6 @@
 #include "Rating.h"
 
 #include <musikcore/preferences.hpp>
-#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/utfutil.h>
 #include <app/util/PreferenceKeys.h>
 

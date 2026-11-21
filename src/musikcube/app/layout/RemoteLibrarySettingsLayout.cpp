@@ -40,7 +40,6 @@
 
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
-#include <musikcore/support/PreferenceKeys.h>
 #include <app/overlay/SettingsOverlays.h>
 
 #include <algorithm>
@@ -202,12 +201,12 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->wssTlsCheckbox->CheckChanged.disconnect(this);
     this->httpTlsCheckbox->CheckChanged.disconnect(this);
 
-    auto host = prefs.GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    auto const wssPort = prefs.GetInt(core::prefs::keys::RemoteLibraryWssPort, MC_REMOTE_DEFAULT_WEBSOCKET_PORT);
-    auto const httpPort = prefs.GetInt(core::prefs::keys::RemoteLibraryHttpPort, MC_REMOTE_DEFAULT_HTTP_PORT);
-    auto const password = prefs.GetString(core::prefs::keys::RemoteLibraryPassword, "");
-    auto const wssTls = prefs.GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
-    auto const httpTls = prefs.GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
+    auto host = prefs.GetString(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HOSTNAME, "127.0.0.1");
+    auto const wssPort = prefs.GetInt(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT, MC_REMOTE_DEFAULT_WEBSOCKET_PORT);
+    auto const httpPort = prefs.GetInt(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_PORT, MC_REMOTE_DEFAULT_HTTP_PORT);
+    auto const password = prefs.GetString(MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD, "");
+    auto const wssTls = prefs.GetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_TLS, false);
+    auto const httpTls = prefs.GetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS, false);
     this->hostInput->SetText(host);
     this->wssPortInput->SetText(std::to_string(wssPort));
     this->wssTlsCheckbox->SetChecked(wssTls);
@@ -215,9 +214,9 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->httpTlsCheckbox->SetChecked(httpTls);
     this->pwInput->SetText(password);
 
-    this->transcoderCheckbox->SetChecked(prefs.GetBool(core::prefs::keys::RemoteLibraryTranscoderEnabled, false));
+    this->transcoderCheckbox->SetChecked(prefs.GetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED, false));
 
-    const std::string transcodeFormat = prefs.GetString(core::prefs::keys::RemoteLibraryTranscoderFormat, "ogg");
+    const std::string transcodeFormat = prefs.GetString(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT, "ogg");
     this->transcoderFormatDropdown->SetText(
         kArrowSymbol +
         u8fmt(_TSTR(
@@ -225,7 +224,7 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
             transcodeFormat.c_str()),
         text::AlignRight);
 
-    const int transcodeBitrate = prefs.GetInt(core::prefs::keys::RemoteLibraryTranscoderBitrate, 192);
+    const int transcodeBitrate = prefs.GetInt(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE, 192);
     this->transcoderBitrateDropdown->SetText(
         kArrowSymbol +
         u8fmt(_TSTR(
@@ -263,20 +262,19 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     }
 
     /* Replacing an unchanged connection would invalidate queued track origins. */
-    namespace keys = musik::core::prefs::keys;
-    const bool changed = host != prefs.GetString(keys::RemoteLibraryHostname, "127.0.0.1") ||
-        wssPort != prefs.GetInt(keys::RemoteLibraryWssPort, MC_REMOTE_DEFAULT_WEBSOCKET_PORT) ||
-        password != prefs.GetString(keys::RemoteLibraryPassword) ||
-        wssTls != prefs.GetBool(keys::RemoteLibraryWssTls);
+    const bool changed = host != prefs.GetString(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HOSTNAME, "127.0.0.1") ||
+        wssPort != prefs.GetInt(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT, MC_REMOTE_DEFAULT_WEBSOCKET_PORT) ||
+        password != prefs.GetString(MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD) ||
+        wssTls != prefs.GetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_TLS);
 
     prefs.Write({
-        api::Preference(keys::RemoteLibraryHostname, host),
-        api::Preference(keys::RemoteLibraryWssPort, wssPort),
-        api::Preference(keys::RemoteLibraryHttpPort, httpPort),
-        api::Preference(keys::RemoteLibraryPassword, password),
-        api::Preference(keys::RemoteLibraryWssTls, wssTls),
-        api::Preference(keys::RemoteLibraryHttpTls, httpTls),
-        api::Preference(keys::RemoteLibraryTranscoderEnabled, transcoderEnabled)
+        api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HOSTNAME, host),
+        api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT, wssPort),
+        api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_PORT, httpPort),
+        api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD, password),
+        api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_TLS, wssTls),
+        api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS, httpTls),
+        api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED, transcoderEnabled)
     });
 
     const auto status = this->musikcore.GetLibraryStatus();
