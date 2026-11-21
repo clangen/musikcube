@@ -7,13 +7,13 @@ endif ()
 
 if (${BUILD_STANDALONE} MATCHES "true")
   install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/lib/"
-    DESTINATION share/musikcube/lib COMPONENT MusikcoreSDK OPTIONAL)
+    DESTINATION share/musikcube/lib COMPONENT musikcoreSDK OPTIONAL)
   install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/share/"
     DESTINATION share/musikcube/share OPTIONAL)
 endif()
 
 install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/plugins/"
-  DESTINATION share/musikcube/plugins COMPONENT MusikcorePlugins OPTIONAL FILES_MATCHING PATTERN "*.${plugin_extension}")
+  DESTINATION share/musikcube/plugins COMPONENT musikcorePlugins OPTIONAL FILES_MATCHING PATTERN "*.${plugin_extension}")
 
 # sdk header files
 file(GLOB sdk_headers "src/musikcore/sdk/*.h")
@@ -53,12 +53,12 @@ configure_package_config_file("${CMAKE_CURRENT_LIST_DIR}/musikcoreConfig.cmake.i
 write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/musikcoreConfigVersion.cmake"
   VERSION "${musikcube_VERSION}" COMPATIBILITY ExactVersion)
 
-install(FILES "$<TARGET_FILE:musikcore>" DESTINATION "${MUSIKCORE_INSTALL_RUNTIME_DIR}" COMPONENT MusikcoreSDK)
+install(FILES "$<TARGET_FILE:musikcore>" DESTINATION "${MUSIKCORE_INSTALL_RUNTIME_DIR}" COMPONENT musikcoreSDK)
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/musikcore" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  COMPONENT MusikcoreSDK FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+  COMPONENT musikcoreSDK FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/musikcoreConfig.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/musikcoreConfigVersion.cmake"
-  DESTINATION "${musikcore_config_dir}" COMPONENT MusikcoreSDK)
+  DESTINATION "${musikcore_config_dir}" COMPONENT musikcoreSDK)
 
 # executable and shell script for musikcube
 install(

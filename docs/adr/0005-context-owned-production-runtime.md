@@ -40,7 +40,7 @@ about individually selectable engine components.
 
 ## Consequences
 
-Musikcube and musikcubed start core services through the same public entry point as other production clients. Its UI queue is separate. Local and remote selection use concrete catalogs, and a playback queue resets when its catalog changes. The readiness thread adds one thread per managed context and performs no delivery.
+musikcube and musikcubed start core services through the same public entry point as other production clients. Its UI queue is separate. Local and remote selection use concrete catalogs, and a playback queue resets when its catalog changes. The readiness thread adds one thread per managed context and performs no delivery.
 
 The public-only managed-runtime test covers startup, delayed wakeups, restart, and retained handles. The managed loopback test covers local and remote selection, stale queue snapshots, and same-endpoint reconnect.
 

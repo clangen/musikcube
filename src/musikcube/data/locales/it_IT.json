@@ -165,7 +165,7 @@
     "settings_library_type_remote_use_tls": "_TSTR_use tls",
     "settings_library_type_remote_wss_port": "_TSTR_metadata port:",
     "settings_minimize_to_tray": "riduci a icona",
-    "settings_needs_restart": "Hai bisogno di riavviare Musikcube per rendere effettive le modifiche",
+    "settings_needs_restart": "Hai bisogno di riavviare musikcube per rendere effettive le modifiche",
     "settings_no_plugin_config_message": "_TSTR_plugin \"{{name}}\" does not provide any configurable settings.",
     "settings_no_plugin_config_title": "_TSTR_no configuration",
     "settings_output_device": "output device: ",

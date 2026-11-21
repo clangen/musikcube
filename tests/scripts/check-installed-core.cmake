@@ -15,9 +15,9 @@ function(run)
   set(last_output "${output}" PARENT_SCOPE)
 endfunction()
 
-run("${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${installed}" --component MusikcoreSDK)
+run("${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${installed}" --component musikcoreSDK)
 if(INSTALLED_TEST_PLUGIN)
-  run("${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${installed}" --component MusikcorePlugins)
+  run("${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${installed}" --component musikcorePlugins)
 endif()
 file(RENAME "${installed}" "${relocated}")
 run("${CMAKE_COMMAND}" -S "${SOURCE}/tests/integration/binary/consumer" -B "${root}/consumer"
