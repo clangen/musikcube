@@ -893,20 +893,22 @@ path from the current untested codebase to reliable cross-platform releases.
 ## Correctness UI scenarios and driver checks
 
 The full `musikcube_tests` target builds the app and required fixture plugins on
-Unix. CTest registers `musikcube.ui.search`, `musikcube.ui.queue`,
-`musikcube.ui.playlists`, and `musikcube.ui.browse` with small isolated catalogs.
+Unix. CTest registers separate search, queue, playlists, browse, settings,
+and locale scenarios with small isolated catalogs. The capture fixture also
+enables separate transport scenarios for gapless and crossfade.
 Windows requires a native PTY backend before these app scenarios can be enabled;
 registration on macOS does not establish Windows/Linux acceptance.
 
 ```sh
-node tests/ui/scenarios/track-search.js --build-dir build/test --bin-dir build/test/bin --tracks 1000 --windows --scenario playlists
+node tests/ui/scenarios/playlists.js --build-dir build/test --bin-dir build/test/bin
+node tests/ui/scenarios/standalone.js --build-dir build/test --bin-dir build/test/bin --tracks 1000 --windows
 node --test tests/ui/driver/*.test.js
 ```
 
-Each selected scenario launches a fresh app/catalog. The default `--scenario all`
-retains the combined flow for manual/benchmark use. Search and queue setup may
-be shared by a workflow, but playlist and browse outcomes are reported separately
-and cannot be hidden by an earlier scenario's failure. Focus transitions use
+Each scenario launches a fresh app and catalog. `track-search.js` defaults to
+search and paging measurements. `standalone.js` runs the combined acceptance
+workflow. Queue, playlist, and transport scenarios use Search to select a fixture
+track and skip the search benchmark. Focus transitions use
 visible state with no arbitrary focus-delay sleeps; the app activates overlays
 created by dispatch before drawing them.
 

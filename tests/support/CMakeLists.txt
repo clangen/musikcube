@@ -217,11 +217,17 @@ if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGE
       add_dependencies(musikcube_ui_tests ${plugin})
     endif()
   endforeach()
-  foreach(scenario IN ITEMS search queue playlists browse)
+  foreach(scenario IN ITEMS search queue playlists browse settings locale)
+    set(script "${scenario}")
+    set(arguments)
+    if(scenario STREQUAL "search")
+      set(script "track-search")
+      set(arguments --windows)
+    endif()
     add_test(NAME musikcube.ui.${scenario} COMMAND "${MUSIKCORE_TEST_NODE}"
-      "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/track-search.js"
+      "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/${script}.js"
       --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:musikcube>"
-      --tracks 1000 --windows --scenario "${scenario}")
+      --tracks 1000 ${arguments})
     set_tests_properties(musikcube.ui.${scenario} PROPERTIES
       LABELS "ui;musikcube;${scenario}" TIMEOUT 90)
   endforeach()
@@ -229,9 +235,9 @@ if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGE
     add_dependencies(musikcube_ui_tests musikcore_pcm_capture_output)
     foreach(mode IN ITEMS gapless crossfade)
       add_test(NAME musikcube.ui.transport.${mode} COMMAND "${MUSIKCORE_TEST_NODE}"
-        "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/track-search.js"
+        "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/transport.js"
         --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:musikcube>"
-        --tracks 1000 --windows --scenario transport --playback-mode "${mode}"
+        --tracks 1000 --playback-mode "${mode}"
         --capture-output "$<TARGET_FILE:musikcore_pcm_capture_output>")
       set_tests_properties(musikcube.ui.transport.${mode} PROPERTIES
         LABELS "ui;musikcube;transport" TIMEOUT 90)

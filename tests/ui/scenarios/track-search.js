@@ -1,626 +1,78 @@
-/* End-to-end TUI scenarios. Launch musikcube in a pseudo-terminal, send real
-   keystrokes, and check visible search, queue, playlist, and browse behavior.
-   Uses an isolated indexed catalog and records selected interaction timings. */
-
-const { spawn } = require('node:child_process');
-const fs = require('node:fs');
-const { basename, dirname, join, resolve } = require('node:path');
+/* Measure track search, filtering, and paging. */
 const { performance } = require('node:perf_hooks');
-const { parseArgs } = require('node:util');
-const { sampleVariants, printMetrics, cpuMillisecondsPerTick } = require('../support/benchmark');
-const { Terminal } = require('../support/terminal');
-const { withRuntime } = require('../support/artifacts');
+const { FILTER, FIRST_ALBUM, FIRST_TRACK, FILTERED_FIRST, FILTERED_LAST, FIRST_WINDOW_MISS,
+  DISTANT_TRACK, DOWN, UP, END, HOME, PAGE_DOWN, DISTANT_PAGE } = require('../support/catalog');
 
-const SOURCE = resolve(__dirname, '../../..');
-const TRACK_COUNT = 10000;
-const FILTER = 'Artist 001 - Album 02';
-const FIRST_ALBUM = 'Artist 001 - Album 01';
-const FIRST_TRACK = `${FIRST_ALBUM} - Track 01`;
-const FILTERED_FIRST = `${FILTER} - Track 01`;
-const FILTERED_LAST = `${FILTER} - Track 10`;
-const FIRST_WINDOW_MISS = `${FIRST_ALBUM} - Track 10`;
-const DISTANT_TRACK = 'Artist 001 - Album 10 - Track 10';
-const DOWN = '\x1bOB';
-const UP = '\x1bOA';
-const RIGHT = '\x1bOC';
-const END = '\x1bOF';
-const HOME = '\x1bOH';
-const PAGE_DOWN = '\x1b[6~';
-const DISTANT_PAGE = 12;
+async function checkSearch(terminal, { pilot, windows, cache, openSearch, capture }) {
+  const ready = terminal.processStats();
+  let started = performance.now();
+  terminal.send(openSearch);
+  await terminal.expect('search');
+  await terminal.expect(FIRST_TRACK);
+  const openMs = performance.now() - started;
+  if (!pilot) await terminal.expect(`${FIRST_ALBUM} - 0:10`);
+  await capture('01-search', `${FIRST_ALBUM} - Track 08`);
 
-/* Stage the production app/assets with only the plugins required to index the generated fixture. */
-function stageRuntime(runtime, binaryDir, testSettings) {
-  for (const name of fs.readdirSync(binaryDir)) {
-    if (['lib', 'locales', 'share', 'themes'].includes(name) || name.startsWith('libmusikcore')) {
-      fs.symlinkSync(fs.realpathSync(join(binaryDir, name)), join(runtime, name));
-    }
+  /* Filter to a different album and scroll beyond the first viewport. */
+  started = performance.now();
+  terminal.send(FILTER);
+  await terminal.expect(FILTERED_FIRST, { absent: FIRST_TRACK });
+  const filterMs = performance.now() - started;
+  if (terminal.screen.text().includes(FILTERED_LAST)) {
+    throw new Error('The last result already fits in the viewport');
   }
+  await capture('02-filtered', `${FILTER} - Track 08`);
 
-  for (const name of ['musikcube', 'musikcube_seed_library']) {
-    fs.copyFileSync(join(binaryDir, name), join(runtime, name));
-  }
+  started = performance.now();
+  terminal.send(DOWN + END);
+  await terminal.expect(FILTERED_LAST, { absent: FILTERED_FIRST });
+  const scrollMs = performance.now() - started;
+  await capture('03-scrolled', FILTERED_LAST);
 
-  fs.mkdirSync(join(runtime, 'plugins'));
-  for (const name of fs.readdirSync(join(binaryDir, 'plugins'))) {
-    if (/^lib(?:taglibreader|ffmpegdecoder)\./.test(name) ||
-        (testSettings && /^lib(?:nullout|supereqdsp|server)\./.test(name))) {
-      fs.symlinkSync(fs.realpathSync(join(binaryDir, 'plugins', name)), join(runtime, 'plugins', name));
-    }
-  }
-}
+  const result = { openMs, filterMs, scrollMs };
+  if (windows) {
+    /* Widen the filter and verify whether Page Down uses a prefetched page. */
+    terminal.send(HOME + UP + '\x7f'.repeat(3));
+    await terminal.expect(FIRST_TRACK, { absent: FILTERED_LAST });
+    if (pilot && cache.prefetch) await terminal.expect('adjacent page ready');
+    started = performance.now();
+    terminal.send(DOWN + PAGE_DOWN);
+    await terminal.expect(FIRST_WINDOW_MISS);
+    result.nextMs = performance.now() - started;
+    if (pilot) await terminal.expect(cache.prefetch ? 'cache hit' : 'cache miss');
 
-/* Run the production indexer with a retained log and resolve its generated database path. */
-async function seedLibrary(runtime, build, tracks) {
-  const log = join(runtime, 'indexer.log');
-  const output = fs.openSync(log, 'w');
-  try {
-    const child = spawn(process.execPath, [
-      join(SOURCE, 'tests/scripts/seed-test-library.js'),
-      '--tracks', String(tracks),
-      '--indexer', join(runtime, 'musikcube_seed_library'),
-      '--fixture-dir', runtime, build,
-    ], { timeout: 330000, stdio: ['ignore', output, output] });
-    await new Promise((resolve, reject) => {
-      child.once('error', reject);
-      child.once('close', (code, signal) => {
-        if (code === 0) resolve();
-        else reject(new Error(`Seeder exited with ${signal || code}`));
-      });
-    });
-  } catch (error) {
-    throw new Error(`Indexing fixture failed\n${error.message}\n${fs.readFileSync(log, 'utf8')}`);
-  } finally {
-    fs.closeSync(output);
-  }
-
-  const summary = fs.readFileSync(log, 'utf8');
-  const database = summary.trimEnd().split(/\r?\n/).pop();
-  if (!fs.existsSync(database)) throw new Error(`Missing fixture database\n${summary}`);
-  return database;
-}
-
-/* Stage the optional ABI-only search pilot beside its experimental shared library. */
-function stagePilot(runtime, binaryDir) {
-  fs.mkdirSync(runtime);
-  const library = process.platform === 'darwin' ? 'libmusikcore-abi0.dylib' : 'libmusikcore-abi0.so';
-  fs.symlinkSync(fs.realpathSync(join(binaryDir, library)), join(runtime, library));
-  fs.copyFileSync(join(binaryDir, 'musikcube_abi_search_pilot'), join(runtime, 'musikcube'));
-}
-
-/* Drive search/paging and production queue/playlist/browse workflows, measuring only selected interactions. */
-async function checkTrackSearch(runtime, database, screenshots,
-  { pilot = false, windows = false, cache, scenario = 'all', playbackMode = 'gapless' } = {}) {
-  const fixture = dirname(dirname(dirname(database)));
-  /* Keep startup from reindexing the fixture. */
-  const settings = join(fixture, 'musikcube', 'settings.json');
-  const preferences = fs.existsSync(settings) ? JSON.parse(fs.readFileSync(settings, 'utf8')) : {};
-  preferences.SyncOnStartup = false;
-  preferences.FirstRunSettingsDisplayed = true;
-  delete preferences.TrackSearchSortOrder;
-  fs.writeFileSync(settings, JSON.stringify(preferences));
-  if (scenario === 'transport') {
-    const transport = playbackMode === 'crossfade' ? 1 : 0;
-    fs.writeFileSync(join(fixture, 'musikcube', 'playback.json'), JSON.stringify({ Transport: transport }));
-  }
-  const openSearch = !pilot && scenario === 'browse' ? 'T' : 't';
-  if (openSearch !== 't') {
-    fs.writeFileSync(join(fixture, 'musikcube', 'hotkeys.json'),
-      JSON.stringify({ navigate_library_tracks: openSearch }));
-  }
-  const hasServer = !pilot && fs.readdirSync(join(runtime, 'plugins')).some(name => name.startsWith('libserver.'));
-  if (hasServer) {
-    fs.writeFileSync(join(fixture, 'musikcube', 'plugin_musikcubeserver(wss,http).json'),
-      JSON.stringify({ websocket_server_enabled: false, http_server_enabled: false }));
-  }
-
-  const env = {
-    ...process.env, HOME: fixture, XDG_CONFIG_HOME: fixture, TERM: 'xterm-256color',
-    MUSIKCUBE_SEARCH_DATA: dirname(database),
-    LC_ALL: process.platform === 'darwin' ? 'en_US.UTF-8' : 'C.UTF-8',
-  };
-  delete env.LANGUAGE;
-  if (scenario === 'transport') {
-    env.MUSIKCORE_TEST_OUTPUT_DELAY_MS = '900';
-  }
-  if (pilot) {
-    delete env.MUSIKCUBE_SEARCH_CACHE_PAGES;
-    delete env.MUSIKCUBE_SEARCH_PREFETCH_PAGES;
-    if (cache.capacityOverride !== undefined) env.MUSIKCUBE_SEARCH_CACHE_PAGES = String(cache.capacity);
-    if (cache.prefetchOverride !== undefined) env.MUSIKCUBE_SEARCH_PREFETCH_PAGES = String(cache.prefetch);
-    env.MUSIKCUBE_SEARCH_CACHE_DIAGNOSTICS = '1';
-  }
-
-  const terminal = new Terminal(runtime, env, 18, 140);
-
-  /* Wait for the final intended row before capturing; an earlier matching
-     header alone could yield an SVG of an incompletely repainted viewport. */
-  const capture = async (name, lastVisibleTrack) => {
-    if (!screenshots) return;
-    await terminal.expect(lastVisibleTrack);
-    fs.writeFileSync(join(screenshots, `${name}.svg`), terminal.screen.svg());
-  };
-
-  try {
-    /* Establish startup readiness before timing search, otherwise process and
-       plugin initialization would contaminate the search-open measurement. */
-    await terminal.expect(pilot ? 'Track Search Pilot' : 'playback is stopped');
-    const ready = terminal.processStats();
-    let started = performance.now();
-    terminal.send(openSearch);
-    await terminal.expect('search');
+    started = performance.now();
+    terminal.send(HOME);
     await terminal.expect(FIRST_TRACK);
-    const openMs = performance.now() - started;
-    if (!pilot) await terminal.expect(`${FIRST_ALBUM} - 0:10`);
-    await capture('01-search', `${FIRST_ALBUM} - Track 08`);
-
-    /* Filter to a different album and scroll beyond the first viewport. */
-    started = performance.now();
-    terminal.send(FILTER);
-    await terminal.expect(FILTERED_FIRST, { absent: FIRST_TRACK });
-    const filterMs = performance.now() - started;
-    if (terminal.screen.text().includes(FILTERED_LAST)) {
-      throw new Error('The last result already fits in the viewport');
-    }
-    await capture('02-filtered', `${FILTER} - Track 08`);
+    result.warmMs = performance.now() - started;
 
     started = performance.now();
-    terminal.send(DOWN + END);
-    await terminal.expect(FILTERED_LAST, { absent: FILTERED_FIRST });
-    const scrollMs = performance.now() - started;
-    await capture('03-scrolled', FILTERED_LAST);
-
-    const result = { openMs, filterMs, scrollMs };
-    if (windows) {
-      /* Widen the filter and verify whether Page Down uses a prefetched page. */
-      terminal.send(HOME + UP + '\x7f'.repeat(3));
-      await terminal.expect(FIRST_TRACK, { absent: FILTERED_LAST });
-      if (pilot && cache.prefetch) await terminal.expect('adjacent page ready');
-      started = performance.now();
-      terminal.send(DOWN + PAGE_DOWN);
-      await terminal.expect(FIRST_WINDOW_MISS);
-      result.nextMs = performance.now() - started;
-      if (pilot) await terminal.expect(cache.prefetch ? 'cache hit' : 'cache miss');
-
-      started = performance.now();
-      terminal.send(HOME);
-      await terminal.expect(FIRST_TRACK);
-      result.warmMs = performance.now() - started;
-
-      started = performance.now();
-      terminal.send(END);
-      await terminal.expect(DISTANT_TRACK);
-      result.jumpMs = performance.now() - started;
-      if (pilot && cache.prefetch < DISTANT_PAGE) await terminal.expect('cache miss');
-    }
-
-    const finished = terminal.processStats();
-    if (finished) {
-      result.peakRssKiB = finished.peakRssKiB;
-      result.cpuTicks = finished.cpuTicks - ready.cpuTicks;
-      result.totalCpuTicks = finished.cpuTicks;
-    }
-    if (pilot && windows) {
-      terminal.send(HOME + 'j\r');
-      await terminal.expect(`Selected track: ${FIRST_ALBUM} - Track 02`);
-    } else if (!pilot && scenario === 'search') {
-      terminal.send('\x1bs');
-      await terminal.expect('select sort order');
-      terminal.send(DOWN + '\r');
-      await terminal.expect('tracks (sorted by track title)', { absent: 'select sort order' });
-    } else if (!pilot && ['all', 'queue', 'playlists', 'transport'].includes(scenario)) {
-      /* Append the selected search result through its track actions menu. */
-      terminal.send('\x1b\r');
-      await terminal.expect('play now');
-      terminal.send(END + UP + UP + '\r');
-      terminal.send('n');
-      const queuedTrack = windows ? DISTANT_TRACK : FILTERED_LAST;
-      await terminal.expect(queuedTrack, { absent: 'tracks (sorted by' });
-
-      if (scenario === 'transport') {
-        const states = [];
-        const observe = () => {
-          const line = terminal.screen.text().split('\n').find(row => /\bshuffle\s*$/.test(row));
-          const status = line?.match(/^\s*(buffering|paused|playing)\b/);
-          if (status) {
-            const state = line.includes(queuedTrack) ? status[1] : 'missing metadata';
-            if (states.at(-1) !== state) states.push(state);
-          }
-        };
-        terminal.events.on('update', observe);
-        try {
-          terminal.send('\r');
-          await terminal.expect('buffering ' + queuedTrack);
-          await terminal.expect('playing ' + queuedTrack);
-        } finally {
-          terminal.events.off('update', observe);
-        }
-        if (states.join(',') !== 'buffering,playing') {
-          throw new Error('Unexpected transport transition: ' + states.join(' → '));
-        }
-
-        terminal.send('\x10');
-        await terminal.expect('paused ' + queuedTrack);
-        terminal.send('\x10');
-        await terminal.expect('playing ' + queuedTrack);
-        terminal.send('\x18');
-        await terminal.expect('playback is stopped');
-      } else if (scenario === 'queue' &&
-          fs.readdirSync(join(runtime, 'plugins')).some(name => name.startsWith('libnullout.'))) {
-        /* Capture transient output before the async metadata response repaints it. */
-        const formatToken = /\$(?:title|artist|album|state)\b/;
-        const danglingSeparators = /\b(?:buffer(?:ing)?|playing|paused)\s+by\s+from\b/i;
-        let leaked = false;
-        const observe = () => {
-          const screen = terminal.screen.text();
-          leaked ||= formatToken.test(terminal.transcript.toString()) ||
-            formatToken.test(screen) || danglingSeparators.test(screen);
-        };
-        terminal.events.on('update', observe);
-        try {
-          terminal.send('\r');
-          await terminal.expect('playing ' + queuedTrack);
-          if (leaked) {
-            throw new Error('Transport displayed an incomplete metadata format');
-          }
-        } finally {
-          terminal.events.off('update', observe);
-        }
-      }
-
-      if (scenario !== 'queue' && scenario !== 'transport') {
-        /* Save the queue, then add a track from Search. Reloading must show both
-           writes in order, even though they came through different UI paths. */
-        const playlistName = `Fixture ${Date.now()}`;
-        terminal.send('\x1bs');
-        await terminal.expect('save playlist');
-        terminal.send('\r');
-        await terminal.expect('playlist name');
-        terminal.send(playlistName + '\r');
-        await terminal.expect('play queue', { absent: 'playlist name' });
-
-        /* Append a second track through Track Search's playlist picker. */
-        terminal.send('t');
-        await terminal.expect(FIRST_TRACK);
-        terminal.send(DOWN);
-        terminal.send('\x1b\r');
-        await terminal.expect('track actions');
-        terminal.send(HOME + DOWN.repeat(3) + '\r');
-        await terminal.expect(playlistName);
-        terminal.send(END + '\r');
-        await terminal.expect('tracks (sorted by', { absent: playlistName });
-        terminal.send('n');
-        await terminal.expect('play queue', { absent: 'tracks (sorted by' });
-
-        /* Now Playing refreshes from the queue notification after clear. */
-        terminal.send('X');
-        await terminal.expect('play queue', { absent: queuedTrack });
-        terminal.send('\x1bl');
-        await terminal.expect(playlistName);
-        terminal.send(END + '\r');
-        await terminal.waitFor(() => {
-          const screen = terminal.screen.text();
-          const first = screen.indexOf(queuedTrack);
-          return !screen.includes('load playlist') && first >= 0 && screen.indexOf(FIRST_TRACK) > first;
-        }, 'both saved tracks in queue order');
-
-        /* Rename/delete exercise separate modal focus transitions; checking the
-           resulting names prevents an unnoticed picker action on the wrong row. */
-        terminal.send('\x1br');
-        await terminal.expect('rename playlist');
-        terminal.send('\r');
-        await terminal.expect('new playlist name');
-        terminal.send(END + ' revised\r');
-        await terminal.expect('play queue', { absent: 'new playlist name' });
-
-        terminal.send('\x1bx');
-        await terminal.expect('delete playlist');
-        await terminal.expect(playlistName + ' revised');
-        terminal.send('\r');
-        await terminal.expect('are you sure you want to delete');
-        terminal.send('\r');
-        await terminal.expect('play queue', { absent: 'are you sure you want to delete' });
-        terminal.send('\x1bl');
-        await terminal.expect("you haven't saved any playlists yet!");
-        terminal.send('\r');
-      }
-    }
-
-    if (!pilot && ['all', 'browse'].includes(scenario)) {
-      terminal.send('`');
-      await terminal.expect('debug logs');
-      await terminal.expect('LocalLibrary');
-      terminal.send('a');
-      if (scenario === 'all') {
-        /* Playlist checks leave a loaded queue and the queue view selected. */
-        await terminal.expect('play queue');
-        terminal.send('X');
-        await terminal.expect('play queue', { absent: FIRST_TRACK });
-        terminal.send(openSearch);
-        await terminal.expect(FIRST_TRACK);
-      }
-      await terminal.expect('tracks (sorted by');
-      terminal.send('\x12');
-      await terminal.expect('metadata indexer');
-      terminal.send('\x1b');
-      await terminal.expect('tracks (sorted by', { absent: 'metadata indexer' });
-
-      if (scenario === 'all') {
-        terminal.send(DOWN + DOWN);
-      }
-      terminal.send('r');
-      await terminal.expect('rate track');
-      terminal.send('5');
-      await terminal.expect('tracks (sorted by', { absent: 'rate track' });
-
-      /* The album divider queues the whole album through the typed category query. */
-      terminal.send(HOME + '\r');
-      await terminal.expect('album actions');
-      terminal.send(END + UP + '\r');
-      await terminal.expect('tracks (sorted by', { absent: 'album actions' });
-      terminal.send('n');
-      await terminal.expect(FIRST_TRACK, { absent: 'tracks (sorted by' });
-      await terminal.expect(`${FIRST_ALBUM} - Track 10`);
-      terminal.send('X');
-      await terminal.expect('play queue', { absent: FIRST_TRACK });
-
-      /* Switch album selections before the first one has time to publish a refresh. */
-      terminal.send('b2');
-      await terminal.expect('albums');
-      terminal.send('6');
-      await terminal.expect('select category');
-      terminal.send('\x1b');
-      await terminal.expect('albums', { absent: 'select category' });
-      terminal.send('\x06');
-      await terminal.expect('search');
-      terminal.send('\r' + HOME);
-      await terminal.expect(FIRST_TRACK);
-      terminal.send(DOWN + UP + DOWN);
-      await terminal.expect(FILTERED_FIRST, { absent: FIRST_TRACK });
-
-      terminal.send('d');
-      await terminal.expect('tracks in');
-      await terminal.expect(FIRST_TRACK);
-
-      terminal.send('n');
-      await terminal.expect('play queue', { absent: 'tracks in' });
-      terminal.send('X');
-      await terminal.expect('play queue', { absent: FIRST_TRACK });
-
-      /* Exercise the Browse playlist commands through their public API callbacks. */
-      terminal.send('b5');
-      await terminal.expect('playlists');
-      terminal.send('\x1bn');
-      await terminal.expect('new playlist name');
-      terminal.send('Browse fixture\r');
-      await terminal.expect('Browse fixture', { absent: 'new playlist name' });
-      terminal.send('\x06');
-      await terminal.expect('search');
-      terminal.send('\r' + HOME);
-      terminal.send('\x1br');
-      await terminal.expect('new playlist name');
-      terminal.send(END + ' revised\r');
-      await terminal.expect('Browse fixture revised', { absent: 'new playlist name' });
-
-      const staged = fs.readdirSync(join(runtime, 'plugins'));
-      if (staged.some(name => name.startsWith('libsupereqdsp.'))) {
-        terminal.send('\x05');
-        await terminal.expect('frequency bands');
-        terminal.send('\t' + RIGHT);
-        await terminal.expect('1 dB');
-        terminal.send('z');
-        await terminal.expect('frequency bands', { absent: '1 dB' });
-        terminal.send('\x1b');
-        await terminal.expect('Browse fixture revised', { absent: 'frequency bands' });
-      }
-      if (staged.some(name => name.startsWith('libnullout.'))) {
-        terminal.send('v');
-        await terminal.expect('no visualizers found!');
-        terminal.send('\r');
-        await terminal.expect('Browse fixture revised', { absent: 'no visualizers found!' });
-        await terminal.resize(28, 140);
-        terminal.send('s');
-        await terminal.expect('output driver: Null');
-        const clickLabel = async label => {
-          await terminal.expect(label);
-          const rows = terminal.screen.text().split('\n');
-          const y = rows.findIndex(row => row.includes(label));
-          const x = rows[y].indexOf(label);
-          const click = `\x1b[<0;${x + 1};${y + 1}`;
-          terminal.send(click + 'M' + click + 'm');
-        };
-        await clickLabel('playback mode: gapless');
-        await terminal.expect('crossfade');
-        terminal.send(DOWN + '\r');
-        await terminal.expect('playback mode: crossfade');
-        terminal.send('\x1b[Z\r');
-        await terminal.expect('preamp gain (dB):');
-        await terminal.expect('replaygain: disabled');
-        terminal.send('\t\r');
-        await terminal.expect('replaygain mode');
-        terminal.send(DOWN + '\r');
-        await terminal.expect('replaygain: track');
-        terminal.send('\x1b');
-        await terminal.expect('playback mode: crossfade', { absent: 'preamp gain (dB):' });
-        if (hasServer) {
-          await terminal.expect('server setup');
-          terminal.send('\t'.repeat(5) + '\r');
-          await terminal.expect('audio streaming enabled');
-          terminal.send('\x1b');
-          await terminal.expect('playback mode: crossfade', { absent: 'audio streaming enabled' });
-        }
-
-        await terminal.expect('configure plugins');
-        terminal.send('\t'.repeat(hasServer ? 7 : 11) + '\r');
-        await terminal.expect('Null IOutput');
-        const pluginRows = terminal.screen.text().split('\n').filter(row => row.includes('[v'));
-        const nullRow = pluginRows.findIndex(row => row.includes('Null IOutput'));
-        terminal.send(HOME + DOWN.repeat(nullRow) + '\r');
-        await terminal.expect('default_sample_rate');
-        terminal.send(DOWN + '\r');
-        await terminal.expect('4096 - 192000');
-        terminal.send(END + '\x7f'.repeat(5) + '44100\r');
-        await terminal.expect('44100', { absent: '4096 - 192000' });
-        terminal.send('\x1b');
-        await terminal.expect('Null IOutput', { absent: 'default_sample_rate' });
-        terminal.send('\x1b');
-        await terminal.expect('configure plugins', { absent: 'Null IOutput' });
-
-        terminal.send('\t\r');
-        await terminal.expect('AutoHideCommandBar');
-        terminal.send('\x1b');
-        await terminal.expect('configure plugins', { absent: 'AutoHideCommandBar' });
-
-        terminal.send('\x1b[Z'.repeat(hasServer ? 11 : 10) + '\r');
-        await terminal.expect('no last.fm account registered');
-        terminal.send('\x1b');
-        await terminal.expect('configure plugins', { absent: 'last.fm registration' });
-      }
-    }
-    /* The driver must observe a clean application exit, not just a screen that
-       happened to match before a shutdown crash. */
-    terminal.send('\x04');
-    await terminal.expectExit();
-    return result;
-  } catch (error) {
-    terminal.saveArtifacts(join(runtime, 'failure'));
-    throw new Error(`${error.message}\n${terminal.screen.text()}\nPTY output tail ${JSON.stringify(terminal.transcript.toString())}`);
-  } finally {
-    await terminal.close();
+    terminal.send(END);
+    await terminal.expect(DISTANT_TRACK);
+    result.jumpMs = performance.now() - started;
+    if (pilot && cache.prefetch < DISTANT_PAGE) await terminal.expect('cache miss');
   }
+
+  const finished = terminal.processStats();
+  if (finished) {
+    result.peakRssKiB = finished.peakRssKiB;
+    result.cpuTicks = finished.cpuTicks - ready.cpuTicks;
+    result.totalCpuTicks = finished.cpuTicks;
+  }
+  if (pilot && windows) {
+    terminal.send(HOME + 'j\r');
+    await terminal.expect(`Selected track: ${FIRST_ALBUM} - Track 02`);
+  }
+  return result;
 }
 
-/* Create an isolated catalog/runtime, run selected variants, report measurements, and clean up. */
-async function main() {
-  const { values } = parseArgs({
-    options: {
-      'build-dir': { type: 'string', default: SOURCE },
-      'bin-dir': { type: 'string', default: join(SOURCE, 'bin') },
-      'capture-output': { type: 'string' },
-      'playback-mode': { type: 'string', default: 'gapless' },
-      screenshots: { type: 'string' },
-      tracks: { type: 'string', default: String(TRACK_COUNT) },
-      runs: { type: 'string', default: '1' },
-      compare: { type: 'boolean' },
-      windows: { type: 'boolean' },
-      scenario: { type: 'string', default: 'all' },
-      'pilot-control': { type: 'string' },
-      'cache-pages': { type: 'string' },
-      'prefetch-pages': { type: 'string' },
-      help: { type: 'boolean' },
-    },
-  });
-
-  if (values.help) {
-    console.log('Usage: node tests/ui/scenarios/track-search.js [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|transport|all] [--capture-output <path>] [--playback-mode gapless|crossfade] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]');
-    return;
-  }
-  if (!['linux', 'darwin'].includes(process.platform)) {
-    throw new Error('This test requires script on Linux or macOS');
-  }
-
-  if (!['search', 'queue', 'playlists', 'browse', 'transport', 'all'].includes(values.scenario)) {
-    throw new Error('Choose scenario search, queue, playlists, browse, transport, or all');
-  }
-  if (values.scenario === 'transport' && !values['capture-output']) {
-    throw new Error('The transport scenario requires --capture-output');
-  }
-  if (!['gapless', 'crossfade'].includes(values['playback-mode'])) {
-    throw new Error('Choose playback mode gapless or crossfade');
-  }
-
-  const build = resolve(values['build-dir']);
-  const tracks = Number(values.tracks);
-  const runs = Number(values.runs);
-  if (!Number.isSafeInteger(tracks) || tracks < 20 || !Number.isSafeInteger(runs) || runs < 1) {
-    throw new Error('Use at least 20 tracks and one run');
-  }
-
-  /* Comparison mode uses identical generated data for both executables so
-     differences reflect the implementation rather than a different catalog. */
-  const controlDir = values['pilot-control'];
-  const compare = values.compare || controlDir !== undefined;
-  if (values.compare && controlDir !== undefined) throw new Error('Choose one comparison mode');
-  const windows = Boolean(values.windows || compare);
-  if (windows && tracks < 100) throw new Error('The viewport scenario requires at least 100 tracks');
-
-  /* Capacity must leave room for the viewport before any prefetch is enabled. */
-  const capacity = Number(values['cache-pages'] ?? '3');
-  const prefetch = Number(values['prefetch-pages'] ?? Math.min(1, capacity - 1));
-  if (!Number.isSafeInteger(capacity) || capacity < 1 ||
-      !Number.isSafeInteger(prefetch) || prefetch < 0 || prefetch >= capacity) {
-    throw new Error('Cache pages must be positive and prefetch pages must be smaller than cache pages');
-  }
-  const cache = {
-    capacity, prefetch,
-    capacityOverride: values['cache-pages'], prefetchOverride: values['prefetch-pages'],
-  };
-
-  /* Keep generated databases, settings, staged assets, and screenshots under
-     explicit test roots rather than the user's normal app configuration. */
-  const tickMs = await cpuMillisecondsPerTick();
-  const work = join(build, 'tests', 'bin');
-  fs.mkdirSync(work, { recursive: true });
-  const screenshots = values.screenshots ? resolve(values.screenshots) : undefined;
-  if (screenshots) fs.mkdirSync(screenshots, { recursive: true });
-  const runtime = fs.mkdtempSync(join(work, 'tui-'));
-
-  await withRuntime(runtime, async () => {
-    /* Stage each implementation separately to prevent loading the wrong core
-       library while retaining the same catalog for comparison runs. */
-    stageRuntime(runtime, resolve(values['bin-dir']), ['all', 'browse', 'queue'].includes(values.scenario));
-    if (values.scenario === 'transport') {
-      const output = fs.realpathSync(values['capture-output']);
-      fs.symlinkSync(output, join(runtime, 'plugins', basename(output)));
-    }
-    let control = { name: 'Production', runtime, pilot: false };
-    if (controlDir !== undefined) {
-      const controlRuntime = join(runtime, 'control');
-      stagePilot(controlRuntime, resolve(controlDir));
-      control = { name: 'ABI0 control', runtime: controlRuntime, pilot: true };
-    }
-
-    const variants = [control];
-    if (compare) {
-      const pilot = join(runtime, 'pilot');
-      stagePilot(pilot, join(build, 'bin', 'abi0'));
-      variants.push({ name: 'ABI0 pilot', runtime: pilot, pilot: true });
-    }
-
-    /* Index once outside measured interactions; reseeding per launch would
-       dominate runtime and make cache/viewport comparisons harder to interpret. */
-    const started = performance.now();
-    const database = await seedLibrary(runtime, build, tracks);
-    const fixture = dirname(dirname(dirname(database)));
-    const seedMs = performance.now() - started;
-
-    const results = await sampleVariants(variants, runs, async variant => {
-      try {
-        return await checkTrackSearch(variant.runtime, database,
-          variant.pilot ? undefined : screenshots, {
-            pilot: variant.pilot, windows, cache, scenario: values.scenario, playbackMode: values['playback-mode']
-          });
-      } finally {
-        fs.rmSync(join(fixture, 'musikcube', 'session.json'), { force: true });
-      }
-    });
-
-    /* Report functional success separately from descriptive latency samples;
-       this runner does not enforce machine-specific performance thresholds. */
-    console.log(`UI ${values.scenario} passed with ${tracks.toLocaleString('en-US')} tracks across ${runs} runs.`);
-    console.log(`Generate and index ${(seedMs / 1000).toFixed(2)} s`);
-    if (compare) console.log(`ABI0 cache: ${capacity} pages, ${prefetch} prefetched in the direction of travel`);
-    printMetrics(results, [
-      ['Open', 'openMs', 'ms'], ['Filter', 'filterMs', 'ms'], ['Scroll', 'scrollMs', 'ms'],
-      ['Next window', 'nextMs', 'ms'], ['Back to first window', 'warmMs', 'ms'],
-      ['Jump to last window', 'jumpMs', 'ms'], ['Peak RSS', 'peakRssKiB', 'KiB'],
-      ['Search scenario CPU', 'cpuTicks', 'ms', tickMs],
-      ['Startup + search CPU', 'totalCpuTicks', 'ms', tickMs],
-    ]);
-    if (screenshots && !control.pilot) console.log(`Screenshots saved to ${screenshots}`);
-  });
+async function checkSortOrder(terminal) {
+  terminal.send('\x1bs');
+  await terminal.expect('select sort order');
+  terminal.send(DOWN + '\r');
+  await terminal.expect('tracks (sorted by track title)', { absent: 'select sort order' });
 }
 
-main().catch(error => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+module.exports = { checkSearch, checkSortOrder };
+
+if (require.main === module) require('../support/run-scenario').run('search');
