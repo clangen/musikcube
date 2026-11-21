@@ -33,6 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+
+#include <musikcore/library.h>
 #include <musikcore/debug.h>
 
 #include <chrono>
@@ -40,7 +42,6 @@
 #include "PlayQueueOverlays.h"
 
 #include <musikcore/audio/Visualizer.h>
-#include <musikcore/library/LocalLibraryConstants.h>
 
 #include <musikcore/runtime/Message.h>
 
@@ -59,7 +60,6 @@
 
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::cube;
 using namespace cursespp;
@@ -293,7 +293,7 @@ static void openCategoryTracks(api::Context& musikcore,
     if (field == MagicConstants::DirectoryCategoryType) {
         api::OpenDirectory(musikcore, value, std::move(completion));
     }
-    else if (field == Playlists::TABLE_NAME) {
+    else if (field == MC_LIBRARY_CATEGORY_PLAYLISTS) {
         api::OpenPlaylist(musikcore, id, std::move(completion));
     }
     else {

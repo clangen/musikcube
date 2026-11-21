@@ -90,7 +90,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/debug.h>
 #include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/io/LocalFileStream.h>
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/net/RawWebSocketClient.h>
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/plugin/PluginFactory.h>

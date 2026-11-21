@@ -41,7 +41,6 @@
 #include <cursespp/Screen.h>
 #include <cursespp/SingleLineEntry.h>
 
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
 
@@ -52,7 +51,6 @@
 using namespace std::placeholders;
 using namespace musik;
 using namespace musik::core;
-using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;

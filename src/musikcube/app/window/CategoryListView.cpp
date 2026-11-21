@@ -33,6 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+
+#include <musikcore/library.h>
 #include <cursespp/Colors.h>
 
 #include <cursespp/SingleLineEntry.h>
@@ -40,7 +42,6 @@
 #include <cursespp/Text.h>
 
 #include <musikcore/runtime/IMessage.h>
-#include <musikcore/library/LocalLibraryConstants.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -49,16 +50,15 @@
 
 using namespace musik::core;
 using namespace musik::core::db;
-using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::cube;
 using namespace cursespp;
 
 static std::map<std::string, std::string> FIELD_TO_ID_MAP = {
-    { library::constants::Track::ALBUM, library::constants::Track::ALBUM_ID },
-    { library::constants::Track::ARTIST, library::constants::Track::ARTIST_ID },
-    { library::constants::Track::ALBUM_ARTIST, library::constants::Track::ALBUM_ARTIST_ID },
-    { library::constants::Track::GENRE,  library::constants::Track::GENRE_ID }
+    { MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_ALBUM_ID },
+    { MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_VISUAL_ARTIST_ID },
+    { MC_TRACK_FIELD_ALBUM_ARTIST, MC_TRACK_FIELD_ALBUM_ARTIST_ID },
+    { MC_TRACK_FIELD_GENRE,  MC_TRACK_FIELD_VISUAL_GENRE_ID }
 };
 
 static std::string getFieldIdColumn(const std::string& fieldId) {

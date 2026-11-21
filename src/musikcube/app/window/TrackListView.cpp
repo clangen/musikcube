@@ -33,6 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+
+#include <musikcore/library.h>
 #include "TrackListView.h"
 
 #include <cursespp/Colors.h>
@@ -40,7 +42,6 @@
 #include <cursespp/Text.h>
 #include <cursespp/ToastOverlay.h>
 
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/Duration.h>
 
 #include <app/util/Hotkeys.h>

@@ -34,20 +34,20 @@
 
 #include <stdafx.h>
 
+#include <musikcore/library.h>
+
 #include "CategorySearchLayout.h"
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Messages.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 
-using namespace musik::core::library::constants;
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -148,9 +148,9 @@ void CategorySearchLayout::InitializeWindows() {
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
-    this->CreateCategoryView(this->albums, "browse_title_albums", constants::Track::ALBUM, 1);
-    this->CreateCategoryView(this->artists, "browse_title_artists", constants::Track::ARTIST, 2);
-    this->CreateCategoryView(this->genres, "browse_title_genres", constants::Track::GENRE, 3);
+    this->CreateCategoryView(this->albums, "browse_title_albums", MC_TRACK_FIELD_ALBUM, 1);
+    this->CreateCategoryView(this->artists, "browse_title_artists", MC_TRACK_FIELD_ARTIST, 2);
+    this->CreateCategoryView(this->genres, "browse_title_genres", MC_TRACK_FIELD_GENRE, 3);
 }
 
 void CategorySearchLayout::Requery() {

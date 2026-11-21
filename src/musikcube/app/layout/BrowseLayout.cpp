@@ -34,10 +34,11 @@
 
 #include <stdafx.h>
 
+#include <musikcore/library.h>
+
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/i18n/Locale.h>
@@ -52,7 +53,6 @@
 #include "BrowseLayout.h"
 
 using namespace musik;
-using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
@@ -77,15 +77,15 @@ constexpr int kFilterPadding = 1;
 #endif
 
 
-#define DEFAULT_CATEGORY constants::Track::ARTIST
+#define DEFAULT_CATEGORY MC_TRACK_FIELD_ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
 
 static std::map <std::string, std::string> FIELD_TO_TITLE {
-    std::make_pair(constants::Track::ARTIST, "browse_title_artists"),
-    std::make_pair(constants::Track::ALBUM, "browse_title_albums"),
-    std::make_pair(constants::Track::GENRE, "browse_title_genres"),
-    std::make_pair(constants::Track::ALBUM_ARTIST, "browse_title_album_artists"),
-    std::make_pair(constants::Playlists::TABLE_NAME, "browse_title_playlists")
+    std::make_pair(MC_TRACK_FIELD_ARTIST, "browse_title_artists"),
+    std::make_pair(MC_TRACK_FIELD_ALBUM, "browse_title_albums"),
+    std::make_pair(MC_TRACK_FIELD_GENRE, "browse_title_genres"),
+    std::make_pair(MC_TRACK_FIELD_ALBUM_ARTIST, "browse_title_album_artists"),
+    std::make_pair(MC_LIBRARY_CATEGORY_PLAYLISTS, "browse_title_playlists")
 };
 
 static inline std::string getModifiedText() {
@@ -361,7 +361,7 @@ void BrowseLayout::SwitchCategory(const std::string& fieldName) {
     this->categoryList->SetFieldName(fieldName);
     this->categoryList->SetFrameTitle(getTitleForCategory(fieldName));
 
-    this->trackList->SetTrackNumType(fieldName == constants::Playlists::TABLE_NAME
+    this->trackList->SetTrackNumType(fieldName == MC_LIBRARY_CATEGORY_PLAYLISTS
         ? TrackRowRenderers::TrackNumType::Sequential
         : TrackRowRenderers::TrackNumType::Metadata);
 }
@@ -418,7 +418,7 @@ bool BrowseLayout::KeyPress(const std::string& key) {
 }
 
 bool BrowseLayout::IsPlaylist() {
-    return this->categoryList->GetFieldName() == Playlists::TABLE_NAME;
+    return this->categoryList->GetFieldName() == MC_LIBRARY_CATEGORY_PLAYLISTS;
 }
 
 bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {

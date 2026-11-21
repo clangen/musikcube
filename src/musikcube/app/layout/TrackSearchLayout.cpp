@@ -38,7 +38,6 @@
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Hotkeys.h>
@@ -53,7 +52,6 @@
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
-using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::cube;
 using namespace cursespp;

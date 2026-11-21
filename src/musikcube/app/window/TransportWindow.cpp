@@ -33,6 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+
+#include <musikcore/library.h>
 #include "TransportWindow.h"
 
 #include <cursespp/Screen.h>
@@ -42,7 +44,6 @@
 #include <musikcore/support/Duration.h>
 
 #include <musikcore/debug.h>
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Playback.h>

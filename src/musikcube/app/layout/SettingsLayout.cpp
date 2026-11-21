@@ -43,7 +43,6 @@
 #include <cursespp/SchemaOverlay.h>
 #include <cursespp/AppLayout.h>
 
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/output.hpp>
 #include <musikcore/support/Messages.h>
@@ -67,7 +66,6 @@
 using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
 using namespace musik::core::net;
 using namespace musik::cube;

@@ -193,6 +193,9 @@ typedef void (MC_CALL *mc_track_search_completion_fn)(
 #define MC_TRACK_FIELD_GENRE "genre"
 #define MC_TRACK_FIELD_DIRECTORY "directory"
 
+/* Category key for browsing saved playlists. */
+#define MC_LIBRARY_CATEGORY_PLAYLISTS "playlists"
+
 typedef struct mc_track_query {
     /* Size of this struct in bytes. */
     uint32_t struct_size;

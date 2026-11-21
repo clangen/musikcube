@@ -34,11 +34,12 @@
 
 #include <stdafx.h>
 
+#include <musikcore/library.h>
+
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -57,7 +58,6 @@ using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
-using namespace musik::core::library::constants;
 using namespace musik::cube;
 using namespace musik::core::runtime;
 using namespace cursespp;
@@ -400,10 +400,10 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage& message) {
     switch (message.Type()) {
         case message::JumpToCategory: {
             static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
-                { cube::message::category::Album, constants::Track::ALBUM },
-                { cube::message::category::Artist, constants::Track::ARTIST },
-                { cube::message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
-                { cube::message::category::Genre, constants::Track::GENRE }
+                { cube::message::category::Album, MC_TRACK_FIELD_ALBUM },
+                { cube::message::category::Artist, MC_TRACK_FIELD_ARTIST },
+                { cube::message::category::AlbumArtist, MC_TRACK_FIELD_ALBUM_ARTIST },
+                { cube::message::category::Genre, MC_TRACK_FIELD_GENRE }
             };
 
             auto type = JUMP_TYPE_TO_COLUMN[(int) message.UserData1()];
@@ -466,23 +466,23 @@ bool LibraryLayout::KeyPress(const std::string& key) {
     if (this->visibleLayout == this->browseLayout ||
         this->visibleLayout == this->directoryLayout) {
         if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
-            this->ShowBrowse(constants::Track::ARTIST);
+            this->ShowBrowse(MC_TRACK_FIELD_ARTIST);
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbums, key)) {
-            this->ShowBrowse(constants::Track::ALBUM);
+            this->ShowBrowse(MC_TRACK_FIELD_ALBUM);
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseGenres, key)) {
-            this->ShowBrowse(constants::Track::GENRE);
+            this->ShowBrowse(MC_TRACK_FIELD_GENRE);
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbumArtists, key)) {
-            this->ShowBrowse(constants::Track::ALBUM_ARTIST);
+            this->ShowBrowse(MC_TRACK_FIELD_ALBUM_ARTIST);
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowsePlaylists, key)) {
-            this->ShowBrowse(constants::Playlists::TABLE_NAME);
+            this->ShowBrowse(MC_LIBRARY_CATEGORY_PLAYLISTS);
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseChooseCategory, key)) {
