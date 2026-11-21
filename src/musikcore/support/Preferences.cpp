@@ -285,6 +285,7 @@ bool Preferences::SetValues(const nlohmann::json& values, bool persist) {
 }
 
 void Preferences::GetKeys(std::vector<std::string>& target) {
+    std::lock_guard lock(this->mutex);
     auto it = json.begin();
     for (; it != json.end(); it++) {
         target.push_back(it.key());
@@ -372,8 +373,13 @@ namespace {
             return *settings;
         }
 
-        static const auto session = Preferences::ForComponent(prefs::components::Session);
-        return *session;
+        if (scope == MC_PREFERENCE_SESSION) {
+            static const auto session = Preferences::ForComponent(prefs::components::Session);
+            return *session;
+        }
+
+        static const auto hotkeys = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
+        return *hotkeys;
     }
 
     std::string preferenceText(mc_string_view view) {
@@ -459,5 +465,19 @@ mc_result MC_CALL mc_preferences_save(mc_preference_scope scope) {
     }
     return ffi::exception_barrier(nullptr, [&] {
         return preferenceStore(scope).Flush() ? MC_OK : MC_ERROR_IO;
+    });
+}
+
+mc_result MC_CALL mc_preferences_list_keys(mc_preference_scope scope, mc_preference_key_fn read, void* data) {
+    if (!ffi::valid_preference_scope(scope) || !read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        std::vector<std::string> keys;
+        preferenceStore(scope).GetKeys(keys);
+        for (const auto& key : keys) {
+            read(data, { key.data(), key.size() });
+        }
+        return MC_OK;
     });
 }

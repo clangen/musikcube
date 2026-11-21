@@ -97,6 +97,11 @@ async function checkTrackSearch(runtime, database, screenshots,
   preferences.SyncOnStartup = false;
   preferences.FirstRunSettingsDisplayed = true;
   fs.writeFileSync(settings, JSON.stringify(preferences));
+  const openSearch = !pilot && scenario === 'browse' ? 'T' : 't';
+  if (openSearch !== 't') {
+    fs.writeFileSync(join(fixture, 'musikcube', 'hotkeys.json'),
+      JSON.stringify({ navigate_library_tracks: openSearch }));
+  }
   const hasServer = !pilot && fs.readdirSync(join(runtime, 'plugins')).some(name => name.startsWith('libserver.'));
   if (hasServer) {
     fs.writeFileSync(join(fixture, 'musikcube', 'plugin_musikcubeserver(wss,http).json'),
@@ -133,7 +138,7 @@ async function checkTrackSearch(runtime, database, screenshots,
     await terminal.expect(pilot ? 'Track Search Pilot' : 'playback is stopped');
     const ready = terminal.processStats();
     let started = performance.now();
-    terminal.send('t');
+    terminal.send(openSearch);
     await terminal.expect('search');
     await terminal.expect(FIRST_TRACK);
     const openMs = performance.now() - started;

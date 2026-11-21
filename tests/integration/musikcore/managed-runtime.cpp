@@ -87,8 +87,9 @@ namespace {
         session.SetBool(enabled, true);
         session.SetDouble(gain, 10.25);
         const Preferences settings { MC_PREFERENCE_SETTINGS };
+        const auto keys = session.Keys();
         return session.GetBool(enabled) && session.GetDouble(gain) == 10.25 && !settings.GetBool(enabled) &&
-            session.Save() == MC_OK;
+            std::ranges::find(keys, name) != keys.end() && session.Save() == MC_OK;
     }
 
     bool checkEqualizer(Context& context, Host& host) {

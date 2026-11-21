@@ -91,7 +91,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/io/LocalFileStream.h>
 #include <musikcore/net/RawWebSocketClient.h>
 #include <musikcore/net/WebSocketClient.h>
-#include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/runtime/IMessage.h>
 #include <musikcore/runtime/IMessageQueue.h>
@@ -123,10 +122,7 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/sdk/IMetadataProxy.h>
 #include <musikcore/sdk/IPcmVisualizer.h>
 #include <musikcore/sdk/IPlaybackRemote.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/IResource.h>
-#include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/ISpectrumVisualizer.h>
 #include <musikcore/sdk/IStreamingEncoder.h>
 #include <musikcore/sdk/ITagReader.h>
@@ -148,7 +144,6 @@ asio's streambuf. include it up front so work around this */
 #include <musikcore/support/NarrowCast.h>
 #include <musikcore/support/Playback.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/Preferences.h>
 #include <musikcore/utfutil.h>
 #include <musikcore/sdk/version.h>
 

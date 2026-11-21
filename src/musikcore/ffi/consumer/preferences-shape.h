@@ -9,7 +9,7 @@
 
 namespace musik { namespace core { namespace ffi {
     inline bool valid_preference_scope(mc_preference_scope scope) {
-        return scope == MC_PREFERENCE_SETTINGS || scope == MC_PREFERENCE_SESSION;
+        return scope == MC_PREFERENCE_SETTINGS || scope == MC_PREFERENCE_SESSION || scope == MC_PREFERENCE_HOTKEYS;
     }
 
     inline bool valid_preference_value(const mc_preference_value& value) {

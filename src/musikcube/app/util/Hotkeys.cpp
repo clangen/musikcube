@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include "Hotkeys.h"
-#include <musikcore/support/Preferences.h>
+#include <musikcore/preferences.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <iostream>
@@ -42,7 +42,7 @@
 using namespace musik::cube;
 using namespace musik::core;
 
-#define ENSURE_LOADED() { if (!preferences) { loadPreferences(); } }
+#define ENSURE_LOADED() { if (!preferencesLoaded) { loadPreferences(); } }
 
 using Id = Hotkeys::Id;
 
@@ -239,30 +239,31 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
 static std::unordered_map<Id, std::string, EnumHasher> customIdToKey;
 
 /* preferences file */
-static std::shared_ptr<Preferences> preferences;
+static musik::core::api::Preferences preferences { MC_PREFERENCE_HOTKEYS };
+static bool preferencesLoaded = false;
 
 static void savePreferences() {
+    std::vector<std::string> keys;
+    std::vector<mc_preference_entry> entries;
+    keys.reserve(NAME_TO_ID.size());
+    entries.reserve(NAME_TO_ID.size());
+
     for (const auto& pair : NAME_TO_ID) {
-        preferences->SetString(
-            pair.first.c_str(),
-            Hotkeys::Get(pair.second).c_str());
+        keys.push_back(Hotkeys::Get(pair.second));
+        entries.push_back(musik::core::api::Preference(pair.first, keys.back()));
     }
 
-    preferences->Save();
+    preferences.Write(entries);
+    preferences.Save();
 }
 
 static void loadPreferences() {
-    preferences = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
-
+    preferencesLoaded = true;
     try {
-        if (preferences) {
-            std::vector<std::string> names;
-            preferences->GetKeys(names);
-            for (auto n : names) {
-                const auto it = NAME_TO_ID.find(n);
-                if (it != NAME_TO_ID.end()) {
-                    customIdToKey[it->second] = preferences->GetString(n);
-                }
+        for (const auto& name : preferences.Keys()) {
+            const auto it = NAME_TO_ID.find(name);
+            if (it != NAME_TO_ID.end()) {
+                customIdToKey[it->second] = preferences.GetString(name);
             }
         }
 

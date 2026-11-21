@@ -1084,11 +1084,13 @@ legacy list for actions that still require it.
 
 ### Phase 7: expand and migrate the public API
 
-- [ ] **PUB-001** Add preference namespace, typed values, batch updates, and
+- [x] **PUB-001** Add preference namespace, typed values, batch updates, and
   persistence contracts.
   Settings and Session support typed reads, atomic in-memory batches, and
   explicit saving through the C ABI. `musikcore.integration.api.managed_runtime`
   verifies scope isolation, copied text, and rejection of an invalid batch.
+  Hotkeys use a separate store and key enumeration.
+  `musikcube.ui.browse` launches search through a configured key override.
 - [ ] **PUB-002** Add category, album, directory, and remaining metadata query
   shapes.
   Browse and Directories use typed ordered results for their track panes.
@@ -1153,7 +1155,7 @@ legacy list for actions that still require it.
 - [ ] **PUB-009** Add contract and integration tests with every public feature
   family.
 - [ ] **CPP-003** Expand the C++ wrapper with each public feature family.
-- [ ] **MIG-003** Migrate preferences and settings consumers.
+- [x] **MIG-003** Migrate preferences and settings consumers.
   Search and Browse use the public preferences API for sort and session state.
   Startup, layout and theme preferences, and remote endpoint settings also
   use the public store. `musikcore.integration.api.managed_remote` starts

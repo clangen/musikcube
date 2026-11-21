@@ -113,10 +113,22 @@ namespace musik { namespace core { namespace api {
         }
 
         void Write(std::initializer_list<mc_preference_entry> entries) {
-            const auto status = mc_preferences_write(this->scope, entries.begin(), entries.size());
+            this->Write(entries.begin(), entries.size());
+        }
+
+        void Write(const std::vector<mc_preference_entry>& entries) {
+            this->Write(entries.data(), entries.size());
+        }
+
+        std::vector<std::string> Keys() const {
+            std::vector<std::string> keys;
+            const auto status = mc_preferences_list_keys(this->scope, [](void* data, mc_string_view key) {
+                static_cast<std::vector<std::string>*>(data)->emplace_back(AsStringView(key));
+            }, &keys);
             if (status != MC_OK) {
                 throw Error(status);
             }
+            return keys;
         }
 
         mc_result Save() {
@@ -124,6 +136,13 @@ namespace musik { namespace core { namespace api {
         }
 
     private:
+        void Write(const mc_preference_entry* entries, size_t count) {
+            const auto status = mc_preferences_write(this->scope, entries, count);
+            if (status != MC_OK) {
+                throw Error(status);
+            }
+        }
+
         void Read(std::string_view key, const mc_preference_value& fallback, mc_preference_read_fn read, void* data) const {
             const auto status = mc_preferences_read(this->scope, { key.data(), key.size() }, &fallback, read, data);
             if (status != MC_OK) {
