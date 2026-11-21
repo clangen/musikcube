@@ -38,7 +38,7 @@
 #include <musikcore/db/ScopedTransaction.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/support/Messages.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 
 #pragma warning(push, 0)
 #include <nlohmann/json.hpp>

@@ -1,8 +1,8 @@
 /* Direct tests of the production message queue. No library, plugins, audio,
    or shared runtime is started, so queue failures have a small reproducible fixture. */
 
-#include <musikcore/runtime/Message.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/Message.h>
+#include <common/runtime/MessageQueue.h>
 
 #include <algorithm>
 #include <chrono>

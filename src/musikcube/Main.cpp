@@ -52,7 +52,7 @@
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/debug.h>
 #include <app/util/Locale.h>
 #include <musikcore/indexer.hpp>

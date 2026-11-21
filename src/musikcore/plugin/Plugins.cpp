@@ -53,7 +53,7 @@
 #include <musikcore/support/ServerPreferences.h>
 #include <musikcore/library/LocalMetadataProxy.h>
 #include <musikcore/library/LibraryFactory.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 
 #include <musikcore/sdk/IDebug.h>

@@ -35,7 +35,7 @@
 #include "pch.hpp"
 
 #include <musikcore/audio/Crossfader.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 
 #include <algorithm>
 #include <chrono>

@@ -41,8 +41,8 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 
-#include <musikcore/runtime/Message.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/Message.h>
+#include <common/runtime/MessageQueue.h>
 
 #include <cassert>
 

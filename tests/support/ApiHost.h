@@ -1,7 +1,7 @@
 #pragma once
 #include <musikcore/context.h>
-#include <musikcore/runtime/Message.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/Message.h>
+#include <common/runtime/MessageQueue.h>
 #include <chrono>
 
 /* Wake the real host queue for ABI completions, without polling or sleeping. */

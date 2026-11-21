@@ -38,7 +38,7 @@
 
 #include <musikcore/net/PiggyWebSocketClient.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/sdk/version.h>
 
 using namespace musik::core;

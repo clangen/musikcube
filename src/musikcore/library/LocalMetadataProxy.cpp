@@ -52,7 +52,7 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/support/Common.h>
 #include <vector>

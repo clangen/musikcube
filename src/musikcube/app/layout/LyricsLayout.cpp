@@ -43,7 +43,7 @@
 #include <cursespp/ToastOverlay.h>
 #include <cursespp/SingleLineEntry.h>
 #include <app/util/Hotkeys.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <app/util/Messages.h>
 
 using namespace musik::cube;

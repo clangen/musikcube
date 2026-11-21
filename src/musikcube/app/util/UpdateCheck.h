@@ -37,7 +37,7 @@
 #include <thread>
 #include <mutex>
 #include <memory>
-#include <musikcore/runtime/IMessageTarget.h>
+#include <common/runtime/IMessageTarget.h>
 #include <musikcore/sdk/HttpClient.h>
 
 namespace musik { namespace cube {

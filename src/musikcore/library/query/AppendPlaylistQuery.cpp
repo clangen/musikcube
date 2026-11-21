@@ -38,7 +38,7 @@
 #include <musikcore/library/query/TrackMetadataQuery.h>
 #include <musikcore/library/query/util/Serialization.h>
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/db/Statement.h>
 

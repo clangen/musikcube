@@ -42,7 +42,7 @@
 #include <cursespp/SingleLineEntry.h>
 
 
-#include <musikcore/runtime/IMessage.h>
+#include <common/runtime/IMessage.h>
 
 #include <app/util/TrackRowRenderers.h>
 #include <app/util/AsyncCallbackScope.h>

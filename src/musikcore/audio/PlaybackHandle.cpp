@@ -4,7 +4,7 @@
 #include <musikcore/ffi/consumer/library-query-backends.h>
 #include <musikcore/ffi/consumer/library-storage.h>
 #include <musikcore/ffi/consumer/playback-storage.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/Playback.h>
 
 #include <atomic>

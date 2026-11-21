@@ -34,7 +34,7 @@
 
 #include "MainController.h"
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/library/query/local/SearchTrackListQuery.h>
 #include <musikcore/support/Playback.h>
 #include <musikcore/support/Duration.h>

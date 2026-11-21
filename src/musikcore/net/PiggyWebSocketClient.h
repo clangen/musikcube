@@ -36,7 +36,7 @@
 
 #include <musikcore/config.h>
 #include <musikcore/net/RawWebSocketClient.h>
-#include <musikcore/runtime/IMessageQueue.h>
+#include <common/runtime/IMessageQueue.h>
 
 #include <sigslot/sigslot.h>
 

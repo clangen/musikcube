@@ -118,11 +118,11 @@
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/runtime/IMessage.h>
-#include <musikcore/runtime/IMessageQueue.h>
-#include <musikcore/runtime/IMessageTarget.h>
-#include <musikcore/runtime/Message.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/IMessage.h>
+#include <common/runtime/IMessageQueue.h>
+#include <common/runtime/IMessageTarget.h>
+#include <common/runtime/Message.h>
+#include <common/runtime/MessageQueue.h>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/DataBuffer.h>
 #include <musikcore/sdk/Filesystem.h>

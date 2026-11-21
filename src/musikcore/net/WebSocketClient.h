@@ -37,7 +37,7 @@
 #include <musikcore/config.h>
 #include <musikcore/net/RawWebSocketClient.h>
 #include <musikcore/library/IQuery.h>
-#include <musikcore/runtime/IMessageQueue.h>
+#include <common/runtime/IMessageQueue.h>
 #include <thread>
 #include <unordered_map>
 #include <atomic>

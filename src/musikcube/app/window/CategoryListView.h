@@ -44,7 +44,7 @@
 
 
 #include <musikcore/playback.hpp>
-#include <musikcore/runtime/IMessage.h>
+#include <common/runtime/IMessage.h>
 
 #include <mutex>
 

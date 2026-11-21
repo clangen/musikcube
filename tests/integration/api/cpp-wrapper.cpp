@@ -3,8 +3,8 @@
 #ifdef MUSIKCORE_TEST_APP_BINDING
 #include "../../support/TestTransport.h"
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/runtime/MessageQueue.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/MessageQueue.h>
+#include <common/runtime/Message.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/QueryRegistry.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>

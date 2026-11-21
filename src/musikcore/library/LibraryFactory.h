@@ -38,7 +38,7 @@
 #include <musikcore/library.h>
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
-#include <musikcore/runtime/IMessageQueue.h>
+#include <common/runtime/IMessageQueue.h>
 #include <sigslot/sigslot.h>
 #include <map>
 #include <vector>

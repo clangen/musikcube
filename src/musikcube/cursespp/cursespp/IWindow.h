@@ -40,8 +40,8 @@
 #include <cursespp/IMouseHandler.h>
 #include <cursespp/Colors.h>
 
-#include <musikcore/runtime/IMessage.h>
-#include <musikcore/runtime/IMessageTarget.h>
+#include <common/runtime/IMessage.h>
+#include <common/runtime/IMessageTarget.h>
 #include <string>
 
 namespace cursespp {

@@ -6,7 +6,7 @@
 #include <musikcore/library.hpp>
 #include <musikcore/playback.hpp>
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/MessageQueue.h>
 
 /* Neither copyable nor movable. Owns production services in application order.
    Dependent playback/library objects must be declared after this fixture. */

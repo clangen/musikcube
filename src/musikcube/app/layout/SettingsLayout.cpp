@@ -44,7 +44,6 @@
 #include <cursespp/AppLayout.h>
 
 #include <musikcore/output.hpp>
-#include <musikcore/support/Messages.h>
 #include <musikcore/sdk/version.h>
 
 #include <app/util/Hotkeys.h>

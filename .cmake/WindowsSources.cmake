@@ -56,8 +56,8 @@ set(windows_core_sources
   src/musikcore/audio/Stream.cpp
   src/musikcore/plugin/PluginFactory.cpp
   src/musikcore/plugin/Plugins.cpp
-  src/musikcore/runtime/Message.cpp
-  src/musikcore/runtime/MessageQueue.cpp
+  src/common/runtime/Message.cpp
+  src/common/runtime/MessageQueue.cpp
   src/musikcore/support/Auddio.cpp
   src/musikcore/support/Common.cpp
   src/musikcore/support/Duration.cpp

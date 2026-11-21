@@ -105,8 +105,8 @@ add_custom_target(musikcube_tests DEPENDS
 # global library services, or the production precompiled header.
 add_executable(musikcore_message_queue_test
   unit/musikcore/runtime/message-queue.cpp
-  "${PROJECT_SOURCE_DIR}/src/musikcore/runtime/MessageQueue.cpp"
-  "${PROJECT_SOURCE_DIR}/src/musikcore/runtime/Message.cpp")
+  "${PROJECT_SOURCE_DIR}/src/common/runtime/MessageQueue.cpp"
+  "${PROJECT_SOURCE_DIR}/src/common/runtime/Message.cpp")
 target_include_directories(musikcore_message_queue_test PRIVATE
   "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/src/3rdparty/include")
 target_link_libraries(musikcore_message_queue_test PRIVATE Threads::Threads)

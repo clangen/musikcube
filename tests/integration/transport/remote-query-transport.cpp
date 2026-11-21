@@ -19,7 +19,7 @@
 #include <musikcore/library/QueryRegistry.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/MessageQueue.h>
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>

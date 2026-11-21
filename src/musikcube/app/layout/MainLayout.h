@@ -43,7 +43,7 @@
 
 #include <musikcore/playback.hpp>
 #include <musikcore/preferences.hpp>
-#include <musikcore/runtime/IMessageTarget.h>
+#include <common/runtime/IMessageTarget.h>
 #include <musikcore/indexer.hpp>
 #include <musikcore/net/PiggyWebSocketClient.h>
 

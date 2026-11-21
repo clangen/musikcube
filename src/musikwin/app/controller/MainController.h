@@ -36,7 +36,7 @@
 
 #include <app/view/MainWindow.h>
 
-#include <musikcore/runtime/IMessageQueue.h>
+#include <common/runtime/IMessageQueue.h>
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/ILibrary.h>
 

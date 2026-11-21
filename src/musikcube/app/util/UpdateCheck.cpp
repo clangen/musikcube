@@ -43,7 +43,7 @@
 #include <cursespp/Window.h>
 #include <cursespp/DialogOverlay.h>
 
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/sdk/version.h>
 

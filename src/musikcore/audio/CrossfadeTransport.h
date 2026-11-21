@@ -38,7 +38,7 @@
 #include <musikcore/audio/ITransport.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/Crossfader.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/MessageQueue.h>
 #include <musikcore/sdk/IOutput.h>
 #include <musikcore/sdk/constants.h>
 

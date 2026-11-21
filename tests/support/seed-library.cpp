@@ -2,8 +2,8 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/runtime/Message.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/Message.h>
+#include <common/runtime/MessageQueue.h>
 
 #include <chrono>
 #include <cstdio>

@@ -41,7 +41,6 @@
 #include <cursespp/Screen.h>
 #include <cursespp/SingleLineEntry.h>
 
-#include <musikcore/support/Messages.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>

@@ -56,8 +56,8 @@ set(CORE_SOURCES
   ./net/WebSocketClient.cpp
   ./plugin/PluginFactory.cpp
   ./plugin/Plugins.cpp
-  ./runtime/Message.cpp
-  ./runtime/MessageQueue.cpp
+  ../common/runtime/Message.cpp
+  ../common/runtime/MessageQueue.cpp
   ./support/Auddio.cpp
   ./support/Duration.cpp
   ./support/Common.cpp

@@ -37,7 +37,7 @@
 #include <cursespp/curses_config.h>
 #include <cursespp/IWindow.h>
 #include <cursespp/INavigationKeys.h>
-#include <musikcore/runtime/IMessageQueue.h>
+#include <common/runtime/IMessageQueue.h>
 #include <sigslot/sigslot.h>
 
 #ifdef WIN32

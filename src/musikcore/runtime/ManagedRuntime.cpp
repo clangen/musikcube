@@ -8,7 +8,7 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/runtime/MessageQueue.h>
+#include <common/runtime/MessageQueue.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>

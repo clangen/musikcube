@@ -43,7 +43,7 @@
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/support/Preferences.h>
-#include <musikcore/runtime/IMessageQueue.h>
+#include <common/runtime/IMessageQueue.h>
 #include <musikcore/playback.h>
 
 #include <mutex>

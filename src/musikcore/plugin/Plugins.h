@@ -37,7 +37,7 @@
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/sdk/IEnvironment.h>
 #include <musikcore/sdk/IPlaybackService.h>
-#include <musikcore/runtime/IMessage.h>
+#include <common/runtime/IMessage.h>
 
 namespace musik { namespace core { namespace plugin {
 

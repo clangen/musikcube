@@ -43,8 +43,8 @@
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/query/MarkTrackPlayedQuery.h>
 #include <musikcore/plugin/PluginFactory.h>
-#include <musikcore/runtime/MessageQueue.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/MessageQueue.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Playback.h>
 #include <thread>

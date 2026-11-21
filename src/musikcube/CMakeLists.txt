@@ -75,7 +75,10 @@ endif()
 
 configure_file("musikcube.in" "musikcube" @ONLY)
 
-add_executable(musikcube ${CUBE_SRCS})
+# Use the queue implementation locally so UI traffic stays within the executable.
+add_library(musikcube_ui_runtime OBJECT ../common/runtime/Message.cpp ../common/runtime/MessageQueue.cpp)
+set_target_properties(musikcube_ui_runtime PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
+add_executable(musikcube ${CUBE_SRCS} $<TARGET_OBJECTS:musikcube_ui_runtime>)
 add_definitions(-DNCURSES_WIDECHAR)
 
 if (${BUILD_STANDALONE} MATCHES "true")

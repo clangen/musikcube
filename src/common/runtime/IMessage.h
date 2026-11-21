@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/config.h>
+#include <cstdint>
 #include <memory>
 
 namespace musik { namespace core { namespace runtime {

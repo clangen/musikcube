@@ -42,8 +42,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <musikcore/runtime/Message.h>
-#include <musikcore/support/Messages.h>
+#include <common/runtime/Message.h>
 
 #include <app/overlay/BrowseOverlays.h>
 #include <app/overlay/PlayQueueOverlays.h>

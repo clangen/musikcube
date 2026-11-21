@@ -43,7 +43,7 @@
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/sdk/ITrack.h>
-#include <musikcore/runtime/IMessageQueue.h>
+#include <common/runtime/IMessageQueue.h>
 
 namespace musik { namespace core {
 

@@ -17,8 +17,8 @@
 #include <musikcore/debug.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/runtime/MessageQueue.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/MessageQueue.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Common.h>
 

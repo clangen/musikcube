@@ -38,7 +38,7 @@
 #include <cursespp/IKeyHandler.h>
 #include <app/util/AsyncCallbackScope.h>
 #include <musikcore/sdk/constants.h>
-#include <musikcore/runtime/IMessage.h>
+#include <common/runtime/IMessage.h>
 #include <musikcore/playback.hpp>
 
 namespace musik {

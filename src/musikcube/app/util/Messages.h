@@ -35,12 +35,11 @@
 #pragma once
 
 #include <stdafx.h>
-#include <musikcore/support/Messages.h>
 
 namespace musik {
     namespace cube {
         namespace message {
-            static const int First = musik::core::message::User + 1024;
+            static const int First = 5120;
 
             namespace category { /* User1 */
                 static const int Album = 0;

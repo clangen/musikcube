@@ -110,3 +110,7 @@ Theme reads, directory browsing, and hotkey backups use application-owned filesy
 ## Locale resources
 
 Cube loads and selects the existing locale resources through the public SDK. Queries and UI share the same synchronized translation store, and C callbacks receive a snapshot outside its lock. All 47 Linux Release tests passed. The isolated managed-runtime fixture stages the English locale to check enumeration, selection, and fallback values.
+
+## UI message queue
+
+The application and core compile the same generic queue implementation, with a local copy in the Unix frontend. Cube no longer imports message queue methods from libmusikcore. All 47 Linux Release tests passed, including the queue unit contracts and four headless UI scenarios.

@@ -41,7 +41,7 @@
 #include <musikcore/library/IQuery.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/QueryRegistry.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/NarrowCast.h>
 #include <musikcore/debug.h>
 

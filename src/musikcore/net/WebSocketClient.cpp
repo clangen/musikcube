@@ -36,7 +36,7 @@
 
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/sdk/String.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/sdk/version.h>
 
 #pragma warning(push, 0)

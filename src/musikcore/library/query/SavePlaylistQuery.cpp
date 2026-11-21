@@ -42,7 +42,7 @@
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/db/ScopedTransaction.h>
 #include <musikcore/db/Statement.h>
-#include <musikcore/runtime/Message.h>
+#include <common/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 
 using namespace musik::core;
