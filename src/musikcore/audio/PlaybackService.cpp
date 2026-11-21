@@ -174,6 +174,38 @@ PlaybackService::~PlaybackService() {
     this->ResetRemotes();
 }
 
+void PlaybackService::SelectLibrary(ILibraryPtr library) {
+    auto previous = this->library;
+    if (previous == library) {
+        return;
+    }
+
+    /* Stop old stream work before resetting the queue's track identifiers. */
+    this->Stop();
+    previous->Indexer()->Finished.disconnect(this);
+    for (const auto type : { MESSAGE_STREAM_EVENT, MESSAGE_PREPARE_NEXT_TRACK,
+        MESSAGE_NEXT_TRACK_EDITED, MESSAGE_SEEK, MESSAGE_MARK_TRACK_PLAYED, MESSAGE_MARK_TRACK_PLAYING })
+    {
+        this->messageQueue.Remove(this, type);
+    }
+
+    {
+        std::lock_guard lock(this->playlistMutex);
+        this->playlist.ResetForLibrary(library);
+        this->unshuffled.ResetForLibrary(library);
+        this->queueOrigin.reset();
+        this->playingOrigin.reset();
+        this->playingTrack.reset();
+        this->index = this->nextIndex = NO_POSITION;
+        this->seekPosition = -1.0;
+        this->library = std::move(library);
+        ++this->queueRevision;
+    }
+
+    this->library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
+    POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
+}
+
 void PlaybackService::InitRemotes() {
     typedef PluginFactory::ReleaseDeleter<IPlaybackRemote> Deleter;
 
@@ -894,11 +926,11 @@ double PlaybackService::GetDuration() {
 }
 
 ITrack* PlaybackService::GetTrack(size_t index) {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     if (this->library->GetConnectionState() != ILibrary::ConnectionState::Connected) {
         return nullptr;
     }
 
-    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     if (this->queueOrigin && !MatchesPlaybackOrigin(*this->queueOrigin, this->library)) return nullptr;
 
     const size_t count = this->playlist.Count();
@@ -929,11 +961,11 @@ TrackPtr PlaybackService::GetPlaying() {
 }
 
 TrackPtr PlaybackService::TrackAtIndexWithTimeout(size_t index) {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     if (this->library->GetConnectionState() != ILibrary::ConnectionState::Connected) {
         return TrackPtr();
     }
 
-    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     if (this->queueOrigin && !MatchesPlaybackOrigin(*this->queueOrigin, this->library)) return {};
 
     if (index >= this->playlist.Count()) {
@@ -1170,6 +1202,7 @@ void PlaybackService::Editor::Release() noexcept {
 }
 
 std::string PlaybackService::UriAtIndex(size_t index) {
+    std::lock_guard lock(this->playlistMutex);
     if (index < this->playlist.Count()) {
         auto track = TrackAtIndexWithTimeout(index);
         if (track) {

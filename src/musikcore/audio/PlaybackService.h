@@ -148,6 +148,7 @@ namespace musik { namespace core { namespace audio {
             void CopyTo(musik::core::TrackList& target);
             void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetPlaying();
+            void SelectLibrary(musik::core::ILibraryPtr library);
 
             musik::core::audio::ITransport& GetTransport() noexcept {
                 return *this->transport.get();

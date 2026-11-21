@@ -80,6 +80,8 @@ namespace musik { namespace core {
             TrackPtr Get(size_t index, bool async = false) const;
             TrackPtr GetWithTimeout(size_t index, size_t timeoutMs) const;
             void ClearCache() noexcept;
+            /* Call after outstanding cache reads have settled. */
+            void ResetForLibrary(ILibraryPtr library) noexcept;
             void Swap(TrackList& list) noexcept;
             void CopyFrom(const TrackList& from);
             void CopyTo(TrackList& to);

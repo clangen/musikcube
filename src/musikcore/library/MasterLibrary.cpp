@@ -179,45 +179,7 @@ void MasterLibrary::PublishSelection(bool selectionChanged) {
     }
     audio::DiscardUnavailablePlaybackQueue(*this->playback);
 
-    ffi::LibraryStatus status;
-    status.kind = this->GetType() == Type::Local ? MC_LIBRARY_LOCAL : MC_LIBRARY_REMOTE;
-    status.configured = this->IsConfigured();
-    switch (this->GetConnectionState()) {
-        case ConnectionState::Disconnected:
-            status.state = MC_LIBRARY_DISCONNECTED;
-            break;
-        case ConnectionState::Connecting:
-            status.state = MC_LIBRARY_CONNECTING;
-            break;
-        case ConnectionState::Connected:
-            status.state = MC_LIBRARY_CONNECTED;
-            break;
-        case ConnectionState::AuthenticationFailure:
-            status.state = MC_LIBRARY_AUTHENTICATION_FAILED;
-            break;
-    }
-    if (const auto remote = std::dynamic_pointer_cast<RemoteLibrary>(this->wrappedLibrary)) {
-        const auto& socket = remote->WebSocketClient();
-        status.endpoint = socket.Uri();
-        status.serverVersion = socket.LastServerVersion();
-        using Error = net::WebSocketClient::ConnectionError;
-        switch (socket.LastConnectionError()) {
-            case Error::None:
-                break;
-            case Error::ClosedByServer:
-                status.error = MC_LIBRARY_CONNECTION_CLOSED;
-                break;
-            case Error::ConnectionFailed:
-                status.error = MC_LIBRARY_CONNECTION_FAILED;
-                break;
-            case Error::InvalidPassword:
-                status.error = MC_LIBRARY_CONNECTION_INVALID_PASSWORD;
-                break;
-            case Error::IncompatibleVersion:
-                status.error = MC_LIBRARY_CONNECTION_INCOMPATIBLE_VERSION;
-                break;
-        }
-    }
+    auto status = ffi::CaptureLibraryStatus(this->wrappedLibrary);
 
     auto identity = status.state == MC_LIBRARY_CONNECTED
         ? ffi::CaptureLibrary(this->wrappedLibrary)

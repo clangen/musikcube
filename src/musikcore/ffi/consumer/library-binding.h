@@ -9,6 +9,7 @@ namespace musik { namespace core { namespace api { class Library; class Context;
 struct LibraryIdentity;
 
 namespace musik { namespace core { namespace ffi {
+    struct LibraryStatus;
 
     /*
      * The app's MasterLibrary is a mutable selector. An async request may
@@ -42,5 +43,6 @@ namespace musik { namespace core { namespace ffi {
     mc_result BindRemoteLibrary(const std::shared_ptr<library::RemoteLibrary>& library, mc_library** out);
 
     std::shared_ptr<const LibraryIdentity> CaptureLibrary(const ILibraryPtr& library);
+    LibraryStatus CaptureLibraryStatus(const ILibraryPtr& library);
 
 } } }

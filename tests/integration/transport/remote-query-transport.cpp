@@ -1050,10 +1050,19 @@ namespace {
 
         auto origin = tracks.Track(0);
         auto playback = context.GetPlayback();
-        if (playback.UseTrack(origin, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
-            context.SelectLibrary(MC_LIBRARY_LOCAL) != MC_OK ||
+        if (playback.UseTrack(origin, MC_PLAYBACK_TRACK_APPEND) != MC_OK) {
+            return failure(__LINE__);
+        }
+        const auto remoteQueue = playback.Queue();
+        if (!remoteQueue || remoteQueue->Size() != 1 || context.SelectLibrary(MC_LIBRARY_LOCAL) != MC_OK ||
             context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL ||
-            playback.UseTrack(origin, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND)
+            playback.UseTrack(origin, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND ||
+            playback.Remove(*remoteQueue, 0) != MC_ERROR_NOT_FOUND)
+        {
+            return failure(__LINE__);
+        }
+        const auto localQueue = playback.Queue();
+        if (!localQueue || localQueue->Size() != 0)
         {
             return failure(__LINE__);
         }

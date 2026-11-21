@@ -546,3 +546,48 @@ mc_result musik::core::ffi::BindRemoteLibrary(const std::shared_ptr<library::Rem
         return MC_OK;
     });
 }
+
+musik::core::ffi::LibraryStatus musik::core::ffi::CaptureLibraryStatus(const ILibraryPtr& selected) {
+    LibraryStatus status;
+    using ConnectionState = ILibrary::ConnectionState;
+    status.kind = selected->GetType() == ILibrary::Type::Local ? MC_LIBRARY_LOCAL : MC_LIBRARY_REMOTE;
+    status.configured = selected->IsConfigured();
+    switch (selected->GetConnectionState()) {
+        case ConnectionState::Disconnected:
+            status.state = MC_LIBRARY_DISCONNECTED;
+            break;
+        case ConnectionState::Connecting:
+            status.state = MC_LIBRARY_CONNECTING;
+            break;
+        case ConnectionState::Connected:
+            status.state = MC_LIBRARY_CONNECTED;
+            break;
+        case ConnectionState::AuthenticationFailure:
+            status.state = MC_LIBRARY_AUTHENTICATION_FAILED;
+            break;
+    }
+    if (const auto remote = std::dynamic_pointer_cast<library::RemoteLibrary>(selected)) {
+        const auto& socket = remote->WebSocketClient();
+        status.endpoint = socket.Uri();
+        status.serverVersion = socket.LastServerVersion();
+        using Error = net::WebSocketClient::ConnectionError;
+        switch (socket.LastConnectionError()) {
+            case Error::None:
+                break;
+            case Error::ClosedByServer:
+                status.error = MC_LIBRARY_CONNECTION_CLOSED;
+                break;
+            case Error::ConnectionFailed:
+                status.error = MC_LIBRARY_CONNECTION_FAILED;
+                break;
+            case Error::InvalidPassword:
+                status.error = MC_LIBRARY_CONNECTION_INVALID_PASSWORD;
+                break;
+            case Error::IncompatibleVersion:
+                status.error = MC_LIBRARY_CONNECTION_INCOMPATIBLE_VERSION;
+                break;
+        }
+    }
+
+    return status;
+}

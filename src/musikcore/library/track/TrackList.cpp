@@ -236,6 +236,13 @@ void TrackList::ClearCache() noexcept {
     this->cacheMap.clear();
 }
 
+void TrackList::ResetForLibrary(ILibraryPtr library) noexcept {
+    this->Clear();
+    this->currentWindow.Reset();
+    this->nextWindow.Reset();
+    this->library = std::move(library);
+}
+
 void TrackList::Swap(TrackList& tl) noexcept {
     std::swap(tl.ids, this->ids);
 }
