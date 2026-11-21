@@ -34,6 +34,8 @@
 
 #include <stdafx.h>
 
+#include <musikcore/preferences.hpp>
+
 #include <musikcore/library.h>
 
 #include <cursespp/App.h>
@@ -63,18 +65,16 @@ using namespace musik::core::runtime;
 using namespace cursespp;
 
 namespace keys = musik::cube::prefs::keys;
-namespace components = musik::core::prefs::components;
 
 #define SHOULD_REFOCUS(target)         \
     (this->visibleLayout == target) && \
         (this->shortcuts && !this->shortcuts->IsFocused())
 
-#define REMEMBER(key, value)                                         \
-    {                                                                \
-        auto prefs = Preferences::ForComponent(components::Session); \
-        prefs->SetString(key, value.c_str());                        \
-        this->prefs->Save();                                         \
-    }
+static void rememberSessionValue(std::string_view key, std::string_view value) {
+    api::Preferences session { MC_PREFERENCE_SESSION };
+    session.SetString(key, value);
+    session.Save();
+}
 
 namespace type {
     const std::string CategoryFilter = "CategoryFilter";
@@ -90,12 +90,11 @@ LibraryLayout::LibraryLayout(musik::core::api::Context& musikcore)
 , musikcore(musikcore)
 , shortcuts(nullptr)
 {
-    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows(musikcore);
 }
 
 void LibraryLayout::OnLayout() {
-    const bool autoHideCommandBar = this->prefs->GetBool(keys::AutoHideCommandBar, false);
+    const bool autoHideCommandBar = this->prefs.GetBool(keys::AutoHideCommandBar, false);
     const int x = 0, y = 0;
     const int cx = this->GetWidth(), cy = this->GetHeight();
 #ifdef WIN32
@@ -116,7 +115,7 @@ void LibraryLayout::OnVisibilityChanged(bool visible) {
 
     const auto status = this->musikcore.GetLibraryStatus();
     if (visible && status.kind == MC_LIBRARY_REMOTE && status.state == MC_LIBRARY_CONNECTED) {
-        prefs->SetBool(core::prefs::keys::RemoteLibraryViewed, true);
+        prefs.SetBool(core::prefs::keys::RemoteLibraryViewed, true);
     }
 }
 
@@ -157,7 +156,7 @@ void LibraryLayout::OnLayoutChanged() {
 
 void LibraryLayout::ShowNowPlaying() {
     this->ChangeMainLayout(this->nowPlayingLayout);
-    REMEMBER(keys::LastLibraryView, type::NowPlaying);
+    rememberSessionValue(keys::LastLibraryView, type::NowPlaying);
 }
 
 void LibraryLayout::ShowBrowse(const std::string& category) {
@@ -166,14 +165,14 @@ void LibraryLayout::ShowBrowse(const std::string& category) {
         this->browseLayout->SwitchCategory(category);
     }
     this->lastBrowseCategoryType = category;
-    REMEMBER(keys::LastLibraryView, type::Browse);
+    rememberSessionValue(keys::LastLibraryView, type::Browse);
 }
 
 void LibraryLayout::ShowCategorySearch() {
     SHOULD_REFOCUS(this->categorySearchLayout)
     ? this->categorySearchLayout->FocusInput()
     : this->ChangeMainLayout(this->categorySearchLayout);
-    REMEMBER(keys::LastLibraryView, type::CategoryFilter);
+    rememberSessionValue(keys::LastLibraryView, type::CategoryFilter);
 }
 
 void LibraryLayout::ShowTrackSearch() {
@@ -181,17 +180,17 @@ void LibraryLayout::ShowTrackSearch() {
     ? this->trackSearchLayout->FocusInput()
     : this->ChangeMainLayout(this->trackSearchLayout);
 
-    REMEMBER(keys::LastLibraryView, type::TrackFilter);
+    rememberSessionValue(keys::LastLibraryView, type::TrackFilter);
 }
 
 void LibraryLayout::ShowDirectories(const std::string& directory) {
     if (directory.size()) {
         this->directoryLayout->SetDirectory(directory);
-        REMEMBER(keys::LastBrowseDirectoryRoot, directory);
+        rememberSessionValue(keys::LastBrowseDirectoryRoot, directory);
     }
     this->ChangeMainLayout(this->directoryLayout);
     this->lastBrowseCategoryType = MagicConstants::DirectoryCategoryType;
-    REMEMBER(keys::LastLibraryView, type::Directory);
+    rememberSessionValue(keys::LastLibraryView, type::Directory);
 }
 
 void LibraryLayout::CancelLibraryRequests() {
@@ -234,12 +233,12 @@ void LibraryLayout::InitializeWindows(musik::core::api::Context& musikcore) {
 }
 
 void LibraryLayout::LoadLastSession() {
-    if (this->prefs->GetBool(musik::core::prefs::keys::SaveSessionOnExit, true)) {
-        auto session = Preferences::ForComponent(components::Session);
-        const std::string type = session->GetString(keys::LastLibraryView, type::Browse);
+    if (this->prefs.GetBool(musik::core::prefs::keys::SaveSessionOnExit, true)) {
+        auto session = api::Preferences { MC_PREFERENCE_SESSION };
+        const std::string type = session.GetString(keys::LastLibraryView, type::Browse);
         if (type == type::Directory) {
             const std::string lastDirectoryRoot =
-                session->GetString(keys::LastBrowseDirectoryRoot, "");
+                session.GetString(keys::LastBrowseDirectoryRoot, "");
 
             const auto paths = this->musikcore.GetLibraryStatus().kind == MC_LIBRARY_LOCAL
                 ? api::Indexer(this->musikcore).Paths()

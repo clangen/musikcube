@@ -1155,6 +1155,9 @@ legacy list for actions that still require it.
 - [ ] **CPP-003** Expand the C++ wrapper with each public feature family.
 - [ ] **MIG-003** Migrate preferences and settings consumers.
   Search and Browse use the public preferences API for sort and session state.
+  Startup, layout and theme preferences, and remote endpoint settings also
+  use the public store. `musikcore.integration.api.managed_remote` starts
+  from endpoint settings written as a single public batch.
 - [ ] **MIG-004** Migrate remaining library/category/directory views.
   Browse receives local playlist mutations through context dispatch.
   `musikcore.abi.dispatch` verifies notification ordering and

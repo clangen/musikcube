@@ -42,7 +42,7 @@
 #include <cursespp/TextLabel.h>
 
 #include <musikcore/playback.hpp>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/preferences.hpp>
 #include <musikcore/runtime/IMessageTarget.h>
 #include <musikcore/indexer.hpp>
 #include <musikcore/net/PiggyWebSocketClient.h>
@@ -92,7 +92,7 @@ namespace musik {
                 void UpdateTopBannerText();
 
 
-                std::shared_ptr<musik::core::Preferences> prefs;
+                musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
                 std::shared_ptr<cursespp::TextLabel> topBanner;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout;
                 std::shared_ptr<LibraryLayout> libraryLayout;

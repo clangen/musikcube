@@ -34,6 +34,8 @@
 
 #include <stdafx.h>
 
+#include <musikcore/preferences.hpp>
+
 #include "TrackRowRenderers.h"
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
@@ -60,8 +62,8 @@ static inline std::string getRatingForTrack(const api::TrackView& track, size_t 
     if (width <= kRatingBreakpointWidth) {
         return "";
     }
-    auto p = Preferences::ForComponent(musik::core::prefs::components::Settings);
-    if (p->GetBool(musik::cube::prefs::keys::DisableRatingColumn, false)) {
+    auto p = api::Preferences { MC_PREFERENCE_SETTINGS };
+    if (p.GetBool(musik::cube::prefs::keys::DisableRatingColumn, false)) {
         return "";
     }
     const int rating = static_cast<int>(std::clamp<int64_t>(track.Rating().value_or(0), 0, 5));

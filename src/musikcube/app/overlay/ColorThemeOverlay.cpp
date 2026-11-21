@@ -38,7 +38,7 @@
 
 #include <musikcore/support/Common.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/preferences.hpp>
 
 #include <app/util/PreferenceKeys.h>
 
@@ -77,11 +77,10 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
-    auto prefs = core::Preferences::
-        ForComponent(core::prefs::components::Settings);
+    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
-    std::string currentTheme = prefs->GetString(cube::prefs::keys::ColorTheme);
-    bool disableCustomColors = prefs->GetBool(cube::prefs::keys::DisableCustomColors);
+    std::string currentTheme = prefs.GetString(cube::prefs::keys::ColorTheme);
+    bool disableCustomColors = prefs.GetBool(cube::prefs::keys::DisableCustomColors);
 
     int selectedIndex = disableCustomColors ? 1 : 0;
 
@@ -107,10 +106,12 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
         .SetWidth(36)
         .SetItemSelectedCallback(
             [callback, prefs, themes, currentTheme, disableCustomColors]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) mutable {
                 if (index == 0) {
-                    prefs->SetString(cube::prefs::keys::ColorTheme, "");
-                    prefs->SetBool(cube::prefs::keys::DisableCustomColors, true);
+                    prefs.Write({
+                        api::Preference(cube::prefs::keys::ColorTheme, ""),
+                        api::Preference(cube::prefs::keys::DisableCustomColors, true)
+                    });
 
                     if (!disableCustomColors) {
                         showNeedsRestart();
@@ -119,8 +120,10 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
                 else {
                     std::string selected = themes.at(index - 1);
                     if (selected != currentTheme) {
-                        prefs->SetString(cube::prefs::keys::ColorTheme, selected.c_str());
-                        prefs->SetBool(cube::prefs::keys::DisableCustomColors, false);
+                        prefs.Write({
+                            api::Preference(cube::prefs::keys::ColorTheme, selected),
+                            api::Preference(cube::prefs::keys::DisableCustomColors, false)
+                        });
                         Colors::SetTheme(selected);
                         if (disableCustomColors) {
                             showNeedsRestart();
@@ -128,7 +131,7 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
                     }
                 }
 
-                prefs->Save();
+                prefs.Save();
 
                 if (callback) {
                     callback();
@@ -139,12 +142,11 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
 }
 
 void ColorThemeOverlay::Show256ColorsInfo(bool enabled, std::function<void()> callback) {
-    auto prefs = core::Preferences::
-        ForComponent(core::prefs::components::Settings);
+    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
     if (enabled) {
-        prefs->SetBool(cube::prefs::keys::UsePaletteColors, enabled);
-        prefs->Save();
+        prefs.SetBool(cube::prefs::keys::UsePaletteColors, enabled);
+        prefs.Save();
         showNeedsRestart(callback);
     }
     else {
@@ -154,9 +156,9 @@ void ColorThemeOverlay::Show256ColorsInfo(bool enabled, std::function<void()> ca
             .SetTitle(_TSTR("default_overlay_title"))
             .SetMessage(_TSTR("color_theme_256_overlay_message"))
             .AddButton(
-                "y", "y", _TSTR("button_yes"), [prefs, callback](std::string key) {
-                    prefs->SetBool(cube::prefs::keys::UsePaletteColors, false);
-                    prefs->Save();
+                "y", "y", _TSTR("button_yes"), [prefs, callback](std::string key) mutable {
+                    prefs.SetBool(cube::prefs::keys::UsePaletteColors, false);
+                    prefs.Save();
                     showNeedsRestart(callback);
                 })
             .AddButton(

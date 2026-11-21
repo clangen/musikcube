@@ -988,10 +988,12 @@ namespace {
         using namespace musik::core::api;
 
         Server server(true);
-        auto settings = musik::core::Preferences::ForComponent(prefs::components::Settings);
-        settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-        settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
-        settings->SetBool(prefs::keys::RemoteLibraryViewed, true);
+        api::Preferences settings { MC_PREFERENCE_SETTINGS };
+        settings.Write({
+            Preference(prefs::keys::RemoteLibraryHostname, "127.0.0.1"),
+            Preference(prefs::keys::RemoteLibraryWssPort, static_cast<int32_t>(server.Port())),
+            Preference(prefs::keys::RemoteLibraryViewed, true)
+        });
 
         TrackResult tracks;
         TrackPage page;

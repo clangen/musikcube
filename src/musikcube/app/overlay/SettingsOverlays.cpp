@@ -37,7 +37,7 @@
 #include "SettingsOverlays.h"
 
 #include <musikcore/i18n/Locale.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/preferences.hpp>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/sdk/String.h>
 
@@ -154,9 +154,9 @@ void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(
 }
 
 void musik::cube::SettingsOverlays::CheckShowFirstRunDialog() {
-    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
-    if (!prefs->GetBool(cube::prefs::keys::FirstRunSettingsDisplayed)) {
+    if (!prefs.GetBool(cube::prefs::keys::FirstRunSettingsDisplayed)) {
         auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = u8fmt(
@@ -171,8 +171,8 @@ void musik::cube::SettingsOverlays::CheckShowFirstRunDialog() {
                 "KEY_ENTER",
                 "ENTER",
                 _TSTR("button_ok"),
-                [prefs](std::string key) {
-                    prefs->SetBool(cube::prefs::keys::FirstRunSettingsDisplayed, true);
+                [prefs](std::string key) mutable {
+                    prefs.SetBool(cube::prefs::keys::FirstRunSettingsDisplayed, true);
                 });
 
         App::Overlays().Push(dialog);
@@ -180,9 +180,9 @@ void musik::cube::SettingsOverlays::CheckShowFirstRunDialog() {
 }
 
 void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
-    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
-    if (!prefs->GetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, false)) {
+    if (!prefs.GetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, false)) {
         const int64_t now = duration_cast<milliseconds>(
             system_clock::now().time_since_epoch()).count();
 
@@ -215,8 +215,8 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
                 "d",
                 "d",
                 _TSTR("button_dont_show_again"),
-                [prefs](std::string key) {
-                    prefs->SetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, true);
+                [prefs](std::string key) mutable {
+                    prefs.SetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, true);
                 });
 
         App::Overlays().Push(dialog);
@@ -224,9 +224,9 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
 }
 
 void musik::cube::SettingsOverlays::ShowTranscoderBitrateOverlay(std::function<void()> callback) {
-    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
-    const int currentBitrate = prefs->GetInt(
+    const int currentBitrate = prefs.GetInt(
         core::prefs::keys::RemoteLibraryTranscoderBitrate,
         kDefaultTranscoderBitrate);
 
@@ -250,8 +250,8 @@ void musik::cube::SettingsOverlays::ShowTranscoderBitrateOverlay(std::function<v
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [prefs, callback]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                prefs->SetInt(
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) mutable {
+                prefs.SetInt(
                     core::prefs::keys::RemoteLibraryTranscoderBitrate,
                     kTranscoderBitrates[index]);
                 callback();
@@ -261,9 +261,9 @@ void musik::cube::SettingsOverlays::ShowTranscoderBitrateOverlay(std::function<v
 }
 
 void musik::cube::SettingsOverlays::ShowTranscoderFormatOverlay(std::function<void()> callback) {
-    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
-    std::string const currentFormat = prefs->GetString(
+    std::string const currentFormat = prefs.GetString(
         core::prefs::keys::RemoteLibraryTranscoderFormat,
         kDefaultTranscoderFormat);
 
@@ -287,9 +287,9 @@ void musik::cube::SettingsOverlays::ShowTranscoderFormatOverlay(std::function<vo
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [prefs, callback]
-            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) mutable {
                 std::string const updatedFormat = kTranscoderFormats[index];
-                prefs->SetString(core::prefs::keys::RemoteLibraryTranscoderFormat, updatedFormat.c_str());
+                prefs.SetString(core::prefs::keys::RemoteLibraryTranscoderFormat, updatedFormat.c_str());
                 callback();
             });
 

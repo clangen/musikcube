@@ -47,7 +47,7 @@
 #include <app/layout/TrackSearchLayout.h>
 #include <app/window/TransportWindow.h>
 #include <musikcore/playback.hpp>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/preferences.hpp>
 #include <musikcore/indexer.hpp>
 
 #include <sigslot/sigslot.h>
@@ -112,7 +112,7 @@ namespace musik { namespace cube {
             AsyncCallbackScope playlistWork;
             musik::core::api::Playback playback;
             musik::core::api::Context& musikcore;
-            std::shared_ptr<musik::core::Preferences> prefs;
+            musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
             std::shared_ptr<BrowseLayout> browseLayout;
             std::shared_ptr<DirectoryLayout> directoryLayout;
             std::shared_ptr<TransportWindow> transportView;

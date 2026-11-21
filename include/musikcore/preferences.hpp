@@ -4,7 +4,38 @@
 #include <musikcore/context.hpp>
 #include <musikcore/preferences.h>
 
+#include <initializer_list>
+
 namespace musik { namespace core { namespace api {
+    /* The entry borrows key and text storage through the enclosing write. */
+    inline mc_preference_entry Preference(std::string_view key, bool value) {
+        mc_preference_entry entry { { key.data(), key.size() }, { MC_PREFERENCE_BOOLEAN, {} } };
+        entry.value.data.boolean = value;
+        return entry;
+    }
+
+    inline mc_preference_entry Preference(std::string_view key, int32_t value) {
+        mc_preference_entry entry { { key.data(), key.size() }, { MC_PREFERENCE_INTEGER, {} } };
+        entry.value.data.integer = value;
+        return entry;
+    }
+
+    inline mc_preference_entry Preference(std::string_view key, double value) {
+        mc_preference_entry entry { { key.data(), key.size() }, { MC_PREFERENCE_NUMBER, {} } };
+        entry.value.data.number = value;
+        return entry;
+    }
+
+    inline mc_preference_entry Preference(std::string_view key, std::string_view value) {
+        mc_preference_entry entry { { key.data(), key.size() }, { MC_PREFERENCE_TEXT, {} } };
+        entry.value.data.text = { value.data(), value.size() };
+        return entry;
+    }
+
+    inline mc_preference_entry Preference(std::string_view key, const char* value) {
+        return Preference(key, value ? std::string_view(value) : std::string_view {});
+    }
+
     /* Identifies a shared preference store. Copyable and movable. */
     class Preferences {
     public:
@@ -51,27 +82,26 @@ namespace musik { namespace core { namespace api {
         }
 
         void SetBool(std::string_view key, bool value) {
-            mc_preference_value stored { MC_PREFERENCE_BOOLEAN, {} };
-            stored.data.boolean = value;
-            this->Write(key, stored);
+            this->Write({ Preference(key, value) });
         }
 
         void SetInt(std::string_view key, int32_t value) {
-            mc_preference_value stored { MC_PREFERENCE_INTEGER, {} };
-            stored.data.integer = value;
-            this->Write(key, stored);
+            this->Write({ Preference(key, value) });
         }
 
         void SetDouble(std::string_view key, double value) {
-            mc_preference_value stored { MC_PREFERENCE_NUMBER, {} };
-            stored.data.number = value;
-            this->Write(key, stored);
+            this->Write({ Preference(key, value) });
         }
 
         void SetString(std::string_view key, std::string_view value) {
-            mc_preference_value stored { MC_PREFERENCE_TEXT, {} };
-            stored.data.text = { value.data(), value.size() };
-            this->Write(key, stored);
+            this->Write({ Preference(key, value) });
+        }
+
+        void Write(std::initializer_list<mc_preference_entry> entries) {
+            const auto status = mc_preferences_write(this->scope, entries.begin(), entries.size());
+            if (status != MC_OK) {
+                throw Error(status);
+            }
         }
 
         mc_result Save() {
@@ -81,14 +111,6 @@ namespace musik { namespace core { namespace api {
     private:
         void Read(std::string_view key, const mc_preference_value& fallback, mc_preference_read_fn read, void* data) const {
             const auto status = mc_preferences_read(this->scope, { key.data(), key.size() }, &fallback, read, data);
-            if (status != MC_OK) {
-                throw Error(status);
-            }
-        }
-
-        void Write(std::string_view key, const mc_preference_value& value) {
-            const mc_preference_entry entry { { key.data(), key.size() }, value };
-            const auto status = mc_preferences_write(this->scope, &entry, 1);
             if (status != MC_OK) {
                 throw Error(status);
             }

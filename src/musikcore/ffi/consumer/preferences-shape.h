@@ -4,6 +4,8 @@
 #include "../common/primitives.h"
 
 #include <cmath>
+#include <cstddef>
+#include <limits>
 
 namespace musik { namespace core { namespace ffi {
     inline bool valid_preference_scope(mc_preference_scope scope) {
@@ -24,7 +26,8 @@ namespace musik { namespace core { namespace ffi {
     }
 
     inline bool valid_preference_entries(const mc_preference_entry* entries, size_t count) {
-        if (count && !entries) {
+        constexpr auto maxEntries = std::numeric_limits<std::ptrdiff_t>::max() / sizeof(mc_preference_entry);
+        if ((count && !entries) || count > maxEntries) {
             return false;
         }
         for (size_t i = 0; i < count; ++i) {

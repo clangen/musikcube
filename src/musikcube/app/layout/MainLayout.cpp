@@ -34,6 +34,8 @@
 
 #include <stdafx.h>
 
+#include <musikcore/preferences.hpp>
+
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
 #include <cursespp/ToastOverlay.h>
@@ -100,7 +102,6 @@ MainLayout::MainLayout(
 , playback(musikcore.GetPlayback())
 , musikcore(musikcore)
 , AppLayout(app) {
-    this->prefs = Preferences::ForComponent("settings");
 
     /* note we don't create `libraryLayout` here; instead we do it lazily once we're sure
     it has been connected. see SwitchToLibraryLayout() */
@@ -118,7 +119,7 @@ MainLayout::MainLayout(
     /* take user to settings if they don't have a valid configuration. otherwise,
     switch to the library view immediately */
     this->SetInitialLayout();
-    this->SetAutoHideCommandBar(this->prefs->GetBool(prefs::keys::AutoHideCommandBar, false));
+    this->SetAutoHideCommandBar(this->prefs.GetBool(prefs::keys::AutoHideCommandBar, false));
 
     this->RunUpdateCheck();
 }
@@ -333,7 +334,7 @@ void MainLayout::OnIndexerEvent(mc_indexer_event event, int updates) {
 
 void MainLayout::UpdateWindowTitle() {
     this->titleWork.Invalidate();
-    if (prefs->GetBool(cube::prefs::keys::DisableWindowTitleUpdates,
+    if (prefs.GetBool(cube::prefs::keys::DisableWindowTitleUpdates,
         cube::prefs::defaults::DisableWindowTitleUpdates))
     {
         return;
@@ -365,7 +366,7 @@ void MainLayout::UpdateWindowTitle() {
 
 void MainLayout::RunUpdateCheck() {
 #ifndef DISABLE_UPDATE_CHECK
-    if (!prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true)) {
+    if (!prefs.GetBool(cube::prefs::keys::AutoUpdateCheck, true)) {
         return;
     }
 

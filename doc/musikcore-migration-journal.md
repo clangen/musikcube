@@ -82,3 +82,5 @@ Removed `MasterLibrary` and the legacy selection source after migrating the inte
 ## Typed preferences
 
 Settings and Session now support typed reads and atomic in-memory batch writes through the C ABI, with explicit persistence. Search and Browse use the header-only preferences wrapper and retain their existing on-disk keys. The public runtime test covers scope isolation, text ownership, and invalid-batch rollback. All 47 Linux Release tests passed.
+
+Startup, session navigation, theme, and remote settings now use public preferences. The remote editor applies endpoint fields as a batch and keeps the active connection when the endpoint is unchanged. The managed loopback test configures the endpoint through the public store. All 47 Linux Release tests passed.

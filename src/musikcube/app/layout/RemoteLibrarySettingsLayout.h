@@ -39,7 +39,7 @@
 #include <cursespp/TextInput.h>
 #include <cursespp/Checkbox.h>
 #include <musikcore/context.hpp>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/preferences.hpp>
 
 namespace musik { namespace cube {
     class RemoteLibrarySettingsLayout: public cursespp::LayoutBase, public sigslot::has_slots<>  {
@@ -65,7 +65,7 @@ namespace musik { namespace cube {
 
             musik::core::api::Context& musikcore;
 
-            std::shared_ptr<musik::core::Preferences> prefs;
+            musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
             std::shared_ptr<cursespp::TextLabel> httpPortLabel, wssPortLabel, hostLabel, pwLabel;
             std::shared_ptr<cursespp::TextInput> httpPortInput, wssPortInput, hostInput, pwInput;
             std::shared_ptr<cursespp::Checkbox> wssTlsCheckbox, httpTlsCheckbox, transcoderCheckbox;

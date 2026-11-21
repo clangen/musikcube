@@ -34,6 +34,8 @@
 
 #include <stdafx.h>
 
+#include <musikcore/preferences.hpp>
+
 #include <stdlib.h>
 #include <time.h>
 
@@ -108,7 +110,7 @@ int main(int argc, char* argv[]) {
     freopen(errorFn.c_str(), "w", stderr);
 #endif
 
-    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
 
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
 
@@ -116,9 +118,9 @@ int main(int argc, char* argv[]) {
         new debug::SimpleFileBackend(), consoleLogger
     };
 
-    if (prefs->GetBool(core::prefs::keys::PiggyEnabled, false)) {
+    if (prefs.GetBool(core::prefs::keys::PiggyEnabled, false)) {
         auto piggyClient = PiggyWebSocketClient::Instance(&Window::MessageQueue());
-        piggyClient->Connect(prefs->GetString(core::prefs::keys::PiggyHostname, "localhost"));
+        piggyClient->Connect(prefs.GetString(core::prefs::keys::PiggyHostname, "localhost"));
         debuggerBackends.push_back(new PiggyDebugBackend(piggyClient));
     }
 
@@ -159,10 +161,10 @@ int main(int argc, char* argv[]) {
         app.SetSingleInstanceId("musikcube");
 #endif
 
-        app.SetQuitKey(prefs->GetString(keys::AppQuitKey, "^D"));
+        app.SetQuitKey(prefs.GetString(keys::AppQuitKey, "^D"));
 
         /* fire up the indexer if configured to run on startup */
-        if (prefs->GetBool(core::prefs::keys::SyncOnStartup, true) &&
+        if (prefs.GetBool(core::prefs::keys::SyncOnStartup, true) &&
             musikcore.GetLibraryStatus().kind == MC_LIBRARY_LOCAL)
         {
             api::Indexer(musikcore).Schedule(MC_INDEXER_SCAN_ALL);
@@ -171,17 +173,17 @@ int main(int argc, char* argv[]) {
         /* set color mode (basic, palette, rgb) */
         Colors::Mode colorMode = Colors::RGB;
 
-        if (prefs->GetBool(keys::DisableCustomColors.c_str(), false)) {
+        if (prefs.GetBool(keys::DisableCustomColors.c_str(), false)) {
             colorMode = Colors::Basic;
         }
 #ifndef WIN32
-        else if (prefs->GetBool(keys::UsePaletteColors.c_str(), true)) {
+        else if (prefs.GetBool(keys::UsePaletteColors.c_str(), true)) {
             colorMode = Colors::Palette;
         }
 #endif
 
         Colors::BgType bgType = Colors::Theme;
-        if (prefs->GetBool(keys::InheritBackgroundColor.c_str(), false)) {
+        if (prefs.GetBool(keys::InheritBackgroundColor.c_str(), false)) {
             bgType = Colors::Inherit;
         }
 
@@ -189,14 +191,14 @@ int main(int argc, char* argv[]) {
         app.SetColorBackgroundType(bgType);
 
         /* theme */
-        std::string colorTheme = prefs->GetString(keys::ColorTheme);
+        std::string colorTheme = prefs.GetString(keys::ColorTheme);
         if (colorTheme.size()) {
             app.SetColorTheme(colorTheme);
         }
 
         /* tray icon */
-        app.SetMinimizeToTray(prefs->GetBool(keys::MinimizeToTray, false));
-        if (prefs->GetBool(keys::StartMinimized, false)) {
+        app.SetMinimizeToTray(prefs.GetBool(keys::MinimizeToTray, false));
+        if (prefs.GetBool(keys::StartMinimized, false)) {
             app.Minimize();
         }
 

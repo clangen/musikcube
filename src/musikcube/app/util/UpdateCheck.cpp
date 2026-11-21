@@ -33,6 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+
+#include <musikcore/preferences.hpp>
 #include "UpdateCheck.h"
 
 #include <nlohmann/json.hpp>
@@ -173,9 +175,9 @@ void UpdateCheck::ProcessMessage(IMessage &message) {
 void UpdateCheck::ShowUpgradeAvailableOverlay(
     const std::string& version, const std::string& url, bool silent)
 {
-    auto prefs = Preferences::ForComponent("settings");
+    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
     std::string prefKey = prefs::keys::LastAcknowledgedUpdateVersion;
-    std::string acknowledged = prefs->GetString(prefKey);
+    std::string acknowledged = prefs.GetString(prefKey);
     if (!silent || acknowledged != version) {
         auto const dialog = std::make_shared<DialogOverlay>();
 
@@ -196,9 +198,9 @@ void UpdateCheck::ShowUpgradeAvailableOverlay(
         if (silent) {
             dialog->AddButton(
                 "x", "x", _TSTR("button_dont_remind_me"),
-                [prefs, prefKey, version](std::string key) {
-                    prefs->SetString(prefKey.c_str(), version.c_str());
-                    prefs->Save();
+                [prefs, prefKey, version](std::string key) mutable {
+                    prefs.SetString(prefKey.c_str(), version.c_str());
+                    prefs.Save();
                 });
 
             dialog->AddButton("l", "l", _TSTR("button_remind_me_later"));

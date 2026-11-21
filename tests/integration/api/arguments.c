@@ -92,6 +92,7 @@ int main(void) {
     CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, NULL, 1) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, NULL, 0) == MC_OK);
     CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, &preference, 1) == MC_ERROR_UNSUPPORTED);
+    CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, &preference, SIZE_MAX) == MC_ERROR_INVALID_ARGUMENT);
     mc_equalizer_state equalizer = MC_EQUALIZER_STATE_DEFAULT;
     CHECK(mc_equalizer_get_state(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_equalizer_get_state(&equalizer) == MC_ERROR_UNSUPPORTED);
