@@ -470,6 +470,12 @@ preserves the old `GetDataStreamFactory`/`Open` path. Legacy providers lacking t
 hook must bound their blocking `Open` work; interruption becomes available once
 that method returns. The stock HTTP provider supports the hook.
 
+[`core-player.c`](../examples/core-player.c) and
+[`core-player.cpp`](../examples/core-player.cpp) demonstrate an event-driven host.
+Build the normal example targets `musikcore_example_player_c` or
+`musikcore_example_player_cpp`, then run `<example> <URI> [plugin-directory]`.
+The installed-SDK test also compiles and runs both examples after relocation.
+
 ### Async requests and dispatch
 
 Accepted operations return a nonzero request ID and deliver one terminal

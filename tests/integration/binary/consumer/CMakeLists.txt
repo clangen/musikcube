@@ -23,6 +23,15 @@ foreach(language IN ITEMS c cpp)
     CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 endforeach()
 
+foreach(language IN ITEMS c cpp)
+  add_executable(player_${language} "${EXAMPLES}/core-player.${language}" "${SUPPORT}/host-wakeup.cpp")
+  target_include_directories(player_${language} PRIVATE "${SUPPORT}")
+  target_link_libraries(player_${language} PRIVATE musikcore::musikcore Threads::Threads)
+  set_target_properties(player_${language} PROPERTIES
+    C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+    CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+endforeach()
+
 add_executable(managed managed.c)
 target_link_libraries(managed PRIVATE musikcore::musikcore)
 set_target_properties(managed PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)

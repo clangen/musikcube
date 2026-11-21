@@ -299,6 +299,12 @@ endif()
 
 # exercise URI resources through the actual shared C boundary without catalogs.
 if(TARGET nullout AND TARGET ffmpegdecoder)
+  foreach(language IN ITEMS c cpp)
+    add_executable(musikcore_example_player_${language} "${PROJECT_SOURCE_DIR}/examples/core-player.${language}" host-wakeup.cpp)
+    target_include_directories(musikcore_example_player_${language} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(musikcore_example_player_${language} PRIVATE musikcore Threads::Threads)
+    add_dependencies(musikcube_tests musikcore_example_player_${language})
+  endforeach()
   add_executable(musikcore_uri_player_test ../integration/musikcore/uri-player.cpp host-wakeup.cpp)
   target_link_libraries(musikcore_uri_player_test PRIVATE musikcore Threads::Threads)
   set_target_properties(musikcore_uri_player_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)

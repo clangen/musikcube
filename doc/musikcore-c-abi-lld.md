@@ -1290,7 +1290,7 @@ remains deferred. This does not begin the new plugin C SDK. See
   independent players, early close, observer replacement within a detached
   dispatch batch, empty HTTP failures, sustained HTTP readiness before EOF,
   and retained handles in `musikcore.integration.api.uri_player` using headless output and loopback HTTP.
-- [ ] **API-URI-005** Ship C/C++ example apps and verify their public-only builds
+- [x] **API-URI-005** Ship C/C++ example apps and verify their public-only builds
   and playback against the relocated SDK in `musikcore.integration.api.installed_sdk`.
 
 Native macOS arm64 validation: full Release and ASan/UBSan Debug suites pass

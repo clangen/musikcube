@@ -56,4 +56,13 @@ foreach(language IN ITEMS c cpp)
   endif()
 endforeach()
 
+# play generated media using only the installed decoder and headless output.
+file(GLOB installed_decoders "${relocated}/share/musikcube/plugins/*ffmpegdecoder*")
+file(COPY ${installed_decoders} DESTINATION "${plugins}")
+foreach(language IN ITEMS c cpp)
+  run("${CMAKE_COMMAND}" -E env "XDG_CONFIG_HOME=${root}/player-${language}"
+    "${root}/consumer/player_${language}" "${config_directory}/media/01-morning.wav"
+    "${plugins}")
+endforeach()
+
 file(REMOVE_RECURSE "${root}")
