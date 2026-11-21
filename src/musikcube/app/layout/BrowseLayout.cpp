@@ -272,7 +272,7 @@ void BrowseLayout::OnPlaylistChanged(mc_playlist_event event, int64_t playlistId
         this->categoryList->Requery(this->categoryList->GetFilter(), selectedId);
     }
     else if (selectedId == playlistId) {
-        this->RequeryTrackList(this->categoryList.get());
+        this->RequeryTrackList(this->categoryList.get(), true);
     }
 }
 
@@ -284,19 +284,18 @@ void BrowseLayout::UpdateTrackTitle() {
         sortName.c_str()));
 }
 
-void BrowseLayout::RequeryTrackList(ListWindow *view) {
+void BrowseLayout::RequeryTrackList(ListWindow *view, bool refresh) {
     if (view == this->categoryList.get()) {
         const int64_t selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
             const mc_track_search_order sortOrder = getDefaultTrackSort(this->prefs);
-            const auto column = this->categoryList->GetFieldName();
-            const auto hash = std::hash<std::string>{}(column + ":" + std::to_string(selectedId) +
-                ":" + std::to_string(static_cast<int>(sortOrder)));
-            this->trackList->RequeryTracks(hash, [column, selectedId, sortOrder]
-                (api::Context& context, api::TrackSearchCompletion completion) {
-                    return api::OpenCategory(context, column, selectedId,
-                        sortOrder, std::move(completion));
-                });
+            CategoryTracks source { this->categoryList->GetFieldName(), selectedId, sortOrder };
+            if (refresh) {
+                this->trackList->Refresh(std::move(source));
+            }
+            else {
+                this->trackList->Show(std::move(source));
+            }
             this->UpdateTrackTitle();
         }
         else {
@@ -344,7 +343,7 @@ void BrowseLayout::OnCategoryViewInvalidated(
         return;
     }
 
-    this->RequeryTrackList(view);
+    this->RequeryTrackList(view, true);
 }
 
 void BrowseLayout::SwitchCategory(const std::string& fieldName) {

@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <app/util/AsyncCallbackScope.h>
+#include <app/util/LatestRequest.h>
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
@@ -83,6 +83,17 @@ namespace musik { namespace cube {
             void OnLayout() override;
 
         private:
+            enum { RetrySearchMessage = 1010 };
+
+            struct SearchQuery {
+                musik::core::api::Library library;
+                std::string filter;
+                mc_track_search_mode mode;
+                mc_track_search_order order;
+
+                mc_request_id Open(musik::core::api::Context& context,
+                    musik::core::api::TrackSearchCompletion completion) const;
+            };
 
             void SaveSession();
             void InitializeWindows();
@@ -108,8 +119,7 @@ namespace musik { namespace cube {
             musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
             std::shared_ptr<TrackListView> trackList;
             std::shared_ptr<cursespp::TextInput> input;
-            AsyncCallbackScope searchWork;
-            mc_request_id searchRequest = 0;
             musik::core::api::Context& musikcore;
+            LatestRequest<SearchQuery, musik::core::api::TrackResult> search;
     };
 } }

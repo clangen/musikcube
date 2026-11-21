@@ -494,8 +494,13 @@ void App::SetMouseEnabled(bool enabled) {
     this->mouseEnabled = enabled;
 }
 
-void App::SetInputPollInterval(int milliseconds) {
-    this->inputPollInterval = milliseconds;
+void App::SetInputPolling(const IWindow& window, bool active) {
+    if (active) {
+        this->inputPollWindows.insert(&window);
+    }
+    else {
+        this->inputPollWindows.erase(&window);
+    }
 }
 
 #ifdef WIN32
@@ -537,8 +542,9 @@ void App::Run(ILayoutPtr layout) {
 
     while (!this->quit && !disconnected) {
         kn = "";
-        const int inputTimeout = this->inputPollInterval > 0
-            ? std::min(IDLE_TIMEOUT_MS, this->inputPollInterval) : IDLE_TIMEOUT_MS;
+        constexpr int kActiveInputPollMs = 2;
+        const int inputTimeout = this->inputPollWindows.empty()
+            ? IDLE_TIMEOUT_MS : std::min(IDLE_TIMEOUT_MS, kActiveInputPollMs);
 
         if (this->injectedKeys.size()) {
             kn = injectedKeys.front();

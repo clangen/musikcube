@@ -35,6 +35,7 @@
 #pragma once
 
 #include <chrono>
+#include <variant>
 
 #include <cursespp/curses_config.h>
 #include <cursespp/Colors.h>
@@ -48,6 +49,8 @@
 
 #include <app/util/TrackRowRenderers.h>
 #include <app/util/AsyncCallbackScope.h>
+#include <app/util/LatestRequest.h>
+#include <app/util/TrackSource.h>
 #include <musikcore/track-result-window.hpp>
 #include <musikcore/playback.hpp>
 #include <map>
@@ -71,6 +74,7 @@ namespace musik {
                 using RowDecorator = std::function<cursespp::Color(size_t)>;
                 using Headers = std::shared_ptr<std::set<size_t>>;
                 using Durations = std::shared_ptr<std::map<size_t, size_t>>;
+                using ListWindow::Show;
 
                 /* ctor, dtor */
                 TrackListView(
@@ -105,15 +109,11 @@ namespace musik {
                 void SetRowRenderer(TrackRowRenderers::Renderer renderer);
 
                 void Reset();
-                using TrackRequest = std::function<mc_request_id(musik::core::api::Context&,
-                    musik::core::api::TrackSearchCompletion)>;
-                void RequeryTracks(size_t hash, TrackRequest request);
-                void SetTrackResult(musik::core::api::TrackResult result, size_t hash);
-                void SetTrackIds(const int64_t* ids, size_t count, size_t hash);
-                void SetEditedTrackIds(const std::vector<int64_t>& ids) {
-                    this->CancelTrackRequest();
-                    this->SetTrackIds(ids.data(), ids.size(), this->lastQueryHash);
-                }
+                void Show(TrackSource source);
+                void Refresh(TrackSource source);
+                void SetTrackResult(musik::core::api::TrackResult result);
+                void SetSearchResult(musik::core::api::TrackResult result, std::string filter);
+                void SetEditedTrackIds(const std::vector<int64_t>& ids);
                 void CancelTrackRequests();
                 bool PlayRow(size_t row);
 
@@ -159,27 +159,34 @@ namespace musik {
                 };
 
             private:
-                void ApplyQueryResult(Headers headers, Durations durations, size_t hash, bool hadTracks);
+                using QueryKey = std::variant<std::monostate, TrackSource, std::string>;
+
+                struct TrackQuery {
+                    TrackSource source;
+                    musik::core::api::Library library;
+
+                    mc_request_id Open(musik::core::api::Context& context,
+                        musik::core::api::TrackSearchCompletion completion) const;
+                };
+
+                void InstallTrackResult(musik::core::api::TrackResult result, QueryKey key);
+                void ApplyQueryResult(Headers headers, Durations durations, QueryKey key, bool hadTracks);
                 size_t RowIndex(size_t adapterIndex);
                 void LoadTrackPage();
                 void DelayRemoteSkeleton();
                 void UpdatePagePolling(bool pending);
                 void HandlePageStatus(mc_result status);
                 void CancelTrackRequest();
-                void SubmitTrackRequest();
                 musik::core::api::Context& musikcore;
                 std::unique_ptr<musik::core::api::TrackResultWindow> resultWindow;
-                AsyncCallbackScope trackQueryWork;
+                LatestRequest<TrackQuery, musik::core::api::TrackResult> trackQuery;
+                AsyncCallbackScope resultActionWork;
                 AsyncCallbackScope albumActionWork;
                 AsyncCallbackScope ratingDialogWork;
-                mc_request_id trackRequest = 0;
-                TrackRequest pendingTrackQuery;
-                size_t pendingTrackHash = 0;
                 size_t skeletonScrollIndex = 0;
                 int skeletonViewportHeight = 0;
                 bool remoteRows = false;
                 std::chrono::steady_clock::time_point skeletonAfter {};
-                bool pollingPages = false;
                 AddTrackToPlaylist addTrackToPlaylist;
                 AddCategoryToPlaylist addCategoryToPlaylist;
                 std::function<void(size_t)> activateQueueRow;
@@ -216,7 +223,7 @@ namespace musik {
                 std::unique_ptr<Adapter> adapter;
                 musik::core::api::Playback apiPlayback;
                 std::optional<int64_t> playingId;
-                size_t lastQueryHash;
+                QueryKey lastQuery {};
                 RowDecorator decorator;
                 TrackRowRenderers::Renderer renderer;
                 std::chrono::milliseconds lastChanged;

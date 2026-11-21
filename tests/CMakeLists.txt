@@ -123,7 +123,8 @@ endforeach()
 
 # This application helper is header-only and needs no running core context.
 add_executable(musikcube_async_callback_scope_test unit/musikcube/async-callback-scope.cpp)
-target_include_directories(musikcube_async_callback_scope_test PRIVATE "${PROJECT_SOURCE_DIR}/src/musikcube")
+target_include_directories(musikcube_async_callback_scope_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/src/musikcube" "${PROJECT_SOURCE_DIR}/include")
 set_target_properties(musikcube_async_callback_scope_test PROPERTIES
   CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")

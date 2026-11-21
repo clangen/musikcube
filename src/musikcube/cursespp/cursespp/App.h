@@ -35,6 +35,7 @@
 #pragma once
 
 #include <queue>
+#include <set>
 #include <functional>
 #include <cursespp/ILayout.h>
 #include <cursespp/IInput.h>
@@ -86,8 +87,8 @@ namespace cursespp {
             void ChangeLayout(ILayoutPtr layout);
             ILayoutPtr GetLayout();
             void InjectKeyPress(const std::string& key);
-            /* Shorten the keyboard wait while visible async work is pending. Zero restores idle behavior. */
-            void SetInputPollInterval(int milliseconds);
+            /* Each window releases its own request when work completes or it hides. */
+            void SetInputPolling(const IWindow& window, bool active);
             void Quit();
 
             static App& Instance();
@@ -121,6 +122,8 @@ namespace cursespp {
             void OnResized();
 
             std::queue<std::string> injectedKeys;
+            /* Windows unregister during destruction, so their state dies first. */
+            std::set<const IWindow*> inputPollWindows;
             WindowState state;
             KeyHandler keyHandler, keyHook;
             ResizeHandler resizeHandler;
@@ -131,7 +134,6 @@ namespace cursespp {
             int minWidth, minHeight;
             bool mouseEnabled{true};
             bool quit{false}, initialized{false};
-            int inputPollInterval = 0;
             std::string appTitle;
 
 #ifdef WIN32

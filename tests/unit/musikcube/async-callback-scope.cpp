@@ -2,6 +2,7 @@
    old tokens unusable even when cancellation cannot retract queued delivery. */
 
 #include <app/util/AsyncCallbackScope.h>
+#include <app/util/LatestRequest.h>
 #include <cstdio>
 #include <functional>
 #include <memory>
@@ -9,6 +10,7 @@
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #define CHECK(expression)                                                         \
     do {                                                                          \
@@ -157,5 +159,63 @@ int main() {
         callbackWork.Invalidate();
         throwing();
     }
+    struct QueryContext {
+        std::vector<std::function<void(mc_result, unsigned, std::string_view)>> replies;
+        std::vector<mc_request_id> canceled;
+        bool rejectSubmit = false;
+
+        void Cancel(mc_request_id id) { this->canceled.push_back(id); }
+    } context;
+
+    struct Query {
+        unsigned value;
+
+        mc_request_id Open(QueryContext& context,
+            std::function<void(mc_result, unsigned, std::string_view)> done) const
+        {
+            if (context.rejectSubmit) {
+                throw musik::core::api::Error(MC_ERROR_QUEUE_FULL);
+            }
+            context.replies.push_back(std::move(done));
+            return context.replies.size();
+        }
+    };
+    std::vector<unsigned> delivered;
+    unsigned retries = 0;
+
+    {
+        musik::cube::LatestRequest<Query, unsigned, QueryContext> request(context,
+            [&] { ++retries; },
+            [&](const Query& query, mc_result status, unsigned result, std::string_view) {
+                if (status == MC_OK && query.value == result) {
+                    delivered.push_back(result);
+                }
+            });
+
+        request.Replace({ 1 });
+        CHECK(request.Pending() && request.Pending()->value == 1);
+        request.Replace({ 2 });
+        CHECK(context.canceled == std::vector<mc_request_id> { 1 });
+        context.replies[1](MC_OK, 2, {});
+        context.replies[0](MC_OK, 1, {});
+        CHECK(delivered == std::vector<unsigned> { 2 });
+        CHECK(!request.Pending());
+
+        context.rejectSubmit = true;
+        request.Replace({ 3 });
+        CHECK(retries == 1);
+        context.rejectSubmit = false;
+        request.TrySubmit();
+        context.replies[2](MC_ERROR_BUSY, 0, {});
+        CHECK(retries == 2);
+        request.TrySubmit();
+        context.replies[3](MC_OK, 3, {});
+        CHECK((delivered == std::vector<unsigned> { 2, 3 }));
+
+        request.Replace({ 4 });
+    }
+    CHECK((context.canceled == std::vector<mc_request_id> { 1, 5 }));
+    context.replies.back()(MC_OK, 4, {});
+    CHECK((delivered == std::vector<unsigned> { 2, 3 }));
     return 0;
 }

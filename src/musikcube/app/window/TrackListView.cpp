@@ -49,7 +49,6 @@
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/overlay/TrackOverlays.h>
 
-static constexpr int kTrackPagePollIntervalMs = 2;
 static constexpr int kTrackPageRetryMs = 25;
 static constexpr int kRemoteSkeletonDelayMs = 50;
 
@@ -75,10 +74,22 @@ TrackListView::TrackListView(
     RowDecorator decorator)
 : ListWindow(nullptr)
 , musikcore(context)
+, trackQuery(context,
+    /* Schedules a retry for a temporarily unavailable track query. */
+    [this] { this->Debounce(RetryTrackRequestMessage, 0, 0, kTrackPageRetryMs); },
+
+    /* Receives the selected source's result or its terminal error. */
+    [this](const TrackQuery& query, mc_result status, api::TrackResult result, std::string_view error) {
+        if (status == MC_OK) {
+            this->InstallTrackResult(std::move(result), query.source);
+        }
+        else if (status != MC_ERROR_CANCELLED) {
+            api::WriteLog(MC_LOG_ERROR, "TrackListView", error);
+        }
+    })
 , apiPlayback(this->musikcore.GetPlayback())
 {
     this->adapter = std::make_unique<Adapter>(*this);
-    this->lastQueryHash = 0;
     this->lastChanged = now();
     this->decorator = decorator;
     this->trackNumType = TrackRowRenderers::TrackNumType::Metadata;
@@ -97,9 +108,9 @@ TrackListView::~TrackListView() {
 }
 
 void TrackListView::CancelTrackRequest() {
-    this->trackQueryWork.Invalidate();
-    if (this->trackRequest) this->musikcore.Cancel(std::exchange(this->trackRequest, 0));
-    this->pendingTrackQuery = {};
+    this->Remove(RetryTrackRequestMessage);
+    this->trackQuery.Clear();
+    this->resultActionWork.Invalidate();
 }
 
 void TrackListView::CancelTrackRequests() {
@@ -109,54 +120,67 @@ void TrackListView::CancelTrackRequests() {
     this->UpdatePagePolling(false);
 }
 
-void TrackListView::RequeryTracks(size_t hash, TrackRequest request) {
-    this->CancelTrackRequest();
-    if (hash != this->lastQueryHash) this->Reset();
-
-    this->pendingTrackQuery = std::move(request);
-    this->pendingTrackHash = hash;
-    this->SubmitTrackRequest();
+mc_request_id TrackListView::TrackQuery::Open(api::Context& context, api::TrackSearchCompletion completion) const {
+    return std::visit([&](const auto& source) {
+        return source.Open(context, this->library, std::move(completion));
+    }, this->source);
 }
 
-void TrackListView::SubmitTrackRequest() {
-    if (!this->pendingTrackQuery || this->trackRequest) {
-        return;
+void TrackListView::Show(TrackSource source) {
+    if (const auto* pending = this->trackQuery.Pending()) {
+        if (pending->source == source) {
+            return;
+        }
     }
+    else if (const auto* previous = std::get_if<TrackSource>(&this->lastQuery)) {
+        if (this->resultWindow && *previous == source) {
+            return;
+        }
+    }
+    this->Refresh(std::move(source));
+}
+
+void TrackListView::Refresh(TrackSource source) {
+    const auto* previous = std::get_if<TrackSource>(&this->lastQuery);
+    if (!previous || *previous != source) {
+        this->Reset();
+    }
+    else {
+        this->CancelTrackRequest();
+    }
+
+    /* Keep retries bound to the catalog selected when the query was made. */
     try {
-        this->trackRequest = this->pendingTrackQuery(this->musikcore,
-            this->trackQueryWork.Begin([this](mc_result status, api::TrackResult result, std::string_view) {
-                this->trackRequest = 0;
-                if (status == MC_ERROR_BUSY || status == MC_ERROR_QUEUE_FULL) {
-                    this->Debounce(RetryTrackRequestMessage, 0, 0, kTrackPageRetryMs);
-                    return;
-                }
-                this->pendingTrackQuery = {};
-                if (status == MC_OK) {
-                    this->SetTrackResult(std::move(result), this->pendingTrackHash);
-                }
-            }));
+        if (auto library = this->musikcore.GetLibrary()) {
+            this->trackQuery.Replace({ std::move(source), std::move(*library) });
+        }
     }
     catch (const api::Error& error) {
-        if (error.Result() == MC_ERROR_BUSY || error.Result() == MC_ERROR_QUEUE_FULL) {
-            this->Debounce(RetryTrackRequestMessage, 0, 0, kTrackPageRetryMs);
-        }
-        else {
-            this->pendingTrackQuery = {};
-            musik::core::api::WriteLog(MC_LOG_ERROR, "TrackListView", error.what());
-        }
+        api::WriteLog(MC_LOG_ERROR, "TrackListView", error.what());
     }
 }
 
-void TrackListView::SetTrackIds(const int64_t* ids, size_t count, size_t hash) {
-    const auto library = this->musikcore.GetLibrary();
-    if (!library) {
+void TrackListView::SetEditedTrackIds(const std::vector<int64_t>& ids) {
+    this->CancelTrackRequest();
+    if (!this->TrackCount()) {
         this->Reset();
         return;
     }
-    this->SetTrackResult(api::MakeTrackResult(*library, ids, count), hash);
+    const auto origin = this->resultWindow->Result().Track(0).Origin();
+    this->InstallTrackResult(api::MakeTrackResult(origin, ids.data(), ids.size()), this->lastQuery);
 }
 
-void TrackListView::SetTrackResult(api::TrackResult result, size_t hash) {
+void TrackListView::SetTrackResult(api::TrackResult result) {
+    this->CancelTrackRequest();
+    this->InstallTrackResult(std::move(result), std::monostate {});
+}
+
+void TrackListView::SetSearchResult(api::TrackResult result, std::string filter) {
+    this->CancelTrackRequest();
+    this->InstallTrackResult(std::move(result), std::move(filter));
+}
+
+void TrackListView::InstallTrackResult(api::TrackResult result, QueryKey key) {
     this->ratingDialogWork.Invalidate();
     const bool hadTracks = this->TrackCount() > 0;
     auto headers = std::make_shared<std::set<size_t>>();
@@ -180,7 +204,7 @@ void TrackListView::SetTrackResult(api::TrackResult result, size_t hash) {
             this->HandlePageStatus(status);
         });
 
-    this->ApplyQueryResult(std::move(headers), std::move(durations), hash, hadTracks);
+    this->ApplyQueryResult(std::move(headers), std::move(durations), std::move(key), hadTracks);
 }
 
 void TrackListView::OnParentVisibilityChanged(bool visible) {
@@ -210,13 +234,15 @@ void TrackListView::OnVisibilityChanged(bool visible) {
     ListWindow::OnVisibilityChanged(visible);
     if (!visible) {
         this->ratingDialogWork.Invalidate();
+        this->UpdatePagePolling(false);
+    }
+    else if (this->resultWindow) {
+        this->Post(LoadTrackPageMessage);
     }
 }
 
 void TrackListView::UpdatePagePolling(bool pending) {
-    if (this->pollingPages == pending) return;
-    this->pollingPages = pending;
-    App::Instance().SetInputPollInterval(pending ? kTrackPagePollIntervalMs : 0);
+    App::Instance().SetInputPolling(*this, pending && this->IsVisible() && this->IsParentVisible());
 }
 
 void TrackListView::HandlePageStatus(mc_result status) {
@@ -273,10 +299,10 @@ void TrackListView::SetRowRenderer(TrackRowRenderers::Renderer renderer) {
     this->renderer = renderer;
 }
 
-void TrackListView::ApplyQueryResult(Headers headers, Durations durations, size_t hash, bool hadTracks) {
-    const bool preserveSelection = hadTracks && this->lastQueryHash == hash;
+void TrackListView::ApplyQueryResult(Headers headers, Durations durations, QueryKey key, bool hadTracks) {
+    const bool preserveSelection = hadTracks && this->lastQuery == key;
     this->headers.Set(std::move(headers), std::move(durations));
-    this->lastQueryHash = hash;
+    this->lastQuery = std::move(key);
     this->OnAdapterChanged();
 
     /* A refresh of the same query keeps the user's position. */
@@ -368,7 +394,7 @@ void TrackListView::ProcessMessage(IMessage &message) {
         this->LoadTrackPage();
     }
     else if (message.Type() == RetryTrackRequestMessage) {
-        this->SubmitTrackRequest();
+        this->trackQuery.TrySubmit();
     }
     else if (message.Type() == ScrollToPlayingMessage) {
         this->ScrollToPlaying();
@@ -398,7 +424,7 @@ void TrackListView::ShowContextMenu() {
     this->ratingDialogWork.Invalidate();
     const auto row = this->GetSelectedTrackIndex();
     if (row == ListWindow::NO_SELECTION) return;
-    const auto token = this->trackQueryWork.CurrentToken();
+    const auto token = this->resultActionWork.CurrentToken();
     if (headers.HeaderAt(this->GetSelectedIndex())) {
         /* A confirmed album action can finish after the user opens the queue view. */
         PlayQueueOverlays::ShowAlbumDividerOverlay(
@@ -419,11 +445,11 @@ void TrackListView::ShowRatingOverlay() {
     }
 
     auto track = std::make_shared<api::TrackRef>(this->resultWindow->Result().Track(row));
-    const auto token = this->trackQueryWork.CurrentToken();
+    const auto token = this->resultActionWork.CurrentToken();
     const auto dialogToken = this->ratingDialogWork.Begin();
     try {
         api::ReadTrack(this->musikcore, *track, { MC_TRACK_FIELD_RATING },
-            this->trackQueryWork.Wrap(
+            this->resultActionWork.Wrap(
                 [this, track, token, dialogToken, selectedIndex]
                 (mc_result status, api::TrackPage page, std::string_view) {
                     /* A late read must not interrupt another view or modal. */
@@ -441,7 +467,7 @@ void TrackListView::ShowRatingOverlay() {
                         }
                         try {
                             api::SetTrackRating(this->musikcore, *track, value,
-                                this->trackQueryWork.Wrap([this](mc_result status, std::string_view) {
+                                this->resultActionWork.Wrap([this](mc_result status, std::string_view) {
                                     if (status == MC_OK) {
                                         this->InvalidateData();
                                     }

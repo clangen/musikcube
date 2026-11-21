@@ -71,6 +71,20 @@ TrackSearchLayout::TrackSearchLayout(
 : LayoutBase()
 , trackList(std::move(trackList))
 , musikcore(musikcore)
+, search(musikcore,
+    /* Schedules a retry for a temporarily unavailable search. */
+    [this] { this->Debounce(RetrySearchMessage, 0, 0, kRequeryIntervalMs); },
+
+    /* Receives the latest search result or its terminal error. */
+    [this](const SearchQuery& query, mc_result status, api::TrackResult result, std::string_view error) {
+        if (status == MC_OK) {
+            this->trackList->SetSearchResult(std::move(result), query.filter);
+            this->SetSearchTitle(TrackOverlays::TrackSortName(query.order));
+        }
+        else if (status != MC_ERROR_CANCELLED) {
+            api::WriteLog(MC_LOG_ERROR, "TrackSearchLayout", error);
+        }
+    })
 {
     this->InitializeWindows();
 }
@@ -155,31 +169,22 @@ void TrackSearchLayout::FocusInput() {
     this->SetFocus(this->input);
 }
 
+mc_request_id TrackSearchLayout::SearchQuery::Open(api::Context& context, api::TrackSearchCompletion completion) const {
+    return api::OpenTrackSearch(context, this->library,
+        { this->filter, this->mode, this->order }, std::move(completion));
+}
+
 void TrackSearchLayout::Requery() {
-    const std::string& filter = this->input->GetText();
-    const mc_track_search_order sortOrder = getDefaultTrackSort(this->prefs);
     this->CancelSearch();
-
-
+    this->Remove(message::RequeryTrackList);
     try {
-        const auto hash = std::hash<std::string> {}(filter);
-        this->searchRequest = api::OpenTrackSearch(this->musikcore,
-            api::TrackSearch { filter, this->matchType, sortOrder },
-            this->searchWork.Begin([this, sortOrder, hash](mc_result status, api::TrackResult result, std::string_view) {
-                this->searchRequest = 0;
-                if (status == MC_ERROR_BUSY || status == MC_ERROR_QUEUE_FULL) {
-                    this->Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
-                }
-                if (status != MC_OK) {
-                    return;
-                }
-
-                this->trackList->SetTrackResult(std::move(result), hash);
-                this->SetSearchTitle(TrackOverlays::TrackSortName(sortOrder));
-            }));
+        if (auto library = this->musikcore.GetLibrary()) {
+            this->search.Replace({ std::move(*library), this->input->GetText(),
+                this->matchType, getDefaultTrackSort(this->prefs) });
+        }
     }
     catch (const api::Error& error) {
-        musik::core::api::WriteLog(MC_LOG_ERROR, "TrackSearchLayout", error.what());
+        api::WriteLog(MC_LOG_ERROR, "TrackSearchLayout", error.what());
     }
 }
 
@@ -189,11 +194,8 @@ void TrackSearchLayout::CancelSearchRequests() {
 }
 
 void TrackSearchLayout::CancelSearch() {
-    this->searchWork.Invalidate();
-    if (this->searchRequest) {
-        this->musikcore.Cancel(this->searchRequest);
-        this->searchRequest = 0;
-    }
+    this->Remove(RetrySearchMessage);
+    this->search.Clear();
 }
 
 void TrackSearchLayout::PlayFromTop() {
@@ -206,6 +208,9 @@ void TrackSearchLayout::ProcessMessage(IMessage& message) {
             this->Requery();
         }
     }
+    else if (message.Type() == RetrySearchMessage) {
+        this->search.TrySubmit();
+    }
     else {
         LayoutBase::ProcessMessage(message);
     }
@@ -217,6 +222,7 @@ void TrackSearchLayout::SetSearchTitle(const std::string& order) {
 
 void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
     if (this->IsVisible()) {
+        this->CancelSearch();
         Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
     }
 }

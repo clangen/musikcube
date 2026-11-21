@@ -200,7 +200,7 @@ void NowPlayingLayout::RequeryTrackList() {
 
     /* Playback remains authoritative for duplicate rows, position, and revision. */
     if (changed) {
-        this->trackListView->SetTrackResult(this->queue->Tracks(), 0);
+        this->trackListView->SetTrackResult(this->queue->Tracks());
     }
     else {
         this->trackListView->Redraw();

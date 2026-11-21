@@ -75,7 +75,7 @@ namespace musik {
                 void InitializeWindows();
                 void Refresh(bool requery = false);
                 void Requery(bool invalidate = false);
-                void RequeryTrackList(cursespp::ListWindow *view);
+                void RequeryTrackList(cursespp::ListWindow *view, bool refresh = false);
                 void UpdateTitle();
                 bool IsParentSelected();
                 bool IsParentRoot();
@@ -98,7 +98,6 @@ namespace musik {
                 std::shared_ptr<DirectoryAdapter> adapter;
                 std::shared_ptr<cursespp::ListWindow> directoryList;
                 std::shared_ptr<TrackListView> trackList;
-                size_t queryHash;
                 bool hasSubdirectories;
         };
     }

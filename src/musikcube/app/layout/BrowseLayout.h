@@ -94,7 +94,7 @@ namespace musik {
                 void InitializeWindows();
                 void SaveSession();
 
-                void RequeryTrackList(cursespp::ListWindow *view);
+                void RequeryTrackList(cursespp::ListWindow *view, bool refresh = false);
 
                 void OnCategoryViewSelectionChanged(
                     cursespp::ListWindow *view, size_t newIndex, size_t oldIndex);

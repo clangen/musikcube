@@ -59,7 +59,6 @@ DirectoryLayout::DirectoryLayout(
     api::Context& context)
 : LayoutBase()
 , musikcore(context)
-, queryHash(0)
 , hasSubdirectories(true) {
     this->InitializeWindows();
 }
@@ -135,7 +134,7 @@ void DirectoryLayout::OnIndexerProgress(int count) {
     this->Requery(true);
 }
 
-void DirectoryLayout::RequeryTrackList(ListWindow *view) {
+void DirectoryLayout::RequeryTrackList(ListWindow *view, bool refresh) {
     size_t selected = this->directoryList->GetSelectedIndex();
     std::string fullPath = "";
 
@@ -149,15 +148,13 @@ void DirectoryLayout::RequeryTrackList(ListWindow *view) {
         fullPath = this->adapter->GetFullPathAt(selected);
     }
 
-    if (fullPath.size()) {
-        const auto hash = std::hash<std::string>{}(fullPath);
-
-        if (hash != this->queryHash) {
-            this->queryHash = hash;
-            this->trackList->RequeryTracks(hash, [fullPath]
-                (api::Context& context, api::TrackSearchCompletion completion) {
-                    return api::OpenDirectory(context, fullPath, std::move(completion));
-                });
+    if (!fullPath.empty()) {
+        DirectoryTracks source { std::move(fullPath) };
+        if (refresh) {
+            this->trackList->Refresh(std::move(source));
+        }
+        else {
+            this->trackList->Show(std::move(source));
         }
     }
 }
@@ -190,10 +187,7 @@ void DirectoryLayout::Refresh(bool requery) {
 }
 
 void DirectoryLayout::Requery(bool invalidate) {
-    if (invalidate) {
-        this->queryHash = 0;
-    }
-    this->RequeryTrackList(this->directoryList.get());
+    this->RequeryTrackList(this->directoryList.get(), invalidate);
 }
 
 bool DirectoryLayout::IsParentSelected() {
@@ -257,8 +251,8 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
-        this->queryHash = 0;
         this->Refresh();
+        this->Requery(true);
         return true;
     }
 

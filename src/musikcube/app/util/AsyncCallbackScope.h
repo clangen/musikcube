@@ -15,6 +15,11 @@ namespace musik { namespace cube {
        It does not keep the view alive, schedule work, or cancel requests.
        Noncopyable and nonmovable; used only on the dispatcher thread.
 
+       Use this scope when the caller owns the workflow, such as guarding a
+       dialog callback or chaining a catalog read to an online lookup. Use
+       LatestRequest for one replaceable query that should retain its inputs,
+       cancel superseded work, and retry transient failures.
+
        Compose the scope as a member of the view, so it dies with the view:
 
            class SearchView {
