@@ -56,7 +56,7 @@ namespace {
     std::shared_ptr<const Library> openLibrary(const char *directory) {
 #ifdef MUSIKCORE_TEST_APP_BINDING
         musik::core::library::MasterLibrary selection;
-        return selection.OpenApiLibrary();
+        return OpenSelectedLibrary(selection);
 #else
         return std::make_shared<const Library>(directory);
 #endif
@@ -393,7 +393,7 @@ namespace {
     bool checkPlaybackCommands() {
         using namespace musik::core;
         const auto selection = std::make_shared<library::MasterLibrary>();
-        const auto source = selection->OpenApiLibrary();
+        const auto source = OpenSelectedLibrary(*selection);
         if (!source) return playbackFailure(__LINE__);
         api::TrackResult result;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
@@ -981,7 +981,7 @@ namespace {
     bool checkBrowseReads(const char* directory) {
         using namespace musik::core;
         library::MasterLibrary selected;
-        const auto source = selected.OpenApiLibrary();
+        const auto source = OpenSelectedLibrary(selected);
         if (!source) return false;
 
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
@@ -1044,7 +1044,7 @@ namespace {
 
         using namespace musik::core;
         library::MasterLibrary selection;
-        const auto library = selection.OpenApiLibrary();
+        const auto library = OpenSelectedLibrary(selection);
         if (!library) return false;
         mc_result completed = MC_OK;
         TrackResult tracks;

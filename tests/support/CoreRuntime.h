@@ -2,6 +2,8 @@
 
 #include <musikcore/debug.h>
 #include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/library.hpp>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/runtime/MessageQueue.h>
 
@@ -38,3 +40,18 @@ public:
 private:
     musik::core::runtime::MessageQueue queue;
 };
+
+inline std::shared_ptr<const musik::core::api::Library> OpenSelectedLibrary(
+    const musik::core::library::MasterLibrary& selection)
+{
+    mc_library* handle = nullptr;
+    const auto result = selection.OpenLibrary(&handle);
+    if (result == MC_ERROR_IO || result == MC_ERROR_NOT_FOUND) {
+        return {};
+    }
+    if (result != MC_OK) {
+        throw musik::core::api::Error(result);
+    }
+    musik::core::api::Library library(handle);
+    return std::make_shared<const musik::core::api::Library>(std::move(library));
+}

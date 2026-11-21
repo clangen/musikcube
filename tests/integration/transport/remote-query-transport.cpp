@@ -649,7 +649,7 @@ namespace {
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
         const auto master = std::make_shared<library::MasterLibrary>();
         master->LoadDefaultLibrary();
-        const auto local = master->OpenApiLibrary();
+        const auto local = OpenSelectedLibrary(*master);
         if (!local) {
             return failure(__LINE__);
         }
@@ -917,7 +917,7 @@ namespace {
             ->Connect();
         master->LoadDefaultLibrary();
         std::shared_ptr<const Library> playbackLibrary;
-        if (!AwaitTestHost(host, [&] { return bool(playbackLibrary = master->OpenApiLibrary()); })) {
+        if (!AwaitTestHost(host, [&] { return bool(playbackLibrary = OpenSelectedLibrary(*master)); })) {
             return failure(__LINE__);
         }
         TrackResult queueTracks;

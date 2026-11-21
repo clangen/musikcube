@@ -1297,7 +1297,7 @@ legacy list for actions that still require it.
 
 | Bridge | Remove when |
 | --- | --- |
-| `src/musikcore/ffi/consumer/legacy-library-selection.*`, `library-binding.h` and `legacy-library-binding.cpp`, plus `MasterLibrary::OpenApiLibrary()` | The public library API creates and owns local and remote backends directly. The app now receives its selection through the context. `musikcore.abi.remote_query_transport` covers context selection on switch, disconnect, and reconnect. Retained requests, results, and references must still preserve their originating backend and connection generation. |
+| `src/musikcore/ffi/consumer/legacy-library-selection.*`, `library-binding.h` and `legacy-library-binding.cpp`, plus `MasterLibrary::OpenLibrary()` | The public library API creates and owns local and remote backends directly. The app now receives its selection through the context. `musikcore.abi.remote_query_transport` covers context selection on switch, disconnect, and reconnect. Retained requests, results, and references must still preserve their originating backend and connection generation. |
 | `src/musikcore/ffi/consumer/playback-binding.h` and `legacy-playback-binding.cpp`, plus the friendship and lifetime token in `PlaybackService` | The public playback API creates and owns the session directly. Carry forward the owner-thread rules, queue origin checks, and dispatcher notifications. |
 | `TrackListView::GetTrackList()` and legacy track and playlist action overlays | Hot-swap, playlist drafts, and the remaining overlays can consume ordered results and track references directly. |
 

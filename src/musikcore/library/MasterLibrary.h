@@ -48,7 +48,6 @@
 #include <sigslot/sigslot.h>
 #include <musikcore/context.h>
 
-namespace musik { namespace core { namespace api { class Library; } } }
 namespace musik { namespace core { namespace audio { class PlaybackService; } } }
 
 namespace musik { namespace core { namespace library {
@@ -78,7 +77,7 @@ namespace musik { namespace core { namespace library {
 
             ILibraryPtr Wrapped() const noexcept { return this->wrappedLibrary; }
 
-            std::shared_ptr<const musik::core::api::Library> OpenApiLibrary() const;
+            mc_result OpenLibrary(mc_library** out) const;
             void LoadDefaultLibrary();
             void Select(Type type);
             void AttachContext(mc_context* context, audio::PlaybackService* playback);

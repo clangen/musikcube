@@ -40,7 +40,6 @@
 #include <musikcore/ffi/consumer/library-storage.h>
 #include <musikcore/ffi/consumer/playback-binding.h>
 #include <musikcore/ffi/consumer/request.h>
-#include <musikcore/library.hpp>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Messages.h>
@@ -129,27 +128,16 @@ void MasterLibrary::ProcessMessage(IMessage& message) {
     }
 }
 
-std::shared_ptr<const api::Library> MasterLibrary::OpenApiLibrary() const {
-    std::unique_lock<decltype(this->libraryMutex)> lock(this->libraryMutex);
-    if (!this->wrappedLibrary) return {};
-
+mc_result MasterLibrary::OpenLibrary(mc_library** out) const {
+    std::lock_guard lock(this->libraryMutex);
     /* Pin the selected backend so requests and track references survive library switches. */
-    mc_library* handle = nullptr;
-    mc_result status;
     if (const auto selected = std::dynamic_pointer_cast<LocalLibrary>(this->wrappedLibrary)) {
-        status = ffi::BindLocalLibrary(selected, &handle);
+        return ffi::BindLocalLibrary(selected, out);
     }
-    else if (const auto remote = std::dynamic_pointer_cast<RemoteLibrary>(this->wrappedLibrary)) {
-        status = ffi::BindRemoteLibrary(remote, &handle);
-        if (status == MC_ERROR_IO) return {};
+    if (const auto remote = std::dynamic_pointer_cast<RemoteLibrary>(this->wrappedLibrary)) {
+        return ffi::BindRemoteLibrary(remote, out);
     }
-    else {
-        return {};
-    }
-    if (status != MC_OK) throw api::Error(status);
-
-    api::Library bound(handle);
-    return std::make_shared<const api::Library>(std::move(bound));
+    return MC_ERROR_NOT_FOUND;
 }
 
 void MasterLibrary::LoadDefaultLibrary() {
@@ -257,8 +245,10 @@ void MasterLibrary::PublishSelection(bool selectionChanged) {
         }
     }
 
-    const auto library = status.state == MC_LIBRARY_CONNECTED ? this->OpenApiLibrary() : nullptr;
-    ffi::publish_library_selection(*this->context, library ? library->Get()->identity : nullptr,
+    auto identity = status.state == MC_LIBRARY_CONNECTED
+        ? ffi::CaptureLibrary(this->wrappedLibrary)
+        : nullptr;
+    ffi::publish_library_selection(*this->context, std::move(identity),
         std::move(status), selectionChanged);
 }
 

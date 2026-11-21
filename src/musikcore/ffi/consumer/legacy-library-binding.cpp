@@ -496,24 +496,17 @@ namespace {
     };
 }
 
-mc_result musik::core::ffi::BindLocalLibrary(const std::shared_ptr<library::LocalLibrary>& library,
-    mc_library** out) {
-    return exception_barrier(nullptr, [&]() -> mc_result {
-        if (!library || !out || *out) return MC_ERROR_INVALID_ARGUMENT;
+std::shared_ptr<const LibraryIdentity> musik::core::ffi::CaptureLibrary(const ILibraryPtr& selected) {
+    if (const auto library = std::dynamic_pointer_cast<library::LocalLibrary>(selected)) {
         const auto backend = std::make_shared<AppTrackReadBackend>(library);
-        auto identity = std::make_shared<LibraryIdentity>(LibraryIdentity{
+        return std::make_shared<LibraryIdentity>(LibraryIdentity {
             library->GetLibraryDirectory(), backend, {}, backend, backend });
-        *out = new mc_library{ std::move(identity) };
-        return MC_OK;
-    });
-}
-
-mc_result musik::core::ffi::BindRemoteLibrary(const std::shared_ptr<library::RemoteLibrary>& library,
-    mc_library** out) {
-    return exception_barrier(nullptr, [&]() -> mc_result {
-        if (!library || !out || *out) return MC_ERROR_INVALID_ARGUMENT;
+    }
+    if (const auto library = std::dynamic_pointer_cast<library::RemoteLibrary>(selected)) {
         const auto generation = library->WebSocketClient().ConnectionGeneration();
-        if (!generation) return MC_ERROR_IO;
+        if (!generation) {
+            return {};
+        }
 
         auto identity = std::make_shared<LibraryIdentity>();
         const auto reader = std::make_shared<RemoteTrackReader>(library, generation);
@@ -521,7 +514,35 @@ mc_result musik::core::ffi::BindRemoteLibrary(const std::shared_ptr<library::Rem
         identity->playbackOrigin = reader;
         identity->queries = reader;
         identity->kind = MC_LIBRARY_REMOTE;
-        *out = new mc_library{ std::move(identity) };
+        return identity;
+    }
+    return {};
+}
+
+mc_result musik::core::ffi::BindLocalLibrary(const std::shared_ptr<library::LocalLibrary>& library,
+    mc_library** out)
+{
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!library || !out || *out) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        *out = new mc_library { CaptureLibrary(library) };
+        return MC_OK;
+    });
+}
+
+mc_result musik::core::ffi::BindRemoteLibrary(const std::shared_ptr<library::RemoteLibrary>& library,
+    mc_library** out)
+{
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        if (!library || !out || *out) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        auto identity = CaptureLibrary(library);
+        if (!identity) {
+            return MC_ERROR_IO;
+        }
+        *out = new mc_library { std::move(identity) };
         return MC_OK;
     });
 }

@@ -5,6 +5,7 @@
 #include "library-storage.h"
 #include "request.h"
 #include "playback-storage.h"
+#include "../common/error.h"
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/MasterLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
@@ -142,16 +143,12 @@ std::shared_ptr<const LibraryIdentity> musik::core::audio::CapturePlaybackOrigin
         return {};
     }
 
-    mc_library* handle = nullptr;
-    if (const auto local = std::dynamic_pointer_cast<LocalLibrary>(selected)) {
-        ffi::BindLocalLibrary(local, &handle);
-    }
-    else if (const auto remote = std::dynamic_pointer_cast<RemoteLibrary>(selected)) {
-        ffi::BindRemoteLibrary(remote, &handle);
-    }
-
-    std::unique_ptr<mc_library> bound(handle);
-    return bound ? bound->identity : nullptr;
+    std::shared_ptr<const LibraryIdentity> origin;
+    ffi::exception_barrier(nullptr, [&] {
+        origin = ffi::CaptureLibrary(selected);
+        return MC_OK;
+    });
+    return origin;
 }
 
 /* Bridge the public handle to the existing engine until the API owns playback sessions. */

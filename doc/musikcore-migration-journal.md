@@ -56,3 +56,7 @@ Browse refreshes local playlist edits through public context callbacks. Deletion
 ## Queue readiness
 
 The core queue can wait for due work independently of dispatch. Public remote sessions use this wait instead of polling, and shutdown interrupts it. All 45 Linux Release tests passed. The new queue test covers an earlier post interrupting a deadline, delivery remaining on the dispatcher, and cancellation of the wait.
+
+## Library identity capture
+
+Core selection and playback now capture backend identity directly. They no longer construct SDK wrappers or allocate temporary C handles to recover the identity. All 45 Linux Release tests passed, including the backend switch and remote generation tests.
