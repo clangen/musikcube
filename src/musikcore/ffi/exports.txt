@@ -108,3 +108,9 @@ mc_plugin_read_settings
 mc_plugin_write_setting
 mc_preferences_list_keys
 mc_path_read
+mc_locale_load
+mc_locale_list
+mc_locale_read_selected
+mc_locale_select
+mc_locale_translate
+mc_locale_dimension

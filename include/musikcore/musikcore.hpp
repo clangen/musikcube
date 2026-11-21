@@ -17,5 +17,6 @@
 #include <musikcore/plugins.hpp>
 
 #include <musikcore/paths.hpp>
+#include <musikcore/locale.hpp>
 
 #endif

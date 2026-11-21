@@ -36,7 +36,7 @@
 
 #include <cursespp/SchemaOverlay.h>
 
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 #include <musikcore/utfutil.h>
 
 #include <cursespp/App.h>

@@ -40,7 +40,7 @@
 #include <cursespp/Screen.h>
 
 #include <musikcore/support/Messages.h>
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>

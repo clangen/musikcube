@@ -37,7 +37,7 @@
 
 #include <cursespp/InputOverlay.h>
 #include <musikcore/utfutil.h>
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 #include <cmath>
 #include <limits>
 #include <stdexcept>

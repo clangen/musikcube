@@ -35,7 +35,7 @@
 #include <stdafx.h>
 
 #include <musikcore/support/Messages.h>
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 #include <cursespp/Colors.h>
 #include <cursespp/ToastOverlay.h>
 #include <app/util/Hotkeys.h>

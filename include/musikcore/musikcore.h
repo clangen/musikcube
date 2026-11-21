@@ -14,5 +14,6 @@
 #include <musikcore/plugins.h>
 
 #include <musikcore/paths.h>
+#include <musikcore/locale.h>
 
 #endif

@@ -36,7 +36,7 @@
 
 #include "ServerOverlay.h"
 
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 
 #include <cursespp/App.h>
 #include <cursespp/DialogOverlay.h>

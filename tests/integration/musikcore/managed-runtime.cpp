@@ -251,6 +251,20 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    const auto localeDirectory = ReadPath(MC_PATH_APPLICATION) + "/locales";
+    const auto loaded = LoadLocales(localeDirectory);
+    const auto locales = ReadLocales();
+    if (loaded != MC_OK || std::ranges::find(locales, "en_US") == locales.end() ||
+        ReadSelectedLocale() != "en_US" ||
+        SelectLocale("unavailable-locale") != MC_ERROR_NOT_FOUND ||
+        Translate("settings_selected_locale") == "settings_selected_locale" ||
+        Translate("missing-fixture-key") != "missing-fixture-key" ||
+        LocaleDimension("missing-fixture-key", 17) != 17)
+    {
+        std::fprintf(stderr, "public locale contract failed\n");
+        return 1;
+    }
+
     if (!checkPreferences()) {
         std::fputs("Preference values did not round trip atomically through the public API\n", stderr);
         return 1;

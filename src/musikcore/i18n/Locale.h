@@ -36,10 +36,9 @@
 
 #include <musikcore/config.h>
 #include <musikcore/support/Preferences.h>
-#include <unordered_map>
+#include <mutex>
 
 #pragma warning(push, 0)
-#include <sigslot/sigslot.h>
 #include <nlohmann/json.hpp>
 #pragma warning(pop)
 
@@ -47,8 +46,6 @@ namespace musik { namespace core { namespace i18n {
 
     class Locale {
         public:
-            sigslot::signal1<std::string> LocaleChanged;
-
             ~Locale();
 
             static Locale& Instance() {
@@ -71,6 +68,10 @@ namespace musik { namespace core { namespace i18n {
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Locale)
 
             Locale() noexcept;
+
+            bool LoadSelection(const std::string& locale);
+
+            std::mutex mutex;
 
             std::vector<std::string> locales;
             std::shared_ptr<musik::core::Preferences> prefs;

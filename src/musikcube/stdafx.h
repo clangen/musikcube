@@ -73,7 +73,7 @@ asio's streambuf. include it up front so work around this */
 #pragma warning(pop)
 
 #include <musikcore/config.h>
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 #include <musikcore/audio/Buffer.h>
 #include <musikcore/audio/Crossfader.h>
 #include <musikcore/audio/CrossfadeTransport.h>

@@ -4,6 +4,7 @@
 #include <musikcore/visualizer.h>
 #include <musikcore/plugins.h>
 #include <musikcore/paths.h>
+#include <musikcore/locale.h>
 #include "../common/error.h"
 
 #include <cmath>
@@ -146,4 +147,32 @@ mc_result MC_CALL mc_equalizer_set_gains(const double* gains, size_t count) {
 
 mc_result MC_CALL mc_path_read(mc_path_kind kind, mc_path_fn read, void*) {
     return read && kind <= MC_PATH_DATA ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_locale_load(mc_string_view directory) {
+    return musik::core::ffi::valid_text(directory, false) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_locale_list(mc_locale_text_fn read, void*) {
+    return read ? MC_OK : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_locale_read_selected(mc_locale_text_fn read, void*) {
+    return read ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_locale_select(mc_string_view locale) {
+    return musik::core::ffi::valid_text(locale, false) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_locale_translate(mc_string_view key, mc_locale_text_fn read, void* userData) {
+    if (!read || !musik::core::ffi::valid_text(key, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    read(userData, key);
+    return MC_OK;
+}
+
+int MC_CALL mc_locale_dimension(mc_string_view, int fallback) {
+    return fallback;
 }

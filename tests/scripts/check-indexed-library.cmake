@@ -27,6 +27,7 @@ if(DEFINED MANAGED_RUNTIME_TEST)
   endif()
   execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
     "${BUILD_DIR}/tests/bin/isolated" "${MANAGED_RUNTIME_TEST}" --stage
+    --locale "${CMAKE_CURRENT_LIST_DIR}/../../src/musikcube/data/locales/en_US.json"
     --headless-output "${NULL_OUTPUT}" ${managed_runtime_plugins}
     --config-root "${config_directory}" ${managed_runtime_options}
     RESULT_VARIABLE status)

@@ -38,7 +38,7 @@
 #include <app/util/MagicConstants.h>
 #include <musikcore/indexer.hpp>
 #include <musikcore/library.hpp>
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>

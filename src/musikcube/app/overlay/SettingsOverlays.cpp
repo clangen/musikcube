@@ -36,7 +36,7 @@
 
 #include "SettingsOverlays.h"
 
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 #include <musikcore/preferences.hpp>
 #include <musikcore/sdk/String.h>
 
@@ -87,16 +87,12 @@ static void showNeedsRestart(Callback cb = Callback()) {
     App::Overlays().Push(dialog);
 }
 
-static std::vector<std::string> allLocales;
-
 void musik::cube::SettingsOverlays::ShowLocaleOverlay(std::function<void()> callback) {
-    auto& locale = i18n::Locale::Instance();
-
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
-    std::string currentLocale = locale.GetSelectedLocale();
-    allLocales = locale.GetLocales();
+    const auto currentLocale = musik::core::api::ReadSelectedLocale();
+    auto allLocales = musik::core::api::ReadLocales();
 
     auto adapter = std::make_shared<Adapter>();
     adapter->SetSelectable(true);
@@ -115,10 +111,11 @@ void musik::cube::SettingsOverlays::ShowLocaleOverlay(std::function<void()> call
         .SetTitle(_TSTR("locale_overlay_select_title"))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [callback, currentLocale]
+            [callback, currentLocale, allLocales = std::move(allLocales)]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                if (allLocales[index] != currentLocale) {
-                    i18n::Locale::Instance().SetSelectedLocale(allLocales[index]);
+                if (index < allLocales.size() && allLocales[index] != currentLocale &&
+                    musik::core::api::SelectLocale(allLocales[index]) == MC_OK)
+                {
                     showNeedsRestart(callback);
                 }
             });

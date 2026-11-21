@@ -40,6 +40,10 @@
 
 #include <filesystem>
 
+#include <musikcore/locale.h>
+#include <musikcore/ffi/common/error.h>
+#include <musikcore/ffi/common/primitives.h>
+
 #include "Locale.h"
 
 #define KEY_STRINGS "strings"
@@ -85,7 +89,10 @@ Locale::~Locale() {
 void Locale::Initialize(const std::string& localePath) {
     namespace fs = std::filesystem;
 
+    std::lock_guard lock(this->mutex);
     this->locales.clear();
+    this->defaultLocaleData = {};
+    this->localeData = {};
     this->localePath = localePath;
 
     fs::path locales(fs::u8path(localePath));
@@ -102,20 +109,25 @@ void Locale::Initialize(const std::string& localePath) {
         }
     }
 
-    this->SetSelectedLocale(this->selectedLocale);
+    this->LoadSelection(this->selectedLocale);
 }
 
 std::vector<std::string> Locale::GetLocales() {
-    std::vector<std::string> result;
-    std::copy(this->locales.begin(), this->locales.end(), std::back_inserter(result));
-    return result;
+    std::lock_guard lock(this->mutex);
+    return this->locales;
 }
 
 std::string Locale::GetSelectedLocale() {
+    std::lock_guard lock(this->mutex);
     return this->selectedLocale;
 }
 
 bool Locale::SetSelectedLocale(const std::string& locale) {
+    std::lock_guard lock(this->mutex);
+    return this->LoadSelection(locale);
+}
+
+bool Locale::LoadSelection(const std::string& locale) {
     if (this->defaultLocaleData.is_null()) {
         this->defaultLocaleData = loadLocaleData(localePath + "/" + DEFAULT_LOCALE + ".json");
     }
@@ -129,15 +141,15 @@ bool Locale::SetSelectedLocale(const std::string& locale) {
 
     if (it != this->locales.end()) {
         std::string localeFn = this->localePath + "/" + locale + ".json";
-        this->localeData = loadLocaleData(localeFn);
+        auto selected = loadLocaleData(localeFn);
 
-        if (!this->localeData.is_null()) {
+        if (!selected.is_null()) {
+            this->localeData = std::move(selected);
             this->selectedLocale = locale;
 
             prefs->SetString(keys::Locale, this->selectedLocale.c_str());
             prefs->Save();
 
-            this->LocaleChanged(this->selectedLocale);
             return true;
         }
     }
@@ -150,6 +162,8 @@ std::string Locale::Translate(const std::string& key) {
 }
 
 std::string Locale::Translate(const char* key) {
+    std::lock_guard lock(this->mutex);
+
     /* get the string from the current locale */
     if (!this->localeData.is_null()) {
         const nlohmann::json& strings = this->localeData.value(KEY_STRINGS, empty);
@@ -171,6 +185,8 @@ std::string Locale::Translate(const char* key) {
 }
 
 int Locale::Dimension(const char* key, int defaultValue) {
+    std::lock_guard lock(this->mutex);
+
     if (!this->localeData.is_null()) { /* current locale */
         const nlohmann::json& dimens = this->localeData.value(KEY_DIMENSIONS, empty);
         auto it = dimens.find(key);
@@ -185,4 +201,74 @@ int Locale::Dimension(const char* key, int defaultValue) {
     }
 
     return defaultValue; /* not found anywhere */
+}
+
+namespace {
+    void readLocaleText(mc_locale_text_fn read, void* userData, const std::string& text) {
+        read(userData, { text.data(), text.size() });
+    }
+}
+
+mc_result MC_CALL mc_locale_load(mc_string_view directory) {
+    if (!ffi::valid_text(directory, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        Locale::Instance().Initialize(std::string(directory.data, directory.length));
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_locale_list(mc_locale_text_fn read, void* userData) {
+    if (!read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        for (const auto& locale : Locale::Instance().GetLocales()) {
+            readLocaleText(read, userData, locale);
+        }
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_locale_read_selected(mc_locale_text_fn read, void* userData) {
+    if (!read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        readLocaleText(read, userData, Locale::Instance().GetSelectedLocale());
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_locale_select(mc_string_view locale) {
+    if (!ffi::valid_text(locale, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        return Locale::Instance().SetSelectedLocale(std::string(locale.data, locale.length))
+            ? MC_OK
+            : MC_ERROR_NOT_FOUND;
+    });
+}
+
+mc_result MC_CALL mc_locale_translate(mc_string_view key, mc_locale_text_fn read, void* userData) {
+    if (!read || !ffi::valid_text(key, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        readLocaleText(read, userData, Locale::Instance().Translate(std::string(key.data, key.length)));
+        return MC_OK;
+    });
+}
+
+int MC_CALL mc_locale_dimension(mc_string_view key, int fallback) {
+    int value = fallback;
+    if (ffi::valid_text(key, false)) {
+        ffi::exception_barrier(nullptr, [&] {
+            value = Locale::Instance().Dimension(std::string(key.data, key.length).c_str(), fallback);
+            return MC_OK;
+        });
+    }
+    return value;
 }

@@ -106,3 +106,7 @@ Library selection, remote reconnect, and local indexing now use the context-owne
 Cube uses public constants for settings shared with core and reads its application, home, and data directories through the C ABI. Persisted setting names are unchanged. The managed runtime test covers directory resolution and invalid arguments. All 47 Linux Release tests passed.
 
 Theme reads, directory browsing, and hotkey backups use application-owned filesystem operations. All 47 Linux Release tests passed, including the Browse TUI scenario.
+
+## Locale resources
+
+Cube loads and selects the existing locale resources through the public SDK. Queries and UI share the same synchronized translation store, and C callbacks receive a snapshot outside its lock. All 47 Linux Release tests passed. The isolated managed-runtime fixture stages the English locale to check enumeration, selection, and fallback values.

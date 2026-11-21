@@ -35,7 +35,7 @@
 #include <stdafx.h>
 #include <app/layout/LyricsLayout.h>
 #include <app/util/Messages.h>
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 #include <musikcore/support/Auddio.h>
 #include <musikcore/sdk/String.h>
 #include <cursespp/App.h>

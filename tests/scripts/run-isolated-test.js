@@ -22,6 +22,14 @@ if (args[0] === '--stage') {
   command = stageTestRuntime(resolve(executable), root);
 }
 
+if (args[0] === '--locale') {
+  args.shift();
+  const locale = args.shift();
+  const directory = join(dirname(command), 'locales');
+  mkdirSync(directory, { recursive: true });
+  copyFileSync(locale, join(directory, basename(locale)));
+}
+
 if (args[0] === '--headless-output') {
   args.shift();
   const plugins = join(dirname(command), 'plugins');

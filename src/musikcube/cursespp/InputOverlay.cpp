@@ -39,7 +39,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 
 using namespace cursespp;
 

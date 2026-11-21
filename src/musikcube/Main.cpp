@@ -54,7 +54,7 @@
 
 #include <musikcore/runtime/Message.h>
 #include <musikcore/debug.h>
-#include <musikcore/i18n/Locale.h>
+#include <app/util/Locale.h>
 #include <musikcore/indexer.hpp>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/support/Common.h>
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     srand((unsigned int) time(0));
 
     /* ensure we have the correct locale loaded */
-    core::i18n::Locale::Instance().Initialize(api::ReadPath(MC_PATH_APPLICATION) + "/locales/");
+    api::LoadLocales(api::ReadPath(MC_PATH_APPLICATION) + "/locales/");
 
 #ifdef WIN32
     AddDllDirectory(u8to16(core::GetPluginDirectory()).c_str());
