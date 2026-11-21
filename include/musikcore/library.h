@@ -45,8 +45,8 @@ typedef struct mc_library_options {
 
 #define MC_LIBRARY_OPTIONS_DEFAULT { sizeof(mc_library_options), MC_LIBRARY_LOCAL, { NULL, 0 } }
 
-/* Create a library identity. The output slot must be empty. */
-/* Creating a remote handle by endpoint does not open a connection. Remote reads require a core-bound
+/* Create a library identity. The output slot must be empty.
+   Creating a remote handle by endpoint does not open a connection. Remote reads require a core-bound
    session. */
 MC_API mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_library **out_library);
 /* Release the handle. Accepted requests and derived identities retain their library. */
@@ -156,8 +156,8 @@ typedef struct mc_track_query {
 
 #define MC_TRACK_QUERY_DEFAULT { sizeof(mc_track_query), { NULL, 0 }, NULL, 0, 0, 0, 0 }
 
-/* Success transfers the page to the callback. Release it with mc_track_page_destroy. */
-/* Core owns error details and message bytes; they are valid until the callback returns. */
+/* Success transfers the page to the callback. Release it with mc_track_page_destroy.
+   Core owns error details and message bytes; they are valid until the callback returns. */
 typedef void (MC_CALL *mc_track_query_completion_fn)(
     mc_result result, mc_track_page *page, const mc_error *error, void *user_data);
 
@@ -166,8 +166,8 @@ MC_API mc_result MC_CALL mc_library_open_track_search_async(
     mc_context *context, const mc_library *library, const mc_track_search *search, mc_track_search_completion_fn completion,
     void *user_data, mc_request_id *out_request);
 
-/* Read the saved playlist in queue order, preserving duplicates. Uses the track-result completion contract. */
-/* Returns MC_ERROR_UNSUPPORTED when the library has no playlist backend. */
+/* Read the saved playlist in queue order, preserving duplicates. Uses the track-result completion contract.
+   Returns MC_ERROR_UNSUPPORTED when the library has no playlist backend. */
 MC_API mc_result MC_CALL mc_library_open_playlist_async(
     mc_context *context, const mc_library *library, int64_t playlist_id,
     mc_track_search_completion_fn completion, void *user_data, mc_request_id *out_request);
@@ -204,8 +204,8 @@ typedef void (MC_CALL *mc_playlist_write_completion_fn)(
 MC_API mc_result MC_CALL mc_library_list_playlists_async(
     mc_context *context, const mc_library *library, mc_playlist_list_completion_fn completion,
     void *user_data, mc_request_id *out_request);
-/* Zero playlist_id creates a playlist using name. A positive ID overwrites its tracks. */
-/* IDs belong to library. Core copies their order, including duplicates, before returning. */
+/* Zero playlist_id creates a playlist using name. A positive ID overwrites its tracks.
+   IDs belong to library. Core copies their order, including duplicates, before returning. */
 MC_API mc_result MC_CALL mc_library_save_playlist_async(
     mc_context *context, const mc_library *library, int64_t playlist_id, mc_string_view name,
     const int64_t *track_ids, size_t track_count, mc_playlist_write_completion_fn completion,
@@ -229,12 +229,12 @@ MC_API int64_t MC_CALL mc_track_result_get_id(const mc_track_result *tracks, siz
 MC_API bool MC_CALL mc_track_result_starts_album(const mc_track_result *tracks, size_t row);
 /* Total seconds for the album group starting at row. Other positions return zero. */
 MC_API uint64_t MC_CALL mc_track_result_get_album_duration(const mc_track_result *tracks, size_t row);
-/* Read current metadata. Removed tracks retain their IDs and have no values. */
-/* Remote reads support ID, title, artist, album, duration, track number, and rating. */
-/* A remote read that requests any other field returns MC_ERROR_UNSUPPORTED. */
-/* Current servers preserve missing/empty values and hidden rows through a typed
-   projection. Legacy servers can return their older, less precise metadata map. */
-/* The submitted request retains the result data after the caller releases the handle. */
+/* Read current metadata. Removed tracks retain their IDs and have no values.
+   Remote reads support ID, title, artist, album, duration, track number, and rating.
+   A remote read that requests any other field returns MC_ERROR_UNSUPPORTED.
+   Current servers preserve missing/empty values and hidden rows through a typed
+   projection. Legacy servers can return their older, less precise metadata map.
+   The submitted request retains the result data after the caller releases the handle. */
 MC_API mc_result MC_CALL mc_track_result_read_async(
     mc_context *context, const mc_track_result *tracks, const mc_track_range *range,
     mc_track_query_completion_fn completion, void *user_data, mc_request_id *out_request);
@@ -246,15 +246,15 @@ MC_API mc_result MC_CALL mc_track_result_get_ref(
 /* The ID is scoped to the originating library. Null returns zero. */
 MC_API int64_t MC_CALL mc_track_ref_get_id(const mc_track_ref *track);
 MC_API void MC_CALL mc_track_ref_destroy(mc_track_ref **track);
-/* Resolve against the originating library. Missing tracks return MC_ERROR_NOT_FOUND. */
-/* Local reads also treat hidden tracks as missing. Remote reads use the range projection above. */
-/* The accepted request copies the identity and all requested fields. */
+/* Resolve against the originating library. Missing tracks return MC_ERROR_NOT_FOUND.
+   Local reads also treat hidden tracks as missing. Remote reads use the range projection above.
+   The accepted request copies the identity and all requested fields. */
 MC_API mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_ref *track,
     const mc_string_view *fields, size_t field_count, mc_track_query_completion_fn completion,
     void *user_data, mc_request_id *out_request);
 
-/* Callers own query input storage and may release it on return. */
-/* Local libraries read musik.db in their locator directory. */
+/* Callers own query input storage and may release it on return.
+   Local libraries read musik.db in their locator directory. */
 MC_API mc_result MC_CALL mc_library_query_tracks_async(
     mc_context *context, const mc_library *library, const mc_track_query *query, mc_track_query_completion_fn completion,
     void *user_data, mc_request_id *out_request);

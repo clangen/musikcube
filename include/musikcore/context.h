@@ -43,8 +43,8 @@ typedef struct mc_context_options {
 #define MC_CONTEXT_OPTIONS_DEFAULT \
     { sizeof(mc_context_options), 0, { NULL, 0 }, 0, NULL, NULL, 0, 0, 0 }
 
-/* Null options use defaults. Callers own directory storage and may release it on return. */
-/* out_context is required. out_error is optional; initialize both supplied slots
+/* Null options use defaults. Callers own directory storage and may release it on return.
+   out_context is required. out_error is optional; initialize both supplied slots
    to null. Occupied slots are rejected unchanged. A second context returns MC_ERROR_BUSY.
    A successful context is owned by the caller until destroy succeeds. */
 MC_API mc_result MC_CALL mc_context_create(
@@ -62,8 +62,8 @@ MC_API mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id re
 /* Settles requests on the dispatcher thread. Waits for work and wakeup hooks to stop. */
 MC_API mc_result MC_CALL mc_context_shutdown(mc_context *context);
 
-/* Shuts down on the dispatcher thread and clears the slot on success. Null is accepted. */
-/* If shutdown is busy, the handle stays valid. Retry on the dispatcher thread outside callbacks. */
+/* Shuts down on the dispatcher thread and clears the slot on success. Null is accepted.
+   If shutdown is busy, the handle stays valid. Retry on the dispatcher thread outside callbacks. */
 MC_API void MC_CALL mc_context_destroy(mc_context **context);
 
 #ifdef __cplusplus

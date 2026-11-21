@@ -51,8 +51,8 @@ enum {
     MC_ERROR_BUFFER_TOO_SMALL = 9
 };
 
-/* Non-owning UTF-8 view. Keep the backing storage alive while using it. */
-/* Copy the bytes for longer use. The view itself needs no cleanup. */
+/* Non-owning UTF-8 view. Keep the backing storage alive while using it.
+   Copy the bytes for longer use. The view itself needs no cleanup. */
 typedef struct mc_string_view {
     /* Non-owning UTF-8 pointer; lifetime is set by the supplying API. Null is allowed for an empty view. */
     const char *data;
