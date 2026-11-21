@@ -51,6 +51,8 @@ namespace musik {
                 virtual ~DirectoryAdapter();
 
                 size_t Select(cursespp::ListWindow* window);
+                static std::string NormalizePath(const std::string& path);
+
                 std::string GetParentPath();
                 std::string GetCurrentPath();
                 std::string GetFullPathAt(size_t index);

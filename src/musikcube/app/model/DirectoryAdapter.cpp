@@ -36,7 +36,6 @@
 #include <musikcore/paths.hpp>
 #include <musikcore/sdk/Filesystem.h>
 
-#include <musikcore/support/Common.h>
 #include <cursespp/Text.h>
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/SingleLineEntry.h>
@@ -143,12 +142,24 @@ static void buildDirectoryList(
     }
 }
 
+static fs::path directoryPath(fs::path path) {
+    path.make_preferred();
+    if (path.has_filename()) {
+        path /= "";
+    }
+    return path;
+}
+
 static std::string pathToString(fs::path path) {
-    return musik::core::NormalizeDir(pathToUtf8(path));
+    return pathToUtf8(directoryPath(std::move(path)));
 }
 
 static fs::path stringToPath(const std::string& path) {
-    return fs::u8path(musik::core::NormalizeDir(path));
+    return directoryPath(fs::u8path(path));
+}
+
+std::string DirectoryAdapter::NormalizePath(const std::string& path) {
+    return pathToUtf8(stringToPath(path));
 }
 
 DirectoryAdapter::DirectoryAdapter() {

@@ -104,3 +104,5 @@ Library selection, remote reconnect, and local indexing now use the context-owne
 ## Shared preferences and paths
 
 Cube uses public constants for settings shared with core and reads its application, home, and data directories through the C ABI. Persisted setting names are unchanged. The managed runtime test covers directory resolution and invalid arguments. All 47 Linux Release tests passed.
+
+Theme reads, directory browsing, and hotkey backups use application-owned filesystem operations. All 47 Linux Release tests passed, including the Browse TUI scenario.

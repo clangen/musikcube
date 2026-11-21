@@ -206,7 +206,7 @@ bool DirectoryLayout::IsParentSelected() {
 }
 
 bool DirectoryLayout::IsParentRoot() {
-    std::string root = NormalizeDir(this->rootDirectory);
+    std::string root = DirectoryAdapter::NormalizePath(this->rootDirectory);
     return
         root == this->adapter->GetParentPath() ||
         root == this->adapter->GetCurrentPath();

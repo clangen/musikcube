@@ -34,6 +34,8 @@
 
 #include <stdafx.h>
 #include <musikcore/paths.hpp>
+
+#include <filesystem>
 #include "HotkeysLayout.h"
 #include <musikcore/sdk/String.h>
 #include <cursespp/App.h>
@@ -119,11 +121,14 @@ static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, Callbac
 }
 
 static void backupAndShowDialog() {
-    std::string dir = NormalizeDir(musik::core::api::ReadPath(MC_PATH_DATA));
+    const auto dir = musik::core::api::ReadPath(MC_PATH_DATA);
     std::string in = dir + "hotkeys.json";
     std::string out = dir + "hotkeys-" + formattedTime() + ".json";
 
-    if (CopyFile(in, out)) {
+    std::error_code error;
+    if (!dir.empty() && std::filesystem::copy_file(std::filesystem::u8path(in),
+        std::filesystem::u8path(out), std::filesystem::copy_options::overwrite_existing, error))
+    {
         auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = _TSTR("hotkeys_backup_success_message");

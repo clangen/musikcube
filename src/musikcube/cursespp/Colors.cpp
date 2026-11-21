@@ -37,7 +37,7 @@
 #include <musikcore/sdk/Filesystem.h>
 #include <nlohmann/json.hpp>
 #include <cursespp/Colors.h>
-#include <musikcore/support/Common.h>
+#include <fstream>
 #include <set>
 #include <filesystem>
 
@@ -288,12 +288,11 @@ struct Theme {
         }
 
         bool success = false;
-        char* buffer = nullptr;
-        int size = 0;
 
-        if (FileToByteArray(fn, &buffer, size, true)) {
+        std::ifstream file(fs::u8path(fn), std::ios::binary);
+        if (file) {
             try {
-                json data = json::parse(buffer);
+                json data = json::parse(file);
 
                 /* validate schema version */
                 int schemaVersion = data[JSON_KEY_SCHEMA_VERSION];
@@ -365,7 +364,6 @@ struct Theme {
             }
         }
 
-        free(buffer);
         return success;
     }
 
