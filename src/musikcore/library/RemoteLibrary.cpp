@@ -271,7 +271,7 @@ void RemoteLibrary::ThreadProc() {
 }
 
 void RemoteLibrary::NotifyQueryCompleted(QueryContextPtr context) {
-    this->QueryCompleted(context->query.get());
+    this->QueryCompleted.Publish(context->query.get());
     if (context->callback) {
         context->callback(context->query);
     }
@@ -394,7 +394,7 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     else if (message.Type() == MESSAGE_UPDATE_CONNECTION_STATE) {
         const auto updatedState = static_cast<ConnectionState>(message.UserData1());
         this->connectionState = updatedState;
-        this->ConnectionStateChanged(this->connectionState);
+        this->ConnectionStateChanged.Publish(this->connectionState);
     }
 }
 

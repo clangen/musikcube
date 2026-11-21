@@ -315,7 +315,7 @@ void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
                 this->messageQueue->Post(std::make_shared<QueryCompletedMessage>(this, context));
             }
             else {
-                this->QueryCompleted(query.get());
+                this->QueryCompleted.Publish(query.get());
             }
         }
         else if (context->callback) {
@@ -348,7 +348,7 @@ void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
         auto context = dynamic_cast<QueryCompletedMessage*>(&message)->GetContext();
         auto query = context->query;
 
-        this->QueryCompleted(context->query.get());
+        this->QueryCompleted.Publish(context->query.get());
 
         if (context->callback) {
             context->callback(query);

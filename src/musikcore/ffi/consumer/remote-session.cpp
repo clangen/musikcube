@@ -29,14 +29,14 @@ namespace {
     }
 }
 
-struct mc_remote_session : sigslot::has_slots<> {
+struct mc_remote_session {
     explicit mc_remote_session(RemoteLibrary::ConnectionOptions options)
     : queue(std::make_shared<Queue>())
     , library(new RemoteLibrary("Remote", 0, this->queue.get(),
         [options = std::move(options)] { return options; }, false),
         [keepQueue = this->queue](RemoteLibrary* remote) { delete remote; })
     {
-        this->library->ConnectionStateChanged.connect(this, &mc_remote_session::OnState);
+        this->stateChanged = this->library->ConnectionStateChanged.Subscribe([this](State state) { this->OnState(state); });
         this->pump = std::thread([this] {
             while (this->queue->WaitForReady(this->stopping)) {
                 this->queue->Dispatch();
@@ -49,7 +49,7 @@ struct mc_remote_session : sigslot::has_slots<> {
         this->stopping.store(true);
         this->queue->WakeWaiters();
         this->pump.join();
-        this->library->ConnectionStateChanged.disconnect(this);
+        this->stateChanged.Reset();
         this->library->Close();
     }
 
@@ -85,6 +85,7 @@ struct mc_remote_session : sigslot::has_slots<> {
     std::function<void(mc_result, mc_remote_state)> pending;
     std::atomic<bool> stopping { false };
     std::thread pump;
+    musik::core::api::Subscriptions<State>::Connection stateChanged;
 };
 
 using namespace musik::core::ffi;

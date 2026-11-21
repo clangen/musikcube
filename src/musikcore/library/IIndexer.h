@@ -36,15 +36,14 @@
 
 #include <string>
 #include <vector>
-#include <sigslot/sigslot.h>
-#include <musikcore/support/Subscriptions.h>
+#include <musikcore/subscriptions.hpp>
 
 namespace musik { namespace core {
     class IIndexer {
         public:
-            sigslot::signal0<> Started;
-            Subscriptions<int> Finished;
-            sigslot::signal1<int> Progress;
+            api::Subscriptions<> Started;
+            api::Subscriptions<int> Finished;
+            api::Subscriptions<int> Progress;
 
             enum State {
                 StateIdle = 0,

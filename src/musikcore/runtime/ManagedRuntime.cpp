@@ -121,7 +121,7 @@ namespace musik { namespace core { namespace ffi {
     };
 
     /* Owns the core queue and its readiness thread. Neither copyable nor movable. */
-    class ManagedRuntime final : public ContextRuntime, public sigslot::has_slots<> {
+    class ManagedRuntime final : public ContextRuntime {
     public:
         ~ManagedRuntime() override {
             try {
@@ -164,14 +164,16 @@ namespace musik { namespace core { namespace ffi {
                 const bool selectRemote = !(flags & MC_CONTEXT_START_LOCAL) &&
                     catalog == static_cast<int>(ILibrary::Type::Remote);
                 this->active = selectRemote ? ILibraryPtr(this->remote) : this->local;
-                this->remote->ConnectionStateChanged.connect(this, &ManagedRuntime::OnRemoteStateChanged);
+                this->remoteStateChanged = this->remote->ConnectionStateChanged.Subscribe([this](auto state) {
+                    this->OnRemoteStateChanged(state);
+                });
             }
             if (services & MC_SERVICE_PLAYBACK) {
                 this->playback = std::make_unique<audio::PlaybackService>(*this->queue, this->active);
             }
             if (this->indexer) {
-                this->indexer->Started.connect(this, &ManagedRuntime::OnIndexStarted);
-                this->indexer->Progress.connect(this, &ManagedRuntime::OnIndexProgress);
+                this->indexStarted = this->indexer->Started.Subscribe([this] { this->OnIndexStarted(); });
+                this->indexProgress = this->indexer->Progress.Subscribe([this](int updates) { this->OnIndexProgress(updates); });
                 this->indexFinished = this->indexer->Finished.Subscribe([this](int updates) { this->OnIndexFinished(updates); });
             }
             if (this->active) {
@@ -273,14 +275,12 @@ namespace musik { namespace core { namespace ffi {
             this->players.clear();
             if (this->indexer) {
                 Cleanup([&] { this->indexer->Shutdown(); }, failure);
-                this->indexer->Started.disconnect(this);
-                this->indexer->Progress.disconnect(this);
+                this->indexStarted.Reset();
+                this->indexProgress.Reset();
                 this->indexFinished.Reset();
                 this->indexer = nullptr;
             }
-            if (this->remote) {
-                this->remote->ConnectionStateChanged.disconnect(this);
-            }
+            this->remoteStateChanged.Reset();
             if (this->notifications) {
                 this->queue->UnregisterForBroadcasts(this->notifications.get());
                 this->notifications.reset();
@@ -393,7 +393,10 @@ namespace musik { namespace core { namespace ffi {
         std::condition_variable changed;
         uint64_t dispatches = 0;
         IIndexer* indexer = nullptr;
-        Subscriptions<int>::Connection indexFinished;
+        api::Subscriptions<ILibrary::ConnectionState>::Connection remoteStateChanged;
+        api::Subscriptions<>::Connection indexStarted;
+        api::Subscriptions<int>::Connection indexProgress;
+        api::Subscriptions<int>::Connection indexFinished;
         bool pluginsInitialized = false;
         bool librariesInitialized = false;
         bool ownsLogging = false;

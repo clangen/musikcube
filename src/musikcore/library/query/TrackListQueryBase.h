@@ -44,6 +44,8 @@
 #include <nlohmann/json.hpp>
 #pragma warning(pop)
 
+#include <set>
+
 namespace musik { namespace core { namespace library { namespace query {
 
     class TrackListQueryBase : public musik::core::library::query::QueryBase {

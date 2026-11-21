@@ -455,7 +455,7 @@ inline void Indexer::IncrementTracksScanned(int delta) {
 
     if (this->incrementalUrisScanned > TRANSACTION_INTERVAL) {
         this->trackTransaction->CommitAndRestart();
-        this->Progress(this->totalUrisScanned);
+        this->Progress.Publish(this->totalUrisScanned);
         this->incrementalUrisScanned = 0;
     }
 }
@@ -621,7 +621,7 @@ void Indexer::ThreadLoop() {
         this->syncQueue.pop_front();
 
         this->state = StateIndexing;
-        this->Started();
+        this->Started.Publish();
 
         if (this->dbConnection.Open(this->dbFilename.c_str(), 0) != db::Okay) {
             musik::debug::warning(TAG, "could not open catalog for indexing");
@@ -694,7 +694,7 @@ void Indexer::ThreadLoop() {
         this->dbConnection.Close();
 
         if (!this->Bail()) {
-            this->Progress(this->totalUrisScanned);
+            this->Progress.Publish(this->totalUrisScanned);
             this->Finished.Publish(this->totalUrisScanned);
         }
 

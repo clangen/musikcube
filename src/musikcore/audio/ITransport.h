@@ -37,7 +37,7 @@
 #include <musikcore/config.h>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/audio/Player.h>
-#include <musikcore/support/Subscriptions.h>
+#include <musikcore/subscriptions.hpp>
 
 namespace musik { namespace core { namespace audio {
 
@@ -49,10 +49,10 @@ namespace musik { namespace core { namespace audio {
                 Immediate = 0, Wait = 1
             };
 
-            Subscriptions<musik::core::sdk::StreamState, std::string> StreamEvent;
-            Subscriptions<musik::core::sdk::PlaybackState> PlaybackEvent;
-            Subscriptions<> VolumeChanged;
-            Subscriptions<double> TimeChanged;
+            api::Subscriptions<musik::core::sdk::StreamState, std::string> StreamEvent;
+            api::Subscriptions<musik::core::sdk::PlaybackState> PlaybackEvent;
+            api::Subscriptions<> VolumeChanged;
+            api::Subscriptions<double> TimeChanged;
 
             struct Connections {
                 decltype(StreamEvent)::Connection stream;

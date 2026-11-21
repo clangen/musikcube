@@ -4,6 +4,7 @@ function(musikcore_add_consumer_api target remote_session_source)
     "${ffi}/common/version.cpp"
     "${ffi}/common/string.cpp"
     "${ffi}/common/error.cpp"
+    "${ffi}/common/subscriptions.cpp"
     "${ffi}/consumer/context.cpp"
     "${ffi}/consumer/library.cpp"
     "${remote_session_source}"

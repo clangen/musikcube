@@ -44,7 +44,6 @@
 #include <musikcore/support/ThreadGroup.h>
 
 #pragma warning(push, 0)
-#include <sigslot/sigslot.h>
 #include <asio/io_context.hpp>
 #pragma warning(pop)
 

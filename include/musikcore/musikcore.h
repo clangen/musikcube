@@ -3,6 +3,7 @@
 
 #include <musikcore/abi.h>
 #include <musikcore/context.h>
+#include <musikcore/subscriptions.h>
 #include <musikcore/library.h>
 #include <musikcore/playback.h>
 #include <musikcore/player.h>

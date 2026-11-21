@@ -49,7 +49,6 @@
 #include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/client.hpp>
 #include <nlohmann/json.hpp>
-#include <sigslot/sigslot.h>
 #pragma warning(pop)
 
 #include <musikcore/config.h>

@@ -36,7 +36,6 @@
 
 #include <string>
 #include <vector>
-#include <sigslot/sigslot.h>
 
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/db/Connection.h>

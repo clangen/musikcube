@@ -560,8 +560,8 @@ private:
     std::mutex liveRegistrationMutex;
     std::shared_ptr<LiveObserver> liveObserver;
     std::shared_ptr<QueueObserver> queueObserver;
-    Subscriptions<>::Connection queueEdited;
-    Subscriptions<size_t, TrackPtr>::Connection trackChanged;
+    api::Subscriptions<>::Connection queueEdited;
+    api::Subscriptions<size_t, TrackPtr>::Connection trackChanged;
 };
 
 mc_result PlaybackService::OpenHandle(mc_playback** out) {

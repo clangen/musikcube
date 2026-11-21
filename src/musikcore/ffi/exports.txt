@@ -19,6 +19,10 @@ mc_equalizer_set_gains
 mc_error_destroy
 mc_error_get_code
 mc_error_get_message
+mc_event_source_create
+mc_event_source_destroy
+mc_event_source_publish
+mc_event_source_subscribe
 mc_indexer_add_path
 mc_indexer_get_state
 mc_indexer_read_paths
@@ -111,6 +115,7 @@ mc_remote_session_state
 mc_request_cancel
 mc_server_configure
 mc_server_read_configuration
+mc_subscription_destroy
 mc_track_page_destroy
 mc_track_page_get_count
 mc_track_page_get_field_count

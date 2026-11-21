@@ -8,10 +8,19 @@
 #include <utility>
 #include <vector>
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace api {
+
+    namespace detail {
+        inline unsigned& SubscriptionDeliveryDepth() {
+            static thread_local unsigned depth = 0;
+            return depth;
+        }
+    }
 
     /* Owns a typed list of callbacks. Neither copyable nor movable. Delivery
-       runs on the publisher thread. Concurrent publishes may overlap. */
+       runs in registration order on the publisher thread. Concurrent publishes
+       may overlap. An exception from a callback propagates and ends that
+       delivery. Keep the source alive through all Publish and Subscribe calls. */
     template<class... Args>
     class Subscriptions {
         using Callback = std::function<void(Args...)>;
@@ -28,32 +37,29 @@ namespace musik { namespace core {
 
         /* Tracks reentrant disconnect without holding any lock during a callback. */
         struct Invocation {
-            explicit Invocation(Slot& slot) : slot(slot), previous(Current()) {
-                Current() = this;
+            explicit Invocation(Slot& slot) : slot(slot) {
+                ++detail::SubscriptionDeliveryDepth();
             }
 
             ~Invocation() {
-                Current() = this->previous;
+                --detail::SubscriptionDeliveryDepth();
                 std::lock_guard<std::mutex> lock(this->slot.mutex);
                 if (--this->slot.running == 0) {
                     this->slot.idle.notify_all();
                 }
             }
 
-            static Invocation*& Current() {
-                static thread_local Invocation* current = nullptr;
-                return current;
-            }
-
             Slot& slot;
-            Invocation* previous;
         };
 
         using SlotList = std::vector<std::weak_ptr<Slot>>;
 
     public:
         /* Move-only owner. Reset waits for admitted callbacks, so call it
-           outside locks those callbacks need. Self-disconnect skips the wait. */
+           outside locks those callbacks need. Reset inside a callback delivered
+           by Subscriptions in the same binary skips the wait to prevent cyclic
+           waits. An admitted callback may still be running on another thread.
+           Synchronize access to the same Connection separately. */
         class Connection {
         public:
             Connection() = default;
@@ -79,10 +85,8 @@ namespace musik { namespace core {
 
                 std::unique_lock<std::mutex> lock(slot->mutex);
                 slot->connected = false;
-                for (auto* call = Invocation::Current(); call; call = call->previous) {
-                    if (&call->slot == slot.get()) {
-                        return;
-                    }
+                if (detail::SubscriptionDeliveryDepth() != 0) {
+                    return;
                 }
                 slot->idle.wait(lock, [&] { return slot->running == 0; });
             }
@@ -94,7 +98,18 @@ namespace musik { namespace core {
             std::shared_ptr<Slot> slot;
         };
 
+        Subscriptions() = default;
+        Subscriptions(const Subscriptions&) = delete;
+        Subscriptions(Subscriptions&&) = delete;
+
+        Subscriptions& operator=(const Subscriptions&) = delete;
+        Subscriptions& operator=(Subscriptions&&) = delete;
+
         Connection Subscribe(Callback callback) {
+            if (!callback) {
+                return {};
+            }
+
             auto slot = std::make_shared<Slot>(std::move(callback));
             std::lock_guard<std::mutex> lock(this->mutex);
 
@@ -141,4 +156,4 @@ namespace musik { namespace core {
         std::shared_ptr<const SlotList> slots;
     };
 
-} }
+} } }

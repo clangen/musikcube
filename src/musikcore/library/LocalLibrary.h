@@ -42,12 +42,11 @@
 #include <musikcore/library/IQuery.h>
 #include <musikcore/library/QueryBase.h>
 
+#include <list>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <string>
-
-#include <sigslot/sigslot.h>
 
 namespace musik { namespace core { namespace library {
 

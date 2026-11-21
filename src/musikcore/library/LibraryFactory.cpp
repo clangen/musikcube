@@ -130,7 +130,6 @@ ILibraryPtr LibraryFactory::AddLibrary(int id, ILibrary::Type type, const std::s
         }
         this->libraries.push_back(library);
         this->libraryMap[id] = library;
-        this->LibrariesUpdated();
     }
 
     return library;

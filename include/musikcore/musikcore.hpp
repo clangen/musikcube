@@ -5,6 +5,7 @@
    request dispatch, library queries, metadata pages, and app-supplied playback;
    subsystem headers can be included separately when fewer facilities are needed. */
 #include <musikcore/context.hpp>
+#include <musikcore/subscriptions.hpp>
 #include <musikcore/library.hpp>
 #include <musikcore/playback.hpp>
 #include <musikcore/player.hpp>

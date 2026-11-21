@@ -142,7 +142,7 @@ class MainController::TrackListModel : public ListView::Model {
         TextCellRendererRef normal;
         TextCellRendererRef bold;
         TrackPtr playing;
-        Subscriptions<size_t, TrackPtr>::Connection trackChanged;
+        musik::core::api::Subscriptions<size_t, TrackPtr>::Connection trackChanged;
 };
 
 MainController::MainController(
@@ -157,7 +157,9 @@ MainController::MainController(
     this->playbackStateChanged = playback.PlaybackStateChanged.Subscribe([this](auto state) {
         this->OnPlaybackStateChanged(state);
     });
-    library->QueryCompleted.connect(this, &MainController::OnLibraryQueryCompleted);
+    this->queryCompleted = library->QueryCompleted.Subscribe([this](IQuery* query) {
+        this->OnLibraryQueryCompleted(query);
+    });
 
     this->trackListQuery.reset(new SearchTrackListQuery(library, ""));
     library->Enqueue(this->trackListQuery);
@@ -193,6 +195,7 @@ MainController::MainController(
 }
 
 MainController::~MainController() {
+    this->queryCompleted.Reset();
     this->playbackStateChanged.Reset();
 }
 

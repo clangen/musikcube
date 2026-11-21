@@ -81,9 +81,9 @@ namespace musik { namespace core { namespace audio {
 
         public:
             /* Published on the service queue's dispatcher. */
-            Subscriptions<size_t, musik::core::TrackPtr> TrackChanged;
-            Subscriptions<musik::core::sdk::PlaybackState> PlaybackStateChanged;
-            Subscriptions<> QueueEdited;
+            api::Subscriptions<size_t, musik::core::TrackPtr> TrackChanged;
+            api::Subscriptions<musik::core::sdk::PlaybackState> PlaybackStateChanged;
+            api::Subscriptions<> QueueEdited;
 
             PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
@@ -225,7 +225,7 @@ namespace musik { namespace core { namespace audio {
             std::shared_ptr<const LibraryIdentity> CaptureOrigin(int libraryId) const;
 
             ITransport::Connections transportConnections;
-            Subscriptions<int>::Connection indexFinished;
+            api::Subscriptions<int>::Connection indexFinished;
             lastfm::PlaybackReports lastFm;
             bool stopped = false;
             musik::core::TrackList playlist;

@@ -38,7 +38,6 @@
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <common/runtime/IMessageQueue.h>
-#include <sigslot/sigslot.h>
 #include <map>
 #include <vector>
 
@@ -48,10 +47,7 @@ namespace musik { namespace core {
         public:
             using LibraryVector = std::vector<ILibraryPtr>;
             using LibraryMap = std::map<int, ILibraryPtr>;
-            using LibrariesUpdatedEvent = sigslot::signal0<>;
             using IMessageQueue = musik::core::runtime::IMessageQueue;
-
-            LibrariesUpdatedEvent LibrariesUpdated;
 
             ~LibraryFactory();
 

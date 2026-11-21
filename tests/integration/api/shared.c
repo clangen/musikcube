@@ -7,6 +7,50 @@ _Static_assert(sizeof(mc_library_kind) == 4, "library kind width");
 _Static_assert(sizeof(mc_track_search_mode) == 4, "search mode width");
 _Static_assert(sizeof(mc_track_search_order) == 4, "search order width");
 
+struct event_observer {
+    mc_subscription *subscription;
+    int total;
+};
+
+static void MC_CALL observe_event(void *user_data, const void *event) {
+    struct event_observer *observer = user_data;
+    observer->total += *(const int *) event;
+}
+
+static void MC_CALL observe_once(void *user_data, const void *event) {
+    struct event_observer *observer = user_data;
+    observe_event(user_data, event);
+    mc_subscription_destroy(&observer->subscription);
+}
+
+static int check_event_subscriptions(void) {
+    mc_event_source *source = NULL;
+    struct event_observer once = { NULL, 0 };
+    struct event_observer repeat = { NULL, 0 };
+    const int event = 7;
+    int passed = 0;
+
+    if (!TEST_CHECK(mc_event_source_create(&source) == MC_OK) ||
+        !TEST_CHECK(mc_event_source_subscribe(source, observe_once, &once, &once.subscription) == MC_OK) ||
+        !TEST_CHECK(mc_event_source_subscribe(source, observe_event, &repeat, &repeat.subscription) == MC_OK) ||
+        !TEST_CHECK(mc_event_source_subscribe(source, observe_event, &repeat, &repeat.subscription) ==
+            MC_ERROR_INVALID_ARGUMENT) ||
+        !TEST_CHECK(mc_event_source_publish(source, &event) == MC_OK) ||
+        !TEST_CHECK(!once.subscription) ||
+        !TEST_CHECK(mc_event_source_publish(source, &event) == MC_OK)) {
+        goto cleanup;
+    }
+
+    mc_event_source_destroy(&source);
+    passed = TEST_CHECK(!source && once.total == event && repeat.total == event * 2);
+
+cleanup:
+    mc_subscription_destroy(&once.subscription);
+    mc_subscription_destroy(&repeat.subscription);
+    mc_event_source_destroy(&source);
+    return passed && TEST_CHECK(!repeat.subscription);
+}
+
 /* Pass occupied output slots to catch leaked/replaced owners, then release the library to expose dangling
    references in derived identities. */
 static int check_owned_outputs(void) {
@@ -128,6 +172,10 @@ cleanup:
 
 /* Exercise a separately compiled C11 consumer through the actual shared-library boundary. */
 int main(void) {
+    if (!check_event_subscriptions()) {
+        return 1;
+    }
+
     if (mc_playback_control(NULL, MC_PLAYBACK_STOP, 0) != MC_ERROR_INVALID_ARGUMENT) return 1;
     mc_playback *playback = NULL;
     mc_playback_destroy(&playback);

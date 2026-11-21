@@ -38,10 +38,9 @@
 #include <functional>
 #include <limits>
 
-#include <sigslot/sigslot.h>
-
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/library/IQuery.h>
+#include <musikcore/subscriptions.hpp>
 #include <musikcore/sdk/ITrack.h>
 #include <common/runtime/IMessageQueue.h>
 
@@ -73,8 +72,8 @@ namespace musik { namespace core {
                         const std::string& defaultUri = "") = 0;
             };
 
-            sigslot::signal1<musik::core::db::IQuery*> QueryCompleted;
-            sigslot::signal1<ConnectionState> ConnectionStateChanged;
+            api::Subscriptions<musik::core::db::IQuery*> QueryCompleted;
+            api::Subscriptions<ConnectionState> ConnectionStateChanged;
 
             virtual ~ILibrary() { }
 

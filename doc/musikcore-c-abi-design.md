@@ -529,6 +529,13 @@ are released during destruction.
 
 ### Notifications
 
+Caller-owned event sources in `subscriptions.h` and the typed C++
+`Subscriptions` helper deliver synchronously on the publisher's thread.
+Core services continue to use context dispatch for application notifications.
+Disconnect waits for admitted callbacks when called outside delivery.
+Disconnect during delivery only closes admission so callbacks on different
+threads can disconnect each other without waiting in a cycle.
+
 The context queues unsolicited playback, library, and indexer notifications.
 The dispatcher thread polls them separately from per-request completions:
 

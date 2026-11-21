@@ -42,6 +42,7 @@
 #include <musikcore/library/IQuery.h>
 #include <musikcore/net/WebSocketClient.h>
 
+#include <list>
 #include <thread>
 #include <mutex>
 #include <condition_variable>

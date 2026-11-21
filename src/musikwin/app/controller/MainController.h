@@ -89,6 +89,7 @@ namespace musik { namespace win {
             win32cpp::Button* pauseButton;
 
             bool trackListDirty;
-            musik::core::Subscriptions<musik::core::sdk::PlaybackState>::Connection playbackStateChanged;
+            musik::core::api::Subscriptions<musik::core::sdk::PlaybackState>::Connection playbackStateChanged;
+            musik::core::api::Subscriptions<musik::core::db::IQuery*>::Connection queryCompleted;
     };
 } }

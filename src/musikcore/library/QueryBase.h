@@ -38,17 +38,12 @@
 #include <musikcore/library/IQuery.h>
 #include <musikcore/db/Connection.h>
 
-#include <sigslot/sigslot.h>
-
 #include <mutex>
 #include <atomic>
 
 namespace musik { namespace core { namespace library { namespace query {
 
-    class QueryBase:
-        public musik::core::db::ISerializableQuery,
-        public sigslot::has_slots<>
-    {
+    class QueryBase : public musik::core::db::ISerializableQuery {
         public:
             enum class MatchType : int {
                 Substring = 1,
