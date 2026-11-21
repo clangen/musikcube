@@ -272,12 +272,23 @@ async function checkTrackSearch(runtime, database, screenshots,
       await terminal.expect('debug logs');
       await terminal.expect('LocalLibrary');
       terminal.send('a');
+      if (scenario === 'all') {
+        /* Playlist checks leave a loaded queue and the queue view selected. */
+        await terminal.expect('play queue');
+        terminal.send('X');
+        await terminal.expect('play queue', { absent: FIRST_TRACK });
+        terminal.send(openSearch);
+        await terminal.expect(FIRST_TRACK);
+      }
       await terminal.expect('tracks (sorted by');
       terminal.send('\x12');
       await terminal.expect('metadata indexer');
       terminal.send('\x1b');
       await terminal.expect('tracks (sorted by', { absent: 'metadata indexer' });
 
+      if (scenario === 'all') {
+        terminal.send(DOWN + DOWN);
+      }
       terminal.send('r');
       await terminal.expect('rate track');
       terminal.send('5');

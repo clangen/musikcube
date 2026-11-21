@@ -152,3 +152,7 @@ The Linux loopback test starts the real server, selects the remote catalog, and 
 ## Bridge cleanup
 
 Removed the final fixture-only library opener from LibraryFactory. Its fault-injection probe lives with the tests and is compiled only when test targets are enabled. Standalone archives disable test targets. The unused raw file-copy and lyrics-availability helpers are also gone. All 50 Linux Release tests passed after this cleanup.
+
+## Standalone Linux acceptance
+
+A clean Zig Release build with tests disabled passed the public import audit and the glibc 2.28 dependency scan. CPack produced Debian and RPM packages. Both extracted runtimes passed the dependency scan and the combined headless search, queue, playlists, and Browse scenario. C and C++ examples built against the extracted Debian SDK and queried the indexed fixture. The combined scenario now restores the intended view and focus after playlist checks. Native macOS verification remains open. Windows and the provider SDK remain deferred.
