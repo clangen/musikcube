@@ -40,7 +40,6 @@
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/ILibrary.h>
 
-#include <sigslot/sigslot.h>
 
 #include <unordered_map>
 #include <list>
@@ -49,12 +48,9 @@ namespace musik { namespace core {
 
     class TrackList :
         public musik::core::sdk::ITrackList,
-        public std::enable_shared_from_this<TrackList>,
-        public sigslot::has_slots<>
+        public std::enable_shared_from_this<TrackList>
     {
         public:
-            mutable sigslot::signal3<const TrackList*, size_t, size_t> WindowCached;
-
             TrackList(ILibraryPtr library);
             TrackList(TrackList* other);
             TrackList(std::shared_ptr<TrackList> other);

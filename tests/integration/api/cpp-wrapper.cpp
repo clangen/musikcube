@@ -780,12 +780,12 @@ namespace {
 
             if (statePlayback.Play(result, 1) != MC_OK) return playbackFailure(__LINE__);
             stateTransport->state = sdk::PlaybackState::Prepared;
-            stateTransport->PlaybackEvent(sdk::PlaybackState::Prepared);
+            stateTransport->PlaybackEvent.Publish(sdk::PlaybackState::Prepared);
             stateTransport->stream = sdk::StreamState::Buffered;
-            stateTransport->StreamEvent(sdk::StreamState::Buffered, stateTransport->Uri());
-            stateTransport->VolumeChanged();
-            stateTransport->VolumeChanged();
-            stateTransport->TimeChanged(0);
+            stateTransport->StreamEvent.Publish(sdk::StreamState::Buffered, stateTransport->Uri());
+            stateTransport->VolumeChanged.Publish();
+            stateTransport->VolumeChanged.Publish();
+            stateTransport->TimeChanged.Publish(0);
             stateService.SetRepeatMode(sdk::RepeatMode::Track);
 
             /* Deliver each distinct event once, with the registration filter copied at subscribe time. */
@@ -811,7 +811,7 @@ namespace {
             }
 
             /* Replace a queued callback from another thread and drop its delivery. */
-            stateTransport->VolumeChanged();
+            stateTransport->VolumeChanged.Publish();
             stateMessages.Dispatch();
             LiveEvents replacement;
             std::thread replace([&] { subscribed = statePlayback.SetChangedCallback(record, &replacement); });
@@ -830,8 +830,8 @@ namespace {
                     self.reset();
                     ++selfCalls;
                 });
-            stateTransport->VolumeChanged();
-            stateTransport->TimeChanged(0);
+            stateTransport->VolumeChanged.Publish();
+            stateTransport->TimeChanged.Publish(0);
             stateMessages.Dispatch();
             stateMessages.Dispatch();
             const std::vector selfBatch { MC_PLAYBACK_CHANGED_VOLUME, MC_PLAYBACK_CHANGED_POSITION };
@@ -866,7 +866,7 @@ namespace {
             if (statePlayback.SetChangedCallback(block, &inFlight) != MC_OK) {
                 return playbackFailure(__LINE__);
             }
-            stateTransport->VolumeChanged();
+            stateTransport->VolumeChanged.Publish();
             stateMessages.Dispatch();
             std::thread unsubscribe([&] {
                 {
@@ -886,7 +886,7 @@ namespace {
             });
             stateMessages.Dispatch();
             unsubscribe.join();
-            stateTransport->VolumeChanged();
+            stateTransport->VolumeChanged.Publish();
             stateMessages.Dispatch();
             stateMessages.Dispatch();
             if (subscribed != MC_OK || !inFlight.waited || !inFlight.returned ||
@@ -959,7 +959,7 @@ namespace {
             }
 
             /* Cancel an immediate start before the transport ever enters Playing. */
-            stateTransport->PlaybackEvent(sdk::PlaybackState::Stopped);
+            stateTransport->PlaybackEvent.Publish(sdk::PlaybackState::Stopped);
             stateMessages.Dispatch();
             stateMessages.Dispatch();
             unsigned trackChanges = 0;
@@ -974,7 +974,7 @@ namespace {
             stateTransport->state = sdk::PlaybackState::Stopped;
             for (const auto stream : { sdk::StreamState::Buffering, sdk::StreamState::Buffered }) {
                 stateTransport->stream = stream;
-                stateTransport->StreamEvent(stream, stateTransport->Uri());
+                stateTransport->StreamEvent.Publish(stream, stateTransport->Uri());
                 stateMessages.Dispatch();
                 stateMessages.Dispatch();
                 if (trackChanges != 1 || !statePlayback.CurrentTrack()) {
@@ -985,7 +985,7 @@ namespace {
             if (statePlayback.Control(MC_PLAYBACK_STOP) != MC_OK) {
                 return playbackFailure(__LINE__);
             }
-            stateTransport->StreamEvent(sdk::StreamState::Stopped, stateTransport->Uri());
+            stateTransport->StreamEvent.Publish(sdk::StreamState::Stopped, stateTransport->Uri());
             stateMessages.Dispatch();
             stateMessages.Dispatch();
             if (trackChanges != 2 || statePlayback.CurrentTrack() || stateService.GetPlaying()) {

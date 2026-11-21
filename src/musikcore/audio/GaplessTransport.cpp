@@ -249,7 +249,7 @@ void GaplessTransport::SetPosition(double seconds) {
     }
 
     if (this->activePlayer) {
-        this->TimeChanged(seconds);
+        this->TimeChanged.Publish(seconds);
     }
 }
 
@@ -266,7 +266,7 @@ void GaplessTransport::SetMuted(bool muted) {
     if (this->muted != muted) {
         this->muted = muted;
         this->output->SetVolume(muted ? 0.0f : this->volume);
-        this->VolumeChanged();
+        this->VolumeChanged.Publish();
     }
 }
 
@@ -284,7 +284,7 @@ void GaplessTransport::SetVolume(double volume) {
 
     if (oldVolume != this->volume) {
         this->SetMuted(false);
-        this->VolumeChanged();
+        this->VolumeChanged.Publish();
     }
 }
 
@@ -400,7 +400,7 @@ void GaplessTransport::SetPlaybackState(PlaybackState state) {
     }
 
     if (changed) {
-        this->PlaybackEvent(state);
+        this->PlaybackEvent.Publish(state);
     }
 }
 
@@ -415,7 +415,7 @@ void GaplessTransport::RaiseStreamEvent(StreamState type, Player const* player) 
     }
 
     if (eventIsFromActivePlayer) {
-        this->StreamEvent(type, player->GetUrl());
+        this->StreamEvent.Publish(type, player->GetUrl());
     }
 }
 

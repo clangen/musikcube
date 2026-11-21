@@ -111,7 +111,7 @@ namespace musik {
                         if (index >= 0) {
                             double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
                             playback.Prepare(index, time);
-                            playback.QueueEdited(); /* hack to get the play queue view to scroll
+                            playback.QueueEdited.Publish(); /* hack to get the play queue view to scroll
                                 to the track we just prepared. */
 
                             if (Settings()->GetBool(keys::ResumePlaybackOnStartup, false)) {

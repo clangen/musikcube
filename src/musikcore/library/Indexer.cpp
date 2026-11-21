@@ -626,7 +626,7 @@ void Indexer::ThreadLoop() {
         if (this->dbConnection.Open(this->dbFilename.c_str(), 0) != db::Okay) {
             musik::debug::warning(TAG, "could not open catalog for indexing");
             this->dbConnection.Close();
-            this->Finished(0);
+            this->Finished.Publish(0);
             continue;
         }
 
@@ -695,7 +695,7 @@ void Indexer::ThreadLoop() {
 
         if (!this->Bail()) {
             this->Progress(this->totalUrisScanned);
-            this->Finished(this->totalUrisScanned);
+            this->Finished.Publish(this->totalUrisScanned);
         }
 
         musik::debug::info(TAG, "done!");

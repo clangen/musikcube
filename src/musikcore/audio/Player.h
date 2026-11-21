@@ -40,7 +40,6 @@
 #include <musikcore/sdk/IOutput.h>
 #include <musikcore/sdk/IBufferProvider.h>
 
-#include <sigslot/sigslot.h>
 
 #include <thread>
 #include <mutex>

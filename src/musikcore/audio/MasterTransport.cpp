@@ -54,6 +54,11 @@ MasterTransport::MasterTransport()
     this->SwitchTo(this->type);
 }
 
+MasterTransport::~MasterTransport() {
+    this->transportConnections = {};
+    this->transport.reset();
+}
+
 void MasterTransport::SwitchTo(Type type) {
     if (!this->transport || this->type != type) {
         this->type = type;
@@ -61,6 +66,7 @@ void MasterTransport::SwitchTo(Type type) {
 
         const double volume = this->transport ? this->transport->Volume() : -1;
 
+        this->transportConnections = {};
         switch (this->type) {
             case Type::Gapless:
                 if (this->transport) {
@@ -82,17 +88,14 @@ void MasterTransport::SwitchTo(Type type) {
             this->transport->SetVolume(volume);
         }
 
-        this->transport->PlaybackEvent.connect(
-            this, &MasterTransport::OnPlaybackEvent);
-
-        this->transport->StreamEvent.connect(
-            this, &MasterTransport::OnStreamEvent);
-
-        this->transport->TimeChanged.connect(
-            this, &MasterTransport::OnTimeChanged);
-
-        this->transport->VolumeChanged.connect(
-            this, &MasterTransport::OnVolumeChanged);
+        this->transportConnections = {
+            this->transport->StreamEvent.Subscribe([this](auto state, std::string url) {
+                this->OnStreamEvent(state, std::move(url));
+            }),
+            this->transport->PlaybackEvent.Subscribe([this](auto state) { this->OnPlaybackEvent(state); }),
+            this->transport->VolumeChanged.Subscribe([this] { this->OnVolumeChanged(); }),
+            this->transport->TimeChanged.Subscribe([this](double time) { this->OnTimeChanged(time); })
+        };
     }
 }
 
@@ -165,17 +168,17 @@ StreamState MasterTransport::GetStreamState() {
 }
 
 void MasterTransport::OnStreamEvent(musik::core::sdk::StreamState type, std::string url) {
-    this->StreamEvent(type, url);
+    this->StreamEvent.Publish(type, url);
 }
 
 void MasterTransport::OnPlaybackEvent(musik::core::sdk::PlaybackState type) {
-    this->PlaybackEvent(type);
+    this->PlaybackEvent.Publish(type);
 }
 
 void MasterTransport::OnVolumeChanged() {
-    this->VolumeChanged();
+    this->VolumeChanged.Publish();
 }
 
 void MasterTransport::OnTimeChanged(double time) {
-    this->TimeChanged(time);
+    this->TimeChanged.Publish(time);
 }

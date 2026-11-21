@@ -39,14 +39,12 @@
 #include <musikcore/support/Preferences.h>
 
 namespace musik { namespace core { namespace audio {
-    class MasterTransport :
-        public sigslot::has_slots<>,
-        public musik::core::audio::ITransport
-    {
+    class MasterTransport : public musik::core::audio::ITransport {
         public:
             using Type = musik::core::sdk::TransportType;
 
             MasterTransport();
+            ~MasterTransport() override;
 
             void Start(const std::string& uri, Gain gain, StartMode mode) override;
             void PrepareNextTrack(const std::string& uri, Gain gain) override;
@@ -85,5 +83,6 @@ namespace musik { namespace core { namespace audio {
             std::shared_ptr<musik::core::audio::ITransport> transport;
             std::shared_ptr<musik::core::Preferences> prefs;
             Type type;
+            Connections transportConnections;
     };
 } } }

@@ -987,7 +987,7 @@ namespace {
         }
         transport->state = sdk::PlaybackState::Stopped;
         transport->stream = sdk::StreamState::Buffering;
-        transport->StreamEvent(sdk::StreamState::Buffering, transport->Uri());
+        transport->StreamEvent.Publish(sdk::StreamState::Buffering, transport->Uri());
         playbackMessages.Dispatch();
         playbackMessages.Dispatch();
         if (trackChanges != 1 || !playback.CurrentTrack()) {

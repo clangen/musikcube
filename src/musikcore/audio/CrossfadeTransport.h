@@ -45,14 +45,12 @@
 #include <thread>
 #include <mutex>
 
-#include <sigslot/sigslot.h>
 
 namespace musik { namespace core { namespace audio {
 
     class CrossfadeTransport :
         public ITransport,
-        private Player::EventListener,
-        public sigslot::has_slots<>
+        private Player::EventListener
     {
         public:
             CrossfadeTransport();

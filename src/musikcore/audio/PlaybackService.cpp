@@ -148,12 +148,16 @@ PlaybackService::PlaybackService(
 , playbackPrefs(Preferences::ForComponent(components::Playback))
 , appPrefs(Preferences::ForComponent(components::Settings)) {
     this->apiEvents = CreatePlaybackEvents();
-    transport->StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
-    transport->PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
-    transport->VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
-    transport->TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
+    this->transportConnections = {
+        transport->StreamEvent.Subscribe([this](auto state, std::string uri) {
+            this->OnStreamEvent(state, std::move(uri));
+        }),
+        transport->PlaybackEvent.Subscribe([this](auto state) { this->OnPlaybackEvent(state); }),
+        transport->VolumeChanged.Subscribe([this] { this->OnVolumeChanged(); }),
+        transport->TimeChanged.Subscribe([this](double time) { this->OnTimeChanged(time); })
+    };
     if (auto* indexer = library->Indexer()) {
-        indexer->Finished.connect(this, &PlaybackService::OnIndexerFinished);
+        this->indexFinished = indexer->Finished.Subscribe([this](int updates) { this->OnIndexerFinished(updates); });
     }
     messageQueue.Register(this);
     messageQueue.Post(Message::Create(this, MESSAGE_LOAD_PLAYBACK_CONTEXT));
@@ -185,9 +189,8 @@ void PlaybackService::Shutdown() {
     }
     this->stopped = true;
 
-    if (auto* indexer = this->library->Indexer()) {
-        indexer->Finished.disconnect(this);
-    }
+    this->transportConnections = {};
+    this->indexFinished.Reset();
     this->ClosePlaybackHandles();
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
@@ -205,9 +208,7 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
 
     /* Stop old stream work before resetting the queue's track identifiers. */
     this->Stop();
-    if (auto* indexer = previous->Indexer()) {
-        indexer->Finished.disconnect(this);
-    }
+    this->indexFinished.Reset();
     for (const auto type : { MESSAGE_STREAM_EVENT, MESSAGE_PREPARE_NEXT_TRACK,
         MESSAGE_NEXT_TRACK_EDITED, MESSAGE_SEEK, MESSAGE_MARK_TRACK_PLAYED, MESSAGE_MARK_TRACK_PLAYING })
     {
@@ -233,7 +234,7 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_TRACK);
     }
     if (auto* indexer = this->library->Indexer()) {
-        indexer->Finished.connect(this, &PlaybackService::OnIndexerFinished);
+        this->indexFinished = indexer->Finished.Subscribe([this](int updates) { this->OnIndexerFinished(updates); });
     }
     POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
 }
@@ -434,7 +435,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 /* Canceling startup can end the stream without a playback-state change. */
                 this->OnTrackChanged(NO_POSITION, {});
             }
-            this->StreamStateChanged(eventType);
+
             this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_STREAM);
         }
     }
@@ -462,7 +463,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             it->OnPlaybackStateChanged(static_cast<PlaybackState>(eventType));
         }
 
-        this->PlaybackStateChanged(static_cast<PlaybackState>(eventType));
+        this->PlaybackStateChanged.Publish(static_cast<PlaybackState>(eventType));
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_STATE);
     }
     else if (type == MESSAGE_NEXT_TRACK_EDITED) {
@@ -497,21 +498,21 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         for (auto it : remotes) {
             it->OnVolumeChanged(volume);
         }
-        this->VolumeChanged();
+
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_VOLUME);
     }
     else if (type == MESSAGE_MODE_CHANGED) {
         this->NotifyRemotesModeChanged();
-        this->ModeChanged();
+
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_MODE);
     }
     else if (type == MESSAGE_SHUFFLED) {
         this->NotifyRemotesModeChanged();
-        this->Shuffled(!!message.UserData1());
+
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_MODE);
     }
     else if (type == MESSAGE_TIME_CHANGED) {
-        this->TimeChanged(transport->Position());
+
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_POSITION);
         const double volume = transport->Volume();
         for (auto remote : this->remotes) {
@@ -525,7 +526,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             it->OnPlayQueueChanged();
         }
 
-        this->QueueEdited();
+        this->QueueEdited.Publish();
     }
     else if (type == MESSAGE_SEEK) {
         if (this->seekPosition != -1.0f) {
@@ -602,7 +603,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
             this->playingTrack = track;
         }
     }
-    this->TrackChanged(this->index, track);
+    this->TrackChanged.Publish(this->index, track);
     if (changed) {
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_TRACK);
     }
@@ -934,7 +935,7 @@ void PlaybackService::SetPosition(double seconds) {
     if (this->timeChangeMode == TimeChangeMode::Seek) {
         seconds = std::max(seconds, (double) 0.0);
         this->seekPosition = seconds;
-        this->TimeChanged(seconds);
+
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_POSITION);
         messageQueue.Debounce(Message::Create(this, MESSAGE_SEEK), 500);
     }

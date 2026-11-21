@@ -151,7 +151,7 @@ std::shared_ptr<const LibraryIdentity> PlaybackService::CaptureOrigin(int librar
 }
 
 /* Borrows the owner-thread service. Neither copyable nor movable. */
-class PlaybackService::PlaybackHandle final : public mc_playback, public sigslot::has_slots<> {
+class PlaybackService::PlaybackHandle final : public mc_playback {
 public:
     explicit PlaybackHandle(PlaybackService& service)
         : service(service), owner(service.apiOwner), events(service.apiEvents) {}
@@ -376,10 +376,13 @@ public:
         const auto status = this->CheckSession();
         if (status != MC_OK) return status;
 
-        if (callback && !this->observingQueue) {
-            this->service.QueueEdited.connect(this, &PlaybackHandle::OnQueueChanged);
-            this->service.TrackChanged.connect(this, &PlaybackHandle::OnTrackChanged);
-            this->observingQueue = true;
+        if (callback && !this->queueObserver) {
+            this->queueEdited = this->service.QueueEdited.Subscribe([this] { this->OnQueueChanged(); });
+            this->trackChanged = this->service.TrackChanged.Subscribe([this](size_t, TrackPtr) { this->OnQueueChanged(); });
+        }
+        else if (!callback) {
+            this->queueEdited.Reset();
+            this->trackChanged.Reset();
         }
         /* Replacing a subscription invalidates any delivery posted for its user data. */
         this->queueObserver = callback ? std::make_shared<QueueObserver>(QueueObserver { callback, data }) : nullptr;
@@ -478,7 +481,7 @@ private:
             return;
         }
 
-        /* The legacy signal holds its lock while notifying listeners. */
+        /* Coalesce notifications and invalidate queued delivery on replacement. */
         this->service.messageQueue.Post(std::make_shared<PlaybackNotification>(
             &this->service, MESSAGE_NOTIFY_API_CHANGED, [weak = std::weak_ptr(this->queueObserver)] {
                 if (const auto observer = weak.lock()) {
@@ -487,10 +490,6 @@ private:
                 }
             }));
         this->queueObserver->pending = true;
-    }
-
-    void OnTrackChanged(size_t, TrackPtr) {
-        this->OnQueueChanged();
     }
 
     mc_result InsertOrderedIds(const std::shared_ptr<const LibraryIdentity>& origin,
@@ -561,7 +560,8 @@ private:
     std::mutex liveRegistrationMutex;
     std::shared_ptr<LiveObserver> liveObserver;
     std::shared_ptr<QueueObserver> queueObserver;
-    bool observingQueue = false;
+    Subscriptions<>::Connection queueEdited;
+    Subscriptions<size_t, TrackPtr>::Connection trackChanged;
 };
 
 mc_result PlaybackService::OpenHandle(mc_playback** out) {

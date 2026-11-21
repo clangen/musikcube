@@ -37,7 +37,7 @@
 #include <musikcore/config.h>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/audio/Player.h>
-#include <sigslot/sigslot.h>
+#include <musikcore/support/Subscriptions.h>
 
 namespace musik { namespace core { namespace audio {
 
@@ -49,10 +49,17 @@ namespace musik { namespace core { namespace audio {
                 Immediate = 0, Wait = 1
             };
 
-            sigslot::signal2<musik::core::sdk::StreamState, std::string> StreamEvent;
-            sigslot::signal1<musik::core::sdk::PlaybackState> PlaybackEvent;
-            sigslot::signal0<> VolumeChanged;
-            sigslot::signal1<double> TimeChanged;
+            Subscriptions<musik::core::sdk::StreamState, std::string> StreamEvent;
+            Subscriptions<musik::core::sdk::PlaybackState> PlaybackEvent;
+            Subscriptions<> VolumeChanged;
+            Subscriptions<double> TimeChanged;
+
+            struct Connections {
+                decltype(StreamEvent)::Connection stream;
+                decltype(PlaybackEvent)::Connection playback;
+                decltype(VolumeChanged)::Connection volume;
+                decltype(TimeChanged)::Connection time;
+            };
 
             virtual ~ITransport() { }
 

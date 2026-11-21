@@ -52,11 +52,9 @@ CrossfadeTransport::CrossfadeTransport()
 : volume(1.0)
 , playbackState(PlaybackState::Stopped)
 , muted(false)
-, crossfader(*this)
+, crossfader(*this, [this] { this->OnCrossfaderEmptied(); })
 , active(*this, crossfader)
 , next(*this, crossfader) {
-    this->crossfader.Emptied.connect(
-        this, &CrossfadeTransport::OnCrossfaderEmptied);
 }
 
 CrossfadeTransport::~CrossfadeTransport() {
@@ -208,7 +206,7 @@ void CrossfadeTransport::SetPosition(double seconds) {
     }
 
     if (this->active.player) {
-        this->TimeChanged(seconds);
+        this->TimeChanged.Publish(seconds);
     }
 }
 
@@ -242,7 +240,7 @@ void CrossfadeTransport::SetMuted(bool muted) {
             }
         }
 
-        this->VolumeChanged();
+        this->VolumeChanged.Publish();
     }
 }
 
@@ -263,7 +261,7 @@ void CrossfadeTransport::SetVolume(double volume) {
 
     if (oldVolume != this->volume) {
         this->SetMuted(false);
-        this->VolumeChanged();
+        this->VolumeChanged.Publish();
     }
 }
 
@@ -416,7 +414,7 @@ void CrossfadeTransport::SetPlaybackState(PlaybackState state) {
     }
 
     if (changed) {
-        this->PlaybackEvent(state);
+        this->PlaybackEvent.Publish(state);
     }
 }
 
@@ -431,7 +429,7 @@ void CrossfadeTransport::RaiseStreamEvent(musik::core::sdk::StreamState type, Pl
     }
 
     if (eventIsFromActivePlayer) {
-        this->StreamEvent(type, player->GetUrl());
+        this->StreamEvent.Publish(type, player->GetUrl());
     }
 }
 

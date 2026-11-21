@@ -45,7 +45,7 @@
 #include <mutex>
 #include <atomic>
 
-#include <sigslot/sigslot.h>
+#include <functional>
 
 namespace musik { namespace core { namespace audio {
 
@@ -56,9 +56,7 @@ namespace musik { namespace core { namespace audio {
         public:
             enum Direction { FadeIn, FadeOut };
 
-            sigslot::signal0<> Emptied;
-
-            Crossfader(ITransport& transport);
+            Crossfader(ITransport& transport, std::function<void()> onEmptied);
             virtual ~Crossfader();
 
             void Fade(
@@ -100,6 +98,7 @@ namespace musik { namespace core { namespace audio {
             std::atomic<bool> quit, paused;
             std::condition_variable_any drainCondition;
             ITransport& transport;
+            const std::function<void()> onEmptied;
     };
 
 } } }

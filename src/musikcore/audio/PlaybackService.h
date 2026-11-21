@@ -36,7 +36,6 @@
 
 #include <musikcore/support/LastFm.h>
 
-#include <sigslot/sigslot.h>
 
 #include <musikcore/sdk/IPlaybackService.h>
 #include <musikcore/sdk/IPlaybackRemote.h>
@@ -57,8 +56,7 @@ namespace musik { namespace core { namespace audio {
 
     class PlaybackService :
         public musik::core::sdk::IPlaybackService,
-        public musik::core::runtime::IMessageTarget,
-        public sigslot::has_slots<>
+        public musik::core::runtime::IMessageTarget
     {
         enum MessageType {
             MESSAGE_STREAM_EVENT = 1000,
@@ -82,18 +80,10 @@ namespace musik { namespace core { namespace audio {
         class StreamMessage;
 
         public:
-            /* our unique events */
-            sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
-            sigslot::signal0<> ModeChanged;
-            sigslot::signal1<bool> Shuffled;
-            sigslot::signal0<> QueueEdited;
-
-            /* copied from Transport, but will be automatically called on the
-            specified MessageQueue's thread! */
-            sigslot::signal1<musik::core::sdk::PlaybackState> PlaybackStateChanged;
-            sigslot::signal1<musik::core::sdk::StreamState> StreamStateChanged;
-            sigslot::signal0<> VolumeChanged;
-            sigslot::signal1<double> TimeChanged;
+            /* Published on the service queue's dispatcher. */
+            Subscriptions<size_t, musik::core::TrackPtr> TrackChanged;
+            Subscriptions<musik::core::sdk::PlaybackState> PlaybackStateChanged;
+            Subscriptions<> QueueEdited;
 
             PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
@@ -234,6 +224,8 @@ namespace musik { namespace core { namespace audio {
             bool MatchesOrigin(const LibraryIdentity& origin) const;
             std::shared_ptr<const LibraryIdentity> CaptureOrigin(int libraryId) const;
 
+            ITransport::Connections transportConnections;
+            Subscriptions<int>::Connection indexFinished;
             lastfm::PlaybackReports lastFm;
             bool stopped = false;
             musik::core::TrackList playlist;

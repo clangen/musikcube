@@ -310,7 +310,7 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
         currentWindow.Set(from, to);
         auto shared = shared_from_this(); /* ensure we remain alive for the duration of the query */
         auto completionFinished = std::make_shared<bool>(false); /* ugh... keep it alive. */
-        auto completion = [this, completionFinished, shared, from, to, query](auto q) {
+        auto completion = [this, completionFinished, shared, query](auto q) {
             if (*completionFinished) {
                 return;
             }
@@ -327,7 +327,6 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
                 nextWindow.Reset();
                 this->CacheWindow(from, to, true);
             }
-            this->WindowCached(const_cast<TrackList*>(this), from, to);
             *completionFinished = true;
         };
 
@@ -345,7 +344,6 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
             for (auto& kv : result) {
                 this->AddToCache(kv.first, kv.second);
             }
-            this->WindowCached(const_cast<TrackList*>(this), from, to);
         }
     }
 }

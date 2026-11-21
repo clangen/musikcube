@@ -63,8 +63,9 @@ using namespace std::chrono;
 #define MESSAGE_QUIT 0
 #define MESSAGE_TICK 1
 
-Crossfader::Crossfader(ITransport& transport)
-: transport(transport) {
+Crossfader::Crossfader(ITransport& transport, std::function<void()> onEmptied)
+: transport(transport)
+, onEmptied(std::move(onEmptied)) {
     this->messageQueue.Register(this);
     this->quit = false;
     this->paused = false;
@@ -310,7 +311,7 @@ void Crossfader::ProcessMessage(IMessage &message) {
 
             /* notify outside of the critical section! */
             if (emptied) {
-                this->Emptied();
+                this->onEmptied();
                 this->drainCondition.notify_all();
             }
             else {

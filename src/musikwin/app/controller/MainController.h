@@ -69,7 +69,7 @@ namespace musik { namespace win {
             void OnLibraryQueryCompleted(musik::core::db::IQuery* query);
             void OnSearchEditChanged(win32cpp::EditView* editView);
             void OnTransportButtonClicked(win32cpp::Button* button);
-            void OnPlaybackStateChanged(int state);
+            void OnPlaybackStateChanged(musik::core::sdk::PlaybackState state);
 
             void Layout();
 
@@ -89,5 +89,6 @@ namespace musik { namespace win {
             win32cpp::Button* pauseButton;
 
             bool trackListDirty;
+            musik::core::Subscriptions<musik::core::sdk::PlaybackState>::Connection playbackStateChanged;
     };
 } }

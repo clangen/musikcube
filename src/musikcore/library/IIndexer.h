@@ -37,12 +37,13 @@
 #include <string>
 #include <vector>
 #include <sigslot/sigslot.h>
+#include <musikcore/support/Subscriptions.h>
 
 namespace musik { namespace core {
     class IIndexer {
         public:
             sigslot::signal0<> Started;
-            sigslot::signal1<int> Finished;
+            Subscriptions<int> Finished;
             sigslot::signal1<int> Progress;
 
             enum State {

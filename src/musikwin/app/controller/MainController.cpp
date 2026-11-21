@@ -64,7 +64,7 @@ static ColumnRef sEndColumn = ListView::Column::Create(_T(""), 35);
 #define UPDATE_SEARCH_MESSAGE 1001
 #define UPDATE_SEARCH_DEBOUNCE_MS 750
 
-class MainController::TrackListModel : public ListView::Model, public sigslot::has_slots<> {
+class MainController::TrackListModel : public ListView::Model {
     public:
         static std::shared_ptr<TrackListModel> Create(PlaybackService& playback) {
             return std::shared_ptr<TrackListModel>(new TrackListModel(playback));
@@ -72,7 +72,9 @@ class MainController::TrackListModel : public ListView::Model, public sigslot::h
 
         TrackListModel(PlaybackService& playback)
         : playback(playback) {
-            playback.TrackChanged.connect(this, &TrackListModel::OnTrackChanged);
+            this->trackChanged = playback.TrackChanged.Subscribe([this](size_t index, TrackPtr track) {
+                this->OnTrackChanged(index, std::move(track));
+            });
 
             this->normal.reset(new TextCellRenderer());
 
@@ -140,6 +142,7 @@ class MainController::TrackListModel : public ListView::Model, public sigslot::h
         TextCellRendererRef normal;
         TextCellRendererRef bold;
         TrackPtr playing;
+        Subscriptions<size_t, TrackPtr>::Connection trackChanged;
 };
 
 MainController::MainController(
@@ -151,7 +154,9 @@ MainController::MainController(
 , library(library)
 , trackListDirty(true) {
 
-    playback.PlaybackEvent.connect(this, &MainController::OnPlaybackStateChanged);
+    this->playbackStateChanged = playback.PlaybackStateChanged.Subscribe([this](auto state) {
+        this->OnPlaybackStateChanged(state);
+    });
     library->QueryCompleted.connect(this, &MainController::OnLibraryQueryCompleted);
 
     this->trackListQuery.reset(new SearchTrackListQuery(library, ""));
@@ -188,6 +193,7 @@ MainController::MainController(
 }
 
 MainController::~MainController() {
+    this->playbackStateChanged.Reset();
 }
 
 #define /*button width */ BW(x) x->WindowSize().width;
@@ -268,7 +274,7 @@ void MainController::OnTransportButtonClicked(win32cpp::Button* button) {
         playback.Previous();
     }
     else if (button == this->pauseButton) {
-        if (playback.GetPlaybackState() == musik::core::sdk::PlaybackStopped) {
+        if (playback.GetPlaybackState() == musik::core::sdk::PlaybackState::Stopped) {
             std::vector<int> selected = this->trackListView->SelectedRows();
             if (selected.size()) {
                 this->OnTrackListRowActivated(this->trackListView, selected[0]);
@@ -283,12 +289,12 @@ void MainController::OnTransportButtonClicked(win32cpp::Button* button) {
     }
 }
 
-void MainController::OnPlaybackStateChanged(int state) {
+void MainController::OnPlaybackStateChanged(musik::core::sdk::PlaybackState state) {
     if (this->pauseButton) {
         switch (state) {
-            case musik::core::sdk::PlaybackPaused:
+            case musik::core::sdk::PlaybackState::Paused:
                 this->pauseButton->SetCaption(_T("resume")); break;
-            case musik::core::sdk::PlaybackPlaying:
+            case musik::core::sdk::PlaybackState::Playing:
                 this->pauseButton->SetCaption(_T("pause")); break;
         }
 

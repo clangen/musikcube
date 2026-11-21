@@ -171,7 +171,7 @@ namespace musik { namespace core { namespace ffi {
             if (this->indexer) {
                 this->indexer->Started.connect(this, &ManagedRuntime::OnIndexStarted);
                 this->indexer->Progress.connect(this, &ManagedRuntime::OnIndexProgress);
-                this->indexer->Finished.connect(this, &ManagedRuntime::OnIndexFinished);
+                this->indexFinished = this->indexer->Finished.Subscribe([this](int updates) { this->OnIndexFinished(updates); });
             }
             if (this->active) {
                 this->PublishSelection(true);
@@ -256,7 +256,7 @@ namespace musik { namespace core { namespace ffi {
                 Cleanup([&] { this->indexer->Shutdown(); }, failure);
                 this->indexer->Started.disconnect(this);
                 this->indexer->Progress.disconnect(this);
-                this->indexer->Finished.disconnect(this);
+                this->indexFinished.Reset();
                 this->indexer = nullptr;
             }
             if (this->remote) {
@@ -373,6 +373,7 @@ namespace musik { namespace core { namespace ffi {
         std::condition_variable changed;
         uint64_t dispatches = 0;
         IIndexer* indexer = nullptr;
+        Subscriptions<int>::Connection indexFinished;
         bool pluginsInitialized = false;
         bool librariesInitialized = false;
         bool ownsLogging = false;
