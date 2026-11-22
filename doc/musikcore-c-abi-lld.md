@@ -1476,14 +1476,22 @@ Windows behavior. Recorded Linux results apply only to their stated revision.
 
 #### Core consumer release acceptance
 
-- [ ] **CORE-RC-001** Add one minimal non-C++ foreign-runtime consumer of the
-  installed shared library. Exercise async query submission, retained callback
-  state, owner-thread dispatch, and shutdown against an isolated catalog.
-  Register a named integration case alongside it; use existing runtime tools or
-  a standard-library FFI before considering another dependency.
-- [ ] **CORE-RC-002** Review installed headers/examples for service selection,
+- [x] **CORE-RC-001** Validate a non-C++ foreign-runtime consumer of the
+  installed shared library. The maintained Rust consumer lives in
+  `musikcore-bindings/rust/bindings`; it remains independently runnable with
+  `MUSIKCORE_SDK=<relocated-prefix> cargo test --locked -p musikcore` from that
+  repository's `rust/` workspace. Its named integration cases include
+  `runtime_contracts`, `shutdown_delivers_once_and_releases_capture_even_without_dispatch`,
+  and `shutdown_completion_can_drop_event_views`. These exercise isolated
+  catalogs, async submission, retained callbacks, owner-thread dispatch, and
+  shutdown. Use Rust as the foreign-runtime acceptance vehicle rather than
+  introducing another language or making core CTest depend on a sibling checkout.
+- [x] **CORE-RC-002** Review installed headers/examples for service selection,
   owner-thread rules, request/output ownership, cancellation, and teardown.
-  Verify the documented examples through `installed_sdk` and CORE-RC-001.
+  `musikcore.integration.api.installed_sdk` passes; separately compiled C/C++
+  query and URI-player examples pass against an extracted, relocated SDK archive
+  with the original install prefix unavailable. Rust tests and all five doctests
+  also pass against that archive. This review requires no public API changes.
 - [ ] **CORE-RC-003** Confirm consumer release acceptance before beginning the
   C provider SDK: API-013 instrumentation, CORE-RC-001/CORE-RC-002, GATE-700,
   and the consumer/application portions of PKG-001 and PKG-005 through PKG-009.
@@ -1494,7 +1502,7 @@ Windows behavior. Recorded Linux results apply only to their stated revision.
 
 #### Phase 7 gate
 
-- [ ] **GATE-700** musikcube builds and passes smoke and integration tests
+- [x] **GATE-700** musikcube builds and passes smoke and integration tests
   using the public C ABI and header-only wrapper. Linux Release passed
   `musikcube.integration.core_boundary` and all four headless scenarios.
   Native macOS Debug/Release validation also passes the frontend import guard,
@@ -1503,6 +1511,20 @@ Windows behavior. Recorded Linux results apply only to their stated revision.
   pass 87/87 each, including both frontend import checks, the relocated SDK,
   managed and headless runtime, remote HTTP audio and MP3/FLAC transcoding,
   captured PCM, and 10 console UI tests through ConPTY.
+
+Native macOS arm64 consumer validation (2026-11-22, `6525f9aff`, Rust
+bindings `4ea5bbd`): Release passes 109/109; Debug ASan/UBSan passes 114/114.
+An extracted standalone app under a path containing spaces passes three
+startup/search/queue/clean-exit runs through the existing PTY driver. The
+extracted daemon passes `tests/scripts/check-daemon.js`, including competing
+starts, rescan, termination, and background startup failure. These checks add
+no new physical audio-device or Linux/Windows evidence.
+
+The first ad-hoc archive TUI run timed out without saving diagnostics. The
+rerun retains failure artifacts and passes repeatedly; no driver defect has
+been reproduced. Its dependent SDK check initially lacked a fixture manifest;
+creating that manifest before the TUI check fixes the validation orchestration.
+Neither incident required a maintained test-driver or runtime change.
 
 ### Phase 8: expand and migrate the provider SDK
 
@@ -1601,7 +1623,11 @@ Windows behavior. Recorded Linux results apply only to their stated revision.
   audit. Export allowlists already pass `musikcore.abi.exports` and
   `musikcore.integration.binary.exports.*`; relocated installed consumers pass
   `musikcore.integration.api.installed_sdk`. Those checks do not replace a full
-  standalone archive audit.
+  standalone archive audit. The 2026-11-22 extracted app/SDK audit verifies
+  signatures and dependencies across 52 Mach-O files, but finds stale absolute
+  build-directory RPATHs in four FFmpeg dylibs and `libportaudioout.dylib` in
+  each archive. Remove those paths during staging/install and repeat the audit
+  before completing this item; successful relocation alone is insufficient.
 - [x] **PKG-007** Validate Windows DLL/import-library/plugin placement.
   Visual Studio 2026 x64 Debug and Release stage `musikcore.dll` beside both
   frontends, the import library under the configuration's build library directory,
@@ -1610,9 +1636,16 @@ Windows behavior. Recorded Linux results apply only to their stated revision.
   the C ABI export allowlist. Both staged configurations passed the Windows
   dependency audit.
 - [ ] **PKG-008** Run consumer, plugin, and application smoke tests from staged
-  standalone archives.
+  standalone archives. Native macOS app/daemon and C/C++/Rust consumer checks
+  pass from extracted archives on 2026-11-22. URI players load the shipped
+  FFmpeg decoder and null output; physical audio-device behavior and new
+  Linux/Windows archive runs are not established here. Pure-C provider smoke
+  remains deferred with PKG-003/PKG-004.
 - [ ] **PKG-009** Verify packages contain no build-machine absolute paths or
-  unexpected dependencies.
+  unexpected dependencies. The native macOS audit still finds the absolute
+  RPATHs described in PKG-006. The existing dependency policy also permits
+  host-provided Homebrew PortAudio for the optional output plugin; this is an
+  explicit dependency exception, not evidence of a fully self-contained plugin.
 - [ ] **CI-001** Add the fast contract/unit/integration matrix for Windows,
   macOS, GCC, and Clang.
 - [ ] **CI-002** Add ASan/UBSan jobs.
@@ -1685,13 +1718,15 @@ preparation; it is not a request to add every deferred API below.
 2. Preserve TST-008/API-013 instrumentation and fault-detection probes when
    adding targets. Debug now covers direct ABI and production paths; Release
    stays uninstrumented. Linux/Windows execution remains separately owned.
-3. Complete CORE-RC-001/CORE-RC-002: exercise one non-C++ installed-library
-   consumer and close documentation for service selection, dispatch, ownership,
-   cancellation, and teardown. Reuse installed headers/examples as the contract.
+3. Preserve CORE-RC-001/CORE-RC-002 acceptance with the independently maintained
+   Rust consumer and installed C/C++ examples. Reuse their existing tests rather
+   than adding another foreign-runtime harness.
 4. Complete macOS standalone acceptance under PKG-006/PKG-008/PKG-009: stage and
    relocate the app/daemon/SDK, exercise external consumers and normal app entry
    points, and audit install names, runtime paths, exports, and dependencies.
-   Installed-prefix relocation already passes; archive acceptance remains open.
+   Extracted macOS app/daemon/SDK consumers pass. Remove stale absolute Mach-O
+   RPATHs identified in PKG-006/PKG-009, then repeat the archive audit; broader
+   consumer release acceptance remains open until those packaging checks pass.
 5. Preserve recorded native Windows DLL, installed-SDK, playback, and ConPTY
    checks and the existing Linux results. Validate subsequent changes in their
    native platform sessions; the macOS sanitizer change does not establish new
