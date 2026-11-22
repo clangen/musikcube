@@ -891,6 +891,9 @@ recorded before the experimental shared façade is introduced.
   conventions.
 - [x] **ABI-008** Implement core-owned error objects with allocation-failure
   fallback behavior.
+  Async library errors name their operation and available failure reason;
+  `musikcore.abi.header` and `result_contracts` cover diagnostics, ownership,
+  and allocation fallback. Human-readable messages are not a parsing contract.
 - [x] **ABI-009** Contain exceptions in allocating/dispatching entry points and
   audit scalar getters/destructors as nonthrowing. Share text and ID validation
   helpers. `arguments`, `shared_c`, and `dispatch` verify

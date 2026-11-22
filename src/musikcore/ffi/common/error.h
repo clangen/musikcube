@@ -8,24 +8,21 @@ namespace musik { namespace core { namespace ffi {
 
     mc_result fail(mc_result code, const char *message, mc_error **out_error) noexcept;
 
-    /* Stack-scoped details shared by all asynchronous result adapters. */
+    /* stack-scoped details shared by all asynchronous result adapters. */
     class CompletionError {
     public:
-        explicit CompletionError(mc_result result) noexcept {
-            if (result == MC_ERROR_QUEUE_FULL) {
-                fail(result, "The context request queue is full", &this->error);
-            }
-            else if (result == MC_ERROR_OUTCOME_UNKNOWN) {
-                fail(result, "The backend may have applied the mutation. Refresh before retrying", &this->error);
-            }
-            else if (result != MC_OK) {
-                fail(result, "Asynchronous operation failed", &this->error);
-            }
-        }
-        ~CompletionError() { mc_error_destroy(&this->error); }
+        /* copy optional operation/detail text during construction; diagnostics
+        may be absent under allocation failure without changing the result. */
+        explicit CompletionError(mc_result result, const char* operation = nullptr,
+            const char* detail = nullptr) noexcept;
         CompletionError(const CompletionError&) = delete;
+
+        ~CompletionError() { mc_error_destroy(&this->error); }
+
         CompletionError& operator=(const CompletionError&) = delete;
+
         const mc_error* Get() const noexcept { return this->error; }
+
     private:
         mc_error* error = nullptr;
     };

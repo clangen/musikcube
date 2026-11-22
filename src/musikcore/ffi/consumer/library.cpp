@@ -18,13 +18,16 @@ namespace query = musik::core::library::query;
 namespace {
     using namespace musik::core::ffi;
 
+    /* action labels have static lifetime so successful requests need no extra
+    diagnostic allocation while retaining the label through dispatch. */
     template<typename Result, typename Work, typename Completion>
-    mc_result submitLibraryRequest(mc_context *context, Work work, Completion completion,
-        void *user_data, mc_request_id *out_request) {
+    mc_result submitLibraryRequest(mc_context *context, const char* operation, Work work, Completion completion,
+        void *user_data, mc_request_id *out_request)
+    {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
         const auto canceled = std::make_shared<std::atomic_bool>(false);
         return submit_request(context, [=] { return work(*output, *canceled); }, [=](mc_result result, void *data) {
-            const CompletionError error(result);
+            const CompletionError error(result, operation);
             completion(result, result == MC_OK ? output->release() : nullptr, error.Get(), data);
         }, user_data, out_request, canceled);
     }
@@ -167,7 +170,7 @@ mc_result MC_CALL mc_library_read_thumbnail_async(mc_context* context, const mc_
             return MC_ERROR_UNSUPPORTED;
         }
         using Image = std::vector<uint8_t>;
-        return submitLibraryRequest<Image>(context,
+        return submitLibraryRequest<Image>(context, "Load album artwork",
             [=](std::unique_ptr<Image>& output, const std::atomic_bool& canceled) {
                 output.reset(new Image);
                 return identity->queries->ReadThumbnail(thumbnail_id, *output, canceled);
@@ -481,7 +484,7 @@ mc_result MC_CALL mc_library_query_tracks_async(
         const std::string term(search.length ? search.data : "", search.length);
         std::vector<std::string> names;
         if (!copyFields(fields, count, limits.max_fields, names)) return MC_ERROR_INVALID_ARGUMENT;
-        return submitLibraryRequest<mc_track_page>(context,
+        return submitLibraryRequest<mc_track_page>(context, "Read track details",
             [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) {
                 return readPage(*identity, { term, names, offset, page_limit }, page, canceled);
             }, completion, user_data, out_request);
@@ -515,7 +518,7 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
         }
         if (!identity->backend) return MC_ERROR_UNSUPPORTED;
 
-        return submitLibraryRequest<mc_track_result>(context,
+        return submitLibraryRequest<mc_track_result>(context, "Search library",
             [=](std::unique_ptr<mc_track_result> &result, const std::atomic_bool& canceled) {
                 return openSearch(identity, { term, mode == MC_TRACK_SEARCH_REGEX,
                     static_cast<query::TrackSortType>(order) }, result, canceled);
@@ -572,7 +575,7 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
                 { data->ids.begin() + start, data->ids.begin() + start + size },
                 std::move(names), true, completion, user_data, out_request);
         }
-        return submitLibraryRequest<mc_track_page>(context,
+        return submitLibraryRequest<mc_track_page>(context, "Read track details",
             [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) -> mc_result {
                 if (size) return readPage(*data->library, { "", names, 0, size, data->ids.data() + start }, page, canceled);
                 page.reset(new mc_track_page);
@@ -626,7 +629,7 @@ mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_re
             return identity.library->async->ReadPage(context, { identity.id }, std::move(names),
                 false, completion, user_data, out_request);
         }
-        return submitLibraryRequest<mc_track_page>(context,
+        return submitLibraryRequest<mc_track_page>(context, "Read track details",
             [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) -> mc_result {
                 /* A direct identity lookup distinguishes a removed row from missing tags. */
                 const auto status = readPage(*identity.library, { "", names, 0, 1, &identity.id, false }, page, canceled);

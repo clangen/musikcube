@@ -53,6 +53,7 @@ namespace {
         api::TrackRef reference;
         unsigned calls = 0;
         mc_result status = MC_ERROR_INTERNAL;
+        std::string failureMessage;
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
         options.services = MC_SERVICE_NONE;
         options.wakeup = test_host_event_signal;
@@ -63,9 +64,10 @@ namespace {
         api::Library library(root);
         /* Keep callback count/status beside the owned payload so a successful
            wait cannot hide duplicate delivery or a stale page from an error. */
-        const auto receive = [&](mc_result result, api::TrackPage value, std::string_view) {
+        const auto receive = [&](mc_result result, api::TrackPage value, std::string_view message) {
             ++calls;
             status = result;
+            failureMessage.assign(message.empty() ? "" : message.data(), message.size());
             page = std::move(value);
         };
 
@@ -157,6 +159,11 @@ namespace {
         expected = calls + 1;
         api::ReadTrack(context, reference, receive);
         if (!dispatch(expected) || status != MC_ERROR_NOT_FOUND || page) return false;
+        /* the public callback must retain the requested action and precise
+        status reason after the borrowed native error has been destroyed. */
+        if (failureMessage != "Read track details: The requested item was not found") {
+            return false;
+        }
         expected = calls + 1;
         api::ReadTracks(context, search, {0, 3, {MC_TRACK_FIELD_TITLE}}, receive);
         if (!dispatch(expected) || status != MC_OK || page.Size() != 3 || page.Id(0) != 1 ||
@@ -168,6 +175,9 @@ namespace {
         expected = calls + 1;
         api::QueryTracks(context, reopened, {}, receive);
         if (!dispatch(expected) || status != MC_ERROR_IO || page) return false;
+        if (failureMessage != "Read track details: A read, write, or connection operation failed") {
+            return false;
+        }
         /* Successful shutdown and removal of the final explicit page owner
            must not invalidate the retained view's immutable metadata. */
         if (context.Shutdown() != MC_OK) return false;

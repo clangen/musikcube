@@ -21,6 +21,7 @@ _Static_assert(MC_ABI_VERSION_MINOR(UINT32_C(0xabcd1234)) == UINT16_C(0x1234), "
 mc_result MC_CALL check_string_view(mc_string_view view);
 int MC_CALL check_sized_structures(void);
 mc_result MC_CALL check_error_operation(int mode, mc_error **error);
+int MC_CALL check_completion_errors(void);
 
 /* Verify error ownership, exception translation, allocation fallback, and null/double-destroy behavior
    from C. */
@@ -93,6 +94,10 @@ int main(void) {
     }
     if (!check_errors()) {
         fputs("error ownership or translation contract failed\n", stderr);
+        return 1;
+    }
+    if (!check_completion_errors()) {
+        fputs("asynchronous error context failed\n", stderr);
         return 1;
     }
     return 0;

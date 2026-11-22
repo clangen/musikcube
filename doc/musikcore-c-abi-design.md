@@ -239,10 +239,13 @@ cross an exported function or plugin function-table call. Exceptions are
 translated into `mc_result` values at the boundary.
 
 Detailed failures are represented by an optional owned `mc_error` handle.
-Error objects are created only on failure and expose a code, UTF-8 message, and
-optional plugin or subsystem identifier. Async callbacks borrow the error
-handle for the duration of the callback. Errors do not depend on thread-local
-state.
+Error objects are created only on failure and expose a code and UTF-8 message.
+Async messages name the submitted action and preserve specific failure details
+when available. Clients use the callback, result code, and typed state for logic;
+message wording is intended for people rather than parsing. Async callbacks
+borrow the error handle for the duration of the callback. Diagnostics may be
+absent on allocation failure; the result code remains authoritative. Errors do
+not depend on thread-local state.
 
 ```c
 MC_API mc_result MC_CALL mc_error_get_code(const mc_error *error);
