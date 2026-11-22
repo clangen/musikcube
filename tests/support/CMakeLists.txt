@@ -553,3 +553,22 @@ add_test(NAME musikcore.integration.runtime.local_startup COMMAND "${MUSIKCORE_T
   "$<TARGET_FILE:musikcore_runtime_local_startup_test>" --stage)
 set_tests_properties(musikcore.integration.runtime.local_startup PROPERTIES
   LABELS "integration;musikcore;runtime;transport;contract" TIMEOUT 25)
+
+# contextual facets use the existing remote category protocol without client composition.
+add_executable(musikcore_remote_facets_test ../integration/transport/remote-facets.cpp)
+target_include_directories(musikcore_remote_facets_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
+target_link_libraries(musikcore_remote_facets_test PRIVATE ${core_fixture_library} Threads::Threads)
+target_compile_features(musikcore_remote_facets_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_remote_facets_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+if(WIN32)
+  target_link_libraries(musikcore_remote_facets_test PRIVATE
+    musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+endif()
+add_dependencies(musikcube_tests musikcore_remote_facets_test)
+add_dependencies(musikcube_integration_tests musikcore_remote_facets_test)
+add_test(NAME musikcore.integration.api.remote_facets COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_remote_facets_test>" --stage)
+set_tests_properties(musikcore.integration.api.remote_facets PROPERTIES
+  LABELS "integration;musikcore;api;transport;contract" TIMEOUT 25)

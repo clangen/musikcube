@@ -96,7 +96,7 @@ namespace musik { namespace core { namespace ffi {
     /* Reserves a request for an external producer. Late replies may outlive the context. */
     mc_result reserve_external_request(mc_context *context, RequestCompletion completion,
         void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish,
-        RequestEffect effect = RequestEffect::Read);
+        RequestEffect effect = RequestEffect::Read, std::shared_ptr<std::atomic_bool> cancel = {});
 
 } } }
 

@@ -755,7 +755,8 @@ namespace musik { namespace core { namespace ffi {
     }
 
     mc_result reserve_external_request(mc_context *context, RequestCompletion completion,
-        void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish, RequestEffect effect) {
+        void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish, RequestEffect effect,
+        std::shared_ptr<std::atomic_bool> cancel) {
         std::lock_guard<std::mutex> lock(context->mutex);
         if (context->stopping) return MC_ERROR_BUSY;
         if (context->requests.size() >= max_requests || !context->next_request) return MC_ERROR_QUEUE_FULL;
@@ -781,7 +782,8 @@ namespace musik { namespace core { namespace ffi {
             if (notify) signal_host(*context);
         };
 
-        context->requests.push_back({ id, {}, std::move(completion), user_data, RequestState::running, MC_OK, {}, effect, true });
+        context->requests.push_back({ id, {}, std::move(completion), user_data, RequestState::running, MC_OK,
+            std::move(cancel), effect, true });
         *out_request = id;
         ++context->next_request;
         return MC_OK;
@@ -1087,6 +1089,9 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
             }
             else {
                 request.result = MC_ERROR_CANCELLED;
+                if (request.cancel) {
+                    request.cancel->store(true);
+                }
             }
             request.state = RequestState::ready;
         }

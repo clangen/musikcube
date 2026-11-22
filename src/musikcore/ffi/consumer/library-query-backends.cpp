@@ -407,6 +407,187 @@ namespace {
         return MC_OK;
     }
 
+    /* contextual facets compose existing typed category commands. one outstanding
+    command preserves transport admission even when a catalog contains many values. */
+    class RemoteFacetRead final : public std::enable_shared_from_this<RemoteFacetRead> {
+        public:
+            RemoteFacetRead(std::shared_ptr<musik::core::library::RemoteLibrary> library,
+                uint64_t generation, std::string field, std::string search, query::category::PredicateList selections)
+            : library(std::move(library))
+            , generation(generation)
+            , field(std::move(field))
+            , search(std::move(search))
+            , selections(std::move(selections)) {}
+
+            mc_result Start(mc_context* context, mc_category_list_completion_fn completion,
+                void* data, mc_request_id* request)
+            {
+                const auto self = this->shared_from_this();
+                const auto status = reserve_external_request(context,
+                    [self, completion](mc_result result, void* data) {
+                        const CompletionError error(result);
+                        completion(result, result == MC_OK ? self->output->entries.data() : nullptr,
+                            result == MC_OK ? self->output->entries.size() : 0, error.Get(), data);
+                    }, data, request, this->finish, RequestEffect::Read, this->canceled);
+                if (status != MC_OK) {
+                    return status;
+                }
+
+                const auto submitted = exception_barrier(nullptr, [&]() -> mc_result {
+                    auto command = std::make_shared<query::CategoryListQuery>(
+                        query::CategoryListQuery::MatchType::Substring, this->field, this->selections);
+                    this->Enqueue(command, [self](auto& completed) {
+                        self->choices = completed.GetResult();
+                        self->output = std::make_unique<CategoryEntries>();
+                        self->output->names.reserve(self->choices->Count());
+                        self->output->entries.reserve(self->choices->Count());
+                        if (self->search.empty() || self->choices->Count() == 0) {
+                            for (size_t i = 0; i < self->choices->Count(); ++i) {
+                                self->Append(i);
+                            }
+                            if (self->Continue()) {
+                                self->finish(MC_OK);
+                            }
+                        }
+                        else {
+                            self->Search();
+                        }
+                    });
+                    return MC_OK;
+                });
+                if (submitted != MC_OK) {
+                    this->finish(submitted);
+                }
+                return MC_OK;
+            }
+
+        private:
+            bool Continue() {
+                if (this->canceled->load()) {
+                    this->finish(MC_ERROR_CANCELLED);
+                    return false;
+                }
+                if (this->library->WebSocketClient().ConnectionGeneration() != this->generation) {
+                    this->finish(MC_ERROR_IO);
+                    return false;
+                }
+                return true;
+            }
+
+            template<typename Command, typename Completion>
+            void Enqueue(std::shared_ptr<Command> command, Completion completion) {
+                if (!this->Continue()) {
+                    return;
+                }
+                const auto self = this->shared_from_this();
+                const auto status = exception_barrier(nullptr, [&]() -> mc_result {
+                    const auto admission = this->library->EnqueueForConnection(command, this->generation,
+                        [self, command, completion](const auto&) {
+                            const auto status = exception_barrier(nullptr, [&]() -> mc_result {
+                                if (!self->Continue()) {
+                                    return MC_OK;
+                                }
+                                if (command->GetStatus() != musik::core::db::IQuery::Finished) {
+                                    return MC_ERROR_IO;
+                                }
+                                completion(*command);
+                                return MC_OK;
+                            });
+                            if (status != MC_OK) {
+                                self->finish(status);
+                            }
+                        });
+                    using Admission = musik::core::library::RemoteLibrary::ConnectionQueryStatus;
+                    if (admission == Admission::Busy) {
+                        return MC_ERROR_BUSY;
+                    }
+                    return admission == Admission::Accepted ? MC_OK : MC_ERROR_IO;
+                });
+                if (status != MC_OK) {
+                    this->finish(status);
+                }
+            }
+
+            void Append(size_t index) {
+                const auto choice = this->choices->At(index);
+                const auto& name = this->output->names.emplace_back(choice->ToString());
+                this->output->entries.push_back({ choice->GetId(), { name.data(), name.size() } });
+            }
+
+            void Search() {
+                /* reuse the server's existing combined predicate/text query. full
+                metadata carries stable visual category IDs on the existing wire. */
+                auto command = std::make_shared<query::CategoryTrackListQuery>(
+                    this->library, this->selections, this->search, query::TrackSortType::Album);
+                const auto self = this->shared_from_this();
+                this->Enqueue(command, [self](auto& completed) {
+                    const auto tracks = completed.GetResult();
+                    const auto& ids = tracks->GetIds();
+                    if (!valid_ids(ids.data(), ids.size())) {
+                        self->finish(MC_ERROR_IO);
+                        return;
+                    }
+                    self->ids = ids;
+                    self->NextBatch();
+                });
+            }
+
+            void NextBatch() {
+                if (!this->Continue()) {
+                    return;
+                }
+                if (this->next == this->ids.size()) {
+                    for (size_t i = 0; i < this->choices->Count(); ++i) {
+                        if (this->matches.count(this->choices->At(i)->GetId())) {
+                            this->Append(i);
+                        }
+                    }
+                    this->finish(MC_OK);
+                    return;
+                }
+
+                constexpr size_t FacetMetadataBatchSize = 500;
+                const auto end = std::min(this->ids.size(), this->next + FacetMetadataBatchSize);
+                const auto batch = std::unordered_set<int64_t>(this->ids.begin() + this->next, this->ids.begin() + end);
+                this->next = end;
+                auto command = std::make_shared<query::TrackMetadataBatchQuery>(batch, this->library);
+                const auto self = this->shared_from_this();
+                this->Enqueue(command, [self, batch](auto& completed) {
+                    using namespace musik::core::library::constants;
+                    const auto key = self->field == "genre"
+                        ? Track::GENRE_ID
+                        : (self->field == "artist" ? Track::ARTIST_ID : Track::ALBUM_ID);
+                    const auto& metadata = completed.Result();
+                    for (const auto id : batch) {
+                        const auto track = metadata.find(id);
+                        /* tracks deleted between the ID query and metadata read no
+                        longer contribute a choice to this non-transactional view. */
+                        if (track != metadata.end()) {
+                            if (track->second->GetString(key).empty()) {
+                                self->finish(MC_ERROR_IO);
+                                return;
+                            }
+                            self->matches.insert(track->second->GetInt64(key));
+                        }
+                    }
+                    self->NextBatch();
+                });
+            }
+
+            std::shared_ptr<musik::core::library::RemoteLibrary> library;
+            uint64_t generation;
+            std::string field;
+            std::string search;
+            query::category::PredicateList selections;
+            std::shared_ptr<std::atomic_bool> canceled = std::make_shared<std::atomic_bool>(false);
+            std::function<void(mc_result)> finish;
+            query::CategoryListQuery::Result choices;
+            std::unique_ptr<CategoryEntries> output;
+            std::vector<int64_t> ids;
+            std::unordered_set<int64_t> matches;
+            size_t next = 0;
+    };
+
     /* Neither copyable nor movable. Retains one remote library and connection generation. */
     class RemoteTrackReadBackend final : public AsyncTrackReader, public LibraryQueries {
     public:
@@ -472,11 +653,16 @@ namespace {
             query::category::PredicateList selections, mc_category_list_completion_fn completion,
             void* data, mc_request_id* request) const override
         {
-            auto command = std::make_shared<query::CategoryListQuery>(
-                query::CategoryListQuery::MatchType::Substring, field, std::move(selections));
-            command->SetFacetSearch(std::move(search));
-            return submitRemote<CategoryEntries>(context, this->library, this->generation, command,
-                collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
+            if (this->library->WebSocketClient().SupportsContextualFacets(this->generation)) {
+                auto command = std::make_shared<query::CategoryListQuery>(
+                    query::CategoryListQuery::MatchType::Substring, field, std::move(selections));
+                command->SetFacetSearch(std::move(search));
+                return submitRemote<CategoryEntries>(context, this->library, this->generation, command,
+                    collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
+            }
+            auto read = std::make_shared<RemoteFacetRead>(this->library, this->generation,
+                std::move(field), std::move(search), std::move(selections));
+            return read->Start(context, completion, data, request);
         }
 
         mc_result ListAlbums(mc_context* context, std::string filter, mc_album_list_completion_fn completion,

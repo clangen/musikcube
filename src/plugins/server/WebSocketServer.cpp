@@ -119,6 +119,7 @@ static json getEnvironment(Context& context) {
         { serverprefs::AudioPort, context.prefs->GetInt(serverprefs::AudioPort.c_str()) },
         { key::sdk_version, musik::core::sdk::SdkVersion },
         { key::app_version, context.environment->GetAppVersion() },
+        { key::contextual_facets, true },
         { key::api_version, ApiVersion }
     };
 }

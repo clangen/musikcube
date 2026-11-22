@@ -1169,6 +1169,16 @@ This completed pilot is not a second migration backlog.
   Browse and Directories use typed ordered results for their track panes.
   Now Playing projects metadata from its queue snapshot using the same paged
   track view. The indexed-query and loopback tests cover order and headers.
+  `musikcore.integration.api.remote_facets` verifies contextual facets through
+  established remote category/search/metadata commands when the authenticated
+  server environment does not advertise native support. It covers stable IDs,
+  duplicate labels, bounded metadata batches, cancellation, and generations.
+  Advertised support retains the native single-query path; query errors are
+  not retried. Frontends supply predicates; selection order is app state.
+- [ ] **FACET-COMPAT-REMOVAL** Remove the temporary core composition/capability
+  routing after the maintainer's Pi server upgrade is ready. Compatibility is
+  retained by explicit maintainer request for functionality testing until then;
+  the Rust frontend already uses only the common public facet operation.
 - [x] **PUB-003** Add coherent playback snapshots.
   The transport control surface reads state, position, duration, volume,
   and mute through `mc_playback_get_snapshot`. Category and track lists use

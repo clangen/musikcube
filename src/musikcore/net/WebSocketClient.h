@@ -113,6 +113,8 @@ namespace musik { namespace core { namespace net {
             std::string Uri() const;
 
             uint64_t ConnectionGeneration() const;
+            /* optional authenticated capability, scoped to one live connection. */
+            bool SupportsContextualFacets(uint64_t generation) const;
             std::string EnqueueQuery(Query query, uint64_t generation = 0);
 
             void SetMessageQueue(musik::core::runtime::IMessageQueue* messageQueue);
@@ -138,6 +140,7 @@ namespace musik { namespace core { namespace net {
             std::atomic<bool> quit{ false };
             ConnectionError connectionError{ ConnectionError::None };
             std::string serverVersion;
+            bool contextualFacets = false;
             State state{ State::Disconnected };
             uint64_t generation = 0;
             Listener* listener{ nullptr };

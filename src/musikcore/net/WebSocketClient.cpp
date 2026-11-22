@@ -133,9 +133,15 @@ WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener
         auto name = responseJson["name"].get<std::string>();
         auto messageId = responseJson["id"].get<std::string>();
         if (name == "authenticate") {
-            this->connection = connection;
-
-            this->serverVersion = responseJson["options"]["environment"]["app_version"].get<std::string>();
+            {
+                std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+                this->connection = connection;
+                const auto& environment = responseJson["options"]["environment"];
+                this->serverVersion = environment["app_version"].get<std::string>();
+                const auto capability = environment.find("contextual_facets");
+                this->contextualFacets = capability != environment.end() && capability->is_boolean() &&
+                    capability->get<bool>();
+            }
             if (!this->ignoreVersionMismatch && !isVersionCompatible(this->serverVersion)) {
                 this->SetDisconnected(ConnectionError::IncompatibleVersion);
             }
@@ -227,6 +233,11 @@ void WebSocketClient::SetDisconnected(ConnectionError errorCode) {
 uint64_t WebSocketClient::ConnectionGeneration() const {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     return this->state == State::Connected ? this->generation : 0;
+}
+
+bool WebSocketClient::SupportsContextualFacets(uint64_t generation) const {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    return this->state == State::Connected && generation == this->generation && this->contextualFacets;
 }
 
 std::string WebSocketClient::EnqueueQuery(Query query, uint64_t generation) {
@@ -351,6 +362,7 @@ void WebSocketClient::SetState(State state, ConnectionError error) {
 
         if (state == State::Disconnected) {
             this->connection.reset();
+            this->contextualFacets = false;
             disconnected.swap(this->messageIdToQuery);
         }
         else if (state == State::Connected) {
