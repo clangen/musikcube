@@ -1,0 +1,11 @@
+# reject build-directory loader paths even when another relative path masks them.
+file(GLOB_RECURSE libraries "${RUNTIME}/*.dylib")
+foreach(binary IN LISTS libraries)
+  execute_process(COMMAND otool -l "${binary}" RESULT_VARIABLE status OUTPUT_VARIABLE commands)
+  if(NOT status EQUAL 0)
+    message(FATAL_ERROR "Cannot inspect ${binary}")
+  endif()
+  if(commands MATCHES "cmd LC_RPATH\n[ \t]*cmdsize [0-9]+\n[ \t]*path /[^\n]+")
+    message(FATAL_ERROR "Absolute packaged RPATH in ${binary}")
+  endif()
+endforeach()

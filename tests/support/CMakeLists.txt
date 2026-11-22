@@ -26,6 +26,14 @@ endif()
 
 if(BUILD_TESTING)
 
+  if(APPLE)
+    add_test(NAME musikcore.integration.binary.macos_package COMMAND "${MUSIKCORE_TEST_NODE}"
+      "${PROJECT_SOURCE_DIR}/tests/scripts/check-macos-package.js"
+      "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "${CMAKE_C_COMPILER}" "${CMAKE_COMMAND}")
+    set_tests_properties(musikcore.integration.binary.macos_package PROPERTIES
+      LABELS "integration;musikcore;packaging;contract" TIMEOUT 60)
+  endif()
+
   if(UNIX AND CMAKE_NM)
     foreach(host IN ITEMS musikcube musikcubed)
       if(TARGET ${host})

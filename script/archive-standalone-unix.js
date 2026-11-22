@@ -97,6 +97,12 @@ function stageArchive(config, output) {
   }
   run('cp', ['-Rp', join(bin, 'share/terminfo') + '/.', join(output, 'share/terminfo')], config.env);
 
+  if (config.codesign) {
+    /* copied dependencies may retain vendor-build paths even when relocation works. */
+    run('cmake', ['-DMUSIKCORE_RUNTIME=' + output, '-P',
+      join(source, '.cmake/FixupMachORpaths.cmake')], config.env);
+  }
+
   console.log('Stripping staged binaries');
   const binaries = [...files.slice(0, 3), ...lib, ...plugins].map((file) => join(output, file));
   run(strip, [...stripArguments, ...binaries], config.env);

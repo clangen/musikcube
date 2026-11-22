@@ -44,6 +44,11 @@ if(WIN32)
   file(COPY ${installed_dlls} DESTINATION "${consumer_bin}")
 endif()
 
+# SDK installation must clean copied vendor libraries as well as CMake targets.
+if(APPLE)
+  run("${CMAKE_COMMAND}" "-DRUNTIME=${runtime}" -P "${SOURCE}/tests/scripts/check-macho-paths.cmake")
+endif()
+
 foreach(language IN ITEMS c cpp)
   run("${consumer_bin}/query_${language}${exe}" "${CATALOG}")
   if(NOT last_output MATCHES "Morning Light")

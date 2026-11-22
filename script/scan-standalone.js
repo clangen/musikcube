@@ -263,8 +263,11 @@ const loadCommandsMac = async (file) => {
   const rpaths = [...stdout.matchAll(
     /^\s*cmd LC_RPATH\s*\n\s*cmdsize \d+\s*\n\s*path (.+?) \(offset \d+\)/gm
   )].map(([, path]) => path);
+  const ids = [...stdout.matchAll(
+    /^\s*cmd LC_ID_DYLIB\s*\n\s*cmdsize \d+\s*\n\s*name (.+?) \(offset \d+\)/gm
+  )].map(([, name]) => name);
   /* Universal binaries can list the same dependency in multiple slices. */
-  return { needed: [...new Set(needed)], rpaths: [...new Set(rpaths)] };
+  return { needed: [...new Set(needed)], rpaths: [...new Set(rpaths)], ids: [...new Set(ids)] };
 };
 
 const neededMac = async (file) => (await loadCommandsMac(file)).needed;
@@ -337,12 +340,26 @@ const macExecutableRpathRoots = async (packageRoot) => {
 const lddMac = async (fn) => {
   const packageRoot = await realpath(root);
   const file = await realpath(join(root, fn));
-  const { needed, rpaths } = await loadCommandsMac(file);
+  const { needed, rpaths, ids } = await loadCommandsMac(file);
   const searchRoots = new Set(rpaths.map((path) => expandMacPath(path, file, packageRoot)));
   if (fn !== 'musikcube' && fn !== 'musikcubed') {
     for (const path of await macExecutableRpathRoots(packageRoot)) searchRoots.add(path);
   }
   const problems = [];
+
+  for (const id of ids) {
+    if (isAbsolute(id)) {
+      problems.push(`non-relocatable install name: ${id}`);
+    }
+  }
+
+  /* a working fallback must not hide a dependency on the build machine. */
+  for (const path of rpaths) {
+    const directory = expandMacPath(path, file, packageRoot);
+    if (isAbsolute(path) || !directory || (directory !== packageRoot && !within(packageRoot, directory))) {
+      problems.push(`non-relocatable search path: ${path}`);
+    }
+  }
 
   for (const name of needed) {
     if (validLibraries.has(name)) continue;

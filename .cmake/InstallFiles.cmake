@@ -77,3 +77,12 @@ install(
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
     WORLD_EXECUTE WORLD_READ)
+
+if(APPLE)
+  # run after all copies, for full installs as well as either SDK component.
+  foreach(component IN ITEMS musikcoreSDK musikcorePlugins)
+    install(CODE "set(MUSIKCORE_RUNTIME \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/musikcube\")
+include(\"${PROJECT_SOURCE_DIR}/.cmake/FixupMachORpaths.cmake\")"
+      COMPONENT ${component})
+  endforeach()
+endif()

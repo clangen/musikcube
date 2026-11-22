@@ -1492,13 +1492,18 @@ Windows behavior. Recorded Linux results apply only to their stated revision.
   query and URI-player examples pass against an extracted, relocated SDK archive
   with the original install prefix unavailable. Rust tests and all five doctests
   also pass against that archive. This review requires no public API changes.
-- [ ] **CORE-RC-003** Confirm consumer release acceptance before beginning the
+- [x] **CORE-RC-003** Confirm consumer release acceptance before beginning the
   C provider SDK: API-013 instrumentation, CORE-RC-001/CORE-RC-002, GATE-700,
   and the consumer/application portions of PKG-001 and PKG-005 through PKG-009.
   Use currently shipped SDK 23 plugins for runtime smoke tests. Pure-C provider
   installation/loading (PKG-003/PKG-004) and combined GATE-900 follow provider
   implementation, so they cannot be prerequisites for starting it. Keep approved
   platform exceptions explicit rather than treating them as passing results.
+  Consumer acceptance is complete for this pass: native macOS archive checks
+  below pass, and the maintainer has explicitly deferred fresh Linux/Windows
+  parity runs to their native sessions. Existing platform evidence remains
+  scoped to its recorded revision. This permits Phase 4 bootstrap work, not
+  completion of the combined provider/package GATE-900.
 
 #### Phase 7 gate
 
@@ -1520,11 +1525,12 @@ extracted daemon passes `tests/scripts/check-daemon.js`, including competing
 starts, rescan, termination, and background startup failure. These checks add
 no new physical audio-device or Linux/Windows evidence.
 
-The first ad-hoc archive TUI run timed out without saving diagnostics. The
-rerun retains failure artifacts and passes repeatedly; no driver defect has
-been reproduced. Its dependent SDK check initially lacked a fixture manifest;
-creating that manifest before the TUI check fixes the validation orchestration.
-Neither incident required a maintained test-driver or runtime change.
+Freshly staged full-plugin archives can exceed the driver's ordinary ten-second
+screen deadline before drawing their first frame. Startup now has a separate
+60-second bound; interaction deadlines and immediate exit/error detection are
+unchanged. The dependent ad-hoc SDK check also now creates its fixture manifest
+before launching the TUI. The final extracted archive passes three runs; no
+production startup failure was established.
 
 ### Phase 8: expand and migrate the provider SDK
 
@@ -1619,15 +1625,16 @@ Neither incident required a maintained test-driver or runtime change.
 - [x] **PKG-005** Validate ELF SONAME/RPATH and symbol versions. Linux Release
   installed with the expected `libmusikcore.so` SONAME and relative runtime
   paths. The complete runtime passed `script/scan-standalone.js` at glibc 2.28.
-- [ ] **PKG-006** Complete a named packaged Mach-O install-name/RPATH/dependency
-  audit. Export allowlists already pass `musikcore.abi.exports` and
-  `musikcore.integration.binary.exports.*`; relocated installed consumers pass
-  `musikcore.integration.api.installed_sdk`. Those checks do not replace a full
-  standalone archive audit. The 2026-11-22 extracted app/SDK audit verifies
-  signatures and dependencies across 52 Mach-O files, but finds stale absolute
-  build-directory RPATHs in four FFmpeg dylibs and `libportaudioout.dylib` in
-  each archive. Remove those paths during staging/install and repeat the audit
-  before completing this item; successful relocation alone is insufficient.
+- [x] **PKG-006** Audit packaged Mach-O install names, RPATHs, and dependencies.
+  Archive staging and SDK installation share `FixupMachORpaths.cmake`, which
+  removes absolute build paths, supplies relative search roots, and re-signs
+  changed binaries. `musikcore.integration.binary.macos_package` rejects stale
+  absolute paths, escaping relative paths, and absolute install names; it checks
+  repeated fixup and signature validity. `musikcore.integration.api.installed_sdk`
+  rejects absolute RPATHs in copied libraries. The regression failed on the
+  original FFmpeg dependency before the fix and passes afterward. The extracted
+  app passes `script/scan-standalone.js`; all 52 app/SDK Mach-O signatures and
+  install-name/RPATH checks pass. Export allowlists pass in the full suite.
 - [x] **PKG-007** Validate Windows DLL/import-library/plugin placement.
   Visual Studio 2026 x64 Debug and Release stage `musikcore.dll` beside both
   frontends, the import library under the configuration's build library directory,
@@ -1635,17 +1642,23 @@ Neither incident required a maintained test-driver or runtime change.
   `musikcube.integration.windows_core_dll` test verifies frontend imports and
   the C ABI export allowlist. Both staged configurations passed the Windows
   dependency audit.
-- [ ] **PKG-008** Run consumer, plugin, and application smoke tests from staged
-  standalone archives. Native macOS app/daemon and C/C++/Rust consumer checks
-  pass from extracted archives on 2026-11-22. URI players load the shipped
-  FFmpeg decoder and null output; physical audio-device behavior and new
-  Linux/Windows archive runs are not established here. Pure-C provider smoke
-  remains deferred with PKG-003/PKG-004.
-- [ ] **PKG-009** Verify packages contain no build-machine absolute paths or
-  unexpected dependencies. The native macOS audit still finds the absolute
-  RPATHs described in PKG-006. The existing dependency policy also permits
-  host-provided Homebrew PortAudio for the optional output plugin; this is an
-  explicit dependency exception, not evidence of a fully self-contained plugin.
+- [x] **PKG-008** Run consumer, SDK 23 plugin, and application smoke tests from
+  staged standalone archives. Native macOS extracted app startup/search/queue/
+  shutdown passes three times; daemon lifecycle, competing starts, rescan, and
+  background failure checks pass. External C/C++ queries and URI players plus
+  Rust tests and five doctests pass against the extracted SDK with its original
+  install prefix unavailable. URI players use shipped FFmpeg/null-output plugins;
+  physical audio-device behavior is outside this check. Fresh Linux/Windows
+  archive runs are maintainer-deferred; pure-C provider smoke remains separately
+  deferred with PKG-003/PKG-004 and does not block core consumer acceptance.
+- [x] **PKG-009** Verify consumer packages have no build-machine loader paths or
+  unexpected dependencies. The native macOS app/SDK load-command and package
+  metadata checks pass after RPATH cleanup. The package scanner rejects absolute
+  and out-of-package RPATHs even when a working fallback exists. The existing
+  explicit host-provided Homebrew PortAudio exception remains limited to the
+  optional output plugin. This checks runtime/package paths, not arbitrary
+  diagnostic source strings embedded in vendor binaries. New Linux/Windows
+  checks remain maintainer-deferred; GATE-900 stays open for combined acceptance.
 - [ ] **CI-001** Add the fast contract/unit/integration matrix for Windows,
   macOS, GCC, and Clang.
 - [ ] **CI-002** Add ASan/UBSan jobs.
@@ -1721,19 +1734,18 @@ preparation; it is not a request to add every deferred API below.
 3. Preserve CORE-RC-001/CORE-RC-002 acceptance with the independently maintained
    Rust consumer and installed C/C++ examples. Reuse their existing tests rather
    than adding another foreign-runtime harness.
-4. Complete macOS standalone acceptance under PKG-006/PKG-008/PKG-009: stage and
-   relocate the app/daemon/SDK, exercise external consumers and normal app entry
-   points, and audit install names, runtime paths, exports, and dependencies.
-   Extracted macOS app/daemon/SDK consumers pass. Remove stale absolute Mach-O
-   RPATHs identified in PKG-006/PKG-009, then repeat the archive audit; broader
-   consumer release acceptance remains open until those packaging checks pass.
+4. Preserve macOS archive acceptance under PKG-006/PKG-008/PKG-009, including
+   shared staging/install fixup, strict loader-path scanning, extracted app/daemon
+   runs, and relocated external C/C++/Rust consumers. The native Release suite
+   passes 110/110 after packaging changes; the focused UI/SDK/package rerun also
+   passes after separating cold-start and interaction deadlines.
 5. Preserve recorded native Windows DLL, installed-SDK, playback, and ConPTY
    checks and the existing Linux results. Validate subsequent changes in their
    native platform sessions; the macOS sanitizer change does not establish new
    Windows/Linux coverage. Finish the remaining release gates without reopening
    foundation checks that already have native evidence.
-6. Once CORE-RC-003 passes, begin the C provider walking skeleton and migration
-   in a separate pass. Finish combined packaging and compatibility gates before
+6. CORE-RC-003 now permits the Phase 4 C provider walking skeleton on a separate
+   branch; decoder migration follows its lifecycle/negotiation tests. Finish combined packaging and compatibility gates before
    ABI v1 freeze.
 
 Deferred expansion includes polling/owned unsolicited events (API-014/API-015),
