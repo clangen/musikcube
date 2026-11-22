@@ -126,6 +126,22 @@ mc_result MC_CALL mc_visualizer_hide() {
     return MC_ERROR_NOT_FOUND;
 }
 
+mc_result MC_CALL mc_visualizer_is_visible(bool* outVisible) {
+    if (!outVisible) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    *outVisible = false;
+    return MC_OK;
+}
+
+mc_result MC_CALL mc_visualizer_set_spectrum_enabled(bool) {
+    return MC_ERROR_UNSUPPORTED;
+}
+
+mc_result MC_CALL mc_visualizer_read_spectrum(float* bins, size_t capacity, uint32_t* sampleRate) {
+    return bins && capacity >= MC_VISUALIZER_SPECTRUM_BINS && sampleRate ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
 mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
     return state && state->struct_size >= sizeof(*state) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }

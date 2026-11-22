@@ -585,8 +585,8 @@ namespace {
 
         /* Keep one accepted read pending through shutdown; cancel the rest while
            replies are held, until the transport reports its bounded admission. */
-        constexpr unsigned burstSize = 65;
-        for (unsigned i = 0; i < burstSize; ++i) {
+        constexpr unsigned acceptedQueries = 64;
+        for (unsigned i = 0; i <= acceptedQueries; ++i) {
             const auto request = OpenTrackSearch(context, *reconnected, TrackSearch { "Origin" },
                 [&](mc_result result, TrackResult, std::string_view) {
                     status = result;
@@ -601,7 +601,7 @@ namespace {
                 return failure(__LINE__);
             }
             if (status == MC_ERROR_BUSY) {
-                if (cancelled != MC_ERROR_NOT_FOUND || context.Shutdown() != MC_OK ||
+                if (i != acceptedQueries || cancelled != MC_ERROR_NOT_FOUND || context.Shutdown() != MC_OK ||
                     calls != before + 2 || status != MC_ERROR_CANCELLED || !server.ReleaseHeld(true))
                 {
                     return failure(__LINE__);
@@ -1167,6 +1167,7 @@ namespace {
         auto remoteOptions = mc_remote_options MC_REMOTE_OPTIONS_DEFAULT;
         remoteOptions.host = { "127.0.0.1", 9 };
         remoteOptions.websocket_port = explicitServer.Port();
+        remoteOptions.max_pending_queries = 1;
         RemoteSession session(remoteOptions);
         completed.reset();
         session.Connect(context, [&](mc_result result, mc_remote_state, std::string_view) { completed = result; });
@@ -1187,6 +1188,19 @@ namespace {
             return failure(__LINE__);
         }
         if (playback.UseTrack(tracks.Track(0), MC_PLAYBACK_TRACK_APPEND) != MC_OK) {
+            return failure(__LINE__);
+        }
+        completed.reset();
+        OpenTrackSearch(context, TrackSearch { kHeldSearch },
+            [&](mc_result result, TrackResult, std::string_view) { completed = result; });
+        if (!explicitServer.WaitForHeldReply()) {
+            return failure(__LINE__);
+        }
+        std::optional<mc_result> excessStatus;
+        OpenTrackSearch(context, {}, [&](mc_result result, TrackResult, std::string_view) { excessStatus = result; });
+        if (!wait([&] { return excessStatus.has_value(); }) || excessStatus != MC_ERROR_BUSY || completed ||
+            !explicitServer.ReleaseHeld(false) || !wait([&] { return completed.has_value(); }) || completed != MC_OK)
+        {
             return failure(__LINE__);
         }
         if (session.Disconnect() != MC_OK ||

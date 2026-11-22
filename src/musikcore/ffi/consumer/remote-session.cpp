@@ -30,10 +30,10 @@ namespace {
 }
 
 struct mc_remote_session {
-    explicit mc_remote_session(RemoteLibrary::ConnectionOptions options)
+    mc_remote_session(RemoteLibrary::ConnectionOptions options, uint64_t maxPendingQueries)
     : queue(std::make_shared<Queue>())
     , library(new RemoteLibrary("Remote", 0, this->queue.get(),
-        [options = std::move(options)] { return options; }, false),
+        [options = std::move(options)] { return options; }, false, maxPendingQueries),
         [keepQueue = this->queue](RemoteLibrary* remote) { delete remote; })
     {
         this->stateChanged = this->library->ConnectionStateChanged.Subscribe([this](State state) { this->OnState(state); });
@@ -111,10 +111,15 @@ mc_result MC_CALL mc_remote_session_create(const mc_remote_options *options, mc_
         }
         config.websocketTls = options->websocket_tls;
         config.httpTls = options->http_tls;
-        if (options->struct_size >= sizeof(*options)) {
+        if (options->struct_size >= offsetof(mc_remote_options, http_tls_allow_untrusted_certificate) + sizeof(options->http_tls_allow_untrusted_certificate)) {
             config.httpTlsAllowUntrustedCertificate = options->http_tls_allow_untrusted_certificate != 0;
         }
-        *out_session = new mc_remote_session(std::move(config));
+        const auto maxPendingQueries = options->struct_size >=
+            offsetof(mc_remote_options, max_pending_queries) + sizeof(options->max_pending_queries) &&
+            options->max_pending_queries
+                ? options->max_pending_queries
+                : RemoteLibrary::DefaultMaxPendingQueries;
+        *out_session = new mc_remote_session(std::move(config), maxPendingQueries);
         return MC_OK;
     });
 }

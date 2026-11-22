@@ -285,7 +285,10 @@ public:
         }
 
         /* Project the track playback loaded before publishing the change event. */
-        page.names = { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION };
+        page.names = {
+            MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION,
+            MC_TRACK_FIELD_GENRE
+        };
         query::ProjectedTrackPage::Row row { playing->GetId(), {} };
         row.fields.reserve(page.names.size());
         for (const auto& field : page.names) {

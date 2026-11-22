@@ -93,9 +93,10 @@ class RemoteLibrary::QueryCompletedMessage: public Message {
 };
 
 RemoteLibrary::RemoteLibrary(std::string name, int id, MessageQueue* messageQueue,
-    OptionsProvider options, bool reconnect)
+    OptionsProvider options, bool reconnect, uint64_t maxPendingQueries)
 : options(std::move(options))
 , reconnect(reconnect)
+, maxPendingQueries(maxPendingQueries)
 , messageQueue(messageQueue)
 , wsc(messageQueue, this)
 , id(id)
@@ -185,10 +186,12 @@ RemoteLibrary::ConnectionQueryStatus RemoteLibrary::EnqueueForConnection(
     }
 
     /* ABI cancellation can finish before the server replies. Keep transport admission bounded. */
-    constexpr auto maxPendingConnectionQueries = 16;
+
     const auto pending = std::count_if(this->queriesInFlight.begin(), this->queriesInFlight.end(),
         [](const auto& entry) { return !entry.second->notify; });
-    if (pending >= maxPendingConnectionQueries) return ConnectionQueryStatus::Busy;
+    if (static_cast<uint64_t>(pending) >= this->maxPendingQueries) {
+        return ConnectionQueryStatus::Busy;
+    }
 
     auto context = std::make_shared<QueryContext>();
     context->query = std::move(query);

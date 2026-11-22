@@ -217,7 +217,7 @@ static mc_result openSelection(mc_context *context, const mc_library *library, m
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!request) return MC_ERROR_INVALID_ARGUMENT;
         *request = 0;
-        if (!context || !completion || int(order) < 0 || order > MC_TRACK_SEARCH_GENRE) {
+        if (!context || !completion || int(order) < 0 || order > MC_TRACK_SEARCH_DURATION) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
         const auto input = category.length ? category : directory;
@@ -499,7 +499,7 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
         const auto text = read_option(search, &mc_track_search::text, offsetof(mc_track_search, text));
         const auto mode = read_option(search, &mc_track_search::mode, offsetof(mc_track_search, mode));
         const auto order = read_option(search, &mc_track_search::order, offsetof(mc_track_search, order));
-        if (mode > MC_TRACK_SEARCH_REGEX || order > MC_TRACK_SEARCH_GENRE) return MC_ERROR_UNSUPPORTED;
+        if (mode > MC_TRACK_SEARCH_REGEX || order > MC_TRACK_SEARCH_DURATION) return MC_ERROR_UNSUPPORTED;
         if (!valid_text(text)) return MC_ERROR_INVALID_ARGUMENT;
         const auto identity = library ? library->identity : context_library(*context);
         if (!identity) {

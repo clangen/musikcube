@@ -1,3 +1,4 @@
+#include <musikcore/visualizer.h>
 #include "CoreRuntime.h"
 #include "PcmCapture.h"
 
@@ -606,6 +607,14 @@ int main(int argc, char** argv) {
         return hold && wait && outstanding && stressPlayback(mode, first, read, hold, wait, outstanding) ? 0 : 1;
     }
 
+    std::array<float, MC_VISUALIZER_SPECTRUM_BINS> spectrum {};
+    uint32_t spectrumRate = 0;
+    if (!crossfade && (mc_visualizer_read_spectrum(spectrum.data(), spectrum.size(), &spectrumRate) != MC_ERROR_NOT_FOUND ||
+        mc_visualizer_set_spectrum_enabled(true) != MC_OK))
+    {
+        return 1;
+    }
+
     bool played;
     if (crossfade) {
         CrossfadeTransport transport;
@@ -620,6 +629,17 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    if (!crossfade) {
+        const bool valid = mc_visualizer_read_spectrum(spectrum.data(), spectrum.size(), &spectrumRate) == MC_OK &&
+            spectrumRate == sampleRate && std::any_of(spectrum.begin(), spectrum.end(), [](float value) { return value > 0; }) &&
+            std::all_of(spectrum.begin(), spectrum.end(), [](float value) { return value >= 0 && value <= 80; });
+        if (mc_visualizer_set_spectrum_enabled(false) != MC_OK || !valid ||
+            mc_visualizer_read_spectrum(spectrum.data(), spectrum.size(), &spectrumRate) != MC_ERROR_NOT_FOUND)
+        {
+            std::fputs("Expected a captured spectrum from the headless playback stream\n", stderr);
+            return 1;
+        }
+    }
     std::vector<CapturedFrame> frames(read(nullptr, 0));
     read(frames.data(), frames.size());
     return (crossfade ? checkCrossfade(frames) : checkGapless(frames)) ? 0 : 1;

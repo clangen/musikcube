@@ -87,9 +87,11 @@ typedef struct mc_remote_options {
     /* Allow HTTPS audio and artwork from an untrusted or expired certificate.
        Hostname verification remains enabled. Defaults to zero. */
     uint32_t http_tls_allow_untrusted_certificate;
+    /* Maximum pending typed queries per connection. Zero selects the default of 64. */
+    uint64_t max_pending_queries;
 } mc_remote_options;
 
-#define MC_REMOTE_OPTIONS_DEFAULT { sizeof(mc_remote_options), { NULL, 0 }, { NULL, 0 }, 0, 0, false, false, 0 }
+#define MC_REMOTE_OPTIONS_DEFAULT { sizeof(mc_remote_options), { NULL, 0 }, { NULL, 0 }, 0, 0, false, false, 0, 0 }
 
 typedef void (MC_CALL *mc_remote_connect_fn)(mc_result status, mc_remote_state state,
     const mc_error *error, void *user_data);
@@ -131,7 +133,8 @@ enum {
     MC_TRACK_SEARCH_RATING_DESC = 10,
     MC_TRACK_SEARCH_PLAY_COUNT_ASC = 11,
     MC_TRACK_SEARCH_PLAY_COUNT_DESC = 12,
-    MC_TRACK_SEARCH_GENRE = 13
+    MC_TRACK_SEARCH_GENRE = 13,
+    MC_TRACK_SEARCH_DURATION = 14
 };
 
 typedef struct mc_track_search {

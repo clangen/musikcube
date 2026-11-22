@@ -49,7 +49,9 @@
 #include <future>
 
 #define MAX_PREBUFFER_QUEUE_COUNT 8
-#define FFT_N 512
+#include <musikcore/visualizer.h>
+
+#define FFT_N (2 * MC_VISUALIZER_SPECTRUM_BINS)
 #define PI 3.14159265358979323846
 
 using namespace musik::core::audio;
@@ -145,6 +147,8 @@ Player::Player(
     }
 
     /* retain allocation ownership until worker construction succeeds. */
+    auto fft = std::make_unique<FftContext>();
+    this->fftContext = fft.get();
     std::unique_ptr<float[]> spectrum(new float[FFT_N / 2]);
     this->spectrum = spectrum.get();
     if (listener) {
@@ -165,6 +169,7 @@ Player::Player(
     }
     ++playerWorkers;
     spectrum.release();
+    fft.release();
 }
 
 Player::~Player() {
@@ -636,16 +641,17 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
     auto* specVis = dynamic_cast<ISpectrumVisualizer*>(visualizer);
     auto* pcmVis = dynamic_cast<IPcmVisualizer*>(visualizer);
 
-    if (specVis && specVis->Visible()) {
-        if (!fftContext) {
-            fftContext = new FftContext();
-        }
-
-        if (performFft(buffer, fftContext, spectrum, FFT_N / 2)) {
+    const bool renderSpectrum = specVis && specVis->Visible();
+    const bool captureSpectrum = vis::SpectrumEnabled();
+    if ((renderSpectrum || captureSpectrum) && performFft(buffer, fftContext, spectrum, FFT_N / 2)) {
+        if (renderSpectrum) {
             specVis->Write(spectrum, FFT_N / 2);
         }
+        if (captureSpectrum) {
+            vis::PublishSpectrum(spectrum, static_cast<uint32_t>(buffer->SampleRate()));
+        }
     }
-    else if (pcmVis && pcmVis->Visible()) {
+    if (pcmVis && pcmVis->Visible()) {
         pcmVis->Write(buffer);
     }
 

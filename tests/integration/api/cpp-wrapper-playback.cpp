@@ -553,11 +553,13 @@ namespace wrapper_tests {
             engineTrack->ClearValue(MC_TRACK_FIELD_TITLE);
             engineTrack->SetValue(MC_TRACK_FIELD_TITLE, playbackTitle);
             engineTrack->ClearValue(MC_TRACK_FIELD_ALBUM);
+            engineTrack->ClearValue(MC_TRACK_FIELD_GENRE);
+            engineTrack->SetValue(MC_TRACK_FIELD_GENRE, "Playback genre");
             stateTransport->state = sdk::PlaybackState::Stopped;
             stateTransport->stream = sdk::StreamState::Buffered;
             const auto metadata = statePlayback.CurrentTrackMetadata();
             if (!metadata || metadata->Id() != result.Id(1) ||
-                metadata->Title() != playbackTitle || !metadata->Album().empty())
+                metadata->Title() != playbackTitle || !metadata->Album().empty() || metadata->Genre() != "Playback genre")
             {
                 return playbackFailure(__LINE__);
             }

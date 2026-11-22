@@ -55,6 +55,7 @@ namespace musik { namespace core { namespace library { namespace query {
         PlayCountAsc = 11,
         PlayCountDesc = 12,
         Genre = 13,
+        Duration = 14,
     };
 
     static const std::map<TrackSortType, std::string> kTrackListSortOrderBy = {
@@ -72,6 +73,7 @@ namespace musik { namespace core { namespace library { namespace query {
         { TrackSortType::PlayCountAsc, "tracks.play_count ASC" },
         { TrackSortType::PlayCountDesc, "tracks.play_count DESC" },
         { TrackSortType::Genre, "gn.name, al.name, disc, track, ar.name" },
+        { TrackSortType::Duration, "tracks.duration ASC, tracks.title, ar.name, al.name" },
     };
 
     static const std::map<TrackSortType, std::string> kTrackSearchSortOrderByPredicate {

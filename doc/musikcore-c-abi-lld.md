@@ -658,6 +658,17 @@ release-candidate quality.
   Album-divider Play and Add use a generation-bound category result.
   `musikcube.ui.browse` exercises album queue insertion, and
   `musikcore.abi.remote_query_transport` holds an album reply across a reconnect.
+- [x] Bound pending typed queries per remote connection. The default is 64.
+  Explicit remote sessions can override it via `mc_remote_options.max_pending_queries`.
+  `musikcore.abi.remote_query_transport` verifies default admission and
+  `musikcore.integration.api.managed_remote` exercises a custom session limit.
+
+- [x] Include the playing track's loaded genre in its metadata page without a
+  catalog query. The existing field positions are preserved.
+  `musikcore.integration.api.production.playback_commands` covers this projection.
+
+- [x] Expose the selected visualizer's current visibility through the C API.
+  `musikcore.integration.runtime.visualizer_session` covers show and shutdown.
 
 ## Foundation validation and baselines
 
@@ -1198,6 +1209,9 @@ legacy list for actions that still require it.
   for indexer commands, directory paths, and dispatch notifications.
 - [x] **MIG-008** Migrate environment/output/equalizer consumers.
   The visualizer chooser and hotkey use the public visualizer API.
+  The inline WinUI meter pulls a copied FFT spectrum from the C API.
+  `musikcore.integration.transport.gapless_pcm` verifies bin levels and
+  sample rate from headless playback without opening a visualizer plugin.
   `musikcore.integration.plugin.playback_reload` and `musikcube.ui.browse`
   cover an installation without a visualizer plugin.
   The equalizer overlay subscribes to public dispatch for live updates.

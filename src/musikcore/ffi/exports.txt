@@ -143,5 +143,8 @@ mc_track_result_read_async
 mc_track_result_starts_album
 mc_track_set_rating_async
 mc_visualizer_hide
+mc_visualizer_is_visible
 mc_visualizer_list
+mc_visualizer_read_spectrum
+mc_visualizer_set_spectrum_enabled
 mc_visualizer_show

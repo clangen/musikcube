@@ -98,11 +98,16 @@ namespace runtime_tests {
         const auto read = [](void* data, const mc_string_view*, size_t size) {
             *static_cast<size_t*>(data) = size;
         };
-        if (!TEST_CHECK(mc_visualizer_list(read, &count) == MC_OK && count == 1) ||
+        bool visible = true;
+        if (!TEST_CHECK(mc_visualizer_is_visible(nullptr) == MC_ERROR_INVALID_ARGUMENT) ||
+            !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && !visible) ||
+            !TEST_CHECK(mc_visualizer_list(read, &count) == MC_OK && count == 1) ||
             !TEST_CHECK(mc_visualizer_show(0) == MC_OK) ||
+            !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && visible) ||
             !TEST_CHECK(context.Close() == MC_OK) ||
             !TEST_CHECK(preferences->GetInt("hides") == 1 && preferences->GetInt("releases") == 1) ||
-            !TEST_CHECK(mc_visualizer_hide() == MC_ERROR_NOT_FOUND))
+            !TEST_CHECK(mc_visualizer_hide() == MC_ERROR_NOT_FOUND) ||
+            !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && !visible))
         {
             return false;
         }

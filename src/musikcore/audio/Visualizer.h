@@ -41,6 +41,8 @@
 namespace musik { namespace core { namespace audio { namespace vis {
 
     musik::core::sdk::IVisualizer* SelectedVisualizer();
+    bool SpectrumEnabled();
+    void PublishSpectrum(const float* bins, uint32_t sampleRate);
     void Shutdown();
 
 } } } }

@@ -118,7 +118,7 @@ MC_API mc_result MC_CALL mc_playback_get_snapshot(const mc_playback *playback, m
 MC_API mc_result MC_CALL mc_playback_get_current_track(const mc_playback* playback, mc_track_ref** out_track);
 
 /* On the owner thread, copy the active or buffering track's loaded title, artist,
-   album, and duration into an owned one-row page. Pass an empty output slot.
+   album, duration, and genre into an owned one-row page. Pass an empty output slot.
    No catalog I/O is performed. Returns MC_ERROR_NOT_FOUND when there is no
    active track or its origin is unavailable.
    Release the page with mc_track_page_destroy. */

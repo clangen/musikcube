@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <array>
 #include <cctype>
 #include <string_view>
 
@@ -53,6 +54,12 @@ namespace {
     std::vector<std::shared_ptr<IVisualizer>> visualizers;
     std::atomic<IVisualizer*> selectedVisualizer { nullptr };
     bool initialized = false;
+    std::atomic<bool> spectrumEnabled { false };
+    std::atomic<uint64_t> spectrumVersion { 0 };
+    uint64_t enabledVersion = 0;
+    std::atomic<uint32_t> spectrumSampleRate { 0 };
+    std::array<std::atomic<float>, MC_VISUALIZER_SPECTRUM_BINS> spectrum {};
+    static_assert(std::atomic<float>::is_always_lock_free);
 
     std::string normalizedName(IVisualizer& visualizer) {
         std::string name = visualizer.Name();
@@ -87,7 +94,61 @@ IVisualizer* vis::SelectedVisualizer() {
     return selectedVisualizer.load();
 }
 
+bool vis::SpectrumEnabled() {
+    return spectrumEnabled.load(std::memory_order_relaxed);
+}
+
+void vis::PublishSpectrum(const float* bins, uint32_t sampleRate) {
+    auto version = spectrumVersion.load(std::memory_order_relaxed);
+    /* Concurrent crossfade workers skip a frame when another writer is active. */
+    if ((version & 1) || !spectrumVersion.compare_exchange_strong(version, version + 1,
+        std::memory_order_acq_rel))
+    {
+        return;
+    }
+    spectrumSampleRate.store(sampleRate, std::memory_order_relaxed);
+    for (size_t i = 0; i < spectrum.size(); ++i) {
+        spectrum[i].store(bins[i], std::memory_order_relaxed);
+    }
+    spectrumVersion.store(version + 2, std::memory_order_release);
+}
+
+mc_result MC_CALL mc_visualizer_set_spectrum_enabled(bool enabled) {
+    if (enabled && !vis::SpectrumEnabled()) {
+        enabledVersion = spectrumVersion.load(std::memory_order_acquire);
+    }
+    spectrumEnabled.store(enabled, std::memory_order_relaxed);
+    return MC_OK;
+}
+
+mc_result MC_CALL mc_visualizer_read_spectrum(float* bins, size_t capacity, uint32_t* sampleRate) {
+    if (!bins || capacity < spectrum.size() || !sampleRate) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    const auto version = spectrumVersion.load(std::memory_order_acquire);
+    if (!vis::SpectrumEnabled() || version == enabledVersion) {
+        return MC_ERROR_NOT_FOUND;
+    }
+    if (version & 1) {
+        return MC_ERROR_BUSY;
+    }
+
+    std::array<float, MC_VISUALIZER_SPECTRUM_BINS> snapshot;
+    const auto rate = spectrumSampleRate.load(std::memory_order_relaxed);
+    for (size_t i = 0; i < spectrum.size(); ++i) {
+        snapshot[i] = spectrum[i].load(std::memory_order_relaxed);
+    }
+    std::atomic_thread_fence(std::memory_order_acquire);
+    if (spectrumVersion.load(std::memory_order_relaxed) != version) {
+        return MC_ERROR_BUSY;
+    }
+    std::copy(snapshot.begin(), snapshot.end(), bins);
+    *sampleRate = rate;
+    return MC_OK;
+}
+
 void vis::Shutdown() {
+    spectrumEnabled.store(false, std::memory_order_relaxed);
     if (auto* selected = selectedVisualizer.exchange(nullptr)) {
         selected->Hide();
     }
@@ -140,6 +201,17 @@ mc_result MC_CALL mc_visualizer_hide() {
         }
 
         selected->Hide();
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL mc_visualizer_is_visible(bool* outVisible) {
+    if (!outVisible) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        auto* selected = selectedVisualizer.load();
+        *outVisible = selected && selected->Visible();
         return MC_OK;
     });
 }

@@ -24,7 +24,7 @@ namespace {
         if (sqlite3_exec(raw,
             "CREATE TABLE tracks(id INTEGER PRIMARY KEY, title TEXT, visible INTEGER, duration INTEGER,"
             "visual_artist_id INTEGER, album_id INTEGER, visual_genre_id INTEGER, disc INTEGER, track INTEGER);"
-            "INSERT INTO tracks VALUES(1,'',1,1,1,1,1,1,1),(2,'',1,2,1,1,1,1,2),"
+            "INSERT INTO tracks VALUES(1,'',1,2,1,1,1,1,1),(2,'',1,1,1,1,1,1,2),"
             "(3,'',1,3,1,2,1,1,1),(4,'Hidden',0,4,1,2,1,1,2);"
             "CREATE TABLE artists(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO artists VALUES(1,'Artist');"
             "CREATE TABLE albums(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO albums VALUES(1,'A'),(2,'B');"
@@ -97,6 +97,19 @@ namespace {
             search.AlbumDurationSeconds(0) != 3 || search.AlbumDurationSeconds(2) != 3) return false;
         /* Reordered duplicates and a nonexistent positive ID detect SQL order
            leaking through the public result's saved membership. */
+        api::TrackResult byDuration;
+        api::OpenTrackSearch(context, library, { "", MC_TRACK_SEARCH_SUBSTRING, MC_TRACK_SEARCH_DURATION },
+            [&](mc_result result, api::TrackResult value, std::string_view) {
+                ++calls;
+                status = result;
+                byDuration = std::move(value);
+            });
+        if (!dispatch(3) || status != MC_OK || byDuration.Size() != 3 ||
+            byDuration.Id(0) != 2 || byDuration.Id(1) != 1 || byDuration.Id(2) != 3)
+        {
+            return false;
+        }
+
         reference = search.Track(0);
         const int64_t ids[] = {2, 1, 2, 999, 3};
         ordered = api::MakeTrackResult(library, ids, 5);

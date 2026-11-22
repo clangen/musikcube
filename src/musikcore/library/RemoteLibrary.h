@@ -63,6 +63,8 @@ namespace musik { namespace core { namespace library {
             static constexpr int DefaultWebSocketPort = 7905;
             static constexpr int DefaultHttpPort = 7906;
 
+            static constexpr uint64_t DefaultMaxPendingQueries = 64;
+
             using Client = musik::core::net::WebSocketClient;
             using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
             using MessageQueue = musik::core::runtime::IMessageQueue;
@@ -85,7 +87,7 @@ namespace musik { namespace core { namespace library {
             using OptionsProvider = std::function<ConnectionOptions()>;
 
             RemoteLibrary(std::string name, int id, MessageQueue* messageQueue,
-                OptionsProvider options, bool reconnect);
+                OptionsProvider options, bool reconnect, uint64_t maxPendingQueries = DefaultMaxPendingQueries);
             RemoteLibrary(const RemoteLibrary&) = delete;
 
             virtual ~RemoteLibrary();
@@ -153,6 +155,7 @@ namespace musik { namespace core { namespace library {
 
             const OptionsProvider options;
             const bool reconnect;
+            const uint64_t maxPendingQueries;
             QueryList queryQueue;
 
             musik::core::runtime::IMessageQueue* messageQueue;
