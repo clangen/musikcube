@@ -535,9 +535,22 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
     }
     else if (type == MESSAGE_RELOAD_OUTPUT) {
+        /* read stream first: startup may publish Playing between these calls,
+        and either observation must retain the pending playback intent. */
+        const auto stream = this->transport->GetStreamState();
         const auto state = this->GetPlaybackState();
         const auto index = this->GetIndex();
         const double time = this->GetPosition();
+        /* startup can still report Stopped while its stream buffers. preserve
+        the requested mode so reloading cannot cancel Play or autoplay Prepare. */
+        const bool pendingStart = state == PlaybackState::Stopped &&
+            (stream == StreamState::Buffering || stream == StreamState::Buffered);
+        auto startMode = this->requestedStartMode;
+        if (!pendingStart) {
+            startMode = (state == PlaybackState::Paused || state == PlaybackState::Prepared)
+                ? ITransport::StartMode::Wait
+                : ITransport::StartMode::Immediate;
+        }
 
         /* we generally have a MasterTransport available, but apps may
         choose to implement their own transport and use it instead, so
@@ -556,16 +569,11 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             }
         }
 
-        if (state != PlaybackState::Stopped) {
+        if (state != PlaybackState::Stopped || pendingStart) {
             this->Stop();
             this->transport->ReloadOutput();
 
             if (index != NO_POSITION) {
-                const auto startMode =
-                    (state != PlaybackState::Paused && state != PlaybackState::Prepared)
-                        ? ITransport::StartMode::Immediate
-                        : ITransport::StartMode::Wait;
-
                 this->PlayAt(index, startMode);
                 if (time > 0.0f) {
                     this->transport->SetPosition(time);
@@ -871,6 +879,7 @@ void PlaybackService::PlayAt(size_t index, ITransport::StartMode mode) {
     const auto gain = this->GainAtIndex(index);
 
     if (uri.size()) {
+        this->requestedStartMode = mode;
         transport->Start(uri, gain, mode);
         this->nextIndex = NO_POSITION;
         this->index = index;

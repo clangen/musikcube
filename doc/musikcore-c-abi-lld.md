@@ -1178,7 +1178,9 @@ This completed pilot is not a second migration backlog.
   kind per callback on the owner thread with optional filters and coalescing
   of repeated kinds. `musikcore.integration.api.production.playback_commands`
   covers independent subscribers, filter ownership, cross-thread replacement
-  and unsubscription, in-flight delivery, and scoped teardown.
+  and unsubscription, in-flight delivery, and scoped teardown. It also verifies
+  output reload during Buffering/Buffered startup for Immediate and Wait modes,
+  getter transitions during startup, and that explicit Stop never restarts.
 - [x] **PUB-005** Add queue snapshots and commands for existing queue edits.
   Move, remove, and clear commands power the Now Playing keyboard editor.
   Track Search inserts tracks through origin-bound references. Now Playing

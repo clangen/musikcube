@@ -48,10 +48,82 @@ namespace wrapper_tests {
             });
         if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || result.Size() != 2) return playbackFailure(__LINE__);
 
-        runtime::MessageQueue queue;
-        const auto transport = std::make_shared<TestTransport>();
         Preferences::ForComponent(musik::core::prefs::components::Settings)
             ->SetBool(musik::core::prefs::keys::SaveSessionOnExit, false);
+
+        /* hold startup before its playback-state transition so output reload always overlaps the
+        pending stream, independently of decoder speed and host scheduling. */
+        for (const auto mode : { audio::ITransport::StartMode::Immediate, audio::ITransport::StartMode::Wait }) {
+            for (const auto stream : { sdk::StreamState::Buffering, sdk::StreamState::Buffered }) {
+                runtime::MessageQueue reloadMessages;
+                const auto reloadTransport = std::make_shared<TestTransport>();
+                audio::PlaybackService reloadService(reloadMessages, local, reloadTransport);
+                reloadMessages.Dispatch();
+                auto reloadPlayback = OpenFixturePlayback(reloadService);
+                reloadTransport->holdStartup = true;
+                if (reloadPlayback.Play(result, 1) != MC_OK) {
+                    return playbackFailure(__LINE__);
+                }
+                if (mode == audio::ITransport::StartMode::Wait) {
+                    reloadService.Prepare(1);
+                }
+                reloadTransport->stream = stream;
+                const auto starts = reloadTransport->starts;
+                const auto uri = reloadTransport->uri;
+                if (reloadPlayback.Control(MC_PLAYBACK_RELOAD_OUTPUT) != MC_OK ||
+                    !AwaitTestHost(reloadMessages, [&] { return reloadTransport->reloads == 1; }) ||
+                    reloadTransport->starts != starts + 1 || reloadTransport->uri != uri ||
+                    reloadTransport->lastStartMode != mode || reloadService.GetIndex() != 1)
+                {
+                    std::fprintf(stderr,
+                        "startup reload: mode=%d stream=%d reloads=%u starts=%u expected=%u uri_preserved=%d\n",
+                        static_cast<int>(mode), static_cast<int>(stream), reloadTransport->reloads,
+                        reloadTransport->starts, starts + 1, reloadTransport->uri == uri);
+                    return playbackFailure(__LINE__);
+                }
+
+                /* an explicit stop retains the queue row but cancels startup intent. */
+                if (reloadPlayback.Control(MC_PLAYBACK_STOP) != MC_OK) {
+                    return playbackFailure(__LINE__);
+                }
+                const auto stoppedStarts = reloadTransport->starts;
+                if (reloadPlayback.Control(MC_PLAYBACK_RELOAD_OUTPUT) != MC_OK ||
+                    !AwaitTestHost(reloadMessages, [&] { return reloadTransport->reloads == 2; }) ||
+                    reloadTransport->starts != stoppedStarts ||
+                    reloadTransport->state != sdk::PlaybackState::Stopped)
+                {
+                    return playbackFailure(__LINE__);
+                }
+            }
+        }
+
+        /* finish startup between the two transport getters. a stale Stopped read must not cause
+        the following Playing stream read to discard the requested playback. */
+        {
+            runtime::MessageQueue reloadMessages;
+            const auto reloadTransport = std::make_shared<TestTransport>();
+            audio::PlaybackService reloadService(reloadMessages, local, reloadTransport);
+            reloadMessages.Dispatch();
+            auto reloadPlayback = OpenFixturePlayback(reloadService);
+            reloadTransport->holdStartup = true;
+            if (reloadPlayback.Play(result, 1) != MC_OK ||
+                reloadPlayback.Control(MC_PLAYBACK_RELOAD_OUTPUT) != MC_OK)
+            {
+                return playbackFailure(__LINE__);
+            }
+            reloadTransport->completeStartupOnStateRead = true;
+            if (!AwaitTestHost(reloadMessages, [&] { return reloadTransport->reloads == 1; }) ||
+                reloadTransport->starts != 2 || reloadTransport->uri.empty() ||
+                reloadTransport->lastStartMode != audio::ITransport::StartMode::Immediate)
+            {
+                std::fprintf(stderr, "startup transition reload: starts=%u uri_preserved=%d\n",
+                    reloadTransport->starts, !reloadTransport->uri.empty());
+                return playbackFailure(__LINE__);
+            }
+        }
+
+        runtime::MessageQueue queue;
+        const auto transport = std::make_shared<TestTransport>();
         std::optional<api::Playback> playback;
         {
             audio::PlaybackService service(queue, local, transport);

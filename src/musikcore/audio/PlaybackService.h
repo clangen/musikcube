@@ -245,6 +245,7 @@ namespace musik { namespace core { namespace audio {
             musik::core::ILibraryPtr library;
             std::shared_ptr<musik::core::audio::ITransport> transport;
             size_t index, nextIndex;
+            ITransport::StartMode requestedStartMode { ITransport::StartMode::Immediate };
 
             musik::core::sdk::RepeatMode repeatMode;
             musik::core::sdk::TimeChangeMode timeChangeMode;

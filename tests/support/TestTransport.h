@@ -11,7 +11,14 @@ public:
     /* Record the URI and model prepared versus playing state without decoding or opening a device. */
     void Start(const std::string& value, Gain, StartMode mode) override {
         uri = value;
-        state = mode == StartMode::Wait ? PlaybackState::Prepared : PlaybackState::Playing;
+        ++starts;
+        lastStartMode = mode;
+        state = holdStartup
+            ? PlaybackState::Stopped
+            : (mode == StartMode::Wait ? PlaybackState::Prepared : PlaybackState::Playing);
+        if (holdStartup) {
+            stream = StreamState::Buffering;
+        }
     }
     /* Ignore prefetch: these tests exercise playback commands and do not produce audio. */
     void PrepareNextTrack(const std::string&, Gain) override {}
@@ -40,10 +47,25 @@ public:
     bool IsMuted() override { return muted; }
     /* Record mute changes without touching hardware. */
     void SetMuted(bool value) override { muted = value; }
-    /* Ignore device reload requests because this fixture has no physical output. */
-    void ReloadOutput() override { ++reloads; }
+    /* model destructive output replacement while a test holds startup pending. */
+    void ReloadOutput() override {
+        ++reloads;
+        if (holdStartup) {
+            Stop();
+            uri.clear();
+        }
+    }
     /* Expose the transport state manipulated by commands and lifecycle cases. */
-    PlaybackState GetPlaybackState() override { return state; }
+    PlaybackState GetPlaybackState() override {
+        const auto result = state;
+        /* model startup completing after this getter releases its snapshot lock. */
+        if (completeStartupOnStateRead) {
+            completeStartupOnStateRead = false;
+            state = PlaybackState::Playing;
+            stream = StreamState::Playing;
+        }
+        return result;
+    }
     StreamState GetStreamState() override { return stream; }
 
     PlaybackState state = PlaybackState::Playing;
@@ -52,5 +74,9 @@ public:
     double volume = 0.5;
     bool muted = false;
     unsigned reloads = 0;
+    unsigned starts = 0;
+    bool holdStartup = false;
+    bool completeStartupOnStateRead = false;
+    StartMode lastStartMode = StartMode::Immediate;
     std::string uri;
 };
