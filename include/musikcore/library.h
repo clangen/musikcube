@@ -289,6 +289,30 @@ MC_API mc_result MC_CALL mc_library_list_categories_async(mc_context* context, c
     mc_string_view field, mc_string_view filter, mc_track_search_mode mode,
     mc_category_list_completion_fn completion, void* user_data, mc_request_id* out_request);
 
+typedef struct mc_album_entry {
+    /* ID scoped to the catalog. */
+    int64_t id;
+    /* Album name borrowed until the callback returns. */
+    mc_string_view title;
+    /* Album artist borrowed until the callback returns. */
+    mc_string_view artist;
+    /* Catalog-scoped cover ID. Zero means no artwork. */
+    int64_t thumbnail_id;
+} mc_album_entry;
+
+typedef void (MC_CALL *mc_album_list_completion_fn)(mc_result status, const mc_album_entry* albums,
+    size_t count, const mc_error* error, void* user_data);
+typedef void (MC_CALL *mc_thumbnail_completion_fn)(mc_result status, mc_byte_view image,
+    const mc_error* error, void* user_data);
+
+/* List albums and their cover IDs. The catalog and substring filter are captured at submission. */
+MC_API mc_result MC_CALL mc_library_list_albums_async(mc_context* context, const mc_library* library,
+    mc_string_view filter, mc_album_list_completion_fn completion, void* user_data, mc_request_id* out_request);
+/* Read encoded artwork by positive cover ID from the supplied catalog. Bytes
+   are valid only during completion. Missing artwork returns MC_ERROR_NOT_FOUND. */
+MC_API mc_result MC_CALL mc_library_read_thumbnail_async(mc_context* context, const mc_library* library,
+    int64_t thumbnail_id, mc_thumbnail_completion_fn completion, void* user_data, mc_request_id* out_request);
+
 /* Core owns entries, names, and error; valid only during the callback. Failure yields null
    entries and zero count. */
 typedef void (MC_CALL *mc_playlist_list_completion_fn)(

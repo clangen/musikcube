@@ -636,7 +636,7 @@ int HttpServer::HandleThumbnailRequest(
             long length = file->Length();
 
             response = MHD_create_response_from_callback(
-                length == 0 ? MHD_SIZE_UNKNOWN : length + 1,
+                length == 0 ? MHD_SIZE_UNKNOWN : length,
                 4096,
                 &fileReadCallback,
                 parseRange(file, nullptr),

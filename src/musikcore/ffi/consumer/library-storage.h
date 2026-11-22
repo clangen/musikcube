@@ -48,6 +48,8 @@ struct LibraryQueries {
     virtual mc_result ListCategoryFields(mc_context*, mc_category_fields_completion_fn, void*, mc_request_id*) const = 0;
     virtual mc_result ListCategories(mc_context*, std::string, std::string, mc_track_search_mode,
         mc_category_list_completion_fn, void*, mc_request_id*) const = 0;
+    virtual mc_result ListAlbums(mc_context*, std::string, mc_album_list_completion_fn, void*, mc_request_id*) const = 0;
+    virtual mc_result ReadThumbnail(int64_t, std::vector<uint8_t>&, const std::atomic_bool&) const = 0;
 };
 
 struct LibraryIdentity {

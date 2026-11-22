@@ -44,6 +44,7 @@
 #include <common/runtime/Message.h>
 #include <common/NarrowCast.h>
 #include <musikcore/debug.h>
+#include <musikcore/support/OnlineTransfer.h>
 
 #include <chrono>
 
@@ -477,6 +478,60 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
     };
 
     return "musikcore://remote-track/" + path.dump();
+}
+
+bool RemoteLibrary::ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes, size_t limit,
+    const std::atomic_bool& canceled)
+{
+    const std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), &curl_easy_cleanup);
+    if (!curl) {
+        return false;
+    }
+    const auto config = this->options();
+    const auto host = config.host.find(':') == std::string::npos ? config.host : "[" + config.host + "]";
+    const auto uri = (config.httpTls ? "https://" : "http://") + host + ":" +
+        std::to_string(config.httpPort) + "/thumbnail/" + std::to_string(id);
+    struct Transfer {
+        std::vector<uint8_t>& bytes;
+        size_t limit;
+    } transfer { bytes, limit };
+    auto* handle = curl.get();
+    curl_easy_setopt(handle, CURLOPT_URL, uri.c_str());
+    curl_easy_setopt(handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    curl_easy_setopt(handle, CURLOPT_USERNAME, "default");
+    curl_easy_setopt(handle, CURLOPT_PASSWORD, config.password.c_str());
+    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    musik::core::ConfigureOnlineTransfer(handle, canceled);
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, &transfer);
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION,
+        +[](char* data, size_t size, size_t count, void* opaque) -> size_t {
+            auto& transfer = *static_cast<Transfer*>(opaque);
+            const auto length = size * count;
+            if (length > transfer.limit - transfer.bytes.size()) {
+                return 0;
+            }
+            try {
+                const auto* begin = reinterpret_cast<const uint8_t*>(data);
+                transfer.bytes.insert(transfer.bytes.end(), begin, begin + length);
+                return length;
+            }
+            catch (...) {
+                return 0;
+            }
+        });
+    const auto result = curl_easy_perform(handle);
+    long response = 0;
+    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response);
+    if (response == 404) {
+        bytes.clear();
+        return true;
+    }
+    curl_off_t length = 0;
+    curl_easy_getinfo(handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &length);
+    /* Older thumbnail responses advertised an extra byte. */
+    return response == 200 && (result == CURLE_OK ||
+        (result == CURLE_PARTIAL_FILE && length == static_cast<curl_off_t>(bytes.size() + 1)));
 }
 
 /* RemoteLibrary */

@@ -103,6 +103,9 @@ namespace musik { namespace core { namespace library {
             Type GetType() const noexcept override { return Type::Remote; }
             void Close() override;
 
+            bool ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes, size_t limit,
+                const std::atomic_bool& canceled);
+
             /* IMessageTarget */
             void ProcessMessage(musik::core::runtime::IMessage &message) override;
 

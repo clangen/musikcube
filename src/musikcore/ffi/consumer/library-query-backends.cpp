@@ -9,6 +9,7 @@
 #include <musikcore/library/query/CategoryTrackListQuery.h>
 #include <musikcore/library/query/DirectoryTrackListQuery.h>
 #include <musikcore/library/query/CategoryListQuery.h>
+#include <musikcore/library/query/AlbumListQuery.h>
 #include <musikcore/library/query/AllCategoriesQuery.h>
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/DeletePlaylistQuery.h>
@@ -21,6 +22,8 @@
 #include "../common/error.h"
 #include "../common/primitives.h"
 
+#include <filesystem>
+#include <fstream>
 #include <unordered_set>
 
 namespace {
@@ -35,6 +38,30 @@ namespace {
 
     using PlaylistEntries = LibraryEntries<mc_playlist_entry>;
     using CategoryEntries = LibraryEntries<mc_category_entry>;
+    constexpr size_t MaxThumbnailBytes = 8 * 1024 * 1024;
+
+    struct AlbumEntries {
+        std::vector<std::string> titles;
+        std::vector<std::string> artists;
+        std::vector<mc_album_entry> entries;
+    };
+
+    mc_result collectAlbums(query::AlbumListQuery& command, std::unique_ptr<AlbumEntries>& output) {
+        auto albums = std::make_unique<AlbumEntries>();
+        const auto result = command.GetResult();
+        albums->titles.reserve(result->Count());
+        albums->artists.reserve(result->Count());
+        albums->entries.reserve(result->Count());
+        for (size_t i = 0; i < result->Count(); ++i) {
+            const auto entry = result->GetSharedAt(i);
+            const auto& title = albums->titles.emplace_back(entry->GetTypeValue());
+            const auto& artist = albums->artists.emplace_back(entry->Get(MC_TRACK_FIELD_ALBUM_ARTIST));
+            albums->entries.push_back({ entry->GetId(), { title.data(), title.size() },
+                { artist.data(), artist.size() }, entry->GetInt64(MC_TRACK_FIELD_THUMBNAIL_ID) });
+        }
+        output = std::move(albums);
+        return MC_OK;
+    }
 
     auto deliverStatus(mc_library_completion_fn completion) {
         return [completion](mc_result result, bool*, const mc_error* error, void* data) {
@@ -258,6 +285,37 @@ namespace {
                 collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
         }
 
+        mc_result ListAlbums(mc_context* context, std::string filter, mc_album_list_completion_fn completion,
+            void* data, mc_request_id* request) const override
+        {
+            return submitLocal<AlbumEntries>(context, this->library,
+                std::make_shared<query::AlbumListQuery>(filter), collectAlbums,
+                deliverEntries<AlbumEntries>(completion), data, request);
+        }
+
+        mc_result ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes,
+            const std::atomic_bool& canceled) const override
+        {
+            const auto file = std::filesystem::u8path(this->library->GetLibraryDirectory()) /
+                "thumbs" / (std::to_string(id) + ".jpg");
+            std::ifstream stream(file, std::ios::binary | std::ios::ate);
+            if (!stream) {
+                return MC_ERROR_NOT_FOUND;
+            }
+            const auto size = stream.tellg();
+            if (size <= 0 || size > static_cast<std::streamoff>(MaxThumbnailBytes)) {
+                return MC_ERROR_IO;
+            }
+            if (canceled.load()) {
+                return MC_ERROR_CANCELLED;
+            }
+            bytes.resize(static_cast<size_t>(size));
+            stream.seekg(0);
+            return stream.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size))
+                ? MC_OK
+                : MC_ERROR_IO;
+        }
+
         mc_result ListPlaylists(mc_context* context, mc_playlist_list_completion_fn completion,
             void* data, mc_request_id* request) const override {
             return submitLocal<PlaylistEntries>(context, this->library, listPlaylistsCommand(),
@@ -395,6 +453,26 @@ namespace {
             const auto command = std::make_shared<query::CategoryListQuery>(match, field, filter);
             return submitRemote<CategoryEntries>(context, this->library, this->generation, command,
                 collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
+        }
+
+        mc_result ListAlbums(mc_context* context, std::string filter, mc_album_list_completion_fn completion,
+            void* data, mc_request_id* request) const override
+        {
+            return submitRemote<AlbumEntries>(context, this->library, this->generation,
+                std::make_shared<query::AlbumListQuery>(filter), collectAlbums,
+                deliverEntries<AlbumEntries>(completion), data, request);
+        }
+
+        mc_result ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes,
+            const std::atomic_bool& canceled) const override
+        {
+            if (!this->Matches(this->library.get()) ||
+                !this->library->ReadThumbnail(id, bytes, MaxThumbnailBytes, canceled) ||
+                !this->Matches(this->library.get()))
+            {
+                return MC_ERROR_IO;
+            }
+            return bytes.empty() ? MC_ERROR_NOT_FOUND : MC_OK;
         }
 
         mc_result ListPlaylists(mc_context* context, mc_playlist_list_completion_fn completion,

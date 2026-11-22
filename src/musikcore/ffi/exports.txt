@@ -37,6 +37,7 @@ mc_library_append_playlist_async
 mc_library_create
 mc_library_delete_playlist_async
 mc_library_destroy
+mc_library_list_albums_async
 mc_library_list_categories_async
 mc_library_list_category_fields_async
 mc_library_list_playlists_async
@@ -46,6 +47,7 @@ mc_library_open_directory_async
 mc_library_open_playlist_async
 mc_library_open_track_search_async
 mc_library_query_tracks_async
+mc_library_read_thumbnail_async
 mc_library_rename_playlist_async
 mc_library_save_playlist_async
 mc_locale_list

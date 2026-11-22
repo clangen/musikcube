@@ -123,6 +123,61 @@ mc_result MC_CALL mc_context_get_library(const mc_context* context, mc_library**
     });
 }
 
+mc_result MC_CALL mc_library_list_albums_async(mc_context* context, const mc_library* library,
+    mc_string_view filter, mc_album_list_completion_fn completion, void* user_data, mc_request_id* out_request)
+{
+    if (!out_request) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    *out_request = 0;
+    if (!context || !completion || !valid_text(filter)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        if (!identity->queries) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        return identity->queries->ListAlbums(context, std::string(filter.data ? filter.data : "", filter.length),
+            completion, user_data, out_request);
+    });
+}
+
+mc_result MC_CALL mc_library_read_thumbnail_async(mc_context* context, const mc_library* library,
+    int64_t thumbnail_id, mc_thumbnail_completion_fn completion, void* user_data, mc_request_id* out_request)
+{
+    if (!out_request) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    *out_request = 0;
+    if (!context || !completion || thumbnail_id <= 0) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        if (!identity->queries) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        using Image = std::vector<uint8_t>;
+        return submitLibraryRequest<Image>(context,
+            [=](std::unique_ptr<Image>& output, const std::atomic_bool& canceled) {
+                output.reset(new Image);
+                return identity->queries->ReadThumbnail(thumbnail_id, *output, canceled);
+            },
+            [=](mc_result status, Image* bytes, const mc_error* error, void* data) {
+                const std::unique_ptr<Image> owned(bytes);
+                completion(status, bytes ? mc_byte_view { bytes->data(), bytes->size() } : mc_byte_view {},
+                    error, data);
+            }, user_data, out_request);
+    });
+}
+
 mc_result MC_CALL mc_track_set_rating_async(mc_context* context, const mc_track_ref* track, uint32_t rating,
     mc_library_completion_fn completion, void* user_data, mc_request_id* out_request)
 {
