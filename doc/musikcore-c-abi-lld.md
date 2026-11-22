@@ -636,6 +636,12 @@ release-candidate quality.
   connect, state access, disconnect, and generation-bound library opening.
   `musikcore.integration.api.backend_parity` uses the public session for
   loopback queries and checks retained results across reconnect.
+  `mc_remote_session_set_callback` observes an explicit session independently of
+  the selected library through context dispatch. Initial/current state may be
+  coalesced; replacement, removal, session destruction, and context shutdown
+  suppress queued delivery. `musikcore.integration.api.managed_remote` checks
+  those lifetimes, dispatcher delivery, and self-removal on macOS; Linux and
+  Windows execution remain pending for this extension.
 - [x] Supply Track Search with the same public library interface for either
   backend. The app binds its selected backend at the API boundary.
   `musikcore.abi.remote_query_transport` verifies that search results can

@@ -20,6 +20,12 @@ mc_remote_state MC_CALL mc_remote_session_state(const mc_remote_session*) {
     return MC_REMOTE_DISCONNECTED;
 }
 
+mc_result MC_CALL mc_remote_session_set_callback(mc_context*, mc_remote_session*,
+    mc_remote_state_fn, void*)
+{
+    return MC_ERROR_INVALID_ARGUMENT;
+}
+
 mc_result MC_CALL mc_remote_session_connect_async(mc_context*, mc_remote_session*,
     mc_remote_connect_fn, void*, mc_request_id* out_request)
 {

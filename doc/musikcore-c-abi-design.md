@@ -407,6 +407,13 @@ saved selection or connecting the configured remote. Selecting Remote or
 explicitly reconnecting authorizes that connection. Without the flag, normal
 configured-remote startup remains unchanged.
 
+Explicit sessions offer `mc_remote_session_set_callback` for current-state
+notifications even when another catalog is selected. Registration/removal and
+delivery use the context dispatcher thread. The initial snapshot and later
+states may coalesce to the latest state. Removing/replacing the observer,
+destroying the session, or shutting down the context discards queued delivery;
+the session may safely outlive its observing context.
+
 `MC_SERVICE_NONE` allows callers to open an existing read-only `mc_library` or
 `mc_remote_session` and attach a library with `mc_context_set_library`. A context
 owning Library uses `mc_context_select_library` instead. Without Library, managed
@@ -552,8 +559,9 @@ MC_API void MC_CALL mc_event_destroy(mc_event **event);
 
 An empty queue returns `MC_OK` with a null event. A delivered event is owned
 by the caller. Destroying it releases any payload the caller has not taken.
-State transitions and terminal indexer outcomes are lossless. Documented
-progress or invalidation notifications may be coalesced. A mutation is
+Ordered playback transitions and terminal indexer outcomes are lossless.
+Current-state remote notifications and documented progress or invalidation
+notifications may be coalesced. A mutation is
 committed before either its completion or its change notification is
 published. The two queues have no shared delivery order.
 

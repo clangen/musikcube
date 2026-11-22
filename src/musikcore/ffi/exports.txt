@@ -116,6 +116,7 @@ mc_remote_session_destroy
 mc_remote_session_disconnect
 mc_remote_session_open_library
 mc_remote_session_state
+mc_remote_session_set_callback
 mc_request_cancel
 mc_server_configure
 mc_server_read_configuration

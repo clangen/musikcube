@@ -9,6 +9,7 @@
 #include <vector>
 
 bool context_test_allocation_failures();
+bool context_test_notification_dispatch_without_allocations();
 
 namespace {
     struct State {
@@ -479,6 +480,7 @@ static bool check_playlist_dispatch(State& state) {
 /* Run each lifecycle case independently so context/thread state cannot leak between scenarios. */
 int main() {
     return context_test_allocation_failures() &&
+        context_test_notification_dispatch_without_allocations() &&
         run_check("completion and cancellation", check_dispatch) &&
         run_check("dispatch rearm", check_dispatch_rearm) &&
         run_check("queue capacity and wakeup coalescing", check_queue_capacity) &&

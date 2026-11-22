@@ -83,8 +83,11 @@ struct mc_context {
     bool equalizerNotificationPending = false;
     mc_library_changed_fn libraryChanged = nullptr;
     void* libraryChangedData = nullptr;
+    uint64_t librarySubscription = 0;
     bool libraryNotificationPending = false;
     bool librarySelectionChanged = false;
+    std::list<std::weak_ptr<musik::core::ffi::ContextNotification>> notifications;
+    std::list<std::weak_ptr<musik::core::ffi::ContextNotification>> notification_batch;
 
     std::list<Request> requests;
     std::list<Request> dispatch_batch;
@@ -246,6 +249,7 @@ namespace {
             : nullptr;
         const auto selectionChanged = context.librarySelectionChanged;
         auto* const libraryData = context.libraryChangedData;
+        const auto librarySubscription = context.librarySubscription;
         context.libraryNotificationPending = false;
         context.librarySelectionChanged = false;
 
@@ -266,15 +270,40 @@ namespace {
         const auto equalizerSubscription = context.equalizerSubscription;
         context.equalizerNotificationPending = false;
 
+        /* detach existing slots without allocating during dispatch. callbacks can
+        register fresh slots without invalidating this delivery batch. */
+        auto& notifications = context.notification_batch;
+        notifications.splice(notifications.end(), context.notifications);
+
         /* Rearm before invoking callbacks so concurrent producers can wake the next dispatch. */
         context.wakeup_pending = false;
         lock.unlock();
 
+        for (auto it = notifications.begin(); it != notifications.end();) {
+            if (const auto notification = it->lock()) {
+                notification->Deliver();
+                ++it;
+            }
+            else {
+                it = notifications.erase(it);
+            }
+        }
+        lock.lock();
+        context.notifications.splice(context.notifications.end(), notifications);
+        lock.unlock();
+
         if (notifyLibrary) {
-            musik::core::ffi::exception_barrier(nullptr, [&] {
-                notifyLibrary(libraryData, selectionChanged);
-                return MC_OK;
-            });
+            /* an earlier observer may replace/remove this callback and release
+            its user_data. only the captured subscription can receive this batch. */
+            lock.lock();
+            const bool subscribed = context.librarySubscription == librarySubscription;
+            lock.unlock();
+            if (subscribed) {
+                musik::core::ffi::exception_barrier(nullptr, [&] {
+                    notifyLibrary(libraryData, selectionChanged);
+                    return MC_OK;
+                });
+            }
         }
         for (const auto& event : indexerEvents) {
             lock.lock();
@@ -685,6 +714,7 @@ mc_result MC_CALL mc_context_set_library_changed_callback(
     if (context->stopping && callback) {
         return MC_ERROR_BUSY;
     }
+    ++context->librarySubscription;
     context->libraryChanged = callback;
     context->libraryChangedData = userData;
     context->libraryNotificationPending = false;
@@ -758,6 +788,83 @@ namespace musik { namespace core { namespace ffi {
     }
 
 } } }
+
+namespace {
+    /* owns a dispatch callback without retaining the context or its publisher.
+    registration, removal, and delivery share the host thread; Notify may run
+    on a producer thread after either owner has begun shutdown. */
+    class ExternalNotification final : public musik::core::ffi::ContextNotification {
+    public:
+        ExternalNotification(std::function<void()> callback, std::function<void()> wake)
+            : callback(std::move(callback)), wake(std::move(wake)) {}
+
+        void Notify() override {
+            if (this->active.load()) {
+                this->pending.store(true);
+                this->wake();
+            }
+        }
+
+        void Deactivate() override {
+            this->active.store(false);
+            this->pending.store(false);
+        }
+
+        void Deliver() override {
+            if (this->active.load() && this->pending.exchange(false)) {
+                musik::core::ffi::exception_barrier(nullptr, [&] {
+                    this->callback();
+                    return MC_OK;
+                });
+            }
+        }
+
+    private:
+        const std::function<void()> callback;
+        const std::function<void()> wake;
+        std::atomic<bool> active { true };
+        std::atomic<bool> pending { false };
+    };
+}
+
+mc_result musik::core::ffi::create_context_notification(mc_context* context,
+    std::function<void()> callback, std::shared_ptr<ContextNotification>& notification)
+{
+    if (!context || !callback) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        std::lock_guard<std::mutex> lock(context->mutex);
+        if (context->stopping) {
+            return MC_ERROR_BUSY;
+        }
+        const auto thread = std::this_thread::get_id();
+        if (context->dispatcher != std::thread::id {} && context->dispatcher != thread) {
+            return MC_ERROR_WRONG_THREAD;
+        }
+        const auto external = context->external;
+        auto wake = [external] {
+            std::unique_lock<std::mutex> lifetime(external->mutex);
+            auto* context = external->context;
+            if (!context) {
+                return;
+            }
+            std::unique_lock<std::mutex> lock(context->mutex);
+            const bool notify = select_wakeup(*context);
+            lock.unlock();
+            lifetime.unlock();
+            if (notify) {
+                signal_host(*context);
+            }
+        };
+        auto next = std::make_shared<ExternalNotification>(std::move(callback), std::move(wake));
+        context->notifications.remove_if([](const std::weak_ptr<ContextNotification>& weak) { return weak.expired(); });
+        context->notifications.push_back(next);
+        context->dispatcher = thread;
+        notification = std::move(next);
+        return MC_OK;
+    });
+}
 
 mc_result MC_CALL mc_context_create(
     const mc_context_options *options, mc_context **out_context, mc_error **out_error) {
@@ -958,6 +1065,11 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
             return MC_ERROR_BUSY;
         }
         context->stopping = true;
+        for (const auto& weak : context->notifications) {
+            if (const auto notification = weak.lock()) {
+                notification->Deactivate();
+            }
+        }
         if (context->active_cancel) {
             context->active_cancel->store(true);
         }

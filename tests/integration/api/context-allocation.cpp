@@ -1,4 +1,5 @@
 #include <musikcore/context.h>
+#include "request.h"
 #include <cstdio>
 #include <cstdlib>
 #include <new>
@@ -62,6 +63,36 @@ bool context_test_allocation_failures() {
     }
     if (failures < 3 || successes == 0) {
         std::fprintf(stderr, "allocation fault sweep: %u failures, %u successes\n", failures, successes);
+        return false;
+    }
+    return true;
+}
+
+/* ready notifications must remain deliverable under allocation pressure; dispatch
+must not strand the context after detaching callbacks from its pending batch. */
+bool context_test_notification_dispatch_without_allocations() {
+    mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
+    options.services = MC_SERVICE_NONE;
+    mc_context* context = nullptr;
+    if (mc_context_create(&options, &context, nullptr) != MC_OK) {
+        return false;
+    }
+    unsigned calls = 0;
+    std::shared_ptr<musik::core::ffi::ContextNotification> notification;
+    const auto registered = musik::core::ffi::create_context_notification(context, [&] { ++calls; }, notification);
+    if (registered != MC_OK) {
+        mc_context_destroy(&context);
+        return false;
+    }
+    notification->Notify();
+    allocationsUntilFailure = 0;
+    const auto status = mc_context_dispatch(context);
+    allocationsUntilFailure = -1;
+    const bool delivered = status == MC_OK && calls == 1 && mc_context_dispatch(context) == MC_OK;
+    const auto destroyed = mc_context_destroy(&context);
+    if (!delivered || destroyed != MC_OK) {
+        std::fprintf(stderr, "notification dispatch allocated or lost its callback: status=%d calls=%u destroy=%d\n",
+            status, calls, destroyed);
         return false;
     }
     return true;

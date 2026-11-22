@@ -45,6 +45,13 @@ struct mc_remote_session {
     }
 
     ~mc_remote_session() {
+        {
+            std::lock_guard<std::mutex> lock(this->mutex);
+            if (this->observer) {
+                this->observer->Deactivate();
+                this->observer.reset();
+            }
+        }
         this->Disconnect();
         this->stopping.store(true);
         this->queue->WakeWaiters();
@@ -59,6 +66,15 @@ struct mc_remote_session {
     }
 
     void OnState(State state) {
+        std::shared_ptr<musik::core::ffi::ContextNotification> observer;
+        {
+            std::lock_guard<std::mutex> lock(this->mutex);
+            this->observedState->store(publicState(state));
+            observer = this->observer;
+        }
+        if (observer) {
+            observer->Notify();
+        }
         const auto socket = this->library->WebSocketClient().ConnectionState();
         if (state == State::Connected && socket == RemoteLibrary::Client::State::Connected) {
             this->Complete(MC_OK, MC_REMOTE_CONNECTED);
@@ -83,12 +99,51 @@ struct mc_remote_session {
     const std::shared_ptr<RemoteLibrary> library;
     std::mutex mutex;
     std::function<void(mc_result, mc_remote_state)> pending;
+    const std::shared_ptr<std::atomic<mc_remote_state>> observedState =
+        std::make_shared<std::atomic<mc_remote_state>>(MC_REMOTE_DISCONNECTED);
+    std::shared_ptr<musik::core::ffi::ContextNotification> observer;
     std::atomic<bool> stopping { false };
     std::thread pump;
     musik::core::api::Subscriptions<State>::Connection stateChanged;
 };
 
 using namespace musik::core::ffi;
+
+mc_result MC_CALL mc_remote_session_set_callback(mc_context* context, mc_remote_session* session,
+    mc_remote_state_fn callback, void* userData)
+{
+    if (!context || !session) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        const auto state = session->observedState;
+        std::shared_ptr<ContextNotification> next;
+        const auto status = create_context_notification(context, [state, callback, userData] {
+            if (callback) {
+                callback(userData, state->load());
+            }
+        }, next);
+        if (status != MC_OK) {
+            return status;
+        }
+        {
+            std::lock_guard<std::mutex> lock(session->mutex);
+            if (session->observer) {
+                session->observer->Deactivate();
+            }
+            if (!callback) {
+                next->Deactivate();
+                session->observer.reset();
+                return MC_OK;
+            }
+            session->observedState->store(publicState(session->library->GetConnectionState()));
+            session->observer = next;
+        }
+        /* the snapshot is queued, never delivered inline during registration. */
+        next->Notify();
+        return MC_OK;
+    });
+}
 
 mc_result MC_CALL mc_remote_session_create(const mc_remote_options *options, mc_remote_session **out_session) {
     if (!out_session || *out_session || !options || options->struct_size < offsetof(mc_remote_options, http_tls_allow_untrusted_certificate) ||

@@ -45,6 +45,19 @@ namespace musik { namespace core { namespace ffi {
     std::unique_ptr<ContextRuntime> make_context_runtime();
     void wake_context(mc_context& context);
 
+    /* routes a coalesced external event to its context's dispatcher. publishers
+    may outlive the context; deactivation discards queued delivery. */
+    class ContextNotification {
+    public:
+        virtual ~ContextNotification() = default;
+        virtual void Notify() = 0;
+        virtual void Deactivate() = 0;
+        virtual void Deliver() = 0;
+    };
+
+    mc_result create_context_notification(mc_context* context, std::function<void()> callback,
+        std::shared_ptr<ContextNotification>& notification);
+
     struct LibraryStatus {
         mc_library_kind kind = MC_LIBRARY_NONE;
         mc_library_connection_state state = MC_LIBRARY_DISCONNECTED;

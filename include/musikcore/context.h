@@ -163,7 +163,7 @@ MC_API mc_result MC_CALL mc_context_set_library_changed_callback(
 MC_API mc_result MC_CALL mc_context_get_playback(const mc_context* context, mc_playback** out_playback);
 
 /* When services are selected, create binds the dispatcher thread. Otherwise, the
-   first dispatch or shutdown binds its thread. Ready callbacks run inline,
+   first dispatch, remote observer registration, or shutdown binds its thread. Ready callbacks run inline,
    outside internal locks. reentrant dispatch returns MC_ERROR_BUSY. dispatch
    from another thread after binding returns MC_ERROR_WRONG_THREAD.
    callbacks may submit or cancel requests. shutdown and destruction from a

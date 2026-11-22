@@ -1168,10 +1168,124 @@ namespace {
         remoteOptions.host = { "127.0.0.1", 9 };
         remoteOptions.websocket_port = explicitServer.Port();
         remoteOptions.max_pending_queries = 1;
+        /* destroying a session retires its queued initial snapshot. */
+        bool destroyedCalled = false;
+        {
+            RemoteSession retired(remoteOptions);
+            if (retired.SetCallback(context, [&](mc_remote_state) { destroyedCalled = true; }) != MC_OK) {
+                return failure(__LINE__);
+            }
+        }
+        if (context.Dispatch() != MC_OK || destroyedCalled) {
+            return failure(__LINE__);
+        }
+        /* moving transfers stable callback storage; assignment first retires
+        the destination's previously queued observer. */
+        bool movedCalled = false;
+        bool displacedCalled = false;
+        {
+            RemoteSession moving(remoteOptions);
+            if (moving.SetCallback(context, [&](mc_remote_state) { movedCalled = true; }) != MC_OK) {
+                return failure(__LINE__);
+            }
+            RemoteSession transferred(std::move(moving));
+            RemoteSession destination(remoteOptions);
+            if (destination.SetCallback(context, [&](mc_remote_state) { displacedCalled = true; }) != MC_OK) {
+                return failure(__LINE__);
+            }
+            destination = std::move(transferred);
+            if (context.Dispatch() != MC_OK || !movedCalled || displacedCalled) {
+                return failure(__LINE__);
+            }
+        }
         RemoteSession session(remoteOptions);
+        /* both subscriptions may be pending together. replacing/removing the
+        library observer from an earlier remote callback must retire the old
+        callback, rather than invoking its potentially freed user_data. */
+        for (const bool replace : { false, true }) {
+            bool retiredLibraryCalled = false;
+            bool replacementLibraryCalled = false;
+            bool replaced = false;
+            const mc_library_changed_fn markLibrary = [](void* data, bool) {
+                *static_cast<bool*>(data) = true;
+            };
+            if (context.SetLibraryChangedCallback(markLibrary, &retiredLibraryCalled) != MC_OK ||
+                session.SetCallback(context, [&](mc_remote_state) {
+                    replaced = context.SetLibraryChangedCallback(replace ? markLibrary : nullptr,
+                        replace ? &replacementLibraryCalled : nullptr) == MC_OK;
+                }) != MC_OK)
+            {
+                return failure(__LINE__);
+            }
+            const auto target = context.GetLibraryStatus().kind == MC_LIBRARY_LOCAL
+                ? MC_LIBRARY_REMOTE
+                : MC_LIBRARY_LOCAL;
+            if (context.SelectLibrary(target) != MC_OK || context.Dispatch() != MC_OK ||
+                !replaced || retiredLibraryCalled || replacementLibraryCalled ||
+                session.SetCallback(context, {}) != MC_OK)
+            {
+                std::fprintf(stderr, "reentrant library replacement=%d retired=%d new=%d\n",
+                    replaced, retiredLibraryCalled, replacementLibraryCalled);
+                return failure(__LINE__);
+            }
+            /* the replacement starts receiving only fresh notifications. */
+            if (replace &&
+                (context.SelectLibrary(target == MC_LIBRARY_LOCAL ? MC_LIBRARY_REMOTE : MC_LIBRARY_LOCAL) != MC_OK ||
+                    context.Dispatch() != MC_OK || !replacementLibraryCalled))
+            {
+                return failure(__LINE__);
+            }
+            if (context.SetLibraryChangedCallback(nullptr) != MC_OK) {
+                return failure(__LINE__);
+            }
+        }
+        /* an unselected session must wake the host and deliver on dispatch,
+        independently of the context's selected-library notification. */
+        std::vector<mc_remote_state> states;
+        const auto owner = std::this_thread::get_id();
+        bool wrongThread = false;
+        if (session.SetCallback(context, [&](mc_remote_state state) {
+            wrongThread |= std::this_thread::get_id() != owner;
+            states.push_back(state);
+        }) != MC_OK || !states.empty() || !wait([&] { return !states.empty(); }) ||
+            states.back() != MC_REMOTE_DISCONNECTED)
+        {
+            return failure(__LINE__);
+        }
+        /* a foreign thread cannot replace the dispatcher subscription. */
+        mc_result foreignStatus = MC_OK;
+        bool foreignCalled = false;
+        std::thread foreign([&] {
+            foreignStatus = session.SetCallback(context, [&](mc_remote_state) { foreignCalled = true; });
+        });
+        foreign.join();
+        if (foreignStatus != MC_ERROR_WRONG_THREAD || foreignCalled) {
+            return failure(__LINE__);
+        }
         completed.reset();
         session.Connect(context, [&](mc_result result, mc_remote_state, std::string_view) { completed = result; });
         if (!wait([&] { return completed.has_value(); }) || completed != MC_OK) {
+            return failure(__LINE__);
+        }
+
+        if (!wait([&] { return !states.empty() && states.back() == MC_REMOTE_CONNECTED; }) || wrongThread) {
+            return failure(__LINE__);
+        }
+        /* replacing an observer discards queued delivery to the old callback. */
+        bool retiredCalled = false;
+        if (session.SetCallback(context, [&](mc_remote_state) { retiredCalled = true; }) != MC_OK ||
+            session.SetCallback(context, {}) != MC_OK || context.Dispatch() != MC_OK || retiredCalled)
+        {
+            return failure(__LINE__);
+        }
+        /* self-removal is safe even though the C++ wrapper owns the closure. */
+        bool removed = false;
+        if (session.SetCallback(context, [&](mc_remote_state) {
+            removed = session.SetCallback(context, {}) == MC_OK;
+        }) != MC_OK || !wait([&] { return removed; })) {
+            return failure(__LINE__);
+        }
+        if (session.SetCallback(context, [&](mc_remote_state state) { states.push_back(state); }) != MC_OK) {
             return failure(__LINE__);
         }
 
@@ -1204,7 +1318,8 @@ namespace {
             return failure(__LINE__);
         }
         if (session.Disconnect() != MC_OK ||
-            !wait([&] { return context.GetLibraryStatus().state == MC_LIBRARY_DISCONNECTED; }))
+            !wait([&] { return context.GetLibraryStatus().state == MC_LIBRARY_DISCONNECTED &&
+                states.back() == MC_REMOTE_DISCONNECTED; }))
         {
             return failure(__LINE__);
         }
@@ -1216,7 +1331,15 @@ namespace {
         {
             return failure(__LINE__);
         }
-        return context.Shutdown() == MC_OK;
+        /* a caller-owned session can outlive its context without retaining
+        host callback state or delivering a queued initial notification. */
+        bool afterShutdown = false;
+        if (session.SetCallback(context, [&](mc_remote_state) { afterShutdown = true; }) != MC_OK ||
+            context.Close() != MC_OK || afterShutdown || session.Disconnect() != MC_OK)
+        {
+            return failure(__LINE__);
+        }
+        return !afterShutdown;
     }
 }
 

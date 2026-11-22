@@ -370,13 +370,31 @@ namespace musik { namespace core { namespace api {
         RemoteSession(const RemoteSession&) = delete;
         RemoteSession(RemoteSession&&) noexcept = default;
         RemoteSession& operator=(const RemoteSession&) = delete;
-        RemoteSession& operator=(RemoteSession&&) noexcept = default;
+        RemoteSession& operator=(RemoteSession&& other) noexcept {
+            if (this != &other) {
+                this->session.reset();
+                this->observer = std::move(other.observer);
+                this->session = std::move(other.session);
+            }
+            return *this;
+        }
 
         mc_request_id Connect(Context& context, ConnectCompletion completion) {
             return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
                 return mc_remote_session_connect_async(context.Get(), this->session.get(),
                     CompleteConnect, state, request);
             });
+        }
+
+        /* observers run only on context dispatch and may remove themselves. */
+        mc_result SetCallback(Context& context, std::function<void(mc_remote_state)> callback) {
+            auto next = callback ? std::make_unique<std::function<void(mc_remote_state)>>(std::move(callback)) : nullptr;
+            const auto status = mc_remote_session_set_callback(context.Get(), this->session.get(),
+                next ? Changed : nullptr, next.get());
+            if (status == MC_OK) {
+                this->observer = std::move(next);
+            }
+            return status;
         }
 
         mc_remote_state State() const noexcept { return mc_remote_session_state(this->session.get()); }
@@ -404,6 +422,14 @@ namespace musik { namespace core { namespace api {
             (*completion)(status, state, AsStringView(mc_error_get_message(error)));
         }
 
+        static void MC_CALL Changed(void* data, mc_remote_state state) {
+            /* removal or session destruction inside the callback can release its
+            storage; keep this invocation alive until user code returns. */
+            auto callback = *static_cast<std::function<void(mc_remote_state)>*>(data);
+            callback(state);
+        }
+
+        std::unique_ptr<std::function<void(mc_remote_state)>> observer;
         std::unique_ptr<mc_remote_session, Deleter> session;
     };
 

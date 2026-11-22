@@ -95,6 +95,7 @@ typedef struct mc_remote_options {
 
 typedef void (MC_CALL *mc_remote_connect_fn)(mc_result status, mc_remote_state state,
     const mc_error *error, void *user_data);
+typedef void (MC_CALL *mc_remote_state_fn)(void* user_data, mc_remote_state state);
 
 /* Own a remote connection independently of app preferences. Use session operations on one
    host thread. The ABI-only build returns MC_ERROR_UNSUPPORTED. */
@@ -103,6 +104,14 @@ MC_API mc_result MC_CALL mc_remote_session_create(const mc_remote_options *optio
 MC_API void MC_CALL mc_remote_session_destroy(mc_remote_session **session);
 /* Report the latest connection state. */
 MC_API mc_remote_state MC_CALL mc_remote_session_state(const mc_remote_session *session);
+/* observe a session even when it is not the selected library. register/remove
+on the context dispatcher thread (registration binds an unbound context).
+the initial state and later changes arrive on
+dispatch and may be coalesced to the latest state. null removes the observer.
+replacement, session destruction, and context shutdown discard queued delivery.
+callbacks may remove themselves. keep user_data alive until removal/shutdown. */
+MC_API mc_result MC_CALL mc_remote_session_set_callback(mc_context* context, mc_remote_session* session,
+    mc_remote_state_fn callback, void* user_data);
 /* Complete on context dispatch when the connection succeeds or fails. Cancelling
    delivery does not disconnect the session. Only one connection attempt may be active. */
 MC_API mc_result MC_CALL mc_remote_session_connect_async(mc_context *context, mc_remote_session *session,
