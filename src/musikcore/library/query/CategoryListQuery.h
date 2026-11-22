@@ -48,6 +48,7 @@ namespace musik { namespace core { namespace library { namespace query {
     class CategoryListQuery : public musik::core::library::query::QueryBase {
         public:
             static const std::string kQueryName;
+            static const std::string kFacetQueryName;
 
             using Result = SdkValueList::Shared;
 
@@ -70,12 +71,14 @@ namespace musik { namespace core { namespace library { namespace query {
                 const category::PredicateList predicate,
                 const std::string& filter = "");
 
+            void SetFacetSearch(std::string search);
+
             Result GetResult() noexcept;
             int GetIndexOf(int64_t id);
             musik::core::sdk::IValueList* GetSdkResult();
 
             /* IQuery */
-            std::string Name() override { return kQueryName; }
+            std::string Name() override { return this->facet ? kFacetQueryName : kQueryName; }
 
             /* ISerializableQuery */
             std::string SerializeQuery() override;
@@ -98,6 +101,8 @@ namespace musik { namespace core { namespace library { namespace query {
             void QueryExtended(musik::core::db::Connection &db);
             void ProcessResult(musik::core::db::Statement &stmt);
 
+            bool facet = false;
+            std::string trackSearch;
             std::string trackField;
             std::string filter;
             MatchType matchType;

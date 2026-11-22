@@ -75,7 +75,7 @@ namespace musik { namespace core { namespace library {
             if (name == GetPlaylistQuery::kQueryName) {
                 return GetPlaylistQuery::DeserializeQuery(library, data);
             }
-            if (name == CategoryListQuery::kQueryName) {
+            if (name == CategoryListQuery::kQueryName || name == CategoryListQuery::kFacetQueryName) {
                 return CategoryListQuery::DeserializeQuery(data);
             }
             if (name == CategoryTrackListQuery::kQueryName) {

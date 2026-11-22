@@ -474,7 +474,8 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
         { "uri", uri },
         { "originalUri", std::string(buffer) },
         { "type", type },
-        { "password", config.password }
+        { "password", config.password },
+        { "allowUntrustedCertificate", config.httpTls && config.httpTlsAllowUntrustedCertificate }
     };
 
     return "musikcore://remote-track/" + path.dump();
@@ -497,6 +498,9 @@ bool RemoteLibrary::ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes, size_
     } transfer { bytes, limit };
     auto* handle = curl.get();
     curl_easy_setopt(handle, CURLOPT_URL, uri.c_str());
+    if (config.httpTls && config.httpTlsAllowUntrustedCertificate) {
+        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0L);
+    }
     curl_easy_setopt(handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
     curl_easy_setopt(handle, CURLOPT_USERNAME, "default");
     curl_easy_setopt(handle, CURLOPT_PASSWORD, config.password.c_str());

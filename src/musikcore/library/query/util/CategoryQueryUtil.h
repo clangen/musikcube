@@ -114,6 +114,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "WHERE {{table}}.id=tracks.{{fk_id}} AND tracks.visible=1 "
             "{{regular_predicates}} "
             "{{regular_filter}} "
+            "{{facet_filter}} "
             "ORDER BY {{table}}.sort_order";
 
         /* EXTENDED_PROPERTY_QUERY is similar to REGULAR_PROPERTY_QUERY, but is used to

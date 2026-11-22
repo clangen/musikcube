@@ -62,6 +62,7 @@ static const std::string kFilteredPlaylistsQuery =
     "ORDER BY name;";
 
 const std::string CategoryListQuery::kQueryName = "CategoryListQuery";
+const std::string CategoryListQuery::kFacetQueryName = "FacetListQuery";
 
 static std::string getMatchType(CategoryListQuery::MatchType matchType) {
     return matchType == CategoryListQuery::MatchType::Regex ? "REGEXP" : "LIKE";
@@ -112,6 +113,11 @@ CategoryListQuery::CategoryListQuery(
     else {
         this->outputType = OutputType::Extended;
     }
+}
+
+void CategoryListQuery::SetFacetSearch(std::string search) {
+    this->facet = true;
+    this->trackSearch = std::move(search);
 }
 
 CategoryListQuery::Result CategoryListQuery::GetResult() noexcept {
@@ -173,6 +179,18 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
     category::ReplaceAll(query, "{{extended_predicates}}", extended);
     category::ReplaceAll(query, "{{regular_predicates}}", regular);
     category::ReplaceAll(query, "{{regular_filter}}", regularFilter);
+    std::string facetFilter;
+    if (this->facet && !this->trackSearch.empty()) {
+        facetFilter =
+            " AND (tracks.title LIKE ? OR tracks.album_id IN (SELECT id FROM albums WHERE name LIKE ?) "
+            " OR tracks.visual_artist_id IN (SELECT id FROM artists WHERE name LIKE ?) "
+            " OR tracks.visual_genre_id IN (SELECT id FROM genres WHERE name LIKE ?)) ";
+        const auto pattern = "%" + this->trackSearch + "%";
+        for (int i = 0; i < 4; ++i) {
+            args.push_back(category::StringArgument(pattern));
+        }
+    }
+    category::ReplaceAll(query, "{{facet_filter}}", facetFilter);
 
     Statement stmt(query.c_str(), db);
     Apply(stmt, args);
@@ -247,7 +265,7 @@ bool CategoryListQuery::OnRun(Connection& db) {
 
 std::string CategoryListQuery::SerializeQuery() {
     nlohmann::json query;
-    query["name"] = kQueryName;
+    query["name"] = this->Name();
     query["options"] = {
         { "trackField", this->trackField },
         { "filter", this->filter },
@@ -256,6 +274,9 @@ std::string CategoryListQuery::SerializeQuery() {
         { "regularPredicateList", PredicateListToJson(this->regular) },
         { "extendedPredicateList", PredicateListToJson(this->extended) }
     };
+    if (this->facet) {
+        query["options"]["trackSearch"] = this->trackSearch;
+    }
     return query.dump();
 }
 
@@ -275,8 +296,12 @@ void CategoryListQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<CategoryListQuery> CategoryListQuery::DeserializeQuery(const std::string& data) {
-    nlohmann::json options = nlohmann::json::parse(data)["options"];
+    const auto message = nlohmann::json::parse(data);
+    const auto& options = message["options"];
     std::shared_ptr<CategoryListQuery> result(new CategoryListQuery());
+    if (message.value("name", "") == kFacetQueryName) {
+        result->SetFacetSearch(options.value("trackSearch", ""));
+    }
     result->trackField = options.value("trackField", "");
     result->filter = options.value("filter", "");
     result->matchType = options.value("matchType", MatchType::Substring);

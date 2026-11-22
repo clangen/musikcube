@@ -95,7 +95,7 @@ class HttpDataStream : public IDataStream {
         static int LegacyCurlTransferCallback(void *ptr, double downTotal, double downNow, double upTotal, double upNow);
         #endif
 
-        std::string originalUri, httpUri, type;
+        std::string originalUri, httpUri, cacheUri, type;
         size_t length;
         std::string filename;
         FILE* writeFile;

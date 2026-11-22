@@ -285,6 +285,17 @@ namespace {
                 collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
         }
 
+        mc_result ListFacets(mc_context* context, std::string field, std::string search,
+            query::category::PredicateList selections, mc_category_list_completion_fn completion,
+            void* data, mc_request_id* request) const override
+        {
+            auto command = std::make_shared<query::CategoryListQuery>(
+                query::CategoryListQuery::MatchType::Substring, field, std::move(selections));
+            command->SetFacetSearch(std::move(search));
+            return submitLocal<CategoryEntries>(context, this->library, command,
+                collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
+        }
+
         mc_result ListAlbums(mc_context* context, std::string filter, mc_album_list_completion_fn completion,
             void* data, mc_request_id* request) const override
         {
@@ -451,6 +462,17 @@ namespace {
             using MatchType = query::CategoryListQuery::MatchType;
             const auto match = mode == MC_TRACK_SEARCH_REGEX ? MatchType::Regex : MatchType::Substring;
             const auto command = std::make_shared<query::CategoryListQuery>(match, field, filter);
+            return submitRemote<CategoryEntries>(context, this->library, this->generation, command,
+                collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
+        }
+
+        mc_result ListFacets(mc_context* context, std::string field, std::string search,
+            query::category::PredicateList selections, mc_category_list_completion_fn completion,
+            void* data, mc_request_id* request) const override
+        {
+            auto command = std::make_shared<query::CategoryListQuery>(
+                query::CategoryListQuery::MatchType::Substring, field, std::move(selections));
+            command->SetFacetSearch(std::move(search));
             return submitRemote<CategoryEntries>(context, this->library, this->generation, command,
                 collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request);
         }

@@ -91,7 +91,7 @@ struct mc_remote_session {
 using namespace musik::core::ffi;
 
 mc_result MC_CALL mc_remote_session_create(const mc_remote_options *options, mc_remote_session **out_session) {
-    if (!out_session || *out_session || !options || options->struct_size < sizeof(*options) ||
+    if (!out_session || *out_session || !options || options->struct_size < offsetof(mc_remote_options, http_tls_allow_untrusted_certificate) ||
         !valid_text(options->host, false) || !valid_text(options->password))
     {
         return MC_ERROR_INVALID_ARGUMENT;
@@ -111,6 +111,9 @@ mc_result MC_CALL mc_remote_session_create(const mc_remote_options *options, mc_
         }
         config.websocketTls = options->websocket_tls;
         config.httpTls = options->http_tls;
+        if (options->struct_size >= sizeof(*options)) {
+            config.httpTlsAllowUntrustedCertificate = options->http_tls_allow_untrusted_certificate != 0;
+        }
         *out_session = new mc_remote_session(std::move(config));
         return MC_OK;
     });

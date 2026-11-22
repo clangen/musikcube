@@ -74,6 +74,7 @@ namespace musik { namespace core { namespace library {
                 unsigned short httpPort = DefaultHttpPort;
                 bool websocketTls = false;
                 bool httpTls = false;
+                bool httpTlsAllowUntrustedCertificate = false;
                 bool configured = true;
                 int latencyTimeoutMs = Client::DefaultLatencyTimeoutMs;
                 bool ignoreVersionMismatch = false;

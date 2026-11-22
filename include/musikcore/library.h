@@ -84,9 +84,12 @@ typedef struct mc_remote_options {
     bool websocket_tls;
     /* Enable TLS for audio requests. Defaults to false. */
     bool http_tls;
+    /* Allow HTTPS audio and artwork from an untrusted or expired certificate.
+       Hostname verification remains enabled. Defaults to zero. */
+    uint32_t http_tls_allow_untrusted_certificate;
 } mc_remote_options;
 
-#define MC_REMOTE_OPTIONS_DEFAULT { sizeof(mc_remote_options), { NULL, 0 }, { NULL, 0 }, 0, 0, false, false }
+#define MC_REMOTE_OPTIONS_DEFAULT { sizeof(mc_remote_options), { NULL, 0 }, { NULL, 0 }, 0, 0, false, false, 0 }
 
 typedef void (MC_CALL *mc_remote_connect_fn)(mc_result status, mc_remote_state state,
     const mc_error *error, void *user_data);
@@ -285,6 +288,24 @@ MC_API mc_result MC_CALL mc_library_list_category_fields_async(mc_context* conte
     mc_category_fields_completion_fn completion, void* user_data, mc_request_id* out_request);
 
 /* List values for a metadata field, filtered by substring or regular expression. */
+typedef uint32_t mc_facet_field;
+enum { MC_FACET_GENRE = 1, MC_FACET_ARTIST = 2, MC_FACET_ALBUM = 3 };
+
+typedef struct mc_facet_selection {
+    /* Category column to constrain. */
+    mc_facet_field field;
+    /* Positive category ID from a facet or category result in this library. */
+    int64_t id;
+} mc_facet_selection;
+
+/* List values that occur in matching tracks. Text uses the same title, artist,
+   album and genre substring matching as track search. Constraints are intersected.
+   Pass the other columns' selections to keep this facet's alternatives visible.
+   Each field may be constrained once. Callback rows are borrowed during delivery. */
+MC_API mc_result MC_CALL mc_library_list_facets_async(mc_context* context, const mc_library* library,
+    mc_facet_field field, mc_string_view search, const mc_facet_selection* selections, size_t selection_count,
+    mc_category_list_completion_fn completion, void* user_data, mc_request_id* out_request);
+
 MC_API mc_result MC_CALL mc_library_list_categories_async(mc_context* context, const mc_library* library,
     mc_string_view field, mc_string_view filter, mc_track_search_mode mode,
     mc_category_list_completion_fn completion, void* user_data, mc_request_id* out_request);

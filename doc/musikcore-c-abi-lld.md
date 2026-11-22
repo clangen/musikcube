@@ -1317,6 +1317,10 @@ remains deferred. This does not begin the new plugin C SDK. See
   selected origin. A lost connection invalidates that generation without
   retargeting retained results. `musikcore.integration.api.managed_remote`
   verifies selection, queue admission, and disconnect invalidation.
+- [x] **API-FACETS** List contextual genre, artist, and album values with a
+  track search and typed category constraints.
+  `musikcore.integration.api.backend_parity` checks search and constraints
+  against the local catalog and the loopback query server.
 - [ ] **API-URI-007** Implement and validate Windows CDDA device cancellation.
   Its existing `Interrupt` is a no-op; SDK 23 creation now exposes the stream
   before opening, but does not by itself cancel its synchronous device I/O.

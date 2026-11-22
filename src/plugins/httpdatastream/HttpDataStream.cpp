@@ -263,6 +263,7 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
     this->maxCacheFiles = prefs->GetInt(kMaxCacheFiles.c_str(), kDefaultMaxCacheFiles);
 
     std::unordered_map<std::string, std::string> requestHeaders;
+    bool allowUntrustedCertificate = false;
 
     {
         std::unique_lock<std::mutex> lock(this->stateMutex);
@@ -281,6 +282,8 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
                 this->httpUri = options["uri"].get<std::string>();
                 this->originalUri = options["originalUri"].get<std::string>();
                 this->type = options.value("type", ".mp3");
+                allowUntrustedCertificate = this->httpUri.compare(0, 8, "https://") == 0 &&
+                    options.value("allowUntrustedCertificate", false);
 
                 std::string password = options.value("password", "");
                 std::string headerValue = "Basic " + websocketpp::base64_encode("default:" + password);
@@ -292,7 +295,9 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
             }
         }
 
-        auto const id = cacheId(httpUri);
+        /* Keep bytes from an unverified peer separate from verified HTTPS. */
+        this->cacheUri = allowUntrustedCertificate ? "untrusted:" + this->httpUri : this->httpUri;
+        auto const id = cacheId(this->cacheUri);
 
         if (diskCache.Cached(id)) {
             FILE* file = diskCache.Open(id, this->instanceId, "rb", this->type, this->length);
@@ -317,7 +322,10 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
         curl_easy_setopt(this->curlEasy, CURLOPT_URL, this->httpUri.c_str());
         curl_easy_setopt(this->curlEasy, CURLOPT_HEADER, 0);
         curl_easy_setopt(this->curlEasy, CURLOPT_HTTPGET, 1);
-        curl_easy_setopt(this->curlEasy, CURLOPT_FOLLOWLOCATION, 1);
+        curl_easy_setopt(this->curlEasy, CURLOPT_FOLLOWLOCATION, allowUntrustedCertificate ? 0L : 1L);
+        if (allowUntrustedCertificate) {
+            curl_easy_setopt(this->curlEasy, CURLOPT_SSL_VERIFYPEER, 0L);
+        }
         curl_easy_setopt(this->curlEasy, CURLOPT_AUTOREFERER, 1);
         curl_easy_setopt(this->curlEasy, CURLOPT_FAILONERROR, 1);
         curl_easy_setopt(this->curlEasy, CURLOPT_USERAGENT, "musikcube HttpDataStream");
@@ -389,11 +397,11 @@ void HttpDataStream::ResetFileHandles() {
         this->reader.reset();
     }
 
-    auto const id = cacheId(httpUri);
+    auto const id = cacheId(this->cacheUri);
     diskCache.Delete(id, this->instanceId);
     this->writeFile = diskCache.Open(id, this->instanceId, "wb");
     if (this->writeFile) {
-        this->reader = std::make_shared<FileReadStream>(this->httpUri, this->instanceId);
+        this->reader = std::make_shared<FileReadStream>(this->cacheUri, this->instanceId);
     }
 }
 
@@ -490,7 +498,7 @@ bool HttpDataStream::Close() {
 
     /* if we just downloaded the file let's rename it to its final name; if the
     download failed, let's delete the temp file. */
-    auto id = cacheId(this->httpUri);
+    auto id = cacheId(this->cacheUri);
     if (this->state == State::Downloaded) {
         diskCache.Finalize(id, this->instanceId, this->Type());
     }

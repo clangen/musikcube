@@ -39,6 +39,7 @@ mc_library_delete_playlist_async
 mc_library_destroy
 mc_library_list_albums_async
 mc_library_list_categories_async
+mc_library_list_facets_async
 mc_library_list_category_fields_async
 mc_library_list_playlists_async
 mc_library_make_track_result

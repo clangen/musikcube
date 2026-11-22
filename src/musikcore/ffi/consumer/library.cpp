@@ -317,6 +317,47 @@ mc_result MC_CALL mc_library_list_categories_async(mc_context* context, const mc
     });
 }
 
+mc_result MC_CALL mc_library_list_facets_async(mc_context* context, const mc_library* library,
+    mc_facet_field field, mc_string_view search, const mc_facet_selection* selections, size_t selectionCount,
+    mc_category_list_completion_fn completion, void* data, mc_request_id* request)
+{
+    if (!request) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    *request = 0;
+    if (!context || !completion || !valid_text(search) || field < MC_FACET_GENRE || field > MC_FACET_ALBUM ||
+        selectionCount > 3 || (selectionCount && !selections))
+    {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return exception_barrier(nullptr, [&]() -> mc_result {
+        constexpr const char* fields[] { "", "genre", "artist", "album" };
+        bool seen[4] {};
+        std::vector<std::pair<std::string, int64_t>> predicates;
+        for (size_t i = 0; i < selectionCount; ++i) {
+            const auto column = selections[i].field;
+            const auto id = selections[i].id;
+            if (column < MC_FACET_GENRE || column > MC_FACET_ALBUM || id <= 0 || seen[column]) {
+                return MC_ERROR_INVALID_ARGUMENT;
+            }
+            seen[column] = true;
+            predicates.emplace_back(fields[column], id);
+        }
+        const auto identity = library ? library->identity : context_library(*context);
+        if (!identity) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        if (!identity->queries) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        std::string term(search.data ? search.data : "", search.length);
+        const auto begin = term.find_first_not_of(" \t\n\r\f\v");
+        term = begin == std::string::npos ? "" : term.substr(begin, term.find_last_not_of(" \t\n\r\f\v") - begin + 1);
+        return identity->queries->ListFacets(context, fields[field], std::move(term),
+            std::move(predicates), completion, data, request);
+    });
+}
+
 mc_result MC_CALL mc_library_list_playlists_async(mc_context *context, const mc_library *library,
     mc_playlist_list_completion_fn completion, void *data, mc_request_id *request) {
     return exception_barrier(nullptr, [&]() -> mc_result {

@@ -666,6 +666,38 @@ namespace {
             {
                 return failure(__LINE__);
             }
+            struct Facets {
+                mc_result status = MC_ERROR_INTERNAL;
+                std::vector<std::pair<int64_t, std::string>> rows;
+                bool done = false;
+            } facets;
+            const auto deliver = [](mc_result result, const mc_category_entry* rows, size_t count,
+                const mc_error*, void* userData) {
+                auto& output = *static_cast<Facets*>(userData);
+                output.status = result;
+                for (size_t i = 0; i < count; ++i) {
+                    output.rows.emplace_back(rows[i].id, std::string(rows[i].value.data, rows[i].value.length));
+                }
+                output.done = true;
+            };
+            mc_request_id request = 0;
+            const auto ready = [&] {
+                return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && facets.done; }) &&
+                    facets.status == MC_OK;
+            };
+            if (mc_library_list_facets_async(context.Get(), nullptr, MC_FACET_GENRE, { "Evening", 7 },
+                nullptr, 0, deliver, &facets, &request) != MC_OK || !ready() ||
+                facets.rows.size() != 1 || facets.rows[0].second != "Electronic")
+            {
+                return failure(__LINE__);
+            }
+            const mc_facet_selection selection { MC_FACET_GENRE, facets.rows[0].first };
+            facets = {};
+            if (mc_library_list_facets_async(context.Get(), nullptr, MC_FACET_ALBUM, { "Morning", 7 },
+                &selection, 1, deliver, &facets, &request) != MC_OK || !ready() || !facets.rows.empty())
+            {
+                return failure(__LINE__);
+            }
         }
         context.ClearLibrary();
 
