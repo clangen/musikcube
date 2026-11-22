@@ -3,6 +3,7 @@
 #include <musikcore/db/SqliteExtensions.h>
 #include <sqlite3.h>
 #include <chrono>
+#include <mutex>
 
 namespace musik { namespace core { namespace library { namespace query {
     namespace {
@@ -13,8 +14,18 @@ namespace musik { namespace core { namespace library { namespace query {
         using Database = std::unique_ptr<sqlite3, decltype(&sqlite3_close)>;
 
         struct ReadControl {
-            explicit ReadControl(const std::atomic_bool& canceled) : canceled(canceled) {}
+            ReadControl(sqlite3* database, const std::atomic_bool& canceled)
+                : database(database), canceled(canceled) {
+                sqlite3_busy_handler(database, WaitForLock, this);
+                sqlite3_progress_handler(database, readProgressInterval, CheckProgress, this);
+            }
 
+            ~ReadControl() {
+                sqlite3_progress_handler(this->database, 0, nullptr, nullptr);
+                sqlite3_busy_handler(this->database, nullptr, nullptr);
+            }
+
+            sqlite3* const database;
             const std::atomic_bool& canceled;
             std::chrono::steady_clock::time_point busyDeadline {};
 
@@ -36,7 +47,7 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         };
 
-        /* Each read gets its own transaction, isolated from the app's shared connection. */
+        /* Reuse a private reader while each statement or read transaction takes a fresh snapshot. */
         /* Inherits noncopyable and nonmovable ownership. */
         class SqliteTrackReadBackend final : public TrackReadBackend {
         public:
@@ -45,40 +56,47 @@ namespace musik { namespace core { namespace library { namespace query {
             bool Run(const TrackSearchQuery& query, TrackSearchRows& rows,
                 const std::atomic_bool& canceled) const override
             {
-                ReadControl control { canceled };
-                const auto database = this->Open(control);
-                return database && db::SqliteExtensions::Register(database.get()) == SQLITE_OK &&
-                    query.Run(database.get(), rows);
+                return this->Read(query, rows, canceled);
             }
 
             bool Run(const TrackPageQuery& query, ProjectedTrackPage& page,
                 const std::atomic_bool& canceled) const override
             {
-                ReadControl control { canceled };
-                const auto database = this->Open(control);
-                return database && query.Run(database.get(), page);
+                return this->Read(query, page, canceled);
             }
 
         private:
-            Database Open(ReadControl& control) const {
-                if (control.canceled.load()) {
-                    return { nullptr, sqlite3_close };
+            template<class Query, class Result>
+            bool Read(const Query& query, Result& result, const std::atomic_bool& canceled) const {
+                std::lock_guard<std::mutex> lock(this->mutex);
+                if (canceled.load() || (!this->database && !this->Open(canceled))) {
+                    return false;
                 }
+                ReadControl control { this->database.get(), canceled };
+                return query.Run(this->database.get(), result);
+            }
+
+            bool Open(const std::atomic_bool& canceled) const {
                 sqlite3* raw = nullptr;
                 const int opened = sqlite3_open_v2(this->path.c_str(), &raw, SQLITE_OPEN_READONLY | SQLITE_OPEN_PRIVATECACHE, nullptr);
                 Database database(raw, sqlite3_close);
                 if (opened != SQLITE_OK) {
-                    database.reset();
+                    return false;
                 }
-                else {
-                    /* keep lock retries bounded and let shutdown interrupt the wait. */
-                    sqlite3_busy_handler(database.get(), ReadControl::WaitForLock, &control);
-                    sqlite3_progress_handler(database.get(), readProgressInterval, ReadControl::CheckProgress, &control);
+                ReadControl control { database.get(), canceled };
+                /* keep metadata pages warm without retaining the full search working set. */
+                if (sqlite3_exec(database.get(), "PRAGMA cache_size=-256", nullptr, nullptr, nullptr) != SQLITE_OK ||
+                    db::SqliteExtensions::Register(database.get()) != SQLITE_OK)
+                {
+                    return false;
                 }
-                return database;
+                this->database = std::move(database);
+                return true;
             }
 
             const std::string path;
+            mutable std::mutex mutex;
+            mutable Database database { nullptr, sqlite3_close };
         };
     }
 

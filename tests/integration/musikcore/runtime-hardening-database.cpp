@@ -196,7 +196,8 @@ namespace runtime_tests {
             test_host_event_create(), test_host_event_destroy);
         struct Completion {
             bool done = false;
-            bool committed = false;
+            bool matched = false;
+            std::string_view expected;
         } state;
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
         options.services = MC_SERVICE_NONE;
@@ -214,24 +215,32 @@ namespace runtime_tests {
         api::Library library(raw);
         const auto callback = [](mc_result status, mc_track_page* page, const mc_error*, void* data) {
             auto& state = *static_cast<Completion*>(data);
-            state.committed = status == MC_OK &&
-                api::AsStringView(mc_track_page_get_string(page, 0, 0)) == "committed";
+            state.matched = status == MC_OK &&
+                api::AsStringView(mc_track_page_get_string(page, 0, 0)) == state.expected;
             state.done = true;
             mc_track_page_destroy(&page);
         };
         auto query = mc_track_query MC_TRACK_QUERY_DEFAULT;
-        mc_request_id request = 0;
-        if (!TEST_CHECK(mc_library_query_tracks_async(context.Get(), library.Get(), &query,
-            callback, &state, &request) == MC_OK))
-        {
-            return false;
-        }
-        while (!state.done) {
-            if (!TEST_CHECK(test_host_event_wait(event.get())) || !TEST_CHECK(context.Dispatch() == MC_OK)) {
+        const auto read = [&](std::string_view expected) -> bool {
+            state = { false, false, expected };
+            mc_request_id request = 0;
+            if (!TEST_CHECK(mc_library_query_tracks_async(context.Get(), library.Get(), &query,
+                callback, &state, &request) == MC_OK))
+            {
                 return false;
             }
-        }
-        return TEST_CHECK(state.committed);
+            while (!state.done) {
+                if (!TEST_CHECK(test_host_event_wait(event.get())) || !TEST_CHECK(context.Dispatch() == MC_OK)) {
+                    return false;
+                }
+            }
+            return TEST_CHECK(state.matched);
+        };
+
+        /* A second read on the same library must see the writer's new committed snapshot. */
+        return read("committed") &&
+            TEST_CHECK(sqlite3_exec(writer, "COMMIT", nullptr, nullptr, nullptr) == SQLITE_OK) &&
+            read("uncommitted");
     }
 
     bool checkLockedReadShutdown() {
