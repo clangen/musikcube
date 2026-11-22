@@ -147,7 +147,9 @@ async function checkWorkflow(runtime, database, screenshots,
   };
 
   try {
-    await terminal.expect(pilot ? 'Track Search Pilot' : 'playback is stopped');
+    /* freshly signed macOS plugins can load slowly on their first launch.
+    allow startup time without weakening interaction deadlines or exit checks. */
+    await terminal.expect(pilot ? 'Track Search Pilot' : 'playback is stopped', { timeoutMs: 60000 });
     const result = {};
 
     if (pilot || scenario === 'search' || scenario === 'all') {

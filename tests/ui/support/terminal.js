@@ -157,11 +157,11 @@ class Terminal {
   }
 
   /* Wait for required visible text and optional disappearance of text from the previous state. */
-  expect(text, { absent } = {}) {
+  expect(text, { absent, timeoutMs = 10000 } = {}) {
     return this.waitFor(() => {
       const screen = this.screen.text();
       return screen.includes(text) && (!absent || !screen.includes(absent));
-    }, `screen text ${JSON.stringify(text)}${absent ? ` with ${JSON.stringify(absent)} absent` : ''}`);
+    }, `screen text ${JSON.stringify(text)}${absent ? ` with ${JSON.stringify(absent)} absent` : ''}`, timeoutMs);
   }
 
   /* Wait for process closure and require a clean exit rather than treating any termination as success. */
@@ -172,9 +172,9 @@ class Terminal {
     }
   }
 
-  /* Observe screen/process updates until the predicate succeeds, the app exits, or a ten-second deadline
-     expires. */
-  waitFor(predicate, description) {
+  /* observe updates until readiness, exit, or a bounded deadline. cold macOS
+  plugin loading can need more time than an ordinary keystroke/repaint. */
+  waitFor(predicate, description, timeoutMs = 10000) {
     return new Promise((resolve, reject) => {
       /* Every completion path removes its listener/timer; leaking either can
          make a later scenario observe stale state or keep Node alive. */
@@ -193,7 +193,7 @@ class Terminal {
         else if (this.result) finish(new Error(`musikcube exited while waiting for ${description}`));
       };
 
-      const timer = setTimeout(() => finish(new Error(`Timed out waiting for ${description}`)), 10000);
+      const timer = setTimeout(() => finish(new Error(`Timed out waiting for ${description}`)), timeoutMs);
       this.events.on('update', check);
 
       /* Check after subscribing: readiness may already be visible, and a
