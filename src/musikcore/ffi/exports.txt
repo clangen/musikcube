@@ -24,6 +24,7 @@ mc_event_source_destroy
 mc_event_source_publish
 mc_event_source_subscribe
 mc_indexer_add_path
+mc_indexer_cancel
 mc_indexer_get_state
 mc_indexer_read_paths
 mc_indexer_remove_path

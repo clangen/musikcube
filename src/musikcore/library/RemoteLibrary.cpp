@@ -71,6 +71,7 @@ class NullIndexer: public musik::core::IIndexer {
         void RemovePath(const std::string& path) noexcept override { }
         void GetPaths(std::vector<std::string>& paths) noexcept override { }
         void Schedule(SyncType type) noexcept override { }
+        void Cancel() noexcept override { }
         void Shutdown() noexcept override { }
         State GetState() noexcept override { return StateIdle; }
 } kNullIndexer;

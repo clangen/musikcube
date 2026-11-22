@@ -78,6 +78,7 @@ namespace musik { namespace core {
             void RemovePath(const std::string& path) override;
             void GetPaths(std::vector<std::string>& paths) override;
             void Schedule(SyncType type) override;
+            void Cancel() override;
             void Shutdown() override;
 
             State GetState() noexcept override {
@@ -121,6 +122,8 @@ namespace musik { namespace core {
                 musik::core::sdk::IIndexerSource>> IndexerSourceList;
 
             void ThreadLoop();
+            void CompleteScan();
+            void InterruptSource(const std::shared_ptr<musik::core::sdk::IIndexerSource>& source, uint64_t generation);
 
             void Synchronize(const SyncContext& context, asio::io_context* io);
 
@@ -161,7 +164,10 @@ namespace musik { namespace core {
             std::string libraryPath;
             std::string dbFilename;
             std::atomic<State> state;
+            std::atomic<bool> cancelRequested { false };
             std::mutex stateMutex;
+            std::recursive_mutex sourceLifecycleMutex;
+            uint64_t scanGeneration { 0 };
             std::condition_variable_any waitCondition;
             std::unique_ptr<std::thread> thread;
             std::atomic<int> incrementalUrisScanned, totalUrisScanned;

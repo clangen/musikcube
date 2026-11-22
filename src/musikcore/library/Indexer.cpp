@@ -152,16 +152,17 @@ Indexer::~Indexer() {
 
 void Indexer::Shutdown() {
     if (this->thread) {
+        std::shared_ptr<IIndexerSource> source;
+        uint64_t generation;
         {
             std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
 
             this->syncQueue.clear();
             this->state = StateStopping;
-
-            if (this->currentSource) {
-                this->currentSource->Interrupt();
-            }
+            source = this->currentSource;
+            generation = this->scanGeneration;
         }
+        this->InterruptSource(source, generation);
 
         this->waitCondition.notify_all();
         this->thread->join();
@@ -171,6 +172,37 @@ void Indexer::Shutdown() {
 
 void Indexer::Schedule(SyncType type) {
     this->Schedule(type, nullptr);
+}
+
+void Indexer::Cancel() {
+    std::shared_ptr<IIndexerSource> source;
+    uint64_t generation;
+    {
+        std::lock_guard lock(this->stateMutex);
+        this->syncQueue.clear();
+        generation = this->scanGeneration;
+        if (this->state == StateIndexing && !this->cancelRequested.exchange(true)) {
+            source = this->currentSource;
+        }
+    }
+    this->InterruptSource(source, generation);
+}
+
+void Indexer::InterruptSource(const std::shared_ptr<IIndexerSource>& source, uint64_t generation) {
+    if (!source) {
+        return;
+    }
+    /* serialize interruption with provider reset, but allow callbacks to reenter
+    Cancel. a delayed interrupt must never spill into a later scan generation. */
+    std::lock_guard lifecycle(this->sourceLifecycleMutex);
+    bool interrupt;
+    {
+        std::lock_guard state(this->stateMutex);
+        interrupt = generation == this->scanGeneration && this->currentSource == source && this->Bail();
+    }
+    if (interrupt) {
+        source->Interrupt();
+    }
 }
 
 void Indexer::Schedule(SyncType type, IIndexerSource* source) {
@@ -230,6 +262,9 @@ void Indexer::RemovePath(const std::string& path) {
 }
 
 void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
+    if (this->Bail()) {
+        return;
+    }
     LocalLibrary::CreateIndexes(this->dbConnection);
 
     IndexerTrack::OnIndexerStarted(this->dbConnection);
@@ -293,9 +328,28 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
             continue; /* asked to scan a specific source, and this isn't it. */
         }
 
-        this->currentSource = it;
+        /* reset provider interruption before publishing its active lifetime.
+        cancellation during this callback prevents Scan from starting. */
+        bool runSource;
+        {
+            std::lock_guard lifecycle(this->sourceLifecycleMutex);
+            it->OnBeforeScan();
+            std::lock_guard lock(this->stateMutex);
+            runSource = !this->Bail();
+            if (runSource) {
+                this->currentSource = it;
+            }
+        }
+        if (!runSource) {
+            it->OnAfterScan();
+            break;
+        }
         if (this->SyncSource(it.get(), paths) == ScanRollback) {
             this->trackTransaction->Cancel();
+        }
+        {
+            std::lock_guard lock(this->stateMutex);
+            this->currentSource.reset();
         }
         this->trackTransaction->CommitAndRestart();
 
@@ -303,8 +357,6 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
             break; /* done with the one we were asked to scan */
         }
     }
-
-    this->currentSource.reset();
 
     /* process local files */
     if (type != SyncType::Sources) {
@@ -353,7 +405,9 @@ void Indexer::FinalizeSync(const SyncContext& context) {
     }
 
     /* run analyzers. */
-    this->RunAnalyzers();
+    if (!this->Bail()) {
+        this->RunAnalyzers();
+    }
 
     IndexerTrack::OnIndexerFinished(this->dbConnection);
 }
@@ -538,8 +592,6 @@ ScanResult Indexer::SyncSource(
     /* only commit if explicitly succeeded */
     ScanResult result = ScanRollback;
 
-    source->OnBeforeScan();
-
     try {
         /* alloc/init fun interop; we pass all paths to the indexer source */
         const char** pathsList = new const char*[paths.size()];
@@ -576,7 +628,7 @@ ScanResult Indexer::SyncSource(
                     this->dbConnection);
 
                 tracks.BindInt32(0, source->SourceId());
-                while (tracks.Step() == db::Row) {
+                while (!this->Bail() && tracks.Step() == db::Row) {
                     TrackPtr track = std::make_shared<IndexerTrack>(tracks.ColumnInt64(0));
                     track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
 
@@ -610,29 +662,33 @@ void Indexer::ThreadLoop() {
     }
 
     while (true) {
-        /* wait for some work. */
+        SyncContext context;
+        /* selecting work and cancellation share one boundary: a later Schedule
+        belongs to the next scan and must not inherit the cancelled flag. */
         {
             std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
-            while (!this->Bail() && this->syncQueue.size() == 0) {
+            while (this->state != StateStopping && this->syncQueue.empty()) {
                 this->state = StateIdle;
                 this->waitCondition.wait(lock);
             }
+            if (this->state == StateStopping) {
+                this->state = StateStopped;
+                return;
+            }
+            context = this->syncQueue.front();
+            this->syncQueue.pop_front();
+            ++this->scanGeneration;
+            this->cancelRequested = false;
+            this->state = StateIndexing;
         }
-
-        if (this->Bail()) {
-            return;
-        }
-
-        const SyncContext context = this->syncQueue.front();
-        this->syncQueue.pop_front();
-
-        this->state = StateIndexing;
+        this->incrementalUrisScanned = 0;
+        this->totalUrisScanned = 0;
         this->Started.Publish();
 
         if (this->dbConnection.Open(this->dbFilename.c_str(), 0) != db::Okay) {
             musik::debug::warning(TAG, "could not open catalog for indexing");
             this->dbConnection.Close();
-            this->Finished.Publish(0);
+            this->CompleteScan();
             continue;
         }
 
@@ -699,12 +755,30 @@ void Indexer::ThreadLoop() {
 
         this->dbConnection.Close();
 
-        if (!this->Bail()) {
-            this->Progress.Publish(this->totalUrisScanned);
-            this->Finished.Publish(this->totalUrisScanned);
-        }
+        this->CompleteScan();
 
         musik::debug::info(TAG, "done!");
+    }
+}
+
+void Indexer::CompleteScan() {
+    bool cancelled;
+    {
+        std::lock_guard lock(this->stateMutex);
+        if (this->state == StateStopping) {
+            return;
+        }
+        cancelled = this->cancelRequested.exchange(false);
+        this->state = StateIdle;
+    }
+    /* publish after retiring the scan, so callbacks may cancel or schedule
+    again without changing the terminal outcome selected for this scan. */
+    this->Progress.Publish(this->totalUrisScanned);
+    if (cancelled) {
+        this->Cancelled.Publish(this->totalUrisScanned);
+    }
+    else {
+        this->Finished.Publish(this->totalUrisScanned);
     }
 }
 
@@ -1133,7 +1207,7 @@ void Indexer::ScheduleRescan(IIndexerSource* source) {
 }
 
 bool Indexer::Bail() noexcept {
-    return
+    return this->cancelRequested ||
         this->state == StateStopping ||
         this->state == StateStopped;
 }

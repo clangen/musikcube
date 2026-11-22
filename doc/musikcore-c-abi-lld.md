@@ -1210,6 +1210,14 @@ This completed pilot is not a second migration backlog.
 - [x] **PUB-006** Add local indexer paths, scan commands, state, progress, and
   terminal events. `musikcore.abi.remote_query_transport` verifies local path
   editing and scan notifications while a remote catalog is selected.
+  `mc_indexer_cancel` cooperatively cancels the active scan and discards scans
+  queued before the call, preserving processed updates and allowing later scans.
+  `MC_INDEXER_CANCELLED` is a distinct terminal event after the scanner settles
+  to Idle; missing-track cleanup is suppressed for incomplete scans.
+  `musikcore.integration.runtime.indexer_cancel` checks active/queued cancellation,
+  idempotency, idle publication, reuse, and shutdown on macOS. Provider handoff
+  races have a separate `indexer_provider_cancel` regression; Linux and Windows
+  execution of these new contracts remains pending.
 - [x] **PUB-007** Add output selection, replay gain, equalizer, and transport
   settings required by musikcube.
   Cube reloads output through `mc_playback_control` and reads replay-gain

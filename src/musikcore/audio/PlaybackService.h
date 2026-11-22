@@ -226,6 +226,7 @@ namespace musik { namespace core { namespace audio {
 
             ITransport::Connections transportConnections;
             api::Subscriptions<int>::Connection indexFinished;
+            api::Subscriptions<int>::Connection indexCancelled;
             lastfm::PlaybackReports lastFm;
             bool stopped = false;
             musik::core::TrackList playlist;

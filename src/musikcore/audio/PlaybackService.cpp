@@ -158,6 +158,8 @@ PlaybackService::PlaybackService(
     };
     if (auto* indexer = library->Indexer()) {
         this->indexFinished = indexer->Finished.Subscribe([this](int updates) { this->OnIndexerFinished(updates); });
+        /* cancelled scans can still commit metadata updates before stopping. */
+        this->indexCancelled = indexer->Cancelled.Subscribe([this](int updates) { this->OnIndexerFinished(updates); });
     }
     messageQueue.Register(this);
     messageQueue.Post(Message::Create(this, MESSAGE_LOAD_PLAYBACK_CONTEXT));
@@ -191,6 +193,7 @@ void PlaybackService::Shutdown() {
 
     this->transportConnections = {};
     this->indexFinished.Reset();
+    this->indexCancelled.Reset();
     this->ClosePlaybackHandles();
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
@@ -209,6 +212,7 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
     /* Stop old stream work before resetting the queue's track identifiers. */
     this->Stop();
     this->indexFinished.Reset();
+    this->indexCancelled.Reset();
     for (const auto type : { MESSAGE_STREAM_EVENT, MESSAGE_PREPARE_NEXT_TRACK,
         MESSAGE_NEXT_TRACK_EDITED, MESSAGE_SEEK, MESSAGE_MARK_TRACK_PLAYED, MESSAGE_MARK_TRACK_PLAYING })
     {
@@ -235,6 +239,8 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
     }
     if (auto* indexer = this->library->Indexer()) {
         this->indexFinished = indexer->Finished.Subscribe([this](int updates) { this->OnIndexerFinished(updates); });
+        /* cancelled scans can still commit metadata updates before stopping. */
+        this->indexCancelled = indexer->Cancelled.Subscribe([this](int updates) { this->OnIndexerFinished(updates); });
     }
     POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
 }

@@ -46,6 +46,10 @@ namespace musik { namespace core { namespace api {
             return mc_indexer_schedule(this->context.Get(), scan);
         }
 
+        mc_result Cancel() {
+            return mc_indexer_cancel(this->context.Get());
+        }
+
         mc_result SetCallback(mc_indexer_event_fn callback, void* data = nullptr) {
             return mc_indexer_set_callback(this->context.Get(), callback, data);
         }

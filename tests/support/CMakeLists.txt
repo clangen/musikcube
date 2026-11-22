@@ -357,6 +357,7 @@ add_executable(musikcore_runtime_hardening_test
   ../integration/musikcore/runtime-hardening-context.cpp
   ../integration/musikcore/runtime-hardening-database.cpp
   ../integration/musikcore/runtime-hardening-plugins.cpp
+  ../integration/musikcore/runtime-hardening-indexer.cpp
   host-wakeup.cpp)
 target_include_directories(musikcore_runtime_hardening_test PRIVATE "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/src/3rdparty/include/sqlite" ${VENDOR_INCLUDE_DIRECTORIES})
@@ -374,6 +375,29 @@ foreach(case IN ITEMS services plugin_directory registry startup owner read_isol
   set_tests_properties(musikcore.integration.runtime.${case} PROPERTIES
     LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
 endforeach()
+
+add_test(NAME musikcore.integration.runtime.indexer_cancel COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage indexer_cancel)
+set_tests_properties(musikcore.integration.runtime.indexer_cancel PROPERTIES
+  LABELS "integration;musikcore;runtime;indexer;contract" TIMEOUT 30)
+
+add_library(musikcore_runtime_indexer MODULE ../integration/musikcore/runtime-indexer-plugin.cpp)
+target_include_directories(musikcore_runtime_indexer PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+set_target_properties(musikcore_runtime_indexer PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-indexer"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-indexer"
+  DISABLE_PRECOMPILE_HEADERS ON)
+if(APPLE)
+  set_target_properties(musikcore_runtime_indexer PROPERTIES SUFFIX ".dylib")
+endif()
+add_dependencies(musikcore_runtime_hardening_test musikcore_runtime_indexer)
+add_test(NAME musikcore.integration.runtime.indexer_provider_cancel COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage --plugin "$<TARGET_FILE:musikcore_runtime_indexer>"
+  indexer_provider_cancel)
+set_tests_properties(musikcore.integration.runtime.indexer_provider_cancel PROPERTIES
+  LABELS "integration;musikcore;runtime;indexer;contract" TIMEOUT 30)
 
 # separate processes are essential: a static migration flag cannot survive them.
 set(migration_media)

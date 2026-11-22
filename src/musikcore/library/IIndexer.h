@@ -43,6 +43,7 @@ namespace musik { namespace core {
         public:
             api::Subscriptions<> Started;
             api::Subscriptions<int> Finished;
+            api::Subscriptions<int> Cancelled;
             api::Subscriptions<int> Progress;
 
             enum State {
@@ -64,6 +65,7 @@ namespace musik { namespace core {
             virtual void RemovePath(const std::string& path) = 0;
             virtual void GetPaths(std::vector<std::string>& paths) = 0;
             virtual void Schedule(SyncType type) = 0;
+            virtual void Cancel() = 0;
             virtual void Shutdown() = 0;
             virtual State GetState() = 0;
     };

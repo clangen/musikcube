@@ -601,6 +601,12 @@ mc_result MC_CALL mc_indexer_schedule(mc_context* context, mc_indexer_scan scan)
     });
 }
 
+mc_result MC_CALL mc_indexer_cancel(mc_context* context) {
+    return with_indexer(context, [](musik::core::IIndexer& indexer) {
+        indexer.Cancel();
+    });
+}
+
 mc_result MC_CALL mc_indexer_set_callback(mc_context* context, mc_indexer_event_fn callback, void* userData) {
     if (!context) {
         return MC_ERROR_INVALID_ARGUMENT;

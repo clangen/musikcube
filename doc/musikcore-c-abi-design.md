@@ -705,6 +705,20 @@ The indexer API supports:
 Progress events may be coalesced. State transitions and terminal outcomes may
 not be dropped.
 
+`mc_indexer_cancel` cooperatively cancels the active local scan and drops scans
+queued before the call. It is idempotent when idle and leaves the indexer
+available for later scans, including scans scheduled while cancellation drains.
+It does not join workers; an active provider receives its existing `Interrupt`
+request. An in-progress filesystem or tag-reader operation may finish first.
+Processed changes remain committed according to the existing scan transaction
+rules; cancellation is not a scan-wide rollback. Remaining cleanup is skipped
+so unvisited tracks remain available. An active cancelled scan emits one
+`MC_INDEXER_CANCELLED` terminal event instead of `MC_INDEXER_FINISHED`, with the
+processed-item count. Queued scans removed before starting emit no events.
+State returns to `MC_INDEXER_IDLE` before terminal publication, though a later
+scan may already be running when the dispatcher delivers the event. Shutdown
+remains a separate operation that stops and joins the indexer.
+
 ### Preferences
 
 Preferences expose typed getters and setters for booleans, fixed-width

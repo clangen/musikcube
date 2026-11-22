@@ -11,6 +11,12 @@ int main(int argc, char** argv) {
         return 1;
     }
     const std::string_view mode(argv[1]);
+    if (mode == "indexer_cancel") {
+        return checkIndexerCancel() ? 0 : 1;
+    }
+    if (mode == "indexer_provider_cancel") {
+        return checkIndexerProviderCancel() ? 0 : 1;
+    }
 #ifdef _WIN32
     if (mode == "windows_plugins") {
         return checkWindowsPlugins() ? 0 : 1;

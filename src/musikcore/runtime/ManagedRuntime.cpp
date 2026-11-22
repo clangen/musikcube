@@ -180,6 +180,9 @@ namespace musik { namespace core { namespace ffi {
                 this->indexStarted = this->indexer->Started.Subscribe([this] { this->OnIndexStarted(); });
                 this->indexProgress = this->indexer->Progress.Subscribe([this](int updates) { this->OnIndexProgress(updates); });
                 this->indexFinished = this->indexer->Finished.Subscribe([this](int updates) { this->OnIndexFinished(updates); });
+                this->indexCancelled = this->indexer->Cancelled.Subscribe([this](int updates) {
+                    publish_indexer_event(*this->context, MC_INDEXER_CANCELLED, updates);
+                });
             }
             if (this->active) {
                 this->PublishSelection(true);
@@ -298,6 +301,7 @@ namespace musik { namespace core { namespace ffi {
                 this->indexStarted.Reset();
                 this->indexProgress.Reset();
                 this->indexFinished.Reset();
+                this->indexCancelled.Reset();
                 this->indexer = nullptr;
             }
             this->remoteStateChanged.Reset();
@@ -465,6 +469,7 @@ namespace musik { namespace core { namespace ffi {
         api::Subscriptions<>::Connection indexStarted;
         api::Subscriptions<int>::Connection indexProgress;
         api::Subscriptions<int>::Connection indexFinished;
+        api::Subscriptions<int>::Connection indexCancelled;
         bool pluginsInitialized = false;
         bool librariesInitialized = false;
         bool ownsLogging = false;

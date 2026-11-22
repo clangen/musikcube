@@ -19,5 +19,7 @@ namespace runtime_tests {
     bool checkLockedReadShutdown();
     bool checkDatabaseFailure();
     bool checkOwner();
+    bool checkIndexerCancel();
+    bool checkIndexerProviderCancel();
     bool checkFailure(bool caches = false);
 }

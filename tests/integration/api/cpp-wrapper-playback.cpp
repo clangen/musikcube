@@ -122,6 +122,60 @@ namespace wrapper_tests {
             }
         }
 
+        /* a cancelled scan retains processed database changes. both the initial
+        and a newly selected library must invalidate cached queue metadata. */
+        for (const bool rebind : { false, true }) {
+            runtime::MessageQueue cacheMessages;
+            const auto cacheTransport = std::make_shared<TestTransport>();
+            audio::PlaybackService cacheService(cacheMessages, local, cacheTransport);
+            cacheMessages.Dispatch();
+            auto cachePlayback = OpenFixturePlayback(cacheService);
+            if (rebind) {
+                cacheService.SelectLibrary(remote);
+                cacheService.SelectLibrary(local);
+            }
+            if (cachePlayback.Play(result, 0) != MC_OK) {
+                return playbackFailure(__LINE__);
+            }
+            /* GetTrack transfers a temporary SDK wrapper; release it after each
+            read so cache invalidation is tested without retaining stale wrappers. */
+            const auto readRating = [&]() -> std::optional<int64_t> {
+                auto* track = cacheService.GetTrack(0);
+                if (!track) {
+                    return std::nullopt;
+                }
+                const auto rating = track->GetInt64("rating");
+                track->Release();
+                return rating;
+            };
+            const auto original = readRating();
+            if (!original || !local->Indexer()) {
+                return playbackFailure(__LINE__);
+            }
+            const auto updated = *original == MC_TRACK_RATING_MAX ? 0 : MC_TRACK_RATING_MAX;
+            /* use the public mutation boundary, then publish the scanner terminal
+            outcome separately so this proves cancellation invalidation itself. */
+            const auto writeRating = [&](uint32_t rating) {
+                std::optional<mc_result> status;
+                const auto before = query_test_wakeup_count();
+                api::SetTrackRating(context, result.Track(0), rating,
+                    [&](mc_result result, std::string_view) { status = result; });
+                return query_test_wait_for_wakeup(before + 1) && context.Dispatch() == MC_OK && status == MC_OK;
+            };
+            if (!writeRating(updated) || readRating() != original) {
+                return playbackFailure(__LINE__);
+            }
+            local->Indexer()->Cancelled.Publish(1);
+            const auto refreshed = readRating();
+            if (!refreshed || *refreshed != updated) {
+                return playbackFailure(__LINE__);
+            }
+            if (!writeRating(static_cast<uint32_t>(*original))) {
+                return playbackFailure(__LINE__);
+            }
+            local->Indexer()->Cancelled.Publish(1);
+        }
+
         runtime::MessageQueue queue;
         const auto transport = std::make_shared<TestTransport>();
         std::optional<api::Playback> playback;
