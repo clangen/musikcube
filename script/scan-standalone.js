@@ -4,8 +4,8 @@
  * run the app and daemon without needing to install any additional packages.
  *
  * This script scans binaries produced by the build process to ensure there
- * are no unexpected libraries being dynamically linked by using `ldd` on
- * unix systems, and `otool` on mac.
+ * are no unexpected libraries being dynamically linked. foreign ELF files
+ * are inspected with readelf without executing the target loader.
  *
  * If dependencies undergo major version bumps, we often need to update the
  * set of expected libraries that are used to perform the scan.
@@ -36,7 +36,7 @@ const ignoredLibraries = mac
     'libsndioout.so',
   ]);
 
-/* Direct host dependencies of optional Linux plugins in the Zig archive. */
+/* Direct host dependencies permitted for optional Linux plugins. */
 const optionalPluginLibraries = new Map([
   ['libalsaout.so', 'libasound.so.2'],
   ['libmpris.so', 'libsystemd.so.0'],
@@ -57,7 +57,7 @@ const linuxLoaders = [
 /* Linux runtime libraries allowed in both scans. */
 const linuxRuntimeLibraries = [
   ...linuxLoaders, 'libc.so.6', 'libdl.so.2', 'libgcc_s.so.1', 'libm.so.6',
-  'libpthread.so.0', 'librt.so.1', 'libstdc++.so.6', 'libz.so.1', 'libatomic.so.1',
+  'libpthread.so.0', 'librt.so.1', 'libstdc++.so.6', 'libz.so.1',
 ];
 
 /* macOS runtime libraries and frameworks allowed in both scans. */
@@ -105,11 +105,30 @@ const validLibraries = mac
 let errors = 0;
 
 const vendorMode = process.argv[2] === '--vendor';
-const [packagePath, glibcFlag, glibcMax, ...extra] = process.argv.slice(vendorMode ? 3 : 2);
+const [packagePath, ...args] = process.argv.slice(vendorMode ? 3 : 2);
+const elfTargets = {
+  armv6: { machine: 'ARM', elfClass: 'ELF32', cpu: 'v6', loader: '/lib/ld-linux-armhf.so.3' },
+  armv8: { machine: 'ARM', elfClass: 'ELF32', cpu: 'v8', loader: '/lib/ld-linux-armhf.so.3' },
+  x86_64: { machine: 'Advanced Micro Devices X86-64', elfClass: 'ELF64', loader: '/lib64/ld-linux-x86-64.so.2' },
+};
+/* ARM1176 supports the ARMv6KZ profile and Thumb-1. */
+const armv6Architectures = new Set(['v4', 'v4T', 'v5T', 'v5TE', 'v5TEJ', 'v6', 'v6K', 'v6KZ']);
 
-if (!packagePath || extra.length ||
-    (glibcFlag && (mac || glibcFlag !== '--glibc-max' || !/^\d+\.\d+(\.\d+)?$/.test(glibcMax)))) {
-  console.log('\n\nusage: node scan-standalone.js [--vendor] <path> [--glibc-max <version>]\n\n');
+let glibcMax;
+let target;
+let invalid = !packagePath;
+for (let i = 0; i < args.length; i += 2) {
+  const [flag, value] = args.slice(i, i + 2);
+  if (flag === '--glibc-max' && !glibcMax && /^\d+\.\d+(\.\d+)?$/.test(value)) {
+    glibcMax = value;
+  } else if (flag === '--target' && !target && Object.prototype.hasOwnProperty.call(elfTargets, value)) {
+    target = elfTargets[value];
+  } else {
+    invalid = true;
+  }
+}
+if (invalid || (mac && (target || glibcMax))) {
+  console.log('usage: node scan-standalone.js [--vendor] <path> [--glibc-max <version>] [--target armv6|armv8|x86_64]');
   process.exit(1);
 }
 
@@ -119,7 +138,7 @@ const ls = async (leaf) => {
   const output = await readdir(`${root}/${leaf}`);
   const files = output
     .filter((fn) => fn.indexOf(filetype) !== -1)
-    .filter((fn) => glibcMax || !ignoredLibraries.has(fn));
+    .filter((fn) => target || glibcMax || !ignoredLibraries.has(fn));
   return files;
 };
 
@@ -131,6 +150,91 @@ const within = (root, path) => {
 const neededLinux = async (file) => {
   const { stdout } = await execFile('readelf', ['-d', file], { env });
   return [...stdout.matchAll(/\(NEEDED\).*?\[([^\]]+)\]/g)].map(([, name]) => name);
+};
+
+/* packaged zlib and the static C++ runtime must not resolve from the host. */
+const targetRuntime = new Set(['libc.so.6', 'libm.so.6', 'libdl.so.2', 'libpthread.so.0',
+  'librt.so.1', 'libgcc_s.so.1']);
+
+const targetAllows = (name) => targetRuntime.has(name) || name === basename(target.loader) ||
+  (target.cpu === 'v6' && name === 'libatomic.so.1');
+
+const elfProblems = async (file, executable = false) => {
+  const { stdout } = await execFile('readelf', ['-h', '-A', '-l', file], { env });
+  const problems = [];
+  const field = (name) => stdout.match(new RegExp('^\\s*' + name + ':\\s*(.+)$', 'm'))?.[1].trim();
+  if (field('Class') !== target.elfClass || field('Machine') !== target.machine ||
+      !field('Data')?.includes('little endian')) {
+    problems.push(`wrong ELF architecture (expected ${target.elfClass} ${target.machine})`);
+  }
+  const type = field('Type')?.split(/\s+/)[0];
+  if (type !== 'DYN' && (!executable || type !== 'EXEC')) {
+    problems.push(`unexpected ELF type: ${type ?? '(missing)'}`);
+  }
+  if (target.cpu) {
+    const cpu = field('Tag_CPU_arch');
+    const flags = field('Flags') ?? '';
+    const compatible = armv6Architectures.has(cpu) ||
+      (target.cpu === 'v8' && ['v6T2', 'v7', 'v8'].includes(cpu));
+    const float = field('Tag_FP_arch');
+    const armv6Features = target.cpu !== 'v6' ||
+      ((!float || float === 'VFPv2' || float === 'VFPv1') && field('Tag_THUMB_ISA_use') !== 'Thumb-2');
+    if (!compatible || !armv6Features || (executable && cpu !== target.cpu) ||
+        !flags.includes('Version5 EABI') || !flags.includes('hard-float ABI')) {
+      problems.push(`incompatible ARM attributes (expected EABI5 hard-float ARM${target.cpu}${executable ? '' : ' or older'})`);
+    }
+  }
+  const loader = stdout.match(/Requesting program interpreter: ([^\]]+)/)?.[1];
+  if ((executable || loader) && loader !== target.loader) {
+    problems.push(`unexpected ELF interpreter: ${loader ?? '(missing)'}`);
+  }
+  return problems;
+};
+
+const packagedElfProblems = async (file, packageRoot) => {
+  const { stdout } = await execFile('readelf', ['-d', file], { env });
+  const needed = [...stdout.matchAll(/\(NEEDED\).*?\[([^\]]+)\]/g)].map(([, name]) => name);
+  const paths = [...stdout.matchAll(/\((RUNPATH|RPATH)\).*?\[([^\]]*)\]/g)];
+  const effective = paths.find(([, tag]) => tag === 'RUNPATH') ?? paths[0];
+  const problems = [];
+  const search = [];
+  for (const path of effective ? effective[2].split(':') : []) {
+    const origin = path.match(/^\$(?:ORIGIN|\{ORIGIN\})(?:\/(.*))?$/);
+    if (!origin) {
+      problems.push(`non-relocatable search path: ${path}`);
+      continue;
+    }
+    const directory = resolve(dirname(file), origin[1] ?? '');
+    if (directory !== packageRoot && !within(packageRoot, directory)) {
+      problems.push(`search path leaves package: ${path}`);
+      continue;
+    }
+    search.push(directory);
+  }
+  const hostLibrary = dirname(file) === join(packageRoot, 'plugins')
+    ? optionalPluginLibraries.get(basename(file)) : undefined;
+  const scannedDirectories = [join(packageRoot, 'lib'), join(packageRoot, 'plugins')];
+  for (const name of needed) {
+    if (targetAllows(name) || name === hostLibrary) continue;
+    let found = false;
+    if (name === basename(name)) {
+      for (const directory of search) {
+        try {
+          const candidate = await realpath(join(directory, name));
+          const scanned = candidate === join(packageRoot, 'libmusikcore.so') ||
+            (scannedDirectories.includes(dirname(candidate)) && basename(candidate).includes(filetype));
+          if (scanned && (await stat(candidate)).isFile()) {
+            found = true;
+            break;
+          }
+        } catch (error) {
+          if (error.code !== 'ENOENT' && error.code !== 'ENOTDIR') throw error;
+        }
+      }
+    }
+    if (!found) problems.push(`${name} (not found on packaged search paths)`);
+  }
+  return problems;
 };
 
 const glibcProblems = async (file) => {
@@ -300,17 +404,26 @@ const scanVendor = async () => {
   for (const file of files) {
     const needed = await (mac ? neededMac(file) : neededLinux(file));
     const problems = needed.filter((name) => {
-      if (vendorSystemLibraries.has(name)) return false;
+      if (target ? targetAllows(name) : vendorSystemLibraries.has(name)) return false;
       if (!mac) return basename(name) !== name || !aliases.has(join(directory, name));
       if (name.startsWith('@rpath/')) return !aliases.has(resolve(directory, name.slice(7)));
       if (name.startsWith('@loader_path/')) return !aliases.has(resolve(dirname(file), name.slice(13)));
       return true;
     });
-    report(relative(directory, file), [...problems, ...await glibcProblems(file)]);
+    report(relative(directory, file), [...problems, ...await glibcProblems(file),
+      ...(target ? await elfProblems(file) : [])]);
   }
 };
 
 const ldd = async (fn) => {
+  if (target) {
+    const directory = await realpath(root);
+    const file = await realpath(join(directory, fn));
+    if (!within(directory, file)) throw new Error(`Binary is outside the package: ${fn}`);
+    report(fn, [...await elfProblems(file, fn === 'musikcube' || fn === 'musikcubed'),
+      ...await packagedElfProblems(file, directory), ...await glibcProblems(file)]);
+    return;
+  }
   /* Optional plugins use the host's stack, but still need the target glibc ABI. */
   const optionalLibrary = glibcMax && optionalPluginLibraries.get(basename(fn));
   const problems = optionalLibrary

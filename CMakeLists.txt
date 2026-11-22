@@ -79,14 +79,6 @@ else()
   message(STATUS "${BoldYellow}[ccache] disabled; homebrew or standalone build detected.${ColorReset}")
 endif()
 
-if (CROSS_COMPILE_SYSROOT)
-  message(STATUS "[cross-compile] enabled, rooted at: ${CROSS_COMPILE_SYSROOT}")
-  set(CMAKE_FIND_ROOT_PATH ${CROSS_COMPILE_SYSROOT} ${musikcube_SOURCE_DIR}/vendor)
-  set(ENV{PKG_CONFIG_PATH} ${CROSS_COMPILE_PKG_CONFIG_PATH})
-else()
-  message(STATUS "[cross-compile] not enabled!")
-endif()
-
 list(
   APPEND
   PROJECT_INCLUDE_DIRECTORIES

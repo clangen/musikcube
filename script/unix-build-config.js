@@ -4,13 +4,29 @@ const { existsSync, readdirSync, realpathSync, statSync } = require('fs');
 const { join } = require('path');
 const { createInterface } = require('readline');
 const { glibcVersion, stage } = require('./stage-zig-toolchain');
+const xTools = require('./install-crosscompile-toolkits');
 
 const mac = process.platform === 'darwin';
 const compilerNames = ['default', 'zig', 'rpi-armv6', 'rpi-armv8', 'x86'];
 const zigStaticLibraries = ['libncursesw.a', 'libpanelw.a', 'libtinfo.a', 'libev.a'];
 const raspberryPi = {
-  'rpi-armv6': ['armv6', 'armv6-rpi-linux-gnueabihf'],
-  'rpi-armv8': ['armv8', 'armv8-rpi3-linux-gnueabihf'],
+  'rpi-armv6': {
+    arch: 'armv6',
+    target: 'armv6-rpi-linux-gnueabihf',
+    manifest: 'raspbian-armhf',
+    /* the static libatomic pulls ARMv7 dispatch code into ARMv6 binaries. */
+    atomic: 'atomic',
+    debRuntime: ['libatomic1'],
+    rpmRuntime: ['libatomic'],
+  },
+  'rpi-armv8': {
+    arch: 'armv8',
+    target: 'armv8-rpi3-linux-gnueabihf',
+    manifest: 'debian-armhf',
+    atomic: ':libatomic.a',
+    debRuntime: [],
+    rpmRuntime: [],
+  },
 };
 
 function ask(question, fallback) {
@@ -47,15 +63,13 @@ function buildConfiguration(compiler, root, flags = {}) {
 
     config.marker = `zig-glibc${glibcVersion}`;
     config.variant = arch + '-' + config.marker;
-    config.audit = ['--glibc-max', glibcVersion];
+    config.audit = ['--glibc-max', glibcVersion, '--target', 'x86_64'];
   } else if (raspberryPi[compiler]) {
-    const [arm, toolchain] = raspberryPi[compiler];
-    const tools = join('/build', 'x-tools', toolchain);
     config.marker = compiler;
     config.variant = compiler;
-    config.rpi = { arm, toolchain, tools, sysroot: join(tools, toolchain, 'sysroot') };
-    config.cmake = ['--toolchain', join(__dirname, '..', '.cmake', `RaspberryPiToolchain-${arm}.cmake`)];
-    env.PATH = join(tools, 'bin') + ':' + env.PATH;
+    config.rpi = raspberryPi[compiler];
+    config.arch = config.rpi.arch;
+    config.audit = ['--glibc-max', xTools.glibcVersion, '--target', config.arch];
   } else if (compiler === 'x86') {
     config.marker = 'x86';
     config.variant = 'x86';
@@ -69,26 +83,70 @@ function buildArchiveConfiguration(root) {
   const cross = process.env.CROSSCOMPILE || '';
   const linuxCompiler = cross.startsWith('rpi-') || cross === 'x86' ? cross : 'zig';
   const config = buildConfiguration(linux ? linuxCompiler : 'default', root);
-  const arch = config.rpi?.arm ?? (config.compiler === 'x86' ? 'x86' : config.arch);
+  const arch = config.compiler === 'x86' ? 'x86' : config.arch;
   const platform = config.rpi ? 'linux_rpi' : linux ? 'linux' : 'macos';
 
   Object.assign(config, {
     osArch: platform + '_' + arch,
     extension: linux ? '.so' : '.dylib',
-    strip: config.rpi ? join(config.rpi.tools, 'bin/strip') : 'strip',
+    strip: 'strip',
     stripArguments: mac ? ['-x'] : [],
     codesign: mac,
     generatePackages: linux,
     packageCmake: [],
   });
 
-  if (config.rpi) config.cmake.push('-DENABLE_PIPEWIRE=false');
   if (config.generatePackages) {
     const debArch = config.rpi ? 'armhf' : arch === 'x86_64' ? 'amd64' : arch;
     config.packageCmake.push('-DGENERATE_DEB=true', '-DPACKAGE_ARCHITECTURE=' + debArch,
       '-DFRIENDLY_ARCHITECTURE_NAME=' + config.osArch, '-DCMAKE_INSTALL_PREFIX=/usr');
+    if (config.rpi) {
+      const debRuntime = [`libc6 (>= ${xTools.glibcVersion})`, 'libgcc-s1', ...config.rpi.debRuntime];
+      const rpmRuntime = [`glibc >= ${xTools.glibcVersion}`, 'libgcc', ...config.rpi.rpmRuntime];
+      config.packageCmake.push('-DCPACK_RPM_PACKAGE_ARCHITECTURE=' + arch + 'hl',
+        '-DCPACK_DEBIAN_PACKAGE_DEPENDS=' + debRuntime.join(', '),
+        '-DCPACK_RPM_PACKAGE_REQUIRES=' + rpmRuntime.join(', '));
+    }
   }
   return config;
+}
+
+async function stageRpiCompiler(config, root) {
+  config.toolchain = await xTools.stage(root, config.rpi.target);
+  const { prefix } = config.toolchain;
+  Object.assign(config.env, {
+    CC: prefix + 'gcc',
+    CXX: prefix + 'g++',
+    AR: prefix + 'ar',
+    RANLIB: prefix + 'ranlib',
+    NM: prefix + 'nm',
+    STRIP: prefix + 'strip',
+    PKG_CONFIG_PATH: '',
+    PKG_CONFIG_LIBDIR: '',
+    PKG_CONFIG_SYSROOT_DIR: '',
+  });
+  delete config.env.LD;
+}
+
+async function configureRpiArchive(config, { root, vendor, run }) {
+  const dependencies = join(vendor, 'sysroot');
+  if (!existsSync(join(vendor, `.config-${config.arch}-${config.marker}`))) {
+    throw new Error(`Expected a ${config.compiler} build marker in ${vendor}. Rebuild the vendors first.`);
+  }
+  run(process.execPath, [join(__dirname, 'scan-standalone.js'), '--vendor',
+    join(vendor, 'bin/lib'), ...config.audit], config.env);
+  await stageRpiCompiler(config, root);
+  config.strip = config.env.STRIP;
+  config.cmake.push('--toolchain', join(__dirname, '..', '.cmake', 'RaspberryPiToolchain.cmake'),
+    '-DMUSIKCUBE_XTOOLS_FILE=' + config.toolchain.cmake,
+    '-DMUSIKCUBE_DEPENDENCY_ROOT=' + dependencies,
+    '-DMUSIKCUBE_ATOMIC_LIBRARY=-l' + config.rpi.atomic);
+  Object.assign(config.env, {
+    MUSIKCUBE_RUNTIME_LIB_DIRS: join(dependencies, 'usr/lib'),
+    MUSIKCUBE_REQUIRED_RUNTIME_LIBS: 'libz.so.1',
+    MUSIKCUBE_OPTIONAL_RUNTIME_LIBS: '',
+    MUSIKCUBE_TERMINFO_DIR: join(dependencies, 'usr/share/terminfo'),
+  });
 }
 
 async function stageZigCompiler(config, root) {
@@ -174,6 +232,7 @@ async function configureZigArchive(config, { root, vendor, sysroot, run }) {
 }
 
 module.exports = {
-  ask, buildArchiveConfiguration, buildConfiguration, compilerNames, configureZigArchive,
-  glibcVersion, resolveZigSysroot, stageZigCompiler,
+  ask, buildArchiveConfiguration, buildConfiguration, compilerNames,
+  configureRpiArchive, configureZigArchive, glibcVersion, resolveZigSysroot,
+  stageRpiCompiler, stageZigCompiler,
 };

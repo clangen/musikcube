@@ -32,7 +32,7 @@ exports.build = function({ sources, config, run }) {
 
   const build = { cwd: sources.ncurses, env: config.env };
 
-  run('./configure', configureOptions, build);
+  run('./configure', [...configureOptions, ...config.configure], build);
   run('make', [config.jobs], build);
   run('make', ['DESTDIR=' + config.staticSysroot, ...installTargets], build);
 };

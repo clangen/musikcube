@@ -319,6 +319,17 @@ add_dependencies(musikcube_unit_tests musikcore_subscriptions_test)
 add_test(NAME musikcore.unit.subscriptions COMMAND musikcore_subscriptions_test)
 set_tests_properties(musikcore.unit.subscriptions PROPERTIES LABELS "unit;musikcore;playback;contract" TIMEOUT 10)
 
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
+    AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
+    AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+  add_test(NAME musikcube.integration.packaging.standalone_elf
+    COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/check-standalone-elf.js"
+    "${CMAKE_C_COMPILER}" "${PROJECT_SOURCE_DIR}/script/scan-standalone.js"
+    "${CMAKE_CURRENT_BINARY_DIR}/fixtures")
+  set_tests_properties(musikcube.integration.packaging.standalone_elf PROPERTIES
+    LABELS "integration;musikcube;packaging;contract" TIMEOUT 20)
+endif()
+
 # Deliberate faults must fail in both languages; successful probes stay quiet.
 if(MUSIKCUBE_SANITIZERS_LIST AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   foreach(language IN ITEMS c cpp)

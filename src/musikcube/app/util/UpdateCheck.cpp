@@ -45,10 +45,14 @@
 #include <cursespp/DialogOverlay.h>
 
 #include <common/runtime/Message.h>
+#include <musikcore/sdk/HttpClient.h>
 #include <musikcore/sdk/version.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
+
+#include <sstream>
+#include <utility>
 
 using namespace nlohmann;
 using namespace musik::cube;
@@ -57,6 +61,7 @@ using namespace musik::core::runtime;
 using namespace cursespp;
 
 static const std::string UPDATE_CHECK_URL = "https://musikcube.com/version";
+static constexpr long UPDATE_CHECK_TIMEOUT_MS = 5000;
 static const std::string LATEST = "latest";
 static const std::string MAJOR = "major";
 static const std::string MINOR = "minor";
@@ -99,71 +104,79 @@ UpdateCheck::UpdateCheck() {
 }
 
 UpdateCheck::~UpdateCheck() {
+    this->Cancel();
     Window::MessageQueue().Unregister(this);
 }
 
 bool UpdateCheck::Run(Callback callback) {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
     if (!callback) {
         return false;
     }
 
-    this->Reset();
+    this->Cancel();
+    this->callback = std::move(callback);
 
-    this->callback = callback;
-    this->httpClient = HttpClient::Create(std::stringstream());
-    this->httpClient->Url(UPDATE_CHECK_URL)
-        .UserAgent(getUserAgent())
-        .Mode(HttpClient::Thread::Background)
-        .Run([this](HttpClient* client, int statusCode, CURLcode curlCode) {
-            bool needsUpdate = false;
+    /* own the transfer so cancellation can join it before process shutdown. */
+    this->worker = std::jthread([this](std::stop_token stop) {
+        using HttpClient = musik::core::sdk::HttpClient<std::stringstream>;
+        auto client = HttpClient::Create(std::stringstream());
+        client->Url(UPDATE_CHECK_URL)
+            .UserAgent(getUserAgent())
+            .Mode(HttpClient::Thread::Current)
+            .Decorator([&stop](CURL* curl) {
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, UPDATE_CHECK_TIMEOUT_MS);
+                curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &stop);
+                curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION,
+                    +[](void* data, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int {
+                        return static_cast<std::stop_token*>(data)->stop_requested();
+                    });
+            })
+            .Run([this, &stop](HttpClient* client, int, CURLcode status) {
+                if (stop.stop_requested()) {
+                    return;
+                }
 
-            try {
-                json data = json::parse(client->Stream().str());
-                const auto platform = data[LATEST][PLATFORM];
-                const short major = platform[MAJOR];
-                const short minor = platform[MINOR];
-                const short patch = platform[PATCH];
+                bool needsUpdate = false;
+                if (status == CURLE_OK) {
+                    try {
+                        const auto platform = json::parse(client->Stream().str())[LATEST][PLATFORM];
+                        const short major = platform[MAJOR];
+                        const short minor = platform[MINOR];
+                        const short patch = platform[PATCH];
+                        this->updateUrl = platform[URL].get<std::string>();
+                        this->latestVersion = formattedVersion(major, minor, patch);
 
-                this->updateUrl = platform[URL].get<std::string>();
-                this->latestVersion = formattedVersion(major, minor, patch);
+                        constexpr auto current = versionCode(
+                            MUSIKCUBE_VERSION_MAJOR, MUSIKCUBE_VERSION_MINOR, MUSIKCUBE_VERSION_PATCH);
+                        needsUpdate = versionCode(major, minor, patch) > current;
+                    }
+                    catch (...) {
+                        /* a malformed response contains no usable update. */
+                    }
+                }
 
-                const int64_t current = versionCode(MUSIKCUBE_VERSION_MAJOR, MUSIKCUBE_VERSION_MINOR, MUSIKCUBE_VERSION_PATCH);
-                const int64_t latest = versionCode(major, minor, patch);
-                needsUpdate = latest > current;
-            }
-            catch (...) {
-                /* malformed. nothing we can do. */
-            }
-
-            cursespp::Window::MessageQueue().Post(
-                Message::Create(this, message::UpdateCheckFinished, needsUpdate));
-        });
+                Window::MessageQueue().Post(Message::Create(this, message::UpdateCheckFinished, needsUpdate));
+            });
+    });
 
     return true;
 }
 
 void UpdateCheck::Cancel() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    if (this->httpClient) {
-        this->httpClient->Cancel();
-        this->httpClient.reset();
+    /* join before removing queued completions or letting OpenSSL shut down. */
+    if (this->worker.joinable()) {
+        this->worker.request_stop();
+        this->worker.join();
     }
-}
 
-void UpdateCheck::Reset() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    this->Cancel();
-    this->callback = Callback();
-    this->result = "";
+    Window::MessageQueue().Remove(this, message::UpdateCheckFinished);
+    this->callback = {};
 }
 
 void UpdateCheck::ProcessMessage(IMessage &message) {
     if (message.Type() == message::UpdateCheckFinished) {
-        auto callback = this->callback;
-
-        this->Reset();
+        auto callback = std::move(this->callback);
+        this->Cancel();
 
         if (callback) {
             const bool updateRequired = message.UserData1() != 0;

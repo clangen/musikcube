@@ -244,12 +244,14 @@ exports.build = function({ sources, out, config, run }) {
   for (const [name, options, cflags] of codecBuilds(codecPrefix)) {
     console.log('Building static ' + name);
     if (name === 'vorbis') patchVorbisConfigure(sources[name]);
+    const extra = name === 'opus' ? config.opus ?? [] : [];
     const build = { cwd: sources[name], env: { ...codecEnv, CFLAGS: env.CFLAGS + cflags } };
     run('./configure', [
       '--prefix=' + codecPrefix,
       '--libdir=' + codecLib,
       ...staticCodecOptions,
       ...options,
+      ...extra,
       ...config.configure
     ], build);
     run('make', [jobs], build);

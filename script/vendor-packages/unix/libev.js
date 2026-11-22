@@ -15,7 +15,7 @@ exports.build = function({ sources, config, run }) {
   console.log('Building libev');
   const build = { cwd: sources.libev, env: config.env };
 
-  run('./configure', configureOptions, build);
+  run('./configure', [...configureOptions, ...config.configure], build);
   run('make', [config.jobs], build);
   run('make', ['DESTDIR=' + config.staticSysroot, 'install'], build);
 };

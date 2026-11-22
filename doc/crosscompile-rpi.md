@@ -1,48 +1,35 @@
-# Prerequisites
+# Cross-compile musikcube for Raspberry Pi
 
-Cross compiling depends on:
+Use a Linux x86-64 build host with the [standalone build prerequisites](build-standalone-unix.md) and GNU `readelf` from binutils.
 
-- A working "standalone" build environment ([see here](build-standalone-unix.md))
-- A working Raspberry Pi `Buster` environment, either via `chroot` ([see here](rpi-buster-chroot.md)) or on a physical device
+| Profile | Output | Optional plugin inputs |
+| --- | --- | --- |
+| `rpi-armv6` | 32-bit ARMv6 hard-float, for Pi 1 and Zero | Raspbian Bullseye |
+| `rpi-armv8` | 32-bit ARMv8-A hard-float, for ARMv8-capable Pi models | Debian Bullseye |
 
-# Gather dependencies from a Raspbian install
+Both profiles use an x-tools compiler with glibc 2.31. The build stages the pinned toolchain and dependency packages automatically. The toolchain supplies libc and its headers. The dependency packages supply headers and link libraries for the optional ALSA, PortAudio, PulseAudio, sndio, MPRIS, and PipeWire plugins.
 
-The cross-compile toolchain ships with a minimal system "image" that does not include all of the third-party dependencies we need to compile musikcube.
+The ARMv6 build uses the target's `libatomic.so.1`. The x-tools static archive contains ARMv7 dispatch routines that raise the output's ELF architecture to ARMv7.
 
-To obtain these dependencies we need to boot into the chroot environment and execute a script to download and collect the latest versions of the headers and libraries so we can add them to the cross-compile toolchain.
+## Build and package
 
-1. Enter the `chroot` environment (or boot your device)
-2. `apt-get update`
-3. `sudo apt-get dist-upgrade`
-4. `cd /build/sysroot`
-5. `node /build/musikcube/script/create-crosscompile-sysroot.js`
+From the directory containing the `musikcube` checkout:
 
-After this process completes you will be left with a file called `sysroot.tar`.
+```sh
+node musikcube/script/build-vendor-libraries.js --compiler rpi-armv6
+CROSSCOMPILE=rpi-armv6 node musikcube/script/archive-standalone-unix.js <version>
+```
 
-# Install the cross-compile toolchain
+Use `rpi-armv8` in both commands for that target. The vendor build writes to `vendor-rpi-armv6` or `vendor-rpi-armv8` next to the checkout and reuses downloads in `.vendor-cache`. The app build is under `musikcube/build/standalone/<profile>/`. Release files are under `musikcube/dist/<version>/`.
 
-The cross-compile toochains that ship with Debian and Ubuntu generally do not fully support `armv6`, which means we cannot use them to generate builds for older Raspberry Pi devices.
+## Verify
 
-Instead, we'll install a better maintained toolchain from the following github project: https://github.com/tttapa/docker-arm-cross-toolchain
+The build audits vendor libraries before building the app. Before packaging, it checks ELF architecture and ABI, the glibc symbol version ceiling, and the runtime dependencies of the executables, core library, plugins, and bundled libraries. Optional plugins can use an explicitly allowed system library. Its absence disables the associated plugin.
 
-1. `cd /build`
-2. `cp /path/to/generated/sysroot/sysroot.tar .`
-3. `node /build/musikcube/script/install-crosscompile-tools.js`
+To repeat the audit on an extracted archive:
 
-This will download the cross-compile tools to the current directory, extract them, then use the `sysroot.tar` to populate the tools' environments.
+```sh
+node musikcube/script/scan-standalone.js /path/to/extracted/archive --target armv6 --glibc-max 2.31
+```
 
-# Use cross-compile toolchain to compile dependencies
-
-In order to facilite easy, efficient distribution of musikcube binaries, we compile various dependencies ourselves, omitting unused features and ensuring the entire package is "relocatable," meaning users can run them from anywhere (i.e. they don't need to be installed to `/usr/` or `/usr/local/` to work properly).
-
-1. `cd /build`
-2. `node ./musikcube/script/build-vendor-libraries.js --compiler rpi-armv6`
-
-When this has finished, you'll be left with a `vendor-rpi-armv6` directory that the main app compile will reference.
-
-# Build the main app
-
-Now that we have all of our dependencies available it's time to compile the main app.
-
-1. `cd /build/musikcube`
-2. `CROSSCOMPILE=rpi-armv6 node ./script/archive-standalone-unix.js 3.0.2`
+Use `--target armv8` for the ARMv8 build. On a matching Pi, run `./musikcube`, index a local directory, and play a track through the intended output plugin to verify the runtime.

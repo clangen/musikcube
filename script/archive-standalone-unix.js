@@ -5,14 +5,14 @@ const {
   realpathSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync,
 } = require('fs');
 const { join, resolve } = require('path');
-const { ask, buildArchiveConfiguration, configureZigArchive } = require('./unix-build-config');
+const { ask, buildArchiveConfiguration, configureRpiArchive, configureZigArchive } = require('./unix-build-config');
 
 const source = realpathSync(join(__dirname, '..'));
 const root = join(source, '..');
 
-function run(program, args, env, capture = false) {
+function run(program, args, env, capture = false, cwd = source) {
   const result = spawnSync(program, args, {
-    cwd: source,
+    cwd,
     env,
     encoding: 'utf8',
     stdio: capture ? ['ignore', 'pipe', 'inherit'] : 'inherit',
@@ -35,18 +35,22 @@ function linkVendor(vendor) {
   symlinkSync(vendor, link);
 }
 
-function buildApp(config, clean) {
-  const { env } = config;
+function buildApp(config, vendor, clean) {
+  const { env, buildDirectory } = config;
   if (clean) {
     console.log('Cleaning the application build');
-    /* The cleanup script tolerates missing files from an initial build. */
-    const cleanup = spawnSync('sh', [join(__dirname, 'clean-nix.sh')], { cwd: source, env, stdio: 'inherit' });
-    if (cleanup.error) throw cleanup.error;
+    if (buildDirectory === source) {
+      const cleanup = spawnSync('sh', [join(__dirname, 'clean-nix.sh')], { cwd: source, env, stdio: 'inherit' });
+      if (cleanup.error) throw cleanup.error;
+    } else {
+      rmSync(buildDirectory, { recursive: true, force: true });
+      mkdirSync(buildDirectory, { recursive: true });
+    }
   } else {
     console.log('Reusing the application build');
   }
 
-  run('bash', [join(__dirname, 'stage-vendor-libraries.sh')], env);
+  run('bash', [join(__dirname, 'stage-vendor-libraries.sh'), vendor], env, false, buildDirectory);
   if (clean) {
     const args = [
       ...config.cmake,
@@ -57,16 +61,19 @@ function buildApp(config, clean) {
       '-DENABLE_PCH=true',
       ...config.packageCmake,
     ];
-    run('cmake', [...args, '.'], env);
-    run('make', [config.jobs], env);
+    if (buildDirectory !== source) {
+      args.push('-DMUSIKCUBE_VENDOR_ROOT=' + vendor, '-DMUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY=' + join(buildDirectory, 'bin'));
+    }
+    run('cmake', [...args, '-S', source, '-B', buildDirectory], env);
+    run('make', [config.jobs], env, false, buildDirectory);
   }
 
-  run('sh', [join(__dirname, 'patch-rpath.sh'), source], env);
+  run('sh', [join(__dirname, 'patch-rpath.sh'), buildDirectory], env, false, buildDirectory);
 }
 
 function stageArchive(config, output) {
   const { extension, strip, stripArguments } = config;
-  const bin = join(source, 'bin');
+  const bin = join(config.buildDirectory, 'bin');
   const files = ['musikcube', 'musikcubed', 'libmusikcore' + extension];
   const lib = readdirSync(join(bin, 'lib'))
     .filter((file) => lstatSync(join(bin, 'lib', file)).isFile())
@@ -97,14 +104,15 @@ function stageArchive(config, output) {
   }
 }
 
-function createPackages(output, env) {
+function createPackages(output, { buildDirectory, env }) {
   const staging = mkdtempSync(join(output, '.cpack-'));
   try {
-    /* Keep CPack from rebuilding and replacing the stripped, patched binaries. */
-    const config = readFileSync(join(source, 'CPackConfig.cmake'), 'utf8');
+    /* keep CPack from rebuilding and replacing the patched binaries. */
+    const config = readFileSync(join(buildDirectory, 'CPackConfig.cmake'), 'utf8');
     const stagedConfig = join(staging, 'CPackConfig.cmake');
     writeFileSync(stagedConfig, config.replace('Unix Makefiles', 'Ninja'));
-    run('cpack', ['--config', stagedConfig, '-B', staging], env);
+    run('cpack', ['--config', stagedConfig, '-B', staging,
+      '-D', 'CPACK_RPM_SPEC_MORE_DEFINE=%global _tmppath ' + staging], env);
 
     const packages = readdirSync(staging).filter((file) => /\.(deb|rpm)$/.test(file));
     for (const extension of ['.deb', '.rpm']) {
@@ -124,7 +132,9 @@ function scanArchive(output, { audit, env }) {
 }
 
 function configureRpi(config) {
-  config.scan = () => console.log('Skipping the runtime dependency scan for the Raspberry Pi cross-build');
+  config.prepare = (vendor) => configureRpiArchive(config, { root, vendor, run });
+  config.cleanBuild = () => true;
+  config.buildDirectory = join(source, 'build', 'standalone', config.variant);
 }
 
 const archiveConfigurations = new Map([
@@ -140,6 +150,7 @@ const archiveConfigurations = new Map([
 function configuration() {
   const config = buildArchiveConfiguration(root);
   Object.assign(config, {
+    buildDirectory: source,
     cleanBuild: async () => !/^n$/i.test(await ask('clean and rebuild [y]? ', 'y')),
     scan: scanArchive,
     package: config.generatePackages ? createPackages : undefined,
@@ -168,12 +179,12 @@ async function main() {
     throw new Error(`Vendor libraries missing from ${vendor}. Run build-vendor-libraries.js first.`);
   }
 
-  /* Verify the Zig vendor build before changing the checkout's vendor link. */
+  /* Verify the vendor build before changing the checkout's vendor link. */
   await config.prepare?.(vendor, sysroot);
   mkdirSync(config.env.TMPDIR, { recursive: true });
 
-  linkVendor(vendor);
-  buildApp(config, await config.cleanBuild());
+  if (config.buildDirectory === source) linkVendor(vendor);
+  buildApp(config, vendor, await config.cleanBuild());
 
   /* Scan the staged archive before creating release files. */
   const outName = `musikcube_${version}_${config.osArch}`;
@@ -183,7 +194,7 @@ async function main() {
   config.scan(output, config);
 
   run('tar', ['-cjf', output + '.tar.bz2', '-C', destination, outName], config.env);
-  config.package?.(destination, config.env);
+  config.package?.(destination, config);
   console.log('Standalone archives written to ' + destination);
 }
 

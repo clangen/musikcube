@@ -34,42 +34,39 @@
 
 #pragma once
 
+#include <functional>
+#include <string>
 #include <thread>
-#include <mutex>
-#include <memory>
 #include <common/runtime/IMessageTarget.h>
-#include <musikcore/sdk/HttpClient.h>
 
 namespace musik { namespace cube {
+    /* non-copyable and non-movable. the UI message queue registers this object's address. */
     class UpdateCheck: private musik::core::runtime::IMessageTarget {
         public:
             /* args = updateRequired, version, url */
             using Callback = std::function<void(bool, std::string, std::string)>;
-            using HttpClient = musik::core::sdk::HttpClient<std::stringstream>;
 
             static void ShowUpgradeAvailableOverlay(
                 const std::string& version, const std::string& url, bool silent = true);
 
             static void ShowNoUpgradeFoundOverlay();
 
-            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(UpdateCheck)
-
             UpdateCheck();
             ~UpdateCheck();
+
+            UpdateCheck(const UpdateCheck&) = delete;
+            UpdateCheck& operator=(const UpdateCheck&) = delete;
 
             bool Run(Callback callback);
             void Cancel();
 
         private:
-            void Reset();
-
             /* IMessageHandler */
             void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
-            std::recursive_mutex mutex;
             Callback callback;
-            std::shared_ptr<HttpClient> httpClient;
-            std::string result, latestVersion, updateUrl;
+            std::jthread worker;
+            std::string latestVersion, updateUrl;
     };
 
 } }

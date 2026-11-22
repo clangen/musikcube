@@ -20,7 +20,8 @@ const {
 } = require('fs');
 const { basename, dirname, isAbsolute, join, relative, resolve } = require('path');
 const {
-  ask, buildConfiguration, compilerNames, glibcVersion, resolveZigSysroot, stageZigCompiler,
+  ask, buildConfiguration, compilerNames, glibcVersion, resolveZigSysroot,
+  stageRpiCompiler, stageZigCompiler,
 } = require('./unix-build-config');
 
 const ffmpeg = require('./vendor-packages/unix/ffmpeg');
@@ -82,17 +83,16 @@ function run(program, args, { capture = false, ...options } = {}) {
   }
 }
 
-async function configureZig(config, out, sysroot) {
-  await stageZigCompiler(config, buildDirectory);
+function configureStaticDependencies(config, out, sysroot) {
   const { env } = config;
 
   /* Build zlib against the same glibc baseline as its consumers. */
-  const zlib = join(out, '..', '..', 'zig-zlib');
+  const zlib = join(out, '..', '..', 'static-zlib');
   const destination = join(out, '..', 'sysroot');
   Object.assign(config, {
     stageSysroot: sysroot ? () => stageZigSysroot(sysroot, destination) : () => {},
     stagePluginDependencies: sysroot ? undefined : (work) => {
-      debianPluginDependencies.stage({ destination, download, run, work });
+      debianPluginDependencies.stage({ destination, download, run, work, target: config.rpi?.manifest });
       relocateSysrootLinks(destination);
     },
     sourceSysroot: sysroot ? undefined : destination,
@@ -115,7 +115,6 @@ async function configureZig(config, out, sysroot) {
       '-DZLIB_ROOT=' + zlib,
       '-DZLIB_USE_STATIC_LIBS=ON',
     ],
-    openmpt: ['CONFIG=clang', 'CC=' + env.CC, 'CXX=' + env.CXX, 'LD=' + env.CXX, 'AR=' + env.AR],
     makefileEnv: {
       ...env,
       CPPFLAGS: [env.CPPFLAGS, '-I' + join(zlib, 'include')].filter(Boolean).join(' '),
@@ -127,37 +126,33 @@ async function configureZig(config, out, sysroot) {
   });
 }
 
-function configureRpi(config, out) {
-  // The toolchain's libstdc++ is newer than the oldest target system's.
-  const { arch, env, rpi: { toolchain, sysroot } } = config;
+async function configureZig(config, out, sysroot) {
+  await stageZigCompiler(config, buildDirectory);
+  configureStaticDependencies(config, out, sysroot);
+  config.openmpt = ['CONFIG=clang', 'CC=' + config.env.CC, 'CXX=' + config.env.CXX,
+    'LD=' + config.env.CXX, 'AR=' + config.env.AR];
+}
 
-  env.LDFLAGS = [env.LDFLAGS, `--sysroot=${sysroot}/`].filter(Boolean).join(' ');
-  env.CXXFLAGS += ' -static-libstdc++';
-  env.PKG_CONFIG_PATH = join(out, 'lib', 'pkgconfig') + ':' +
-    join(sysroot, 'usr/lib/arm-linux-gnueabihf/pkgconfig');
-
-  Object.assign(config, {
-    openssl: ['-latomic', 'linux-generic32', `--cross-compile-prefix=${toolchain}-`],
-    configure: [
-      '--build=x86_64-pc-linux-gnu',
-      `--host=${toolchain}`,
-      `--with-sysroot=${sysroot}/`
-    ],
-    ffmpeg: [
-      `--arch=${arch}`,
-      '--target-os=linux',
-      '--enable-cross-compile',
-      `--sysroot=${sysroot}/`,
-      `--cross-prefix=${toolchain}-`
-    ],
-    makefileEnv: {
-      ...env,
-      AR: `${toolchain}-ar`,
-      CC: `${toolchain}-gcc`,
-      CXX: `${toolchain}-g++`,
-      LD: `${toolchain}-ld`,
-    },
-  });
+async function configureRpi(config, out) {
+  await stageRpiCompiler(config, buildDirectory);
+  const { env, toolchain } = config;
+  /* keep the newer compiler runtime private to each shared library. */
+  env.CXXFLAGS += ' -static-libstdc++ -fvisibility-inlines-hidden';
+  env.LDFLAGS = [env.LDFLAGS, '-Wl,--exclude-libs,libstdc++.a:libatomic.a'].filter(Boolean).join(' ');
+  configureStaticDependencies(config, out);
+  config.openssl = ['-l' + config.rpi.atomic, 'linux-generic32'];
+  config.configure = ['--build=x86_64-pc-linux-gnu', '--host=arm-linux-gnueabihf'];
+  config.ffmpeg.push('--arch=arm', '--target-os=linux', '--enable-cross-compile',
+    '--strip=' + config.env.STRIP);
+  /* opus uses rounding intrinsics missing from GCC's 32-bit ARM headers. */
+  config.opus = ['--disable-intrinsics'];
+  if (config.arch === 'armv6') {
+    config.ffmpeg.push('--disable-neon', '--disable-vfpv3');
+    config.opus.push('--disable-asm');
+  }
+  config.cmake.push('--toolchain', toolchain.cmake);
+  config.openmpt = ['CONFIG=gcc', 'CC=' + env.CC, 'CXX=' + env.CXX, 'LD=' + env.CXX, 'AR=' + env.AR,
+    'LDFLAGS=' + [config.makefileEnv.LDFLAGS, '-static-libstdc++'].filter(Boolean).join(' ')];
 }
 
 function configureX86(config) {
@@ -358,7 +353,7 @@ async function main() {
 
     config.stageSysroot();
 
-    /* The Zig prerequisites come after FFmpeg and before their consumers. */
+    /* Build the static prerequisites before their consumers. */
     const recipes = [ffmpeg, ...config.prerequisites, ...commonRecipes];
     const sources = fetchPackages(vendor, recipes);
     for (const recipe of recipes) recipe.build({ sources, out, config, run });
