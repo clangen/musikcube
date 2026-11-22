@@ -77,12 +77,14 @@ target_link_options(musikcube_windows INTERFACE "$<$<CONFIG:Release>:/OPT:REF;/O
 
 set(pdcurses_sources ${windows_thirdparty_sources})
 list(FILTER pdcurses_sources INCLUDE REGEX "/pdcurses/")
-list(FILTER windows_thirdparty_sources EXCLUDE REGEX "/pdcurses/")
+list(FILTER windows_thirdparty_sources EXCLUDE REGEX "/pdcurses/|/wcwidth\\.c$")
 
 add_library(musikcube_thirdparty STATIC ${windows_thirdparty_sources})
 target_link_libraries(musikcube_thirdparty PRIVATE musikcube_windows)
 target_include_directories(musikcube_thirdparty PRIVATE src/3rdparty/include/sqlite)
 target_compile_definitions(musikcube_thirdparty PRIVATE SQLITE_THREADSAFE _CRT_SECURE_NO_DEPRECATE)
+set_source_files_properties(src/3rdparty/src/sqlean/unicode/extension.c
+  PROPERTIES COMPILE_DEFINITIONS SQLITE_CORE)
 
 add_library(pdcurses_gui STATIC ${pdcurses_sources})
 add_library(pdcurses_console STATIC ${pdcurses_sources})
@@ -93,13 +95,28 @@ endforeach()
 target_compile_definitions(pdcurses_gui PRIVATE PDCURSES_WINGUI)
 target_compile_definitions(pdcurses_console PRIVATE PDCURSES_WINCON)
 
-add_library(musikcore STATIC ${windows_core_sources})
-musikcore_add_consumer_api(musikcore "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer/remote-session.cpp")
-target_include_directories(musikcore PRIVATE src/musikcore)
-target_link_libraries(musikcore PRIVATE musikcube_windows musikcube_thirdparty
-  vendor::curl vendor::ssl vendor::crypto shell32)
-target_compile_definitions(musikcore PRIVATE _CRT_SECURE_NO_DEPRECATE)
-target_precompile_headers(musikcore PRIVATE src/musikcore/pch.hpp)
+add_library(musikcore_objects OBJECT ${windows_core_sources})
+target_compile_features(musikcore_objects PRIVATE cxx_std_20)
+musikcore_add_consumer_api(musikcore_objects "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer/remote-session.cpp")
+target_include_directories(musikcore_objects PRIVATE src/musikcore)
+target_link_libraries(musikcore_objects PRIVATE musikcube_windows)
+target_compile_definitions(musikcore_objects PRIVATE _CRT_SECURE_NO_DEPRECATE)
+target_precompile_headers(musikcore_objects PRIVATE src/musikcore/pch.hpp)
+
+set(windows_core_libraries musikcube_thirdparty Threads::Threads
+  vendor::curl vendor::ssl vendor::crypto shell32 ws2_32 wldap32)
+add_library(musikcore SHARED $<TARGET_OBJECTS:musikcore_objects>)
+set_target_properties(musikcore PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS OFF)
+target_include_directories(musikcore PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_compile_definitions(musikcore INTERFACE MC_USING_SHARED)
+target_link_libraries(musikcore PRIVATE ${windows_core_libraries})
+
+if(BUILD_TESTING)
+  # Private implementation fixtures use the same objects as the DLL.
+  add_library(musikcore_internal STATIC $<TARGET_OBJECTS:musikcore_objects>)
+  target_include_directories(musikcore_internal PUBLIC "${PROJECT_SOURCE_DIR}/include")
+  target_link_libraries(musikcore_internal PRIVATE ${windows_core_libraries})
+endif()
 
 # Use one runtime target for both frontends and for the C SDK demo.
 file(GLOB windows_dlls CONFIGURE_DEPENDS "${windows_vendor}/win64/dll/*/*.dll")
@@ -206,6 +223,11 @@ foreach(target directsoundout gmedecoder nullout supereqdsp taglib_plugin
   target_link_options(${target} PRIVATE /SUBSYSTEM:WINDOWS)
 endforeach()
 
+add_dependencies(musikcore musikcube_runtime)
+add_library(musikcube_ui_runtime OBJECT
+  src/common/runtime/Message.cpp src/common/runtime/MessageQueue.cpp src/3rdparty/src/wcwidth.c)
+target_link_libraries(musikcube_ui_runtime PRIVATE musikcube_windows)
+
 add_executable(musikcube WIN32 ${windows_app_sources})
 add_executable(musikcube-cmd ${windows_app_sources})
 target_compile_definitions(musikcube PRIVATE PDCURSES_WINGUI)
@@ -217,12 +239,23 @@ foreach(target musikcube musikcube-cmd)
   windows_project_sources(${target} src/musikcube)
   target_include_directories(${target} PRIVATE src/musikcube src/musikcube/cursespp)
   target_precompile_headers(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${PROJECT_SOURCE_DIR}/src/musikcube/stdafx.h>")
-  target_link_libraries(${target} PRIVATE musikcube_windows musikcore
+  target_link_libraries(${target} PRIVATE musikcube_windows musikcore musikcube_ui_runtime vendor::curl
     dwmapi windowsapp pdh psapi ws2_32 wldap32 comctl32 winmm)
   add_dependencies(${target} musikcube_runtime)
 endforeach()
 
-windows_project_sources(musikcore src/musikcore)
+if(BUILD_TESTING)
+  add_test(NAME musikcube.integration.windows_core_dll COMMAND "${CMAKE_COMMAND}"
+    "-DLINKER=${CMAKE_LINKER}" "-DLIBRARY=$<TARGET_FILE:musikcore>"
+    "-DGUI=$<TARGET_FILE:musikcube>" "-DCONSOLE=$<TARGET_FILE:musikcube-cmd>"
+    "-DALLOWLIST=${PROJECT_SOURCE_DIR}/src/musikcore/ffi/exports.txt"
+    -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-windows-core-dll.cmake")
+  set_tests_properties(musikcube.integration.windows_core_dll PROPERTIES
+    LABELS "integration;musikcube;abi;contract")
+  add_dependencies(musikcube_tests musikcube musikcube-cmd)
+endif()
+
+windows_project_sources(musikcore_objects src/musikcore)
 
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT musikcube)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

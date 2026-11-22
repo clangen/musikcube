@@ -1475,7 +1475,13 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
   installed with the expected `libmusikcore.so` SONAME and relative runtime
   paths. The complete runtime passed `script/scan-standalone.js` at glibc 2.28.
 - [ ] **PKG-006** Validate Mach-O install names and exported symbols.
-- [ ] **PKG-007** Validate Windows DLL/import-library/plugin placement.
+- [x] **PKG-007** Validate Windows DLL/import-library/plugin placement.
+  Visual Studio 2026 x64 Debug and Release stage `musikcore.dll` beside both
+  frontends, the import library under the configuration's build library directory,
+  and plugins in the runtime's `plugins` directory. The
+  `musikcube.integration.windows_core_dll` test verifies frontend imports and
+  the C ABI export allowlist. Both staged configurations passed the Windows
+  dependency audit.
 - [ ] **PKG-008** Run consumer, plugin, and application smoke tests from staged
   standalone archives.
 - [ ] **PKG-009** Verify packages contain no build-machine absolute paths or

@@ -33,7 +33,7 @@ function stageTestRuntime(executable, root) {
 
   /* An allowlist prevents unrelated output/device plugins from affecting tests. */
   for (const entry of readdirSync(join(source, 'plugins'), { withFileTypes: true })) {
-    if (!entry.isDirectory() && /^(lib)?(taglibreader|ffmpegdecoder)\.(dll|dylib|so)$/.test(entry.name)) {
+    if (!entry.isDirectory() && /^(lib)?(taglibreader|taglib_plugin|ffmpegdecoder)\.(dll|dylib|so)$/.test(entry.name)) {
       copyFileSync(join(source, 'plugins', entry.name), join(runtime, 'plugins', entry.name));
     }
   }

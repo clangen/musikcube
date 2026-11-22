@@ -390,6 +390,18 @@ namespace {
 }
 
 /* argv comes from an isolated fixture with no catalog, user media, or devices. */
+#ifdef _WIN32
+int wmain(int argc, wchar_t** argv) {
+    if (argc < 2) {
+        return 1;
+    }
+
+    const auto path = std::filesystem::path(argv[1]).u8string();
+    const auto http = std::filesystem::path(argc > 2 ? argv[2] : L"").u8string();
+    return check(std::string(path.begin(), path.end()), std::string(http.begin(), http.end())) ? 0 : 1;
+}
+#else
 int main(int argc, char** argv) {
     return argc >= 2 && check(argv[1], argc > 2 ? argv[2] : "") ? 0 : 1;
 }
+#endif

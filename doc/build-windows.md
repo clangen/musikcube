@@ -30,6 +30,8 @@ cmake --build --preset windows-debug
 
 Open the generated `musikcube.slnx` (or `musikcube.sln`, depending on your CMake version) at the checkout root to build and debug from Visual Studio. Rerun the generator after adding or removing a CMake target. The GUI and console executables, plugins, and runtime files are in `bin64\Release` and `bin64\Debug`.
 
+Both frontends import the C API from the same `musikcore.dll` in their configuration's runtime directory. The corresponding import library is `build/windows-x64/lib/<configuration>/musikcore.lib`.
+
 ```powershell
 node .\script\build-vendor-libraries.js --audit-directory .\bin64\Release
 node .\script\build-vendor-libraries.js --audit-directory .\bin64\Debug

@@ -85,7 +85,7 @@ if(BUILD_TESTING)
     target_include_directories(musikcore_production_api_test PRIVATE
       "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
     set_target_properties(musikcore_production_api_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
-    target_compile_features(musikcore_production_api_test PRIVATE cxx_std_17)
+    target_compile_features(musikcore_production_api_test PRIVATE cxx_std_20)
     target_link_libraries(musikcore_production_api_test PRIVATE ${core_fixture_library} Threads::Threads)
     if(WIN32)
       target_link_libraries(musikcore_production_api_test PRIVATE musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)

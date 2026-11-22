@@ -5,6 +5,11 @@ project(musikcore_testing_disabled LANGUAGES C CXX)
 set(BUILD_TESTING OFF)
 find_package(Threads REQUIRED)
 add_library(musikcore INTERFACE)
+if(WIN32)
+  add_library(musikcube_windows INTERFACE)
+  add_library(vendor::ssl INTERFACE IMPORTED)
+  add_custom_target(musikcube_runtime)
+endif()
 add_subdirectory("${SUPPORT}" support)
 
 # Fixture executables/modules must never enter a tests-disabled target graph.

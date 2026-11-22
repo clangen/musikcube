@@ -59,6 +59,11 @@ target_include_directories(musikcore_abi_dispatch_test PRIVATE
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer"
 )
 target_link_libraries(musikcore_abi_dispatch_test PRIVATE Threads::Threads)
+if(MSVC)
+  # The allocation fault sweep must avoid MSVC's debug-only iterator proxy
+  # allocations in noexcept container constructors.
+  target_compile_definitions(musikcore_abi_dispatch_test PRIVATE _ITERATOR_DEBUG_LEVEL=0)
+endif()
 set_target_properties(musikcore_abi_dispatch_test PROPERTIES
   CXX_STANDARD 11
   CXX_STANDARD_REQUIRED ON

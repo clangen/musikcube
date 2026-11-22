@@ -1,4 +1,5 @@
 #include <musikcore/context.h>
+#include <cstdio>
 #include <cstdlib>
 #include <new>
 #include <string>
@@ -38,17 +39,30 @@ bool context_test_allocation_failures() {
         allocationsUntilFailure = -1;
         mc_error_destroy(&error);
         if (result == MC_OK) {
-            if (!context) return false;
+            if (!context) {
+                std::fprintf(stderr, "allocation %ld: successful create returned no context\n", allocation);
+                return false;
+            }
             ++successes;
         }
         else {
-            if (result != MC_ERROR_INTERNAL || context) return false;
+            if (result != MC_ERROR_INTERNAL || context) {
+                std::fprintf(stderr, "allocation %ld: unexpected create result %d\n", allocation, (int) result);
+                return false;
+            }
             ++failures;
         }
         mc_context_destroy(&context);
         /* A failed constructor must never consume the process context slot. */
-        if (mc_context_create(&options, &context, nullptr) != MC_OK) return false;
+        if (mc_context_create(&options, &context, nullptr) != MC_OK) {
+            std::fprintf(stderr, "allocation %ld: could not recreate context\n", allocation);
+            return false;
+        }
         mc_context_destroy(&context);
     }
-    return failures >= 3 && successes != 0;
+    if (failures < 3 || successes == 0) {
+        std::fprintf(stderr, "allocation fault sweep: %u failures, %u successes\n", failures, successes);
+        return false;
+    }
+    return true;
 }
