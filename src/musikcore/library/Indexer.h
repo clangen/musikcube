@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <musikcore/db/Connection.h>
 #include <musikcore/sdk/ITagReader.h>
 #include <musikcore/sdk/IDecoderFactory.h>
@@ -164,6 +165,7 @@ namespace musik { namespace core {
             std::condition_variable_any waitCondition;
             std::unique_ptr<std::thread> thread;
             std::atomic<int> incrementalUrisScanned, totalUrisScanned;
+            std::chrono::steady_clock::time_point lastProgressCommit;
             std::deque<AddRemoveContext> addRemoveQueue;
             std::deque<SyncContext> syncQueue;
             TagReaderList tagReaders;

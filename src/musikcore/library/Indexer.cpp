@@ -238,6 +238,7 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
 
     this->incrementalUrisScanned = 0;
     this->totalUrisScanned = 0;
+    this->lastProgressCommit = std::chrono::steady_clock::now();
 
     /* always remove tracks that no longer have a corresponding source */
     for (const auto id : this->GetOrphanedSourceIds()) {
@@ -453,7 +454,12 @@ inline void Indexer::IncrementTracksScanned(int delta) {
     const int interval = prefs->GetInt(
         prefs::keys::IndexerTransactionInterval, TRANSACTION_INTERVAL);
 
-    if (this->incrementalUrisScanned > TRANSACTION_INTERVAL) {
+    constexpr auto progressInterval = std::chrono::seconds(2);
+    const auto now = std::chrono::steady_clock::now();
+    if (this->incrementalUrisScanned >= std::max(1, interval) ||
+        now - this->lastProgressCommit >= progressInterval)
+    {
+        this->lastProgressCommit = now;
         this->trackTransaction->CommitAndRestart();
         this->Progress.Publish(this->totalUrisScanned);
         this->incrementalUrisScanned = 0;
