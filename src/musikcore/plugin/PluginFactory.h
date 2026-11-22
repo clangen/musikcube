@@ -58,6 +58,9 @@ namespace musik { namespace core {
             static PluginFactory& Instance(const std::string& directory = {});
 
             const std::string& Directory() const noexcept { return this->directory; }
+            /* discovery classifies each image once. sessions load only these C
+            candidates, without reopening rejected SDK 23 libraries. */
+            const std::vector<std::string>& CProviderFiles() const noexcept { return this->cProviderFiles; }
             void BeginSession();
             void EndSession();
 
@@ -170,10 +173,12 @@ namespace musik { namespace core {
             explicit PluginFactory(std::string directory);
             ~PluginFactory();
             void LoadPlugins();
+            void RecordCProvider(const std::string& filename, void* nativeHandle);
 
             const std::string directory;
 
             std::vector<std::shared_ptr<Descriptor> > plugins;
+            std::vector<std::string> cProviderFiles;
             std::mutex mutex;
             std::shared_ptr<musik::core::sdk::IPreferences> prefs;
     };

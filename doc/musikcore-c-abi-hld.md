@@ -488,3 +488,5 @@ The modernization is complete when:
 - [ADR-0004: testing at the public boundary](../docs/adr/0004-test-the-public-boundary-first.md)
 - [ADR-0005: context-owned production runtime](../docs/adr/0005-context-owned-production-runtime.md)
 - [ADR-0006: enforce the frontend consumer boundary](../docs/adr/0006-enforce-the-frontend-consumer-boundary.md)
+- [ADR-0007: explicit URI player resources](../docs/adr/0007-explicit-uri-player-resources.md)
+- [ADR-0008: C provider bootstrap and unload lifetime](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md)

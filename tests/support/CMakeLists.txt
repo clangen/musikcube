@@ -587,3 +587,24 @@ add_test(NAME musikcore.integration.api.remote_facets COMMAND "${MUSIKCORE_TEST_
   "$<TARGET_FILE:musikcore_remote_facets_test>" --stage)
 set_tests_properties(musikcore.integration.api.remote_facets PROPERTIES
   LABELS "integration;musikcore;api;transport;contract" TIMEOUT 25)
+
+# exercise provider discovery through the shared public application boundary.
+add_executable(musikcore_provider_runtime_test ../integration/plugins/runtime.cpp host-wakeup.cpp)
+target_link_libraries(musikcore_provider_runtime_test PRIVATE musikcore)
+target_compile_features(musikcore_provider_runtime_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_provider_runtime_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+add_dependencies(musikcube_tests musikcore_provider_runtime_test musikcore_provider_valid)
+add_dependencies(musikcube_integration_tests musikcore_provider_runtime_test musikcore_provider_valid)
+add_test(NAME musikcore.integration.plugins.runtime COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_provider_runtime_test>" --stage --plugin "$<TARGET_FILE:musikcore_provider_valid>"
+  --plugin "$<TARGET_FILE:musikcore_provider_incompatible>" --plugin "$<TARGET_FILE:musikcore_provider_init_fail>")
+set_tests_properties(musikcore.integration.plugins.runtime PROPERTIES
+  LABELS "integration;musikcore;plugins;runtime;contract" TIMEOUT 45)
+add_test(NAME musikcore.integration.plugins.installed COMMAND "${CMAKE_COMMAND}"
+  "-DBUILD_DIR=${PROJECT_BINARY_DIR}" "-DSOURCE=${PROJECT_SOURCE_DIR}" "-DTEST_CONFIG=$<CONFIG>"
+  "-DHOST=$<TARGET_FILE:musikcore_provider_host_test>" "-DNM=${CMAKE_NM}"
+  "-DTEST_GENERATOR=${CMAKE_GENERATOR}" "-DTEST_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+  -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-installed-provider.cmake")
+set_tests_properties(musikcore.integration.plugins.installed PROPERTIES
+  LABELS "integration;musikcore;plugins;packaging;contract" TIMEOUT 90)

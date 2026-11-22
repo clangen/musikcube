@@ -1010,27 +1010,92 @@ recorded before the experimental shared façade is introduced.
 
 ### Phase 4: C SDK walking skeleton
 
-- [ ] **SDK-001** Create `include/musikcore/plugin.h`.
-- [ ] **SDK-002** Define the single `mc_plugin_get_api` entry point.
-- [ ] **SDK-003** Define sized `mc_host_api` and `mc_plugin_api` tables.
-- [ ] **SDK-004** Implement bootstrap logging and host-owned error creation.
-- [ ] **SDK-005** Implement ABI negotiation and required-table validation.
-- [ ] **SDK-006** Implement plugin records and lifecycle states.
-- [ ] **SDK-007** Implement capability/factory registration lifetime rules.
-- [ ] **SDK-008** Track in-flight calls and prevent premature unload.
-- [ ] **SDK-009** Add the valid pure-C fixture plugin.
-- [ ] **SDK-010** Add incompatible, truncated, and initialization-failure
-  fixture plugins.
-- [ ] **SDK-011** Add contract tests for discovery, negotiation, initialization,
-  shutdown, and unload.
-- [ ] **SDK-012** Verify fixture plugins include only installed C headers and do
-  not link private musikcore targets.
+- [x] **SDK-001** Create `include/musikcore/plugin.h`. Independent C11/C++17
+  translation units compile it in `musikcore_public_headers`; it remains separate
+  from the application umbrella header.
+- [x] **SDK-002** Define the single `mc_plugin_get_api` entry point. Fixture and
+  external-provider export audits enforce that surface; C providers use host
+  callbacks without importing core symbols.
+- [x] **SDK-003** Define sized `mc_host_api` and `mc_plugin_api` tables with
+  documented fields, byte limits, and default initializers. Initialize receives
+  the host table and returns opaque per-session state; shutdown owns its cleanup,
+  including partial/null state after failure. `plugins.lifecycle` verifies
+  independent sessions sharing one mapped image.
+- [x] **SDK-004** Implement bootstrap logging and host-owned error creation and
+  destruction. `plugins.lifecycle` verifies copied diagnostics survive mutation
+  of their source and native unload, and contains throwing log sinks.
+- [x] **SDK-005** Implement ABI negotiation and required-table validation.
+  `plugins.lifecycle` rejects incompatible/newer/zero versions, truncated tables,
+  missing hooks, invalid identifiers/UTF-8, and malformed registration sizes.
+  The zero-version regression failed before the validation fix.
+- [x] **SDK-006** Implement plugin records and lifecycle states. Negotiation,
+  initializing, running, stopping, and stopped states separate publication from
+  reclamation. `plugins.lifecycle` checks rejection before lifecycle entry,
+  rollback after failed initialization, and one-shot shutdown/unload.
+- [x] **SDK-007** Implement capability/factory registration lifetime rules.
+  Registration copies temporary descriptors/IDs, rejects duplicates and wrong
+  phases/threads, and publishes only after successful initialization. Registered
+  typed tables remain provider-owned. `plugins.lifecycle` verifies these rules;
+  concrete decoder/stream instance contracts remain Phase 6 work.
+- [x] **SDK-008** Track in-flight calls and prevent premature unload. Shared
+  capability leases pin state/code; shutdown retires admission before draining
+  references and calls. `plugins.lifecycle` uses bounded synchronization gates,
+  releases the caller's reference inside a running call, rejects new calls through
+  retired references, and observes native mapping before/after drain. Owner-thread
+  lifecycle reentry and wrong-thread calls return distinct errors.
+- [x] **SDK-009** Add the valid pure-C fixture plugin. Its test-only probe table
+  exercises session-owned state without inventing a shipped provider family.
+- [x] **SDK-010** Add incompatible, truncated, missing-hook/version/entry,
+  initialization-failure, malformed-capability, and duplicate-ID fixtures.
+  `plugins.lifecycle` verifies failure cleanup without publishing partial state.
+- [x] **SDK-011** Add contract tests for discovery, negotiation, initialization,
+  shutdown, and unload: `musikcore.integration.plugins.lifecycle`,
+  `musikcore.integration.plugins.runtime`, and
+  `musikcore.integration.plugins.installed`. The runtime case repeats plugins-only
+  context creation through the shared public C API, keeps a valid provider usable
+  alongside rejected negotiation and failed initialization, and observes rollback
+  diagnostics through normal owner-thread wakeup/dispatch. Discovery classifies C candidates separately;
+  `musikcore.integration.runtime.stream_sdk_contract` protects rejected SDK 23
+  modules from an accidental second load/unload. No compatibility adapter is added.
+- [x] **SDK-012** Verify fixture plugins include only installed C headers and do
+  not link private musikcore targets. `plugins.installed` builds a separate C-only
+  project against a relocated SDK, checks exports/imports, and runs it through the
+  same lifecycle/drain tests from a path containing spaces.
+
+The per-session-state regression failed with the initial global-host fixture:
+closing one host affected the other's callbacks. Returning state from initialize
+removes that coupling without changing the application runtime's existing
+process-wide ownership policy. See
+[ADR-0008](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md).
+
+The missing-entry fixture has no instrumented globals. It exposed a link failure
+in the AppleClang 21 unload helper, which now supplies a hidden weak zero flag
+that coalesces with compiler-generated registration state when present.
+`musikcore.integration.binary.sanitizer_reload` and the provider lifecycle case
+pass with this empty-module path under ASan/UBSan.
 
 #### Phase 4 gate
 
-- [ ] **GATE-400** ABI0 loads a separately built pure-C plugin, observes a
-  registered trivial capability, releases all references, shuts it down once,
-  and unloads it safely on all platforms.
+- [x] **GATE-400** The shared production runtime loads a separately built pure-C
+  provider. Focused host tests observe its registered capability, release retained
+  references, drain admitted calls, invoke shutdown once, and verify native unload.
+  Native macOS arm64 Release passes 126/126 and Debug ASan/UBSan passes 131/131.
+  Final focused header/inventory/provider/SDK-regression runs pass 6/6 Release
+  and 7/7 Debug after the last fixture validation changes. Rebuilt/extracted
+  app startup/search/queue/shutdown passes three times; daemon lifecycle and
+  relocated SDK C/C++ query/URI players plus Rust tests/five doctests pass again
+  with the provider host compiled into the runtime.
+  Scope exception: the maintainer has deferred fresh Linux/Windows parity runs
+  while working from macOS. Those are the explicit follow-up tasks below, not
+  passing platform results. This completes the bootstrap scope; typed providers,
+  application-facing C-provider catalog/settings integration, and decoder migration
+  are not claimed complete.
+- [ ] **SDK-LINUX** Run lifecycle, installed-provider/export checks, shared-runtime
+  restart, and ASan/UBSan on native Linux. Verify ELF visibility, loader search
+  paths, and actual `dlclose` with retained references/calls.
+- [ ] **SDK-WINDOWS** Run the same provider checks on native Windows. Verify cdecl
+  function tables, DLL exports/imports/search paths, and UTF-8/Unicode filenames.
+  The intentionally missing-entry fixture must not advertise the provider export.
 
 ### Phase 5: metadata/query public vertical slice
 
@@ -1534,6 +1599,15 @@ production startup failure was established.
 
 ### Phase 8: expand and migrate the provider SDK
 
+#### Provider discovery and configuration
+
+- [ ] **PLG-MGMT-001** Include C provider metadata and enable preferences in
+  `mc_plugins_list` and configuration flows before converting user-facing plugins.
+  Define metadata discovery for disabled providers without initializing them;
+  test listing, preference changes, and restart. Phase 4 proves runtime loading,
+  not this application-facing catalog integration. Add typed schema/settings
+  support with EXT-001.
+
 #### Data streams and encoders
 
 - [ ] **ENC-001** Define blocking encoder output to a host stream.
@@ -1748,9 +1822,12 @@ preparation; it is not a request to add every deferred API below.
    native platform sessions; the macOS sanitizer change does not establish new
    Windows/Linux coverage. Finish the remaining release gates without reopening
    foundation checks that already have native evidence.
-6. CORE-RC-003 now permits the Phase 4 C provider walking skeleton on a separate
-   branch; decoder migration follows its lifecycle/negotiation tests. Finish combined packaging and compatibility gates before
-   ABI v1 freeze.
+6. Phase 4 bootstrap is complete on the provider branch, with native platform
+   follow-ups explicit above. Next is the Phase 6 decoder vertical slice: owned
+   audio buffers, streams, a typed decoder factory, and deterministic PCM through
+   real playback. Complete C-provider catalog/settings integration before stock
+   plugin conversion; preserve the bootstrap lifetime rules and sanitizer checks.
+   Finish combined packaging and compatibility gates before ABI v1 freeze.
 
 Deferred expansion includes polling/owned unsolicited events (API-014/API-015),
 general metadata invalidation and atomic batch edits (LIB-008/LIB-009), generic

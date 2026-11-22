@@ -236,7 +236,7 @@ if(APPLE)
 endif()
 
 # Compile each public header in its own translation unit using public includes only.
-set(public_c_headers abi context subscriptions library playback player output equalizer indexer visualizer preferences server plugins paths locale log online musikcore)
+set(public_c_headers abi context subscriptions library playback player output equalizer indexer visualizer preferences server plugins plugin paths locale log online musikcore)
 set(public_cpp_headers context subscriptions library playback player output equalizer indexer visualizer preferences server plugins paths locale log online musikcore track-result-window detail/async detail/track-page-cache)
 set(header_sources)
 foreach(header IN LISTS public_c_headers)
@@ -373,3 +373,5 @@ if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug" AND "address" IN_LIST MUSIKCUBE_S
   set_tests_properties(musikcore.integration.binary.sanitizer_reload PROPERTIES
     LABELS "integration;musikcore;binary;sanitizer;contract" TIMEOUT 45)
 endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/plugins.cmake")

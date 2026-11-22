@@ -839,7 +839,7 @@ be added after the foundational media interfaces are proven.
 Each plugin exports one well-known symbol:
 
 ```c
-MC_PLUGIN_API mc_result mc_plugin_get_api(
+MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     uint32_t host_abi_version,
     const mc_host_api *host,
     mc_plugin_api *out_plugin,
@@ -866,25 +866,23 @@ The plugin API contains stable identity and lifecycle operations:
 ```c
 typedef struct mc_plugin_api {
     uint32_t struct_size;
-    uint32_t plugin_abi_version;
+    uint32_t abi_version;
     mc_string_view id;
     mc_string_view name;
     mc_string_view version;
     mc_string_view author;
-    uint64_t capabilities;
-    void *plugin_context;
-
-    mc_result (*initialize)(void *plugin_context, mc_error **out_error);
-    void (*shutdown)(void *plugin_context);
+    mc_result (MC_CALL *initialize)(
+        const mc_host_api *host, void **out_plugin_context, mc_error **out_error);
+    void (MC_CALL *shutdown)(void *plugin_context);
 } mc_plugin_api;
 ```
 
-The proposed load sequence is:
+The load sequence is:
 
 1. Discover a candidate shared library.
 2. Load it and resolve `mc_plugin_get_api`.
 3. Exchange ABI versions and sized function tables.
-4. Validate identity and requested capabilities.
+4. Validate identity, ABI requirements, and required lifecycle callbacks.
 5. Call plugin initialization, during which the plugin registers factories
    through the host API.
 6. Make registered factories available for instance creation.
@@ -894,62 +892,47 @@ The proposed load sequence is:
 10. Call plugin shutdown and unload the library.
 
 The core must not unload a plugin while any of its function tables, string
-views, factories, or provider instances can still be used.
+views, factories, instances, or admitted calls can still be used. Internal
+capability leases retain the module across worker calls. Shutdown closes new
+acquisition and invocation before waiting for those references and calls to
+finish. Lifecycle reentry from a provider call and wrong-thread lifecycle calls
+are rejected; the registry is not a real-time dispatch mechanism.
+
+Entry must leave no persistent engine state requiring cleanup if negotiation
+fails. Once initialize is entered, shutdown must run exactly once, even after
+initialization failure, and clean partially initialized state. Initialize
+receives the host table and returns an opaque per-session context, assigning it
+before further fallible work. Shutdown receives that context (possibly null).
+This allows provider-owned allocation without an entry-time allocation or a
+mutable global host pointer. Failed registrations are never published. Shutdown must join provider workers before
+returning, because the host context and native image may then be released.
+See [ADR-0008](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md).
 
 A sidecar manifest may be added for discovery without executing plugin code.
 The entry point remains authoritative for ABI validation.
 
 ### Host API
 
-The host function table exposes narrowly scoped services:
+The bootstrap host table in
+[`plugin.h`](../include/musikcore/plugin.h) exposes logging, host-owned error
+creation/destruction, and capability registration. It contains a byte size,
+provider ABI version, and opaque host context passed to every callback.
+Providers use these function pointers without linking private core targets or
+importing application-facing C functions.
 
-```c
-typedef struct mc_host_api {
-    uint32_t struct_size;
-    uint32_t abi_version;
-    void *host_context;
+`mc_plugin_capability` carries an identifier, an immutable typed table pointer,
+and its byte size. The table begins with its own `uint32_t struct_size`, which
+must match the registered byte count. The host copies registration metadata;
+the plugin keeps table storage alive until shutdown. A typed capability belongs
+to the negotiated provider ABI, without another contract identifier or version.
+Only initialization on the owner thread may register capabilities. Publication
+happens atomically after initialization succeeds; duplicate IDs are rejected.
 
-    void (*log)(
-        void *host_context,
-        mc_log_level level,
-        mc_string_view component,
-        mc_string_view message);
-
-    mc_result (*create_error)(
-        void *host_context,
-        mc_error_code code,
-        mc_string_view message,
-        mc_error **out_error);
-
-    mc_result (*create_audio_buffer)(
-        void *host_context,
-        const mc_audio_format *format,
-        size_t frame_capacity,
-        mc_audio_buffer **out_buffer);
-
-    mc_result (*map_audio_buffer)(
-        void *host_context,
-        mc_audio_buffer *buffer,
-        mc_audio_buffer_view *out_view);
-
-    void (*unmap_audio_buffer)(
-        void *host_context,
-        mc_audio_buffer *buffer);
-
-    mc_result (*open_preferences)(
-        void *host_context,
-        mc_string_view plugin_id,
-        mc_preferences **out_preferences);
-
-    mc_result (*register_decoder_factory)(
-        void *host_context,
-        const mc_decoder_factory *factory);
-} mc_host_api;
-```
-
-Additional registration functions are appended in ABI minor versions. A
-plugin checks `struct_size` and feature support before using optional host
-functions.
+Audio-buffer, stream, decoder, and preference services are defined with their
+typed provider families. They are not required bootstrap callbacks. Future
+host services use sized optional tails/sub-tables so a plugin can check support
+before accessing them. The application umbrella header does not include the
+provider header.
 
 When a provider returns detailed failure information, it creates the
 `mc_error` through the host table. The resulting error is core-owned and can be

@@ -5,6 +5,7 @@ function(musikcore_add_consumer_api target remote_session_source)
     "${ffi}/common/string.cpp"
     "${ffi}/common/error.cpp"
     "${ffi}/common/subscriptions.cpp"
+    "${ffi}/plugin_abi/ProviderHost.cpp"
     "${ffi}/consumer/context.cpp"
     "${ffi}/consumer/library.cpp"
     "${remote_session_source}"
@@ -22,7 +23,7 @@ function(musikcore_add_consumer_api target remote_session_source)
   set_source_files_properties(${sources} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
   target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}/include")
   target_include_directories(${target} PRIVATE "${PROJECT_SOURCE_DIR}/src/3rdparty/include/sqlite")
-  target_link_libraries(${target} PRIVATE Threads::Threads)
+  target_link_libraries(${target} PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
 
   get_target_property(kind ${target} TYPE)
   if(kind STREQUAL "SHARED_LIBRARY" OR target STREQUAL "musikcore_objects")

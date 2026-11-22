@@ -40,6 +40,9 @@
 #include "../ffi/common/error.h"
 #include "../ffi/consumer/server-shape.h"
 #include <cmath>
+#include <filesystem>
+#include <musikcore/sdk/Filesystem.h>
+#include <musikcore/ffi/plugin_abi/ProviderHost.h>
 
 #include <musikcore/debug.h>
 #include <musikcore/sdk/version.h>
@@ -149,6 +152,7 @@ static ILibraryPtr defaultLibrary;
 static IPlaybackService* playbackService = nullptr;
 static LocalMetadataProxy* metadataProxy = nullptr;
 static std::shared_ptr<Preferences> playbackPrefs;
+static std::unique_ptr<musik::core::ffi::ProviderHost> cProviders;
 
 static void saveEnvironment() {
     if (::playbackPrefs) {
@@ -477,6 +481,28 @@ namespace musik { namespace core { namespace plugin {
             [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
             func(&debugger);
         }, PluginFactory::FunctionSelection::Session);
+
+        /* C providers have their own contract and lifetime; they do not return
+        SDK 23 interfaces or pass through its factory adapters. */
+        cProviders = std::make_unique<musik::core::ffi::ProviderHost>(
+            [](mc_log_level level, mc_string_view tag, mc_string_view text) {
+                mc_log_write(level, tag, text);
+            });
+        const auto preferences = Preferences::ForComponent(prefs::components::Plugins);
+        for (const auto& filename : PluginFactory::Instance().CProviderFiles()) {
+            const auto leaf = musik::core::sdk::fs::pathToUtf8(std::filesystem::u8path(filename).filename());
+            if (!preferences->GetBool(leaf, true)) {
+                continue;
+            }
+            mc_error* error = nullptr;
+            const auto status = cProviders->Load(filename, &error);
+            if (status != MC_OK && status != MC_ERROR_UNSUPPORTED) {
+                const auto detail = mc_error_get_message(error);
+                const auto reason = detail.data ? std::string(detail.data, detail.length) : "provider rejected";
+                musik::debug::error("CPluginHost", filename + ": " + reason);
+            }
+            mc_error_destroy(&error);
+        }
     }
 
     void BindServices(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
@@ -565,6 +591,15 @@ namespace musik { namespace core { namespace plugin {
         /* workers have stopped, so cached factories can release provider state. */
         cleanup([] { musik::core::audio::streams::Shutdown(); }, failure);
         cleanup([] { musik::core::io::Shutdown(); }, failure);
+        cleanup([] {
+            if (cProviders) {
+                const auto status = cProviders->Shutdown();
+                cProviders.reset();
+                if (status != MC_OK) {
+                    throw std::runtime_error("C provider shutdown failed");
+                }
+            }
+        }, failure);
         cleanup([] { PluginFactory::Instance().EndSession(); }, failure);
 
         delete metadataProxy;
