@@ -104,7 +104,7 @@ function stageArchive(config, output) {
   }
 }
 
-function createPackages(output, { buildDirectory, env }) {
+function createPackages(output, archive, { buildDirectory, env }) {
   const staging = mkdtempSync(join(output, '.cpack-'));
   try {
     /* keep CPack from rebuilding and replacing the patched binaries. */
@@ -112,6 +112,8 @@ function createPackages(output, { buildDirectory, env }) {
     const stagedConfig = join(staging, 'CPackConfig.cmake');
     writeFileSync(stagedConfig, config.replace('Unix Makefiles', 'Ninja'));
     run('cpack', ['--config', stagedConfig, '-B', staging,
+      '-D', 'CPACK_PRE_BUILD_SCRIPTS=' + join(source, '.cmake', 'StageStandalonePackage.cmake'),
+      '-D', 'MUSIKCUBE_STAGED_ARCHIVE=' + archive,
       '-D', 'CPACK_RPM_SPEC_MORE_DEFINE=%global _tmppath ' + staging], env);
 
     const packages = readdirSync(staging).filter((file) => /\.(deb|rpm)$/.test(file));
@@ -194,7 +196,7 @@ async function main() {
   config.scan(output, config);
 
   run('tar', ['-cjf', output + '.tar.bz2', '-C', destination, outName], config.env);
-  config.package?.(destination, config);
+  config.package?.(destination, output, config);
   console.log('Standalone archives written to ' + destination);
 }
 
