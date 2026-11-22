@@ -25,6 +25,7 @@ get_filename_component(config_directory "${directory}/../.." ABSOLUTE)
 if(DEFINED INSTALLED_SDK_SOURCE)
   execute_process(COMMAND "${CMAKE_COMMAND}" "-DBUILD_DIR=${BUILD_DIR}" "-DSOURCE=${INSTALLED_SDK_SOURCE}"
     "-DCATALOG=${directory}" "-DINSTALLED_TEST_PLUGIN=${INSTALLED_TEST_PLUGIN}"
+    "-DTEST_CONFIG=${TEST_CONFIG}"
     "-DNODE=${NODE}" "-DREMOTE_TEST=${REMOTE_TEST}" -P "${CMAKE_CURRENT_LIST_DIR}/check-installed-core.cmake"
     RESULT_VARIABLE status)
   if(NOT status STREQUAL "0")

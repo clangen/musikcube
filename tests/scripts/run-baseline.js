@@ -30,7 +30,7 @@ function run(args, env = process.env, capture = false) {
 function measurements(output) {
   const values = {};
 
-  for (const line of output.split('\n')) {
+  for (const line of output.split(/\r?\n/)) {
     const match = /^(?:profile )?([a-z0-9_]+): (.*)$/.exec(line);
     if (!match) continue;
 
@@ -89,11 +89,12 @@ try {
       if (rebuilt.error || rebuilt.status !== 0) throw new Error('Could not build production baseline fixtures');
 
       /* Resolve the production runtime and seed its private two-track catalog. */
-      const runtime = process.platform === 'win32' ? join(source, 'bin64', values.config)
-        : /^MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY:PATH=(.+)$/m.exec(cache)?.[1] || join(source, 'bin');
+      const configuredRuntime = /^MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY:PATH=(.+)$/m.exec(cache)?.[1];
+      const runtime = process.platform === 'win32' ? join(configuredRuntime || join(source, 'bin64'), values.config)
+        : configuredRuntime || join(source, 'bin');
       const extension = process.platform === 'win32' ? '.exe' : '';
 
-      const seeded = run([join(__dirname, 'seed-test-library.js'), '--indexer',
+      const seeded = run([join(__dirname, 'seed-test-library.js'), '--embedded-lyrics', '--indexer',
         join(runtime, `musikcube_seed_library${extension}`), production], process.env, true);
       const database = seeded.trimEnd().split(/\r?\n/).pop();
       const config = resolve(dirname(database), '../..');

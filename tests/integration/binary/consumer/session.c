@@ -2,7 +2,6 @@
 
 #include "host-wakeup.h"
 
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +16,7 @@
 typedef struct host {
     mc_context* context;
     test_host_event* event;
-    pthread_t owner;
+    const void* owner;
     unsigned notifications;
     bool callback_contract;
     bool rejected_off_thread;
@@ -41,7 +40,7 @@ static void MC_CALL connected(mc_result status, mc_remote_state state, const mc_
     (void) error;
     reply* result = data;
     result->calls++;
-    result->on_owner = pthread_equal(result->host->owner, pthread_self());
+    result->on_owner = result->host->owner == test_host_thread_token();
     result->status = state == MC_REMOTE_CONNECTED ? status : MC_ERROR_IO;
 }
 
@@ -50,7 +49,7 @@ static void MC_CALL library_changed(void* data, bool selection_changed) {
     mc_context* original = state->context;
 
     state->notifications++;
-    state->callback_contract = pthread_equal(state->owner, pthread_self()) && selection_changed &&
+    state->callback_contract = state->owner == test_host_thread_token() && selection_changed &&
         mc_context_set_library_changed_callback(original, NULL, NULL) == MC_OK &&
         mc_context_dispatch(original) == MC_ERROR_BUSY &&
         mc_context_shutdown(original) == MC_ERROR_BUSY &&
@@ -61,7 +60,7 @@ static void MC_CALL search_done(mc_result status, mc_track_result* tracks, const
     (void) error;
     reply* result = data;
     result->calls++;
-    result->on_owner = pthread_equal(result->host->owner, pthread_self());
+    result->on_owner = result->host->owner == test_host_thread_token();
     result->notification_delivered = result->host->notifications == 1;
     result->status = status;
     result->tracks = tracks;
@@ -71,7 +70,7 @@ static void MC_CALL read_done(mc_result status, mc_track_page* page, const mc_er
     (void) error;
     reply* result = data;
     result->calls++;
-    result->on_owner = pthread_equal(result->host->owner, pthread_self());
+    result->on_owner = result->host->owner == test_host_thread_token();
     result->status = status;
     result->page = page;
 }
@@ -88,11 +87,10 @@ static bool wait_reply(const host* state, const reply* result) {
     return result->calls == 1 && result->on_owner && result->status == MC_OK;
 }
 
-static void* wrong_thread(void* data) {
+static void wrong_thread(void* data) {
     host* state = data;
     state->rejected_off_thread = mc_context_dispatch(state->context) == MC_ERROR_WRONG_THREAD &&
         mc_context_shutdown(state->context) == MC_ERROR_WRONG_THREAD;
-    return NULL;
 }
 
 int main(int argc, char** argv) {
@@ -107,7 +105,7 @@ int main(int argc, char** argv) {
     }
 
     int outcome = 1;
-    host state = { .owner = pthread_self(), .event = test_host_event_create() };
+    host state = { .owner = test_host_thread_token(), .event = test_host_event_create() };
     reply connection = { .host = &state }, remote = { .host = &state }, local = { .host = &state };
     reply remote_row = { .host = &state }, local_row = { .host = &state }, pending = { .host = &state };
     mc_library* local_library = NULL;
@@ -115,7 +113,6 @@ int main(int argc, char** argv) {
     mc_remote_session* session = NULL;
     mc_track_ref* track = NULL;
     mc_request_id request = 0;
-    pthread_t worker;
 
     mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
     options.services = MC_SERVICE_NONE;
@@ -123,8 +120,7 @@ int main(int argc, char** argv) {
     options.wakeup_user_data = state.event;
     CHECK(state.event && mc_context_create(&options, &state.context, NULL) == MC_OK);
     CHECK(mc_context_dispatch(state.context) == MC_OK);
-    CHECK(pthread_create(&worker, NULL, wrong_thread, &state) == 0);
-    CHECK(pthread_join(worker, NULL) == 0 && state.rejected_off_thread);
+    CHECK(test_host_run_worker(wrong_thread, &state) && state.rejected_off_thread);
 
     mc_library_options local_options = MC_LIBRARY_OPTIONS_DEFAULT;
     local_options.locator = text(argv[1]);

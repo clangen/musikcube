@@ -1,6 +1,6 @@
 # musikcore C ABI modernization: low-level design and task plan
 
-Status: active migration; macOS foundation validation complete, platform gates open
+Status: active migration; native foundation validation complete, release gates open
 
 The [core C API foundation gate](#core-c-api-foundation-gate) supersedes
 the original phase ordering below. Additional application feature migrations
@@ -57,7 +57,7 @@ through its ADR rather than adding a competing policy to a task description.
 ## Constraints from the current repository
 
 - Unix-like builds currently define `musikcore` as a shared CMake target.
-- Windows currently defines `musikcore` as a static CMake target.
+- Windows builds `musikcore.dll` and shares it between the GUI and console frontends.
 - Core source lists are duplicated between `src/musikcore/CMakeLists.txt` and
   `.cmake/WindowsSources.cmake`.
 - The retired legacy C boundary (`c_context.cpp`, `c_interface_wrappers.cpp`,
@@ -566,18 +566,16 @@ proposal to reconcile.
   raw terminal output, visible text and SVG; clean successful runs. Separate
   correctness smoke tests from explicitly selected catalog/timing benchmarks.
 
-Windows UI needs a native PTY backend and validation before its smoke scenarios
-can be enabled. Linux execution remains deferred to a separate user-directed
-session. Emoji/ZWJ and terminal-specific glyph presentation remain explicit
-screen-model limits, not coverage claims. Add further tests alongside the code
-being changed; this work does not authorize a broad legacy-test backfill.
+Windows runs the shared smoke scenarios through the native ConPTY driver with
+an isolated runtime and profile. Emoji/ZWJ and terminal-specific glyph
+presentation remain explicit screen-model limits. Add further tests alongside
+the code being changed.
 
 ## Core C API foundation gate
 
-Status: native macOS and Linux foundation validation complete. The maintainer
-approved deferring native Windows acceptance on 2026-11-20 so remote-session
-work can proceed using the verified Linux and macOS contracts as interim
-evidence. Native Windows acceptance remains a release requirement.
+Native macOS, Linux and Windows foundation validation is complete. Windows
+closed the 2026-11-20 deferral with native x64 Debug and Release runs, installed
+consumer checks, PE export and dependency audits, and a Release timing baseline.
 
 The completed work below groups the former foundation checklist; detailed
 feature tasks remain in the task list rather than a second parallel checklist.
@@ -607,9 +605,13 @@ the output during playback with an unavailable selection and verifies restart.
 
 Remaining acceptance:
 
-- [ ] **FND-WINDOWS** Run clean native Windows Debug/Release tests, verify actual
-  DLL exports, import-library loading, and runtime placement. Requires a Windows
-  host; project maintainer owns native execution.
+- [x] **FND-WINDOWS** Native Visual Studio 2026 x64 Debug and Release pass 87/87
+  each in separate build and runtime directories. `musikcore.abi.shared_c`,
+  `musikcore.abi.exports`, `musikcube.integration.windows_core_dll`, and
+  `musikcore.integration.api.installed_sdk` cover import-library loading, PE
+  exports and runtime placement. The Release ABI-only run passes 30/30.
+  `tests/scripts/run-baseline.js --timing-only` records ABI and production
+  local/loopback measurements on Windows with a native Release build.
 - [x] **FND-LINUX** Run clean native Linux Debug/Release tests and verify ELF
   SONAME/RUNPATH and actual exports.
 - [x] **GATE-FOUNDATION** Record passing clean Debug/Release contract,
@@ -865,8 +867,9 @@ recorded before the experimental shared façade is introduced.
   `musikcore.abi.shared_c`. Native Debug and Release verification is BLD-014.
 - [x] **BLD-009** Add ELF version script and macOS exported-symbols list.
 - [x] **BLD-010** Add an export allowlist test that rejects private C++ symbols.
-  `musikcore.abi.exports` checks the complete ELF and Mach-O export lists.
-  Windows export verification remains part of GATE-200.
+  `musikcore.abi.exports` checks the complete PE, ELF and Mach-O export lists.
+  `musikcube.integration.windows_core_dll` checks production PE exports and
+  both frontend import tables.
 - [x] **BLD-011** Add a build/link check preventing one executable from linking
   legacy and ABI0 targets together.
   `.cmake/VerifyCoreBoundary.cmake` traverses target dependencies; the positive
@@ -875,14 +878,15 @@ recorded before the experimental shared façade is introduced.
   `bin/abi0` and its empty reserved plugin directory are build-local. Standalone
   ABI0 currently does not load plugins; production fixtures stage selected plugins.
 - [x] **BLD-013** Add a separately compiled C executable linked only to ABI0.
-- [ ] **BLD-014** Test Debug and Release import/shared-library behavior on
-  Windows.
+- [x] **BLD-014** Test Debug and Release import/shared-library behavior on
+  Windows. `musikcore.abi.shared_c` loads ABI0 through its import library, and
+  `musikcore.abi.exports` checks its PE export allowlist.
 
 #### Phase 2 gate
 
 - [ ] **GATE-200** A separate C process loads `musikcore_abi0` on Windows,
-  macOS, and Linux; actual exports match the allowlist; production musikcube
-  continues using only the legacy path.
+  macOS, and Linux, and actual exports match the allowlist. Production
+  musikcube links its production shared core separately from ABI0.
 
 ### Phase 3: public runtime walking skeleton
 
@@ -1306,8 +1310,8 @@ remains deferred. This does not begin the new plugin C SDK. See
   still writes correctly, accepted plugins are acquired once, and SDK 22 plugins
   are released before unload without querying incompatible factories. Real GME
   and OpenMPT providers also cover unopened release, successful nested opening,
-  and cancellation before opening. Windows
-  CDDA sources are migrated; Windows/Linux runtime validation remains deferred.
+  and cancellation before opening. Windows runs the same contract against GME
+  and OpenMPT. Windows CDDA device cancellation is tracked in API-URI-007.
 - [x] Allow a managed context to select a catalog from an explicit remote
   session through `mc_context_set_library`. The playback queue follows the
   selected origin. A lost connection invalidates that generation without
@@ -1382,8 +1386,10 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
   `musikcube.integration.core_boundary` and all four headless scenarios.
   Native macOS Debug/Release validation also passes the frontend import guard,
   installed consumers, managed local/remote sessions, remote HTTP audio, captured
-  gapless/crossfade PCM, and six TUI scenarios. Windows remains deferred; this
-  gate does not claim native Windows acceptance.
+  gapless/crossfade PCM, and six TUI scenarios. Native Windows Debug and Release
+  pass 87/87 each, including both frontend import checks, the relocated SDK,
+  managed and headless runtime, remote HTTP audio and MP3/FLAC transcoding,
+  captured PCM, and 10 console UI tests through ConPTY.
 
 ### Phase 8: expand and migrate the provider SDK
 
@@ -1459,9 +1465,12 @@ claim physical CoreAudio, native Windows, or newly rerun Linux acceptance.
   `musikcubed.integration.lifecycle` covers concurrent starts, foreground
   scan completion, background readiness and startup failure, and shutdown.
   Native macOS verification is pending.
-- [ ] **PKG-001** Install headers, shared library, import library, and package
-  metadata into a temporary prefix. The Unix install supplies public headers
-  and the relocatable `musikcore::musikcore` CMake target. Windows is deferred.
+- [x] **PKG-001** Install headers, shared library, platform import library,
+  and package metadata into a temporary prefix. Unix and Windows supply the
+  relocatable `musikcore::musikcore` CMake target. On Windows,
+  `musikcore.integration.api.installed_sdk` moves the prefix and independently
+  builds and runs the installed C and C++ consumers, including managed
+  runtime and playback against the installed DLL and plugins.
 - [x] **PKG-002** Build external C and C++ consumers against the installed prefix
   on Linux. `musikcore.integration.api.installed_sdk` relocates the prefix,
   builds both query examples independently, and runs them against indexed media.
@@ -1545,8 +1554,8 @@ the probe.
 
 1. Complete remaining native platform/release acceptance for `GATE-700`.
    macOS Debug/Release and Linux Release verify Cube using the C ABI and public
-   header-only wrapper. Windows remains deferred. Keep Linux package checks and
-   the native macOS managed/plugin/PCM coverage in place.
+   header-only wrapper. Windows Debug/Release covers the shared DLL, installed
+   SDK, playback, and console UI. Keep these checks in the native platform suites.
 2. Finish the remaining platform acceptance and release documentation for the
    core consumer SDK.
 3. Begin the provider walking skeleton and SDK migration in a separate pass.

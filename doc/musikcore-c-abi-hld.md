@@ -6,9 +6,9 @@ Status: active migration; foundation stabilization in progress
 
 Finish the core application C API and integrate musikcube through its strictly
 header-only C++ wrapper. The [foundation gate](musikcore-c-abi-lld.md#core-c-api-foundation-gate)
-comes first; native Windows and Linux acceptance is still pending. Then close
-the application API gaps, migrate the remaining consumers, and reach core
-release-candidate quality before beginning plugin/provider API work.
+comes first. Then close the application API gaps, migrate the remaining
+consumers, and reach core release-candidate quality before beginning
+plugin/provider API work.
 
 This document owns architecture and sequencing, and links the decision records
 in `docs/adr/`.
@@ -48,10 +48,9 @@ had ambiguous ownership, inconsistent errors, incomplete async behavior, and
 callback/threading hazards. Its declarations are now retired. Existing plugin
 entry points still expose C++ vtables and compiler ABI despite their C linkage.
 
-The current build topology also differs by platform. Unix-like builds currently
-produce a shared musikcore library for the application, while Windows links
-musikcore statically. The existing Unix shared library is an internal build
-artifact, not the proposed stable C ABI.
+Unix-like and Windows builds use a shared musikcore library for the
+application. On Windows the GUI and console frontends import the same
+`musikcore.dll`. The application C ABI remains experimental until freeze.
 
 Forcing the current implementation into a Windows DLL before the C ABI is
 defined would introduce avoidable risk:
@@ -220,10 +219,10 @@ or return private C++ interfaces.
 The transition deliberately separates the production application from the
 experimental ABI.
 
-### Stage A: current production topology
+### Stage A: initial production topology
 
 ```text
-Windows musikcube ──> current static musikcore
+Windows musikcube ──> static musikcore
 Unix musikcube    ──> current internal shared musikcore
 existing plugins  ──> current C++ SDK interfaces
 ```
@@ -393,8 +392,11 @@ Those numbers do not authorize starting a provider phase before step 4.
 
 ## Windows-specific strategy
 
-- Do not convert the current Windows production core target to a DLL before the
-  minimal C ABI foundation is complete.
+The Windows migration first isolated ABI0, then moved both production frontends
+to the shared DLL.
+
+- Establish the minimal C ABI boundary before switching the Windows production
+  core from static linkage to a DLL.
 - Build the experimental façade under a distinct name while musikcube continues
   using the static implementation.
 - Export only functions explicitly marked by the C ABI; do not enable automatic

@@ -8,9 +8,12 @@ const { parseArgs } = require('node:util');
 const { sampleVariants, printMetrics, cpuMillisecondsPerTick } = require('./benchmark');
 const { Terminal } = require('./terminal');
 const { withRuntime } = require('./artifacts');
+const { copyRuntimeLibraries } = require('../../scripts/test-runtime');
 
 const SOURCE = resolve(__dirname, '../../..');
 const TRACK_COUNT = 10000;
+const isWindows = process.platform === 'win32';
+const seederName = isWindows ? 'musikcube_seed_library.exe' : 'musikcube_seed_library';
 const { FIRST_TRACK, SECOND_TRACK, FILTERED_LAST, DISTANT_TRACK, DOWN } = require('./catalog');
 const { checkSearch, checkSortOrder } = require('../scenarios/track-search');
 const { stageLocale, checkLocale } = require('../scenarios/locale');
@@ -23,22 +26,27 @@ const { checkSettings } = require('../scenarios/settings');
 
 /* Stage the production app/assets with only the plugins required to index the generated fixture. */
 function stageRuntime(runtime, binaryDir, { settings, lyrics }) {
+  const stage = (source, destination) => {
+    if (isWindows) fs.cpSync(source, destination, { recursive: true });
+    else fs.symlinkSync(fs.realpathSync(source), destination);
+  };
+  if (isWindows) copyRuntimeLibraries(binaryDir, runtime);
   for (const name of fs.readdirSync(binaryDir)) {
     if (['lib', 'locales', 'share', 'themes'].includes(name) || name.startsWith('libmusikcore')) {
-      fs.symlinkSync(fs.realpathSync(join(binaryDir, name)), join(runtime, name));
+      stage(join(binaryDir, name), join(runtime, name));
     }
   }
 
-  for (const name of ['musikcube', 'musikcube_seed_library']) {
+  for (const name of [isWindows ? 'musikcube-cmd.exe' : 'musikcube', seederName]) {
     fs.copyFileSync(join(binaryDir, name), join(runtime, name));
   }
 
   fs.mkdirSync(join(runtime, 'plugins'));
   for (const name of fs.readdirSync(join(binaryDir, 'plugins'))) {
-    if (/^lib(?:taglibreader|ffmpegdecoder)\./.test(name) ||
-        (settings && /^lib(?:nullout|supereqdsp|server)\./.test(name)) ||
-        (lyrics && /^libnullout\./.test(name))) {
-      fs.symlinkSync(fs.realpathSync(join(binaryDir, 'plugins', name)), join(runtime, 'plugins', name));
+    if (/^(?:lib)?(?:taglibreader|taglib_plugin|ffmpegdecoder)\./.test(name) ||
+        (settings && /^(?:lib)?(?:nullout|supereqdsp|server)\./.test(name)) ||
+        (lyrics && /^(?:lib)?nullout\./.test(name))) {
+      stage(join(binaryDir, 'plugins', name), join(runtime, 'plugins', name));
     }
   }
 }
@@ -52,7 +60,7 @@ async function seedLibrary(runtime, build, tracks, lyrics) {
       join(SOURCE, 'tests/scripts/seed-test-library.js'),
       '--tracks', String(tracks),
       ...(lyrics ? ['--embedded-lyrics', '--seconds', '8'] : []),
-      '--indexer', join(runtime, 'musikcube_seed_library'),
+      '--indexer', join(runtime, seederName),
       '--fixture-dir', runtime, build,
     ], { timeout: 330000, stdio: ['ignore', output, output] });
     await new Promise((resolve, reject) => {
@@ -84,13 +92,14 @@ function stagePilot(runtime, binaryDir) {
 
 /* Launch the PTY with isolated settings, then run the selected checks. */
 async function checkWorkflow(runtime, database, screenshots,
-  { pilot = false, windows = false, cache, scenario = 'all', playbackMode = 'gapless' } = {}) {
+  { pilot = false, windows = false, windowsHost, cache, scenario = 'all', playbackMode = 'gapless' } = {}) {
   const fixture = dirname(dirname(dirname(database)));
   /* Keep startup from reindexing the fixture. */
   const settings = join(fixture, 'musikcube', 'settings.json');
   const preferences = fs.existsSync(settings) ? JSON.parse(fs.readFileSync(settings, 'utf8')) : {};
   preferences.SyncOnStartup = false;
   preferences.FirstRunSettingsDisplayed = true;
+  preferences.AutoUpdateCheck = false;
   delete preferences.TrackSearchSortOrder;
   fs.writeFileSync(settings, JSON.stringify(preferences));
   if (scenario === 'transport') {
@@ -103,7 +112,7 @@ async function checkWorkflow(runtime, database, screenshots,
       JSON.stringify({ navigate_library_tracks: openSearch }));
   }
   const staged = pilot ? [] : fs.readdirSync(join(runtime, 'plugins'));
-  const hasServer = staged.some(name => name.startsWith('libserver.'));
+  const hasServer = staged.some(name => /^(?:lib)?server\./.test(name));
   if (hasServer) {
     fs.writeFileSync(join(fixture, 'musikcube', 'plugin_musikcubeserver(wss,http).json'),
       JSON.stringify({ websocket_server_enabled: false, http_server_enabled: false }));
@@ -111,6 +120,7 @@ async function checkWorkflow(runtime, database, screenshots,
 
   const env = {
     ...process.env, HOME: fixture, XDG_CONFIG_HOME: fixture, TERM: 'xterm-256color',
+    APPDATA: fixture, USERPROFILE: fixture,
     MUSIKCUBE_SEARCH_DATA: dirname(database),
     LC_ALL: process.platform === 'darwin' ? 'en_US.UTF-8' : 'C.UTF-8',
   };
@@ -126,7 +136,7 @@ async function checkWorkflow(runtime, database, screenshots,
     env.MUSIKCUBE_SEARCH_CACHE_DIAGNOSTICS = '1';
   }
 
-  const terminal = new Terminal(runtime, env, 18, 140);
+  const terminal = new Terminal(runtime, env, 18, 140, { windowsHost });
 
   /* Wait for the final intended row before capturing; an earlier matching
      header alone could yield an SVG of an incompletely repainted viewport. */
@@ -195,6 +205,7 @@ async function main(defaultScenario) {
       'build-dir': { type: 'string', default: SOURCE },
       'bin-dir': { type: 'string', default: join(SOURCE, 'bin') },
       'capture-output': { type: 'string' },
+      'conpty-host': { type: 'string' },
       'playback-mode': { type: 'string', default: 'gapless' },
       screenshots: { type: 'string' },
       tracks: { type: 'string', default: ['search', 'all'].includes(defaultScenario) ? String(TRACK_COUNT) : '1000' },
@@ -210,11 +221,14 @@ async function main(defaultScenario) {
   });
 
   if (values.help) {
-    console.log(`Usage: node ${basename(process.argv[1])} [--build-dir <dir>] [--bin-dir <dir>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|settings|locale|lyrics|transport|all] [--capture-output <path>] [--playback-mode gapless|crossfade] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]`);
+    console.log(`Usage: node ${basename(process.argv[1])} [--build-dir <dir>] [--bin-dir <dir>] [--conpty-host <launcher.exe>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|settings|locale|lyrics|transport|all] [--capture-output <path>] [--playback-mode gapless|crossfade] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]`);
     return;
   }
-  if (!['linux', 'darwin'].includes(process.platform)) {
-    throw new Error('This test requires script on Linux or macOS');
+  if (isWindows && !values['conpty-host']) {
+    throw new Error('Windows UI scenarios require --conpty-host <launcher.exe>');
+  }
+  if (isWindows && (values.compare || values['pilot-control'])) {
+    throw new Error('Windows builds do not provide the ABI-only search pilot');
   }
 
   if (!['search', 'queue', 'playlists', 'browse', 'settings', 'locale', 'lyrics', 'transport', 'all'].includes(values.scenario)) {
@@ -271,7 +285,9 @@ async function main(defaultScenario) {
     if (values.scenario === 'locale') stageLocale(runtime);
     if (values.scenario === 'transport') {
       const output = fs.realpathSync(values['capture-output']);
-      fs.symlinkSync(output, join(runtime, 'plugins', basename(output)));
+      const target = join(runtime, 'plugins', basename(output));
+      if (isWindows) fs.copyFileSync(output, target);
+      else fs.symlinkSync(output, target);
     }
     let control = { name: 'Production', runtime, pilot: false };
     if (controlDir !== undefined) {
@@ -298,7 +314,8 @@ async function main(defaultScenario) {
       try {
         return await checkWorkflow(variant.runtime, database,
           variant.pilot ? undefined : screenshots, {
-            pilot: variant.pilot, windows, cache, scenario: values.scenario, playbackMode: values['playback-mode']
+            pilot: variant.pilot, windows, cache, scenario: values.scenario, playbackMode: values['playback-mode'],
+            windowsHost: isWindows ? resolve(values['conpty-host']) : undefined,
           });
       } finally {
         fs.rmSync(join(fixture, 'musikcube', 'session.json'), { force: true });
@@ -316,6 +333,8 @@ async function main(defaultScenario) {
       ['Jump to last window', 'jumpMs', 'ms'], ['Peak RSS', 'peakRssKiB', 'KiB'],
       ['Search scenario CPU', 'cpuTicks', 'ms', tickMs],
       ['Startup + search CPU', 'totalCpuTicks', 'ms', tickMs],
+      ['Search scenario CPU', 'cpuMs', 'ms'],
+      ['Startup + search CPU', 'totalCpuMs', 'ms'],
     ]);
     if (screenshots && !control.pilot) console.log(`Screenshots saved to ${screenshots}`);
   });

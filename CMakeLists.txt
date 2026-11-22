@@ -9,6 +9,10 @@ if(POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW)
 endif()
 project(musikcube)
+set (musikcube_VERSION_MAJOR 3)
+set (musikcube_VERSION_MINOR 0)
+set (musikcube_VERSION_PATCH 5)
+set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 
 include(.cmake/RestrictExports.cmake)
 
@@ -39,10 +43,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set (musikcube_VERSION_MAJOR 3)
-set (musikcube_VERSION_MINOR 0)
-set (musikcube_VERSION_PATCH 5)
-set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 set(MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY "${musikcube_SOURCE_DIR}/bin" CACHE PATH
   "Production runtime directory; test builds select a private directory under their build root")
 set (LIBRARY_OUTPUT_PATH ${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/plugins)

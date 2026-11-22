@@ -8,7 +8,7 @@ const { basename, dirname, join } = require('path');
 function copyRuntimeLibraries(source, destination) {
   mkdirSync(destination, { recursive: true });
   for (const entry of readdirSync(source, { withFileTypes: true })) {
-    if (!entry.isDirectory() && /\.(dll|dylib|so)(\.[\d.]+)?$/.test(entry.name)) {
+    if (!entry.isDirectory() && /\.(dll|dylib|so)(\.[\d.]+)?$/i.test(entry.name)) {
       copyFileSync(join(source, entry.name), join(destination, entry.name));
     }
   }
@@ -41,4 +41,4 @@ function stageTestRuntime(executable, root) {
   return staged;
 }
 
-module.exports = { stageTestRuntime };
+module.exports = { copyRuntimeLibraries, stageTestRuntime };

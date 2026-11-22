@@ -1,4 +1,5 @@
 #include "PcmCapture.h"
+#include <musikcore/abi.h>
 
 #include <musikcore/sdk/IDataStreamFactory.h>
 #include <musikcore/sdk/IOutput.h>
@@ -156,7 +157,13 @@ namespace {
 
                 auto next = Clock::now();
                 while (!stop.stop_requested() && this->Tick(lock, stop)) {
-                    next = std::max(next + period, Clock::now());
+                    /* Keep the PCM clock on cadence across short scheduler delays.
+                       Rebase after a stall so the fixture cannot issue an unbounded burst. */
+                    next += period;
+                    const auto now = Clock::now();
+                    if (now - next > 4 * period) {
+                        next = now;
+                    }
                     this->changed.wait_until(lock, next, [&] { return stop.stop_requested(); });
                 }
             }
@@ -405,46 +412,46 @@ namespace {
     };
 }
 
-extern "C" IPlugin* GetPlugin() {
+extern "C" MC_PLUGIN_API IPlugin* GetPlugin() {
     return new CapturePlugin();
 }
 
-extern "C" IOutput* GetAudioOutput() {
+extern "C" MC_PLUGIN_API IOutput* GetAudioOutput() {
     return new CaptureOutput();
 }
 
-extern "C" IDataStreamFactory* GetDataStreamFactory() {
+extern "C" MC_PLUGIN_API IDataStreamFactory* GetDataStreamFactory() {
     return new GatedSourceFactory();
 }
 
-extern "C" void ReleasePcmSourceOpen() {
+extern "C" MC_PLUGIN_API void ReleasePcmSourceOpen() {
     capture().ReleaseSourceOpen();
 }
 
-extern "C" std::size_t ReadPcmCapture(CapturedFrame* destination, std::size_t capacity) {
+extern "C" MC_PLUGIN_API std::size_t ReadPcmCapture(CapturedFrame* destination, std::size_t capacity) {
     return capture().Read(destination, capacity);
 }
 
-extern "C" void HoldPcmCompletion(bool hold) {
+extern "C" MC_PLUGIN_API void HoldPcmCompletion(bool hold) {
     capture().HoldCompletion(hold);
 }
 
-extern "C" bool WaitPcmCapture(CaptureEvent event, unsigned timeoutMs) {
+extern "C" MC_PLUGIN_API bool WaitPcmCapture(CaptureEvent event, unsigned timeoutMs) {
     return capture().Wait(event, timeoutMs);
 }
 
-extern "C" std::size_t OutstandingPcmCapture() {
+extern "C" MC_PLUGIN_API std::size_t OutstandingPcmCapture() {
     return capture().Outstanding();
 }
 
-extern "C" bool WaitPcmCaptureFrames(std::size_t frames, unsigned timeoutMs) {
+extern "C" MC_PLUGIN_API bool WaitPcmCaptureFrames(std::size_t frames, unsigned timeoutMs) {
     return capture().WaitFrames(frames, timeoutMs);
 }
 
-extern "C" void StorePcmCapture(bool enabled) {
+extern "C" MC_PLUGIN_API void StorePcmCapture(bool enabled) {
     capture().StoreFrames(enabled);
 }
 
-extern "C" std::size_t AudiblePcmCapture() {
+extern "C" MC_PLUGIN_API std::size_t AudiblePcmCapture() {
     return capture().AudibleFrames();
 }

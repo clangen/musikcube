@@ -1007,7 +1007,9 @@ namespace {
         const auto lateExpected = calls + 1;
         OpenTrackSearch(context, *remote, { kHeldSearch }, receiveResult(lateTracks));
         if (!server.WaitForHeldReply() || session.Disconnect() != MC_OK || !connect() ||
-            !server.ReleaseHeld(false) || calls != lateExpected || status != MC_ERROR_IO || lateTracks)
+            !server.ReleaseHeld(false) ||
+            !AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && calls == lateExpected; }) ||
+            status != MC_ERROR_IO || lateTracks)
         {
             return failure(__LINE__);
         }

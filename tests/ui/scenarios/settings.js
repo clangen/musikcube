@@ -2,7 +2,7 @@
 const { DOWN, RIGHT, END, HOME } = require('../support/catalog');
 
 async function checkSettings(terminal, { staged, hasServer }) {
-  if (staged.some(name => name.startsWith('libsupereqdsp.'))) {
+  if (staged.some(name => /^(?:lib)?supereqdsp\./.test(name))) {
     terminal.send('\x05');
     await terminal.expect('frequency bands');
     terminal.send('\t' + RIGHT);
@@ -12,12 +12,14 @@ async function checkSettings(terminal, { staged, hasServer }) {
     terminal.send('\x1b');
     await terminal.expect('playback is stopped', { absent: 'frequency bands' });
   }
-  if (staged.some(name => name.startsWith('libnullout.'))) {
+  if (staged.some(name => /^(?:lib)?nullout\./.test(name))) {
     terminal.send('v');
     await terminal.expect('no visualizers found!');
     terminal.send('\r');
     await terminal.expect('playback is stopped', { absent: 'no visualizers found!' });
     await terminal.resize(28, 140);
+    await terminal.waitFor(() => terminal.screen.text().split('\n')[27]?.includes('^D  quit'),
+      'redrawn command bar after resizing');
     terminal.send('s');
     await terminal.expect('output driver: Null');
     const clickLabel = async label => {
@@ -62,10 +64,14 @@ async function checkSettings(terminal, { staged, hasServer }) {
     await terminal.expect('default_sample_rate');
     terminal.send(DOWN + '\r');
     await terminal.expect('4096 - 192000');
-    terminal.send(END + '\x7f'.repeat(5) + '44100\r');
-    await terminal.expect('44100', { absent: '4096 - 192000' });
+    terminal.send(END + '\x7f'.repeat(5) + '48000\r');
+    await terminal.expect('48000', { absent: '4096 - 192000' });
     terminal.send('\x1b');
-    await terminal.expect('Null IOutput', { absent: 'default_sample_rate' });
+    await terminal.waitFor(() => {
+      const text = terminal.screen.text();
+      return !text.includes('default_sample_rate') && text.split('\n').some(
+        row => row.includes('Null IOutput') && row.includes('[v'));
+    }, 'restored plugin list after closing its editor');
     terminal.send('\x1b');
     await terminal.expect('configure plugins', { absent: 'Null IOutput' });
 

@@ -56,8 +56,13 @@ async function checkSearch(terminal, { pilot, windows, cache, openSearch, captur
   const finished = terminal.processStats();
   if (finished) {
     result.peakRssKiB = finished.peakRssKiB;
-    result.cpuTicks = finished.cpuTicks - ready.cpuTicks;
-    result.totalCpuTicks = finished.cpuTicks;
+    if (finished.cpuTicks !== undefined) {
+      result.cpuTicks = finished.cpuTicks - ready.cpuTicks;
+      result.totalCpuTicks = finished.cpuTicks;
+    } else {
+      result.cpuMs = finished.cpuMs - ready.cpuMs;
+      result.totalCpuMs = finished.cpuMs;
+    }
   }
   if (pilot && windows) {
     terminal.send(HOME + 'j\r');

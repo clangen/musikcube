@@ -43,6 +43,12 @@ if(UNIX)
     "-DALLOWLIST=${PROJECT_SOURCE_DIR}/src/musikcore/ffi/exports.txt"
     -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-exports.cmake")
   set_tests_properties(musikcore.abi.exports PROPERTIES LABELS "integration;musikcore;abi;contract")
+elseif(MSVC)
+  add_test(NAME musikcore.abi.exports COMMAND "${CMAKE_COMMAND}"
+    "-DLINKER=${CMAKE_LINKER}" "-DLIBRARY=$<TARGET_FILE:musikcore_abi0>"
+    "-DALLOWLIST=${PROJECT_SOURCE_DIR}/src/musikcore/ffi/exports.txt"
+    -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-windows-core-dll.cmake")
+  set_tests_properties(musikcore.abi.exports PROPERTIES LABELS "integration;musikcore;abi;contract")
 endif()
 
 add_executable(musikcore_abi_dispatch_test

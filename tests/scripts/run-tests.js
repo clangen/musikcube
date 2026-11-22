@@ -62,7 +62,8 @@ function main() {
 
   /* Keep Debug/Release selection and runtime placement consistent across
      configure, build, and CTest; ABI-only mode avoids production dependencies. */
-  run('cmake', ['-S', source, '-B', build, '-DBUILD_TESTING=ON',
+  const preset = process.platform === 'win32' ? ['--preset', 'windows-x64'] : [];
+  run('cmake', [...preset, '-S', source, '-B', build, '-DBUILD_TESTING=ON',
     `-DMUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY=${resolve(build, 'bin')}`,
     `-DCMAKE_BUILD_TYPE=${values.config}`, `-DMUSIKCORE_ABI_ONLY=${values['abi-only'] ? 'ON' : 'OFF'}`], source);
 

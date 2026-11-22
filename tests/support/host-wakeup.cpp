@@ -2,6 +2,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 
 struct test_host_event {
     std::mutex mutex;
@@ -39,4 +40,20 @@ int test_host_event_wait_for(test_host_event* event, unsigned timeout_ms) {
     if (!event->changed.wait_for(lock, std::chrono::milliseconds(timeout_ms), [&] { return event->pending; })) return 0;
     event->pending = false;
     return 1;
+}
+
+const void* test_host_thread_token() {
+    static thread_local char token;
+    return &token;
+}
+
+int test_host_run_worker(void (*work)(void*), void* data) {
+    try {
+        std::thread worker(work, data);
+        worker.join();
+        return 1;
+    }
+    catch (...) {
+        return 0;
+    }
 }

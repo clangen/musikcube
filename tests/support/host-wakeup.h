@@ -14,6 +14,9 @@ void MC_CALL test_host_event_signal(void* event);
 /* Consume one pending wakeup; return zero after a bounded wait instead of hanging. */
 int test_host_event_wait(test_host_event* event);
 int test_host_event_wait_for(test_host_event* event, unsigned timeout_ms);
+/* Identify the current thread and run a function on a joined worker. */
+const void* test_host_thread_token(void);
+int test_host_run_worker(void (*work)(void*), void* data);
 #ifdef __cplusplus
 }
 #endif

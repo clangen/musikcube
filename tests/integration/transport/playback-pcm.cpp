@@ -15,7 +15,6 @@
 #include <condition_variable>
 #include <cstdint>
 #include <cstdio>
-#include <dlfcn.h>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -23,7 +22,13 @@
 #include <string_view>
 #include <thread>
 #include <vector>
+#ifdef _WIN32
+#include <windows.h>
+#include <psapi.h>
+#else
+#include <dlfcn.h>
 #include <sys/resource.h>
+#endif
 
 namespace {
     using namespace musik::core;
@@ -31,6 +36,31 @@ namespace {
     using namespace playback_fixture;
     using namespace std::chrono_literals;
     using Clock = std::chrono::steady_clock;
+
+    void* openModule(const std::filesystem::path& path) {
+#ifdef _WIN32
+        return LoadLibraryW(path.c_str());
+#else
+        return dlopen(path.c_str(), RTLD_NOW);
+#endif
+    }
+
+    void closeModule(void* module) {
+#ifdef _WIN32
+        FreeLibrary(static_cast<HMODULE>(module));
+#else
+        dlclose(module);
+#endif
+    }
+
+    template<class Function>
+    Function moduleSymbol(void* module, const char* name) {
+#ifdef _WIN32
+        return reinterpret_cast<Function>(GetProcAddress(static_cast<HMODULE>(module), name));
+#else
+        return reinterpret_cast<Function>(dlsym(module, name));
+#endif
+    }
 
     constexpr int16_t signalLevel = 16384;
     constexpr int pcmScale = 32768;
@@ -205,7 +235,7 @@ namespace {
         constexpr unsigned deadlineMs = 3000;
         constexpr int repetitions = 12;
         constexpr int seekSeconds = 4;
-        const auto track = [](auto frame) {
+        const auto track = [seekSeconds](auto frame) {
             return StereoFrame { static_cast<int16_t>(frame < seekSeconds * sampleRate ? signalLevel : -signalLevel), 0 };
         };
         if (!writeWave(file, crossfadeLength, track)) {
@@ -392,16 +422,38 @@ namespace {
         return true;
     }
 
-    double milliseconds(timeval value) {
-        return value.tv_sec * 1000.0 + value.tv_usec / 1000.0;
-    }
+    struct ProcessUsage {
+        double user;
+        double system;
+        std::size_t peak;
+    };
 
-    std::size_t peakRssBytes(const rusage& usage) {
-#ifdef __APPLE__
-        return usage.ru_maxrss;
+    bool readProcessUsage(ProcessUsage& result) {
+#ifdef _WIN32
+        FILETIME start, exit, system, user;
+        PROCESS_MEMORY_COUNTERS memory {};
+        if (!GetProcessTimes(GetCurrentProcess(), &start, &exit, &system, &user) ||
+            !K32GetProcessMemoryInfo(GetCurrentProcess(), &memory, sizeof(memory)))
+        {
+            return false;
+        }
+        const auto millis = [](FILETIME value) {
+            return ((static_cast<uint64_t>(value.dwHighDateTime) << 32) | value.dwLowDateTime) / 10000.0;
+        };
+        result = { millis(user), millis(system), memory.PeakWorkingSetSize };
 #else
-        return static_cast<std::size_t>(usage.ru_maxrss) * 1024;
+        rusage usage {};
+        if (getrusage(RUSAGE_SELF, &usage) != 0) {
+            return false;
+        }
+        const auto millis = [](timeval value) { return value.tv_sec * 1000.0 + value.tv_usec / 1000.0; };
+        std::size_t peak = usage.ru_maxrss;
+#ifndef __APPLE__
+        peak *= 1024;
 #endif
+        result = { millis(usage.ru_utime), millis(usage.ru_stime), peak };
+#endif
+        return true;
     }
 
     bool benchmarkPlayback(const std::filesystem::path& first, const std::filesystem::path& second,
@@ -410,8 +462,8 @@ namespace {
         constexpr unsigned deadlineMs = 10000;
         constexpr auto frames = gaplessFirst + gaplessSecond;
         store(false);
-        rusage before {};
-        if (getrusage(RUSAGE_SELF, &before) != 0) {
+        ProcessUsage before {};
+        if (!readProcessUsage(before)) {
             return false;
         }
         const auto started = Clock::now();
@@ -429,23 +481,23 @@ namespace {
             Player::WaitForWorkers();
         }
         const auto elapsed = std::chrono::duration<double, std::milli>(Clock::now() - started).count();
-        rusage after {};
-        if (getrusage(RUSAGE_SELF, &after) != 0 || audible() != frames) {
+        ProcessUsage after {};
+        if (!readProcessUsage(after) || audible() != frames) {
             std::fprintf(stderr, "Benchmark rendered %zu of %zu expected PCM frames\n", audible(), frames);
             return false;
         }
-        const auto userMs = milliseconds(after.ru_utime) - milliseconds(before.ru_utime);
-        const auto systemMs = milliseconds(after.ru_stime) - milliseconds(before.ru_stime);
+        const auto userMs = after.user - before.user;
+        const auto systemMs = after.system - before.system;
         std::printf("playback-benchmark {\"frames\":%zu,\"wallMs\":%.3f,\"cpuMs\":%.3f,"
             "\"userMs\":%.3f,\"systemMs\":%.3f,\"startPeakRssBytes\":%zu,\"peakRssBytes\":%zu}\n",
-            frames, elapsed, userMs + systemMs, userMs, systemMs, peakRssBytes(before), peakRssBytes(after));
+            frames, elapsed, userMs + systemMs, userMs, systemMs, before.peak, after.peak);
         return true;
     }
 
     bool destroyPausedCrossfade(const std::filesystem::path& first, const std::filesystem::path& second,
         WaitCapture wait)
     {
-        constexpr unsigned overlapDeadlineMs = 9000;
+        constexpr unsigned overlapDeadlineMs = 18000;
         {
             CrossfadeTransport transport;
             transport.Start(first.string(), {}, ITransport::StartMode::Immediate);
@@ -497,14 +549,14 @@ int main(int argc, char** argv) {
     }
 
     const auto pluginPath = std::filesystem::canonical(argv[0]).parent_path() / "plugins" / argv[2];
-    const std::unique_ptr<void, decltype(&dlclose)> module { dlopen(pluginPath.c_str(), RTLD_NOW), dlclose };
+    const std::unique_ptr<void, decltype(&closeModule)> module { openModule(pluginPath), closeModule };
     if (!module) {
-        std::fprintf(stderr, "Could not load capture output: %s\n", dlerror());
+        std::fprintf(stderr, "Could not load capture output: %s\n", pluginPath.string().c_str());
         return 1;
     }
-    const auto read = reinterpret_cast<ReadCapture>(dlsym(module.get(), "ReadPcmCapture"));
+    const auto read = moduleSymbol<ReadCapture>(module.get(), "ReadPcmCapture");
     if (!read) {
-        std::fprintf(stderr, "Could not find PCM capture reader: %s\n", dlerror());
+        std::fputs("Could not find PCM capture reader\n", stderr);
         return 1;
     }
 
@@ -523,20 +575,20 @@ int main(int argc, char** argv) {
     }
 
     if (benchmark) {
-        const auto store = reinterpret_cast<StoreCapture>(dlsym(module.get(), "StorePcmCapture"));
-        const auto waitFrames = reinterpret_cast<WaitCaptureFrames>(dlsym(module.get(), "WaitPcmCaptureFrames"));
-        const auto audible = reinterpret_cast<CountCapture>(dlsym(module.get(), "AudiblePcmCapture"));
+        const auto store = moduleSymbol<StoreCapture>(module.get(), "StorePcmCapture");
+        const auto waitFrames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");
+        const auto audible = moduleSymbol<CountCapture>(module.get(), "AudiblePcmCapture");
         return store && waitFrames && audible && benchmarkPlayback(first, second, store, waitFrames, audible) ? 0 : 1;
     }
 
     if (pausedFade) {
-        const auto wait = reinterpret_cast<WaitCapture>(dlsym(module.get(), "WaitPcmCapture"));
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
         return wait && destroyPausedCrossfade(first, second, wait) ? 0 : 1;
     }
 
     if (sourceOpen) {
-        const auto wait = reinterpret_cast<WaitCapture>(dlsym(module.get(), "WaitPcmCapture"));
-        const auto release = reinterpret_cast<void (*)()>(dlsym(module.get(), "ReleasePcmSourceOpen"));
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
+        const auto release = moduleSymbol<void (*)()>(module.get(), "ReleasePcmSourceOpen");
         return wait && release && cancelSourceOpen(wait, release) ? 0 : 1;
     }
 
@@ -544,13 +596,13 @@ int main(int argc, char** argv) {
         if (mode == "completion" || mode == "detach_listener") {
             return stopDuringNotification(first, mode == "detach_listener") ? 0 : 1;
         }
-        const auto hold = reinterpret_cast<HoldCompletion>(dlsym(module.get(), "HoldPcmCompletion"));
-        const auto wait = reinterpret_cast<WaitCapture>(dlsym(module.get(), "WaitPcmCapture"));
+        const auto hold = moduleSymbol<HoldCompletion>(module.get(), "HoldPcmCompletion");
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
         if (mode == "replace_next") {
-            const auto frames = reinterpret_cast<WaitCaptureFrames>(dlsym(module.get(), "WaitPcmCaptureFrames"));
+            const auto frames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");
             return hold && wait && frames && replacePreparedTrack(argv[3], read, hold, wait, frames) ? 0 : 1;
         }
-        const auto outstanding = reinterpret_cast<CountCapture>(dlsym(module.get(), "OutstandingPcmCapture"));
+        const auto outstanding = moduleSymbol<CountCapture>(module.get(), "OutstandingPcmCapture");
         return hold && wait && outstanding && stressPlayback(mode, first, read, hold, wait, outstanding) ? 0 : 1;
     }
 

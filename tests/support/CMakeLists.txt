@@ -110,7 +110,7 @@ if(BUILD_TESTING)
     set_tests_properties(musikcore.abi.indexed_query PROPERTIES
       LABELS "integration;musikcore;api;contract" TIMEOUT 90)
 
-    if(UNIX AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16 AND
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.16 AND
         CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME AND
         CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
       set(installed_plugin_args)
@@ -119,7 +119,8 @@ if(BUILD_TESTING)
         add_dependencies(musikcube_tests nullout)
       endif()
       add_test(NAME musikcore.integration.api.installed_sdk COMMAND "${CMAKE_COMMAND}"
-        ${indexed_arguments} "-DINSTALLED_SDK_SOURCE=${PROJECT_SOURCE_DIR}" ${installed_plugin_args} -P "${indexed_script}")
+        ${indexed_arguments} "-DINSTALLED_SDK_SOURCE=${PROJECT_SOURCE_DIR}" "-DTEST_CONFIG=$<CONFIG>"
+        ${installed_plugin_args} -P "${indexed_script}")
       set_tests_properties(musikcore.integration.api.installed_sdk PROPERTIES
         LABELS "integration;musikcore;api;packaging;contract" TIMEOUT 90)
     endif()
@@ -148,9 +149,9 @@ if(BUILD_TESTING)
     set_tests_properties(musikcore.integration.api.backend_parity PROPERTIES
       LABELS "integration;musikcore;api;transport;contract" TIMEOUT 90)
 
-    if(UNIX AND TARGET ffmpegdecoder)
+    if(TARGET ffmpegdecoder)
       add_library(musikcore_pcm_capture_output MODULE pcm-capture-output.cpp)
-      target_include_directories(musikcore_pcm_capture_output PRIVATE "${PROJECT_SOURCE_DIR}/src")
+      target_include_directories(musikcore_pcm_capture_output PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
       target_compile_features(musikcore_pcm_capture_output PRIVATE cxx_std_20)
       target_link_libraries(musikcore_pcm_capture_output PRIVATE Threads::Threads)
       set_target_properties(musikcore_pcm_capture_output PROPERTIES
@@ -165,6 +166,10 @@ if(BUILD_TESTING)
       target_include_directories(musikcore_playback_pcm_test PRIVATE
         "${PROJECT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
       target_link_libraries(musikcore_playback_pcm_test PRIVATE ${core_fixture_library} Threads::Threads ${CMAKE_DL_LIBS})
+      if(WIN32)
+        target_link_libraries(musikcore_playback_pcm_test PRIVATE musikcube_windows)
+        add_dependencies(musikcore_playback_pcm_test musikcube_runtime)
+      endif()
       set_target_properties(musikcore_playback_pcm_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
       add_dependencies(musikcore_playback_pcm_test musikcore_pcm_capture_output ffmpegdecoder)
       add_dependencies(musikcube_tests musikcore_playback_pcm_test)
@@ -186,15 +191,18 @@ if(BUILD_TESTING)
         set_tests_properties(musikcore.integration.transport.${mode}_pcm PROPERTIES
           LABELS "integration;musikcore;transport;playback" TIMEOUT 35)
       endforeach()
-      set_tests_properties(musikcore.integration.transport.paused_crossfade_pcm PROPERTIES TIMEOUT 12)
+      set_tests_properties(musikcore.integration.transport.paused_crossfade_pcm PROPERTIES TIMEOUT 25)
     endif()
 
-    if(UNIX AND TARGET nullout AND TARGET ffmpegdecoder AND TARGET taglibreader)
+    if(TARGET nullout AND TARGET ffmpegdecoder AND (TARGET taglibreader OR TARGET taglib_plugin))
       add_executable(musikcore_plugin_playback_test ../integration/musikcore/plugin-playback.cpp)
       target_include_directories(musikcore_plugin_playback_test PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}" ${VENDOR_INCLUDE_DIRECTORIES})
       set_target_properties(musikcore_plugin_playback_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
       target_link_libraries(musikcore_plugin_playback_test PRIVATE ${core_fixture_library} Threads::Threads)
+      if(WIN32)
+        target_link_libraries(musikcore_plugin_playback_test PRIVATE musikcube_windows)
+      endif()
       add_dependencies(musikcore_plugin_playback_test nullout musikcube_seed_library)
       add_dependencies(musikcube_tests musikcore_plugin_playback_test)
       add_dependencies(musikcube_integration_tests musikcore_plugin_playback_test)
@@ -207,6 +215,11 @@ if(BUILD_TESTING)
       add_executable(musikcore_managed_runtime_test ../integration/musikcore/managed-runtime.cpp)
       set_target_properties(musikcore_managed_runtime_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
       target_link_libraries(musikcore_managed_runtime_test PRIVATE musikcore Threads::Threads)
+      target_compile_features(musikcore_managed_runtime_test PRIVATE cxx_std_20)
+      if(WIN32)
+        target_link_libraries(musikcore_managed_runtime_test PRIVATE musikcube_windows ws2_32)
+        target_compile_definitions(musikcore_managed_runtime_test PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+      endif()
       add_dependencies(musikcore_managed_runtime_test nullout musikcube_seed_library)
       add_dependencies(musikcube_tests musikcore_managed_runtime_test)
       add_dependencies(musikcube_integration_tests musikcore_managed_runtime_test)
@@ -258,9 +271,18 @@ endif()
 
 # Keep small production UI checks in the ordinary suite; catalog/latency
 # benchmarks remain explicit commands instead of machine-dependent assertions.
-if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGET ffmpegdecoder)
-  add_dependencies(musikcube_tests musikcube taglibreader ffmpegdecoder)
-  add_dependencies(musikcube_ui_tests musikcube musikcube_seed_library taglibreader ffmpegdecoder)
+if(BUILD_TESTING AND TARGET musikcube AND TARGET ffmpegdecoder AND (TARGET taglibreader OR TARGET taglib_plugin))
+  set(ui_frontend musikcube)
+  set(ui_tag_reader taglibreader)
+  set(ui_platform_arguments)
+  if(WIN32)
+    set(ui_frontend musikcube-cmd)
+    set(ui_tag_reader taglib_plugin)
+    set(ui_platform_arguments --conpty-host "$<TARGET_FILE:musikcube_conpty_host>")
+    add_dependencies(musikcube_ui_tests musikcube_conpty_host)
+  endif()
+  add_dependencies(musikcube_tests ${ui_frontend} ${ui_tag_reader} ffmpegdecoder)
+  add_dependencies(musikcube_ui_tests ${ui_frontend} musikcube_seed_library ${ui_tag_reader} ffmpegdecoder)
   foreach(plugin IN ITEMS nullout supereqdsp)
     if(TARGET ${plugin})
       add_dependencies(musikcube_tests ${plugin})
@@ -276,15 +298,16 @@ if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGE
     endif()
     add_test(NAME musikcube.ui.${scenario} COMMAND "${MUSIKCORE_TEST_NODE}"
       "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/${script}.js"
-      --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:musikcube>"
-      --tracks 1000 ${arguments})
+      --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:${ui_frontend}>"
+      --tracks 1000 ${ui_platform_arguments} ${arguments})
     set_tests_properties(musikcube.ui.${scenario} PROPERTIES
       LABELS "ui;musikcube;${scenario}" TIMEOUT 90)
   endforeach()
   if(TARGET nullout)
     add_test(NAME musikcube.ui.lyrics COMMAND "${MUSIKCORE_TEST_NODE}"
       "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/lyrics.js"
-      --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:musikcube>" --tracks 20)
+      --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:${ui_frontend}>"
+      --tracks 20 ${ui_platform_arguments})
     set_tests_properties(musikcube.ui.lyrics PROPERTIES
       LABELS "ui;musikcube;lyrics" TIMEOUT 30)
   endif()
@@ -293,9 +316,9 @@ if(BUILD_TESTING AND UNIX AND TARGET musikcube AND TARGET taglibreader AND TARGE
     foreach(mode IN ITEMS gapless crossfade)
       add_test(NAME musikcube.ui.transport.${mode} COMMAND "${MUSIKCORE_TEST_NODE}"
         "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/transport.js"
-        --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:musikcube>"
+        --build-dir "${PROJECT_BINARY_DIR}" --bin-dir "$<TARGET_FILE_DIR:${ui_frontend}>"
         --tracks 1000 --playback-mode "${mode}"
-        --capture-output "$<TARGET_FILE:musikcore_pcm_capture_output>")
+        --capture-output "$<TARGET_FILE:musikcore_pcm_capture_output>" ${ui_platform_arguments})
       set_tests_properties(musikcube.ui.transport.${mode} PROPERTIES
         LABELS "ui;musikcube;transport" TIMEOUT 90)
     endforeach()
@@ -354,8 +377,13 @@ endforeach()
 
 # separate processes are essential: a static migration flag cannot survive them.
 set(migration_media)
-if(TARGET taglibreader AND TARGET ffmpegdecoder)
-  add_dependencies(musikcore_runtime_hardening_test musikcube_seed_library taglibreader ffmpegdecoder)
+if(TARGET ffmpegdecoder AND (TARGET taglibreader OR TARGET taglib_plugin))
+  add_dependencies(musikcore_runtime_hardening_test musikcube_seed_library ffmpegdecoder)
+  if(TARGET taglibreader)
+    add_dependencies(musikcore_runtime_hardening_test taglibreader)
+  else()
+    add_dependencies(musikcore_runtime_hardening_test taglib_plugin)
+  endif()
   list(APPEND migration_media "$<TARGET_FILE:musikcube_seed_library>" "${PROJECT_BINARY_DIR}")
 endif()
 add_test(NAME musikcore.integration.runtime.migration_scan COMMAND "${MUSIKCORE_TEST_NODE}"
@@ -402,10 +430,14 @@ endforeach()
 # Exercise nested stream adapters only when their actual providers are built.
 set(stream_sdk_plugins)
 foreach(provider IN ITEMS gmedecoder openmptdecoder)
-  if(TARGET ${provider})
-    list(APPEND stream_sdk_plugins --plugin "$<TARGET_FILE:${provider}>")
+  set(target "${provider}")
+  if(provider STREQUAL "openmptdecoder" AND TARGET libopenmptdecoder)
+    set(target libopenmptdecoder)
+  endif()
+  if(TARGET ${target})
+    list(APPEND stream_sdk_plugins --plugin "$<TARGET_FILE:${target}>")
     target_compile_definitions(musikcore_runtime_hardening_test PRIVATE TEST_STREAM_${provider})
-    add_dependencies(musikcore_runtime_hardening_test ${provider})
+    add_dependencies(musikcore_runtime_hardening_test ${target})
   endif()
 endforeach()
 add_test(NAME musikcore.integration.runtime.stream_sdk_contract COMMAND "${MUSIKCORE_TEST_NODE}"

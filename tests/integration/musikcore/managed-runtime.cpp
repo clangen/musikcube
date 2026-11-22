@@ -410,7 +410,7 @@ namespace {
             }
             const auto plugins = ListPlugins();
             const auto server = std::find_if(plugins.begin(), plugins.end(), [](const auto& plugin) {
-                return plugin.filename.starts_with("libserver.");
+                return plugin.filename.starts_with("libserver.") || plugin.filename == "server.dll";
             });
             if (server == plugins.end() || SetPluginEnabled(server->filename, false) != MC_OK) {
                 return false;

@@ -10,8 +10,10 @@ function stageLocale(runtime) {
   const locales = join(runtime, 'locales');
   const resource = JSON.parse(fs.readFileSync(join(locales, 'en_US.json'), 'utf8'));
   resource.integers.track_search_sort_order_width = SORT_OVERLAY_WIDTH;
-  fs.unlinkSync(locales);
-  fs.mkdirSync(locales);
+  if (fs.lstatSync(locales).isSymbolicLink()) {
+    fs.unlinkSync(locales);
+    fs.mkdirSync(locales);
+  }
   fs.writeFileSync(join(locales, 'en_US.json'), JSON.stringify(resource));
 }
 

@@ -7,6 +7,13 @@ if(NOT TARGET musikcore::musikcore)
   set_target_properties(musikcore::musikcore PROPERTIES
     IMPORTED_LOCATION "${musikcore_library}"
     INTERFACE_INCLUDE_DIRECTORIES "${musikcore_include_dir}")
+  if(WIN32)
+    set_and_check(musikcore_import_library "@PACKAGE_CMAKE_INSTALL_LIBDIR@/@MUSIKCORE_IMPORT_FILENAME@")
+    set_target_properties(musikcore::musikcore PROPERTIES
+      IMPORTED_IMPLIB "${musikcore_import_library}"
+      INTERFACE_COMPILE_DEFINITIONS MC_USING_SHARED)
+    unset(musikcore_import_library)
+  endif()
   unset(musikcore_include_dir)
   unset(musikcore_library)
 endif()

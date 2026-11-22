@@ -14,7 +14,9 @@ include("${CMAKE_CURRENT_LIST_DIR}/WindowsSources.cmake")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin64/$<CONFIG>")
+set(MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin64" CACHE PATH
+  "Production runtime directory; test builds can select a private directory under their build root")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/$<CONFIG>")
 
 cmake_policy(SET CMP0069 NEW)
@@ -155,6 +157,8 @@ function(windows_plugin target)
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins")
   add_dependencies(musikcube_runtime ${target})
+  install(TARGETS ${target} RUNTIME DESTINATION bin/plugins COMPONENT musikcorePlugins
+    LIBRARY DESTINATION bin/plugins COMPONENT musikcorePlugins)
 endfunction()
 
 windows_plugin(cddadecoder CddaDataModel.cpp CddaDataStream.cpp CddaDataStreamFactory.cpp
@@ -267,6 +271,10 @@ if(BUILD_TESTING)
 endif()
 
 windows_project_sources(musikcore_objects src/musikcore)
+
+set(MUSIKCORE_INSTALL_RUNTIME_DIR bin)
+include("${CMAKE_CURRENT_LIST_DIR}/InstallMusikcoreSdk.cmake")
+install(FILES ${windows_dlls} DESTINATION bin COMPONENT musikcoreSDK)
 
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT musikcube)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
