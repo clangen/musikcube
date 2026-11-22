@@ -72,6 +72,12 @@ if(BUILD_TESTING)
   set_tests_properties(musikcore.integration.api.managed_remote PROPERTIES
     LABELS "integration;musikcore;api;transport;contract" TIMEOUT 20)
 
+  add_test(NAME musikcore.integration.api.remote_versions COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcore_remote_query_transport_test>" --stage --versions)
+  set_tests_properties(musikcore.integration.api.remote_versions PROPERTIES
+    LABELS "integration;musikcore;api;transport;contract" TIMEOUT 20)
+
   find_program(MUSIKCUBE_TEST_NODE NAMES node)
   if(MUSIKCUBE_TEST_NODE)
     add_executable(musikcore_production_api_test

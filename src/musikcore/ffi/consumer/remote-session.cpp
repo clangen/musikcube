@@ -7,6 +7,7 @@
 #include "request.h"
 
 #include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/sdk/version.h>
 #include <common/runtime/MessageQueue.h>
 
 #include <atomic>
@@ -18,7 +19,12 @@ namespace {
     using Queue = musik::core::runtime::MessageQueue;
     using State = RemoteLibrary::ConnectionState;
 
-    mc_remote_state publicState(State state) {
+    mc_remote_state publicState(State state,
+        RemoteLibrary::Client::ConnectionError error = RemoteLibrary::Client::ConnectionError::None)
+    {
+        if (state == State::Disconnected && error == RemoteLibrary::Client::ConnectionError::IncompatibleVersion) {
+            return MC_REMOTE_INCOMPATIBLE_VERSION;
+        }
         switch (state) {
             case State::Connected: return MC_REMOTE_CONNECTED;
             case State::Connecting: return MC_REMOTE_CONNECTING;
@@ -27,6 +33,15 @@ namespace {
         }
         return MC_REMOTE_DISCONNECTED;
     }
+
+    /* a queued completion owns its terminal details independently of later
+    reconnects and session destruction. cancellation may race publication. */
+    struct ConnectResult {
+        std::mutex mutex;
+        mc_result status = MC_ERROR_CANCELLED;
+        mc_remote_state state = MC_REMOTE_DISCONNECTED;
+        std::string message;
+    };
 }
 
 struct mc_remote_session {
@@ -66,10 +81,11 @@ struct mc_remote_session {
     }
 
     void OnState(State state) {
+        const auto reported = publicState(state, this->library->WebSocketClient().LastConnectionError());
         std::shared_ptr<musik::core::ffi::ContextNotification> observer;
         {
             std::lock_guard<std::mutex> lock(this->mutex);
-            this->observedState->store(publicState(state));
+            this->observedState->store(reported);
             observer = this->observer;
         }
         if (observer) {
@@ -80,25 +96,41 @@ struct mc_remote_session {
             this->Complete(MC_OK, MC_REMOTE_CONNECTED);
         }
         else if (state != State::Connecting && socket == RemoteLibrary::Client::State::Disconnected) {
-            this->Complete(MC_ERROR_IO, publicState(state));
+            const auto status = musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+                if (reported == MC_REMOTE_INCOMPATIBLE_VERSION) {
+                    const auto required = std::to_string(MUSIKCUBE_VERSION_MAJOR) + "." +
+                        std::to_string(MUSIKCUBE_VERSION_MINOR) + ".x";
+                    const auto version = this->library->WebSocketClient().LastServerVersion();
+                    this->Complete(MC_ERROR_UNSUPPORTED, reported,
+                        "Incompatible server version '" + version + "'. This client requires musikcube server " +
+                        required + ". Update the server or use a matching client.");
+                }
+                else {
+                    this->Complete(MC_ERROR_IO, reported);
+                }
+                return MC_OK;
+            });
+            if (status != MC_OK) {
+                this->Complete(status, reported);
+            }
         }
     }
 
-    void Complete(mc_result status, mc_remote_state state) {
-        std::function<void(mc_result, mc_remote_state)> finish;
+    void Complete(mc_result status, mc_remote_state state, const std::string& message = {}) {
+        std::function<void(mc_result, mc_remote_state, const std::string&)> finish;
         {
             std::lock_guard<std::mutex> lock(this->mutex);
             finish = std::move(this->pending);
         }
         if (finish) {
-            finish(status, state);
+            finish(status, state, message);
         }
     }
 
     const std::shared_ptr<Queue> queue;
     const std::shared_ptr<RemoteLibrary> library;
     std::mutex mutex;
-    std::function<void(mc_result, mc_remote_state)> pending;
+    std::function<void(mc_result, mc_remote_state, const std::string&)> pending;
     const std::shared_ptr<std::atomic<mc_remote_state>> observedState =
         std::make_shared<std::atomic<mc_remote_state>>(MC_REMOTE_DISCONNECTED);
     std::shared_ptr<musik::core::ffi::ContextNotification> observer;
@@ -136,7 +168,8 @@ mc_result MC_CALL mc_remote_session_set_callback(mc_context* context, mc_remote_
                 session->observer.reset();
                 return MC_OK;
             }
-            session->observedState->store(publicState(session->library->GetConnectionState()));
+            session->observedState->store(publicState(session->library->GetConnectionState(),
+                session->library->WebSocketClient().LastConnectionError()));
             session->observer = next;
         }
         /* the snapshot is queued, never delivered inline during registration. */
@@ -188,7 +221,8 @@ void MC_CALL mc_remote_session_destroy(mc_remote_session **session) {
 
 mc_remote_state MC_CALL mc_remote_session_state(const mc_remote_session *session) {
     if (session) {
-        return publicState(session->library->GetConnectionState());
+        return publicState(session->library->GetConnectionState(),
+            session->library->WebSocketClient().LastConnectionError());
     }
     return MC_REMOTE_DISCONNECTED;
 }
@@ -205,12 +239,18 @@ mc_result MC_CALL mc_remote_session_connect_async(mc_context *context, mc_remote
     }
 
     return exception_barrier(nullptr, [&]() -> mc_result {
-        auto state = std::make_shared<std::atomic<mc_remote_state>>(MC_REMOTE_DISCONNECTED);
+        auto outcome = std::make_shared<ConnectResult>();
         auto finish = std::make_shared<std::function<void(mc_result)>>();
-        std::function<void(mc_result, mc_remote_state)> publish =
-            [state, finish](mc_result status, mc_remote_state connected) {
-                state->store(connected);
-                (*finish)(status);
+        std::function<void(mc_result, mc_remote_state, const std::string&)> publish =
+            [outcome, finish](mc_result status, mc_remote_state connected, const std::string& message) {
+                const auto copied = exception_barrier(nullptr, [&]() -> mc_result {
+                    std::lock_guard<std::mutex> lock(outcome->mutex);
+                    outcome->message = message;
+                    outcome->status = status;
+                    outcome->state = connected;
+                    return MC_OK;
+                });
+                (*finish)(copied == MC_OK ? status : copied);
             };
         {
             std::lock_guard<std::mutex> lock(session->mutex);
@@ -218,9 +258,21 @@ mc_result MC_CALL mc_remote_session_connect_async(mc_context *context, mc_remote
                 return MC_ERROR_BUSY;
             }
             const auto status = reserve_external_request(context,
-                [state, completion](mc_result result, void *data) {
-                    const CompletionError error(result);
-                    completion(result, state->load(), error.Get(), data);
+                [outcome, completion](mc_result result, void *data) {
+                    /* do not hold the payload lock across user callbacks: they
+                    may disconnect or release the session. cancellation's result
+                    must not inherit another terminal outcome's error details. */
+                    mc_remote_state state;
+                    std::string message;
+                    {
+                        std::lock_guard<std::mutex> lock(outcome->mutex);
+                        state = outcome->state;
+                        if (result == outcome->status) {
+                            message.swap(outcome->message);
+                        }
+                    }
+                    const CompletionError error(result, "Connect to server", message.c_str());
+                    completion(result, state, error.Get(), data);
                 }, user_data, out_request, *finish);
             if (status != MC_OK) {
                 return status;

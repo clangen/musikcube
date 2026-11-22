@@ -355,8 +355,14 @@ void WebSocketClient::SetState(State state, ConnectionError error) {
     State oldState;
     {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-        if (error != ConnectionError::None) this->connectionError = error;
-        if (state == this->state) return;
+        /* a close frame following a protocol rejection must not overwrite its
+        first terminal reason without publishing another state transition. */
+        if (state == this->state) {
+            return;
+        }
+        if (error != ConnectionError::None) {
+            this->connectionError = error;
+        }
         oldState = this->state;
         this->state = state;
 

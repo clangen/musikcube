@@ -66,7 +66,9 @@ enum {
     MC_REMOTE_DISCONNECTED = 0,
     MC_REMOTE_CONNECTING = 1,
     MC_REMOTE_CONNECTED = 2,
-    MC_REMOTE_AUTHENTICATION_FAILED = 3
+    MC_REMOTE_AUTHENTICATION_FAILED = 3,
+    /* connection rejected because server major/minor differs from this client. */
+    MC_REMOTE_INCOMPATIBLE_VERSION = 4
 };
 
 typedef struct mc_remote_options {
@@ -112,8 +114,10 @@ replacement, session destruction, and context shutdown discard queued delivery.
 callbacks may remove themselves. keep user_data alive until removal/shutdown. */
 MC_API mc_result MC_CALL mc_remote_session_set_callback(mc_context* context, mc_remote_session* session,
     mc_remote_state_fn callback, void* user_data);
-/* Complete on context dispatch when the connection succeeds or fails. Cancelling
-   delivery does not disconnect the session. Only one connection attempt may be active. */
+/* complete on context dispatch when the connection succeeds or fails. a server
+major/minor mismatch returns MC_ERROR_UNSUPPORTED, MC_REMOTE_INCOMPATIBLE_VERSION,
+and callback-scoped details naming the server and required versions. cancelling
+only delivery does not disconnect the session. one connection attempt may be active. */
 MC_API mc_result MC_CALL mc_remote_session_connect_async(mc_context *context, mc_remote_session *session,
     mc_remote_connect_fn completion, void *user_data, mc_request_id *out_request);
 /* Disconnect and invalidate previously opened library handles for future requests. */

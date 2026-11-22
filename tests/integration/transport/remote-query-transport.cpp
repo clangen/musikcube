@@ -53,17 +53,28 @@ namespace {
     class Server {
         public:
             /* Bind a dynamic loopback port and select real typed-query forwarding or controlled mock replies. */
-            explicit Server(bool catalog = false, musik::core::ILibraryPtr local = {}) {
+            explicit Server(bool catalog = false, musik::core::ILibraryPtr local = {},
+                std::string version = {}, bool closeAfterAuthentication = false)
+            {
                 this->socket.clear_access_channels(websocketpp::log::alevel::all);
                 this->socket.init_asio(&this->io);
-                this->socket.set_message_handler([this, catalog, local](auto connection, auto message) {
+                this->socket.set_close_handler([this](auto) {
+                    std::lock_guard<std::mutex> lock(this->heldMutex);
+                    this->closed = true;
+                    this->heldChanged.notify_all();
+                });
+                this->socket.set_message_handler([this, catalog, local, version = std::move(version), closeAfterAuthentication](auto connection, auto message) {
                     const nlohmann::json request = nlohmann::json::parse(message->get_payload());
                     auto reply = nlohmann::json { { "id", request.at("id") }, { "name", request.at("name") } };
                     if (request.at("name") == "authenticate") {
-                        reply["options"]["environment"]["app_version"] =
-                            std::to_string(MUSIKCUBE_VERSION_MAJOR) + "." +
-                            std::to_string(MUSIKCUBE_VERSION_MINOR) + ".0";
+                        reply["options"]["environment"]["app_version"] = version.empty()
+                            ? std::to_string(MUSIKCUBE_VERSION_MAJOR) + "." +
+                                std::to_string(MUSIKCUBE_VERSION_MINOR) + ".0"
+                            : version;
                         this->Send(connection, reply);
+                        if (closeAfterAuthentication) {
+                            this->socket.close(connection, websocketpp::close::status::normal, "Authentication completed");
+                        }
                     }
                     else if (request.at("name") == "ping") {
                         this->Send(connection, reply);
@@ -197,6 +208,13 @@ namespace {
                 return true;
             }
 
+            /* wait for the peer's close handshake before checking that a later
+            close event did not replace the original version-rejection reason. */
+            bool WaitForClosed() {
+                std::unique_lock<std::mutex> lock(this->heldMutex);
+                return this->heldChanged.wait_for(lock, std::chrono::seconds(5), [this] { return this->closed; });
+            }
+
         private:
             void HoldReply(websocketpp::connection_hdl connection, const nlohmann::json& reply) {
                 std::lock_guard<std::mutex> lock(this->heldMutex);
@@ -225,6 +243,7 @@ namespace {
             std::mutex heldMutex;
             std::condition_variable heldChanged;
             std::function<void(bool)> held;
+            bool closed = false;
     };
 
     /* Owns observations shared by the test and client threads. Neither copyable nor movable. */
@@ -1075,6 +1094,98 @@ namespace {
         }
         return context.Shutdown() == MC_OK;
     }
+    /* keep protocol rejection distinct from a network failure and preserve
+    callback-scoped version details even if the caller releases the session. */
+    bool checkRemoteVersions() {
+        using namespace musik::core;
+        using namespace musik::core::api;
+        runtime::MessageQueue host;
+        Context context(TestHostOptions(host));
+        const auto required = std::to_string(MUSIKCUBE_VERSION_MAJOR) + "." +
+            std::to_string(MUSIKCUBE_VERSION_MINOR);
+        const auto wait = [&](auto ready) {
+            return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && ready(); });
+        };
+        for (const auto& version : { std::to_string(MUSIKCUBE_VERSION_MAJOR + 1) + ".0.0",
+            std::to_string(MUSIKCUBE_VERSION_MAJOR) + "." + std::to_string(MUSIKCUBE_VERSION_MINOR + 1) + ".0",
+            std::string("invalid-version") })
+        {
+            Server server(false, {}, version, true);
+            auto options = mc_remote_options MC_REMOTE_OPTIONS_DEFAULT;
+            options.host = { "127.0.0.1", 9 };
+            options.websocket_port = server.Port();
+            auto session = std::make_unique<RemoteSession>(options);
+            std::optional<mc_result> status;
+            mc_remote_state finalState = MC_REMOTE_DISCONNECTED;
+            mc_remote_state observedState = MC_REMOTE_DISCONNECTED;
+            std::string message;
+            unsigned completions = 0;
+            if (session->SetCallback(context, [&](mc_remote_state state) { observedState = state; }) != MC_OK) {
+                return failure(__LINE__);
+            }
+            session->Connect(context, [&](mc_result result, mc_remote_state state, std::string_view error) {
+                status = result;
+                finalState = state;
+                message.assign(error);
+                ++completions;
+            });
+            if (!wait([&] { return status.has_value(); }) || !server.WaitForClosed() || status != MC_ERROR_UNSUPPORTED ||
+                finalState != MC_REMOTE_INCOMPATIBLE_VERSION ||
+                !wait([&] { return observedState == MC_REMOTE_INCOMPATIBLE_VERSION; }) ||
+                session->State() != MC_REMOTE_INCOMPATIBLE_VERSION || message.find(version) == std::string::npos ||
+                message.find(required) == std::string::npos || message.find("Incompatible") == std::string::npos ||
+                message.find("Connect to server") == std::string::npos)
+            {
+                std::fprintf(stderr, "version mismatch status=%d state=%u message=%s\n",
+                    status.value_or(MC_ERROR_BUSY), finalState, message.c_str());
+                return failure(__LINE__);
+            }
+            session.reset();
+            if (context.Dispatch() != MC_OK || completions != 1) {
+                return failure(__LINE__);
+            }
+        }
+        /* delivery owns its version details after the session has been released,
+        rather than consulting a dead or reconnected transport during dispatch. */
+        {
+            const auto version = std::to_string(MUSIKCUBE_VERSION_MAJOR + 2) + ".0.0";
+            Server server(false, {}, version);
+            auto options = mc_remote_options MC_REMOTE_OPTIONS_DEFAULT;
+            options.host = { "127.0.0.1", 9 };
+            options.websocket_port = server.Port();
+            auto session = std::make_unique<RemoteSession>(options);
+            std::optional<mc_result> status;
+            std::string message;
+            host.Dispatch();
+            session->Connect(context, [&](mc_result result, mc_remote_state, std::string_view error) {
+                status = result;
+                message.assign(error);
+            });
+            /* this session has no observer; its only host wakeup selects the
+            connect terminal. drain that wakeup without dispatching completion. */
+            host.WaitAndDispatch(5000);
+            if (session->State() != MC_REMOTE_INCOMPATIBLE_VERSION) {
+                return failure(__LINE__);
+            }
+            session.reset();
+            if (!wait([&] { return status.has_value(); }) || status != MC_ERROR_UNSUPPORTED ||
+                message.find(version) == std::string::npos)
+            {
+                return failure(__LINE__);
+            }
+        }
+        /* patch-only differences remain compatible; reporting must not tighten
+        the existing protocol policy while making a mismatch actionable. */
+        Server compatible(false, {}, required + ".999");
+        auto options = mc_remote_options MC_REMOTE_OPTIONS_DEFAULT;
+        options.host = { "127.0.0.1", 9 };
+        options.websocket_port = compatible.Port();
+        RemoteSession session(options);
+        std::optional<mc_result> status;
+        session.Connect(context, [&](mc_result result, mc_remote_state, std::string_view) { status = result; });
+        return wait([&] { return status.has_value(); }) && status == MC_OK && session.State() == MC_REMOTE_CONNECTED;
+    }
+
     bool checkManagedRemote() {
         using namespace musik::core;
         using namespace musik::core::api;
@@ -1360,6 +1471,9 @@ int main(int argc, char** argv) {
         }
         if (argc > 1 && std::strcmp(argv[1], "--parity") == 0) {
             return argc == 3 && checkBackendParity(argv[2]) ? 0 : 1;
+        }
+        if (argc > 1 && std::strcmp(argv[1], "--versions") == 0) {
+            return checkRemoteVersions() ? 0 : 1;
         }
         if (argc > 1 && std::strcmp(argv[1], "--managed") == 0) {
             return checkManagedRemote() ? 0 : 1;

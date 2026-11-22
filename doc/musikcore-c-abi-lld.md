@@ -642,6 +642,11 @@ release-candidate quality.
   suppress queued delivery. `musikcore.integration.api.managed_remote` checks
   those lifetimes, dispatcher delivery, and self-removal on macOS; Linux and
   Windows execution remain pending for this extension.
+  `musikcore.integration.api.remote_versions` checks incompatible major/minor
+  and malformed versions, immediate peer close, state notifications, retained
+  terminal details after session destruction, and compatible patch differences.
+  Mismatch returns `MC_ERROR_UNSUPPORTED` / `MC_REMOTE_INCOMPATIBLE_VERSION` with
+  server and required version details.
 - [x] Supply Track Search with the same public library interface for either
   backend. The app binds its selected backend at the API boundary.
   `musikcore.abi.remote_query_transport` verifies that search results can
