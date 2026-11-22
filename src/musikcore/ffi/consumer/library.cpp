@@ -13,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+namespace query = musik::core::library::query;
+
 namespace {
     using namespace musik::core::ffi;
 

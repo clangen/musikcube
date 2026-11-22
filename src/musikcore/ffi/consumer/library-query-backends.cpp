@@ -26,6 +26,8 @@
 #include <fstream>
 #include <unordered_set>
 
+namespace query = musik::core::library::query;
+
 namespace {
     using namespace musik::core::ffi;
     using musik::core::ILibraryPtr;
