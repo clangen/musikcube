@@ -1,6 +1,7 @@
 #include "runtime-hardening-cases.h"
 #include <musikcore/musikcore.hpp>
 #include "../../support/check.h"
+#include <musikcore/audio/Outputs.h>
 #include <musikcore/audio/Streams.h>
 #include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/plugin/Plugins.h>
@@ -15,6 +16,58 @@
 
 namespace runtime_tests {
     using namespace musik::core;
+
+#ifdef _WIN32
+    bool checkWindowsPlugins() {
+        const std::string_view modules[] = {
+            "directsoundout.dll", "wasapiout.dll", "waveout.dll",
+            "win32gdivis.dll", "win32globalhotkeys.dll", "cddadecoder.dll",
+        };
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_PLUGINS;
+
+        /* exercise actual DLL discovery and persisted state across plugin sessions. */
+        const auto check = [&](bool enabled, bool nextEnabled) -> bool {
+            api::Context context(options);
+            const auto plugins = api::ListPlugins();
+            /* instantiate and release factories without opening a device or window. */
+            {
+                const auto outputs = audio::outputs::GetAllOutputs();
+                for (const std::string_view name : { "DirectSound", "WASAPI", "WaveOut" }) {
+                    const auto found = std::any_of(outputs.begin(), outputs.end(), [name](const auto& output) {
+                        return output->Name() == name;
+                    });
+                    if (!TEST_CHECK(found == enabled)) {
+                        return false;
+                    }
+                }
+                const auto visualizers = api::ListVisualizers();
+                if (!TEST_CHECK((std::find(visualizers.begin(), visualizers.end(), "GdiVis") != visualizers.end()) == enabled)) {
+                    return false;
+                }
+            }
+            for (const auto module : modules) {
+                const auto matches = [module](const api::PluginInfo& item) {
+                    return std::filesystem::path(item.filename).filename().string() == module;
+                };
+                const auto plugin = std::find_if(plugins.begin(), plugins.end(), matches);
+                if (plugin == plugins.end() || plugin->id.empty() || plugin->version.empty() ||
+                    plugin->enabled != enabled || std::count_if(plugins.begin(), plugins.end(), matches) != 1)
+                {
+                    std::fprintf(stderr, "Unexpected Windows plugin catalog entry for %s\n", module.data());
+                    return false;
+                }
+                if (enabled != nextEnabled &&
+                    !TEST_CHECK(api::SetPluginEnabled(plugin->filename, nextEnabled) == MC_OK))
+                {
+                    return false;
+                }
+            }
+            return TEST_CHECK(context.Close() == MC_OK);
+        };
+        return check(true, false) && check(false, true) && check(true, true);
+    }
+#endif
 
     /* rejecting a directory before first discovery must not pin the default
     directory as a side effect of rollback. a later valid custom root must work. */

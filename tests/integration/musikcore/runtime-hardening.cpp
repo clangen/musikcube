@@ -11,6 +11,11 @@ int main(int argc, char** argv) {
         return 1;
     }
     const std::string_view mode(argv[1]);
+#ifdef _WIN32
+    if (mode == "windows_plugins") {
+        return checkWindowsPlugins() ? 0 : 1;
+    }
+#endif
     if (mode == "stream_sdk_contract") {
         return checkStreamSdkContract() ? 0 : 1;
     }

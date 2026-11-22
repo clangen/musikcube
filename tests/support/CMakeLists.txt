@@ -416,6 +416,19 @@ add_test(NAME musikcore.integration.runtime.stream_sdk_contract COMMAND "${MUSIK
 set_tests_properties(musikcore.integration.runtime.stream_sdk_contract PROPERTIES
   LABELS "integration;musikcore;plugin;runtime;contract" TIMEOUT 30)
 
+if(WIN32)
+  set(windows_plugin_fixtures)
+  foreach(provider IN ITEMS directsoundout wasapiout waveout win32gdivis win32globalhotkeys cddadecoder)
+    add_dependencies(musikcore_runtime_hardening_test ${provider})
+    list(APPEND windows_plugin_fixtures --plugin "$<TARGET_FILE:${provider}>")
+  endforeach()
+  add_test(NAME musikcore.integration.runtime.windows_plugins COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage ${windows_plugin_fixtures} windows_plugins)
+  set_tests_properties(musikcore.integration.runtime.windows_plugins PROPERTIES
+    LABELS "integration;musikcore;plugin;runtime;contract" TIMEOUT 30)
+endif()
+
 if(UNIX AND CMAKE_NM)
   musikcube_restrict_exports(musikcore_runtime_hardening_test)
   get_property(export_targets GLOBAL PROPERTY MUSIKCUBE_RESTRICTED_TARGETS)

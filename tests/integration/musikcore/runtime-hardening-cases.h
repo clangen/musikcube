@@ -10,6 +10,9 @@ namespace runtime_tests {
     bool verifyMigrationComplete();
     bool checkVisualizerSession();
     bool checkStreamSdkContract();
+#ifdef _WIN32
+    bool checkWindowsPlugins();
+#endif
     bool checkRegistry();
     bool checkStartup();
     bool checkReadIsolation();
