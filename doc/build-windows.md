@@ -41,6 +41,26 @@ Both configurations use the same shared dependency DLLs. The static libraries us
 
 After changing dependency versions or build flags, rerun the vendor script, run `script\clean-win.bat` to clear the old build and staged DLLs, and rebuild. FFmpeg's codec and format options are in `script/vendor-packages/windows/ffmpeg-options.txt`.
 
+### Capture the GUI during resizing
+
+In an interactive Windows desktop, open the GUI in a restored window large enough to shrink. Start the scenario from Windows PowerShell, then bring musikcube to the foreground during the three-second countdown.
+
+```powershell
+$cube = Get-Process musikcube
+.\tests\ui\scenarios\windows-resize.ps1 -TargetProcessId $cube.Id
+```
+
+The scenario resizes the window and restores its original size. It checks that the client area shrinks and returns to its initial dimensions. PNG frames and a CSV with capture timestamps and dimensions are saved under `build/ui`. To record a manual border drag, invoke `tests/ui/support/capture-windows-window.ps1` with the same process ID, `-Frames 150`, and leave `-ShrinkPixels` at zero. The capture records visible desktop pixels, so keep the window unobstructed.
+
+### Test the console frontend
+
+```powershell
+cmake --build --preset windows-release --target musikcube_ui_tests
+ctest --test-dir build/windows-x64 -C Release -R windows_console --output-on-failure
+```
+
+The scenario runs `musikcube-cmd.exe` in a Windows pseudoconsole with a temporary profile. It checks startup, redraw after resizing, and exit through the normal keyboard shortcut. On failure it retains the text screen, SVG, terminal transcript, and app logs under the build directory.
+
 ### Package a Release build with MilkDrop
 
 For the optional MilkDrop visualizer, clone the plugin into `../milkdrop2-musikcube` next to the musikcube checkout and use a revision that supports Visual Studio 2026. After building the vendor libraries, run `script\build-win.bat` from the VS 2026 Developer PowerShell. It builds Release x64 and, when the sibling solution is present, restores MilkDrop's D3DX dependency and builds the plugin.

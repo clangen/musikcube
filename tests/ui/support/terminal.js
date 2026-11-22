@@ -25,24 +25,28 @@ const MACOS_LAUNCHER = [
 
 class Terminal {
   /* Launch musikcube in a sized PTY and feed stdout into an incrementally updated screen model. */
-  constructor(runtime, env, rows, columns) {
+  constructor(runtime, env, rows, columns, { windowsHost } = {}) {
     this.screen = new Screen(rows, columns);
     this.events = new EventEmitter();
     this.transcript = Buffer.alloc(0);
     this.pidFile = join(runtime, '.tui-pid');
     this.ttyFile = join(runtime, '.tui-tty');
     this.isProcessGroup = process.platform === 'darwin';
+    this.isConpty = process.platform === 'win32';
 
     /* Keep stdin open for keystrokes and return the PTY child's exit status. */
     const command = `stty rows ${rows} cols ${columns} && tty > .tui-tty && echo $$ > .tui-pid && exec ./musikcube`;
-    const args = process.platform === 'darwin'
+    if (this.isConpty && !windowsHost) throw new Error('A Windows ConPTY launcher is required.');
+    const args = this.isConpty ? [join(runtime, 'musikcube-cmd.exe'), String(columns), String(rows)]
+      : process.platform === 'darwin'
       ? ['-c', MACOS_LAUNCHER, 'musikcube-tui', command]
       : ['--quiet', '--flush', '--return', '--command', command, '/dev/null'];
-    const host = process.platform === 'darwin' ? '/bin/bash' : 'script';
+    const host = this.isConpty ? windowsHost : process.platform === 'darwin' ? '/bin/bash' : 'script';
     this.child = spawn(host, args, {
       cwd: runtime,
       env: { ...env, SHELL: '/bin/sh' },
       detached: this.isProcessGroup,
+      windowsHide: this.isConpty,
     });
 
     this.child.stdout.on('data', data => {
@@ -81,13 +85,32 @@ class Terminal {
 
   /* Write raw keystrokes to the PTY child without bypassing the app's real input handling. */
   send(keys) {
-    this.child.stdin.write(keys);
+    if (this.isConpty) {
+      const data = Buffer.from(keys);
+      this.child.stdin.write(Buffer.concat([this.conptyCommand('k', data.length, 0), data]));
+    } else {
+      this.child.stdin.write(keys);
+    }
+  }
+
+  conptyCommand(kind, first, second) {
+    const header = Buffer.alloc(5);
+    header.write(kind);
+    header.writeUInt16LE(first, 1);
+    header.writeUInt16LE(second, 3);
+    return header;
   }
 
   /* Resize the actual PTY, not just the grid. The kernel's window-size change
      notifies the app through its normal SIGWINCH/curses resize handling. */
   async resize(rows, columns) {
     this.screen.resize(rows, columns);
+    if (this.isConpty) {
+      await new Promise((resolve, reject) => {
+        this.child.stdin.write(this.conptyCommand('r', columns, rows), error => error ? reject(error) : resolve());
+      });
+      return;
+    }
     const tty = fs.readFileSync(this.ttyFile, 'utf8').trim();
     const deviceFlag = process.platform === 'darwin' ? '-f' : '-F';
     await new Promise((resolve, reject) => {

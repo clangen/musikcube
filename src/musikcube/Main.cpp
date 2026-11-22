@@ -58,6 +58,8 @@
 
 #ifdef WIN32
 #include <cursespp/Win32Util.h>
+#include <filesystem>
+#include <functional>
 #include "resource.h"
 #endif
 
@@ -71,11 +73,26 @@ using namespace cursespp;
 
 namespace keys = musik::cube::prefs::keys;
 
+#ifdef WIN32
+static const std::string& instanceId() {
+    /* isolated data directories can run independently without sharing a catalog or settings. */
+    static const auto id = [] {
+        const std::filesystem::path path(u8to16(api::ReadPath(MC_PATH_DATA)));
+        std::error_code error;
+        auto canonical = std::filesystem::weakly_canonical(path, error);
+        auto key = (error ? path.lexically_normal() : canonical).native();
+        CharLowerBuffW(key.data(), (DWORD) key.size());
+        return "musikcube-" + std::to_string(std::hash<std::wstring> {}(key));
+    }();
+    return id;
+}
+#endif
+
 #if defined(WIN32) && !defined(PDCURSES_WINCON)
 int _main(int argc, wchar_t* argv[]);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow) {
-    return App::Running("musikcube") ? 0 : _main(0, 0);
+    return App::Running(instanceId(), "musikcube") ? 0 : _main(0, 0);
 }
 
 int _main(int argc, wchar_t* argv[]) {
@@ -140,7 +157,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef WIN32
         app.SetIcon(IDI_ICON1);
-        app.SetSingleInstanceId("musikcube");
+        app.SetSingleInstanceId(instanceId());
 #endif
 
         app.SetQuitKey(prefs.GetString(keys::AppQuitKey, "^D"));

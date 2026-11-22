@@ -253,6 +253,17 @@ if(BUILD_TESTING)
   set_tests_properties(musikcube.integration.windows_core_dll PROPERTIES
     LABELS "integration;musikcube;abi;contract")
   add_dependencies(musikcube_tests musikcube musikcube-cmd)
+
+  add_executable(musikcube_conpty_host tests/ui/support/windows-conpty.cpp)
+  set_target_properties(musikcube_conpty_host PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests/ui/bin")
+  add_test(NAME musikcube.ui.windows_console COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/windows-console.js"
+    "$<TARGET_FILE:musikcube_conpty_host>" "$<TARGET_FILE:musikcube-cmd>"
+    "${CMAKE_BINARY_DIR}")
+  set_tests_properties(musikcube.ui.windows_console PROPERTIES LABELS "ui;musikcube;terminal" TIMEOUT 30)
+  add_dependencies(musikcube_ui_tests musikcube_conpty_host musikcube-cmd)
+  add_dependencies(musikcube_tests musikcube_ui_tests)
 endif()
 
 windows_project_sources(musikcore_objects src/musikcore)
