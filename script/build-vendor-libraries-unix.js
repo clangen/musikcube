@@ -21,7 +21,7 @@ const {
 const { basename, dirname, isAbsolute, join, relative, resolve } = require('path');
 const {
   ask, buildConfiguration, compilerNames, glibcVersion, resolveZigSysroot,
-  stageRpiCompiler, stageZigCompiler,
+  stageRpiCompiler, stageZigCompiler, takeOption,
 } = require('./unix-build-config');
 
 const ffmpeg = require('./vendor-packages/unix/ffmpeg');
@@ -302,37 +302,24 @@ async function main() {
   const args = process.argv.slice(2).filter((arg) => arg !== '--verbose');
 
   if (args.includes('--help') || args.includes('-h')) {
-    console.log('Usage: node script/build-vendor-libraries.js [--verbose] [--compiler <name>] [--sysroot <path>]\n' +
+    console.log('Usage: node script/build-vendor-libraries.js [--verbose] [--compiler=<name>] [--sysroot <path>]\n' +
       'Run from the standalone build directory.\n' +
       '  --verbose   Stream build command output\n' +
       `  --compiler  ${compilerNames.join(', ')}\n` +
       `              zig targets Linux x86-64 with glibc ${glibcVersion}\n` +
-      '              Prompts when omitted. The suggested choice is CROSSCOMPILE or default.\n' +
+      '              Prompts when omitted, with default as the suggested choice.\n' +
       '  --sysroot   Use a prepared Zig sysroot instead of building one');
     return;
   }
 
-  const compilerIndex = args.findIndex((arg) => arg === '--compiler' || arg.startsWith('--compiler='));
-  let compiler;
-  if (compilerIndex !== -1) {
-    const [flag] = args.splice(compilerIndex, 1);
-    compiler = flag === '--compiler' ? args.splice(compilerIndex, 1)[0] : flag.slice('--compiler='.length);
-    if (!compiler || compiler.startsWith('--')) throw new Error('--compiler requires a name.');
-  }
-
-  const sysrootIndex = args.indexOf('--sysroot');
-  let sysroot;
-  if (sysrootIndex !== -1) {
-    [, sysroot] = args.splice(sysrootIndex, 2);
-    if (!sysroot || sysroot.startsWith('--')) throw new Error('--sysroot requires a path.');
-  }
+  const selectedCompiler = takeOption(args, '--compiler');
+  let sysroot = takeOption(args, '--sysroot');
 
   if (args.length) throw new Error('Unknown Unix vendor build argument: ' + args[0]);
   if (!mac && process.platform !== 'linux') throw new Error('Unix vendor builds require Linux or macOS.');
 
   /* Resolve the compiler profile before creating the work directory. */
-  const suggested = process.env.CROSSCOMPILE || 'default';
-  compiler = compiler ?? await ask(`Compiler (${compilerNames.join(', ')}) [${suggested}]: `, suggested);
+  const compiler = selectedCompiler ?? await ask(`Compiler (${compilerNames.join(', ')}) [default]: `, 'default');
   if (sysroot && compiler !== 'zig') throw new Error('--sysroot requires --compiler zig.');
   if (sysroot) sysroot = resolveZigSysroot(sysroot);
   mkdirSync(scratch, { recursive: true });

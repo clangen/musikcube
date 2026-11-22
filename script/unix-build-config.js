@@ -78,11 +78,23 @@ function buildConfiguration(compiler, root, flags = {}) {
   return config;
 }
 
-function buildArchiveConfiguration(root) {
+function takeOption(args, name) {
+  const prefix = name + '=';
+  const matches = (arg) => arg === name || arg.startsWith(prefix);
+  const index = args.findIndex(matches);
+  if (index === -1) return undefined;
+
+  const [option] = args.splice(index, 1);
+  const value = option === name ? args.splice(index, 1)[0] : option.slice(prefix.length);
+  if (!value || value.startsWith('--')) throw new Error(name + ' requires a value.');
+  if (args.some(matches)) throw new Error(name + ' can only be specified once.');
+  return value;
+}
+
+function buildArchiveConfiguration(root, compiler = 'default') {
   const linux = process.platform === 'linux';
-  const cross = process.env.CROSSCOMPILE || '';
-  const linuxCompiler = cross.startsWith('rpi-') || cross === 'x86' ? cross : 'zig';
-  const config = buildConfiguration(linux ? linuxCompiler : 'default', root);
+  if (mac && compiler !== 'default') throw new Error('macOS standalone builds use --compiler=default.');
+  const config = buildConfiguration(linux && compiler === 'default' ? 'zig' : compiler, root);
   const arch = config.compiler === 'x86' ? 'x86' : config.arch;
   const platform = config.rpi ? 'linux_rpi' : linux ? 'linux' : 'macos';
 
@@ -95,6 +107,11 @@ function buildArchiveConfiguration(root) {
     generatePackages: linux,
     packageCmake: [],
   });
+
+  if (config.compiler === 'x86') {
+    config.env.MUSIKCUBE_RUNTIME_LIB_DIRS = config.env.MUSIKCUBE_RUNTIME_LIB_DIRS ||
+      '/usr/lib/i386-linux-gnu:/lib/i386-linux-gnu:/usr/lib32:/lib32';
+  }
 
   if (config.generatePackages) {
     const debArch = config.rpi ? 'armhf' : arch === 'x86_64' ? 'amd64' : arch;
@@ -234,5 +251,5 @@ async function configureZigArchive(config, { root, vendor, sysroot, run }) {
 module.exports = {
   ask, buildArchiveConfiguration, buildConfiguration, compilerNames,
   configureRpiArchive, configureZigArchive, glibcVersion, resolveZigSysroot,
-  stageRpiCompiler, stageZigCompiler,
+  stageRpiCompiler, stageZigCompiler, takeOption,
 };

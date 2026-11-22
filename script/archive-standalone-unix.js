@@ -5,7 +5,9 @@ const {
   realpathSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync,
 } = require('fs');
 const { join, resolve } = require('path');
-const { ask, buildArchiveConfiguration, configureRpiArchive, configureZigArchive } = require('./unix-build-config');
+const {
+  ask, buildArchiveConfiguration, compilerNames, configureRpiArchive, configureZigArchive, takeOption,
+} = require('./unix-build-config');
 
 const source = realpathSync(join(__dirname, '..'));
 const root = join(source, '..');
@@ -149,8 +151,8 @@ const archiveConfigurations = new Map([
   ['rpi-armv8', configureRpi],
 ]);
 
-function configuration() {
-  const config = buildArchiveConfiguration(root);
+function configuration(compiler) {
+  const config = buildArchiveConfiguration(root, compiler);
   Object.assign(config, {
     buildDirectory: source,
     cleanBuild: async () => !/^n$/i.test(await ask('clean and rebuild [y]? ', 'y')),
@@ -162,19 +164,21 @@ function configuration() {
 }
 
 async function main() {
-  const [version, ...args] = process.argv.slice(2);
-  if (!version || version === '--help' || version === '-h') {
-    console.log('Usage: node script/archive-standalone-unix.js <version> [--sysroot <path>]');
-    if (!version) process.exitCode = 1;
+  const args = process.argv.slice(2);
+  if (!args.length || args.includes('--help') || args.includes('-h')) {
+    console.log('Usage: node script/archive-standalone-unix.js <version> [--compiler=<name>] [--sysroot <path>]\n' +
+      `Linux compiler profiles: ${compilerNames.join(', ')}. Default uses Zig on Linux and the system compiler on macOS.`);
+    if (!args.length) process.exitCode = 1;
     return;
   }
+  const compiler = takeOption(args, '--compiler');
+  const sysrootOption = takeOption(args, '--sysroot');
+  const [version, ...extra] = args;
+  if (!version || extra.length) throw new Error('Expected one archive version.');
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._+-]*$/.test(version)) throw new Error('Invalid archive version: ' + version);
-  if (args.length && (args.length !== 2 || args[0] !== '--sysroot' || !args[1] || args[1].startsWith('--'))) {
-    throw new Error('Expected --sysroot <path>.');
-  }
 
-  const config = configuration();
-  const sysroot = args.length ? resolve(args[1]) : undefined;
+  const config = configuration(compiler);
+  const sysroot = sysrootOption ? resolve(sysrootOption) : undefined;
   if (sysroot && !config.acceptsSysroot) throw new Error('--sysroot is supported for native Linux builds.');
   const vendor = join(root, 'vendor-' + config.variant);
   if (!existsSync(join(vendor, 'bin/lib'))) {

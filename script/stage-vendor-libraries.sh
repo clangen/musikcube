@@ -51,8 +51,6 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     # Search the configured target paths before using platform defaults.
     if [[ -n $MUSIKCUBE_RUNTIME_LIB_DIRS ]]; then
         IFS=: read -r -a system_dirs <<< "$MUSIKCUBE_RUNTIME_LIB_DIRS"
-    elif [[ $CROSSCOMPILE == "x86" ]]; then
-        system_dirs=(/usr/lib/i386-linux-gnu /lib/i386-linux-gnu /usr/lib32 /lib32)
     else
         multiarch=$("${CC:-cc}" -print-multiarch 2>/dev/null || true)
         system_dirs=()
