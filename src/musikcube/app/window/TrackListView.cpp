@@ -209,6 +209,10 @@ void TrackListView::InstallTrackResult(api::TrackResult result, QueryKey key) {
         }, api::TrackResultWindow::Options { kTrackPageCapacity, 1 });
 
     this->ApplyQueryResult(std::move(headers), std::move(durations), std::move(key), hadTracks);
+
+    /* the final viewport is known now. submit its async read in this dispatch. */
+    this->Remove(LoadTrackPageMessage);
+    this->LoadTrackPage();
 }
 
 void TrackListView::OnParentVisibilityChanged(bool visible) {
