@@ -47,10 +47,12 @@ const std::string PersistedPlayQueueQuery::kQueryName = "PersistedPlayQueueQuery
 PersistedPlayQueueQuery::PersistedPlayQueueQuery(
     musik::core::ILibraryPtr library,
     musik::core::audio::PlaybackService& playback,
-    Type type) noexcept
+    Type type,
+    int savedIndex) noexcept
 : library(library)
 , playback(playback)
 , type(type)
+, savedIndex(savedIndex)
 {
 
 }
@@ -79,10 +81,21 @@ bool PersistedPlayQueueQuery::OnRun(musik::core::db::Connection &db) {
     else if (this->type == Type::Restore) {
         /* read the full queue before changing playback. */
         std::vector<int64_t> ids;
-        Statement query("SELECT track_id FROM last_session_play_queue ORDER BY id ASC", db);
+        Statement query(
+            "SELECT tracks.id FROM last_session_play_queue AS queue "
+            "LEFT JOIN tracks ON tracks.id = queue.track_id AND tracks.visible = 1 "
+            "ORDER BY queue.id ASC", db);
+        size_t originalIndex = 0;
         int step;
         while ((step = query.Step()) == db::Row) {
-            ids.push_back(query.ColumnInt64(0));
+            if (!query.IsNull(0)) {
+                /* Keep the saved position tied to the same row when entries are missing. */
+                if (this->savedIndex >= 0 && originalIndex == static_cast<size_t>(this->savedIndex)) {
+                    this->restoredIndex = static_cast<int>(ids.size());
+                }
+                ids.push_back(query.ColumnInt64(0));
+            }
+            ++originalIndex;
         }
         if (step != db::Done) {
             return false;

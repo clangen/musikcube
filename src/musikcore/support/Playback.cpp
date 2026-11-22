@@ -101,13 +101,13 @@ namespace musik {
                 if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
                     auto prefs = Session();
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
-                        PersistedPlayQueueQuery::Restore(library, playback));
+                        PersistedPlayQueueQuery::Restore(library, playback, prefs->GetInt(keys::LastPlayQueueIndex, -1)));
 
                     const auto restored = [&playback, prefs](const auto& query) {
                         if (query->GetStatus() != db::IQuery::Finished) {
                             return;
                         }
-                        int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
+                        const int index = static_cast<const PersistedPlayQueueQuery&>(*query).RestoredIndex();
                         if (index >= 0) {
                             double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
                             playback.Prepare(index, time);

@@ -359,7 +359,27 @@ namespace runtime_tests {
                 return false;
             }
         }
-        api::Context recovered(options);
-        return TEST_CHECK(recovered.GetLibrary().has_value());
+        {
+            api::Context recovered(options);
+            if (!TEST_CHECK(recovered.GetLibrary().has_value())) {
+                return false;
+            }
+        }
+
+        /* Restore a queue whose previous entry has been removed from the catalog. */
+        {
+            sqlite3* raw = nullptr;
+            const auto opened = sqlite3_open(filename.string().c_str(), &raw);
+            const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> database(raw, sqlite3_close);
+            if (!TEST_CHECK(opened == SQLITE_OK && sqlite3_exec(database.get(),
+                "INSERT INTO last_session_play_queue(track_id) VALUES (9999);",
+                nullptr, nullptr, nullptr) == SQLITE_OK))
+            {
+                return false;
+            }
+        }
+        api::Context restored(options);
+        const auto queue = restored.GetPlayback().Queue();
+        return TEST_CHECK(queue && queue->Size() == 0);
     }
 }

@@ -52,12 +52,15 @@ namespace musik { namespace core { namespace library { namespace query {
 
             static PersistedPlayQueueQuery* Restore(
                 musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback)
+                musik::core::audio::PlaybackService& playback,
+                int savedIndex)
             {
-                return new PersistedPlayQueueQuery(library, playback, Type::Restore);
+                return new PersistedPlayQueueQuery(library, playback, Type::Restore, savedIndex);
             }
 
             DELETE_CLASS_DEFAULTS(PersistedPlayQueueQuery)
+
+            int RestoredIndex() const noexcept { return this->restoredIndex; }
 
             /* IQuery */
             std::string Name() override { return kQueryName; }
@@ -72,11 +75,14 @@ namespace musik { namespace core { namespace library { namespace query {
             PersistedPlayQueueQuery(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback,
-                Type type) noexcept;
+                Type type,
+                int savedIndex = -1) noexcept;
 
             musik::core::ILibraryPtr library;
             musik::core::audio::PlaybackService& playback;
             Type type;
+            int savedIndex;
+            int restoredIndex = -1;
     };
 
 } } } }
