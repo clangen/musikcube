@@ -304,6 +304,8 @@ set_tests_properties(${driver_tests} PROPERTIES
 add_executable(musikcore_playback_math_test unit/musikcore/playback-math.cpp)
 target_include_directories(musikcore_playback_math_test PRIVATE "${PROJECT_SOURCE_DIR}/src")
 target_compile_features(musikcore_playback_math_test PRIVATE cxx_std_20)
+set_target_properties(musikcore_playback_math_test PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 add_dependencies(musikcube_tests musikcore_playback_math_test)
 add_dependencies(musikcube_unit_tests musikcore_playback_math_test)
 add_test(NAME musikcore.unit.playback_math COMMAND musikcore_playback_math_test)
