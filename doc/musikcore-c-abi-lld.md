@@ -1145,6 +1145,12 @@ This completed pilot is not a second migration backlog.
 
 ### Phase 7: expand and migrate the public API
 
+- [x] **LOCAL-STARTUP** `MC_CONTEXT_START_LOCAL` selects the local catalog and
+  defers the default remote connection until selection or explicit reconnect.
+  Saved remote startup without this flag preserves its normal behavior.
+  `musikcore.integration.runtime.local_startup` verifies no initial connection
+  and explicit opt-in against loopback on macOS; Linux/Windows runs are pending.
+
 - [x] **PUB-001** Add preference namespace, typed values, batch updates, and
   persistence contracts.
   Settings and Session support typed reads, atomic in-memory batches, and

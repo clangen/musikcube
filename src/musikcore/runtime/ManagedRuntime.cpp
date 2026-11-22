@@ -155,7 +155,10 @@ namespace musik { namespace core { namespace ffi {
             }
             if (services & MC_SERVICE_LIBRARY) {
                 this->librariesInitialized = true;
-                musik::core::LibraryFactory::Initialize(this->queue, (services & MC_SERVICE_INDEXER) != 0);
+                /* suppress implicit network startup before the factory constructs its
+                remote, rather than selecting local after Connect already ran. */
+                musik::core::LibraryFactory::Initialize(this->queue,
+                    (services & MC_SERVICE_INDEXER) != 0, !(flags & MC_CONTEXT_START_LOCAL));
                 auto& factory = musik::core::LibraryFactory::Instance();
                 this->local = factory.DefaultLocalLibrary();
                 this->remote = std::static_pointer_cast<library::RemoteLibrary>(factory.DefaultRemoteLibrary());
@@ -348,6 +351,14 @@ namespace musik { namespace core { namespace ffi {
 
             Preferences::ForComponent(prefs::components::Settings)
                 ->SetInt(prefs::keys::LibraryType, static_cast<int>(selected->GetType()));
+
+            /* a local-only startup has never connected this remote. selection is
+            the explicit opt-in, and must not restart an already pending connection. */
+            if (kind == MC_LIBRARY_REMOTE &&
+                this->remote->WebSocketClient().ConnectionState() == library::RemoteLibrary::Client::State::Disconnected)
+            {
+                this->remote->Connect();
+            }
             return MC_OK;
         }
 

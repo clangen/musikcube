@@ -52,7 +52,10 @@ namespace musik { namespace core {
             ~LibraryFactory();
 
             static void Initialize(IMessageQueue& messageQueue);
-            static void Initialize(std::shared_ptr<IMessageQueue> messageQueue, bool enableIndexer = true);
+            /* startup policy is fixed before lazy catalog construction. local-only
+            hosts defer network activity until they explicitly select or reconnect. */
+            static void Initialize(std::shared_ptr<IMessageQueue> messageQueue,
+                bool enableIndexer = true, bool connectRemote = true);
             static LibraryFactory& Instance();
             static void Shutdown();
 

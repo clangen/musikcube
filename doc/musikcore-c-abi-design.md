@@ -402,6 +402,11 @@ not disable existing process-wide configuration/discovery functions or unload
 previously discovered modules. Explicit caller-owned remote sessions remain independent
 of the configured catalog service.
 
+`MC_CONTEXT_START_LOCAL` starts with the local catalog without changing the
+saved selection or connecting the configured remote. Selecting Remote or
+explicitly reconnecting authorizes that connection. Without the flag, normal
+configured-remote startup remains unchanged.
+
 `MC_SERVICE_NONE` allows callers to open an existing read-only `mc_library` or
 `mc_remote_session` and attach a library with `mc_context_set_library`. A context
 owning Library uses `mc_context_select_library` instead. Without Library, managed

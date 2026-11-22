@@ -67,7 +67,8 @@ enum {
 
 enum {
     MC_CONTEXT_ENABLE_LOGGING = 2,
-    /* start with the local catalog without writing the saved selection. */
+    /* start with the local catalog without writing the saved selection or
+    connecting the default remote. selecting remote/reconnecting opts in. */
     MC_CONTEXT_START_LOCAL = 4
 };
 

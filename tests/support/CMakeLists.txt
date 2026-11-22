@@ -510,3 +510,22 @@ if(UNIX AND TARGET musikcubed)
   set_tests_properties(musikcubed.integration.lifecycle PROPERTIES
     LABELS "integration;musikcubed;runtime;contract" TIMEOUT 20)
 endif()
+
+# offline startup must not contact a saved remote before the host opts in.
+add_executable(musikcore_runtime_local_startup_test ../integration/musikcore/runtime-local-startup.cpp)
+target_include_directories(musikcore_runtime_local_startup_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})
+target_link_libraries(musikcore_runtime_local_startup_test PRIVATE ${core_fixture_library} Threads::Threads)
+target_compile_features(musikcore_runtime_local_startup_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_runtime_local_startup_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+if(WIN32)
+  target_link_libraries(musikcore_runtime_local_startup_test PRIVATE
+    musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+endif()
+add_dependencies(musikcube_tests musikcore_runtime_local_startup_test)
+add_dependencies(musikcube_integration_tests musikcore_runtime_local_startup_test)
+add_test(NAME musikcore.integration.runtime.local_startup COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_runtime_local_startup_test>" --stage)
+set_tests_properties(musikcore.integration.runtime.local_startup PROPERTIES
+  LABELS "integration;musikcore;runtime;transport;contract" TIMEOUT 25)
