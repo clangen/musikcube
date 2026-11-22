@@ -58,9 +58,13 @@
 #include <vector>
 #include <map>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <nlohmann/json.hpp>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 #define TAG "LocalMetadataProxy"
 
@@ -216,8 +220,6 @@ class RemoveFromPlaylistQuery : public QueryBase {
                     db);
 
                 for (size_t i = 0; i < count; i++) {
-                    const auto id = this->externalIds[i];
-                    const auto o = this->sortOrders[i];
 
                     deleteStmt.ResetAndUnbind();
                     deleteStmt.BindInt64(0, this->playlistId);

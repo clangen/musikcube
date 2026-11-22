@@ -62,8 +62,8 @@ static void last(ILayout* layout, int last) {
 }
 
 AppLayout::AppLayout(cursespp::App& app)
-: topLevelLayout(nullptr)
-, LayoutBase() {
+: LayoutBase()
+, topLevelLayout(nullptr) {
     this->Initialize();
     this->EnableDemoModeIfNecessary();
 }

@@ -50,8 +50,8 @@ Buffer::Buffer(Flags flags) noexcept
 , internalBufferSize(0)
 , sampleRate(44100)
 , channels(2)
-, flags(flags)
-, position(0) {
+, position(0)
+, flags(flags) {
 }
 
 Buffer::Buffer(float* buffer, int samples) noexcept
@@ -60,8 +60,8 @@ Buffer::Buffer(float* buffer, int samples) noexcept
 , internalBufferSize(samples)
 , sampleRate(44100)
 , channels(2)
-, flags(ImmutableSize | NoDelete)
-, position(0) {
+, position(0)
+, flags(ImmutableSize | NoDelete) {
 }
 
 Buffer::~Buffer() {

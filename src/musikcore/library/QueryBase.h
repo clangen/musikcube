@@ -54,8 +54,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
             QueryBase() noexcept
             : status(IQuery::Idle)
-            , options(0)
             , queryId(nextId())
+            , options(0)
             , cancel(false) {
             }
 

@@ -49,12 +49,12 @@ using namespace musik::core::sdk;
 static std::string TAG = "CrossfadeTransport";
 
 CrossfadeTransport::CrossfadeTransport()
-: volume(1.0)
-, playbackState(PlaybackState::Stopped)
-, muted(false)
+: playbackState(PlaybackState::Stopped)
 , crossfader(*this, [this] { this->OnCrossfaderEmptied(); })
 , active(*this, crossfader)
-, next(*this, crossfader) {
+, next(*this, crossfader)
+, volume(1.0)
+, muted(false) {
 }
 
 CrossfadeTransport::~CrossfadeTransport() {
@@ -436,12 +436,12 @@ void CrossfadeTransport::RaiseStreamEvent(musik::core::sdk::StreamState type, Pl
 CrossfadeTransport::PlayerContext::PlayerContext(
     CrossfadeTransport& transport,
     Crossfader& crossfader) noexcept
-: transport(transport)
-, crossfader(crossfader)
-, player(nullptr)
+: startImmediate(false)
+, started(false)
 , canFade(false)
-, startImmediate(false)
-, started(false) {
+, player(nullptr)
+, transport(transport)
+, crossfader(crossfader) {
 }
 
 void CrossfadeTransport::PlayerContext::StopIf(Player const* player) {

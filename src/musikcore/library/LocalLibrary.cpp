@@ -101,10 +101,10 @@ ILibraryPtr LocalLibrary::Create(std::string name, int id, MessageQueue* message
 }
 
 LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer)
-: name(name)
+: messageQueue(messageQueue)
 , id(id)
+, name(name)
 , exit(false)
-, messageQueue(messageQueue)
 , indexer(nullptr) {
     this->identifier = std::to_string(id);
 

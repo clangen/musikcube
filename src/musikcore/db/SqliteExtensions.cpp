@@ -32,13 +32,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 extern "C" {
     #include <sqlean/unicode/extension.h>
     #include <sqlite/sqlite3.h>
 }
 #include <musikcore/db/SqliteExtensions.h>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 #include <unordered_map>
 #include <regex>

@@ -53,7 +53,6 @@ using namespace musik::cube;
 using namespace cursespp;
 
 constexpr int kMaxCategoryWidth = 40;
-constexpr int kMinListTitleHeight = 26;
 
 DirectoryLayout::DirectoryLayout(
     api::Context& context)

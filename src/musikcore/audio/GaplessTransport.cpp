@@ -46,10 +46,10 @@ using namespace musik::core::sdk;
 static std::string TAG = "GaplessTransport";
 
 GaplessTransport::GaplessTransport()
-: volume(1.0)
-, playbackState(PlaybackState::Stopped)
+: playbackState(PlaybackState::Stopped)
 , activePlayer(nullptr)
 , nextPlayer(nullptr)
+, volume(1.0)
 , nextCanStart(false)
 , muted(false) {
     this->output = outputs::SelectedOutput();

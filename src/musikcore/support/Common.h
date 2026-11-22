@@ -43,7 +43,9 @@ namespace musik { namespace core {
     std::string GetHomeDirectory();
     std::string GetApplicationDirectory();
     std::string GetDataDirectory(bool create = true);
+    #ifdef WIN32
     std::string GetPath(const std::string &sFile);
+    #endif
     std::string GetPluginDirectory();
     std::string NormalizeDir(std::string path);
     int64_t Checksum(char *data,unsigned int bytes);

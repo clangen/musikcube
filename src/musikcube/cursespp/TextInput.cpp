@@ -66,12 +66,12 @@ inline static bool removeUtf8Char(std::string& value, size_t position) {
 
 TextInput::TextInput(TextInput::Style style, IInput::InputMode inputMode)
 : Window()
-, bufferLength(0)
 , position(0)
-, style(style)
-, inputMode(inputMode)
 , enterEnabled(true)
-, truncate(false) {
+, truncate(false)
+, bufferLength(0)
+, style(style)
+, inputMode(inputMode) {
     if (style == StyleLine) {
         this->SetFrameVisible(false);
         this->SetFocusedContentColor(Color::TextFocused);

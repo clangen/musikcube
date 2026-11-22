@@ -45,8 +45,8 @@ size_t ListWindow::NO_SELECTION = (size_t) -1;
 
 ListWindow::ListWindow(std::shared_ptr<IScrollAdapter> adapter, IWindow *parent)
 : ScrollableWindow(adapter, parent)
-, selectedIndex(0)
-, showScrollbar(true) {
+, showScrollbar(true)
+, selectedIndex(0) {
 
 }
 
@@ -103,7 +103,6 @@ void ListWindow::ScrollUp(int delta) {
         ScrollPos spos = this->GetScrollPosition();
 
         size_t first = spos.firstVisibleEntryIndex;
-        size_t last = first + spos.visibleEntryCount;
         int drawIndex = (int) first;
 
         int minIndex = 0;
@@ -191,8 +190,6 @@ void ListWindow::ScrollDown(int delta) {
 }
 
 void ListWindow::PageUp() {
-    IScrollAdapter &adapter = this->GetScrollAdapter();
-    ScrollPos spos = this->GetScrollPosition();
     int target = (int) this->GetPreviousPageEntryIndex();
 
     /* if the target position is zero, let it be so the user can see

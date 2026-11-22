@@ -200,7 +200,6 @@ HotkeysLayout::HotkeysLayout() {
 
 void HotkeysLayout::OnEntryActivated(cursespp::ListWindow* list, size_t index) {
     const Hotkeys::Id id = static_cast<Hotkeys::Id>(index);
-    const auto shortcuts = this->shortcuts;
 
     ReassignHotkeyOverlay::Show(id, [this, list, id](std::string key) {
         checkConflictAndSave(id, key, [this, list]() {

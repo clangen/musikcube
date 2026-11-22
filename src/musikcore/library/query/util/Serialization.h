@@ -34,9 +34,13 @@
 
 #pragma once
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <nlohmann/json.hpp>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 #include "CategoryQueryUtil.h"
 #include <musikcore/library/metadata/MetadataMapList.h>

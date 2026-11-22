@@ -59,7 +59,6 @@ using namespace cursespp;
 namespace keys = musik::cube::prefs::keys;
 
 constexpr int kMaxCategoryWidth = 40;
-constexpr int kMinListTitleHeight = 26;
 constexpr int kRequeryIntervalMs = 300;
 
 #if 1

@@ -42,10 +42,14 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <sstream>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 /* https://api.audd.io/findLyrics/?q=the%20beatles%20sgt%20pepper%20reprise */
 

@@ -64,7 +64,7 @@ static const std::string defaultOutput = "PulseAudio";
 
 #define LOWER(x) std::transform(x.begin(), x.end(), x.begin(), tolower);
 
-class NoOutput: public IOutput {
+class NoOutput final: public IOutput {
     public:
         void Release() override { delete this; }
         void Pause() override { }

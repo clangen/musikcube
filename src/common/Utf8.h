@@ -6,12 +6,16 @@
 #include <algorithm>
 #include <memory>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
     #include <utf8/utf8.h>
     #ifdef WIN32
         #include <wcwidth.h>
     #endif
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 #ifdef max
 #undef max

@@ -88,9 +88,9 @@ CategoryListQuery::CategoryListQuery(
     const std::string& trackField,
     const category::PredicateList predicates,
     const std::string& filter)
-: matchType(matchType)
-, trackField(trackField)
-, filter(filter) {
+: trackField(trackField)
+, filter(filter)
+, matchType(matchType) {
     result = std::make_shared<SdkValueList>();
 
     if (this->filter.size() && this->matchType == MatchType::Substring) {
@@ -102,7 +102,6 @@ CategoryListQuery::CategoryListQuery(
 
     category::SplitPredicates(predicates, this->regular, this->extended);
 
-    auto end = category::REGULAR_PROPERTY_MAP.end();
 
     if (trackField == "playlists") {
         this->outputType = OutputType::Playlist;

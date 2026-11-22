@@ -135,18 +135,18 @@ PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
     ILibraryPtr library,
     std::shared_ptr<ITransport> transport)
-: library(library)
-, transport(transport)
-, playlist(library)
+: playlist(library)
 , unshuffled(library)
-, repeatMode(RepeatMode::None)
-, messageQueue(messageQueue)
-, timeChangeMode(TimeChangeMode::Seek)
-, seekPosition(-1.0f)
+, playbackPrefs(Preferences::ForComponent(components::Playback))
+, appPrefs(Preferences::ForComponent(components::Settings))
+, library(library)
+, transport(transport)
 , index(NO_POSITION)
 , nextIndex(NO_POSITION)
-, playbackPrefs(Preferences::ForComponent(components::Playback))
-, appPrefs(Preferences::ForComponent(components::Settings)) {
+, repeatMode(RepeatMode::None)
+, timeChangeMode(TimeChangeMode::Seek)
+, seekPosition(-1.0f)
+, messageQueue(messageQueue) {
     this->apiEvents = CreatePlaybackEvents();
     this->transportConnections = {
         transport->StreamEvent.Subscribe([this](auto state, std::string uri) {
@@ -520,7 +520,6 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     else if (type == MESSAGE_TIME_CHANGED) {
 
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_POSITION);
-        const double volume = transport->Volume();
         for (auto remote : this->remotes) {
             remote->OnPlaybackTimeChanged(transport->Position());
         }
@@ -597,7 +596,6 @@ void PlaybackService::ProcessMessage(IMessage &message) {
 }
 
 void PlaybackService::NotifyRemotesModeChanged() {
-    const RepeatMode mode = this->repeatMode;
     const bool shuffled = this->IsShuffled();
     for (auto it : remotes) {
         it->OnModeChanged(repeatMode, shuffled);

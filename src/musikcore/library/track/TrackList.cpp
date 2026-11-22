@@ -61,25 +61,25 @@ static constexpr size_t kDefaultCacheSize = 50;
 static constexpr int64_t kCacheWindowTimeoutMs = 150LL;
 
 TrackList::TrackList(ILibraryPtr library)
-: library(library)
-, cacheSize(kDefaultCacheSize) {
+: cacheSize(kDefaultCacheSize)
+, library(library) {
 }
 
 TrackList::TrackList(TrackList* other)
-: ids(other->ids)
-, library(other->library)
-, cacheSize(kDefaultCacheSize) {
+: cacheSize(kDefaultCacheSize)
+, ids(other->ids)
+, library(other->library) {
 }
 
 TrackList::TrackList(std::shared_ptr<TrackList> other)
-    : ids(other->ids)
-    , library(other->library)
-    , cacheSize(kDefaultCacheSize) {
+    : cacheSize(kDefaultCacheSize)
+    , ids(other->ids)
+    , library(other->library) {
 }
 
 TrackList::TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount)
-: library(library)
-, cacheSize(kDefaultCacheSize) {
+: cacheSize(kDefaultCacheSize)
+, library(library) {
     if (trackIds != nullptr && trackIdCount > 0) {
         this->ids.insert(this->ids.end(), &trackIds[0], &trackIds[trackIdCount]);
     }

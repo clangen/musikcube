@@ -115,7 +115,7 @@ void TrackSearchLayout::SaveSession() {
 }
 
 void TrackSearchLayout::OnLayout() {
-    const int cx = this->GetWidth(), cy = this->GetHeight();
+    const int cx = this->GetWidth();
     const int x = 0, y = 0;
 
     const int inputWidth = cx / 2;

@@ -216,7 +216,6 @@ void Preferences::Release() {
 }
 
 bool Preferences::GetBool(const std::string& key, bool defaultValue) {
-    const char* p = key.c_str();
     std::unique_lock<std::mutex> lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }

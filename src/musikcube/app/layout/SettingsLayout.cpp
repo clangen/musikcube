@@ -78,8 +78,6 @@ using namespace cursespp;
 #endif
 
 constexpr int kLabelHeight = 1;
-constexpr int kInputHeight = 3;
-constexpr int kHotkeyInputWidth = 20;
 
 #define TOP(w) w->GetY()
 #define BOTTOM(w) (w->GetY() + w->GetHeight())
@@ -278,7 +276,7 @@ void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
 
 void SettingsLayout::OnUpdateDropdownActivate(cursespp::TextLabel* label) {
 #ifndef DISABLE_UPDATE_CHECK
-    updateCheck.Run([this](bool updateRequired, std::string version, std::string url) {
+    updateCheck.Run([](bool updateRequired, std::string version, std::string url) {
         if (updateRequired) {
             UpdateCheck::ShowUpgradeAvailableOverlay(version, url, false);
         }
@@ -294,7 +292,6 @@ void SettingsLayout::OnThemeDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnLayout() {
-    const int x = this->GetX();
     int y = this->GetY();
     const int cx = this->GetWidth(), cy = this->GetHeight();
 

@@ -35,9 +35,13 @@
 #include "pch.hpp"
 #include "MarkTrackPlayedQuery.h"
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <nlohmann/json.hpp>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;

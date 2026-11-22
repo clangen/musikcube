@@ -126,20 +126,20 @@ Player::Player(
     DestroyMode destroyMode,
     EventListener *listener,
     Gain gain, std::shared_ptr<WorkerGroup> workers)
-: internalState(Player::Idle)
-, streamState(StreamState::Buffering)
+: output(output)
 , stream(Stream::Create())
 , url(url)
-, currentPosition(0)
-, output(output)
-, notifiedStarted(false)
-, seekToPosition(-1)
 , nextMixPoint(-1.0)
-, pendingBufferCount(0)
+, currentPosition(0)
+, seekToPosition(-1)
+, streamState(StreamState::Buffering)
+, internalState(Player::Idle)
+, notifiedStarted(false)
 , workers(std::move(workers))
 , destroyMode(destroyMode)
-, fftContext(nullptr)
-, gain(gain) {
+, gain(gain)
+, pendingBufferCount(0)
+, fftContext(nullptr) {
     musik::debug::info(TAG, "new instance created");
 
     if (!this->output) {

@@ -103,8 +103,8 @@ void IndexerTrack::OnIndexerFinished(db::Connection &dbConnection) {
 }
 
 IndexerTrack::IndexerTrack(int64_t trackId)
-: internalMetadata(new IndexerTrack::InternalMetadata())
-, trackId(trackId)
+: trackId(trackId)
+, internalMetadata(new IndexerTrack::InternalMetadata())
 {
 }
 
@@ -289,7 +289,6 @@ bool IndexerTrack::NeedsToBeIndexed(
 
         stmt.BindText(0, this->GetString("filename"));
 
-        const bool fileDifferent = true;
 
         if (stmt.Step() == db::Row) {
             this->trackId = stmt.ColumnInt64(0);
@@ -514,12 +513,10 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     for ( ; it != unknownFields.end(); ++it){
         int64_t keyId = 0;
         std::string key;
-        bool keyCached = false, valueCached = false;
 
         /* lookup the ID for the key; insert if it doesn't exist.. */
         if (metadataIdCache.find("metaKey-" + it->first) != metadataIdCache.end()) {
             keyId = metadataIdCache["metaKey-" + it->first];
-            keyCached = true;
         }
         else {
             selectMetaKey.Reset();
@@ -553,7 +550,6 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 
         if (metadataIdCache.find("metaValue-" + it->second) != metadataIdCache.end()) {
             valueId = metadataIdCache["metaValue-" + it->second];
-            valueCached = true;
         }
         else {
             selectMetaValue.Reset();

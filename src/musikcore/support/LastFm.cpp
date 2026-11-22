@@ -44,10 +44,14 @@
 #include <sstream>
 #include <map>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 extern "C" {
     #include <md5.h>

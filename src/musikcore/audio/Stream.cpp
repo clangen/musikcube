@@ -48,16 +48,16 @@ static std::string TAG = "Stream";
 #define MIN_BUFFER_COUNT 30
 
 Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options)
-: options(options)
-, samplesPerChannel(samplesPerChannel)
-, bufferLengthSeconds(bufferLengthSeconds)
-, bufferCount(0)
-, decoderSampleRate(0)
+: decoderSampleRate(0)
 , decoderChannels(0)
-, decoderPosition(0)
 , decoderSampleOffset(0)
 , decoderSamplesRemain(0)
+, decoderPosition(0)
+, options(options)
+, samplesPerChannel(samplesPerChannel)
+, bufferCount(0)
 , done(false)
+, bufferLengthSeconds(bufferLengthSeconds)
 , capabilities(0)
 , rawBuffer(nullptr) {
     if (((int) this->options & (int) StreamFlags::NoDSP) == 0) {

@@ -37,15 +37,19 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/SqliteExtensions.h>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <sqlite/sqlite3.h>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 using namespace musik::core::db;
 
 Connection::Connection() noexcept
-: connection(nullptr)
-, transactionCounter(0) {
+: transactionCounter(0)
+, connection(nullptr) {
 }
 
 Connection::~Connection() {

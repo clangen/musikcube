@@ -195,7 +195,6 @@ namespace cursespp {
                         std::string::iterator begin = word.begin();
                         std::string::iterator end = word.begin();
                         int count = 0;
-                        bool done = false;
                         while (end != word.end()) {
                             utf8::unchecked::next(end);
                             ++count;

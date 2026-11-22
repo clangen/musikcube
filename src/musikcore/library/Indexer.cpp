@@ -111,15 +111,11 @@ static void closeLogFile() noexcept {
     }
 }
 
-static std::string normalizePath(const std::string& path) {
-    return pathToUtf8(std::fs::path(std::fs::u8path(path)).make_preferred());
-}
-
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
-: thread(nullptr)
+: state(StateStopped)
+, thread(nullptr)
 , incrementalUrisScanned(0)
 , totalUrisScanned(0)
-, state(StateStopped)
 , prefs(Preferences::ForComponent(prefs::components::Settings)) {
     if (prefs->GetBool(prefs::keys::IndexerLogEnabled, false) && !logFile) {
         openLogFile();

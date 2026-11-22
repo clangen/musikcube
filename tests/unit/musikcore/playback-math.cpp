@@ -1,6 +1,7 @@
 #include "../../support/check.h"
 
 #include <musikcore/audio/PlaybackMath.h>
+#include <musikcore/sdk/DataBuffer.h>
 #include <plugins/portaudioout/PcmFrames.h>
 
 #include <array>
@@ -9,6 +10,19 @@
 using namespace musik::core::audio;
 
 int main() {
+    DataBuffer<char> first;
+    DataBuffer<char> second;
+    first.append("abcd", 4);
+    second.append("xyz", 3);
+    first.inc(2);
+    second.inc(1);
+    first.swap(second);
+    if (!TEST_CHECK(first.avail() == 2 && *first.pos() == 'y') ||
+        !TEST_CHECK(second.avail() == 2 && *second.pos() == 'c'))
+    {
+        return 1;
+    }
+
     for (const std::size_t channels : { 1, 2, 6 }) {
         std::array<float, 24> source {};
         std::array<float, 26> target;

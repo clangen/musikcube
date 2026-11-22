@@ -101,7 +101,7 @@ void CategorySearchLayout::SaveSession() {
 
 void CategorySearchLayout::OnLayout() {
     const int cx = this->GetWidth(), cy = this->GetHeight();
-    constexpr int x = 0, y = 0;
+    constexpr int x = 0;
 
     const int inputWidth = cx / 2;
     const int inputX = x + ((cx - inputWidth) / 2);

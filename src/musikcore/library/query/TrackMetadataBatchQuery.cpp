@@ -44,9 +44,13 @@
 #include <algorithm>
 #include <stdexcept>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <nlohmann/json.hpp>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -78,13 +82,11 @@ bool TrackMetadataBatchQuery::OnRun(Connection& db) {
     }
     if (this->trackIds.empty()) return true;
     std::string idList;
-    size_t i = 0;
-    for (const int64_t id : this->trackIds) {
-        idList += "?";
-        if (i < this->trackIds.size() - 1) {
+    for (size_t i = 0; i < this->trackIds.size(); ++i) {
+        if (i != 0) {
             idList += ",";
         }
-        ++i;
+        idList += "?";
     }
 
     std::string query = tracks::kAllMetadataQueryByIdBatch;

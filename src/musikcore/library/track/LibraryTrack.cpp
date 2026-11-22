@@ -43,22 +43,22 @@ using namespace musik::core::sdk;
 LibraryTrack::LibraryTrack() noexcept
 : id(0)
 , libraryId(0)
-, gain(nullptr)
-, state(MetadataState::NotLoaded) {
+, state(MetadataState::NotLoaded)
+, gain(nullptr) {
 }
 
 LibraryTrack::LibraryTrack(int64_t id, int libraryId)
 : id(id)
 , libraryId(libraryId)
-, gain(nullptr)
-, state(MetadataState::NotLoaded) {
+, state(MetadataState::NotLoaded)
+, gain(nullptr) {
 }
 
 LibraryTrack::LibraryTrack(int64_t id, ILibraryPtr library)
 : id(id)
 , libraryId(library->Id())
-, gain(nullptr)
-, state(MetadataState::NotLoaded) {
+, state(MetadataState::NotLoaded)
+, gain(nullptr) {
 }
 
 LibraryTrack::~LibraryTrack() {

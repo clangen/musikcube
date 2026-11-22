@@ -131,7 +131,7 @@ struct DataBuffer {
         with.data = d;
         with.length = len;
         with.rawLength = raw;
-        with.offset = offset;
+        with.offset = off;
     }
 
     T *data;

@@ -49,9 +49,13 @@
 #include <algorithm>
 #include <filesystem>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <utf8/utf8.h>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 #if defined(__APPLE__)
     #include <mach-o/dyld.h>
@@ -86,11 +90,6 @@
 using musik::core::sdk::fs::pathToUtf8;
 
 namespace fs = std::filesystem;
-
-static inline void silentDelete(const std::string fn) {
-    std::error_code ec;
-    fs::remove(fs::path(fs::u8path(fn)), ec);
-}
 
 namespace musik { namespace core {
 
@@ -225,11 +224,11 @@ namespace musik { namespace core {
         return directory;
     }
 
+    #ifdef WIN32
     std::string GetPath(const std::string &sFile) {
         std::string sPath;
         int length;
 
-    #ifdef WIN32
         wchar_t widePath[2048];
         wchar_t *szFile = NULL;
 
@@ -244,13 +243,10 @@ namespace musik { namespace core {
         else {
             sPath.assign(sFile);
         }
-     #else
-        char* szDir;
-        sPath.assign(getcwd((char*)szDir, (size_t) length));
-     #endif
 
         return sPath;
     }
+    #endif
 
     int64_t Checksum(char *data,unsigned int bytes) {
         int64_t sum = 0;

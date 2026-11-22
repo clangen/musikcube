@@ -80,7 +80,6 @@ static std::string placeholder(int width) {
 namespace AlbumSort {
     constexpr int kTrackColWidth = 3;
     constexpr int kArtistColWidth = 17;
-    constexpr int kRatingColumnWidth = 5;
 
     static std::string skeleton(int64_t id, size_t width) {
         std::string rating = width <= kRatingBreakpointWidth ? "" : getRatingString(0);

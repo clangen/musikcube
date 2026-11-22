@@ -96,11 +96,11 @@ MainLayout::MainLayout(
     cursespp::App& app,
     musik::cube::ConsoleLogger* logger,
     api::Context& musikcore)
-: shortcutsFocused(false)
-, syncUpdateCount(0)
+: AppLayout(app)
 , playback(musikcore.GetPlayback())
-, musikcore(musikcore)
-, AppLayout(app) {
+, shortcutsFocused(false)
+, syncUpdateCount(0)
+, musikcore(musikcore) {
 
     /* note we don't create `libraryLayout` here; instead we do it lazily once we're sure
     it has been connected. see SwitchToLibraryLayout() */
@@ -358,7 +358,7 @@ void MainLayout::RunUpdateCheck() {
         return;
     }
 
-    updateCheck.Run([this](bool updateRequired, std::string version, std::string url) {
+    updateCheck.Run([](bool updateRequired, std::string version, std::string url) {
         if (updateRequired) {
             UpdateCheck::ShowUpgradeAvailableOverlay(version, url);
         }

@@ -280,7 +280,6 @@ void Window::SetParent(IWindow* parent) {
     ASSERT_MAIN_THREAD();
 
     if (this->parent != parent) {
-        IWindowGroup* group = dynamic_cast<IWindowGroup*>(this->parent);
         IWindow* oldParent = this->parent;
         bool visible = !!this->frame;
 
@@ -768,16 +767,6 @@ void Window::Create() {
         absoluteXOffset + this->x);
 
     if (this->frame) { /* can fail if the screen size is too small. */
-        /* resolve our current colors colors */
-
-        bool focused = this->IsFocused();
-
-        int64_t currentFrameColor = focused
-            ? this->focusedFrameColor : this->frameColor;
-
-        int64_t currentContentColor = focused
-            ? this->focusedContentColor : this->contentColor;
-
         /* create the corresponding panel. required for z-ordering. */
 
         this->framePanel = new_panel(this->frame);

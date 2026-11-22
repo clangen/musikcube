@@ -86,7 +86,7 @@ namespace musik { namespace core { namespace library { namespace query {
             int64_t id;
     };
 
-    class SdkValueList : public musik::core::sdk::IValueList {
+    class SdkValueList final : public musik::core::sdk::IValueList {
         public:
             using SharedValueList = std::shared_ptr<std::vector<SdkValue::Shared>>;
             using Shared = std::shared_ptr<SdkValueList>;

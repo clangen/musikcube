@@ -39,9 +39,13 @@
 #include <common/runtime/Message.h>
 #include <musikcore/sdk/version.h>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <nlohmann/json.hpp>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 using namespace musik::core;
 using namespace musik::core::sdk;

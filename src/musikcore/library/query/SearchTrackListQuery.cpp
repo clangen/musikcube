@@ -39,9 +39,13 @@
 #include "TrackReadQueries.h"
 #include <musikcore/library/query/util/Serialization.h>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <nlohmann/json.hpp>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 using musik::core::ILibraryPtr;
 

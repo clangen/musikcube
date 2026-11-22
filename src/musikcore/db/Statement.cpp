@@ -37,22 +37,26 @@
 #include <musikcore/db/Statement.h>
 #include <musikcore/db/Connection.h>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <sqlite/sqlite3.h>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 using namespace musik::core::db;
 
 Statement::Statement(const char* sql, Connection &connection) noexcept
-: connection(&connection)
-, stmt(nullptr)
+: stmt(nullptr)
+, connection(&connection)
 , modifiedRows(0) {
     connection.PrepareStatement(sql, &this->stmt);
 }
 
 Statement::Statement(Connection &connection) noexcept
-: connection(&connection)
-, stmt(nullptr) {
+: stmt(nullptr)
+, connection(&connection) {
 }
 
 Statement::~Statement() noexcept {

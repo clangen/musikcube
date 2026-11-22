@@ -41,7 +41,6 @@
 
 using namespace cursespp;
 
-static const size_t INVALID_INDEX = (size_t) -1;
 
 typedef IScrollAdapter::ScrollPosition ScrollPos;
 

@@ -40,9 +40,13 @@
 #include <musikcore/library/query/util/TrackQueryFragments.h>
 #include <musikcore/sdk/ReplayGain.h>
 
+#ifdef _MSC_VER
 #pragma warning(push, 0)
+#endif
 #include <nlohmann/json.hpp>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 using namespace musik::core;
 using namespace musik::core::db;
