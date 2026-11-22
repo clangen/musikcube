@@ -87,12 +87,8 @@ namespace musik { namespace core { namespace runtime {
                 std::chrono::milliseconds time;
             };
 
-            struct WeakPtrLess { /* https://stackoverflow.com/a/12875729 */
-                template <typename T>
-                bool operator() (const std::weak_ptr<T>& l, const std::weak_ptr<T>& r) const {
-                    return l.lock().get() < r.lock().get();
-                }
-            };
+            /* Preserve subscriber ordering when a weak reference expires. */
+            using WeakPtrLess = std::owner_less<IWeakMessageTarget>;
 
             void Enqueue(IMessagePtr message, int64_t delayMs);
             void Dispatch(IMessage* message);
