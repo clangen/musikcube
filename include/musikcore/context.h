@@ -132,9 +132,12 @@ available after shutdown; it describes configuration rather than running state.
 safe on any thread while context remains alive. out_services is required. */
 MC_API mc_result MC_CALL mc_context_get_services(const mc_context* context, mc_services* out_services);
 
-/* Select a caller-owned library for later submissions. Null clears it.
-   Contexts owning MC_SERVICE_LIBRARY use mc_context_select_library instead. Previously
-   accepted requests and retained handles keep their original library. */
+/* Select a caller-owned library for later submissions. A managed context also
+   switches its playback service on the dispatcher thread. It accepts a catalog
+   from the runtime or an explicitly connected remote session and rejects null.
+   Selecting a host-configured catalog again uses mc_context_select_library.
+   Other contexts accept null to clear the selection. Previously accepted
+   requests and retained handles keep their original library. */
 MC_API mc_result MC_CALL mc_context_set_library(mc_context* context, const mc_library* library);
 /* Return an owned library in an empty output slot. An empty selection returns MC_ERROR_NOT_FOUND. */
 MC_API mc_result MC_CALL mc_context_get_library(const mc_context* context, mc_library** out_library);

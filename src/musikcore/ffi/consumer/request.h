@@ -34,6 +34,9 @@ namespace musik { namespace core { namespace ffi {
         virtual mc_result CreatePlayer(mc_player**) { return MC_ERROR_UNSUPPORTED; }
         virtual mc_result OpenPlayback(mc_playback** out) = 0;
         virtual mc_result SelectLibrary(mc_library_kind kind) = 0;
+        virtual mc_result SelectLibrary(const std::shared_ptr<const LibraryIdentity>&) {
+            return MC_ERROR_UNSUPPORTED;
+        }
         virtual mc_result ReconnectRemote() = 0;
         virtual IIndexer* LocalIndexer() const = 0;
         virtual void Stop() = 0;

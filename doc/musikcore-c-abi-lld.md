@@ -1308,6 +1308,11 @@ remains deferred. This does not begin the new plugin C SDK. See
   and OpenMPT providers also cover unopened release, successful nested opening,
   and cancellation before opening. Windows
   CDDA sources are migrated; Windows/Linux runtime validation remains deferred.
+- [x] Allow a managed context to select a catalog from an explicit remote
+  session through `mc_context_set_library`. The playback queue follows the
+  selected origin. A lost connection invalidates that generation without
+  retargeting retained results. `musikcore.integration.api.managed_remote`
+  verifies selection, queue admission, and disconnect invalidation.
 - [ ] **API-URI-007** Implement and validate Windows CDDA device cancellation.
   Its existing `Interrupt` is a no-op; SDK 23 creation now exposes the stream
   before opening, but does not by itself cancel its synchronous device I/O.

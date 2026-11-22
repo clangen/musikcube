@@ -1,4 +1,5 @@
 #include <musikcore/ffi/consumer/library-query-backends.h>
+#include <musikcore/ffi/consumer/library-storage.h>
 #include <musikcore/ffi/consumer/request.h>
 #include <musikcore/ffi/consumer/player-handle.h>
 #include <musikcore/ffi/common/error.h>
@@ -121,7 +122,7 @@ namespace musik { namespace core { namespace ffi {
     };
 
     /* Owns the core queue and its readiness thread. Neither copyable nor movable. */
-    class ManagedRuntime final : public ContextRuntime {
+    class ManagedRuntime final : public ContextRuntime, private runtime::IMessageTarget {
     public:
         ~ManagedRuntime() override {
             try {
@@ -136,6 +137,7 @@ namespace musik { namespace core { namespace ffi {
             mc_services services, uint32_t flags, mc_log_fn log, void* logData) override
         {
             this->context = &context;
+            this->queue->Register(this);
             this->notifications = std::make_shared<CoreNotifications>(context, log, logData);
             this->queue->RegisterForBroadcasts(this->notifications);
             if (flags & MC_CONTEXT_ENABLE_LOGGING) {
@@ -218,6 +220,21 @@ namespace musik { namespace core { namespace ffi {
             this->queue->Dispatch();
         }
 
+        void ProcessMessage(runtime::IMessage&) override {
+            if (this->explicitLibrary && !this->explicitInvalid &&
+                !this->explicitLibrary->playbackOrigin->Matches(this->active.get()))
+            {
+                /* A reconnect cannot rebind the selected handle to its new generation. */
+                this->explicitInvalid = true;
+                if (this->playback) {
+                    this->playback->InvalidateDisconnectedCatalog();
+                }
+                auto status = CaptureLibraryStatus(this->active);
+                status.state = MC_LIBRARY_DISCONNECTED;
+                publish_library_selection(*this->context, nullptr, std::move(status), false);
+            }
+        }
+
         void AcknowledgeDispatch() override {
             std::lock_guard lock(this->mutex);
             ++this->dispatches;
@@ -241,7 +258,7 @@ namespace musik { namespace core { namespace ffi {
         }
 
         mc_result ReconnectRemote() override {
-            if (!this->remote) {
+            if (!this->remote || this->explicitLibrary) {
                 return MC_ERROR_UNSUPPORTED;
             }
             this->remote->Disconnect();
@@ -281,6 +298,8 @@ namespace musik { namespace core { namespace ffi {
                 this->indexer = nullptr;
             }
             this->remoteStateChanged.Reset();
+            this->explicitStateChanged.Reset();
+            this->queue->Unregister(this);
             if (this->notifications) {
                 this->queue->UnregisterForBroadcasts(this->notifications.get());
                 this->notifications.reset();
@@ -319,11 +338,11 @@ namespace musik { namespace core { namespace ffi {
                 return MC_ERROR_UNSUPPORTED;
             }
             const ILibraryPtr selected = kind == MC_LIBRARY_LOCAL ? this->local : this->remote;
-            if (this->active != selected) {
-                if (this->playback) {
-                    this->playback->SelectLibrary(selected);
-                }
-                this->active = selected;
+            const bool changed = this->active != selected || this->explicitLibrary;
+            this->explicitStateChanged.Reset();
+            this->explicitLibrary.reset();
+            if (changed) {
+                this->SwitchCatalog(selected);
                 this->PublishSelection(true);
             }
 
@@ -332,7 +351,42 @@ namespace musik { namespace core { namespace ffi {
             return MC_OK;
         }
 
+        mc_result SelectLibrary(const std::shared_ptr<const LibraryIdentity>& library) override {
+            const auto& origin = library->playbackOrigin;
+            if (!origin) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            auto selected = origin->Backend();
+            if (this->explicitLibrary == library && !this->explicitInvalid) {
+                return origin->Matches(selected.get()) ? MC_OK : MC_ERROR_NOT_FOUND;
+            }
+
+            /* Explicit sessions have their own message pump. The host dispatcher
+               owns playback invalidation and library selection callbacks. */
+            auto observer = selected->ConnectionStateChanged.Subscribe([this](auto) {
+                this->queue->Post(runtime::Message::Create(this, ExplicitLibraryChanged));
+            });
+            if (!origin->Matches(selected.get())) {
+                return MC_ERROR_NOT_FOUND;
+            }
+            this->SwitchCatalog(std::move(selected));
+            this->explicitLibrary = library;
+            this->explicitInvalid = false;
+            this->explicitStateChanged = std::move(observer);
+            return publish_library_selection(*this->context, library, CaptureLibraryStatus(this->active), true);
+        }
+
     private:
+        static constexpr int ExplicitLibraryChanged = 1;
+
+        void SwitchCatalog(ILibraryPtr selected) {
+            if (this->playback) {
+                this->playback->InvalidateDisconnectedCatalog();
+                this->playback->SelectLibrary(selected);
+            }
+            this->active = std::move(selected);
+        }
+
         /* record failures without retaining provider-defined exception objects. */
         template<typename Work>
         static void Cleanup(Work&& work, bool& failure) noexcept {
@@ -361,7 +415,7 @@ namespace musik { namespace core { namespace ffi {
         }
 
         void OnRemoteStateChanged(ILibrary::ConnectionState) {
-            if (this->active == this->remote) {
+            if (!this->explicitLibrary && this->active == this->remote) {
                 if (this->playback) {
                     this->playback->InvalidateDisconnectedCatalog();
                 }
@@ -385,6 +439,8 @@ namespace musik { namespace core { namespace ffi {
         ILibraryPtr local;
         std::shared_ptr<library::RemoteLibrary> remote;
         ILibraryPtr active;
+        std::shared_ptr<const LibraryIdentity> explicitLibrary;
+        bool explicitInvalid = false;
         std::shared_ptr<CoreNotifications> notifications;
         mc_context* context = nullptr;
         std::unique_ptr<audio::PlaybackService> playback;
@@ -394,6 +450,7 @@ namespace musik { namespace core { namespace ffi {
         uint64_t dispatches = 0;
         IIndexer* indexer = nullptr;
         api::Subscriptions<ILibrary::ConnectionState>::Connection remoteStateChanged;
+        api::Subscriptions<ILibrary::ConnectionState>::Connection explicitStateChanged;
         api::Subscriptions<>::Connection indexStarted;
         api::Subscriptions<int>::Connection indexProgress;
         api::Subscriptions<int>::Connection indexFinished;

@@ -1127,6 +1127,47 @@ namespace {
         if (playback.UseTrack(origin, MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND) {
             return failure(__LINE__);
         }
+
+        /* A separately configured connection can own the managed playback queue. */
+        Server explicitServer(true);
+        auto remoteOptions = mc_remote_options MC_REMOTE_OPTIONS_DEFAULT;
+        remoteOptions.host = { "127.0.0.1", 9 };
+        remoteOptions.websocket_port = explicitServer.Port();
+        RemoteSession session(remoteOptions);
+        completed.reset();
+        session.Connect(context, [&](mc_result result, mc_remote_state, std::string_view) { completed = result; });
+        if (!wait([&] { return completed.has_value(); }) || completed != MC_OK) {
+            return failure(__LINE__);
+        }
+
+        auto explicitLibrary = session.OpenLibrary();
+        if (mc_context_set_library(context.Get(), explicitLibrary.Get()) != MC_OK) {
+            return failure(__LINE__);
+        }
+        completed.reset();
+        OpenTrackSearch(context, {}, [&](mc_result result, TrackResult selection, std::string_view) {
+            completed = result;
+            tracks = std::move(selection);
+        });
+        if (!wait([&] { return completed.has_value(); }) || completed != MC_OK || tracks.Size() != 2) {
+            return failure(__LINE__);
+        }
+        if (playback.UseTrack(tracks.Track(0), MC_PLAYBACK_TRACK_APPEND) != MC_OK) {
+            return failure(__LINE__);
+        }
+        if (session.Disconnect() != MC_OK ||
+            !wait([&] { return context.GetLibraryStatus().state == MC_LIBRARY_DISCONNECTED; }))
+        {
+            return failure(__LINE__);
+        }
+        if (context.GetLibrary() ||
+            mc_context_set_library(context.Get(), explicitLibrary.Get()) != MC_ERROR_NOT_FOUND ||
+            playback.UseTrack(tracks.Track(0), MC_PLAYBACK_TRACK_APPEND) != MC_ERROR_NOT_FOUND ||
+            context.SelectLibrary(MC_LIBRARY_LOCAL) != MC_OK ||
+            context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL)
+        {
+            return failure(__LINE__);
+        }
         return context.Shutdown() == MC_OK;
     }
 }

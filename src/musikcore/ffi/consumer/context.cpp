@@ -384,6 +384,20 @@ namespace {
 mc_result musik::core::ffi::set_context_library(mc_context& context,
     std::shared_ptr<const LibraryIdentity> library, LibraryStatus status)
 {
+    if (context.services & MC_SERVICE_LIBRARY) {
+        ContextRuntime* runtime;
+        {
+            std::lock_guard<std::mutex> lock(context.mutex);
+            if (!is_dispatcher(context)) {
+                return MC_ERROR_WRONG_THREAD;
+            }
+            if (context.stopping) {
+                return MC_ERROR_BUSY;
+            }
+            runtime = context.runtime.get();
+        }
+        return runtime && library ? runtime->SelectLibrary(library) : MC_ERROR_UNSUPPORTED;
+    }
     return update_library(context, std::move(library), std::move(status), false, true);
 }
 
