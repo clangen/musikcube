@@ -51,6 +51,10 @@
 
 static constexpr int kTrackPageRetryMs = 25;
 static constexpr int kRemoteSkeletonDelayMs = 50;
+static constexpr size_t kTrackPageSize = MC_TRACK_QUERY_DEFAULT_LIMIT;
+/* allow a maximum-sized viewport to start partway through a page and still prefetch. */
+static constexpr size_t kTrackPageCapacity =
+    (MC_TRACK_QUERY_MAX_LIMIT + kTrackPageSize - 1) / kTrackPageSize + 2;
 
 using namespace musik::core;
 using namespace musik::core::runtime;
@@ -202,7 +206,7 @@ void TrackListView::InstallTrackResult(api::TrackResult result, QueryKey key) {
             this->UpdatePagePolling(this->resultWindow->Pending() && this->IsParentVisible());
             if (this->resultWindow->IntersectsViewport(offset, count)) this->Redraw();
             this->HandlePageStatus(status);
-        });
+        }, api::TrackResultWindow::Options { kTrackPageCapacity, 1 });
 
     this->ApplyQueryResult(std::move(headers), std::move(durations), std::move(key), hadTracks);
 }
@@ -690,8 +694,7 @@ void TrackListView::Adapter::DrawPage(ScrollableWindow* window, size_t index, Sc
     if (parent.resultWindow && result.visibleEntryCount) {
         const auto first = result.firstVisibleEntryIndex;
         const auto update = parent.resultWindow->SetViewport(parent.RowIndex(first),
-            parent.RowIndex(first + result.visibleEntryCount - 1),
-            static_cast<size_t>(std::max(1, parent.GetContentHeight())));
+            parent.RowIndex(first + result.visibleEntryCount - 1), kTrackPageSize);
         if (update == api::TrackResultWindow::ViewportUpdate::Changed) {
             parent.UpdatePagePolling(parent.IsParentVisible());
             parent.Post(LoadTrackPageMessage);

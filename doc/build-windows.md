@@ -59,7 +59,7 @@ cmake --build --preset windows-release --target musikcube_ui_tests
 ctest --test-dir build/windows-x64 -C Release -R windows_console --output-on-failure
 ```
 
-The scenario runs `musikcube-cmd.exe` in a Windows pseudoconsole with a temporary profile. It checks startup, redraw after resizing, and exit through the normal keyboard shortcut. On failure it retains the text screen, SVG, terminal transcript, and app logs under the build directory.
+The scenario runs `musikcube-cmd.exe` in a Windows pseudoconsole with a temporary profile and generated catalog. It checks that loaded tracks stay visible through repeated height changes and that the normal keyboard shortcut exits cleanly. On failure it retains the text screen, SVG, terminal transcript, and app logs under the build directory.
 
 ### Package a Release build with MilkDrop
 

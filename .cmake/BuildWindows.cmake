@@ -260,9 +260,9 @@ if(BUILD_TESTING)
   add_test(NAME musikcube.ui.windows_console COMMAND "${MUSIKCORE_TEST_NODE}"
     "${PROJECT_SOURCE_DIR}/tests/ui/scenarios/windows-console.js"
     "$<TARGET_FILE:musikcube_conpty_host>" "$<TARGET_FILE:musikcube-cmd>"
-    "${CMAKE_BINARY_DIR}")
+    "$<TARGET_FILE:musikcube_seed_library>" "${CMAKE_BINARY_DIR}")
   set_tests_properties(musikcube.ui.windows_console PROPERTIES LABELS "ui;musikcube;terminal" TIMEOUT 30)
-  add_dependencies(musikcube_ui_tests musikcube_conpty_host musikcube-cmd)
+  add_dependencies(musikcube_ui_tests musikcube_conpty_host musikcube-cmd musikcube_seed_library)
   add_dependencies(musikcube_tests musikcube_ui_tests)
 endif()
 
