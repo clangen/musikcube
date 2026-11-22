@@ -61,6 +61,17 @@ ctest --test-dir build/windows-x64 -C Release -R windows_console --output-on-fai
 
 The scenario runs `musikcube-cmd.exe` in a Windows pseudoconsole with a temporary profile and generated catalog. It checks that loaded tracks stay visible through repeated height changes and that the normal keyboard shortcut exits cleanly. On failure it retains the text screen, SVG, terminal transcript, and app logs under the build directory.
 
+To compare two Windows Release builds, generate a local catalog once and pass its database to the benchmark. The benchmark copies the database for each run and uses null audio output so the comparison can run without an audio device.
+
+```powershell
+$build = 'build/windows-x64'
+$baselineBin = 'C:\path\to\baseline\bin'
+$catalog = node tests/scripts/seed-test-library.js --tracks 10000 --stereo --indexer bin64/Release/musikcube_seed_library.exe $build | Select-Object -Last 1
+node tests/scripts/benchmark-windows.js "$build/tests/ui/bin/Release/musikcube_conpty_host.exe" $catalog $baselineBin bin64/Release "$build/performance/comparison"
+```
+
+The benchmark reports startup, search and filter latency, idle and playback CPU, and process memory. It writes raw samples to `results.json` in the specified output directory.
+
 ### Package a Release build with MilkDrop
 
 For the optional MilkDrop visualizer, clone the plugin into `../milkdrop2-musikcube` next to the musikcube checkout and use a revision that supports Visual Studio 2026. After building the vendor libraries, run `script\build-win.bat` from the VS 2026 Developer PowerShell. It builds Release x64 and, when the sibling solution is present, restores MilkDrop's D3DX dependency and builds the plugin.

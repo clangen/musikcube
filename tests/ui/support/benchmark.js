@@ -2,7 +2,7 @@
    summarize latency samples, and convert Linux CPU-accounting ticks to time.
    Scenario code supplies the interactions and correctness assertions. */
 
-const { execFile } = require('node:child_process');
+const { execFile, execFileSync } = require('node:child_process');
 const { promisify } = require('node:util');
 
 /* Collect repeated scenario measurements, alternating variant order to reduce warm-cache bias. */
@@ -52,4 +52,14 @@ async function cpuMillisecondsPerTick() {
   return 1000 / rate;
 }
 
-module.exports = { sampleVariants, printMetrics, cpuMillisecondsPerTick };
+/* Query cumulative CPU time and memory for the app itself using Windows process counters. */
+function windowsProcessStats(pid) {
+  if (!Number.isSafeInteger(pid) || pid <= 0) throw new Error('Invalid Windows app process ID');
+  const command = `$p = Get-Process -Id ${pid} -ErrorAction Stop; ` +
+    '@{ cpuMs = $p.TotalProcessorTime.TotalMilliseconds; workingSetBytes = $p.WorkingSet64; ' +
+    'peakRssKiB = $p.PeakWorkingSet64 / 1KB; privateBytes = $p.PrivateMemorySize64 } | ConvertTo-Json -Compress';
+  return JSON.parse(execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', command],
+    { encoding: 'utf8', windowsHide: true, timeout: 5000 }));
+}
+
+module.exports = { sampleVariants, printMetrics, cpuMillisecondsPerTick, windowsProcessStats };

@@ -73,14 +73,23 @@ function id3Tag(album, track, lyrics) {
 }
 
 /* Generate a silent WAV in memory with RIFF and ID3 tags read by the production indexer. */
-function wave({ title, artist, album, genre, track, lyrics }, seconds) {
-  const format = Buffer.alloc(16);
-  format.writeUInt16LE(1, 0);
-  format.writeUInt16LE(1, 2);
+function wave({ title, artist, album, genre, track, lyrics }, seconds, stereo) {
+  const channels = stereo ? 2 : 1;
+  const bytesPerSecond = 16000 * channels;
+  const format = Buffer.alloc(stereo ? 40 : 16);
+  format.writeUInt16LE(stereo ? 0xfffe : 1, 0);
+  format.writeUInt16LE(channels, 2);
   format.writeUInt32LE(8000, 4);
-  format.writeUInt32LE(16000, 8);
-  format.writeUInt16LE(2, 12);
+  format.writeUInt32LE(bytesPerSecond, 8);
+  format.writeUInt16LE(2 * channels, 12);
   format.writeUInt16LE(16, 14);
+  if (stereo) {
+    /* WAVE_FORMAT_EXTENSIBLE with the front left/right mask and PCM subtype. */
+    format.writeUInt16LE(22, 16);
+    format.writeUInt16LE(16, 18);
+    format.writeUInt32LE(3, 20);
+    Buffer.from('0100000000001000800000aa00389b71', 'hex').copy(format, 24);
+  }
 
   /* Use RIFF INFO tags so the production tag reader supplies the metadata. */
   const info = Buffer.concat([
@@ -93,20 +102,20 @@ function wave({ title, artist, album, genre, track, lyrics }, seconds) {
   ]);
   return chunk('RIFF', Buffer.concat([
     Buffer.from('WAVE'), chunk('fmt ', format), chunk('LIST', info),
-    chunk('ID3 ', id3Tag(album, track, lyrics)), chunk('data', Buffer.alloc(16000 * seconds)),
+    chunk('ID3 ', id3Tag(album, track, lyrics)), chunk('data', Buffer.alloc(bytesPerSecond * seconds)),
   ]));
 }
 
 /* Write either the small named contract fixture or a larger deterministic artist/album catalog. */
-function writeMedia(media, count, seconds, embeddedLyrics) {
+function writeMedia(media, count, seconds, embeddedLyrics, stereo) {
   if (count === 2) {
     writeFileSync(join(media, '01-morning.wav'), wave({
       title: 'Morning Light', artist: 'Fixture Artist', album: 'Fixture Album', genre: 'Ambient', track: 1,
       lyrics: embeddedLyrics ? 'Fixture lyrics for track 1' : undefined,
-    }, seconds));
+    }, seconds, stereo));
     writeFileSync(join(media, '02-evening.wav'), wave({
       title: 'Evening Flight', artist: 'Fixture Artist', album: 'Fixture Album', genre: 'Electronic', track: 2,
-    }, seconds));
+    }, seconds, stereo));
     return;
   }
 
@@ -125,7 +134,7 @@ function writeMedia(media, count, seconds, embeddedLyrics) {
       const title = `${album} - Track ${String(track).padStart(2, '0')}`;
       const lyrics = embeddedLyrics ? `Fixture lyrics for track ${track}` : undefined;
       writeFileSync(join(directory, `${String(track).padStart(2, '0')}.wav`),
-        wave({ title, artist, album, genre, track, lyrics }, seconds));
+        wave({ title, artist, album, genre, track, lyrics }, seconds, stereo));
     }
   }
 }
@@ -148,6 +157,7 @@ function main() {
       tracks: { type: 'string', default: '2' },
       seconds: { type: 'string', default: '1' },
       'embedded-lyrics': { type: 'boolean' },
+      stereo: { type: 'boolean' },
       indexer: { type: 'string' },
       'fixture-dir': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
@@ -155,7 +165,7 @@ function main() {
     allowPositionals: true,
   });
   if (values.help) {
-    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--seconds <duration>] [--embedded-lyrics] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
+    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--seconds <duration>] [--embedded-lyrics] [--stereo] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
     return;
   }
 
@@ -187,7 +197,7 @@ function main() {
   mkdirSync(media);
 
   console.log(`Generating ${count} fixture tracks under ${root}`);
-  writeMedia(media, count, seconds, values['embedded-lyrics']);
+  writeMedia(media, count, seconds, values['embedded-lyrics'], values.stereo);
 
   /* Stage plugins and redirect preferences before starting production code so
      indexing cannot discover user paths or unrelated installed audio plugins. */

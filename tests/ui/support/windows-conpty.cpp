@@ -133,6 +133,12 @@ namespace {
         if (started) {
             Handle process(info.hProcess), processThread(info.hThread);
             if (AssignProcessToJobObject(job.get(), process.get()) && ResumeThread(processThread.get()) != (DWORD) -1) {
+                /* sampling must target the app process rather than the console launcher. */
+                FILE* pid;
+                if (fopen_s(&pid, ".tui-pid", "w") == 0) {
+                    std::fprintf(pid, "%lu\n", info.dwProcessId);
+                    std::fclose(pid);
+                }
                 std::thread input(receive, console, appInput.get());
                 HANDLE waits[] = { process.get(), input.native_handle() };
                 if (WaitForMultipleObjects(2, waits, false, INFINITE) == WAIT_OBJECT_0) {

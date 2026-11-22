@@ -7,6 +7,7 @@ const { EventEmitter } = require('node:events');
 const fs = require('node:fs');
 const { join } = require('node:path');
 const { Screen } = require('./screen');
+const { windowsProcessStats } = require('./benchmark');
 
 /* macOS script accepts ordinary pipes but rejects Node's socket-backed stdin.
    Bash process substitution gives it a real pipe through cat. Stop that feeder
@@ -133,8 +134,9 @@ class Terminal {
     fs.writeFileSync(join(directory, 'terminal.log'), this.transcript);
   }
 
-  /* Read Linux peak RSS and CPU ticks for the actual app process, excluding the terminal launcher. */
+  /* Sample the app process itself, excluding the terminal launcher. */
   processStats() {
+    if (this.isConpty) return windowsProcessStats(Number(fs.readFileSync(this.pidFile, 'utf8').trim()));
     if (process.platform !== 'linux') return undefined;
 
     const pid = fs.readFileSync(this.pidFile, 'utf8').trim();
