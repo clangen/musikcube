@@ -4,6 +4,14 @@ project(musikcore_installed_consumers LANGUAGES C CXX)
 find_package(musikcore CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
+# instrumented SDK consumers must link their compiler runtime themselves;
+# relying on a toolchain RPATH embedded in the SDK breaks relocation.
+if(CONSUMER_SANITIZERS)
+  add_compile_options("$<$<CONFIG:Debug>:-fsanitize=${CONSUMER_SANITIZERS}>"
+    "$<$<CONFIG:Debug>:-fno-sanitize-recover=all>")
+  add_link_options("$<$<CONFIG:Debug>:-fsanitize=${CONSUMER_SANITIZERS}>")
+endif()
+
 foreach(language IN ITEMS c cpp)
   add_executable(query_${language} "${EXAMPLES}/core-query.${language}" "${SUPPORT}/host-wakeup.cpp")
   target_include_directories(query_${language} PRIVATE "${SUPPORT}")

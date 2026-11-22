@@ -36,6 +36,7 @@ if(WIN32)
 endif()
 run("${CMAKE_COMMAND}" -S "${SOURCE}/tests/integration/binary/consumer" -B "${root}/consumer"
   ${consumer_generator}
+  "-DCMAKE_BUILD_TYPE=${TEST_CONFIG}" "-DCONSUMER_SANITIZERS=${CONSUMER_SANITIZERS}"
   "-DCMAKE_PREFIX_PATH=${relocated}" "-DEXAMPLES=${SOURCE}/examples" "-DSUPPORT=${SOURCE}/tests/support")
 run("${CMAKE_COMMAND}" --build "${root}/consumer" ${config_argument})
 if(WIN32)

@@ -26,7 +26,8 @@ if(DEFINED INSTALLED_SDK_SOURCE)
   execute_process(COMMAND "${CMAKE_COMMAND}" "-DBUILD_DIR=${BUILD_DIR}" "-DSOURCE=${INSTALLED_SDK_SOURCE}"
     "-DCATALOG=${directory}" "-DINSTALLED_TEST_PLUGIN=${INSTALLED_TEST_PLUGIN}"
     "-DTEST_CONFIG=${TEST_CONFIG}"
-    "-DNODE=${NODE}" "-DREMOTE_TEST=${REMOTE_TEST}" -P "${CMAKE_CURRENT_LIST_DIR}/check-installed-core.cmake"
+    "-DNODE=${NODE}" "-DREMOTE_TEST=${REMOTE_TEST}" "-DCONSUMER_SANITIZERS=${CONSUMER_SANITIZERS}"
+    -P "${CMAKE_CURRENT_LIST_DIR}/check-installed-core.cmake"
     RESULT_VARIABLE status)
   if(NOT status STREQUAL "0")
     message(FATAL_ERROR "Installed SDK test failed (${status}); fixture: ${directory}")

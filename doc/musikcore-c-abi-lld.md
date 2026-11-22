@@ -1635,6 +1635,10 @@ production startup failure was established.
   original FFmpeg dependency before the fix and passes afterward. The extracted
   app passes `script/scan-standalone.js`; all 52 app/SDK Mach-O signatures and
   install-name/RPATH checks pass. Export allowlists pass in the full suite.
+  Debug installed consumers use the SDK's sanitizer selection and explicitly
+  link the compiler runtime; they cannot rely on an absolute toolchain RPATH
+  inside the relocated library. The installed-SDK regression also passes with
+  native macOS ASan/UBSan after this test-build correction.
 - [x] **PKG-007** Validate Windows DLL/import-library/plugin placement.
   Visual Studio 2026 x64 Debug and Release stage `musikcore.dll` beside both
   frontends, the import library under the configuration's build library directory,

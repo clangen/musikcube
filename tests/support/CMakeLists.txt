@@ -107,6 +107,7 @@ if(BUILD_TESTING)
     add_dependencies(musikcube_tests musikcube_seed_library musikcore_production_api_test)
     add_dependencies(musikcube_integration_tests musikcube_seed_library musikcore_production_api_test)
     set(indexed_arguments
+      "-DCONSUMER_SANITIZERS=${sanitizers_flags}"
       "-DNODE=${MUSIKCUBE_TEST_NODE}"
       "-DSEED_SCRIPT=${PROJECT_SOURCE_DIR}/tests/scripts/seed-test-library.js"
       "-DISOLATED_RUNNER=${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
