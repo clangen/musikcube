@@ -1,8 +1,7 @@
 #include "PcmCapture.h"
 #include <musikcore/abi.h>
 
-#include <musikcore/sdk/IDataStreamFactory.h>
-#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/plugin/stream.h>
 #include <musikcore/plugin/output.hpp>
 #include <musikcore/sdk/constants.h>
 
@@ -103,6 +102,7 @@ namespace {
             }
             return this->changed.wait_for(lock, std::chrono::milliseconds(timeoutMs), [&] {
                 switch (event) {
+                    case CaptureEvent::Draining: return this->draining;
                     case CaptureEvent::HeldCompletion: return this->heldCompletion;
                     case CaptureEvent::Stop: return this->interrupted;
                     case CaptureEvent::Resumed: return this->frameCount > this->framesAtStop;
@@ -201,6 +201,7 @@ namespace {
         bool interrupted {};
         std::size_t submitted {};
         bool secondPrepared {};
+        bool draining {};
         bool gateRetiredQueue {};
         bool heldRetiredQueue {};
         bool sourceReleased {};
@@ -330,43 +331,53 @@ namespace {
         return capture;
     }
 
-    class GatedSource final : public IDataStream {
-    public:
-        /* block only after publication, so Interrupt can wake this open gate. */
-        bool Open(const char*, OpenFlags) override {
+    /* the URI chooses the cancellation boundary. one test holds open, while
+    another lets the byte decoder open successfully and holds its first read. */
+    const mc_stream_vtable gatedMethods {
+        .struct_size = sizeof(mc_stream_vtable),
+        .destroy = [](void*) { capture().ReleaseSource(); },
+        .open = [](void*, mc_string_view uri, mc_stream_open_flags, mc_error**) -> mc_result {
+            if (std::string_view(uri.data, uri.length) == stalledDecoderInput) {
+                return MC_OK;
+            }
             capture().GateSourceOpen();
-            return true;
-        }
-        bool Close() override { return true; }
-        void Interrupt() override { capture().InterruptSource(); }
-        void Release() override {
-            capture().ReleaseSource();
-            delete this;
-        }
-        bool Readable() override { return false; }
-        bool Writable() override { return false; }
-        PositionType Read(void*, PositionType) override { return 0; }
-        PositionType Write(void*, PositionType) override { return 0; }
-        bool SetPosition(PositionType) override { return false; }
-        PositionType Position() override { return 0; }
-        bool Seekable() override { return false; }
-        bool Eof() override { return true; }
-        long Length() override { return 0; }
-        const char* Type() override { return ".wav"; }
-        const char* Uri() override { return stalledSource; }
-        bool CanPrefetch() override { return false; }
+            return MC_ERROR_CANCELLED;
+        },
+        .close = [](void*) -> mc_result { return MC_OK; },
+        .interrupt = [](void*) { capture().InterruptSource(); },
+        .get_info = [](void*, mc_stream_info* info) -> mc_result {
+            *info = MC_STREAM_INFO_DEFAULT;
+            info->flags = MC_STREAM_READABLE | MC_STREAM_LENGTH_KNOWN;
+            info->length_bytes = 4;
+            info->uri = { stalledDecoderInput, sizeof(stalledDecoderInput) - 1 };
+            info->extension = { "bytes", 5 };
+            return MC_OK;
+        },
+        .read = [](void*, void*, size_t, size_t* count, mc_read_state*, mc_error**) -> mc_result {
+            *count = 0;
+            capture().GateSourceOpen();
+            return MC_ERROR_CANCELLED;
+        },
+        .write = [](void*, const void*, size_t, size_t*, mc_error**) -> mc_result { return MC_ERROR_UNSUPPORTED; },
+        .seek = [](void*, uint64_t, mc_error**) -> mc_result { return MC_ERROR_UNSUPPORTED; },
+        .tell = [](void*, uint64_t*) -> mc_result { return MC_ERROR_UNSUPPORTED; },
     };
 
-    class GatedSourceFactory final : public IDataStreamFactory {
-    public:
-        bool CanRead(const char* uri) override { return std::string_view(uri) == stalledSource; }
-        /* publish the source before any blocking provider work. */
-        IDataStream* Create() override { return new GatedSource(); }
-        void Release() override { delete this; }
+    const mc_stream_factory gatedFactory {
+        .struct_size = sizeof(mc_stream_factory),
+        .context = nullptr,
+        .instance_api = &gatedMethods,
+        .can_handle = [](void*, const mc_media_hint* hint, uint32_t* supported) -> mc_result {
+            const std::string_view uri(hint->uri.data, hint->uri.length);
+            *supported = uri == stalledSource || uri == stalledDecoderInput;
+            return MC_OK;
+        },
+        .create = [](void*, const mc_plugin_services*, void** instance, mc_error**) -> mc_result {
+            *instance = &capture();
+            return std::getenv("MUSIKCORE_TEST_EXPECT_ABORT") ? MC_ERROR_IO : MC_OK;
+        },
     };
 
-    /* C output and old stream-source exports deliberately share this test
-    fixture's clock/gates while the two production families migrate separately. */
     class CaptureOutput final {
     public:
         CaptureOutput() {
@@ -492,6 +503,8 @@ namespace {
         mc_result Drain() {
             auto& sink = capture();
             std::unique_lock lock(sink.mutex);
+            sink.draining = true;
+            sink.changed.notify_all();
             if (!this->channel.playing && !this->channel.buffers.empty()) {
                 return MC_ERROR_IN_FLIGHT;
             }
@@ -515,26 +528,16 @@ namespace {
 
     mc_result MC_CALL initialize(const mc_host_api* host, void** state, mc_error**) {
         *state = nullptr;
-        return musik::core::plugin::RegisterOutput<CaptureOutput>(*host);
+        const mc_plugin_capability capability {
+            .struct_size = sizeof(mc_plugin_capability),
+            .id = { MC_PLUGIN_CAPABILITY_STREAM, sizeof(MC_PLUGIN_CAPABILITY_STREAM) - 1 },
+            .api = &gatedFactory,
+            .api_size = sizeof(gatedFactory),
+        };
+        const auto status = host->register_capability(host->host_context, &capability);
+        return status == MC_OK ? musik::core::plugin::RegisterOutput<CaptureOutput>(*host) : status;
     }
     void MC_CALL shutdown(void*) {}
-
-    class CapturePlugin final : public IPlugin {
-    public:
-        void Release() noexcept override { delete this; }
-        const char* Name() override { return driver; }
-        const char* Version() override { return "1"; }
-        const char* Author() override { return "musikcube tests"; }
-        const char* Guid() override { return "9c27689f-d977-4d5b-b079-5278bf1b8487"; }
-        bool Configurable() override { return false; }
-        void Configure() override {}
-        void Reload() override {}
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-    };
-}
-
-extern "C" MC_PLUGIN_API IPlugin* GetPlugin() {
-    return new CapturePlugin();
 }
 
 extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
@@ -550,10 +553,6 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     plugin->initialize = initialize;
     plugin->shutdown = shutdown;
     return MC_OK;
-}
-
-extern "C" MC_PLUGIN_API IDataStreamFactory* GetDataStreamFactory() {
-    return new GatedSourceFactory();
 }
 
 extern "C" MC_PLUGIN_API void ReleasePcmSourceOpen() {

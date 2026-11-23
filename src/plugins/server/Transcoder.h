@@ -34,46 +34,17 @@
 
 #pragma once
 
-#include "Context.h"
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IDataStream.h>
-#include <musikcore/sdk/IDecoder.h>
-#include <musikcore/sdk/IStreamingEncoder.h>
-#include <string>
+#include "ServerMedia.h"
 
 class Transcoder {
-    public:
-        using IDataStream = musik::core::sdk::IDataStream;
-        using IEncoder = musik::core::sdk::IEncoder;
-        using IStreamingEncoder = musik::core::sdk::IStreamingEncoder;
+public:
+    enum class Request { WholeTrack, PartialTrack, CompleteFile };
 
-        static void RemoveTempTranscodeFiles(Context& context);
+    static void RemoveTempTranscodeFiles(Context& context);
+    static void PruneTranscodeCache(Context& context);
 
-        static void PruneTranscodeCache(Context& context);
+    static std::unique_ptr<server::ResponseBody> Transcode(
+        Context& context, const std::string& uri, size_t bitrate, const std::string& format, Request request);
 
-        static IDataStream* Transcode(
-            Context& context,
-            const std::string& uri,
-            size_t bitrate,
-            const std::string& format);
-
-        static IDataStream* TranscodeAndWait(
-            Context& context,
-            IEncoder* encoder,
-            const std::string& uri,
-            size_t bitrate,
-            const std::string& format);
-
-        static int GetActiveCount();
-
-    private:
-        static IDataStream* TranscodeOnDemand(
-            Context& context,
-            IStreamingEncoder* encoder,
-            const std::string& uri,
-            size_t bitrate,
-            const std::string& format);
-
-        Transcoder() { }
-        ~Transcoder() { }
+    static int GetActiveCount();
 };

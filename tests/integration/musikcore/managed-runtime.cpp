@@ -11,7 +11,6 @@
 #include <condition_variable>
 #include <cstdio>
 #include <mutex>
-#include <random>
 #include <thread>
 
 namespace {
@@ -170,7 +169,12 @@ namespace {
         return ConfigureServer(updated) == MC_ERROR_INVALID_ARGUMENT;
     }
 
-    bool configureLoopbackAudio(std::string_view format) {
+    /* both the real remote client and the direct HTTP probe authenticate to this
+    isolated loopback server. the latter sends the base64 form of default:password. */
+    constexpr char fixturePassword[] = "transcode-fixture";
+    constexpr char fixtureBasic[] = "ZGVmYXVsdDp0cmFuc2NvZGUtZml4dHVyZQ==";
+
+    bool configureLoopbackAudio(std::string_view format, bool synchronous, bool noTranscodeCache) {
         auto configuration = ReadServerConfiguration();
         if (!configuration) {
             return false;
@@ -186,7 +190,11 @@ namespace {
         configuration->audioPort = audio.local_endpoint().port();
         configuration->metadataEnabled = true;
         configuration->audioEnabled = true;
-        configuration->password = std::to_string(std::random_device{}());
+        configuration->password = fixturePassword;
+        configuration->synchronousTranscoding = synchronous;
+        if (noTranscodeCache) {
+            configuration->cacheCount = 0;
+        }
         metadata.close();
         audio.close();
 
@@ -207,7 +215,114 @@ namespace {
         return true;
     }
 
-    bool checkRemoteAudio(Context& context, Host& host, Playback& playback) {
+    /* issue a real authenticated HTTP/1.0 request. closing the connection marks
+    the end of an on-demand response whose encoded length is unknown. */
+    std::pair<std::string, std::string> fetchAudio(
+        uint16_t port, const std::string& path, std::string_view range = {}, std::string_view userAgent = {})
+    {
+        asio::ip::tcp::iostream client;
+        client.expires_after(4s);
+        client.connect("127.0.0.1", std::to_string(port));
+        client << "GET " << path << " HTTP/1.0\r\nHost: localhost\r\nAuthorization: Basic " << fixtureBasic << "\r\n";
+        if (!userAgent.empty()) {
+            client << "User-Agent: " << userAgent << "\r\n";
+        }
+        if (!range.empty()) {
+            client << "Range: " << range << "\r\n";
+        }
+        client << "\r\n" << std::flush;
+        std::string response(std::istreambuf_iterator<char>(client), {});
+        const auto end = response.find("\r\n\r\n");
+        if (end == std::string::npos) {
+            return {};
+        }
+        return { response.substr(0, end + 2), response.substr(end + 4) };
+    }
+
+    /* a generated MP3 has no exact length until flush. once cached, a new
+    request for its last byte must return precisely that byte as a 206 response. */
+    bool checkEncodedResponse(int64_t trackId, bool rangeFallback) {
+        const auto config = ReadServerConfiguration();
+        if (!config) {
+            return false;
+        }
+        const auto [originalHeaders, wav] = fetchAudio(config->audioPort, "/audio/id/" + std::to_string(trackId));
+        const std::string nameHeader = "X-musikcube-Filename-Override: ";
+        const auto name = originalHeaders.find(nameHeader);
+        if (name == std::string::npos || wav.compare(0, 4, "RIFF") != 0) {
+            std::fputs("Original track did not supply its filename and WAV bytes\n", stderr);
+            return false;
+        }
+        const auto start = name + nameHeader.size();
+        const auto externalId = originalHeaders.substr(start, originalHeaders.find("\r\n", start) - start);
+        const auto external = "/audio/external_id/" + externalId + "?format=mp3&bitrate=";
+        /* musikdroid's proxy marks a download complete only at the advertised
+        length. its first request already needs the finalized gapless header. */
+        constexpr std::string_view androidAgent = "Dalvik/2.1.0 (Linux; U; Android 15)";
+        const auto [androidHeaders, mp3] = fetchAudio(config->audioPort, external + "80", {}, androidAgent);
+        if (androidHeaders.find(" 200 ") == std::string::npos || mp3.empty() ||
+            androidHeaders.find("Content-Length: " + std::to_string(mp3.size()) + "\r\n") == std::string::npos ||
+            mp3.substr(0, 512).find("Info") == std::string::npos)
+        {
+            std::fputs("Android proxy did not get a complete, gapless MP3 on its first request\n", stderr);
+            return false;
+        }
+        const auto [androidRange, firstBytes] = fetchAudio(config->audioPort, external + "80", "bytes=0-255", androidAgent);
+        if (androidRange.find(" 206 ") == std::string::npos ||
+            androidRange.find("Content-Range: bytes 0-255/" + std::to_string(mp3.size()) + "\r\n") == std::string::npos ||
+            firstBytes != mp3.substr(0, 256))
+        {
+            std::fputs("Android header range did not match the finalized first download\n", stderr);
+            return false;
+        }
+        if (originalHeaders.find("Content-Type: audio/wav") == std::string::npos ||
+            androidHeaders.find("Content-Type: audio/mpeg") == std::string::npos)
+        {
+            std::fputs("Audio response MIME does not match the original or encoded track\n", stderr);
+            return false;
+        }
+        const auto [headers, bytes] = fetchAudio(config->audioPort, external + "112",
+            rangeFallback ? "bytes=0-" : "");
+        const bool knownLength = headers.find("\r\nContent-Length:") != std::string::npos;
+        const bool refreshHeader = headers.find("X-musikcube-Estimated-Content-Length: true") != std::string::npos;
+        if (headers.find(" 200 ") == std::string::npos || knownLength != config->synchronousTranscoding ||
+            refreshHeader == knownLength || bytes.size() < 4096 || bytes.compare(0, 4, "RIFF") == 0)
+        {
+            std::fputs("MP3 must serve encoded bytes and report a length only after the file is complete\n", stderr);
+            return false;
+        }
+        const auto last = std::to_string(bytes.size() - 1);
+        const auto [cached, tail] = fetchAudio(config->audioPort, external + "112", "bytes=" + last + "-" + last);
+        if (config->cacheCount || config->synchronousTranscoding || rangeFallback) {
+            if (cached.find(" 206 ") == std::string::npos || tail.size() != 1 || tail.back() != bytes.back()) {
+                std::fputs("Completed MP3 did not serve its final byte\n", stderr);
+                return false;
+            }
+        }
+        else if (cached.find(" 200 ") == std::string::npos || tail.size() != bytes.size()) {
+            std::fputs("A live transcode with caching disabled unexpectedly retained a seekable file\n", stderr);
+            return false;
+        }
+        /* choose a fresh bitrate so the cache cannot satisfy this seek. only a
+        synchronous encode or an explicit fallback may turn it into a byte range. */
+        const auto uncached = "/audio/id/" + std::to_string(trackId) + "?bitrate=96&format=mp3";
+        const auto [rangeHeaders, rangeBytes] = fetchAudio(config->audioPort, uncached, "bytes=10-12");
+        if (rangeFallback || config->synchronousTranscoding) {
+            if (rangeHeaders.find(" 206 ") == std::string::npos ||
+                rangeHeaders.find("Content-Range: bytes 10-12/") == std::string::npos || rangeBytes.size() != 3)
+            {
+                std::fputs("Configured range fallback did not serve the requested encoded bytes\n", stderr);
+                return false;
+            }
+        }
+        else if (rangeHeaders.find(" 200 ") == std::string::npos || rangeBytes.size() <= 3) {
+            std::fputs("Default on-demand encode did not stream the whole response\n", stderr);
+            return false;
+        }
+        return true;
+    }
+
+    bool checkRemoteAudio(Context& context, Host& host, Playback& playback, std::string_view format, bool rangeFallback) {
         if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK ||
             !waitFor(context, host, [&] { return context.GetLibraryStatus().state == MC_LIBRARY_CONNECTED; }))
         {
@@ -226,6 +341,10 @@ namespace {
             opened != MC_OK || remoteTrack.Size() != 1 || playback.Play(remoteTrack, 0) != MC_OK)
         {
             std::fputs("Could not start the remote track\n", stderr);
+            return false;
+        }
+
+        if (format == "mp3" && !checkEncodedResponse(remoteTrack.Id(0), rangeFallback)) {
             return false;
         }
 
@@ -305,7 +424,8 @@ namespace {
     };
 
     bool checkRuntime(
-        const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer, bool remoteAudio, LogProbe& log)
+        const mc_context_options& options, Host& host, std::optional<Library>& retained, bool equalizer,
+        bool remoteAudio, std::string_view format, bool rangeFallback, LogProbe& log)
     {
         TrackResult tracks;
         mc_result complete = MC_ERROR_BUSY;
@@ -412,7 +532,7 @@ namespace {
         }
 
         if (remoteAudio) {
-            if (!checkRemoteAudio(context, host, playback)) {
+            if (!checkRemoteAudio(context, host, playback, format, rangeFallback)) {
                 return false;
             }
             const auto plugins = ListPlugins();
@@ -484,6 +604,9 @@ int main(int argc, char** argv) {
     bool equalizer = false;
     bool server = false;
     bool remoteAudio = false;
+    bool synchronous = false;
+    bool rangeFallback = false;
+    bool noTranscodeCache = false;
     bool playbackOnly = false;
     std::string_view transcodeFormat;
     for (int i = 1; i < argc; ++i) {
@@ -491,6 +614,9 @@ int main(int argc, char** argv) {
         equalizer |= option == "--check-equalizer";
         server |= option == "--check-server";
         remoteAudio |= option == "--check-remote-audio";
+        synchronous |= option == "--synchronous-transcode";
+        rangeFallback |= option == "--range-fallback";
+        noTranscodeCache |= option == "--no-transcode-cache";
         playbackOnly |= option == "--playback-only";
         constexpr std::string_view transcodeOption = "--transcode=";
         if (option.starts_with(transcodeOption)) {
@@ -503,7 +629,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (remoteAudio && !configureLoopbackAudio(transcodeFormat)) {
+    if (remoteAudio && !configureLoopbackAudio(transcodeFormat, synchronous, noTranscodeCache)) {
         std::fputs("Could not configure the loopback server\n", stderr);
         return 1;
     }
@@ -519,7 +645,7 @@ int main(int argc, char** argv) {
     options.wakeup = Host::Wake;
     options.wakeup_user_data = &host;
     std::optional<Library> oldLibrary;
-    if (!checkRuntime(options, host, oldLibrary, equalizer, remoteAudio, log)) {
+    if (!checkRuntime(options, host, oldLibrary, equalizer, remoteAudio, transcodeFormat, rangeFallback, log)) {
         return 1;
     }
 

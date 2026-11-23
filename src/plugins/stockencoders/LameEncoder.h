@@ -40,16 +40,15 @@
 #pragma warning(pop)
 
 class LameEncoder: public musik::core::sdk::IStreamingEncoder {
-    using IBuffer = musik::core::sdk::IBuffer;
 
     public:
         LameEncoder();
 
         virtual void Release() override;
         virtual bool Initialize(size_t rate, size_t channels, size_t bitrate) override;
-        virtual int Encode(const IBuffer* pcm, char** data) override;
+        virtual int Encode(const mc_pcm_view& pcm, char** data) override;
         virtual int Flush(char** data) override;
-        virtual void Finalize(const char* uri) override;
+        virtual bool Finalize(const char* uri) override;
 
     private:
         DataBuffer<unsigned char> encodedBytes;

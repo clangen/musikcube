@@ -33,9 +33,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "LameEncoder.h"
+#include <climits>
 #include "shared.h"
 #include <string>
-#include <limits>
 
 using namespace musik::core::sdk;
 
@@ -57,58 +57,56 @@ LameEncoder::LameEncoder() {
 }
 
 bool LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
-    if (rate > std::numeric_limits<int>::max() || bitrate > std::numeric_limits<int>::max()) {
+    lame = lame_init();
+    if (!lame || !rate || !channels || !bitrate || rate > INT_MAX || bitrate > INT_MAX) {
         return false;
     }
-    lame = lame_init();
     lame_set_in_samplerate(lame, static_cast<int>(rate));
     lame_set_VBR(lame, vbr_off);
-    lame_set_VBR_mean_bitrate_kbps(lame, static_cast<int>(bitrate));
-    lame_set_brate(lame, static_cast<int>(bitrate));
+    lame_set_VBR_mean_bitrate_kbps(lame, bitrate);
+    lame_set_brate(lame, bitrate);
     lame_set_quality(lame, 5);
-    lame_set_out_samplerate(lame, static_cast<int>(rate));
+    lame_set_out_samplerate(lame, rate);
     lame_set_bWriteVbrTag(lame, 1);
-    lame_init_params(lame);
-    return true;
+    return lame_init_params(lame) >= 0;
 }
 
 void LameEncoder::Release() {
-    lame_close(lame);
+    if (lame) {
+        lame_close(lame);
+    }
     lame = nullptr;
     delete this;
 }
 
-int LameEncoder::Encode(const IBuffer* pcm, char** data) {
+int LameEncoder::Encode(const mc_pcm_view& pcm, char** data) {
     /* calculated according to lame.h */
-    size_t channels = pcm->Channels();
-    if (channels == 0) {
-        return 0;
+    size_t channels = pcm.format.channels;
+    size_t numSamples = pcm.frame_count;
+    if (!channels || numSamples > static_cast<size_t>((INT_MAX - 7200) / 5) * 4) {
+        return -1;
     }
-    size_t numSamples = pcm->Samples() / channels;
-    if (numSamples > (std::numeric_limits<int>::max() - 7200) / 2) {
-        return 0;
-    }
-    size_t requiredBytes = numSamples + numSamples / 4 + 7201;
+    size_t requiredBytes = numSamples + (numSamples + 3) / 4 + 7200;
 
     encodedBytes.reset(requiredBytes);
 
     int encodeCount = -1;
 
     /* stereo */
-    if (pcm->Channels() == 2) {
+    if (pcm.format.channels == 2) {
         encodeCount =
             lame_encode_buffer_interleaved_ieee_float(
                 lame,
-                pcm->BufferPointer(),
-                static_cast<int>(numSamples),
+                pcm.data,
+                numSamples,
                 encodedBytes.data,
-                static_cast<int>(encodedBytes.length));
+                encodedBytes.length);
     }
     /* non-stereo. convert to stereo! */
     else {
         downmix.reset(numSamples * 2);
 
-        float* from = pcm->BufferPointer();
+        const float* from = pcm.data;
         float* to = downmix.data;
 
         if (channels == 1) {
@@ -134,19 +132,19 @@ int LameEncoder::Encode(const IBuffer* pcm, char** data) {
             lame_encode_buffer_interleaved_ieee_float(
                 lame,
                 downmix.data,
-                static_cast<int>(numSamples),
+                numSamples,
                 encodedBytes.data,
-                static_cast<int>(encodedBytes.length));
+                encodedBytes.length);
     }
 
     if (encodeCount < 0) {
-        return 0;
+        return -1;
     }
 
     encodedBytes.length = (size_t)encodeCount;
 
     *data = reinterpret_cast<char*>(encodedBytes.data);
-    return encodeCount;
+    return encodedBytes.length;
 }
 
 int LameEncoder::Flush(char** data) {
@@ -158,30 +156,30 @@ int LameEncoder::Flush(char** data) {
     int count = lame_encode_flush(
         lame,
         encodedBytes.data,
-        static_cast<int>(std::min(encodedBytes.length, static_cast<size_t>(std::numeric_limits<int>::max()))));
+        encodedBytes.length);
 
     *data = reinterpret_cast<char*>(encodedBytes.data);
     return count;
 }
 
-void LameEncoder::Finalize(const char* uri) {
-    /* need to make sure we write the LAME header, otherwise
-    gapless playback won't work! */
-    unsigned char header[2800]; /* max frame size */
-    size_t headerSize = lame_get_lametag_frame(lame, header, sizeof(header));
-    if (headerSize) {
-#ifdef WIN32
-        FILE* fp = nullptr;
-        _wfopen_s(&fp, utf8to16(uri).c_str(), L"r+b");
-#else
-        FILE* fp = fopen(uri, "r+b");
-#endif
-        if (fp) {
-            if (!fseek(fp, 0, SEEK_SET)) {
-                size_t written = fwrite(header, 1, headerSize, fp);
-                ++written;
-            }
-            fclose(fp);
-        }
+bool LameEncoder::Finalize(const char* uri) {
+    /* a complete cached MP3 can now advertise the encoder delay and padding. */
+    unsigned char header[2800];
+    const size_t headerSize = lame_get_lametag_frame(lame, header, sizeof(header));
+    if (!headerSize) {
+        return true;
     }
+    if (headerSize > sizeof(header)) {
+        return false;
+    }
+#ifdef WIN32
+    FILE* file = _wfopen(utf8to16(uri).c_str(), L"r+b");
+#else
+    FILE* file = fopen(uri, "r+b");
+#endif
+    if (!file) {
+        return false;
+    }
+    const bool written = fwrite(header, 1, headerSize, file) == headerSize;
+    return fclose(file) == 0 && written;
 }

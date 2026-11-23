@@ -36,9 +36,7 @@
 
 #include <musikcore/config.h>
 #include <musikcore/sdk/IBuffer.h>
-#include <musikcore/sdk/IDecoder.h>
 #include <musikcore/sdk/IDSP.h>
-#include <musikcore/sdk/IDecoderFactory.h>
 #include <musikcore/audio/Output.h>
 
 #include <list>
@@ -54,6 +52,7 @@ namespace musik { namespace core { namespace audio {
             virtual bool OpenStream(std::string uri, musik::core::audio::Output* output) = 0;
             virtual void Interrupt() = 0;
             virtual int GetCapabilities() = 0;
+            virtual mc_result DecodeStatus() const = 0;
             virtual bool Eof() = 0;
             virtual void Release() = 0;
     };

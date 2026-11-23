@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "FfmpegEncoder.h"
+#include <musikcore/plugin/stream.hpp>
 
 #include "shared.h"
 #include <algorithm>
@@ -200,67 +201,39 @@ static int resolveChannelLayout(size_t channelCount) {
     }
 }
 
-static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
-    FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
-    if (encoder && encoder->Stream()) {
-        auto count = encoder->Stream()->Read(buffer, (PositionType) bufferSize);
-        return (count == bufferSize) ? count : AVERROR_EOF;
-    }
-    return 0;
-}
-
 #ifdef USE_FFMPEG7_CHANNEL_LAYOUT
-    static int writeCallback(void* opaque, const uint8_t* buffer, int bufferSize) {
+static int writeCallback(void* opaque, const uint8_t* buffer, int size) {
 #else
-    static int writeCallback(void* opaque, uint8_t* buffer, int bufferSize) {
+static int writeCallback(void* opaque, uint8_t* buffer, int size) {
 #endif
-    FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
-    if (encoder && encoder->Stream()) {
-#ifdef USE_FFMPEG7_CHANNEL_LAYOUT
-        auto count = encoder->Stream()->Write((void *) buffer, (PositionType) bufferSize);
-#else
-        auto count = encoder->Stream()->Write(buffer, (PositionType) bufferSize);
-#endif
-        return (count == bufferSize) ? count : AVERROR_EOF;
+    const auto& stream = *static_cast<const mc_stream*>(opaque);
+    size_t offset = 0;
+    while (offset < static_cast<size_t>(size)) {
+        size_t written = 0;
+        const size_t remaining = static_cast<size_t>(size) - offset;
+        const auto status = stream.api->write(stream.instance, buffer + offset, remaining, &written, nullptr);
+        if (status != MC_OK || !written || written > remaining) {
+            return AVERROR(EIO);
+        }
+        offset += written;
     }
-    return 0;
+    return size;
 }
 
 static int64_t seekCallback(void* opaque, int64_t offset, int whence) {
-    FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
-    if (encoder && encoder->Stream()) {
-        IDataStream* stream = encoder->Stream();
-        switch (whence) {
-            case AVSEEK_SIZE:
-                return stream->Length();
-                break;
-            case SEEK_SET: {
-                if (offset >= stream->Length()) {
-                    return AVERROR(EINVAL);
-                }
-                stream->SetPosition((PositionType)offset);
-                break;
-            }
-            case SEEK_CUR: {
-                if (stream->Position() + offset >= stream->Length()) {
-                    return AVERROR(EINVAL);
-                }
-                stream->SetPosition(stream->Position() + (PositionType)offset);
-                break;
-            }
-            case SEEK_END:
-                stream->SetPosition(stream->Length() - 1);
-                break;
-            default:
-                debug->Error(TAG, "unknown seek type!");
-                break;
+    const auto& stream = *static_cast<const mc_stream*>(opaque);
+    whence &= ~AVSEEK_FORCE;
+    if (whence == AVSEEK_SIZE) {
+        mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+        if (stream.api->get_info(stream.instance, &info) != MC_OK || !(info.flags & MC_STREAM_LENGTH_KNOWN) ||
+            info.length_bytes > INT64_MAX)
+        {
+            return AVERROR(ENOSYS);
         }
-        if (stream->Position() >= stream->Length()) {
-            return -1;
-        }
-        return stream->Position();
+        return static_cast<int64_t>(info.length_bytes);
     }
-    return 0;
+    int64_t actual = 0;
+    return musik::core::plugin::seekStream(stream, offset, whence, actual) == MC_OK ? actual : AVERROR(EINVAL);
 }
 
 FfmpegEncoder::FfmpegEncoder(const std::string& format)
@@ -272,14 +245,11 @@ FfmpegEncoder::FfmpegEncoder(const std::string& format)
     this->outputFrame = nullptr;
     this->resampledFrame = nullptr;
     this->ioContext = nullptr;
-    this->ioContextOutputBuffer = nullptr;
     this->outputFormatContext = nullptr;
     this->outputFifo = nullptr;
     this->globalTimestamp = 0LL;
     this->inputChannelCount = 0;
     this->inputSampleRate = 0;
-    this->readBufferSize = 0;
-    this->out = nullptr;
 
     std::transform(
         this->format.begin(),
@@ -440,21 +410,19 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 }
 
 bool FfmpegEncoder::OpenOutputContext() {
-    this->ioContextOutputBuffer = av_malloc(IO_CONTEXT_BUFFER_SIZE);
-
-    this->ioContext = avio_alloc_context(
-        reinterpret_cast<unsigned char*>(this->ioContextOutputBuffer),
-        IO_CONTEXT_BUFFER_SIZE,
-        1,
-        this,
-        readCallback,
-        writeCallback,
-        seekCallback);
-
+    auto* buffer = static_cast<unsigned char*>(av_malloc(IO_CONTEXT_BUFFER_SIZE));
+    if (!buffer) {
+        return false;
+    }
+    this->ioContext = avio_alloc_context(buffer, IO_CONTEXT_BUFFER_SIZE, 1, &this->out, nullptr,
+        writeCallback, seekCallback);
+    if (!this->ioContext) {
+        av_free(buffer);
+    }
     return this->ioContext != nullptr;
 }
 
-bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
+bool FfmpegEncoder::Initialize(const mc_stream& out, size_t rate, size_t channels, size_t bitrate) {
     this->out = out;
 
     if (this->OpenOutputContext()) {
@@ -485,23 +453,19 @@ void FfmpegEncoder::Cleanup() {
         this->resampledFrame = nullptr;
     }
     if (this->ioContext) {
-        av_free(this->ioContext);
-        this->ioContext = nullptr;
+        /* FFmpeg can replace the original AVIO buffer. release the buffer it
+        actually owns before freeing its context. */
+        av_freep(&this->ioContext->buffer);
+        avio_context_free(&this->ioContext);
     }
     if (this->outputContext) {
-        avcodec_flush_buffers(this->outputContext);
         avcodec_free_context(&this->outputContext);
-        av_free(this->outputContext);
         this->outputContext = nullptr;
         this->outputCodec = nullptr;
     }
     if (this->outputFormatContext) {
         avformat_free_context(this->outputFormatContext);
         this->outputFormatContext = nullptr;
-    }
-    if (this->ioContextOutputBuffer) {
-        av_free(this->ioContextOutputBuffer);
-        this->ioContextOutputBuffer = nullptr;
     }
     if (this->resampler) {
         swr_free(&this->resampler);
@@ -518,8 +482,8 @@ void FfmpegEncoder::Release() {
     delete this;
 }
 
-bool FfmpegEncoder::Encode(const IBuffer* pcm) {
-    if (!this->isValid || pcm->Samples() == 0) {
+bool FfmpegEncoder::Encode(const mc_pcm_view& pcm) {
+    if (!this->isValid || pcm.frame_count == 0) {
         return false;
     }
 
@@ -533,10 +497,12 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     return false;
 }
 
-void FfmpegEncoder::Finalize() {
-    if (this->ReadFromFifoAndWriteToOutput(true)) {
-        this->WriteOutputTrailer();
+bool FfmpegEncoder::Finalize() {
+    if (!this->ReadFromFifoAndWriteToOutput(true) || !this->WriteOutputTrailer()) {
+        return false;
     }
+    avio_flush(this->ioContext);
+    return this->ioContext->error >= 0;
 }
 
 bool FfmpegEncoder::WriteOutputTrailer() {
@@ -557,12 +523,17 @@ bool FfmpegEncoder::WriteOutputHeader() {
     return true;
 }
 
-bool FfmpegEncoder::WriteSamplesToFifo(const IBuffer* pcm) {
-    const int totalSamples = pcm->Samples();
-    const int samplesPerChannel = totalSamples / pcm->Channels();
-    const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
+bool FfmpegEncoder::WriteSamplesToFifo(const mc_pcm_view& pcm) {
+    const int currentFifoSize = av_audio_fifo_size(this->outputFifo);
+    if (pcm.frame_count > static_cast<size_t>(INT_MAX - currentFifoSize) ||
+        pcm.format.channels != static_cast<unsigned>(this->inputChannelCount) ||
+        pcm.format.sample_rate != static_cast<unsigned>(this->inputSampleRate))
+    {
+        return false;
+    }
+    const int samplesPerChannel = static_cast<int>(pcm.frame_count);
+    const uint8_t* inData = (const uint8_t*) pcm.data;
 
-    int currentFifoSize = av_audio_fifo_size(this->outputFifo);
     int error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + samplesPerChannel);
 
     if (error < 0) {
@@ -599,6 +570,9 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
             frameSize,
             this->inputSampleRate);
 
+        if (!this->outputFrame) {
+            return false;
+        }
         int framesRead = av_audio_fifo_read(
             this->outputFifo, (void **) outputFrame->data, frameSize);
 
@@ -613,6 +587,9 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
             frameSize,
             this->outputContext->sample_rate);
 
+        if (!this->resampledFrame) {
+            return false;
+        }
         error = swr_convert_frame(
             this->resampler,
             this->resampledFrame,
@@ -632,12 +609,15 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
         }
     }
 
-    if (drain) {
-        this->FlushResampler();
-        this->SendReceiveAndWriteFrame(nullptr);
+    if (!drain) {
+        return true;
     }
-
-    return true;
+    if (!this->FlushResampler()) {
+        return false;
+    }
+    /* receive_packet reports EOF once all delayed output was accepted by
+    the muxer. other errors must prevent publication of the cache file. */
+    return this->SendReceiveAndWriteFrame(nullptr) == AVERROR_EOF;
 }
 
 int FfmpegEncoder::SendReceiveAndWriteFrame(AVFrame* frame) {
@@ -676,7 +656,7 @@ int FfmpegEncoder::SendReceiveAndWriteFrame(AVFrame* frame) {
     return error;
 }
 
-void FfmpegEncoder::FlushResampler() {
+bool FfmpegEncoder::FlushResampler() {
     int64_t bufferedFrames = swr_get_delay(
         this->resampler, this->outputContext->sample_rate);
 
@@ -687,6 +667,9 @@ void FfmpegEncoder::FlushResampler() {
             FFMIN((int) bufferedFrames, this->outputContext->frame_size),
             this->outputContext->sample_rate);
 
+        if (!this->resampledFrame) {
+            return false;
+        }
         int converted = swr_convert(
             this->resampler,
             this->resampledFrame->extended_data,
@@ -695,13 +678,17 @@ void FfmpegEncoder::FlushResampler() {
             0);
 
         if (converted > 0) {
-            this->SendReceiveAndWriteFrame(this->resampledFrame);
+            this->resampledFrame->nb_samples = converted;
+            if (this->SendReceiveAndWriteFrame(this->resampledFrame) != AVERROR(EAGAIN)) {
+                return false;
+            }
             bufferedFrames -= converted;
         }
         else {
-            break;
+            return converted == 0;
         }
     }
+    return true;
 }
 
 AVFrame* FfmpegEncoder::ReallocFrame(
@@ -715,17 +702,24 @@ AVFrame* FfmpegEncoder::ReallocFrame(
             av_frame_free(&original);
         }
         original = av_frame_alloc();
+        if (!original) {
+            return nullptr;
+        }
         original->nb_samples = samplesPerChannel;
         original->format = format;
         original->sample_rate = sampleRate;
 #ifdef USE_FFMPEG6_CHANNEL_LAYOUT
-        original->ch_layout = this->outputContext->ch_layout;
+        if (av_channel_layout_copy(&original->ch_layout, &this->outputContext->ch_layout) < 0) {
+            av_frame_free(&original);
+            return nullptr;
+        }
 #else
         original->channel_layout = this->outputContext->channel_layout;
 #endif
         int error = av_frame_get_buffer(original, 0);
         if (error < 0) {
             logAvError("av_frame_get_buffer", error);
+            av_frame_free(&original);
             return nullptr;
         }
     }

@@ -51,6 +51,17 @@ elseif(DEFINED MANAGED_RUNTIME_TEST)
   if(DEFINED ENCODER_PLUGIN)
     list(APPEND managed_runtime_plugins --plugin "${ENCODER_PLUGIN}")
     list(APPEND managed_runtime_options "--transcode=${TRANSCODE_FORMAT}")
+    if(RANGE_FALLBACK)
+      # Exercise the persisted server-plugin preference before the runtime reads it.
+      file(WRITE "${config_directory}/musikcube/plugin_musikcubeserver(wss,http).json"
+        [=[{"transcoder_synchronous_fallback":true}]=])
+      list(APPEND managed_runtime_options --range-fallback)
+    elseif(NO_TRANSCODE_CACHE)
+      list(APPEND managed_runtime_options --no-transcode-cache)
+    endif()
+    if(SYNCHRONOUS_TRANSCODE)
+      list(APPEND managed_runtime_options --synchronous-transcode)
+    endif()
   endif()
   execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
     "${BUILD_DIR}/tests/bin/isolated" "${MANAGED_RUNTIME_TEST}" --stage

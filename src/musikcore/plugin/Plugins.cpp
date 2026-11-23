@@ -36,6 +36,8 @@
 #include <stdexcept>
 #include "Plugins.h"
 #include "PluginFactory.h"
+#include "MediaHost.h"
+#include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
 #include <musikcore/equalizer.h>
 #include "../ffi/common/error.h"
 #include "../ffi/consumer/server-shape.h"
@@ -49,7 +51,6 @@
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
-#include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/audio/Buffer.h>
 #include <musikcore/audio/Streams.h>
 #include <musikcore/audio/Outputs.h>
@@ -69,7 +70,6 @@ using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library::query;
-using namespace musik::core::io;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 
@@ -154,6 +154,7 @@ static IPlaybackService* playbackService = nullptr;
 static LocalMetadataProxy* metadataProxy = nullptr;
 static std::shared_ptr<Preferences> playbackPrefs;
 static std::unique_ptr<musik::core::ffi::PluginRegistry> pluginRegistry;
+static std::unique_ptr<musik::core::plugin::MediaHost> mediaHost;
 
 static void saveEnvironment() {
     if (::playbackPrefs) {
@@ -303,13 +304,9 @@ static class Environment: public IEnvironment {
             return CopyString(path, dst, size);
         }
 
-        IDataStream* CreateDataStream(const char* uri) override {
-            return DataStreamFactory::CreateDataStream(uri);
-        }
+        const mc_media_host_api& Media() override { return mediaHost->Api(); }
 
-        IDecoder* GetDecoder(IDataStream* stream) override {
-            return streams::GetDecoderForDataStream(stream);
-        }
+        const mc_audio_scratch_buffer_api& AudioScratch() override { return ffi::audio_scratch_buffers::Host(); }
 
         IEncoder* GetEncoder(const char* type) override {
             return streams::GetEncoderForType(type);
@@ -321,14 +318,6 @@ static class Environment: public IEnvironment {
 
         IPreferences* GetPreferences(const char* name) override {
             return Preferences::Unmanaged(name ? name : std::string());
-        }
-
-        IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) override {
-            musik::core::audio::Buffer* buffer = new Buffer();
-            buffer->SetChannels(2);
-            buffer->SetSampleRate((long) rate);
-            buffer->SetSamples((long) samples);
-            return buffer;
         }
 
         mc_result GetOutputConfiguration(mc_string_view driver, mc_output_configuration_fn read, void* data) override {
@@ -478,6 +467,7 @@ namespace musik { namespace core { namespace plugin {
         if (status != MC_OK) {
             throw std::runtime_error("Could not initialize C plugin registry: " + std::to_string(status));
         }
+        mediaHost = std::make_unique<MediaHost>(*pluginRegistry);
     }
 
     void BindServices(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
@@ -638,7 +628,7 @@ namespace musik { namespace core { namespace plugin {
         cleanup([] { Preferences::SavePluginPreferences(); }, failure);
         /* workers have stopped, so cached factories can release provider state. */
         cleanup([] { musik::core::audio::streams::Shutdown(); }, failure);
-        cleanup([] { musik::core::io::Shutdown(); }, failure);
+        mediaHost.reset();
         musik::contract::Assert(audio::Output::InstanceCount() == 0,
             "output instances must be destroyed before plugin unload");
         cleanup([] {

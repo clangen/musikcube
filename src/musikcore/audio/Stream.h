@@ -36,10 +36,9 @@
 #include <mutex>
 
 #include <musikcore/config.h>
-#include <musikcore/io/DataStreamFactory.h>
+#include <musikcore/plugin/media.h>
 #include <musikcore/audio/Buffer.h>
 #include <musikcore/audio/IStream.h>
-#include <musikcore/sdk/IDecoder.h>
 #include <musikcore/audio/Output.h>
 
 #include <musikcore/sdk/IDSP.h>
@@ -53,7 +52,6 @@ namespace musik { namespace core { namespace audio {
 
     class Stream : public IStream {
         using IDSP = musik::core::sdk::IDSP;
-        using IDecoder = musik::core::sdk::IDecoder;
         using IBuffer = musik::core::sdk::IBuffer;
         using StreamFlags = musik::core::sdk::StreamFlags;
 
@@ -84,6 +82,7 @@ namespace musik { namespace core { namespace audio {
             bool OpenStream(std::string uri, musik::core::audio::Output* output) override;
             void Interrupt() override;
             int GetCapabilities() override;
+            mc_result DecodeStatus() const override { return this->decodeStatus; }
             bool Eof() override { return this->done; }
             void Release() override { delete this; }
 
@@ -93,21 +92,23 @@ namespace musik { namespace core { namespace audio {
             void RefillInternalBuffers();
 
             typedef std::deque<Buffer*> BufferList;
-            typedef std::shared_ptr<IDecoder> DecoderPtr;
             typedef std::shared_ptr<IDSP> DspPtr;
             typedef std::vector<DspPtr> Dsps;
 
             long decoderSampleRate;
             long decoderChannels;
-            std::string uri;
-            musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
+            mc_stream dataStream = MC_STREAM_DEFAULT;
+            mc_decoder decoder = MC_DECODER_DEFAULT;
             std::mutex sourceMutex;
             bool sourceInterrupted {};
 
             BufferList recycledBuffers;
             BufferList filledBuffers;
 
-            Buffer* decoderBuffer;
+            mc_audio_scratch_buffer* scratch = nullptr;
+            mc_pcm_view decoded = MC_PCM_VIEW_DEFAULT;
+            bool decoderEnded = false;
+            mc_result decodeStatus = MC_OK;
             long decoderSampleOffset;
             long decoderSamplesRemain;
             uint64_t decoderPosition;
@@ -122,7 +123,6 @@ namespace musik { namespace core { namespace audio {
 
             float* rawBuffer;
 
-            DecoderPtr decoder;
             Dsps dsps;
     };
 

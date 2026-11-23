@@ -35,18 +35,27 @@
 #pragma once
 
 #include "IEncoder.h"
-#include "IBuffer.h"
+#include <musikcore/plugin/audio.h>
 
 namespace musik { namespace core { namespace sdk {
 
-    class IStreamingEncoder: public IEncoder {
-        public:
-            IStreamingEncoder* AsStreaming() final { return this; }
+    /* supplies compressed bytes while the input is still being decoded. the
+    caller drains each returned block before calling Encode or Flush again. */
+    class IStreamingEncoder : public IEncoder {
+    public:
+        IStreamingEncoder* AsStreaming() final { return this; }
 
-            virtual bool Initialize(size_t rate, size_t channels, size_t bitrate) = 0;
-            virtual int Encode(const IBuffer* pcm, char** data) = 0;
-            virtual int Flush(char** data) = 0;
-            virtual void Finalize(const char* uri) = 0;
-     };
+        virtual bool Initialize(size_t rate, size_t channels, size_t bitrate) = 0;
+
+        /* consume the PCM during this call. return encoded bytes, zero if
+        more input is needed, or a negative value on failure. */
+        virtual int Encode(const mc_pcm_view& pcm, char** data) = 0;
+
+        /* produce the last encoded bytes after the input reaches EOF. */
+        virtual int Flush(char** data) = 0;
+
+        /* finish metadata in a complete, closed cached file before publication. */
+        virtual bool Finalize(const char* uri) = 0;
+    };
 
 } } }

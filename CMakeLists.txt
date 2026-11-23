@@ -36,6 +36,8 @@ if(MUSIKCORE_ABI_ONLY)
   return()
 endif()
 
+include(.cmake/MusikcoreSources.cmake)
+
 if(WIN32)
   include("${CMAKE_CURRENT_SOURCE_DIR}/.cmake/BuildWindows.cmake")
   add_subdirectory(tests/support EXCLUDE_FROM_ALL)

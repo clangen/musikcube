@@ -90,7 +90,6 @@ using namespace musik::core::library::query;
 using Thread = std::unique_ptr<std::thread>;
 
 using TagReaderDestroyer = PluginFactory::ReleaseDeleter<ITagReader>;
-using DecoderDeleter = PluginFactory::ReleaseDeleter<IDecoderFactory>;
 using SourceDeleter = PluginFactory::ReleaseDeleter<IIndexerSource>;
 
 static void openLogFile() {
@@ -123,9 +122,6 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 
     this->tagReaders = PluginFactory::Instance()
         .QueryInterface<ITagReader, TagReaderDestroyer>("GetTagReader");
-
-    this->audioDecoders = PluginFactory::Instance()
-        .QueryInterface<IDecoderFactory, DecoderDeleter>("GetDecoderFactory");
 
     this->sources = PluginFactory::Instance()
         .QueryInterface<IIndexerSource, SourceDeleter>("GetIndexerSource");

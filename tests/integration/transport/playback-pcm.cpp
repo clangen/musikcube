@@ -1,5 +1,6 @@
 #include <musikcore/visualizer.h>
 #include "CoreRuntime.h"
+#include "FatalScope.h"
 #include "PcmCapture.h"
 
 #include <musikcore/audio/CrossfadeTransport.h>
@@ -612,6 +613,106 @@ namespace {
             transport->GetPlaybackState() == sdk::PlaybackState::Playing;
     }
 
+    /* read known PCM back from the output of a public URI player. the C
+    decoder publishes EOF with its last samples. both a malformed empty block
+    and a later read error must surface as failure rather than normal EOF. */
+    bool checkDecoderPlayback(const std::filesystem::path& directory, ReadCapture read, WaitCapture wait) {
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_PLUGINS;
+        api::Context context(options);
+        api::Player player(context);
+
+        for (const auto* name : { "samples.bytes", "empty-more.bytes", "read-error.bytes" }) {
+            const bool complete = std::string_view(name) == "samples.bytes";
+            const auto path = directory / name;
+            constexpr size_t frameCount = 48001;
+            {
+                std::ofstream file(path, std::ios::binary);
+                for (size_t frame = 0; frame < frameCount; ++frame) {
+                    file.put(static_cast<char>(1 + frame % 127));
+                }
+                if (!file) {
+                    return false;
+                }
+            }
+            if (player.Play(path.string()) != MC_OK) {
+                return false;
+            }
+            auto state = player.Snapshot().state;
+            const auto deadline = Clock::now() + 5s;
+            while (state != MC_PLAYER_FINISHED && state != MC_PLAYER_FAILED && Clock::now() < deadline) {
+                std::this_thread::sleep_for(2ms);
+                state = player.Snapshot().state;
+            }
+            if (state != (complete ? MC_PLAYER_FINISHED : MC_PLAYER_FAILED)) {
+                std::fprintf(stderr, "%s ended in unexpected player state %d\n", name, static_cast<int>(state));
+                return false;
+            }
+            if (complete) {
+                std::vector<CapturedFrame> frames(read(nullptr, 0));
+                read(frames.data(), frames.size());
+                size_t index = 0;
+                for (const auto& frame : frames) {
+                    if (frame.underrun) {
+                        continue;
+                    }
+                    const auto expected = static_cast<float>(1 + index % 127) / 256;
+                    if (frame.left != expected || frame.right != expected) {
+                        return false;
+                    }
+                    ++index;
+                }
+                if (index != frameCount) {
+                    return false;
+                }
+            }
+        }
+        /* the fixture signals from inside the decoder's first input read.
+        shutdown must wake that call and destroy its source before plugin unload. */
+        if (player.Play(stalledDecoderInput) != MC_OK || !wait(CaptureEvent::SourceOpening, 3000)) {
+            return false;
+        }
+        return context.Shutdown() == MC_OK && wait(CaptureEvent::SourceInterrupted, 500) &&
+            wait(CaptureEvent::SourceReleased, 500);
+    }
+
+    /* keep an accepted token on the shared device while a decoder blocks.
+    stopping the reader with Drain::Yes must let the device finish that token. */
+    bool drainInterruptedDecoder(WaitCapture wait, HoldCompletion hold) {
+        CoreRuntime runtime;
+        auto output = outputs::SelectedOutput();
+        struct Sink final : Output::CompletionSink {
+            void CompleteBuffer(sdk::IBuffer*, mc_result result) override { outcome = result; }
+            mc_result outcome = MC_ERROR_IN_FLIGHT;
+        } sink;
+        std::array<float, 2> samples {};
+        Buffer tail(samples.data(), samples.size());
+        tail.SetSampleRate(sampleRate);
+        Output::Writer previous(*output, sink);
+        Player::EventListener listener;
+        PlaybackWorkers workers(listener);
+
+        hold(true);
+        if (output->Resume() != MC_OK || previous.TryQueueAudioBuffer(tail) != MC_OK) {
+            hold(false);
+            return false;
+        }
+        auto track = workers.Start(stalledDecoderInput, output, Player::Drain::Yes, {});
+        track->Play();
+        const bool blocked = wait(CaptureEvent::HeldCompletion, 3000) && wait(CaptureEvent::SourceOpening, 3000);
+        track->RequestStop(Player::Drain::Yes);
+        const bool draining = blocked && wait(CaptureEvent::Draining, 3000);
+        hold(false);
+        const bool balanced = wait(CaptureEvent::Balanced, 3000);
+        previous.ProcessCompletions();
+        if (!balanced || !draining || sink.outcome != MC_OK) {
+            std::fprintf(stderr, "interrupted decoder lost output drain (blocked=%d, drain=%d, completion=%d)\n",
+                blocked, draining, sink.outcome);
+            return false;
+        }
+        return true;
+    }
+
     /* URI players bypass the catalog playback service. an unsuccessful
     device command must reach this caller with its previous state intact. */
     bool checkUriControls(const std::filesystem::path& file, SetControlFailure setFailure,
@@ -1089,6 +1190,11 @@ namespace {
 }
 
 int main(int argc, char** argv) {
+    if (argc == 2 && std::string_view(argv[1]) == "partial_media_create") {
+        FatalScope fatal;
+        CoreRuntime runtime;
+        return Stream::Create()->OpenStream(stalledDecoderInput, nullptr) ? 0 : 1;
+    }
     if (argc != 4) {
         return 1;
     }
@@ -1112,8 +1218,8 @@ int main(int argc, char** argv) {
     const bool blockedControl = mode == "blocked_control";
     const bool retiredFade = mode == "retired_crossfade";
     const bool failedNextFade = mode == "failed_next_crossfade";
-    if (!crossfade && mode != "gapless" && !seekEof && !seekTail && !stress && !benchmark &&
-        !pausedFade && !sourceOpen && !outputFailure && !retiredFade && !failedNextFade &&
+    if (!crossfade && mode != "gapless" && mode != "decoder_contract" && mode != "decoder_drain" &&
+        !seekEof && !seekTail && !stress && !benchmark && !pausedFade && !sourceOpen && !outputFailure && !retiredFade && !failedNextFade &&
         !controlFailure && !blockedControl && !pausedReplacement && !pausedSeek)
     {
         return 1;
@@ -1131,6 +1237,15 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    if (mode == "decoder_drain") {
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
+        const auto hold = moduleSymbol<HoldCompletion>(module.get(), "HoldPcmCompletion");
+        return wait && hold && drainInterruptedDecoder(wait, hold) ? 0 : 1;
+    }
+    if (mode == "decoder_contract") {
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
+        return wait && checkDecoderPlayback(argv[3], read, wait) ? 0 : 1;
+    }
     const auto first = std::filesystem::path(argv[3]) / "first.wav";
     const auto second = std::filesystem::path(argv[3]) / "second.wav";
     const bool longTracks = crossfade || retiredFade || failedNextFade || pausedReplacement || pausedSeek ||

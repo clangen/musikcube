@@ -35,19 +35,25 @@
 #pragma once
 
 #include "IEncoder.h"
-#include "IBuffer.h"
-#include "IDataStream.h"
+#include <musikcore/plugin/audio.h>
+#include <musikcore/plugin/stream.h>
 #include <stddef.h>
 
 namespace musik { namespace core { namespace sdk {
 
-    class IBlockingEncoder: public IEncoder {
-        public:
-            IBlockingEncoder* AsBlocking() final { return this; }
+    /* encodes a complete file into a caller-owned writable stream. the caller
+    keeps the stream alive through Finalize, then closes it to publish the file. */
+    class IBlockingEncoder : public IEncoder {
+    public:
+        IBlockingEncoder* AsBlocking() final { return this; }
 
-            virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) = 0;
-            virtual bool Encode(const IBuffer* pcm) = 0;
-            virtual void Finalize() = 0;
-     };
+        virtual bool Initialize(const mc_stream& out, size_t rate, size_t channels, size_t bitrate) = 0;
+
+        /* consume these interleaved frames before returning. */
+        virtual bool Encode(const mc_pcm_view& pcm) = 0;
+
+        /* report whether all delayed packets and the container trailer were written. */
+        virtual bool Finalize() = 0;
+    };
 
 } } }

@@ -3,6 +3,7 @@
 namespace runtime_tests {
     enum class MigrationFailure { None, Completion, Metadata };
 
+    bool checkServerTranscode();
     bool checkServices();
     bool checkPluginDirectory();
     bool prepareMigration();

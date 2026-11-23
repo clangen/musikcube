@@ -111,7 +111,7 @@ namespace musik { namespace core { namespace audio {
         void ReturnUnusedBuffer(sdk::IBuffer* buffer);
         void CompleteBuffer(sdk::IBuffer* buffer, mc_result outcome) override;
         void OnBufferProcessed(sdk::IBuffer* buffer);
-        void FailOutput(mc_result status);
+        void FailPlayback(mc_result status, const char* operation = "output");
         bool Exited() const { return this->state.load() == State::Quit; }
 
         const std::shared_ptr<Output> output;
@@ -136,7 +136,7 @@ namespace musik { namespace core { namespace audio {
 
         /* only Run and the completions it dispatches touch these fields. */
         bool notifiedStarted = false;
-        bool outputFailed = false;
+        bool playbackFailed = false;
         std::unique_ptr<FftContext> fftContext;
     };
 

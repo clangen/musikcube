@@ -2,6 +2,7 @@ set (server_SOURCES
   BlockingTranscoder.cpp
   HttpServer.cpp
   main.cpp
+  ServerMedia.cpp
   Snapshots.cpp
   Transcoder.cpp
   TranscodingAudioDataStream.cpp

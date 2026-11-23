@@ -4,8 +4,6 @@ phase. preference markers survive because modules remain process-owned here. */
 #include <musikcore/sdk/IPlugin.h>
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IDataStreamFactory.h>
-#include <musikcore/sdk/IDecoderFactory.h>
 #include <musikcore/sdk/IEncoderFactory.h>
 #include <stdexcept>
 #include <initializer_list>
@@ -30,30 +28,16 @@ namespace {
         preferences->SetInt(key, preferences->GetInt(key, 0) + 1);
     }
 
-    /* record cache retirement without needing real network or codec work. */
-    class StreamFactory final : public musik::core::sdk::IDataStreamFactory {
+    /* the encoder family still uses session-owned C++ factories. */
+    class CodecFactory final : public musik::core::sdk::IEncoderFactory {
     public:
-        bool CanRead(const char*) override { return false; }
-        musik::core::sdk::IDataStream* Create() override { return nullptr; }
-        void Release() override { mark(16); acquire("stream_releases"); }
-    } streamFactory;
-
-    /* decoder/encoder factories must retire even after an earlier hook threw. */
-    class CodecFactory final : public musik::core::sdk::IDecoderFactory, public musik::core::sdk::IEncoderFactory {
-    public:
-        explicit CodecFactory(int released) : released(released) {}
-
-        musik::core::sdk::IDecoder* CreateDecoder() override { return nullptr; }
         musik::core::sdk::IEncoder* CreateEncoder(const char*) override { return nullptr; }
         bool CanHandle(const char*) const override { return false; }
         void Release() override {
-            mark(this->released);
-            acquire(this->released == 32 ? "decoder_releases" : "encoder_releases");
+            mark(64);
+            acquire("encoder_releases");
         }
-
-    private:
-        int released;
-    } decoderFactory(32), encoderFactory(64);
+    } encoderFactory;
 
     /* static provider state is reset by each SetPreferences installation. */
     class FailurePlugin final : public musik::core::sdk::IPlugin {
@@ -121,6 +105,4 @@ extern "C" MC_PLUGIN_API void SetDebug(void*) {
 }
 
 /* discovery keeps each factory until the managed session has quiesced. */
-extern "C" MC_PLUGIN_API musik::core::sdk::IDataStreamFactory* GetDataStreamFactory() { acquire("stream_acquisitions"); return &streamFactory; }
-extern "C" MC_PLUGIN_API musik::core::sdk::IDecoderFactory* GetDecoderFactory() { acquire("decoder_acquisitions"); return &decoderFactory; }
 extern "C" MC_PLUGIN_API musik::core::sdk::IEncoderFactory* GetEncoderFactory() { acquire("encoder_acquisitions"); return &encoderFactory; }

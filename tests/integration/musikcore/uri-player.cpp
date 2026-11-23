@@ -132,6 +132,72 @@ namespace {
         return TEST_CHECK(state.oldCalls == 0 && state.newCalls == 1);
     }
 
+    /* replay a short chunked track first with disk caching disabled in the
+    saved preference file, then with caching enabled through the public API.
+    the loopback server counts requests to verify that the provider sees both. */
+    bool checkHttpSettings(api::Context& context, test_host_event* event, mc_player* player, const std::string& http) {
+        constexpr mc_string_view id { "b153adad-ee98-4331-ad32-4ff7f34828cd", 36 };
+        struct Settings {
+            size_t count = 0;
+            int maxFiles = -1;
+        } settings;
+
+        if (!TEST_CHECK(mc_plugin_read_settings(id, [](void* data, const mc_plugin_setting* setting) {
+            auto& observed = *static_cast<Settings*>(data);
+            ++observed.count;
+            if (std::string_view(setting->key.data, setting->key.length) == "max_cache_files") {
+                observed.maxFiles = setting->value.data.integer;
+            }
+        }, &settings) == MC_OK) || !TEST_CHECK(settings.count == 5 && settings.maxFiles == 0)) {
+            return false;
+        }
+
+        const auto replay = [&](const char* route) {
+            const auto url = http + route;
+            for (unsigned pass = 0; pass < 2; ++pass) {
+                if (!TEST_CHECK(mc_player_play_uri(player, { url.data(), url.size() }) == MC_OK) ||
+                    !await(context, event, [&] { return state(player) == MC_PLAYER_FINISHED; }, route))
+                {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        mc_preference_entry change {};
+        change.key = { "read_timeout_seconds", 20 };
+        change.value.type = MC_PREFERENCE_INTEGER;
+        change.value.data.integer = 0;
+        if (!TEST_CHECK(mc_plugin_write_setting(id, &change) == MC_ERROR_INVALID_ARGUMENT) || !replay("/uncached")) {
+            return false;
+        }
+        change.key = { "max_cache_files", 15 };
+        change.value.data.integer = 4;
+        return TEST_CHECK(mc_plugin_write_setting(id, &change) == MC_OK) && replay("/cached");
+    }
+
+    /* a cancelled download must discard only its own temporary file, even
+    when another player has already completed and cached the same track. */
+    bool checkOverlappingDownloads(api::Context& context, test_host_event* event, mc_player* first,
+        const std::string& http)
+    {
+        Players peer;
+        const auto url = http + "/overlap.wav";
+        const mc_string_view uri { url.data(), url.size() };
+        std::string ready;
+        if (!TEST_CHECK(mc_player_play_uri(first, uri) == MC_OK) ||
+            !TEST_CHECK(bool(std::getline(std::cin, ready)) && ready == "/overlap.wav") ||
+            !TEST_CHECK(mc_player_create(context.Get(), &peer.first) == MC_OK) ||
+            !TEST_CHECK(mc_player_play_uri(peer.first, uri) == MC_OK) ||
+            !await(context, event, [&] { return state(peer.first) == MC_PLAYER_FINISHED; }, "concurrent HTTP EOF") ||
+            !TEST_CHECK(mc_player_destroy(&peer.first) == MC_OK) || !TEST_CHECK(mc_player_stop(first) == MC_OK))
+        {
+            return false;
+        }
+        return TEST_CHECK(mc_player_play_uri(first, uri) == MC_OK) &&
+            await(context, event, [&] { return state(first) == MC_PLAYER_FINISHED; }, "concurrent cache replay");
+    }
+
     bool checkIndependentBlockedSession(api::Context& context, test_host_event* event,
         mc_player* stalled, const std::string& path, const std::string& http)
     {
@@ -322,7 +388,9 @@ namespace {
             }
         }
         if (!http.empty()) {
-            if (!checkIndependentBlockedSession(context, event.get(), players.first, path, http) ||
+            if (!checkHttpSettings(context, event.get(), players.first, http) ||
+                !checkOverlappingDownloads(context, event.get(), players.first, http) ||
+                !checkIndependentBlockedSession(context, event.get(), players.first, path, http) ||
                 !checkInterruptedOpen(context, event.get(), players.first, path, http)) {
                 return false;
             }
@@ -350,6 +418,20 @@ namespace {
                     "HTTP EOF")) {
                 return false;
             }
+            /* a broken chunked response must fail and leave the next open free
+            to download a complete copy at the same URL. */
+            const auto truncated = http + "/truncated.wav";
+            const mc_string_view interruptedUri { truncated.data(), truncated.size() };
+            if (!TEST_CHECK(mc_player_play_uri(players.first, interruptedUri) == MC_OK) ||
+                !await(context, event.get(), [&] { return state(players.first) == MC_PLAYER_FAILED; },
+                    "truncated HTTP transfer") ||
+                !TEST_CHECK(mc_player_play_uri(players.first, interruptedUri) == MC_OK) ||
+                !await(context, event.get(), [&] { return state(players.first) == MC_PLAYER_FINISHED; },
+                    "retry truncated transfer"))
+            {
+                return false;
+            }
+
             /* a completed empty source is EOF, not an endless buffering wait. */
             const auto empty = http + "/empty.wav";
             if (!TEST_CHECK(mc_player_play_uri(players.first, { empty.data(), empty.size() }) == MC_OK) ||

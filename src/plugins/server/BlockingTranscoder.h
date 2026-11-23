@@ -32,43 +32,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/IDataStream.h>
+#pragma once
+
+#include "ServerMedia.h"
 #include <musikcore/sdk/IBlockingEncoder.h>
-#include <musikcore/sdk/DataBuffer.h>
-#include "Context.h"
-#include <thread>
-#include <condition_variable>
-#include <mutex>
-#include <string>
-#include <stdio.h>
 
 class BlockingTranscoder {
-    public:
-        using PositionType = musik::core::sdk::PositionType;
+public:
+    /* commit the temporary file only after every PCM block and the encoder
+    trailer were written successfully. */
+    static bool Run(Context& context, musik::core::sdk::IBlockingEncoder& encoder, const std::string& uri,
+        const std::string& temp, const std::string& destination, size_t bitrate);
 
-        BlockingTranscoder(
-            Context& context,
-            musik::core::sdk::IBlockingEncoder* encoder,
-            const std::string& uri,
-            const std::string& tempFilename,
-            const std::string& finalFilename,
-            int bitrate);
-
-        virtual ~BlockingTranscoder();
-
-        bool Transcode();
-        void Interrupt();
-
-        static int GetActiveCount();
-
-    private:
-        void Cleanup();
-
-        Context& context;
-        musik::core::sdk::IDataStream* input;
-        musik::core::sdk::IBlockingEncoder* encoder;
-        musik::core::sdk::IDataStream* output;
-        std::string tempFilename, finalFilename;
-        int bitrate;
-        bool interrupted;
+    static int GetActiveCount();
 };

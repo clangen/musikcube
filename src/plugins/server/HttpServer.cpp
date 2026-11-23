@@ -37,7 +37,9 @@
 #include "Constants.h"
 #include "Util.h"
 #include "Transcoder.h"
-#include "TranscodingAudioDataStream.h"
+#include <charconv>
+#include <limits>
+#include <string_view>
 
 #include <musikcore/sdk/ITrack.h>
 #include <musikcore/sdk/String.h>
@@ -50,7 +52,6 @@
 #include <string>
 #include <cstdlib>
 #include <filesystem>
-#include <limits>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -61,7 +62,6 @@
 
 #include <vector>
 
-#define HTTP_416_DISABLED true
 #define ENABLE_DEBUG 1
 
 static const char* ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH = "MUSIKCUBE_DISABLE_HTTP_SERVER_AUTH";
@@ -75,7 +75,7 @@ namespace std {
 
 using namespace musik::core::sdk;
 
-std::unordered_map<std::string, std::string> CONTENT_TYPE_MAP = {
+static const std::unordered_map<std::string, std::string> CONTENT_TYPE_MAP = {
     { ".mp3", "audio/mpeg" },
     { ".ogg", "audio/ogg" },
     { ".opus", "audio/ogg" },
@@ -94,30 +94,15 @@ std::unordered_map<std::string, std::string> CONTENT_TYPE_MAP = {
     { ".jpg", "image/jpeg" }
 };
 
-struct Range {
-    size_t from;
-    size_t to;
-    size_t total;
-    IDataStream* file;
-
-    std::string HeaderValue() {
-        return "bytes " + std::to_string(from) + "-" + std::to_string(to) + "/" + std::to_string(total);
-    }
+struct ResponseRange {
+    std::unique_ptr<server::ResponseBody> body;
+    uint64_t start = 0;
+    std::optional<uint64_t> length;
 };
 
-static std::string contentType(const std::string& fn) {
-    try {
-        std::fs::path p(std::fs::u8path(fn));
-        std::string ext = str::ToLowerCopy(str::Trim(pathToUtf8(p.extension())));
-        auto it = CONTENT_TYPE_MAP.find(ext);
-        if (it != CONTENT_TYPE_MAP.end()) {
-            return it->second;
-        }
-    }
-    catch (...) {
-    }
-
-    return "application/octet-stream";
+static std::string contentType(const std::string& extension) {
+    const auto it = CONTENT_TYPE_MAP.find("." + str::ToLowerCopy(extension));
+    return it == CONTENT_TYPE_MAP.end() ? "application/octet-stream" : it->second;
 }
 
 static std::string fileExtension(const std::string& fn) {
@@ -131,94 +116,134 @@ static std::string fileExtension(const std::string& fn) {
     catch (...) {
     }
 
-    return "mp3";
+    return {};
 }
 
-static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) {
-    Range* range = static_cast<Range*>(cls);
-
-    if (pos > std::numeric_limits<size_t>::max() - range->from) {
-        return MHD_CONTENT_READER_END_OF_STREAM;
-    }
-    size_t offset = static_cast<size_t>(pos) + range->from;
-    offset = std::min(range->to ? range->to : (size_t) SIZE_MAX, offset);
-
-    if (range->total && offset >= range->total) {
-        return MHD_CONTENT_READER_END_OF_STREAM;
-    }
-    size_t avail = range->total ? (range->total - offset) : SIZE_MAX;
-    const size_t limit = static_cast<size_t>(std::numeric_limits<PositionType>::max());
-    size_t count = std::min({ avail, max, limit });
-
-    if (range->file->Seekable()) {
-        if (offset > limit || !range->file->SetPosition(static_cast<PositionType>(offset))) {
+static ssize_t fileReadCallback(void* context, uint64_t position, char* dst, size_t capacity) {
+    auto& range = *static_cast<ResponseRange*>(context);
+    if (range.length) {
+        if (position >= *range.length) {
             return MHD_CONTENT_READER_END_OF_STREAM;
         }
+        capacity = static_cast<size_t>(std::min<uint64_t>(*range.length - position, capacity));
     }
-
-    count = range->file->Read(buf, static_cast<PositionType>(count));
-    if (count > 0) {
-        return count;
+    if (position > UINT64_MAX - range.start) {
+        return MHD_CONTENT_READER_END_WITH_ERROR;
     }
-
-    return MHD_CONTENT_READER_END_OF_STREAM;
-}
-
-static void fileFreeCallback(void *cls) {
-    Range* range = static_cast<Range*>(cls);
-    if (range->file) {
-        range->file->Close(); /* lazy destroy */
-        range->file = nullptr;
-    }
-    delete range;
-}
-
-static Range* parseRange(IDataStream* file, const char* range) {
-    Range* result = new Range();
-
-    size_t size = file ? file->Length() : 0;
-
-    result->file = file;
-    result->total = size;
-    result->from = 0;
-    result->to = (size <= 0) ? 0 : size - 1;
-
-    if (range) {
-        std::string str(range);
-
-        if (str.substr(0, 6) == "bytes=") {
-            str = str.substr(6);
-            std::vector<std::string> parts = str::Split(str, "-");
-            if (parts.size() == 2) {
-                try {
-                    size_t from = (size_t) std::max(0, std::stoi(str::Trim(parts[0])));
-                    size_t to = size;
-
-                    if (parts.at(1).size()) {
-                        to = (size_t) std::min((int) size, std::stoi(str::Trim(parts[1])));
-                    }
-
-                    if (to > from) {
-                        result->from = from;
-                        if (to == 0) {
-                            result->to = 0;
-                        }
-                        else if (to >= size) {
-                            result->to = (size == 0) ? 0 : size - 1;
-                        }
-                        else {
-                            result->to = (to == 0) ? 0 : to - 1;
-                        }
-                    }
-                }
-                catch (...) {
-                    /* return false below */
-                }
-            }
+    try {
+        size_t count = 0;
+        if (range.body->Read(range.start + position, dst, capacity, count) != MC_OK ||
+            (range.length && !count && capacity))
+        {
+            return MHD_CONTENT_READER_END_WITH_ERROR;
         }
+        return count ? static_cast<ssize_t>(count) : MHD_CONTENT_READER_END_OF_STREAM;
+    }
+    catch (const std::bad_alloc&) {
+        /* microhttpd will drop the response and release its partial cache. */
+        return MHD_CONTENT_READER_END_WITH_ERROR;
+    }
+}
+
+static void fileFreeCallback(void* context) {
+    delete static_cast<ResponseRange*>(context);
+}
+
+static bool byteOffset(std::string_view value, uint64_t& offset) {
+    if (value.empty()) {
+        return false;
+    }
+    const auto parsed = std::from_chars(value.data(), value.data() + value.size(), offset);
+    return parsed.ec == std::errc() && parsed.ptr == value.data() + value.size();
+}
+
+/* the inclusive endpoints of one HTTP byte range. a live encoder can stream
+bytes=0- immediately, but a bounded range or suffix needs a completed file. */
+struct RequestedRange {
+    std::optional<uint64_t> first;
+    std::optional<uint64_t> last;
+
+    bool IsPartialRequest() const { return !first || *first != 0 || last.has_value(); }
+
+    bool Apply(uint64_t size, ResponseRange& result) const {
+        if (!size || (first && *first >= size)) {
+            return false;
+        }
+        if (!first) {
+            result.length = std::min(*last, size);
+            result.start = size - *result.length;
+        }
+        else {
+            result.start = *first;
+            result.length = std::min(last.value_or(size - 1), size - 1) - *first + 1;
+        }
+        return true;
+    }
+};
+
+static std::optional<RequestedRange> parseRange(std::string_view header) {
+    if (header.substr(0, 6) != "bytes=") {
+        return {};
+    }
+    header.remove_prefix(6);
+    const auto dash = header.find('-');
+    if (dash == std::string_view::npos) {
+        return {};
+    }
+    const auto left = header.substr(0, dash);
+    const auto right = header.substr(dash + 1);
+    RequestedRange range;
+    uint64_t offset;
+    if (!left.empty()) {
+        if (!byteOffset(left, offset)) {
+            return {};
+        }
+        range.first = offset;
+    }
+    if (!right.empty()) {
+        if (!byteOffset(right, offset)) {
+            return {};
+        }
+        range.last = offset;
+    }
+    if ((!range.first && !range.last.value_or(0)) || (range.first && range.last && *range.last < *range.first)) {
+        return {};
+    }
+    return range;
+}
+
+static MHD_Response* makeFileResponse(
+    std::unique_ptr<server::ResponseBody> body, const std::optional<RequestedRange>& requestedRange, int& status)
+{
+    const auto total = body->Length();
+    const bool seekable = body->Seekable();
+    auto range = std::make_unique<ResponseRange>();
+    range->body = std::move(body);
+    range->length = total;
+    const bool partial = seekable && total && requestedRange && requestedRange->Apply(*total, *range);
+
+    std::string contentRange;
+    if (partial) {
+        contentRange = "bytes " + std::to_string(range->start) + "-" +
+            std::to_string(range->start + (*range->length - 1)) + "/" + std::to_string(*total);
     }
 
-    return result;
+    /* an on-demand encoder learns the actual size only after flushing. a false
+    Content-Length causes the HTTP client to discard the end of the track. */
+    auto* response = MHD_create_response_from_callback(range->length.value_or(MHD_SIZE_UNKNOWN), 4096,
+        fileReadCallback, range.get(), fileFreeCallback);
+    if (!response) {
+        return nullptr;
+    }
+    range.release();
+    status = partial ? MHD_HTTP_PARTIAL_CONTENT : MHD_HTTP_OK;
+    if (partial) {
+        MHD_add_response_header(response, "Content-Range", contentRange.c_str());
+    }
+    if (seekable && total) {
+        MHD_add_response_header(response, "Accept-Ranges", "bytes");
+    }
+    return response;
 }
 
 static size_t getUnsignedUrlParam(
@@ -471,147 +496,56 @@ int HttpServer::HandleAudioTrackRequest(
             format = getStringUrlParam(connection, "format", "mp3");
         }
 
-        IDataStream* file = nullptr;
-        if (bitrate == 0) {
-            file = server->context.environment->CreateDataStream(filename.c_str());
-            if (file && !file->Open(filename.c_str(), OpenFlags::Read)) {
-                file->Release();
-                file = nullptr;
+        const char* header = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Range");
+        const auto range = parseRange(header ? header : "");
+        auto request = range && range->IsPartialRequest()
+            ? Transcoder::Request::PartialTrack
+            : Transcoder::Request::WholeTrack;
+        /* musikdroid's shipped HTTP cache uses Android's default Dalvik agent
+        and external track IDs. it retries EOF forever without a byte length
+        when the server cache is disabled. send the finalized MP3 on its first GET. */
+        const bool mp3 = str::ToLowerCopy(format) == "mp3";
+        const bool externalMp3 = byExternalId && mp3;
+        if (externalMp3) {
+            const char* agent = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "User-Agent");
+            if (agent && std::string_view(agent).starts_with("Dalvik/")) {
+                request = Transcoder::Request::CompleteFile;
             }
         }
-        else {
-            file = Transcoder::Transcode(server->context, filename, bitrate, format);
+        auto body = bitrate
+            ? Transcoder::Transcode(server->context, filename, bitrate, format, request)
+            : ::server::OpenFileBody(server->context, filename);
+        if (!body) {
+            response = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+            return MHD_HTTP_NOT_FOUND;
         }
-
-        const char* rangeVal = MHD_lookup_connection_value(
-            connection, MHD_HEADER_KIND, "Range");
-
-        Range* range = parseRange(file, rangeVal);
-
-        /* ehh... */
-        bool isOnDemandTranscoder = !!dynamic_cast<TranscodingAudioDataStream*>(file);
-
-#ifdef ENABLE_DEBUG
-        server->context.debug->Info(TAG, str::Format(
-            "range request: %s, resolved range: %s, isOnDemandTranscoder=%s",
-            rangeVal ? rangeVal : "[unspecified]",
-            range ? range->HeaderValue().c_str() : "[unresolved]",
-            isOnDemandTranscoder ? "true" : "false").c_str());
-#endif
-
-        /* gotta be careful with request ranges if we're transcoding. don't
-        allow any custom ranges other than from 0 to end. */
-        if (isOnDemandTranscoder && rangeVal && strlen(rangeVal)) {
-            if (range->from != 0 || range->to != range->total - 1) {
-                delete range;
-
-#ifdef ENABLE_DEBUG
-                server->context.debug->Info(TAG, "removing range header, seek requested with ondemand transcoder");
-#endif
-
-                if (HTTP_416_DISABLED) {
-                    rangeVal = nullptr; /* ignore the header from here on out. */
-
-                    /* lots of clients don't seem to be to deal with 416 properly;
-                    instead, ignore the range header and return the whole file,
-                    and a 200 (not 206) */
-                    if (file) {
-                        range = parseRange(file, nullptr);
-                    }
-                }
-                else {
-                    if (file) {
-                        file->Release();
-                        file = nullptr;
-                    }
-
-                    if (server->context.prefs->GetBool(
-                        prefs::transcoder_synchronous_fallback.c_str(),
-                        defaults::transcoder_synchronous_fallback))
-                    {
-                        /* if we're allowed, fall back to synchronous transcoding. we'll block
-                        here until the entire file has been converted and cached */
-                        file = Transcoder::TranscodeAndWait(server->context, nullptr, filename, bitrate, format);
-                        range = parseRange(file, rangeVal);
-                    }
-                    else {
-                        /* otherwise fail with a "range not satisfiable" status */
-                        status = 416;
-                        char empty[1];
-                        response = MHD_create_response_from_buffer(0, empty, MHD_RESPMEM_PERSISTENT);
-                    }
-                }
+        const bool seekable = body->Seekable();
+        response = makeFileResponse(std::move(body), range, status);
+        if (response) {
+            const std::string extension = format.empty() ? fileExtension(filename) : format;
+            /* preserve the download filename fallback for extensionless tracks.
+            their actual MIME type is unknown. */
+            MHD_add_response_header(response, "X-musikcube-File-Extension", extension.empty() ? "mp3" : extension.c_str());
+            if (seekable && std::fs::exists(std::fs::u8path(filename))) {
+                MHD_add_response_header(response, "X-musikcube-Filename-Override", externalId.c_str());
             }
-        }
-
-        if (file) {
-            size_t length = (range->to - range->from);
-
-            response = MHD_create_response_from_callback(
-                length == 0 ? MHD_SIZE_UNKNOWN : length + 1,
-                4096,
-                &fileReadCallback,
-                range,
-                &fileFreeCallback);
-
-#ifdef ENABLE_DEBUG
-            server->context.debug->Info(TAG, str::Format("response length=%d", ((length == 0) ? 0 : length + 1)).c_str());
-#endif
-
-            if (response) {
-                /* 'format' will be valid if we're transcoding. otherwise, extract the extension
-                from the filename. the client can use this as a hint when naming downloaded files */
-                std::string extension = format.size() ? format : fileExtension(filename);
-                MHD_add_response_header(response, "X-musikcube-File-Extension", extension.c_str());
-
-                if (!isOnDemandTranscoder) {
-                    MHD_add_response_header(response, "Accept-Ranges", "bytes");
-
-                    if (std::fs::exists(std::fs::u8path(filename))) {
-                        MHD_add_response_header(response, "X-musikcube-Filename-Override", externalId.c_str());
-                    }
-                }
-                else {
-                    MHD_add_response_header(response, "X-musikcube-Estimated-Content-Length", "true");
-                }
-
-                if (duration.size()) {
-                    MHD_add_response_header(response, "X-Content-Duration", duration.c_str());
-                    MHD_add_response_header(response, "Content-Duration", duration.c_str());
-                }
-
-                if (byExternalId) {
-                    /* if we're using an on-demand transcoder, ensure the client does not cache the
-                    result because we have to guess the content length. */
-                    std::string value = isOnDemandTranscoder ? "no-cache" : "public, max-age=31536000";
-                    MHD_add_response_header(response, "Cache-Control", value.c_str());
-                }
-
-                std::string type = (isOnDemandTranscoder || format.size())
-                    ? contentType("." + format) : contentType(filename);
-
-                MHD_add_response_header(response, "Content-Type", type.c_str());
-                MHD_add_response_header(response, "Server", "musikcube server");
-
-                if ((rangeVal && strlen(rangeVal)) || range->from > 0) {
-                    if (range->total > 0) {
-                        MHD_add_response_header(response, "Content-Range", range->HeaderValue().c_str());
-                        status = MHD_HTTP_PARTIAL_CONTENT;
-#ifdef ENABLE_DEBUG
-                        if (rangeVal) {
-                            server->context.debug->Info(TAG, str::Format("range header: %s", range->HeaderValue().c_str()).c_str());
-                        }
-#endif
-                    }
-                }
+            /* legacy clients use this marker to refresh the gapless header
+            after downloading live MP3 bytes. Content-Length remains unknown. */
+            if (!seekable && mp3) {
+                MHD_add_response_header(response, "X-musikcube-Estimated-Content-Length", "true");
             }
-            else {
-                file->Release();
-                file = nullptr;
+            if (externalMp3) {
+                MHD_add_response_header(response, "Vary", "User-Agent");
             }
-        }
-        else {
-            status = MHD_HTTP_NOT_FOUND;
+            if (!duration.empty()) {
+                MHD_add_response_header(response, "X-Content-Duration", duration.c_str());
+                MHD_add_response_header(response, "Content-Duration", duration.c_str());
+            }
+            if (byExternalId) {
+                MHD_add_response_header(response, "Cache-Control", seekable ? "public, max-age=31536000" : "no-cache");
+            }
+            MHD_add_response_header(response, "Content-Type", contentType(extension).c_str());
+            MHD_add_response_header(response, "Server", "musikcube server");
         }
     }
     else {
@@ -633,31 +567,18 @@ int HttpServer::HandleThumbnailRequest(
     server->context.environment->GetPath(PathType::Library, pathBuffer, sizeof(pathBuffer));
 
     if (strlen(pathBuffer)) {
-        std::string path = std::string(pathBuffer) + "thumbs/" + pathParts.at(1) + ".jpg";
-        IDataStream* file = server->context.environment->CreateDataStream(path.c_str());
-        if (file && !file->Open(path.c_str(), OpenFlags::Read)) {
-            file->Release();
-            file = nullptr;
+        const auto leaf = std::fs::u8path(pathParts.at(1) + ".jpg");
+        if (leaf.has_parent_path() || leaf.has_root_name()) {
+            return MHD_HTTP_NOT_FOUND;
         }
-
-        if (file) {
-            long length = file->Length();
-
-            response = MHD_create_response_from_callback(
-                length == 0 ? MHD_SIZE_UNKNOWN : length,
-                4096,
-                &fileReadCallback,
-                parseRange(file, nullptr),
-                &fileFreeCallback);
-
+        const auto file = std::fs::u8path(pathBuffer) / "thumbs" / leaf;
+        auto body = ::server::OpenFileBody(server->context, pathToUtf8(file));
+        if (body) {
+            response = makeFileResponse(std::move(body), {}, status);
             if (response) {
                 MHD_add_response_header(response, "Cache-Control", "public, max-age=31536000");
-                MHD_add_response_header(response, "Content-Type", contentType(path).c_str());
+                MHD_add_response_header(response, "Content-Type", "image/jpeg");
                 MHD_add_response_header(response, "Server", "musikcube server");
-                status = MHD_HTTP_OK;
-            }
-            else {
-                file->Release();
             }
         }
     }

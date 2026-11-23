@@ -37,7 +37,6 @@
 #include <chrono>
 #include <musikcore/db/Connection.h>
 #include <musikcore/sdk/ITagReader.h>
-#include <musikcore/sdk/IDecoderFactory.h>
 #include <musikcore/sdk/IIndexerWriter.h>
 #include <musikcore/sdk/IIndexerNotifier.h>
 #include <musikcore/library/IIndexer.h>
@@ -116,9 +115,6 @@ namespace musik { namespace core {
                 musik::core::sdk::ITagReader>> TagReaderList;
 
             typedef std::vector<std::shared_ptr<
-                musik::core::sdk::IDecoderFactory>> DecoderList;
-
-            typedef std::vector<std::shared_ptr<
                 musik::core::sdk::IIndexerSource>> IndexerSourceList;
 
             void ThreadLoop();
@@ -175,7 +171,6 @@ namespace musik { namespace core {
             std::deque<AddRemoveContext> addRemoveQueue;
             std::deque<SyncContext> syncQueue;
             TagReaderList tagReaders;
-            DecoderList audioDecoders;
             IndexerSourceList sources;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;

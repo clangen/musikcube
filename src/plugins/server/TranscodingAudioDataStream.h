@@ -32,74 +32,44 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/IDataStream.h>
+#pragma once
+
+#include "ServerMedia.h"
 #include <musikcore/sdk/IStreamingEncoder.h>
-#include <musikcore/sdk/DataBuffer.h>
-#include "Context.h"
-#include <thread>
-#include <condition_variable>
-#include <mutex>
-#include <string>
-#include <stdio.h>
+#include <fstream>
 
-class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
-    public:
-        using PositionType = musik::core::sdk::PositionType;
-        using OpenFlags = musik::core::sdk::OpenFlags;
+/* produces compressed bytes on the HTTP worker as the client reads. the
+encoder owns each output block until the next encode or flush call. */
+class TranscodingAudioDataStream final : public server::ResponseBody {
+public:
+    TranscodingAudioDataStream(server::EncoderOwner<musik::core::sdk::IStreamingEncoder> encoder, size_t bitrate);
+    ~TranscodingAudioDataStream() override;
 
-        TranscodingAudioDataStream(
-            Context& context,
-            musik::core::sdk::IStreamingEncoder* encoder,
-            const std::string& uri,
-            size_t bitrate,
-            const std::string& format);
+    bool Open(Context& context, const std::string& uri, bool requireDuration, const std::string& temporaryFile,
+        const std::string& cacheFile);
 
-        TranscodingAudioDataStream(
-            Context& context,
-            musik::core::sdk::IStreamingEncoder* encoder,
-            const std::string& uri,
-            const std::string& tempFilename,
-            const std::string& finalFilename,
-            size_t bitrate,
-            const std::string& format);
+    std::unique_ptr<server::ResponseBody> Finish(Context& context);
 
-        virtual ~TranscodingAudioDataStream();
+    mc_result Read(uint64_t offset, char* dst, size_t capacity, size_t& count) override;
+    std::optional<uint64_t> Length() const override { return {}; }
+    bool Seekable() const override { return false; }
+    bool IsCaching() const { return cache.is_open(); }
 
-        virtual bool Open(const char *uri, OpenFlags flags) override;
-        virtual bool Close() override;
-        virtual void Interrupt() override;
-        virtual void Release() override;
-        virtual bool Readable() override { return true; }
-        virtual bool Writable() override { return false; };
-        virtual PositionType Read(void *buffer, PositionType readBytes) override;
-        virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
-        virtual bool SetPosition(PositionType position) override;
-        virtual PositionType Position() override;
-        virtual bool Seekable() override;
-        virtual bool Eof() override;
-        virtual long Length() override;
-        virtual const char* Type() override;
-        virtual const char* Uri() override;
-        virtual bool CanPrefetch() override;
+    static int GetActiveCount();
 
-        static int GetActiveCount();
+private:
+    mc_result EncodeNextBlock();
+    bool PublishCache();
 
-    private:
-        void Dispose();
-
-        Context& context;
-        musik::core::sdk::IDataStream* input;
-        musik::core::sdk::IDecoder* decoder;
-        musik::core::sdk::IBuffer* pcmBuffer;
-        musik::core::sdk::IStreamingEncoder* encoder;
-        DataBuffer<char> spillover;
-        size_t bitrate;
-        bool eof;
-        std::mutex mutex;
-        PositionType length, position;
-        FILE* outFile;
-        std::string tempFilename, finalFilename;
-        std::string format;
-        bool interrupted{ false }, encoderInitialized{ false };
-        long detachTolerance;
+    server::DecodedAudio source;
+    server::EncoderOwner<musik::core::sdk::IStreamingEncoder> encoder;
+    size_t bitrate;
+    bool initialized = false;
+    bool flushed = false;
+    char* pending = nullptr;
+    size_t pendingBytes = 0;
+    uint64_t position = 0;
+    std::ofstream cache;
+    std::string temporaryFile;
+    std::string cacheFile;
 };

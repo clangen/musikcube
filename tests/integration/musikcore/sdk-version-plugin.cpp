@@ -63,7 +63,7 @@ namespace {
             /* SDK 22 used the incompatible factory Open/environment GetDataStream. */
             int SdkVersion() override {
 #ifdef SDK_FIXTURE_OBSOLETE
-                constexpr int obsoleteSdkVersion = 22;
+                constexpr int obsoleteSdkVersion = musik::core::sdk::SdkVersion - 1;
                 return obsoleteSdkVersion;
 #else
                 return musik::core::sdk::SdkVersion;

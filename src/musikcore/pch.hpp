@@ -75,8 +75,6 @@
 #include <musikcore/db/SqliteExtensions.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/debug.h>
-#include <musikcore/io/DataStreamFactory.h>
-#include <musikcore/io/LocalFileStream.h>
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/library/Indexer.h>
@@ -134,11 +132,7 @@
 #include <musikcore/sdk/IBlockingEncoder.h>
 #include <musikcore/sdk/IBuffer.h>
 #include <musikcore/sdk/IBufferProvider.h>
-#include <musikcore/sdk/IDataStream.h>
-#include <musikcore/sdk/IDataStreamFactory.h>
 #include <musikcore/sdk/IDebug.h>
-#include <musikcore/sdk/IDecoder.h>
-#include <musikcore/sdk/IDecoderFactory.h>
 #include <musikcore/sdk/IDevice.h>
 #include <musikcore/sdk/IDSP.h>
 #include <musikcore/sdk/IEncoder.h>

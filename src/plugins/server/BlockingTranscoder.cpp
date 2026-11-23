@@ -33,133 +33,50 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "BlockingTranscoder.h"
-#include "Util.h"
-#include <filesystem>
-#include <algorithm>
+
 #include <atomic>
+#include <filesystem>
 
-#define BUFFER_SIZE 8192
-#define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
+namespace {
+    std::atomic<int> activeCount { 0 };
 
-static std::atomic<int> activeCount(0);
-
-namespace std {
-    namespace fs = std::filesystem;
+    struct ActiveTranscode {
+        ActiveTranscode() { ++activeCount; }
+        ~ActiveTranscode() { --activeCount; }
+    };
 }
 
-using namespace musik::core::sdk;
-
-BlockingTranscoder::BlockingTranscoder(
-    Context& context,
-    IBlockingEncoder* encoder,
-    const std::string& uri,
-    const std::string& tempFilename,
-    const std::string& finalFilename,
-    int bitrate)
-: context(context) {
-    ++activeCount;
-    this->interrupted = false;
-    this->bitrate = bitrate;
-    this->encoder = encoder;
-    this->tempFilename = tempFilename;
-    this->finalFilename = finalFilename;
-    this->output = context.environment->CreateDataStream(tempFilename.c_str());
-    if (this->output && !this->output->Open(tempFilename.c_str(), OpenFlags::Write)) {
-        this->output->Release();
-        this->output = nullptr;
-    }
-    this->input = context.environment->CreateDataStream(uri.c_str());
-    if (this->input && !this->input->Open(uri.c_str(), OpenFlags::Read)) {
-        this->input->Release();
-        this->input = nullptr;
-    }
-}
-
-BlockingTranscoder::~BlockingTranscoder() {
-    --activeCount;
-    this->Cleanup();
-}
-
-void BlockingTranscoder::Cleanup() {
-    if (this->input) {
-        this->input->Release();
-        this->input = nullptr;
-    }
-    if (this->encoder) {
-        this->encoder->Release();
-        this->encoder = nullptr;
-    }
-    if (this->output) {
-        this->output->Release();
-        this->output = nullptr;
-    }
-}
-
-bool BlockingTranscoder::Transcode() {
-    if (!this->input || !this->output || !this->encoder) {
+bool BlockingTranscoder::Run(Context& context, musik::core::sdk::IBlockingEncoder& encoder, const std::string& uri,
+    const std::string& temp, const std::string& destination, size_t bitrate) {
+    ActiveTranscode active;
+    server::DecodedAudio input;
+    if (!input.Open(context, uri) || !input.HasDuration()) {
         return false;
     }
 
-    IDecoder* decoder = this->context.environment->GetDecoder(this->input);
-
-    if (!decoder) {
+    server::MediaStream output;
+    if (!output.Open(context, temp, MC_STREAM_OPEN_WRITE | MC_STREAM_OPEN_CREATE | MC_STREAM_OPEN_TRUNCATE)) {
         return false;
     }
 
-    IBuffer* pcmBuffer = this->context.environment->GetBuffer(SAMPLES_PER_BUFFER);
+    mc_pcm_view pcm = MC_PCM_VIEW_DEFAULT;
+    bool success = input.Read(pcm) == MC_OK && pcm.frame_count &&
+        encoder.Initialize(output.Handle(), pcm.format.sample_rate, pcm.format.channels, bitrate);
+    while (success && pcm.frame_count) {
+        success = encoder.Encode(pcm) && input.Read(pcm) == MC_OK;
+    }
+    success = success && encoder.Finalize();
+    success = output.Close() && success;
 
-    bool result = false;
-
-    if (decoder->GetBuffer(pcmBuffer)) {
-        bool initialized = encoder->Initialize(
-            this->output,
-            pcmBuffer->SampleRate(),
-            pcmBuffer->Channels(),
-            this->bitrate);
-
-        if (initialized) {
-            this->encoder->Encode(pcmBuffer);
-            while (!interrupted && decoder->GetBuffer(pcmBuffer)) {
-                this->encoder->Encode(pcmBuffer);
-                std::this_thread::yield();
-            }
-
-            if (decoder->Exhausted()) {
-                this->encoder->Finalize();
-                this->output->Release();
-                this->output = nullptr;
-                std::error_code ec;
-                std::fs::rename(
-                    std::fs::u8path(this->tempFilename),
-                    std::fs::u8path(this->finalFilename),
-                    ec);
-                if (ec) {
-                    std::fs::remove(
-                        std::fs::u8path(this->tempFilename),
-                        ec);
-                }
-                else {
-                    result = true;
-                }
-            }
+    std::error_code error;
+    if (success) {
+        std::filesystem::rename(std::filesystem::u8path(temp), std::filesystem::u8path(destination), error);
+        if (!error) {
+            return true;
         }
     }
-
-    decoder->Release();
-    pcmBuffer->Release();
-
-    this->Cleanup();
-
-    if (!result) {
-        std::error_code ec;
-        std::fs::remove(std::fs::u8path(this->tempFilename), ec);
-    }
-
-    return result;
-}
-
-void BlockingTranscoder::Interrupt() {
-    this->interrupted = true;
+    std::filesystem::remove(std::filesystem::u8path(temp), error);
+    return false;
 }
 
 int BlockingTranscoder::GetActiveCount() {

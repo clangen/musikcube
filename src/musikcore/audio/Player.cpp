@@ -141,7 +141,7 @@ bool Player::HasCapability(Capability capability) const {
 bool Player::WaitForBuffers(bool interruptForSeek) {
     for (;;) {
         this->writer.ProcessCompletions();
-        if (interruptForSeek && !this->outputFailed && !this->Exited() && this->HasPendingSeek()) {
+        if (interruptForSeek && !this->playbackFailed && !this->Exited() && this->HasPendingSeek()) {
             return false;
         }
         if (!this->writer.HasPending()) {
@@ -167,7 +167,7 @@ void Player::Run() {
         this->state.wait(State::Idle);
         for (;;) {
             this->WriteTrack();
-            if (!this->outputFailed && !this->Exited() && !this->HasPendingSeek()) {
+            if (!this->playbackFailed && !this->Exited() && !this->HasPendingSeek()) {
                 this->streamState = StreamState::AlmostDone;
                 this->listener.OnPlayerStreamEof(this);
             }
@@ -180,12 +180,12 @@ void Player::Run() {
             if (this->drain.load() == Drain::Yes) {
                 const auto result = this->writer.Drain();
                 if (result != MC_OK && result != MC_ERROR_CANCELLED) {
-                    this->FailOutput(result);
+                    this->FailPlayback(result);
                 }
             }
             {
                 std::lock_guard lock(this->mixPointMutex);
-                if (!this->outputFailed && !this->Exited() && this->HasPendingSeek()) {
+                if (!this->playbackFailed && !this->Exited() && this->HasPendingSeek()) {
                     continue;
                 }
                 /* SetPosition uses the same lock: either the worker restarts
@@ -206,7 +206,7 @@ void Player::Run() {
         }
     }
 
-    if (!this->outputFailed && !this->Exited() && this->streamState != StreamState::OpenFailed) {
+    if (!this->playbackFailed && !this->Exited() && this->streamState != StreamState::OpenFailed) {
         this->streamState = StreamState::Finished;
         this->listener.OnPlayerFinished(this);
     }
@@ -221,7 +221,7 @@ void Player::WriteTrack() {
 
     while (!this->Exited()) {
         this->writer.ProcessCompletions();
-        if (this->outputFailed || this->Exited()) {
+        if (this->playbackFailed || this->Exited()) {
             break;
         }
 
@@ -233,11 +233,11 @@ void Player::WriteTrack() {
             }
             const auto reset = this->writer.ResetForSeek();
             if (reset != MC_OK) {
-                this->FailOutput(reset);
+                this->FailPlayback(reset);
                 break;
             }
             this->WaitForBuffers();
-            if (this->Exited() || this->outputFailed) {
+            if (this->Exited() || this->playbackFailed) {
                 break;
             }
             const auto actual = this->stream->SetPosition(seek);
@@ -257,6 +257,16 @@ void Player::WriteTrack() {
         if (!buffer) {
             buffer = this->stream->GetNextProcessedOutputBuffer();
             if (!buffer) {
+                /* stop may have interrupted a blocked decode. leave accepted
+                audio on the device when the caller requested a drain. */
+                if (this->Exited()) {
+                    break;
+                }
+                const auto status = this->stream->DecodeStatus();
+                if (status != MC_OK) {
+                    this->FailPlayback(status, "decode");
+                    break;
+                }
                 if (this->stream->Eof()) {
                     break;
                 }
@@ -284,7 +294,7 @@ void Player::WriteTrack() {
             this->writer.WaitForQueueSpace();
         }
         else {
-            this->FailOutput(result);
+            this->FailPlayback(result);
             break;
         }
     }
@@ -390,21 +400,21 @@ void Player::CompleteBuffer(IBuffer* buffer, mc_result outcome) {
     else {
         this->ReturnUnusedBuffer(buffer);
         if (outcome != MC_ERROR_CANCELLED) {
-            this->FailOutput(outcome);
+            this->FailPlayback(outcome);
         }
     }
 }
 
-/* one failed backend session owns one failure transition. stop returns any
+/* a decoder or output failure ends playback once. stop returns any
 remaining tokens before the worker waits, and prevents false EOF/auto-advance. */
-void Player::FailOutput(mc_result status) {
-    if (this->outputFailed) {
+void Player::FailPlayback(mc_result status, const char* operation) {
+    if (this->playbackFailed) {
         return;
     }
-    this->outputFailed = true;
+    this->playbackFailed = true;
     const auto stopped = this->writer.StopAfterFailure();
     if (stopped != MC_ERROR_CANCELLED && !this->Exited()) {
-        musik::debug::error(TAG, std::string(this->output->Name()) + " output failed (" + std::to_string(status) + ")");
+        musik::debug::error(TAG, std::string(operation) + " failed (" + std::to_string(status) + ")");
         this->streamState = StreamState::OpenFailed;
         this->listener.OnPlayerOpenFailed(this);
     }

@@ -8,6 +8,8 @@ namespace playback_fixture {
     inline constexpr int sampleRate = 48000;
     inline constexpr char stalledSource[] = "fixture://stalled-source.wav";
 
+    inline constexpr char stalledDecoderInput[] = "fixture://stalled-decoder.bytes";
+
     struct CapturedFrame {
         float left {};
         float right {};
@@ -22,7 +24,7 @@ namespace playback_fixture {
 
     enum class CaptureEvent {
         HeldCompletion, Stop, Resumed, Balanced, Overlap, SourceOpening, SourceInterrupted,
-        SecondPrepared, HeldRetiredQueue, SourceReleased, BothOutputsPlaying, OnlyOneOutputPaused
+        SecondPrepared, HeldRetiredQueue, SourceReleased, BothOutputsPlaying, OnlyOneOutputPaused, Draining
     };
     using HoldCompletion = void (*)(bool);
     using WaitCapture = bool (*)(CaptureEvent, unsigned);

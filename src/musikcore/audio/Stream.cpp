@@ -37,15 +37,18 @@
 #include "Stream.h"
 #include <musikcore/audio/PlaybackMath.h>
 #include "Streams.h"
+#include <musikcore/plugin/Plugins.h>
+#include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
+#include <climits>
 #include <musikcore/debug.h>
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
-using namespace musik::core::io;
+namespace scratchBuffers = musik::core::ffi::audio_scratch_buffers;
 
 static std::string TAG = "Stream";
 
-#define MIN_BUFFER_COUNT 30
+static constexpr int MinimumBufferCount = 30;
 
 Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options)
 : decoderSampleRate(0)
@@ -63,14 +66,18 @@ Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, StreamFlags op
     if (((int) this->options & (int) StreamFlags::NoDSP) == 0) {
         dsps = streams::GetDspPlugins();
     }
-
-    this->decoderBuffer = new Buffer();
-    this->decoderBuffer->SetSamples(0);
 }
 
 Stream::~Stream() {
     delete[] rawBuffer;
-    delete this->decoderBuffer;
+    if (this->decoder.instance) {
+        this->decoder.api->destroy(this->decoder.instance);
+    }
+    if (this->dataStream.instance) {
+        this->dataStream.api->destroy(this->dataStream.instance);
+    }
+    const auto& buffers = scratchBuffers::Host();
+    buffers.destroy(buffers.context, &this->scratch);
 
     for (Buffer* buffer : this->recycledBuffers) {
         delete buffer;
@@ -90,34 +97,46 @@ musik::core::audio::IStream* Stream::CreateUnmanaged(int samplesPerChannel, doub
 }
 
 double Stream::SetPosition(double requestedSeconds) {
-    double actualSeconds = this->decoder->SetPosition(requestedSeconds);
-
-    if (actualSeconds != -1) {
-        double rate = (double) this->decoderSampleRate;
-
-        this->decoderPosition = (uint64_t) (actualSeconds * rate) * this->decoderChannels;
-
-        /* a successful seek invalidates the old decoder remainder and EOF,
-        as well as the slices already waiting in the playback pool. */
-        this->decoderSamplesRemain = 0;
-        this->decoderSampleOffset = 0;
-        this->decoderBuffer->SetSamples(0);
-        this->done = false;
-
-        auto it = this->filledBuffers.begin();
-        while (it != this->filledBuffers.end()) {
-            this->recycledBuffers.push_back(*it);
-            ++it;
-        }
-
-        this->filledBuffers.clear();
+    double actualSeconds = -1;
+    if (!this->decoder.instance ||
+        this->decoder.api->seek(this->decoder.instance, requestedSeconds, &actualSeconds, nullptr) != MC_OK ||
+        !std::isfinite(actualSeconds) || actualSeconds < 0)
+    {
+        return -1;
     }
+    const auto samplePosition = actualSeconds * this->decoderSampleRate * this->decoderChannels;
+    if (samplePosition >= static_cast<double>(UINT64_MAX)) {
+        return -1;
+    }
+    this->decoderPosition = static_cast<uint64_t>(samplePosition);
+
+    /* a successful seek invalidates the old decoder remainder and EOF,
+    as well as the slices already waiting in the playback pool. */
+    this->decoderSamplesRemain = 0;
+    this->decoderSampleOffset = 0;
+    this->decoderEnded = false;
+    this->decodeStatus = MC_OK;
+    this->done = false;
+
+    auto it = this->filledBuffers.begin();
+    while (it != this->filledBuffers.end()) {
+        this->recycledBuffers.push_back(*it);
+        ++it;
+    }
+
+    this->filledBuffers.clear();
 
     return actualSeconds;
 }
 
 double Stream::GetDuration() {
-    return this->decoder ? this->decoder->GetDuration() : -1.0f;
+    double seconds;
+    if (this->decoder.instance && this->decoder.api->get_duration(this->decoder.instance, &seconds) == MC_OK &&
+        std::isfinite(seconds) && seconds >= 0)
+    {
+        return seconds;
+    }
+    return -1;
 }
 
 int Stream::GetCapabilities() {
@@ -125,64 +144,70 @@ int Stream::GetCapabilities() {
 }
 
 bool Stream::OpenStream(std::string uri, Output* output) {
-    musik::debug::info(TAG, "opening " + uri);
-
-    /* use our file stream abstraction to open the data at the
-    specified URI */
-    auto source = DataStreamFactory::OpenSharedDataStream(uri.c_str(), OpenFlags::Read,
-        [this](const DataStreamFactory::DataStreamPtr& source) {
-            std::lock_guard<std::mutex> lock(this->sourceMutex);
-            if (this->sourceInterrupted) {
-                source->Interrupt();
-                return false;
-            }
-            this->dataStream = source;
-            return true;
-        });
-    if (!source) {
-        musik::debug::error(TAG, "failed to open " + uri);
+    const auto& media = musik::core::plugin::Environment().Media();
+    const mc_string_view path { uri.data(), uri.size() };
+    mc_stream source = MC_STREAM_DEFAULT;
+    if (media.create_stream(media.context, path, &source, nullptr) != MC_OK) {
         return false;
     }
 
-    bool interrupted;
+    /* publish each handle before calling into the provider. Stop can now wake
+    a blocked open/read. the worker owns both handles until Stream destruction. */
     {
         std::lock_guard lock(this->sourceMutex);
-        interrupted = this->sourceInterrupted;
-        if (!interrupted) {
-            this->dataStream = source;
+        this->dataStream = source;
+        if (this->sourceInterrupted) {
+            return false;
         }
     }
-
-    /* a stop during provider open must reach the source before decoder probing. */
-    if (interrupted) {
-        source->Interrupt();
+    if (source.api->open(source.instance, path, MC_STREAM_OPEN_READ, nullptr) != MC_OK) {
+        return false;
+    }
+    mc_decoder codec = MC_DECODER_DEFAULT;
+    if (media.create_decoder(media.context, &this->dataStream, &codec, nullptr) != MC_OK) {
+        return false;
+    }
+    {
+        std::lock_guard lock(this->sourceMutex);
+        this->decoder = codec;
+        if (this->sourceInterrupted) {
+            return false;
+        }
+    }
+    if (codec.api->open(codec.instance, &this->dataStream, nullptr) != MC_OK) {
         return false;
     }
 
-    this->decoder = streams::GetDecoderForDataStream(source);
-
-    if (this->decoder) {
-        /* if the output has a default/preferred sample rate, let the decoder know
-        before sending samples. this way the decoder can resample the audio itself
-        if it likes. */
-        if (output) {
-            int defaultOutputSampleRate = output->GetDefaultSampleRate();
-            if (defaultOutputSampleRate > 0) {
-                this->decoder->SetPreferredSampleRate(defaultOutputSampleRate);
-            }
-        }
-        if (source->CanPrefetch()) {
-            this->capabilities |= (int) musik::core::sdk::Capability::Prebuffer;
-            this->RefillInternalBuffers();
-        }
-        return true;
+    const auto rate = output ? output->GetDefaultSampleRate() : 0;
+    if (rate > 0) {
+        codec.api->set_preferred_sample_rate(codec.instance, rate);
     }
-
-    return false;
+    const auto& buffers = scratchBuffers::Host();
+    /* scratch starts empty. the decoder supplies the track format when it
+    publishes its first block. */
+    const mc_audio_format initial {
+        .struct_size = sizeof(mc_audio_format),
+        .sample_rate = 44100,
+        .channels = 2,
+        .channel_layout = 0,
+    };
+    if (buffers.create(buffers.context, &initial, 0, &this->scratch, nullptr) != MC_OK) {
+        return false;
+    }
+    mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+    if (source.api->get_info(source.instance, &info) != MC_OK) {
+        return false;
+    }
+    if (info.flags & MC_STREAM_CAN_PREFETCH) {
+        this->capabilities |= (int) musik::core::sdk::Capability::Prebuffer;
+        this->RefillInternalBuffers();
+    }
+    return this->decodeStatus == MC_OK;
 }
 
 void Stream::Interrupt() {
-    DataStreamFactory::DataStreamPtr source;
+    mc_stream source;
+    mc_decoder codec;
     {
         std::lock_guard lock(this->sourceMutex);
         if (this->sourceInterrupted) {
@@ -190,10 +215,13 @@ void Stream::Interrupt() {
         }
         this->sourceInterrupted = true;
         source = this->dataStream;
+        codec = this->decoder;
     }
-
-    if (source) {
-        source->Interrupt();
+    if (source.instance) {
+        source.api->interrupt(source.instance);
+    }
+    if (codec.instance) {
+        codec.api->interrupt(codec.instance);
     }
 }
 
@@ -202,24 +230,52 @@ void Stream::OnBufferProcessedByPlayer(IBuffer* buffer) {
 }
 
 bool Stream::GetNextBufferFromDecoder() {
-    /* ask the decoder for some data */
-    if (!this->decoder->GetBuffer(this->decoderBuffer)) {
+    if (this->decoderEnded) {
+        return false;
+    }
+    mc_decode_state state = MC_DECODE_MORE;
+    this->decodeStatus = this->decoder.api->decode(this->decoder.instance, this->scratch, &state, nullptr);
+    if (this->decodeStatus == MC_OK) {
+        const auto& buffers = scratchBuffers::Host();
+        this->decodeStatus = buffers.read_block(buffers.context, this->scratch, &this->decoded);
+    }
+    if (this->decodeStatus != MC_OK) {
+        return false;
+    }
+    this->decoderEnded = state == MC_DECODE_END;
+    if (this->decoderEnded && !this->decoded.frame_count) {
+        return false;
+    }
+    const auto& pcm = this->decoded;
+    if ((state != MC_DECODE_MORE && state != MC_DECODE_END) || !pcm.data || !pcm.frame_count ||
+        !pcm.format.channels || pcm.format.channels > INT_MAX / this->samplesPerChannel ||
+        !pcm.format.sample_rate || pcm.format.sample_rate > INT_MAX ||
+        pcm.frame_count > static_cast<size_t>(LONG_MAX) / pcm.format.channels)
+    {
+        this->decodeStatus = MC_ERROR_PLUGIN;
+        musik::debug::error(TAG, "decoder returned an invalid PCM block");
+        return false;
+    }
+    if (this->rawBuffer &&
+        (this->decoderChannels != pcm.format.channels || this->decoderSampleRate != pcm.format.sample_rate))
+    {
+        this->decodeStatus = MC_ERROR_PLUGIN;
+        musik::debug::error(TAG, "decoder changed PCM format during playback");
         return false;
     }
 
-    /* ensure our internal state is initialized */
     if (!this->rawBuffer) {
-        this->decoderSampleRate = this->decoderBuffer->SampleRate();
-        this->decoderChannels = this->decoderBuffer->Channels();
+        this->decoderSampleRate = pcm.format.sample_rate;
+        this->decoderChannels = pcm.format.channels;
         this->samplesPerBuffer = samplesPerChannel * decoderChannels;
 
         this->bufferCount = pcmBufferCount(this->bufferLengthSeconds, this->decoderSampleRate,
-            this->samplesPerChannel, MIN_BUFFER_COUNT);
+            this->samplesPerChannel, MinimumBufferCount);
 
         /* allocate playback storage once and recycle fixed slices. decoder
         scratch storage is separate; output releases each slice before reuse. */
-        this->rawBuffer = new float[bufferCount * this->samplesPerBuffer];
-        int offset = 0;
+        this->rawBuffer = new float[static_cast<size_t>(bufferCount) * this->samplesPerBuffer];
+        size_t offset = 0;
         for (int i = 0; i < bufferCount; i++) {
             auto buffer = new Buffer(this->rawBuffer + offset, this->samplesPerBuffer);
             buffer->SetSampleRate(this->decoderSampleRate);
@@ -288,11 +344,7 @@ void Stream::RefillInternalBuffers() {
                 break;
             }
 
-            if (this->decoderBuffer->Samples() == 0) {
-                continue;
-            }
-
-            this->decoderSamplesRemain = this->decoderBuffer->Samples();
+            this->decoderSamplesRemain = static_cast<long>(this->decoded.frame_count * this->decoderChannels);
             this->decoderSampleOffset = 0;
         }
 
@@ -327,7 +379,7 @@ void Stream::RefillInternalBuffers() {
         if (targetSamplesRemain > 0) {
             long samplesToCopy = std::min(this->decoderSamplesRemain, targetSamplesRemain);
             if (samplesToCopy > 0) {
-                float* src = this->decoderBuffer->BufferPointer() + this->decoderSampleOffset;
+                const float* src = this->decoded.data + this->decoderSampleOffset;
                 target->Copy(src, samplesToCopy, targetSampleOffset);
 
                 this->decoderPosition += samplesToCopy;

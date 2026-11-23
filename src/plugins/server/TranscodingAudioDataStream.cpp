@@ -33,333 +33,164 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "TranscodingAudioDataStream.h"
-#include "Util.h"
+
 #include <algorithm>
 #include <atomic>
+#include <cstring>
 #include <filesystem>
 
-#define BUFFER_SIZE 8192
-#define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
-
-static std::atomic<int> activeCount(0);
-
-namespace fs = std::filesystem;
-
-using PositionType = TranscodingAudioDataStream::PositionType;
-
-TranscodingAudioDataStream::TranscodingAudioDataStream(
-    Context& context,
-    musik::core::sdk::IStreamingEncoder* encoder,
-    const std::string& uri,
-    size_t bitrate,
-    const std::string& format)
-: context(context)
-{
-    ++activeCount;
-    this->encoder = encoder;
-    this->input = nullptr;
-    this->decoder = nullptr;
-    this->pcmBuffer = nullptr;
-    this->length = 0;
-    this->position = 0;
-    this->bitrate = bitrate;
-    this->interrupted = false;
-    this->eof = false;
-    this->outFile = nullptr;
-    this->detachTolerance = 0;
-    this->format = format;
-
-    this->input = context.environment->CreateDataStream(uri.c_str());
-    if (this->input && !this->input->Open(uri.c_str(), OpenFlags::Read)) {
-        this->input->Release();
-        this->input = nullptr;
-    }
-    if (this->input) {
-        this->decoder = context.environment->GetDecoder(this->input);
-        if (this->decoder) {
-            this->pcmBuffer = context.environment->GetBuffer(SAMPLES_PER_BUFFER);
-
-            /* note that we purposely under-estimate the content length by 1.0
-            seconds; we do this because http clients seem to be more likely to be
-            throw a fit if we over estimate, instead of under-estimate. */
-            this->length = (PositionType)((this->decoder->GetDuration() - 1.0) * 1000.0 * (float)bitrate / 8.0);
-
-            /* after the stream ends we allow decoding for up to an additional 5
-            seconds to account for rounding errors in length estimation and decoder
-            duration calculation. */
-            this->detachTolerance = (PositionType)((5.0) * 1000.0 * (float)bitrate / 8.0);
-        }
-    }
+namespace {
+    std::atomic<int> activeCount { 0 };
 }
 
 TranscodingAudioDataStream::TranscodingAudioDataStream(
-    Context& context,
-    musik::core::sdk::IStreamingEncoder* encoder,
-    const std::string& uri,
-    const std::string& tempFilename,
-    const std::string& finalFilename,
-    size_t bitrate,
-    const std::string& format)
-: TranscodingAudioDataStream(context, encoder, uri, bitrate, format)
-{
-    this->encoder = encoder;
-    this->tempFilename = tempFilename;
-    this->finalFilename = finalFilename;
-
-    if (tempFilename.size() && finalFilename.size()) {
-#ifdef WIN32
-        this->outFile = _wfopen(utf8to16(tempFilename.c_str()).c_str(), L"wb");
-#else
-        this->outFile = fopen(tempFilename.c_str(), "wb");
-#endif
-    }
+    server::EncoderOwner<musik::core::sdk::IStreamingEncoder> encoder, size_t bitrate)
+: encoder(std::move(encoder))
+, bitrate(bitrate) {
+    ++activeCount;
 }
 
 TranscodingAudioDataStream::~TranscodingAudioDataStream() {
+    /* a disconnected client may leave a partial encode. a later request must
+    never mistake that partial file for a complete cached response. */
+    if (!temporaryFile.empty()) {
+        cache.close();
+        std::error_code error;
+        std::filesystem::remove(std::filesystem::u8path(temporaryFile), error);
+    }
     --activeCount;
 }
 
-bool TranscodingAudioDataStream::Open(const char *uri, OpenFlags flags) {
+bool TranscodingAudioDataStream::Open(Context& context, const std::string& uri, bool requireDuration,
+    const std::string& temporaryFile, const std::string& cacheFile) {
+    if (!source.Open(context, uri)) {
+        return false;
+    }
+    const bool finite = source.HasDuration();
+    if (requireDuration && !finite) {
+        return false;
+    }
+    if (finite && !temporaryFile.empty()) {
+        this->temporaryFile = temporaryFile;
+        this->cacheFile = cacheFile;
+        cache.open(std::filesystem::u8path(temporaryFile), std::ios::binary);
+        return cache.is_open();
+    }
     return true;
 }
 
-bool TranscodingAudioDataStream::Close() {
-    if (this->eof) {
-        this->Dispose();
+mc_result TranscodingAudioDataStream::EncodeNextBlock() {
+    mc_pcm_view pcm = MC_PCM_VIEW_DEFAULT;
+    const auto status = source.Read(pcm);
+    if (status != MC_OK) {
+        return status;
+    }
+
+    if (!initialized) {
+        if (!pcm.frame_count || !encoder->Initialize(pcm.format.sample_rate, pcm.format.channels, bitrate)) {
+            return MC_ERROR_PLUGIN;
+        }
+        initialized = true;
+    }
+    int encoded;
+    if (pcm.frame_count) {
+        encoded = encoder->Encode(pcm, &pending);
     }
     else {
-        std::thread([this]() { /* detach and finish. hopefully. */
-            char buffer[8192];
-            int count = 0;
-            int last = 0;
-            while (!Eof() && count < detachTolerance) {
-                last = Read(buffer, sizeof(buffer));
-                count += last;
-            }
-
-            if (last != 0 && this->outFile) {
-                /* incomplete, delete... */
-                fclose(this->outFile);
-                this->outFile = nullptr;
-                std::error_code ec;
-                fs::remove(fs::u8path(this->tempFilename), ec);
-            }
-
-            Dispose();
-        }).detach();
+        encoded = encoder->Flush(&pending);
+        flushed = true;
     }
+    if (encoded < 0 || (encoded && !pending)) {
+        return MC_ERROR_PLUGIN;
+    }
+    pendingBytes = static_cast<size_t>(encoded);
+    return MC_OK;
+}
 
+bool TranscodingAudioDataStream::PublishCache() {
+    if (!cache.is_open()) {
+        return true;
+    }
+    cache.close();
+    if (cache.fail()) {
+        return false;
+    }
+    if (!encoder->Finalize(temporaryFile.c_str())) {
+        return false;
+    }
+    if (cacheFile.empty()) {
+        /* a wait-mode request with caching disabled owns this file until
+        Finish hands it to the HTTP response. it never enters the cache. */
+        return true;
+    }
+    std::error_code error;
+    std::filesystem::rename(std::filesystem::u8path(temporaryFile), std::filesystem::u8path(cacheFile), error);
+    if (error) {
+        /* another request can publish the same encoding first. on systems
+        that cannot replace an open file, keep that complete cache entry. */
+        if (!std::filesystem::is_regular_file(std::filesystem::u8path(cacheFile), error)) {
+            return false;
+        }
+        std::filesystem::remove(std::filesystem::u8path(temporaryFile), error);
+        if (error) {
+            return false;
+        }
+    }
+    temporaryFile.clear();
     return true;
 }
 
-void TranscodingAudioDataStream::Dispose() {
-    if (this->pcmBuffer) {
-        this->pcmBuffer->Release();
-        this->pcmBuffer = nullptr;
+mc_result TranscodingAudioDataStream::Read(uint64_t offset, char* dst, size_t capacity, size_t& count) {
+    count = 0;
+    if (offset != position) {
+        return MC_ERROR_UNSUPPORTED;
     }
-
-    if (this->decoder) {
-        this->decoder->Release();
-        this->decoder = nullptr;
-    }
-
-    if (this->input) {
-        this->input->Release();
-        this->input = nullptr;
-    }
-
-    if (this->encoder) {
-        this->encoder->Release();
-        this->encoder = nullptr;
-    }
-
-    if (this->outFile) {
-        fclose(this->outFile);
-        this->outFile = nullptr;
-        std::error_code ec;
-        fs::remove(fs::u8path(this->tempFilename), ec);
-    }
-
-    delete this;
-}
-
-void TranscodingAudioDataStream::Interrupt() {
-    this->interrupted = true;
-}
-
-void TranscodingAudioDataStream::Release() {
-    this->Dispose();
-}
-
-PositionType TranscodingAudioDataStream::Read(void *buffer, PositionType bytesToRead) {
-    if (this->eof || !this->pcmBuffer) {
-        return 0;
-    }
-
-    if (!this->encoder) {
-        this->eof = true;
-        return 0;
-    }
-
-    size_t bytesWritten = 0;
-    char* dst = (char*) buffer;
-    bool hasBuffer = false;
-
-    /* init */
-    if (!this->encoderInitialized) {
-        hasBuffer = this->decoder->GetBuffer(this->pcmBuffer);
-        if (hasBuffer) {
-            this->encoderInitialized = this->encoder->Initialize(
-                this->pcmBuffer->SampleRate(),
-                this->pcmBuffer->Channels(),
-                this->bitrate);
-        }
-    }
-
-    /* see if we have some stuff left over from last time through... */
-    if (!spillover.empty()) {
-        size_t count = std::min(spillover.avail(), (size_t) bytesToRead);
-        memcpy(dst, spillover.pos(), count);
-
-        if (this->outFile) {
-            fwrite(spillover.pos(), 1, count, this->outFile);
-        }
-
-        spillover.inc(count);
-        bytesWritten += count;
-    }
-
-    if (bytesWritten == bytesToRead) {
-        this->position += (PositionType) bytesWritten;
-        return (PositionType) bytesWritten; /* filled from the spillover... */
-    }
-
-    if (!hasBuffer) {
-        hasBuffer = this->decoder->GetBuffer(this->pcmBuffer);
-    }
-
-    if (!hasBuffer && !decoder->Exhausted()) {
-        goto internal_error;
-    }
-
-    /* done with spillover. read new data... */
-    while (hasBuffer && bytesWritten < (size_t) bytesToRead) {
-        char* encodedData = nullptr;
-        int encodedLength = encoder->Encode(this->pcmBuffer, &encodedData);
-
-        if (encodedLength < 0) {
-            goto internal_error;
-        }
-
-        /* write to the output buffer */
-        if (encodedLength > 0) {
-            int toWrite = std::min(
-                encodedLength,
-                (int)(bytesToRead - bytesWritten));
-
-            memcpy(dst + bytesWritten, encodedData, toWrite);
-
-            if (this->outFile) {
-                fwrite(encodedData, 1, toWrite, this->outFile);
+    while (count < capacity) {
+        if (!pendingBytes) {
+            if (flushed) {
+                break;
             }
-
-            bytesWritten += toWrite;
-
-            /* if we have decoded bytes still available, that means the
-            output buffer is exhausted. swap it into the spillover buffer
-            so it can be finalized the next time through. */
-            if (encodedLength > toWrite) {
-                spillover.from(encodedData + toWrite, encodedLength - toWrite);
-                this->position += (PositionType) bytesWritten;
-                return (PositionType) bytesWritten;
+            const auto status = EncodeNextBlock();
+            if (status != MC_OK) {
+                return status;
+            }
+            if (!pendingBytes) {
+                continue;
             }
         }
-
-        /* if we get here we still need to write some more data to
-        the output buffer. get our next buffer of pcm data and go
-        through the loop again. */
-        hasBuffer =
-            ((size_t) bytesToRead > bytesWritten) &&
-            this->decoder->GetBuffer(this->pcmBuffer);
-    }
-
-    /* finalize */
-    if (bytesWritten == 0) {
-        char* encodedData = nullptr;
-        int encodedLength = this->encoder->Flush(&encodedData);
-
-        this->eof = true;
-
-        if (encodedLength >= 0) {
-            memcpy(dst + bytesWritten, encodedData, encodedLength);
-
-            if (this->outFile) {
-                fwrite(encodedData, 1, encodedLength, this->outFile);
-                fclose(this->outFile);
-                this->outFile = nullptr;
-
-                this->encoder->Finalize(this->tempFilename.c_str());
-
-                std::error_code ec;
-                fs::rename(
-                    fs::u8path(this->tempFilename),
-                    fs::u8path(this->finalFilename),
-                    ec);
-                if (ec) {
-                    fs::remove(fs::u8path(this->tempFilename), ec);
-                }
-            }
+        /* the flush block can exceed the remaining caller capacity too. keep
+        its unread suffix under the same ownership rules as any encoded block. */
+        const auto bytes = std::min(capacity - count, pendingBytes);
+        std::memcpy(dst + count, pending, bytes);
+        if (cache.is_open() && !cache.write(pending, static_cast<std::streamsize>(bytes))) {
+            return MC_ERROR_IO;
         }
-        else {
-            goto internal_error;
+        count += bytes;
+        pending += bytes;
+        pendingBytes -= bytes;
+    }
+    position += count;
+    if (flushed && !pendingBytes && !PublishCache()) {
+        return MC_ERROR_IO;
+    }
+    return MC_OK;
+}
+
+std::unique_ptr<server::ResponseBody> TranscodingAudioDataStream::Finish(Context& context) {
+    if (!cache.is_open()) {
+        return {};
+    }
+    char block[8192];
+    size_t bytes;
+    do {
+        if (Read(position, block, sizeof(block), bytes) != MC_OK) {
+            return {};
         }
+    } while (bytes);
+    if (!cacheFile.empty()) {
+        return server::OpenFileBody(context, cacheFile);
     }
-
-    this->position += (PositionType) bytesWritten;
-    return (PositionType) bytesWritten;
-
-internal_error:
-    this->eof = true;
-    fclose(this->outFile);
-    this->outFile = nullptr;
-    std::error_code ec;
-    fs::remove(fs::u8path(this->tempFilename), ec);
-    return 0;
-}
-
-bool TranscodingAudioDataStream::SetPosition(PositionType position) {
-    return false;
-}
-
-PositionType TranscodingAudioDataStream::Position() {
-    return this->position;
-}
-
-bool TranscodingAudioDataStream::Seekable() {
-    return false;
-}
-
-bool TranscodingAudioDataStream::Eof() {
-    return this->eof;
-}
-
-long TranscodingAudioDataStream::Length() {
-    return this->length;
-}
-
-const char* TranscodingAudioDataStream::Type() {
-    return "audio/mpeg";
-}
-
-const char* TranscodingAudioDataStream::Uri() {
-    if (this->input) {
-        return this->input->Uri();
-    }
-    return "";
-}
-
-bool TranscodingAudioDataStream::CanPrefetch() {
-    return true;
+    return server::TakeTemporaryFileBody(context, temporaryFile);
 }
 
 int TranscodingAudioDataStream::GetActiveCount() {

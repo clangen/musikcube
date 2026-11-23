@@ -98,7 +98,7 @@ endforeach()
 target_compile_definitions(pdcurses_gui PRIVATE PDCURSES_WINGUI)
 target_compile_definitions(pdcurses_console PRIVATE PDCURSES_WINCON)
 
-add_library(musikcore_objects OBJECT ${windows_core_sources})
+add_library(musikcore_objects OBJECT ${musikcore_sources})
 target_compile_features(musikcore_objects PRIVATE cxx_std_20)
 musikcore_add_consumer_api(musikcore_objects "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/consumer/remote-session.cpp")
 target_include_directories(musikcore_objects PRIVATE src/musikcore)
@@ -206,8 +206,9 @@ musikcube_configure_c_plugin(nullout)
 target_link_libraries(nullout PRIVATE Threads::Threads)
 target_compile_features(nullout PRIVATE cxx_std_20)
 
-windows_plugin(server BlockingTranscoder.cpp HttpServer.cpp main.cpp Snapshots.cpp
+windows_plugin(server BlockingTranscoder.cpp HttpServer.cpp main.cpp ServerMedia.cpp Snapshots.cpp
   Transcoder.cpp TranscodingAudioDataStream.cpp Util.cpp WebSocketServer.cpp)
+target_compile_features(server PRIVATE cxx_std_20)
 target_compile_definitions(server PRIVATE MHD_W32LIB BUILDING_MHD_LIB)
 target_include_directories(server PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(server PRIVATE vendor::zlib vendor::microhttpd ws2_32)

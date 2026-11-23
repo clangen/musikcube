@@ -42,11 +42,12 @@
 
 #include <thread>
 #include <set>
+#include <atomic>
+#include <condition_variable>
 #include <map>
 #include <filesystem>
 #include <functional>
 #include <chrono>
-#include <limits>
 
 using musik::core::sdk::fs::pathToUtf8;
 
@@ -54,64 +55,29 @@ namespace fs = std::filesystem;
 
 using namespace std::chrono;
 using musik::core::sdk::IBlockingEncoder;
-using musik::core::sdk::IDataStream;
+using server::EncoderOwner;
 using musik::core::sdk::IEncoder;
 using musik::core::sdk::IStreamingEncoder;
-using musik::core::sdk::OpenFlags;
+
 using musik::core::sdk::PathType;
 
-std::mutex transcoderMutex;
-std::condition_variable waitForTranscode;
-std::set<std::string> runningBlockingTranscoders;
+static std::mutex transcoderMutex;
+static std::condition_variable waitForTranscode;
+static std::set<std::string> runningBlockingTranscoders;
 
 static IEncoder* getEncoder(Context& context, const std::string& format) {
     std::string extension = "." + format;
     return context.environment->GetEncoder(extension.c_str());
 }
 
-static IStreamingEncoder* getStreamingEncoder(Context& context, const std::string& format) {
-    IEncoder* encoder = getEncoder(context, format);
-    if (encoder) {
-        auto* typedEncoder = encoder->AsStreaming();
-        if (typedEncoder) {
-            return typedEncoder;
-        }
-        encoder->Release();
-    }
-    return nullptr;
-}
-
-static size_t lastWriteTime(const fs::path& path) {
-    std::error_code ec;
-    return (size_t)duration_cast<milliseconds>(
-        std::filesystem::last_write_time(path, ec).time_since_epoch()).count();
-}
-
-static size_t lastWriteTime(const std::string& path) {
-    return lastWriteTime(fs::u8path(path));
-}
-
-static std::filesystem::file_time_type touch(const std::string& path) {
-    auto fsPath = fs::u8path(path);
-    try {
-        std::chrono::time_point now = fs::file_time_type::clock::now();
-        fs::last_write_time(fsPath, now);
-    }
-    catch (...) {
-    }
-
-    return fs::last_write_time(fsPath);
-}
-
 static std::string cachePath(Context& context) {
     char buf[4096];
     context.environment->GetPath(PathType::Data, buf, sizeof(buf));
-    std::string path = std::string(buf) + "/cache/transcoder/";
-	fs::path fsPath(fs::u8path(path));
+    fs::path fsPath = fs::u8path(buf) / "cache" / "transcoder";
     if (!fs::exists(fsPath)) {
         fs::create_directories(fsPath);
     }
-    return path;
+    return pathToUtf8(fsPath);
 }
 
 static void iterateTranscodeCache(Context& context, std::function<void(fs::path)> cb) {
@@ -137,10 +103,16 @@ void Transcoder::RemoveTempTranscodeFiles(Context& context) {
 }
 
 void Transcoder::PruneTranscodeCache(Context& context) {
-    std::map<time_t, fs::path> sorted;
+    std::multimap<fs::file_time_type, fs::path> sorted;
 
     iterateTranscodeCache(context, [&sorted](fs::path p) {
-        sorted[lastWriteTime(p)] = p;
+        if (p.extension() != ".tmp") {
+            std::error_code error;
+            const auto written = fs::last_write_time(p, error);
+            if (!error) {
+                sorted.emplace(written, p);
+            }
+        }
     });
 
     int maxSize = context.prefs->GetInt(
@@ -167,211 +139,97 @@ static void getTempAndFinalFilename(
     std::string& tempFn,
     std::string& finalFn)
 {
-    finalFn = std::string(
-        cachePath(context) +
-        std::to_string(std::hash<std::string>()(uri)) +
-        "-" + std::to_string(bitrate) +
-        "." + format);
+    const auto leaf = std::to_string(std::hash<std::string>()(uri)) + "-" + std::to_string(bitrate) + "." + format;
+    finalFn = pathToUtf8(fs::u8path(cachePath(context)) / fs::u8path(leaf));
 
+    static std::atomic<uint64_t> sequence { 0 };
     do {
-        tempFn = finalFn + "." + std::to_string(rand()) + ".tmp";
+        tempFn = finalFn + "." + std::to_string(sequence.fetch_add(1)) + ".tmp";
     } while (fs::exists(fs::u8path(tempFn)));
 }
 
-IDataStream* Transcoder::Transcode(
-    Context& context,
-    const std::string& uri,
-    size_t bitrate,
-    const std::string& format)
+std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
+    Context& context, const std::string& uri, size_t bitrate, const std::string& format, Request request)
 {
-    if (context.prefs->GetBool(
-        serverprefs::SynchronousTranscoding.c_str(),
-        defaults::transcoder_synchronous))
+    if (format.empty() || format.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") !=
+        std::string::npos)
     {
-        return TranscodeAndWait(context, getEncoder(context, format), uri, bitrate, format);
+        return {};
     }
 
-    /* on-demand is the default. however, on-demand transcoding is only available
-    for `IStreamingEncoder` types.  */
-    IStreamingEncoder* audioStreamEncoder = getStreamingEncoder(context, format);
-    if (audioStreamEncoder) {
-        return TranscodeOnDemand(context, audioStreamEncoder, uri, bitrate, format);
-    }
-
-    return TranscodeAndWait(context, nullptr, uri, bitrate, format);
-}
-
-IDataStream* Transcoder::TranscodeOnDemand(
-    Context& context,
-    IStreamingEncoder* encoder,
-    const std::string& uri,
-    size_t bitrate,
-    const std::string& format)
-{
-    /* the caller can specify an encoder; if it is not specified, go ahead and
-    create one here */
+    EncoderOwner<IEncoder> encoder(getEncoder(context, format));
     if (!encoder) {
-        encoder = getStreamingEncoder(context, format);
-        if (!encoder) {
-            return nullptr;
+        return {};
+    }
+    std::string temp, destination;
+    getTempAndFinalFilename(context, uri, bitrate, format, temp, destination);
+    const auto path = fs::u8path(destination);
+    if (fs::exists(path)) {
+        if (auto cached = server::OpenFileBody(context, destination)) {
+            std::error_code error;
+            fs::last_write_time(path, fs::file_time_type::clock::now(), error);
+            return cached;
         }
     }
 
-    /* see if it already exists in the cache. if it does, just return it. */
-    std::string expectedFilename, tempFilename;
-    getTempAndFinalFilename(context, uri, bitrate, format, tempFilename, expectedFilename);
-
-    if (fs::exists(fs::u8path(expectedFilename))) {
-        touch(expectedFilename);
-        auto* stream = context.environment->CreateDataStream(expectedFilename.c_str());
-        if (stream && !stream->Open(expectedFilename.c_str(), OpenFlags::Read)) {
-            stream->Release();
-            stream = nullptr;
+    if (auto* streaming = encoder->AsStreaming()) {
+        const bool synchronous = context.prefs->GetBool(serverprefs::SynchronousTranscoding.c_str(),
+            defaults::transcoder_synchronous);
+        const bool wait = synchronous || request == Request::CompleteFile || (request == Request::PartialTrack &&
+            context.prefs->GetBool(prefs::transcoder_synchronous_fallback.c_str(),
+                defaults::transcoder_synchronous_fallback));
+        const bool cache = context.prefs->GetInt(serverprefs::CacheCount.c_str(),
+            serverprefs::DefaultCacheCount) > 0;
+        if (cache) {
+            PruneTranscodeCache(context);
         }
-        return stream;
+
+        encoder.release();
+        EncoderOwner<IStreamingEncoder> owner(streaming);
+        auto body = std::make_unique<TranscodingAudioDataStream>(std::move(owner), bitrate);
+        if (!body->Open(context, uri, synchronous, (cache || wait) ? temp : "", cache ? destination : "")) {
+            return {};
+        }
+        /* an unknown-duration source might never finish. let asynchronous
+        clients read it live even when they normally need an exact length. */
+        if (!wait || !body->IsCaching()) {
+            return body;
+        }
+
+        /* wait-mode must serve the completed encoded file, even when the
+        selected codec can stream. a failed encode never publishes a cache. */
+        return body->Finish(context);
     }
 
-    /* if it doesn't exist, check to see if the cache is enabled. */
-    int cacheCount = context.prefs->GetInt(
-        serverprefs::CacheCount.c_str(),
-        serverprefs::DefaultCacheCount);
-
-    TranscodingAudioDataStream* transcoderStream = nullptr;
-
-    if (cacheCount > 0) {
-        PruneTranscodeCache(context);
-
-        transcoderStream = new TranscodingAudioDataStream(
-            context, encoder, uri, tempFilename, expectedFilename, bitrate, format);
-
-        /* if the stream has an indeterminate length, close it down and
-        re-open it without caching options; we don't want to fill up
-        the storage disk */
-        if (transcoderStream->Length() < 0) {
-            transcoderStream->Release();
-            delete transcoderStream;
-            transcoderStream = new TranscodingAudioDataStream(context, encoder, uri, bitrate, format);
+    auto* blocking = encoder->AsBlocking();
+    if (!blocking) {
+        return {};
+    }
+    {
+        /* requests for the same encoding share one completed file. other
+        formats or bitrates of the same source can progress independently. */
+        std::unique_lock lock(transcoderMutex);
+        if (!runningBlockingTranscoders.insert(destination).second) {
+            waitForTranscode.wait(lock, [&] { return !runningBlockingTranscoders.count(destination); });
+            lock.unlock();
+            return server::OpenFileBody(context, destination);
         }
     }
-    else {
-        transcoderStream = new TranscodingAudioDataStream(context, encoder, uri, bitrate, format);
+    struct Completion {
+        const std::string& destination;
+        ~Completion() {
+            std::lock_guard lock(transcoderMutex);
+            runningBlockingTranscoders.erase(destination);
+            waitForTranscode.notify_all();
+        }
+    } completion {
+        .destination = destination,
+    };
+    PruneTranscodeCache(context);
+    if (!BlockingTranscoder::Run(context, *blocking, uri, temp, destination, bitrate)) {
+        return {};
     }
-
-    return transcoderStream;
-}
-
-IDataStream* Transcoder::TranscodeAndWait(
-    Context& context,
-    IEncoder* encoder,
-    const std::string& uri,
-    size_t bitrate,
-    const std::string& format)
-{
-    if (bitrate > static_cast<size_t>(std::numeric_limits<int>::max())) {
-        return nullptr;
-    }
-    /* the caller can specify an encoder; if it is not specified, go ahead and
-    create one here */
-    if (!encoder) {
-        encoder = getEncoder(context, format);
-        if (!encoder) {
-            return nullptr;
-        }
-    }
-
-    std::string expectedFilename, tempFilename;
-    getTempAndFinalFilename(context, uri, bitrate, format, tempFilename, expectedFilename);
-
-    /* already exists? */
-    if (fs::exists(fs::u8path(expectedFilename))) {
-        touch(expectedFilename);
-        auto* stream = context.environment->CreateDataStream(expectedFilename.c_str());
-        if (stream && !stream->Open(expectedFilename.c_str(), OpenFlags::Read)) {
-            stream->Release();
-            stream = nullptr;
-        }
-        return stream;
-    }
-
-    IStreamingEncoder* audioStreamEncoder = encoder->AsStreaming();
-    if (audioStreamEncoder) {
-        TranscodingAudioDataStream* transcoderStream = new TranscodingAudioDataStream(
-            context, audioStreamEncoder, uri, tempFilename, expectedFilename, bitrate, format);
-
-        /* transcoders with a negative length have an indeterminate duration, so
-        we disallow waiting for them because they may never finish */
-        if (transcoderStream->Length() < 0) {
-            transcoderStream->Release();
-            delete transcoderStream;
-            return nullptr;
-        }
-
-        char buffer[8192];
-        while (!transcoderStream->Eof()) {
-            transcoderStream->Read(buffer, sizeof(buffer));
-            std::this_thread::yield();
-        }
-
-        transcoderStream->Release();
-        PruneTranscodeCache(context);
-        auto* stream = context.environment->CreateDataStream(uri.c_str());
-        if (stream && !stream->Open(uri.c_str(), OpenFlags::Read)) {
-            stream->Release();
-            stream = nullptr;
-        }
-        return stream;
-    }
-    else {
-        IBlockingEncoder* blockingEncoder = encoder->AsBlocking();
-        if (blockingEncoder) {
-            bool alreadyTranscoding = false;
-            {
-                /* see if there's already a blocking transcoder running for the specified
-                uri. if there is, wait for it to complete. if there's not, add it to the
-                running set */
-                std::unique_lock<std::mutex> lock(transcoderMutex);
-                alreadyTranscoding = runningBlockingTranscoders.find(uri) != runningBlockingTranscoders.end();
-                if (alreadyTranscoding) {
-                    while (runningBlockingTranscoders.find(uri) != runningBlockingTranscoders.end()) {
-                        waitForTranscode.wait(lock);
-                    }
-                }
-                else {
-                    runningBlockingTranscoders.insert(uri);
-                }
-            }
-
-            if (!alreadyTranscoding) {
-                BlockingTranscoder blockingTranscoder(
-                    context, blockingEncoder, uri, tempFilename, expectedFilename, static_cast<int>(bitrate));
-
-                bool success = blockingTranscoder.Transcode();
-
-                {
-                    /* let anyone else waiting for a resource to be transcoding that we
-                    finished. */
-                    std::unique_lock<std::mutex> lock(transcoderMutex);
-                    auto it = runningBlockingTranscoders.find(uri);
-                    if (it != runningBlockingTranscoders.end()) {
-                        runningBlockingTranscoders.erase(it);
-                    }
-                    waitForTranscode.notify_all();
-                }
-
-                if (!success) {
-                    return nullptr;
-                }
-            }
-        }
-
-        PruneTranscodeCache(context);
-        auto* stream = context.environment->CreateDataStream(expectedFilename.c_str());
-        if (stream && !stream->Open(expectedFilename.c_str(), OpenFlags::Read)) {
-            stream->Release();
-            stream = nullptr;
-        }
-        return stream;
-    }
+    return server::OpenFileBody(context, destination);
 }
 
 int Transcoder::GetActiveCount() {

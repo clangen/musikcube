@@ -35,11 +35,8 @@
 #pragma once
 
 #include <musikcore/config.h>
-#include <musikcore/io/DataStreamFactory.h>
-#include <musikcore/sdk/IDecoder.h>
 #include <musikcore/sdk/IEncoder.h>
 #include <musikcore/sdk/IDSP.h>
-#include <musikcore/sdk/IDecoderFactory.h>
 
 #include <memory>
 #include <vector>
@@ -49,12 +46,6 @@ namespace musik { namespace core { namespace audio {
     namespace streams {
         /* retire session factories after decoder/encoder users have stopped. */
         void Shutdown();
-
-        std::shared_ptr<musik::core::sdk::IDecoder>
-            GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
-
-        musik::core::sdk::IDecoder*
-            GetDecoderForDataStream(musik::core::sdk::IDataStream* stream);
 
         musik::core::sdk::IEncoder* GetEncoderForType(const char* type);
 

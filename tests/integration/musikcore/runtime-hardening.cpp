@@ -12,6 +12,11 @@ int main(int argc, char** argv) {
         return 1;
     }
     const std::string_view mode(argv[1]);
+#ifdef TEST_SERVER_TRANSCODE
+    if (mode == "server_transcode") {
+        return checkServerTranscode() ? 0 : 1;
+    }
+#endif
     if (mode == "indexer_cancel") {
         return checkIndexerCancel() ? 0 : 1;
     }

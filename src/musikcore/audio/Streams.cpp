@@ -35,44 +35,27 @@
 #include "pch.hpp"
 
 #include "Streams.h"
-#include <musikcore/debug.h>
-#include <musikcore/sdk/IDecoderFactory.h>
 #include <musikcore/sdk/IEncoderFactory.h>
 #include <musikcore/plugin/PluginFactory.h>
 #include <mutex>
-
-#define TAG "Streams"
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using musik::core::PluginFactory;
 
-using DataStreamPtr = musik::core::io::DataStreamFactory::DataStreamPtr;
-using DecoderFactoryList = std::vector<std::shared_ptr<IDecoderFactory>>;
 using EncoderFactoryList = std::vector<std::shared_ptr<IEncoderFactory>>;
 using DspList = std::vector<std::shared_ptr<IDSP>>;
-using Deleter = PluginFactory::ReleaseDeleter<IDecoder>;
-using DecoderPtr = std::shared_ptr<IDecoder>;
 
 namespace {
-    /* one provider generation is retained by each in-flight factory lookup. */
-    struct FactoryCache {
-        DecoderFactoryList decoders;
-        EncoderFactoryList encoders;
-    };
-
     std::mutex initLock;
-    std::shared_ptr<const FactoryCache> factories;
+    std::shared_ptr<const EncoderFactoryList> factories;
 
-    std::shared_ptr<const FactoryCache> getFactories() {
+    std::shared_ptr<const EncoderFactoryList> getFactories() {
         std::lock_guard<std::mutex> lock(initLock);
         if (!factories) {
-            const auto cache = std::make_shared<FactoryCache>();
-            cache->decoders = PluginFactory::Instance()
-                .QueryInterface<IDecoderFactory, PluginFactory::ReleaseDeleter<IDecoderFactory>>("GetDecoderFactory");
-            cache->encoders = PluginFactory::Instance()
-                .QueryInterface<IEncoderFactory, PluginFactory::ReleaseDeleter<IEncoderFactory>>("GetEncoderFactory");
-            factories = cache;
+            using Deleter = PluginFactory::ReleaseDeleter<IEncoderFactory>;
+            factories = std::make_shared<EncoderFactoryList>(
+                PluginFactory::Instance().QueryInterface<IEncoderFactory, Deleter>("GetEncoderFactory"));
         }
         return factories;
     }
@@ -82,7 +65,7 @@ namespace musik { namespace core { namespace audio {
 
     namespace streams {
         void Shutdown() {
-            std::shared_ptr<const FactoryCache> retired;
+            std::shared_ptr<const EncoderFactoryList> retired;
             {
                 std::lock_guard<std::mutex> lock(initLock);
                 retired.swap(factories);
@@ -90,66 +73,16 @@ namespace musik { namespace core { namespace audio {
             /* provider Release may reenter core; do not hold the cache mutex. */
         }
 
-        IDecoder* GetDecoderForDataStream(IDataStream* dataStream) {
-            const auto cache = getFactories();
-
-            IDecoder* decoder = nullptr;
-
-            /* find a DecoderFactory we can use for this type of data */
-            auto factories = cache->decoders.begin();
-            const auto end = cache->decoders.end();
-            std::shared_ptr<IDecoderFactory> factory;
-
-            for (; factories != end && !factory; ++factories) {
-                if ((*factories)->CanHandle(dataStream->Type())) {
-                    factory = (*factories);
-                    break;
-                }
-            }
-
-            const std::string uri = dataStream->Uri();
-
-            if (!factory) {
-                /* nothing can decode this type of file */
-                musik::debug::error(TAG, "nothing could open " + uri);
-                return nullptr;
-            }
-
-            decoder = factory->CreateDecoder();
-
-            if (!decoder) {
-                /* shouldn't ever happen, the factory said it can handle this file */
-                return nullptr;
-            }
-
-            /* ask the decoder to open the data stream. if it returns true we're
-            good to start pulling data out of it! */
-            if (!decoder->Open(dataStream)) {
-                musik::debug::error(TAG, "open ok, but decode failed " + uri);
-                decoder->Release();
-                return nullptr;
-            }
-
-            musik::debug::info(TAG, "found a decoder for " + uri);
-
-            return decoder;
-        }
-
         IEncoder* GetEncoderForType(const char* type) {
             const auto cache = getFactories();
 
-            for (const auto& factory : cache->encoders) {
+            for (const auto& factory : *cache) {
                 if (factory->CanHandle(type)) {
                     return factory->CreateEncoder(type);
                 }
             }
 
             return nullptr;
-        }
-
-        std::shared_ptr<IDecoder> GetDecoderForDataStream(DataStreamPtr dataStream) {
-            auto decoder = GetDecoderForDataStream(dataStream.get());
-            return decoder ? DecoderPtr(decoder, Deleter()) : DecoderPtr();
         }
 
         DspList GetDspPlugins() {

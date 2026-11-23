@@ -3,7 +3,7 @@
 #include "../../support/check.h"
 #include <musikcore/audio/Outputs.h>
 #include <musikcore/audio/Streams.h>
-#include <musikcore/io/DataStreamFactory.h>
+#include <musikcore/plugin/media.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/Preferences.h>
 
@@ -154,72 +154,62 @@ namespace runtime_tests {
         const auto path = std::filesystem::u8path(directory) / "not-opened-yet.bin";
         const auto encoded = path.u8string();
         const std::string filename(reinterpret_cast<const char*>(encoded.data()), encoded.size());
-        auto& environment = musik::core::plugin::Environment();
-        /* own unopened streams too, including early assertion failures. */
-        const auto release = [](sdk::IDataStream* stream) {
-            if (stream) {
-                stream->Release();
-            }
-        };
-        std::unique_ptr<sdk::IDataStream, decltype(release)> source(
-            environment.CreateDataStream(filename.c_str()), release);
-        if (!TEST_CHECK(bool(source)) || !TEST_CHECK(!std::filesystem::exists(path))) {
+        const auto& media = musik::core::plugin::Environment().Media();
+        const mc_string_view pathView { filename.data(), filename.size() };
+        const auto writeFlags = MC_STREAM_OPEN_WRITE | MC_STREAM_OPEN_CREATE | MC_STREAM_OPEN_TRUNCATE;
+        mc_stream source = MC_STREAM_DEFAULT;
+        if (!TEST_CHECK(media.create_stream(media.context, pathView, &source, nullptr) == MC_OK)) {
+            return false;
+        }
+        /* Stop before open must prevent side effects even for writable media. */
+        source.api->interrupt(source.instance);
+        auto status = source.api->open(source.instance, pathView, writeFlags, nullptr);
+        source.api->destroy(source.instance);
+        if (!TEST_CHECK(status == MC_ERROR_CANCELLED && !std::filesystem::exists(path))) {
             return false;
         }
 
-        /* abort publication before any Open call, including writable streams. */
-        bool published = false;
-        const auto cancelled = io::DataStreamFactory::OpenSharedDataStream(filename.c_str(), sdk::OpenFlags::Write,
-            [&](const auto& pending) {
-                published = bool(pending);
-                pending->Interrupt();
-                return false;
-            });
-        if (!TEST_CHECK(published && !cancelled && !std::filesystem::exists(path))) {
+        source = MC_STREAM_DEFAULT;
+        if (!TEST_CHECK(media.create_stream(media.context, pathView, &source, nullptr) == MC_OK)) {
+            return false;
+        }
+        const char bytes[] = "media";
+        size_t written = 0;
+        /* an encoder's writable sink must not be probed as a decoder input. */
+        mc_decoder codec = MC_DECODER_DEFAULT;
+        const bool saved = source.api->open(source.instance, pathView, writeFlags, nullptr) == MC_OK &&
+            media.create_decoder(media.context, &source, &codec, nullptr) == MC_ERROR_UNSUPPORTED &&
+            !codec.instance && source.api->write(source.instance, bytes, sizeof(bytes), &written, nullptr) == MC_OK &&
+            written == sizeof(bytes) && source.api->close(source.instance) == MC_OK;
+        source.api->destroy(source.instance);
+        if (!TEST_CHECK(saved && std::filesystem::file_size(path) == sizeof(bytes))) {
             return false;
         }
 
-        /* creation did not choose flags or touch disk; the caller opens its
-        already-owned resource explicitly and retains normal write behavior. */
-        const char bytes[] = "sdk23";
-        if (!TEST_CHECK(source->Open(filename.c_str(), sdk::OpenFlags::Write)) ||
-            !TEST_CHECK(source->Write((void*) bytes, sizeof(bytes)) == sizeof(bytes)) ||
-            !TEST_CHECK(source->Close()) || !TEST_CHECK(std::filesystem::file_size(path) == sizeof(bytes)))
-        {
-            return false;
-        }
-        source.reset();
-
-        /* nested adapters must release unopened streams and forward cancellation
-        that arrives before their child is opened. successful Open first proves
-        provider selection, rather than accidentally testing a local-path fallback. */
+        /* exercise nested factory selection and interruption before child open;
+        a local-file fallback cannot open the virtual subsong URI. */
         const auto checkNested = [&](const char* prefix, const char* name) -> bool {
             const auto child = std::filesystem::u8path(directory) / name;
             std::filesystem::copy_file(path, child);
             const auto childEncoded = child.u8string();
             const std::string uri = std::string(prefix) + "://0/" +
                 std::string(reinterpret_cast<const char*>(childEncoded.data()), childEncoded.size());
-            std::unique_ptr<sdk::IDataStream, decltype(release)> unopened(
-                environment.CreateDataStream(uri.c_str()), release);
-            if (!TEST_CHECK(bool(unopened))) {
-                return false;
+            const mc_string_view view { uri.data(), uri.size() };
+            for (bool cancel : { false, true }) {
+                mc_stream nested = MC_STREAM_DEFAULT;
+                if (!TEST_CHECK(media.create_stream(media.context, view, &nested, nullptr) == MC_OK)) {
+                    return false;
+                }
+                if (cancel) {
+                    nested.api->interrupt(nested.instance);
+                }
+                const auto opened = nested.api->open(nested.instance, view, MC_STREAM_OPEN_READ, nullptr);
+                nested.api->destroy(nested.instance);
+                if (!TEST_CHECK(opened == (cancel ? MC_ERROR_CANCELLED : MC_OK))) {
+                    return false;
+                }
             }
-            unopened.reset();
-            std::unique_ptr<sdk::IDataStream, decltype(release)> opened(
-                environment.CreateDataStream(uri.c_str()), release);
-            if (!TEST_CHECK(opened && opened->Open(uri.c_str(), sdk::OpenFlags::Read)) ||
-                !TEST_CHECK(opened->Close()))
-            {
-                return false;
-            }
-            opened.reset();
-            std::unique_ptr<sdk::IDataStream, decltype(release)> interrupted(
-                environment.CreateDataStream(uri.c_str()), release);
-            if (!TEST_CHECK(bool(interrupted))) {
-                return false;
-            }
-            interrupted->Interrupt();
-            return TEST_CHECK(!interrupted->Open(uri.c_str(), sdk::OpenFlags::Read));
+            return true;
         };
 #ifdef TEST_STREAM_gmedecoder
         if (!checkNested("gme", "nested.spc")) {
@@ -228,6 +218,42 @@ namespace runtime_tests {
 #endif
 #ifdef TEST_STREAM_openmptdecoder
         if (!checkNested("libopenmpt", "nested.mod")) {
+            return false;
+        }
+#endif
+        /* a saved disabled codec also suppresses its new indexer until the
+        user explicitly enables indexing. listing plugins must not itself
+        create an override that masks the inherited setting. */
+        auto checkIndexerSelection = [](std::string_view mediaId, std::string_view indexerId) {
+            const auto plugins = api::ListPlugins();
+            const auto find = [&](std::string_view id) {
+                return std::find_if(plugins.begin(), plugins.end(), [&](const auto& plugin) { return plugin.id == id; });
+            };
+            const auto media = find(mediaId);
+            const auto indexer = find(indexerId);
+            if (!TEST_CHECK(media != plugins.end() && indexer != plugins.end()) ||
+                !TEST_CHECK(api::SetPluginEnabled(media->filename, false) == MC_OK))
+            {
+                return false;
+            }
+            const auto indexerEnabled = [&] {
+                for (const auto& item : api::ListPlugins()) {
+                    if (item.id == indexerId) {
+                        return item.enabled;
+                    }
+                }
+                return false;
+            };
+            return TEST_CHECK(!indexerEnabled()) && TEST_CHECK(api::SetPluginEnabled(indexer->filename, true) == MC_OK) &&
+                TEST_CHECK(indexerEnabled());
+        };
+#ifdef TEST_STREAM_gmedecoder
+        if (!checkIndexerSelection("org.musikcube.decoder.gme", "2c4eee19-6585-4984-a631-b52ff7d6d564")) {
+            return false;
+        }
+#endif
+#ifdef TEST_STREAM_openmptdecoder
+        if (!checkIndexerSelection("org.musikcube.decoder.openmpt", "c367f42f-389a-4378-966c-1f96dad6a66a")) {
             return false;
         }
 #endif
@@ -249,26 +275,14 @@ namespace runtime_tests {
             api::Context context(options);
             auto playback = context.GetPlayback();
             if (caches) {
-                /* exercise concurrent first lookup; no fixture accepts the URI. */
-                const auto path = std::filesystem::u8path(api::ReadPath(MC_PATH_DATA)) / "uncreated-runtime-stream";
-                const auto text = path.u8string();
-                const std::string uri(reinterpret_cast<const char*>(text.data()), text.size());
-                std::vector<std::thread> readers;
-                for (unsigned reader = 0; reader < 4; ++reader) {
-                    readers.emplace_back([&] {
-                        const auto stream = io::DataStreamFactory::OpenSharedDataStream(uri.c_str(), sdk::OpenFlags::Read);
-                    });
-                }
-                for (auto& reader : readers) {
-                    reader.join();
-                }
+                /* populate the remaining encoder cache before stopping its providers. */
                 audio::streams::GetEncoderForType("runtime-fixture-unsupported-codec");
             }
             api::OpenTrackSearch(context, {}, [&](mc_result status, api::TrackResult, std::string_view) {
                 ++completions;
                 completed = status;
             });
-            const int expectedMask = caches ? 127 : 15;
+            const int expectedMask = caches ? (15 | 64) : 15;
             if (!TEST_CHECK(context.Shutdown() == MC_OK) ||
                 !TEST_CHECK((first->GetInt("cleanup_mask") & expectedMask) == expectedMask) ||
                 !TEST_CHECK((second->GetInt("cleanup_mask") & expectedMask) == expectedMask) ||
@@ -281,13 +295,10 @@ namespace runtime_tests {
         }
         if (caches) {
             for (const auto& preferences : { first, second }) {
-                for (const std::string kind : { "stream", "decoder", "encoder" }) {
-                    if (!TEST_CHECK(preferences->GetInt(kind + "_acquisitions") > 0) ||
-                        !TEST_CHECK(preferences->GetInt(kind + "_acquisitions") ==
-                            preferences->GetInt(kind + "_releases")))
-                    {
-                        return false;
-                    }
+                if (!TEST_CHECK(preferences->GetInt("encoder_acquisitions") > 0) ||
+                    !TEST_CHECK(preferences->GetInt("encoder_acquisitions") == preferences->GetInt("encoder_releases")))
+                {
+                    return false;
                 }
             }
         }

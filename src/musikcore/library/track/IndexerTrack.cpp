@@ -43,7 +43,6 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/library/LocalLibrary.h>
-#include <musikcore/io/DataStreamFactory.h>
 
 #include <unordered_map>
 #include <chrono>

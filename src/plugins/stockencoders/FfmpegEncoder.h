@@ -56,18 +56,16 @@ using AVCodecCompat = AVCodec;
 #endif
 
 class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
-    using IBuffer = musik::core::sdk::IBuffer;
-    using IDataStream = musik::core::sdk::IDataStream;
 
     public:
         FfmpegEncoder(const std::string& format);
 
         virtual void Release() override;
-        virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) override;
-        virtual bool Encode(const IBuffer* pcm) override;
-        virtual void Finalize() override;
+        virtual bool Initialize(const mc_stream& out, size_t rate, size_t channels, size_t bitrate) override;
+        virtual bool Encode(const mc_pcm_view& pcm) override;
+        virtual bool Finalize() override;
 
-        IDataStream* Stream() { return this->out; }
+
 
     private:
         void Cleanup();
@@ -75,21 +73,19 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         bool OpenOutputContext();
         bool WriteOutputHeader();
         bool WriteOutputTrailer();
-        bool WriteSamplesToFifo(const IBuffer* pcm);
+        bool WriteSamplesToFifo(const mc_pcm_view& pcm);
         bool ReadFromFifoAndWriteToOutput(bool drain);
-        void FlushResampler();
+        bool FlushResampler();
         AVFrame* ReallocFrame(AVFrame* original, AVSampleFormat format, int samplesPerChannel, int sampleRate);
         int SendReceiveAndWriteFrame(AVFrame* frame);
 
         bool isValid;
-        IDataStream* out;
-        int readBufferSize;
+        mc_stream out = MC_STREAM_DEFAULT;
         AVAudioFifo* outputFifo;
         AVCodecCompat* outputCodec;
         AVCodecContext* outputContext;
         AVFormatContext* outputFormatContext;
         AVIOContext* ioContext;
-        void* ioContextOutputBuffer;
         AVFrame* outputFrame;
         AVFrame* resampledFrame;
         SwrContext* resampler;

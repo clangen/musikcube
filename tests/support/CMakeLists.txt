@@ -214,6 +214,24 @@ if(BUILD_TESTING)
         set_tests_properties(musikcore.integration.transport.${mode}_pcm PROPERTIES
           LABELS "integration;musikcore;transport;playback" TIMEOUT 35)
       endforeach()
+      add_dependencies(musikcore_playback_pcm_test musikcore_byte_decoder)
+      foreach(mode IN ITEMS decoder_contract decoder_drain)
+        add_test(NAME musikcore.integration.transport.${mode}_pcm COMMAND "${MUSIKCORE_TEST_NODE}"
+          "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+          "$<TARGET_FILE:musikcore_playback_pcm_test>" --stage --plugin "$<TARGET_FILE:musikcore_byte_decoder>"
+          --plugin "$<TARGET_FILE:musikcore_pcm_capture_output>" ${mode}
+          "$<TARGET_FILE_NAME:musikcore_pcm_capture_output>" @origin)
+        set_tests_properties(musikcore.integration.transport.${mode}_pcm PROPERTIES
+          LABELS "integration;musikcore;transport;playback;contract" TIMEOUT 30)
+      endforeach()
+      add_test(NAME musikcore.integration.plugins.partial_media_create COMMAND "${MUSIKCORE_TEST_NODE}"
+        "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+        "$<TARGET_FILE:musikcore_playback_pcm_test>" --expect-abort --stage
+        --plugin "$<TARGET_FILE:musikcore_pcm_capture_output>" partial_media_create)
+      set_tests_properties(musikcore.integration.plugins.partial_media_create PROPERTIES
+        LABELS "integration;musikcore;plugins;contract" TIMEOUT 30
+        PASS_REGULAR_EXPRESSION "failed media factory returned an instance"
+        FAIL_REGULAR_EXPRESSION "fatal-test: stack unwound;Test failed")
       set_tests_properties(musikcore.integration.transport.paused_crossfade_pcm PROPERTIES TIMEOUT 25)
     endif()
 
@@ -277,13 +295,28 @@ if(BUILD_TESTING)
           LABELS "integration;musikcore;transport;playback;contract" TIMEOUT 30)
         if(TARGET stockencoders)
           add_dependencies(musikcore_managed_runtime_test stockencoders)
-          foreach(format IN ITEMS mp3 flac)
-            add_test(NAME musikcore.integration.api.remote_transcode.${format} COMMAND "${CMAKE_COMMAND}"
+          foreach(mode IN ITEMS mp3 flac mp3_sync mp3_range_fallback mp3_no_cache)
+            set(format "${mode}")
+            set(sync OFF)
+            set(range_fallback OFF)
+            set(no_cache OFF)
+            if(mode STREQUAL "mp3_sync")
+              set(format mp3)
+              set(sync ON)
+            elseif(mode STREQUAL "mp3_range_fallback")
+              set(format mp3)
+              set(range_fallback ON)
+            elseif(mode STREQUAL "mp3_no_cache")
+              set(format mp3)
+              set(no_cache ON)
+            endif()
+            add_test(NAME musikcore.integration.api.remote_transcode.${mode} COMMAND "${CMAKE_COMMAND}"
               ${indexed_arguments} "-DMANAGED_RUNTIME_TEST=$<TARGET_FILE:musikcore_managed_runtime_test>"
               "-DSERVER_PLUGIN=$<TARGET_FILE:server>" "-DHTTP_DATASTREAM_PLUGIN=$<TARGET_FILE:httpdatastream>"
               "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" "-DENCODER_PLUGIN=$<TARGET_FILE:stockencoders>"
-              "-DTRANSCODE_FORMAT=${format}" -P "${indexed_script}")
-            set_tests_properties(musikcore.integration.api.remote_transcode.${format} PROPERTIES
+              "-DTRANSCODE_FORMAT=${format}" "-DSYNCHRONOUS_TRANSCODE=${sync}"
+              "-DRANGE_FALLBACK=${range_fallback}" "-DNO_TRANSCODE_CACHE=${no_cache}" -P "${indexed_script}")
+            set_tests_properties(musikcore.integration.api.remote_transcode.${mode} PROPERTIES
               LABELS "integration;musikcore;transport;playback;contract" TIMEOUT 30)
           endforeach()
         endif()
@@ -410,6 +443,25 @@ if(WIN32)
 endif()
 add_dependencies(musikcube_tests musikcore_runtime_hardening_test)
 add_dependencies(musikcube_integration_tests musikcore_runtime_hardening_test)
+if(TARGET server)
+  target_sources(musikcore_runtime_hardening_test PRIVATE
+    ../integration/plugins/server-transcode.cpp
+    "${PROJECT_SOURCE_DIR}/src/plugins/server/ServerMedia.cpp"
+    "${PROJECT_SOURCE_DIR}/src/plugins/server/BlockingTranscoder.cpp"
+    "${PROJECT_SOURCE_DIR}/src/plugins/server/TranscodingAudioDataStream.cpp")
+  target_compile_definitions(musikcore_runtime_hardening_test PRIVATE TEST_SERVER_TRANSCODE)
+  add_dependencies(musikcore_runtime_hardening_test musikcore_byte_decoder)
+  set(server_encoder_fixture)
+  if(TARGET stockencoders)
+    target_compile_definitions(musikcore_runtime_hardening_test PRIVATE TEST_SERVER_STOCK_ENCODER)
+    add_dependencies(musikcore_runtime_hardening_test stockencoders)
+    set(server_encoder_fixture --plugin "$<TARGET_FILE:stockencoders>")
+  endif()
+  add_test(NAME musikcore.integration.server.transcode_body COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage --plugin "$<TARGET_FILE:musikcore_byte_decoder>" ${server_encoder_fixture} server_transcode)
+  set_tests_properties(musikcore.integration.server.transcode_body PROPERTIES LABELS "integration;server;audio;contract" TIMEOUT 30)
+endif()
 foreach(case IN ITEMS services plugin_directory registry startup owner read_isolation locked_read_shutdown database_failure)
   add_test(NAME musikcore.integration.runtime.${case} COMMAND "${MUSIKCORE_TEST_NODE}"
     "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
@@ -540,7 +592,12 @@ foreach(provider IN ITEMS gmedecoder openmptdecoder)
     set(target libopenmptdecoder)
   endif()
   if(TARGET ${target})
-    list(APPEND stream_sdk_plugins --plugin "$<TARGET_FILE:${target}>")
+    if(provider STREQUAL "gmedecoder")
+      set(indexer gmeindexer)
+    else()
+      set(indexer openmptindexer)
+    endif()
+    list(APPEND stream_sdk_plugins --plugin "$<TARGET_FILE:${target}>" --plugin "$<TARGET_FILE:${indexer}>")
     target_compile_definitions(musikcore_runtime_hardening_test PRIVATE TEST_STREAM_${provider})
     add_dependencies(musikcore_runtime_hardening_test ${target})
   endif()
