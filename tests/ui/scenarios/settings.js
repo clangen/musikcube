@@ -60,6 +60,29 @@ async function checkSettings(terminal, { staged, hasServer }) {
     await terminal.waitFor(() => terminal.screen.text().split('\n').some(
       row => row.includes('Null Output') && row.includes('[v')), 'complete Null plugin row');
     const pluginRows = terminal.screen.text().split('\n').filter(row => row.includes('[v'));
+    /* toggling the codec changes both checkboxes. pressing space again must
+    target the same filename after the catalog refreshes. */
+    const codec = staged.find(name => /^(?:lib)?gmedecoder\./.test(name));
+    const indexer = staged.find(name => /^(?:lib)?gmeindexer\./.test(name));
+    if (codec && indexer) {
+      const row = pluginRows.findIndex(line => line.includes(`(${codec})`));
+      if (row < 0) {
+        throw new Error(`Missing plugin row for ${codec}`);
+      }
+
+      const expectPair = async mark => {
+        for (const filename of [codec, indexer]) {
+          await terminal.expect(`${mark} GME IDecoder (${filename})`);
+        }
+      };
+
+      await expectPair('[x]');
+      terminal.send(HOME + DOWN.repeat(row) + ' ');
+      await expectPair('[ ]');
+      terminal.send(' ');
+      await expectPair('[x]');
+    }
+
     const nullRow = pluginRows.findIndex(row => row.includes('Null Output'));
     terminal.send(HOME + DOWN.repeat(nullRow) + '\r');
     /* C null output intentionally has no settings schema. its row must remain

@@ -53,11 +53,15 @@
 
 namespace musik { namespace core {
 
+    namespace api { struct PluginInfo; }
+    class Preferences;
+
     class PluginFactory {
         public:
             static PluginFactory& Instance(const std::string& directory = {});
 
             const std::string& Directory() const noexcept { return this->directory; }
+            std::vector<api::PluginInfo> ListPlugins();
             void BeginSession();
             void EndSession();
 
@@ -83,7 +87,7 @@ namespace musik { namespace core {
                 typedef T* STDCALL(PluginInterfaceCall);
 
                 for (std::shared_ptr<Descriptor> descriptor : this->plugins) {
-                    if (functionName == "GetPlugin" || prefs->GetBool(descriptor->key.c_str(), true)) { /* enabled */
+                    if (functionName == "GetPlugin" || IsEnabled(*descriptor)) { /* enabled */
                         PluginInterfaceCall funcPtr =
 #ifdef WIN32
                             (PluginInterfaceCall) GetProcAddress((HMODULE)(descriptor->nativeHandle), functionName.c_str());
@@ -129,7 +133,7 @@ namespace musik { namespace core {
                 for (std::shared_ptr<Descriptor> descriptor : this->plugins) {
                     const bool selected = selection == FunctionSelection::Session
                         ? descriptor->session
-                        : prefs->GetBool(descriptor->key.c_str(), true);
+                        : IsEnabled(*descriptor);
                     if (selected) {
                         T funcPtr =
 #ifdef WIN32
@@ -164,17 +168,19 @@ namespace musik { namespace core {
                 void* nativeHandle;
                 std::string filename;
                 std::string key;
+                std::string parentKey;
                 bool session = false;
             };
 
             explicit PluginFactory(std::string directory);
             ~PluginFactory();
             void LoadPlugins();
+            bool IsEnabled(const Descriptor& descriptor) const;
 
             const std::string directory;
 
             std::vector<std::shared_ptr<Descriptor> > plugins;
             std::mutex mutex;
-            std::shared_ptr<musik::core::sdk::IPreferences> prefs;
+            std::shared_ptr<Preferences> prefs;
     };
 } }

@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <initializer_list>
+#include <string_view>
 #include <memory>
 #include <vector>
 #include <mutex>
@@ -87,6 +89,24 @@ namespace musik { namespace core {
 
             /* easier interface for internal use */
             bool GetBool(const std::string& key, bool defaultValue = false);
+            /* read the first saved value of the requested type. a missing key
+            stays missing so it can continue to inherit its default. */
+            template<typename T> T Lookup(std::initializer_list<std::string_view> keys, T fallback) {
+                std::lock_guard lock(this->mutex);
+                for (auto key : keys) {
+                    const auto value = this->json.find(key);
+                    if (value != this->json.end()) {
+                        try {
+                            return value->get<T>();
+                        }
+                        catch (const nlohmann::json::type_error&) {
+                            /* an invalid setting leaves the next choice eligible. */
+                        }
+                    }
+                }
+                return fallback;
+            }
+
             int GetInt(const std::string& key, int defaultValue = 0);
             double GetDouble(const std::string& key, double defaultValue = 0.0f);
             std::string GetString(const std::string& key, const std::string& defaultValue = "");

@@ -548,6 +548,56 @@ namespace musik { namespace core { namespace plugin {
         return pluginRegistry->Find<mc_output_factory>(pluginId);
     }
 
+    ffi::PluginRegistry::Factory<mc_configuration_api> FindConfiguration(std::string_view pluginId) {
+        return pluginRegistry ? pluginRegistry->Find<mc_configuration_api>(pluginId)
+            : ffi::PluginRegistry::Factory<mc_configuration_api>();
+    }
+
+    static mc_result MC_CALL readInteger(void* context, const mc_integer_setting* setting, int32_t* value) {
+        if (!setting || !value || !ffi::valid_text(setting->key, false) ||
+            setting->default_value < setting->minimum || setting->default_value > setting->maximum)
+        {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return ffi::exception_barrier(nullptr, [&] {
+            const std::string key(setting->key.data, setting->key.length);
+            const auto saved = static_cast<Preferences*>(context)->GetInt(key, setting->default_value);
+            *value = saved >= setting->minimum && saved <= setting->maximum ? saved : setting->default_value;
+            return MC_OK;
+        });
+    }
+
+    static mc_result MC_CALL readBoolean(void* context, mc_string_view key, bool fallback, bool* value) {
+        if (!value || !ffi::valid_text(key, false)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return ffi::exception_barrier(nullptr, [&] {
+            *value = static_cast<Preferences*>(context)->GetBool(std::string(key.data, key.length), fallback);
+            return MC_OK;
+        });
+    }
+
+    static mc_result MC_CALL readNumber(void* context, mc_string_view key, double fallback, double* value) {
+        if (!value || !std::isfinite(fallback) || !ffi::valid_text(key, false)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return ffi::exception_barrier(nullptr, [&] {
+            const auto saved = static_cast<Preferences*>(context)->GetDouble(std::string(key.data, key.length), fallback);
+            *value = std::isfinite(saved) ? saved : fallback;
+            return MC_OK;
+        });
+    }
+
+    mc_preferences_host_api ReadSettingsService(const std::string& pluginName) {
+        return {
+            .struct_size = sizeof(mc_preferences_host_api),
+            .context = Preferences::ForPlugin(pluginName).get(),
+            .read_integer = readInteger,
+            .read_boolean = readBoolean,
+            .read_number = readNumber,
+        };
+    }
+
     void ValidateShutdown() {
         if (pluginRegistry) {
             pluginRegistry->AssertCanShutdown();

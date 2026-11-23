@@ -44,7 +44,7 @@ function stageRuntime(runtime, binaryDir, { settings, lyrics }) {
   fs.mkdirSync(join(runtime, 'plugins'));
   for (const name of fs.readdirSync(join(binaryDir, 'plugins'))) {
     if (/^(?:lib)?(?:taglibreader|taglib_plugin|ffmpegdecoder)\./.test(name) ||
-        (settings && /^(?:lib)?(?:nullout|supereqdsp|server)\./.test(name)) ||
+        (settings && /^(?:lib)?(?:nullout|supereqdsp|server|gmedecoder|gmeindexer)\./.test(name)) ||
         (lyrics && /^(?:lib)?nullout\./.test(name))) {
       stage(join(binaryDir, 'plugins', name), join(runtime, 'plugins', name));
     }

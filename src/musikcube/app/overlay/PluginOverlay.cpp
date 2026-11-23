@@ -73,10 +73,8 @@ namespace {
 
     class PluginListAdapter final : public ScrollAdapterBase {
     public:
-        PluginListAdapter() : plugins(api::ListPlugins()) {
-            std::sort(this->plugins.begin(), this->plugins.end(), [](const auto& left, const auto& right) {
-                return sortKey(left.name) < sortKey(right.name);
-            });
+        PluginListAdapter() {
+            this->RefreshPlugins();
         }
 
         void Configure(size_t index) {
@@ -96,9 +94,10 @@ namespace {
         }
 
         void ToggleEnabled(size_t index) {
-            auto& plugin = this->plugins.at(index);
+            const auto& plugin = this->plugins.at(index);
             if (api::SetPluginEnabled(plugin.filename, !plugin.enabled) == MC_OK) {
-                plugin.enabled = !plugin.enabled;
+                /* a companion can inherit the toggled setting. read both rows back from the host. */
+                this->RefreshPlugins();
             }
         }
 
@@ -118,6 +117,16 @@ namespace {
         }
 
     private:
+        void RefreshPlugins() {
+            this->plugins = api::ListPlugins();
+            /* companions can share a display name. a stable filename tie-break
+            keeps the selection on the same plugin when the list is redrawn. */
+            std::sort(this->plugins.begin(), this->plugins.end(), [](const auto& left, const auto& right) {
+                const auto byName = sortKey(left.name).compare(sortKey(right.name));
+                return byName == 0 ? left.filename < right.filename : byName < 0;
+            });
+        }
+
         std::vector<api::PluginInfo> plugins;
     };
 }

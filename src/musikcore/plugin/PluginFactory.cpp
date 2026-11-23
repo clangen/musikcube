@@ -37,7 +37,7 @@
 
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/ISchema.h>
-#include <musikcore/plugins.h>
+#include <musikcore/plugins.hpp>
 #include <musikcore/ffi/common/error.h>
 #include <musikcore/ffi/consumer/preferences-shape.h>
 #include <musikcore/plugin/PluginFactory.h>
@@ -98,10 +98,34 @@ PluginFactory::PluginFactory(std::string directory)
     this->LoadPlugins();
 }
 
+bool PluginFactory::IsEnabled(const Descriptor& descriptor) const {
+    if (descriptor.parentKey.empty()) {
+        return this->prefs->GetBool(descriptor.key, true);
+    }
+    /* reading the catalog must leave an unset companion free to follow its parent. */
+    return this->prefs->Lookup({ descriptor.key, descriptor.parentKey }, true);
+}
+
+std::vector<api::PluginInfo> PluginFactory::ListPlugins() {
+    std::lock_guard lock(this->mutex);
+    std::vector<api::PluginInfo> plugins;
+    for (const auto& descriptor : this->plugins) {
+        const auto plugin = descriptor->plugin;
+        plugins.push_back({
+            .id = plugin->Guid(),
+            .name = plugin->Name(),
+            .version = plugin->Version(),
+            .filename = descriptor->key,
+            .enabled = IsEnabled(*descriptor),
+        });
+    }
+    return plugins;
+}
+
 void PluginFactory::BeginSession() {
     std::lock_guard lock(this->mutex);
     for (const auto& descriptor : this->plugins) {
-        descriptor->session = this->prefs->GetBool(descriptor->key.c_str(), true);
+        descriptor->session = this->IsEnabled(*descriptor);
     }
 }
 
@@ -219,31 +243,31 @@ void PluginFactory::LoadPlugins() {
     }
     catch(...) {
     }
+    /* a companion may name the plugin whose enable setting supplies its default.
+    copy the name once while the module is loaded. */
+    for (const auto& descriptor : this->plugins) {
+        using ParentFilename = const char* (*)();
+#ifdef WIN32
+        auto parent = reinterpret_cast<ParentFilename>(
+            GetProcAddress(static_cast<HMODULE>(descriptor->nativeHandle), "GetParentPluginFilename"));
+#else
+        auto parent = reinterpret_cast<ParentFilename>(dlsym(descriptor->nativeHandle, "GetParentPluginFilename"));
+#endif
+        if (parent) {
+            if (const char* filename = parent()) {
+                descriptor->parentKey = filename;
+            }
+        }
+    }
 }
 
 namespace {
     using musik::core::sdk::IPlugin;
     using musik::core::sdk::ISchema;
 
-    struct PluginDetails {
-        std::string id;
-        std::string name;
-        std::string version;
-        std::string filename;
-        bool enabled;
-    };
-
-    std::vector<PluginDetails> pluginCatalog() {
+    std::vector<api::PluginInfo> pluginCatalog() {
         const auto settings = Preferences::ForComponent(prefs::components::Plugins);
-        std::vector<PluginDetails> plugins;
-        PluginFactory::Instance().QueryInterface<IPlugin, PluginFactory::ReleaseDeleter<IPlugin>>(
-            "GetPlugin", [&](IPlugin*, const std::shared_ptr<IPlugin>& plugin, const std::string& path) {
-                const auto filename = pathToUtf8(musik::core::sdk::fs::pathFromUtf8(path).filename());
-                plugins.push_back({
-                    plugin->Guid(), plugin->Name(), plugin->Version(),
-                    filename, settings->GetBool(filename, true)
-                });
-            });
+        auto plugins = PluginFactory::Instance().ListPlugins();
         for (const auto& plugin : musik::core::plugin::ListPlugins()) {
             const auto filename = pathToUtf8(fs::u8path(plugin.filename).filename());
             plugins.push_back({ plugin.id, plugin.name, plugin.version, filename,
@@ -384,8 +408,33 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
     if (!read || !ffi::valid_text(id, false)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return ffi::exception_barrier(nullptr, [&] {
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         const auto pluginId = pluginText(id);
+        const auto configuration = plugin::FindConfiguration(pluginId);
+        if (configuration) {
+            const auto catalog = plugin::ListPlugins();
+            const auto item = std::ranges::find(catalog, pluginId, &ffi::PluginRegistry::PluginInfo::id);
+            if (item == catalog.end()) {
+                return MC_ERROR_NOT_FOUND;
+            }
+            auto preferences = plugin::ReadSettingsService(item->name);
+            return configuration.Invoke([&](const mc_configuration_api& schema) -> mc_result {
+                for (size_t i = 0; i < schema.integer_count; ++i) {
+                    const auto& field = schema.integers[i];
+                    mc_plugin_setting row {};
+                    row.key = field.key;
+                    row.minimum = field.minimum;
+                    row.maximum = field.maximum;
+                    row.value.type = MC_PREFERENCE_INTEGER;
+                    const auto status = preferences.read_integer(preferences.context, &field, &row.value.data.integer);
+                    if (status != MC_OK) {
+                        return status;
+                    }
+                    read(data, &row);
+                }
+                return MC_OK;
+            });
+        }
         const auto plugin = PluginFactory::Instance().QueryGuid(std::string(pluginId));
         if (!plugin) {
             const auto catalog = pluginCatalog();
@@ -431,8 +480,34 @@ mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference
     if (!entry || !ffi::valid_text(id, false) || !ffi::valid_preference_entries(entry, 1)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return ffi::exception_barrier(nullptr, [&] {
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         const auto pluginId = pluginText(id);
+        const auto configuration = plugin::FindConfiguration(pluginId);
+        if (configuration) {
+            const auto catalog = plugin::ListPlugins();
+            const auto item = std::ranges::find(catalog, pluginId, &ffi::PluginRegistry::PluginInfo::id);
+            if (item == catalog.end()) {
+                return MC_ERROR_NOT_FOUND;
+            }
+            return configuration.Invoke([&](const mc_configuration_api& schema) -> mc_result {
+                for (size_t i = 0; i < schema.integer_count; ++i) {
+                    const auto& field = schema.integers[i];
+                    if (pluginText(field.key) != pluginText(entry->key)) {
+                        continue;
+                    }
+                    if (entry->value.type != MC_PREFERENCE_INTEGER ||
+                        entry->value.data.integer < field.minimum || entry->value.data.integer > field.maximum)
+                    {
+                        return MC_ERROR_INVALID_ARGUMENT;
+                    }
+                    const auto prefs = Preferences::ForPlugin(item->name);
+                    return prefs->SetValues({ { std::string(pluginText(field.key)), entry->value.data.integer } }, true)
+                        ? MC_OK
+                        : MC_ERROR_IO;
+                }
+                return MC_ERROR_NOT_FOUND;
+            });
+        }
         const auto plugin = PluginFactory::Instance().QueryGuid(std::string(pluginId));
         if (!plugin) {
             const auto catalog = pluginCatalog();
