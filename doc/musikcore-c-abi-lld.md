@@ -1093,7 +1093,11 @@ replacement stream tests protect its useful create/open/cancel contracts.
      existing C++ hash-based source IDs, file-clock timestamps, and preference
      store identity before any persisted-data conversion. No automatic reindex,
      data rewrite, or legacy compatibility shim is authorized by this draft.
-2. **Disconnect the previous architecture and install the new loading path.**
+2. **Replace each family's engine path with the new loading contract.**
+   Maintainer-approved staging: integrate C outputs first while keeping existing
+   decoders, streams, DSP, and other families usable. No output compatibility
+   interface or fallback is retained. Full old-SDK removal remains open until
+   those families migrate; this supersedes the initial all-family disconnection.
    - [ ] **PLG-CUTOVER-001** Remove the old discovery/startup path, factory
      lookups/caches, `Get*`/`Set*` hook wiring, and engine dependencies on
      `sdk::I*` interfaces. Simplify private types as callers move; engine-owned
@@ -1144,7 +1148,7 @@ replacement stream tests protect its useful create/open/cancel contracts.
      Never silently turn required regression tests into passing no-ops. Restore
      their normal registration as each prerequisite family becomes available.
 4. **Provide real null implementations for required defaults.**
-   - [ ] **PLG-NULL-001** Supply `nullout` as a loadable C output plugin.
+   - [x] **PLG-NULL-001** Supply `nullout` as a loadable C output plugin.
      Prove pacing, pause/resume, paused-delivery backpressure, exactly-once return,
      unavailable timing, stop/drain, and unload (`plugins.null_output`). An empty
      plugin directory leaves queries/startup/idle usable; playback without an
@@ -1166,21 +1170,29 @@ replacement stream tests protect its useful create/open/cancel contracts.
        DLL test supplies explicit host stop/cleanup. `plugins.installed` builds
        and loads C/C++ plugins from relocated public headers and audits symbols.
        Extend helpers as other concrete C families are implemented.
-     - [ ] **PLG-OUTPUT-HOST-001** Establish and test preconditions in the actual
-       replacement engine's output call path before integration. Reject invalid
-       pointers/prefixes, PCM frame/storage bounds, token identities, formats,
-       normalized volume, and required callbacks before calling the plugin.
+     - [x] **PLG-OUTPUT-HOST-001** Establish and test preconditions in the actual
+       replacement engine's output call path before integration. Accept one
+       typed playback buffer and completion owner; construct C prefixes, format,
+       and storage identity internally. Check changing sample counts, storage
+       bounds, and format values once before calling the plugin. Token identities
+       and required callbacks are host-generated; validate normalized volume
+       when it is set, not per buffer.
        Test a downstream recording provider with the production host path so
        invalid inputs produce no calls; a mock caller is not enforcement proof.
        Test successful prepare before queue, Stop before reprepare, cleanup of
        failed prepare, producer/callback quiescence before destroy/unload, and
        failed Stop preventing unsafe destruction. Boundary input checks and
-       lifecycle-order assertions must run before closing this gate; the C
-       engine output path is not connected yet. Adapter tests prove forwarding,
-       not these deferred engine guarantees.
-     - [ ] Connect engine output selection and plugin catalog/settings to the C
-       factory. The maintainer approved replacing the target now; the dependent
-       tests below remain explicitly pending until this integration is ready.
+       lifecycle-order assertions run through production audio::Output in
+       `plugins.output_host`. Recording-DLL regressions cover inline and deferred
+       completion, shared-player ownership, bounded admission, prepare rollback,
+       partial-create cleanup, interruption of a blocked producer, and stop/restart.
+       Fatal child tests `plugins.output_stop_failure`,
+       `plugins.output_duplicate_completion`, and `plugins.output_stale_completion`
+       prevent unsafe reuse or destruction after broken plugin contracts.
+     - [x] Connect engine output selection and plugin catalog/settings to the C
+       factory. Saved device preferences, no-schema settings, plugin enablement,
+       reload, and missing-output behavior use the actual engine path. Restore
+       the playback/UI and installed-consumer scenarios listed below.
    - [ ] **PLG-NULL-002** Decide any other required defaults from actual engine
      callers. Supply an implementation only where it has truthful behavior;
      otherwise report unsupported. Document whether the implementation is
@@ -1207,46 +1219,78 @@ replacement stream tests protect its useful create/open/cancel contracts.
      meaningful regression coverage. Complete GATE-800, external plugin/archive
      checks, and restored app workflows before release or ABI freeze.
 
+#### Output integration mechanics
+
+Each transport owns its joinable track jobs ([ADR-0009: Playback threading model](../docs/adr/0009-playback-threading-model.md)).
+The track worker opens and reads the decoder, applies gain and owns the fixed PCM
+pool. The transport reads duration and capabilities from snapshots. Closing the
+session interrupts active, prepared and retired jobs before joining any one of
+them. Independent URI sessions remain usable while a peer is stalled.
+
+`audio::Output::Writer` binds a track to one output. It records which slots
+contain that track's buffers. Native callbacks claim the matching token, publish
+the outcome and wake the worker. The worker recycles its own slots and handles
+FFT and notifications. Revoking a writer prevents new submissions, seeks, drains
+and failure cleanup from affecting a replacement track. Accepted slots must
+still be returned. Same-format gapless tracks share the device queue. An output
+that returns queue-full must wake its producer when capacity or a terminal
+error becomes observable, even if it already returned all outstanding buffers.
+
+Ordinary backend operations are serialized. Stop can interrupt a blocked write
+or drain independently. Failed prepare and partially created instances are
+stopped before reuse or destruction. Service teardown detaches plugin hosts
+while playback/catalogs exist, then releases outputs before DLL unload. Reentry
+is checked before service mutation. Cleanup failures that prevent quiescence are
+fatal.
+
+CoreAudio allocates AudioQueue storage during prepare and copies PCM on producer
+workers. Callbacks allocate/free no storage and take no engine locks. Synchronous
+disposal quiesces callbacks before returning outstanding cancelled tokens. Drain
+requests AudioQueueStop(false) and waits for both accepted frames to complete
+and IsRunning to become false; buffer reuse alone does not prove audible playback
+has finished. Timing remains explicitly unknown until a meaningful backend
+measurement is available.
+
 #### Replacement foundation validation
 
 Loader, buffer, and output checks exercise the actual C boundaries. The null
 output test uses the production shared library, not a copy of its implementation
 linked into the test host. Native Linux/Windows checks remain SDK-LINUX/SDK-WINDOWS.
-Engine cutover, remaining family headers, and the first decoder playback gate
+Full engine cutover, remaining family headers, and the first C decoder playback gate
 remain open. Passing currently applicable checks does not close these gates.
 
-The following tests are registered but disabled with `pending-plugin-cutover`
-labels, by maintainer approval. Restore them under PLG-CUTOVER-001/OUT-004 once
-engine playback/catalog/settings consume the C output factory:
+The output integration restores the previously deferred plugin playback/reload,
+managed runtime, playback-without-indexer, remote audio/transcoding, URI player,
+and TUI settings/lyrics scenarios. Installed SDK consumers again exercise managed
+plugin catalogs and C/C++ URI players. None remain disabled for output cutover.
 
-- `musikcore.integration.plugin.playback_reload`
-- `musikcore.integration.api.managed_runtime`
-- `musikcore.integration.api.playback_without_indexer`
-- `musikcore.integration.api.remote_audio`
-- `musikcore.integration.api.remote_transcode.mp3`
-- `musikcore.integration.api.remote_transcode.flac`
-- `musikcore.integration.api.uri_player`
-- `musikcube.ui.settings`
-- `musikcube.ui.lyrics`
+`transport.playback_pcm` scenarios cover real engine PCM handoff, gapless and
+crossfade transitions, seek, held completions, paused teardown, retired short-track
+cancellation, and queue/callback failure. Terminal transport Destroy cancels
+retired sessions and joins workers before plugin unload, even while a caller
+retains the transport. Failure regressions require exactly one OpenFailed and
+no natural Finished/automatic-next event. Throwing host detachment terminates
+before later hooks or native unload (`runtime.failure`).
 
-The installed SDK query, session, and engine-query consumers remain active.
-Its managed plugin-catalog and C/C++ URI-player subcases are explicitly pending
-C catalog/output integration; no compatibility exports or passing no-op
-substitute is added.
+The macOS gate `plugins.coreaudio_output` uses the physical
+AudioQueue with silent buffers, device UID selection, immediate/repeated drain,
+pause/stop/restart, and format change. It also drives a generated silent WAV
+through the public context/URI-player API and the existing FFmpeg decoder,
+including live runtime shutdown. Only actual device absence permits a skip;
+operational errors fail. Device unplug/replacement and other native platforms
+remain unverified; these runs do not close SDK-LINUX/SDK-WINDOWS.
 
-The last full macOS Release rebuild passed 129 applicable entries, with nine
-explicit pending engine-cutover entries. After synchronous pacing and the C++
-thin output adapter, focused Release plugin/SDK/export checks pass 12/12 and
-Debug ASan/UBSan checks pass 10/10. Removed adapter-owned cleanup tests were
-replaced by explicit caller-order and no-hidden-lifecycle assertions. Public C/C++ headers compile independently. The
-relocated installed-SDK check builds and loads C and C++ plugins without core
-linkage and audits both libraries. Invalid queue/stop exception specifications,
-wrong operation result types, and mutable timing methods fail compilation.
-The exception-policy regressions first reproduced empty-registry termination,
-missing entry context, and unsafe shutdown return; they now pass. The
-synchronous-pacing regression first failed on deferred completion, then passed
-with caller-thread completion. The null-output
-DLL exports only `mc_plugin_get_api` and depends only on the system C/C++ runtime.
+The remaining C++ SDK environment vtable now exposes output configuration
+snapshots and selection instead of output objects. Its version advances from
+23 to 24 and remaining plugins must rebuild; no compatibility shim is added.
+The public application C ABI is unchanged. This intentional autonomous SDK
+change requires maintainer acknowledgment before further family migration.
+
+Public C/C++ headers compile independently. The relocated installed-SDK check
+builds and loads C and C++ plugins without core linkage and audits their symbols.
+The NullOutput DLL exports only mc_plugin_get_api and depends only on the system
+C/C++ runtime. Adapter compile checks reject invalid noexcept/result signatures
+and mutable timing methods; adapters own no implicit lifecycle policy.
 
 #### Existing bootstrap foundation (retain and adapt)
 
@@ -1477,8 +1521,8 @@ This completed pilot is not a second migration backlog.
   - [ ] Connect decoder scratch to a private, contiguous fixed playback pool.
     Split decoded blocks across slices without growing playback storage; test
     pool exhaustion/backpressure, exactly-once recycling after output completion,
-    and quiescence before pool replacement on format changes. No playback
-    handoff through the replacement C pipeline is claimed yet.
+    and quiescence before pool replacement on format changes. The C output
+    handoff is covered by OUT-002; C decoder scratch integration remains open.
 - [x] **AUD-002** Define frame counts, capacities, formats, and buffer state
   transitions precisely in `plugin/audio.h` and `plugin/output.h`.
   `plugins.audio_buffers`, `plugins.contract_headers`, and `plugins.null_output`
@@ -1491,7 +1535,8 @@ This completed pilot is not a second migration backlog.
   `mc_audio_format` layout is 16 bytes; consumers of these structs must rebuild.
   Hosts supply validated values and negotiated prefixes; plugins handle backend
   capacity/availability. `plugins.null_output` tests unavailable-device recovery
-  with explicit host cleanup; engine input enforcement remains PLG-OUTPUT-HOST-001. Bootstrap
+  with explicit host cleanup; production engine input enforcement is covered
+  by PLG-OUTPUT-HOST-001. Bootstrap
   checks are centralized in `mc_plugin_validate_host_api`, covered by strict
   `plugins.contract_headers` compatibility/prefix/default tests.
 - [ ] **STR-001** Define stream table operations with `uint64_t` positions,
@@ -1896,8 +1941,9 @@ production startup failure was established.
 
 Contract-definition portions run in PLG-CONTRACT-002; implementation begins only
 after the new loading/empty/null path is established. Complete one representative
-per family under PLG-PROVE-002 before backfilling the remaining plugins. Phase 8
-is not an instruction to keep the C++ SDK active during conversion.
+per family under PLG-PROVE-002 before backfilling the remaining plugins.
+Unmigrated families retain their current SDK during the approved output-first
+stage; migrated families must not keep a parallel former-SDK path.
 
 #### Provider discovery and configuration
 
@@ -1939,15 +1985,53 @@ is not an instruction to keep the C++ SDK active during conversion.
 #### Audio outputs
 
 - [ ] **OUT-001** Finalize real-time-safe output and device contracts.
-- [ ] **OUT-002** Implement buffer submission/recycle state machine.
+- [x] **OUT-002** Implement buffer submission/recycle state machine.
+  Production audio::Output publishes bounded token records before queueing and
+  reports successful buffers to each player worker in submission order, including
+  when a gapless successor reuses the previous track's slots. A device failure
+  reaches the worker even if the device holds an earlier buffer until Stop.
+  `plugins.output_host` and `transport.playback_pcm` cover both cases, inline
+  completion, backpressure, cancellation, and failure without false natural EOF.
+  `plugins.output_host` also covers writer revocation across output reuse and
+  readiness after early completion. `transport.retired_crossfade_pcm` covers
+  shutdown with a blocked fade tail. `transport.failed_next_crossfade_pcm`
+  keeps the active track playing through a failed prefetch. `transport.seek_eof_pcm`
+  verifies the first samples after buffered and post-EOF fractional seeks.
+  `transport.seek_tail_pcm` covers a seek accepted while the last output buffers play.
+  `api.uri_player` keeps one session blocked while its peer plays and closes.
+- [ ] Before freezing output timing, distinguish when a buffer can be reused
+  from when its samples become audible. Specify a media-to-output timeline and
+  fallback for unknown device timing, including seek and crossfade overlap.
+  Exercise a backend that returns copied PCM before playback.
+- [x] Keep Stop reachable during a blocking write. Pause and resume give a
+  paced write a short time to finish, then return `MC_ERROR_IN_FLIGHT` if the
+  device is still busy. A rejected pause or resume preserves the prior state
+  and reports the selected device's error to the caller. A volume change that
+  encounters a busy output leaves the latest gain for the next write without
+  waiting. `plugins.output_host` exercises repeated updates during a blocked
+  write. Control failures are covered by
+  `transport.blocked_control_pcm`, `transport.gapless_control_failure_pcm`,
+  `transport.crossfade_control_failure_pcm`, and `transport.uri_control_failure_pcm`.
+  During overlap, `transport.paused_crossfade_pcm` checks that rejection by
+  the selected device leaves the overlap playing and rejection by an outgoing
+  device retires only its tail. PCM tests also verify that a seek from pause
+  restores the selected track's gain and that a stopped or
+  failed replacement cannot bring back the previous track.
 - [ ] **OUT-003** Add debug instrumentation for forbidden real-time host calls.
-- [ ] **OUT-004** Convert `nullout` as the first production output.
+- [x] **OUT-004** Convert `nullout` as the first production output.
   - [x] Ship a C-only shared library with synchronous, interruptible producer pacing.
     `plugins.null_output` exercises its factory/instances and native unload;
     `binary.exports.nullout` verifies the only export is `mc_plugin_get_api`.
-  - [ ] Restore engine selection, catalog/settings, and the pending playback/UI
-    and installed-consumer scenarios listed under Phase 4 validation.
-- [ ] **OUT-005** Convert `coreaudioout`.
+  - [x] Restore engine selection, catalog/settings, playback/UI, and installed
+    consumers through the C output factory (Phase 4 validation above).
+- [x] **OUT-005** Convert `coreaudioout`.
+  `plugins.coreaudio_output` validates preallocated AudioQueue storage,
+  exactly-once return, interruptible drain, pause/restart, format changes,
+  public URI playback, and teardown before DLL unload on macOS. Timing remains
+  optional. A missing pinned device follows the system default on the next
+  open and retains the pin for reconnection. `plugins.output_host` exercises
+  disappearance and reconnection; live device loss during playback remains
+  a manual follow-up.
 - [ ] **OUT-006** Convert `alsaout`.
 - [ ] **OUT-007** Convert `pipewireout`.
 - [ ] **OUT-008** Convert `portaudioout`.

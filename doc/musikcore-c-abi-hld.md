@@ -261,8 +261,10 @@ shared target remains available for contract tests and the pilot. Temporary
 internal adapters preserve existing behavior behind the façade.
 
 That application migration preserved its working path until the public surface
-covered the required behavior. The provider replacement uses the separate-branch
-cutover below; it does not preserve a parallel old SDK path in the new engine.
+covered the required behavior. The provider replacement uses its own branch and
+cuts over one family at a time. Migrated families use only the C contract;
+other families keep their existing implementations until their cutover. This
+keeps the app usable without compatibility exports or C-to-old-SDK adapters.
 
 #### Library routing and identity
 
@@ -396,10 +398,12 @@ The test harness provides:
    including installed consumers, runtime paths, dependency scans, and staged
    application smoke tests. This establishes core release-candidate quality.
 5. Only then replace the plugin architecture on its own branch. Draft all C
-   interface shapes first, disconnect the old loading/factory path, establish the
-   session-owned registry and empty/null behavior, then prove one provider
-   per family before backfilling remaining plugins. Pure-C boundary fixtures
-   accompany the work; no production coexistence with the former SDK is required.
+   interface shapes first and establish the session-owned registry and empty/null
+   behavior. Replace each family's loading, factory, and engine ownership path
+   together, beginning with outputs; keep unmigrated families usable on their
+   existing contracts. Prove representative providers with boundary fixtures
+   before backfilling each family. Remove the former SDK after the last family
+   migrates; do not add compatibility exports to converted plugins.
 6. Complete consumer/plugin packaging and compatibility validation, remove
    transitional implementations, and freeze ABI v1 after both surfaces have
    proven real consumers. Core release-candidate quality does not freeze ABI0.
@@ -508,3 +512,4 @@ The modernization is complete when:
 - [ADR-0006: enforce the frontend consumer boundary](../docs/adr/0006-enforce-the-frontend-consumer-boundary.md)
 - [ADR-0007: explicit URI player resources](../docs/adr/0007-explicit-uri-player-resources.md)
 - [ADR-0008: C provider bootstrap and unload lifetime](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md)
+- [ADR-0009: Playback threading model](../docs/adr/0009-playback-threading-model.md)
