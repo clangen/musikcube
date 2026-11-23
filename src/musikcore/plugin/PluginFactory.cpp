@@ -269,7 +269,7 @@ namespace {
         const auto settings = Preferences::ForComponent(prefs::components::Plugins);
         auto plugins = PluginFactory::Instance().ListPlugins();
         for (const auto& plugin : musik::core::plugin::ListPlugins()) {
-            const auto filename = pathToUtf8(fs::u8path(plugin.filename).filename());
+            const auto filename = pathToUtf8(musik::core::sdk::fs::pathFromUtf8(plugin.filename).filename());
             plugins.push_back({ plugin.id, plugin.name, plugin.version, filename,
                 settings->GetBool(filename, true) });
         }

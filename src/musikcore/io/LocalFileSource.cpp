@@ -5,6 +5,7 @@ interfaces before any system header declares stat or seek. */
 #endif
 
 #include "LocalFileSource.h"
+#include <musikcore/sdk/FilesystemPath.h>
 
 #include <algorithm>
 #include <atomic>
@@ -96,7 +97,7 @@ namespace {
             if (file.uri.find('\0') != std::string::npos) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
-            const auto path = std::filesystem::u8path(file.uri);
+            const auto path = musik::core::sdk::fs::pathFromUtf8(file.uri);
             const auto extension = path.extension().u8string();
             if (!extension.empty()) {
                 file.extension.assign(extension.begin() + 1, extension.end());
