@@ -193,3 +193,49 @@ add_dependencies(musikcube_unit_tests musikcore_output_adapter_test)
 add_test(NAME musikcore.unit.plugins.output_adapter COMMAND musikcore_output_adapter_test)
 set_tests_properties(musikcore.unit.plugins.output_adapter PROPERTIES
   LABELS "unit;musikcore;plugins;contract" TIMEOUT 15)
+
+# a recording DLL proves validation and lifecycle order at the actual engine
+# output boundary; it uses the same C++ helper available to external plugins.
+add_library(musikcore_output_recording MODULE support/plugins/output-recording.cpp support/plugins/unload-probe.c)
+target_include_directories(musikcore_output_recording PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_definitions(musikcore_output_recording PRIVATE MC_BUILDING_PLUGIN)
+target_compile_features(musikcore_output_recording PRIVATE cxx_std_17)
+target_link_libraries(musikcore_output_recording PRIVATE Threads::Threads)
+set_target_properties(musikcore_output_recording PROPERTIES SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}"
+  ARCHIVE_OUTPUT_DIRECTORY "${provider_output_directory}"
+  LIBRARY_OUTPUT_DIRECTORY "${provider_output_directory}"
+  RUNTIME_OUTPUT_DIRECTORY "${provider_output_directory}")
+musikcube_restrict_exports(musikcore_output_recording mc_plugin_get_api)
+add_executable(musikcore_output_host_test integration/plugins/output-host.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/audio/Output.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/Plugin.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/PluginRegistry.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
+target_include_directories(musikcore_output_host_test PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_output_host_test PRIVATE cxx_std_20)
+target_link_libraries(musikcore_output_host_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+set_target_properties(musikcore_output_host_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcore_output_host_test musikcore_output_recording)
+add_dependencies(musikcube_tests musikcore_output_host_test)
+add_dependencies(musikcube_integration_tests musikcore_output_host_test)
+add_test(NAME musikcore.integration.plugins.output_host
+  COMMAND musikcore_output_host_test "$<TARGET_FILE:musikcore_output_recording>")
+set_tests_properties(musikcore.integration.plugins.output_host PROPERTIES LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+
+# Stop failure must remain fatal in Release, before calling a destructor that
+# cannot safely assume callbacks/workers relinquished the output instance.
+add_test(NAME musikcore.integration.plugins.output_stop_failure COMMAND "${CMAKE_COMMAND}"
+  "-DHELPER=$<TARGET_FILE:musikcore_output_host_test>" "-DPLUGIN=$<TARGET_FILE:musikcore_output_recording>" -DMODE=stop
+  -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-output-host-fatal.cmake")
+set_tests_properties(musikcore.integration.plugins.output_stop_failure PROPERTIES
+  LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 15)
+
+# callback corruption is fatal before a stale or duplicate token can recycle PCM
+# that belongs to a different submission or player.
+foreach(mode IN ITEMS duplicate stale)
+  add_test(NAME musikcore.integration.plugins.output_${mode}_completion COMMAND "${CMAKE_COMMAND}"
+    "-DHELPER=$<TARGET_FILE:musikcore_output_host_test>" "-DPLUGIN=$<TARGET_FILE:musikcore_output_recording>" "-DMODE=${mode}"
+    -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-output-host-fatal.cmake")
+  set_tests_properties(musikcore.integration.plugins.output_${mode}_completion PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 15)
+endforeach()

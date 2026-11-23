@@ -29,9 +29,13 @@ typedef struct mc_output {
 
 #define MC_OUTPUT_DEFAULT { sizeof(mc_output), NULL, NULL }
 
-/* functions musikcore gives an output plugin to report progress back to the
-engine. completed reports that a submitted audio block is no longer in use, so
-musikcore can reuse its buffer. ready tells musikcore to try sending more audio. */
+/* call completed when musikcore can reuse a buffer. call ready when musikcore
+can retry a write. for example, copying a block into the last free device buffer can
+release the original buffer before the device has room for another block.
+
+both callbacks may run inside queue_audio_buffer or on a backend thread.
+the host keeps context alive until stop returns. finish all callbacks by then.
+callbacks must not block, allocate, throw, or call stop or destroy. */
 typedef struct mc_output_callbacks {
     /* readable bytes; initialize with MC_OUTPUT_CALLBACKS_DEFAULT. */
     uint32_t struct_size;
@@ -39,16 +43,17 @@ typedef struct mc_output_callbacks {
     /* host-owned callback state; passed unchanged. default null. */
     void* context;
 
-    /* required: return a block's token once the plugin no longer needs its PCM
-    memory. audio copied to the driver may still be playing afterward.
-    may run inside queue_audio_buffer or on a backend thread; must not block or allocate.
-    default null. callback state stays alive through stop. callbacks must not
-    call stop/destroy or throw. */
+    /* return each accepted block's token exactly once, after the plugin has
+    finished using its samples. the driver may still be playing its copy.
+    required for playback. default null. */
     void(MC_CALL* completed)(void* context, uint64_t token, mc_result outcome);
 
-    /* optional: wake musikcore when output space becomes available. several
-    space changes may share one notification; queue_audio_buffer still checks capacity.
-    may run on a backend thread; must not block or allocate. default null. */
+    /* after MC_ERROR_QUEUE_FULL, call ready whenever a retry could succeed
+    or report a terminal error. make the space or error visible to the next
+    write before calling ready, even if this happens inside queue_audio_buffer.
+    one call can cover several freed buffers. musikcore checks again on retry.
+    default null. an output that returns MC_ERROR_QUEUE_FULL requires this
+    callback. musikcore always supplies it. */
     void(MC_CALL* ready)(void* context);
 } mc_output_callbacks;
 
@@ -158,15 +163,19 @@ struct mc_output_vtable {
     mc_result(MC_CALL* prepare)(
         void* instance, const mc_output_options* options, const mc_output_callbacks* callbacks, mc_error** error);
 
-    /* ask the output plugin to play an audio block. MC_OK means it accepted the
-    block; musikcore keeps the samples alive until completed returns its token.
-    MC_ERROR_QUEUE_FULL means retry after ready signals that space is available.
-    MC_ERROR_BUFFER_TOO_SMALL means the block cannot fit; split it or prepare a
-    larger capacity. any failure leaves the block with musikcore and produces no
-    completion callback. called only on musikcore's producer worker, never a
-    real-time callback. may block while the backend accepts/plays this block;
-    stop must interrupt a blocked call. MC_OK reports acceptance even if stop
-    cancels playback, in which case completed returns the token with cancellation. */
+    /* accept one block for playback. musikcore calls this on its producer
+    worker. the call may block while the device accepts or plays the block.
+    stop must interrupt a blocked call and cancel any wait for space.
+
+    return MC_OK if the plugin accepted the block. musikcore keeps its samples
+    alive until completed returns the token. if stop later discards the block,
+    return its token through completed with MC_ERROR_CANCELLED.
+
+    return MC_ERROR_QUEUE_FULL if the block fits but the queue is full for now.
+    use ready to wake musikcore for another try. return MC_ERROR_BUFFER_TOO_SMALL
+    if the block can never fit at the current capacity. the caller can then split
+    it or prepare a larger queue. on any error, leave the block with musikcore
+    and do not call completed for it. */
     mc_result(MC_CALL* queue_audio_buffer)(void* instance, const mc_output_buffer* buffer);
 
     /* freeze frame consumption; buffers may still fill available capacity. */

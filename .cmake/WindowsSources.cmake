@@ -2,6 +2,7 @@ set(windows_core_sources
   src/musikcore/audio/Crossfader.cpp
   src/musikcore/audio/CrossfadeTransport.cpp
   src/musikcore/audio/GaplessTransport.cpp
+  src/musikcore/audio/Output.cpp
   src/musikcore/audio/Outputs.cpp
   src/musikcore/audio/PlaybackService.cpp
   src/musikcore/runtime/ManagedRuntime.cpp

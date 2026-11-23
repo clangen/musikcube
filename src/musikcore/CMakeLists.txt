@@ -5,6 +5,7 @@ set(CORE_SOURCES
   ./audio/CrossfadeTransport.cpp
   ./audio/GaplessTransport.cpp
   ./audio/MasterTransport.cpp
+  ./audio/Output.cpp
   ./audio/Outputs.cpp
   ./audio/PlaybackService.cpp
   ./runtime/ManagedRuntime.cpp

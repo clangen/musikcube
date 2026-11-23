@@ -188,6 +188,9 @@ namespace musik { namespace core { namespace plugin {
     Stop interrupts concurrent queue/drain and finishes callbacks. ordinary
     implementation exceptions become MC_ERROR_INTERNAL; optional errors stay null.
     noexcept queue/cleanup and a nonthrowing destructor preserve ABI/ownership rules.
+    an implementation returning MC_ERROR_QUEUE_FULL publishes retryable capacity
+    before calling callbacks.ready; returning PCM through completed does not
+    replace that notification. the host supplies ready for these implementations.
 
     static device methods: VisitDevices(mc_output_device_fn, void*),
     ReadDefaultDevice(mc_output_device_fn, void*), and
