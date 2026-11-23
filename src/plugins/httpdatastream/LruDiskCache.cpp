@@ -32,299 +32,263 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#if defined(__linux__) && !defined(_FILE_OFFSET_BITS)
+#define _FILE_OFFSET_BITS 64
+#endif
+
 #include "config.h"
-#include "musikcore/sdk/Filesystem.h"
-
 #include "LruDiskCache.h"
-
-#include <musikcore/sdk/String.h>
+#include <musikcore/sdk/Filesystem.h>
 
 #include <algorithm>
-#include <filesystem>
+#include <cerrno>
+#include <charconv>
 #include <chrono>
-#ifdef WIN32
+#include <climits>
+
+#ifdef _WIN32
+#include <io.h>
 #include <share.h>
+#else
+#include <csignal>
+#include <sys/stat.h>
+#include <unistd.h>
 #endif
-
-const std::string PREFIX = "musikcube";
-const std::string TEMP_EXTENSION = ".tmp";
-
-using musik::core::sdk::fs::pathToUtf8;
 
 namespace fs = std::filesystem;
-namespace str = musik::core::sdk::str;
 
-using Lock = std::unique_lock<std::recursive_mutex>;
-
-static FILE* openCacheFile(const std::string& path, const std::string& mode) {
-#ifdef WIN32
-    return _fsopen(path.c_str(), mode.c_str(), _SH_DENYNO);
+namespace {
+    FILE* openFile(const fs::path& file, bool create) {
+#ifdef _WIN32
+        return _wfsopen(file.c_str(), create ? L"wbx" : L"rb", _SH_DENYNO);
 #else
-    return fopen(path.c_str(), mode.c_str());
+        return fopen(file.c_str(), create ? "wbx" : "rb");
 #endif
-}
-
-static std::string tempFilename(const std::string& root, size_t id, int64_t instanceId) {
-    return root + "/" + PREFIX + "_" + std::to_string(id) + "_" + std::to_string(instanceId) + TEMP_EXTENSION;
-}
-
-static std::string finalFilename(const std::string& root, size_t id, std::string type) {
-    str::ReplaceAll(type, "/", "-");
-    return root + "/" + PREFIX + "_" + std::to_string(id) + "_" + type;
-}
-
-static bool isTemp(const fs::path& path) {
-    return pathToUtf8(path.extension()) == TEMP_EXTENSION;
-}
-
-static bool isTemp(const std::string& path) {
-    return isTemp(fs::path(fs::u8path(path)));
-}
-
-static std::filesystem::file_time_type touch(const std::string& path) {
-    auto fsPath = fs::u8path(path);
-    try {
-        std::chrono::time_point now = fs::file_time_type::clock::now();
-        fs::last_write_time(fsPath, now);
-    }
-    catch (...) {
     }
 
-    return fs::last_write_time(fsPath);
-}
+    constexpr std::string_view Pending = "musikcube-download-";
+    std::atomic<uint64_t> nextTransfer { static_cast<uint64_t>(
+        std::chrono::system_clock::now().time_since_epoch().count()) };
 
-static bool rm(const std::string& path) {
-    try {
-        return fs::remove(fs::path(path));
-    }
-    catch (...) {
-
-    }
-
-    return false;
-}
-
-static bool rm(const fs::path& p) {
-    return rm(pathToUtf8(p));
-}
-
-LruDiskCache::LruDiskCache()
-: maxEntries(10)
-, initialized(false) {
-
-}
-
-void LruDiskCache::Init(const std::string& root, size_t maxEntries) {
-    Lock lock(this->stateMutex);
-
-    if (!this->initialized) {
-        this->initialized = true;
-        this->root = root;
-        this->maxEntries = maxEntries;
-
-        this->Purge(); /* always purge partial files on startup */
-
-        /* index all the completed files... */
-        std::error_code ec;
-        fs::directory_iterator end;
-        fs::directory_iterator file(fs::u8path(this->root), ec);
-
-        while (file != end) {
-            if (!is_directory(file->status())) {
-                if (!isTemp(file->path())) {
-                    auto entry = LruDiskCache::Parse(file->path());
-                    if (entry) {
-                        this->cached.push_back(entry);
-                    }
-                }
-            }
-            ++file;
-        }
-
-        this->SortAndPrune();
-    }
-}
-
-void LruDiskCache::Purge() {
-    Lock lock(stateMutex);
-
-    std::error_code ec;
-    fs::directory_iterator end;
-    fs::directory_iterator file(fs::u8path(this->root), ec);
-
-    while (file != end) {
-        if (!is_directory(file->status())) {
-            if (isTemp(file->path())) {
-                rm(file->path());
-            }
-        }
-        ++file;
-    }
-}
-
-LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
-    std::string fn = pathToUtf8(path.stem()) + pathToUtf8(path.extension());
-    std::vector<std::string> parts = str::Split(fn, "_");
-    if (parts.size() == 3 && parts[0] == PREFIX) {
-        try {
-            auto entry = std::shared_ptr<Entry>(new Entry());
-            entry->id = std::stoull(parts[1].c_str());
-            entry->path = pathToUtf8(path);
-            entry->type = parts[2];
-            entry->time = fs::last_write_time(path);
-            str::ReplaceAll(entry->type, "-", "/");
-            return entry;
-        }
-        catch (...) {
-            /* can't parse. it's invalid. */
-        }
+    unsigned long processId() {
+#ifdef _WIN32
+        return GetCurrentProcessId();
+#else
+        return static_cast<unsigned long>(getpid());
+#endif
     }
 
-    return EntryPtr();
-}
-
-bool LruDiskCache::Finalize(size_t id, int64_t instanceId, std::string type) {
-    Lock lock(stateMutex);
-
-    if (type.size() == 0) {
-        type = "unknown";
-    }
-
-    fs::path src(tempFilename(this->root, instanceId, id));
-    fs::path dst(finalFilename(this->root, id, type));
-
-    if (fs::exists(src)) {
-        if (fs::exists(dst)) {
-            if (!rm(dst)) {
-                return false;
-            }
-        }
-
-        try {
-            fs::rename(src, dst);
-        }
-        catch (...) {
+    /* a peer can still be writing while this process opens its first stream.
+    remove a partial only when its owning process is known to have exited. */
+    bool abandoned(std::string_view name) {
+        name.remove_prefix(Pending.size());
+        const auto dash = name.find('-');
+        if (dash == std::string_view::npos || name.size() == dash + 1 ||
+            name.find_first_not_of("0123456789", dash + 1) != std::string_view::npos)
+        {
             return false;
         }
+        unsigned long pid = 0;
+        const auto end = name.data() + dash;
+        const auto result = std::from_chars(name.data(), end, pid);
+        if (result.ec != std::errc() || result.ptr != end || !pid || pid == processId()) {
+            return false;
+        }
+#ifdef _WIN32
+        HANDLE process = OpenProcess(SYNCHRONIZE, FALSE, pid);
+        if (!process) {
+            return GetLastError() == ERROR_INVALID_PARAMETER;
+        }
+        const auto state = WaitForSingleObject(process, 0);
+        CloseHandle(process);
+        return state == WAIT_OBJECT_0;
+#else
+        return pid <= INT_MAX && kill(static_cast<pid_t>(pid), 0) < 0 && errno == ESRCH;
+#endif
+    }
 
-        auto entry = LruDiskCache::Parse(dst);
-        if (entry) {
-            this->cached.push_back(entry);
-            this->SortAndPrune();
+    int64_t fileLength(FILE* reader) {
+#ifdef _WIN32
+        return _filelengthi64(_fileno(reader));
+#else
+        struct stat info {};
+        return fstat(fileno(reader), &info) == 0 ? info.st_size : -1;
+#endif
+    }
+
+    constexpr std::string_view Prefix = "musikcube_";
+
+    /* the type is supplied by an HTTP peer and becomes part of a filename.
+    keep MIME and extension spellings reversible for the existing disk format. */
+    std::string filenameType(std::string type) {
+        for (auto& c : type) {
+            if (c == '/') {
+                c = '-';
+            }
+            else if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '+' ||
+                         c == '.' || c == '-' || c == '_'))
+            {
+                return "unknown";
+            }
+        }
+        return type.empty() || type.size() > 128 ? "unknown" : type;
+    }
+}
+
+bool LruDiskCache::Initialize(const fs::path& directory, size_t maxEntries, const std::atomic<bool>& cancelled) {
+    {
+        std::lock_guard lock(mutex);
+        if (cancelled) {
+            return false;
+        }
+        if (root == directory) {
+            if (limit != maxEntries) {
+                limit = maxEntries;
+                Prune();
+            }
+            return true;
         }
     }
 
+    fs::create_directories(directory);
+    std::vector<Entry> scanned;
+    for (const auto& item : fs::directory_iterator(directory)) {
+        if (cancelled) {
+            return false;
+        }
+        std::error_code ec;
+        const auto name = musik::core::sdk::fs::pathToUtf8(item.path().filename());
+        if (!item.is_regular_file(ec)) {
+            continue;
+        }
+        if (name.compare(0, Pending.size(), Pending) == 0) {
+            if (abandoned(name)) {
+                fs::remove(item.path(), ec);
+            }
+            continue;
+        }
+        /* an older running engine may own a .tmp file with no recorded PID. */
+        if (name.compare(0, Prefix.size(), Prefix) != 0 || item.path().extension() == ".tmp") {
+            continue;
+        }
+        const auto split = name.find('_', Prefix.size());
+        if (split == std::string::npos || split + 1 == name.size()) {
+            continue;
+        }
+        size_t id = 0;
+        const auto result = std::from_chars(name.data() + Prefix.size(), name.data() + split, id);
+        if (result.ec != std::errc() || result.ptr != name.data() + split) {
+            continue;
+        }
+        auto type = name.substr(split + 1);
+        /* completed MIME entries use a dash for the first slash. preserve
+        subsequent dashes, e.g. audio/x-wav. */
+        if (!type.empty() && type.front() != '.') {
+            const auto slash = type.find('-');
+            if (slash != std::string::npos) {
+                type[slash] = '/';
+            }
+        }
+        const auto used = item.last_write_time(ec);
+        if (ec) {
+            continue;
+        }
+        scanned.push_back({
+            .id = id,
+            .path = item.path(),
+            .type = type,
+            .used = used,
+        });
+    }
+    /* a second worker can finish the scan and publish a download while this
+    worker is still outside the mutex. retain those newer entries. */
+    std::lock_guard lock(mutex);
+    if (root != directory) {
+        root = directory;
+        entries.swap(scanned);
+    }
+    limit = maxEntries;
+    Prune();
     return true;
 }
 
-bool LruDiskCache::Cached(size_t id) {
-    Lock lock(stateMutex);
-
-    auto end = this->cached.end();
-    auto it = std::find_if(this->cached.begin(), end, [id](EntryPtr entry) {
-        return entry->id == id;
+FILE* LruDiskCache::OpenCached(size_t id, std::string& type, uint64_t& length) {
+    std::lock_guard lock(mutex);
+    auto it = std::find_if(entries.begin(), entries.end(), [id](const auto& entry) {
+        return entry.id == id;
     });
-
-    return it != end;
-}
-
-FILE* LruDiskCache::Open(size_t id, int64_t instanceId, const std::string& mode) {
-    std::string type;
-    size_t len;
-    return this->Open(id, instanceId, mode, type, len);
-}
-
-FILE* LruDiskCache::Open(size_t id, int64_t instanceId, const std::string& mode, std::string& type, size_t& len) {
-    Lock lock(stateMutex);
-
-    auto end = this->cached.end();
-    auto it = std::find_if(this->cached.begin(), end, [id](EntryPtr entry) {
-        return entry->id == id;
-    });
-
-    FILE* result = nullptr;
-
-    if (it != end) {
-        result = openCacheFile((*it)->path, mode);
-
-        if (result) {
-            type = (*it)->type;
-            fseek(result, 0, SEEK_END);
-            len = (size_t) ftell(result);
-            fseek(result, 0, SEEK_SET);
-        }
-
-        this->Touch(id);
+    if (it == entries.end()) {
+        return nullptr;
     }
-
-    if (result) {
-        return result;
-    }
-
-    /* ensure the cache directory exists */
     std::error_code ec;
-    fs::path p(fs::u8path(this->root));
-    if (!fs::exists(p)) {
-        fs::create_directories(p, ec);
+    type = it->type;
+    if (FILE* reader = openFile(it->path, false)) {
+        /* a peer may replace the path while we open it. report the size of
+        the file this reader actually owns. */
+        const auto bytes = fileLength(reader);
+        if (bytes >= 0) {
+            length = static_cast<uint64_t>(bytes);
+            it->used = fs::file_time_type::clock::now();
+            fs::last_write_time(it->path, it->used, ec);
+            return reader;
+        }
+        fclose(reader);
     }
-
-    /* open the file and return it regardless of cache status. */
-    return openCacheFile(tempFilename(this->root, instanceId, id), mode);
+    entries.erase(it);
+    return nullptr;
 }
 
-void LruDiskCache::Delete(size_t id, int64_t instanceId) {
-    Lock lock(stateMutex);
-
-    auto it = this->cached.begin();
-    while (it != this->cached.end()) {
-        if ((*it)->id == id) {
-            rm((*it)->path);
-            return;
+bool LruDiskCache::CreatePartial(fs::path& path, FILE*& writer, FILE*& reader) {
+    std::lock_guard lock(mutex);
+    const auto prefix = std::string(Pending) + std::to_string(processId()) + "-";
+    for (;;) {
+        auto candidate = root / (prefix + std::to_string(++nextTransfer));
+        writer = openFile(candidate, true);
+        if (writer) {
+            path.swap(candidate);
+            reader = openFile(path, false);
+            return reader != nullptr;
         }
-        else {
-            ++it;
-        }
-    }
-
-    rm(tempFilename(this->root, id, instanceId));
-}
-
-void LruDiskCache::SortAndPrune() {
-    Lock lock(this->stateMutex);
-
-    std::sort( /* sort by access time */
-        this->cached.begin(),
-        this->cached.end(),
-        [](EntryPtr e1, EntryPtr e2) {
-            return e1->time > e2->time;
-        });
-
-    /* prune old entries */
-    const size_t extras = this->cached.size() > this->maxEntries
-        ? this->cached.size() - this->maxEntries : 0;
-    for (size_t i = 0; i < extras; i++) {
-        auto entry = this->cached.back();
-        if (rm(entry->path)) {
-            this->cached.pop_back();
+        if (errno != EEXIST) {
+            return false;
         }
     }
 }
 
-void LruDiskCache::Touch(size_t id) {
-    Lock lock(this->stateMutex);
-
-    auto end = this->cached.end();
-    auto it = std::find_if(this->cached.begin(), end, [id](EntryPtr entry) {
-        return entry->id == id;
+void LruDiskCache::Finish(size_t id, const fs::path& part, const std::string& type) {
+    std::lock_guard lock(mutex);
+    std::error_code ec;
+    if (std::any_of(entries.begin(), entries.end(),
+            [id](const auto& entry) {
+                return entry.id == id;
+            }))
+    {
+        return;
+    }
+    const auto final = root / ("musikcube_" + std::to_string(id) + "_" + filenameType(type));
+    fs::rename(part, final, ec);
+    if (ec) {
+        return;
+    }
+    entries.push_back({
+        .id = id,
+        .path = final,
+        .type = type,
+        .used = fs::file_time_type::clock::now(),
     });
+    Prune();
+}
 
-    if (it != end) {
-        auto e = (*it);
-        fs::path p(e->path);
-        if (fs::exists(p)) {
-            e->time = touch(pathToUtf8(p));
-            this->SortAndPrune();
-            return;
+void LruDiskCache::Prune() {
+    std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
+        return a.used > b.used;
+    });
+    while (entries.size() > limit) {
+        std::error_code ec;
+        fs::remove(entries.back().path, ec);
+        if (ec) {
+            break;
         }
+        entries.pop_back();
     }
 }

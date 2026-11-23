@@ -32,592 +32,466 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "config.h"
-
-#include "HttpDataStream.h"
-#include "LruDiskCache.h"
-
-#include <musikcore/sdk/IEnvironment.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/ISchema.h>
-#include <musikcore/sdk/String.h>
-
-#include <iostream>
-#include <algorithm>
-#include <string>
-#include <mutex>
-#include <unordered_map>
-#include <unordered_set>
-#include <chrono>
-#include <atomic>
-
-#pragma warning(push, 0)
-#include <../../3rdparty/include/nlohmann/json.hpp>
-#include <../../3rdparty/include/websocketpp/base64/base64.hpp>
-#pragma warning(pop)
-
-#ifdef WIN32
-#include <Windows.h>
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
+/* stream offsets are 64-bit on 32-bit Linux too. select the matching libc
+interfaces before any system header declares stat or seek. */
+#if defined(__linux__) && !defined(_FILE_OFFSET_BITS)
+#define _FILE_OFFSET_BITS 64
 #endif
 
-using namespace std::chrono;
-using namespace musik::core::sdk;
+#include "config.h"
+#include "HttpDataStream.h"
+#include <musikcore/sdk/String.h>
+#include <../../3rdparty/include/nlohmann/json.hpp>
+#include <../../3rdparty/include/websocketpp/base64/base64.hpp>
 
-static std::mutex globalMutex;
-static IEnvironment* environment;
-static LruDiskCache diskCache;
-static std::string cachePath;
-static IPreferences* prefs;
-static std::atomic<int64_t> nextInstanceId(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
+#include <algorithm>
+#include <charconv>
+#include <cstring>
+#include <memory>
 
-static const int kDefaultMaxCacheFiles = 35;
-static const int kDefaultPreCacheSizeBytes = 524288; /*2^19 */
-static const int kDefaultChunkSizeBytes = 131072; /* 2^17 */
-static const int kDefaultConnectionTimeoutSeconds = 15;
-static const int kDefaultReadTimeoutSeconds = 30;
+namespace {
+    constexpr mc_integer_setting setting(std::string_view key, int value, int minimum) {
+        return {
+            .key = {
+                .data = key.data(),
+                .length = key.size(),
+            },
+            .default_value = value,
+            .minimum = minimum,
+            .maximum = INT32_MAX,
+        };
+    }
 
-static const std::string kMaxCacheFiles = "max_cache_files";
-static const std::string kPreCacheBufferSizeBytesKey = "precache_buffer_size_bytes";
-static const std::string kChunkSizeBytesKey = "chunk_size_bytes";
-static const std::string kConnectionTimeoutSecondsKey = "connection_timeout_seconds";
-static const std::string kReadTimeoutSecondsKey = "read_timeout_seconds";
+    constexpr auto MaxFiles = setting("max_cache_files", 35, INT32_MIN);
+    constexpr auto Precache = setting("precache_buffer_size_bytes", 524288, 32768);
+    constexpr auto Chunk = setting("chunk_size_bytes", 131072, 32768);
+    constexpr auto ConnectionTimeout = setting("connection_timeout_seconds", 15, 1);
+    constexpr auto ReadTimeout = setting("read_timeout_seconds", 30, 1);
 
-const std::string HttpDataStream::kRemoteTrackHost = "musikcore://remote-track/";
+    constexpr mc_integer_setting Settings[] = { MaxFiles, Precache, Chunk, ConnectionTimeout, ReadTimeout };
 
-extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
-    std::unique_lock<std::mutex> lock(globalMutex);
-    ::environment = environment;
+    mc_string_view view(const std::string& value) {
+        return {
+            .data = value.data(),
+            .length = value.size(),
+        };
+    }
 
-    if (environment) {
-        static char buffer[2046];
-        environment->GetPath(PathType::Data, buffer, sizeof(buffer));
-        cachePath = std::string(buffer) + "/cache/httpclient/";
+    char lower(char c) {
+        return c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c;
+    }
+
+    bool seekFile(FILE* file, uint64_t offset) {
+        if (offset > INT64_MAX) {
+            return false;
+        }
+#ifdef _WIN32
+        return _fseeki64(file, static_cast<int64_t>(offset), SEEK_SET) == 0;
+#else
+        return fseeko(file, static_cast<off_t>(offset), SEEK_SET) == 0;
+#endif
     }
 }
 
-extern "C" DLLEXPORT void SetPreferences(IPreferences * prefs) {
-    ::prefs = prefs;
-}
-
-extern "C" DLLEXPORT musik::core::sdk::ISchema * GetSchema() {
-    auto schema = new TSchema<>();
-    schema->AddInt(kMaxCacheFiles, kDefaultMaxCacheFiles);
-    schema->AddInt(kPreCacheBufferSizeBytesKey, kDefaultPreCacheSizeBytes, 32768);
-    schema->AddInt(kChunkSizeBytesKey, kDefaultChunkSizeBytes, 32768);
-    schema->AddInt(kConnectionTimeoutSecondsKey, kDefaultConnectionTimeoutSeconds, 1);
-    schema->AddInt(kReadTimeoutSecondsKey, kDefaultReadTimeoutSeconds, 1);
+const mc_configuration_api& HttpDataStream::Configuration() {
+    static constexpr mc_configuration_api schema {
+        .struct_size = sizeof(mc_configuration_api),
+        .integers = Settings,
+        .integer_count = std::size(Settings),
+    };
     return schema;
 }
 
-static bool parseHeader(std::string raw, std::string& key, std::string& value) {
-    str::ReplaceAll(raw, "\r\n", "");
-
-    size_t splitAt = raw.find_first_of(":");
-    if (splitAt != std::string::npos) {
-        key = str::Trim(raw.substr(0, splitAt));
-        value = str::Trim(raw.substr(splitAt + 1));
-        return true;
+mc_result HttpDataStream::Create(LruDiskCache& cache, const mc_plugin_services& services, void** instance) {
+    if (!services.preferences || !services.data_directory.length) {
+        return MC_ERROR_UNSUPPORTED;
+    }
+    Options options {};
+    mc_result status = MC_OK;
+    auto load = [&](const mc_integer_setting& field, int& value) {
+        if (status == MC_OK) {
+            const auto prefs = services.preferences;
+            status = prefs->read_integer(prefs->context, &field, &value);
+        }
+    };
+    load(MaxFiles, options.maxFiles);
+    load(Precache, options.precache);
+    load(Chunk, options.chunk);
+    load(ConnectionTimeout, options.connectionTimeout);
+    load(ReadTimeout, options.readTimeout);
+    if (status != MC_OK) {
+        return status;
     }
 
-    return false;
+    const auto directory = services.data_directory;
+    options.directory =
+        std::filesystem::u8path(directory.data, directory.data + directory.length) / "cache" / "httpclient";
+    *instance = new HttpDataStream(cache, std::move(options));
+    return MC_OK;
 }
 
-static size_t cacheId(const std::string& uri) {
-    return std::hash<std::string>()(uri);
-}
-
-class FileReadStream {
-    public:
-        FileReadStream(FILE* file, long maxLength) {
-            this->file = file;
-            this->maxLength = maxLength;
-            this->Reset();
-        }
-
-        FileReadStream(const std::string& fn, int64_t instanceId) {
-            this->file = diskCache.Open(cacheId(fn), instanceId, "rb");
-            this->maxLength = -1;
-            Reset();
-        }
-
-        ~FileReadStream() {
-            if (this->file) {
-                fclose(this->file);
-                this->file = nullptr;
-            }
-        }
-
-        void Reset() {
-            this->interrupted = false;
-            this->length = 0;
-
-            if (this->file) {
-                fseek(this->file, 0, SEEK_END);
-                this->length = (PositionType) ftell(this->file);
-                fseek(this->file, 0, SEEK_SET);
-            }
-        }
-
-        void Interrupt() {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            this->interrupted = true;
-            this->underflow.notify_all();
-        }
-
-        void Add(PositionType length) {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            this->length += length;
-            this->underflow.notify_all();
-        }
-
-        void Completed() {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            this->maxLength = length;
-            this->underflow.notify_all();
-        }
-
-        PositionType Read(void* buffer, PositionType readBytes) {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            while (this->Position() >= this->length && !this->Eof() && !this->interrupted) {
-                this->underflow.wait(lock);
-            }
-
-            if (this->interrupted || this->Eof()) {
-                return 0;
-            }
-
-            clearerr(this->file);
-            const int available = this->length - this->Position();
-            const unsigned actualReadBytes = std::max(0, std::min(available, (int) readBytes));
-            return (PositionType) fread(buffer, 1, actualReadBytes, this->file);
-        }
-
-        bool SetPosition(PositionType position) {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            while (position > this->length && !this->Eof() && !this->interrupted) {
-                this->underflow.wait(lock);
-            }
-
-            /* if we've been interrupted, or we know we're at EOF and have been asked
-            to read beyond it. */
-            if (this->interrupted || (position >= this->Position() && this->Eof())) {
-                return false;
-            }
-
-            return (fseek(this->file, position, SEEK_SET) == 0);
-        }
-
-        PositionType Position() {
-            return (this->file) ? ftell(this->file) : 0;
-        }
-
-    private:
-        bool Eof() {
-            return this->maxLength >= 0 && this->Position() >= this->maxLength;
-        }
-
-        FILE* file;
-        PositionType length, maxLength;
-        std::condition_variable underflow;
-        std::mutex mutex;
-        bool interrupted;
-};
-
-HttpDataStream::HttpDataStream() {
-    this->length = this->totalWritten = this->written = 0;
-    this->state = State::NotStarted;
-    this->writeFile = nullptr;
-    this->curlEasy = nullptr;
-    this->interrupted = false;
-    this->instanceId = ++nextInstanceId;
+HttpDataStream::HttpDataStream(LruDiskCache& cache, Options options)
+: cache(cache)
+, options(std::move(options)) {
 }
 
 HttpDataStream::~HttpDataStream() {
-    this->Close();
+    Close();
+}
+
+mc_result HttpDataStream::Open(mc_string_view uri, mc_stream_open_flags flags) {
+    if (flags != MC_STREAM_OPEN_READ) {
+        return MC_ERROR_UNSUPPORTED;
+    }
+    if (cancelled) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (opened || !uri.data || !uri.length || std::memchr(uri.data, 0, uri.length)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    opened = true;
+    url.assign(uri.data, uri.length);
+    originalUri = url;
+    if (url.compare(0, RemoteTrack.size(), RemoteTrack) == 0) {
+        try {
+            const auto payload = nlohmann::json::parse(url.substr(RemoteTrack.size()));
+            url = payload.at("uri").get<std::string>();
+            originalUri = payload.at("originalUri").get<std::string>();
+            const auto type = payload.value("type", ".mp3");
+            if (!type.empty() && type[0] == '.') {
+                extension = type.substr(1);
+            }
+            else {
+                contentType = type;
+                explicitContentType = !type.empty();
+            }
+            allowUntrusted = url.compare(0, 8, "https://") == 0 && payload.value("allowUntrustedCertificate", false);
+            authorization =
+                "Authorization: Basic " + websocketpp::base64_encode("default:" + payload.value("password", ""));
+        }
+        catch (const nlohmann::json::exception&) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+    }
+    if (extension.empty()) {
+        const auto resource = originalUri.substr(0, originalUri.find_first_of("?#"));
+        const auto dot = resource.rfind('.');
+        const auto slash = resource.rfind('/');
+        if (dot != std::string::npos && (slash == std::string::npos || dot > slash)) {
+            extension = resource.substr(dot + 1);
+        }
+    }
+    std::transform(extension.begin(), extension.end(), extension.begin(), lower);
+
+    /* keep the existing verified and unverified cache namespaces separate. */
+    cacheId = std::hash<std::string>()(allowUntrusted ? "untrusted:" + url : url);
+    std::string storedType;
+    uint64_t cachedBytes = 0;
+    if (!cache.Initialize(options.directory, static_cast<size_t>(std::max(options.maxFiles, 0)), cancelled)) {
+        return MC_ERROR_CANCELLED;
+    }
+    reader = cache.OpenCached(cacheId, storedType, cachedBytes);
+    if (reader) {
+        if (contentType.empty() && storedType.find('/') != std::string::npos) {
+            contentType = storedType;
+        }
+        else if (extension.empty() && !storedType.empty() && storedType.front() == '.') {
+            extension = storedType.substr(1);
+        }
+        length = available = cachedBytes;
+        finished = MC_OK;
+        return cancelled ? MC_ERROR_CANCELLED : MC_OK;
+    }
+
+    if (!cache.CreatePartial(partial, writer, reader)) {
+        return MC_ERROR_IO;
+    }
+    worker = std::thread(&HttpDataStream::Download, this);
+    std::unique_lock lock(mutex);
+    changed.wait(lock, [&] {
+        return cancelled || finished || available >= static_cast<size_t>(options.precache);
+    });
+    return cancelled ? MC_ERROR_CANCELLED : finished.value_or(MC_OK);
 }
 
 void HttpDataStream::Interrupt() {
-    std::unique_lock<std::mutex> lock(this->stateMutex);
-    /* latch even before the download thread exists, and wake a blocked Open. */
-    this->interrupted = true;
-    if (this->reader) {
-        this->reader->Interrupt();
-    }
-    this->startedContition.notify_all();
-}
-
-bool HttpDataStream::CanPrefetch() {
-    return true;
-}
-
-bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
-    if ((flags & OpenFlags::Write) != 0) {
-        return false;
-    }
-
-    this->precacheSizeBytes = prefs->GetInt(kPreCacheBufferSizeBytesKey.c_str(), kDefaultPreCacheSizeBytes);
-    this->chunkSizeBytes = prefs->GetInt(kChunkSizeBytesKey.c_str(), kDefaultChunkSizeBytes);
-    this->maxCacheFiles = prefs->GetInt(kMaxCacheFiles.c_str(), kDefaultMaxCacheFiles);
-
-    std::unordered_map<std::string, std::string> requestHeaders;
-    bool allowUntrustedCertificate = false;
-
     {
-        std::unique_lock<std::mutex> lock(this->stateMutex);
-
-        if (this->interrupted) {
-            return false;
-        }
-        diskCache.Init(cachePath, this->maxCacheFiles);
-
-        this->httpUri = rawUri;
-
-        if (this->httpUri.find(kRemoteTrackHost) == 0) {
-            try {
-                nlohmann::json options = nlohmann::json::parse(
-                    this->httpUri.substr(kRemoteTrackHost.size()));
-                this->httpUri = options["uri"].get<std::string>();
-                this->originalUri = options["originalUri"].get<std::string>();
-                this->type = options.value("type", ".mp3");
-                allowUntrustedCertificate = this->httpUri.compare(0, 8, "https://") == 0 &&
-                    options.value("allowUntrustedCertificate", false);
-
-                std::string password = options.value("password", "");
-                std::string headerValue = "Basic " + websocketpp::base64_encode("default:" + password);
-                requestHeaders["Authorization"] = headerValue;
-            }
-            catch (...) {
-                /* malformed payload. not much we can do. */
-                return false;
-            }
-        }
-
-        /* Keep bytes from an unverified peer separate from verified HTTPS. */
-        this->cacheUri = allowUntrustedCertificate ? "untrusted:" + this->httpUri : this->httpUri;
-        auto const id = cacheId(this->cacheUri);
-
-        if (diskCache.Cached(id)) {
-            FILE* file = diskCache.Open(id, this->instanceId, "rb", this->type, this->length);
-            if (file) {
-                this->reader = std::make_shared<FileReadStream>(file, this->length);
-                this->state = State::Cached;
-                return true;
-            }
-            else {
-                diskCache.Delete(id, this->instanceId);
-            }
-        }
-
-        this->ResetFileHandles();
+        std::lock_guard lock(mutex);
+        cancelled = true;
     }
+    changed.notify_all();
+}
 
-    if (this->writeFile && this->reader) {
-        this->curlEasy = curl_easy_init();
-
-        // curl_easy_setopt (this->curlEasy, CURLOPT_VERBOSE, verbose);
-
-        curl_easy_setopt(this->curlEasy, CURLOPT_URL, this->httpUri.c_str());
-        curl_easy_setopt(this->curlEasy, CURLOPT_HEADER, 0);
-        curl_easy_setopt(this->curlEasy, CURLOPT_HTTPGET, 1);
-        curl_easy_setopt(this->curlEasy, CURLOPT_FOLLOWLOCATION, allowUntrustedCertificate ? 0L : 1L);
-        if (allowUntrustedCertificate) {
-            curl_easy_setopt(this->curlEasy, CURLOPT_SSL_VERIFYPEER, 0L);
-        }
-        curl_easy_setopt(this->curlEasy, CURLOPT_AUTOREFERER, 1);
-        curl_easy_setopt(this->curlEasy, CURLOPT_FAILONERROR, 1);
-        curl_easy_setopt(this->curlEasy, CURLOPT_USERAGENT, "musikcube HttpDataStream");
-        curl_easy_setopt(this->curlEasy, CURLOPT_NOPROGRESS, 0);
-
-        curl_easy_setopt(this->curlEasy, CURLOPT_WRITEHEADER, this);
-        curl_easy_setopt(this->curlEasy, CURLOPT_HEADERFUNCTION, &HttpDataStream::CurlReadHeaderCallback);
-
-        curl_easy_setopt(this->curlEasy, CURLOPT_WRITEDATA, this);
-        curl_easy_setopt(this->curlEasy, CURLOPT_WRITEFUNCTION, &HttpDataStream::CurlWriteCallback);
-
-#if LIBCURL_VERSION_NUM < 0x072000
-        curl_easy_setopt(this->curlEasy, CURLOPT_PROGRESSDATA, this);
-        curl_easy_setopt(this->curlEasy, CURLOPT_PROGRESSFUNCTION, &HttpDataStream::LegacyCurlTransferCallback);
-#else
-        curl_easy_setopt(this->curlEasy, CURLOPT_XFERINFODATA, this);
-        curl_easy_setopt(this->curlEasy, CURLOPT_XFERINFOFUNCTION, &HttpDataStream::CurlTransferCallback);
-#endif
-
-        const int connectionTimeout = prefs->GetInt(kConnectionTimeoutSecondsKey.c_str(), kDefaultConnectionTimeoutSeconds);
-        const int readTimeout = prefs->GetInt(kReadTimeoutSecondsKey.c_str(), kDefaultReadTimeoutSeconds);
-
-        curl_easy_setopt (this->curlEasy, CURLOPT_CONNECTTIMEOUT, connectionTimeout);
-        curl_easy_setopt (this->curlEasy, CURLOPT_LOW_SPEED_TIME, readTimeout);
-        curl_easy_setopt(this->curlEasy, CURLOPT_LOW_SPEED_LIMIT, 1);
-
-        // if (useproxy == 1) {
-        //     curl_easy_setopt (this->curlEasy, CURLOPT_PROXY, proxyaddress);
-        //     if (authproxy == 1) {
-        //         curl_easy_setopt (this->curlEasy, CURLOPT_PROXYUSERPWD, proxyuserpass);
-        //     }
-        // }
-
-        curl_easy_setopt(this->curlEasy, CURLOPT_NOSIGNAL, 1);
-
-        /* append parsed headers, if any */
-        if (requestHeaders.size()) {
-            for (auto& kv : requestHeaders) {
-                auto header = kv.first + ": " + kv.second;
-                this->curlHeaders = curl_slist_append(this->curlHeaders, header.c_str());
+mc_result HttpDataStream::Close() {
+    Interrupt();
+    if (worker.joinable()) {
+        worker.join();
+    }
+    bool closed = true;
+    if (reader) {
+        closed = fclose(reader) == 0;
+        reader = nullptr;
+    }
+    if (writer) {
+        closed = fclose(writer) == 0 && closed;
+        writer = nullptr;
+    }
+    if (!partial.empty()) {
+        /* only a complete, flushed response may replace the cached track.
+        cleanup after a failed cache rename leaves playback itself usable. */
+        try {
+            const auto type = contentType.empty() && !extension.empty() ? "." + extension : contentType;
+            if (closed && finished == MC_OK) {
+                cache.Finish(cacheId, partial, type);
             }
-            curl_easy_setopt(this->curlEasy, CURLOPT_HTTPHEADER, this->curlHeaders);
         }
+        catch (const std::exception&) {
+            closed = false;
+        }
+        std::error_code ignored;
+        std::filesystem::remove(partial, ignored);
+        partial.clear();
+    }
+    return closed ? MC_OK : MC_ERROR_IO;
+}
 
-        /* start downloading... */
-        this->state = State::Downloading;
-        downloadThread = std::make_shared<std::thread>(&HttpDataStream::ThreadProc, this);
+mc_result HttpDataStream::Info(mc_stream_info& info) {
+    std::lock_guard lock(mutex);
+    if (cancelled || !reader) {
+        return cancelled ? MC_ERROR_CANCELLED : MC_ERROR_INVALID_ARGUMENT;
+    }
+    info = MC_STREAM_INFO_DEFAULT;
+    info.flags = MC_STREAM_READABLE | MC_STREAM_SEEKABLE | MC_STREAM_CAN_PREFETCH;
+    if (length) {
+        info.flags |= MC_STREAM_LENGTH_KNOWN;
+        info.length_bytes = *length;
+    }
+    info.uri = view(originalUri);
+    info.content_type = view(contentType);
+    info.extension = view(extension);
+    return MC_OK;
+}
 
-        /* wait until we have a few hundred k of data */
-        std::unique_lock<std::mutex> lock(this->stateMutex);
-        startedContition.wait(lock, [&] {
-            return this->interrupted || this->openReady;
+mc_result HttpDataStream::Read(void* dst, size_t capacity, size_t& bytes, mc_read_state& state) {
+    bytes = 0;
+    state = MC_READ_MORE;
+    std::unique_lock lock(mutex);
+    if (!reader) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    /* reaching the writer's current position is ordinary underflow. wait for
+    the next flushed chunk, transfer completion, or Stop before answering. */
+    if (capacity) {
+        changed.wait(lock, [&] {
+            return cancelled || finished || position < available;
         });
-
-        return !this->interrupted && this->state != State::Error;
     }
-
-    return false;
-}
-
-void HttpDataStream::ResetFileHandles() {
-    if (this->writeFile) {
-        fclose(this->writeFile);
-        this->writeFile = nullptr;
+    if (cancelled) {
+        return MC_ERROR_CANCELLED;
     }
-
-    if (this->reader) {
-        this->reader->Interrupt();
-        this->reader.reset();
-    }
-
-    auto const id = cacheId(this->cacheUri);
-    diskCache.Delete(id, this->instanceId);
-    this->writeFile = diskCache.Open(id, this->instanceId, "wb");
-    if (this->writeFile) {
-        this->reader = std::make_shared<FileReadStream>(this->cacheUri, this->instanceId);
-    }
-}
-
-void HttpDataStream::ThreadProc() {
-    if (this->curlEasy) {
-        static const int kMaxRetries = 10;
-        int retryCount = 0; /* note: weighted based on failure type */
-        const auto waitForRetry = [this](seconds delay) {
-            std::unique_lock<std::mutex> lock(this->stateMutex);
-            this->startedContition.wait_for(lock, delay, [this] { return this->interrupted.load(); });
-        };
-
-        while (this->state != State::Downloaded && !this->interrupted) {
-            auto const curlCode = curl_easy_perform(this->curlEasy);
-            long httpStatusCode = 0;
-            curl_easy_getinfo(this->curlEasy, CURLINFO_RESPONSE_CODE, &httpStatusCode);
-            if (httpStatusCode == 200) {
-                this->state = curlCode != CURLE_OK
-                    ? State::Aborted
-                    : State::Downloaded;
-
-                if (this->reader) {
-                    if (this->written > 0) {
-                        this->reader->Add(this->written);
-                        this->written = 0;
-                    }
-                    this->reader->Completed();
-                }
-            }
-            else {
-                if (httpStatusCode == 429 && retryCount < kMaxRetries) {
-                    this->state = State::Retrying;
-                    retryCount += 1;
-                    waitForRetry(seconds(5));
-                }
-                else if ((httpStatusCode < 400 || httpStatusCode >= 500) && retryCount < kMaxRetries) {
-                    {
-                        std::unique_lock<std::mutex> lock(this->stateMutex);
-                        this->ResetFileHandles();
-                    }
-                    this->state = State::Retrying;
-                    retryCount += 2;
-                    waitForRetry(seconds(2));
-                }
-                else {
-                    this->state = State::Error;
-                    this->interrupted = true;
-                }
-            }
-        }
-
-        /* publish readiness under the waiter's mutex, including short bodies
-        and terminal errors that never reach the precache threshold. */
-        {
-            std::lock_guard<std::mutex> lock(this->stateMutex);
-            this->openReady = true;
-        }
-        startedContition.notify_all();
-
-        if (this->curlEasy) {
-            curl_easy_cleanup(this->curlEasy);
-            this->curlEasy = nullptr;
-        }
-
-        if (this->curlHeaders) {
-            curl_slist_free_all(this->curlHeaders);
-            this->curlHeaders = nullptr;
-        }
-
-        if (this->writeFile) {
-            fclose(this->writeFile);
-            this->writeFile = nullptr;
+    if (position < available && capacity) {
+        const auto n = static_cast<size_t>(std::min<uint64_t>(available - position, capacity));
+        clearerr(reader);
+        bytes = fread(dst, 1, n, reader);
+        position += bytes;
+        if (bytes != n) {
+            return MC_ERROR_IO;
         }
     }
-}
-
-bool HttpDataStream::Close() {
-    this->Interrupt();
-    if (this->state == State::NotStarted) {
-        return true;
-    }
-
-    /* wait for the download thread to stop, this will ensure file writes have
-    completed. */
-    auto thread = this->downloadThread;
-    this->downloadThread.reset();
-
-    if (thread) {
-        thread->join();
-    }
-
-    /* need to close the reader so we can perform the filesystem operations below */
-    this->reader.reset();
-
-    /* if we just downloaded the file let's rename it to its final name; if the
-    download failed, let's delete the temp file. */
-    auto id = cacheId(this->cacheUri);
-    if (this->state == State::Downloaded) {
-        diskCache.Finalize(id, this->instanceId, this->Type());
-    }
-    else if (this->state != State::Cached) {
-        diskCache.Delete(id, this->instanceId);
-    }
-
-    return true;
-}
-
-void HttpDataStream::Release() {
-    this->Close();
-    delete this;
-}
-
-PositionType HttpDataStream::Read(void* buffer, PositionType readBytes) {
-    auto reader = this->reader;
-    return reader ? reader->Read(buffer, readBytes) : 0;
-}
-
-bool HttpDataStream::SetPosition(PositionType position) {
-    auto reader = this->reader;
-    return reader ? reader->SetPosition(position) : 0;
-}
-
-bool HttpDataStream::Seekable() {
-    return true;
-}
-
-PositionType HttpDataStream::Position() {
-    auto reader = this->reader;
-    return reader ? reader->Position() : 0;
-}
-
-bool HttpDataStream::Eof() {
-    auto reader = this->reader;
-    return !reader || reader->Position() >= (long) this->length;
-}
-
-long HttpDataStream::Length() {
-    return (long) this->length;
-}
-
-const char* HttpDataStream::Type() {
-    return this->type.c_str();
-}
-
-const char* HttpDataStream::Uri() {
-    return this->originalUri.c_str();
-}
-
-size_t HttpDataStream::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
-    HttpDataStream* stream = static_cast<HttpDataStream*>(userdata);
-
-    const size_t total = size * nmemb;
-    const size_t result = fwrite(ptr, size, nmemb, stream->writeFile);
-    fflush(stream->writeFile); /* normally we wouldn't want to do this, but it ensures
-     data written is available immediately to any simultaneous readers */
-    stream->written += result;
-
-    if (stream->written >= stream->chunkSizeBytes) {
-        stream->reader->Add(stream->written);
-        stream->written = 0;
-    }
-
-    if (stream->totalWritten > -1) {
-        stream->totalWritten += result;
-        if (stream->totalWritten >= stream->precacheSizeBytes) {
-            {
-                std::lock_guard<std::mutex> lock(stream->stateMutex);
-                stream->totalWritten = -1;
-                stream->openReady = true;
-            }
-            stream->startedContition.notify_all();
+    if (finished && position >= available) {
+        if (*finished == MC_OK) {
+            state = MC_READ_END;
         }
+        return *finished;
     }
-
-    return result;
+    return MC_OK;
 }
 
-size_t HttpDataStream::CurlReadHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata) {
-    HttpDataStream* stream = static_cast<HttpDataStream*>(userdata);
+mc_result HttpDataStream::Seek(uint64_t offset) {
+    std::unique_lock lock(mutex);
+    if (cancelled) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (!reader || offset > INT64_MAX || (length && offset > *length)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    /* a demuxer can probe the alleged end in the file header before playback.
+    a live response has no promised tail. it can seek within the published
+    prefix and read forward as data arrives. waiting here could stall open forever. */
+    if (!length && offset > available) {
+        return MC_ERROR_UNSUPPORTED;
+    }
+    changed.wait(lock, [&] {
+        return cancelled || finished || offset <= available;
+    });
+    if (cancelled) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (offset > available || !seekFile(reader, offset)) {
+        return MC_ERROR_IO;
+    }
+    position = offset;
+    return MC_OK;
+}
 
-    std::string header(buffer, size * nitems);
+mc_result HttpDataStream::Tell(uint64_t& offset) {
+    std::lock_guard lock(mutex);
+    offset = position;
+    return cancelled ? MC_ERROR_CANCELLED : MC_OK;
+}
 
-    std::string key, value;
-    if (parseHeader(header, key, value)) {
-        if (key == "Content-Length") {
-            stream->length = std::atoi(value.c_str());
+void HttpDataStream::Download() noexcept {
+    mc_result result = MC_ERROR_IO;
+    try {
+        result = Transfer();
+    }
+    catch (...) {
+        /* the waiting decoder still needs a terminal status if a download
+        cannot allocate its request or open its cache file. */
+    }
+    {
+        std::lock_guard lock(mutex);
+        if (fflush(writer) != 0) {
+            result = MC_ERROR_IO;
         }
-        else if (key == "Content-Type") {
-            if (!stream->type.size()) {
-                stream->type = value;
-            }
+        available = received;
+        if (result == MC_OK) {
+            length = received;
         }
+        finished = result;
     }
-
-    return size * nitems;
+    changed.notify_all();
 }
 
-int HttpDataStream::CurlTransferCallback(
-    void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow)
-{
-    HttpDataStream* stream = static_cast<HttpDataStream*>(ptr);
-    if (stream->interrupted) {
-        return -1; /* kill the stream */
+mc_result HttpDataStream::Transfer() {
+    std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
+    if (!curl) {
+        return MC_ERROR_IO;
     }
-    return 0; /* ok! */
-}
-
-#if LIBCURL_VERSION_NUM < 0x072000
-int HttpDataStream::LegacyCurlTransferCallback(
-    void *ptr, double downTotal, double downNow, double upTotal, double upNow)
-{
-    return CurlTransferCallback(
-        ptr,
-        (curl_off_t) downTotal,
-        (curl_off_t) downNow,
-        (curl_off_t) upTotal,
-        (curl_off_t) upNow);
-}
+    auto* handle = curl.get();
+    std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> headers(
+        authorization.empty() ? nullptr : curl_slist_append(nullptr, authorization.c_str()), curl_slist_free_all);
+    if (!authorization.empty() && !headers) {
+        return MC_ERROR_IO;
+    }
+    curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers.get());
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, allowUntrusted ? 0L : 1L);
+    if (allowUntrusted) {
+        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0L);
+    }
+#if LIBCURL_VERSION_NUM >= 0x075500
+    curl_easy_setopt(handle, CURLOPT_PROTOCOLS_STR, "http,https");
+    curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
+#else
+    curl_easy_setopt(handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
 #endif
+    curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1L);
+    curl_easy_setopt(handle, CURLOPT_USERAGENT, "musikcube HttpDataStream");
+    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, static_cast<long>(options.connectionTimeout));
+    curl_easy_setopt(handle, CURLOPT_LOW_SPEED_TIME, static_cast<long>(options.readTimeout));
+    curl_easy_setopt(handle, CURLOPT_LOW_SPEED_LIMIT, 1L);
+    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &CurlWrite);
+    curl_easy_setopt(handle, CURLOPT_WRITEDATA, this);
+    curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, &CurlHeader);
+    curl_easy_setopt(handle, CURLOPT_HEADERDATA, this);
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, &CurlProgress);
+    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, this);
+
+    int retryWeight = 0;
+    while (!cancelled) {
+        const auto status = curl_easy_perform(handle);
+        long response = 0;
+        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response);
+        if (status == CURLE_OK && response == 200) {
+            return MC_OK;
+        }
+        /* retry transient failures only before consuming body bytes. a second
+        response appended to a partial track would corrupt the decoder's input. */
+        std::unique_lock lock(mutex);
+        if (received || retryWeight >= 10 || (response >= 400 && response < 500 && response != 429)) {
+            break;
+        }
+        retryWeight += response == 429 ? 1 : 2;
+        changed.wait_for(lock, std::chrono::seconds(response == 429 ? 5 : 2), [&] {
+            return cancelled.load();
+        });
+    }
+    return cancelled ? MC_ERROR_CANCELLED : MC_ERROR_IO;
+}
+
+size_t HttpDataStream::WriteBytes(const char* data, size_t size) {
+    if (cancelled || !size) {
+        return 0;
+    }
+    const size_t written = fwrite(data, 1, size, writer);
+    std::lock_guard lock(mutex);
+    received += written;
+    if (received - available >= static_cast<size_t>(options.chunk) ||
+        (available < static_cast<size_t>(options.precache) && received >= static_cast<size_t>(options.precache)))
+    {
+        if (fflush(writer) != 0) {
+            return 0;
+        }
+        available = received;
+        changed.notify_all();
+    }
+    return written;
+}
+
+void HttpDataStream::ReadHeader(std::string_view header) {
+    if (header.compare(0, 5, "HTTP/") == 0) {
+        std::lock_guard lock(mutex);
+        /* redirects and proxy handshakes each have their own headers. only
+        the final response describes the bytes passed to the decoder. */
+        if (!received) {
+            length.reset();
+            if (!explicitContentType) {
+                contentType.clear();
+            }
+        }
+        return;
+    }
+    const auto separator = header.find(':');
+    if (separator == std::string_view::npos) {
+        return;
+    }
+    auto key = std::string(header.substr(0, separator));
+    std::transform(key.begin(), key.end(), key.begin(), lower);
+    auto value = musik::core::sdk::str::Trim(std::string(header.substr(separator + 1)));
+    std::lock_guard lock(mutex);
+    if (received) {
+        return;
+    }
+    if (key == "content-length") {
+        uint64_t n = 0;
+        const auto parsed = std::from_chars(value.data(), value.data() + value.size(), n);
+        if (parsed.ec == std::errc() && parsed.ptr == value.data() + value.size()) {
+            length = n;
+        }
+    }
+    else if (key == "content-type" && contentType.empty()) {
+        contentType = value.substr(0, value.find(';'));
+    }
+}
+
+size_t HttpDataStream::CurlWrite(char* data, size_t size, size_t count, void* context) {
+    return static_cast<HttpDataStream*>(context)->WriteBytes(data, size * count);
+}
+
+size_t HttpDataStream::CurlHeader(char* data, size_t size, size_t count, void* context) {
+    try {
+        static_cast<HttpDataStream*>(context)->ReadHeader({ data, size * count });
+        return size * count;
+    }
+    catch (...) {
+        return 0;
+    }
+}
+
+int HttpDataStream::CurlProgress(void* context, curl_off_t, curl_off_t, curl_off_t, curl_off_t) {
+    return static_cast<HttpDataStream*>(context)->cancelled.load() ? 1 : 0;
+}

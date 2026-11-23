@@ -177,8 +177,9 @@ target_link_libraries(ffmpegdecoder PRIVATE ${windows_ffmpeg})
 windows_plugin(gmedecoder GmeDataStream.cpp GmeDecoder.cpp GmeIndexerSource.cpp plugin.cpp)
 target_link_libraries(gmedecoder PRIVATE vendor::gme vendor::zlib)
 
-windows_plugin(httpdatastream HttpDataStream.cpp HttpDataStreamFactory.cpp
-  httpdatastream_plugin.cpp LruDiskCache.cpp)
+windows_plugin(httpdatastream HttpDataStream.cpp httpdatastream_plugin.cpp LruDiskCache.cpp)
+musikcube_configure_c_plugin(httpdatastream)
+target_compile_features(httpdatastream PRIVATE cxx_std_20)
 target_link_libraries(httpdatastream PRIVATE shlwapi vendor::curl)
 
 windows_plugin(libopenmptdecoder OpenMptDataStream.cpp OpenMptDecoder.cpp

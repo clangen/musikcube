@@ -349,6 +349,25 @@ if(BUILD_TESTING AND TARGET musikcube AND TARGET ffmpegdecoder AND (TARGET tagli
 endif()
 
 # exercise URI resources through the actual shared C boundary without catalogs.
+# reuse the C registry host to exercise the production HTTP source directly.
+# decoder prebuffering otherwise hides the point at which a byte read blocks.
+if(TARGET httpdatastream)
+  target_sources(musikcore_decoder_stream_test PRIVATE "${PROJECT_SOURCE_DIR}/tests/integration/plugins/http-read.cpp")
+  target_include_directories(musikcore_decoder_stream_test PRIVATE "${PROJECT_SOURCE_DIR}/src/3rdparty/asio/asio/include")
+  target_compile_definitions(musikcore_decoder_stream_test PRIVATE MUSIKCORE_TEST_HTTP_SOURCE ASIO_STANDALONE)
+  if(WIN32)
+    target_link_libraries(musikcore_decoder_stream_test PRIVATE ws2_32 mswsock)
+  endif()
+  add_dependencies(musikcore_decoder_stream_test httpdatastream)
+  add_test(NAME musikcore.integration.plugins.progressive_http_read
+    COMMAND musikcore_decoder_stream_test --progressive-http "$<TARGET_FILE:httpdatastream>")
+  add_test(NAME musikcore.integration.plugins.shared_http_cache
+    COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/check-http-cache.js"
+      "$<TARGET_FILE:musikcore_decoder_stream_test>" "$<TARGET_FILE:httpdatastream>")
+  set_tests_properties(musikcore.integration.plugins.progressive_http_read musikcore.integration.plugins.shared_http_cache PROPERTIES
+    LABELS "integration;musikcore;plugins;contract" TIMEOUT 20)
+endif()
+
 if(TARGET nullout AND TARGET ffmpegdecoder)
   foreach(language IN ITEMS c cpp)
     add_executable(musikcore_example_player_${language} "${PROJECT_SOURCE_DIR}/examples/core-player.${language}" host-wakeup.cpp)

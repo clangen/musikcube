@@ -32,85 +32,73 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/IDataStream.h>
+#pragma once
 
-#include <string>
+#include "LruDiskCache.h"
+#include <musikcore/plugin/services.h>
+#include <musikcore/plugin/settings.h>
+#include <musikcore/plugin/stream.h>
 #include <curl/curl.h>
-#include <memory>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <atomic>
+#include <condition_variable>
+#include <optional>
+#include <string_view>
+#include <thread>
 
-using namespace musik::core::sdk;
+/* downloads into a private cache file while the decoder reads its published
+prefix. seek can wait for future bytes; Stop wakes both open and the reader. */
+class HttpDataStream {
+public:
+    static constexpr std::string_view RemoteTrack = "musikcore://remote-track/";
 
-class FileReadStream;
+    static mc_result Create(LruDiskCache& cache, const mc_plugin_services& services, void** instance);
+    static const mc_configuration_api& Configuration();
 
-class HttpDataStream : public IDataStream {
-    public:
-        static const std::string kRemoteTrackHost;
+    ~HttpDataStream();
 
-        using OpenFlags = musik::core::sdk::OpenFlags;
+    mc_result Open(mc_string_view uri, mc_stream_open_flags flags);
+    mc_result Close();
+    void Interrupt();
+    mc_result Info(mc_stream_info& info);
+    mc_result Read(void* dst, size_t capacity, size_t& bytes, mc_read_state& state);
+    mc_result Seek(uint64_t offset);
+    mc_result Tell(uint64_t& offset);
 
-        HttpDataStream();
-        virtual ~HttpDataStream();
+private:
+    struct Options {
+        std::filesystem::path directory;
+        int maxFiles;
+        int precache;
+        int chunk;
+        int connectionTimeout;
+        int readTimeout;
+    };
 
-        void Release() override;
-        bool Open(const char *rawUri, OpenFlags flags = OpenFlags::Read) override;
-        bool Close() override;
-        bool Readable() override  { return true; }
-        bool Writable() override  { return false; }
-        PositionType Read(void* buffer, PositionType readBytes) override;
-        PositionType Write(void* buffer, PositionType writeBytes) override  { return 0; }
-        bool SetPosition(PositionType position) override;
-        PositionType Position() override;
-        bool Eof() override;
-        long Length() override;
-        bool Seekable() override;
-        const char* Type() override;
-        const char* Uri() override;
-        void Interrupt() override;
-        bool CanPrefetch() override;
+    HttpDataStream(LruDiskCache& cache, Options options);
 
-    private:
-        enum class State {
-            NotStarted,
-            Conflict,
-            Cached,
-            Downloading,
-            Retrying,
-            Aborted,
-            Downloaded,
-            Error,
-        };
+    void Download() noexcept;
+    mc_result Transfer();
+    size_t WriteBytes(const char* data, size_t size);
+    void ReadHeader(std::string_view header);
+    static size_t CurlWrite(char* data, size_t size, size_t count, void* context);
+    static size_t CurlHeader(char* data, size_t size, size_t count, void* context);
+    static int CurlProgress(void* context, curl_off_t, curl_off_t, curl_off_t, curl_off_t);
 
-        void ThreadProc();
-        void ResetFileHandles();
-
-        static size_t CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
-        static size_t CurlReadHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata);
-        static int CurlTransferCallback(void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow);
-
-        #if LIBCURL_VERSION_NUM < 0x072000
-        static int LegacyCurlTransferCallback(void *ptr, double downTotal, double downNow, double upTotal, double upNow);
-        #endif
-
-        std::string originalUri, httpUri, cacheUri, type;
-        size_t length;
-        std::string filename;
-        FILE* writeFile;
-        CURL* curlEasy;
-        curl_slist *curlHeaders{ nullptr };
-
-        std::atomic<long> written, totalWritten;
-        std::atomic<bool> interrupted;
-        std::atomic<State> state;
-
-        std::mutex stateMutex;
-        std::condition_variable startedContition;
-        bool openReady = false;
-        std::shared_ptr<std::thread> downloadThread;
-        std::shared_ptr<FileReadStream> reader;
-        int precacheSizeBytes, chunkSizeBytes, maxCacheFiles;
-        int64_t instanceId;
+    LruDiskCache& cache;
+    Options options;
+    std::filesystem::path partial;
+    size_t cacheId {};
+    bool opened = false;
+    std::string url, originalUri, authorization, contentType, extension;
+    bool allowUntrusted = false;
+    bool explicitContentType = false;
+    FILE* reader = nullptr;
+    FILE* writer = nullptr;
+    std::thread worker;
+    std::atomic<bool> cancelled { false };
+    std::mutex mutex;
+    std::condition_variable changed;
+    uint64_t received = 0, available = 0, position = 0;
+    std::optional<uint64_t> length;
+    std::optional<mc_result> finished;
 };

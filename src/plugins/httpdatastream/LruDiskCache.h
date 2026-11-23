@@ -32,48 +32,37 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <string>
-#include <vector>
-#include <mutex>
-#include <memory>
-#include <ctime>
+#pragma once
+
+#include <atomic>
+#include <cstdio>
 #include <cstdint>
 #include <filesystem>
+#include <mutex>
+#include <string>
+#include <vector>
 
+/* one cache index is shared by the plugin's streams. each download writes a
+private temporary file; readers of a completed track see only the final file. */
 class LruDiskCache {
-    public:
-        LruDiskCache();
+public:
+    bool Initialize(const std::filesystem::path& directory, size_t maxEntries, const std::atomic<bool>& cancelled);
+    FILE* OpenCached(size_t id, std::string& type, uint64_t& length);
+    bool CreatePartial(std::filesystem::path& path, FILE*& writer, FILE*& reader);
+    void Finish(size_t id, const std::filesystem::path& path, const std::string& type);
 
-        void Purge();
+private:
+    struct Entry {
+        size_t id;
+        std::filesystem::path path;
+        std::string type;
+        std::filesystem::file_time_type used;
+    };
 
-        bool Finalize(size_t id, int64_t instanceId, std::string type);
-        FILE* Open(size_t id, int64_t instanceId, const std::string& mode);
-        FILE* Open(size_t id, int64_t instanceId, const std::string& mode, std::string& type, size_t& len);
-        bool Cached(size_t id);
-        void Delete(size_t id, int64_t instanceId);
-        void Touch(size_t id);
+    void Prune();
 
-        void Init(const std::string& root, size_t maxEntries);
-
-    private:
-        struct Entry {
-            uint64_t id;
-            std::string path;
-            std::string type;
-            std::filesystem::file_time_type time;
-        };
-
-        using EntryPtr = std::shared_ptr<Entry>;
-        using EntryList = std::vector<EntryPtr>;
-
-        void SortAndPrune();
-
-        static std::shared_ptr<Entry> Parse(const std::filesystem::path& path);
-
-        std::recursive_mutex stateMutex;
-
-        bool initialized;
-        size_t maxEntries;
-        EntryList cached;
-        std::string root;
+    std::mutex mutex;
+    std::filesystem::path root;
+    size_t limit = 0;
+    std::vector<Entry> entries;
 };

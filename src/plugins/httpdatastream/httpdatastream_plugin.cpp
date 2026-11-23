@@ -33,39 +33,166 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "config.h"
+#include "HttpDataStream.h"
+#include <musikcore/plugin.h>
+#include <musikcore/sdk/version.h>
 
-#include "HttpDataStreamFactory.h"
+namespace {
+    constexpr mc_string_view text(std::string_view s) {
+        return {
+            .data = s.data(),
+            .length = s.size(),
+        };
+    }
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
+    template<typename Operation> mc_result call(Operation operation) noexcept {
+        try {
+            return operation();
+        }
+        catch (const std::filesystem::filesystem_error&) {
+            return MC_ERROR_IO;
+        }
+        catch (...) {
+            return MC_ERROR_INTERNAL;
+        }
+    }
 
-#ifdef WIN32
-    BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+    bool startsWith(std::string_view uri, std::string_view scheme) {
+        if (uri.size() < scheme.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < scheme.size(); ++i) {
+            const char c = uri[i];
+            if ((c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c) != scheme[i]) {
+                return false;
+            }
+        }
         return true;
     }
 
-    #define DLLEXPORT __declspec(dllexport)
-#else
-    #define DLLEXPORT
-#endif
+    mc_result MC_CALL canHandle(void*, const mc_media_hint* hint, uint32_t* supported) {
+        const std::string_view uri(hint->uri.data ? hint->uri.data : "", hint->uri.length);
+        *supported = startsWith(uri, "http://") || startsWith(uri, "https://") ||
+            uri.substr(0, HttpDataStream::RemoteTrack.size()) == HttpDataStream::RemoteTrack;
+        return MC_OK;
+    }
 
-static class HttpDataStreamPlugin : public musik::core::sdk::IPlugin {
-    public:
-        void Release() override { };
-        const char* Name() override { return "HTTP IDataStream"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "b153adad-ee98-4331-ad32-4ff7f34828cd"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-} plugin;
+    mc_result MC_CALL create(void* context, const mc_plugin_services* services, void** instance, mc_error**) {
+        if (!services) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        return call([&] {
+            return HttpDataStream::Create(*static_cast<LruDiskCache*>(context), *services, instance);
+        });
+    }
 
-extern "C" DLLEXPORT IPlugin* GetPlugin() {
-    return &plugin;
+    void MC_CALL destroy(void* input) {
+        delete static_cast<HttpDataStream*>(input);
+    }
+
+    mc_result MC_CALL open(void* input, mc_string_view uri, mc_stream_open_flags flags, mc_error**) {
+        return call([&] {
+            return static_cast<HttpDataStream*>(input)->Open(uri, flags);
+        });
+    }
+
+    mc_result MC_CALL close(void* input) {
+        return call([&] {
+            return static_cast<HttpDataStream*>(input)->Close();
+        });
+    }
+
+    void MC_CALL interrupt(void* input) {
+        static_cast<HttpDataStream*>(input)->Interrupt();
+    }
+
+    mc_result MC_CALL info(void* input, mc_stream_info* result) {
+        return static_cast<HttpDataStream*>(input)->Info(*result);
+    }
+
+    mc_result MC_CALL read(void* input, void* dst, size_t capacity, size_t* bytes, mc_read_state* state, mc_error**) {
+        return static_cast<HttpDataStream*>(input)->Read(dst, capacity, *bytes, *state);
+    }
+
+    mc_result MC_CALL write(void*, const void*, size_t, size_t* bytes, mc_error**) {
+        *bytes = 0;
+        return MC_ERROR_UNSUPPORTED;
+    }
+
+    mc_result MC_CALL seek(void* input, uint64_t offset, mc_error**) {
+        return static_cast<HttpDataStream*>(input)->Seek(offset);
+    }
+
+    mc_result MC_CALL tell(void* input, uint64_t* offset) {
+        return static_cast<HttpDataStream*>(input)->Tell(*offset);
+    }
+
+    constexpr mc_stream_vtable Methods {
+        .struct_size = sizeof(mc_stream_vtable),
+        .destroy = destroy,
+        .open = open,
+        .close = close,
+        .interrupt = interrupt,
+        .get_info = info,
+        .read = read,
+        .write = write,
+        .seek = seek,
+        .tell = tell,
+    };
+
+    /* active streams share a cache index for this engine session. the registry
+    keeps the immutable factory and its cache alive through the last destroy. */
+    struct Provider {
+        LruDiskCache cache;
+        mc_stream_factory factory {
+            .struct_size = sizeof(mc_stream_factory),
+            .context = &cache,
+            .instance_api = &Methods,
+            .can_handle = canHandle,
+            .create = create,
+        };
+    };
+
+    template<typename T> mc_result registerTable(const mc_host_api& host, mc_string_view id, const T& table) {
+        const mc_plugin_capability capability {
+            .struct_size = sizeof(mc_plugin_capability),
+            .id = id,
+            .api = &table,
+            .api_size = sizeof(T),
+        };
+        return host.register_capability(host.host_context, &capability);
+    }
+
+    mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_error**) {
+        return call([&]() -> mc_result {
+            auto* provider = new Provider;
+            *context = provider;
+            const auto configured =
+                registerTable(*host, text(MC_PLUGIN_CAPABILITY_CONFIGURATION), HttpDataStream::Configuration());
+            if (configured != MC_OK) {
+                return configured;
+            }
+            return registerTable(*host, text(MC_PLUGIN_CAPABILITY_STREAM), provider->factory);
+        });
+    }
+
+    void MC_CALL shutdown(void* context) {
+        delete static_cast<Provider*>(context);
+    }
 }
 
-extern "C" DLLEXPORT IDataStreamFactory* GetDataStreamFactory() {
-    return new HttpDataStreamFactory();
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error) {
+    const auto result = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (result != MC_OK) {
+        return result;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = text("b153adad-ee98-4331-ad32-4ff7f34828cd");
+    plugin->name = text("HTTP IDataStream");
+    plugin->author = text("clangen");
+    plugin->version = text(MUSIKCUBE_VERSION_WITH_COMMIT_HASH);
+    plugin->initialize = initialize;
+    plugin->shutdown = shutdown;
+    return MC_OK;
 }
