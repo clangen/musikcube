@@ -70,8 +70,8 @@ through its ADR rather than adding a competing policy to a task description.
 
 - Unix-like builds currently define `musikcore` as a shared CMake target.
 - Windows builds `musikcore.dll` and shares it between the GUI and console frontends.
-- Core source lists are duplicated between `src/musikcore/CMakeLists.txt` and
-  `.cmake/WindowsSources.cmake`.
+- Windows and Unix build the engine from the shared source list in
+  `.cmake/MusikcoreSources.cmake`.
 - The retired legacy C boundary (`c_context.cpp`, `c_interface_wrappers.cpp`,
   and `musikcore_c.h`) has been removed. The new consumer boundary lives in
   `src/musikcore/ffi/consumer`.
@@ -167,14 +167,14 @@ separation is:
 
 ### Current build topology
 
-Unix production builds compile `CORE_SOURCES` from
-`src/musikcore/CMakeLists.txt` into position-independent `musikcore_objects`.
+Unix production builds compile the shared engine sources from
+`.cmake/MusikcoreSources.cmake` into position-independent `musikcore_objects`.
 Those objects supply the shared, C-export-only production `musikcore`. With
 `BUILD_TESTING`, they also supply private static `musikcore_internal` for tests
 that need implementation access. The normal musikcube and musikcubed targets
 use the production public C ABI; they do not link the private test archive.
 
-Windows builds `musikcore_objects` from `.cmake/WindowsSources.cmake`, then
+Windows builds `musikcore_objects` from the same source list, then
 shares `musikcore.dll` between console and GUI frontends. Private integration
 tests reuse `musikcore_internal` without widening the DLL exports. The reduced
 `musikcore_abi0` shared target remains separate. Native Windows Debug/Release
@@ -1347,8 +1347,8 @@ and mutable timing methods; adapters own no implicit lifecycle policy.
   The whole-engine teardown entry must enforce the same fatal reentry invariant
   before destroying services; the private registry check cannot protect earlier
   engine mutation. Public context dispatch/BUSY behavior is unchanged.
-  Full engine orchestration and instance/callback quiescence remain PLG-CUTOVER-001,
-  AUD-001/DCD-003, and the extension teardown integration task below.
+  GATE-600 covers stream and decoder quiescence. Full engine orchestration
+  and extension teardown remain PLG-CUTOVER-001 and the extension task below.
 - [x] **SDK-009** Add the valid pure-C fixture plugin. Its test-only probe table
   exercises session-owned state without inventing a shipped provider family.
 - [x] **SDK-010** Add incompatible, truncated, missing-hook/version/entry,
@@ -1508,6 +1508,13 @@ This completed pilot is not a second migration backlog.
 
 ### Phase 6: decoder SDK vertical slice
 
+[ADR-0010](../docs/adr/0010-shared-media-services-for-playback-and-transcoding.md)
+records why playback, server transcoding, and nested sources share one media
+service. Keep the legacy C++ SDK version at 24 until the C migration is complete.
+Build the host and its C++ plugins from the same revision. The environment and
+encoder interfaces changed, so a matching version alone cannot establish binary
+compatibility between migration builds.
+
 - [ ] **AUD-001** Implement decoder scratch storage and fixed playback-pool
   handoff/recycling.
   - [x] Implement opaque growable `mc_audio_scratch_buffer` storage through
@@ -1522,14 +1529,20 @@ This completed pilot is not a second migration backlog.
     Split decoded blocks across slices without growing playback storage; test
     pool exhaustion/backpressure, exactly-once recycling after output completion,
     and quiescence before pool replacement on format changes. The C output
-    handoff is covered by OUT-002; C decoder scratch integration remains open.
+    handoff is covered by OUT-002. C scratch now feeds the fixed playback
+    pool (`transport.decoder_contract_pcm`, `transport.gapless_pcm`, and
+    `transport.completion_pcm`). A change of channel count or sample rate
+    during one track ends playback with an error. Retain the existing
+    fixed-format playback pool for this migration. Mid-track pool replacement
+    is deferred.
 - [x] **AUD-002** Define frame counts, capacities, formats, and buffer state
   transitions precisely in `plugin/audio.h` and `plugin/output.h`.
   `plugins.audio_buffers`, `plugins.contract_headers`, and `plugins.null_output`
   verify the implemented contracts on macOS, including host-sized returned
   format prefixes and permanent oversized-submission errors versus backpressure.
-  Native-platform follow-ups remain SDK-LINUX/SDK-WINDOWS; full engine handoff
-  remains AUD-001/DCD-003/PLG-NULL-001.
+  Native-platform follow-ups remain SDK-LINUX/SDK-WINDOWS. The production
+  decoder-to-output path is exercised by GATE-600; mid-track pool replacement
+  remains AUD-001.
   PCM is fixed interleaved native float32, with typed `float*` writable views;
   no encoding selector or per-block sample-format checks. The experimental
   `mc_audio_format` layout is 16 bytes; consumers of these structs must rebuild.
@@ -1539,28 +1552,63 @@ This completed pilot is not a second migration backlog.
   by PLG-OUTPUT-HOST-001. Bootstrap
   checks are centralized in `mc_plugin_validate_host_api`, covered by strict
   `plugins.contract_headers` compatibility/prefix/default tests.
-- [ ] **STR-001** Define stream table operations with `uint64_t` positions,
-  partial reads, EOF, seek, and interruption.
-- [ ] **STR-002** Implement core-provided and plugin-provided C streams, with
+- [x] **STR-001** Define stream table operations with `uint64_t` positions,
+  partial reads, EOF, seek, and interruption. Exercised on macOS by
+  `musikcore.unit.plugins.local_file_source`, including offsets above 4 GiB.
+- [x] **STR-002** Implement core-provided and plugin-provided C streams, with
   engine-owned wrappers as needed; do not reintroduce `sdk::IDataStream`.
-- [ ] **DCD-001** Define decoder factory capability advertisement.
-- [ ] **DCD-002** Define decoder open, decode, seek, duration, preferred rate,
-  exhaustion, and destroy operations.
-- [ ] **DCD-003** Connect C decoder instances to playback through engine-owned
+  The local file, HTTP and subtrack providers use the same C stream
+  contract. Playback and server transcoding obtain these streams through
+  `mc_media_host_api`. See `runtime.stream_sdk_contract` and `api.uri_player` on macOS.
+- [x] **DCD-001** Define decoder factory capability advertisement.
+  `musikcore.integration.plugins.lifecycle` rejects incomplete decoder and
+  stream registrations. `musikcore.integration.plugins.decoder_stream` loads
+  a registered C decoder by type.
+- [x] **DCD-002** Define decoder open, decode, seek, duration, preferred rate,
+  exhaustion, and destroy operations. `musikcore.integration.plugins.decoder_stream`
+  exercises the C contract with real file bytes and host scratch on macOS.
+- [x] **DCD-003** Connect C decoder instances to playback through engine-owned
   types, removing `sdk::IDecoder` dependencies rather than adapting the old SDK.
-- [ ] **DCD-004** Implement the pure-C deterministic decoder fixture.
-- [ ] **DCD-005** Add controlled decoder failure modes selected by fixture URI.
-- [ ] **DCD-006** Add SDK contract tests for stream and decoder edge cases.
-- [ ] **DCD-007** Run the deterministic decoder through the real playback
-  pipeline and fake output.
-- [ ] **DCD-008** Add malformed provider results and unload-race tests.
-- [ ] **PERF-002** Verify the ABI introduces no PCM copy and no per-sample call.
+  `transport.decoder_contract_pcm` runs a C-only decoder in a public URI player;
+  the FFmpeg gapless, seek and crossfade tests run through the same host.
+- [x] **DCD-004** Implement the pure-C deterministic decoder fixture.
+  `musikcore.integration.plugins.decoder_stream` verifies sample values across
+  a partial final block, EOF, seek, cancellation, and destruction before unload.
+- [x] **DCD-005** Add controlled decoder failure modes selected by fixture URI.
+  `transport.decoder_contract_pcm` rejects a successful empty block and a
+  read error during playback, and distinguishes both from a healthy EOF with final frames.
+- [x] **DCD-006** Add SDK contract tests for stream and decoder edge cases.
+  `plugins.local_file_source`, `plugins.decoder_stream`, and `api.uri_player`
+  cover large offsets, short reads, live streams, seeks, and interruption on macOS.
+- [x] **DCD-007** Run the deterministic decoder through the real playback
+  pipeline and fake output. `transport.decoder_contract_pcm` compares each
+  captured sample, including the final partial block.
+- [ ] **DCD-SEEK** Verify the first post-seek PCM timestamp using a packet-based
+  fixture with non-frame-aligned seeks. FFmpeg currently reports the requested
+  logical playback position after the demuxer accepts it. Before promising
+  sample-accurate seeks, specify whether to decode and discard a partial packet,
+  what to report for streams with missing timestamps, and the cost for HTTP.
+- [x] **DCD-008** Add malformed provider results and unload-race tests.
+  `transport.decoder_contract_pcm` rejects a decoder that stops publishing
+  after one valid block, verifies the previous samples cannot replay, and shuts
+  the managed runtime down while a C decoder is inside its input's blocked read.
+  The source must be interrupted and destroyed before shutdown returns.
+  `plugins.partial_media_create` requires an abort at the factory boundary if
+  a failed stream creation leaves an instance in the output slot.
+  `transport.decoder_drain_pcm` interrupts a blocked decode with a pending device
+  completion and checks that the requested drain plays out the accepted audio.
+- [x] **PERF-002** Verify the ABI introduces no PCM copy and no per-sample call.
+  `plugins.ffmpeg_resample` counts one scratch write per nonempty output block,
+  checks the published buffer address and verifies all 48,000 frames including
+  the resampler tail. Playback still copies into fixed output slices.
 
 #### Phase 6 gate
 
-- [ ] **GATE-600** Known PCM frames cross a C decoder provider into the real
+- [x] **GATE-600** Known PCM frames cross a C decoder provider into the real
   playback pipeline with correct seek, failure, ownership, teardown, and unload
-  behavior under sanitizers.
+  behavior under sanitizers. macOS ASan/UBSan acceptance uses
+  `plugins.decoder_stream`, `transport.decoder_contract_pcm`, `transport.seek_tail_pcm`
+  and `api.uri_player`. Native Linux and Windows verification remains deferred.
 
 ### Phase 7: expand and migrate the public API
 
@@ -1959,18 +2007,48 @@ stage; migrated families must not keep a parallel former-SDK path.
 - [ ] **ENC-001** Define blocking encoder output to a host stream.
 - [ ] **ENC-002** Define streaming encoder packet/sink ownership.
 - [ ] **ENC-003** Implement encoder adapters and pure-C fixtures.
-- [ ] **ENC-004** Convert `stockencoders`.
-- [ ] **DST-001** Define data-stream factory capability and creation tables.
-- [ ] **DST-002** Implement data-stream factory adapters and fixtures.
-- [ ] **DST-003** Convert `httpdatastream`.
+- [ ] **ENC-004** Convert `stockencoders`. The server passes C PCM views and
+  writable C streams to both stock encoders. Factory discovery and encoder
+  lifecycle still use the C++ SDK. `server.transcode_body` and
+  `api.remote_transcode` cover the handoff and encode/finalize failure on macOS.
+- [x] **DST-001** Define data-stream factory capability and creation tables.
+- [x] **DST-002** Implement data-stream factory adapters and fixtures.
+- [x] **DST-003** Convert `httpdatastream` alongside local file and FFmpeg
+  playback. Bring forward the C host services for the data directory and
+  plugin-scoped settings, including schema discovery. Preserve the existing
+  cache location, setting keys, defaults, and limits. Verify that a saved
+  cache or timeout override is honored and that authenticated remote playback
+  and Stop during a stalled request still work.
+  `api.uri_player` covers live settings, chunked HTTP, cancellation and
+  overlapping cache downloads. `plugins.progressive_http_read` verifies reads
+  resume when another chunk arrives before EOF. `plugins.shared_http_cache`
+  verifies that two processes can download the same URL, recover a complete
+  entry, and clean up after an interrupted transfer. `api.remote_transcode`
+  plays a remote track through the authenticated server. Its MP3 cases check
+  that musikdroid receives a finalized file with an exact length on its first
+  request for a finite track, even with caching disabled. Unknown-duration
+  inputs and other streaming clients can receive bytes during encoding.
+  `mp3_range_fallback` covers opt-in full encoding for an uncached range.
 
 #### Decoder plugins
 
-- [ ] **PLG-DEC-001** Convert `ffmpegdecoder`.
-- [ ] **PLG-DEC-002** Convert `gmedecoder`.
-- [ ] **PLG-DEC-003** Convert `libopenmptdecoder`.
+- [x] **PLG-DEC-001** Convert `ffmpegdecoder`. `transport.gapless_pcm`,
+  `transport.seek_tail_pcm` and `api.remote_transcode` exercise the C DLL on macOS.
+- [x] **PLG-DEC-002** Convert `gmedecoder`.
+- [x] **PLG-DEC-003** Convert `libopenmptdecoder`. The GME and OpenMPT
+  media DLLs each register a stream and decoder. The installed C++17 plugin
+  SDK provides `SubtrackSource` for indexed containers and `seekStream`
+  for codec callbacks using relative offsets. Ship the indexers alongside
+  their codecs. Each indexer declares its media plugin filename through
+  `GetParentPluginFilename` so its enable setting follows the codec until
+  overridden. `plugins.subsong_gme` and `runtime.stream_sdk_contract` cover
+  selection on macOS. `musikcube.ui.settings` checks both plugin rows after a
+  toggle. `plugins.subsong_openmpt` also verifies that the decoder consumes a
+  final block carrying EOF without requesting it again.
 - [ ] **PLG-DEC-004** Convert Windows `cddadecoder` and its stream/source
-  capabilities.
+  capabilities. CD audio playback is unavailable on this branch until its
+  device reads support cancellation. Verify Stop during a blocked read, disc
+  eject, and shutdown on a Windows machine with a drive.
 
 #### Tags and indexer sources
 

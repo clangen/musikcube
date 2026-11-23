@@ -1138,11 +1138,14 @@ typedef struct mc_plugin_services mc_plugin_services;
 
 A factory advertises the instance vtable before creation. The core validates
 its required prefix and destruction function before allocating any instance.
-`create` receives a null output slot; it returns opaque state for that known
-table. On failure it either cleans up and leaves null, or returns partial state
-safe for the known destruction callback. The core constructs the typed object
-and keeps it within the engine session. Object destruction must tolerate null/partial
-state and must never throw.
+`create` receives a null output slot and publishes opaque state on success.
+A stream or decoder factory owns cleanup if creation fails and must leave the
+slot null. A nonnull slot on failure is a fatal ownership violation because
+the host cannot establish whether it owns the reported instance. An output
+factory can return partial state on failure. Its stop and destroy callbacks
+must accept that state so the host can stop workers before releasing it.
+Destruction must never throw. The core keeps successfully created objects
+within the engine session.
 
 Factory tables are immutable after registration and valid through plugin
 shutdown. Their `context` is plugin-owned state. Register one factory per role
@@ -1230,6 +1233,11 @@ capacity; an invalid count ends access, publishes zero frames, and returns an
 error. Validation and state tracking cannot protect against a plugin writing
 beyond the returned capacity.
 
+The consumer calls `read_block` once per decode. It clears the published frame
+count and leaves the returned samples in place until the next mutation. If a
+provider returns success without publishing its next block, the previous PCM
+cannot appear a second time.
+
 Buffer operations never transfer ownership of a buffer passed into `decode`.
 A plugin releases only buffers it explicitly creates/owns. Multiplications of
 frames, channels, and element size are checked before accessing storage.
@@ -1239,77 +1247,27 @@ interrupt operation that actually wakes a blocked read.
 
 #### Streams and decoders
 
-```c
-typedef struct mc_stream_info {
-    uint32_t struct_size;
-    uint32_t flags;                /* readable/writable/seekable/length-known/prefetch. */
-    uint64_t length_bytes;         /* meaningful only with length-known. */
-    mc_string_view uri;
-    mc_string_view content_type;   /* views valid until close/destroy. */
-} mc_stream_info;
+The SDK defines the byte-stream operations and factory in
+[plugin/stream.h](../include/musikcore/plugin/stream.h) and the decoder operations
+and factory in [plugin/decoder.h](../include/musikcore/plugin/decoder.h).
+An opened stream supplies the MIME type or normalized filename extension when known.
+A decoder receives the host's scratch operations through
+[plugin/services.h](../include/musikcore/plugin/services.h).
+The host keeps the stream alive until the decoder is destroyed.
 
-typedef uint32_t mc_read_state;
-enum { MC_READ_MORE = 0, MC_READ_END = 1 };
-
-struct mc_stream_vtable {
-    uint32_t struct_size;
-    void (MC_CALL *destroy)(void *);
-    mc_result (MC_CALL *open)(void *, mc_string_view uri, uint32_t open_flags, mc_error **);
-    mc_result (MC_CALL *close)(void *);
-    void (MC_CALL *interrupt)(void *);
-    mc_result (MC_CALL *get_info)(void *, mc_stream_info *);
-    mc_result (MC_CALL *read)(void *, void *dst, size_t capacity_bytes,
-        size_t *read_bytes, mc_read_state *, mc_error **);
-    mc_result (MC_CALL *write)(void *, const void *src, size_t requested_bytes,
-        size_t *written_bytes, mc_error **);
-    mc_result (MC_CALL *seek)(void *, uint64_t absolute_byte_offset, mc_error **);
-    mc_result (MC_CALL *tell)(void *, uint64_t *byte_offset);
-};
-
-typedef struct mc_stream_factory {
-    uint32_t struct_size;
-    void *context;
-    const mc_stream_vtable *instance_api;
-    mc_result (MC_CALL *can_handle)(void *, const mc_media_hint *, uint32_t *supported);
-    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
-} mc_stream_factory;
-
-typedef uint32_t mc_decode_state;
-enum { MC_DECODE_MORE = 0, MC_DECODE_END = 1 };
-
-struct mc_decoder_vtable {
-    uint32_t struct_size;
-    void (MC_CALL *destroy)(void *);
-    mc_result (MC_CALL *open)(void *, const mc_stream *, mc_error **);
-    void (MC_CALL *interrupt)(void *);
-    mc_result (MC_CALL *decode)(void *, mc_audio_scratch_buffer *, mc_decode_state *, mc_error **);
-    mc_result (MC_CALL *seek)(void *, double requested_seconds, double *actual_seconds, mc_error **);
-    mc_result (MC_CALL *get_duration)(void *, double *seconds);
-    mc_result (MC_CALL *set_preferred_sample_rate)(void *, uint32_t sample_rate_hz);
-};
-
-typedef struct mc_decoder_factory {
-    uint32_t struct_size;
-    void *context;
-    const mc_decoder_vtable *instance_api;
-    mc_result (MC_CALL *can_handle)(void *, const mc_media_hint *, uint32_t *supported);
-    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
-} mc_decoder_factory;
-```
-
-Open flags explicitly identify read/write/create/truncate/append; define named
-constants in the real header. No seek is attempted when unsupported. Reads may
+The open flags distinguish read, write, create, truncate, and append. No seek is attempted when unsupported. Reads may
 be short; nonzero blocking reads return data, EOF, cancellation, or failure,
 not an indefinite sequence of zero-byte successes. EOF may accompany a final
 nonempty read. Writes report actual transferred bytes even on failure, so callers
 do not assume rollback or duplicate partially written data.
 
-A decoder uses its input stream until decoder destruction; the core keeps that
-stream alive and destroys the decoder before the stream. Preferred rate is a
-hint set before open. Unknown duration reports unavailable, not a fabricated
+The host can suggest an output rate before the first decode. This lets playback
+use the preferred device rate after opening the input. Unknown duration reports unavailable, not a fabricated
 zero. `decode` may return final frames with `MC_DECODE_END`; consume those frames
 before stopping. Empty `MORE` successes are invalid for the initial blocking
-contract. Seek reports the actual position. Factory probes perform no I/O;
+contract. Seek reports the decoder's logical playback position. A demuxer that only confirms
+acceptance can report the requested time; its first decoded frame can fall on
+a different packet boundary. Factory probes perform no I/O;
 selection/fallback must account for nonseekable inputs rather than silently
 consuming their initial bytes during trial opens.
 
@@ -1709,85 +1667,36 @@ read services before they exist. All instances and their scoped host callbacks
 remain inside the engine session. Core owns and destroys peer-provider objects
 before registry shutdown; these objects do not carry per-plugin lifetime leases.
 
+The implemented service bundle, media operations, and plugin preferences are
+defined in [services.h](../include/musikcore/plugin/services.h),
+[media.h](../include/musikcore/plugin/media.h), and
+[settings.h](../include/musikcore/plugin/settings.h). A worker creates a stream
+from a URI, opens it, then selects its decoder from the opened stream's metadata.
+Both playback and server transcoding follow this sequence. The server passes
+the decoded PCM view to the encoder before reading another block.
+
+A plugin receives its own preference store and the application data directory.
+The HTTP source registers its integer settings with defaults and bounds. Its
+display name still selects the original preference file, preserving saved
+values. Each new transfer reads the current settings. GME and OpenMPT also read
+their existing component preferences. Their indexer companions still publish
+their full schemas through the C++ SDK.
+
+The remaining design calls for media encoder factories, preference writes and
+saves, richer schema types and apply/restart semantics, and system, catalog,
+playback and indexer services. Add these tables with their first concrete users.
+A system service should supply file modification times and other paths when
+needed. System time shared with output timing must use the host's monotonic clock.
+
+Future schema operations should describe type, enum choices, explicit bounds,
+decimal precision and restart requirements. The host owns copied descriptors
+and renders controls. Apply and save run outside the audio callback.
+
+The proposed asynchronous services below use a call-scoped completion error:
+
 ```c
-typedef struct mc_media_host_api mc_media_host_api;
-typedef struct mc_preferences_host_api mc_preferences_host_api;
-typedef struct mc_catalog_host_api mc_catalog_host_api;
-typedef struct mc_playback_host_api mc_playback_host_api;
-typedef struct mc_system_host_api mc_system_host_api;
-typedef struct mc_indexer_host_api mc_indexer_host_api;
-
-struct mc_plugin_services {
-    uint32_t struct_size;
-    const mc_cancel_token *cancel;
-    const mc_audio_scratch_buffer_api *audio_scratch;
-    const mc_media_host_api *media;
-    const mc_preferences_host_api *preferences;
-    const mc_catalog_host_api *catalog;
-    const mc_playback_host_api *playback;
-    const mc_system_host_api *system;
-    const mc_indexer_host_api *indexer;
-};
-
-typedef void (MC_CALL *mc_plugin_text_fn)(void *, mc_string_view);
-typedef void (MC_CALL *mc_plugin_completion_fn)(mc_result, const mc_error *, void *);
-
-struct mc_media_host_api {
-    uint32_t struct_size;
-    void *context;
-    mc_result (MC_CALL *create_stream)(void *, const mc_media_hint *, mc_stream *, mc_error **);
-    mc_result (MC_CALL *create_decoder)(void *, const mc_media_hint *, mc_decoder *, mc_error **);
-    mc_result (MC_CALL *create_blocking_encoder)(void *, mc_string_view, mc_blocking_encoder *, mc_error **);
-    mc_result (MC_CALL *create_streaming_encoder)(void *, mc_string_view, mc_streaming_encoder *, mc_error **);
-};
-
-struct mc_preferences_host_api {
-    uint32_t struct_size;
-    void *context;                 /* scoped to the stable plugin ID. */
-    mc_result (MC_CALL *read)(void *, mc_string_view key, const mc_preference_value *fallback,
-        mc_preference_read_fn, void *);
-    mc_result (MC_CALL *write)(void *, const mc_preference_entry *, size_t count);
-    mc_result (MC_CALL *save)(void *);
-};
-
-struct mc_system_host_api {
-    uint32_t struct_size;
-    void *context;
-    mc_result (MC_CALL *read_path)(void *, mc_path_kind, mc_plugin_text_fn, void *);
-    uint64_t (MC_CALL *monotonic_ns)(void *);  /* the shared timing clock; RT-safe. */
-    mc_result (MC_CALL *file_modified_time)(void *, mc_string_view path, int64_t *unix_ns);
-};
-
-typedef struct mc_setting_descriptor {
-    uint32_t struct_size;
-    mc_string_view key;
-    mc_preference_value default_value;
-    uint32_t constraint_flags;     /* type/enum/min/max/restart requirements. */
-    double minimum;
-    double maximum;
-    uint32_t decimal_precision;
-    const mc_string_view *choices;
-    size_t choice_count;
-} mc_setting_descriptor;
-
-typedef void (MC_CALL *mc_setting_fn)(void *, const mc_setting_descriptor *);
-typedef struct mc_configuration_api {
-    uint32_t struct_size;
-    void *context;
-    mc_result (MC_CALL *visit_fields)(void *, mc_setting_fn, void *);
-    mc_result (MC_CALL *apply)(void *, const mc_preference_entry *, size_t count,
-        uint32_t *restart_effects, mc_error **);
-} mc_configuration_api;
+typedef void (MC_CALL *mc_plugin_completion_fn)(mc_result status, const mc_error *error, void *user_data);
 ```
-
-Preferences keep typed fallback/read/write/save semantics, scoped by plugin ID;
-values are copied during calls and returned text is callback-scoped. Schema
-entries are copied by the core, with distinct constraint flags for absent bounds
-rather than using `DBL_MIN` as a magic negative limit. The app renders controls;
-no C++ UI object crosses the SDK. Apply runs off the audio callback and identifies
-instances requiring controlled restart. Persistence/activation order and mapping
-of existing preference filenames must be reviewed before conversion, not hidden
-in a legacy adapter.
 
 Catalog and playback services reuse the application API's C value types and
 operation semantics. The opaque scope replaces an application-owned context;
