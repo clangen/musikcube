@@ -132,6 +132,42 @@ namespace {
         return TEST_CHECK(state.oldCalls == 0 && state.newCalls == 1);
     }
 
+    bool checkIndependentBlockedSession(api::Context& context, test_host_event* event,
+        mc_player* stalled, const std::string& path, const std::string& http)
+    {
+        const auto blocked = http + "/blocked-independent.wav";
+        std::string ready;
+        if (!TEST_CHECK(mc_player_play_uri(stalled, { blocked.data(), blocked.size() }) == MC_OK) ||
+            !TEST_CHECK(bool(std::getline(std::cin, ready)) && ready == "/blocked-independent.wav") ||
+            !TEST_CHECK(state(stalled) == MC_PLAYER_BUFFERING)) {
+            return false;
+        }
+
+        /* the server retains the first response body throughout the other
+        session's playback and destruction. no timer releases the stalled read. */
+        Players independent;
+        if (!TEST_CHECK(mc_player_create(context.Get(), &independent.first) == MC_OK) ||
+            !TEST_CHECK(mc_player_play_uri(independent.first, { path.data(), path.size() }) == MC_OK) ||
+            !await(context, event, [&] { return state(independent.first) == MC_PLAYER_PLAYING; },
+                "independent playing with stalled peer") ||
+            !await(context, event, [&] { return state(independent.first) == MC_PLAYER_FINISHED; },
+                "independent EOF with stalled peer") ||
+            !TEST_CHECK(state(stalled) == MC_PLAYER_BUFFERING) ||
+            !TEST_CHECK(mc_player_play_uri(independent.first, { path.data(), path.size() }) == MC_OK) ||
+            !await(context, event, [&] { return state(independent.first) == MC_PLAYER_PLAYING; },
+                "independent restart with stalled peer")) {
+            return false;
+        }
+
+        const auto before = Clock::now();
+        if (!TEST_CHECK(mc_player_destroy(&independent.first) == MC_OK) ||
+            !TEST_CHECK(Clock::now() - before < std::chrono::seconds(3)) ||
+            !TEST_CHECK(state(stalled) == MC_PLAYER_BUFFERING)) {
+            return false;
+        }
+        return TEST_CHECK(mc_player_stop(stalled) == MC_OK);
+    }
+
     bool checkInterruptedOpen(api::Context& context, test_host_event* event,
         mc_player* player, const std::string& path, const std::string& http)
     {
@@ -238,9 +274,13 @@ namespace {
         auto before = Clock::now();
         if (!TEST_CHECK(mc_player_destroy(&players.second) == MC_OK) ||
             !TEST_CHECK(Clock::now() - before < std::chrono::seconds(3)) ||
-            !TEST_CHECK(state(players.first) == MC_PLAYER_PAUSED) ||
-            !TEST_CHECK(mc_player_resume(players.first) == MC_OK) ||
-            !TEST_CHECK(mc_player_seek(players.first, 0.1) == MC_OK) ||
+            !TEST_CHECK(state(players.first) == MC_PLAYER_PAUSED)) {
+            return false;
+        }
+
+        /* a standalone seek resumes the selected track, including when the
+        output is paused. verify EOF to catch a worker left waiting for Resume. */
+        if (!TEST_CHECK(mc_player_seek(players.first, 0.1) == MC_OK) ||
             !await(context, event.get(), [&] {
                 return state(players.first) == MC_PLAYER_FINISHED;
             },
@@ -273,7 +313,7 @@ namespace {
         }
 
         /* cancellation before publication must never lose an interrupt or leave
-        a cached callback targeting a destroyed transport. */
+        a queued callback targeting a destroyed URI player. */
         for (unsigned cycle = 0; cycle < 12; ++cycle) {
             if (!TEST_CHECK(mc_player_create(context.Get(), &players.second) == MC_OK) ||
                 !TEST_CHECK(mc_player_play_uri(players.second, { path.data(), path.size() }) == MC_OK) ||
@@ -282,7 +322,8 @@ namespace {
             }
         }
         if (!http.empty()) {
-            if (!checkInterruptedOpen(context, event.get(), players.first, path, http)) {
+            if (!checkIndependentBlockedSession(context, event.get(), players.first, path, http) ||
+                !checkInterruptedOpen(context, event.get(), players.first, path, http)) {
                 return false;
             }
 

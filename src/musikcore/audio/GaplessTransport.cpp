@@ -126,7 +126,6 @@ void GaplessTransport::StartWithPlayer(Player::Shared newPlayer, StartMode mode)
 
             this->nextPlayer = nullptr;
             this->activePlayer = newPlayer;
-            this->terminalState = StreamState::Stopped;
             this->activeStartMode = mode;
 
             if (newPlayer) {
@@ -168,8 +167,6 @@ void GaplessTransport::ReloadOutput() {
 
 void GaplessTransport::Stop() {
     this->StopInternal(false, true);
-    LockT lock(this->stateMutex);
-    this->terminalState = StreamState::Stopped;
 }
 
 std::string GaplessTransport::Uri() {
@@ -252,47 +249,15 @@ double GaplessTransport::Position() {
 }
 
 void GaplessTransport::SetPosition(double seconds) {
-    this->SetPositionInternal(seconds, false);
-}
-
-GaplessTransport::SeekResult GaplessTransport::Seek(double seconds) {
-    return this->SetPositionInternal(seconds, true);
-}
-
-GaplessTransport::SeekResult GaplessTransport::SetPositionInternal(double seconds, bool requireReady) {
     {
         LockT lock(this->stateMutex);
-
-        if (!this->activePlayer || (requireReady && this->terminalState != StreamState::Stopped)) {
-            return SeekResult::NoTrack;
-        }
-        if (requireReady && this->activePlayerState == StreamState::Buffering) {
-            return SeekResult::Buffering;
-        }
-
-        if (!this->activePlayer->SetPosition(seconds)) {
-            return SeekResult::NoTrack;
+        if (!this->activePlayer || !this->activePlayer->SetPosition(seconds)) {
+            return;
         }
         this->nextCanStart = false;
-        if (this->playbackState != PlaybackState::Playing) {
-            this->SetPlaybackState(PlaybackState::Playing);
-        }
+        this->SetPlaybackState(PlaybackState::Playing);
     }
-
     this->TimeChanged.Publish(seconds);
-    return SeekResult::Accepted;
-}
-
-GaplessTransport::Snapshot GaplessTransport::ReadSnapshot() {
-    LockT lock(this->stateMutex);
-    const auto stream = this->activePlayerState;
-    const auto player = this->activePlayer;
-    const bool ready = stream == StreamState::Buffered || stream == StreamState::Playing ||
-        stream == StreamState::AlmostDone || stream == StreamState::Finished;
-
-    /* Buffered publishes decoder metadata. Before then only read the position. */
-    return { this->playbackState, stream, this->terminalState,
-        player ? player->GetPosition() : 0.0, player && ready ? player->GetDuration() : -1.0, this->volume };
 }
 
 double GaplessTransport::GetDuration() {
@@ -460,9 +425,6 @@ void GaplessTransport::RaiseStreamEvent(StreamState type, Player const* player) 
         eventIsFromActivePlayer = (player == activePlayer.get());
         if (eventIsFromActivePlayer) {
             this->activePlayerState = static_cast<StreamState>(type);
-            if (type == StreamState::Finished || type == StreamState::OpenFailed) {
-                this->terminalState = type;
-            }
         }
     }
 

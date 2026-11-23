@@ -14,8 +14,10 @@ transport and decoders already operate on URI strings.
 ## Decision
 
 Expose an explicitly constructed, owned C `mc_player` resource attached to a
-context providing Plugins. It owns its transport/output, uses context wakeups
-and dispatch for foreign callbacks, and requires no catalog services. Its C++
+context providing Plugins. Each URI player owns its output and runs one selected track through the
+shared playback worker implementation. Catalog transports handle queues and
+track transitions, neither of which a single URI requires. The player uses
+context wakeups and dispatch for foreign callbacks and requires no catalog services. Its C++
 wrapper remains header-only over that C contract. Default contexts still enable
 all services; lightweight callers explicitly select Plugins.
 

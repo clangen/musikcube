@@ -41,7 +41,7 @@ user_data must remain alive until replacement, removal, or shutdown returns. */
 typedef void (MC_CALL *mc_player_changed_fn)(void* user_data, const mc_player_snapshot* snapshot);
 
 /* out_player must be an empty owned slot. providers/output preferences remain
-process-wide; players own separate transports/outputs, without promising mixing. */
+process-wide; each player owns its output. mixing depends on the backend. */
 MC_API mc_result MC_CALL mc_player_create(mc_context* context, mc_player** out_player);
 /* copy a nonempty UTF-8 path or provider URI before returning. supports local
 file:// URIs with empty/localhost authority and percent-encoded paths. other

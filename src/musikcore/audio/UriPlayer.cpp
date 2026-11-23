@@ -1,6 +1,7 @@
 #include <musikcore/ffi/consumer/player-handle.h>
 #include <musikcore/ffi/common/error.h>
-#include <musikcore/audio/GaplessTransport.h>
+#include <musikcore/audio/Outputs.h>
+#include <musikcore/audio/PlaybackWorkers.h>
 #include <common/runtime/MessageQueue.h>
 #include <common/runtime/Message.h>
 #include <algorithm>
@@ -87,20 +88,19 @@ namespace musik { namespace core { namespace ffi {
                 const uint64_t generation;
         };
 
-        /* owns a URI transport and dispatch subscription. neither copyable nor
-        movable. the handle retains this stopped session after context shutdown. */
-        class Session final : public UriPlayerSession, public runtime::IMessageTarget {
+        /* plays one URI through its own output. retired workers may finish
+        returning buffers after replacement. only the selected track can
+        update the snapshot delivered on the context thread. */
+        class Session final : public UriPlayerSession, public runtime::IMessageTarget,
+            private audio::Player::EventListener
+        {
             public:
                 static constexpr int Changed = 1;
 
                 explicit Session(std::shared_ptr<runtime::MessageQueue> queue)
                 : queue(std::move(queue))
                 , owner(std::this_thread::get_id())
-                , transport(new audio::GaplessTransport()) {
-                    this->connections.stream = this->transport->StreamEvent.Subscribe(
-                        [this](auto, const std::string&) { this->Notify(); });
-                    this->connections.playback = this->transport->PlaybackEvent.Subscribe(
-                        [this](auto state) { this->OnPlayback(state); });
+                , output(audio::outputs::SelectedOutput()) {
                     this->queue->Register(this);
                 }
                 ~Session() override { this->Shutdown(); }
@@ -131,12 +131,10 @@ namespace musik { namespace core { namespace ffi {
                     }
                     this->callback = nullptr;
                     this->data = nullptr;
-                    /* disconnect outside notificationMutex so admitted callbacks
-                    can finish before their session storage is retired. */
-                    this->connections = {};
-                    /* resetting the transport stops its output, interrupts opens,
-                    and waits for its workers before target storage can disappear. */
-                    this->transport.reset();
+                    /* workers can still publish their final state while joining. */
+                    this->workers.Close();
+                    this->track.reset();
+                    this->output.reset();
                     this->queue->Unregister(this);
                 }
 
@@ -150,8 +148,17 @@ namespace musik { namespace core { namespace ffi {
                     if (normalized != MC_OK) {
                         return normalized;
                     }
-                    this->transport->Stop();
-                    this->transport->Start(uri, {}, audio::ITransport::StartMode::Immediate);
+                    std::lock_guard lock(this->mutex);
+                    this->StopTrack();
+                    if (this->output->Resume() == MC_OK) {
+                        /* publish the selection before a fast open can report failure. */
+                        this->track = this->workers.Start(uri, this->output, audio::Player::Drain::No, {});
+                        this->state = MC_PLAYER_BUFFERING;
+                        this->track->Play();
+                    }
+                    else {
+                        this->state = MC_PLAYER_FAILED;
+                    }
                     this->Notify();
                     return MC_OK;
                 }
@@ -161,38 +168,38 @@ namespace musik { namespace core { namespace ffi {
                     if (status != MC_OK) {
                         return status;
                     }
+                    std::lock_guard lock(this->mutex);
                     switch (command) {
                         case PlayerCommand::Pause:
-                            {
-                                const auto result = this->transport->Pause();
-                                if (result != MC_OK) {
-                                    return result;
-                                }
-                            }
-                            break;
-                        case PlayerCommand::Resume:
-                            {
-                                const auto result = this->transport->Resume();
-                                if (result != MC_OK) {
-                                    return result;
-                                }
-                            }
-                            break;
-                        case PlayerCommand::Stop:
-                            this->transport->Stop();
-                            break;
-                        case PlayerCommand::Seek: {
-                            const auto seek = this->transport->Seek(value);
-                            if (seek == audio::GaplessTransport::SeekResult::Buffering) {
-                                return MC_ERROR_BUSY;
-                            }
-                            if (seek == audio::GaplessTransport::SeekResult::NoTrack) {
+                        case PlayerCommand::Resume: {
+                            if (!this->track) {
                                 return MC_ERROR_NOT_FOUND;
                             }
+                            const bool pause = command == PlayerCommand::Pause;
+                            const auto result = pause ? this->output->Pause() : this->output->Resume();
+                            if (result != MC_OK) {
+                                return result;
+                            }
+                            this->state = pause ? MC_PLAYER_PAUSED : MC_PLAYER_PLAYING;
                         }
                         break;
+                        case PlayerCommand::Stop:
+                            this->StopTrack();
+                            break;
+                        case PlayerCommand::Seek:
+                            if (!this->track) {
+                                return MC_ERROR_NOT_FOUND;
+                            }
+                            if (this->track->GetStreamState() == sdk::StreamState::Buffering) {
+                                return MC_ERROR_BUSY;
+                            }
+                            if (!this->track->SetPosition(value)) {
+                                return MC_ERROR_NOT_FOUND;
+                            }
+                            this->state = MC_PLAYER_PLAYING;
+                            break;
                         case PlayerCommand::Volume:
-                            this->transport->SetVolume(value);
+                            this->output->SetVolume(value);
                             break;
                     }
                     this->Notify();
@@ -204,27 +211,11 @@ namespace musik { namespace core { namespace ffi {
                     if (status != MC_OK) {
                         return status;
                     }
-                    const auto snapshot = this->transport->ReadSnapshot();
-                    if (snapshot.terminal == sdk::StreamState::Finished) {
-                        result.state = MC_PLAYER_FINISHED;
-                    }
-                    else if (snapshot.terminal == sdk::StreamState::OpenFailed) {
-                        result.state = MC_PLAYER_FAILED;
-                    }
-                    else if (snapshot.playback == sdk::PlaybackState::Paused) {
-                        result.state = MC_PLAYER_PAUSED;
-                    }
-                    else if (snapshot.playback == sdk::PlaybackState::Playing) {
-                        result.state = MC_PLAYER_PLAYING;
-                    }
-                    else if (snapshot.stream == sdk::StreamState::Buffering ||
-                        snapshot.stream == sdk::StreamState::Buffered)
-                    {
-                        result.state = MC_PLAYER_BUFFERING;
-                    }
-                    result.position = snapshot.position;
-                    result.duration = snapshot.duration;
-                    result.volume = snapshot.volume;
+                    std::lock_guard lock(this->mutex);
+                    result.state = this->state;
+                    result.position = this->track ? this->track->GetPosition() : 0.0;
+                    result.duration = this->track ? this->track->GetDuration() : -1.0;
+                    result.volume = this->output->GetVolume();
                     return MC_OK;
                 }
 
@@ -233,7 +224,7 @@ namespace musik { namespace core { namespace ffi {
                     if (status != MC_OK) {
                         return status;
                     }
-                    std::lock_guard<std::mutex> lock(this->notificationMutex);
+                    std::lock_guard lock(this->mutex);
                     ++this->generation;
                     this->queue->Remove(this);
                     this->pending = false;
@@ -244,7 +235,7 @@ namespace musik { namespace core { namespace ffi {
 
                 void ProcessMessage(runtime::IMessage& message) override {
                     {
-                        std::lock_guard<std::mutex> lock(this->notificationMutex);
+                        std::lock_guard lock(this->mutex);
                         if (static_cast<const ChangeMessage&>(message).Generation() != this->generation) {
                             return;
                         }
@@ -263,8 +254,51 @@ namespace musik { namespace core { namespace ffi {
                 }
 
             private:
+                /* the session mutex protects selection and notification together.
+                a replaced worker can finish, but it cannot publish over the new URI. */
+                void StopTrack() {
+                    if (this->track) {
+                        this->track->RequestStop();
+                        this->track.reset();
+                    }
+                    this->output->Stop();
+                    this->state = MC_PLAYER_STOPPED;
+                }
+
+                void OnPlayerBuffered(audio::Player* sender) override {
+                    std::lock_guard lock(this->mutex);
+                    if (sender == this->track.get()) {
+                        /* duration becomes available even if the listener paused during open. */
+                        this->Notify();
+                    }
+                }
+
+                void OnPlayerStarted(audio::Player* sender) override {
+                    std::lock_guard lock(this->mutex);
+                    if (sender == this->track.get() && this->state == MC_PLAYER_BUFFERING) {
+                        this->state = MC_PLAYER_PLAYING;
+                        this->Notify();
+                    }
+                }
+
+                void OnPlayerFinished(audio::Player* sender) override {
+                    this->Finish(sender, MC_PLAYER_FINISHED);
+                }
+
+                void OnPlayerOpenFailed(audio::Player* sender) override {
+                    this->Finish(sender, MC_PLAYER_FAILED);
+                }
+
+                void Finish(audio::Player* sender, mc_player_state terminal) {
+                    std::lock_guard lock(this->mutex);
+                    if (sender == this->track.get()) {
+                        this->track.reset();
+                        this->state = terminal;
+                        this->Notify();
+                    }
+                }
+
                 void Notify() {
-                    std::lock_guard<std::mutex> lock(this->notificationMutex);
                     if (this->active.load() && !this->pending) {
                         /* decoder workers signal the queue; foreign callbacks never
                         run on those workers or on an audio output callback. */
@@ -272,14 +306,15 @@ namespace musik { namespace core { namespace ffi {
                         this->pending = true;
                     }
                 }
-                void OnPlayback(sdk::PlaybackState) { this->Notify(); }
 
                 const std::shared_ptr<runtime::MessageQueue> queue;
                 const std::thread::id owner;
-                std::unique_ptr<audio::GaplessTransport> transport;
-                audio::ITransport::Connections connections;
+                std::shared_ptr<audio::Output> output;
+                audio::Player::Shared track;
+                audio::PlaybackWorkers workers { *this };
+                mc_player_state state = MC_PLAYER_STOPPED;
                 std::atomic<bool> active { true };
-                std::mutex notificationMutex;
+                mutable std::mutex mutex;
                 uint64_t generation = 0;
                 bool pending = false;
                 mc_player_changed_fn callback = nullptr;
