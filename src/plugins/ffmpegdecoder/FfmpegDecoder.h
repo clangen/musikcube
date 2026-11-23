@@ -34,71 +34,51 @@
 
 #pragma once
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IDecoder.h>
-#include <musikcore/sdk/IDataStream.h>
+#include <common/DeleteDefaults.h>
+#include <musikcore/plugin/decoder.hpp>
 
 extern "C" {
-    #pragma warning(push, 0)
-    #include <libavformat/avio.h>
-    #include <libavformat/avformat.h>
-    #include <libavcodec/avcodec.h>
-    #include <libavcodec/version.h>
-    #include <libavutil/samplefmt.h>
-    #include <libavutil/audio_fifo.h>
-    #include <libswresample/swresample.h>
-    #pragma warning(pop)
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswresample/swresample.h>
 }
 
-#include <stddef.h>
+/* owns the demuxer, codec, and resampler for one track. custom AVIO keeps all
+file and HTTP reads on the stream chosen by the host. */
+class FfmpegDecoder {
+public:
+    explicit FfmpegDecoder(const mc_plugin_services&) {}
+    ~FfmpegDecoder();
 
-#if LIBAVCODEC_VERSION_MAJOR >= 59
-using AVCodecCompat = const AVCodec;
-#else
-using AVCodecCompat = AVCodec;
-#endif
+    MUSIK_DELETE_COPY_AND_MOVE(FfmpegDecoder);
 
-using namespace musik::core::sdk;
+    static bool CanHandle(const mc_media_hint& hint);
+    mc_result Open(const mc_stream& input);
+    mc_result Decode(musik::core::plugin::DecoderBuffer& target, mc_decode_state& state);
+    mc_result Seek(double seconds, double& actual);
+    mc_result GetDuration(double& seconds) const;
+    mc_result SetPreferredSampleRate(uint32_t rate);
 
-class FfmpegDecoder: public musik::core::sdk::IDecoder {
-    public:
-        FfmpegDecoder();
-        ~FfmpegDecoder();
+private:
+    static int Read(void* opaque, uint8_t* destination, int capacity);
+    static int64_t SeekBytes(void* opaque, int64_t offset, int whence);
+    mc_result InitResampler();
+    mc_result Convert(musik::core::plugin::DecoderBuffer& target, const AVFrame* input, size_t& count);
+    mc_result SendPacket();
 
-        void Release() override;
-        double SetPosition(double seconds) override;
-        bool GetBuffer(IBuffer *buffer) override;
-        double GetDuration() override;
-        bool Open(musik::core::sdk::IDataStream *stream) override;
-        bool Exhausted() override;
-        void SetPreferredSampleRate(int rate) override { this->preferredSampleRate = rate; }
-
-        IDataStream* Stream() { return this->stream; }
-
-    private:
-        void Reset();
-        AVFrame* AllocFrame(AVFrame* original, AVSampleFormat format, int sampleRate, int frameSize = -1);
-        bool RefillFifoQueue();
-        bool DrainResamplerToFifoQueue();
-        bool ReadFromFifoAndWriteToBuffer(IBuffer* buffer);
-        bool InitializeResampler();
-        bool ReadSendAndReceivePacket(AVPacket* packet);
-        void FlushAndFinalizeDecoder();
-
-        musik::core::sdk::IDataStream* stream;
-        AVIOContext* ioContext;
-        AVAudioFifo* outputFifo;
-        AVFormatContext* formatContext;
-        AVCodecContext* codecContext;
-        AVFrame* decodedFrame;
-        AVFrame* resampledFrame;
-        SwrContext* resampler;
-        int preferredSampleRate { -1 };
-        bool disableInvalidPacketDetection { false };
-        int rate, channels;
-        int streamId;
-        int preferredFrameSize;
-        double duration;
-        bool exhausted{ false };
-        bool eof{ false };
+    const mc_stream* stream = nullptr;
+    AVIOContext* io = nullptr;
+    AVFormatContext* format = nullptr;
+    AVCodecContext* codec = nullptr;
+    AVPacket* packet = nullptr;
+    AVFrame* frame = nullptr;
+    SwrContext* resampler = nullptr;
+    int track = -1;
+    int outputRate = 0;
+    int inputFormat = AV_SAMPLE_FMT_NONE;
+    int inputRate = 0;
+    int channels = 0;
+    bool draining = false;
+    bool inputEnded = false;
+    mc_result readError = MC_OK;
 };

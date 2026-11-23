@@ -1,25 +1,34 @@
-set (openmptdecoder_SOURCES
-  plugin.cpp
-  OpenMptDataStream.cpp
-  OpenMptDecoder.cpp
-  OpenMptIndexerSource.cpp
-  Utility.cpp)
-
-if (${BUILD_STANDALONE} MATCHES "true")
-  add_library(openmptdecoder SHARED ${openmptdecoder_SOURCES})
-  target_include_directories(openmptdecoder BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
+if (BUILD_STANDALONE)
   find_vendor_library(LIBOPENMPT openmpt)
-  target_link_libraries(openmptdecoder ${LIBOPENMPT})
 else()
   find_library(LIBOPENMPT NAMES openmpt)
-  find_library(LIBMPG123 NAMES mpg123)
-  find_library(LIBZ NAMES z)
-  if ("${LIBOPENMPT}" STREQUAL "LIBOPENMPT-NOTFOUND")
-    disable_plugin(openmptdecoder)
-  else()
-    add_library(openmptdecoder SHARED ${openmptdecoder_SOURCES})
-    target_link_libraries(openmptdecoder ${LIBOPENMPT} ${LIBMPG123} ${LIBZ})
-  endif()
 endif()
 
+if (NOT LIBOPENMPT)
+  disable_plugin(openmptdecoder)
+  return()
+endif()
 
+# subsong indexing still uses the indexer SDK. keep it in its own plugin so
+# playback loads only the stream and decoder contracts from the media plugin.
+add_library(openmptdecoder SHARED plugin.cpp OpenMptDecoder.cpp Utility.cpp)
+add_library(openmptindexer SHARED IndexerPlugin.cpp OpenMptIndexerSource.cpp Utility.cpp)
+musikcube_configure_c_plugin(openmptdecoder)
+target_compile_definitions(openmptindexer PRIVATE MUSIKCUBE_PARENT_PLUGIN_FILENAME="$<TARGET_FILE_NAME:openmptdecoder>")
+musikcube_restrict_exports(openmptindexer GetParentPluginFilename GetPlugin GetIndexerSource GetSchema SetDebug SetPreferences)
+add_dependencies(openmptdecoder openmptindexer)
+foreach(target IN ITEMS openmptdecoder openmptindexer)
+  target_link_libraries(${target} PRIVATE ${LIBOPENMPT})
+  if (BUILD_STANDALONE)
+    target_include_directories(${target} BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
+    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      set_target_properties(${target} PROPERTIES INSTALL_RPATH "$ORIGIN:$ORIGIN/../lib")
+    endif()
+  endif()
+endforeach()
+if (NOT BUILD_STANDALONE)
+  find_library(LIBMPG123 NAMES mpg123)
+  find_library(LIBZ NAMES z)
+  target_link_libraries(openmptdecoder PRIVATE ${LIBMPG123} ${LIBZ})
+  target_link_libraries(openmptindexer PRIVATE ${LIBMPG123} ${LIBZ})
+endif()

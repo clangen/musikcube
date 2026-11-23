@@ -1,25 +1,30 @@
-set (gmedecoder_SOURCES
-  plugin.cpp
-  GmeDataStream.cpp
-  GmeDecoder.cpp
-  GmeIndexerSource.cpp
-)
-
-add_definitions(-DHAVE_STDINT_H)
-
-if (${BUILD_STANDALONE} MATCHES "true")
-  add_library(gmedecoder SHARED ${gmedecoder_SOURCES})
-  include_directories(BEFORE ${VENDOR_INCLUDE_DIRECTORIES})
+if (BUILD_STANDALONE)
   find_vendor_library(GME gme)
-  target_link_libraries(gmedecoder ${GME})
 else()
   find_library(GME NAMES gme)
-  if ("${GME}" STREQUAL "GME-NOTFOUND")
-    disable_plugin(gmedecoder)
-  else()
-    add_library(gmedecoder SHARED ${gmedecoder_SOURCES})
-    target_link_libraries(gmedecoder ${GME})
-  endif()
 endif()
 
-message(STATUS "[gmedecoder] using ${GME}")
+if (NOT GME)
+  disable_plugin(gmedecoder)
+  return()
+endif()
+
+# subsong indexing still uses the indexer SDK. keep it in its own plugin so
+# playback loads only the stream and decoder contracts from the media plugin.
+add_library(gmedecoder SHARED plugin.cpp GmeDecoder.cpp)
+add_library(gmeindexer SHARED IndexerPlugin.cpp GmeIndexerSource.cpp)
+musikcube_configure_c_plugin(gmedecoder)
+target_compile_definitions(gmeindexer PRIVATE MUSIKCUBE_PARENT_PLUGIN_FILENAME="$<TARGET_FILE_NAME:gmedecoder>")
+musikcube_restrict_exports(gmeindexer GetParentPluginFilename GetPlugin GetIndexerSource GetSchema SetDebug SetPreferences)
+add_dependencies(gmedecoder gmeindexer)
+foreach(target IN ITEMS gmedecoder gmeindexer)
+  target_link_libraries(${target} PRIVATE ${GME})
+  if (BUILD_STANDALONE)
+    target_include_directories(${target} BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
+    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      set_target_properties(${target} PROPERTIES INSTALL_RPATH "$ORIGIN:$ORIGIN/../lib")
+    endif()
+  endif()
+endforeach()
+target_compile_definitions(gmedecoder PRIVATE HAVE_STDINT_H)
+target_compile_definitions(gmeindexer PRIVATE HAVE_STDINT_H)

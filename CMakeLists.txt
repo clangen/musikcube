@@ -173,9 +173,9 @@ add_plugin("src/plugins/server" "server" GetPlaybackRemote SetDebug SetEnvironme
 # streams
 add_plugin("src/plugins/httpdatastream" "httpdatastream")
 # decoders
-add_plugin("src/plugins/ffmpegdecoder" "ffmpegdecoder" GetDecoderFactory SetDebug)
-add_plugin("src/plugins/gmedecoder" "gmedecoder" GetDataStreamFactory GetDecoderFactory GetIndexerSource GetSchema SetDebug SetEnvironment SetPreferences)
-add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder" GetDataStreamFactory GetDecoderFactory GetIndexerSource GetSchema SetDebug SetEnvironment SetPreferences)
+add_plugin("src/plugins/ffmpegdecoder" "ffmpegdecoder")
+add_plugin("src/plugins/gmedecoder" "gmedecoder")
+add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder")
 # encoders
 add_plugin("src/plugins/stockencoders" "stockencoders" GetEncoderFactory SetDebug SetEnvironment)
 # dsps

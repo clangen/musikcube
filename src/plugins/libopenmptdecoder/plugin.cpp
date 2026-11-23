@@ -32,114 +32,33 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/ISchema.h>
-#include <musikcore/sdk/IDecoderFactory.h>
-#include <musikcore/sdk/IDataStreamFactory.h>
-#include <musikcore/sdk/IIndexerSource.h>
-#include <musikcore/sdk/IEnvironment.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/IDebug.h>
-#include "Utility.h"
-#include "OpenMptDataStream.h"
+#include <musikcore/sdk/version.h>
 #include "OpenMptDecoder.h"
-#include "OpenMptIndexerSource.h"
+#include <musikcore/plugin/subtrack-source.hpp>
 
-#ifdef WIN32
-#include <Windows.h>
-#define DLLEXPORT __declspec(dllexport)
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
-#else
-#define DLLEXPORT
-#endif
-
-using namespace musik::core::sdk;
-
-IDebug* debug = nullptr;
-IEnvironment* environment = nullptr;
-IPreferences* prefs = nullptr;
-
-class OpenMptPlugin: public IPlugin {
-    public:
-        void Release() override { delete this; };
-        const char* Name() override { return "libopenmpt IDecoder"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "c367f42f-389a-4378-966c-1f96dad6a66a"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-};
-
-class OpenMptDecoderFactory: public IDecoderFactory {
-    public:
-        IDecoder* CreateDecoder() override {
-            return new OpenMptDecoder();
+namespace {
+    mc_result MC_CALL initialize(const mc_host_api* host, void**, mc_error**) {
+        const auto status = musik::core::plugin::RegisterDecoder<OpenMptDecoder>(*host);
+        if (status != MC_OK) {
+            return status;
         }
-
-        void Release() override {
-            delete this;
-        }
-
-        bool CanHandle(const char* type) const override {
-            return isFileTypeSupported(type);
-        }
-};
-
-class OpenMptDataStreamFactory : public IDataStreamFactory {
-    public:
-        bool CanRead(const char *uri) override {
-            std::string fn;
-            int track;
-            if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), fn, track)) {
-                if (isFileSupported(fn)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        IDataStream* Create() override {
-            return new OpenMptDataStream();
-        }
-
-        void Release() override {
-            delete this;
-        }
-};
-
-extern "C" DLLEXPORT IPlugin* GetPlugin() {
-    return new OpenMptPlugin();
+        return musik::core::plugin::SubtrackSource<OpenMptDecoder>::Register(*host);
+    }
 }
 
-extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
-    return new OpenMptDecoderFactory();
-}
-
-extern "C" DLLEXPORT IDataStreamFactory* GetDataStreamFactory() {
-    return new OpenMptDataStreamFactory();
-}
-
-extern "C" DLLEXPORT IIndexerSource* GetIndexerSource() {
-    return new OpenMptIndexerSource();
-}
-
-extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
-    ::debug = debug;
-}
-
-extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
-    ::environment = environment;
-}
-
-extern "C" DLLEXPORT ISchema* GetSchema() {
-    return createSchema();
-}
-
-extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
-    ::prefs = prefs;
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error) {
+    const auto status = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (status != MC_OK) {
+        return status;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "org.musikcube.decoder.openmpt", 29 };
+    plugin->name = { "libopenmpt IDecoder", 19 };
+    plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
+    plugin->author = { "clangen", 7 };
+    plugin->initialize = initialize;
+    plugin->shutdown = [](void*) {
+    };
+    return MC_OK;
 }

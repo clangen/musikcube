@@ -32,103 +32,33 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IDecoderFactory.h>
-#include <musikcore/sdk/IDataStreamFactory.h>
-#include <musikcore/sdk/IEnvironment.h>
-#include <musikcore/sdk/IDebug.h>
-#include <musikcore/sdk/ISchema.h>
-#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/version.h>
 #include "GmeDecoder.h"
-#include "GmeIndexerSource.h"
-#include "GmeDataStream.h"
+#include <musikcore/plugin/subtrack-source.hpp>
 
-#ifdef WIN32
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
-#endif
-
-using namespace musik::core::sdk;
-
-IEnvironment* environment = nullptr;
-IDebug* debug = nullptr;
-IPreferences* prefs = nullptr;
-
-class GmePlugin: public IPlugin {
-    public:
-        void Release() override { delete this; };
-        const char* Name() override { return PLUGIN_NAME; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "2c4eee19-6585-4984-a631-b52ff7d6d564"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-};
-
-class GmeDecoderFactory: public IDecoderFactory {
-    public:
-        IDecoder* CreateDecoder() override {
-            return new GmeDecoder();
+namespace {
+    mc_result MC_CALL initialize(const mc_host_api* host, void**, mc_error**) {
+        const auto status = musik::core::plugin::RegisterDecoder<GmeDecoder>(*host);
+        if (status != MC_OK) {
+            return status;
         }
-
-        void Release() override {
-            delete this;
-        }
-
-        bool CanHandle(const char* type) const override {
-            return canHandle(std::string(type));
-        }
-};
-
-class GmeDataStreamFactory: public IDataStreamFactory{
-    public:
-        bool CanRead(const char *uri) override {
-            std::string str = uri;
-            return str.find("gme://") == 0 && canHandle(str);
-        }
-
-        IDataStream* Create() override {
-            return new GmeDataStream();
-        }
-
-        void Release() override {
-            delete this;
-        }
-};
-
-extern "C" DLLEXPORT IPlugin* GetPlugin() {
-    return new GmePlugin();
+        return musik::core::plugin::SubtrackSource<GmeDecoder>::Register(*host);
+    }
 }
 
-extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
-    return new GmeDecoderFactory();
-}
-
-extern "C" DLLEXPORT IDataStreamFactory* GetDataStreamFactory() {
-    return new GmeDataStreamFactory();
-}
-
-extern "C" DLLEXPORT IIndexerSource* GetIndexerSource() {
-    return new GmeIndexerSource();
-}
-
-extern "C" DLLEXPORT ISchema* GetSchema() {
-    return CreateSchema();
-}
-
-extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
-    ::environment = environment;
-}
-
-extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
-    ::debug = debug;
-}
-
-extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
-    ::prefs = prefs;
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error) {
+    const auto status = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (status != MC_OK) {
+        return status;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "org.musikcube.decoder.gme", 25 };
+    plugin->name = { "GME IDecoder", 12 };
+    plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
+    plugin->author = { "clangen", 7 };
+    plugin->initialize = initialize;
+    plugin->shutdown = [](void*) {
+    };
+    return MC_OK;
 }

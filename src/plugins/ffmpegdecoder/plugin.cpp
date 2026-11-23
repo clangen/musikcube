@@ -32,137 +32,28 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IDecoderFactory.h>
+#include <musikcore/sdk/version.h>
 #include "FfmpegDecoder.h"
 
-extern "C" {
-    #pragma warning(push, 0)
-    #include <libavformat/avformat.h>
-    #include <libavcodec/avcodec.h>
-    #pragma warning(pop)
-}
-
-#include <algorithm>
-#include <set>
-#include <map>
-#include <string>
-
-#ifdef WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
-
-#ifdef WIN32
-#include <Windows.h>
-#include <Objbase.h>
-
-    BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-        return true;
+namespace {
+    mc_result MC_CALL initialize(const mc_host_api* host, void**, mc_error**) {
+        return musik::core::plugin::RegisterDecoder<FfmpegDecoder>(*host);
     }
-#endif
-
-class FfmpegPlugin : public musik::core::sdk::IPlugin {
-    public:
-        FfmpegPlugin() { }
-        void Release() override { };
-        const char* Name() override { return "ffmpeg IDecoder"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-} plugin;
-
-class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
-    public:
-        FfmpegDecoderFactory() {
-#ifdef WIN32
-            CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-#endif
-
-            typeToCodecId = {
-                { ".mp3", AV_CODEC_ID_MP3 },
-                { "audio/mpeg", AV_CODEC_ID_MP3 },
-                { ".ogg", AV_CODEC_ID_VORBIS },
-                { "audio/ogg", AV_CODEC_ID_VORBIS },
-                { ".opus", AV_CODEC_ID_OPUS },
-                { ".flac", AV_CODEC_ID_FLAC },
-                { "audio/flac", AV_CODEC_ID_FLAC },
-                { ".alac", AV_CODEC_ID_ALAC },
-                { ".aac", AV_CODEC_ID_AAC },
-                { "audio/aac", AV_CODEC_ID_AAC },
-                { ".mp4", AV_CODEC_ID_MPEG4 },
-                { "audio/mp4", AV_CODEC_ID_MPEG4 },
-                { ".aac", AV_CODEC_ID_AAC },
-                { ".m4a", AV_CODEC_ID_AAC },
-                { ".mpc", AV_CODEC_ID_MUSEPACK8 },
-                { ".mp+", AV_CODEC_ID_MUSEPACK8 },
-                { ".mpp", AV_CODEC_ID_MUSEPACK8 },
-                { "audio/x-musepack", AV_CODEC_ID_MUSEPACK8 },
-                { ".ape", AV_CODEC_ID_APE },
-                { "audio/monkeys-audio", AV_CODEC_ID_APE },
-                { ".wma", AV_CODEC_ID_WMAV2 },
-                { "audio/x-ms-wma", AV_CODEC_ID_WMAV2 },
-                { ".wv", AV_CODEC_ID_WAVPACK },
-            };
-
-            supportedTypesWithoutCodec = {
-                ".wav", ".wave", ".aif", ".aiff", "audio/wav", "audio/x-wav", "audio/wave", "audio/aiff", "audio/x-aiff"
-            };
-
-            void* iterator = nullptr;
-            const AVCodec* codec = nullptr;
-            while ((codec = av_codec_iterate(&iterator))) {
-                const AVCodecDescriptor* descriptor = avcodec_descriptor_get(codec->id);
-                if (descriptor != nullptr && descriptor->type == AVMEDIA_TYPE_AUDIO) {
-                    supported.insert(descriptor->id);
-                }
-            }
-        }
-
-        ~FfmpegDecoderFactory() {
-        }
-
-        void Release() override {
-        }
-
-        musik::core::sdk::IDecoder* CreateDecoder() override {
-            return new FfmpegDecoder();
-        }
-
-        bool CanHandle(const char* type) const override {
-            std::string str(type);
-            std::transform(str.begin(), str.end(), str.begin(), tolower);
-
-            auto it = typeToCodecId.find(str);
-            if (it != typeToCodecId.end()) {
-                if (supported.find(it->second) != supported.end()) {
-                    return true;
-                }
-            }
-
-            if (supportedTypesWithoutCodec.find(str) != supportedTypesWithoutCodec.end()) {
-                return true;
-            }
-
-            return false;
-        }
-
-    private:
-        std::map<std::string, AVCodecID> typeToCodecId;
-        std::set<std::string> supportedTypesWithoutCodec;
-        std::set<AVCodecID> supported;
-} factory;
-
-extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
-    return &plugin;
 }
 
-extern "C" DLLEXPORT musik::core::sdk::IDecoderFactory* GetDecoderFactory() {
-    return &factory;
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error) {
+    const auto status = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (status != MC_OK) {
+        return status;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c", 36 };
+    plugin->name = { "ffmpeg IDecoder", 15 };
+    plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
+    plugin->author = { "clangen", 7 };
+    plugin->initialize = initialize;
+    plugin->shutdown = [](void*) {
+    };
+    return MC_OK;
 }

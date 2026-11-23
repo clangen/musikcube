@@ -33,140 +33,113 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "OpenMptDecoder.h"
-#include "OpenMptDataStream.h"
-#include <musikcore/sdk/IDebug.h>
-#include <cassert>
+#include "Utility.h"
+#include <musikcore/plugin/stream.hpp>
+#include <musikcore/plugin/subtrack-source.hpp>
+#include <cmath>
 
-using namespace musik::core::sdk;
-
-extern IDebug* debug;
-
-static const int kSampleRate = 48000;
-static const int kSamplesPerChannel = 2048;
-static const int kChannels = 2;
-
-static size_t readCallback(void *user, void *dst, size_t bytes) {
-    auto stream = static_cast<OpenMptDecoder*>(user)->Stream();
-    return (size_t) stream->Read(dst, (PositionType) bytes);
+const std::string& OpenMptDecoder::Prefix() {
+    return EXTERNAL_ID_PREFIX;
+}
+bool OpenMptDecoder::SupportsPath(const std::string& path) {
+    return isFileSupported(path);
 }
 
-static int seekCallback(void *user, int64_t offset, int whence) {
-    auto stream = static_cast<OpenMptDecoder*>(user)->Stream();
-    switch (whence) {
-        case OPENMPT_STREAM_SEEK_SET:
-            return stream->SetPosition((PositionType) offset) ? 0 : -1;
-        case OPENMPT_STREAM_SEEK_CUR:
-            return stream->SetPosition((PositionType) offset + stream->Position()) ? 0 : -1;
-        case OPENMPT_STREAM_SEEK_END:
-            return stream->SetPosition(stream->Length() - 1 - (PositionType)offset) ? 0 : -1;
-    }
-    return -1;
-}
-
-static int64_t tellCallback(void *user) {
-    return (int64_t) static_cast<OpenMptDecoder*>(user)->Stream()->Position();
-}
-
-static void logCallback(const char *message, void *userdata) {
-    if (debug) {
-        debug->Info("OpenMtpDecoder", message);
-    }
-}
-
-OpenMptDecoder::OpenMptDecoder() {
-    this->module = nullptr;
+bool OpenMptDecoder::CanHandle(const mc_media_hint& hint) {
+    return hint.extension.data && isFileTypeSupported(std::string(hint.extension.data, hint.extension.length).c_str());
 }
 
 OpenMptDecoder::~OpenMptDecoder() {
-    if (this->module) {
-        openmpt_module_destroy(this->module);
-        this->module = nullptr;
-    }
-
-    if (this->isWrappedStream) {
-        delete this->stream;
-        this->stream = nullptr;
+    if (module) {
+        openmpt_module_destroy(module);
     }
 }
 
-bool OpenMptDecoder::Open(musik::core::sdk::IDataStream *stream) {
-    auto mptStream = dynamic_cast<OpenMptDataStream*>(stream);
-    if (mptStream) {
-        this->stream = mptStream;
-        this->isWrappedStream = false;
+mc_result OpenMptDecoder::Open(const mc_stream& stream) {
+    mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+    auto status = stream.api->get_info(stream.instance, &info);
+    if (status != MC_OK) {
+        return status;
     }
-    else {
-        mptStream = new OpenMptDataStream(stream);
-        if (!mptStream->Parse(stream->Uri())) {
-            delete mptStream;
-            mptStream = nullptr;
-            return false;
-        }
-        this->stream = mptStream;
-        this->isWrappedStream = true; /* we need to clean it up later */
+    std::string path;
+    int track = 0;
+    if (info.uri.data) {
+        musik::core::plugin::SubtrackSource<OpenMptDecoder>::Parse({ info.uri.data, info.uri.length }, path, track);
     }
 
-    openmpt_stream_callbacks callbacks = { 0 };
-    callbacks.read = readCallback;
-    callbacks.seek = seekCallback;
-    callbacks.tell = tellCallback;
-
-    this->module = openmpt_module_create2(
-        callbacks, this, logCallback,
-        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-
-    if (this->module) {
-        int track = mptStream->GetTrackNumber();
-        if (track >= 0 && track < openmpt_module_get_num_subsongs(module)) {
-            openmpt_module_select_subsong(this->module, track);
-        }
-        return true;
+    /* libopenmpt consumes its input during creation. preserve the first read
+    failure because a callback returning zero alone looks like a clean EOF. */
+    struct Input {
+        const mc_stream& stream;
+        mc_result error = MC_OK;
+        bool ended = false;
+    } input { stream };
+    const openmpt_stream_callbacks callbacks {
+        [](void* opaque, void* dst, size_t size) -> size_t {
+            auto& input = *static_cast<Input*>(opaque);
+            if (input.ended || input.error != MC_OK || !size) {
+                return 0;
+            }
+            size_t count = 0;
+            mc_read_state state = MC_READ_MORE;
+            auto& source = input.stream;
+            const auto result = source.api->read(source.instance, dst, size, &count, &state, nullptr);
+            if (result != MC_OK || count > size || (state != MC_READ_MORE && state != MC_READ_END) ||
+                (!count && state != MC_READ_END))
+            {
+                input.error = result == MC_OK ? MC_ERROR_PLUGIN : result;
+                return 0;
+            }
+            input.ended = state == MC_READ_END;
+            return count;
+        },
+        [](void* p, int64_t offset, int whence) {
+            int64_t actual;
+            auto& input = *static_cast<Input*>(p);
+            if (musik::core::plugin::seekStream(input.stream, offset, whence, actual) != MC_OK) {
+                return -1;
+            }
+            input.ended = false;
+            return 0;
+        },
+        [](void* p) -> int64_t {
+            auto& source = static_cast<Input*>(p)->stream;
+            uint64_t position;
+            return source.api->tell(source.instance, &position) == MC_OK && position <= INT64_MAX
+                ? static_cast<int64_t>(position)
+                : -1;
+        },
+    };
+    module = openmpt_module_create2(
+        callbacks, &input, openmpt_log_func_silent, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+    if (input.error != MC_OK) {
+        return input.error;
     }
-
-    return false;
+    if (!module || track >= openmpt_module_get_num_subsongs(module) || !openmpt_module_select_subsong(module, track)) {
+        return MC_ERROR_IO;
+    }
+    return MC_OK;
 }
 
-void OpenMptDecoder::Release() {
-    delete this;
+mc_result OpenMptDecoder::Seek(double seconds, double& actual) {
+    if (!std::isfinite(seconds) || seconds < 0) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    actual = openmpt_module_set_position_seconds(module, seconds);
+    return actual < 0 ? MC_ERROR_IO : MC_OK;
 }
 
-double OpenMptDecoder::SetPosition(double seconds) {
-    if (this->module) {
-        return openmpt_module_set_position_seconds(this->module, seconds);
-    }
-    return 0.0;
+mc_result OpenMptDecoder::GetDuration(double& seconds) const {
+    seconds = openmpt_module_get_duration_seconds(module);
+    return std::isfinite(seconds) && seconds >= 0 ? MC_OK : MC_ERROR_UNSUPPORTED;
 }
 
-double OpenMptDecoder::GetDuration() {
-    if (this->module) {
-        return openmpt_module_get_duration_seconds(this->module);
-    }
-    return 0.0;
-}
-
-bool OpenMptDecoder::GetBuffer(IBuffer *target) {
-    if (this->module) {
-        target->SetSampleRate(kSampleRate);
-        target->SetSamples(kSamplesPerChannel * kChannels);
-
-        int samplesWritten = (int) openmpt_module_read_interleaved_float_stereo(
-            this->module,
-            (int32_t) kSampleRate,
-            (size_t) kSamplesPerChannel,
-            target->BufferPointer());
-
-        if (samplesWritten > 0) {
-            target->SetSamples(samplesWritten * kChannels);
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool OpenMptDecoder::Exhausted() {
-    if (this->module) {
-        return openmpt_module_get_position_seconds(this->module) >= this->GetDuration();
-    }
-    return true;
+mc_result OpenMptDecoder::Decode(musik::core::plugin::DecoderBuffer& target, mc_decode_state& state) {
+    constexpr uint32_t rate = 48000;
+    constexpr size_t capacity = 2048;
+    return target.Write(rate, 2, capacity, [&](float* dst, size_t& count) noexcept -> mc_result {
+        count = openmpt_module_read_interleaved_float_stereo(module, rate, capacity, dst);
+        state = count ? MC_DECODE_MORE : MC_DECODE_END;
+        return MC_OK;
+    });
 }

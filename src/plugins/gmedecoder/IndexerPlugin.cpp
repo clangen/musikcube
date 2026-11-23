@@ -32,47 +32,59 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "Constants.h"
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/IDebug.h>
+#include <musikcore/sdk/ISchema.h>
+#include <musikcore/sdk/IPreferences.h>
+#include "GmeIndexerSource.h"
 
-#include <musikcore/sdk/IDataStream.h>
-#include <string>
-#include <mutex>
+#ifdef WIN32
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+    return true;
+}
+#endif
 
-class GmeDataStream: public musik::core::sdk::IDataStream {
+using namespace musik::core::sdk;
+
+IDebug* debug = nullptr;
+IPreferences* prefs = nullptr;
+
+class GmePlugin: public IPlugin {
     public:
-        using PositionType = musik::core::sdk::PositionType;
-        using OpenFlags = musik::core::sdk::OpenFlags;
-
-        GmeDataStream();
-        GmeDataStream(musik::core::sdk::IDataStream* stream);
-        virtual ~GmeDataStream();
-
-        virtual bool Open(const char *uri, OpenFlags flags) override;
-        virtual bool Close() override;
-        virtual void Interrupt() override;
-        virtual void Release() override;
-        virtual bool Readable() override { return true; }
-        virtual bool Writable() override { return false; }
-        virtual PositionType Read(void *buffer, PositionType readBytes) override;
-        virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
-        virtual bool SetPosition(PositionType position) override;
-        virtual PositionType Position() override;
-        virtual bool Seekable() override;
-        virtual bool Eof() override;
-        virtual long Length() override;
-        virtual const char* Type() override;
-        virtual const char* Uri() override;
-        virtual bool CanPrefetch() override;
-
-        bool Parse(const char* uri);
-        int GetTrackNumber() { return this->trackNumber; }
-        std::string GetFilename() { return this->filename; }
-
-    private:
-        int trackNumber { 0 };
-        std::string filename;
-        musik::core::sdk::IDataStream* stream { nullptr };
-        bool releaseStream { true };
-        std::mutex streamMutex;
-        bool interrupted = false;
+        void Release() override { delete this; };
+        const char* Name() override { return PLUGIN_NAME; }
+        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
+        const char* Author() override { return "clangen"; }
+        const char* Guid() override { return "2c4eee19-6585-4984-a631-b52ff7d6d564"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override { }
+        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
+
+/* use the codec's saved enable setting until the user selects this indexer explicitly. */
+extern "C" DLLEXPORT const char* GetParentPluginFilename() {
+    return MUSIKCUBE_PARENT_PLUGIN_FILENAME;
+}
+
+extern "C" DLLEXPORT IPlugin* GetPlugin() {
+    return new GmePlugin();
+}
+
+extern "C" DLLEXPORT IIndexerSource* GetIndexerSource() {
+    return new GmeIndexerSource();
+}
+
+extern "C" DLLEXPORT ISchema* GetSchema() {
+    return CreateSchema();
+}
+
+extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
+    ::debug = debug;
+}
+
+extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
+    ::prefs = prefs;
+}

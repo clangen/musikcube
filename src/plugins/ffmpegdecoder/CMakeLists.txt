@@ -3,6 +3,7 @@ set (ffmpegdecoder_SOURCES
     FfmpegDecoder.cpp)
 
 add_library(ffmpegdecoder SHARED ${ffmpegdecoder_SOURCES})
+musikcube_configure_c_plugin(ffmpegdecoder)
 
 if (${BUILD_STANDALONE} MATCHES "true")
     target_include_directories(ffmpegdecoder BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})

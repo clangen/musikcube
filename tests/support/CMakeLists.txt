@@ -496,7 +496,43 @@ foreach(name IN ITEMS CurrentSdk ObsoleteSdk)
   endif()
   add_dependencies(musikcore_runtime_hardening_test musikcore_sdk_${name})
 endforeach()
-# Exercise nested stream adapters only when their actual providers are built.
+# exercise the real virtual-URI providers when their optional codec libraries are installed.
+if(TARGET ffmpegdecoder OR TARGET gmedecoder OR TARGET openmptdecoder OR TARGET libopenmptdecoder)
+  add_executable(musikcore_codec_providers_test "${PROJECT_SOURCE_DIR}/tests/integration/plugins/codec-providers.cpp"
+    "${PROJECT_SOURCE_DIR}/src/musikcore/io/LocalFileSource.cpp"
+    "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/AudioScratchBuffers.cpp"
+    "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/PluginRegistry.cpp"
+    "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/Plugin.cpp"
+    "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
+  target_include_directories(musikcore_codec_providers_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+  target_compile_features(musikcore_codec_providers_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_codec_providers_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+  add_dependencies(musikcube_tests musikcore_codec_providers_test)
+  add_dependencies(musikcube_integration_tests musikcore_codec_providers_test)
+  foreach(provider IN ITEMS ffmpegdecoder gmedecoder openmptdecoder libopenmptdecoder)
+    if(TARGET ${provider})
+      if(provider STREQUAL ffmpegdecoder)
+        set(family ffmpeg)
+        set(scenario ffmpeg_resample)
+      elseif(provider STREQUAL gmedecoder)
+        set(scenario subsong_gme)
+        set(family gme)
+      else()
+        set(family openmpt)
+        set(scenario subsong_openmpt)
+      endif()
+      add_dependencies(musikcore_codec_providers_test ${provider})
+      add_test(NAME musikcore.integration.plugins.${scenario}
+        COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+        "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_codec_providers_test>" --stage
+        --plugin "$<TARGET_FILE:${provider}>" @origin "${family}")
+      set_tests_properties(musikcore.integration.plugins.${scenario} PROPERTIES
+        LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+    endif()
+  endforeach()
+endif()
+
+# exercise the real nested sources through the runtime when their optional libraries are installed.
 set(stream_sdk_plugins)
 foreach(provider IN ITEMS gmedecoder openmptdecoder)
   set(target "${provider}")
