@@ -8,7 +8,7 @@ set(provider_arguments)
 set(provider_targets)
 foreach(variant IN LISTS provider_variants)
   set(target "musikcore_provider_${variant}")
-  add_library(${target} MODULE support/plugins/provider.c)
+  add_library(${target} MODULE support/plugins/provider.c support/plugins/unload-probe.c)
   target_include_directories(${target} PRIVATE "${PROJECT_SOURCE_DIR}/include")
   if(NOT variant STREQUAL "no_entry")
     target_compile_definitions(${target} PRIVATE MC_BUILDING_PLUGIN)
@@ -40,7 +40,7 @@ add_executable(musikcore_plugin_registry_test integration/plugins/plugin-registr
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
 target_include_directories(musikcore_plugin_registry_test PRIVATE
   "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
-target_compile_features(musikcore_plugin_registry_test PRIVATE cxx_std_17)
+target_compile_features(musikcore_plugin_registry_test PRIVATE cxx_std_20)
 target_link_libraries(musikcore_plugin_registry_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
 set_target_properties(musikcore_plugin_registry_test PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
@@ -69,7 +69,7 @@ add_executable(musikcore_plugin_discovery_test integration/plugins/plugin-discov
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
 target_include_directories(musikcore_plugin_discovery_test PRIVATE
   "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
-target_compile_features(musikcore_plugin_discovery_test PRIVATE cxx_std_17)
+target_compile_features(musikcore_plugin_discovery_test PRIVATE cxx_std_20)
 target_link_libraries(musikcore_plugin_discovery_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
 set_target_properties(musikcore_plugin_discovery_test PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
@@ -119,7 +119,7 @@ function(musikcore_add_null_output_contract_test)
     "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
   target_include_directories(musikcore_null_output_test PRIVATE
     "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
-  target_compile_features(musikcore_null_output_test PRIVATE cxx_std_17)
+  target_compile_features(musikcore_null_output_test PRIVATE cxx_std_20)
   target_link_libraries(musikcore_null_output_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
   set_target_properties(musikcore_null_output_test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
@@ -161,7 +161,7 @@ endif()
 
 foreach(stage IN ITEMS entry initialize shutdown)
   set(target "musikcore_plugin_${stage}_throws")
-  add_library(${target} MODULE support/plugins/throwing.cpp)
+  add_library(${target} MODULE support/plugins/throwing.cpp support/plugins/unload-probe.c)
   string(TOUPPER "${stage}_THROWS" definition)
   target_compile_definitions(${target} PRIVATE MC_BUILDING_PLUGIN ${definition})
   target_include_directories(${target} PRIVATE "${PROJECT_SOURCE_DIR}/include")

@@ -1,3 +1,4 @@
+#include "../../support/FatalScope.h"
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <type_traits>
 #include "../../support/plugins/PluginCandidates.h"
@@ -19,6 +20,9 @@
 
 using musik::core::ffi::PluginRegistry;
 using namespace std::chrono;
+
+/* keep even fatal-child fixtures away from the installable plugin tree. */
+static fs::path candidateRoot;
 
 /* fail promptly before cleanup can obscure a broken callback/unload contract. */
 static void require(bool condition, const char* message) {
@@ -254,7 +258,7 @@ static_assert(!std::is_invocable_v<decltype(&OutputFactory::Invoke), const Outpu
 /* a disabled real output must stay in the catalog without becoming callable.
 registry destruction must unload enabled outputs even if passive views survive. */
 static void checkRegistryOwnership(const std::string& source) {
-    PluginCandidates candidates(fs::u8path(source).parent_path() / "output-runs");
+    PluginCandidates candidates(candidateRoot / "output-runs");
     const auto path = candidates.Add(fs::u8path(source), "nullout");
     {
         PluginRegistry disabled;
@@ -280,20 +284,14 @@ static void checkRegistryOwnership(const std::string& source) {
     require(!mapped(path), "discarding an expired view performs no plugin work");
 }
 
-/* a fatal lifecycle contract must fire before the DLL is unmapped. the child
-uses a terminate handler to avoid platform crash reporters and retain evidence. */
-static std::string fatalPluginPath;
-static constexpr int FatalMapped = 77;
-static constexpr int FatalUnmapped = 78;
+/* lifecycle reentry must abort before returning or unwinding the session. */
 static constexpr int ReentryReturned = 79;
 
 /* exercise real registry entry points, not an artificially set guard. */
 static int checkFatalReentry(const std::string& mode, const std::string& source) {
-    PluginCandidates candidates(fs::u8path(source).parent_path() / "reentry-runs");
-    fatalPluginPath = candidates.Add(fs::u8path(source), "01-output");
-    std::set_terminate([] {
-        std::_Exit(mapped(fatalPluginPath) ? FatalMapped : FatalUnmapped);
-    });
+    PluginCandidates candidates(candidateRoot / "reentry-runs");
+    candidates.Add(fs::u8path(source), "01-output");
+    FatalScope fatalScope;
     PluginRegistry* active = nullptr;
     PluginRegistry registry([&](mc_log_level, mc_string_view tag, mc_string_view) {
         if (mode == "diagnostic" && std::string(tag.data, tag.length) == "PluginRegistry") {
@@ -332,13 +330,14 @@ static int checkFatalReentry(const std::string& mode, const std::string& source)
 /* negotiate, instantiate, and unload the actual production shared library.
 the host compiles none of the sink implementation and imports no plugin C++ types. */
 int main(int argc, char** argv) {
+    candidateRoot = fs::u8path(argv[0]).parent_path() / "plugin-runs";
     if (argc == 3 && std::string(argv[1]).find("--fatal-") == 0) {
         return checkFatalReentry(std::string(argv[1]).substr(sizeof("--fatal-") - 1), argv[2]);
     }
     require(argc == 2, "expected the production nullout DLL path");
     checkRegistryOwnership(argv[1]);
     for (unsigned run = 0; run < 2; ++run) {
-        PluginCandidates candidates(fs::u8path(argv[1]).parent_path() / "output-runs");
+        PluginCandidates candidates(candidateRoot / "output-runs");
         const auto path = candidates.Add(fs::u8path(argv[1]), "nullout");
         PluginRegistry registry;
         require(!registry.Find<mc_output_factory>("absent"), "uninitialized registry has no output");

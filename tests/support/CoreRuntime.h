@@ -21,6 +21,7 @@ public:
         }
         catch (...) {
             musik::core::LibraryFactory::Shutdown();
+            musik::core::plugin::UnbindServices();
             musik::core::plugin::Shutdown();
             musik::debug::Shutdown();
             throw;
@@ -29,6 +30,7 @@ public:
     /* Stop library workers before unloading plugins and shutting down debugging. */
     ~CoreRuntime() {
         musik::core::LibraryFactory::Shutdown();
+        musik::core::plugin::UnbindServices();
         musik::core::plugin::Shutdown();
         musik::debug::Shutdown();
     }

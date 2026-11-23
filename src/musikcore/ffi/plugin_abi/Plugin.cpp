@@ -223,7 +223,8 @@ namespace musik { namespace core { namespace ffi {
     }
 
     Plugin::~Plugin() {
-        musik::contract::Assert(this->Stop() == MC_OK, "Plugin destruction must run on its owning thread");
+        const auto status = this->Stop();
+        musik::contract::Assert(status == MC_OK, "Plugin destruction must run on its owning thread");
     }
 
     mc_result Plugin::ValidateCallingThread() const {
@@ -259,9 +260,6 @@ namespace musik { namespace core { namespace ffi {
             catch (...) {
                 /* failed cleanup cannot prove workers stopped. never unload
                 their code or continue as if this were a recoverable error. */
-                static constexpr char tag[] = "PluginRegistry";
-                static constexpr char message[] = "Plugin shutdown threw an exception; refusing to unload";
-                Log(this, MC_LOG_ERROR, { tag, sizeof(tag) - 1 }, { message, sizeof(message) - 1 });
                 musik::contract::Assert(false, "Plugin shutdown threw; cleanup is not safe");
             }
         }

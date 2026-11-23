@@ -1,4 +1,5 @@
 #include "runtime-hardening-cases.h"
+#include "../../support/FatalScope.h"
 #include "../../support/check.h"
 
 #include <string_view>
@@ -71,6 +72,7 @@ int main(int argc, char** argv) {
         return checkFailure(true) ? 0 : 1;
     }
     if (mode == "failure") {
+        FatalScope fatalScope;
         return checkFailure() ? 0 : 1;
     }
     return 1;

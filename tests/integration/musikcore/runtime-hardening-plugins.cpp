@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <exception>
 #include <iterator>
 #include <thread>
 
@@ -234,13 +235,15 @@ namespace runtime_tests {
         return TEST_CHECK(context.Close() == MC_OK);
     }
 
-    /* every provider must lose all host pointers despite a throwing peer.
-    shutdown reports failure, drains requests, and leaves destruction retryable. */
+    /* healthy sessions retire cached factories; failed host detachment must
+    abort before visiting later hooks or releasing playback/catalog owners. */
     bool checkFailure(bool caches) {
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
         options.services = MC_SERVICE_ALL;
         auto first = Preferences::ForPlugin("RuntimeFailureFirst");
         auto second = Preferences::ForPlugin("RuntimeFailureSecond");
+        first->SetBool("fail_teardown", !caches);
+        second->SetBool("fail_teardown", !caches);
         {
             unsigned completions = 0;
             mc_result completed = MC_ERROR_BUSY;
@@ -267,7 +270,7 @@ namespace runtime_tests {
                 completed = status;
             });
             const int expectedMask = caches ? 127 : 15;
-            if (!TEST_CHECK(context.Shutdown() == MC_ERROR_INTERNAL) ||
+            if (!TEST_CHECK(context.Shutdown() == MC_OK) ||
                 !TEST_CHECK((first->GetInt("cleanup_mask") & expectedMask) == expectedMask) ||
                 !TEST_CHECK((second->GetInt("cleanup_mask") & expectedMask) == expectedMask) ||
                 !TEST_CHECK(completions == 1 && (completed == MC_OK || completed == MC_ERROR_CANCELLED)) ||
@@ -289,7 +292,8 @@ namespace runtime_tests {
                 }
             }
         }
-        /* a failed startup must release the process slot even if rollback hooks fail. */
+        /* a failed startup releases the process slot after successful rollback.
+        unsafe rollback instead follows the fatal detachment subprocess above. */
         first->SetBool("fail_startup", true);
         mc_context* failed = nullptr;
         const auto result = mc_context_create(&options, &failed, nullptr);
@@ -298,7 +302,7 @@ namespace runtime_tests {
             return false;
         }
         api::Context reopened(options);
-        return TEST_CHECK(reopened.Shutdown() == MC_ERROR_INTERNAL) &&
+        return TEST_CHECK(reopened.Shutdown() == MC_OK) &&
             TEST_CHECK(reopened.Close() == MC_OK);
     }
 }

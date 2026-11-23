@@ -535,7 +535,7 @@ foreach(name IN ITEMS First Second)
   endif()
   add_dependencies(musikcore_runtime_hardening_test musikcore_runtime_failure_${name})
 endforeach()
-foreach(case IN ITEMS failure caches)
+foreach(case IN ITEMS caches)
   add_test(NAME musikcore.integration.runtime.${case} COMMAND "${MUSIKCORE_TEST_NODE}"
     "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
     "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage
@@ -640,3 +640,12 @@ if(TARGET nullout)
     endif()
   endforeach()
 endif()
+
+# fatal hook failures are child-process contracts: the first failed detachment
+# must stop teardown before other hooks or service destruction can run.
+add_test(NAME musikcore.integration.runtime.failure COMMAND "${CMAKE_COMMAND}"
+  "-DNODE=${MUSIKCORE_TEST_NODE}" "-DSOURCE=${PROJECT_SOURCE_DIR}"
+  "-DROOT=${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "-DHELPER=$<TARGET_FILE:musikcore_runtime_hardening_test>"
+  "-DFIRST=$<TARGET_FILE:musikcore_runtime_failure_First>" "-DSECOND=$<TARGET_FILE:musikcore_runtime_failure_Second>"
+  -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-runtime-fatal-detachment.cmake")
+set_tests_properties(musikcore.integration.runtime.failure PROPERTIES LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)

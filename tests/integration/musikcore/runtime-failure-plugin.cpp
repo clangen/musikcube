@@ -9,6 +9,8 @@ phase. preference markers survive because modules remain process-owned here. */
 #include <musikcore/sdk/IEncoderFactory.h>
 #include <stdexcept>
 #include <initializer_list>
+#include <cstdio>
+#include <cstdlib>
 
 namespace {
     musik::core::sdk::IPreferences* preferences = nullptr;
@@ -17,6 +19,9 @@ namespace {
     /* use ordinary SDK preferences rather than exporting test-only core APIs. */
     void mark(int bit) {
         preferences->SetInt("cleanup_mask", preferences->GetInt("cleanup_mask", 0) | bit);
+        if (std::getenv("MUSIKCORE_TEST_EXPECT_ABORT")) {
+            std::fprintf(stderr, "fatal-test: cleanup-bit=%d\n", bit);
+        }
     }
 
     /* acquisition/release counts also distinguish a cached reference from the
@@ -85,7 +90,9 @@ extern "C" MC_PLUGIN_API void SetMetadataProxy(void* proxy) {
     if (!proxy) {
         tearingDown = true;
         mark(1);
-        throw std::runtime_error("deliberate metadata teardown failure");
+        if (preferences->GetBool("fail_teardown", false)) {
+            throw std::runtime_error("deliberate metadata teardown failure");
+        }
     }
 }
 

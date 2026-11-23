@@ -45,6 +45,7 @@
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 
 #include <musikcore/debug.h>
+#include <common/Contract.h>
 #include <musikcore/sdk/version.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
@@ -555,35 +556,44 @@ namespace musik { namespace core { namespace plugin {
         }
     }
 
+    void ValidateShutdown() {
+        if (pluginRegistry) {
+            pluginRegistry->AssertCanShutdown();
+        }
+    }
+
+    void UnbindServices() {
+        musik::core::plugin::ValidateShutdown();
+        try {
+            PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
+                "SetMetadataProxy", [](musik::core::sdk::IPlugin*, SetMetadataProxy function) {
+                    function(nullptr);
+                }, PluginFactory::FunctionSelection::Session);
+            PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
+                "SetIndexerNotifier", [](musik::core::sdk::IPlugin*, SetIndexerNotifier function) {
+                    function(nullptr);
+                }, PluginFactory::FunctionSelection::Session);
+            PluginFactory::Instance().QueryFunction<SetEnvironment>(
+                "SetEnvironment", [](musik::core::sdk::IPlugin*, SetEnvironment function) {
+                    function(nullptr);
+                }, PluginFactory::FunctionSelection::Session);
+            PluginFactory::Instance().QueryFunction<SetDebug>(
+                "SetDebug", [](musik::core::sdk::IPlugin*, SetDebug function) {
+                    function(&nullDebugger);
+                }, PluginFactory::FunctionSelection::Session);
+        }
+        catch (...) {
+            /* a failed host detachment cannot prove that plugin workers stopped
+            using playback/library state. do not destroy services or unload code. */
+            musik::contract::Assert(false, "plugin host detachment failed; worker quiescence is not safe");
+        }
+        ::playbackService = nullptr;
+    }
+
     void Shutdown() {
+        musik::core::plugin::ValidateShutdown();
         bool failure = false;
         cleanup([] { Preferences::SavePluginPreferences(); }, failure);
-
-        /* isolate each provider so one bad hook cannot strand the others. */
-        cleanup([&] {
-            PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
-                "SetMetadataProxy", [&](musik::core::sdk::IPlugin*, SetMetadataProxy function) {
-                    cleanup([&] { function(nullptr); }, failure);
-                }, PluginFactory::FunctionSelection::Session);
-        }, failure);
-        cleanup([&] {
-            PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
-                "SetIndexerNotifier", [&](musik::core::sdk::IPlugin*, SetIndexerNotifier function) {
-                    cleanup([&] { function(nullptr); }, failure);
-                }, PluginFactory::FunctionSelection::Session);
-        }, failure);
-        cleanup([&] {
-            PluginFactory::Instance().QueryFunction<SetEnvironment>(
-                "SetEnvironment", [&](musik::core::sdk::IPlugin*, SetEnvironment function) {
-                    cleanup([&] { function(nullptr); }, failure);
-                }, PluginFactory::FunctionSelection::Session);
-        }, failure);
-        cleanup([&] {
-            PluginFactory::Instance().QueryFunction<SetDebug>(
-                "SetDebug", [&](musik::core::sdk::IPlugin*, SetDebug function) {
-                    cleanup([&] { function(&nullDebugger); }, failure);
-                }, PluginFactory::FunctionSelection::Session);
-        }, failure);
         /* workers have stopped, so cached factories can release provider state. */
         cleanup([] { musik::core::audio::streams::Shutdown(); }, failure);
         cleanup([] { musik::core::io::Shutdown(); }, failure);

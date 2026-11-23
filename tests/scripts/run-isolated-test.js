@@ -15,6 +15,11 @@ const root = mkdtempSync(join(resolve(parent), 'run-'));
 let command = executable;
 let config = root;
 
+/* fatal lifecycle tests exercise real aborts, retaining the same private
+runtime setup instead of substituting a process-wide termination callback. */
+const expectAbort = args[0] === '--expect-abort';
+if (expectAbort) args.shift();
+
 /* Production fixtures load a staged executable/plugins; standalone ABI tests
    can run directly with their existing shared-library search paths. */
 if (args[0] === '--stage') {
@@ -65,13 +70,24 @@ const expanded = args.map(value => value === '@origin' ? fixtures[0]
 /* Bound the child lifetime and redirect both Unix and Windows preference roots. */
 const result = spawnSync(command, expanded, {
   stdio: 'inherit',
-  env: { ...process.env, XDG_CONFIG_HOME: config, APPDATA: config },
+  env: {
+    ...process.env,
+    XDG_CONFIG_HOME: config,
+    APPDATA: config,
+    ...(expectAbort ? { MUSIKCORE_TEST_EXPECT_ABORT: '1' } : {}),
+  },
   timeout: 90000,
 });
 
-/* Successful runs leave no state; failures retain their isolated evidence. */
-if (result.status === 0) rmSync(root, { recursive: true });
+/* fatal fixtures disable Windows crash reporting so an abort exits with
+status 3. Unix reports SIGABRT. timeouts and other signals remain failures. */
+const passed = !result.error && (expectAbort
+  ? result.signal === 'SIGABRT' || process.platform === 'win32' && result.status === 3
+  : result.status === 0);
+
+/* successful runs leave no state; failures retain their isolated evidence. */
+if (passed) rmSync(root, { recursive: true });
 else console.error(`Test failed; isolated fixture retained at ${root}`);
 if (result.error) console.error(result.error.message);
 
-process.exitCode = result.status ?? 1;
+process.exitCode = passed ? 0 : result.status || 1;

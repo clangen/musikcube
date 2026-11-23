@@ -22,7 +22,8 @@ namespace musik { namespace core { namespace ffi {
     }
 
     PluginRegistry::~PluginRegistry() {
-        musik::contract::Assert(this->Shutdown() == MC_OK, "PluginRegistry destruction must run on its owning thread");
+        const auto status = this->Shutdown();
+        musik::contract::Assert(status == MC_OK, "PluginRegistry destruction must run on its owning thread");
     }
 
     mc_result PluginRegistry::ValidateCallingThread() const {
@@ -242,6 +243,11 @@ namespace musik { namespace core { namespace ffi {
             }
         }
         return nullptr;
+    }
+
+    void PluginRegistry::AssertCanShutdown() const {
+        musik::contract::Assert(this->calls.IsOwnerThread(), "engine shutdown on the wrong plugin owner thread");
+        musik::contract::Assert(!this->calls.IsActive(), "engine shutdown reentered an active plugin call");
     }
 
     mc_result PluginRegistry::Shutdown() {

@@ -51,6 +51,8 @@ namespace musik { namespace core { namespace plugin {
 
     musik::core::sdk::IEnvironment& Environment();
 
+    void ValidateShutdown();
+    void UnbindServices();
     void Shutdown();
 
 } } }

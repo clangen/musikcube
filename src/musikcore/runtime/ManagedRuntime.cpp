@@ -277,6 +277,7 @@ namespace musik { namespace core { namespace ffi {
         }
 
         void Stop() override {
+            musik::core::plugin::ValidateShutdown();
             {
                 std::lock_guard lock(this->mutex);
                 if (this->stopping.exchange(true)) {
@@ -321,6 +322,10 @@ namespace musik { namespace core { namespace ffi {
                 /* visualizer APIs can acquire providers without Playback. retire
                 their cache for every provider session, after any player workers. */
                 Cleanup([] { musik::core::audio::vis::Shutdown(); }, failure);
+                Cleanup([] { musik::core::plugin::UnbindServices(); }, failure);
+                /* transports own C output instances; release them while their
+                plugin tables are still mapped, after server users have stopped. */
+                Cleanup([&] { this->playback.reset(); }, failure);
                 this->pluginsInitialized = false;
                 Cleanup([] { musik::core::plugin::Shutdown(); }, failure);
             }

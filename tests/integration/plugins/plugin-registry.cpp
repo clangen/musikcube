@@ -1,3 +1,4 @@
+#include "../../support/FatalScope.h"
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <musikcore/ffi/plugin_abi/Plugin.h>
 #include "../../support/plugins/probe.h"
@@ -224,21 +225,16 @@ static void checkGuardNesting() {
     require(!calls.IsActive(), "last scope restores inactivity");
 }
 
-/* the terminate handler observes mapping before any automatic cleanup runs.
-77 means fatal policy kept the image mapped; 78 means it was already unloaded. */
-static const char* fatalPluginPath = nullptr;
-static constexpr int FatalWhileMapped = 77;
-static constexpr int FatalAfterUnload = 78;
+/* returning from a fatal lifecycle operation must fail the child test. */
 static constexpr int ShutdownUnexpectedlyReturned = 79;
 
 /* entry/initialize exceptions return contextual errors. shutdown exceptions
 must terminate before unload because worker cleanup can no longer be trusted. */
 static int checkException(const std::string& stage, const char* path) {
-    fatalPluginPath = path;
-    std::set_terminate([] {
-        std::_Exit(mapped(fatalPluginPath) ? FatalWhileMapped : FatalAfterUnload);
+    FatalScope fatalScope;
+    auto plugin = Plugin::Open(path, [](mc_log_level, mc_string_view, mc_string_view) {
+        std::fputs("fatal-test: unexpected logger\n", stderr);
     });
-    auto plugin = Plugin::Open(path);
     require(bool(plugin), "throwing image opens");
     mc_error* error = nullptr;
     auto result = plugin->Identify(&error);
@@ -265,10 +261,7 @@ static int checkException(const std::string& stage, const char* path) {
 /* enter through actual plugin logging so the assertion protects executing
 foreign code, not an artificial test-only call marker. */
 static int checkFatalReentry(const std::string& mode, const char* path) {
-    fatalPluginPath = path;
-    std::set_terminate([] {
-        std::_Exit(mapped(fatalPluginPath) ? FatalWhileMapped : FatalAfterUnload);
-    });
+    FatalScope fatalScope;
     Plugin* active = nullptr;
     auto plugin = Plugin::Open(path, [&](mc_log_level, mc_string_view, mc_string_view text) {
         const std::string message(text.data, text.length);
@@ -301,10 +294,6 @@ int main(int argc, char** argv) {
     if (argc == 3 && std::string(argv[1]).find("--exception-") == 0) {
         return checkException(std::string(argv[1]).substr(sizeof("--exception-") - 1), argv[2]);
     }
-    /* avoid platform crash reporters if ordinary lifecycle cleanup terminates. */
-    std::set_terminate([] {
-        std::_Exit(FatalWhileMapped);
-    });
     checkGuardNesting();
     /* matches the fixture order in tests/plugins.cmake; the external installed
     provider check supplies only Valid. */

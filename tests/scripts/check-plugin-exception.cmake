@@ -1,11 +1,11 @@
-# run fatal cleanup in a child so it cannot terminate the test runner. the
-# helper's terminate handler verifies the DLL is still mapped before exiting.
+# entry/initialization failures remain recoverable; a throwing shutdown must
+# abort before user logging, stack cleanup, or native image unload.
+include("${CMAKE_CURRENT_LIST_DIR}/check-fatal-result.cmake")
+set(ENV{MUSIKCORE_TEST_EXPECT_ABORT} 1)
 execute_process(COMMAND "${HELPER}" "--exception-${STAGE}" "${PLUGIN}"
-  RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE diagnostics TIMEOUT 10)
-set(expected 0)
+  RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE diagnostic TIMEOUT 10)
 if(STAGE STREQUAL "shutdown")
-  set(expected 77)
-endif()
-if(NOT "${result}" STREQUAL "${expected}")
-  message(FATAL_ERROR "${STAGE} exception: expected exit ${expected}, got ${result}\n${output}\n${diagnostics}")
+  check_fatal_result("${result}" "${diagnostic}")
+elseif(NOT "${result}" STREQUAL "0")
+  message(FATAL_ERROR "${STAGE} exception: expected recovery, got ${result}\n${output}\n${diagnostic}")
 endif()

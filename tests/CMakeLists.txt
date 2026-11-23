@@ -122,6 +122,27 @@ set_tests_properties(musikcore.abi.query PROPERTIES LABELS "integration;musikcor
 add_custom_target(musikcube_tests DEPENDS
   musikcore_abi_header_test musikcore_abi0_c_test musikcore_abi_dispatch_test musikcore_abi_query_test)
 
+# build both assertion modes even when the enclosing configuration selects one.
+# the subprocess driver checks real aborts without terminating the test runner.
+foreach(mode IN ITEMS debug ndebug)
+  set(target "musikcore_contract_${mode}_test")
+  add_executable(${target} unit/common/contract.cpp)
+  target_include_directories(${target} PRIVATE "${PROJECT_SOURCE_DIR}/src")
+  target_compile_features(${target} PRIVATE cxx_std_20)
+  if(mode STREQUAL "ndebug")
+    target_compile_definitions(${target} PRIVATE MUSIKCORE_TEST_NDEBUG=1)
+  else()
+    target_compile_definitions(${target} PRIVATE MUSIKCORE_TEST_NDEBUG=0)
+  endif()
+  set_target_properties(${target} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  add_dependencies(musikcube_tests ${target})
+  add_test(NAME musikcore.unit.contract.${mode} COMMAND "${CMAKE_COMMAND}"
+    "-DHELPER=$<TARGET_FILE:${target}>" -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-contract.cmake")
+  set_tests_properties(musikcore.unit.contract.${mode} PROPERTIES
+    LABELS "unit;common;contract" TIMEOUT 20)
+endforeach()
+
 # Compile the queue on its own: these tests should not need audio, plugins,
 # global library services, or the production precompiled header.
 add_executable(musikcore_message_queue_test
@@ -285,7 +306,7 @@ set_tests_properties(musikcube.unit.ui_artifacts PROPERTIES
   LABELS "unit;musikcube;terminal" TIMEOUT 20)
 
 # Level-specific targets keep a quick unit run from building the full app.
-add_custom_target(musikcube_unit_tests DEPENDS musikcore_abi_header_test
+add_custom_target(musikcube_unit_tests DEPENDS musikcore_contract_debug_test musikcore_contract_ndebug_test musikcore_abi_header_test
   musikcore_message_queue_test musikcube_async_callback_scope_test musikcube_transport_format_test
   musikcore_public_headers)
 add_custom_target(musikcube_integration_tests DEPENDS musikcore_abi0_c_test

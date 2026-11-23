@@ -114,6 +114,8 @@ namespace musik { namespace core { namespace ffi {
 
         /* callers first stop workers/instances and finish callbacks. cleanup
         and native handle closure complete synchronously before this returns. */
+        /* full engine teardown checks reentry before destroying its services. */
+        void AssertCanShutdown() const;
         mc_result Shutdown();
 
     private:
