@@ -63,6 +63,8 @@ ReferenceAlignment: Left
 SpaceAfterTemplateKeyword: false
 SpaceAfterCStyleCast: true
 SpacesInContainerLiterals: true
+# Struct aggregates use one field per line and a final trailing comma to keep
+# clang-format from collapsing their fields and closing brace onto one line.
 Cpp11BracedListStyle: false
 SpaceBeforeCpp11BracedList: true
 
