@@ -35,6 +35,8 @@
 #include "FfmpegDecoder.h"
 #include <musikcore/sdk/IDebug.h>
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <unordered_set>
 
@@ -203,9 +205,32 @@ double FfmpegDecoder::SetPosition(double seconds) {
     if (this->ioContext && this->formatContext && this->codecContext) {
         AVStream* stream = this->formatContext->streams[this->streamId];
         AVRational timeBase = stream->time_base;
-        int64_t seekTime = stream->start_time != AV_NOPTS_VALUE ? stream->start_time : 0;
-        seekTime += av_rescale((int64_t) seconds, timeBase.den, timeBase.num);
+        const double requestedMicros = seconds * AV_TIME_BASE;
+        if (!std::isfinite(requestedMicros) || requestedMicros < 0 ||
+            requestedMicros >= static_cast<double>(std::numeric_limits<int64_t>::max()))
+        {
+            return -1.0;
+        }
+        constexpr AVRational microseconds {
+            1,
+            AV_TIME_BASE,
+        };
+        const auto offset = av_rescale_q(std::llround(requestedMicros), microseconds, timeBase);
+        const int64_t start = stream->start_time != AV_NOPTS_VALUE ? stream->start_time : 0;
+        if (offset < 0 || (start > 0 && offset > std::numeric_limits<int64_t>::max() - start)) {
+            return -1.0;
+        }
+        const int64_t seekTime = start + offset;
         if (av_seek_frame(this->formatContext, this->streamId, seekTime, AVSEEK_FLAG_ANY) >= 0) {
+            /* the codec can already be drained while decoded audio remains in
+            the FIFO or resampler. none of it belongs after the new position. */
+            avcodec_flush_buffers(this->codecContext);
+            av_audio_fifo_reset(this->outputFifo);
+            swr_free(&this->resampler);
+            av_frame_free(&this->decodedFrame);
+            av_frame_free(&this->resampledFrame);
+            this->eof = false;
+            this->exhausted = false;
             return seconds;
         }
     }
