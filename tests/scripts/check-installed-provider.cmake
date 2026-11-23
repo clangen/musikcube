@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-# compile a separate C project using only relocated installed headers. keep the
+# compile separate C and C++ providers using only relocated installed headers. keep the
 # prefix/build on failure so diagnostics never depend on deleted artifacts.
 string(RANDOM LENGTH 12 suffix)
 set(root "${BUILD_DIR}/tests/bin/provider-install-${suffix}")
@@ -27,19 +27,24 @@ if(WIN32)
   set(generator -G "${TEST_GENERATOR}" -A "${TEST_PLATFORM}")
 endif()
 run("${CMAKE_COMMAND}" -S "${SOURCE}/tests/support/plugins" -B "${external}"
-  ${generator} "-DCMAKE_PREFIX_PATH=${relocated}" "-DCMAKE_BUILD_TYPE=${TEST_CONFIG}")
+  ${generator} "-DCMAKE_PREFIX_PATH=${relocated}" "-DCMAKE_BUILD_TYPE=${TEST_CONFIG}"
+  "-DOUTPUT_SOURCE=${SOURCE}/src/plugins/nullout/plugin.cpp")
 run("${CMAKE_COMMAND}" --build "${external}" ${config_arguments})
 file(READ "${external}/artifact-${TEST_CONFIG}.txt" fixture)
+file(READ "${external}/output-artifact-${TEST_CONFIG}.txt" output_fixture)
 
-if(UNIX)
-  # no C++ or private core symbols may leak out of the separately built plugin.
-  file(WRITE "${root}/exports.txt" "mc_plugin_get_api\n")
-  run("${CMAKE_COMMAND}" "-DNM=${NM}" "-DAPPLE=${APPLE}" "-DLIBRARY=${fixture}"
-    "-DALLOWLIST=${root}/exports.txt" -P "${SOURCE}/tests/scripts/check-exports.cmake")
-  execute_process(COMMAND "${NM}" -u "${fixture}" RESULT_VARIABLE status OUTPUT_VARIABLE imports)
-  if(NOT status EQUAL 0 OR imports MATCHES "[_ ]mc_[a-z_]+")
-    message(FATAL_ERROR "Provider must use host tables rather than import musikcore: ${imports}")
+foreach(plugin IN ITEMS "${fixture}" "${output_fixture}")
+  if(UNIX)
+    # both C and C++ implementations expose only C and call through host tables.
+    file(WRITE "${root}/exports.txt" "mc_plugin_get_api\n")
+    run("${CMAKE_COMMAND}" "-DNM=${NM}" "-DAPPLE=${APPLE}" "-DLIBRARY=${plugin}"
+      "-DALLOWLIST=${root}/exports.txt" -P "${SOURCE}/tests/scripts/check-exports.cmake")
+    execute_process(COMMAND "${NM}" -u "${plugin}" RESULT_VARIABLE status OUTPUT_VARIABLE imports)
+    if(NOT status EQUAL 0 OR imports MATCHES "[_ ]mc_[a-z_]+")
+      message(FATAL_ERROR "Provider must use host tables rather than import musikcore: ${imports}")
+    endif()
   endif()
-endif()
+endforeach()
 run("${HOST}" "${fixture}")
+run("${OUTPUT_HOST}" "${output_fixture}")
 file(REMOVE_RECURSE "${root}")

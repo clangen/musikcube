@@ -38,10 +38,11 @@
 #include <musikcore/sdk/IEnvironment.h>
 #include <musikcore/sdk/IPlaybackService.h>
 #include <common/runtime/IMessage.h>
+#include <string>
 
 namespace musik { namespace core { namespace plugin {
 
-    void Initialize();
+    void Initialize(const std::string& pluginDirectory);
 
     void BindServices(
         musik::core::runtime::IMessageQueue* messageQueue,

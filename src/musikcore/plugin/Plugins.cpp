@@ -42,7 +42,7 @@
 #include <cmath>
 #include <filesystem>
 #include <musikcore/sdk/Filesystem.h>
-#include <musikcore/ffi/plugin_abi/ProviderHost.h>
+#include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 
 #include <musikcore/debug.h>
 #include <musikcore/sdk/version.h>
@@ -152,7 +152,7 @@ static ILibraryPtr defaultLibrary;
 static IPlaybackService* playbackService = nullptr;
 static LocalMetadataProxy* metadataProxy = nullptr;
 static std::shared_ptr<Preferences> playbackPrefs;
-static std::unique_ptr<musik::core::ffi::ProviderHost> cProviders;
+static std::unique_ptr<musik::core::ffi::PluginRegistry> pluginRegistry;
 
 static void saveEnvironment() {
     if (::playbackPrefs) {
@@ -469,8 +469,9 @@ static class Environment: public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void Initialize() {
-        PluginFactory::Instance().BeginSession();
+    void Initialize(const std::string& pluginDirectory) {
+        auto& factory = PluginFactory::Instance(pluginDirectory);
+        factory.BeginSession();
 
         /* preferences */
         Preferences::LoadPluginPreferences();
@@ -482,26 +483,21 @@ namespace musik { namespace core { namespace plugin {
             func(&debugger);
         }, PluginFactory::FunctionSelection::Session);
 
-        /* C providers have their own contract and lifetime; they do not return
-        SDK 23 interfaces or pass through its factory adapters. */
-        cProviders = std::make_unique<musik::core::ffi::ProviderHost>(
+        /* discover C plugins for this engine session. the registry owns selected
+        DLLs until their users finish and session teardown closes them. */
+        pluginRegistry = std::make_unique<musik::core::ffi::PluginRegistry>(
             [](mc_log_level level, mc_string_view tag, mc_string_view text) {
                 mc_log_write(level, tag, text);
             });
         const auto preferences = Preferences::ForComponent(prefs::components::Plugins);
-        for (const auto& filename : PluginFactory::Instance().CProviderFiles()) {
-            const auto leaf = musik::core::sdk::fs::pathToUtf8(std::filesystem::u8path(filename).filename());
-            if (!preferences->GetBool(leaf, true)) {
-                continue;
-            }
-            mc_error* error = nullptr;
-            const auto status = cProviders->Load(filename, &error);
-            if (status != MC_OK && status != MC_ERROR_UNSUPPORTED) {
-                const auto detail = mc_error_get_message(error);
-                const auto reason = detail.data ? std::string(detail.data, detail.length) : "provider rejected";
-                musik::debug::error("CPluginHost", filename + ": " + reason);
-            }
-            mc_error_destroy(&error);
+        /* both contracts use the process-selected directory, including when
+        an embedded host omits its directory on a later session. */
+        const auto status = pluginRegistry->Initialize(factory.Directory(), [&](const auto& plugin) {
+            const auto leaf = musik::core::sdk::fs::pathToUtf8(std::filesystem::u8path(plugin.filename).filename());
+            return preferences->GetBool(leaf, true);
+        });
+        if (status != MC_OK) {
+            throw std::runtime_error("Could not initialize C plugin registry: " + std::to_string(status));
         }
     }
 
@@ -592,9 +588,9 @@ namespace musik { namespace core { namespace plugin {
         cleanup([] { musik::core::audio::streams::Shutdown(); }, failure);
         cleanup([] { musik::core::io::Shutdown(); }, failure);
         cleanup([] {
-            if (cProviders) {
-                const auto status = cProviders->Shutdown();
-                cProviders.reset();
+            if (pluginRegistry) {
+                const auto status = pluginRegistry->Shutdown();
+                pluginRegistry.reset();
                 if (status != MC_OK) {
                     throw std::runtime_error("C provider shutdown failed");
                 }

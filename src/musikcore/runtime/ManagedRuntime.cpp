@@ -147,11 +147,11 @@ namespace musik { namespace core { namespace ffi {
             /* provider discovery precedes indexer/decoder creation. a registry-only
             context does not attach application hosts to legacy plugins. */
             if (services & MC_SERVICE_PLUGINS) {
-                musik::core::PluginFactory::Instance(pluginDirectory);
+                const auto& directory = musik::core::PluginFactory::Instance(pluginDirectory).Directory();
                 /* only session initialization needs plugin rollback. discovery
                 rejection must not initialize the default registry during cleanup. */
                 this->pluginsInitialized = true;
-                musik::core::plugin::Initialize();
+                musik::core::plugin::Initialize(directory);
             }
             if (services & MC_SERVICE_LIBRARY) {
                 this->librariesInitialized = true;

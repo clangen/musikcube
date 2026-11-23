@@ -141,8 +141,12 @@ namespace runtime_tests {
             std::ifstream file(std::filesystem::u8path(directory) / name);
             return std::string(std::istreambuf_iterator<char>(file), {});
         };
-        if (!TEST_CHECK(readMarker("CurrentSdk.log") == "G") ||
-            !TEST_CHECK(readMarker("ObsoleteSdk.log") == "GRU"))
+        /* require one object released before unload. additional native probes
+        may unload the image without creating another object. */
+        const auto obsolete = readMarker("ObsoleteSdk.log");
+        const bool releasedBeforeUnload = obsolete.size() >= 3 && obsolete.substr(0, 3) == "GRU" &&
+            obsolete.find_first_not_of('U', 3) == std::string::npos;
+        if (!TEST_CHECK(readMarker("CurrentSdk.log") == "G") || !TEST_CHECK(releasedBeforeUnload))
         {
             return false;
         }

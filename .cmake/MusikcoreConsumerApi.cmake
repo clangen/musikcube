@@ -5,7 +5,8 @@ function(musikcore_add_consumer_api target remote_session_source)
     "${ffi}/common/string.cpp"
     "${ffi}/common/error.cpp"
     "${ffi}/common/subscriptions.cpp"
-    "${ffi}/plugin_abi/ProviderHost.cpp"
+    "${ffi}/plugin_abi/PluginRegistry.cpp"
+    "${ffi}/plugin_abi/Plugin.cpp"
     "${ffi}/consumer/context.cpp"
     "${ffi}/consumer/library.cpp"
     "${remote_session_source}"
@@ -22,6 +23,9 @@ function(musikcore_add_consumer_api target remote_session_source)
     list(APPEND sources "${ffi}/consumer/audio-abi-only.cpp")
   endif()
   target_sources(${target} PRIVATE ${sources})
+  # Native plugin discovery uses std::filesystem; consumer headers retain their
+  # independently tested language requirements.
+  target_compile_features(${target} PRIVATE cxx_std_17)
   set_source_files_properties(${sources} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
   target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}/include")
   target_include_directories(${target} PRIVATE "${PROJECT_SOURCE_DIR}/src/3rdparty/include/sqlite")

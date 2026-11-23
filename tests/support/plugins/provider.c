@@ -1,4 +1,5 @@
 #include "probe.h"
+#include <musikcore/plugin/output.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -76,6 +77,16 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
     if (register_again(state) != MC_ERROR_INVALID_ARGUMENT) {
         return MC_ERROR_INTERNAL;
     }
+#ifdef BAD_OUTPUT
+    /* a sized but incomplete factory must fail registration, rather than
+    publishing null methods that crash when a caller tries to create output. */
+    static const mc_output_factory output = MC_OUTPUT_FACTORY_DEFAULT;
+    mc_plugin_capability capability = MC_PLUGIN_CAPABILITY_DEFAULT;
+    capability.id = (mc_string_view) { MC_PLUGIN_CAPABILITY_OUTPUT, sizeof(MC_PLUGIN_CAPABILITY_OUTPUT) - 1 };
+    capability.api = &output;
+    capability.api_size = sizeof(output);
+    return host->register_capability(host->host_context, &capability);
+#endif
 #ifdef INIT_FAIL
     make_error(state, error);
     return MC_ERROR_PLUGIN;
@@ -102,17 +113,16 @@ MC_PLUGIN_API mc_result MC_CALL not_a_plugin(void) {
 }
 #else
 MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
-    uint32_t version, const mc_host_api* host, mc_plugin_api* output, mc_error** error)
-{
+    uint32_t version, const mc_host_api* host, mc_plugin_api* output, mc_error** error) {
     /* reject an unknown host major before reading its table layout. */
     if (MC_ABI_VERSION_MAJOR(version) != MC_ABI_VERSION_MAJOR(MC_PLUGIN_ABI_VERSION) ||
         MC_ABI_VERSION_MINOR(version) < MC_ABI_VERSION_MINOR(MC_PLUGIN_ABI_VERSION))
     {
         return MC_ERROR_UNSUPPORTED;
     }
-    if (!host || host->struct_size < sizeof(mc_host_api) || !host->log || !host->create_error ||
-        !host->destroy_error || !host->register_capability || !output ||
-        output->struct_size < sizeof(mc_plugin_api) || version != host->abi_version)
+    if (!host || host->struct_size < sizeof(mc_host_api) || !host->log || !host->create_error || !host->destroy_error ||
+        !host->register_capability || !output || output->struct_size < sizeof(mc_plugin_api) ||
+        version != host->abi_version)
     {
         return MC_ERROR_INVALID_ARGUMENT;
     }

@@ -39,7 +39,7 @@ static void MC_CALL logged(void* state, mc_log_level, mc_string_view tag, mc_str
     else if (component == "failed-fixture" && message == "shutdown") {
         ++seen.failedShutdown;
     }
-    else if (component == "CPluginHost") {
+    else if (component == "PluginRegistry") {
         ++seen.rejected;
     }
 }
@@ -48,7 +48,14 @@ static void MC_CALL logged(void* state, mc_log_level, mc_string_view tag, mc_str
 host table or callbacks from the preceding context. no library/audio is needed. */
 int main(int argc, char** argv) {
     require(argc == 1, "no ambient runtime configuration arguments");
-    const auto utf8 = (std::filesystem::u8path(argv[0]).parent_path() / "plugins").u8string();
+
+    /* keep the selected directory distinct from the executable default. a
+    restart that silently switches directories must fail to find the fixture. */
+    const auto runtime = std::filesystem::u8path(argv[0]).parent_path();
+    const auto selected = runtime / "selected-plugins";
+    std::filesystem::rename(runtime / "plugins", selected);
+    std::filesystem::create_directory(runtime / "plugins");
+    const auto utf8 = selected.u8string();
     const std::string plugins(utf8.begin(), utf8.end());
     for (unsigned run = 0; run < 3; ++run) {
         mc_context* context = nullptr;
@@ -59,7 +66,13 @@ int main(int argc, char** argv) {
         mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;
         options.services = MC_SERVICE_PLUGINS;
         options.flags = MC_CONTEXT_ENABLE_LOGGING;
-        options.plugin_directory = { plugins.data(), plugins.size() };
+
+        /* omitted directory on restart must reuse the process's selected
+        directory, just as explicitly selecting it again does. */
+        if (run != 1) {
+            options.plugin_directory = { plugins.data(), plugins.size() };
+        }
+
         options.wakeup = test_host_event_signal;
         options.wakeup_user_data = event;
         options.log = logged;
@@ -78,7 +91,7 @@ int main(int argc, char** argv) {
             require(mc_context_dispatch(context) == MC_OK, "startup log dispatch");
             if (seen.initialized != 1 || seen.rejected != 2 || seen.failedInitialize != 1 || seen.failedShutdown != 1) {
                 require(std::chrono::steady_clock::now() < deadline && test_host_event_wait(event),
-                    "initialization diagnostic arrives before deadline");
+                    "selected directory fixture initializes after restart before deadline");
             }
         }
         require(seen.initialized == 1 && seen.rejected == 2, "optional provider failures leave the valid session usable");

@@ -1,6 +1,6 @@
 # musikcore C ABI modernization: low-level design and task plan
 
-Status: core consumer integration implemented; release acceptance and provider work remain open
+Status: core consumer acceptance complete in its recorded scope; clean C plugin replacement is next
 
 The [core C API foundation gate](#core-c-api-foundation-gate) supersedes
 the original phase ordering below. Additional application feature migrations
@@ -16,9 +16,10 @@ This document translates the
 layout, runtime components, state machines, test fixtures, migration steps, and
 trackable tasks.
 
-The current goal is a complete core application API consumed by musikcube.
-Provider tasks remain deferred until that integration reaches release-candidate
-quality. This document is the task/status authority; the HLD links architectural decisions,
+The core application API is consumed by musikcube and has reached the scoped
+consumer acceptance recorded under CORE-RC-003. The active body of work is a
+clean replacement of the plugin architecture on `clangen/c-plugin-api-foundation`.
+This document is the task/status authority; the HLD links architectural decisions,
 and public headers define parameter-level contracts. Runtime and provider
 sections describing future services are target design, not implemented features.
 
@@ -36,9 +37,10 @@ Status legend:
   foundation gate records a maintainer-approved exception.
 - A task annotated `blocked by` must not begin until its dependency gate passes.
 
-The active next steps at the end of this document identify the core consumer
-release backlog. Historical phase numbers and deferred expansion tasks do not
-make provider work eligible or require adding unused public APIs.
+The active next steps and plugin execution order below govern the current work.
+Historical phase numbers group related tasks; they do not require the old
+interleaved provider migration order. Previously checked bootstrap tasks record
+working building blocks, not completion of the replacement architecture.
 
 ## Related documents
 
@@ -57,6 +59,8 @@ make provider work eligible or require adding unused public APIs.
   identity, snapshot/page ownership, backend routing, and copy-cost tradeoffs.
 - [Tests at the public boundary](../docs/adr/0004-test-the-public-boundary-first.md):
   contract-first coverage, hermetic fixtures, and expansion alongside app changes.
+- [C provider loading and lifetime](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md):
+  registry loading/ownership responsibilities, typed registration, scoped services, and unload.
 
 ADRs own the choice and rationale. This plan records implementation mechanisms,
 current ABI details, remaining work, and acceptance evidence. Change a decision
@@ -77,8 +81,11 @@ through its ADR rather than adding a competing policy to a task description.
 - Production binaries and plugins currently share source-tree output
   directories in several configurations.
 
-The migration must preserve working production targets until replacement
-surfaces cover their consumers.
+The core-completion branch preserves the working application baseline. The
+provider branch keeps targets buildable and unavailable capabilities explicit
+while families are restored; it does not keep the old plugin architecture active
+merely to preserve functionality during reconstruction. Record temporary test
+prerequisites under PLG-EMPTY-002.
 
 ## Proposed source layout
 
@@ -89,7 +96,8 @@ include/
         musikcore.h             public application umbrella
         context.h               runtime lifecycle and request dispatch
         library.h               queries and metadata pages
-        plugin.h                provider/plugin SDK
+        plugin.h                provider bootstrap
+        plugin/                 typed family/host-service C headers
         musikcore.hpp           public C++ wrapper
         plugin.hpp              optional C++ provider wrapper
 
@@ -112,18 +120,18 @@ src/musikcore/
             indexer.cpp
             preferences.cpp
             audio.cpp
-        provider/
-            loader.cpp
-            host.cpp
-            registry.cpp
-            provider_lifetime.cpp
-            decoder_adapter.cpp
-            encoder_adapter.cpp
-            stream_adapter.cpp
-            output_adapter.cpp
-            dsp_adapter.cpp
-            tag_adapter.cpp
-            indexer_source_adapter.cpp
+        plugin_abi/
+            PluginRegistry.h/.cpp
+            Plugin.h/.cpp       per-library state and lifetime
+            stream.cpp          C contracts and engine-owned implementation wrappers
+            decoder.cpp
+            encoder.cpp
+            output.cpp
+            dsp.cpp
+            metadata.cpp
+            indexer.cpp
+            visualizer.cpp
+            services.cpp
 
 tests/
     scripts/                    orchestration and fixture generation
@@ -149,7 +157,8 @@ separation is:
 - `ffi/common` owns behavior shared by both directions of the C boundary.
 - `ffi/consumer` contains the application-facing façade, exception boundaries,
   and validation.
-- `ffi/provider` contains the plugin host and private provider adapters.
+- `ffi/plugin_abi` contains loading, registry ownership, typed C family support,
+  and engine-owned wrappers; no wrapper implements the former C++ SDK.
 - Public C++ convenience wrappers are header-only and use public C declarations.
 - Library/playback attachment adapters have been removed from Cube. Test-only
   probes stay out of standalone production builds.
@@ -330,46 +339,49 @@ invalidation stream. Current lifetime/error details are recorded below and in he
 
 ### Plugin registry
 
-The following registry/table design belongs to the deferred C provider SDK.
-The existing SDK 23 C++ plugin loader does not implement these C tables or
-per-instance unload accounting.
-
-Each future C plugin record contains:
-
-- Native library handle.
-- Negotiated ABI version and table size.
-- Stable plugin ID and metadata.
-- Lifecycle state.
-- Registered factory records.
-- Live provider instance count.
-- In-flight call count.
+`PluginRegistry` uniquely owns accepted `Plugin` records for one engine session.
+Each record holds its native library, identified ABI/table, copied identity and
+metadata, initialization state, and registered factory tables. There are no
+per-plugin lease, instance, or active-call counters.
 
 Lifecycle states:
 
 ```text
-discovered -> loaded -> initialized -> active
-                                    -> stopping -> stopped -> unloaded
-                         failure --------------------^
+opened -> identified -> initializing -> running -> stopped
+             failure ---------------------------> stopped
 ```
 
-New factory/instance acquisition stops before shutdown. The native library is
-unloaded only after no factories, instances, string views, or in-flight calls
-can reference its code or storage.
+Typed factory views refer to immutable plugin tables without owning them. Registry
+ownership keeps their DLLs loaded during normal operation. Before `Shutdown`,
+the engine stops new work, interrupts/drains instances, finishes callbacks,
+joins workers, and destroys all plugin instances. `Shutdown` synchronously calls
+plugin cleanup and closes native libraries on the owner thread. It does not
+wait for capability values to be discarded. Calling through a view after
+shutdown is a contract violation; individual mid-session unload is unsupported.
 
-### Provider adapters
+The registry's public operations are `Initialize(directory, selection)`,
+`ListPlugins()`, `Find<T>(pluginId)`, and `Shutdown()`. Discovery/loading and
+candidate results remain private. Initialize scans only once; candidate
+failures are logged and skipped, missing directories succeed empty, and fatal
+directory failures close the session. `plugins.discovery` checks those rules,
+thread/reentry checks, invalid paths, and throwing selection/diagnostic callbacks.
+`plugins.null_output` exercises the type-to-ID mapping and typed invocation
+against the production DLL; arbitrary table types are compile-time errors.
 
-Private adapters implement current internal C++ interfaces by forwarding to C
-provider tables. Each adapter:
+### Private family wrappers
 
-- Retains the plugin lifetime record.
+Private wrappers may simplify calls to C provider tables without recreating the
+former C++ SDK. Each wrapper:
+
+- Uses immutable tables only within its engine session.
 - Validates required function pointers at construction.
 - Translates results and errors.
-- Prevents calls after plugin stopping begins.
-- Calls the provider's destroy function exactly once.
+- Stops work and finishes callbacks before destruction.
+- Calls the provider's destroy function exactly once before registry shutdown.
 - Contains exceptions thrown by optional C++ convenience wrappers.
 
-Adapters allow the internal playback/indexer implementation to migrate without
-being rewritten at the same time as the plugin ABI.
+These wrappers own family instances, not plugin lifetime records. The engine's
+shutdown order keeps their code and scoped services alive until cleanup finishes.
 
 ## Test target design
 
@@ -448,8 +460,11 @@ The supported reduced-test and production surfaces are summarized in the
 [HLD](musikcore-c-abi-hld.md#current-experimental-scope). Unsupported operations
 reject admission with `MC_ERROR_UNSUPPORTED` and deliver no callback.
 In production, `plugin_directory` is copied and used when Plugins is selected;
-that service starts provider discovery. The reduced ABI-only target supplies
-no production plugin loader.
+that service starts provider discovery. Its process-selected directory is shared
+by both discovery paths; omitting it on a later context reuses the original
+selection. `plugins.runtime` tests explicit/custom, omitted, and explicit-again
+sessions with fixtures outside the executable default directory. The reduced
+ABI-only target supplies no production plugin loader.
 
 ### Declarations and validation
 
@@ -1008,7 +1023,232 @@ recorded before the experimental shared façade is introduced.
   this result does not claim new Linux/Windows sanitizer execution. Polled
   notifications remain separately deferred under API-014/API-015.
 
-### Phase 4: C SDK walking skeleton
+### Phase 4: C plugin architecture replacement
+
+#### Approved execution order
+
+Replace the existing plugin architecture on this branch. The preserved
+`clangen/musikcore-c-abi-completion` branch is the working fallback. There is one
+production plugin path in the replacement engine: `PluginRegistry` discovers,
+identifies, and initializes C plugins, owns accepted `Plugin` records for the
+engine session, and indexes their features. Engine internals may use private C++ types,
+but must not depend on the former C++ SDK interfaces. Do not introduce runtime
+coexistence, C++ SDK compatibility adapters, or a second discovery list such as
+`PluginFactory::CProviderFiles`.
+
+The following six steps supersede the previous incremental migration route.
+Existing AUD/STR/DCD/ENC/DST/TAG/IDX/OUT/DSP/EXT task IDs remain authoritative for
+individual families; the cross-family tasks below coordinate their order.
+
+The cutover dependency map below identifies current engine callers, relative to
+`src/musikcore`. It is an implementation inventory, not permission to keep an
+old-interface adapter. The interface-by-interface disposition is in the design.
+
+| Caller group | Current dependency | Replacement work |
+| --- | --- | --- |
+| `runtime/ManagedRuntime`, `plugin/Plugins`, `plugin/PluginFactory` | Old discovery, process registry, session flags, and `Get*`/`Set*` hooks | Retain explicit context directory/service selection; use only `PluginRegistry`, then remove old discovery and global service setters. |
+| `support/Preferences`, plugin catalog/settings C entry points | `IPreferences`, `ISchema`, plugin-name stores, reload calls | Use scoped preference/configuration tables. Decide persistence identity before changing filenames; render data descriptors without plugin-owned UI. |
+| `io/DataStreamFactory`, `io/LocalFileStream`, `audio/Streams`, `audio/Stream` | `IDataStream`, decoder/encoder factories, DSP enumeration and caches | Use C stream/factory contracts and engine-owned instances. Preserve create-before-open publication and interruption; absent families report unsupported or bypass DSP. |
+| `audio/Buffer`, `audio/Player`, `audio/Outputs`, transport headers, `audio/Crossfader` | SDK buffer/provider/output types and callbacks | Use opaque host buffers, typed output factories, explicit submission tokens, and core-owned playback state. Discover the bundled null-output DLL through the same loader as native outputs. |
+| `audio/PlaybackService`, `audio/Visualizer` | Playback-remotes, visualizer interfaces, borrowed playback-service pointers | Deliver owner-thread C snapshots and bounded read-only PCM/spectrum views. Active platform integrations become explicitly stopped/joined extensions. |
+| `library/Indexer` | Tag readers, decoder factories, indexer sources, analyzers, SDK metadata writers | Use source-scoped C writers and typed factories. Keep checkpoint/rollback semantics; resolve source-ID and timestamp persistence before conversion. |
+| `library/ILibrary`, `library/LocalMetadataProxy`, `library/track/*`, `library/metadata/*` | SDK track/list/map/editor interfaces | Keep concrete metadata storage private to the core; expose existing C identities/results/pages through typed host calls. Do not recreate the exported C++ object graph. |
+| `library/query/*`, including `util/SdkWrappers` and `TrackQueryFragments` | SDK metadata wrappers and shared tag/category constants | Replace old interface results with private core data or existing C result types. Preserve typed backend routing and bound SQL; keep SQL in local query implementations. |
+| `support/Common`, `support/Playback`, `support/LastFm`, `support/Auddio`, `i18n/Locale`, `net/WebSocketClient`, `ffi/consumer/remote-session`, `pch.hpp` | SDK filesystem, strings, HTTP helpers, constants, and transitive includes | Extract reusable implementation helpers into private core/common headers. These are not new C ABI families. Remove transitive SDK includes after direct callers move. |
+
+`runtime.stream_sdk_contract` currently still exercises the old factory and
+stream path. Independent C discovery can probe a rejected old image again; its
+fixture asserts one old object released before unload, not a fixed count of
+native-image probes. Remove that old-only fixture under PLG-BACKFILL-002 when
+replacement stream tests protect its useful create/open/cancel contracts.
+
+1. **Draft all contracts before implementing families.**
+   - [ ] **PLG-CONTRACT-001** Inventory every existing SDK interface/export and
+     engine caller. Map each to a C provider table, a narrow C host service, an
+     existing public C API operation, an internal-only helper, or deliberate
+     removal. Document differences from the C++ behavior and affected callers.
+     Draft interface mapping is in the design's planned family contracts; caller
+     cutover/dependency inventory remains open.
+   - [ ] **PLG-CONTRACT-002** Define provisional C shapes for buffers, streams,
+     decoders, blocking/streaming encoders, outputs/devices, DSP, analyzers,
+     metadata writers/readers, indexer sources/writers, visualizers, playback
+     observers, configuration, and lifecycle extensions. Reuse existing C
+     primitives/results where appropriate. Complete the contract-definition
+     portions of AUD-002, STR-001, DCD-001/DCD-002, ENC-001/ENC-002, DST-001,
+     TAG-001, IDX-001, OUT-001/OUT-002, DSP-001, and EXT-001 through EXT-005
+     here; their integrations remain open. The design sketches family
+     structures/vtables/factories and scoped services, including typed
+     catalog/playback host calls. Audio/output declarations are materialized in
+     `include/musikcore/plugin/audio.h` and `output.h`; materialize the remaining
+     headers/defaults and reconcile real callers before closing this task.
+     Existing `SendRawQuery` carries
+     named-query JSON through QueryRegistry, not SQL. Preserve that protocol
+     where needed; do not add SQL-text execution/database-handle entry points.
+   - [ ] **PLG-CONTRACT-003** Review each shape for ownership, allocation/free
+     pairing, units, input/output direction, EOF/backpressure, interruption,
+     thread affinity, real-time restrictions, and shutdown. Plan standalone
+     C11/C++ header/default-initializer checks (`plugins.contract_headers`).
+     Shapes remain experimental and may change after representative use; this
+     is not an ABI freeze or a mechanical port of C++ inheritance. Review the
+     existing C++ hash-based source IDs, file-clock timestamps, and preference
+     store identity before any persisted-data conversion. No automatic reindex,
+     data rewrite, or legacy compatibility shim is authorized by this draft.
+2. **Disconnect the previous architecture and install the new loading path.**
+   - [ ] **PLG-CUTOVER-001** Remove the old discovery/startup path, factory
+     lookups/caches, `Get*`/`Set*` hook wiring, and engine dependencies on
+     `sdk::I*` interfaces. Simplify private types as callers move; engine-owned
+     types need not reproduce old interface/provider layers, particularly for
+     audio-buffer storage. Old plugin implementations may remain as disconnected
+     conversion references, outside active targets/installation. Add a source/
+     binary boundary check (`plugins.engine_boundary`) so they cannot be
+     reintroduced accidentally. The current names are PluginRegistry/Plugin;
+     C discovery is now owned by the registry, but the old engine interfaces still need
+     removal. Inventory capabilities lost until restored;
+     document explicit C API unsupported outcomes during the rebuild.
+   - [ ] **PLG-LOADER-001** Consolidate loading and engine-session ownership in
+     `PluginRegistry`. It discovers candidates, validates their C entry tables,
+     initializes them, and publishes capabilities transactionally. `Plugin` owns
+     one library's tables/state. Remove `CProviderFiles` and all dependence
+     on `PluginFactory`. Catalog disabled plugins using copied metadata without
+     initializing their engine resources. Preserve existing lifecycle, duplicate-image/ID,
+     rollback, owner-thread, and installed-C fixture regressions; adapt lifetime
+     checks to session ownership and worker quiescence before shutdown;
+     add direct discovery coverage (`plugins.discovery`).
+     - [x] Keep native identification/session state in `Plugin`; consolidate
+       discovery, loading, and accepted ownership in `PluginRegistry`.
+       `CProviderFiles` is removed. `plugins.lifecycle`, `plugins.discovery`,
+       `plugins.runtime`, and `plugins.installed` cover direct/installed loading,
+       disabled metadata, duplicate images/IDs, rollback, wrong-thread calls,
+       broken candidate links, and context-specific discovery directories on macOS.
+     - [ ] Add typed lookup for the remaining family tables as their headers and
+       concrete callers are implemented. Remove the old `PluginFactory` production
+       path under PLG-CUTOVER-001; independent C discovery is not engine cutover.
+   - [ ] **PLG-LOADER-002** Ensure failed discovery/negotiation/initialization
+     leaves no visible registrations and does not prevent other plugins loading.
+     Make dependency injection explicit; no global `SetEnvironment` replacement
+     that exposes the entire engine as one untyped service object. Supply typed
+     services at instance creation, with active extensions started only after
+     required services are ready. Prove stop/cancel/owner-dispatch-drain/join/
+     instance-destruction ordering before final registry shutdown/unload, including
+     workers holding peer-provider objects and awaiting host completions.
+3. **Make empty optional families valid.**
+   - [ ] **PLG-EMPTY-001** Support no DSP, encoders, analyzers, visualizers,
+     playback observers, or platform integrations. DSP bypasses unchanged PCM;
+     encoding reports unsupported; absent observers receive no events. Starting,
+     querying, idling, and stopping the engine must not dereference missing
+     providers (`plugins.empty_registry`). Missing decoders/streams report
+     unsupported input; they must not pretend to read or decode successfully.
+   - [ ] **PLG-EMPTY-002** Establish applicable test sets during the rebuild.
+     Keep core/query/runtime/loader tests meaningful and green; explicitly record
+     which playback/indexing/UI scenarios require families not restored yet.
+     Never silently turn required regression tests into passing no-ops. Restore
+     their normal registration as each prerequisite family becomes available.
+4. **Provide real null implementations for required defaults.**
+   - [ ] **PLG-NULL-001** Supply `nullout` as a loadable C output plugin.
+     Prove pacing, pause/resume, paused-delivery backpressure, exactly-once return,
+     unavailable timing, stop/drain, and unload (`plugins.null_output`). An empty
+     plugin directory leaves queries/startup/idle usable; playback without an
+     output must report unavailable. Do not add a second built-in null sink.
+     - [x] Replace the `nullout` target with a C-only DLL exporting
+       `mc_plugin_get_api`. `musikcore.integration.plugins.null_output` loads the
+       real DLL through PluginRegistry and tests pacing, pause/resume, oversized
+       input versus backpressure, synchronous caller-thread completion, failed
+       prepare, concurrent stop/write cancellation, destruction, and native unload.
+       NullOutput owns no worker or pending audio; only an interruptible producer
+       wait and callback-quiescence flag remain. No injected clock or timing estimator.
+       `binary.exports.nullout` verifies the sole entry point on macOS.
+     - [x] **PLG-CPP-OUTPUT-001** Add the strictly header-only `plugin/output.hpp`
+       adapter. `RegisterOutput<T>` generates C tables without inheritance, core
+       linkage, or lifecycle policy. Require noexcept queue/stop, translate
+       ordinary exceptions, and default optional timing to unknown.
+       `plugins.output_adapter` verifies forwarding, construction failure,
+       exception containment, and absence of implicit Stop/rollback. The real
+       DLL test supplies explicit host stop/cleanup. `plugins.installed` builds
+       and loads C/C++ plugins from relocated public headers and audits symbols.
+       Extend helpers as other concrete C families are implemented.
+     - [ ] **PLG-OUTPUT-HOST-001** Establish and test preconditions in the actual
+       replacement engine's output call path before integration. Reject invalid
+       pointers/prefixes, PCM frame/storage bounds, token identities, formats,
+       normalized volume, and required callbacks before calling the plugin.
+       Test a downstream recording provider with the production host path so
+       invalid inputs produce no calls; a mock caller is not enforcement proof.
+       Test successful prepare before queue, Stop before reprepare, cleanup of
+       failed prepare, producer/callback quiescence before destroy/unload, and
+       failed Stop preventing unsafe destruction. Boundary input checks and
+       lifecycle-order assertions must run before closing this gate; the C
+       engine output path is not connected yet. Adapter tests prove forwarding,
+       not these deferred engine guarantees.
+     - [ ] Connect engine output selection and plugin catalog/settings to the C
+       factory. The maintainer approved replacing the target now; the dependent
+       tests below remain explicitly pending until this integration is ready.
+   - [ ] **PLG-NULL-002** Decide any other required defaults from actual engine
+     callers. Supply an implementation only where it has truthful behavior;
+     otherwise report unsupported. Document whether the implementation is
+     core-owned or dynamically loaded, using the same typed C contract either way.
+5. **Prove one representative of every supported family.**
+   - [ ] **PLG-PROVE-001** First complete AUD/STR/DCD and PERF-002 below using
+     deterministic media, a real decoder path, and `NullOutput`. Prove known PCM,
+     seeking, final-buffer/EOF behavior, cancellation before/during open, buffer
+     ownership, and shutdown/unload through the public application C API.
+   - [ ] **PLG-PROVE-002** Then select and record one representative for each
+     remaining family: stream source, encoder modes, tag reader, indexer source,
+     native output, DSP, analyzer, visualizer, playback observer, configuration,
+     and lifecycle/server integration. Use an in-tree production plugin where
+     practical or a useful deterministic fixture where the platform/plugin is
+     unavailable. Reenable dependent app tests as functionality returns. Each
+     family needs boundary/failure/lifetime tests before it is considered proven.
+6. **Backfill remaining plugins and remove the disconnected code.**
+   - [ ] **PLG-BACKFILL-001** Complete remaining conversion tasks in Phase 8
+     against the proven contracts. Remove each old implementation once replaced.
+     Keep native Linux/Windows implementation/validation work explicitly assigned
+     to their platform sessions; macOS evidence does not close those tasks.
+   - [ ] **PLG-BACKFILL-002** Remove old SDK headers, factories, adapters, exports,
+     targets, install rules, and old-only fixtures after their replacements have
+     meaningful regression coverage. Complete GATE-800, external plugin/archive
+     checks, and restored app workflows before release or ABI freeze.
+
+#### Replacement foundation validation
+
+Loader, buffer, and output checks exercise the actual C boundaries. The null
+output test uses the production shared library, not a copy of its implementation
+linked into the test host. Native Linux/Windows checks remain SDK-LINUX/SDK-WINDOWS.
+Engine cutover, remaining family headers, and the first decoder playback gate
+remain open. Passing currently applicable checks does not close these gates.
+
+The following tests are registered but disabled with `pending-plugin-cutover`
+labels, by maintainer approval. Restore them under PLG-CUTOVER-001/OUT-004 once
+engine playback/catalog/settings consume the C output factory:
+
+- `musikcore.integration.plugin.playback_reload`
+- `musikcore.integration.api.managed_runtime`
+- `musikcore.integration.api.playback_without_indexer`
+- `musikcore.integration.api.remote_audio`
+- `musikcore.integration.api.remote_transcode.mp3`
+- `musikcore.integration.api.remote_transcode.flac`
+- `musikcore.integration.api.uri_player`
+- `musikcube.ui.settings`
+- `musikcube.ui.lyrics`
+
+The installed SDK query, session, and engine-query consumers remain active.
+Its managed plugin-catalog and C/C++ URI-player subcases are explicitly pending
+C catalog/output integration; no compatibility exports or passing no-op
+substitute is added.
+
+The last full macOS Release rebuild passed 129 applicable entries, with nine
+explicit pending engine-cutover entries. After synchronous pacing and the C++
+thin output adapter, focused Release plugin/SDK/export checks pass 12/12 and
+Debug ASan/UBSan checks pass 10/10. Removed adapter-owned cleanup tests were
+replaced by explicit caller-order and no-hidden-lifecycle assertions. Public C/C++ headers compile independently. The
+relocated installed-SDK check builds and loads C and C++ plugins without core
+linkage and audits both libraries. Invalid queue/stop exception specifications,
+wrong operation result types, and mutable timing methods fail compilation.
+The exception-policy regressions first reproduced empty-registry termination,
+missing entry context, and unsafe shutdown return; they now pass. The
+synchronous-pacing regression first failed on deferred completion, then passed
+with caller-thread completion. The null-output
+DLL exports only `mc_plugin_get_api` and depends only on the system C/C++ runtime.
+
+#### Existing bootstrap foundation (retain and adapt)
 
 - [x] **SDK-001** Create `include/musikcore/plugin.h`. Independent C11/C++17
   translation units compile it in `musikcore_public_headers`; it remains separate
@@ -1029,20 +1269,42 @@ recorded before the experimental shared façade is introduced.
   missing hooks, invalid identifiers/UTF-8, and malformed registration sizes.
   The zero-version regression failed before the validation fix.
 - [x] **SDK-006** Implement plugin records and lifecycle states. Negotiation,
-  initializing, running, stopping, and stopped states separate publication from
-  reclamation. `plugins.lifecycle` checks rejection before lifecycle entry,
+  initializing, running, and stopped states separate publication from
+  session teardown. `plugins.lifecycle` checks rejection before lifecycle entry,
   rollback after failed initialization, and one-shot shutdown/unload.
 - [x] **SDK-007** Implement capability/factory registration lifetime rules.
   Registration copies temporary descriptors/IDs, rejects duplicates and wrong
   phases/threads, and publishes only after successful initialization. Registered
-  typed tables remain provider-owned. `plugins.lifecycle` verifies these rules;
+  typed tables remain provider-owned. `Find<T>(pluginId)` maps supported C table
+  types to their IDs internally; unsupported types fail at compile time.
+  No public string capability lookup, unchecked pointer constructor, or friends.
+  `plugins.null_output` checks typed calls, callback self-reset, independent nested
+  sessions, empty views, and retained passive views through shutdown;
   concrete decoder/stream instance contracts remain Phase 6 work.
-- [x] **SDK-008** Track in-flight calls and prevent premature unload. Shared
-  capability leases pin state/code; shutdown retires admission before draining
-  references and calls. `plugins.lifecycle` uses bounded synchronization gates,
-  releases the caller's reference inside a running call, rejects new calls through
-  retired references, and observes native mapping before/after drain. Owner-thread
-  lifecycle reentry and wrong-thread calls return distinct errors.
+- [x] **SDK-008** Keep loaded plugins uniquely owned for the engine session.
+  `PluginCallState` detects owner-thread reentry per session, independently of
+  exception policy; it neither counts workers nor coordinates teardown.
+  `plugins.lifecycle` verifies nested/thread-isolated guards, unwinding,
+  and owner-thread cleanup; `plugins.null_output` checks harmless empty/stopped
+  destruction inside a real factory call. The real
+  `plugins.exception_entry`/`exception_initialize` DLLs verify contextual errors
+  and replacement of pre-existing error slots; `plugins.exception_shutdown`
+  terminates in a child while asserting the DLL remains mapped. Host factory
+  callback exceptions propagate, verified by `plugins.null_output`.
+  Typed factory views are non-owning; no lease counters, retirement phase,
+  shared worker accounting, or blocking unload waits. `plugins.lifecycle` checks that
+  registry ownership leaves a running DLL mapped and native unload occurs on
+  the owner. `plugins.null_output` covers passive retained views and completion
+  of output workers/instances before teardown. Wrong-thread lifecycle calls
+  return a distinct error without mutation.
+  `plugins.reentry_*` subprocesses verify fatal same-session reentry through
+  factory calls, selection, diagnostics, initialization, and shutdown; termination
+  occurs with the DLL still mapped, including Release builds.
+  The whole-engine teardown entry must enforce the same fatal reentry invariant
+  before destroying services; the private registry check cannot protect earlier
+  engine mutation. Public context dispatch/BUSY behavior is unchanged.
+  Full engine orchestration and instance/callback quiescence remain PLG-CUTOVER-001,
+  AUD-001/DCD-003, and the extension teardown integration task below.
 - [x] **SDK-009** Add the valid pure-C fixture plugin. Its test-only probe table
   exercises session-owned state without inventing a shipped provider family.
 - [x] **SDK-010** Add incompatible, truncated, missing-hook/version/entry,
@@ -1054,9 +1316,11 @@ recorded before the experimental shared façade is introduced.
   `musikcore.integration.plugins.installed`. The runtime case repeats plugins-only
   context creation through the shared public C API, keeps a valid provider usable
   alongside rejected negotiation and failed initialization, and observes rollback
-  diagnostics through normal owner-thread wakeup/dispatch. Discovery classifies C candidates separately;
-  `musikcore.integration.runtime.stream_sdk_contract` protects rejected SDK 23
-  modules from an accidental second load/unload. No compatibility adapter is added.
+  diagnostics through normal owner-thread wakeup/dispatch. The original bootstrap
+  used `PluginFactory::CProviderFiles` for coexistence discovery; that wiring is
+  superseded by PLG-CUTOVER-001/PLG-LOADER-001. The old
+  `runtime.stream_sdk_contract` test remains evidence for that implementation,
+  not a requirement to preserve SDK 23 at runtime.
 - [x] **SDK-012** Verify fixture plugins include only installed C headers and do
   not link private musikcore targets. `plugins.installed` builds a separate C-only
   project against a relocated SDK, checks exports/imports, and runs it through the
@@ -1074,7 +1338,11 @@ that coalesces with compiler-generated registration state when present.
 `musikcore.integration.binary.sanitizer_reload` and the provider lifecycle case
 pass with this empty-module path under ASan/UBSan.
 
-#### Phase 4 gate
+#### Bootstrap gate (previous implementation evidence)
+
+GATE-400 records the tested bootstrap before the clean replacement. It does not
+mark the new loader, engine disconnection, all-family contracts, or null/default
+behavior complete. Those remain the unchecked tasks above.
 
 - [x] **GATE-400** The shared production runtime loads a separately built pure-C
   provider. Focused host tests observe its registered capability, release retained
@@ -1092,7 +1360,8 @@ pass with this empty-module path under ASan/UBSan.
   are not claimed complete.
 - [ ] **SDK-LINUX** Run lifecycle, installed-provider/export checks, shared-runtime
   restart, and ASan/UBSan on native Linux. Verify ELF visibility, loader search
-  paths, and actual `dlclose` with retained references/calls.
+  paths, and actual `dlclose` after workers/instances finish, including passive
+  capability views that must not delay unload.
 - [ ] **SDK-WINDOWS** Run the same provider checks on native Windows. Verify cdecl
   function tables, DLL exports/imports/search paths, and UTF-8/Unicode filenames.
   The intentionally missing-entry fixture must not advertise the provider export.
@@ -1195,19 +1464,45 @@ This completed pilot is not a second migration backlog.
 
 ### Phase 6: decoder SDK vertical slice
 
-- [ ] **AUD-001** Implement host audio-buffer creation, mapping, unmapping, and
-  recycling.
-- [ ] **AUD-002** Define frame counts, capacities, formats, and buffer state
-  transitions precisely.
+- [ ] **AUD-001** Implement decoder scratch storage and fixed playback-pool
+  handoff/recycling.
+  - [x] Implement opaque growable `mc_audio_scratch_buffer` storage through
+    `mc_audio_scratch_buffer_api`, reserve/format changes, exclusive
+    `begin_write`/`end_write`, and read-only PCM publication.
+    `musikcore.unit.plugins.audio_buffers` checks frame/sample units, overflow,
+    failed/abandoned writes, nested-access rejection, copied-view isolation, and
+    same-channel capacity reuse, and no-op/failed reserve preservation.
+    `musikcore.unit.plugins.contract_headers` and
+    independent C11/C++17 translation units cover audio/output declarations.
+  - [ ] Connect decoder scratch to a private, contiguous fixed playback pool.
+    Split decoded blocks across slices without growing playback storage; test
+    pool exhaustion/backpressure, exactly-once recycling after output completion,
+    and quiescence before pool replacement on format changes. No playback
+    handoff through the replacement C pipeline is claimed yet.
+- [x] **AUD-002** Define frame counts, capacities, formats, and buffer state
+  transitions precisely in `plugin/audio.h` and `plugin/output.h`.
+  `plugins.audio_buffers`, `plugins.contract_headers`, and `plugins.null_output`
+  verify the implemented contracts on macOS, including host-sized returned
+  format prefixes and permanent oversized-submission errors versus backpressure.
+  Native-platform follow-ups remain SDK-LINUX/SDK-WINDOWS; full engine handoff
+  remains AUD-001/DCD-003/PLG-NULL-001.
+  PCM is fixed interleaved native float32, with typed `float*` writable views;
+  no encoding selector or per-block sample-format checks. The experimental
+  `mc_audio_format` layout is 16 bytes; consumers of these structs must rebuild.
+  Hosts supply validated values and negotiated prefixes; plugins handle backend
+  capacity/availability. `plugins.null_output` tests unavailable-device recovery
+  with explicit host cleanup; engine input enforcement remains PLG-OUTPUT-HOST-001. Bootstrap
+  checks are centralized in `mc_plugin_validate_host_api`, covered by strict
+  `plugins.contract_headers` compatibility/prefix/default tests.
 - [ ] **STR-001** Define stream table operations with `uint64_t` positions,
   partial reads, EOF, seek, and interruption.
-- [ ] **STR-002** Implement private adapters for core-provided and
-  plugin-provided streams.
+- [ ] **STR-002** Implement core-provided and plugin-provided C streams, with
+  engine-owned wrappers as needed; do not reintroduce `sdk::IDataStream`.
 - [ ] **DCD-001** Define decoder factory capability advertisement.
 - [ ] **DCD-002** Define decoder open, decode, seek, duration, preferred rate,
   exhaustion, and destroy operations.
-- [ ] **DCD-003** Implement the private decoder adapter to the current playback
-  interfaces.
+- [ ] **DCD-003** Connect C decoder instances to playback through engine-owned
+  types, removing `sdk::IDecoder` dependencies rather than adapting the old SDK.
 - [ ] **DCD-004** Implement the pure-C deterministic decoder fixture.
 - [ ] **DCD-005** Add controlled decoder failure modes selected by fixture URI.
 - [ ] **DCD-006** Add SDK contract tests for stream and decoder edge cases.
@@ -1597,7 +1892,12 @@ unchanged. The dependent ad-hoc SDK check also now creates its fixture manifest
 before launching the TUI. The final extracted archive passes three runs; no
 production startup failure was established.
 
-### Phase 8: expand and migrate the provider SDK
+### Phase 8: representative families and remaining plugin conversions
+
+Contract-definition portions run in PLG-CONTRACT-002; implementation begins only
+after the new loading/empty/null path is established. Complete one representative
+per family under PLG-PROVE-002 before backfilling the remaining plugins. Phase 8
+is not an instruction to keep the C++ SDK active during conversion.
 
 #### Provider discovery and configuration
 
@@ -1642,6 +1942,11 @@ production startup failure was established.
 - [ ] **OUT-002** Implement buffer submission/recycle state machine.
 - [ ] **OUT-003** Add debug instrumentation for forbidden real-time host calls.
 - [ ] **OUT-004** Convert `nullout` as the first production output.
+  - [x] Ship a C-only shared library with synchronous, interruptible producer pacing.
+    `plugins.null_output` exercises its factory/instances and native unload;
+    `binary.exports.nullout` verifies the only export is `mc_plugin_get_api`.
+  - [ ] Restore engine selection, catalog/settings, and the pending playback/UI
+    and installed-consumer scenarios listed under Phase 4 validation.
 - [ ] **OUT-005** Convert `coreaudioout`.
 - [ ] **OUT-006** Convert `alsaout`.
 - [ ] **OUT-007** Convert `pipewireout`.
@@ -1667,8 +1972,13 @@ production startup failure was established.
 
 #### Phase 8 gate
 
-- [ ] **GATE-800** All shipped plugins use the C SDK or an explicitly approved
-  non-plugin integration; no dynamic module returns a private C++ SDK pointer.
+- [ ] **GATE-800** The engine uses only PluginRegistry and the
+  new C contracts. All shipped plugins use the C SDK or an explicitly approved
+  non-plugin integration; no active engine dependency, exported plugin function,
+  build target, or installed header preserves the old C++ SDK. Required app
+  workflows and plugin tests are restored; missing optional families and
+  a missing output remain supported idle configurations; bundled `nullout`
+  supplies headless playback.
 
 ### Phase 9: system, packaging, and compatibility
 
@@ -1797,9 +2107,11 @@ the probe.
 
 ## Active next steps
 
-Core consumer implementation and application migration are complete in the
-stated scope. Remaining work is acceptance, external-use ergonomics, and release
-preparation; it is not a request to add every deferred API below.
+Core consumer acceptance and packaging are complete in the recorded scope on
+`clangen/musikcore-c-abi-completion`. The active branch rebuilds the plugin
+architecture using the six-step order in Phase 4. Replacing plugin dependencies
+must preserve the public application C ABI and its ownership/threading contracts;
+capability availability may be temporarily reduced as documented under PLG-EMPTY-002.
 
 1. Keep shared subscription scope and URI lifecycle regressions green. The
    subscription fix centralizes delivery depth in the exported C implementation;
@@ -1822,12 +2134,14 @@ preparation; it is not a request to add every deferred API below.
    native platform sessions; the macOS sanitizer change does not establish new
    Windows/Linux coverage. Finish the remaining release gates without reopening
    foundation checks that already have native evidence.
-6. Phase 4 bootstrap is complete on the provider branch, with native platform
-   follow-ups explicit above. Next is the Phase 6 decoder vertical slice: owned
-   audio buffers, streams, a typed decoder factory, and deterministic PCM through
-   real playback. Complete C-provider catalog/settings integration before stock
-   plugin conversion; preserve the bootstrap lifetime rules and sanitizer checks.
-   Finish combined packaging and compatibility gates before ABI v1 freeze.
+6. Finish PLG-CONTRACT-001/002/003: the high-level family shapes are approved;
+   audio/output headers, opaque buffers, the session-owned registry, and a
+   boundary-tested loadable `nullout` plugin are implemented. Materialize the remaining family
+   headers and reconcile engine callers, then disconnect the old production path
+   and select the null factory through the replacement engine. Keep the standalone
+   and runtime plugin regressions green. Empty-engine acceptance and the first
+   stream/decoder playback proof remain open; GATE-400 is historical bootstrap
+   evidence, not completion of this replacement plan.
 
 Deferred expansion includes polling/owned unsolicited events (API-014/API-015),
 general metadata invalidation and atomic batch edits (LIB-008/LIB-009), generic

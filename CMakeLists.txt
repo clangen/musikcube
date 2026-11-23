@@ -160,7 +160,7 @@ add_plugin("src/plugins/taglib_plugin" "taglibreader" GetTagReader)
 # outputs
 add_plugin("src/plugins/alsaout" "alsaout" GetAudioOutput SetPreferences)
 add_plugin("src/plugins/coreaudioout" "coreaudioout" GetAudioOutput SetPreferences)
-add_plugin("src/plugins/nullout" "nullout" GetAudioOutput GetSchema SetPreferences)
+add_plugin("src/plugins/nullout" "nullout")
 add_plugin("src/plugins/pipewireout" "pipewireout" GetAudioOutput GetSchema SetDebug SetPreferences)
 add_plugin("src/plugins/portaudioout" "portaudioout" GetAudioOutput GetSchema SetDebug SetPreferences)
 add_plugin("src/plugins/pulseout" "pulseout" GetAudioOutput SetPreferences)

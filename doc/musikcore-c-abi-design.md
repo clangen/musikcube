@@ -269,7 +269,7 @@ typedef struct mc_context mc_context;
 typedef struct mc_event mc_event;
 typedef struct mc_track_page mc_track_page;
 typedef struct mc_track_list mc_track_list;
-typedef struct mc_audio_buffer mc_audio_buffer;
+typedef struct mc_audio_scratch_buffer mc_audio_scratch_buffer;
 ```
 
 Naming communicates ownership:
@@ -369,6 +369,8 @@ fields. Null options and omitted sized fields use defaults. A zero requested
 ABI version selects the current version; explicit requests must match the
 current major and specify a minor no newer than the library's. Plugin directory
 storage is copied during creation; discovery fixes that directory for the process.
+An omitted directory reuses that selection on later contexts; the first discovery
+uses the host default if no directory is supplied.
 [`context.h`](../include/musikcore/context.h) defines the complete options layout.
 
 The context owns all engine services by default. Set `options.services` to the
@@ -749,31 +751,25 @@ SDK but remain opaque application handles.
 PCM transfer must be frame-oriented and zero-copy:
 
 ```c
-typedef int32_t mc_sample_format;
-
-enum {
-    MC_SAMPLE_F32_NATIVE = 1
-};
-
 typedef struct mc_audio_format {
     uint32_t struct_size;
     uint32_t sample_rate;
     uint32_t channels;
-    mc_sample_format sample_format;
     uint32_t channel_layout;
 } mc_audio_format;
 
 typedef struct mc_audio_buffer_view {
     uint32_t struct_size;
-    void *data;
+    float *data;
     size_t frame_count;
     size_t frame_capacity;
     mc_audio_format format;
 } mc_audio_buffer_view;
 ```
 
-Mapping a buffer pins its storage until it is unmapped or recycled. The API
-must distinguish frame count from samples-per-channel and byte capacity.
+`begin_write` grants exclusive writable access and keeps the buffer's storage
+stable until `end_write`. The API must distinguish frame count from
+samples-per-channel and byte capacity.
 
 Raw database connections and statements should not be part of the initial
 stable surface. They expose implementation details and create a long-term ABI
@@ -831,8 +827,10 @@ The SDK should initially support:
 - Tag readers and tag stores.
 - Indexer sources.
 
-Visualizer, playback-remote, server, and configuration-schema capabilities can
-be added after the foundational media interfaces are proven.
+Plan the C shapes for visualizers, playback observers, analyzers, active
+integrations, and configuration alongside the foundational media contracts.
+Implement one representative per family before backfilling remaining plugins;
+the engine replacement order is tracked in the LLD.
 
 ### Single plugin entry point
 
@@ -877,6 +875,12 @@ typedef struct mc_plugin_api {
 } mc_plugin_api;
 ```
 
+Plugin entry implementations call `mc_plugin_validate_host_api` before using
+the host table. This header-only C helper centralizes ABI, mandatory callback,
+and struct-capacity checks without allocating, invoking callbacks, or mutating
+the plugin table. After success, assign `MC_PLUGIN_API_DEFAULT` and fill the
+plugin's metadata and hooks.
+
 The load sequence is:
 
 1. Discover a candidate shared library.
@@ -891,12 +895,45 @@ The load sequence is:
 9. Destroy all provider instances.
 10. Call plugin shutdown and unload the library.
 
-The core must not unload a plugin while any of its function tables, string
-views, factories, instances, or admitted calls can still be used. Internal
-capability leases retain the module across worker calls. Shutdown closes new
-acquisition and invocation before waiting for those references and calls to
-finish. Lifecycle reentry from a provider call and wrong-thread lifecycle calls
-are rejected; the registry is not a real-time dispatch mechanism.
+The registry uniquely owns loaded plugins for the engine session. Typed factory
+views are non-owning table views, not leases; dropping or retaining them does
+not affect DLL lifetime. They may be called only during the live session.
+Before registry shutdown, the engine stops new work, interrupts/drains instances,
+finishes callbacks, joins workers, and destroys instances. Registry shutdown
+then invokes plugin cleanup and unloads each DLL on its owner thread without
+waiting for handles or calls. Individual plugin unloading during a session is
+not supported. Lifecycle reentry into the same active session is fatal before
+mutation or unload; wrong-thread lifecycle calls return an error without
+changing state. Typed factory invocation detects owner-thread reentry and
+propagates host callback exceptions; it does not schedule, serialize, count
+workers, or extend calls beyond the engine session. Actual plugin entry/initialization
+exceptions become contextual plugin errors. Throwing shutdown is fatal before
+unload because worker quiescence can no longer be established.
+
+`PluginCallState` belongs to one owner, rather than the whole thread. Nested
+scopes save and restore an owner-only flag; workers never access that flag.
+Independent registries can initialize and shut down inside another session's
+call. Empty/completed cleanup is harmless, but reentry that invalidates a live
+transaction or unloads executing code terminates with a diagnostic in Debug
+and Release. This is neither a lock nor worker accounting; the engine must
+still quiesce users before shutdown. Completion is published only after actual
+cleanup. Catch policies stay separate: host factory callbacks
+propagate exceptions, selection failures are host errors, and logging failures
+are contained without recursively reporting through the same failing sink.
+
+Registry callers use `Initialize(directory, selection)`, `ListPlugins()`,
+`Find<T>(pluginId)`, and `Shutdown()`. Initialization scans once; a new directory
+or retry after a failed scan requires a new registry. Invalid arguments and
+wrong-thread calls return errors before changing session state. Fatal reentry
+terminates before that state changes.
+Missing directories create empty sessions. Candidate errors are logged and
+skipped, while directory errors fail initialization and close the session.
+Scanning and single-file loading are private, with no public intermediate
+result type. Factory lookup accepts only supported C table types (currently
+`mc_output_factory`), maps each to its registered ID internally, and returns a
+typed non-owning view. Arbitrary table types cannot be requested or supplied
+as callback parameters. Adding a family requires its table validator and type
+mapping together; C registration remains string-based for extensibility.
 
 Entry must leave no persistent engine state requiring cleanup if negotiation
 fails. Once initialize is entered, shutdown must run exactly once, even after
@@ -943,151 +980,1150 @@ The host should provide capability-specific sub-tables if the single table
 becomes large. Plugins receive only supported services and must handle optional
 services being absent.
 
-### Provider objects and function tables
+### Planned family contracts and C++ SDK mapping
 
-Each provider object consists of plugin-owned instance state and a static or
-long-lived function table:
+This section is the provisional shape plan for PLG-CONTRACT-001/002/003. The
+existing C++ SDK is the behavioral inventory, not a requirement to preserve
+inheritance, allocators, ambiguous return values, or compiler-specific identity.
+Private engine types need not mirror the old SDK hierarchy either. Remove
+unnecessary wrappers, virtual interfaces, or provider layers when concrete
+callers become simpler. For example, an opaque audio-buffer handle can refer
+directly to core-owned storage without recreating `IBuffer`/`IBufferProvider`
+internally. Keep indirection where it serves ownership, lifetime, or actual
+implementation variability; do not refactor unrelated types just for symmetry.
+The bootstrap in `plugin.h` and the audio/output headers under
+`include/musikcore/plugin/` are installed declarations. Other declarations below
+remain design sketches. The buffer host and loadable `nullout` C plugin are
+implemented and boundary-tested; the engine still uses the former SDK pending
+cutover. Family integration and acceptance tasks remain open in the LLD.
+Representative implementations may refine these shapes before the experimental
+ABI is frozen.
+
+Plan family headers under `include/musikcore/plugin/`, included as needed by
+plugins. Keep the application umbrella separate. Reuse `abi.h` primitives and
+existing public library/playback/preference value types instead of defining a
+second model of a track, playlist, or playback state.
+
+#### Existing interfaces and their disposition
+
+| Existing C++ interface/helper | Planned C representation | Behavioral mapping / deliberate change |
+| --- | --- | --- |
+| `IPlugin`, exported `GetPlugin`, SDK version | Existing `mc_plugin_api` entry/lifecycle table | Identity and per-plugin initialization/state; one C entry point. |
+| `IResource::Release`, `Retain`, `IAllocator` | Typed object destruction; explicit clones only for shared core handles | Allocation is freed by its owner. No generic resource hierarchy or caller-selected allocator crosses the boundary. |
+| `IBuffer`, `IBufferProvider` | `mc_audio_scratch_buffer`, private fixed playback pool, PCM views, output completion sink | Replace interleaved sample counts with frames; output returns accepted buffers exactly once. |
+| `IDataStream`, `IDataStreamFactory` | Stream object/vtable and stream factory | Keep create/open/read/write/seek/info/interrupt/close; explicit byte counts and EOF. |
+| `IDecoder`, `IDecoderFactory` | Decoder object/vtable and decoder factory | Keep open/decode/seek/duration/preferred rate; return exhaustion with the decoded block. |
+| `IEncoder`, `IBlockingEncoder`, `IStreamingEncoder`, `IEncoderFactory` | Separate blocking and streaming encoder tables in one factory | Replace `AsBlocking`/`AsStreaming` with advertised modes; streaming bytes use a synchronous sink rather than an ownership-ambiguous `char**`. |
+| `IOutput`, `IDevice`, `IDeviceList` | Output object/vtable, output factory, device callbacks | Keep pause/resume/volume/stop/drain/latency/devices; make accepted/full/error outcomes explicit. |
+| `IDSP` | DSP factory and per-stream processor | Keep in-place processing; prepare/reset/configure outside real-time processing. |
+| `ITagReader`, `ITagStore`, `ReplayGain` | Tag reader, host metadata writer, replay-gain values with presence flags | Keep text/artwork/gain updates and contains/clear; preserve missing versus zero/empty. |
+| `IIndexerSource`, `IIndexerWriter`, `IIndexerNotifier` | Source factory/scan instance, source-scoped writer, rescan host operation | Keep scan hooks, validation, item writes/deletes/progress, interruption. Stable text source keys replace C++ hashes; checkpoint semantics are explicit. |
+| `IAnalyzer` (`GetAudioAnalyzer`) | Analyzer factory and begin/process/finish object | Preserve the core's analysis hook even though a production implementation may be absent; writes use the metadata writer. |
+| `IVisualizer`, `IPcmVisualizer`, `ISpectrumVisualizer` | Visualizer factory/object and bounded PCM/spectrum views | Keep show/hide/visible/name plus frame delivery; no transient audio pointer retained. |
+| `IPlaybackRemote` | Playback observer plus lifecycle extension where a worker is needed | Keep track/state/time/volume/mode/queue notifications; use typed host commands instead of a stored `IPlaybackService*`. |
+| `IPreferences`, `ISchema`, `Configure`/`Reload` | Plugin-scoped preference table and data-driven configuration capability | Keep typed values/defaults/ranges/choices/persistence; activation/restart effects are explicit. |
+| `IMetadataProxy`, `ITrack`, `ITrackList`, editor/map/value interfaces | Existing C identities/results/pages and typed catalog/playback host calls | Preserve useful operations without recreating the C++ object graph. Identify missing typed operations before server conversion. |
+| `IEnvironment`, `IDebug`, `SetEnvironment`/`SetDebug`/`SetPreferences`/`SetMetadataProxy`/`SetIndexerNotifier` | Bootstrap diagnostics and scoped, typed instance services | No global setter protocol. Factories register first; runtime services are supplied when an instance is created. |
+| `String`, `DataBuffer`, `Filesystem`, `HttpClient`, constants/version helpers | Implementation helpers or shared C primitives, according to actual callers | Header-only C++ helpers are not binary interfaces to transliterate. Audit their engine dependencies before removing the old SDK directory. |
+
+`SendRawQuery` needs special care in this inventory: despite its name, the
+current method parses JSON and selects a named query through `QueryRegistry`.
+The authenticated WebSocket protocol does not pass arbitrary SQL to SQLite.
+Preserve that typed-query transport where needed. No new provider/remote API may
+execute caller-supplied SQL or expose a SQLite connection. This is not a claim
+that every existing query implementation has been security-audited here.
+
+Two persistence details require a deliberate migration decision before indexer
+conversion: current sources derive IDs from `std::hash<std::string>(PLUGIN_NAME)`,
+and filesystem modification values use milliseconds of the implementation's
+`file_clock` epoch. Neither is an appropriate language-neutral wire contract.
+The proposed source key and Unix timestamp below must be mapped to existing
+stored data explicitly; do not silently change database identities, force a
+reindex, or introduce a compatibility shim as part of an interface rename.
+
+#### Shared object, factory, and call rules
+
+An owned instance has a typed table and opaque state. The caller does not cast
+or free the state. Copying this C struct copies bits, not ownership: move/reset
+it explicitly, or use a language wrapper. Destroy it once, after concurrent
+calls have finished. A default object has its size set and both pointers null.
+Each real header must define its own `MC_*_DEFAULT` initializer and document
+every field, including units and ownership. Zero/unset values are the default
+unless a family explicitly defines another default, such as initial volume 1.
+
+Each object has an explicit C declaration:
 
 ```c
-typedef struct mc_decoder_vtable {
+typedef struct mc_stream_vtable mc_stream_vtable;
+typedef struct mc_stream {
     uint32_t struct_size;
-
-    void (*destroy)(void *instance);
-
-    mc_result (*open)(
-        void *instance,
-        const mc_stream *stream,
-        mc_error **out_error);
-
-    mc_result (*decode)(
-        void *instance,
-        mc_audio_buffer *buffer,
-        uint8_t *out_exhausted,
-        mc_error **out_error);
-
-    mc_result (*seek)(
-        void *instance,
-        double requested_seconds,
-        double *out_actual_seconds,
-        mc_error **out_error);
-
-    mc_result (*get_duration)(
-        void *instance,
-        double *out_seconds);
-
-    mc_result (*set_preferred_sample_rate)(
-        void *instance,
-        uint32_t sample_rate);
-} mc_decoder_vtable;
-
-typedef struct mc_decoder {
     void *instance;
-    const mc_decoder_vtable *vtable;
+    const mc_stream_vtable *api;
+} mc_stream;
+
+typedef struct mc_decoder_vtable mc_decoder_vtable;
+typedef struct mc_decoder {
+    uint32_t struct_size;
+    void *instance;
+    const mc_decoder_vtable *api;
 } mc_decoder;
+
+typedef struct mc_blocking_encoder_vtable mc_blocking_encoder_vtable;
+typedef struct mc_blocking_encoder {
+    uint32_t struct_size;
+    void *instance;
+    const mc_blocking_encoder_vtable *api;
+} mc_blocking_encoder;
+
+typedef struct mc_streaming_encoder_vtable mc_streaming_encoder_vtable;
+typedef struct mc_streaming_encoder {
+    uint32_t struct_size;
+    void *instance;
+    const mc_streaming_encoder_vtable *api;
+} mc_streaming_encoder;
+
+typedef struct mc_dsp_vtable mc_dsp_vtable;
+typedef struct mc_dsp {
+    uint32_t struct_size;
+    void *instance;
+    const mc_dsp_vtable *api;
+} mc_dsp;
+
+typedef struct mc_tag_reader_vtable mc_tag_reader_vtable;
+typedef struct mc_tag_reader {
+    uint32_t struct_size;
+    void *instance;
+    const mc_tag_reader_vtable *api;
+} mc_tag_reader;
+
+typedef struct mc_index_source_vtable mc_index_source_vtable;
+typedef struct mc_index_source {
+    uint32_t struct_size;
+    void *instance;
+    const mc_index_source_vtable *api;
+} mc_index_source;
+
+typedef struct mc_analyzer_vtable mc_analyzer_vtable;
+typedef struct mc_analyzer {
+    uint32_t struct_size;
+    void *instance;
+    const mc_analyzer_vtable *api;
+} mc_analyzer;
+
+typedef struct mc_visualizer_vtable mc_visualizer_vtable;
+typedef struct mc_visualizer {
+    uint32_t struct_size;
+    void *instance;
+    const mc_visualizer_vtable *api;
+} mc_visualizer;
+
+typedef struct mc_playback_observer_vtable mc_playback_observer_vtable;
+typedef struct mc_playback_observer {
+    uint32_t struct_size;
+    void *instance;
+    const mc_playback_observer_vtable *api;
+} mc_playback_observer;
+
+typedef struct mc_extension_vtable mc_extension_vtable;
+typedef struct mc_extension {
+    uint32_t struct_size;
+    void *instance;
+    const mc_extension_vtable *api;
+} mc_extension;
+
+typedef struct mc_audio_scratch_buffer mc_audio_scratch_buffer;
+typedef struct mc_metadata_record mc_metadata_record;
+typedef struct mc_plugin_services mc_plugin_services;
 ```
 
-The plugin allocates and destroys `instance`. The vtable remains valid until
-the instance is destroyed. musikcore never casts or frees plugin state.
+A factory advertises the instance vtable before creation. The core validates
+its required prefix and destruction function before allocating any instance.
+`create` receives a null output slot; it returns opaque state for that known
+table. On failure it either cleans up and leaves null, or returns partial state
+safe for the known destruction callback. The core constructs the typed object
+and keeps it within the engine session. Object destruction must tolerate null/partial
+state and must never throw.
 
-Factories follow the same pattern and advertise supported MIME types, file
-extensions, URI schemes, sample formats, or other capabilities without
-constructing an instance.
+Factory tables are immutable after registration and valid through plugin
+shutdown. Their `context` is plugin-owned state. Register one factory per role
+per plugin; a factory may support multiple types/devices. Role identifiers are
+the family headers' `MC_PLUGIN_CAPABILITY_*` constants, scoped by plugin ID.
+For example, output uses `MC_PLUGIN_CAPABILITY_OUTPUT` (`org.musikcube.output`).
+Instance creation may allocate but must return promptly without opening files/devices or starting network work. Publish
+the instance to its owner before invoking blocking open/prepare operations.
 
-Function-table calls are wrapped by internal C++ adapters such as
-`CDecoderAdapter`. This permits the existing playback implementation to
-continue using internal C++ interfaces during migration.
+These are direct function calls; the SDK does not put every call into a queue.
+The engine may call a shared factory from different workers at the same time,
+so factory callbacks must be thread-safe. Objects created by that factory have
+separate state: two decoders can run in parallel on two playback workers.
 
-### Streams
+For one instance, the caller sequences ordinary operations. For example, its
+worker finishes `open` before `decode`, and finishes `decode` before `seek` or
+another `decode`. The provider does not need to create a call queue merely to
+satisfy that rule. A synchronous call may block its worker where the family
+contract permits blocking; it does not thereby become an asynchronous API.
 
-Streams are bidirectional interfaces because a plugin decoder may consume a
-core-provided stream while a plugin data-stream factory returns a stream to the
-core.
+Only explicitly identified operations may overlap: a controller can call
+`interrupt` while that instance is blocked in `open`/`read`/`decode`; output
+completions may arrive from a backend thread; timing reads may overlap rendering.
+Those implementations must synchronize their own shared state. The engine
+interrupts/stops work, waits for calls and callbacks to finish, then destroys
+the instance. A real-time callback never waits for this cleanup.
 
-Stream operations use `uint64_t` positions and explicit byte counts. Reads and
-writes return both a result code and the number of bytes transferred. EOF is a
-defined outcome rather than an overloaded negative length.
+An interrupted stream/decoder is terminal for that operation; initial
+implementations may create a fresh instance rather than implicitly resetting
+cancellation during `open`. Document reset/reuse behavior before optimizing it.
+Async host requests below are a different contract: submission queues work for
+the existing context dispatcher and completion arrives later on its owner thread.
 
-The stream contract defines:
+`mc_result` describes success/failure; output parameters describe data and
+normal EOF/queue state. Initialize outputs before fallible work. Failures may
+return host-created `mc_error` details on non-real-time calls. Real-time calls
+return status only and may not allocate an error, log, block, or invoke arbitrary
+application callbacks. UTF-8 views expire at return unless a longer lifetime is
+explicitly stated. Counts use bytes or frames as named; seconds are finite
+`double`, rates are Hz, bitrates are bits/second, and modification timestamps
+are signed Unix nanoseconds with an explicit presence flag.
 
-- Whether reads may be partial.
-- Interrupt and cancellation behavior.
-- Seekability and length availability.
-- Thread confinement.
-- URI and content-type view lifetimes.
-- Whether prefetching is useful and who schedules it.
+All PCM crossing these audio interfaces is interleaved native-endian float32.
+There is no sample-encoding selector or per-block encoding check. Writable
+views use `float*`; outputs convert to a device format internally if needed.
+The negotiated SDK contract requires host-provided call structs (including
+nested views/formats) to contain the known prefix. Plugins may trust those
+sizes; the host must not pass truncated storage. Dynamic values such as rates,
+channels, frame counts, and capacity still need validation. Public application
+C APIs retain their normal size/argument validation responsibilities.
 
-### Decoders and encoders
+#### Buffers, hints, and interruption
 
-Decoder operations consume streams and fill host-owned audio buffers. A decoder
-must not retain a mapped pointer after returning from `decode` unless the buffer
-contract explicitly grants that lifetime.
+`mc_audio_scratch_buffer` is growable decoder scratch storage, accessed through
+`mc_audio_scratch_buffer_api`. `reserve` ensures capacity in frames; it may allocate on
+a producer worker but never waits for output space. Requests within capacity
+are no-ops; failed growth preserves existing storage and populated frames.
+The decoder ends each write before returning to core.
 
-Encoder input is also a buffer view. Encoded output should use one of two
-models:
+Playback storage is separate and private to core: allocate a contiguous pool
+when preparing the pipeline, divide it into fixed-capacity slices, and recycle
+slices only after output returns their completion tokens. Outputs receive
+`mc_pcm_view` values through `queue_audio_buffer`, not scratch-buffer handles.
+There is no public pool allocation/reserve API. A decoded block larger than a
+slice is processed across slices; pool exhaustion applies backpressure rather
+than allocating. Rebuilding a pool requires quiescing output and reclaiming all
+outstanding slices first. Decoder scratch reuse is measured by PERF-002.
 
-- A blocking encoder writes to a host-provided stream.
-- A streaming encoder writes into a host-provided byte sink or returns a
-  plugin-owned immutable packet with an explicit destroy operation.
+The canonical cancellation token, read-only PCM view, media hint, and buffer
+host declarations are in [plugin/audio.h](../include/musikcore/plugin/audio.h),
+including field documentation and default initializers. `mc_audio_scratch_buffer` stays
+opaque; only the core stores its format, capacity, and populated frame count.
+Changing a returned view cannot change that bookkeeping.
 
-Returning a raw `char **` without ownership metadata is not permitted.
+`begin_write` returns a writable view without copying audio. Until `end_write`,
+the buffer cannot be resized, reformatted, recycled, destroyed, or accessed by
+another operation. This is an access-lifetime contract, not a requirement to
+hold a mutex. Nested writes are rejected. A failed `begin_write` grants no access.
 
-Encoder and decoder factories report capabilities before creation. Capability
-queries must not require opening a media stream when MIME type, extension, or
-container metadata is already sufficient.
+Every successful `begin_write` must be paired with `end_write`, including error
+paths. `end_write` publishes the supplied frame count and ends access; the view's
+pointer must no longer be used. Pass zero frames when abandoning a write so
+partially written audio is not exposed. The count must not exceed the returned
+capacity; an invalid count ends access, publishes zero frames, and returns an
+error. Validation and state tracking cannot protect against a plugin writing
+beyond the returned capacity.
 
-### Audio outputs and real-time behavior
+Buffer operations never transfer ownership of a buffer passed into `decode`.
+A plugin releases only buffers it explicitly creates/owns. Multiplications of
+frames, channels, and element size are checked before accessing storage.
+Interruption is latched, safe before/during open, and wakes blocked I/O. Polling
+the cancellation token is bounded and allocation-free; it does not replace an
+interrupt operation that actually wakes a blocked read.
 
-Audio outputs are the most restrictive provider interface. The SDK must mark
-the callback or submission functions that execute on a real-time audio thread.
+#### Streams and decoders
 
-Within a real-time call, a plugin and the core must not:
+```c
+typedef struct mc_stream_info {
+    uint32_t struct_size;
+    uint32_t flags;                /* readable/writable/seekable/length-known/prefetch. */
+    uint64_t length_bytes;         /* meaningful only with length-known. */
+    mc_string_view uri;
+    mc_string_view content_type;   /* views valid until close/destroy. */
+} mc_stream_info;
 
-- Allocate or free general heap memory.
-- Perform filesystem or network I/O.
-- Wait on an unbounded mutex or condition variable.
-- Log synchronously.
-- Invoke arbitrary application callbacks.
-- Call host functions not explicitly marked real-time safe.
+typedef uint32_t mc_read_state;
+enum { MC_READ_MORE = 0, MC_READ_END = 1 };
 
-Buffer ownership uses an explicit state machine such as available, submitted,
-playing, and recyclable. Completion is reported through a real-time-safe sink
-or lock-free notification path, then converted to a normal context event away
-from the audio thread.
+struct mc_stream_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *open)(void *, mc_string_view uri, uint32_t open_flags, mc_error **);
+    mc_result (MC_CALL *close)(void *);
+    void (MC_CALL *interrupt)(void *);
+    mc_result (MC_CALL *get_info)(void *, mc_stream_info *);
+    mc_result (MC_CALL *read)(void *, void *dst, size_t capacity_bytes,
+        size_t *read_bytes, mc_read_state *, mc_error **);
+    mc_result (MC_CALL *write)(void *, const void *src, size_t requested_bytes,
+        size_t *written_bytes, mc_error **);
+    mc_result (MC_CALL *seek)(void *, uint64_t absolute_byte_offset, mc_error **);
+    mc_result (MC_CALL *tell)(void *, uint64_t *byte_offset);
+};
 
-Device enumeration returns an immutable snapshot. Device IDs are stable opaque
-UTF-8 values when the underlying platform permits it.
+typedef struct mc_stream_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_stream_vtable *instance_api;
+    mc_result (MC_CALL *can_handle)(void *, const mc_media_hint *, uint32_t *supported);
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_stream_factory;
 
-### DSP and analyzers
+typedef uint32_t mc_decode_state;
+enum { MC_DECODE_MORE = 0, MC_DECODE_END = 1 };
 
-DSP processing receives mutable, mapped audio frames with an explicit format.
-The process function is real-time safe and does not change buffer capacity.
-Format negotiation and parameter changes occur outside the real-time process
-call.
+struct mc_decoder_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *open)(void *, const mc_stream *, mc_error **);
+    void (MC_CALL *interrupt)(void *);
+    mc_result (MC_CALL *decode)(void *, mc_audio_scratch_buffer *, mc_decode_state *, mc_error **);
+    mc_result (MC_CALL *seek)(void *, double requested_seconds, double *actual_seconds, mc_error **);
+    mc_result (MC_CALL *get_duration)(void *, double *seconds);
+    mc_result (MC_CALL *set_preferred_sample_rate)(void *, uint32_t sample_rate_hz);
+};
 
-Analyzers and visualizers should consume snapshots or bounded frame windows.
-They must not retain transient audio pointers. Dropping analyzer updates under
-load is preferable to blocking playback.
+typedef struct mc_decoder_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_decoder_vtable *instance_api;
+    mc_result (MC_CALL *can_handle)(void *, const mc_media_hint *, uint32_t *supported);
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_decoder_factory;
+```
 
-### Tag readers and indexer sources
+Open flags explicitly identify read/write/create/truncate/append; define named
+constants in the real header. No seek is attempted when unsupported. Reads may
+be short; nonzero blocking reads return data, EOF, cancellation, or failure,
+not an indefinite sequence of zero-byte successes. EOF may accompany a final
+nonempty read. Writes report actual transferred bytes even on failure, so callers
+do not assume rollback or duplicate partially written data.
 
-Tag readers populate a host-provided metadata writer rather than returning a
-plugin-specific map. Metadata writes accept UTF-8 key/value views and binary
-artwork with explicit lengths.
+A decoder uses its input stream until decoder destruction; the core keeps that
+stream alive and destroys the decoder before the stream. Preferred rate is a
+hint set before open. Unknown duration reports unavailable, not a fabricated
+zero. `decode` may return final frames with `MC_DECODE_END`; consume those frames
+before stopping. Empty `MORE` successes are invalid for the initial blocking
+contract. Seek reports the actual position. Factory probes perform no I/O;
+selection/fallback must account for nonseekable inputs rather than silently
+consuming their initial bytes during trial opens.
 
-Indexer sources receive a writer function table and cancellation token. They
-must tolerate cancellation between items and complete with an explicit commit
-or rollback result. No database connection or C++ query object crosses the
-plugin boundary.
+#### Encoders
 
-### Plugin preferences and configuration
+```c
+typedef struct mc_encoder_options {
+    uint32_t struct_size;
+    mc_audio_format input_format;
+    uint32_t bitrate_bps;          /* zero selects codec default. */
+    mc_string_view format;         /* retain established names/aliases. */
+} mc_encoder_options;
 
-Plugins receive preferences scoped to their stable plugin ID. Preferences are
-accessed through the shared C preference API or a restricted host sub-table.
+typedef struct mc_encoded_sink {
+    uint32_t struct_size;
+    void *context;
+    mc_result (MC_CALL *write)(void *, mc_byte_view);
+} mc_encoded_sink;
 
-Configuration UI should be described as data rather than a plugin-created UI
-object. A future schema capability can return immutable field descriptors,
-defaults, constraints, and localized keys. Applications remain responsible for
-rendering the configuration interface.
+struct mc_blocking_encoder_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *initialize)(void *, const mc_encoder_options *, const mc_stream *, mc_error **);
+    mc_result (MC_CALL *encode)(void *, const mc_pcm_view *, mc_error **);
+    mc_result (MC_CALL *finalize)(void *, mc_error **);
+    void (MC_CALL *interrupt)(void *);
+};
+
+struct mc_streaming_encoder_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *initialize)(void *, const mc_encoder_options *, mc_error **);
+    mc_result (MC_CALL *encode)(void *, const mc_pcm_view *, const mc_encoded_sink *, mc_error **);
+    mc_result (MC_CALL *flush)(void *, const mc_encoded_sink *, mc_error **);
+    mc_result (MC_CALL *finalize)(void *, mc_string_view destination_uri, mc_error **);
+    void (MC_CALL *interrupt)(void *);
+};
+
+typedef struct mc_encoder_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_blocking_encoder_vtable *blocking_api;    /* null if unsupported. */
+    const mc_streaming_encoder_vtable *streaming_api;  /* null if unsupported. */
+    mc_result (MC_CALL *can_handle)(void *, mc_string_view format, uint32_t *mode_flags);
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, mc_string_view format,
+        uint32_t mode, void **, mc_error **);
+} mc_encoder_factory;
+```
+
+The blocking encoder uses the supplied stream until finalization/destruction;
+its owner closes/destroys the stream afterward. Streaming sink calls are
+synchronous on an encoder worker: the sink consumes/copies all bytes before
+returning success. It may perform bounded cancellable worker I/O. Sink failure
+is terminal for that encoding attempt; the caller must not re-encode the same
+PCM assuming no bytes were consumed. Flush emits final codec bytes before
+finalize writes destination-dependent metadata. A failed/cancelled encoder is
+destroyable without pretending finalization succeeded. Destruction releases
+resources, not successful-file metadata. Convert existing bitrate settings at
+the protocol/configuration edge rather than changing their wire units silently.
+
+#### Outputs and devices
+
+The canonical output instance, callbacks, options, audio buffer, timing, device,
+and factory tables are in
+[plugin/output.h](../include/musikcore/plugin/output.h). They include explicit
+`MC_OUTPUT_TIMING_*` validity bits and default initializers.
+
+Audio-buffer acceptance is all-or-nothing. `MC_OK` transfers use of the PCM until exactly one
+completion; `MC_ERROR_QUEUE_FULL` retains it with the caller and generates no
+completion. No positive integer secretly means a retry delay.
+`MC_ERROR_BUFFER_TOO_SMALL` identifies a audio buffer that cannot fit the prepared
+frame capacity even when empty; callers must split it or reprepare rather than
+wait for a capacity notification. The core publishes
+the token before calling queue_audio_buffer: completion may occur inline or concurrently.
+After reporting completion the provider never touches that PCM again. A backend
+failure after acceptance is reported through completion, not as an ambiguous
+failed queue_audio_buffer. `ready` is a coalesced producer wakeup, not an application callback.
+Both callbacks must use preallocated nonblocking host wiring and be real-time
+safe; their storage remains alive through stop/destruction.
+
+Prepare/device enumeration/control and audio-buffer delivery run on workers,
+away from hardware callbacks. `queue_audio_buffer` may pace or wait on the producer
+worker; it is not a real-time callback interface. Stop may overlap a blocked
+queue call or drain, must interrupt it, and returns accepted tokens before
+returning. MC_OK still means acceptance: cancellation after acceptance is a
+completion outcome, not a failed queue call. The host joins producer calls before
+destroying instances. Normal prepare/control calls remain serialized; pause may
+take effect between producer blocks. Concurrent timing snapshots remain bounded
+and do not take the control mutex.
+
+The host stops the old instance before reprepare and cleans partial state after
+failed prepare. It never submits audio before prepare succeeds. Drain waits for
+accepted audio to finish and is cancellable. Paused asynchronous output with
+pending PCM reports in-flight rather than waiting for a serialized resume call.
+Completion/ready callbacks cannot throw, block, or call stop/destroy. Device views
+are callback-scoped snapshots copied by the core. Timing flags distinguish
+unknown/estimated latency from device measurements; presentation-aligned
+visualization remains a separate implementation/validation task.
+
+The bundled `nullout` shared library paces and completes audio synchronously on
+the calling producer thread. It owns no worker, pending queue, retained token,
+or playback-progress state. One mutex/condition variable and an active-call flag
+let Stop interrupt the wait and finish its callback before returning. Pause
+rejects delivery without retaining PCM; Resume signals a retry. Timing is
+unknown. There is no separate built-in null backend. Missing outputs leave
+startup/query/idle usable while playback reports unavailable.
+
+C++ output authors may include
+[plugin/output.hpp](../include/musikcore/plugin/output.hpp) and call
+`musik::core::plugin::RegisterOutput<T>(host)` during initialization. This optional
+header-only adapter generates the immutable C factory/vtable, construction,
+destruction, pointer conversion, and exception mapping.
+It depends only on public C headers and the standard library, with no base class,
+compiled glue, private headers, or core imports. The engine owns input validation
+and lifecycle sequencing. The adapter trusts documented host preconditions and
+does not add value checks, implicit Stop calls, or prepare rollback. Its first
+form supports stateless factories with static device methods; instances may receive host-owned services
+through their constructor. Stateful factory helpers can follow a concrete caller.
+
+Implementations use references for prepare/PCM, a plain double volume getter,
+and mc_result operations. Stop is noexcept/idempotent and must interrupt queue/
+drain and finish callbacks. QueueAudioBuffer must be noexcept to prevent an
+exception becoming a failed return after PCM ownership was accepted. The owning
+engine must establish successful Stop and callback/producer quiescence before
+destruction or native unload; cleanup failure cannot be ignored. Other implementation exceptions become MC_ERROR_INTERNAL with optional error outputs
+left null. Optional const/noexcept GetTiming reports unknown when absent.
+Only mc_plugin_get_api is exported; the ABI remains C regardless of implementation
+language. Add other family helpers as their C contracts and implementations exist.
+
+#### DSP, metadata writers, tag readers, and analyzers
+
+```c
+struct mc_dsp_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *prepare)(void *, const mc_audio_format *, mc_error **);
+    mc_result (MC_CALL *configure)(void *, const mc_preference_entry *, size_t count, mc_error **);
+    mc_result (MC_CALL *reset)(void *);
+    mc_result (MC_CALL *process)(void *, mc_audio_buffer_view *);
+};
+
+typedef struct mc_replay_gain_values {
+    uint32_t struct_size;
+    uint32_t present_flags;
+    double track_gain_db;
+    double track_peak;             /* linear amplitude. */
+    double album_gain_db;
+    double album_peak;
+} mc_replay_gain_values;
+
+typedef struct mc_metadata_writer {
+    uint32_t struct_size;
+    void *context;
+    mc_result (MC_CALL *set_values)(void *, mc_string_view key, const mc_string_view *, size_t count);
+    mc_result (MC_CALL *clear)(void *, mc_string_view key);
+    mc_result (MC_CALL *contains)(void *, mc_string_view key, uint32_t *present);
+    mc_result (MC_CALL *set_artwork)(void *, mc_string_view mime_type, mc_byte_view);
+    mc_result (MC_CALL *contains_artwork)(void *, uint32_t *present);
+    mc_result (MC_CALL *set_replay_gain)(void *, const mc_replay_gain_values *);
+} mc_metadata_writer;
+
+struct mc_tag_reader_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *can_read)(void *, const mc_media_hint *, uint32_t *supported);
+    mc_result (MC_CALL *read)(void *, mc_string_view uri, const mc_metadata_writer *, mc_error **);
+    void (MC_CALL *interrupt)(void *);
+};
+
+struct mc_analyzer_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *begin)(void *, const mc_metadata_writer *, mc_error **);
+    mc_result (MC_CALL *process)(void *, const mc_pcm_view *, const mc_metadata_writer *, mc_error **);
+    mc_result (MC_CALL *finish)(void *, const mc_metadata_writer *, uint32_t commit, mc_error **);
+    void (MC_CALL *interrupt)(void *);
+};
+```
+
+DSP must not resize storage or change the negotiated format during process.
+Its process call is real-time safe. Prepare/configure/reset are serialized with
+processing at a controlled boundary outside the audio callback; live parameters
+must be applied without a processing-side allocation or unbounded lock. Stateful
+processors are created per stream, so crossfade streams do not share filter
+history accidentally.
+
+Metadata writers are host-owned, scoped views. They copy keys, values, artwork,
+and gain data during calls. Empty text is present; no values/clear is absent.
+Tag readers and analyzers never retain a writer after the call. Gain presence
+flags distinguish a missing value from a valid zero gain. Analyzer finish runs
+for both commit and cancellation/failure cleanup after begin was entered.
+Analyzers may perform worker computation; they are not invoked on a hardware
+callback or allowed to block playback there.
+
+#### Indexer sources and source-scoped writes
+
+```c
+typedef struct mc_index_source_info {
+    uint32_t struct_size;
+    mc_string_view source_key;     /* stable text, scoped by plugin ID; copied by core. */
+    uint32_t flags;                /* stable external IDs; needs existing-track validation. */
+} mc_index_source_info;
+
+typedef uint32_t mc_scan_decision;
+enum { MC_SCAN_ROLLBACK = 0, MC_SCAN_COMMIT = 1 };
+
+typedef struct mc_index_writer {
+    uint32_t struct_size;
+    void *context;                 /* bound to this source and active scan. */
+    mc_result (MC_CALL *create_record)(void *, mc_metadata_record **);
+    mc_result (MC_CALL *get_writer)(void *, mc_metadata_record *, mc_metadata_writer *);
+    void (MC_CALL *destroy_record)(void *, mc_metadata_record **);
+    mc_result (MC_CALL *save)(void *, const mc_metadata_record *, mc_string_view external_id);
+    mc_result (MC_CALL *remove_uri)(void *, mc_string_view uri, uint64_t *removed);
+    mc_result (MC_CALL *remove_external_id)(void *, mc_string_view external_id, uint64_t *removed);
+    mc_result (MC_CALL *remove_all)(void *, uint64_t *removed);
+    mc_result (MC_CALL *last_modified)(void *, mc_string_view external_id, int64_t *unix_ns);
+    mc_result (MC_CALL *checkpoint)(void *, uint64_t updated_tracks);
+} mc_index_writer;
+
+struct mc_index_source_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *get_info)(void *, mc_index_source_info *);
+    mc_result (MC_CALL *begin_scan)(void *, mc_error **);
+    mc_result (MC_CALL *scan)(void *, const mc_string_view *paths, size_t path_count,
+        const mc_index_writer *, mc_scan_decision *, mc_error **);
+    mc_result (MC_CALL *validate_track)(void *, mc_string_view external_id,
+        const mc_index_writer *, const mc_metadata_writer *, mc_error **);
+    mc_result (MC_CALL *end_scan)(void *, mc_scan_decision, mc_error **);
+    void (MC_CALL *interrupt)(void *);
+};
+```
+
+The core supplies a fresh source instance/cancellation scope for an initial scan
+implementation. Paths/writers are valid for their call; writes are serialized
+on the scan worker. Writer operations cannot address another source or arbitrary
+SQL. Owned metadata records are released before the scan scope ends. Source
+identity uses stable text; the numeric database mapping stays inside the core.
+Unknown modification time is a result status, not a negative sentinel that might
+collide with a legitimate timestamp.
+
+Begin/end bracket the whole operation, including validation of existing tracks.
+End runs once after begin is entered; cancellation/errors force rollback of the
+current uncommitted batch. Checkpoint explicitly commits a batch and progress;
+earlier checkpoints are not undone by a later rollback. Preserve resumable scan
+behavior without claiming whole-scan atomicity. A rescan notification becomes a
+host operation scoped to this source, not an `IIndexerSource*` passed back into
+another module.
+
+#### Visualizers, playback observers, and lifecycle extensions
+
+```c
+typedef struct mc_spectrum_frame {
+    uint32_t struct_size;
+    const float *levels;
+    size_t bin_count;
+    uint32_t sample_rate_hz;
+    uint32_t fft_size;
+    float display_floor_dbfs;
+    uint64_t media_epoch;
+    uint64_t first_frame;
+    uint32_t position_valid;
+} mc_spectrum_frame;
+
+struct mc_visualizer_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *show)(void *);
+    mc_result (MC_CALL *hide)(void *);
+    mc_result (MC_CALL *is_visible)(void *, uint32_t *visible);
+    mc_result (MC_CALL *write_pcm)(void *, const mc_pcm_view *);
+    mc_result (MC_CALL *write_spectrum)(void *, const mc_spectrum_frame *);
+};
+
+typedef struct mc_plugin_playback_event {
+    uint32_t struct_size;
+    uint32_t changed_flags;
+    mc_playback_snapshot playback;
+    const mc_track_ref *track;     /* callback-only identity; clone to retain. */
+    uint64_t queue_revision;
+} mc_plugin_playback_event;
+
+struct mc_playback_observer_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    void (MC_CALL *changed)(void *, const mc_plugin_playback_event *);
+};
+
+struct mc_extension_vtable {
+    uint32_t struct_size;
+    void (MC_CALL *destroy)(void *);
+    mc_result (MC_CALL *start)(void *, mc_error **);
+    void (MC_CALL *request_stop)(void *);
+    mc_result (MC_CALL *join)(void *, mc_error **);
+};
+```
+
+Visualizer format flags in its factory identify PCM and/or spectrum support;
+only those delivery callbacks may be null. Window controls run on the runtime
+owner/control thread; providers marshal to their own platform UI threads and
+join them before destruction. Frame delivery is off the hardware callback,
+bounded, and droppable when busy. Views are read-only and expire at return.
+For the initial spectrum scale preserve existing behavior: values are dB above
+an -80 dBFS display floor, clamped to [0,80], with N/2 bins omitting Nyquist and
+spacing sample_rate/N. The explicit media position is optional and does not
+promise presentation alignment until output-clock integration is implemented.
+
+Playback events preserve the old track/state/time/volume/mode/queue meanings,
+using one change mask and existing C snapshot/identity types. Delivery is owner-
+thread serialized; use typed host commands for actions. Observers cache copies
+for their worker threads. No `IPlaybackService*` or mutable track editor is stored
+across the boundary.
+
+Extensions cover server, media-key, hotkey, MPRIS, and similar active integrations.
+Their factories declare required existing `MC_SERVICE_*` bits. Start only after
+those services and all registrations are ready. Absent services leave the
+extension inactive with an explicit reason; loading a plugin does not silently
+expand context service selection. Initialization only allocates plugin state and
+registers factories: externally active workers belong to owned instances or an
+extension, not hidden work started during negotiation/initialization.
+
+Shutdown first stops new work, requests stop on all active integrations, and
+interrupts pending media I/O. Cancel/drain plugin-scoped host requests and owner-
+thread callbacks while state/code still live; do not block the owner on a worker
+that is waiting for its next dispatch. Join workers and destroy instances,
+including peer-provider objects they own, before final registry teardown
+and plugin shutdown/unload. That ordering avoids cross-plugin reference
+cycles and owner-thread callback/join deadlocks. It needs a dedicated gated
+integration test before the first asynchronous extension is migrated.
+
+The remaining factory structures are explicit as well. Immutable configuration
+is registered directly; it does not require an instance factory.
+
+```c
+typedef struct mc_dsp_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_dsp_vtable *instance_api;
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_dsp_factory;
+
+typedef struct mc_tag_reader_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_tag_reader_vtable *instance_api;
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_tag_reader_factory;
+
+typedef struct mc_index_source_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_index_source_vtable *instance_api;
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_index_source_factory;
+
+typedef struct mc_analyzer_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_analyzer_vtable *instance_api;
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_analyzer_factory;
+
+typedef struct mc_visualizer_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_visualizer_vtable *instance_api;
+    mc_string_view name;
+    uint32_t frame_kinds;          /* PCM and/or spectrum; declares nullable delivery methods. */
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_visualizer_factory;
+
+typedef struct mc_playback_observer_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_playback_observer_vtable *instance_api;
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_playback_observer_factory;
+
+typedef struct mc_extension_factory {
+    uint32_t struct_size;
+    void *context;
+    const mc_extension_vtable *instance_api;
+    mc_services required_services;
+    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
+} mc_extension_factory;
+
+```
+
+#### Scoped services and configuration
+
+The instance service bundle holds pointers to narrow, sized, typed tables. It
+is immutable and valid until that instance is destroyed; absent optional tables
+are null. Each table has its own opaque core context. Factory creation receives
+the bundle, so bootstrap registration need not mutate a global environment or
+read services before they exist. All instances and their scoped host callbacks
+remain inside the engine session. Core owns and destroys peer-provider objects
+before registry shutdown; these objects do not carry per-plugin lifetime leases.
+
+```c
+typedef struct mc_media_host_api mc_media_host_api;
+typedef struct mc_preferences_host_api mc_preferences_host_api;
+typedef struct mc_catalog_host_api mc_catalog_host_api;
+typedef struct mc_playback_host_api mc_playback_host_api;
+typedef struct mc_system_host_api mc_system_host_api;
+typedef struct mc_indexer_host_api mc_indexer_host_api;
+
+struct mc_plugin_services {
+    uint32_t struct_size;
+    const mc_cancel_token *cancel;
+    const mc_audio_scratch_buffer_api *audio_scratch;
+    const mc_media_host_api *media;
+    const mc_preferences_host_api *preferences;
+    const mc_catalog_host_api *catalog;
+    const mc_playback_host_api *playback;
+    const mc_system_host_api *system;
+    const mc_indexer_host_api *indexer;
+};
+
+typedef void (MC_CALL *mc_plugin_text_fn)(void *, mc_string_view);
+typedef void (MC_CALL *mc_plugin_completion_fn)(mc_result, const mc_error *, void *);
+
+struct mc_media_host_api {
+    uint32_t struct_size;
+    void *context;
+    mc_result (MC_CALL *create_stream)(void *, const mc_media_hint *, mc_stream *, mc_error **);
+    mc_result (MC_CALL *create_decoder)(void *, const mc_media_hint *, mc_decoder *, mc_error **);
+    mc_result (MC_CALL *create_blocking_encoder)(void *, mc_string_view, mc_blocking_encoder *, mc_error **);
+    mc_result (MC_CALL *create_streaming_encoder)(void *, mc_string_view, mc_streaming_encoder *, mc_error **);
+};
+
+struct mc_preferences_host_api {
+    uint32_t struct_size;
+    void *context;                 /* scoped to the stable plugin ID. */
+    mc_result (MC_CALL *read)(void *, mc_string_view key, const mc_preference_value *fallback,
+        mc_preference_read_fn, void *);
+    mc_result (MC_CALL *write)(void *, const mc_preference_entry *, size_t count);
+    mc_result (MC_CALL *save)(void *);
+};
+
+struct mc_system_host_api {
+    uint32_t struct_size;
+    void *context;
+    mc_result (MC_CALL *read_path)(void *, mc_path_kind, mc_plugin_text_fn, void *);
+    uint64_t (MC_CALL *monotonic_ns)(void *);  /* the shared timing clock; RT-safe. */
+    mc_result (MC_CALL *file_modified_time)(void *, mc_string_view path, int64_t *unix_ns);
+};
+
+typedef struct mc_setting_descriptor {
+    uint32_t struct_size;
+    mc_string_view key;
+    mc_preference_value default_value;
+    uint32_t constraint_flags;     /* type/enum/min/max/restart requirements. */
+    double minimum;
+    double maximum;
+    uint32_t decimal_precision;
+    const mc_string_view *choices;
+    size_t choice_count;
+} mc_setting_descriptor;
+
+typedef void (MC_CALL *mc_setting_fn)(void *, const mc_setting_descriptor *);
+typedef struct mc_configuration_api {
+    uint32_t struct_size;
+    void *context;
+    mc_result (MC_CALL *visit_fields)(void *, mc_setting_fn, void *);
+    mc_result (MC_CALL *apply)(void *, const mc_preference_entry *, size_t count,
+        uint32_t *restart_effects, mc_error **);
+} mc_configuration_api;
+```
+
+Preferences keep typed fallback/read/write/save semantics, scoped by plugin ID;
+values are copied during calls and returned text is callback-scoped. Schema
+entries are copied by the core, with distinct constraint flags for absent bounds
+rather than using `DBL_MIN` as a magic negative limit. The app renders controls;
+no C++ UI object crosses the SDK. Apply runs off the audio callback and identifies
+instances requiring controlled restart. Persistence/activation order and mapping
+of existing preference filenames must be reviewed before conversion, not hidden
+in a legacy adapter.
+
+Catalog and playback services reuse the application API's C value types and
+operation semantics. The opaque scope replaces an application-owned context;
+plugins cannot dispatch or destroy the application's context. Synchronous reads
+are owner-thread operations unless explicitly documented otherwise. Async
+submissions copy inputs and are available to workers, with owner-thread terminal
+callbacks. Returned views/owned results keep the existing public API lifetimes.
+
+```c
+typedef uint32_t mc_plugin_library_kind;
+enum { MC_PLUGIN_LIBRARY_LOCAL = 1, MC_PLUGIN_LIBRARY_SELECTED = 2 };
+typedef void (MC_CALL *mc_plugin_json_fn)(mc_result, mc_string_view json,
+    const mc_error *, void *);
+
+struct mc_catalog_host_api {
+    uint32_t struct_size;
+    void *context;
+
+    mc_result (MC_CALL *get_library)(void *, mc_plugin_library_kind, mc_library **);
+
+    void (MC_CALL *destroy_library)(mc_library **);
+
+    mc_result (MC_CALL *query_tracks_async)(
+        void *context,
+        const mc_library *library,
+        const mc_track_query *query,
+        mc_track_query_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *open_track_search_async)(
+        void *context,
+        const mc_library *library,
+        const mc_track_search *search,
+        mc_track_search_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *open_playlist_async)(
+        void *context,
+        const mc_library *library,
+        int64_t playlist_id,
+        mc_track_search_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *open_category_async)(
+        void *context,
+        const mc_library *library,
+        mc_string_view category,
+        int64_t id,
+        mc_track_search_order order,
+        mc_track_search_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *open_directory_async)(
+        void *context,
+        const mc_library *library,
+        mc_string_view directory,
+        mc_track_search_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *list_category_fields_async)(
+        void *context,
+        const mc_library *library,
+        mc_category_fields_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *list_categories_async)(
+        void *context,
+        const mc_library *library,
+        mc_string_view field,
+        mc_string_view filter,
+        mc_track_search_mode mode,
+        mc_category_list_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *list_facets_async)(
+        void *context,
+        const mc_library *library,
+        mc_facet_field field,
+        mc_string_view search,
+        const mc_facet_selection *selections,
+        size_t selection_count,
+        mc_category_list_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *list_albums_async)(
+        void *context,
+        const mc_library *library,
+        mc_string_view filter,
+        mc_album_list_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *read_thumbnail_async)(
+        void *context,
+        const mc_library *library,
+        int64_t thumbnail_id,
+        mc_thumbnail_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *list_playlists_async)(
+        void *context,
+        const mc_library *library,
+        mc_playlist_list_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *save_playlist_async)(
+        void *context,
+        const mc_library *library,
+        int64_t playlist_id,
+        mc_string_view name,
+        const int64_t *track_ids,
+        size_t track_count,
+        mc_playlist_write_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *rename_playlist_async)(
+        void *context,
+        const mc_library *library,
+        int64_t playlist_id,
+        mc_string_view name,
+        mc_playlist_write_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *delete_playlist_async)(
+        void *context,
+        const mc_library *library,
+        int64_t playlist_id,
+        mc_playlist_write_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *append_playlist_async)(
+        void *context,
+        const mc_library *library,
+        int64_t playlist_id,
+        const int64_t *track_ids,
+        size_t track_count,
+        mc_playlist_write_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    mc_result (MC_CALL *make_track_result)(
+        const mc_library *library,
+        const int64_t *ids,
+        size_t count,
+        mc_track_result **out_result);
+
+    size_t (MC_CALL *track_result_get_count)(const mc_track_result *tracks);
+
+    int64_t (MC_CALL *track_result_get_id)(const mc_track_result *tracks, size_t row);
+
+    bool (MC_CALL *track_result_starts_album)(const mc_track_result *tracks, size_t row);
+
+    uint64_t (MC_CALL *track_result_get_album_duration)(const mc_track_result *tracks, size_t row);
+
+    mc_result (MC_CALL *track_result_get_ref)(
+        const mc_track_result *tracks,
+        size_t row,
+        mc_track_ref **out_track);
+
+    mc_result (MC_CALL *track_result_read_async)(
+        void *context,
+        const mc_track_result *tracks,
+        const mc_track_range *range,
+        mc_track_query_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    void (MC_CALL *track_result_destroy)(mc_track_result **tracks);
+
+    size_t (MC_CALL *track_page_get_count)(const mc_track_page *page);
+
+    size_t (MC_CALL *track_page_get_field_count)(const mc_track_page *page);
+
+    mc_string_view (MC_CALL *track_page_get_field_name)(const mc_track_page *page, size_t field);
+
+    size_t (MC_CALL *track_page_get_value_count)(
+        const mc_track_page *page,
+        size_t row,
+        size_t field);
+
+    mc_string_view (MC_CALL *track_page_get_string_at)(
+        const mc_track_page *page,
+        size_t row,
+        size_t field,
+        size_t value);
+
+    void (MC_CALL *track_page_destroy)(mc_track_page **page);
+
+    int64_t (MC_CALL *track_ref_get_id)(const mc_track_ref *track);
+
+    mc_result (MC_CALL *track_ref_get_library)(
+        const mc_track_ref *track,
+        mc_library **out_library);
+
+    mc_result (MC_CALL *track_ref_read_async)(
+        void *context,
+        const mc_track_ref *track,
+        const mc_string_view *fields,
+        size_t field_count,
+        mc_track_query_completion_fn completion,
+        void *user_data,
+        mc_request_id *out_request);
+
+    void (MC_CALL *track_ref_destroy)(mc_track_ref **track);
+
+    mc_result (MC_CALL *clone_track_ref)(const mc_track_ref *, mc_track_ref **);
+
+    mc_result (MC_CALL *lookup_external_ids_async)(
+        void *,
+        const mc_library *,
+        const mc_string_view *,
+        size_t count,
+        mc_track_search_completion_fn,
+        void *user_data,
+        mc_request_id *);
+
+    mc_result (MC_CALL *remove_playlist_rows_async)(
+        void *,
+        const mc_library *,
+        int64_t playlist_id,
+        const size_t *rows,
+        size_t count,
+        mc_playlist_write_completion_fn,
+        void *user_data,
+        mc_request_id *);
+
+    mc_result (MC_CALL *submit_library_request_json)(
+        void *,
+        mc_string_view json,
+        mc_plugin_json_fn,
+        void *user_data,
+        mc_request_id *);
+
+    mc_result (MC_CALL *cancel_request)(void *, mc_request_id);
+};
+
+struct mc_playback_host_api {
+    uint32_t struct_size;
+    void *context;
+    mc_result (MC_CALL *get_snapshot)(void *, mc_playback_snapshot *);
+    mc_result (MC_CALL *get_current_track)(void *, mc_track_ref **);
+    mc_result (MC_CALL *get_queue)(void *, mc_play_queue **);
+    void (MC_CALL *destroy_queue)(mc_play_queue **);
+    mc_result (MC_CALL *queue_get_tracks)(const mc_play_queue *, mc_track_result **);
+    size_t (MC_CALL *queue_get_current_row)(const mc_play_queue *);
+    mc_result (MC_CALL *control_async)(void *, mc_playback_command, double value,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *use_track_async)(void *, const mc_track_ref *, mc_playback_track_action action,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *replace_queue_async)(void *, const mc_track_result *,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *insert_queue_async)(void *, const mc_track_result *, mc_playback_track_action action,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *move_queue_row_async)(void *, const mc_play_queue *, size_t from, size_t to,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *remove_queue_row_async)(void *, const mc_play_queue *, size_t row,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *clear_queue_async)(void *, mc_plugin_completion_fn, void *, mc_request_id *);
+    mc_result (MC_CALL *get_equalizer)(void *, mc_equalizer_state *);
+    mc_result (MC_CALL *set_equalizer_async)(void *, const mc_equalizer_state *,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *set_replay_gain_async)(void *, mc_replay_gain_mode,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *set_preamp_async)(void *, double decibels,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *cancel_request)(void *, mc_request_id);
+};
+
+struct mc_indexer_host_api {
+    uint32_t struct_size;
+    void *context;
+    mc_result (MC_CALL *get_state)(void *, mc_indexer_state *);
+    mc_result (MC_CALL *schedule_source_rescan)(void *, mc_string_view source_key,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *schedule_scan)(void *, mc_indexer_scan,
+        mc_plugin_completion_fn, void *user_data, mc_request_id *);
+    mc_result (MC_CALL *cancel_scan)(void *);
+    mc_result (MC_CALL *cancel_request)(void *, mc_request_id);
+};
+```
+
+Queue actions use existing `mc_playback_track_action` values and snapshot
+semantics. Input result/snapshot/track handles are retained by accepted async
+commands. Their callbacks report execution, not merely enqueue success. The
+server requests the local library explicitly; it must not accidentally serve a
+remote selection from the UI. Equalizer/replay-gain/preamp command wrappers use
+existing core operations rather than duplicating their implementation.
+
+External-ID lookup and position-specific saved-playlist removal are identified
+host-call gaps to resolve against the typed backend before server conversion.
+The latter must preserve duplicate entries and define stale-row handling before
+accepting concurrent edits; do not implement it by silently replacing a stale
+whole-playlist snapshot. Registered query JSON is a transport operation only:
+validate the existing named operation/schema and bounds, preserve authentication
+at the server, and dispatch typed backend queries. It never evaluates SQL text.
+
+Host request/subscription state belongs to the requesting plugin instance.
+Track callback admission, cancellations, and owned result destruction through
+terminal completion within the engine session. Inline views expire after the callback;
+owned results remain until the matching release. No callback may occur after
+instance destruction or plugin unload. Instance teardown must cancel/drain these
+callbacks through owner dispatch before joining dependent workers. The detailed
+completion/error/cancellation semantics reuse the application C API contracts,
+including rejected submissions having no callback and accepted requests settling
+once. No new scheduling or callback ABI is needed merely to rename an interface.
+
+#### Shape review and first implementation checks
+
+Before materializing the headers, resolve the persisted source/time/preference
+mapping decisions, shared enum types, async wrapper details, and typed host-call
+gaps identified above. Compile the sketches
+as C11 and C++ using existing public primitive headers; that checks syntax and
+name collisions, not functionality or ABI readiness. Actual headers need every
+field/default documented and standalone compile checks.
+
+The first implementation path proves unopened cancellable streams, known decoded
+frames, frame-count buffers, and the timed null output. Test short reads/writes,
+final frames at EOF, failed/partial creation, callback-before-return submissions,
+stop/drain token return, and no per-sample allocation/call. Each later family
+adds behavior/failure/lifetime tests at its own boundary. Empty optional families
+stay valid throughout; old application workflows are restored as their required
+families become available. The LLD records explicit temporary test prerequisites
+rather than weakening old expectations silently.
 
 ### C++ SDK wrapper
 
@@ -1202,28 +2238,19 @@ will expose assumptions hidden by the C++ adapters.
 - Add advanced audio consumer APIs only where an identified consumer needs
   them.
 
-### Phase 4: decoder SDK pilot
+### Provider replacement sequence
 
-- Implement host and plugin entry tables.
-- Implement streams, audio buffers, decoder factories, and decoders.
-- Add internal C++ adapters.
-- Convert one decoder plugin and validate it on all three platforms.
+Core consumer acceptance precedes this work. On the provider branch, draft all
+family contracts together, disconnect the former C++ SDK path, introduce the
+session-owned registry, establish empty/null behavior, prove one representative
+per family, and convert the rest. The preserved core-completion branch remains
+the working fallback. Do not keep both plugin architectures active in the new
+engine or add compatibility adapters to carry the old SDK forward.
 
-### Phase 5: remaining provider SDK
-
-- Add encoders and data-stream factories.
-- Add audio outputs and real-time contract tests.
-- Add DSP, tag, and indexer source providers.
-- Convert existing plugins incrementally.
-
-### Phase 6: removal and stabilization
-
-- Remove the legacy C API and C++ plugin ABI after all in-tree consumers have
-  migrated.
-- Freeze ABI major version 1 only after cross-platform lifecycle, compatibility,
-  and performance tests pass.
-- Publish installed headers, sample consumers, sample plugins, and API
-  documentation with release artifacts.
+The [LLD plugin execution order](musikcore-c-abi-lld.md#approved-execution-order)
+owns tasks, acceptance criteria, and current evidence. Freeze ABI v1 only after
+the replacement, native platform validation, and installed/archive consumers
+are complete.
 
 ## Estimated scope
 
@@ -1269,6 +2296,7 @@ The recommended direction is a stable C ABI with two explicit sides:
 
 They share one ABI foundation but remain separate contracts. musikcube consumes
 the public side through an idiomatic C++ wrapper. Existing core code and plugins
-can be bridged with internal C++ adapters during migration. This design makes
+use private C++ implementation wrappers where helpful, without keeping the
+former C++ plugin SDK active in the replacement engine. This design makes
 musikcore both embeddable across runtimes and extensible by plugins written
 outside C++ without putting C++ ABI details into the public contract.

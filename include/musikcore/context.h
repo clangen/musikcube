@@ -92,7 +92,8 @@ typedef struct mc_context_options {
     /* Requested ABI version. Zero selects the current version. */
     uint32_t requested_abi_version;
     /* provider directory, copied at creation; used when MC_SERVICE_PLUGINS is
-    selected. empty uses the host default. discovery fixes it for the process. */
+    selected. discovery fixes it for the process; empty reuses that directory,
+    or selects the host default on first discovery. */
     mc_string_view plugin_directory;
     /* optional MC_CONTEXT_* flags; zero uses normal startup. logging requires
     at least one service; START_LOCAL requires MC_SERVICE_LIBRARY after dependency expansion. */

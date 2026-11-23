@@ -260,8 +260,9 @@ SQLite implementation and extensions with the new API. The separate ABI0
 shared target remains available for contract tests and the pilot. Temporary
 internal adapters preserve existing behavior behind the façade.
 
-The legacy path remains available to the normal build until the new public
-surface covers the required application behavior.
+That application migration preserved its working path until the public surface
+covered the required behavior. The provider replacement uses the separate-branch
+cutover below; it does not preserve a parallel old SDK path in the new engine.
 
 #### Library routing and identity
 
@@ -333,17 +334,30 @@ without Library or Indexer. Their transport lifetime ends at explicit destructio
 or context shutdown; catalog playback remains a separate origin-bound contract.
 See [ADR-0007](../docs/adr/0007-explicit-uri-player-resources.md).
 
-### Plugin host
+### Plugin loading and ownership
 
-The plugin host owns:
+Use one C plugin architecture in the replacement engine:
 
-- Dynamic library discovery and loading.
-- One versioned plugin entry point.
-- Host service tables.
-- Capability and factory registration.
-- Provider instance tracking.
-- Shutdown barriers and unload eligibility.
-- Translation between provider C tables and private C++ interfaces.
+- `PluginRegistry` discovers libraries, identifies the C entry point, initializes
+  candidates transactionally, and owns accepted plugins for the engine session.
+  It also provides copied metadata and non-owning capability lookup.
+- `Plugin` owns one library's tables and per-plugin state. All family instances
+  and their calls finish before registry teardown.
+
+Draft the shapes for every family together. Then build the registry,
+empty optional-family behavior, and the loadable `nullout` C plugin before proving
+one representative per family and converting the rest. The replacement engine
+has no runtime fallback to the old C++ SDK; the preserved branch is the working
+fallback during reconstruction. Missing optional families are ordinary supported
+states. Missing decoding/encoding support reports unsupported operations.
+
+Factories register before application services are bound. Instance creation
+receives scoped typed services; active integrations start after their required
+services are ready. Stop integrations, interrupt I/O, drain scoped host callbacks,
+join workers, and destroy instances before final registry teardown. Private C++
+wrappers may simplify calls internally, but do not implement the former SDK as a
+compatibility layer. See
+[ADR-0008](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md).
 
 ### C++ wrappers
 
@@ -381,8 +395,11 @@ The test harness provides:
 4. Validate the migrated application and shared library on supported platforms,
    including installed consumers, runtime paths, dependency scans, and staged
    application smoke tests. This establishes core release-candidate quality.
-5. Only then start the provider SDK walking skeleton, decoder slice, and other
-   plugin categories. Use pure-C fixtures before migrating production plugins.
+5. Only then replace the plugin architecture on its own branch. Draft all C
+   interface shapes first, disconnect the old loading/factory path, establish the
+   session-owned registry and empty/null behavior, then prove one provider
+   per family before backfilling remaining plugins. Pure-C boundary fixtures
+   accompany the work; no production coexistence with the former SDK is required.
 6. Complete consumer/plugin packaging and compatibility validation, remove
    transitional implementations, and freeze ABI v1 after both surfaces have
    proven real consumers. Core release-candidate quality does not freeze ABI0.
@@ -445,8 +462,9 @@ slice; benchmark the migrated list view before expanding migration.
 
 Risk: a provider function table outlives its dynamic library.
 
-Mitigation: track factories and instances, stop new creation before shutdown,
-wait for in-flight calls, and unload only after all references are gone.
+Mitigation: keep DLLs loaded for the engine session. Stop new work, finish calls
+and callbacks, join workers, and destroy instances before registry shutdown.
+The registry unloads on its owner thread without per-plugin leases or waits.
 
 ### Cross-runtime allocation defects
 
