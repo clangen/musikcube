@@ -50,10 +50,11 @@ struct DataBuffer {
 
     void reset(size_t newLength) {
         if (newLength > rawLength) {
+            T* replacement = new T[newLength];
             delete[] data;
-            data = new T[newLength];
+            data = replacement;
+            rawLength = newLength;
         }
-        rawLength = (newLength > rawLength) ? newLength : rawLength;
         length = newLength;
         offset = 0;
     }

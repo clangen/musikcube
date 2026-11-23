@@ -6,10 +6,43 @@
 
 #include <array>
 #include <limits>
+#include <new>
 
 using namespace musik::core::audio;
 
+namespace {
+    /* force a growth failure without exhausting the machine's memory. */
+    struct FailingElement {
+        static inline bool failNext = false;
+        int value = 0;
+
+        FailingElement() {
+            if (failNext) {
+                failNext = false;
+                throw std::bad_alloc();
+            }
+        }
+    };
+
+    bool preservesBufferOnFailedGrowth() {
+        DataBuffer<FailingElement> buffer;
+        buffer.reset(1);
+        buffer.pos()->value = 42;
+        FailingElement::failNext = true;
+        try {
+            buffer.reset(2);
+        }
+        catch (const std::bad_alloc&) {
+            return buffer.avail() == 1 && buffer.pos()->value == 42;
+        }
+        return false;
+    }
+}
+
 int main() {
+    if (!TEST_CHECK(preservesBufferOnFailedGrowth())) {
+        return 1;
+    }
     DataBuffer<char> first;
     DataBuffer<char> second;
     first.append("abcd", 4);
