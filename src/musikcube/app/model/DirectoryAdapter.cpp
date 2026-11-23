@@ -155,7 +155,7 @@ static std::string pathToString(fs::path path) {
 }
 
 static fs::path stringToPath(const std::string& path) {
-    return directoryPath(fs::u8path(path));
+    return directoryPath(musik::core::sdk::fs::pathFromUtf8(path));
 }
 
 std::string DirectoryAdapter::NormalizePath(const std::string& path) {
@@ -165,7 +165,7 @@ std::string DirectoryAdapter::NormalizePath(const std::string& path) {
 DirectoryAdapter::DirectoryAdapter() {
     this->showDotfiles = false;
     this->showRootDirectory = false;
-    this->dir = fs::path(fs::u8path(musik::core::api::ReadPath(MC_PATH_HOME)));
+    this->dir = fs::path(musik::core::sdk::fs::pathFromUtf8(musik::core::api::ReadPath(MC_PATH_HOME)));
     this->rootDir = kDefaultRoot;
     buildDirectoryList(dir, subdirs, showDotfiles);
 }
@@ -215,7 +215,7 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
     else {
         selectedIndexStack.push(initialIndex);
         initialIndex -= this->GetHeaderCount();
-        this->dir = fs::u8path(this->subdirs.at(initialIndex));
+        this->dir = musik::core::sdk::fs::pathFromUtf8(this->subdirs.at(initialIndex));
     }
 
 #ifdef WIN32
@@ -252,7 +252,7 @@ std::string DirectoryAdapter::GetFullPathAt(size_t index) {
         return pathToUtf8(this->dir);
     }
     index -= this->GetHeaderCount();
-    return pathToString(fs::u8path(this->subdirs.at(index)));
+    return pathToString(musik::core::sdk::fs::pathFromUtf8(this->subdirs.at(index)));
 }
 
 std::string DirectoryAdapter::GetLeafAt(size_t index) {
@@ -262,7 +262,7 @@ std::string DirectoryAdapter::GetLeafAt(size_t index) {
     if (this->IsCurrentDirectory(index)) {
         return ".";
     }
-    return pathToUtf8(fs::u8path(this->subdirs.at(index)));
+    return pathToUtf8(musik::core::sdk::fs::pathFromUtf8(this->subdirs.at(index)));
 }
 
 size_t DirectoryAdapter::IndexOf(const std::string& leaf) {
@@ -337,7 +337,7 @@ bool DirectoryAdapter::HasSubDirectories(size_t index) {
         return !this->subdirs.empty();
     }
     index -= this->GetHeaderCount();
-    return hasSubdirectories(fs::u8path(this->subdirs.at(index)), this->showDotfiles);
+    return hasSubdirectories(musik::core::sdk::fs::pathFromUtf8(this->subdirs.at(index)), this->showDotfiles);
 }
 
 bool DirectoryAdapter::HasSubDirectories() {
@@ -365,7 +365,7 @@ IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* 
         }
     }
     index -= this->GetHeaderCount();
-    auto path = fs::u8path(this->subdirs[index]);
+    auto path = musik::core::sdk::fs::pathFromUtf8(this->subdirs[index]);
     auto pathString = pathToUtf8(path.filename());
     /* windows root drives are 'x:\', so they don't have a filename leaf. if
     we resolve an empty string, just use the whole path */

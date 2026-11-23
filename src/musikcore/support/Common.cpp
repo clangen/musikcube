@@ -139,7 +139,7 @@ namespace musik { namespace core {
                 argv = new char*[len];
                 if (sysctl(mib, 4, argv, &len, nullptr, 0) < 0) abort();
 
-                fs::path command = fs::absolute(fs::path(fs::u8path(argv[0])));
+                fs::path command = fs::absolute(fs::path(musik::core::sdk::fs::pathFromUtf8(argv[0])));
                 realpath(pathToUtf8(command).c_str(), pathbuf);
                 delete[] argv;
             #elif defined __HAIKU__
@@ -149,7 +149,7 @@ namespace musik { namespace core {
                     if (ii.type == B_APP_IMAGE) {
                         if (strlen(ii.name)) {
                             std::string fn(ii.name);
-                            result = pathToUtf8(fs::u8path(fn));
+                            result = pathToUtf8(musik::core::sdk::fs::pathFromUtf8(fn));
                         }
                     }
                 }
@@ -212,7 +212,7 @@ namespace musik { namespace core {
 
         if (create) {
             try {
-                fs::path path(fs::u8path(directory));
+                fs::path path(musik::core::sdk::fs::pathFromUtf8(directory));
                 if (!fs::exists(path)) {
                     fs::create_directories(path);
                 }
@@ -317,7 +317,7 @@ namespace musik { namespace core {
     }
 
     std::string NormalizeDir(std::string path) {
-        path = pathToUtf8(fs::path(fs::u8path(path)).make_preferred());
+        path = pathToUtf8(fs::path(musik::core::sdk::fs::pathFromUtf8(path)).make_preferred());
 
         std::string sep(1, fs::path::preferred_separator);
         if (path.size() && path.substr(path.size() - 1, 1) != sep) {

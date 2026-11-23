@@ -110,7 +110,7 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue,
 
     const auto filename = this->GetDatabaseFilename();
     if (this->db.Open(filename) != SQLITE_OK || sqlite3_db_readonly(this->db.NativeHandle(), "main") != 0) {
-        throw fs::filesystem_error("Could not open writable library database", fs::u8path(filename),
+        throw fs::filesystem_error("Could not open writable library database", musik::core::sdk::fs::pathFromUtf8(filename),
             std::make_error_code(std::errc::io_error));
     }
     LocalLibrary::CreateDatabase(this->db);
@@ -211,7 +211,7 @@ std::string LocalLibrary::GetLibraryDirectory() {
         directory.append(this->identifier + "/" );
     }
 
-    fs::path dir(fs::u8path(directory));
+    fs::path dir(musik::core::sdk::fs::pathFromUtf8(directory));
     if(!fs::exists(dir)){
         fs::create_directories(dir);
     }

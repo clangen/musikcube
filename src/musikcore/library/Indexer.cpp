@@ -303,7 +303,7 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
         try {
             const int64_t id = stmt.ColumnInt64(0);
             std::string path = stmt.ColumnText(1);
-            std::fs::path dir(std::fs::u8path(path));
+            std::fs::path dir(musik::core::sdk::fs::pathFromUtf8(path));
 
             if (std::fs::exists(dir)) {
                 paths.push_back(path);
@@ -529,7 +529,7 @@ void Indexer::SyncDirectory(
 
     try {
         /* for each file in the current path... */
-        std::fs::path path(std::fs::u8path(currentPath));
+        std::fs::path path(musik::core::sdk::fs::pathFromUtf8(currentPath));
         std::fs::directory_iterator end;
         std::fs::directory_iterator file(path);
 
@@ -651,7 +651,7 @@ ScanResult Indexer::SyncSource(
 }
 
 void Indexer::ThreadLoop() {
-    std::fs::path thumbPath(std::fs::u8path(this->libraryPath + "thumbs/"));
+    std::fs::path thumbPath(musik::core::sdk::fs::pathFromUtf8(this->libraryPath + "thumbs/"));
 
     if (!std::fs::exists(thumbPath)) {
         std::fs::create_directories(thumbPath);
@@ -799,7 +799,7 @@ void Indexer::SyncDelete() {
             std::string fn = allTracks.ColumnText(1);
 
             try {
-                std::fs::path file(std::fs::u8path(fn));
+                std::fs::path file(musik::core::sdk::fs::pathFromUtf8(fn));
                 if (!std::fs::exists(file)) {
                     remove = true;
                 }

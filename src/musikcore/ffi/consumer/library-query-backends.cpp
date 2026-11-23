@@ -2,6 +2,7 @@
    connection generation. A retained search result or track reference can
    therefore survive selection changes without resolving in a new catalog. */
 
+#include <musikcore/sdk/FilesystemPath.h>
 #include "library-query-backends.h"
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
@@ -312,7 +313,7 @@ namespace {
         mc_result ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes,
             const std::atomic_bool& canceled) const override
         {
-            const auto file = std::filesystem::u8path(this->library->GetLibraryDirectory()) /
+            const auto file = musik::core::sdk::fs::pathFromUtf8(this->library->GetLibraryDirectory()) /
                 "thumbs" / (std::to_string(id) + ".jpg");
             std::ifstream stream(file, std::ios::binary | std::ios::ate);
             if (!stream) {

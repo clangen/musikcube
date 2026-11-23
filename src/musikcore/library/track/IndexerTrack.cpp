@@ -767,7 +767,7 @@ int64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
 void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename) {
     try {
         std::string dir = NormalizeDir(
-            pathToUtf8(std::filesystem::path(std::filesystem::u8path(filename)).parent_path()));
+            pathToUtf8(std::filesystem::path(musik::core::sdk::fs::pathFromUtf8(filename)).parent_path()));
 
         int64_t dirId = -1;
         if (metadataIdCache.find("directoryId-" + dir) != metadataIdCache.end()) {

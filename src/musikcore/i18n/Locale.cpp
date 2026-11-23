@@ -94,7 +94,7 @@ void Locale::Initialize(const std::string& localePath) {
     this->localeData = {};
     this->localePath = localePath;
 
-    fs::path locales(fs::u8path(localePath));
+    fs::path locales(musik::core::sdk::fs::pathFromUtf8(localePath));
 
     if (fs::exists(locales)) {
         fs::directory_iterator end;

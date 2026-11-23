@@ -75,14 +75,14 @@ PluginFactory& PluginFactory::Instance(const std::string& directory) {
     static PluginFactory* instance = NULL;
 
     if (instance == NULL) {
-        auto path = fs::u8path(directory.empty() ? GetPluginDirectory() : directory);
+        auto path = musik::core::sdk::fs::pathFromUtf8(directory.empty() ? GetPluginDirectory() : directory);
         if (!directory.empty() && !fs::is_directory(path)) {
             throw std::invalid_argument("Plugin directory does not exist");
         }
         instance = new PluginFactory(pathToUtf8(fs::weakly_canonical(path)));
     }
     else if (!directory.empty() &&
-        fs::weakly_canonical(fs::u8path(directory)) != fs::u8path(instance->directory))
+        fs::weakly_canonical(musik::core::sdk::fs::pathFromUtf8(directory)) != musik::core::sdk::fs::pathFromUtf8(instance->directory))
     {
         throw std::invalid_argument("Plugins have already been discovered in another directory");
     }
@@ -127,7 +127,7 @@ void PluginFactory::LoadPlugins() {
     }
 #endif
 
-    fs::path dir(fs::u8path(this->directory));
+    fs::path dir(musik::core::sdk::fs::pathFromUtf8(this->directory));
 
     try {
         fs::directory_iterator end;
@@ -136,7 +136,7 @@ void PluginFactory::LoadPlugins() {
                 std::string filename = pathToUtf8(fs::canonical(fs::path(file->path()).make_preferred()));
                 std::shared_ptr<Descriptor> descriptor(new Descriptor());
                 descriptor->filename = filename;
-                descriptor->key = pathToUtf8(fs::path(fs::u8path(filename)).filename());
+                descriptor->key = pathToUtf8(fs::path(musik::core::sdk::fs::pathFromUtf8(filename)).filename());
 #ifdef WIN32
                 /* if the file ends with ".dll", we'll try to load it*/
                 if (filename.substr(filename.size() - 4) == ".dll") {
@@ -237,7 +237,7 @@ namespace {
         std::vector<PluginDetails> plugins;
         PluginFactory::Instance().QueryInterface<IPlugin, PluginFactory::ReleaseDeleter<IPlugin>>(
             "GetPlugin", [&](IPlugin*, const std::shared_ptr<IPlugin>& plugin, const std::string& path) {
-                const auto filename = pathToUtf8(fs::u8path(path).filename());
+                const auto filename = pathToUtf8(musik::core::sdk::fs::pathFromUtf8(path).filename());
                 plugins.push_back({
                     plugin->Guid(), plugin->Name(), plugin->Version(),
                     filename, settings->GetBool(filename, true)

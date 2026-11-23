@@ -289,7 +289,7 @@ struct Theme {
 
         bool success = false;
 
-        std::ifstream file(fs::u8path(fn), std::ios::binary);
+        std::ifstream file(musik::core::sdk::fs::pathFromUtf8(fn), std::ios::binary);
         if (file) {
             try {
                 json data = json::parse(file);
@@ -574,7 +574,7 @@ static Colors::Mode colorMode = Colors::Basic;
 static Colors::BgType bgType = Colors::Theme;
 
 static void indexThemes(const std::string& directory) {
-    fs::path colorPath(fs::u8path(directory));
+    fs::path colorPath(musik::core::sdk::fs::pathFromUtf8(directory));
     if (fs::exists(colorPath)) {
         fs::directory_iterator end;
         for (fs::directory_iterator file(colorPath); file != end; file++) {

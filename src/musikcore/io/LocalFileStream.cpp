@@ -74,7 +74,7 @@ bool LocalFileStream::Open(const char *filename, OpenFlags flags) {
         this->uri = filename;
         debug::info(TAG, "opening file: " + std::string(filename));
 
-        std::filesystem::path file(std::filesystem::u8path(filename));
+        std::filesystem::path file(musik::core::sdk::fs::pathFromUtf8(filename));
         const bool exists = std::filesystem::exists(file);
 
         if (flags & OpenFlags::Read && !exists) {

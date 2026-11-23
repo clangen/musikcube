@@ -46,6 +46,7 @@
 #include <chrono>
 #include <filesystem>
 #include "String.h"
+#include "FilesystemPath.h"
 
 #ifdef WIN32
 #include <Windows.h>
@@ -78,7 +79,7 @@ namespace musik { namespace core { namespace sdk { namespace fs {
     template <typename String=std::string>
     static int64_t getLastModifiedTime(const String& fn) {
         return (int64_t) std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::filesystem::last_write_time(std::filesystem::u8path(fn)).time_since_epoch()).count();
+            std::filesystem::last_write_time(pathFromUtf8(fn)).time_since_epoch()).count();
     }
 
     template <typename String=std::string>

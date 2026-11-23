@@ -32,6 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include <musikcore/sdk/FilesystemPath.h>
 #include <stdafx.h>
 #include <musikcore/paths.hpp>
 
@@ -59,10 +60,18 @@ using Callback = std::function<void()>;
 static std::string formattedTime() {
     char buffer[128] = { 0 };
     time_t rawtime;
-    struct tm* timeinfo;
     time(&rawtime);
-    timeinfo = localtime(&rawtime);
-    strftime(buffer, sizeof(buffer), "%F-%H-%M-%S", timeinfo);
+    struct tm timeinfo {};
+#ifdef _WIN32
+    if (localtime_s(&timeinfo, &rawtime) != 0) {
+        return {};
+    }
+#else
+    if (!localtime_r(&rawtime, &timeinfo)) {
+        return {};
+    }
+#endif
+    strftime(buffer, sizeof(buffer), "%F-%H-%M-%S", &timeinfo);
     return std::string(buffer);
 }
 
@@ -126,8 +135,8 @@ static void backupAndShowDialog() {
     std::string out = dir + "hotkeys-" + formattedTime() + ".json";
 
     std::error_code error;
-    if (!dir.empty() && std::filesystem::copy_file(std::filesystem::u8path(in),
-        std::filesystem::u8path(out), std::filesystem::copy_options::overwrite_existing, error))
+    if (!dir.empty() && std::filesystem::copy_file(musik::core::sdk::fs::pathFromUtf8(in),
+        musik::core::sdk::fs::pathFromUtf8(out), std::filesystem::copy_options::overwrite_existing, error))
     {
         auto dialog = std::make_shared<DialogOverlay>();
 
