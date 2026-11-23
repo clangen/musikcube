@@ -53,9 +53,9 @@ inline static bool removeUtf8Char(std::string& value, size_t position) {
         }
     }
     else {
-        const size_t offset = u8offset(value, position - 1);
+        const size_t offset = u8offset(value, bounded_int(position - 1));
         if (offset != std::string::npos) {
-            const size_t end = u8offset(value, position);
+            const size_t end = u8offset(value, bounded_int(position));
             value.erase(offset, end - offset);
             return true;
         }
@@ -119,7 +119,7 @@ void TextInput::OnRedraw() {
         /* if we're in "Line" mode and the string is short, pad the
         end with a bunch of underscores */
         if (style == StyleLine) {
-            const int remaining = contentWidth - columns;
+            const int remaining = contentWidth - bounded_int(columns);
             if (remaining > 0) {
                 trimmed += std::string(remaining, '_');
             }
@@ -234,7 +234,7 @@ bool TextInput::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "KEY_END") {
-        this->position = this->bufferLength;
+        this->position = bounded_int(this->bufferLength);
         this->Redraw();
         return true;
     }
@@ -268,7 +268,7 @@ void TextInput::SetText(const std::string& value) {
     if (value != this->buffer) {
         this->buffer = value;
         this->bufferLength = u8len(buffer);
-        this->position = this->bufferLength;
+        this->position = bounded_int(this->bufferLength);
         this->TextChanged(this, this->buffer);
         this->Redraw();
     }

@@ -78,7 +78,7 @@ size_t ScrollAdapterBase::GetVisibleItems(
     for (int i = (int) desiredTopIndex; i < entryCount && totalHeight > 0; i++) {
         EntryPtr entry = this->GetEntry(window, i);
         entry->SetWidth(this->width);
-        totalHeight -= entry->GetLineCount();
+        totalHeight -= bounded_int(entry->GetLineCount());
         target.push_back(entry);
     }
 
@@ -87,13 +87,13 @@ size_t ScrollAdapterBase::GetVisibleItems(
     if (totalHeight > 0) {
         target.clear();
 
-        totalHeight = this->height;
-        int i = GetEntryCount() - 1;
+        totalHeight = bounded_int(this->height);
+        int i = bounded_int(GetEntryCount()) - 1;
         while (i >= 0 && totalHeight >= 0) {
             EntryPtr entry = this->GetEntry(window, i);
             entry->SetWidth(this->width);
 
-            int lines = entry->GetLineCount();
+            int lines = bounded_int(entry->GetLineCount());
             if (lines > totalHeight) {
                 break; /* this Entry won't fit. bail. */
             }
@@ -133,7 +133,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
         for (size_t e = 0; e < visible.size(); e++) {
             EntryPtr entry = visible.at(e);
             size_t count = entry->GetLineCount();
-            wmove(window, drawnLines, 0);
+            wmove(window, bounded_int(drawnLines), 0);
 
             for (size_t i = 0; i < count && drawnLines < this->height; i++) {
                 Color attrs = Color::Default;
@@ -156,7 +156,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
                 /* pad with empty spaces to the end of the line. this allows us to
                 do highlight rows. this should probably be configurable. */
 
-                int remain = this->width - len;
+                int remain = bounded_int(this->width) - bounded_int(len);
                 if (remain > 0) {
                     line += std::string(remain, ' ');
                 }

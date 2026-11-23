@@ -192,7 +192,8 @@ void DialogOverlay::RecalculateSize() {
 
     this->height = 0; /* top padding */
     this->height += (this->title.size()) ? 2 : 0;
-    this->height += (this->messageLines.size()) ? messageLines.size() + 1 : 0;
+    this->height += this->messageLines.empty()
+        ? 0 : bounded_int(std::min(messageLines.size(), static_cast<size_t>(Screen::GetHeight()))) + 1;
     this->height += 1; /* shortcuts */
 
     /* ensure the overlay doesn't exceed the height of the screen,

@@ -41,6 +41,7 @@
 #include <sstream>
 #include <set>
 #include <map>
+#include <common/NarrowCast.h>
 
 #pragma warning(push, 0)
 #include <libopenmpt/libopenmpt.h>
@@ -109,7 +110,7 @@ ScanResult OpenMptIndexerSource::Scan(
         }
     }
 
-    indexer->CommitProgress(this, this->filesIndexed);
+    indexer->CommitProgress(this, bounded_unsigned_sum(this->filesIndexed));
 
     return ScanCommit;
 }
@@ -251,7 +252,7 @@ void OpenMptIndexerSource::UpdateMetadata(
 
     /* we commit progress every so often */
     if (++this->filesIndexed % 300 == 0) {
-        indexer->CommitProgress(this, this->filesIndexed + this->tracksIndexed);
+        indexer->CommitProgress(this, bounded_unsigned_sum(this->filesIndexed, this->tracksIndexed));
         this->filesIndexed = this->tracksIndexed = 0;
     }
 }

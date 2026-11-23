@@ -303,7 +303,7 @@ bool LayoutBase::SetFocus(IWindowPtr focus) {
                 if (asLayout) {
                     asLayout->SetFocus(shared_from_this());
                 }
-                this->focused = i;
+                this->focused = bounded_int(i);
                 this->EnsureValidFocus();
                 return true;
             }

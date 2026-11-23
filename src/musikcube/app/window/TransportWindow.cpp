@@ -323,7 +323,7 @@ size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width, Status statu
         }
 
         getyx(w, y, x);
-        metadataFieldToPosition[token->value] = Position(x, y, cols);
+        metadataFieldToPosition[token->value] = Position(x, y, bounded_int(cols));
 
         ON(w, attr);
         checked_wprintw(w, "%s", value.c_str());
@@ -706,12 +706,12 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     int const escapedPercentSignWidth = (muted ? 0 : 1); /* 1 for escaped percent sign when not muted */
     int const bottomRowControlsWidth =
-        displayCache.Columns(volume) - escapedPercentSignWidth +
+        bounded_int(displayCache.Columns(volume)) - escapedPercentSignWidth +
         (replayGainEnabled ? (narrow_cast<int>(u8cols(replayGain)) + 4) : 0) +  /* [] brackets */
         narrow_cast<int>(u8cols(currentTime)) + 1 + /* +1 for space padding */
         /* timer track with thumb */
         1 + displayCache.totalTimeCols + /* +1 for space padding */
-        displayCache.Columns(repeatModeLabel);
+        bounded_int(displayCache.Columns(repeatModeLabel));
 
     int const timerTrackWidth =
         this->GetContentWidth() -
@@ -745,7 +745,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         checked_wprintw(c, "]  ");
     }
 
-    currentTimePos.Set(getcurx(c), 1, u8cols(currentTime));
+    currentTimePos.Set(getcurx(c), 1, bounded_int(u8cols(currentTime)));
     ON(c, currentTimeAttrs); /* blink if paused */
     checked_wprintw(c, "%s ", currentTime.c_str());
     OFF(c, currentTimeAttrs);

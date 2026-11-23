@@ -35,6 +35,8 @@
 #pragma once
 
 #include <cassert>
+#include <cstddef>
+#include <limits>
 
 /* https://stackoverflow.com/a/46229281 */
 template<class To, class From>
@@ -42,4 +44,16 @@ To narrow_cast(From v) {
     To r = static_cast<To>(v);
     assert(static_cast<From>(r) == v);
     return r;
+}
+
+inline int bounded_int(std::size_t value) {
+    const auto maximum = static_cast<std::size_t>((std::numeric_limits<int>::max)());
+    return static_cast<int>(value > maximum ? maximum : value);
+}
+
+inline unsigned bounded_unsigned_sum(std::size_t first, std::size_t second = 0) {
+    const auto maximum = static_cast<std::size_t>((std::numeric_limits<unsigned>::max)());
+    first = first > maximum ? maximum : first;
+    second = second > maximum - first ? maximum - first : second;
+    return static_cast<unsigned>(first + second);
 }

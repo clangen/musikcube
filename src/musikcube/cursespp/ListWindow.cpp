@@ -133,12 +133,12 @@ bool ListWindow::IsSelectedItemCompletelyVisible() {
 
     if (last <= spos.logicalIndex) {
         /* get the height of all the visible items combined. */
-        int sum = 0;
+        size_t sum = 0;
         for (size_t i = first; i <= spos.logicalIndex; i++) {
             sum += adapter.GetEntry(this, i)->GetLineCount();
         }
 
-        int delta = this->GetContentHeight() - sum;
+        int delta = this->GetContentHeight() - bounded_int(sum);
 
         /* special case -- the last item in the adapter is selected
         and the heights match exactly -- we're at the end! */

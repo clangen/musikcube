@@ -72,8 +72,8 @@ AppLayout::~AppLayout() {
 }
 
 void AppLayout::OnLayout() {
-    const int cx = Screen::GetWidth() - (paddingL + paddingR);
-    const int cy = Screen::GetHeight() - (paddingT + paddingB);
+    const int cx = bounded_int(Screen::GetWidth()) - bounded_int(paddingL + paddingR);
+    const int cy = bounded_int(Screen::GetHeight()) - bounded_int(paddingT + paddingB);
 
 #if ENABLE_DEMO_MODE
     this->hotkey->MoveAndResize(0, cy - 1, cx, 1);
@@ -83,7 +83,7 @@ void AppLayout::OnLayout() {
     const int mainCyOffset = this->autoHideCommandBar ? 0 : 1;
 
     if (this->layout) {
-        this->layout->MoveAndResize(paddingL, paddingT, cx, cy - mainCyOffset);
+        this->layout->MoveAndResize(bounded_int(paddingL), bounded_int(paddingT), cx, cy - mainCyOffset);
         this->layout->Show();
         this->layout->BringToTop();
     }

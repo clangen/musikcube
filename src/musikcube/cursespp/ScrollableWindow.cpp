@@ -225,12 +225,12 @@ size_t ScrollableWindow::GetPreviousPageEntryIndex() {
     int remaining = this->GetContentHeight();
     int width = this->GetContentWidth();
 
-    int i = this->GetScrollPosition().firstVisibleEntryIndex;
+    int i = bounded_int(this->GetScrollPosition().firstVisibleEntryIndex);
     while (i >= 0) {
         IScrollAdapter::EntryPtr entry = adapter->GetEntry(this, i);
         entry->SetWidth(width);
 
-        int count = entry->GetLineCount();
+        int count = bounded_int(entry->GetLineCount());
         if (count > remaining) {
             break;
         }
@@ -243,13 +243,14 @@ size_t ScrollableWindow::GetPreviousPageEntryIndex() {
 }
 
 void ScrollableWindow::PageUp() {
-    ScrollUp(
+    ScrollUp(bounded_int(
         this->GetScrollPosition().firstVisibleEntryIndex -
-        GetPreviousPageEntryIndex());
+        GetPreviousPageEntryIndex()));
 }
 
 void ScrollableWindow::PageDown() {
-    ScrollDown(this->GetScrollPosition().visibleEntryCount - 1);
+    const size_t count = this->GetScrollPosition().visibleEntryCount;
+    ScrollDown(bounded_int(count == 0 ? 0 : count - 1));
 }
 
 bool ScrollableWindow::IsLastItemVisible() {

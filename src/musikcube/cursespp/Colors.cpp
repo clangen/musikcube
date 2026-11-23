@@ -539,22 +539,36 @@ don't error when calling init_color(), but don't actually work. */
 
 static const std::set<std::string> kTrueColorTerminalBacklist = { "vscode" };
 
+static std::string terminalEnvironment(const char* name) {
+#ifdef WIN32
+    char* value = nullptr;
+    size_t length = 0;
+    if (_dupenv_s(&value, &length, name) != 0 || !value) {
+        return {};
+    }
+    std::string result(value);
+    free(value);
+    return result;
+#else
+    const char* value = std::getenv(name);
+    return value ? value : "";
+#endif
+}
+
 static bool canChangeColors() {
-    const char* termEnv = std::getenv("TERM_PROGRAM");
-    std::string term;
-    if (termEnv && strlen(termEnv)) {
-        term = std::string(termEnv);
+    const std::string term = terminalEnvironment("TERM_PROGRAM");
+    if (!term.empty()) {
         if (kTrueColorTerminalBacklist.find(term) != kTrueColorTerminalBacklist.end()) {
             return false;
         }
         if (term == "Apple_Terminal") {
-            const char* termVer = std::getenv("TERM_PROGRAM_VERSION");
-            if (termVer && strlen(termVer)) {
+            const std::string termVer = terminalEnvironment("TERM_PROGRAM_VERSION");
+            if (!termVer.empty()) {
                 /* note that older versions of Terminal.app don't support
                 true color mode. however, I recently tested with 433 and
                 it works fine! versions older than 433 may work as well,
                 but it's untested */
-                if (atoi(termVer) >= 433) {
+                if (atoi(termVer.c_str()) >= 433) {
                     return true;
                 }
             }

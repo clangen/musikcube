@@ -88,7 +88,7 @@ size_t ShortcutsWindow::CalculateLeftPadding() {
 
     for (size_t i = 0; i < this->entries.size(); i++) {
         auto e = this->entries[i];
-        padding -= u8cols(e->key) + u8cols(e->description) + 5;
+        padding -= std::min(padding, bounded_int(u8cols(e->key) + u8cols(e->description) + 5));
     }
 
     if (padding < 0) {
@@ -201,7 +201,7 @@ void ShortcutsWindow::OnRedraw() {
     WINDOW* c = this->GetContent();
 
     size_t leftPadding = this->CalculateLeftPadding();
-    wmove(c, 0, leftPadding);
+    wmove(c, 0, bounded_int(leftPadding));
 
     size_t currentX = leftPadding;
     size_t remaining = this->GetContentWidth();
@@ -224,8 +224,8 @@ void ShortcutsWindow::OnRedraw() {
         /* calculate the offset and width, this is used for mouse
         click handling! */
         size_t width = u8cols(key + value);
-        e->position.offset = currentX;
-        e->position.width = width;
+        e->position.offset = bounded_int(currentX);
+        e->position.width = bounded_int(width);
         currentX += 1 + width; /* 1 is the extra leading space */
 
         /* draw the shortcut key */
