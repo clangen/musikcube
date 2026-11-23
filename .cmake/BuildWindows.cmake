@@ -187,13 +187,8 @@ target_compile_definitions(libopenmptdecoder PRIVATE LIBOPENMPT_USE_DLL)
 target_link_libraries(libopenmptdecoder PRIVATE vendor::openmpt)
 
 windows_plugin(nullout plugin.cpp)
-# MC_BUILDING_PLUGIN marks mc_plugin_get_api for DLL export. factories and
-# instance methods are reached through its returned tables.
-target_include_directories(nullout PRIVATE "${PROJECT_SOURCE_DIR}/include")
-target_compile_definitions(nullout PRIVATE MC_BUILDING_PLUGIN)
+musikcube_configure_c_plugin(nullout)
 target_link_libraries(nullout PRIVATE Threads::Threads)
-# MUSIKCUBE_PLUGIN_ENTRY records the target's entry point for build tools.
-set_target_properties(nullout PROPERTIES MUSIKCUBE_PLUGIN_ENTRY mc_plugin_get_api)
 target_compile_features(nullout PRIVATE cxx_std_20)
 
 windows_plugin(server BlockingTranscoder.cpp HttpServer.cpp main.cpp Snapshots.cpp

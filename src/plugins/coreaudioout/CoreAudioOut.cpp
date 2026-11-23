@@ -33,388 +33,388 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "CoreAudioOut.h"
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <iostream>
+#include <CoreAudio/CoreAudio.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <cmath>
+#include <cstring>
+#include <limits>
+#include <string>
 #include <vector>
 
-#define BUFFER_COUNT 24
-#define PREF_DEVICE_ID "device_id"
-
-using namespace musik::core::sdk;
-
-class CoreAudioDevice : public IDevice {
-    public:
-        CoreAudioDevice(const std::string& id, const std::string& name) {
-            this->id = id;
-            this->name = name;
+namespace {
+    /* CF strings are not guaranteed to expose a direct UTF-8 pointer. copy
+    through the conversion API and release every retained property value. */
+    std::string stringProperty(AudioDeviceID device, AudioObjectPropertySelector selector) {
+        const AudioObjectPropertyAddress property { selector, kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMain };
+        CFStringRef value = nullptr;
+        UInt32 bytes = sizeof(value);
+        if (AudioObjectGetPropertyData(device, &property, 0, nullptr, &bytes, &value) != noErr || !value) {
+            return {};
         }
-
-        virtual void Release() { delete this; }
-        virtual const char* Name() const { return name.c_str(); }
-        virtual const char* Id() const { return id.c_str(); }
-
-    private:
-        std::string name, id;
-};
-
-class CoreAudioDeviceList : public IDeviceList {
-    public:
-        virtual void Release() { delete this; }
-        virtual size_t Count() const { return devices.size(); }
-        virtual const IDevice* At(size_t index) const { return &devices.at(index); }
-
-        void Add(const std::string& id, const std::string& name) {
-            devices.push_back(CoreAudioDevice(id, name));
+        const auto length = CFStringGetMaximumSizeForEncoding(CFStringGetLength(value), kCFStringEncodingUTF8) + 1;
+        std::string text(static_cast<size_t>(length), '\0');
+        const bool copied = CFStringGetCString(value, text.data(), length, kCFStringEncodingUTF8);
+        CFRelease(value);
+        if (!copied) {
+            return {};
         }
-
-    private:
-        std::vector<CoreAudioDevice> devices;
-};
-
-static musik::core::sdk::IPreferences* prefs = nullptr;
-
-extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
-    ::prefs = prefs;
-    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
-    prefs->Save();
-}
-
-static std::string getDeviceId() {
-    return getPreferenceString<std::string>(prefs, PREF_DEVICE_ID, "");
-}
-
-void audioCallback(void *customData, AudioQueueRef queue, AudioQueueBufferRef buffer) {
-    CoreAudioOut* output = (CoreAudioOut *) customData;
-    CoreAudioOut::BufferContext* context = (CoreAudioOut::BufferContext *) buffer->mUserData;
-
-    OSStatus result = AudioQueueFreeBuffer(queue, buffer);
-
-    if (result != 0) {
-        std::cerr << "AudioQueueFreeBuffer failed: " << result << "\n";
+        text.resize(std::strlen(text.c_str()));
+        return text;
     }
 
-    output->NotifyBufferCompleted(context);
-}
+    AudioDeviceID defaultDevice() {
+        const AudioObjectPropertyAddress property { kAudioHardwarePropertyDefaultOutputDevice,
+            kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain };
+        AudioDeviceID device = kAudioObjectUnknown;
+        UInt32 bytes = sizeof(device);
+        AudioObjectGetPropertyData(kAudioObjectSystemObject, &property, 0, nullptr, &bytes, &device);
+        return device;
+    }
 
-void CoreAudioOut::NotifyBufferCompleted(BufferContext *context) {
-    {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-        if (bufferCount > 0) {
-            --bufferCount;
+    bool hasOutput(AudioDeviceID device) {
+        const AudioObjectPropertyAddress property { kAudioDevicePropertyStreamConfiguration,
+            kAudioDevicePropertyScopeOutput, kAudioObjectPropertyElementMain };
+        UInt32 bytes = 0;
+        if (AudioObjectGetPropertyDataSize(device, &property, 0, nullptr, &bytes) != noErr ||
+            bytes < sizeof(AudioBufferList))
+        {
+            return false;
         }
-    }
-
-    context->provider->OnBufferProcessed(context->buffer);
-    delete context;
-}
-
-CoreAudioOut::CoreAudioOut() {
-    this->quit = false;
-    this->state = StateStopped;
-    this->volume = 1.0f;
-
-    this->audioFormat = (AudioStreamBasicDescription) { 0 };
-
-    this->audioFormat.mFormatID = kAudioFormatLinearPCM;
-    this->audioFormat.mFormatFlags = kAudioFormatFlagIsFloat;
-    this->audioFormat.mFramesPerPacket = 1;
-    this->audioFormat.mBitsPerChannel = 32;
-    this->audioFormat.mReserved = 0;
-
-    /* these get filled in later */
-    this->audioFormat.mChannelsPerFrame = -1;
-    this->audioFormat.mSampleRate = -1;
-    this->audioFormat.mBytesPerFrame = -1;
-    this->audioFormat.mBytesPerPacket = -1;
-
-    this->audioQueue = nullptr;
-    this->bufferCount = 0;
-}
-
-OutputState CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-    if (this->state != StatePlaying) {
-        return OutputState::InvalidState;
-    }
-
-    if (this->bufferCount >= BUFFER_COUNT) {
-        /* enough buffers are already in the queue. bail, we'll notify the
-        caller when there's more data available */
-        return OutputState::BufferFull;
-    }
-
-    OSStatus result;
-
-    if (buffer->SampleRate() != this->audioFormat.mSampleRate ||
-        buffer->Channels() != this->audioFormat.mChannelsPerFrame ||
-        this->audioQueue == nullptr)
-    {
-        this->audioFormat.mSampleRate = buffer->SampleRate();
-        this->audioFormat.mChannelsPerFrame = buffer->Channels();
-        this->audioFormat.mBytesPerFrame = (this->audioFormat.mBitsPerChannel / 8) * this->audioFormat.mChannelsPerFrame;
-        this->audioFormat.mBytesPerPacket = this->audioFormat.mBytesPerFrame * this->audioFormat.mFramesPerPacket;
-
-        lock.unlock();
-        this->Stop();
-        lock.lock();
-
-        /* create the queue */
-        result = AudioQueueNewOutput(
-            &this->audioFormat,
-            audioCallback,
-            this,
-            nullptr,
-            kCFRunLoopCommonModes,
-            0,
-            &this->audioQueue);
-
-        if (result != 0) {
-            std::cerr << "AudioQueueNewOutput failed: " << result << "\n";
-            return OutputState::InvalidState;
+        std::vector<unsigned char> storage(bytes);
+        auto* buffers = reinterpret_cast<AudioBufferList*>(storage.data());
+        if (AudioObjectGetPropertyData(device, &property, 0, nullptr, &bytes, buffers) != noErr) {
+            return false;
         }
-
-        /* after the queue is created, but before it's started, let's make
-        sure the correct output device is selected */
-        auto device = this->GetDefaultDevice();
-        if (device) {
-            std::string deviceId = device->Id();
-            if (deviceId.c_str()) {
-                CFStringRef deviceUid = CFStringCreateWithBytes(
-                    kCFAllocatorDefault,
-                    (const UInt8*) deviceId.c_str(),
-                    deviceId.size(),
-                    kCFStringEncodingUTF8,
-                    false);
-
-                AudioQueueSetProperty(
-                    this->audioQueue,
-                    kAudioQueueProperty_CurrentDevice,
-                    &deviceUid,
-                    sizeof(deviceUid));
-
-                CFRelease(deviceUid);
-            }
-            device->Release();
-        }
-
-        /* get it running! */
-        result = AudioQueueStart(this->audioQueue, nullptr);
-
-        this->SetVolume(volume);
-
-        if (result != 0) {
-            std::cerr << "AudioQueueStart failed: " << result << "\n";
-            return OutputState::InvalidState;
-        }
-
-        this->Resume();
-    }
-
-    AudioQueueBufferRef audioQueueBuffer = nullptr;
-
-    size_t bytes = buffer->Bytes();
-
-    result = AudioQueueAllocateBuffer(this->audioQueue, bytes, &audioQueueBuffer);
-
-    BufferContext* context = new BufferContext();
-    context->provider = provider;
-    context->buffer = buffer;
-
-    if (result != 0) {
-        std::cerr << "AudioQueueAllocateBuffer failed: " << result << "\n";
-        return OutputState::InvalidState;
-    }
-
-    audioQueueBuffer->mUserData = (void *) context;
-    audioQueueBuffer->mAudioDataByteSize = bytes;
-
-    memcpy(
-        audioQueueBuffer->mAudioData,
-        (void *) buffer->BufferPointer(),
-        bytes);
-
-    result = AudioQueueEnqueueBuffer(
-        this->audioQueue, audioQueueBuffer, 0, nullptr);
-
-    if (result != 0) {
-        std::cerr << "AudioQueueEnqueueBuffer failed: " << result << "\n";
-        delete context;
-        return OutputState::InvalidState;
-    }
-
-    ++bufferCount;
-
-    return OutputState::BufferWritten;
-}
-
-CoreAudioOut::~CoreAudioOut() {
-    this->Stop();
-}
-
-void CoreAudioOut::Release() {
-    delete this;
-}
-
-void CoreAudioOut::Drain() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-    if (this->state != StateStopped && this->audioQueue) {
-        std::cerr << "CoreAudioOut: draining...\n";
-        AudioQueueFlush(this->audioQueue);
-        std::cerr << "CoreAudioOut: drained.\n";
-    }
-}
-
-void CoreAudioOut::Pause() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-    if (this->audioQueue) {
-        AudioQueuePause(this->audioQueue);
-        this->state = StatePaused;
-    }
-}
-
-void CoreAudioOut::Resume() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-    if (this->audioQueue) {
-        AudioQueueStart(this->audioQueue, nullptr);
-    }
-
-    this->state = StatePlaying;
-}
-
-void CoreAudioOut::SetVolume(double volume) {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-    this->volume = volume;
-
-    if (this->audioQueue) {
-        OSStatus result = AudioQueueSetParameter(
-            this->audioQueue,
-            kAudioQueueParam_Volume,
-            volume);
-
-        if (result != 0) {
-            std::cerr << "AudioQueueSetParameter(volume) failed: " << result << "\n";
-        }
-    }
-}
-
-double CoreAudioOut::GetVolume() {
-    return this->volume;
-}
-
-void CoreAudioOut::Stop() {
-    AudioQueueRef queue = nullptr;
-
-    {
-        /* AudioQueueStop/AudioQueueDispose will trigger the callback, which
-        will try to dispose of the samples on a separate thread and deadlock.
-        cache the queue and reset outside of the critical section */
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
-        queue = this->audioQueue;
-        this->audioQueue = nullptr;
-        this->state = StateStopped;
-        this->bufferCount = 0;
-    }
-
-    if (queue) {
-        AudioQueueStop(queue, true);
-        AudioQueueDispose(queue, true);
-    }
-}
-
-IDeviceList* CoreAudioOut::GetDeviceList() {
-    CoreAudioDeviceList* result = new CoreAudioDeviceList();
-
-    AudioObjectPropertyAddress address = {
-        kAudioHardwarePropertyDevices,
-        kAudioObjectPropertyScopeGlobal,
-        kAudioObjectPropertyElementMaster
-    };
-
-    UInt32 propsize;
-    if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &address, 0, NULL, &propsize) == 0) {
-        int deviceCount = propsize / sizeof(AudioDeviceID);
-        AudioDeviceID *deviceIds = new AudioDeviceID[deviceCount];
-
-        char buffer[2048];
-        if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, NULL, &propsize, deviceIds) == 0) {
-            for (int i = 0; i < deviceCount; ++i) {
-                auto deviceId = deviceIds[i];
-
-                AudioObjectPropertyAddress outputAddress = {
-                    kAudioDevicePropertyStreamConfiguration,
-                    kAudioDevicePropertyScopeOutput,
-                    0
-                };
-
-                /* see if this device has output channels. if it doesn't, it's a device
-                that can only do input */
-                size_t outputChannels = 0;
-                if (AudioObjectGetPropertyDataSize(deviceId, &outputAddress, 0, NULL, &propsize) == 0) {
-                    AudioBufferList *bufferList = (AudioBufferList *) malloc(propsize);
-                    if (AudioObjectGetPropertyData(deviceId, &outputAddress, 0, NULL, &propsize, bufferList) == 0) {
-                        for (UInt32 j = 0; j < bufferList->mNumberBuffers; ++j) {
-                            outputChannels += bufferList->mBuffers[j].mNumberChannels;
-                        }
-                    }
-                    free(bufferList);
-                }
-
-                if (outputChannels > 0) { /* device has an output! */
-                    std::string deviceNameStr, deviceIdStr;
-
-                    /* get the device name */
-
-                    AudioObjectPropertyAddress nameAddress = {
-                        kAudioDevicePropertyDeviceName,
-                        kAudioDevicePropertyScopeOutput,
-                        0
-                    };
-
-                    UInt32 maxLength = 2048;
-                    if (AudioObjectGetPropertyData(deviceId, &nameAddress, 0, NULL, &maxLength, buffer) == 0) {
-                        deviceNameStr = buffer;
-                    }
-
-                    /* get the device id */
-
-                    AudioObjectPropertyAddress uidAddress = {
-                        kAudioDevicePropertyDeviceUID,
-                        kAudioObjectPropertyScopeGlobal,
-                        kAudioObjectPropertyElementMaster
-                    };
-
-                    CFStringRef deviceUid;
-                    if (AudioObjectGetPropertyData(deviceId, &uidAddress, 0, NULL, &propsize, &deviceUid) == 0) {
-                        const char* cstr = CFStringGetCStringPtr(deviceUid, kCFStringEncodingUTF8);
-                        if (cstr) {
-                            deviceIdStr = cstr;
-                        }
-                    }
-
-                    if (deviceNameStr.size() && deviceIdStr.size()) {
-                        result->Add(deviceIdStr, deviceNameStr);
-                    }
-                }
+        for (UInt32 i = 0; i < buffers->mNumberBuffers; ++i) {
+            if (buffers->mBuffers[i].mNumberChannels) {
+                return true;
             }
         }
-
-        delete[] deviceIds;
+        return false;
     }
 
-    return result;
+    mc_result visitDevice(AudioDeviceID device, mc_output_device_fn read, void* data) {
+        if (device == kAudioObjectUnknown || !hasOutput(device)) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const auto id = stringProperty(device, kAudioDevicePropertyDeviceUID);
+        const auto name = stringProperty(device, kAudioObjectPropertyName);
+        if (id.empty() || name.empty()) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const mc_output_device item { { id.data(), id.size() }, { name.data(), name.size() } };
+        read(data, &item);
+        return MC_OK;
+    }
+
+    AudioDeviceID findDevice(mc_string_view id) {
+        if (!id.length) {
+            return defaultDevice();
+        }
+        const AudioObjectPropertyAddress property { kAudioHardwarePropertyTranslateUIDToDevice,
+            kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain };
+        CFStringRef uid = CFStringCreateWithBytes(
+            kCFAllocatorDefault, reinterpret_cast<const UInt8*>(id.data), id.length, kCFStringEncodingUTF8, false);
+        if (!uid) {
+            return kAudioObjectUnknown;
+        }
+        AudioDeviceID device = kAudioObjectUnknown;
+        UInt32 bytes = sizeof(device);
+        const auto result =
+            AudioObjectGetPropertyData(kAudioObjectSystemObject, &property, sizeof(uid), &uid, &bytes, &device);
+        CFRelease(uid);
+        return result == noErr ? device : kAudioObjectUnknown;
+    }
 }
 
-bool CoreAudioOut::SetDefaultDevice(const char* deviceId) {
-    return setDefaultDevice<IPreferences, CoreAudioDevice, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
+mc_result CoreAudioOut::Prepare(const mc_output_options& options, const mc_output_callbacks& callbacks) {
+    if (findDevice(options.device_id) == kAudioObjectUnknown) {
+        return MC_ERROR_NOT_FOUND;
+    }
+    this->format = options.format;
+    this->callbacks = callbacks;
+    this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : 32768;
+    if (this->capacity > std::numeric_limits<UInt32>::max() / options.format.channels / sizeof(float)) {
+        return MC_ERROR_BUFFER_TOO_SMALL;
+    }
+    const auto bytes = this->capacity * options.format.channels * sizeof(float);
+    AudioStreamBasicDescription format {};
+    format.mSampleRate = options.format.sample_rate;
+    format.mFormatID = kAudioFormatLinearPCM;
+    format.mFormatFlags = kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked;
+    format.mFramesPerPacket = 1;
+    format.mChannelsPerFrame = options.format.channels;
+    format.mBitsPerChannel = 32;
+    format.mBytesPerFrame = options.format.channels * sizeof(float);
+    format.mBytesPerPacket = format.mBytesPerFrame;
+    if (AudioQueueNewOutput(&format, Completed, this, nullptr, nullptr, 0, &this->queue) != noErr) {
+        return MC_ERROR_IO;
+    }
+    if (AudioQueueAddPropertyListener(this->queue, kAudioQueueProperty_IsRunning, RunningChanged, this) != noErr) {
+        return MC_ERROR_IO;
+    }
+    if (options.device_id.length) {
+        CFStringRef uid =
+            CFStringCreateWithBytes(kCFAllocatorDefault, reinterpret_cast<const UInt8*>(options.device_id.data),
+                options.device_id.length, kCFStringEncodingUTF8, false);
+        if (!uid) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        const auto status = AudioQueueSetProperty(this->queue, kAudioQueueProperty_CurrentDevice, &uid, sizeof(uid));
+        CFRelease(uid);
+        if (status != noErr) {
+            return MC_ERROR_IO;
+        }
+    }
+    /* AudioQueue owns these buffers until synchronous disposal. no callback
+    allocates, frees storage, or touches the engine's PCM buffer pool. */
+    for (auto& slot : this->slots) {
+        if (AudioQueueAllocateBuffer(this->queue, static_cast<UInt32>(bytes), &slot.buffer) != noErr) {
+            return MC_ERROR_INTERNAL;
+        }
+        slot.buffer->mUserData = &slot;
+    }
+    if (this->SetVolume(options.initial_volume) != MC_OK || AudioQueueStart(this->queue, nullptr) != noErr) {
+        return MC_ERROR_IO;
+    }
+    this->restartAfterDrain = false;
+    this->paused.store(false);
+    this->stopped.store(false);
+    return MC_OK;
 }
 
-IDevice* CoreAudioOut::GetDefaultDevice() {
-    return findDeviceById<CoreAudioDevice, IOutput>(this, getDeviceId());
+mc_result CoreAudioOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
+    /* Stop closes admission before waiting for producer calls, so a caller
+    that arrives late cannot touch an AudioQueue being disposed. */
+    this->producers.fetch_add(1);
+    if (this->stopped.load()) {
+        this->FinishProducer();
+        return MC_ERROR_CANCELLED;
+    }
+    const auto& pcm = block.pcm;
+    if (pcm.format.sample_rate != this->format.sample_rate || pcm.format.channels != this->format.channels) {
+        this->FinishProducer();
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    if (pcm.frame_count > this->capacity) {
+        this->FinishProducer();
+        return MC_ERROR_BUFFER_TOO_SMALL;
+    }
+    if (this->queuedFrames.load() > this->capacity - pcm.frame_count) {
+        this->FinishProducer();
+        return MC_ERROR_QUEUE_FULL;
+    }
+    if (this->restartAfterDrain) {
+        if (AudioQueueStart(this->queue, nullptr) != noErr) {
+            this->FinishProducer();
+            return MC_ERROR_IO;
+        }
+        this->restartAfterDrain = false;
+    }
+    for (auto& slot : this->slots) {
+        if (slot.queued.load(std::memory_order_acquire)) {
+            continue;
+        }
+        slot.token = block.token;
+        slot.frames = pcm.frame_count;
+        const auto bytes = pcm.frame_count * pcm.format.channels * sizeof(float);
+        std::memcpy(slot.buffer->mAudioData, pcm.data, bytes);
+        slot.buffer->mAudioDataByteSize = static_cast<UInt32>(bytes);
+        this->queuedFrames.fetch_add(pcm.frame_count);
+        slot.queued.store(true, std::memory_order_release);
+        const auto result = AudioQueueEnqueueBuffer(this->queue, slot.buffer, 0, nullptr);
+        if (result != noErr) {
+            slot.queued.store(false, std::memory_order_release);
+            this->queuedFrames.fetch_sub(pcm.frame_count);
+        }
+        this->FinishProducer();
+        return result == noErr ? MC_OK : MC_ERROR_IO;
+    }
+    this->FinishProducer();
+    return MC_ERROR_QUEUE_FULL;
+}
+
+void CoreAudioOut::Completed(void* state, AudioQueueRef, AudioQueueBufferRef buffer) noexcept {
+    auto& output = *static_cast<CoreAudioOut*>(state);
+    auto& slot = *static_cast<Slot*>(buffer->mUserData);
+    if (!slot.queued.load(std::memory_order_acquire)) {
+        return;
+    }
+    const auto token = slot.token;
+    const auto frames = slot.frames;
+    output.callbacks.completed(output.callbacks.context, token, output.stopped.load() ? MC_ERROR_CANCELLED : MC_OK);
+    output.queuedFrames.fetch_sub(frames);
+    slot.queued.store(false, std::memory_order_release);
+    if (output.callbacks.ready) {
+        output.callbacks.ready(output.callbacks.context);
+    }
+    output.NotifyDrainWaiter();
+}
+
+/* AudioQueue can call this on an audio thread. let Drain query the
+driver on the playback worker. */
+void CoreAudioOut::RunningChanged(void* state, AudioQueueRef, AudioQueuePropertyID) noexcept {
+    static_cast<CoreAudioOut*>(state)->NotifyDrainWaiter();
+}
+
+void CoreAudioOut::FinishProducer() noexcept {
+    this->producers.fetch_sub(1);
+    this->producers.notify_all();
+}
+
+void CoreAudioOut::NotifyDrainWaiter() noexcept {
+    this->drainNotifications.fetch_add(1);
+    this->drainNotifications.notify_all();
+}
+
+mc_result CoreAudioOut::Stop() noexcept {
+    this->stopped.store(true);
+    this->NotifyDrainWaiter();
+    auto active = this->producers.load();
+    while (active) {
+        this->producers.wait(active);
+        active = this->producers.load();
+    }
+    if (!this->queue) {
+        return MC_OK;
+    }
+    /* never hold a callback-visible lock while stopping/disposal synchronously
+    waits for callbacks. disposal guarantees there are no later callbacks. */
+    AudioQueueStop(this->queue, true);
+    const auto disposed = AudioQueueDispose(this->queue, true);
+    if (disposed != noErr) {
+        return MC_ERROR_IO;
+    }
+    this->queue = nullptr;
+    for (auto& slot : this->slots) {
+        if (slot.queued.exchange(false)) {
+            this->callbacks.completed(this->callbacks.context, slot.token, MC_ERROR_CANCELLED);
+        }
+        slot.buffer = nullptr;
+    }
+    this->queuedFrames.store(0);
+    this->NotifyDrainWaiter();
+    /* successful disposal establishes quiescence even when Stop reported a
+    device that was already unavailable or a queue that never started. */
+    return MC_OK;
+}
+
+mc_result CoreAudioOut::Pause() {
+    if (!this->queue || AudioQueuePause(this->queue) != noErr) {
+        return MC_ERROR_IO;
+    }
+    this->paused.store(true);
+    this->NotifyDrainWaiter();
+    return MC_OK;
+}
+
+mc_result CoreAudioOut::Resume() {
+    if (!this->queue || AudioQueueStart(this->queue, nullptr) != noErr) {
+        return MC_ERROR_IO;
+    }
+    this->restartAfterDrain = false;
+    this->paused.store(false);
+    this->NotifyDrainWaiter();
+    return MC_OK;
+}
+
+mc_result CoreAudioOut::SetVolume(double value) {
+    if (this->queue && AudioQueueSetParameter(this->queue, kAudioQueueParam_Volume, value) != noErr) {
+        return MC_ERROR_IO;
+    }
+    this->volume.store(value);
+    return MC_OK;
+}
+
+double CoreAudioOut::GetVolume() const {
+    return this->volume.load();
+}
+
+mc_result CoreAudioOut::Drain() {
+    if (this->stopped.load()) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->restartAfterDrain) {
+        return MC_OK;
+    }
+    if (this->paused.load()) {
+        return MC_ERROR_IN_FLIGHT;
+    }
+    /* buffer callbacks only prove storage is reusable. Stop(false) also plays
+    driver-buffered audio before IsRunning changes to false. fence native calls
+    against disposal, but release the fence while waiting so Stop can cancel. */
+    this->producers.fetch_add(1);
+    if (this->stopped.load()) {
+        this->FinishProducer();
+        return MC_ERROR_CANCELLED;
+    }
+    const auto requested = AudioQueueStop(this->queue, false);
+    this->FinishProducer();
+    if (requested != noErr) {
+        return MC_ERROR_IO;
+    }
+    while (true) {
+        /* take the count before checking the queue so a notification that
+        arrives during the check also releases the wait below. */
+        const auto observedNotifications = this->drainNotifications.load();
+        this->producers.fetch_add(1);
+        if (this->stopped.load()) {
+            this->FinishProducer();
+            return MC_ERROR_CANCELLED;
+        }
+        UInt32 running = 0;
+        UInt32 size = sizeof(running);
+        const auto status = AudioQueueGetProperty(this->queue, kAudioQueueProperty_IsRunning, &running, &size);
+        this->FinishProducer();
+        if (status != noErr) {
+            return MC_ERROR_IO;
+        }
+        /* AudioQueue may still report its initial stopped state while startup
+        is pending. accepted frames must finish as well as native playback. */
+        if (!running && this->queuedFrames.load() == 0) {
+            this->restartAfterDrain = true;
+            return MC_OK;
+        }
+        this->drainNotifications.wait(observedNotifications);
+    }
+}
+
+mc_result CoreAudioOut::VisitDevices(mc_output_device_fn read, void* data) {
+    const AudioObjectPropertyAddress property { kAudioHardwarePropertyDevices, kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMain };
+    UInt32 bytes = 0;
+    if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &property, 0, nullptr, &bytes) != noErr) {
+        return MC_ERROR_IO;
+    }
+    std::vector<AudioDeviceID> devices(bytes / sizeof(AudioDeviceID));
+    if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &property, 0, nullptr, &bytes, devices.data()) != noErr) {
+        return MC_ERROR_IO;
+    }
+    for (const auto device : devices) {
+        visitDevice(device, read, data);
+    }
+    return MC_OK;
+}
+
+mc_result CoreAudioOut::ReadDefaultDevice(mc_output_device_fn read, void* data) {
+    return visitDevice(defaultDevice(), read, data);
+}
+
+mc_result CoreAudioOut::GetDefaultFormat(mc_string_view id, mc_audio_format& format) {
+    const auto device = findDevice(id);
+    if (device == kAudioObjectUnknown) {
+        return MC_ERROR_NOT_FOUND;
+    }
+    const AudioObjectPropertyAddress property { kAudioDevicePropertyNominalSampleRate, kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMain };
+    Float64 rate = 0;
+    UInt32 bytes = sizeof(rate);
+    if (AudioObjectGetPropertyData(device, &property, 0, nullptr, &bytes, &rate) != noErr || !std::isfinite(rate) ||
+        rate < 1 || rate > UINT32_MAX)
+    {
+        return MC_ERROR_IO;
+    }
+    format = { sizeof(format), static_cast<uint32_t>(rate), 2, 0 };
+    return MC_OK;
 }

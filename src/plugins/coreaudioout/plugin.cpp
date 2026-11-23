@@ -32,29 +32,30 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IOutput.h>
-
 #include "CoreAudioOut.h"
 
-class CoreAudioPlugin : public musik::core::sdk::IPlugin {
-    public:
-        void Release() override { delete this; }
-        const char* Name() override { return "CoreAudio IOutput"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "7277a19f-a5f7-4123-ac2d-c36273097b72"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-};
-
-extern "C" musik::core::sdk::IPlugin* GetPlugin() {
-    return new CoreAudioPlugin();
+namespace {
+    mc_result MC_CALL initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        return musik::core::plugin::RegisterOutput<CoreAudioOut>(*host);
+    }
+    void MC_CALL shutdown(void*) {
+        /* instances and AudioQueue callbacks have finished before plugin shutdown. */
+    }
 }
 
-extern "C" musik::core::sdk::IOutput* GetAudioOutput() {
-    return new CoreAudioOut();
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error) {
+    const auto result = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (result != MC_OK) {
+        return result;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "7277a19f-a5f7-4123-ac2d-c36273097b72", 36 };
+    plugin->name = { "CoreAudio", 9 };
+    plugin->version = { "1", 1 };
+    plugin->author = { "clangen", 7 };
+    plugin->initialize = initialize;
+    plugin->shutdown = shutdown;
+    return MC_OK;
 }

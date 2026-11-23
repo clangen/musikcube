@@ -34,62 +34,61 @@
 
 #pragma once
 
-#include <musikcore/sdk/IOutput.h>
-#include <musikcore/sdk/IBufferProvider.h>
-#include <deque>
-#include <mutex>
+#include <musikcore/plugin/output.hpp>
 #include <AudioToolbox/AudioQueue.h>
-#include <CoreAudio/CoreAudioTypes.h>
-#include <CoreFoundation/CFRunLoop.h>
-#include <CoreServices/CoreServices.h>
-#include <CoreAudio/CoreAudio.h>
+#include <array>
+#include <atomic>
 
-class CoreAudioOut : public musik::core::sdk::IOutput {
-    public:
-        struct BufferContext {
-            musik::core::sdk::IBuffer *buffer;
-            musik::core::sdk::IBufferProvider *provider;
-        };
+/* plays float32 PCM through AudioQueue. prepare owns all allocation; callbacks
+only release preallocated slots and report completion. Stop quiesces AudioQueue
+before returning outstanding tokens. instances cannot be copied or moved. */
+class CoreAudioOut {
+public:
+    CoreAudioOut() = default;
+    CoreAudioOut(const CoreAudioOut&) = delete;
+    CoreAudioOut(CoreAudioOut&&) = delete;
+    ~CoreAudioOut() = default;
 
-        CoreAudioOut();
-        virtual ~CoreAudioOut();
+    CoreAudioOut& operator=(const CoreAudioOut&) = delete;
+    CoreAudioOut& operator=(CoreAudioOut&&) = delete;
 
-        /* IPlugin */
-        const char* Name() override { return "CoreAudio"; }
+    mc_result Prepare(const mc_output_options&, const mc_output_callbacks&);
+    mc_result QueueAudioBuffer(const mc_output_buffer&) noexcept;
+    mc_result Pause();
+    mc_result Resume();
+    mc_result SetVolume(double);
+    double GetVolume() const;
+    mc_result Stop() noexcept;
+    mc_result Drain();
 
-        /* IOutput */
-        void Release() override;
-        void Pause() override;
-        void Resume() override;
-        void SetVolume(double volume) override;
-        double GetVolume() override;
-        void Stop() override;
-        double Latency() override { return 0.0; }
-        void Drain() override;
+    static mc_result VisitDevices(mc_output_device_fn read, void* data);
+    static mc_result ReadDefaultDevice(mc_output_device_fn read, void* data);
+    static mc_result GetDefaultFormat(mc_string_view device, mc_audio_format& format);
 
-        musik::core::sdk::OutputState Play(
-            musik::core::sdk::IBuffer *buffer,
-            musik::core::sdk::IBufferProvider *provider) override;
+private:
+    struct Slot {
+        AudioQueueBufferRef buffer = nullptr;
+        std::atomic<bool> queued { false };
+        uint64_t token = 0;
+        size_t frames = 0;
+    };
 
-        musik::core::sdk::IDeviceList* GetDeviceList() override;
-        bool SetDefaultDevice(const char* deviceId) override;
-        musik::core::sdk::IDevice* GetDefaultDevice() override;
-        int GetDefaultSampleRate() override { return -1; }
+    static constexpr size_t BufferCount = 8;
+    static void Completed(void*, AudioQueueRef, AudioQueueBufferRef) noexcept;
+    static void RunningChanged(void*, AudioQueueRef, AudioQueuePropertyID) noexcept;
+    void NotifyDrainWaiter() noexcept;
+    void FinishProducer() noexcept;
 
-        void NotifyBufferCompleted(BufferContext *context);
-
-    private:
-        enum State {
-            StateStopped,
-            StatePaused,
-            StatePlaying
-        };
-
-        AudioStreamBasicDescription audioFormat;
-        AudioQueueRef audioQueue;
-        double volume;
-        int bufferCount;
-        std::recursive_mutex mutex;
-        bool quit;
-        State state;
+    AudioQueueRef queue = nullptr;
+    mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
+    mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
+    std::array<Slot, BufferCount> slots;
+    size_t capacity = 0;
+    std::atomic<size_t> queuedFrames { 0 };
+    std::atomic<unsigned> producers { 0 };
+    std::atomic<bool> stopped { true };
+    std::atomic<bool> paused { false };
+    bool restartAfterDrain = false;
+    std::atomic<double> volume { 1.0 };
+    std::atomic<uint64_t> drainNotifications { 0 };
 };

@@ -637,3 +637,21 @@ add_test(NAME musikcore.integration.runtime.failure COMMAND "${CMAKE_COMMAND}"
   "-DFIRST=$<TARGET_FILE:musikcore_runtime_failure_First>" "-DSECOND=$<TARGET_FILE:musikcore_runtime_failure_Second>"
   -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-runtime-fatal-detachment.cmake")
 set_tests_properties(musikcore.integration.runtime.failure PROPERTIES LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
+
+# native hardware coverage also drives the public URI player through the
+# existing decoder. the isolated runner protects user catalogs/preferences.
+if(APPLE AND TARGET coreaudioout AND TARGET ffmpegdecoder)
+  add_executable(musikcore_coreaudio_output_test ../integration/plugins/coreaudio-output.cpp host-wakeup.cpp)
+  target_include_directories(musikcore_coreaudio_output_test PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_coreaudio_output_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_coreaudio_output_test PRIVATE ${core_fixture_library} Threads::Threads ${CMAKE_DL_LIBS})
+  set_target_properties(musikcore_coreaudio_output_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+  add_dependencies(musikcore_coreaudio_output_test coreaudioout ffmpegdecoder)
+  add_dependencies(musikcube_tests musikcore_coreaudio_output_test)
+  add_dependencies(musikcube_integration_tests musikcore_coreaudio_output_test)
+  add_test(NAME musikcore.integration.plugins.coreaudio_output COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "$<TARGET_FILE:musikcore_coreaudio_output_test>" "$<TARGET_FILE:coreaudioout>" "$<TARGET_FILE:ffmpegdecoder>")
+  set_tests_properties(musikcore.integration.plugins.coreaudio_output PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;hardware;contract" SKIP_RETURN_CODE 77 TIMEOUT 30)
+endif()

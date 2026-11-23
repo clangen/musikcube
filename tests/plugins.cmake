@@ -155,7 +155,6 @@ if(MUSIKCORE_ABI_ONLY)
   # the plugin uses only installed-shape C headers and system threads, so its
   # real load/unload contract can run without building the application engine.
   add_subdirectory("${PROJECT_SOURCE_DIR}/src/plugins/nullout" fixtures/nullout)
-  musikcube_restrict_exports(nullout mc_plugin_get_api)
   musikcore_add_null_output_contract_test()
 endif()
 
