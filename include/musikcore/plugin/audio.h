@@ -58,7 +58,7 @@ typedef struct mc_media_hint {
     /* non-owning UTF-8 URI, valid during the probe/create call; default empty. */
     mc_string_view uri;
 
-    /* non-owning MIME type; empty means unknown. valid during the call. */
+    /* lowercase MIME type without parameters. empty means unknown. valid during the call. */
     mc_string_view content_type;
 
     /* non-owning lowercase extension without a dot; empty means unknown.
@@ -111,9 +111,16 @@ typedef struct mc_audio_scratch_buffer_api {
     core-owned. clear the caller's slot; null is accepted.
     no active write or other use may remain. default callback is null. */
     void(MC_CALL* destroy)(void* context, mc_audio_scratch_buffer** buffer);
+
+    /* read the published frames once, without copying samples. the view stays
+    valid until the next write, resize, format change or destruction. the next
+    read is empty until end_write publishes another block; a decoder that makes
+    no progress cannot accidentally replay its previous samples. */
+    mc_result(MC_CALL* read_block)(void* context, mc_audio_scratch_buffer* buffer, mc_pcm_view* view);
 } mc_audio_scratch_buffer_api;
 
-#define MC_AUDIO_SCRATCH_BUFFER_API_DEFAULT { sizeof(mc_audio_scratch_buffer_api), NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define MC_AUDIO_SCRATCH_BUFFER_API_DEFAULT \
+    { sizeof(mc_audio_scratch_buffer_api), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 #ifdef __cplusplus
 }

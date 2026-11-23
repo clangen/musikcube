@@ -118,9 +118,26 @@ namespace musik { namespace core { namespace ffi { namespace audio_scratch_buffe
         }
     }
 
+    static mc_result MC_CALL readBlock(void*, mc_audio_scratch_buffer* buffer, mc_pcm_view* view) {
+        const auto status = Read(buffer, view);
+        if (status == MC_OK) {
+            buffer->frames = 0;
+        }
+        return status;
+    }
+
     const mc_audio_scratch_buffer_api& Host() {
-        static const mc_audio_scratch_buffer_api api { sizeof(mc_audio_scratch_buffer_api), nullptr, create, setFormat, reserve, beginWrite,
-            endWrite, destroy };
+        static const mc_audio_scratch_buffer_api api {
+            .struct_size = sizeof(mc_audio_scratch_buffer_api),
+            .context = nullptr,
+            .create = create,
+            .set_format = setFormat,
+            .reserve = reserve,
+            .begin_write = beginWrite,
+            .end_write = endWrite,
+            .destroy = destroy,
+            .read_block = readBlock,
+        };
         return api;
     }
 

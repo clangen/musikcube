@@ -2,10 +2,12 @@
 #include <common/Contract.h>
 #include "../common/error.h"
 #include <musikcore/plugin/output.h>
+#include <musikcore/plugin/decoder.h>
 
 #include <climits>
 #include <cstring>
 #include <exception>
+#include <unordered_set>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -85,26 +87,66 @@ namespace musik { namespace core { namespace ffi {
                 MC_ABI_VERSION_MINOR(version) <= MC_ABI_VERSION_MINOR(MC_PLUGIN_ABI_VERSION);
         }
 
-        /* sized defaults are not callable factories. reject incomplete output
-        tables before publishing them, so callers cannot reach null methods. */
-        bool validOutputFactory(const mc_plugin_capability& capability) {
-            if (capability.api_size < sizeof(mc_output_factory) ||
-                reinterpret_cast<uintptr_t>(capability.api) % alignof(mc_output_factory))
-            {
+        /* validate a factory once, while it can still be rejected as a whole.
+        all three families publish immutable, plugin-owned method tables. */
+        template<typename Factory, typename Check>
+        bool validFactory(const mc_plugin_capability& capability, Check check) {
+            if (capability.api_size < sizeof(Factory) || reinterpret_cast<uintptr_t>(capability.api) % alignof(Factory)) {
                 return false;
             }
-            const auto& factory = *static_cast<const mc_output_factory*>(capability.api);
+            const auto& factory = *static_cast<const Factory*>(capability.api);
             const auto* methods = factory.instance_api;
-            if (!factory.create || !factory.visit_devices || !factory.read_default_device ||
-                !factory.get_default_format || !methods ||
-                reinterpret_cast<uintptr_t>(methods) % alignof(mc_output_vtable) ||
-                methods->struct_size < sizeof(mc_output_vtable))
-            {
-                return false;
+            using Methods = std::remove_pointer_t<decltype(methods)>;
+            return factory.create && methods && reinterpret_cast<uintptr_t>(methods) % alignof(Methods) == 0 &&
+                methods->struct_size >= sizeof(Methods) && methods->destroy && check(factory, *methods);
+        }
+
+        bool validCapability(const std::string& id, const mc_plugin_capability& capability) {
+            if (id == MC_PLUGIN_CAPABILITY_CONFIGURATION) {
+                if (capability.api_size < sizeof(mc_configuration_api) ||
+                    reinterpret_cast<uintptr_t>(capability.api) % alignof(mc_configuration_api))
+                {
+                    return false;
+                }
+                const auto& table = *static_cast<const mc_configuration_api*>(capability.api);
+                if (table.integer_count && (!table.integers ||
+                    reinterpret_cast<uintptr_t>(table.integers) % alignof(mc_integer_setting)))
+                {
+                    return false;
+                }
+
+                std::unordered_set<std::string_view> keys;
+                for (size_t i = 0; i < table.integer_count; ++i) {
+                    const auto& setting = table.integers[i];
+                    if (!validId(setting.key) || setting.minimum > setting.default_value ||
+                        setting.maximum < setting.default_value ||
+                        !keys.emplace(setting.key.data, setting.key.length).second)
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
-            return methods->destroy && methods->prepare && methods->queue_audio_buffer && methods->pause &&
-                methods->resume && methods->set_volume && methods->get_volume && methods->stop && methods->drain &&
-                methods->get_timing;
+            if (id == MC_PLUGIN_CAPABILITY_STREAM) {
+                return validFactory<mc_stream_factory>(capability, [](const auto& factory, const auto& methods) {
+                    return factory.can_handle && methods.open && methods.close && methods.interrupt && methods.get_info &&
+                        methods.read && methods.write && methods.seek && methods.tell;
+                });
+            }
+            if (id == MC_PLUGIN_CAPABILITY_DECODER) {
+                return validFactory<mc_decoder_factory>(capability, [](const auto& factory, const auto& methods) {
+                    return factory.can_handle && methods.open && methods.interrupt && methods.decode && methods.seek &&
+                        methods.get_duration && methods.set_preferred_sample_rate;
+                });
+            }
+            if (id == MC_PLUGIN_CAPABILITY_OUTPUT) {
+                return validFactory<mc_output_factory>(capability, [](const auto& factory, const auto& methods) {
+                    return factory.visit_devices && factory.read_default_device && factory.get_default_format &&
+                        methods.prepare && methods.queue_audio_buffer && methods.pause && methods.resume &&
+                        methods.set_volume && methods.get_volume && methods.stop && methods.drain && methods.get_timing;
+                });
+            }
+            return true;
         }
 
         /* catch only the actual foreign entry/initialize call. host work stays
@@ -326,7 +368,7 @@ namespace musik { namespace core { namespace ffi {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
             const std::string id(capability->id.data, capability->id.length);
-            if (id == MC_PLUGIN_CAPABILITY_OUTPUT && !validOutputFactory(*capability)) {
+            if (!validCapability(id, *capability)) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
             for (const auto& registration : plugin.registrations) {

@@ -1,5 +1,7 @@
 #include "probe.h"
 #include <musikcore/plugin/output.h>
+#include <musikcore/plugin/decoder.h>
+#include <musikcore/plugin/settings.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -77,14 +79,37 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
     if (register_again(state) != MC_ERROR_INVALID_ARGUMENT) {
         return MC_ERROR_INTERNAL;
     }
-#ifdef BAD_OUTPUT
-    /* a sized but incomplete factory must fail registration, rather than
-    publishing null methods that crash when a caller tries to create output. */
-    static const mc_output_factory output = MC_OUTPUT_FACTORY_DEFAULT;
+#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION)
+    /* registration must reject a sized factory with missing operations before
+    playback can obtain a typed view of the provider. */
+#if defined(BAD_CONFIGURATION)
+    /* HTTP-style settings must have a valid fallback even when no file exists. */
+    static const mc_integer_setting field = {
+        .key = { "count", 5 },
+        .default_value = 0,
+        .minimum = 1,
+        .maximum = 2,
+    };
+    static const mc_configuration_api factory = {
+        .struct_size = sizeof(mc_configuration_api),
+        .integers = &field,
+        .integer_count = 1,
+    };
+    static const char id[] = MC_PLUGIN_CAPABILITY_CONFIGURATION;
+#elif defined(BAD_STREAM)
+    static const mc_stream_factory factory = MC_STREAM_FACTORY_DEFAULT;
+    static const char id[] = MC_PLUGIN_CAPABILITY_STREAM;
+#elif defined(BAD_DECODER)
+    static const mc_decoder_factory factory = MC_DECODER_FACTORY_DEFAULT;
+    static const char id[] = MC_PLUGIN_CAPABILITY_DECODER;
+#else
+    static const mc_output_factory factory = MC_OUTPUT_FACTORY_DEFAULT;
+    static const char id[] = MC_PLUGIN_CAPABILITY_OUTPUT;
+#endif
     mc_plugin_capability capability = MC_PLUGIN_CAPABILITY_DEFAULT;
-    capability.id = (mc_string_view) { MC_PLUGIN_CAPABILITY_OUTPUT, sizeof(MC_PLUGIN_CAPABILITY_OUTPUT) - 1 };
-    capability.api = &output;
-    capability.api_size = sizeof(output);
+    capability.id = (mc_string_view) { id, sizeof(id) - 1 };
+    capability.api = &factory;
+    capability.api_size = sizeof(factory);
     return host->register_capability(host->host_context, &capability);
 #endif
 #ifdef INIT_FAIL

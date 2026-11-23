@@ -313,6 +313,9 @@ int main(int argc, char** argv) {
         DuplicateId,
         MissingVersion,
         BadOutput,
+        BadStream,
+        BadDecoder,
+        BadConfiguration,
         FixtureCount
     };
     require(argc == 2 || argc == FixtureCount, "fixture arguments supplied");
@@ -328,6 +331,11 @@ int main(int argc, char** argv) {
         checkRejected(argv[BadCapability], true, true, MC_ERROR_INVALID_ARGUMENT);
         checkRejected(argv[NoEntry], false, false, MC_ERROR_UNSUPPORTED);
         checkRejected(argv[MissingVersion], false, true, MC_ERROR_PLUGIN);
+        /* incomplete stream and decoder contracts must never become callable. */
+        checkRejected(argv[BadStream], true, true, MC_ERROR_INVALID_ARGUMENT);
+        checkRejected(argv[BadDecoder], true, true, MC_ERROR_INVALID_ARGUMENT);
+        /* a setting with an impossible default cannot be exposed to the settings editor. */
+        checkRejected(argv[BadConfiguration], true, true, MC_ERROR_INVALID_ARGUMENT);
         checkRejected(argv[BadOutput], true, true, MC_ERROR_INVALID_ARGUMENT);
     }
     std::puts("provider identification/session-lifetime contracts passed");

@@ -3,7 +3,7 @@
 set(provider_output_directory "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/providers")
 
 # provider fixtures compile as C and exchange only installed-shape function tables.
-set(provider_variants valid incompatible newer_minor truncated missing_shutdown bad_id bad_utf8 entry_fail init_fail bad_capability no_entry duplicate_id missing_version bad_output)
+set(provider_variants valid incompatible newer_minor truncated missing_shutdown bad_id bad_utf8 entry_fail init_fail bad_capability no_entry duplicate_id missing_version bad_output bad_stream bad_decoder bad_configuration)
 set(provider_arguments)
 set(provider_targets)
 foreach(variant IN LISTS provider_variants)
@@ -32,6 +32,32 @@ foreach(variant IN LISTS provider_variants)
   add_dependencies(musikcube_tests ${target})
   add_dependencies(musikcube_integration_tests ${target})
 endforeach()
+
+# load a pure-C decoder from the same build-only fixture directory as the malformed providers.
+add_library(musikcore_byte_decoder MODULE support/plugins/byte-decoder.c)
+target_include_directories(musikcore_byte_decoder PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_definitions(musikcore_byte_decoder PRIVATE MC_BUILDING_PLUGIN)
+set_target_properties(musikcore_byte_decoder PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+  ARCHIVE_OUTPUT_DIRECTORY "${provider_output_directory}" LIBRARY_OUTPUT_DIRECTORY "${provider_output_directory}"
+  RUNTIME_OUTPUT_DIRECTORY "${provider_output_directory}" SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+musikcube_restrict_exports(musikcore_byte_decoder mc_plugin_get_api)
+
+add_executable(musikcore_decoder_stream_test integration/plugins/decoder-stream.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/io/LocalFileSource.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/AudioScratchBuffers.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/PluginRegistry.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/Plugin.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
+target_include_directories(musikcore_decoder_stream_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+target_compile_features(musikcore_decoder_stream_test PRIVATE cxx_std_20)
+target_link_libraries(musikcore_decoder_stream_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+set_target_properties(musikcore_decoder_stream_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcore_decoder_stream_test musikcore_byte_decoder)
+add_dependencies(musikcube_tests musikcore_decoder_stream_test)
+add_dependencies(musikcube_integration_tests musikcore_decoder_stream_test)
+add_test(NAME musikcore.integration.plugins.decoder_stream
+  COMMAND musikcore_decoder_stream_test "$<TARGET_FILE:musikcore_byte_decoder>")
+set_tests_properties(musikcore.integration.plugins.decoder_stream PROPERTIES LABELS "integration;musikcore;plugins;audio;contract")
 
 # compile the same private registry/error implementation without exporting its C++ types.
 add_executable(musikcore_plugin_registry_test integration/plugins/plugin-registry.cpp
@@ -84,6 +110,17 @@ add_test(NAME musikcore.integration.plugins.discovery
     $<TARGET_FILE:musikcore_provider_no_entry>)
 set_tests_properties(musikcore.integration.plugins.discovery PROPERTIES
   LABELS "integration;musikcore;plugins;abi;contract" TIMEOUT 30)
+
+add_executable(musikcore_local_file_source_test unit/musikcore/local-file-source.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/io/LocalFileSource.cpp")
+target_include_directories(musikcore_local_file_source_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+target_compile_features(musikcore_local_file_source_test PRIVATE cxx_std_20)
+set_target_properties(musikcore_local_file_source_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_local_file_source_test)
+add_dependencies(musikcube_unit_tests musikcore_local_file_source_test)
+add_test(NAME musikcore.unit.plugins.local_file_source COMMAND musikcore_local_file_source_test
+  "${CMAKE_CURRENT_BINARY_DIR}/bin/local-source-runs")
+set_tests_properties(musikcore.unit.plugins.local_file_source PROPERTIES LABELS "unit;musikcore;plugins;audio;contract")
 
 add_executable(musikcore_audio_buffers_test unit/musikcore/audio-buffers.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/AudioScratchBuffers.cpp"

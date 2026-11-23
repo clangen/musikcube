@@ -3,7 +3,9 @@
 #include <common/DeleteDefaults.h>
 
 #include <musikcore/plugin.h>
+#include <musikcore/plugin/decoder.h>
 #include <musikcore/plugin/output.h>
+#include <musikcore/plugin/settings.h>
 #include "PluginCallState.h"
 #include <functional>
 #include <memory>
@@ -53,8 +55,6 @@ namespace musik { namespace core { namespace ffi {
         exceptions propagate to the caller.
         it does not schedule or serialize work. */
         template<typename T> class Factory {
-            static_assert(std::is_same_v<T, mc_output_factory>, "unsupported plugin factory type");
-
         public:
             Factory() = default;
 
@@ -107,7 +107,7 @@ namespace musik { namespace core { namespace ffi {
 
         std::vector<PluginInfo> ListPlugins() const;
 
-        /* T is a supported C factory table, currently mc_output_factory.
+        /* T selects the registered C factory family.
         return an empty view if the session is inactive or the plugin lacks T.
         pluginId chooses the plugin; T alone selects its validated capability. */
         template<typename T> Factory<T> Find(std::string_view pluginId) const { return Factory<T>(*this, pluginId); }
@@ -124,8 +124,19 @@ namespace musik { namespace core { namespace ffi {
         /* keep the supported type-to-ID mapping closed: adding a family also
         requires its registration validator before callers can retrieve it. */
         template<typename T> static constexpr const char* CapabilityId() {
-            static_assert(std::is_same_v<T, mc_output_factory>, "unsupported plugin factory type");
-            return MC_PLUGIN_CAPABILITY_OUTPUT;
+            if constexpr (std::is_same_v<T, mc_configuration_api>) {
+                return MC_PLUGIN_CAPABILITY_CONFIGURATION;
+            }
+            else if constexpr (std::is_same_v<T, mc_stream_factory>) {
+                return MC_PLUGIN_CAPABILITY_STREAM;
+            }
+            else if constexpr (std::is_same_v<T, mc_decoder_factory>) {
+                return MC_PLUGIN_CAPABILITY_DECODER;
+            }
+            else {
+                static_assert(std::is_same_v<T, mc_output_factory>, "unsupported plugin factory type");
+                return MC_PLUGIN_CAPABILITY_OUTPUT;
+            }
         }
 
         const void* FindTable(std::string_view pluginId, const char* capabilityId) const;

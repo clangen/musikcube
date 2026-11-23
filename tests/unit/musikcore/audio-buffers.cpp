@@ -42,6 +42,13 @@ static void checkWriteAndRead() {
     require(audio_scratch_buffers::Read(buffer, &read) == MC_OK && read.frame_count == 3 && read.data[5] == 5.0f / 8,
         "growing capacity preserves populated samples");
 
+    /* a missing publication in the next decode cannot replay this block.
+    consuming the count leaves the returned samples in place for the caller. */
+    mc_pcm_view next = MC_PCM_VIEW_DEFAULT;
+    require(host.read_block(host.context, buffer, &read) == MC_OK && read.frame_count == 3, "consume block");
+    require(host.read_block(host.context, buffer, &next) == MC_OK && next.frame_count == 0 &&
+        read.data[5] == 5.0f / 8, "return an empty block until another write is published");
+
     /* decoders may restate the format per block; that must not discard reusable
     capacity and force another allocation before each write. */
     require(host.set_format(host.context, buffer, &format) == MC_OK, "same format can be restated");
