@@ -37,6 +37,7 @@
 
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/String.h>
+#include <limits>
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -1540,7 +1541,7 @@ void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connect
 
     if (valid) {
         auto count = (*externalIdsIt).size();
-        if (count > 0) {
+        if (count > 0 && count <= static_cast<size_t>(std::numeric_limits<int>::max())) {
             auto ids = jsonToStringArray(*externalIdsIt);
             auto orders = jsonToIntArray<int>(*sortOrdersIt);
 
@@ -1549,7 +1550,7 @@ void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connect
                     id,
                     (const char**)ids.get(),
                     orders.get(),
-                    count);
+                    static_cast<int>(count));
         }
     }
 

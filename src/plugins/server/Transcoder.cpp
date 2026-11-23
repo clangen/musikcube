@@ -46,6 +46,7 @@
 #include <filesystem>
 #include <functional>
 #include <chrono>
+#include <limits>
 
 using musik::core::sdk::fs::pathToUtf8;
 
@@ -266,6 +267,9 @@ IDataStream* Transcoder::TranscodeAndWait(
     size_t bitrate,
     const std::string& format)
 {
+    if (bitrate > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        return nullptr;
+    }
     /* the caller can specify an encoder; if it is not specified, go ahead and
     create one here */
     if (!encoder) {
@@ -339,7 +343,7 @@ IDataStream* Transcoder::TranscodeAndWait(
 
             if (!alreadyTranscoding) {
                 BlockingTranscoder blockingTranscoder(
-                    context, blockingEncoder, uri, tempFilename, expectedFilename, bitrate);
+                    context, blockingEncoder, uri, tempFilename, expectedFilename, static_cast<int>(bitrate));
 
                 bool success = blockingTranscoder.Transcode();
 

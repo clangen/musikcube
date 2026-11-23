@@ -140,7 +140,7 @@ void GmeIndexerSource::ScanTrack(
 }
 
 int GmeIndexerSource::SourceId() {
-    return std::hash<std::string>()(PLUGIN_NAME);
+    return static_cast<int>(std::hash<std::string>()(PLUGIN_NAME));
 }
 
 void GmeIndexerSource::UpdateMetadata(

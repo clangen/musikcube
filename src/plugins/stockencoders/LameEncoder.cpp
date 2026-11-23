@@ -35,6 +35,7 @@
 #include "LameEncoder.h"
 #include "shared.h"
 #include <string>
+#include <limits>
 
 using namespace musik::core::sdk;
 
@@ -56,13 +57,16 @@ LameEncoder::LameEncoder() {
 }
 
 bool LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
+    if (rate > std::numeric_limits<int>::max() || bitrate > std::numeric_limits<int>::max()) {
+        return false;
+    }
     lame = lame_init();
-    lame_set_in_samplerate(lame, rate);
+    lame_set_in_samplerate(lame, static_cast<int>(rate));
     lame_set_VBR(lame, vbr_off);
-    lame_set_VBR_mean_bitrate_kbps(lame, bitrate);
-    lame_set_brate(lame, bitrate);
+    lame_set_VBR_mean_bitrate_kbps(lame, static_cast<int>(bitrate));
+    lame_set_brate(lame, static_cast<int>(bitrate));
     lame_set_quality(lame, 5);
-    lame_set_out_samplerate(lame, rate);
+    lame_set_out_samplerate(lame, static_cast<int>(rate));
     lame_set_bWriteVbrTag(lame, 1);
     lame_init_params(lame);
     return true;
@@ -77,8 +81,14 @@ void LameEncoder::Release() {
 int LameEncoder::Encode(const IBuffer* pcm, char** data) {
     /* calculated according to lame.h */
     size_t channels = pcm->Channels();
+    if (channels == 0) {
+        return 0;
+    }
     size_t numSamples = pcm->Samples() / channels;
-    size_t requiredBytes = (size_t)(1.25 * (float)numSamples + 7200.0);
+    if (numSamples > (std::numeric_limits<int>::max() - 7200) / 2) {
+        return 0;
+    }
+    size_t requiredBytes = numSamples + numSamples / 4 + 7201;
 
     encodedBytes.reset(requiredBytes);
 
@@ -90,9 +100,9 @@ int LameEncoder::Encode(const IBuffer* pcm, char** data) {
             lame_encode_buffer_interleaved_ieee_float(
                 lame,
                 pcm->BufferPointer(),
-                numSamples,
+                static_cast<int>(numSamples),
                 encodedBytes.data,
-                encodedBytes.length);
+                static_cast<int>(encodedBytes.length));
     }
     /* non-stereo. convert to stereo! */
     else {
@@ -124,9 +134,9 @@ int LameEncoder::Encode(const IBuffer* pcm, char** data) {
             lame_encode_buffer_interleaved_ieee_float(
                 lame,
                 downmix.data,
-                numSamples,
+                static_cast<int>(numSamples),
                 encodedBytes.data,
-                encodedBytes.length);
+                static_cast<int>(encodedBytes.length));
     }
 
     if (encodeCount < 0) {
@@ -136,7 +146,7 @@ int LameEncoder::Encode(const IBuffer* pcm, char** data) {
     encodedBytes.length = (size_t)encodeCount;
 
     *data = reinterpret_cast<char*>(encodedBytes.data);
-    return encodedBytes.length;
+    return encodeCount;
 }
 
 int LameEncoder::Flush(char** data) {
@@ -148,7 +158,7 @@ int LameEncoder::Flush(char** data) {
     int count = lame_encode_flush(
         lame,
         encodedBytes.data,
-        encodedBytes.length);
+        static_cast<int>(std::min(encodedBytes.length, static_cast<size_t>(std::numeric_limits<int>::max()))));
 
     *data = reinterpret_cast<char*>(encodedBytes.data);
     return count;
@@ -161,7 +171,8 @@ void LameEncoder::Finalize(const char* uri) {
     size_t headerSize = lame_get_lametag_frame(lame, header, sizeof(header));
     if (headerSize) {
 #ifdef WIN32
-        FILE* fp = _wfopen(utf8to16(uri).c_str(), L"r+b");
+        FILE* fp = nullptr;
+        _wfopen_s(&fp, utf8to16(uri).c_str(), L"r+b");
 #else
         FILE* fp = fopen(uri, "r+b");
 #endif

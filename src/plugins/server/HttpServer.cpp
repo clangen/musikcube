@@ -50,6 +50,7 @@
 #include <string>
 #include <cstdlib>
 #include <filesystem>
+#include <limits>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -136,19 +137,26 @@ static std::string fileExtension(const std::string& fn) {
 static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) {
     Range* range = static_cast<Range*>(cls);
 
-    size_t offset = (size_t) pos + range->from;
+    if (pos > std::numeric_limits<size_t>::max() - range->from) {
+        return MHD_CONTENT_READER_END_OF_STREAM;
+    }
+    size_t offset = static_cast<size_t>(pos) + range->from;
     offset = std::min(range->to ? range->to : (size_t) SIZE_MAX, offset);
 
+    if (range->total && offset >= range->total) {
+        return MHD_CONTENT_READER_END_OF_STREAM;
+    }
     size_t avail = range->total ? (range->total - offset) : SIZE_MAX;
-    size_t count = std::min(avail, max);
+    const size_t limit = static_cast<size_t>(std::numeric_limits<PositionType>::max());
+    size_t count = std::min({ avail, max, limit });
 
     if (range->file->Seekable()) {
-        if (!range->file->SetPosition(offset)) {
+        if (offset > limit || !range->file->SetPosition(static_cast<PositionType>(offset))) {
             return MHD_CONTENT_READER_END_OF_STREAM;
         }
     }
 
-    count = range->file->Read(buf, count);
+    count = range->file->Read(buf, static_cast<PositionType>(count));
     if (count > 0) {
         return count;
     }

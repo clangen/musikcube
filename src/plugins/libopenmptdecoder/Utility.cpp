@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "Utility.h"
+#include <limits>
 #include <string.h>
 #include <musikcore/sdk/String.h>
 #include <musikcore/sdk/Filesystem.h>
@@ -55,7 +56,8 @@ bool isFileSupported(const std::string& filename) {
 bool fileToByteArray(const std::string& path, char** target, int& size) {
 #ifdef WIN32
     std::wstring u16fn = str::u8to16(path.c_str());
-    FILE* file = _wfopen(u16fn.c_str(), L"rb");
+    FILE* file = nullptr;
+    _wfopen_s(&file, u16fn.c_str(), L"rb");
 #else
     FILE* file = fopen(path.c_str(), "rb");
 #endif
@@ -79,11 +81,12 @@ bool fileToByteArray(const std::string& path, char** target, int& size) {
             goto close_and_return;
         }
 
-        *target = (char*)malloc(sizeof(char) * fileSize);
-        size = fread(*target, sizeof(char), fileSize, file);
-
-        if (size == fileSize) {
-            success = true;
+        if (fileSize <= std::numeric_limits<int>::max()) {
+            *target = (char*)malloc(sizeof(char) * fileSize);
+            if (*target) {
+                size = static_cast<int>(fread(*target, sizeof(char), fileSize, file));
+                success = size == fileSize;
+            }
         }
     }
 

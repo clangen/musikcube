@@ -115,7 +115,8 @@ int main(int argc, char* argv[]) {
 
     std::string errorFn = api::ReadPath(MC_PATH_DATA) + "stderr.txt";
 #ifdef WIN32
-    _wfreopen(u8to16(errorFn).c_str(), L"w", stderr);
+    FILE* redirected = nullptr;
+    _wfreopen_s(&redirected, u8to16(errorFn).c_str(), L"w", stderr);
 #else
     freopen(errorFn.c_str(), "w", stderr);
 #endif

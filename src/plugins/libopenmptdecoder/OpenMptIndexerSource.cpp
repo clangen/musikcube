@@ -148,7 +148,7 @@ void OpenMptIndexerSource::ScanTrack(
 }
 
 int OpenMptIndexerSource::SourceId() {
-    return std::hash<std::string>()(PLUGIN_NAME);
+    return static_cast<int>(std::hash<std::string>()(PLUGIN_NAME));
 }
 
 static std::string formatDefaultValue(const char* key, const char* defaultValue, std::string type) {
@@ -190,10 +190,10 @@ void OpenMptIndexerSource::UpdateMetadata(
             else {
                 std::string directory = fs::getDirectory(fn);
                 std::string extension = fs::getFileExtension(fn);
-                size_t count = openmpt_module_get_num_subsongs(module);
+                const int32_t count = openmpt_module_get_num_subsongs(module);
                 const char* keys = openmpt_module_get_metadata_keys(module);
                 if (count > 0) {
-                    for (size_t i = 0; i < count; i++) {
+                    for (int32_t i = 0; i < count; i++) {
                         openmpt_module_select_subsong(module, i);
 
                         const std::string externalId = indexer::createExternalId(PLUGIN_NAME, fn, i);

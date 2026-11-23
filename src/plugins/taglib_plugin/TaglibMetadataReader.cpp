@@ -61,6 +61,7 @@
 #include <taglib/textidentificationframe.h>
 
 #include <vector>
+#include <limits>
 #include <string>
 #include <set>
 #include <iostream>
@@ -109,7 +110,8 @@ static inline std::wstring utf8to16(const char* utf8) {
 static TagLib::FileRef resolveOggType(const char* uri) {
     try {
 #ifdef WIN32
-        FILE* file = _wfopen(utf8to16(uri).c_str(), L"rb");
+        FILE* file = nullptr;
+        _wfopen_s(&file, utf8to16(uri).c_str(), L"rb");
 #else
         FILE* file = fopen(uri, "rb");
 #endif
@@ -684,8 +686,8 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
                     TagLib::ByteVector pictureData = picture->picture();
                     const long long size = pictureData.size();
 
-                    if (size > 32) {    /* noticed that some id3tags have like a 4-8 byte size with no thumbnail */
-                        track->SetThumbnail(pictureData.data(), size);
+                    if (size > 32 && size <= std::numeric_limits<long>::max()) {
+                        track->SetThumbnail(pictureData.data(), static_cast<long>(size));
                     }
                 }
             }
@@ -771,7 +773,7 @@ void TaglibMetadataReader::SetAudioProperties(
     TagLib::AudioProperties *audioProperties, ITagStore *track)
 {
     if (audioProperties) {
-        std::string duration = std::to_string(audioProperties->length());
+        std::string duration = std::to_string(audioProperties->lengthInSeconds());
         const int bitrate = audioProperties->bitrate();
         const int channels = audioProperties->channels();
 

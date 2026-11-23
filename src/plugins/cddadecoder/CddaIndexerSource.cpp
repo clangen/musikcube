@@ -377,5 +377,5 @@ void CddaIndexerSource::ScanTrack(
 }
 
 int CddaIndexerSource::SourceId() {
-    return std::hash<std::string>()(PLUGIN_NAME);
+    return static_cast<int>(std::hash<std::string>()(PLUGIN_NAME));
 }

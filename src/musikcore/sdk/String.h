@@ -86,30 +86,12 @@ namespace musik { namespace core { namespace sdk { namespace str {
 
     template<typename String = std::string>
     static String Trim(const String& str) {
-        if (str.size()) {
-            int length = (size_t)str.size();
-            int start = 0, end = length;
-            int i = 0;
-            while (i < length) {
-                if (!IsSpace(str[i])) {
-                    break;
-                }
-                ++start;
-                ++i;
-            }
-            i = end - 1;
-            while (i >= 0) {
-                if (!IsSpace(str[i])) {
-                    break;
-                }
-                --i;
-            }
-            if (end >= start) {
-                std::string result = str.substr((size_t)start, (size_t)end - start);
-                return result;
-            }
+        size_t start = 0;
+        size_t end = str.size();
+        while (start < end && IsSpace(str[start])) {
+            ++start;
         }
-        return str;
+        return str.substr(start, end - start);
     }
 
     template<typename String = std::string>

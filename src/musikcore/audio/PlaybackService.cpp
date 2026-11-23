@@ -975,7 +975,7 @@ double PlaybackService::GetDuration() {
     }
 
     if (track) {
-        std::stod(track->GetString(constants::Track::DURATION));
+        (void) std::stod(track->GetString(constants::Track::DURATION));
     }
 
     return 0.0f;

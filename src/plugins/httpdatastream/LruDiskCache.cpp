@@ -42,6 +42,9 @@
 #include <algorithm>
 #include <filesystem>
 #include <chrono>
+#ifdef WIN32
+#include <share.h>
+#endif
 
 const std::string PREFIX = "musikcube";
 const std::string TEMP_EXTENSION = ".tmp";
@@ -52,6 +55,14 @@ namespace fs = std::filesystem;
 namespace str = musik::core::sdk::str;
 
 using Lock = std::unique_lock<std::recursive_mutex>;
+
+static FILE* openCacheFile(const std::string& path, const std::string& mode) {
+#ifdef WIN32
+    return _fsopen(path.c_str(), mode.c_str(), _SH_DENYNO);
+#else
+    return fopen(path.c_str(), mode.c_str());
+#endif
+}
 
 static std::string tempFilename(const std::string& root, size_t id, int64_t instanceId) {
     return root + "/" + PREFIX + "_" + std::to_string(id) + "_" + std::to_string(instanceId) + TEMP_EXTENSION;
@@ -234,7 +245,7 @@ FILE* LruDiskCache::Open(size_t id, int64_t instanceId, const std::string& mode,
     FILE* result = nullptr;
 
     if (it != end) {
-        result = fopen((*it)->path.c_str(), mode.c_str());
+        result = openCacheFile((*it)->path, mode);
 
         if (result) {
             type = (*it)->type;
@@ -258,7 +269,7 @@ FILE* LruDiskCache::Open(size_t id, int64_t instanceId, const std::string& mode,
     }
 
     /* open the file and return it regardless of cache status. */
-    return fopen(tempFilename(this->root, instanceId, id).c_str(), mode.c_str());
+    return openCacheFile(tempFilename(this->root, instanceId, id), mode);
 }
 
 void LruDiskCache::Delete(size_t id, int64_t instanceId) {
@@ -289,9 +300,9 @@ void LruDiskCache::SortAndPrune() {
         });
 
     /* prune old entries */
-    int count = (int) this->cached.size();
-    int extras = count - this->maxEntries;
-    for (int i = 0; i < extras; i++) {
+    const size_t extras = this->cached.size() > this->maxEntries
+        ? this->cached.size() - this->maxEntries : 0;
+    for (size_t i = 0; i < extras; i++) {
         auto entry = this->cached.back();
         if (rm(entry->path)) {
             this->cached.pop_back();
