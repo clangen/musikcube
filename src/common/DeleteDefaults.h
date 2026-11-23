@@ -34,22 +34,27 @@
 
 #pragma once
 
+/* declare these in the intended access section. they only delete operations;
+constructors and any permitted copy/move operations must be declared separately. */
+#define MUSIK_DELETE_COPY(ClassName) \
+    ClassName(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&) = delete
+
+#define MUSIK_DELETE_MOVE(ClassName) \
+    ClassName(ClassName&&) = delete; \
+    ClassName& operator=(ClassName&&) = delete
+
+#define MUSIK_DELETE_COPY_AND_MOVE(ClassName) \
+    MUSIK_DELETE_COPY(ClassName); \
+    MUSIK_DELETE_MOVE(ClassName)
+
 #define DELETE_CLASS_DEFAULTS(ClassName) \
     ClassName() = delete; \
-    ClassName(const ClassName&) = delete; \
-    ClassName(const ClassName&&) = delete; \
-    ClassName& operator=(const ClassName&) = delete; \
-    ClassName& operator=(const ClassName&&) = delete;
+    MUSIK_DELETE_COPY_AND_MOVE(ClassName);
 
 #define DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(ClassName) \
     ClassName() noexcept = default; \
-    ClassName(const ClassName&) = delete; \
-    ClassName(const ClassName&&) = delete; \
-    ClassName& operator=(const ClassName&) = delete; \
-    ClassName& operator=(const ClassName&&) = delete;
+    MUSIK_DELETE_COPY_AND_MOVE(ClassName);
 
 #define DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(ClassName) \
-    ClassName(const ClassName&) = delete; \
-    ClassName(const ClassName&&) = delete; \
-    ClassName& operator=(const ClassName&) = delete; \
-    ClassName& operator=(const ClassName&&) = delete;
+    MUSIK_DELETE_COPY_AND_MOVE(ClassName);

@@ -375,3 +375,15 @@ if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug" AND "address" IN_LIST MUSIKCUBE_S
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/plugins.cmake")
+
+# declaration macros are shared by core and app owners; compile-time assertions
+# guard their copy/move and constructor policies without loading either runtime.
+add_executable(musikcube_special_members_test unit/common/special-members.cpp)
+target_include_directories(musikcube_special_members_test PRIVATE "${PROJECT_SOURCE_DIR}/src")
+set_target_properties(musikcube_special_members_test PROPERTIES
+  CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcube_special_members_test)
+add_dependencies(musikcube_unit_tests musikcube_special_members_test)
+add_test(NAME common.unit.special_members COMMAND musikcube_special_members_test)
+set_tests_properties(common.unit.special_members PROPERTIES LABELS "unit;common;contract")
