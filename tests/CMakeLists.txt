@@ -327,7 +327,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Linux
   add_test(NAME musikcube.integration.packaging.standalone_elf
     COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/check-standalone-elf.js"
     "${CMAKE_C_COMPILER}" "${PROJECT_SOURCE_DIR}/script/scan-standalone.js"
-    "${CMAKE_CURRENT_BINARY_DIR}/fixtures")
+    "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures")
   set_tests_properties(musikcube.integration.packaging.standalone_elf PROPERTIES
     LABELS "integration;musikcube;packaging;contract" TIMEOUT 20)
 endif()
@@ -354,7 +354,7 @@ if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug" AND "address" IN_LIST MUSIKCUBE_S
   foreach(name IN ITEMS short long)
     add_library(musikcore_sanitizer_${name} MODULE integration/binary/sanitizers/module.c)
     set_target_properties(musikcore_sanitizer_${name} PROPERTIES
-      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/sanitizers")
+      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/sanitizers")
     musikcube_restrict_exports(musikcore_sanitizer_${name} module_name module_byte)
     add_dependencies(musikcube_tests musikcore_sanitizer_${name})
     add_dependencies(musikcube_integration_tests musikcore_sanitizer_${name})

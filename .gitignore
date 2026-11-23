@@ -14,6 +14,7 @@
 /musikcoreConfig.cmake
 /musikcoreConfigVersion.cmake
 **/install_manifest.txt
+**/install_manifest_*.txt
 **/Release
 **/Debug
 **/*.deb

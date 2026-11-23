@@ -169,7 +169,9 @@ if(BUILD_TESTING)
       target_compile_features(musikcore_pcm_capture_output PRIVATE cxx_std_20)
       target_link_libraries(musikcore_pcm_capture_output PRIVATE Threads::Threads)
       set_target_properties(musikcore_pcm_capture_output PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures"
         DISABLE_PRECOMPILE_HEADERS ON)
 
       if(APPLE)
@@ -399,8 +401,9 @@ set_tests_properties(musikcore.integration.runtime.indexer_cancel PROPERTIES
 add_library(musikcore_runtime_indexer MODULE ../integration/musikcore/runtime-indexer-plugin.cpp)
 target_include_directories(musikcore_runtime_indexer PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
 set_target_properties(musikcore_runtime_indexer PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-indexer"
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-indexer"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-indexer"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-indexer"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-indexer"
   DISABLE_PRECOMPILE_HEADERS ON)
 if(APPLE)
   set_target_properties(musikcore_runtime_indexer PROPERTIES SUFFIX ".dylib")
@@ -434,8 +437,9 @@ set_tests_properties(musikcore.integration.runtime.migration_scan PROPERTIES
 add_library(musikcore_runtime_visualizer MODULE ../integration/musikcore/runtime-visualizer-plugin.cpp)
 target_include_directories(musikcore_runtime_visualizer PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
 set_target_properties(musikcore_runtime_visualizer PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-visualizer"
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-visualizer"
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-visualizer"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-visualizer"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-visualizer"
   DISABLE_PRECOMPILE_HEADERS ON)
 if(APPLE)
   set_target_properties(musikcore_runtime_visualizer PROPERTIES SUFFIX ".dylib")
@@ -457,8 +461,9 @@ foreach(name IN ITEMS CurrentSdk ObsoleteSdk)
     target_compile_definitions(musikcore_sdk_${name} PRIVATE SDK_FIXTURE_OBSOLETE)
   endif()
   set_target_properties(musikcore_sdk_${name} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/sdk-version"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/sdk-version"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/sdk-version"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/sdk-version"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/sdk-version"
     DISABLE_PRECOMPILE_HEADERS ON)
   if(APPLE)
     set_target_properties(musikcore_sdk_${name} PROPERTIES SUFFIX ".dylib")
@@ -521,8 +526,9 @@ foreach(name IN ITEMS First Second)
   target_include_directories(musikcore_runtime_failure_${name} PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
   target_compile_definitions(musikcore_runtime_failure_${name} PRIVATE RUNTIME_FIXTURE_NAME="RuntimeFailure${name}")
   set_target_properties(musikcore_runtime_failure_${name} PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-failure"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/fixtures/runtime-failure"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-failure"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-failure"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-failure"
     DISABLE_PRECOMPILE_HEADERS ON)
   if(APPLE)
     set_target_properties(musikcore_runtime_failure_${name} PROPERTIES SUFFIX ".dylib")
