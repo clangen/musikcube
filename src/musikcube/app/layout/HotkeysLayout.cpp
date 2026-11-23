@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/FilesystemPath.h>
+#include <common/FilesystemPath.h>
 #include <stdafx.h>
 #include <musikcore/paths.hpp>
 
