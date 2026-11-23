@@ -39,7 +39,7 @@
 #include "IDecoder.h"
 #include "IEncoder.h"
 #include "IPreferences.h"
-#include "IOutput.h"
+#include <musikcore/output.h>
 #include "ITrackList.h"
 #include "IDebug.h"
 
@@ -48,17 +48,15 @@ namespace musik { namespace core { namespace sdk {
     class IEnvironment {
         public:
             virtual size_t GetPath(PathType type, char* dst, int size) = 0;
-            /* select a provider and return an owned unopened stream. the caller
-            must retain it before Open and release it on failure or completion. */
             virtual IDataStream* CreateDataStream(const char* uri) = 0;
             virtual IDecoder* GetDecoder(IDataStream* stream) = 0;
             virtual IEncoder* GetEncoder(const char* type) = 0;
             virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) = 0;
             virtual IPreferences* GetPreferences(const char* name) = 0;
             virtual IDebug* GetDebug() = 0;
-            virtual size_t GetOutputCount() = 0;
-            virtual IOutput* GetOutputAtIndex(size_t index) = 0;
-            virtual IOutput* GetOutputWithName(const char* name) = 0;
+            virtual mc_result GetOutputConfiguration(mc_string_view driver,
+                mc_output_configuration_fn read, void* data) = 0;
+            virtual mc_result SelectOutput(mc_string_view driver, mc_string_view device) = 0;
             virtual ReplayGainMode GetReplayGainMode() = 0;
             virtual void SetReplayGainMode(ReplayGainMode mode) = 0;
             virtual float GetPreampGain() = 0;
@@ -68,8 +66,6 @@ namespace musik { namespace core { namespace sdk {
             virtual bool GetEqualizerBandValues(double target[], size_t count) = 0;
             virtual bool SetEqualizerBandValues(double values[], size_t count) = 0;
             virtual void ReloadPlaybackOutput() = 0;
-            virtual void SetDefaultOutput(IOutput* output) = 0;
-            virtual IOutput* GetDefaultOutput() = 0;
             virtual TransportType GetTransportType() = 0;
             virtual void SetTransportType(TransportType type) = 0;
             virtual void ReindexMetadata() = 0;

@@ -41,8 +41,9 @@ typedef struct mc_plugin_setting {
 typedef void (MC_CALL *mc_plugin_info_fn)(void* user_data, const mc_plugin_info* plugin);
 typedef void (MC_CALL *mc_plugin_setting_fn)(void* user_data, const mc_plugin_setting* setting);
 
-/* Call on the runtime owner thread. List installed plugins, including disabled
-   plugins. Rows and string data are borrowed for each callback. */
+/* call on the runtime owner thread after starting MC_SERVICE_PLUGINS. list
+installed plugins, including disabled plugins. rows/string data are valid only
+for each callback; copy them to retain a snapshot. */
 MC_API mc_result MC_CALL mc_plugins_list(mc_plugin_info_fn read, void* user_data);
 /* Persist the enabled preference for the installed filename. Already-created
    plugin instances remain valid. */

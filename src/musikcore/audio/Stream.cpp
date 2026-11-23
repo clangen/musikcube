@@ -95,10 +95,15 @@ double Stream::SetPosition(double requestedSeconds) {
     if (actualSeconds != -1) {
         double rate = (double) this->decoderSampleRate;
 
-        this->decoderPosition =
-            (uint64_t)(actualSeconds * rate) * this->decoderChannels;
+        this->decoderPosition = (uint64_t) (actualSeconds * rate) * this->decoderChannels;
 
-        /* move all the filled buffers back to the recycled queue */
+        /* a successful seek invalidates the old decoder remainder and EOF,
+        as well as the slices already waiting in the playback pool. */
+        this->decoderSamplesRemain = 0;
+        this->decoderSampleOffset = 0;
+        this->decoderBuffer->SetSamples(0);
+        this->done = false;
+
         auto it = this->filledBuffers.begin();
         while (it != this->filledBuffers.end()) {
             this->recycledBuffers.push_back(*it);
@@ -119,7 +124,7 @@ int Stream::GetCapabilities() {
     return this->capabilities;
 }
 
-bool Stream::OpenStream(std::string uri, IOutput* output) {
+bool Stream::OpenStream(std::string uri, Output* output) {
     musik::debug::info(TAG, "opening " + uri);
 
     /* use our file stream abstraction to open the data at the

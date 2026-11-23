@@ -4,6 +4,7 @@ set(windows_core_sources
   src/musikcore/audio/GaplessTransport.cpp
   src/musikcore/audio/Output.cpp
   src/musikcore/audio/Outputs.cpp
+  src/musikcore/audio/PlaybackWorkers.cpp
   src/musikcore/audio/PlaybackService.cpp
   src/musikcore/runtime/ManagedRuntime.cpp
   src/musikcore/ffi/consumer/online.cpp

@@ -15,9 +15,15 @@ namespace playback_fixture {
         bool interrupted {};
     };
 
+    enum class ControlFailure { None, Pause, Resume, PauseOutgoing };
+    using SetControlFailure = void (*)(ControlFailure);
+
     using ReadCapture = std::size_t (*)(CapturedFrame*, std::size_t);
 
-    enum class CaptureEvent { HeldCompletion, Stop, Resumed, Balanced, Overlap, SourceOpening, SourceInterrupted };
+    enum class CaptureEvent {
+        HeldCompletion, Stop, Resumed, Balanced, Overlap, SourceOpening, SourceInterrupted,
+        SecondPrepared, HeldRetiredQueue, SourceReleased, BothOutputsPlaying, OnlyOneOutputPaused
+    };
     using HoldCompletion = void (*)(bool);
     using WaitCapture = bool (*)(CaptureEvent, unsigned);
     using WaitCaptureFrames = bool (*)(std::size_t, unsigned);

@@ -163,13 +163,19 @@ namespace musik { namespace core { namespace ffi {
                     }
                     switch (command) {
                         case PlayerCommand::Pause:
-                            if (!this->transport->Pause()) {
-                                return MC_ERROR_NOT_FOUND;
+                            {
+                                const auto result = this->transport->Pause();
+                                if (result != MC_OK) {
+                                    return result;
+                                }
                             }
                             break;
                         case PlayerCommand::Resume:
-                            if (!this->transport->Resume()) {
-                                return MC_ERROR_NOT_FOUND;
+                            {
+                                const auto result = this->transport->Resume();
+                                if (result != MC_OK) {
+                                    return result;
+                                }
                             }
                             break;
                         case PlayerCommand::Stop:

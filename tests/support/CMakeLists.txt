@@ -129,9 +129,10 @@ if(BUILD_TESTING)
         CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME AND
         CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
       set(installed_plugin_args)
-      # query/session consumers stay active. the managed catalog and URI player
-      # subcases require C output/catalog integration before they can run.
-      message(STATUS "[plugin-cutover] pending installed SDK managed-catalog and C/C++ player subcases")
+      if(TARGET nullout)
+        list(APPEND installed_plugin_args "-DINSTALLED_TEST_PLUGIN=$<TARGET_FILE_NAME:nullout>")
+        add_dependencies(musikcube_tests nullout)
+      endif()
       add_test(NAME musikcore.integration.api.installed_sdk COMMAND "${CMAKE_COMMAND}"
         ${indexed_arguments} "-DINSTALLED_SDK_SOURCE=${PROJECT_SOURCE_DIR}" "-DTEST_CONFIG=$<CONFIG>"
         ${installed_plugin_args} -P "${indexed_script}")
@@ -167,6 +168,7 @@ if(BUILD_TESTING)
       add_library(musikcore_pcm_capture_output MODULE pcm-capture-output.cpp)
       target_include_directories(musikcore_pcm_capture_output PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
       target_compile_features(musikcore_pcm_capture_output PRIVATE cxx_std_20)
+      target_compile_definitions(musikcore_pcm_capture_output PRIVATE MC_BUILDING_PLUGIN)
       target_link_libraries(musikcore_pcm_capture_output PRIVATE Threads::Threads)
       set_target_properties(musikcore_pcm_capture_output PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures"
@@ -198,7 +200,12 @@ if(BUILD_TESTING)
         DEPENDS musikcore_playback_pcm_test
         USES_TERMINAL VERBATIM)
 
-      foreach(mode IN ITEMS gapless crossfade teardown seek completion detach_listener replace_next paused_crossfade cancel_open)
+      foreach(mode IN ITEMS
+          gapless crossfade teardown seek seek_eof seek_tail completion replace_next
+          paused_crossfade paused_runtime paused_short_runtime retired_crossfade failed_next_crossfade
+          replace_paused_crossfade replace_stopped_crossfade replace_failed_crossfade seek_paused_crossfade
+          cancel_open output_queue_failure output_callback_failure
+          gapless_control_failure crossfade_control_failure uri_control_failure blocked_control)
         add_test(NAME musikcore.integration.transport.${mode}_pcm COMMAND "${MUSIKCUBE_TEST_NODE}"
           "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
           "$<TARGET_FILE:musikcore_playback_pcm_test>" --stage
@@ -493,7 +500,7 @@ set_tests_properties(musikcore.integration.runtime.stream_sdk_contract PROPERTIE
 
 if(WIN32)
   set(windows_plugin_fixtures)
-  foreach(provider IN ITEMS directsoundout wasapiout waveout win32gdivis win32globalhotkeys cddadecoder)
+  foreach(provider IN ITEMS nullout directsoundout wasapiout waveout win32gdivis win32globalhotkeys cddadecoder)
     add_dependencies(musikcore_runtime_hardening_test ${provider})
     list(APPEND windows_plugin_fixtures --plugin "$<TARGET_FILE:${provider}>")
   endforeach()
@@ -620,25 +627,6 @@ set_tests_properties(musikcore.integration.plugins.installed PROPERTIES
 if(TARGET nullout)
   musikcore_add_null_output_contract_test()
 
-  # these scenarios require engine playback/catalog/settings integration with
-  # the C output plugin. reenable them under PLG-CUTOVER-001/OUT-004 in the LLD.
-  set(nullout_pending_tests
-    musikcore.integration.plugin.playback_reload
-    musikcore.integration.api.managed_runtime
-    musikcore.integration.api.playback_without_indexer
-    musikcore.integration.api.remote_audio
-    musikcore.integration.api.remote_transcode.mp3
-    musikcore.integration.api.remote_transcode.flac
-    musikcore.integration.api.uri_player
-    musikcube.ui.settings
-    musikcube.ui.lyrics)
-  foreach(test IN LISTS nullout_pending_tests)
-    if(TEST ${test})
-      set_tests_properties(${test} PROPERTIES DISABLED TRUE)
-      set_property(TEST ${test} APPEND PROPERTY LABELS pending-plugin-cutover)
-      message(STATUS "[plugin-cutover] pending C output/settings integration: ${test}")
-    endif()
-  endforeach()
 endif()
 
 # fatal hook failures are child-process contracts: the first failed detachment

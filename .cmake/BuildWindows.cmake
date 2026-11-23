@@ -63,6 +63,7 @@ set(windows_ffmpeg vendor::avcodec vendor::avformat vendor::avutil vendor::swres
 
 add_library(musikcube_windows INTERFACE)
 target_include_directories(musikcube_windows INTERFACE
+  "${PROJECT_SOURCE_DIR}/include"
   "${windows_vendor}/include"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/src/3rdparty/include"
@@ -116,6 +117,8 @@ target_link_libraries(musikcore PRIVATE ${windows_core_libraries})
 if(BUILD_TESTING)
   # Private implementation fixtures use the same objects as the DLL.
   add_library(musikcore_internal STATIC $<TARGET_OBJECTS:musikcore_objects>)
+  # Fixtures include private engine headers such as Player.h, which owns C++20 threads.
+  target_compile_features(musikcore_internal INTERFACE cxx_std_20)
   target_include_directories(musikcore_internal PUBLIC "${PROJECT_SOURCE_DIR}/include")
   target_link_libraries(musikcore_internal PRIVATE ${windows_core_libraries})
 endif()

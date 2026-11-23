@@ -5,7 +5,6 @@
 #include <musikcore/ffi/common/error.h>
 
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/audio/Player.h>
 #include <musikcore/audio/Visualizer.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/RemoteLibrary.h>
@@ -315,7 +314,6 @@ namespace musik { namespace core { namespace ffi {
             /* stop players while provider services and catalogs remain available. */
             if (this->playback) {
                 Cleanup([&] { this->playback->Shutdown(); }, failure);
-                Cleanup([] { audio::Player::WaitForWorkers(); }, failure);
             }
 
             if (this->pluginsInitialized) {

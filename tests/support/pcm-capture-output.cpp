@@ -2,7 +2,8 @@
 #include <musikcore/abi.h>
 
 #include <musikcore/sdk/IDataStreamFactory.h>
-#include <musikcore/sdk/IOutput.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/plugin/output.hpp>
 #include <musikcore/sdk/constants.h>
 
 #include <algorithm>
@@ -27,10 +28,16 @@ namespace {
     constexpr int framesPerPeriod = sampleRate * period.count() / 1000;
     constexpr std::size_t queueCapacity = 4;
 
+    struct Channel;
+
+    /* retain C PCM and its token until the deterministic clock consumes it.
+    completion publishes ownership; player work runs on its own worker. */
     struct PendingBuffer {
-        IBuffer* buffer;
-        IBufferProvider* provider;
-        long offset {};
+        mc_pcm_view pcm;
+        mc_output_callbacks callbacks;
+        uint64_t token;
+        Channel* owner;
+        size_t offset {};
     };
 
     struct Channel {
@@ -39,6 +46,9 @@ namespace {
         double gain { 1.0 };
         bool playing {};
         bool started {};
+        bool stopped { true };
+        size_t callbacksInFlight {};
+        size_t admitted {};
     };
 
     class Capture {
@@ -70,10 +80,20 @@ namespace {
             return this->audibleFrames;
         }
 
-        void HoldCompletion(bool hold) {
-            std::lock_guard lock(this->mutex);
+        void HoldCompletionUnlocked(bool hold) {
             this->holdCompletion = hold;
             this->changed.notify_all();
+        }
+
+        void HoldCompletion(bool hold) {
+            std::lock_guard lock(this->mutex);
+            this->HoldCompletionUnlocked(hold);
+        }
+
+        /* inject only the device control selected by the current test. */
+        void SetControlFailure(ControlFailure failure) {
+            std::lock_guard lock(this->mutex);
+            this->controlFailure = failure;
         }
 
         bool Wait(CaptureEvent event, unsigned timeoutMs) {
@@ -90,10 +110,25 @@ namespace {
                     case CaptureEvent::Overlap: return this->overlap;
                     case CaptureEvent::SourceOpening: return this->sourceOpening;
                     case CaptureEvent::SourceInterrupted: return this->sourceInterrupted;
+                    case CaptureEvent::SecondPrepared: return this->secondPrepared;
+                    case CaptureEvent::HeldRetiredQueue: return this->heldRetiredQueue;
+                    case CaptureEvent::SourceReleased: return this->sourceReleased;
+                    case CaptureEvent::OnlyOneOutputPaused:
+                        return std::ranges::count_if(this->channels, [](const Channel* channel) {
+                            return !channel->stopped;
+                        }) == 1 && std::ranges::none_of(this->channels, [](const Channel* channel) {
+                            return channel->playing && !channel->stopped;
+                        });
+                    case CaptureEvent::BothOutputsPlaying:
+                        return std::ranges::count_if(this->channels, [](const Channel* channel) {
+                            return channel->playing && !channel->stopped;
+                        }) == 2;
                 }
                 return false;
             });
         }
+
+        ControlFailure controlFailure = ControlFailure::None;
 
         void GateSourceOpen() {
             std::unique_lock lock(this->mutex);
@@ -114,6 +149,17 @@ namespace {
             this->changed.notify_all();
         }
 
+        void GateRetiredQueue() {
+            std::lock_guard lock(this->mutex);
+            this->gateRetiredQueue = true;
+        }
+
+        void ReleaseSource() {
+            std::lock_guard lock(this->mutex);
+            this->sourceReleased = true;
+            this->changed.notify_all();
+        }
+
         bool WaitFrames(std::size_t frames, unsigned timeoutMs) {
             std::unique_lock lock(this->mutex);
             return this->changed.wait_for(lock, std::chrono::milliseconds(timeoutMs),
@@ -126,8 +172,20 @@ namespace {
         }
 
         void Return(const PendingBuffer& pending) {
-            pending.provider->OnBufferProcessed(pending.buffer);
+            mc_result outcome;
+            {
+                std::lock_guard lock(this->mutex);
+                outcome = pending.owner->stopped ? MC_ERROR_CANCELLED : MC_OK;
+            }
+            if (outcome == MC_OK && std::getenv("MUSIKCORE_TEST_OUTPUT_COMPLETION_ERROR")) {
+                outcome = MC_ERROR_IO;
+            }
+            pending.callbacks.completed(pending.callbacks.context, pending.token, outcome);
+            if (pending.callbacks.ready) {
+                pending.callbacks.ready(pending.callbacks.context);
+            }
             std::lock_guard lock(this->mutex);
+            --pending.owner->callbacksInFlight;
             ++this->returned;
             this->changed.notify_all();
         }
@@ -142,6 +200,10 @@ namespace {
         std::vector<Channel*> channels;
         bool interrupted {};
         std::size_t submitted {};
+        bool secondPrepared {};
+        bool gateRetiredQueue {};
+        bool heldRetiredQueue {};
+        bool sourceReleased {};
 
     private:
         void Consume(std::stop_token stop) {
@@ -197,15 +259,16 @@ namespace {
                 std::size_t i = 0;
                 while (i != mixed.size() && !channel->buffers.empty()) {
                     auto& pending = channel->buffers.front();
-                    const auto count = pending.buffer->Channels();
-                    const auto* input = pending.buffer->BufferPointer();
+                    const auto count = pending.pcm.format.channels;
+                    const auto* input = pending.pcm.data;
                     auto& frame = mixed[i++];
                     const auto gain = static_cast<float>(channel->gain);
 
                     frame.left += gain * input[pending.offset];
                     frame.right += gain * input[pending.offset + count - 1];
                     pending.offset += count;
-                    if (pending.offset == pending.buffer->Samples()) {
+                    if (pending.offset == pending.pcm.frame_count * count) {
+                        ++channel->callbacksInFlight;
                         complete.push_back(pending);
                         channel->buffers.pop_front();
                     }
@@ -276,7 +339,10 @@ namespace {
         }
         bool Close() override { return true; }
         void Interrupt() override { capture().InterruptSource(); }
-        void Release() override { delete this; }
+        void Release() override {
+            capture().ReleaseSource();
+            delete this;
+        }
         bool Readable() override { return false; }
         bool Writable() override { return false; }
         PositionType Read(void*, PositionType) override { return 0; }
@@ -294,12 +360,14 @@ namespace {
     class GatedSourceFactory final : public IDataStreamFactory {
     public:
         bool CanRead(const char* uri) override { return std::string_view(uri) == stalledSource; }
-        /* SDK 23 creation must return before any blocking provider work. */
+        /* publish the source before any blocking provider work. */
         IDataStream* Create() override { return new GatedSource(); }
         void Release() override { delete this; }
     };
 
-    class CaptureOutput final : public IOutput {
+    /* C output and old stream-source exports deliberately share this test
+    fixture's clock/gates while the two production families migrate separately. */
+    class CaptureOutput final {
     public:
         CaptureOutput() {
             auto& sink = capture();
@@ -308,41 +376,65 @@ namespace {
         }
 
         ~CaptureOutput() {
-            this->Stop();
             auto& sink = capture();
             std::lock_guard lock(sink.mutex);
             std::erase(sink.channels, &this->channel);
         }
 
-        void Release() override { delete this; }
-
-        void Pause() override {
-            std::lock_guard lock(capture().mutex);
-            this->channel.playing = false;
-        }
-
-        void Resume() override {
+        mc_result Prepare(const mc_output_options& options, const mc_output_callbacks& callbacks) {
+            this->callbacks = callbacks;
+            this->channel.stopped = false;
+            this->channel.admitted = 0;
+            this->SetVolume(options.initial_volume);
+            const auto result = this->Resume();
             auto& sink = capture();
             std::lock_guard lock(sink.mutex);
+            if (sink.channels.size() > 1 && sink.channels.front() != &this->channel) {
+                sink.secondPrepared = true;
+                sink.changed.notify_all();
+            }
+            return result;
+        }
+
+        mc_result Pause() {
+            auto& sink = capture();
+            std::lock_guard lock(sink.mutex);
+            if (sink.controlFailure == ControlFailure::Pause ||
+                (sink.controlFailure == ControlFailure::PauseOutgoing && sink.channels.front() == &this->channel))
+            {
+                return MC_ERROR_IO;
+            }
+            this->channel.playing = false;
+            return MC_OK;
+        }
+
+        mc_result Resume() {
+            auto& sink = capture();
+            std::lock_guard lock(sink.mutex);
+            if (sink.controlFailure == ControlFailure::Resume) {
+                return MC_ERROR_IO;
+            }
             if (!this->channel.playing && !this->channel.started) {
                 const char* delay = std::getenv("MUSIKCORE_TEST_OUTPUT_DELAY_MS");
                 this->channel.availableAt = Clock::now() + std::chrono::milliseconds(delay ? std::atol(delay) : 0);
             }
             this->channel.playing = true;
             sink.changed.notify_all();
+            return MC_OK;
         }
 
-        void SetVolume(double volume) override {
+        mc_result SetVolume(double volume) {
             std::lock_guard lock(capture().mutex);
             this->channel.gain = volume;
+            return MC_OK;
         }
 
-        double GetVolume() override {
+        double GetVolume() const {
             std::lock_guard lock(capture().mutex);
             return this->channel.gain;
         }
 
-        void Stop() override {
+        mc_result Stop() noexcept {
             auto& sink = capture();
             std::deque<PendingBuffer> discarded;
             {
@@ -350,53 +442,82 @@ namespace {
                 sink.MarkStopped(this->channel.started);
                 this->channel.playing = false;
                 this->channel.started = false;
+                this->channel.stopped = true;
                 discarded.swap(this->channel.buffers);
+                this->channel.callbacksInFlight += discarded.size();
+                /* Stop must interrupt the fixture's held completion gate too;
+                no callback may outlive this instance. */
+                if (this->channel.callbacksInFlight) {
+                    sink.HoldCompletionUnlocked(false);
+                }
                 sink.changed.notify_all();
             }
-
             for (const auto& pending : discarded) {
                 sink.Return(pending);
             }
+            std::unique_lock lock(sink.mutex);
+            sink.changed.wait(lock, [&] { return !this->channel.callbacksInFlight; });
+            return MC_OK;
         }
 
-        OutputState Play(IBuffer* buffer, IBufferProvider* provider) override {
-            if (buffer->SampleRate() != sampleRate || buffer->Channels() < 1 || buffer->Channels() > 2 ||
-                buffer->Samples() <= 0 || buffer->Samples() % buffer->Channels() != 0)
-            {
-                return OutputState::FormatError;
+        mc_result QueueAudioBuffer(const mc_output_buffer& block) noexcept {
+            if (block.pcm.format.sample_rate != sampleRate || block.pcm.format.channels > 2) {
+                return MC_ERROR_UNSUPPORTED;
             }
-
-            auto& sink = capture();
-            std::lock_guard lock(sink.mutex);
-            if (!this->channel.playing) {
-                return OutputState::InvalidState;
-            }
-            if (this->channel.buffers.size() == queueCapacity) {
-                return static_cast<OutputState>(period.count());
-            }
-
-            this->channel.buffers.push_back({ buffer, provider });
-            ++sink.submitted;
-            sink.changed.notify_all();
-            return OutputState::BufferWritten;
-        }
-
-        void Drain() override {
             auto& sink = capture();
             std::unique_lock lock(sink.mutex);
-            sink.changed.wait(lock, [&] { return this->channel.buffers.empty(); });
+            if (sink.gateRetiredQueue && sink.channels.front() == &this->channel) {
+                /* the old output is no longer active, but its producer still
+                owns Output's ordinary-call lock until Stop interrupts it. */
+                sink.heldRetiredQueue = true;
+                sink.changed.notify_all();
+                sink.changed.wait(lock, [&] { return this->channel.stopped; });
+            }
+            if (this->channel.stopped) {
+                return MC_ERROR_CANCELLED;
+            }
+            if (this->channel.admitted && std::getenv("MUSIKCORE_TEST_OUTPUT_QUEUE_ERROR")) {
+                return MC_ERROR_IO;
+            }
+            if (this->channel.buffers.size() == queueCapacity) {
+                return MC_ERROR_QUEUE_FULL;
+            }
+            this->channel.buffers.push_back({ block.pcm, this->callbacks, block.token, &this->channel });
+            ++sink.submitted;
+            ++this->channel.admitted;
+            sink.changed.notify_all();
+            return MC_OK;
         }
 
-        double Latency() override { return 0.0; }
-        const char* Name() override { return driver; }
-        int GetDefaultSampleRate() override { return sampleRate; }
-        IDeviceList* GetDeviceList() override { return nullptr; }
-        bool SetDefaultDevice(const char*) override { return false; }
-        IDevice* GetDefaultDevice() override { return nullptr; }
+        mc_result Drain() {
+            auto& sink = capture();
+            std::unique_lock lock(sink.mutex);
+            if (!this->channel.playing && !this->channel.buffers.empty()) {
+                return MC_ERROR_IN_FLIGHT;
+            }
+            sink.changed.wait(lock, [&] {
+                return this->channel.stopped || (this->channel.buffers.empty() && !this->channel.callbacksInFlight);
+            });
+            return this->channel.stopped ? MC_ERROR_CANCELLED : MC_OK;
+        }
+
+        static mc_result VisitDevices(mc_output_device_fn, void*) { return MC_OK; }
+        static mc_result ReadDefaultDevice(mc_output_device_fn, void*) { return MC_ERROR_NOT_FOUND; }
+        static mc_result GetDefaultFormat(mc_string_view, mc_audio_format& format) {
+            format = { sizeof(format), sampleRate, 2, 0 };
+            return MC_OK;
+        }
 
     private:
         Channel channel;
+        mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
     };
+
+    mc_result MC_CALL initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        return musik::core::plugin::RegisterOutput<CaptureOutput>(*host);
+    }
+    void MC_CALL shutdown(void*) {}
 
     class CapturePlugin final : public IPlugin {
     public:
@@ -416,8 +537,19 @@ extern "C" MC_PLUGIN_API IPlugin* GetPlugin() {
     return new CapturePlugin();
 }
 
-extern "C" MC_PLUGIN_API IOutput* GetAudioOutput() {
-    return new CaptureOutput();
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error)
+{
+    const auto result = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (result != MC_OK) {
+        return result;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "capture.output", 14 };
+    plugin->name = { driver, sizeof(driver) - 1 };
+    plugin->initialize = initialize;
+    plugin->shutdown = shutdown;
+    return MC_OK;
 }
 
 extern "C" MC_PLUGIN_API IDataStreamFactory* GetDataStreamFactory() {
@@ -426,6 +558,14 @@ extern "C" MC_PLUGIN_API IDataStreamFactory* GetDataStreamFactory() {
 
 extern "C" MC_PLUGIN_API void ReleasePcmSourceOpen() {
     capture().ReleaseSourceOpen();
+}
+
+extern "C" MC_PLUGIN_API void SetPcmControlFailure(ControlFailure failure) {
+    capture().SetControlFailure(failure);
+}
+
+extern "C" MC_PLUGIN_API void GateRetiredPcmQueue() {
+    capture().GateRetiredQueue();
 }
 
 extern "C" MC_PLUGIN_API std::size_t ReadPcmCapture(CapturedFrame* destination, std::size_t capacity) {

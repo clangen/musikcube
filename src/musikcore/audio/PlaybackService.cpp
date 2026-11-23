@@ -37,6 +37,7 @@
 #include "PlaybackService.h"
 
 #include <musikcore/playback.h>
+#include <musikcore/debug.h>
 #include <musikcore/ffi/common/error.h>
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/library/LocalLibraryConstants.h>
@@ -198,9 +199,9 @@ void PlaybackService::Shutdown() {
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
     savePreferences(*this, *playbackPrefs);
-    this->Stop();
     this->ResetRemotes();
     this->lastFm.Stop();
+    this->transport->Destroy();
 }
 
 void PlaybackService::SelectLibrary(ILibraryPtr library) {
@@ -585,7 +586,13 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 }
 
                 if (startMode == ITransport::StartMode::Wait) {
-                    this->transport->Pause();
+                    const auto result = this->transport->Pause();
+                    if (result != MC_OK) {
+                        /* the old session was paused. if its replacement cannot
+                        pause, stop it before it can start playing unexpectedly. */
+                        musik::debug::warning("PlaybackService", "could not restore paused output: " + std::to_string(result));
+                        this->Stop();
+                    }
                 }
             }
         }
@@ -916,11 +923,11 @@ void PlaybackService::PauseOrResume() {
             this->Play(0);
         }
     }
-    else if (state == PlaybackState::Paused || state == PlaybackState::Prepared) {
-        transport->Resume();
-    }
-    else if (state == PlaybackState::Playing) {
-        transport->Pause();
+    else {
+        const auto result = musik::core::playback::PauseOrResume(*this->transport);
+        if (result != MC_OK) {
+            musik::debug::warning("PlaybackService", "device playback control failed: " + std::to_string(result));
+        }
     }
 }
 

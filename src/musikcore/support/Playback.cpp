@@ -59,14 +59,15 @@ static Prefs Settings() {
 namespace musik {
     namespace core {
         namespace playback {
-            void PauseOrResume(ITransport& transport) {
+            mc_result PauseOrResume(ITransport& transport) {
                 auto state = transport.GetPlaybackState();
                 if (state == PlaybackState::Paused || state == PlaybackState::Prepared) {
-                    transport.Resume();
+                    return transport.Resume();
                 }
                 else if (state == PlaybackState::Playing) {
-                    transport.Pause();
+                    return transport.Pause();
                 }
+                return MC_OK;
             }
 
             void VolumeUp(ITransport& transport) {

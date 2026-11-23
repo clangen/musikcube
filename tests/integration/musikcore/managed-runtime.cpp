@@ -249,7 +249,7 @@ namespace {
     }
 
     bool checkPluginSettings() {
-        static constexpr char nullPlugin[] = "Null IOutput";
+        static constexpr char nullPlugin[] = "Null Output";
         static constexpr char sampleRate[] = "default_sample_rate";
         constexpr int32_t configuredRate = 44100;
 
@@ -260,6 +260,10 @@ namespace {
         if (null == catalog.end() || !null->enabled ||
             SetPluginEnabled(null->filename, false) != MC_OK)
         {
+            std::fprintf(stderr, "C null plugin absent/disabled or toggle failed; catalog size=%zu\n", catalog.size());
+            for (const auto& plugin : catalog) {
+                std::fprintf(stderr, "plugin: %s (%s) enabled=%d\n", plugin.name.c_str(), plugin.id.c_str(), plugin.enabled);
+            }
             return false;
         }
         const auto disabled = ListPlugins();
@@ -271,18 +275,15 @@ namespace {
             return false;
         }
 
-        if (WritePluginSetting(null->id, sampleRate, configuredRate) != MC_OK ||
-            WritePluginSetting(null->id, sampleRate, int32_t { -1 }) != MC_ERROR_INVALID_ARGUMENT)
-        {
-            return false;
-        }
+        /* null output has no device-specific settings. listing/enabling it
+        still works; configuration reports absence rather than a fake schema. */
         const auto schema = ReadPluginSettings(null->id);
-        if (!schema) {
+        const auto written = WritePluginSetting(null->id, sampleRate, configuredRate);
+        if (schema || written != MC_ERROR_UNSUPPORTED) {
+            std::fprintf(stderr, "C null output schema: present=%d write status=%d\n", bool(schema), written);
             return false;
         }
-        const auto setting = std::ranges::find_if(*schema, [](const auto& field) { return field.key == sampleRate; });
-        return setting != schema->end() && std::holds_alternative<int32_t>(setting->value) &&
-            std::get<int32_t>(setting->value) == configuredRate;
+        return true;
     }
 
     struct LogProbe {
@@ -313,6 +314,12 @@ namespace {
 
         const auto beforeStartup = host.Generation();
         Context context(options);
+        /* C plugin metadata belongs to the selected runtime session; inspect
+        it after startup rather than triggering old discovery before context creation. */
+        if (!checkPluginSettings()) {
+            std::fputs("Plugin metadata/configuration did not round trip through the public API\n", stderr);
+            return false;
+        }
         if (!host.WaitSince(beforeStartup, std::chrono::steady_clock::now() + 5s) ||
             context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL)
         {
@@ -348,7 +355,7 @@ namespace {
         }
 
         retained = context.GetLibrary();
-        if (!retained || ReadOutputConfiguration().selectedDriver != "Null") {
+        if (!retained || ReadOutputConfiguration().selectedDriver != "Null Output") {
             std::fputs("Managed startup did not load the catalog and headless output\n", stderr);
             return false;
         }
@@ -474,10 +481,6 @@ int main(int argc, char** argv) {
     }
 
     Host host;
-    if (!checkPluginSettings()) {
-        std::fputs("Plugin metadata or schema setting did not round trip through the public API\n", stderr);
-        return 1;
-    }
     bool equalizer = false;
     bool server = false;
     bool remoteAudio = false;

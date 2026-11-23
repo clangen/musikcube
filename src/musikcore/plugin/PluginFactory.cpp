@@ -41,6 +41,7 @@
 #include <musikcore/ffi/common/error.h>
 #include <musikcore/ffi/consumer/preferences-shape.h>
 #include <musikcore/plugin/PluginFactory.h>
+#include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Common.h>
@@ -243,6 +244,11 @@ namespace {
                     filename, settings->GetBool(filename, true)
                 });
             });
+        for (const auto& plugin : musik::core::plugin::ListPlugins()) {
+            const auto filename = pathToUtf8(fs::u8path(plugin.filename).filename());
+            plugins.push_back({ plugin.id, plugin.name, plugin.version, filename,
+                settings->GetBool(filename, true) });
+        }
         return plugins;
     }
 
@@ -382,7 +388,9 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
         const auto pluginId = pluginText(id);
         const auto plugin = PluginFactory::Instance().QueryGuid(std::string(pluginId));
         if (!plugin) {
-            return MC_ERROR_NOT_FOUND;
+            const auto catalog = pluginCatalog();
+            return std::ranges::any_of(catalog, [&](const auto& item) { return item.id == pluginId; })
+                ? MC_ERROR_UNSUPPORTED : MC_ERROR_NOT_FOUND;
         }
         const auto schema = pluginSchema(pluginId);
         if (!schema) {
@@ -427,7 +435,9 @@ mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference
         const auto pluginId = pluginText(id);
         const auto plugin = PluginFactory::Instance().QueryGuid(std::string(pluginId));
         if (!plugin) {
-            return MC_ERROR_NOT_FOUND;
+            const auto catalog = pluginCatalog();
+            return std::ranges::any_of(catalog, [&](const auto& item) { return item.id == pluginId; })
+                ? MC_ERROR_UNSUPPORTED : MC_ERROR_NOT_FOUND;
         }
         const auto schema = pluginSchema(pluginId);
         if (!schema) {

@@ -1,5 +1,5 @@
 /* Exercise playback and plugin settings independently of library navigation. */
-const { DOWN, RIGHT, END, HOME } = require('../support/catalog');
+const { DOWN, RIGHT, HOME } = require('../support/catalog');
 
 async function checkSettings(terminal, { staged, hasServer }) {
   if (staged.some(name => /^(?:lib)?supereqdsp\./.test(name))) {
@@ -12,7 +12,8 @@ async function checkSettings(terminal, { staged, hasServer }) {
     terminal.send('\x1b');
     await terminal.expect('playback is stopped', { absent: 'frequency bands' });
   }
-  if (staged.some(name => /^(?:lib)?nullout\./.test(name))) {
+  const nullPlugin = staged.find(name => /^(?:lib)?nullout\./.test(name));
+  if (nullPlugin) {
     terminal.send('v');
     await terminal.expect('no visualizers found!');
     terminal.send('\r');
@@ -53,27 +54,27 @@ async function checkSettings(terminal, { staged, hasServer }) {
 
     await terminal.expect('configure plugins');
     terminal.send('\t'.repeat(hasServer ? 7 : 11) + '\r');
-    await terminal.expect('Null IOutput');
+    await terminal.expect('Null Output');
     /* a PTY update may end midway through the name; wait for its whole row
     before deriving a navigation index from the rendered plugin list. */
     await terminal.waitFor(() => terminal.screen.text().split('\n').some(
-      row => row.includes('Null IOutput') && row.includes('[v')), 'complete Null plugin row');
+      row => row.includes('Null Output') && row.includes('[v')), 'complete Null plugin row');
     const pluginRows = terminal.screen.text().split('\n').filter(row => row.includes('[v'));
-    const nullRow = pluginRows.findIndex(row => row.includes('Null IOutput'));
+    const nullRow = pluginRows.findIndex(row => row.includes('Null Output'));
     terminal.send(HOME + DOWN.repeat(nullRow) + '\r');
-    await terminal.expect('default_sample_rate');
-    terminal.send(DOWN + '\r');
-    await terminal.expect('4096 - 192000');
-    terminal.send(END + '\x7f'.repeat(5) + '48000\r');
-    await terminal.expect('48000', { absent: '4096 - 192000' });
-    terminal.send('\x1b');
+    /* C null output intentionally has no settings schema. its row must remain
+    configurable through the catalog without inventing a sample-rate setting. */
+    await terminal.expect('does not provide any configurable settings.');
+    terminal.send('\r');
     await terminal.waitFor(() => {
       const text = terminal.screen.text();
-      return !text.includes('default_sample_rate') && text.split('\n').some(
-        row => row.includes('Null IOutput') && row.includes('[v'));
-    }, 'restored plugin list after closing its editor');
+      return !text.includes('no configuration') && text.split('\n').some(
+        row => row.includes('Null Output') && row.includes('[v'));
+    }, 'plugin list restored after dismissing no-schema dialog');
     terminal.send('\x1b');
-    await terminal.expect('configure plugins', { absent: 'Null IOutput' });
+    /* the driver and catalog now share a display name; use the binary name
+    to distinguish the closed plugin overlay from the settings underneath. */
+    await terminal.expect('configure plugins', { absent: `(${nullPlugin})` });
 
     terminal.send('\t\r');
     await terminal.expect('AutoHideCommandBar');

@@ -34,192 +34,110 @@
 
 #pragma once
 
-#include <musikcore/config.h>
 #include <musikcore/audio/IStream.h>
+#include <musikcore/audio/Output.h>
 #include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IOutput.h>
-#include <musikcore/sdk/IBufferProvider.h>
 
-
-#include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <atomic>
+#include <list>
+#include <memory>
+#include <mutex>
 
 namespace musik { namespace core { namespace audio {
 
     struct FftContext;
 
-    class Player : public musik::core::sdk::IBufferProvider {
-        public:
-            enum class DestroyMode: int { Drain = 0, NoDrain = 1 };
+    /* decodes one track and sends its samples to an output. a URI player or
+    catalog transport can select another track while this one returns its last
+    buffers to the decoder. */
+    class Player : private Output::CompletionSink {
+    public:
+        using Shared = std::shared_ptr<Player>;
 
-            /* groups retain completion independently of self-deleting players.
-            use one per transport so shutdown never waits on unrelated playback. */
-            class WorkerGroup {
-            public:
-                void Add();
-                void Finish();
-                void Wait();
+        enum class Drain { No, Yes };
 
-            private:
-                std::mutex mutex;
-                std::condition_variable changed;
-                size_t count = 0;
-            };
+        struct Gain {
+            float preamp = 1.0f;
+            float gain = 1.0f;
+            float peak = 1.0f;
+            bool peakValid = false;
+        };
 
-            /* call after stopping all playback and before releasing plugins. */
-            static void WaitForWorkers();
+        /* identify the sending track so the listener can ignore late events
+        from a track it has already replaced. */
+        struct EventListener {
+            virtual ~EventListener() = default;
+            virtual void OnPlayerBuffered(Player*) {}
+            virtual void OnPlayerStarted(Player*) {}
+            virtual void OnPlayerStreamEof(Player*) {}
+            virtual void OnPlayerFinished(Player*) {}
+            virtual void OnPlayerOpenFailed(Player*) {}
+            virtual void OnPlayerStopped(Player*) {}
+            virtual void OnPlayerMixPoint(Player*, int, double) {}
+        };
 
-            struct Gain {
-                Gain() noexcept {
-                    this->preamp = this->gain = this->peak = 1.0f;
-                    this->peakValid = false;
-                }
-                float preamp;
-                float gain;
-                float peak;
-                bool peakValid;
-            };
+        ~Player();
 
-            /* A receiver owns its callback lifetime. Neither copyable nor movable. */
-            struct EventListener {
-                EventListener() = default;
-                virtual ~EventListener() = default;
-                EventListener(const EventListener&) = delete;
-                EventListener& operator=(const EventListener&) = delete;
+        void Play();
+        void RequestStop(Drain drain = Drain::No);
 
-                virtual void OnPlayerBuffered(Player* player) { }
-                virtual void OnPlayerStarted(Player* player) { }
-                virtual void OnPlayerStreamEof(Player* player) { }
-                virtual void OnPlayerFinished(Player* player) { }
-                virtual void OnPlayerOpenFailed(Player* player) { }
-                virtual void OnPlayerDestroying(Player* player) { }
-                virtual void OnPlayerMixPoint(Player* player, int id, double time) { }
+        double GetPosition() const;
+        /* reject once the worker has committed its terminal decision. */
+        bool SetPosition(double seconds);
+        bool HasPendingSeek() const { return this->seekToPosition.load() >= 0; }
+        double GetDuration() const { return this->duration.load(); }
 
-            protected:
-                /* Call after detaching players, outside callback-visible locks and callbacks. */
-                void CloseCallbacks();
+        void AddMixPoint(int id, double time);
+        bool HasCapability(sdk::Capability capability) const;
 
-            private:
-                friend class Player;
-                struct CallbackState {
-                    std::mutex mutex;
-                    std::condition_variable idle;
-                    unsigned running {};
-                    bool closed {};
-                };
-                const std::shared_ptr<CallbackState> callbacks = std::make_shared<CallbackState>();
-            };
+        const std::string& GetUrl() const { return this->url; }
+        sdk::StreamState GetStreamState() const { return this->streamState.load(); }
 
-            static Player* Create(
-                const std::string &url,
-                std::shared_ptr<musik::core::sdk::IOutput> output,
-                DestroyMode destroyMode,
-                EventListener *listener,
-                Gain gain = Gain(), std::shared_ptr<WorkerGroup> workers = {});
+    private:
+        friend class PlaybackWorkers;
 
-            virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
+        enum class State { Idle, Playing, Quit };
 
-            void Detach(EventListener *listener);
-            void Attach(EventListener *listener);
+        struct MixPoint {
+            int id;
+            double time;
+        };
 
-            void Play();
-            void Destroy();
-            void Destroy(DestroyMode mode);
+        Player(const std::string& url, std::shared_ptr<Output> output, Drain drain, EventListener& listener, Gain gain);
 
-            double GetPosition();
-            void SetPosition(double seconds);
-            double GetDuration();
+        void Run();
+        void WriteTrack();
+        bool WaitForBuffers(bool interruptForSeek = false);
+        void ReturnUnusedBuffer(sdk::IBuffer* buffer);
+        void CompleteBuffer(sdk::IBuffer* buffer, mc_result outcome) override;
+        void OnBufferProcessed(sdk::IBuffer* buffer);
+        void FailOutput(mc_result status);
+        bool Exited() const { return this->state.load() == State::Quit; }
 
-            void AddMixPoint(int id, double time);
+        const std::shared_ptr<Output> output;
+        const IStreamPtr stream;
+        Output::Writer writer;
+        EventListener& listener;
+        const std::string url;
+        const Gain gain;
 
-            bool HasCapability(musik::core::sdk::Capability capability);
+        std::atomic<State> state { State::Idle };
+        std::atomic<sdk::StreamState> streamState { sdk::StreamState::Buffering };
+        std::atomic<Drain> drain;
+        std::atomic<double> duration { -1.0 };
+        std::atomic<int> capabilities { 0 };
+        std::atomic<double> currentPosition { 0.0 };
+        std::atomic<double> seekToPosition { -1.0 };
 
-            std::string GetUrl() const { return this->url; }
+        std::mutex mixPointMutex;
+        bool acceptingSeeks = true;
+        std::list<MixPoint> pendingMixPoints;
+        std::list<MixPoint> processedMixPoints;
 
-            musik::core::sdk::StreamState GetStreamState() noexcept { return this->streamState.load(); }
-
-        private:
-            friend void playerThreadLoop(Player* player);
-
-            double GetPositionInternal();
-
-            Player(
-                const std::string &url,
-                std::shared_ptr<musik::core::sdk::IOutput> output,
-                DestroyMode finishMode,
-                EventListener *listener,
-                Gain gain, std::shared_ptr<WorkerGroup> workers);
-
-            virtual ~Player();
-
-            struct MixPoint {
-                MixPoint(int id, double time) noexcept {
-                    this->id = id;
-                    this->time = time;
-                }
-
-                int id;
-                double time;
-            };
-
-            using MixPointPtr = std::shared_ptr<MixPoint>;
-            using MixPointList = std::list<MixPointPtr>;
-            struct ListenerRegistration {
-                explicit ListenerRegistration(EventListener& listener)
-                    : listener(&listener), callbacks(listener.callbacks) {}
-                EventListener* const listener;
-                const std::shared_ptr<EventListener::CallbackState> callbacks;
-                std::atomic_bool attached { true };
-            };
-
-            using ListenerList = std::list<std::shared_ptr<ListenerRegistration>>;
-            using OutputPtr = std::shared_ptr<musik::core::sdk::IOutput>;
-
-            typedef enum {
-                Idle = 0,
-                Playing = 1,
-                Quit = 2
-            } InternalState;
-
-            bool Exited();
-            void ReturnUnusedBuffer(musik::core::sdk::IBuffer* buffer);
-            int State();
-            template<class Notify>
-            void NotifyListeners(Notify notify);
-
-            std::thread* thread;
-
-            OutputPtr output;
-            IStreamPtr stream;
-            ListenerList listeners;
-            MixPointList pendingMixPoints;
-            MixPointList processedMixPoints;
-
-            void UpdateNextMixPointTime();
-
-            std::string url;
-
-            /* granular mutexes for better performance */
-            std::mutex queueMutex, listenerMutex;
-            std::condition_variable writeToOutputCondition;
-
-            double volume;
-            double nextMixPoint;
-            std::atomic<double> currentPosition;
-            std::atomic<double> seekToPosition;
-            std::atomic<musik::core::sdk::StreamState> streamState;
-            std::atomic<int> internalState;
-            bool notifiedStarted;
-            float* spectrum;
-            std::shared_ptr<WorkerGroup> workers;
-            DestroyMode destroyMode;
-            Gain gain;
-            int pendingBufferCount;
-            bool threadFinished;
-
-            FftContext* fftContext;
+        /* only Run and the completions it dispatches touch these fields. */
+        bool notifiedStarted = false;
+        bool outputFailed = false;
+        std::unique_ptr<FftContext> fftContext;
     };
 
 } } }

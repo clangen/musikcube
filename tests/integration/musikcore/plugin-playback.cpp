@@ -1,6 +1,7 @@
 #include "CoreRuntime.h"
 
 #include <musikcore/audio/GaplessTransport.h>
+#include <musikcore/audio/Outputs.h>
 #include <musikcore/output.hpp>
 #include <musikcore/playback.hpp>
 #include <musikcore/visualizer.hpp>
@@ -19,7 +20,7 @@ namespace {
     using State = sdk::PlaybackState;
 
     constexpr char unavailableOutput[] = "Unavailable test output";
-    constexpr std::string_view nullOutput = "Null";
+    constexpr std::string_view nullOutput = "Null Output";
 
     bool startPlayback(GaplessTransport& transport, const char* media) {
         transport.Start(media, ITransport::Gain {}, ITransport::StartMode::Immediate);
@@ -109,9 +110,23 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    CoreRuntime runtime;
-    musik::core::plugin::BindServices(&runtime.Queue(), nullptr, LibraryFactory::Instance().DefaultLocalLibrary());
-    const bool passed = reloadDuringPlayback(argv[1]);
-    Player::WaitForWorkers();
-    return passed ? 0 : 1;
+    /* output discovery must also work while the plugin service is offline. */
+    if (!musik::core::audio::outputs::GetAllOutputs().empty()) {
+        std::fputs("Found output plugins before startup\n", stderr);
+        return 1;
+    }
+
+    {
+        CoreRuntime runtime;
+        musik::core::plugin::BindServices(&runtime.Queue(), nullptr, LibraryFactory::Instance().DefaultLocalLibrary());
+        if (!reloadDuringPlayback(argv[1])) {
+            return 1;
+        }
+    }
+
+    if (!musik::core::audio::outputs::GetAllOutputs().empty()) {
+        std::fputs("Found output plugins after shutdown\n", stderr);
+        return 1;
+    }
+    return 0;
 }

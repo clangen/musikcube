@@ -67,15 +67,11 @@ void MasterTransport::SwitchTo(Type type) {
         const double volume = this->transport ? this->transport->Volume() : -1;
 
         this->transportConnections = {};
+        if (this->transport) {
+            this->transport->Destroy();
+        }
         switch (this->type) {
             case Type::Gapless:
-                if (this->transport) {
-                    /* hacky -- we know it's a crossfade transport, stop it
-                    immediately without fading out so we don't block the UI
-                    for a second or so. */
-                    dynamic_cast<CrossfadeTransport*>(this->transport.get())->StopImmediately();
-                }
-
                 this->transport = std::make_shared<GaplessTransport>();
                 break;
 
@@ -119,11 +115,15 @@ void MasterTransport::Stop() {
     this->transport->Stop();
 }
 
-bool MasterTransport::Pause() {
+void MasterTransport::Destroy() {
+    this->transport->Destroy();
+}
+
+mc_result MasterTransport::Pause() {
     return this->transport->Pause();
 }
 
-bool MasterTransport::Resume() {
+mc_result MasterTransport::Resume() {
     return this->transport->Resume();
 }
 

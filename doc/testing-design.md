@@ -932,9 +932,8 @@ registration on macOS does not establish Windows/Linux acceptance.
 The native PCM capture fixture can hold a buffer completion at a known boundary.
 The transport tests use this to force overlapping seeks, stop and output reload
 with buffers outstanding, and replacement of a prepared next track. Other cases
-block a player notification during teardown, detach a receiver after the player
-has copied its listener list, destroy a paused crossfade, and cancel a source
-while its provider is still opening it. These tests exercise
+stop a job during its last notification, interrupt a blocked retired fade,
+destroy a paused crossfade, and cancel a source while its provider is opening it. These tests exercise
 the production player and decoder with a synthetic output clock.
 
 Run `cmake --build <build-dir> --target musikcube_playback_benchmark` for the

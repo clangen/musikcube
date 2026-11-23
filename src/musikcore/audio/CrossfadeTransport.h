@@ -36,10 +36,9 @@
 
 #include <musikcore/config.h>
 #include <musikcore/audio/ITransport.h>
-#include <musikcore/audio/Player.h>
+#include <musikcore/audio/PlaybackWorkers.h>
 #include <musikcore/audio/Crossfader.h>
-#include <common/runtime/MessageQueue.h>
-#include <musikcore/sdk/IOutput.h>
+#include <musikcore/audio/Output.h>
 #include <musikcore/sdk/constants.h>
 
 #include <thread>
@@ -56,16 +55,15 @@ namespace musik { namespace core { namespace audio {
             CrossfadeTransport();
             virtual ~CrossfadeTransport();
 
-            void StopImmediately();
-
             void Start(const std::string& uri, Gain gain, StartMode mode) override;
             void PrepareNextTrack(const std::string& uri, Gain gain) override;
 
             std::string Uri() override;
 
             void Stop() override;
-            bool Pause() override;
-            bool Resume() override;
+            void Destroy() override;
+            mc_result Pause() override;
+            mc_result Resume() override;
 
             double Position() override;
             void SetPosition(double seconds) override;
@@ -85,11 +83,10 @@ namespace musik { namespace core { namespace audio {
 
         private:
             using Lock = std::unique_lock<std::recursive_mutex>;
-            using Output = std::shared_ptr<musik::core::sdk::IOutput>;
-            using Thread = std::shared_ptr<std::thread>;
-            using IMessage = musik::core::runtime::IMessage;
-            using IMessageTarget = musik::core::runtime::IMessageTarget;
-            using MessageQueue = musik::core::runtime::MessageQueue;
+            using OutputPtr = std::shared_ptr<musik::core::audio::Output>;
+
+            /* decoder readiness and the listener's requested action change independently. */
+            enum class Intent { Prepare, Play, Pause };
 
             struct PlayerContext {
                 PlayerContext(
@@ -100,25 +97,21 @@ namespace musik { namespace core { namespace audio {
 
                 void Reset(
                     const std::string& url,
-                    Player::EventListener* listener,
-                    Gain gain,
-                    bool startImmediate);
+                    Gain gain);
 
                 void TransferTo(PlayerContext& context) noexcept;
 
                 void Start(double transportVolume);
                 void Stop();
                 void StopIf(Player const* player);
-                void Pause();
-                void Resume(double transportVolume);
+                void Play(double transportVolume);
                 void SetVolume(double volume);
                 bool IsEmpty() noexcept;
 
-                bool startImmediate;
                 bool started;
                 bool canFade;
-                Output output;
-                Player *player;
+                OutputPtr output;
+                Player::Shared player;
                 CrossfadeTransport& transport;
                 Crossfader& crossfader;
             };
@@ -127,22 +120,26 @@ namespace musik { namespace core { namespace audio {
             void SetPlaybackState(musik::core::sdk::PlaybackState state);
 
             void OnCrossfaderEmptied();
+            void StopImmediately();
 
             void OnPlayerBuffered(Player* player) override;
             void OnPlayerStarted(Player* player) override;
             void OnPlayerFinished(Player* player) override;
             void OnPlayerOpenFailed(Player* player) override;
             void OnPlayerMixPoint(Player* player, int id, double time) override;
-            void OnPlayerDestroying(Player* player) override;
+            void OnPlayerStopped(Player* player) override;
 
+            Intent intent { Intent::Prepare };
             musik::core::sdk::PlaybackState playbackState;
             musik::core::sdk::StreamState activePlayerState { musik::core::sdk::StreamState::Stopped };
             std::recursive_mutex stateMutex;
             Crossfader crossfader;
             PlayerContext active;
             PlayerContext next;
-            double volume;
-            bool muted;
+            std::atomic<double> volume;
+            std::atomic<bool> muted;
+            std::atomic<bool> destroyed { false };
+            PlaybackWorkers playbackWorkers { *this };
     };
 
 } } }

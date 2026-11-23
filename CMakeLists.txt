@@ -82,6 +82,7 @@ endif()
 list(
   APPEND
   PROJECT_INCLUDE_DIRECTORIES
+  "${musikcube_SOURCE_DIR}/include"
   "${musikcube_SOURCE_DIR}/src"
   "${musikcube_SOURCE_DIR}/src/musikcore"
   "${musikcube_SOURCE_DIR}/src/musikcube"

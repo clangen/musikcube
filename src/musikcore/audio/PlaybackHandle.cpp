@@ -167,7 +167,7 @@ public:
         if (status != MC_OK) return status;
 
         switch (command) {
-            case MC_PLAYBACK_TOGGLE_PAUSE: core::playback::PauseOrResume(this->service.GetTransport()); break;
+            case MC_PLAYBACK_TOGGLE_PAUSE: return core::playback::PauseOrResume(this->service.GetTransport());
             case MC_PLAYBACK_STOP: this->service.Stop(); break;
             case MC_PLAYBACK_NEXT: this->service.Next(); break;
             case MC_PLAYBACK_PREVIOUS: this->service.Previous(); break;

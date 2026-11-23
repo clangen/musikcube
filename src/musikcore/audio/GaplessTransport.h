@@ -36,8 +36,8 @@
 
 #include <musikcore/config.h>
 #include <musikcore/audio/ITransport.h>
-#include <musikcore/audio/Player.h>
-#include <musikcore/sdk/IOutput.h>
+#include <musikcore/audio/PlaybackWorkers.h>
+#include <musikcore/audio/Output.h>
 #include <musikcore/sdk/constants.h>
 
 #include <thread>
@@ -70,8 +70,9 @@ namespace musik { namespace core { namespace audio {
             std::string Uri() override;
 
             void Stop() override;
-            bool Pause() override;
-            bool Resume() override;
+            void Destroy() override;
+            mc_result Pause() override;
+            mc_result Resume() override;
 
             double Position() override;
             void SetPosition(double seconds) override;
@@ -94,7 +95,7 @@ namespace musik { namespace core { namespace audio {
         private:
             using LockT = std::unique_lock<std::recursive_mutex>;
 
-            void StartWithPlayer(Player* player, StartMode mode = StartMode::Immediate);
+            void StartWithPlayer(Player::Shared player, StartMode mode = StartMode::Immediate);
             SeekResult SetPositionInternal(double seconds, bool requireReady);
 
             void StopInternal(
@@ -112,7 +113,7 @@ namespace musik { namespace core { namespace audio {
             void OnPlayerStreamEof(Player* player) override;
             void OnPlayerFinished(Player* player) override;
             void OnPlayerOpenFailed(Player* player) override;
-            void OnPlayerDestroying(Player* player) override;
+            void OnPlayerStopped(Player* player) override;
 
             void ResetActivePlayer();
             void ResetNextPlayer();
@@ -122,13 +123,14 @@ namespace musik { namespace core { namespace audio {
             musik::core::sdk::StreamState terminalState { musik::core::sdk::StreamState::Stopped };
             StartMode activeStartMode { StartMode::Immediate };
             std::recursive_mutex stateMutex;
-            std::shared_ptr<musik::core::sdk::IOutput> output;
-            Player* activePlayer;
-            Player* nextPlayer;
-            const std::shared_ptr<Player::WorkerGroup> workers = std::make_shared<Player::WorkerGroup>();
-            double volume;
+            std::shared_ptr<musik::core::audio::Output> output;
+            Player::Shared activePlayer;
+            Player::Shared nextPlayer;
+            PlaybackWorkers playbackWorkers { *this };
+            std::atomic<double> volume;
             bool nextCanStart;
-            bool muted;
+            std::atomic<bool> muted;
+            std::atomic<bool> destroyed { false };
     };
 
 } } }

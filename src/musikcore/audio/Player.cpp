@@ -46,9 +46,7 @@
 #include <algorithm>
 #include <array>
 #include <math.h>
-#include <future>
 
-#define MAX_PREBUFFER_QUEUE_COUNT 8
 #include <musikcore/visualizer.h>
 
 #define FFT_N (2 * MC_VISUALIZER_SPECTRUM_BINS)
@@ -61,484 +59,239 @@ using std::min;
 using std::max;
 
 static std::string TAG = "Player";
-static std::mutex playerWorkersMutex;
-static std::condition_variable playerWorkersChanged;
-static size_t playerWorkers = 0;
+namespace musik { namespace core { namespace audio {
+    struct FftContext {
+        FftContext() : cfg(kiss_fftr_alloc(FFT_N, false, nullptr, nullptr)) {}
 
-void Player::WorkerGroup::Add() {
-    std::lock_guard<std::mutex> lock(this->mutex);
-    ++this->count;
-}
+        ~FftContext() { kiss_fftr_free(cfg); }
 
-void Player::WorkerGroup::Finish() {
-    std::lock_guard<std::mutex> lock(this->mutex);
-    --this->count;
-    this->changed.notify_all();
-}
+        kiss_fftr_cfg cfg;
+        std::array<kiss_fft_scalar, FFT_N> input;
+        std::array<kiss_fft_cpx, (FFT_N / 2) + 1> output;
+        std::array<float, FFT_N / 2> spectrum;
+    };
+} } }
 
-void Player::WorkerGroup::Wait() {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    this->changed.wait(lock, [&] { return this->count == 0; });
-}
-
-void Player::WaitForWorkers() {
-    std::unique_lock<std::mutex> lock(playerWorkersMutex);
-    playerWorkersChanged.wait(lock, [] { return playerWorkers == 0; });
-}
-
-using Listener = Player::EventListener;
-
-namespace musik {
-    namespace core {
-        namespace audio {
-            void playerThreadLoop(Player* player);
-
-            struct FftContext {
-                FftContext()
-                : cfg(kiss_fftr_alloc(FFT_N, false, nullptr, nullptr)) {
-                }
-
-                ~FftContext() {
-                    kiss_fftr_free(cfg);
-                }
-
-                kiss_fftr_cfg cfg;
-                std::array<kiss_fft_scalar, FFT_N> input;
-                std::array<kiss_fft_cpx, (FFT_N / 2) + 1> output;
-            };
-        }
-    }
-}
-
-Player* Player::Create(
-    const std::string &url,
-    std::shared_ptr<IOutput> output,
-    DestroyMode destroyMode,
-    EventListener *listener,
-    Gain gain, std::shared_ptr<WorkerGroup> workers)
-{
-    return new Player(url, output, destroyMode, listener, gain, std::move(workers));
-}
-
-Player::Player(
-    const std::string &url,
-    std::shared_ptr<IOutput> output,
-    DestroyMode destroyMode,
-    EventListener *listener,
-    Gain gain, std::shared_ptr<WorkerGroup> workers)
-: output(output)
+Player::Player(const std::string& url, std::shared_ptr<Output> output, Drain drain, EventListener& listener, Gain gain)
+: output(std::move(output))
 , stream(Stream::Create())
+, writer(*this->output, *this)
+, listener(listener)
 , url(url)
-, nextMixPoint(-1.0)
-, currentPosition(0)
-, seekToPosition(-1)
-, streamState(StreamState::Buffering)
-, internalState(Player::Idle)
-, notifiedStarted(false)
-, workers(std::move(workers))
-, destroyMode(destroyMode)
 , gain(gain)
-, pendingBufferCount(0)
-, fftContext(nullptr) {
-    musik::debug::info(TAG, "new instance created");
-
-    if (!this->output) {
-        throw std::runtime_error("output cannot be null!");
-    }
-
-    /* retain allocation ownership until worker construction succeeds. */
-    auto fft = std::make_unique<FftContext>();
-    this->fftContext = fft.get();
-    std::unique_ptr<float[]> spectrum(new float[FFT_N / 2]);
-    this->spectrum = spectrum.get();
-    if (listener) {
-        this->Attach(listener);
-    }
-
-    /* each player instance is driven by a background thread. start it. */
-    std::lock_guard<std::mutex> lock(playerWorkersMutex);
-    this->thread = new std::thread([this] {
-        /* Wait until construction has published the worker and counted it. */
-        {
-            std::lock_guard<std::mutex> lock(playerWorkersMutex);
-        }
-        musik::core::audio::playerThreadLoop(this);
-    });
-    if (this->workers) {
-        this->workers->Add();
-    }
-    ++playerWorkers;
-    spectrum.release();
-    fft.release();
+, drain(drain)
+, fftContext(std::make_unique<FftContext>())
+{
 }
 
-Player::~Player() {
-    delete[] this->spectrum;
-    delete fftContext;
-}
+Player::~Player() = default;
 
 void Player::Play() {
-    std::unique_lock<std::mutex> lock(this->queueMutex);
-
-    if (this->internalState != Player::Quit) {
-        this->internalState = Player::Playing;
-        this->writeToOutputCondition.notify_all();
-    }
+    auto idle = State::Idle;
+    this->state.compare_exchange_strong(idle, State::Playing);
+    this->state.notify_one();
 }
 
-void Player::Destroy() {
+void Player::RequestStop(Drain drain) {
+    this->drain.store(drain);
+    if (drain == Drain::No) {
+        this->writer.Revoke();
+    }
+    this->state.store(State::Quit);
+    this->state.notify_one();
+    this->output->NotifyWriters();
+    this->stream->Interrupt();
+}
+
+double Player::GetPosition() const {
+    const auto seek = this->seekToPosition.load();
+    const auto position = seek >= 0 ? seek : this->currentPosition.load();
+    return std::max(0.0, round(position - this->output->Latency()));
+}
+
+bool Player::SetPosition(double seconds) {
+    const auto duration = this->GetDuration();
+    if (duration > 0.0) {
+        seconds = std::min(seconds, duration);
+    }
     {
-        if (this->stream) {
-            this->stream->Interrupt();
-        }
-
-        std::unique_lock<std::mutex> lock(this->queueMutex);
-
-        if (this->internalState == Player::Quit && !this->thread) {
-            return; /* already terminated (or terminating) */
-        }
-
-        this->internalState = Player::Quit;
-        this->writeToOutputCondition.notify_all();
-        this->thread->detach();
-        delete this->thread;
-        this->thread = nullptr;
-    }
-}
-
-void Player::Destroy(DestroyMode mode) {
-    this->destroyMode = mode;
-    this->Destroy();
-}
-
-void Player::Detach(EventListener* listener) {
-    if (listener) {
-        std::unique_lock<std::mutex> lock(this->listenerMutex);
-        this->listeners.remove_if([listener](const auto& registration) {
-            if (registration->listener == listener) {
-                registration->attached.store(false);
-                return true;
-            }
+        std::lock_guard lock(this->mixPointMutex);
+        if (!this->acceptingSeeks || this->Exited()) {
             return false;
-        });
-    }
-}
-
-void Player::Attach(EventListener* listener) {
-    this->Detach(listener);
-
-    if (listener) {
-        std::unique_lock<std::mutex> lock(this->listenerMutex);
-        this->listeners.push_back(std::make_shared<ListenerRegistration>(*listener));
-    }
-}
-
-void Player::EventListener::CloseCallbacks() {
-    std::unique_lock lock(this->callbacks->mutex);
-    this->callbacks->closed = true;
-    this->callbacks->idle.wait(lock, [&] { return this->callbacks->running == 0; });
-}
-
-template<class Notify>
-void Player::NotifyListeners(Notify notify) {
-    ListenerList snapshot;
-    {
-        std::unique_lock lock(this->listenerMutex);
-        snapshot = this->listeners;
-    }
-
-    for (const auto& registration : snapshot) {
-        auto& state = *registration->callbacks;
-        {
-            std::lock_guard lock(state.mutex);
-            if (state.closed || !registration->attached.load()) {
-                continue;
-            }
-            ++state.running;
         }
-
-        /* The receiver may call into transport and output. Hold no
-           registration locks while invoking it. */
-        struct Call {
-            EventListener::CallbackState& state;
-            ~Call() {
-                std::lock_guard lock(this->state.mutex);
-                if (--this->state.running == 0 && this->state.closed) {
-                    this->state.idle.notify_all();
-                }
-            }
-        } call { state };
-        notify(*registration->listener);
+        this->seekToPosition.store(std::max(0.0, seconds));
+        this->pendingMixPoints.splice(this->pendingMixPoints.begin(), this->processedMixPoints);
     }
-}
-
-double Player::GetPosition() {
-    double seek = this->seekToPosition.load();
-    double current = this->currentPosition.load();
-    const double latency = this->output ? this->output->Latency() : 0.0;
-    return std::max(0.0, round((seek >= 0 ? seek : current) - latency));
-}
-
-double Player::GetPositionInternal() {
-    const double latency = this->output ? this->output->Latency() : 0.0;
-    return std::max(0.0, round(this->currentPosition.load() - latency));
-}
-
-double Player::GetDuration() {
-    return this->stream ? this->stream->GetDuration() : -1.0f;
-}
-
-void Player::SetPosition(double seconds) {
-    std::unique_lock<std::mutex> queueLock(this->queueMutex);
-
-    if (this->stream) {
-        auto duration = this->stream->GetDuration();
-        if (duration > 0.0f) {
-            seconds = std::min(duration, seconds);
-        }
-    }
-
-    this->seekToPosition.store(std::max(0.0, seconds));
-
-    /* reset our mix points on seek! that way we'll notify again if necessary */
-
-    this->pendingMixPoints.splice(
-        this->pendingMixPoints.begin(),
-        this->processedMixPoints);
-
-    this->UpdateNextMixPointTime();
+    this->output->NotifyWriters();
+    return true;
 }
 
 void Player::AddMixPoint(int id, double time) {
-    std::unique_lock<std::mutex> queueLock(this->queueMutex);
-    this->pendingMixPoints.push_back(std::make_shared<MixPoint>(id, time));
-    this->UpdateNextMixPointTime();
+    std::lock_guard lock(this->mixPointMutex);
+    this->pendingMixPoints.push_back({
+        .id = id,
+        .time = time,
+    });
 }
 
-int Player::State() {
-    std::unique_lock<std::mutex> lock(this->queueMutex);
-    return this->internalState;
+bool Player::HasCapability(Capability capability) const {
+    return (this->capabilities.load() & static_cast<int>(capability)) != 0;
 }
 
-bool Player::HasCapability(Capability c) {
-    if (this->stream) {
-        return (this->stream->GetCapabilities() & (int) c) != 0;
-    }
-    return false;
-}
-
-void Player::UpdateNextMixPointTime() {
-    const double position = this->GetPositionInternal();
-
-    double next = -1.0;
-    for (MixPointPtr mp : this->pendingMixPoints) {
-        if (mp->time >= position) {
-            if (mp->time < next || next == -1.0) {
-                next = mp->time;
-            }
+bool Player::WaitForBuffers(bool interruptForSeek) {
+    for (;;) {
+        this->writer.ProcessCompletions();
+        if (interruptForSeek && !this->outputFailed && !this->Exited() && this->HasPendingSeek()) {
+            return false;
         }
+        if (!this->writer.HasPending()) {
+            return true;
+        }
+        this->writer.WaitForReturnedBuffer();
     }
-
-    this->nextMixPoint = next;
 }
 
-void musik::core::audio::playerThreadLoop(Player* player) {
+void Player::Run() {
 #ifdef WIN32
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 #endif
 
-    IBuffer* buffer = nullptr;
-
-    const float gain = playbackGain(player->gain.preamp * player->gain.gain,
-        player->gain.peak, player->gain.peakValid);
-
-    if (player->stream->OpenStream(player->url, player->output.get())) {
-        player->streamState = StreamState::Buffered;
-        player->NotifyListeners([player](Listener& listener) { listener.OnPlayerBuffered(player); });
-
-        /* wait until we enter the Playing or Quit state */
-        {
-            std::unique_lock<std::mutex> lock(player->queueMutex);
-            while (player->internalState == Player::Idle) {
-                player->writeToOutputCondition.wait(lock);
-            }
+    if (this->stream->OpenStream(this->url, this->output.get())) {
+        /* controls read snapshots while the worker may be blocked in the decoder. */
+        this->duration.store(this->stream->GetDuration());
+        this->capabilities.store(this->stream->GetCapabilities());
+        if (!this->Exited()) {
+            this->streamState = StreamState::Buffered;
+            this->listener.OnPlayerBuffered(this);
         }
+        this->state.wait(State::Idle);
+        for (;;) {
+            this->WriteTrack();
+            if (!this->outputFailed && !this->Exited() && !this->HasPendingSeek()) {
+                this->streamState = StreamState::AlmostDone;
+                this->listener.OnPlayerStreamEof(this);
+            }
 
-        /* we're ready to go.... */
-        bool finished = false;
-
-        while (!finished && !player->Exited()) {
-            /* see if we've been asked to seek since the last sample was
-            played. if we have, clear our output buffer and seek the
-            stream. */
-            double seek = player->seekToPosition.load();
-
-            if (seek != -1.0) {
-                player->output->Stop(); /* flush all buffers */
-                player->output->Resume(); /* start it back up */
-
-                /* if we've allocated a buffer, but it hasn't been written
-                to the output yet, unlock it. this is an important step, and if
-                not performed, will result in a deadlock just below while
-                waiting for all buffers to complete. */
-                if (buffer) {
-                    player->ReturnUnusedBuffer(buffer);
-                    buffer = nullptr;
+            /* decoded EOF can precede the audible tail. a seek still belongs
+            to this track until its final decision closes admission below. */
+            if (!this->WaitForBuffers(true)) {
+                continue;
+            }
+            if (this->drain.load() == Drain::Yes) {
+                const auto result = this->writer.Drain();
+                if (result != MC_OK && result != MC_ERROR_CANCELLED) {
+                    this->FailOutput(result);
                 }
-
-                player->currentPosition.store(seek);
-
-                {
-                    std::unique_lock<std::mutex> lock(player->queueMutex);
-                    while (player->pendingBufferCount > 0) {
-                        player->writeToOutputCondition.wait(lock);
-                    }
-                }
-
-                player->stream->SetPosition(seek);
-                /* A new seek can arrive while the output returns its buffers. */
-                if (!player->seekToPosition.compare_exchange_strong(seek, -1.0)) {
+            }
+            {
+                std::lock_guard lock(this->mixPointMutex);
+                if (!this->outputFailed && !this->Exited() && this->HasPendingSeek()) {
                     continue;
                 }
+                /* SetPosition uses the same lock: either the worker restarts
+                for an accepted seek, or the caller observes closed admission. */
+                this->acceptingSeeks = false;
             }
-
-            /* let's see if we can find some samples to play */
-            if (!buffer) {
-                std::unique_lock<std::mutex> lock(player->queueMutex);
-
-                buffer = player->stream->GetNextProcessedOutputBuffer();
-
-                if (buffer) {
-                    /* apply replay gain, if specified */
-                    if (gain != 1.0f) {
-                        float* samples = buffer->BufferPointer();
-                        for (long i = 0; i < buffer->Samples(); i++) {
-                            samples[i] *= gain;
-                        }
-                    }
-
-                    ++player->pendingBufferCount;
-                }
-            }
-
-            /* if we have a decoded, processed buffer available. let's try to send it to
-            the output device. */
-            if (buffer) {
-                /* if this result is negative it's an error code defined by the sdk's
-                OutputPlay enum. if it's a positive number it's the number of milliseconds
-                we should wait until automatically trying to play the buffer again. */
-                OutputState playResult = player->output->Play(buffer, player);
-
-                if (playResult == OutputState::BufferWritten) {
-                    buffer = nullptr; /* reset so we pick up a new one next iteration */
-                }
-                else {
-                    /* if the buffer was unable to be processed, we'll try again after
-                    sleepMs milliseconds */
-                    int sleepMs = 1000; /* default */
-
-                    /* if the playResult value >= 0, that means the output requested a
-                    specific callback time because its internal buffer is full. */
-                    if ((int) playResult >= 0) {
-                        /* if there is no visualizer active, we can introduce an
-                        artificial delay of 25% of the buffer size to ease CPU load */
-                        auto visualizer = vis::SelectedVisualizer();
-                        if (!visualizer || !visualizer->Visible()) {
-                            sleepMs = std::max(
-                                (int)(player->output->Latency() * 250.0),
-                                (int) playResult);
-                        }
-                        else {
-                            sleepMs = (int) playResult;
-                        }
-                    }
-
-                    std::unique_lock<std::mutex> lock(player->queueMutex);
-
-                    player->writeToOutputCondition.wait_for(
-                        lock, std::chrono::milliseconds(sleepMs));
-                }
-            }
-            else {
-                if (player->stream->Eof()) {
-                    finished = true;
-                }
-                else {
-                    /* we should never get here, but if for some reason we can't get the
-                    next buffer, but we're not EOF, that means we need to wait for a short
-                    while and try again... */
-                    std::unique_lock<std::mutex> lock(player->queueMutex);
-                    player->writeToOutputCondition.wait_for(
-                        lock, std::chrono::milliseconds(10));
-                }
-            }
-        }
-
-        /* if the Quit flag isn't set, that means the stream has ended "naturally", i.e.
-        it wasn't stopped by the user. raise the "almost ended" flag. */
-        if (!player->Exited()) {
-            player->streamState = StreamState::AlmostDone;
-            player->NotifyListeners([player](Listener& listener) { listener.OnPlayerStreamEof(player); });
+            break;
         }
     }
-
-    /* if the stream failed to open... */
     else {
-        if (!player->Exited()) {
-            player->streamState = StreamState::OpenFailed;
-            player->NotifyListeners([player](Listener& listener) { listener.OnPlayerOpenFailed(player); });
+        {
+            std::lock_guard lock(this->mixPointMutex);
+            this->acceptingSeeks = false;
+        }
+        if (!this->Exited()) {
+            this->streamState = StreamState::OpenFailed;
+            this->listener.OnPlayerOpenFailed(this);
         }
     }
 
-    /* if non-null, it was never accepted by the output. release it now. */
-    if (buffer) {
-        player->ReturnUnusedBuffer(buffer);
-        buffer = nullptr;
+    if (!this->outputFailed && !this->Exited() && this->streamState != StreamState::OpenFailed) {
+        this->streamState = StreamState::Finished;
+        this->listener.OnPlayerFinished(this);
     }
-
-    /* wait until all remaining buffers have been written, set final state... */
-    {
-        std::unique_lock<std::mutex> lock(player->queueMutex);
-        while (player->pendingBufferCount > 0) {
-            player->writeToOutputCondition.wait(lock);
-        }
-    }
-
-    /* buffers have been written, wait for the output to play them all */
-    if (player->destroyMode == Player::DestroyMode::Drain) {
-        player->output->Drain();
-    }
-
-    if (!player->Exited()) {
-        player->streamState = StreamState::Finished;
-        player->NotifyListeners([player](Listener& listener) { listener.OnPlayerFinished(player); });
-    }
-
-    {
-        std::lock_guard lock(player->queueMutex);
-        player->internalState = Player::Quit;
-    }
-
-    player->streamState = StreamState::Stopped;
-    player->NotifyListeners([player](Listener& listener) { listener.OnPlayerDestroying(player); });
-
-    player->Destroy();
-
-    const auto group = player->workers;
-    delete player;
-    if (group) {
-        group->Finish();
-    }
-
-    /* Stream and output plugin references are released as part of player destruction. */
-    std::lock_guard<std::mutex> lock(playerWorkersMutex);
-    --playerWorkers;
-    playerWorkersChanged.notify_all();
+    this->state.store(State::Quit);
+    this->streamState = StreamState::Stopped;
+    this->listener.OnPlayerStopped(this);
 }
 
-bool Player::Exited() {
-    std::unique_lock<std::mutex> lock(this->queueMutex);
-    return (this->internalState == Player::Quit);
+void Player::WriteTrack() {
+    const float gain = playbackGain(this->gain.preamp * this->gain.gain, this->gain.peak, this->gain.peakValid);
+    IBuffer* buffer = nullptr;
+
+    while (!this->Exited()) {
+        this->writer.ProcessCompletions();
+        if (this->outputFailed || this->Exited()) {
+            break;
+        }
+
+        double seek = this->seekToPosition.load();
+        if (seek >= 0) {
+            if (buffer) {
+                this->ReturnUnusedBuffer(buffer);
+                buffer = nullptr;
+            }
+            const auto reset = this->writer.ResetForSeek();
+            if (reset != MC_OK) {
+                this->FailOutput(reset);
+                break;
+            }
+            this->WaitForBuffers();
+            if (this->Exited() || this->outputFailed) {
+                break;
+            }
+            const auto actual = this->stream->SetPosition(seek);
+            if (actual >= 0) {
+                this->currentPosition.store(actual);
+                if (this->streamState == StreamState::AlmostDone && !this->Exited()) {
+                    this->streamState = StreamState::Playing;
+                    this->listener.OnPlayerStarted(this);
+                }
+            }
+            /* a second seek can arrive while the first one flushes the device. */
+            if (!this->seekToPosition.compare_exchange_strong(seek, -1.0)) {
+                continue;
+            }
+        }
+
+        if (!buffer) {
+            buffer = this->stream->GetNextProcessedOutputBuffer();
+            if (!buffer) {
+                if (this->stream->Eof()) {
+                    break;
+                }
+                this->writer.WaitForReturnedBuffer();
+                continue;
+            }
+            if (gain != 1.0f) {
+                float* samples = buffer->BufferPointer();
+                for (long i = 0; i < buffer->Samples(); ++i) {
+                    samples[i] *= gain;
+                }
+            }
+        }
+
+        /* a stop or seek may have arrived during a network read. the writer
+        also checks retirement under the device lock before admitting a block. */
+        if (this->Exited() || this->seekToPosition.load() >= 0) {
+            continue;
+        }
+        const auto result = this->writer.TryQueueAudioBuffer(*buffer);
+        if (result == MC_OK) {
+            buffer = nullptr;
+        }
+        else if (result == MC_ERROR_QUEUE_FULL) {
+            this->writer.WaitForQueueSpace();
+        }
+        else {
+            this->FailOutput(result);
+            break;
+        }
+    }
+
+    if (buffer) {
+        this->ReturnUnusedBuffer(buffer);
+    }
 }
 
 struct HammingWindow {
@@ -625,15 +378,40 @@ static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, i
 }
 
 void Player::ReturnUnusedBuffer(IBuffer* buffer) {
-    std::lock_guard lock(this->queueMutex);
     this->stream->OnBufferProcessedByPlayer(buffer);
-    --this->pendingBufferCount;
-    this->writeToOutputCondition.notify_all();
+}
+
+/* cancelled buffers return storage without advancing playback or showing
+visualizer frames that the output discarded. this runs on the player worker. */
+void Player::CompleteBuffer(IBuffer* buffer, mc_result outcome) {
+    if (outcome == MC_OK) {
+        this->OnBufferProcessed(buffer);
+    }
+    else {
+        this->ReturnUnusedBuffer(buffer);
+        if (outcome != MC_ERROR_CANCELLED) {
+            this->FailOutput(outcome);
+        }
+    }
+}
+
+/* one failed backend session owns one failure transition. stop returns any
+remaining tokens before the worker waits, and prevents false EOF/auto-advance. */
+void Player::FailOutput(mc_result status) {
+    if (this->outputFailed) {
+        return;
+    }
+    this->outputFailed = true;
+    const auto stopped = this->writer.StopAfterFailure();
+    if (stopped != MC_ERROR_CANCELLED && !this->Exited()) {
+        musik::debug::error(TAG, std::string(this->output->Name()) + " output failed (" + std::to_string(status) + ")");
+        this->streamState = StreamState::OpenFailed;
+        this->listener.OnPlayerOpenFailed(this);
+    }
 }
 
 void Player::OnBufferProcessed(IBuffer *buffer) {
-    bool started = false;
-    MixPointList mixPointsHit;
+    std::list<MixPoint> mixPointsHit;
 
     /* process visualizer data, and write to the selected plugin, if applicable */
 
@@ -643,83 +421,47 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
 
     const bool renderSpectrum = specVis && specVis->Visible();
     const bool captureSpectrum = vis::SpectrumEnabled();
-    if ((renderSpectrum || captureSpectrum) && performFft(buffer, fftContext, spectrum, FFT_N / 2)) {
+    if ((renderSpectrum || captureSpectrum) && performFft(buffer, this->fftContext.get(), this->fftContext->spectrum.data(), FFT_N / 2)) {
         if (renderSpectrum) {
-            specVis->Write(spectrum, FFT_N / 2);
+            specVis->Write(this->fftContext->spectrum.data(), FFT_N / 2);
         }
         if (captureSpectrum) {
-            vis::PublishSpectrum(spectrum, static_cast<uint32_t>(buffer->SampleRate()));
+            vis::PublishSpectrum(this->fftContext->spectrum.data(), static_cast<uint32_t>(buffer->SampleRate()));
         }
     }
     if (pcmVis && pcmVis->Visible()) {
         pcmVis->Write(buffer);
     }
 
-    /* release the buffer back to the stream, find mixpoints */
-
+    const auto position = static_cast<Buffer*>(buffer)->Position();
+    this->ReturnUnusedBuffer(buffer);
+    const auto latency = this->output->Latency();
     {
-        std::unique_lock<std::mutex> lock(this->queueMutex);
-
-        /* removes the specified buffer from the list of locked buffers, and also
-        lets the stream know it can be recycled. */
-        this->stream->OnBufferProcessedByPlayer((Buffer*)buffer);
-
-        /* if we're seeking this value will be non-negative, so we shouldn't touch
-        the current time. */
-        if (this->seekToPosition.load() == -1) {
-            this->currentPosition.store(((Buffer*)buffer)->Position());
-        }
-
-        /* did we hit any pending mixpoints? if so add them to our set and
-        move them to the processed set. we'll notify once out of the
-        critical section. */
-        double adjustedPosition = this->GetPositionInternal();
-        if (adjustedPosition >= this->nextMixPoint) {
-            auto it = this->pendingMixPoints.begin();
-            while (it != this->pendingMixPoints.end()) {
-                if (adjustedPosition >= (*it)->time) {
-                    mixPointsHit.push_back(*it);
-                    this->processedMixPoints.push_back(*it);
-                    it = this->pendingMixPoints.erase(it);
+        std::lock_guard lock(this->mixPointMutex);
+        if (this->seekToPosition.load() < 0) {
+            this->currentPosition.store(position);
+            const auto audible = std::max(0.0, round(position - latency));
+            auto point = this->pendingMixPoints.begin();
+            while (point != this->pendingMixPoints.end()) {
+                if (audible >= point->time) {
+                    mixPointsHit.push_back(*point);
+                    this->processedMixPoints.splice(this->processedMixPoints.end(), this->pendingMixPoints, point++);
                 }
                 else {
-                    ++it;
+                    ++point;
                 }
             }
-
-            /* kind of awkward to recalc the next mixpoint here, but we
-            already have the queue mutex acquired. */
-            if (!mixPointsHit.empty()) {
-                this->UpdateNextMixPointTime();
-            }
         }
+    }
 
+    if (!this->Exited()) {
         if (!this->notifiedStarted) {
             this->streamState = StreamState::Playing;
             this->notifiedStarted = true;
-            started = true;
+            this->listener.OnPlayerStarted(this);
+        }
+        for (const auto& point : mixPointsHit) {
+            this->listener.OnPlayerMixPoint(this, point.id, point.time);
         }
     }
-
-    /* check up front so we don't have to acquire the mutex if
-    we don't need to. */
-    if ((started || !mixPointsHit.empty()) && !this->Exited()) {
-        this->NotifyListeners([&](Listener& listener) {
-            /* Announce playback after the first buffer reaches output. */
-            if (started) {
-                listener.OnPlayerStarted(this);
-            }
-            for (const auto& mp : mixPointsHit) {
-                listener.OnPlayerMixPoint(this, mp->id, mp->time);
-            }
-        });
-    }
-
-    /* if the output device's internal buffers are full, it will stop
-    accepting new samples. now that a buffer has been processed, we can
-    try to enqueue another sample. the thread loop blocks on this condition */
-    /* Keep the player alive until completion notifications have returned. */
-    std::lock_guard lock(this->queueMutex);
-    --this->pendingBufferCount;
-    this->writeToOutputCondition.notify_all();
 }

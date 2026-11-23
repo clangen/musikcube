@@ -35,42 +35,23 @@
 #include "pch.hpp"
 
 #include <musikcore/audio/Crossfader.h>
-#include <common/runtime/Message.h>
 
 #include <algorithm>
 #include <chrono>
 
 using namespace musik::core::audio;
-using namespace musik::core::sdk;
-using namespace musik::core::runtime;
-using namespace std::chrono;
 
-#define TICKS_PER_SECOND 30
-#define TICK_TIME_MILLIS (1000 / TICKS_PER_SECOND)
-#define MAX_FADES 3
-
-#define ENQUEUE_TICK() \
-    this->messageQueue.Post(Message::Create( \
-        this, MESSAGE_TICK, 0, 0), TICK_TIME_MILLIS)
-
-#define ENQUEUE_ADJUSTED_TICK(delay) \
-    this->messageQueue.Post(Message::Create( \
-        this, MESSAGE_TICK, 0, 0), delay > 0 ? delay : 0)
-
-#define LOCK(x) \
-    std::unique_lock<std::recursive_mutex> lock(x);
-
-#define MESSAGE_QUIT 0
-#define MESSAGE_TICK 1
+namespace {
+    constexpr auto TickInterval = std::chrono::milliseconds(1000 / 30);
+    constexpr size_t MaximumFades = 3;
+}
 
 Crossfader::Crossfader(ITransport& transport, std::function<void()> onEmptied)
 : transport(transport)
-, onEmptied(std::move(onEmptied)) {
-    this->messageQueue.Register(this);
-    this->quit = false;
-    this->paused = false;
-    this->thread.reset(new std::thread(
-        std::bind(&Crossfader::ThreadLoop, this)));
+, onEmptied(std::move(onEmptied))
+, thread([this] {
+    this->ThreadLoop();
+}) {
 }
 
 Crossfader::~Crossfader() {
@@ -78,254 +59,182 @@ Crossfader::~Crossfader() {
 }
 
 void Crossfader::Shutdown() {
-    if (!this->thread) {
+    if (!this->thread.joinable()) {
         return;
     }
-    this->quit = true;
-    this->messageQueue.Post(Message::Create(this, MESSAGE_QUIT, 0, 0));
-    this->thread->join();
-    this->thread.reset();
-    this->CloseCallbacks();
-    this->messageQueue.Unregister(this);
+    {
+        std::lock_guard lock(this->mutex);
+        this->quit = true;
+        this->StopFades();
+    }
+    this->changed.notify_one();
+    this->thread.join();
 }
 
-void Crossfader::Fade(
-    Player* player,
-    std::shared_ptr<IOutput> output,
-    Direction direction,
-    long durationMs)
-{
-    LOCK(this->contextListLock);
-
-    /* don't add the same player more than once! */
-    if (player && output && !this->Contains(player)) {
-        std::shared_ptr<FadeContext> context = std::make_shared<FadeContext>();
-        context->output = output;
-        context->player = player;
-        context->direction = direction;
-        context->ticksCounted = 0;
-        context->ticksTotal = (durationMs / TICK_TIME_MILLIS);
-        contextList.push_back(context);
-
-        player->Attach(this);
-
-        /* for performance reasons we don't allow more than a couple
-        simultaneous fades. mark extraneous ones as done so they are
-        cleaned up during the next tick */
-        int toRemove = (int) this->contextList.size() - MAX_FADES;
-        if (toRemove > 0) {
-            auto it = contextList.begin();
-            for (int i = 0; i < toRemove; i++, it++) {
-                (*it)->ticksCounted = (*it)->ticksTotal;
-            }
-        }
-
-        if (contextList.size() == 1) {
-            ENQUEUE_TICK();
-        }
+void Crossfader::Fade(Player::Shared player, std::shared_ptr<Output> output, Direction direction, long durationMs) {
+    if (!player || !output) {
+        return;
     }
-}
-
-void Crossfader::Stop() {
-    LOCK(this->contextListLock);
-
-    for (FadeContextPtr context : this->contextList) {
-        if (context->player) {
-            context->player->Detach(this);
-            context->player->Destroy();
-        }
-        context->output->Stop();
+    std::lock_guard lock(this->mutex);
+    if (this->quit ||
+        std::any_of(this->fades.begin(), this->fades.end(),
+            [&](const auto& fade) {
+                return fade.player == player;
+            }))
+    {
+        return;
     }
 
-    this->contextList.clear();
-    this->drainCondition.notify_all();
-}
-
-void Crossfader::Drain() {
-    LOCK(this->contextListLock);
-
-    for (const auto& context : this->contextList) {
-        context->direction = FadeOut;
+    /* finish the oldest envelope before admitting another, so rapid skips
+    cannot leave an unbounded set of audible tails. */
+    if (this->fades.size() == MaximumFades) {
+        this->Finish(this->fades.front());
+        this->fades.pop_front();
     }
-
-    this->drainCondition.wait(lock, [&] { return this->contextList.empty() || this->paused; });
-    if (!this->contextList.empty()) {
-        /* Paused fades cannot drain. Return their buffers during teardown. */
-        this->Stop();
-    }
-}
-
-void Crossfader::OnPlayerDestroying(Player* player) {
-    if (player) {
-        LOCK(this->contextListLock);
-
-        /* the player is destroying, but there may still be buffers
-        playing in the output. forget the player so we don't double
-        destroy it. */
-        for (FadeContextPtr context : this->contextList) {
-            if (context->player == player) {
-                context->player = nullptr;
-            }
-        }
-    }
+    this->fades.push_back({
+        .output = std::move(output),
+        .player = std::move(player),
+        .direction = direction,
+        .duration = std::chrono::milliseconds(std::max(0L, durationMs)),
+        .elapsed = Duration::zero(),
+        .started = Clock::now(),
+    });
+    this->changed.notify_one();
 }
 
 void Crossfader::Cancel(Player* player, Direction direction) {
-    if (player) {
-        LOCK(this->contextListLock);
-
-        this->contextList.remove_if(
-            [player, direction, this](FadeContextPtr context) {
-                bool remove =
-                    context->player == player &&
-                    context->direction == direction;
-
-                if (remove && context->player) {
-                    context->player->Detach(this);
-                }
-
-                return remove;
-            });
-    }
+    std::lock_guard lock(this->mutex);
+    this->fades.remove_if([&](const auto& fade) {
+        return fade.player.get() == player && fade.direction == direction;
+    });
+    this->changed.notify_one();
 }
 
-bool Crossfader::Contains(Player* player) {
-    if (!player) {
+bool Crossfader::Contains(Player* player) const {
+    std::lock_guard lock(this->mutex);
+    return std::any_of(this->fades.begin(), this->fades.end(), [&](const auto& fade) {
+        return fade.player.get() == player;
+    });
+}
+
+bool Crossfader::Empty() const {
+    std::lock_guard lock(this->mutex);
+    return this->fades.empty();
+}
+
+/* a paused tail cannot fade to silence. stopping it now keeps the next
+track from waking an output the listener has already stopped. */
+bool Crossfader::StopPausedFades() {
+    std::lock_guard lock(this->mutex);
+    if (!this->paused) {
         return false;
     }
-
-    LOCK(this->contextListLock);
-
-    return std::any_of(
-        this->contextList.begin(),
-        this->contextList.end(),
-            [player](FadeContextPtr context) {
-            return player == context->player;
-        });
-}
-
-void Crossfader::Pause() {
-    LOCK(this->contextListLock);
-
-    this->paused = true;
-
-    for (FadeContextPtr context : this->contextList) {
-        context->output->Pause();
-    }
-
-    this->messageQueue.Remove(this, MESSAGE_TICK);
-    this->drainCondition.notify_all();
-}
-
-void Crossfader::Resume() {
-    LOCK(this->contextListLock);
-
+    this->StopFades();
     this->paused = false;
-
-    for (FadeContextPtr context : this->contextList) {
-        context->output->Resume();
-    }
-
-    this->messageQueue.Post(
-        Message::Create(this, MESSAGE_TICK, 0, 0), 0);
+    this->changed.notify_one();
+    return true;
 }
 
-void Crossfader::ProcessMessage(IMessage &message) {
-    switch (message.Type()) {
-        case MESSAGE_TICK: {
-            bool emptied = false;
+void Crossfader::StopFades() {
+    for (auto& fade : this->fades) {
+        fade.player->RequestStop();
+        fade.output->Stop();
+    }
+    this->fades.clear();
+}
 
-            auto start = system_clock::now().time_since_epoch();
+mc_result Crossfader::SetPaused(bool pause, Output& activeOutput) {
+    std::lock_guard lock(this->mutex);
+    const auto apply = [](Output& output, bool pause) {
+        return pause ? output.Pause() : output.Resume();
+    };
 
-            {
-                LOCK(this->contextListLock);
+    const auto result = apply(activeOutput, pause);
+    if (result != MC_OK || this->paused == pause) {
+        return result;
+    }
 
-                /* A tick can have left the queue just before Pause removes it. */
-                if (this->paused) {
-                    return;
-                }
-
-                auto it = this->contextList.begin();
-                auto globalVolume = this->transport.Volume();
-
-                while (it != this->contextList.end()) {
-                    auto fade = *it;
-
-                    if (fade->ticksCounted < fade->ticksTotal) {
-                        ++fade->ticksCounted;
-
-                        if (this->transport.IsMuted()) {
-                            fade->output->SetVolume(0.0);
-                        }
-                        else {
-                            double percent =
-                                (float)fade->ticksCounted /
-                                (float)fade->ticksTotal;
-
-                            if (fade->direction == FadeOut) {
-                                percent = (1.0f - percent);
-                            }
-
-                            double outputVolume = globalVolume * percent;
-                            fade->output->SetVolume(outputVolume);
-                        }
-                    }
-
-                    /* if the fade has finished... */
-                    if (fade->ticksCounted >= fade->ticksTotal) {
-                        auto player = (*it)->player;
-
-                        /* we're done with this player now! detach ourself */
-                        if (player) {
-                            (*it)->player->Detach(this);
-                        }
-
-                        if (fade->direction == FadeOut) {
-                            /* if we're fading the player out, we get to destroy
-                            it. go ahead and do that now. awkward but efficient,
-                            and it works. */
-                            if (player) {
-                                (*it)->player->Destroy();
-                            }
-
-                            /* wait for the output to finish playing what it has
-                            buffered -- but do it in the background because it's
-                            a blocking call. */
-                            auto output = (*it)->output;
-                            std::thread drainThread([output]() {
-                                output->Drain();
-                                output->Stop();
-                            });
-                            drainThread.detach();
-                        }
-
-                        it = this->contextList.erase(it);
-                    }
-                    else {
-                        ++it;
-                    }
-                }
-
-                emptied = (this->contextList.size() == 0);
-            } /* end critical section */
-
-            /* notify outside of the critical section! */
-            if (emptied) {
-                this->onEmptied();
-                this->drainCondition.notify_all();
-            }
-            else {
-                auto end = system_clock::now().time_since_epoch();
-                int64_t duration = duration_cast<milliseconds>(end - start).count();
-                ENQUEUE_ADJUSTED_TICK(TICK_TIME_MILLIS - duration);
-            }
+    /* the selected track owns the command. a tail that cannot follow it
+    must go silent, or the listener could still hear it after pausing. */
+    const auto now = Clock::now();
+    for (auto fade = this->fades.begin(); fade != this->fades.end();) {
+        if (fade->output.get() != &activeOutput && apply(*fade->output, pause) != MC_OK) {
+            fade->player->RequestStop();
+            fade->output->Stop();
+            fade = this->fades.erase(fade);
+            continue;
         }
-        break;
+        if (pause) {
+            fade->elapsed += now - fade->started;
+        }
+        else {
+            fade->started = now;
+        }
+        ++fade;
+    }
+    this->paused = pause;
+    this->changed.notify_one();
+    return MC_OK;
+}
+
+void Crossfader::Finish(FadeContext& fade) {
+    const auto volume = this->transport.IsMuted() || fade.direction == FadeOut ? 0.0 : this->transport.Volume();
+    const auto result = fade.output->SetVolume(volume);
+    if (fade.direction == FadeOut) {
+        if (this->paused || result != MC_OK) {
+            /* an evicted paused tail cannot resume here. a blocked or failed
+            gain change also means the tail could remain audible indefinitely. */
+            fade.player->RequestStop(Player::Drain::No);
+            fade.output->Stop();
+            return;
+        }
+        /* the job owns the buffered tail until it drains. */
+        fade.player->RequestStop(Player::Drain::Yes);
     }
 }
 
 void Crossfader::ThreadLoop() {
+    std::unique_lock lock(this->mutex);
     while (!this->quit) {
-        messageQueue.WaitAndDispatch();
+        this->changed.wait(lock, [&] {
+            return this->quit || (!this->paused && !this->fades.empty());
+        });
+        if (this->quit) {
+            break;
+        }
+
+        /* one deadline owns each update. notifications cannot enqueue extra
+        ticks, and a slow backend cannot build a backlog of missed ticks. */
+        const auto deadline = Clock::now() + TickInterval;
+        if (this->changed.wait_until(lock, deadline,
+                [&] {
+                    return this->quit || this->paused || this->fades.empty();
+                }))
+        {
+            continue;
+        }
+
+        const auto now = Clock::now();
+        const auto volume = this->transport.IsMuted() ? 0.0 : this->transport.Volume();
+        auto fade = this->fades.begin();
+        while (fade != this->fades.end()) {
+            const auto elapsed = fade->elapsed + (now - fade->started);
+            const auto fraction = fade->duration > Duration::zero() ? std::min(1.0, elapsed / fade->duration) : 1.0;
+            if (fraction >= 1.0) {
+                this->Finish(*fade);
+                fade = this->fades.erase(fade);
+            }
+            else {
+                const auto gain = fade->direction == FadeOut ? 1.0 - fraction : fraction;
+                fade->output->SetVolume(volume * gain);
+                ++fade;
+            }
+        }
+        if (this->fades.empty()) {
+            /* transport callbacks may start another fade. */
+            lock.unlock();
+            this->onEmptied();
+            lock.lock();
+        }
     }
 }

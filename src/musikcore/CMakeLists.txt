@@ -7,6 +7,7 @@ set(CORE_SOURCES
   ./audio/MasterTransport.cpp
   ./audio/Output.cpp
   ./audio/Outputs.cpp
+  ./audio/PlaybackWorkers.cpp
   ./audio/PlaybackService.cpp
   ./runtime/ManagedRuntime.cpp
   ./ffi/consumer/online.cpp

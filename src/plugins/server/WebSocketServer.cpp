@@ -1343,75 +1343,58 @@ void WebSocketServer::RespondWithRunIndexer(connection_hdl connection, json& req
 }
 
 void WebSocketServer::RespondWithListOutputDrivers(connection_hdl connection, json& request) {
-    json outputs = json::array();
-
-    std::string selectedDriverName, selectedDeviceId;
-
-    size_t count = context.environment->GetOutputCount();
-    for (size_t i = 0; i < count; i++) {
-        auto output = context.environment->GetDefaultOutput();
-
-        if (output) {
-            selectedDriverName = output->Name();
-            auto device = output->GetDefaultDevice();
-            if (device) {
-                selectedDeviceId = device->Id();
+    struct Selection {
+        std::vector<std::string> drivers;
+        std::string driver;
+        std::string device;
+    } selection;
+    const auto result = context.environment->GetOutputConfiguration({ nullptr, 0 },
+        [](void* state, const mc_output_configuration* configuration) {
+            auto& selected = *static_cast<Selection*>(state);
+            const auto copy = [](mc_string_view text) { return std::string(text.data ? text.data : "", text.length); };
+            selected.driver = copy(configuration->selected_driver);
+            selected.device = copy(configuration->selected_device.id);
+            for (size_t i = 0; i < configuration->driver_count; ++i) {
+                selected.drivers.push_back(copy(configuration->drivers[i]));
             }
-            output->Release();
-        }
-
-        output = context.environment->GetOutputAtIndex(i);
-        json devices = json::array();
-
-        devices.push_back({
-            { key::device_name, "default" },
-            { key::device_id, "" }
-        });
-
-        auto deviceList = output->GetDeviceList();
-        if (deviceList) {
-            for (size_t j = 0; j < deviceList->Count(); j++) {
-                auto device = deviceList->At(j);
-                devices.push_back({
-                    { key::device_name, device->Name() },
-                    { key::device_id, device->Id() }
-                });
-            }
-            deviceList->Release();
-        }
-
-        outputs.push_back({
-            { key::driver_name, output->Name() },
-            { key::devices, devices }
-        });
-
-        output->Release();
+        }, &selection);
+    if (result != MC_OK) {
+        this->RespondWithFailure(connection, request);
+        return;
     }
-
+    json outputs = json::array();
+    for (const auto& driver : selection.drivers) {
+        json devices = json::array({ { { key::device_name, "default" }, { key::device_id, "" } } });
+        context.environment->GetOutputConfiguration({ driver.data(), driver.size() },
+            [](void* state, const mc_output_configuration* configuration) {
+                auto& devices = *static_cast<json*>(state);
+                for (size_t i = 0; i < configuration->device_count; ++i) {
+                    const auto& device = configuration->devices[i];
+                    devices.push_back({
+                        { key::device_name, std::string(device.name.data ? device.name.data : "", device.name.length) },
+                        { key::device_id, std::string(device.id.data ? device.id.data : "", device.id.length) }
+                    });
+                }
+            }, &devices);
+        outputs.push_back({ { key::driver_name, driver }, { key::devices, devices } });
+    }
     this->RespondWithOptions(connection, request, {
         { key::all, outputs },
-        { key::selected, {
-            { key::driver_name, selectedDriverName },
-            { key::device_id, selectedDeviceId }
-        }
-    }});
+        { key::selected, { { key::driver_name, selection.driver }, { key::device_id, selection.device } } }
+    });
 }
 
 void WebSocketServer::RespondWithSetDefaultOutputDriver(connection_hdl connection, json& request) {
     auto& options = request[message::options];
-    std::string driver = options.value(key::driver_name, "");
-    if (driver.size()) {
-        auto output = context.environment->GetOutputWithName(driver.c_str());
-        if (output) {
-            std::string device = options.value(key::device_id, "");
-            output->SetDefaultDevice(device.c_str());
-            context.environment->SetDefaultOutput(output);
-            output->Release();
-            this->RespondWithSuccess(connection, request);
-            return;
-        }
+    const std::string driver = options.value(key::driver_name, "");
+    const std::string device = options.value(key::device_id, "");
+    const auto result = context.environment->SelectOutput({ driver.data(), driver.size() }, { device.data(), device.size() });
+    if (result == MC_OK) {
+        this->RespondWithSuccess(connection, request);
     }
-    this->RespondWithFailure(connection, request);
+    else {
+        this->RespondWithFailure(connection, request);
+    }
 }
 
 void WebSocketServer::RespondWithGetGainSettings(connection_hdl connection, json& request) {

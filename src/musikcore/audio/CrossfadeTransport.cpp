@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <common/Contract.h>
 
 #include <musikcore/debug.h>
 #include <musikcore/audio/CrossfadeTransport.h>
@@ -58,10 +59,16 @@ CrossfadeTransport::CrossfadeTransport()
 }
 
 CrossfadeTransport::~CrossfadeTransport() {
-    this->Stop();
-    this->CloseCallbacks();
-    this->crossfader.Drain();
+    this->Destroy();
+}
+
+void CrossfadeTransport::Destroy() {
+    if (this->destroyed.exchange(true)) {
+        return;
+    }
+    this->playbackWorkers.Close();
     this->crossfader.Shutdown();
+    this->StopImmediately();
 }
 
 PlaybackState CrossfadeTransport::GetPlaybackState() {
@@ -76,54 +83,50 @@ StreamState CrossfadeTransport::GetStreamState() {
 
 void CrossfadeTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
     Lock lock(this->stateMutex);
-    this->next.Reset(uri, this, gain, false);
+    musik::contract::Assert(!this->destroyed.load(), "preparing a destroyed transport");
+    this->next.Reset(uri, gain);
 }
 
 void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode) {
     {
         Lock lock(this->stateMutex);
+        musik::contract::Assert(!this->destroyed.load(), "starting a destroyed transport");
 
         musik::debug::info(TAG, "trying to play " + uri);
 
-        const bool immediate = mode == StartMode::Immediate;
+        this->intent = mode == StartMode::Immediate ? Intent::Play : Intent::Prepare;
 
         /* in many cases (e.g. the user is skipping through tracks,
         the requested track may already be queued up. use it, if it is */
         if (this->next.player && this->next.player->GetUrl() == uri) {
             this->active.Reset();
             this->next.TransferTo(this->active);
-            this->active.startImmediate = immediate;
 
             if (this->active.player) {
                 this->RaiseStreamEvent(
                     this->active.player->GetStreamState(),
-                    this->active.player);
+                    this->active.player.get());
             }
 
-            if (immediate) {
+            if (this->intent == Intent::Play) {
                 this->active.Start(this->volume);
             }
-            else if (this->activePlayerState == StreamState::Buffered) {
+            else if (this->intent == Intent::Prepare && this->activePlayerState == StreamState::Buffered) {
                 this->SetPlaybackState(PlaybackState::Prepared);
             }
         }
         else {
-            this->active.Reset(uri, this, gain, immediate);
+            this->active.Reset(uri, gain);
             this->next.Stop();
             if (this->active.player) {
-                this->RaiseStreamEvent(StreamState::Buffering, this->active.player);
+                this->RaiseStreamEvent(StreamState::Buffering, this->active.player.get());
             }
-        }
-
-        if (immediate && (this->playbackState == PlaybackState::Paused ||
-            this->playbackState == PlaybackState::Prepared))
-        {
-            this->SetPlaybackState(PlaybackState::Playing);
         }
     }
 }
 
 std::string CrossfadeTransport::Uri() {
+    Lock lock(this->stateMutex);
     auto const player = this->active.player;
     return player ? player->GetUrl() : "";
 }
@@ -133,54 +136,51 @@ void CrossfadeTransport::ReloadOutput() {
 }
 
 void CrossfadeTransport::StopImmediately() {
+    Lock lock(this->stateMutex);
     /* like stop, but will not fade out. */
-    {
-        Lock lock(this->stateMutex);
-        this->active.Stop();
-        this->next.Stop();
-    }
+    this->active.Stop();
+    this->next.Stop();
 
     this->SetPlaybackState(PlaybackState::Stopped);
 }
 
 void CrossfadeTransport::Stop() {
-    {
-        Lock lock(this->stateMutex);
-        this->active.Reset();
-        this->next.Reset();
+    Lock lock(this->stateMutex);
+    if (this->crossfader.StopPausedFades()) {
+        this->StopImmediately();
+        return;
     }
+    this->active.Reset();
+    this->next.Reset();
 
     this->SetPlaybackState(PlaybackState::Stopped);
 }
 
-bool CrossfadeTransport::Pause() {
-    {
-        Lock lock(this->stateMutex);
-        this->crossfader.Pause();
-        this->active.Pause();
+mc_result CrossfadeTransport::Pause() {
+    Lock lock(this->stateMutex);
+    if (!this->active.player) {
+        return MC_ERROR_NOT_FOUND;
     }
-
-    if (this->active.player) {
+    const auto result = this->crossfader.SetPaused(true, *this->active.output);
+    if (result == MC_OK) {
+        this->intent = Intent::Pause;
         this->SetPlaybackState(PlaybackState::Paused);
-        return true;
     }
-
-    return false;
+    return result;
 }
 
-bool CrossfadeTransport::Resume() {
-    {
-        Lock lock(this->stateMutex);
-        this->crossfader.Resume();
-        this->active.Resume(this->volume);
+mc_result CrossfadeTransport::Resume() {
+    Lock lock(this->stateMutex);
+    if (!this->active.player) {
+        return MC_ERROR_NOT_FOUND;
     }
-
-    if (this->active.player) {
+    const auto result = this->crossfader.SetPaused(false, *this->active.output);
+    if (result == MC_OK) {
+        this->intent = Intent::Play;
+        this->active.Play(this->volume);
         this->SetPlaybackState(PlaybackState::Playing);
-        return true;
     }
-
-    return false;
+    return result;
 }
 
 double CrossfadeTransport::Position() {
@@ -194,20 +194,27 @@ double CrossfadeTransport::Position() {
 }
 
 void CrossfadeTransport::SetPosition(double seconds) {
-    {
-        Lock lock(this->stateMutex);
-
-        if (this->active.player) {
-            if (this->playbackState != PlaybackState::Playing) {
-                this->SetPlaybackState(PlaybackState::Playing);
-            }
-            this->active.player->SetPosition(seconds);
-        }
+    Lock lock(this->stateMutex);
+    if (!this->active.player || !this->active.player->SetPosition(seconds)) {
+        return;
     }
 
-    if (this->active.player) {
-        this->TimeChanged.Publish(seconds);
+    if (this->intent == Intent::Pause) {
+        /* the seek discards queued audio. retire the old track with it and
+        restore the selected track's gain at the new position. */
+        this->crossfader.Cancel(this->active.player.get(), Crossfader::FadeIn);
+        this->crossfader.StopPausedFades();
+        const auto volume = this->IsMuted() ? 0.0 : this->Volume();
+        this->active.SetVolume(volume);
+        this->intent = Intent::Play;
+        this->active.Play(volume);
     }
+    /* restoring a prepared queue entry also sets its saved position. it
+    stays ready for an explicit Play, including when the open is still pending. */
+    if (this->intent == Intent::Play) {
+        this->SetPlaybackState(PlaybackState::Playing);
+    }
+    this->TimeChanged.Publish(seconds);
 }
 
 double CrossfadeTransport::GetDuration() {
@@ -220,6 +227,7 @@ bool CrossfadeTransport::IsMuted() noexcept {
 }
 
 void CrossfadeTransport::SetMuted(bool muted) {
+    Lock lock(this->stateMutex);
     if (this->muted != muted) {
         this->muted = muted;
 
@@ -231,11 +239,11 @@ void CrossfadeTransport::SetMuted(bool muted) {
         /* if we're no longer muted, and the streams aren't currently
         in the crossfader, set their volume appropriately. */
         else {
-            if (!crossfader.Contains(this->active.player)) {
+            if (!crossfader.Contains(this->active.player.get())) {
                 this->active.SetVolume(this->volume);
             }
 
-            if (!crossfader.Contains(this->next.player)) {
+            if (!crossfader.Contains(this->next.player.get())) {
                 this->next.SetVolume(this->volume);
             }
         }
@@ -268,6 +276,9 @@ void CrossfadeTransport::SetVolume(double volume) {
 void CrossfadeTransport::OnPlayerBuffered(Player* player) {
     {
         Lock lock(this->stateMutex);
+        if (this->destroyed.load()) {
+            return;
+        }
 
         const int durationMs = static_cast<int>(player->GetDuration() * 1000.0f);
         double mixpointOffset = 0.0f;
@@ -290,19 +301,17 @@ void CrossfadeTransport::OnPlayerBuffered(Player* player) {
             player->AddMixPoint(END_OF_TRACK_MIXPOINT, mixpointOffset);
         }
 
-        if (player == active.player) {
+        if (player == active.player.get()) {
             active.canFade = canFade;
             this->RaiseStreamEvent(StreamState::Buffered, player);
-            if (active.startImmediate) {
-                if (!active.started) {
-                    active.Start(this->volume);
-                }
+            if (this->intent == Intent::Play && !active.started) {
+                active.Start(this->volume);
             }
-            else {
+            else if (this->intent == Intent::Prepare) {
                 this->SetPlaybackState(PlaybackState::Prepared);
             }
         }
-        else if (player == next.player) {
+        else if (player == next.player.get()) {
             next.canFade = canFade;
         }
     }
@@ -310,32 +319,35 @@ void CrossfadeTransport::OnPlayerBuffered(Player* player) {
 
 void CrossfadeTransport::OnPlayerStarted(Player* player) {
     Lock lock(this->stateMutex);
-    if (player == this->active.player) {
+    if (!this->destroyed.load() && player == this->active.player.get()) {
         this->RaiseStreamEvent(StreamState::Playing, player);
-        this->SetPlaybackState(PlaybackState::Playing);
+        /* a completion already in flight can arrive after Pause returned. */
+        if (this->intent == Intent::Play) {
+            this->SetPlaybackState(PlaybackState::Playing);
+        }
     }
 }
 
 void CrossfadeTransport::OnPlayerFinished(Player* player) {
-    this->RaiseStreamEvent(StreamState::Finished, player);
-
     Lock lock(this->stateMutex);
-    if (player != this->active.player && player != this->next.player) {
+    if (player != this->active.player.get() && player != this->next.player.get()) {
         return;
     }
+    this->RaiseStreamEvent(StreamState::Finished, player);
 
     /* in normal situations OnPlayerMixPoint will deal with the stream switch over,
     but it will not if (1) the stream is too short and there is no mixpoint, or (2)
     the decoder reports an incorrect track duration so the mixpoint is never hit. in
     these cases we need to switch things over manually. if OnPlayerMixPoint is called,
-    the Player will be Detach()'d so this callback will never fire. if we get called
-    we need to take action! */
+    the old player has already left both selections and its callback is ignored. */
     this->active.StopIf(player);
     this->next.StopIf(player);
 
     if (next.player && next.output) {
         next.TransferTo(active);
-        active.Start(this->volume);
+        if (this->intent == Intent::Play) {
+            active.Start(this->volume);
+        }
     }
     else {
         this->Stop();
@@ -343,63 +355,45 @@ void CrossfadeTransport::OnPlayerFinished(Player* player) {
 }
 
 void CrossfadeTransport::OnPlayerOpenFailed(Player* player) {
-    {
-        Lock lock(this->stateMutex);
-        if (player == active.player) {
-            active.Reset();
-        }
-        else if (player == next.player) {
-            next.Reset();
-        }
-        else {
-            return;
-        }
+    Lock lock(this->stateMutex);
+    if (player == active.player.get()) {
+        /* publish failure while this player is still selected, and stop it
+        before a replacement Start can publish a different active player. */
+        this->RaiseStreamEvent(StreamState::OpenFailed, player);
+        this->crossfader.StopPausedFades();
+        this->StopImmediately();
     }
-    this->RaiseStreamEvent(StreamState::OpenFailed, player);
-    this->Stop();
+    else if (player == next.player.get()) {
+        /* failure prebuffering the next source must not stop audible audio. */
+        next.Reset();
+    }
 }
 
-void CrossfadeTransport::OnPlayerDestroying(Player* player) {
+void CrossfadeTransport::OnPlayerStopped(Player* player) {
     this->RaiseStreamEvent(StreamState::Destroyed, player);
 }
 
 void CrossfadeTransport::OnPlayerMixPoint(Player* player, int id, double time) {
-    bool stopped = false;
-
-    {
-        Lock lock(this->stateMutex);
-
-        if (id == END_OF_TRACK_MIXPOINT) {
-            if (player == active.player) {
-                active.Reset(); /* fades out automatically */
-                next.TransferTo(active);
-
-                if (!active.IsEmpty()) {
-                    active.Start(this->volume);
-                }
-                else {
-                    stopped = true;
-                }
-            }
-        }
+    Lock lock(this->stateMutex);
+    /* a queued seek can overtake this notification after the worker has
+    detected the old mix point. let it seek before starting the next track. */
+    if (id != END_OF_TRACK_MIXPOINT || player != active.player.get() || player->HasPendingSeek()) {
+        return;
     }
-
-    if (stopped) {
+    active.Reset();
+    next.TransferTo(active);
+    if (active.IsEmpty()) {
         this->SetPlaybackState(PlaybackState::Stopped);
+    }
+    else if (this->intent == Intent::Play) {
+        active.Start(this->volume);
     }
 }
 
 void CrossfadeTransport::OnCrossfaderEmptied() {
-    bool stopped = false;
-
-    {
-        Lock lock(this->stateMutex);
-        if (this->active.IsEmpty() && this->next.IsEmpty()) {
-            stopped = true;
-        }
-    }
-
-    if (stopped) {
+    Lock lock(this->stateMutex);
+    /* another fade may have arrived while the worker released its lock. */
+    if (this->active.IsEmpty() && this->next.IsEmpty() && this->crossfader.Empty()) {
         this->Stop();
     }
 }
@@ -422,7 +416,7 @@ void CrossfadeTransport::RaiseStreamEvent(musik::core::sdk::StreamState type, Pl
     bool eventIsFromActivePlayer = false;
     {
         Lock lock(this->stateMutex);
-        eventIsFromActivePlayer = (player == active.player);
+        eventIsFromActivePlayer = (player == active.player.get());
         if (eventIsFromActivePlayer) {
             this->activePlayerState = static_cast<StreamState>(type);
         }
@@ -436,8 +430,7 @@ void CrossfadeTransport::RaiseStreamEvent(musik::core::sdk::StreamState type, Pl
 CrossfadeTransport::PlayerContext::PlayerContext(
     CrossfadeTransport& transport,
     Crossfader& crossfader) noexcept
-: startImmediate(false)
-, started(false)
+: started(false)
 , canFade(false)
 , player(nullptr)
 , transport(transport)
@@ -445,29 +438,24 @@ CrossfadeTransport::PlayerContext::PlayerContext(
 }
 
 void CrossfadeTransport::PlayerContext::StopIf(Player const* player) {
-    if (player == this->player) {
+    if (player == this->player.get()) {
         this->Stop();
     }
 }
 
 void CrossfadeTransport::PlayerContext::Reset() {
-    this->Reset("", nullptr, Gain(), false);
+    this->Reset("", Gain());
 }
 
 void CrossfadeTransport::PlayerContext::Reset(
     const std::string& url,
-    Player::EventListener* listener,
-    Gain gain,
-    bool startImmediate)
+    Gain gain)
 {
-    this->startImmediate = false;
-
     if (this->player && this->output) {
-        this->transport.RaiseStreamEvent(StreamState::Destroyed, this->player);
-        this->player->Detach(&this->transport);
+        this->transport.RaiseStreamEvent(StreamState::Destroyed, this->player.get());
         if (this->started && this->canFade) {
             crossfader.Cancel(
-                this->player,
+                this->player.get(),
                 Crossfader::FadeIn);
 
             crossfader.Fade(
@@ -477,91 +465,64 @@ void CrossfadeTransport::PlayerContext::Reset(
                 CROSSFADE_DURATION_MS);
         }
         else {
-            /* if we're being started with a new URL and we can't fade,
-            drain the current instance! */
-            player->Destroy(url.size()
-                ? Player::DestroyMode::NoDrain
-                : Player::DestroyMode::Drain);
+            /* a non-fadeable stopped player must not retain paused audio that
+            can no longer be reached from active/next contexts. */
+            this->output->Stop();
+            player->RequestStop(Player::Drain::No);
         }
     }
 
-    this->startImmediate = startImmediate;
     this->canFade = this->started = false;
     this->output = url.size() ? outputs::SelectedOutput() : nullptr;
     this->player = url.size()
-        ? Player::Create(
-            url,
-            this->output,
-            Player::DestroyMode::Drain,
-            listener,
-            gain)
+        ? this->transport.playbackWorkers.Start(url, this->output, Player::Drain::Yes, gain)
         : nullptr;
 }
 
 void CrossfadeTransport::PlayerContext::TransferTo(PlayerContext& to) noexcept {
-    to.player = player;
-    to.output = output;
+    to.player = std::move(player);
+    to.output = std::move(output);
     to.canFade = canFade;
     to.started = started;
 
     /* don't call Reset() here! it'll trigger a fade. */
     this->canFade = false;
-    this->output.reset();
-    this->player = nullptr;
 }
 
 void CrossfadeTransport::PlayerContext::Start(double transportVolume) {
     if (this->output && this->player) {
-        this->started = true;
-        this->output->SetVolume(0.0f);
-        this->output->Resume();
-        this->player->Play();
+        /* an explicit replacement must also restart the outgoing fade and its clock. */
+        if (this->crossfader.SetPaused(false, *this->output) != MC_OK) {
+            this->transport.OnPlayerOpenFailed(this->player.get());
+            return;
+        }
+        this->Play(transportVolume);
+    }
+}
 
-        if (this->canFade) {
-            crossfader.Fade(
-                this->player,
-                this->output,
-                Crossfader::FadeIn,
-                CROSSFADE_DURATION_MS);
-        }
-        else {
-            this->output->SetVolume(transportVolume);
-        }
+void CrossfadeTransport::PlayerContext::Play(double transportVolume) {
+    if (this->started) {
+        this->player->Play();
+        return;
+    }
+    this->started = true;
+    this->output->SetVolume(this->canFade ? 0.0 : transportVolume);
+    this->player->Play();
+    if (this->canFade) {
+        crossfader.Fade(this->player, this->output, Crossfader::FadeIn, CROSSFADE_DURATION_MS);
     }
 }
 
 void CrossfadeTransport::PlayerContext::Stop() {
     if (this->output && this->player) {
         this->output->Stop();
-        this->transport.RaiseStreamEvent(StreamState::Destroyed, this->player);
-        this->player->Detach(&this->transport);
-        this->player->Destroy();
+        this->transport.RaiseStreamEvent(StreamState::Destroyed, this->player.get());
+        this->player->RequestStop();
     }
 
     this->canFade = this->started = false;
     this->player = nullptr;
     this->output.reset();
-}
-
-void CrossfadeTransport::PlayerContext::Pause() {
-    if (this->output) {
-        this->output->Pause();
-    }
-}
-
-void CrossfadeTransport::PlayerContext::Resume(double transportVolume) {
-    if (!this->started) {
-        this->Start(transportVolume);
-    }
-    else {
-        if (this->output) {
-            this->output->Resume();
-
-            if (this->player) {
-                this->player->Play();
-            }
-        }
-    }
 }
 
 void CrossfadeTransport::PlayerContext::SetVolume(double volume) {

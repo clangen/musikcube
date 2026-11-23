@@ -331,35 +331,17 @@ static class Environment: public IEnvironment {
             return buffer;
         }
 
-        size_t GetOutputCount() override {
-            return outputs::GetOutputCount();
+        mc_result GetOutputConfiguration(mc_string_view driver, mc_output_configuration_fn read, void* data) override {
+            return outputs::ReadConfiguration(driver, read, data);
         }
 
-        IOutput* GetOutputAtIndex(size_t index) override {
-            return outputs::GetUnmanagedOutput(index);
-        }
-
-        IOutput* GetOutputWithName(const char* name) override {
-            return outputs::GetUnmanagedOutput(name ? name : "");
-        }
-
-        void SetDefaultOutput(IOutput* output) override {
-            if (output) {
-                auto current = outputs::SelectedOutput();
-                std::string newName = output->Name();
-                std::string currentName = current ? current->Name() : "";
-                auto newDevice = output->GetDefaultDevice();
-                auto currentDevice = current->GetDefaultDevice();
-                std::string newDeviceId = newDevice ? newDevice->Id() : "";
-                std::string currentDeviceId = currentDevice ? currentDevice->Id() : "";
-                if (newName != currentName || newDeviceId != currentDeviceId) {
-                    outputs::SelectOutput(output);
-                    if (::playbackService) {
-                        playbackService->ReloadOutput();
-                    }
-                }
+        mc_result SelectOutput(mc_string_view driver, mc_string_view device) override {
+            const auto result = outputs::Configure(driver, device);
+            if (result == MC_OK && ::playbackService) {
+                ::playbackService->ReloadOutput();
                 saveEnvironment();
             }
+            return result;
         }
 
         TransportType GetTransportType() override {
@@ -381,10 +363,6 @@ static class Environment: public IEnvironment {
                     saveEnvironment();
                 }
             }
-        }
-
-        IOutput* GetDefaultOutput() override {
-            return outputs::GetUnmanagedSelectedOutput();
         }
 
         void ReindexMetadata() override {
@@ -556,6 +534,20 @@ namespace musik { namespace core { namespace plugin {
         }
     }
 
+    std::vector<ffi::PluginRegistry::PluginInfo> ListPlugins() {
+        if (!pluginRegistry) {
+            return {};
+        }
+        return pluginRegistry->ListPlugins();
+    }
+
+    ffi::PluginRegistry::Factory<mc_output_factory> FindOutputFactory(std::string_view pluginId) {
+        if (!pluginRegistry) {
+            return {};
+        }
+        return pluginRegistry->Find<mc_output_factory>(pluginId);
+    }
+
     void ValidateShutdown() {
         if (pluginRegistry) {
             pluginRegistry->AssertCanShutdown();
@@ -597,6 +589,8 @@ namespace musik { namespace core { namespace plugin {
         /* workers have stopped, so cached factories can release provider state. */
         cleanup([] { musik::core::audio::streams::Shutdown(); }, failure);
         cleanup([] { musik::core::io::Shutdown(); }, failure);
+        musik::contract::Assert(audio::Output::InstanceCount() == 0,
+            "output instances must be destroyed before plugin unload");
         cleanup([] {
             if (pluginRegistry) {
                 const auto status = pluginRegistry->Shutdown();

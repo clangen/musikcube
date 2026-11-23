@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <common/Contract.h>
 
 #include <musikcore/debug.h>
 #include <musikcore/audio/GaplessTransport.h>
@@ -55,12 +56,18 @@ GaplessTransport::GaplessTransport()
     this->output = outputs::SelectedOutput();
 }
 
-GaplessTransport::~GaplessTransport() {
+GaplessTransport::~GaplessTransport() { this->Destroy(); }
+
+void GaplessTransport::Destroy() {
+    if (this->destroyed.exchange(true)) {
+        return;
+    }
     /* keep the transport alive until its own callbacks finish, without
     holding stateMutex or waiting on unrelated transports. */
+    this->playbackWorkers.Close();
     this->StopInternal(true, true);
-    this->workers->Wait();
-    this->CloseCallbacks();
+    LockT lock(this->stateMutex);
+    this->output.reset();
 }
 
 PlaybackState GaplessTransport::GetPlaybackState() {
@@ -79,11 +86,11 @@ void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
     this->ResetNextPlayer();
 
     if (uri.size()) {
-        this->nextPlayer = Player::Create(
+        musik::contract::Assert(!this->destroyed.load(), "preparing a destroyed transport");
+        this->nextPlayer = this->playbackWorkers.Start(
             uri,
-            this->output, Player::DestroyMode::NoDrain,
-            this,
-            gain, this->workers);
+            this->output, Player::Drain::No,
+            gain);
         if (this->nextCanStart) {
             this->StartWithPlayer(this->nextPlayer);
         }
@@ -93,17 +100,17 @@ void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
 void GaplessTransport::Start(const std::string& uri, Gain gain, StartMode mode) {
     /* publish activePlayer before a fast open failure can destroy the worker. */
     LockT lock(this->stateMutex);
+    musik::contract::Assert(!this->destroyed.load(), "starting a destroyed transport");
     musik::debug::info(TAG, "starting track at " + uri);
-    Player* newPlayer = Player::Create(
+    auto newPlayer = this->playbackWorkers.Start(
         uri,
         this->output,
-        Player::DestroyMode::NoDrain,
-        this,
-        gain, this->workers);
+        Player::Drain::No,
+        gain);
     this->StartWithPlayer(newPlayer, mode);
 }
 
-void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
+void GaplessTransport::StartWithPlayer(Player::Shared newPlayer, StartMode mode) {
     if (newPlayer) {
         bool playingNext = false;
 
@@ -123,16 +130,19 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
             this->activeStartMode = mode;
 
             if (newPlayer) {
-                this->RaiseStreamEvent(newPlayer->GetStreamState(), newPlayer);
+                this->RaiseStreamEvent(newPlayer->GetStreamState(), newPlayer.get());
             }
 
             /* first argument suppresses the "Stop" event from getting triggered,
             the second param is used for gapless playback -- we won't stop the output
             and will allow pending buffers to finish if we're not automatically
             playing the next track. */
-            this->StopInternal(true, !playingNext, newPlayer);
+            this->StopInternal(true, !playingNext, newPlayer.get());
             this->SetNextCanStart(false);
-            this->output->Resume();
+            if (this->output && this->output->Resume() != MC_OK) {
+                this->OnPlayerOpenFailed(newPlayer.get());
+                return;
+            }
 
             if (mode == StartMode::Immediate) {
                 newPlayer->Play();
@@ -151,6 +161,7 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
 
 void GaplessTransport::ReloadOutput() {
     this->Stop();
+    LockT lock(this->stateMutex);
     this->output = outputs::SelectedOutput();
     this->output->SetVolume(volume);
 }
@@ -178,18 +189,22 @@ void GaplessTransport::StopInternal(
     otherwise, we let them finish naturally; RemoveActive() will take
     care of disposing of them */
     if (stopOutput) {
+        std::shared_ptr<Output> output;
         {
             LockT lock(this->stateMutex);
+            output = this->output;
 
             this->ResetNextPlayer();
-            if (this->activePlayer != exclude) {
+            if (this->activePlayer.get() != exclude) {
                 this->ResetActivePlayer();
             }
         }
 
         /* stopping the transport will stop any buffers that are currently in
         flight. this makes the sound end immediately. */
-        this->output->Stop();
+        if (output) {
+            output->Stop();
+        }
     }
 
     if (!suppressStopEvent) {
@@ -200,41 +215,30 @@ void GaplessTransport::StopInternal(
     }
 }
 
-bool GaplessTransport::Pause() {
+mc_result GaplessTransport::Pause() {
     LockT lock(this->stateMutex);
-    musik::debug::info(TAG, "pause");
-
-    this->output->Pause();
-
-    if (this->activePlayer) {
-        this->SetPlaybackState(PlaybackState::Paused);
-        return true;
+    if (!this->activePlayer) {
+        return MC_ERROR_NOT_FOUND;
     }
-
-    return false;
+    const auto result = this->output->Pause();
+    if (result == MC_OK) {
+        this->SetPlaybackState(PlaybackState::Paused);
+    }
+    return result;
 }
 
-bool GaplessTransport::Resume() {
+mc_result GaplessTransport::Resume() {
     LockT lock(this->stateMutex);
-    musik::debug::info(TAG, "resume");
-
-    this->output->Resume();
-
-    {
-        LockT lock(this->stateMutex);
-
-        if (this->activePlayer) {
-            this->activeStartMode = StartMode::Immediate;
-            this->activePlayer->Play();
-        }
+    if (!this->activePlayer) {
+        return MC_ERROR_NOT_FOUND;
     }
-
-    if (this->activePlayer) {
+    const auto result = this->output->Resume();
+    if (result == MC_OK) {
+        this->activeStartMode = StartMode::Immediate;
+        this->activePlayer->Play();
         this->SetPlaybackState(PlaybackState::Playing);
-        return true;
     }
-
-    return false;
+    return result;
 }
 
 double GaplessTransport::Position() {
@@ -266,10 +270,13 @@ GaplessTransport::SeekResult GaplessTransport::SetPositionInternal(double second
             return SeekResult::Buffering;
         }
 
+        if (!this->activePlayer->SetPosition(seconds)) {
+            return SeekResult::NoTrack;
+        }
+        this->nextCanStart = false;
         if (this->playbackState != PlaybackState::Playing) {
             this->SetPlaybackState(PlaybackState::Playing);
         }
-        this->activePlayer->SetPosition(seconds);
     }
 
     this->TimeChanged.Publish(seconds);
@@ -298,9 +305,12 @@ bool GaplessTransport::IsMuted() noexcept {
 }
 
 void GaplessTransport::SetMuted(bool muted) {
+    LockT lock(this->stateMutex);
     if (this->muted != muted) {
         this->muted = muted;
-        this->output->SetVolume(muted ? 0.0f : this->volume);
+        if (this->output) {
+            this->output->SetVolume(muted ? 0.0f : this->volume.load());
+        }
         this->VolumeChanged.Publish();
     }
 }
@@ -310,12 +320,15 @@ double GaplessTransport::Volume() noexcept {
 }
 
 void GaplessTransport::SetVolume(double volume) {
+    LockT lock(this->stateMutex);
     const double oldVolume = this->volume;
 
     volume = std::max(0.0, std::min(1.0, volume));
 
     this->volume = volume;
-    this->output->SetVolume(this->volume);
+    if (this->output) {
+        this->output->SetVolume(this->volume.load());
+    }
 
     if (oldVolume != this->volume) {
         this->SetMuted(false);
@@ -330,7 +343,7 @@ void GaplessTransport::SetNextCanStart(bool nextCanStart) {
 
 void GaplessTransport::OnPlayerBuffered(Player* player) {
     LockT lock(this->stateMutex);
-    if (player == this->activePlayer) {
+    if (player == this->activePlayer.get()) {
         this->RaiseStreamEvent(StreamState::Buffered, player);
         if (this->activeStartMode == StartMode::Wait) {
             this->SetPlaybackState(PlaybackState::Prepared);
@@ -340,9 +353,12 @@ void GaplessTransport::OnPlayerBuffered(Player* player) {
 
 void GaplessTransport::OnPlayerStarted(Player* player) {
     LockT lock(this->stateMutex);
-    if (player == this->activePlayer) {
+    if (player == this->activePlayer.get()) {
         this->RaiseStreamEvent(StreamState::Playing, player);
-        this->SetPlaybackState(PlaybackState::Playing);
+        /* a completion already in flight can arrive after Pause returned. */
+        if (this->playbackState != PlaybackState::Paused) {
+            this->SetPlaybackState(PlaybackState::Playing);
+        }
     }
 }
 
@@ -351,7 +367,7 @@ void GaplessTransport::OnPlayerStreamEof(Player* player) {
         LockT lock(this->stateMutex);
 
         /* EOF can arrive after a seek, stop, or a replacement player. */
-        if (player != this->activePlayer) {
+        if (player != this->activePlayer.get() || player->HasPendingSeek()) {
             return;
         }
         this->nextCanStart = true;
@@ -377,7 +393,7 @@ void GaplessTransport::OnPlayerFinished(Player* player) {
         LockT lock(this->stateMutex);
 
         bool startedNext = false;
-        const bool playerIsActive = (player == this->activePlayer);
+        const bool playerIsActive = (player == this->activePlayer.get());
 
         /* only start the next player if the currently active player is the
         one that just finished. */
@@ -401,7 +417,7 @@ void GaplessTransport::OnPlayerFinished(Player* player) {
 
 void GaplessTransport::OnPlayerOpenFailed(Player* player) {
     LockT lock(this->stateMutex);
-    if (player == this->activePlayer) {
+    if (player == this->activePlayer.get()) {
         /* publish failure while this stream is still selected. serialize its
         stop event with replacement Start so it cannot stop the new URI. */
         this->RaiseStreamEvent(StreamState::OpenFailed, player);
@@ -409,15 +425,15 @@ void GaplessTransport::OnPlayerOpenFailed(Player* player) {
         this->ResetNextPlayer();
         this->SetPlaybackState(PlaybackState::Stopped);
     }
-    else if (player == this->nextPlayer) {
+    else if (player == this->nextPlayer.get()) {
         this->ResetNextPlayer();
     }
 }
 
-void GaplessTransport::OnPlayerDestroying(Player *player) {
+void GaplessTransport::OnPlayerStopped(Player *player) {
     LockT lock(this->stateMutex);
 
-    if (player == this->activePlayer) {
+    if (player == this->activePlayer.get()) {
         this->ResetActivePlayer();
         return;
     }
@@ -441,7 +457,7 @@ void GaplessTransport::RaiseStreamEvent(StreamState type, Player const* player) 
     bool eventIsFromActivePlayer = false;
     {
         LockT lock(this->stateMutex);
-        eventIsFromActivePlayer = (player == activePlayer);
+        eventIsFromActivePlayer = (player == activePlayer.get());
         if (eventIsFromActivePlayer) {
             this->activePlayerState = static_cast<StreamState>(type);
             if (type == StreamState::Finished || type == StreamState::OpenFailed) {
@@ -457,18 +473,16 @@ void GaplessTransport::RaiseStreamEvent(StreamState type, Player const* player) 
 
 void GaplessTransport::ResetNextPlayer() {
     if (this->nextPlayer) {
-        this->nextPlayer->Detach(this);
-        this->RaiseStreamEvent(StreamState::Destroyed, this->nextPlayer);
-        this->nextPlayer->Destroy();
+        this->RaiseStreamEvent(StreamState::Destroyed, this->nextPlayer.get());
+        this->nextPlayer->RequestStop();
         this->nextPlayer = nullptr;
     }
 }
 
 void GaplessTransport::ResetActivePlayer() {
     if (this->activePlayer) {
-        this->activePlayer->Detach(this);
-        this->RaiseStreamEvent(StreamState::Destroyed, this->activePlayer);
-        this->activePlayer->Destroy();
+        this->RaiseStreamEvent(StreamState::Destroyed, this->activePlayer.get());
+        this->activePlayer->RequestStop();
         this->activePlayer = nullptr;
     }
 }

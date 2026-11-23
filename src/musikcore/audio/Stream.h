@@ -40,7 +40,7 @@
 #include <musikcore/audio/Buffer.h>
 #include <musikcore/audio/IStream.h>
 #include <musikcore/sdk/IDecoder.h>
-#include <musikcore/sdk/IOutput.h>
+#include <musikcore/audio/Output.h>
 
 #include <musikcore/sdk/IDSP.h>
 #include <musikcore/sdk/constants.h>
@@ -81,7 +81,7 @@ namespace musik { namespace core { namespace audio {
             void OnBufferProcessedByPlayer(IBuffer* buffer) override;
             double SetPosition(double seconds) override;
             double GetDuration() override;
-            bool OpenStream(std::string uri, musik::core::sdk::IOutput* output) override;
+            bool OpenStream(std::string uri, musik::core::audio::Output* output) override;
             void Interrupt() override;
             int GetCapabilities() override;
             bool Eof() override { return this->done; }

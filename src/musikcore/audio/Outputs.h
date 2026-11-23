@@ -34,21 +34,17 @@
 
 #pragma once
 
-#include <musikcore/config.h>
-#include <musikcore/sdk/IOutput.h>
+#include <musikcore/audio/Output.h>
+#include <musikcore/output.h>
+#include <memory>
+#include <vector>
 
 namespace musik { namespace core { namespace audio { namespace outputs {
 
-    using IOutput = musik::core::sdk::IOutput;
-
-    std::vector<std::shared_ptr<IOutput>> GetAllOutputs();
-    size_t GetOutputCount();
-    IOutput* GetUnmanagedOutput(size_t index);
-    IOutput* GetUnmanagedOutput(const std::string& name);
-    IOutput* GetUnmanagedSelectedOutput();
-    std::shared_ptr<IOutput> SelectedOutput();
-
-    void SelectOutput(std::shared_ptr<IOutput> output);
-    void SelectOutput(IOutput* output);
+    std::vector<std::shared_ptr<Output>> GetAllOutputs();
+    std::shared_ptr<Output> SelectedOutput();
+    void SelectOutput(const std::shared_ptr<Output>& output);
+    mc_result Configure(mc_string_view driver, mc_string_view device);
+    mc_result ReadConfiguration(mc_string_view driver, mc_output_configuration_fn read, void* data);
 
 } } } }

@@ -5,8 +5,10 @@
 #include <musikcore/audio/CrossfadeTransport.h>
 #include <musikcore/audio/GaplessTransport.h>
 #include <musikcore/audio/Outputs.h>
+#include <musikcore/audio/PlaybackWorkers.h>
 #include <musikcore/audio/Stream.h>
 #include <musikcore/output.hpp>
+#include <musikcore/player.hpp>
 
 #include <algorithm>
 #include <array>
@@ -19,6 +21,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <string_view>
@@ -288,7 +291,6 @@ namespace {
                 }
                 hold(false);
             }
-            Player::WaitForWorkers();
             if (!wait(CaptureEvent::Balanced, deadlineMs) || outstanding() != 0) {
                 std::fprintf(stderr, "Output still owns PCM after iteration %d\n", iteration);
                 return false;
@@ -297,79 +299,57 @@ namespace {
         return true;
     }
 
-    bool stopDuringNotification(const std::filesystem::path& file, bool detachFollower = false) {
-        /* A single buffer lets teardown reach the final completion even while
-           the listener is blocked. The player must outlive that listener call. */
+    /* a track may be stopped while its transport is handling the first PCM
+    event. joining the session must wait for that callback to return. */
+    bool stopDuringNotification(const std::filesystem::path& file) {
         struct Listener final : Player::EventListener {
             void OnPlayerStarted(Player*) override {
                 std::unique_lock lock(this->mutex);
                 this->started = true;
                 this->changed.notify_all();
-                this->changed.wait(lock, [&] { return this->released; });
+                this->changed.wait(lock, [&] { return this->release; });
             }
 
-            void OnPlayerDestroying(Player*) override {
-                std::lock_guard lock(this->mutex);
-                this->destroying = true;
-                this->changed.notify_all();
+            void OnPlayerStopped(Player*) override {
+                this->finished = true;
             }
 
             std::mutex mutex;
             std::condition_variable changed;
-            bool started {};
-            bool released {};
-            bool destroying {};
+            bool started = false;
+            bool release = false;
+            std::atomic_bool finished { false };
         } listener;
-
-        struct Follower final : Player::EventListener {
-            void OnPlayerStarted(Player*) override { this->called = true; }
-            std::atomic_bool called {};
-        } follower;
 
         if (!writeWave(file, 137, ramp)) {
             return false;
         }
-
+        PlaybackWorkers playbackWorkers(listener);
         auto output = outputs::SelectedOutput();
         output->Resume();
-        auto* player = Player::Create(file.string(), output, Player::DestroyMode::NoDrain, &listener, {});
-        if (detachFollower) {
-            player->Attach(&follower);
-        }
+        auto player = playbackWorkers.Start(file.string(), output, Player::Drain::No, {});
         player->Play();
 
         std::unique_lock lock(listener.mutex);
         const bool started = listener.changed.wait_for(lock, 3s, [&] { return listener.started; });
         lock.unlock();
+        player.reset();
 
-        if (started) {
-            if (detachFollower) {
-                /* The first callback proves the output worker already snapshotted the listeners. */
-                player->Detach(&follower);
-            }
-            else {
-                player->Destroy();
-            }
-        }
-        output->Stop();
-
+        std::promise<void> entering;
+        auto closing = std::async(std::launch::async, [&] {
+            entering.set_value();
+            playbackWorkers.Close();
+        });
+        entering.get_future().wait();
+        /* even after the caller drops its track, Close must wait for the
+        callback using the listener. release it on both success and failure. */
+        const bool stillClosing = closing.wait_for(50ms) == std::future_status::timeout;
         lock.lock();
-        const bool destroyedEarly = started && !detachFollower &&
-            listener.changed.wait_for(lock, 50ms, [&] { return listener.destroying; });
-        listener.released = true;
+        listener.release = true;
         listener.changed.notify_all();
         lock.unlock();
-        Player::WaitForWorkers();
-
-        if (!started || destroyedEarly) {
-            std::fputs("Player did not stay alive through its completion notification\n", stderr);
-            return false;
-        }
-        if (follower.called) {
-            std::fputs("Detached listener was called from a stale snapshot\n", stderr);
-            return false;
-        }
-        return true;
+        closing.get();
+        return started && stillClosing && listener.finished.load();
     }
 
     bool replacePreparedTrack(const std::filesystem::path& directory, ReadCapture read,
@@ -403,7 +383,6 @@ namespace {
         hold(false);
         const bool captured = waitFrames(firstFrames + nextFrames, deadlineMs);
         transport.Stop();
-        Player::WaitForWorkers();
         if (!captured) {
             return false;
         }
@@ -422,6 +401,274 @@ namespace {
             }
         }
         return true;
+    }
+
+    /* backend failures after ownership transfer must stop the session, return
+    pending buffers, and publish failure instead of EOF or automatic next-track
+    playback. CTest bounds worker cleanup as a final deadlock safeguard. */
+    bool failOutput(const std::filesystem::path& file, bool callbackFailure) {
+        if (!writeWave(file, sampleRate, [](auto) { return StereoFrame {}; })) {
+            return false;
+        }
+        const char* key = callbackFailure ? "MUSIKCORE_TEST_OUTPUT_COMPLETION_ERROR" : "MUSIKCORE_TEST_OUTPUT_QUEUE_ERROR";
+#ifdef _WIN32
+        _putenv_s(key, "1");
+#else
+        setenv(key, "1", 1);
+#endif
+        GaplessTransport transport;
+        std::mutex mutex;
+        std::condition_variable changed;
+        unsigned failures = 0;
+        bool finished = false;
+        auto connection = transport.StreamEvent.Subscribe([&](auto state, const std::string&) {
+            std::lock_guard lock(mutex);
+            failures += state == musik::core::sdk::StreamState::OpenFailed;
+            finished |= state == musik::core::sdk::StreamState::Finished;
+            changed.notify_all();
+        });
+        transport.Start(file.string(), {}, ITransport::StartMode::Immediate);
+        bool observed;
+        {
+            std::unique_lock lock(mutex);
+            observed = changed.wait_for(lock, 3s, [&] { return failures || finished; });
+        }
+        transport.Destroy();
+#ifdef _WIN32
+        _putenv_s(key, "");
+#else
+        unsetenv(key);
+#endif
+        return observed && failures == 1 && !finished && Output::InstanceCount() == 0;
+    }
+
+    enum class PausedReplacement { Direct, Stop, FailedOpen };
+
+    /* the old track is on the left and its replacement is on the right.
+    a paused fade worker would leave the replacement running at zero gain. */
+    bool replacePausedCrossfade(const std::filesystem::path& first, const std::filesystem::path& second,
+        PausedReplacement action, ReadCapture read, WaitCaptureFrames waitFrames)
+    {
+        CrossfadeTransport transport;
+        transport.Start(first.string(), {}, ITransport::StartMode::Immediate);
+        if (!waitFrames(sampleRate / 4, 3000) || transport.Pause() != MC_OK) {
+            return false;
+        }
+        if (action == PausedReplacement::Stop) {
+            transport.Stop();
+        }
+        else if (action == PausedReplacement::FailedOpen) {
+            std::promise<void> failure;
+            auto failed = transport.StreamEvent.Subscribe([&](auto state, const std::string&) {
+                if (state == sdk::StreamState::OpenFailed) {
+                    failure.set_value();
+                }
+            });
+            std::atomic_bool claimedPlaying = false;
+            auto playing = transport.PlaybackEvent.Subscribe([&](auto state) {
+                if (state == sdk::PlaybackState::Playing) {
+                    claimedPlaying = true;
+                }
+            });
+            transport.Start((first.parent_path() / "absent.wav").string(), {}, ITransport::StartMode::Immediate);
+            if (failure.get_future().wait_for(3s) != std::future_status::ready ||
+                transport.GetPlaybackState() != sdk::PlaybackState::Stopped || claimedPlaying.load())
+            {
+                std::fputs("Failed replacement did not stop cleanly from pause\n", stderr);
+                return false;
+            }
+        }
+
+        const auto start = read(nullptr, 0);
+        transport.Start(second.string(), {}, ITransport::StartMode::Immediate);
+        if (!waitFrames(start + sampleRate, 3000)) {
+            std::fputs("Playback did not resume with the replacement track\n", stderr);
+            return false;
+        }
+        std::vector<CapturedFrame> frames(read(nullptr, 0));
+        read(frames.data(), frames.size());
+        const auto replacement = frames.begin() + start;
+        const bool audible = std::any_of(replacement, frames.end(), [](const auto& frame) {
+            return frame.right > 0.05f;
+        });
+        const bool oldTrackHeard = std::any_of(replacement, frames.end(), [](const auto& frame) {
+            return frame.left > 0.01f;
+        });
+        if (!audible || (action != PausedReplacement::Direct && oldTrackHeard) ||
+            transport.GetPlaybackState() != sdk::PlaybackState::Playing)
+        {
+            std::fputs("Replacement track remained silent or a stopped track resumed\n", stderr);
+            return false;
+        }
+        return true;
+    }
+
+    /* seeking resumes playback. after seeking past an overlap, the chosen
+    track must return to full gain and the previous track must stay silent. */
+    bool seekPausedCrossfade(const std::filesystem::path& first, const std::filesystem::path& second,
+        ReadCapture read, WaitCapture wait, WaitCaptureFrames waitFrames)
+    {
+        CrossfadeTransport transport;
+        transport.Start(first.string(), {}, ITransport::StartMode::Immediate);
+        if (!waitFrames(sampleRate / 4, 3000)) {
+            return false;
+        }
+        transport.Start(second.string(), {}, ITransport::StartMode::Immediate);
+        if (!wait(CaptureEvent::Overlap, 3000) || transport.Pause() != MC_OK) {
+            return false;
+        }
+        const auto start = read(nullptr, 0);
+        transport.SetPosition(2.0);
+        if (!waitFrames(start + 2 * sampleRate, 4500)) {
+            std::fputs("Paused crossfade did not play after a seek\n", stderr);
+            return false;
+        }
+        std::vector<CapturedFrame> frames(read(nullptr, 0));
+        read(frames.data(), frames.size());
+        const bool reachedFullGain = std::any_of(frames.begin() + start, frames.end(), [](const auto& frame) {
+            return frame.right > 0.475f && std::abs(frame.left) < sampleTolerance;
+        });
+        if (!reachedFullGain || transport.GetPlaybackState() != sdk::PlaybackState::Playing) {
+            std::fputs("Seek left the selected track at its paused fade gain\n", stderr);
+            return false;
+        }
+        return true;
+    }
+
+    /* act on the initial open so decoder readiness always arrives after the
+    command. an explicit pause stays paused; restoring a position during
+    Prepare leaves the track ready for the listener's first Play. */
+    bool checkCrossfadeOpenIntent(const std::filesystem::path& file, ITransport::StartMode start) {
+        CrossfadeTransport transport;
+        const bool prepare = start == ITransport::StartMode::Wait;
+        std::promise<void> buffered;
+        auto ready = buffered.get_future();
+        mc_result command = MC_OK;
+        auto subscription = transport.StreamEvent.Subscribe([&](auto state, const std::string&) {
+            if (state == sdk::StreamState::Buffering) {
+                if (prepare) {
+                    transport.SetPosition(0.25);
+                }
+                else {
+                    command = transport.Pause();
+                }
+            }
+            else if (state == sdk::StreamState::Buffered) {
+                buffered.set_value();
+            }
+        });
+        transport.Start(file.string(), {}, start);
+        const auto expected = prepare ? sdk::PlaybackState::Prepared : sdk::PlaybackState::Paused;
+        return ready.wait_for(3s) == std::future_status::ready && command == MC_OK &&
+            transport.GetPlaybackState() == expected && transport.Resume() == MC_OK;
+    }
+
+    /* a failed device control must reach the C API without publishing a
+    playback state that the device never entered. */
+    bool checkDeviceControls(const std::filesystem::path& file, bool fade, CoreRuntime& runtime,
+        SetControlFailure setFailure)
+    {
+        std::shared_ptr<ITransport> transport;
+        if (fade) {
+            transport = std::make_shared<CrossfadeTransport>();
+        }
+        else {
+            transport = std::make_shared<GaplessTransport>();
+        }
+        PlaybackService service(runtime.Queue(), LibraryFactory::Instance().DefaultLocalLibrary(), transport);
+        auto playback = OpenFixturePlayback(service);
+        std::promise<void> started;
+        auto connection = transport->PlaybackEvent.Subscribe([&](auto state) {
+            if (state == sdk::PlaybackState::Playing) {
+                started.set_value();
+            }
+        });
+        transport->Start(file.string(), {}, ITransport::StartMode::Immediate);
+        if (started.get_future().wait_for(3s) != std::future_status::ready) {
+            return false;
+        }
+        connection = {};
+
+        setFailure(ControlFailure::Pause);
+        if (playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_ERROR_IO ||
+            transport->GetPlaybackState() != sdk::PlaybackState::Playing)
+        {
+            std::fputs("Failed device pause was reported as a successful transition\n", stderr);
+            return false;
+        }
+        setFailure(ControlFailure::None);
+        if (playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_OK) {
+            return false;
+        }
+        setFailure(ControlFailure::Resume);
+        if (playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_ERROR_IO ||
+            transport->GetPlaybackState() != sdk::PlaybackState::Paused)
+        {
+            std::fputs("Failed device resume was reported as a successful transition\n", stderr);
+            return false;
+        }
+        setFailure(ControlFailure::None);
+        return playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) == MC_OK &&
+            transport->GetPlaybackState() == sdk::PlaybackState::Playing;
+    }
+
+    /* URI players bypass the catalog playback service. an unsuccessful
+    device command must reach this caller with its previous state intact. */
+    bool checkUriControls(const std::filesystem::path& file, SetControlFailure setFailure,
+        WaitCaptureFrames waitFrames)
+    {
+        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        options.services = MC_SERVICE_PLUGINS;
+        api::Context context(options);
+        api::Player player(context);
+        const auto path = file.u8string();
+        if (player.Play(std::string(path.begin(), path.end())) != MC_OK || !waitFrames(sampleRate / 4, 3000)) {
+            std::fputs("URI player did not reach the capture device\n", stderr);
+            return false;
+        }
+
+        setFailure(ControlFailure::Pause);
+        if (player.Pause() != MC_ERROR_IO || player.Snapshot().state != MC_PLAYER_PLAYING) {
+            std::fputs("URI player lost the device pause error or changed state\n", stderr);
+            return false;
+        }
+        setFailure(ControlFailure::None);
+        if (player.Pause() != MC_OK) {
+            return false;
+        }
+
+        setFailure(ControlFailure::Resume);
+        if (player.Resume() != MC_ERROR_IO || player.Snapshot().state != MC_PLAYER_PAUSED) {
+            std::fputs("URI player lost the device resume error or changed state\n", stderr);
+            return false;
+        }
+        setFailure(ControlFailure::None);
+        return player.Resume() == MC_OK && player.Stop() == MC_OK;
+    }
+
+    /* a plugin can hold a write until Stop. the control thread must stay
+    available to issue that Stop even if someone first asks it to pause. */
+    bool stopBlockedControl(const std::filesystem::path& file, WaitCapture wait, void (*gateQueue)()) {
+        GaplessTransport transport;
+        transport.Start(file.string(), {}, ITransport::StartMode::Immediate);
+        gateQueue();
+        if (!wait(CaptureEvent::HeldRetiredQueue, 3000)) {
+            std::fputs("Output never entered the blocked write\n", stderr);
+            return false;
+        }
+
+        auto control = std::async(std::launch::async, [&] {
+            const auto result = transport.Pause();
+            transport.SetVolume(0.25);
+            transport.Stop();
+            return result;
+        });
+        if (control.wait_for(3s) != std::future_status::ready) {
+            std::fputs("A blocked write made Pause and Stop unreachable\n", stderr);
+            std::abort();
+        }
+        return control.get() == MC_ERROR_IN_FLIGHT &&
+            transport.GetPlaybackState() == sdk::PlaybackState::Stopped;
     }
 
     struct ProcessUsage {
@@ -475,12 +722,9 @@ namespace {
             transport.PrepareNextTrack(second.string(), {});
             if (!waitFrames(frames, deadlineMs)) {
                 transport.Stop();
-                Player::WaitForWorkers();
                 return false;
             }
             transport.Stop();
-            /* Player notifications may already be in flight when Stop returns. */
-            Player::WaitForWorkers();
         }
         const auto elapsed = std::chrono::duration<double, std::milli>(Clock::now() - started).count();
         ProcessUsage after {};
@@ -497,14 +741,43 @@ namespace {
     }
 
     bool destroyPausedCrossfade(const std::filesystem::path& first, const std::filesystem::path& second,
-        WaitCapture wait)
+        WaitCapture wait, SetControlFailure setFailure, CoreRuntime& runtime, bool throughService, bool shortSource)
     {
         constexpr unsigned overlapDeadlineMs = 18000;
-        auto transport = std::make_unique<CrossfadeTransport>();
+        auto transport = std::make_shared<CrossfadeTransport>();
+        std::unique_ptr<PlaybackService> service;
+        if (throughService) {
+            service = std::make_unique<PlaybackService>(runtime.Queue(),
+                LibraryFactory::Instance().DefaultLocalLibrary(), transport);
+        }
         transport->Start(first.string(), {}, ITransport::StartMode::Immediate);
-        transport->PrepareNextTrack(second.string(), {});
-        if (!wait(CaptureEvent::Overlap, overlapDeadlineMs) || !transport->Pause()) {
-            std::fputs("Could not pause two overlapping tracks\n", stderr);
+        if (!shortSource) {
+            transport->PrepareNextTrack(second.string(), {});
+        }
+        const auto ready = shortSource ? CaptureEvent::Resumed : CaptureEvent::Overlap;
+        if (!wait(ready, overlapDeadlineMs)) {
+            std::fputs("Output never reached the requested playback state\n", stderr);
+            return false;
+        }
+        if (!throughService) {
+            /* a selected-device failure leaves the overlap alone. after the
+            selected track accepts Pause, an uncooperative tail is stopped. */
+            setFailure(ControlFailure::Pause);
+            if (transport->Pause() != MC_ERROR_IO || !wait(CaptureEvent::BothOutputsPlaying, 0)) {
+                return false;
+            }
+            setFailure(ControlFailure::PauseOutgoing);
+            if (transport->Pause() != MC_OK ||
+                transport->GetPlaybackState() != sdk::PlaybackState::Paused ||
+                !wait(CaptureEvent::OnlyOneOutputPaused, 0))
+            {
+                std::fputs("Pausing the selected track did not retire the failing fade tail\n", stderr);
+                return false;
+            }
+            setFailure(ControlFailure::None);
+        }
+        if (transport->Pause() != MC_OK) {
+            std::fputs("Could not pause the output teardown fixture\n", stderr);
             return false;
         }
 
@@ -520,10 +793,279 @@ namespace {
                 std::abort();
             }
         });
+        if (shortSource) {
+            /* stopping a short/non-fadeable track must retain cancellation
+            access until terminal cleanup has joined its retired player. */
+            transport->Stop();
+        }
+        if (service) {
+            /* managed shutdown joins producers before destroying transports.
+            it must cancel paused fades while the transport is still alive. */
+            service->Shutdown();
+            if (Output::InstanceCount() != 0) {
+                std::fputs("Playback shutdown retained a C output instance\n", stderr);
+                return false;
+            }
+        }
         std::fputs("Destroying the transport with both fades paused\n", stderr);
         transport.reset();
-        Player::WaitForWorkers();
         return true;
+    }
+
+    class GatedFadeTransport final : public CrossfadeTransport {
+    public:
+        ~GatedFadeTransport() override {
+            this->ReleaseTick();
+            this->Destroy();
+        }
+
+        double Volume() noexcept override {
+            std::unique_lock lock(this->mutex);
+            if (this->armed) {
+                /* the fader reads volume while holding its context-list lock.
+                retain that lock until the retired producer is blocked too. */
+                this->entered = true;
+                this->changed.notify_all();
+                this->changed.wait(lock, [&] { return this->released; });
+            }
+            return CrossfadeTransport::Volume();
+        }
+
+        void Arm() {
+            std::lock_guard lock(this->mutex);
+            this->armed = true;
+        }
+
+        bool WaitForTick() {
+            std::unique_lock lock(this->mutex);
+            return this->changed.wait_for(lock, 3s, [&] { return this->entered; });
+        }
+
+        void ReleaseTick() {
+            std::lock_guard lock(this->mutex);
+            this->released = true;
+            this->changed.notify_all();
+        }
+
+    private:
+        std::mutex mutex;
+        std::condition_variable changed;
+        bool armed {};
+        bool entered {};
+        bool released {};
+    };
+
+    bool destroyBlockedRetiredCrossfade(const std::filesystem::path& first, const std::filesystem::path& second,
+        WaitCapture wait, void (*gateQueue)(), CoreRuntime& runtime)
+    {
+        auto transport = std::make_shared<GatedFadeTransport>();
+        PlaybackService service(runtime.Queue(), LibraryFactory::Instance().DefaultLocalLibrary(), transport);
+        transport->Start(first.string(), {}, ITransport::StartMode::Immediate);
+        if (!wait(CaptureEvent::Resumed, 3000)) {
+            std::fputs("First crossfade output did not start\n", stderr);
+            return false;
+        }
+        transport->Start(second.string(), {}, ITransport::StartMode::Immediate);
+        if (!wait(CaptureEvent::SecondPrepared, 3000)) {
+            std::fputs("Replacement crossfade output did not prepare\n", stderr);
+            return false;
+        }
+
+        transport->Arm();
+        if (!transport->WaitForTick()) {
+            std::fputs("Crossfader did not enter the volume gate\n", stderr);
+            std::abort();
+        }
+        gateQueue();
+        if (!wait(CaptureEvent::HeldRetiredQueue, 3000)) {
+            std::fputs("Retired output did not enter the producer gate\n", stderr);
+            std::abort();
+        }
+
+        /* both sides of the cycle are now held: the fader owns its context
+        lock and the retired producer owns its output's ordinary-call lock. */
+        std::mutex mutex;
+        std::condition_variable changed;
+        bool destroyed = false;
+        std::thread shutdown([&] {
+            service.Shutdown();
+            std::lock_guard lock(mutex);
+            destroyed = true;
+            changed.notify_all();
+        });
+        transport->ReleaseTick();
+        {
+            std::unique_lock lock(mutex);
+            if (!changed.wait_for(lock, 3s, [&] { return destroyed; })) {
+                std::fputs("Retired crossfade shutdown waited on the fader before interrupting its output\n", stderr);
+                std::abort();
+            }
+        }
+        shutdown.join();
+        return Output::InstanceCount() == 0;
+    }
+
+    bool failPreparedCrossfade(const std::filesystem::path& first, WaitCapture wait, void (*release)(),
+        ReadCapture read, WaitCaptureFrames waitFrames)
+    {
+        std::mutex mutex;
+        std::condition_variable changed;
+        bool playing = false;
+        CrossfadeTransport transport;
+        auto connection = transport.PlaybackEvent.Subscribe([&](auto state) {
+            if (state == sdk::PlaybackState::Playing) {
+                std::lock_guard lock(mutex);
+                playing = true;
+                changed.notify_one();
+            }
+        });
+        transport.Start(first.string(), {}, ITransport::StartMode::Immediate);
+        {
+            std::unique_lock lock(mutex);
+            if (!changed.wait_for(lock, 3s, [&] { return playing; })) {
+                std::fputs("Current track never reached Playing\n", stderr);
+                return false;
+            }
+        }
+        transport.PrepareNextTrack(stalledSource, {});
+        /* hold the next decoder in open until the active output has rendered
+        another block, then fail that open and check playback continues. */
+        const bool opening = wait(CaptureEvent::SourceOpening, 3000);
+        const bool advancedWhileOpening = opening && waitFrames(read(nullptr, 0) + 2048, 3000);
+        release();
+        if (!advancedWhileOpening) {
+            std::fputs("Active output stalled while preparing the next source\n", stderr);
+            return false;
+        }
+        if (!wait(CaptureEvent::SourceReleased, 3000)) {
+            std::fputs("Failed prepared source did not finish cleanup\n", stderr);
+            return false;
+        }
+        if (transport.GetPlaybackState() != sdk::PlaybackState::Playing || transport.Uri() != first.string()) {
+            std::fputs("Failure preparing the next crossfade source stopped the active track\n", stderr);
+            return false;
+        }
+        const auto before = read(nullptr, 0);
+        const bool continued = waitFrames(before + 2048, 3000);
+        transport.Destroy();
+        return continued && Output::InstanceCount() == 0;
+    }
+
+    bool seekWhileDraining(const std::filesystem::path& file, ReadCapture read,
+        HoldCompletion hold, WaitCapture wait)
+    {
+        constexpr auto deadline = 3000;
+        constexpr double seconds = 0.025;
+        if (!writeWave(file, sampleRate / 10, ramp)) {
+            return false;
+        }
+        GaplessTransport transport;
+        std::mutex mutex;
+        std::condition_variable changed;
+        bool decodedEof = false;
+        auto connection = transport.StreamEvent.Subscribe([&](auto state, const std::string&) {
+            if (state == sdk::StreamState::AlmostDone) {
+                std::lock_guard lock(mutex);
+                decodedEof = true;
+                changed.notify_all();
+            }
+        });
+        hold(true);
+        transport.Start(file.string(), {}, ITransport::StartMode::Immediate);
+        {
+            std::unique_lock lock(mutex);
+            if (!changed.wait_for(lock, 3s, [&] { return decodedEof; })) {
+                hold(false);
+                std::fputs("Short track never reached decoded EOF\n", stderr);
+                return false;
+            }
+        }
+        if (!wait(CaptureEvent::HeldCompletion, deadline)) {
+            hold(false);
+            std::fputs("Short track did not retain output at decoded EOF\n", stderr);
+            return false;
+        }
+        const auto before = read(nullptr, 0);
+        transport.SetPosition(seconds);
+        if (!wait(CaptureEvent::Stop, deadline)) {
+            hold(false);
+            std::fputs("Accepted seek during AlmostDone never flushed output\n", stderr);
+            return false;
+        }
+        hold(false);
+        if (!wait(CaptureEvent::Resumed, deadline)) {
+            std::fputs("Seek during AlmostDone never resumed PCM\n", stderr);
+            return false;
+        }
+        std::vector<CapturedFrame> frames(read(nullptr, 0));
+        read(frames.data(), frames.size());
+        const auto expected = ramp(static_cast<size_t>(seconds * sampleRate));
+        const bool correct = frames.size() > before &&
+            std::abs(frames[before].left - static_cast<float>(expected[0]) / pcmScale) < sampleTolerance &&
+            std::abs(frames[before].right - static_cast<float>(expected[1]) / pcmScale) < sampleTolerance;
+        transport.Destroy();
+        if (!correct) {
+            std::fputs("Seek during AlmostDone returned stale PCM\n", stderr);
+        }
+        return correct;
+    }
+
+    /* a seek after prefetch reached EOF must restart both the decoder and
+    the stream pool, including when the requested position is fractional. */
+    bool seekAfterEof(const std::filesystem::path& file) {
+        constexpr double seconds = 0.5;
+        const auto correctFirstFrame = [](sdk::IBuffer& buffer) {
+            const auto expected = ramp(sampleRate / 2);
+            return buffer.Samples() >= 2 &&
+                std::abs(buffer.BufferPointer()[0] - static_cast<float>(expected[0]) / pcmScale) < sampleTolerance &&
+                std::abs(buffer.BufferPointer()[1] - static_cast<float>(expected[1]) / pcmScale) < sampleTolerance;
+        };
+
+        /* small slices leave part of FFmpeg's decoded block unconsumed, so
+        seeking must discard scratch PCM even before either layer reaches EOF. */
+        {
+            auto buffered = Stream::Create(257, 0.05);
+            if (!buffered->OpenStream(file.string(), nullptr) || buffered->Eof() ||
+                buffered->SetPosition(seconds) != seconds)
+            {
+                std::fputs("Could not seek a stream with prefetched decoder PCM\n", stderr);
+                return false;
+            }
+            auto* buffer = buffered->GetNextProcessedOutputBuffer();
+            if (!buffer) {
+                std::fputs("Seeking before EOF did not return PCM\n", stderr);
+                return false;
+            }
+            const bool correct = correctFirstFrame(*buffer);
+            buffered->OnBufferProcessedByPlayer(buffer);
+            if (!correct) {
+                std::fputs("Seeking before EOF returned stale or nonfractional PCM\n", stderr);
+                return false;
+            }
+        }
+
+        auto stream = Stream::Create();
+        if (!stream->OpenStream(file.string(), nullptr)) {
+            return false;
+        }
+        while (auto* buffer = stream->GetNextProcessedOutputBuffer()) {
+            stream->OnBufferProcessedByPlayer(buffer);
+        }
+        if (!stream->Eof() || stream->SetPosition(seconds) != seconds) {
+            std::fputs("Could not seek a stream after decoder EOF\n", stderr);
+            return false;
+        }
+        auto* buffer = stream->GetNextProcessedOutputBuffer();
+        if (!buffer) {
+            std::fputs("Seeking after decoder EOF did not return PCM\n", stderr);
+            return false;
+        }
+        const bool correct = correctFirstFrame(*buffer);
+        stream->OnBufferProcessedByPlayer(buffer);
+        if (!correct) {
+            std::fputs("Seeking after EOF returned stale or nonfractional PCM\n", stderr);
+        }
+        return correct;
     }
 
     bool cancelSourceOpen(WaitCapture wait, void (*release)()) {
@@ -554,11 +1096,26 @@ int main(int argc, char** argv) {
     const std::string_view mode(argv[1]);
     const bool crossfade = mode == "crossfade";
     const bool stress = mode == "teardown" || mode == "seek" || mode == "completion" ||
-        mode == "detach_listener" || mode == "replace_next";
+        mode == "replace_next";
     const bool benchmark = mode == "benchmark";
-    const bool pausedFade = mode == "paused_crossfade";
+    const bool seekEof = mode == "seek_eof";
+    const bool seekTail = mode == "seek_tail";
+    const bool shortPaused = mode == "paused_short_runtime";
+    const bool pausedFade = mode == "paused_crossfade" || mode == "paused_runtime" || shortPaused;
     const bool sourceOpen = mode == "cancel_open";
-    if (!crossfade && mode != "gapless" && !stress && !benchmark && !pausedFade && !sourceOpen) {
+    const bool outputFailure = mode == "output_queue_failure" || mode == "output_callback_failure";
+    const bool controlFailure = mode == "gapless_control_failure" || mode == "crossfade_control_failure" ||
+        mode == "uri_control_failure";
+    const bool pausedReplacement = mode == "replace_paused_crossfade" || mode == "replace_stopped_crossfade" ||
+        mode == "replace_failed_crossfade";
+    const bool pausedSeek = mode == "seek_paused_crossfade";
+    const bool blockedControl = mode == "blocked_control";
+    const bool retiredFade = mode == "retired_crossfade";
+    const bool failedNextFade = mode == "failed_next_crossfade";
+    if (!crossfade && mode != "gapless" && !seekEof && !seekTail && !stress && !benchmark &&
+        !pausedFade && !sourceOpen && !outputFailure && !retiredFade && !failedNextFade &&
+        !controlFailure && !blockedControl && !pausedReplacement && !pausedSeek)
+    {
         return 1;
     }
 
@@ -576,9 +1133,17 @@ int main(int argc, char** argv) {
 
     const auto first = std::filesystem::path(argv[3]) / "first.wav";
     const auto second = std::filesystem::path(argv[3]) / "second.wav";
-    if (!stress && !sourceOpen && !prepareMedia(first, second, crossfade || pausedFade)) {
+    const bool longTracks = crossfade || retiredFade || failedNextFade || pausedReplacement || pausedSeek ||
+        (pausedFade && !shortPaused);
+    if (!stress && !sourceOpen && !outputFailure && !prepareMedia(first, second, longTracks)) {
         std::fputs("Could not generate the PCM fixtures\n", stderr);
         return 1;
+    }
+
+    if (mode == "uri_control_failure") {
+        const auto inject = moduleSymbol<SetControlFailure>(module.get(), "SetPcmControlFailure");
+        const auto waitFrames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");
+        return inject && waitFrames && checkUriControls(first, inject, waitFrames) ? 0 : 1;
     }
 
     CoreRuntime runtime;
@@ -588,6 +1153,47 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    if (controlFailure) {
+        const auto inject = moduleSymbol<SetControlFailure>(module.get(), "SetPcmControlFailure");
+        const bool crossfadeControls = mode == "crossfade_control_failure";
+        if (crossfadeControls && (!checkCrossfadeOpenIntent(first, ITransport::StartMode::Immediate) ||
+            !checkCrossfadeOpenIntent(first, ITransport::StartMode::Wait)))
+        {
+            std::fputs("Decoder readiness changed the requested playback state\n", stderr);
+            return 1;
+        }
+        return inject && checkDeviceControls(first, crossfadeControls, runtime, inject) ? 0 : 1;
+    }
+    if (pausedReplacement) {
+        const auto frames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");
+        auto action = PausedReplacement::Direct;
+        if (mode == "replace_stopped_crossfade") {
+            action = PausedReplacement::Stop;
+        }
+        else if (mode == "replace_failed_crossfade") {
+            action = PausedReplacement::FailedOpen;
+        }
+        return frames && replacePausedCrossfade(first, second, action, read, frames) ? 0 : 1;
+    }
+    if (pausedSeek) {
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
+        const auto frames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");
+        return wait && frames && seekPausedCrossfade(first, second, read, wait, frames) ? 0 : 1;
+    }
+    if (blockedControl) {
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
+        const auto gate = moduleSymbol<void (*)()>(module.get(), "GateRetiredPcmQueue");
+        return wait && gate && stopBlockedControl(first, wait, gate) ? 0 : 1;
+    }
+    if (seekEof) {
+        return seekAfterEof(first) ? 0 : 1;
+    }
+    if (seekTail) {
+        const auto hold = moduleSymbol<HoldCompletion>(module.get(), "HoldPcmCompletion");
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
+        return hold && wait && seekWhileDraining(first, read, hold, wait) ? 0 : 1;
+    }
+
     if (benchmark) {
         const auto store = moduleSymbol<StoreCapture>(module.get(), "StorePcmCapture");
         const auto waitFrames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");
@@ -595,9 +1201,28 @@ int main(int argc, char** argv) {
         return store && waitFrames && audible && benchmarkPlayback(first, second, store, waitFrames, audible) ? 0 : 1;
     }
 
+    if (failedNextFade) {
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
+        const auto release = moduleSymbol<void (*)()>(module.get(), "ReleasePcmSourceOpen");
+        const auto frames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");
+        return wait && release && frames && failPreparedCrossfade(first, wait, release, read, frames) ? 0 : 1;
+    }
+
+    if (retiredFade) {
+        const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
+        const auto gate = moduleSymbol<void (*)()>(module.get(), "GateRetiredPcmQueue");
+        return wait && gate && destroyBlockedRetiredCrossfade(first, second, wait, gate, runtime) ? 0 : 1;
+    }
+
     if (pausedFade) {
         const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
-        return wait && destroyPausedCrossfade(first, second, wait) ? 0 : 1;
+        const auto setFailure = moduleSymbol<SetControlFailure>(module.get(), "SetPcmControlFailure");
+        return wait && setFailure &&
+            destroyPausedCrossfade(first, second, wait, setFailure, runtime, mode != "paused_crossfade", shortPaused) ? 0 : 1;
+    }
+
+    if (outputFailure) {
+        return failOutput(first, mode == "output_callback_failure") ? 0 : 1;
     }
 
     if (sourceOpen) {
@@ -607,8 +1232,8 @@ int main(int argc, char** argv) {
     }
 
     if (stress) {
-        if (mode == "completion" || mode == "detach_listener") {
-            return stopDuringNotification(first, mode == "detach_listener") ? 0 : 1;
+        if (mode == "completion") {
+            return stopDuringNotification(first) ? 0 : 1;
         }
         const auto hold = moduleSymbol<HoldCompletion>(module.get(), "HoldPcmCompletion");
         const auto wait = moduleSymbol<WaitCapture>(module.get(), "WaitPcmCapture");
@@ -637,7 +1262,6 @@ int main(int argc, char** argv) {
         GaplessTransport transport;
         played = play(transport, first, second, read);
     }
-    Player::WaitForWorkers();
     if (!played) {
         return 1;
     }

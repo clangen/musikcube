@@ -39,6 +39,9 @@
 #include <musikcore/sdk/IPlaybackService.h>
 #include <common/runtime/IMessage.h>
 #include <string>
+#include <string_view>
+#include <vector>
+#include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 
 namespace musik { namespace core { namespace plugin {
 
@@ -50,6 +53,10 @@ namespace musik { namespace core { namespace plugin {
         musik::core::ILibraryPtr library);
 
     musik::core::sdk::IEnvironment& Environment();
+
+    std::vector<ffi::PluginRegistry::PluginInfo> ListPlugins();
+
+    ffi::PluginRegistry::Factory<mc_output_factory> FindOutputFactory(std::string_view pluginId);
 
     void ValidateShutdown();
     void UnbindServices();

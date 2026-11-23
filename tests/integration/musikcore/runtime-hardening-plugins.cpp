@@ -21,7 +21,7 @@ namespace runtime_tests {
 #ifdef _WIN32
     bool checkWindowsPlugins() {
         const std::string_view modules[] = {
-            "directsoundout.dll", "wasapiout.dll", "waveout.dll",
+            "nullout.dll", "directsoundout.dll", "wasapiout.dll", "waveout.dll",
             "win32gdivis.dll", "win32globalhotkeys.dll", "cddadecoder.dll",
         };
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
@@ -31,16 +31,15 @@ namespace runtime_tests {
         const auto check = [&](bool enabled, bool nextEnabled) -> bool {
             api::Context context(options);
             const auto plugins = api::ListPlugins();
-            /* instantiate and release factories without opening a device or window. */
+            /* Null Output is the staged C output. check each native output
+            here when it migrates; the catalog below already checks its DLL. */
             {
                 const auto outputs = audio::outputs::GetAllOutputs();
-                for (const std::string_view name : { "DirectSound", "WASAPI", "WaveOut" }) {
-                    const auto found = std::any_of(outputs.begin(), outputs.end(), [name](const auto& output) {
-                        return output->Name() == name;
-                    });
-                    if (!TEST_CHECK(found == enabled)) {
-                        return false;
-                    }
+                if (!TEST_CHECK(outputs.size() == (enabled ? 1u : 0u))) {
+                    return false;
+                }
+                if (enabled && !TEST_CHECK(std::string_view(outputs.front()->Name()) == "Null Output")) {
+                    return false;
                 }
                 const auto visualizers = api::ListVisualizers();
                 if (!TEST_CHECK((std::find(visualizers.begin(), visualizers.end(), "GdiVis") != visualizers.end()) == enabled)) {

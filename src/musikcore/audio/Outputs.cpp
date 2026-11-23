@@ -34,278 +34,158 @@
 
 #include "pch.hpp"
 #include "Outputs.h"
-#include <musikcore/output.h>
 #include "../ffi/common/error.h"
 #include "../ffi/common/primitives.h"
-#include <musikcore/plugin/PluginFactory.h>
+#include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
-
-#include <atomic>
 #include <algorithm>
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::sdk;
 using namespace musik::core::prefs;
 
-using Output = std::shared_ptr<IOutput>;
-using OutputList = std::vector<Output>;
-
-#if defined(WIN32)
-static const std::string defaultOutput = "WASAPI";
-#elif defined(__APPLE__)
-static const std::string defaultOutput = "CoreAudio";
-#elif defined(__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__DragonFly__)
-static const std::string defaultOutput = "sndio";
+namespace musik { namespace core { namespace audio { namespace outputs {
+    namespace {
+#if defined(__APPLE__)
+        constexpr char DefaultOutput[] = "CoreAudio";
+#elif defined(WIN32)
+        constexpr char DefaultOutput[] = "WASAPI";
 #else
-static const std::string defaultOutput = "PulseAudio";
+        constexpr char DefaultOutput[] = "PulseAudio";
 #endif
-
-#define LOWER(x) std::transform(x.begin(), x.end(), x.begin(), tolower);
-
-class NoOutput final: public IOutput {
-    public:
-        void Release() override { delete this; }
-        void Pause() override { }
-        void Resume() override { }
-        void SetVolume(double volume) override { this->volume = volume; }
-        double GetVolume() override { return this->volume; }
-        void Stop() override { }
-        OutputState Play(IBuffer *buffer, IBufferProvider *provider) override { return OutputState::InvalidState; }
-        void Drain() override { }
-        double Latency() override { return 0.0; }
-        const char* Name() override { return "NoOutput"; }
-        IDeviceList* GetDeviceList() override { return nullptr; }
-        bool SetDefaultDevice(const char* deviceId) override { return false; }
-        IDevice* GetDefaultDevice() override { return nullptr; }
-        int GetDefaultSampleRate() override { return -1; }
-    private:
-        double volume{ 1.0f };
-};
-
-namespace musik {
-    namespace core {
-        namespace audio {
-            namespace outputs {
-                using ReleaseDeleter = PluginFactory::ReleaseDeleter<IOutput>;
-                using NullDeleter = PluginFactory::NullDeleter<IOutput>;
-
-                static inline void release(OutputList outputs) {
-                    for (auto output : outputs) {
-                        output->Release();
-                    }
-                }
-
-                template <typename D>
-                OutputList queryOutputs() {
-                    OutputList result = PluginFactory::Instance()
-                        .QueryInterface<IOutput, D>("GetAudioOutput");
-
-                    std::sort(
-                        result.begin(),
-                        result.end(),
-                        [](Output left, Output right) -> bool {
-                            std::string l = left->Name();
-                            LOWER(l);
-                            std::string r = right->Name();
-                            LOWER(r);
-                            return l < r;
-                        });
-
-                    return result;
-                }
-
-                static Output findByName(const std::string& name, const OutputList& list) {
-                    if (name.size()) {
-                        auto it = list.begin();
-                        while (it != list.end()) {
-                            if ((*it)->Name() == name) {
-                                return (*it);
-                            }
-                            ++it;
-                        }
-                    }
-                    return Output();
-                }
-
-                OutputList GetAllOutputs() {
-                    return queryOutputs<ReleaseDeleter>();
-                }
-
-                void SelectOutput(std::shared_ptr<musik::core::sdk::IOutput> output) {
-                    SelectOutput(output.get());
-                }
-
-                void SelectOutput(musik::core::sdk::IOutput* output) {
-                    if (output) {
-                        std::shared_ptr<Preferences> prefs =
-                            Preferences::ForComponent(components::Playback);
-
-                        prefs->SetString(keys::OutputPlugin, output->Name());
-                    }
-                }
-
-                size_t GetOutputCount() {
-                    return queryOutputs<ReleaseDeleter>().size();
-                }
-
-                musik::core::sdk::IOutput* GetUnmanagedOutput(size_t index) {
-                    auto all = queryOutputs<NullDeleter>();
-                    if (!all.size()) {
-                        return new NoOutput();
-                    }
-                    auto output = all[index].get();
-                    all.erase(all.begin() + index);
-                    release(all);
+        std::shared_ptr<Output> findByName(const std::string& name, const std::vector<std::shared_ptr<Output>>& list) {
+            for (const auto& output : list) {
+                if (output->Name() == name) {
                     return output;
                 }
-
-                musik::core::sdk::IOutput* GetUnmanagedOutput(const std::string& name) {
-                    auto all = queryOutputs<NullDeleter>();
-                    IOutput* output = nullptr;
-                    for (size_t i = 0; i < all.size(); i++) {
-                        if (all[i]->Name() == name) {
-                            output = all[i].get();
-                            all.erase(all.begin() + i);
-                            break;
-                        }
-                    }
-                    release(all);
-                    return output == nullptr ? new NoOutput() : output;
-                }
-
-                musik::core::sdk::IOutput* GetUnmanagedSelectedOutput() {
-                    IOutput* output = nullptr;
-
-                    OutputList plugins = queryOutputs<NullDeleter>();
-
-                    if (plugins.size()) {
-                        std::shared_ptr<Preferences> prefs =
-                            Preferences::ForComponent(components::Playback);
-
-                        const std::string name = prefs->GetString(keys::OutputPlugin);
-
-                        for (size_t i = 0; i < plugins.size(); i++) {
-                            if (plugins[i]->Name() == name) {
-                                output = plugins[i].get();
-                                plugins.erase(plugins.begin() + i);
-                                break;
-                            }
-                        }
-
-                        if (!output) {
-                            output = plugins[0].get();
-                            plugins.erase(plugins.begin());
-                        }
-                    }
-
-                    release(plugins);
-
-                    return output == nullptr ? new NoOutput() : output;
-                }
-
-                static Output selectedOutput(const OutputList& plugins) {
-                    std::shared_ptr<Preferences> prefs =
-                        Preferences::ForComponent(components::Playback);
-
-                    if (plugins.size()) {
-                        /* try to find the user selected plugin first */
-                        Output result = findByName(prefs->GetString(keys::OutputPlugin), plugins);
-
-                        if (!result) {
-                            /* fall back to the default */
-                            result = findByName(defaultOutput, plugins);
-                        }
-
-                        if (!result) {
-                            /* no default? ugh, return the first one. */
-                            result = plugins[0];
-                        }
-
-                        return result;
-                    }
-
-                    return Output(new NoOutput());
-                }
-
-                Output SelectedOutput() {
-                    return selectedOutput(GetAllOutputs());
-                }
             }
+            return {};
+        }
+
+        std::shared_ptr<Output> selectedOutput(const std::vector<std::shared_ptr<Output>>& list) {
+            const auto prefs = Preferences::ForComponent(components::Playback);
+            auto selected = findByName(prefs->GetString(keys::OutputPlugin), list);
+            if (!selected) {
+                selected = findByName(DefaultOutput, list);
+            }
+            if (!selected && !list.empty()) {
+                selected = list.front();
+            }
+            return selected ? selected : std::make_shared<Output>();
+        }
+
+        mc_string_view text(const std::string& value) {
+            return { value.data(), value.size() };
+        }
+        mc_string_view text(const char* value) {
+            return { value, value ? std::char_traits<char>::length(value) : 0 };
+        }
+        mc_output_device deviceInfo(const Output::Device& device) {
+            return { text(device.id), text(device.name) };
+        }
+        std::string deviceKey(const std::string& pluginId) {
+            return "output_device_" + pluginId;
         }
     }
-}
 
-namespace {
-    mc_output_transport configuredTransport() {
-        const auto settings = Preferences::ForComponent(components::Playback);
-        return settings->GetInt(keys::Transport, static_cast<int>(TransportType::Gapless)) ==
-                static_cast<int>(TransportType::Crossfade)
-            ? MC_OUTPUT_CROSSFADE
-            : MC_OUTPUT_GAPLESS;
+    std::vector<std::shared_ptr<Output>> GetAllOutputs() {
+        std::vector<std::shared_ptr<Output>> result;
+        const auto plugins = musik::core::plugin::ListPlugins();
+        if (plugins.empty()) {
+            return result;
+        }
+        const auto prefs = Preferences::ForComponent(components::Playback);
+        for (const auto& info : plugins) {
+            const auto factory = musik::core::plugin::FindOutputFactory(info.id);
+            if (factory) {
+                result.push_back(
+                    std::make_shared<Output>(factory, info.id, info.name, prefs->GetString(deviceKey(info.id))));
+            }
+        }
+        std::sort(result.begin(), result.end(), [](const auto& left, const auto& right) {
+            return std::string(left->Name()) < right->Name();
+        });
+        return result;
     }
 
-    bool supportedTransport(mc_output_transport transport, std::string_view driver) {
-        return transport != MC_OUTPUT_CROSSFADE || driver != "WaveOut";
+    std::shared_ptr<Output> SelectedOutput() {
+        return selectedOutput(GetAllOutputs());
     }
 
-    mc_string_view outputText(const char* value) {
-        return { value, value ? std::char_traits<char>::length(value) : 0 };
+    void SelectOutput(const std::shared_ptr<Output>& output) {
+        if (output) {
+            Preferences::ForComponent(components::Playback)->SetString(keys::OutputPlugin, output->Name());
+        }
     }
 
-    mc_output_device deviceInfo(const IDevice& device) {
-        return { outputText(device.Id()), outputText(device.Name()) };
+    mc_result Configure(mc_string_view driver, mc_string_view device) {
+        if (!ffi::valid_text(driver, false) || !ffi::valid_text(device)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return ffi::exception_barrier(nullptr, [&]() -> mc_result {
+            const auto output = findByName(std::string(driver.data, driver.length), GetAllOutputs());
+            const std::string selected(device.data ? device.data : "", device.length);
+            if (!output || !output->SetDefaultDevice(selected.c_str())) {
+                return MC_ERROR_NOT_FOUND;
+            }
+            /* validate both selections before committing either preference. */
+            return Preferences::ForComponent(components::Playback)
+                       ->SetValues({ { keys::OutputPlugin, std::string(output->Name()) },
+                                       { deviceKey(output->Id()), selected } },
+                           true)
+                ? MC_OK
+                : MC_ERROR_IO;
+        });
     }
-}
+
+    mc_result ReadConfiguration(mc_string_view driver, mc_output_configuration_fn read, void* data) {
+        if (!read || !ffi::valid_text(driver)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return ffi::exception_barrier(nullptr, [&]() -> mc_result {
+            const auto available = GetAllOutputs();
+            const auto selected = driver.length ? findByName(std::string(driver.data, driver.length), available)
+                                                : selectedOutput(available);
+            if (!selected) {
+                return MC_ERROR_NOT_FOUND;
+            }
+            std::vector<mc_string_view> drivers;
+            for (const auto& output : available) {
+                drivers.push_back(text(output->Name()));
+            }
+            const auto list = selected->Devices();
+            const auto pin = selected->PinnedDeviceId();
+            mc_output_device selectedDevice {};
+            std::vector<mc_output_device> devices;
+            for (const auto& item : list) {
+                const auto info = deviceInfo(item);
+                devices.push_back(info);
+                if (!pin.empty() && pin == item.id) {
+                    selectedDevice = info;
+                }
+            }
+            const auto transport = Preferences::ForComponent(components::Playback)->GetInt(keys::Transport, 0);
+            const mc_output_configuration configuration { drivers.data(), drivers.size(), text(selected->Name()),
+                devices.data(), devices.size(), selectedDevice, static_cast<mc_output_transport>(transport) };
+            read(data, &configuration);
+            return MC_OK;
+        });
+    }
+} } } }
 
 mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void* data) {
-    if (!read) {
-        return MC_ERROR_INVALID_ARGUMENT;
-    }
-
-    return ffi::exception_barrier(nullptr, [&] {
-        const auto available = outputs::GetAllOutputs();
-        const auto selected = outputs::selectedOutput(available);
-        std::vector<mc_string_view> drivers;
-        drivers.reserve(available.size());
-        for (const auto& output : available) {
-            drivers.push_back(outputText(output->Name()));
-        }
-
-        /* Device storage belongs to the plugin and stays alive through the callback. */
-        const std::unique_ptr<IDeviceList, PluginFactory::ReleaseDeleter<IDeviceList>> list(selected->GetDeviceList());
-        const std::unique_ptr<IDevice, PluginFactory::ReleaseDeleter<IDevice>> device(selected->GetDefaultDevice());
-        std::vector<mc_output_device> devices;
-        if (list) {
-            devices.reserve(list->Count());
-            for (size_t i = 0; i < list->Count(); ++i) {
-                devices.push_back(deviceInfo(*list->At(i)));
-            }
-        }
-
-        const mc_output_configuration configuration {
-            drivers.data(), drivers.size(), outputText(selected->Name()),
-            devices.data(), devices.size(), device ? deviceInfo(*device) : mc_output_device {},
-            configuredTransport()
-        };
-        read(data, &configuration);
-        return MC_OK;
-    });
+    return outputs::ReadConfiguration({ nullptr, 0 }, read, data);
 }
 
 mc_result MC_CALL mc_output_select_driver(mc_string_view driver) {
     if (!ffi::valid_text(driver, false)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-
-    return ffi::exception_barrier(nullptr, [&] {
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         const auto output = outputs::findByName(std::string(driver.data, driver.length), outputs::GetAllOutputs());
         if (!output) {
             return MC_ERROR_NOT_FOUND;
-        }
-        if (!supportedTransport(configuredTransport(), output->Name())) {
-            return MC_ERROR_UNSUPPORTED;
         }
         outputs::SelectOutput(output);
         return MC_OK;
@@ -316,15 +196,17 @@ mc_result MC_CALL mc_output_select_device(mc_string_view driver, mc_string_view 
     if (!ffi::valid_text(driver, false) || !ffi::valid_text(deviceId)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-
-    return ffi::exception_barrier(nullptr, [&] {
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         const auto output = outputs::SelectedOutput();
         if (std::string_view(driver.data, driver.length) != output->Name()) {
             return MC_ERROR_NOT_FOUND;
         }
-
         const std::string id(deviceId.data ? deviceId.data : "", deviceId.length);
-        return output->SetDefaultDevice(id.c_str()) ? MC_OK : MC_ERROR_NOT_FOUND;
+        if (!output->SetDefaultDevice(id.c_str())) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        Preferences::ForComponent(components::Playback)->SetString(outputs::deviceKey(output->Id()), id.c_str());
+        return MC_OK;
     });
 }
 
@@ -332,13 +214,8 @@ mc_result MC_CALL mc_output_set_transport(mc_output_transport transport) {
     if (transport != MC_OUTPUT_GAPLESS && transport != MC_OUTPUT_CROSSFADE) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-
     return ffi::exception_barrier(nullptr, [&] {
-        if (!supportedTransport(transport, outputs::SelectedOutput()->Name())) {
-            return MC_ERROR_UNSUPPORTED;
-        }
-        const auto type = transport == MC_OUTPUT_CROSSFADE ? TransportType::Crossfade : TransportType::Gapless;
-        Preferences::ForComponent(components::Playback)->SetInt(keys::Transport, static_cast<int>(type));
+        Preferences::ForComponent(components::Playback)->SetInt(keys::Transport, static_cast<int>(transport));
         return MC_OK;
     });
 }

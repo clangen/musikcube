@@ -25,14 +25,17 @@ public:
     /* Return the last started URI so the playback service can associate its current track. */
     std::string Uri() override { return uri; }
     /* Model an immediate stopped transport; engine notifications remain under the test's control. */
+    /* the fake owns no asynchronous resources; Stop behavior is tested separately. */
+    void Destroy() override {}
+
     void Stop() override {
         state = PlaybackState::Stopped;
         stream = StreamState::Stopped;
     }
     /* Model a successful pause without asynchronous device work. */
-    bool Pause() override { state = PlaybackState::Paused; return true; }
+    mc_result Pause() override { state = PlaybackState::Paused; return MC_OK; }
     /* Model a successful resume without asynchronous device work. */
-    bool Resume() override { state = PlaybackState::Playing; return true; }
+    mc_result Resume() override { state = PlaybackState::Playing; return MC_OK; }
     /* Return the deterministic position set by the test or a seek command. */
     double Position() override { return position; }
     /* Record seeks in seconds so public snapshot/command units can be asserted. */

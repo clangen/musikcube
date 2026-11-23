@@ -48,6 +48,8 @@ file:// URIs with empty/localhost authority and percent-encoded paths. other
 schemes depend on installed providers. internal musikcore: catalog URIs are
 rejected. MC_OK accepts an asynchronous open; failures surface as FAILED. */
 MC_API mc_result MC_CALL mc_player_play_uri(mc_player* player, mc_string_view uri);
+/* pause and resume propagate device errors. MC_ERROR_IN_FLIGHT means an
+output write or drain is still busy; the caller can retry or stop playback. */
 MC_API mc_result MC_CALL mc_player_pause(mc_player* player);
 MC_API mc_result MC_CALL mc_player_resume(mc_player* player);
 MC_API mc_result MC_CALL mc_player_stop(mc_player* player);

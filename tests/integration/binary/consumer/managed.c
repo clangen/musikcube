@@ -3,7 +3,7 @@
 #include <string.h>
 
 static void MC_CALL check_plugin(void* data, const mc_plugin_info* plugin) {
-    const char name[] = "Null IOutput";
+    const char name[] = "Null Output";
     if (plugin->name.length == sizeof(name) - 1 &&
         memcmp(plugin->name.data, name, sizeof(name) - 1) == 0)
     {

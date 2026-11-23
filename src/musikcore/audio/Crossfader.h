@@ -34,71 +34,63 @@
 
 #pragma once
 
-#include <musikcore/config.h>
 #include <musikcore/audio/ITransport.h>
 #include <musikcore/audio/Player.h>
-#include <common/runtime/MessageQueue.h>
-#include <musikcore/sdk/IOutput.h>
-#include <musikcore/sdk/constants.h>
+#include <musikcore/audio/Output.h>
 
+#include <chrono>
+#include <condition_variable>
+#include <functional>
+#include <list>
 #include <thread>
 #include <mutex>
-#include <atomic>
-
-#include <functional>
 
 namespace musik { namespace core { namespace audio {
 
-    class Crossfader:
-        private musik::core::runtime::IMessageTarget,
-        private Player::EventListener
-    {
-        public:
-            enum Direction { FadeIn, FadeOut };
+    class Crossfader {
+    public:
+        enum Direction { FadeIn, FadeOut };
 
-            Crossfader(ITransport& transport, std::function<void()> onEmptied);
-            virtual ~Crossfader();
+        Crossfader(ITransport& transport, std::function<void()> onEmptied);
 
-            void Fade(
-                Player* player,
-                std::shared_ptr<musik::core::sdk::IOutput> output,
-                Direction direction,
-                long durationMs);
+        ~Crossfader();
 
-            void Cancel(Player* player, Direction direction);
-            bool Contains(Player* player);
-            void Pause();
-            void Resume();
-            void Stop();
-            void Drain();
-            void Shutdown();
+        void Fade(Player::Shared player, std::shared_ptr<Output> output, Direction direction, long durationMs);
+        void Cancel(Player* player, Direction direction);
+        bool Contains(Player* player) const;
+        bool Empty() const;
+        bool StopPausedFades();
+        mc_result SetPaused(bool pause, Output& activeOutput);
 
-        private:
-            void ThreadLoop();
+        /* a paused tail cannot finish its fade. stop remaining outputs and
+        join the fade worker before releasing the transport. */
+        void Shutdown();
 
-            virtual void ProcessMessage(
-                musik::core::runtime::IMessage &message);
+    private:
+        using Clock = std::chrono::steady_clock;
+        using Duration = std::chrono::duration<double>;
 
-            virtual void OnPlayerDestroying(musik::core::audio::Player* player);
+        struct FadeContext {
+            std::shared_ptr<Output> output;
+            Player::Shared player;
+            Direction direction;
+            Duration duration;
+            Duration elapsed;
+            Clock::time_point started;
+        };
 
-            struct FadeContext {
-                std::shared_ptr<musik::core::sdk::IOutput> output;
-                Player* player;
-                Direction direction;
-                long ticksCounted;
-                long ticksTotal;
-            };
+        void StopFades();
+        void Finish(FadeContext& fade);
+        void ThreadLoop();
 
-            using FadeContextPtr = std::shared_ptr<FadeContext>;
-
-            std::recursive_mutex contextListLock;
-            std::unique_ptr<std::thread> thread;
-            musik::core::runtime::MessageQueue messageQueue;
-            std::list<FadeContextPtr> contextList;
-            std::atomic<bool> quit, paused;
-            std::condition_variable_any drainCondition;
-            ITransport& transport;
-            const std::function<void()> onEmptied;
+        mutable std::mutex mutex;
+        std::condition_variable changed;
+        std::list<FadeContext> fades;
+        bool quit = false;
+        bool paused = false;
+        ITransport& transport;
+        const std::function<void()> onEmptied;
+        std::thread thread;
     };
 
 } } }
