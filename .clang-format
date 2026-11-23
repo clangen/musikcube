@@ -5,12 +5,12 @@ BasedOnStyle: LLVM
 Language: Cpp
 Standard: c++17
 
-# Match existing indentation without imposing a new line-length limit.
+# Match existing indentation and wrap long lines at 120 columns.
 IndentWidth: 4
 ContinuationIndentWidth: 4
 TabWidth: 4
 UseTab: Never
-ColumnLimit: 0
+ColumnLimit: 120
 AlignAfterOpenBracket: DontAlign
 # Use continuation indentation instead of aligning under an expression. Inside
 # calls, clang-format still adds an extra level to ternary branches; review those
@@ -20,7 +20,9 @@ BreakBeforeTernaryOperators: true
 # Start multiline string arguments on a new line instead of aligning their
 # continuation beneath a string that follows the function name.
 AlwaysBreakBeforeMultilineStrings: true
-IndentAccessModifiers: true
+# indent class and struct members one level; access labels align with the braces.
+IndentAccessModifiers: false
+AccessModifierOffset: -4
 IndentCaseLabels: true
 NamespaceIndentation: All
 CompactNamespaces: true
@@ -30,8 +32,7 @@ FixNamespaceComments: false
 # multiline function/method/constructor definitions manually: their opening
 # brace belongs on a new line, which AfterFunction cannot express conditionally.
 # Multiline class inheritance also needs a manually placed opening brace.
-# With ColumnLimit: 0, also review manually wrapped conditions: MultiLine does
-# not consistently recognize preserved input line breaks.
+# Review multiline conditions for the required new-line opening brace.
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterControlStatement: MultiLine

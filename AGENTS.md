@@ -2,6 +2,10 @@
 
 ## Project tenets
 
+- **Fail fast on fatal errors.** When an ownership violation, broken invariant, or failed cleanup means execution cannot safely continue, emit a clear diagnostic and terminate before further mutation or resource release. Enforce this in Debug and Release; a debug-only assertion is insufficient. Do not swallow the failure, convert it to an ordinary status, or pretend cleanup succeeded. Expected user, device, and I/O failures remain recoverable errors. Catch exceptions at ABI boundaries only when containment or rollback leaves a valid state.
+
+- **The most important rule of API design is to make APIs easy to use correctly and hard to use incorrectly.** Aim for a pit of success: the natural call should also be the correct and safe one. Apply this to application APIs, internal interfaces, and plugin SDKs. Use types, named operations, and validation to prevent mistakes with identifiers, units, options, ownership, and lifetimes. Keep necessary flexibility, such as custom metadata keys, behind explicit opt-ins. Review how callers could misuse each new or revised API and test meaningful safeguards. [Scott Meyers on interface design](https://www.oreilly.com/library/view/97-things-every/9780596809515/ch55.html) · [Rico Mariani on the pit of success](https://ricomariani.medium.com/the-pit-of-success-cfefc6cb64c8)
+- Keep public API surfaces as small as practical: expose only operations and types needed by real callers. Keep implementation helpers, intermediate results, and bookkeeping private. Prefer operations that complete a caller's task over exposing internal steps that callers must sequence correctly. Apply this to C++ classes as well as exported APIs and SDKs; a smaller surface helps create a pit of success.
 - Keep musikcube usable across supported platforms. Consider standalone packaging and runtime dependencies when changing build inputs.
 - Add dependencies only when necessary. Link them statically when practical, ship them as relocatable libraries without additional runtime requirements, or load them through optional plugins (`dlopen`, `LoadLibrary`, or the platform equivalent). Missing optional plugins must leave the app usable.
 - Keep blocking I/O, allocations, and locks off real-time audio callbacks.
@@ -18,8 +22,10 @@
 - Start multiline ternary continuations with `?` and `:`, indented four spaces beyond the statement. Use continuation indentation for call arguments and adjacent string literals rather than aligning under earlier arguments. In compound conditions, put long calls on their own continuation line before wrapping arguments.
 - Order class access sections as `public`, `protected`, then `private`, omitting empty sections. Within each, order types, constructors, destructor, operators, member functions, then instance variables. Separate nonempty groups and access sections with blank lines; section-label comments are optional. Public instance variables should be very rare.
 - Write nested namespaces on one line: `namespace musik { namespace core { namespace audio {`. Indent the body once and close with `} } }` on one line.
-- Use the root `.clang-format` incrementally on selected C/C++ files and review the diff. Manually preserve conditional brace placement, declaration order, standalone `break;`, ternary indentation, and spaced namespace closings. Watch its extra indentation for structs without access labels.
+- Indent class and struct members one four-space level; align `public`, `protected`, and `private` labels with the class braces.
+- Use the root `.clang-format` incrementally on selected C/C++ files and review the diff. Manually preserve conditional brace placement, declaration order, standalone `break;`, ternary indentation, and spaced namespace closings.
 - Write comment prose in lowercase with normal punctuation; preserve symbol names verbatim. Use `/* comment */` where supported, aligning wrapped text with the opening `/*` without extra indentation. Use `//` only when necessary, and native syntax where block comments are unavailable.
+- Keep APIs and SDKs readable by humans, including generated bindings and plugin declarations. Wrap long signatures at argument boundaries, leave blank lines between function declarations, and separate related groups with whitespace. Avoid dense tables of long single-line declarations; apply the same care to code examples in design documents.
 
 ## Implementation
 
@@ -30,6 +36,7 @@
 - Name meaningful public keys, limits, sentinels, and positional indices; reuse their definitions. Keep local constants near use and obvious literals inline. Group class-scoped message IDs near the top of the class declaration in its header.
 - Prefer `musik::debug` for production diagnostics. Reserve direct stderr output for test assertions or boundaries that cannot depend on that logger.
 - Keep platform/compiler differences near setup and pass resulting options into shared code.
+- Validate inputs at the boundary that owns them, then let internal code and thin adapters rely on documented preconditions. Keep lifecycle sequencing with the caller that owns the lifecycle. Tests must prove the boundary rejects invalid inputs before downstream code runs and establishes required lifecycle order; merely documenting preconditions or testing valid inputs is insufficient. Do not duplicate validation across layers. If an enforcement boundary is not implemented yet, record its tests as an open gate rather than claiming coverage from a mock caller.
 - Make ownership, cleanup, and error handling explicit at resource/thread boundaries. Prefer direct ownership and references when the owner outlives the caller; use smart pointers for shared lifetimes, ownership transfer, or weak references.
 - Prefer event-driven notifications and wakeups. Use polling only when necessary or significantly advantageous; document why and limit its duration.
 - Keep SQL wrappers such as `db::Connection` generic: no application/query-specific types, declarations, or friendships. Add generic operations or access mechanisms when needed.
@@ -64,4 +71,5 @@
 - Keep `musikcore.hpp` strictly header-only, depending solely on the public C ABI without private core headers. For owning wrapper types, explicitly declare copy/move operations and document their semantics at the class declaration. Make read-only accessors const and state-changing operations non-const.
 - Keep the experimental ABI version fixed until freeze; signatures/layouts may change freely during development.
 - Document every public struct field, including units, ownership, and defaults where applicable. Give every struct with `struct_size` an `MC_*_DEFAULT` initializer.
+- Give every public C struct a terse type-level comment explaining what it represents, why it exists, and when callers use it. Establish that purpose before listing restrictions; put detailed units, ownership, threading, and lifetime rules beside the relevant fields or operations.
 - When completing an ABI task, update its checklist and named test in the same change. Complete gates only when named-platform acceptance passes or the task plan records an exception.
