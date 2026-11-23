@@ -145,7 +145,7 @@ extern "C" void equ_init(SuperEqState *state, int wb, int channels)
   state->chg_ires = 1;
 
   for(i=0;i<DITHERLEN;i++)
-	state->ditherbuf[i] = (float(rand())/RAND_MAX-0.5);
+	state->ditherbuf[i] = (static_cast<double>(rand()) / RAND_MAX - 0.5);
 
   if (fact[0] < 1) {
       for(i=0;i<=M;i++)

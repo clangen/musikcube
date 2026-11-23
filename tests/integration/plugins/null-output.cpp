@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include "../../support/FatalScope.h"
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <type_traits>
@@ -259,7 +260,7 @@ static_assert(!std::is_invocable_v<decltype(&OutputFactory::Invoke), const Outpu
 registry destruction must unload enabled outputs even if passive views survive. */
 static void checkRegistryOwnership(const std::string& source) {
     PluginCandidates candidates(candidateRoot / "output-runs");
-    const auto path = candidates.Add(fs::u8path(source), "nullout");
+    const auto path = candidates.Add(musik::core::sdk::fs::pathFromUtf8(source), "nullout");
     {
         PluginRegistry disabled;
         require(disabled.Initialize(candidates.Directory(),
@@ -290,7 +291,7 @@ static constexpr int ReentryReturned = 79;
 /* exercise real registry entry points, not an artificially set guard. */
 static int checkFatalReentry(const std::string& mode, const std::string& source) {
     PluginCandidates candidates(candidateRoot / "reentry-runs");
-    candidates.Add(fs::u8path(source), "01-output");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(source), "01-output");
     FatalScope fatalScope;
     PluginRegistry* active = nullptr;
     PluginRegistry registry([&](mc_log_level, mc_string_view tag, mc_string_view) {
@@ -300,7 +301,7 @@ static int checkFatalReentry(const std::string& mode, const std::string& source)
     });
     active = &registry;
     if (mode == "diagnostic") {
-        candidates.Add(fs::u8path(source), "02-duplicate");
+        candidates.Add(musik::core::sdk::fs::pathFromUtf8(source), "02-duplicate");
     }
     require(registry.Initialize(candidates.Directory(),
                 [&](const auto&) {
@@ -330,7 +331,7 @@ static int checkFatalReentry(const std::string& mode, const std::string& source)
 /* negotiate, instantiate, and unload the actual production shared library.
 the host compiles none of the sink implementation and imports no plugin C++ types. */
 int main(int argc, char** argv) {
-    candidateRoot = fs::u8path(argv[0]).parent_path() / "plugin-runs";
+    candidateRoot = musik::core::sdk::fs::pathFromUtf8(argv[0]).parent_path() / "plugin-runs";
     if (argc == 3 && std::string(argv[1]).find("--fatal-") == 0) {
         return checkFatalReentry(std::string(argv[1]).substr(sizeof("--fatal-") - 1), argv[2]);
     }
@@ -338,7 +339,7 @@ int main(int argc, char** argv) {
     checkRegistryOwnership(argv[1]);
     for (unsigned run = 0; run < 2; ++run) {
         PluginCandidates candidates(candidateRoot / "output-runs");
-        const auto path = candidates.Add(fs::u8path(argv[1]), "nullout");
+        const auto path = candidates.Add(musik::core::sdk::fs::pathFromUtf8(argv[1]), "nullout");
         PluginRegistry registry;
         require(!registry.Find<mc_output_factory>("absent"), "uninitialized registry has no output");
         require(registry.Initialize(candidates.Directory()) == MC_OK, "C-only output DLL loads");

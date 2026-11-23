@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include "../../support/check.h"
 #include <musikcore/musikcore.hpp>
 #include <musikcore/plugin/Plugins.h>
@@ -49,7 +50,7 @@ namespace {
     while it emits delayed packets and the trailer. */
     bool checkWriteFailure(Context& context) {
         server::MediaStream output;
-        const auto path = fs::u8path(musik::core::api::ReadPath(MC_PATH_DATA)) / "failed.flac";
+        const auto path = musik::core::sdk::fs::pathFromUtf8(musik::core::api::ReadPath(MC_PATH_DATA)) / "failed.flac";
         if (!TEST_CHECK(output.Open(context, musik::core::sdk::fs::pathToUtf8(path),
                 MC_STREAM_OPEN_WRITE | MC_STREAM_OPEN_CREATE | MC_STREAM_OPEN_TRUNCATE)))
         {
@@ -113,16 +114,16 @@ namespace runtime_tests {
         musik::core::api::Context runtime(opts);
         Context context;
         context.environment = &musik::core::plugin::Environment();
-        const auto root = fs::u8path(musik::core::api::ReadPath(MC_PATH_DATA));
+        const auto root = musik::core::sdk::fs::pathFromUtf8(musik::core::api::ReadPath(MC_PATH_DATA));
         const auto path = [&](const char* name) {
             return musik::core::sdk::fs::pathToUtf8(root / name);
         };
         const auto source = path("fixture.bytes");
         const auto temp = path("audio.tmp");
         const auto cached = path("audio.encoded");
-        std::ofstream(fs::u8path(source), std::ios::binary).write("123456", 6);
+        std::ofstream(musik::core::sdk::fs::pathFromUtf8(source), std::ios::binary).write("123456", 6);
         const auto clean = [&] {
-            return !fs::exists(fs::u8path(temp)) && !fs::exists(fs::u8path(cached));
+            return !fs::exists(musik::core::sdk::fs::pathFromUtf8(temp)) && !fs::exists(musik::core::sdk::fs::pathFromUtf8(cached));
         };
 
         /* a disconnect after returning a single encoded byte discards the file. */
@@ -132,7 +133,7 @@ namespace runtime_tests {
             TranscodingAudioDataStream body(server::EncoderOwner<TestEncoder>(new TestEncoder(false)), 128);
             if (!TEST_CHECK(body.Open(context, source, false, temp, cached)) ||
                 !TEST_CHECK(body.Read(0, &byte, 1, count) == MC_OK && count == 1 && byte == 'a') ||
-                !TEST_CHECK(fs::exists(fs::u8path(temp)) && !fs::exists(fs::u8path(cached))))
+                !TEST_CHECK(fs::exists(musik::core::sdk::fs::pathFromUtf8(temp)) && !fs::exists(musik::core::sdk::fs::pathFromUtf8(cached))))
             {
                 return false;
             }
@@ -154,18 +155,18 @@ namespace runtime_tests {
                 }
                 bytes.append(&byte, count);
             } while (count && bytes.size() < 16);
-            std::ifstream file(fs::u8path(cached), std::ios::binary);
+            std::ifstream file(musik::core::sdk::fs::pathFromUtf8(cached), std::ios::binary);
             const std::string contents(std::istreambuf_iterator<char>(file), {});
             if (!TEST_CHECK(bytes == "ababxyz" && bytes == contents)) {
                 return false;
             }
         }
-        fs::remove(fs::u8path(cached));
+        fs::remove(musik::core::sdk::fs::pathFromUtf8(cached));
 
         /* a source with no duration cannot produce a seekable file on demand.
         ordinary playback can still read its bytes without opening a cache. */
         const auto live = path("live.bytes");
-        std::ofstream(fs::u8path(live), std::ios::binary).write("123456", 6);
+        std::ofstream(musik::core::sdk::fs::pathFromUtf8(live), std::ios::binary).write("123456", 6);
         {
             TranscodingAudioDataStream body(server::EncoderOwner<TestEncoder>(new TestEncoder(false)), 128);
             if (!TEST_CHECK(body.Open(context, live, false, temp, cached)) || !TEST_CHECK(!body.IsCaching() && !body.Finish(context)) ||
@@ -192,13 +193,13 @@ namespace runtime_tests {
             return false;
         }
         first.reset();
-        if (!TEST_CHECK(clean() && fs::exists(fs::u8path(secondTemp))) ||
+        if (!TEST_CHECK(clean() && fs::exists(musik::core::sdk::fs::pathFromUtf8(secondTemp))) ||
             !TEST_CHECK(second->Read(6, &byte, 1, count) == MC_OK && count == 1 && byte == 'z'))
         {
             return false;
         }
         second.reset();
-        if (!TEST_CHECK(!fs::exists(fs::u8path(secondTemp)))) {
+        if (!TEST_CHECK(!fs::exists(musik::core::sdk::fs::pathFromUtf8(secondTemp)))) {
             return false;
         }
 

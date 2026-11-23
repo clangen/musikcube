@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include "../../support/FatalScope.h"
 #include <musikcore/audio/Output.h>
 
@@ -76,8 +77,8 @@ int main(int argc, char** argv) {
     const bool fatal = mode == "--fatal-stop" || mode == "--fatal-duplicate" || mode == "--fatal-stale";
     require(argc == 2 || fatal, "recording DLL supplied");
     const char* image = argv[fatal ? 2 : 1];
-    PluginCandidates candidates(std::filesystem::u8path(argv[0]).parent_path() / "output-host-runs");
-    candidates.Add(std::filesystem::u8path(image), "recording");
+    PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(argv[0]).parent_path() / "output-host-runs");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(image), "recording");
     std::vector<std::string> calls;
     std::mutex logged;
     std::atomic<bool> blocked { false };

@@ -11,8 +11,6 @@
 @end
 static SPMediaKeyTap *singleton = nil;
 
-static pascal OSStatus appSwitched (EventHandlerCallRef nextHandler, EventRef evt, void* userData);
-static pascal OSStatus appTerminated (EventHandlerCallRef nextHandler, EventRef evt, void* userData);
 static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon);
 
 
@@ -25,9 +23,9 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 -(id)initWithDelegate:(id)delegate;
 {
 	_delegate = delegate;
+	_mediaKeyAppList = [NSMutableArray new];
 	[self startWatchingAppSwitching];
 	singleton = self;
-	_mediaKeyAppList = [NSMutableArray new];
     _tapThreadRL=nil;
     _eventPort=nil;
     _eventPortSource=nil;
@@ -43,21 +41,15 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
 -(void)startWatchingAppSwitching;
 {
-	// Listen to "app switched" event, so that we don't intercept media keys if we
-	// weren't the last "media key listening" app to be active
-	EventTypeSpec eventType = { kEventClassApplication, kEventAppFrontSwitched };
-    OSStatus err = InstallApplicationEventHandler(NewEventHandlerUPP(appSwitched), 1, &eventType, self, &_app_switching_ref);
-	assert(err == noErr);
-
-	eventType.eventKind = kEventAppTerminated;
-    err = InstallApplicationEventHandler(NewEventHandlerUPP(appTerminated), 1, &eventType, self, &_app_terminating_ref);
-	assert(err == noErr);
+    NSNotificationCenter *center = [[NSWorkspace sharedWorkspace] notificationCenter];
+    [center addObserver:self selector:@selector(appActivated:)
+        name:NSWorkspaceDidActivateApplicationNotification object:nil];
+    [center addObserver:self selector:@selector(appTerminated:)
+        name:NSWorkspaceDidTerminateApplicationNotification object:nil];
 }
 -(void)stopWatchingAppSwitching;
 {
-	if(!_app_switching_ref) return;
-	RemoveEventHandler(_app_switching_ref);
-	_app_switching_ref = NULL;
+    [[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
 }
 
 -(BOOL)startWatchingMediaKeys;{
@@ -265,84 +257,34 @@ NSString *kIgnoreMediaKeysDefaultsKey = @"SPIgnoreMediaKeys";
 
 -(void)mediaKeyAppListChanged;
 {
-	if([_mediaKeyAppList count] == 0) return;
-
-	/*NSLog(@"--");
-	int i = 0;
-	for (NSValue *psnv in _mediaKeyAppList) {
-		ProcessSerialNumber psn; [psnv getValue:&psn];
-		NSDictionary *processInfo = [(id)ProcessInformationCopyDictionary(
-			&psn,
-			kProcessDictionaryIncludeAllInformationMask
-		) autorelease];
-		NSString *bundleIdentifier = [processInfo objectForKey:(id)kCFBundleIdentifierKey];
-		NSLog(@"%d: %@", i++, bundleIdentifier);
-	}*/
-
-    ProcessSerialNumber mySerial, topSerial;
-	GetCurrentProcess(&mySerial);
-	[[_mediaKeyAppList objectAtIndex:0] getValue:&topSerial];
-
-	Boolean same;
-	OSErr err = SameProcess(&mySerial, &topSerial, &same);
-	[self setShouldInterceptMediaKeyEvents:(err == noErr && same)];
-
-}
--(void)appIsNowFrontmost:(ProcessSerialNumber)psn;
-{
-	NSValue *psnv = [NSValue valueWithBytes:&psn objCType:@encode(ProcessSerialNumber)];
-
-	NSDictionary *processInfo = [(id)ProcessInformationCopyDictionary(
-		&psn,
-		kProcessDictionaryIncludeAllInformationMask
-	) autorelease];
-	NSString *bundleIdentifier = [processInfo objectForKey:(id)kCFBundleIdentifierKey];
-
-	NSArray *whitelistIdentifiers = [[NSUserDefaults standardUserDefaults] arrayForKey:kMediaKeyUsingBundleIdentifiersDefaultsKey];
-	if(![whitelistIdentifiers containsObject:bundleIdentifier]) return;
-
-	[_mediaKeyAppList removeObject:psnv];
-	[_mediaKeyAppList insertObject:psnv atIndex:0];
-	[self mediaKeyAppListChanged];
-}
--(void)appTerminated:(ProcessSerialNumber)psn;
-{
-	NSValue *psnv = [NSValue valueWithBytes:&psn objCType:@encode(ProcessSerialNumber)];
-	[_mediaKeyAppList removeObject:psnv];
-	[self mediaKeyAppListChanged];
+    if ([_mediaKeyAppList count] == 0) {
+        return;
+    }
+    NSNumber *current = [NSNumber numberWithInt:[[NSProcessInfo processInfo] processIdentifier]];
+    [self setShouldInterceptMediaKeyEvents:[[_mediaKeyAppList objectAtIndex:0] isEqual:current]];
 }
 
-static pascal OSStatus appSwitched (EventHandlerCallRef nextHandler, EventRef evt, void* userData)
+-(void)appActivated:(NSNotification *)notification;
 {
-	SPMediaKeyTap *self = (id)userData;
+    NSRunningApplication *app = [[notification userInfo] objectForKey:NSWorkspaceApplicationKey];
+    NSString *bundleIdentifier = [app bundleIdentifier];
+    NSArray *whitelist = [[NSUserDefaults standardUserDefaults] arrayForKey:kMediaKeyUsingBundleIdentifiersDefaultsKey];
+    if (!bundleIdentifier || ![whitelist containsObject:bundleIdentifier]) {
+        return;
+    }
 
-    ProcessSerialNumber newSerial;
-    GetFrontProcess(&newSerial);
-
-	[self appIsNowFrontmost:newSerial];
-
-    return CallNextEventHandler(nextHandler, evt);
+    NSNumber *pid = [NSNumber numberWithInt:[app processIdentifier]];
+    [_mediaKeyAppList removeObject:pid];
+    [_mediaKeyAppList insertObject:pid atIndex:0];
+    [self mediaKeyAppListChanged];
 }
 
-static pascal OSStatus appTerminated (EventHandlerCallRef nextHandler, EventRef evt, void* userData)
+-(void)appTerminated:(NSNotification *)notification;
 {
-	SPMediaKeyTap *self = (id)userData;
-
-	ProcessSerialNumber deadPSN;
-
-	GetEventParameter(
-		evt,
-		kEventParamProcessID,
-		typeProcessSerialNumber,
-		NULL,
-		sizeof(deadPSN),
-		NULL,
-		&deadPSN
-	);
-
-
-	[self appTerminated:deadPSN];
-    return CallNextEventHandler(nextHandler, evt);
+    NSRunningApplication *app = [[notification userInfo] objectForKey:NSWorkspaceApplicationKey];
+    NSNumber *pid = [NSNumber numberWithInt:[app processIdentifier]];
+    [_mediaKeyAppList removeObject:pid];
+    [self mediaKeyAppListChanged];
 }
 
 @end

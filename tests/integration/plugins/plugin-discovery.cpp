@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include "../../support/plugins/PluginCandidates.h"
 
@@ -17,8 +18,8 @@ static void require(bool condition, const char* message) {
 
 /* selection gets copied metadata without exposing loading steps. disabled plugins remain listed without running their hooks. */
 static void checkDisabled(const std::string& valid) {
-    PluginCandidates candidates(fs::u8path(valid).parent_path() / "discovery-runs");
-    const auto path = candidates.Add(fs::u8path(valid), "valid");
+    PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(valid).parent_path() / "discovery-runs");
+    const auto path = candidates.Add(musik::core::sdk::fs::pathFromUtf8(valid), "valid");
     unsigned initialized = 0;
     unsigned shutdown = 0;
     PluginRegistry registry([&](mc_log_level, mc_string_view, mc_string_view text) {
@@ -44,12 +45,12 @@ static void checkDisabled(const std::string& valid) {
 /* rejection diagnostics identify failures without hiding later valid candidates.
 fatal lifecycle reentry has separate subprocess coverage. */
 static void checkDiscovery(const std::string& valid, const std::string& failed, const std::string& noEntry) {
-    PluginCandidates candidates(fs::u8path(valid).parent_path() / "discovery-runs");
-    candidates.Add(fs::u8path(failed), "01-failed");
-    candidates.Add(fs::u8path(valid), "02-valid");
-    candidates.Add(fs::u8path(noEntry), "03-not-a-plugin");
+    PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(valid).parent_path() / "discovery-runs");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(failed), "01-failed");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(valid), "02-valid");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(noEntry), "03-not-a-plugin");
 #ifndef _WIN32
-    candidates.AddBrokenLink(fs::u8path(valid));
+    candidates.AddBrokenLink(musik::core::sdk::fs::pathFromUtf8(valid));
 #endif
     std::vector<std::string> failures;
     PluginRegistry registry([&](mc_log_level, mc_string_view tag, mc_string_view text) {
@@ -74,7 +75,7 @@ static void checkDiscovery(const std::string& valid, const std::string& failed, 
 /* initialization validates thread and session state before doing I/O. missing
 folders are empty sessions; actual directory failures close the failed session. */
 static void checkInitialization(const std::string& valid) {
-    PluginCandidates candidates(fs::u8path(valid).parent_path() / "discovery-runs");
+    PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(valid).parent_path() / "discovery-runs");
     PluginRegistry registry;
     std::thread worker([&] {
         require(registry.Initialize(candidates.Directory()) == MC_ERROR_WRONG_THREAD, "worker initialization rejected");
@@ -90,7 +91,7 @@ static void checkInitialization(const std::string& valid) {
     require(registry.Initialize(candidates.Directory()) == MC_ERROR_CANCELLED, "closed session cannot restart");
 
     PluginRegistry failed;
-    const auto file = candidates.Add(fs::u8path(valid), "not-a-directory");
+    const auto file = candidates.Add(musik::core::sdk::fs::pathFromUtf8(valid), "not-a-directory");
     require(failed.Initialize(file) == MC_ERROR_IO, "file cannot be scanned as a directory");
     require(failed.ListPlugins().empty(), "directory failure publishes no partial catalog");
     require(failed.Initialize(candidates.Directory()) == MC_ERROR_CANCELLED, "failed session requires a new registry");
@@ -99,9 +100,9 @@ static void checkInitialization(const std::string& valid) {
 /* throwing selection and logging callbacks cannot escape the registry. bad
 selection skips that candidate while another candidate can still initialize. */
 static void checkCallbackFailures(const std::string& valid, const std::string& failed) {
-    PluginCandidates candidates(fs::u8path(valid).parent_path() / "discovery-runs");
-    candidates.Add(fs::u8path(failed), "01-failed");
-    candidates.Add(fs::u8path(valid), "02-valid");
+    PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(valid).parent_path() / "discovery-runs");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(failed), "01-failed");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(valid), "02-valid");
     PluginRegistry registry([](mc_log_level, mc_string_view, mc_string_view) {
         throw std::runtime_error("log sink failed");
     });

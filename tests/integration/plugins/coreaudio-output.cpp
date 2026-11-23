@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include <musikcore/audio/Output.h>
 #include <musikcore/musikcore.hpp>
 #include "../../support/host-wakeup.h"
@@ -68,7 +69,7 @@ static void littleEndian(std::ostream& output, uint32_t value, unsigned bytes) {
 /* exercise the public context/player API with a real decoder and C CoreAudio,
 so host-only tests cannot hide a pipeline or service teardown integration bug. */
 static void checkPublicPlayback(const std::string& directory) {
-    const auto filename = std::filesystem::u8path(directory) / "silence.wav";
+    const auto filename = musik::core::sdk::fs::pathFromUtf8(directory) / "silence.wav";
     constexpr unsigned rate = 48000;
     const std::vector<float> samples(rate * 2 * 2, 0.0f);
     {
@@ -138,9 +139,9 @@ static void checkPublicPlayback(const std::string& directory) {
 
 int main(int argc, char** argv) {
     require(argc == 3, "CoreAudio and decoder DLLs supplied");
-    PluginCandidates candidates(std::filesystem::u8path(argv[0]).parent_path() / "coreaudio-runs");
-    candidates.Add(std::filesystem::u8path(argv[1]), "coreaudio");
-    candidates.Add(std::filesystem::u8path(argv[2]), "decoder");
+    PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(argv[0]).parent_path() / "coreaudio-runs");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(argv[1]), "coreaudio");
+    candidates.Add(musik::core::sdk::fs::pathFromUtf8(argv[2]), "decoder");
     PluginRegistry registry;
     require(registry.Initialize(candidates.Directory()) == MC_OK, "C CoreAudio plugin loads");
     const auto factory = registry.Find<mc_output_factory>("7277a19f-a5f7-4123-ac2d-c36273097b72");

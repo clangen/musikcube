@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include "../../support/plugins/PluginCandidates.h"
 #include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
@@ -88,7 +89,7 @@ int main(int argc, char** argv) {
     }
 #endif
     require(argc == 2, "fixture DLL argument");
-    const auto dll = fs::u8path(argv[1]);
+    const auto dll = musik::core::sdk::fs::pathFromUtf8(argv[1]);
     PluginCandidates candidates(dll.parent_path() / "decoder-runs");
     candidates.Add(dll, "decoder");
     PluginRegistry registry;
@@ -98,7 +99,7 @@ int main(int argc, char** argv) {
 
     const auto filename = candidates.Directory("test.bytes");
     const std::array<char, 6> samples { 0, 1, 2, 3, 4, 5 };
-    std::ofstream(fs::u8path(filename), std::ios::binary).write(samples.data(), samples.size());
+    std::ofstream(musik::core::sdk::fs::pathFromUtf8(filename), std::ios::binary).write(samples.data(), samples.size());
 
     mc_stream input = MC_STREAM_DEFAULT;
     require(musik::core::io::CreateLocalFileSource(input) == MC_OK, "create input");

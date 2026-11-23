@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include "PluginRegistry.h"
 #include "Plugin.h"
 #include <common/Contract.h>
@@ -166,7 +167,7 @@ namespace musik { namespace core { namespace ffi {
     mc_result PluginRegistry::Discover(const std::string& directory, const Selection& select) {
         namespace fs = std::filesystem;
         std::error_code error;
-        fs::directory_iterator cursor(fs::u8path(directory), error);
+        fs::directory_iterator cursor(musik::core::sdk::fs::pathFromUtf8(directory), error);
         if (error == std::errc::no_such_file_or_directory) {
             return MC_OK;
         }

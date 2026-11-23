@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include "../../support/FatalScope.h"
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <musikcore/ffi/plugin_abi/Plugin.h>
@@ -119,15 +120,15 @@ static void checkPluginLifecycle(const std::string& path) {
 /* one directory initializes once. copied IDs reject duplicate candidates;
 the registry owns its DLL even with no factory views, then unloads on shutdown. */
 static void checkSession(const std::string& valid, const std::string& duplicate) {
-    PluginCandidates candidates(fs::u8path(valid).parent_path() / "lifecycle-runs");
-    const auto path = candidates.Add(fs::u8path(valid), "01-valid");
+    PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(valid).parent_path() / "lifecycle-runs");
+    const auto path = candidates.Add(musik::core::sdk::fs::pathFromUtf8(valid), "01-valid");
     if (!duplicate.empty()) {
-        candidates.Add(fs::u8path(duplicate), "03-duplicate");
+        candidates.Add(musik::core::sdk::fs::pathFromUtf8(duplicate), "03-duplicate");
     }
 #ifndef _WIN32
     /* a second path to the same image must be rejected before its entry runs. */
     fs::create_symlink(
-        fs::u8path(path), fs::u8path(candidates.Directory()) / ("02-alias" + fs::u8path(path).extension().string()));
+        musik::core::sdk::fs::pathFromUtf8(path), musik::core::sdk::fs::pathFromUtf8(candidates.Directory()) / ("02-alias" + musik::core::sdk::fs::pathFromUtf8(path).extension().string()));
 #endif
     Observations seen;
     unsigned rejected = 0;
@@ -155,8 +156,8 @@ static void checkSession(const std::string& valid, const std::string& duplicate)
 /* independent sessions may share a native image, but not plugin context state.
 closing one registry must leave the other session initialized and mapped. */
 static void checkIndependentSessions(const std::string& valid) {
-    PluginCandidates candidates(fs::u8path(valid).parent_path() / "lifecycle-runs");
-    const auto path = candidates.Add(fs::u8path(valid), "valid");
+    PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(valid).parent_path() / "lifecycle-runs");
+    const auto path = candidates.Add(musik::core::sdk::fs::pathFromUtf8(valid), "valid");
     Observations firstSeen;
     Observations secondSeen;
     PluginRegistry first(firstSeen.Sink());

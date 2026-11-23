@@ -7,8 +7,6 @@
 #define SPSystemDefinedEventMediaKeys 8
 
 @interface SPMediaKeyTap : NSObject {
-	EventHandlerRef _app_switching_ref;
-	EventHandlerRef _app_terminating_ref;
 	CFMachPortRef _eventPort;
 	CFRunLoopSourceRef _eventPortSource;
 	CFRunLoopRef _tapThreadRL;

@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include <filesystem>
 #include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
@@ -191,7 +192,7 @@ namespace {
         check(file.api->open(file.instance, { path.data(), path.size() }, MC_STREAM_OPEN_READ, nullptr) == MC_OK,
             "open input");
         auto methods = *file.api;
-        probe = { file.api, fs::file_size(fs::u8path(path)) };
+        probe = { file.api, fs::file_size(musik::core::sdk::fs::pathFromUtf8(path)) };
         methods.get_info = [](void* instance, mc_stream_info* info) {
             const auto status = probe.file->get_info(instance, info);
             info->flags &= ~MC_STREAM_LENGTH_KNOWN;
@@ -335,7 +336,7 @@ int main(int argc, char** argv) {
     const char* plugin = ffmpeg ? "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c"
         : gme                   ? "org.musikcube.decoder.gme"
                                 : "org.musikcube.decoder.openmpt";
-    auto file = fs::u8path(argv[1]) / (ffmpeg ? "rate.wav" : gme ? "selection.nsf" : "selection.mod");
+    auto file = musik::core::sdk::fs::pathFromUtf8(argv[1]) / (ffmpeg ? "rate.wav" : gme ? "selection.nsf" : "selection.mod");
     const auto utf8 = file.u8string();
     const std::string path(utf8.begin(), utf8.end());
     mc_media_host_api media = MC_MEDIA_HOST_API_DEFAULT;
@@ -353,7 +354,7 @@ int main(int argc, char** argv) {
     services.media = &media;
     services.preferences = &prefs;
     PluginRegistry registry;
-    const auto plugins = (fs::u8path(argv[0]).parent_path() / "plugins").u8string();
+    const auto plugins = (musik::core::sdk::fs::pathFromUtf8(argv[0]).parent_path() / "plugins").u8string();
     check(registry.Initialize(std::string(plugins.begin(), plugins.end()),
               [&](const auto& info) {
                   return info.id == plugin;

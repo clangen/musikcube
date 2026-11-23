@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include "../../support/plugins/PluginCandidates.h"
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <musikcore/plugin/settings.h>
@@ -94,12 +95,12 @@ int checkHttpCacheClient(const char* plugins, const char* directory, const std::
 
 int checkProgressiveHttpRead(const char* pluginPath) {
     /* a sibling of the plugins directory preserves standalone ../lib lookup. */
-    const auto dll = fs::u8path(pluginPath);
+    const auto dll = musik::core::sdk::fs::pathFromUtf8(pluginPath);
     PluginCandidates files(dll.parent_path().parent_path());
     files.Add(dll, "httpdatastream");
     const auto data = files.Directory("data");
     withHttpStream(files.Directory(), data, [&](const mc_stream& stream) {
-        require(!fs::exists(fs::u8path(data)), "creating an unopened stream touched the filesystem");
+        require(!fs::exists(musik::core::sdk::fs::pathFromUtf8(data)), "creating an unopened stream touched the filesystem");
         asio::io_context sockets;
         using Tcp = asio::ip::tcp;
         Tcp::acceptor listener(sockets, { asio::ip::address_v4::loopback(), 0 });

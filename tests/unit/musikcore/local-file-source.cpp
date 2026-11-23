@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include "../../support/plugins/PluginCandidates.h"
 #include <musikcore/io/LocalFileSource.h>
 
@@ -82,7 +83,7 @@ namespace {
 
 int main(int argc, char** argv) {
     require(argc == 2, "fixture directory");
-    PluginCandidates files(std::filesystem::u8path(argv[1]));
+    PluginCandidates files(musik::core::sdk::fs::pathFromUtf8(argv[1]));
     const auto filename = files.Directory("track.WAV");
     const mc_string_view path { filename.data(), filename.size() };
     checkFile(path);

@@ -1,3 +1,4 @@
+#include <common/FilesystemPath.h>
 #include <musikcore/context.h>
 #include "../../support/host-wakeup.h"
 #include <chrono>
@@ -51,7 +52,7 @@ int main(int argc, char** argv) {
 
     /* keep the selected directory distinct from the executable default. a
     restart that silently switches directories must fail to find the fixture. */
-    const auto runtime = std::filesystem::u8path(argv[0]).parent_path();
+    const auto runtime = musik::core::sdk::fs::pathFromUtf8(argv[0]).parent_path();
     const auto selected = runtime / "selected-plugins";
     std::filesystem::rename(runtime / "plugins", selected);
     std::filesystem::create_directory(runtime / "plugins");
