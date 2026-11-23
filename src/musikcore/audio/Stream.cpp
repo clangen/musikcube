@@ -211,6 +211,8 @@ bool Stream::GetNextBufferFromDecoder() {
         this->bufferCount = pcmBufferCount(this->bufferLengthSeconds, this->decoderSampleRate,
             this->samplesPerChannel, MIN_BUFFER_COUNT);
 
+        /* allocate playback storage once and recycle fixed slices. decoder
+        scratch storage is separate; output releases each slice before reuse. */
         this->rawBuffer = new float[bufferCount * this->samplesPerBuffer];
         int offset = 0;
         for (int i = 0; i < bufferCount; i++) {

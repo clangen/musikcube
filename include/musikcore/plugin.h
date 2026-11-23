@@ -75,8 +75,9 @@ MC_PLUGIN_ID_MAX_BYTES), and refer to immutable plugin storage through shutdown.
 initialize/shutdown run on the loading thread. initialize owns all persistent
 allocation; entry must leave no state needing cleanup if negotiation fails.
 once initialize is entered, shutdown is called exactly once, even on failure;
-shutdown must safely clean partially initialized state. the host retires all
-capabilities and drains their references/calls before shutdown and unload. */
+shutdown must safely clean partially initialized state. plugins stay loaded
+for the engine session. before shutdown/unload, the host stops plugin users,
+finishes their calls/callbacks, and destroys all instances. */
 typedef struct mc_plugin_api {
     /* entry receives host capacity here; return bytes actually initialized,
     never writing beyond that capacity. default sizeof(mc_plugin_api). */
@@ -97,12 +98,39 @@ typedef struct mc_plugin_api {
     optional error transfers ownership to the host. required, default null. */
     mc_result (MC_CALL* initialize)(const mc_host_api* host, void** out_plugin_context, mc_error** out_error);
     /* called once with the state returned by initialize, including on failure.
-    accept null for failed allocation; release state and join workers here. */
+    accept null for failed allocation; release state and join workers here.
+    must not throw: the host terminates before unloading if cleanup throws. */
     void (MC_CALL* shutdown)(void* plugin_context);
 } mc_plugin_api;
 
 #define MC_PLUGIN_API_DEFAULT { sizeof(mc_plugin_api), MC_PLUGIN_ABI_VERSION, \
     { NULL, 0 }, { NULL, 0 }, { NULL, 0 }, { NULL, 0 }, NULL, NULL }
+
+/* validate the host ABI/callbacks and the caller-provided plugin-table capacity
+before mc_plugin_get_api reads host callbacks or writes plugin metadata. newer
+host minor versions are accepted when they supply this SDK's required prefix/callbacks. no allocation,
+host calls, or plugin-table mutation. out_error is optional, points to an empty
+slot, and is cleared. after success, assign MC_PLUGIN_API_DEFAULT to out_plugin
+before filling metadata/hooks; validation does not initialize the table. */
+static inline mc_result mc_plugin_validate_host_api(
+    uint32_t host_abi_version, const mc_host_api* host, mc_plugin_api* out_plugin, mc_error** out_error)
+{
+    if (out_error) {
+        *out_error = NULL;
+    }
+    if (MC_ABI_VERSION_MAJOR(host_abi_version) != MC_ABI_VERSION_MAJOR(MC_PLUGIN_ABI_VERSION) ||
+        MC_ABI_VERSION_MINOR(host_abi_version) < MC_ABI_VERSION_MINOR(MC_PLUGIN_ABI_VERSION))
+    {
+        return MC_ERROR_UNSUPPORTED;
+    }
+    if (!host || host->struct_size < sizeof(*host) || host->abi_version != host_abi_version ||
+        !host->log || !host->create_error || !host->destroy_error || !host->register_capability ||
+        !out_plugin || out_plugin->struct_size < sizeof(*out_plugin))
+    {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return MC_OK;
+}
 
 typedef mc_result (MC_CALL* mc_plugin_get_api_fn)(
     uint32_t host_abi_version, const mc_host_api* host, mc_plugin_api* out_plugin, mc_error** out_error);

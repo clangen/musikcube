@@ -74,37 +74,33 @@ typedef struct mc_byte_view {
     size_t length;
 } mc_byte_view;
 
-typedef int32_t mc_sample_format;
-enum {
-    MC_SAMPLE_F32_NATIVE = 1
-};
-
+/* format of interleaved native-endian float32 PCM. decoders, processing, and
+outputs share this representation; device-specific conversion stays in outputs. */
 typedef struct mc_audio_format {
-    /* Size of this struct in bytes. */
+    /* size of this struct in bytes. */
     uint32_t struct_size;
-    /* Sample frames per second. Zero means unset. */
+    /* sample frames per second. zero means unset. */
     uint32_t sample_rate;
-    /* Samples per interleaved frame. Zero means unset. */
+    /* samples per interleaved frame. zero means unset. */
     uint32_t channels;
-    /* Encoding of each sample. Zero means unset. */
-    mc_sample_format sample_format;
-    /* Channel layout identifier. Zero means unspecified. */
+    /* channel layout identifier. zero means unspecified. */
     uint32_t channel_layout;
 } mc_audio_format;
 
-#define MC_AUDIO_FORMAT_DEFAULT { sizeof(mc_audio_format), 0, 0, 0, 0 }
+#define MC_AUDIO_FORMAT_DEFAULT { sizeof(mc_audio_format), 0, 0, 0 }
 
-/* Interleaved PCM view. It does not own or extend the lifetime of its storage. */
+/* writable interleaved float32 PCM view; does not own or extend storage lifetime. */
 typedef struct mc_audio_buffer_view {
-    /* Size of this struct in bytes. */
+    /* size of this struct in bytes. */
     uint32_t struct_size;
-    /* Non-owning PCM pointer. The owner must keep it valid during use. Null for the default empty view. */
-    void *data;
-    /* Number of populated frames. */
+    /* non-owning interleaved float32 samples, valid during write access.
+    null for the default empty view. */
+    float *data;
+    /* number of populated frames. */
     size_t frame_count;
-    /* Number of frames the storage can hold. */
+    /* number of frames the storage can hold. */
     size_t frame_capacity;
-    /* Format of the interleaved PCM frames. */
+    /* format of the interleaved PCM frames. */
     mc_audio_format format;
 } mc_audio_buffer_view;
 

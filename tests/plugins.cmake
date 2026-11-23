@@ -42,3 +42,41 @@ add_test(NAME musikcore.integration.plugins.lifecycle
   COMMAND musikcore_provider_host_test ${provider_arguments})
 set_tests_properties(musikcore.integration.plugins.lifecycle PROPERTIES
   LABELS "integration;musikcore;plugins;abi;contract" TIMEOUT 30)
+
+add_executable(musikcore_audio_buffers_test unit/musikcore/audio-buffers.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/AudioScratchBuffers.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
+target_include_directories(musikcore_audio_buffers_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+target_compile_features(musikcore_audio_buffers_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_audio_buffers_test PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_audio_buffers_test)
+add_dependencies(musikcube_unit_tests musikcore_audio_buffers_test)
+add_test(NAME musikcore.unit.plugins.audio_buffers COMMAND musikcore_audio_buffers_test)
+set_tests_properties(musikcore.unit.plugins.audio_buffers PROPERTIES
+  LABELS "unit;musikcore;plugins;audio;contract")
+
+add_executable(musikcore_plugin_contract_headers_test unit/musikcore/plugin-contract-headers.c)
+target_include_directories(musikcore_plugin_contract_headers_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+set_target_properties(musikcore_plugin_contract_headers_test PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_plugin_contract_headers_test)
+add_dependencies(musikcube_unit_tests musikcore_plugin_contract_headers_test)
+add_test(NAME musikcore.unit.plugins.contract_headers COMMAND musikcore_plugin_contract_headers_test)
+set_tests_properties(musikcore.unit.plugins.contract_headers PROPERTIES
+  LABELS "unit;musikcore;plugins;abi;contract")
+
+# this executable has only public include paths and no core linkage: the C++
+# plugin adapter must remain independently usable and strictly header-only.
+add_executable(musikcore_output_adapter_test unit/musikcore/output-adapter.cpp)
+target_include_directories(musikcore_output_adapter_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_output_adapter_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_output_adapter_test PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_output_adapter_test)
+add_dependencies(musikcube_unit_tests musikcore_output_adapter_test)
+add_test(NAME musikcore.unit.plugins.output_adapter COMMAND musikcore_output_adapter_test)
+set_tests_properties(musikcore.unit.plugins.output_adapter PROPERTIES
+  LABELS "unit;musikcore;plugins;contract" TIMEOUT 15)

@@ -15,7 +15,9 @@ function(musikcore_add_consumer_api target remote_session_source)
     "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadBackend.cpp"
   )
   if(target STREQUAL "musikcore" OR target STREQUAL "musikcore_objects")
-    list(APPEND sources "${ffi}/consumer/library-query-backends.cpp")
+    list(APPEND sources
+      "${ffi}/consumer/library-query-backends.cpp"
+      "${ffi}/plugin_abi/AudioScratchBuffers.cpp")
   else()
     list(APPEND sources "${ffi}/consumer/audio-abi-only.cpp")
   endif()

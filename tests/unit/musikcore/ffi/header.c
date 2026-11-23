@@ -1,5 +1,6 @@
 #include <musikcore/abi.h>
 #include <stdio.h>
+#include <float.h>
 #include <string.h>
 
 /* Pin C widths/offsets so compiler or platform defaults cannot silently change
@@ -7,9 +8,11 @@
 _Static_assert(sizeof(mc_result) == 4, "result width");
 _Static_assert(offsetof(mc_string_view, data) == 0, "string data offset");
 _Static_assert(offsetof(mc_byte_view, data) == 0, "byte data offset");
-_Static_assert(sizeof(mc_sample_format) == 4, "sample format width");
-_Static_assert(sizeof(mc_audio_format) == 20, "audio format layout");
-_Static_assert(offsetof(mc_audio_format, sample_format) == 12, "sample format offset");
+/* all audio views promise a 32-bit binary float representation. */
+_Static_assert(sizeof(float) == 4 && FLT_RADIX == 2 && FLT_MANT_DIG == 24 && FLT_MAX_EXP == 128,
+    "PCM samples use binary32 float");
+_Static_assert(sizeof(mc_audio_format) == 16, "audio format layout");
+_Static_assert(offsetof(mc_audio_format, channel_layout) == 12, "channel layout offset");
 _Static_assert(offsetof(mc_audio_buffer_view, struct_size) == 0, "buffer size offset");
 _Static_assert(offsetof(mc_audio_buffer_view, frame_capacity) ==
     offsetof(mc_audio_buffer_view, frame_count) + sizeof(size_t), "buffer frame layout");
@@ -72,10 +75,10 @@ int main(void) {
     const mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
     const mc_audio_buffer_view buffer = MC_AUDIO_BUFFER_VIEW_DEFAULT;
     if (format.struct_size != sizeof(format) || format.sample_rate || format.channels ||
-        format.sample_format || format.channel_layout || buffer.struct_size != sizeof(buffer) ||
+        format.channel_layout || buffer.struct_size != sizeof(buffer) ||
         buffer.data || buffer.frame_count || buffer.frame_capacity ||
         buffer.format.struct_size != sizeof(buffer.format) || buffer.format.sample_rate ||
-        buffer.format.channels || buffer.format.sample_format || buffer.format.channel_layout) {
+        buffer.format.channels || buffer.format.channel_layout) {
         fputs("audio defaults failed\n", stderr);
         return 1;
     }
