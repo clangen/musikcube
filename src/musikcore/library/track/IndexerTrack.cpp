@@ -43,6 +43,7 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/library/LocalLibrary.h>
+#include <common/Contract.h>
 
 #include <unordered_map>
 #include <chrono>
@@ -176,14 +177,12 @@ bool IndexerTrack::Contains(const char* metakey) {
 }
 
 void IndexerTrack::SetThumbnail(const char *data, long size) {
-    if (this->internalMetadata->thumbnailData) {
-        delete[] this->internalMetadata->thumbnailData;
-    }
+    auto replacement = std::make_unique<char[]>(size);
+    memcpy(replacement.get(), data, size);
 
-    this->internalMetadata->thumbnailData = new char[size];
+    delete[] this->internalMetadata->thumbnailData;
+    this->internalMetadata->thumbnailData = replacement.release();
     this->internalMetadata->thumbnailSize = size;
-
-    memcpy(this->internalMetadata->thumbnailData, data, size);
 }
 
 int64_t IndexerTrack::GetThumbnailId() {
@@ -207,9 +206,7 @@ bool IndexerTrack::ContainsThumbnail() {
 }
 
 void IndexerTrack::SetReplayGain(const ReplayGain& replayGain) {
-    this->internalMetadata->replayGain.reset();
-    this->internalMetadata->replayGain = std::make_shared<ReplayGain>();
-    memcpy(this->internalMetadata->replayGain.get(), &replayGain, sizeof(ReplayGain));
+    this->internalMetadata->replayGain = std::make_shared<ReplayGain>(replayGain);
 }
 
 ReplayGain IndexerTrack::GetReplayGain() {
@@ -475,20 +472,37 @@ int64_t IndexerTrack::SaveThumbnail(db::Connection& connection, const std::strin
             if (insertThumb.Step() == db::Done) {
                 thumbnailId = connection.LastInsertedId();
 
-                std::string filename =
-                    libraryDirectory +
-                    "thumbs/" +
-                    std::to_string(thumbnailId) +
-                    ".jpg";
+                const auto filename = musik::core::sdk::fs::pathFromUtf8(libraryDirectory) /
+                    "thumbs" / (std::to_string(thumbnailId) + ".jpg");
 
 #ifdef WIN32
-                std::wstring wfilename = u8to16(filename);
-                FILE *thumbFile = _wfopen(wfilename.c_str(), L"wb");
+                FILE* thumbFile = _wfopen(filename.c_str(), L"wb");
 #else
-                FILE *thumbFile = fopen(filename.c_str(), "wb");
+                FILE* thumbFile = fopen(filename.c_str(), "wb");
 #endif
-                fwrite(this->internalMetadata->thumbnailData, sizeof(char), this->internalMetadata->thumbnailSize, thumbFile);
-                fclose(thumbFile);
+                bool written = false;
+                if (thumbFile) {
+                    const auto size = static_cast<size_t>(this->internalMetadata->thumbnailSize);
+                    const auto count = fwrite(this->internalMetadata->thumbnailData, 1, size, thumbFile);
+                    written = fclose(thumbFile) == 0 && count == size;
+                    if (!written) {
+                        std::error_code error;
+                        std::filesystem::remove(filename, error);
+                        if (error) {
+                            musik::debug::warning("IndexerTrack", "could not remove incomplete thumbnail " +
+                                pathToUtf8(filename));
+                        }
+                    }
+                }
+                if (!written) {
+                    /* never publish a thumbnail row for a missing or partial file. */
+                    db::Statement removeThumb("DELETE FROM thumbnails WHERE id=?", connection);
+                    removeThumb.BindInt64(0, thumbnailId);
+                    musik::contract::Assert(removeThumb.Step() == db::Done,
+                        "could not remove failed thumbnail record");
+                    musik::debug::warning("IndexerTrack", "could not write thumbnail " + pathToUtf8(filename));
+                    thumbnailId = 0;
+                }
             }
         }
     }

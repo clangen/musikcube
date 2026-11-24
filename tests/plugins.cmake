@@ -275,3 +275,14 @@ foreach(mode IN ITEMS duplicate stale)
   set_tests_properties(musikcore.integration.plugins.output_${mode}_completion PROPERTIES
     LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 15)
 endforeach()
+
+# metadata callbacks cross the C boundary, including on allocation failure.
+add_executable(musikcore_metadata_writer_test unit/musikcore/metadata-writer.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/plugin/MetadataWriter.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
+target_include_directories(musikcore_metadata_writer_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+target_compile_features(musikcore_metadata_writer_test PRIVATE cxx_std_20)
+add_dependencies(musikcube_tests musikcore_metadata_writer_test)
+add_dependencies(musikcube_unit_tests musikcore_metadata_writer_test)
+add_test(NAME musikcore.unit.plugins.metadata_writer COMMAND musikcore_metadata_writer_test)
+set_tests_properties(musikcore.unit.plugins.metadata_writer PROPERTIES LABELS "unit;musikcore;plugins;contract" TIMEOUT 15)
