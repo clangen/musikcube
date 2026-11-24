@@ -695,6 +695,26 @@ set_tests_properties(musikcore.integration.runtime.stream_sdk_contract PROPERTIE
   LABELS "integration;musikcore;plugin;runtime;contract" TIMEOUT 30)
 
 if(WIN32)
+  add_executable(musikcore_directsound_ring_test ../unit/musikcore/directsound-ring.cpp
+    ../../src/plugins/directsoundout/DirectSoundDevices.cpp)
+  target_include_directories(musikcore_directsound_ring_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+  target_compile_features(musikcore_directsound_ring_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_directsound_ring_test PRIVATE dsound dxguid ole32)
+  add_dependencies(musikcube_tests musikcore_directsound_ring_test)
+  add_dependencies(musikcube_unit_tests musikcore_directsound_ring_test)
+  add_test(NAME musikcore.unit.plugins.directsound_ring COMMAND musikcore_directsound_ring_test)
+  set_tests_properties(musikcore.unit.plugins.directsound_ring PROPERTIES
+    LABELS "unit;musikcore;plugins;audio" TIMEOUT 20)
+  add_executable(musikcore_directsound_output_test ../integration/plugins/directsound-output.cpp)
+  target_include_directories(musikcore_directsound_output_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_directsound_output_test PRIVATE cxx_std_20)
+  add_dependencies(musikcore_directsound_output_test directsoundout)
+  add_dependencies(musikcube_tests musikcore_directsound_output_test)
+  add_dependencies(musikcube_integration_tests musikcore_directsound_output_test)
+  add_test(NAME musikcore.integration.plugins.directsound_output
+    COMMAND musikcore_directsound_output_test "$<TARGET_FILE:directsoundout>")
+  set_tests_properties(musikcore.integration.plugins.directsound_output PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
   add_executable(musikcore_wasapi_output_test ../integration/plugins/wasapi-output.cpp)
   target_include_directories(musikcore_wasapi_output_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
   target_compile_features(musikcore_wasapi_output_test PRIVATE cxx_std_20)

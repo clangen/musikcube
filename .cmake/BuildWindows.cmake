@@ -173,7 +173,9 @@ windows_plugin(cddadecoder CddaDataModel.cpp CddaDataStream.cpp CddaDataStreamFa
   CddaDecoder.cpp cddadecoder_plugin.cpp CddaDecoderFactory.cpp CddaIndexerSource.cpp)
 target_link_libraries(cddadecoder PRIVATE shlwapi vendor::curl)
 
-windows_plugin(directsoundout DirectSoundOut.cpp directsoundout_plugin.cpp)
+windows_plugin(directsoundout DirectSoundOutput.cpp DirectSoundDevices.cpp plugin.cpp)
+musikcube_configure_c_plugin(directsoundout)
+target_compile_features(directsoundout PRIVATE cxx_std_20)
 target_link_libraries(directsoundout PRIVATE dsound dxguid)
 
 windows_plugin(ffmpegdecoder FfmpegDecoder.cpp plugin.cpp)
