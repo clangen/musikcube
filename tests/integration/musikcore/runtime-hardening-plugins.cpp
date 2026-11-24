@@ -21,7 +21,7 @@ namespace runtime_tests {
 #ifdef _WIN32
     bool checkWindowsPlugins() {
         const std::string_view modules[] = {
-            "nullout.dll", "directsoundout.dll", "wasapiout.dll", "waveout.dll",
+            "nullout.dll", "directsoundout.dll", "wasapiout.dll",
             "win32gdivis.dll", "win32globalhotkeys.dll", "cddadecoder.dll",
         };
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
@@ -34,10 +34,11 @@ namespace runtime_tests {
             /* check C output discovery alongside the legacy DLL catalog. */
             {
                 const auto outputs = audio::outputs::GetAllOutputs();
-                if (!TEST_CHECK(outputs.size() == (enabled ? 2u : 0u))) {
+                if (!TEST_CHECK(outputs.size() == (enabled ? 3u : 0u))) {
                     return false;
                 }
-                if (enabled && !TEST_CHECK(std::string_view(outputs.front()->Name()) == "Null Output")) {
+                if (enabled && !TEST_CHECK(std::string_view(outputs.front()->Name()) == "DirectSound" &&
+                    std::string_view(outputs[1]->Name()) == "Null Output")) {
                     return false;
                 }
                 if (enabled && !TEST_CHECK(std::string_view(outputs.back()->Name()) == "WASAPI")) {

@@ -228,9 +228,6 @@ musikcube_configure_c_plugin(wasapiout)
 target_compile_features(wasapiout PRIVATE cxx_std_20)
 target_link_libraries(wasapiout PRIVATE winmm)
 
-windows_plugin(waveout WaveOut.cpp WaveOutBuffer.cpp waveout_plugin.cpp)
-target_link_libraries(waveout PRIVATE winmm)
-
 windows_plugin(win32gdivis GdiVis.cpp MemoryDC.cpp)
 target_compile_definitions(win32gdivis PRIVATE "$<$<CONFIG:Debug>:DEBUG>")
 target_link_libraries(win32gdivis PRIVATE shlwapi)
@@ -247,7 +244,7 @@ foreach(target server stockencoders)
 endforeach()
 
 foreach(target directsoundout gmedecoder nullout supereqdsp taglib_plugin
-    wasapiout waveout win32gdivis win32globalhotkeys)
+    wasapiout win32gdivis win32globalhotkeys)
   target_link_options(${target} PRIVATE /SUBSYSTEM:WINDOWS)
 endforeach()
 

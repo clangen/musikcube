@@ -726,7 +726,7 @@ if(WIN32)
   set_tests_properties(musikcore.integration.plugins.wasapi_output PROPERTIES
     LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
   set(windows_plugin_fixtures)
-  foreach(provider IN ITEMS nullout directsoundout wasapiout waveout win32gdivis win32globalhotkeys cddadecoder)
+  foreach(provider IN ITEMS nullout directsoundout wasapiout win32gdivis win32globalhotkeys cddadecoder)
     add_dependencies(musikcore_runtime_hardening_test ${provider})
     list(APPEND windows_plugin_fixtures --plugin "$<TARGET_FILE:${provider}>")
   endforeach()

@@ -2210,7 +2210,8 @@ stage; migrated families must not keep a parallel former-SDK path.
   from the factory to the instance changes the experimental output plugin ABI;
   providers must be rebuilt. `plugins.output_host` exercises preferences before
   playback and `plugins.wasapi_output` checks the WASAPI setting and lifecycle.
-- [ ] **OUT-013** Convert Windows `waveout`.
+- [x] **OUT-013** Retire the legacy Windows `waveout` plugin; WASAPI and
+  DirectSound remain available as Windows outputs.
 
 #### DSP and remaining plugin categories
 
