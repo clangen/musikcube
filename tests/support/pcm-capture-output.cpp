@@ -516,7 +516,7 @@ namespace {
 
         static mc_result VisitDevices(mc_output_device_fn, void*) { return MC_OK; }
         static mc_result ReadDefaultDevice(mc_output_device_fn, void*) { return MC_ERROR_NOT_FOUND; }
-        static mc_result GetDefaultFormat(mc_string_view, mc_audio_format& format) {
+        mc_result GetDefaultFormat(mc_string_view, mc_audio_format& format) {
             format = { sizeof(format), sampleRate, 2, 0 };
             return MC_OK;
         }

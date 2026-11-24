@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstring>
+#include <common/FilesystemPath.h>
 #include <filesystem>
 
 namespace {
@@ -56,7 +57,7 @@ TranscodingAudioDataStream::~TranscodingAudioDataStream() {
     if (!temporaryFile.empty()) {
         cache.close();
         std::error_code error;
-        std::filesystem::remove(std::filesystem::u8path(temporaryFile), error);
+        std::filesystem::remove(musik::core::sdk::fs::pathFromUtf8(temporaryFile), error);
     }
     --activeCount;
 }
@@ -73,7 +74,7 @@ bool TranscodingAudioDataStream::Open(Context& context, const std::string& uri, 
     if (finite && !temporaryFile.empty()) {
         this->temporaryFile = temporaryFile;
         this->cacheFile = cacheFile;
-        cache.open(std::filesystem::u8path(temporaryFile), std::ios::binary);
+        cache.open(musik::core::sdk::fs::pathFromUtf8(temporaryFile), std::ios::binary);
         return cache.is_open();
     }
     return true;
@@ -126,14 +127,14 @@ bool TranscodingAudioDataStream::PublishCache() {
         return true;
     }
     std::error_code error;
-    std::filesystem::rename(std::filesystem::u8path(temporaryFile), std::filesystem::u8path(cacheFile), error);
+    std::filesystem::rename(musik::core::sdk::fs::pathFromUtf8(temporaryFile), musik::core::sdk::fs::pathFromUtf8(cacheFile), error);
     if (error) {
         /* another request can publish the same encoding first. on systems
         that cannot replace an open file, keep that complete cache entry. */
-        if (!std::filesystem::is_regular_file(std::filesystem::u8path(cacheFile), error)) {
+        if (!std::filesystem::is_regular_file(musik::core::sdk::fs::pathFromUtf8(cacheFile), error)) {
             return false;
         }
-        std::filesystem::remove(std::filesystem::u8path(temporaryFile), error);
+        std::filesystem::remove(musik::core::sdk::fs::pathFromUtf8(temporaryFile), error);
         if (error) {
             return false;
         }

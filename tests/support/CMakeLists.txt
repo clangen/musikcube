@@ -403,9 +403,6 @@ if(TARGET httpdatastream)
   target_sources(musikcore_decoder_stream_test PRIVATE "${PROJECT_SOURCE_DIR}/tests/integration/plugins/http-read.cpp")
   target_include_directories(musikcore_decoder_stream_test PRIVATE "${PROJECT_SOURCE_DIR}/src/3rdparty/asio/asio/include")
   target_compile_definitions(musikcore_decoder_stream_test PRIVATE MUSIKCORE_TEST_HTTP_SOURCE ASIO_STANDALONE)
-  if(WIN32)
-    target_link_libraries(musikcore_decoder_stream_test PRIVATE ws2_32 mswsock)
-  endif()
   add_dependencies(musikcore_decoder_stream_test httpdatastream)
   add_test(NAME musikcore.integration.plugins.progressive_http_read
     COMMAND musikcore_decoder_stream_test --progressive-http "$<TARGET_FILE:httpdatastream>")
@@ -698,6 +695,16 @@ set_tests_properties(musikcore.integration.runtime.stream_sdk_contract PROPERTIE
   LABELS "integration;musikcore;plugin;runtime;contract" TIMEOUT 30)
 
 if(WIN32)
+  add_executable(musikcore_wasapi_output_test ../integration/plugins/wasapi-output.cpp)
+  target_include_directories(musikcore_wasapi_output_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_wasapi_output_test PRIVATE cxx_std_20)
+  add_dependencies(musikcore_wasapi_output_test wasapiout)
+  add_dependencies(musikcube_tests musikcore_wasapi_output_test)
+  add_dependencies(musikcube_integration_tests musikcore_wasapi_output_test)
+  add_test(NAME musikcore.integration.plugins.wasapi_output
+    COMMAND musikcore_wasapi_output_test "$<TARGET_FILE:wasapiout>")
+  set_tests_properties(musikcore.integration.plugins.wasapi_output PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
   set(windows_plugin_fixtures)
   foreach(provider IN ITEMS nullout directsoundout wasapiout waveout win32gdivis win32globalhotkeys cddadecoder)
     add_dependencies(musikcore_runtime_hardening_test ${provider})

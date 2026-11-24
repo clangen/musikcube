@@ -51,6 +51,7 @@
 #include <unordered_map>
 #include <string>
 #include <cstdlib>
+#include <common/FilesystemPath.h>
 #include <filesystem>
 
 #include <fcntl.h>
@@ -107,7 +108,7 @@ static std::string contentType(const std::string& extension) {
 
 static std::string fileExtension(const std::string& fn) {
     try {
-        std::fs::path p(std::fs::u8path(fn));
+        std::fs::path p(musik::core::sdk::fs::pathFromUtf8(fn));
         std::string ext = str::ToLowerCopy(str::Trim(pathToUtf8(p.extension())));
         if (ext.size()) {
             return ext[0] == '.' ? ext.substr(1) : ext;
@@ -553,7 +554,7 @@ int HttpServer::HandleAudioTrackRequest(
             /* preserve the download filename fallback for extensionless tracks.
             their actual MIME type is unknown. */
             MHD_add_response_header(response, "X-musikcube-File-Extension", extension.empty() ? "mp3" : extension.c_str());
-            if (seekable && std::fs::exists(std::fs::u8path(filename))) {
+            if (seekable && std::fs::exists(musik::core::sdk::fs::pathFromUtf8(filename))) {
                 MHD_add_response_header(response, "X-musikcube-Filename-Override", externalId.c_str());
             }
             /* legacy clients use this marker to refresh the gapless header

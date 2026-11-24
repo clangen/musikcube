@@ -35,6 +35,7 @@
 #include "BlockingTranscoder.h"
 
 #include <atomic>
+#include <common/FilesystemPath.h>
 #include <filesystem>
 
 namespace {
@@ -73,12 +74,12 @@ bool BlockingTranscoder::Run(Context& context, mc_encoder& encoder, const std::s
 
     std::error_code error;
     if (success) {
-        std::filesystem::rename(std::filesystem::u8path(temp), std::filesystem::u8path(destination), error);
+        std::filesystem::rename(musik::core::sdk::fs::pathFromUtf8(temp), musik::core::sdk::fs::pathFromUtf8(destination), error);
         if (!error) {
             return true;
         }
     }
-    std::filesystem::remove(std::filesystem::u8path(temp), error);
+    std::filesystem::remove(musik::core::sdk::fs::pathFromUtf8(temp), error);
     return false;
 }
 

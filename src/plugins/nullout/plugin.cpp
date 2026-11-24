@@ -149,7 +149,7 @@ namespace {
 
         static mc_result ReadDefaultDevice(mc_output_device_fn read, void* user) { return VisitDevices(read, user); }
 
-        static mc_result GetDefaultFormat(mc_string_view device, mc_audio_format& format) {
+        mc_result GetDefaultFormat(mc_string_view device, mc_audio_format& format) {
             if (!knownDevice(device)) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }

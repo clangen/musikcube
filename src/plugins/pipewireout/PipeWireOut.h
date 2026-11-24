@@ -64,7 +64,7 @@ public:
 
     static mc_result VisitDevices(mc_output_device_fn, void*);
     static mc_result ReadDefaultDevice(mc_output_device_fn, void*);
-    static mc_result GetDefaultFormat(mc_string_view, mc_audio_format&);
+    mc_result GetDefaultFormat(mc_string_view, mc_audio_format&);
 
 private:
     /* a PCM block from musikcore waiting to be copied into PipeWire buffers.

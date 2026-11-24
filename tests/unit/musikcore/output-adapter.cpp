@@ -1,4 +1,5 @@
 #include <musikcore/plugin/output.hpp>
+#include <musikcore/plugin/services.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -94,7 +95,7 @@ struct TestOutput {
     static mc_result ReadDefaultDevice(mc_output_device_fn read, void* user) { return VisitDevices(read, user); }
 
     /* fill a reference, with no C ABI pointer or exception boilerplate. */
-    static mc_result GetDefaultFormat(mc_string_view, mc_audio_format& format) {
+    mc_result GetDefaultFormat(mc_string_view, mc_audio_format& format) {
         format = { sizeof(format), 48000, 2, 0 };
         return MC_OK;
     }
@@ -148,9 +149,6 @@ static void checkRegistration() {
                 &devices) == MC_OK &&
             devices == 1,
         "static device methods are forwarded");
-    mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
-    require(factory.get_default_format(nullptr, { nullptr, 0 }, &format) == MC_OK && format.sample_rate == 48000,
-        "default format reference is forwarded");
 }
 
 /* the adapter forwards calls without injecting Stop or rollback. the owning
@@ -165,6 +163,9 @@ static void checkInstances() {
     TestOutput::throwConstruct = false;
     require(factory.create(nullptr, nullptr, &instance, nullptr) == MC_OK && instance && TestOutput::constructed == 1,
         "successful construction transfers one implementation instance");
+    mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
+    require(api.get_default_format(instance, { nullptr, 0 }, &format) == MC_OK && format.sample_rate == 48000,
+        "default format is queried on the unopened instance");
     unsigned completed = 0;
     mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
     callbacks.context = &completed;

@@ -202,10 +202,14 @@ struct mc_output_vtable {
     /* bounded concurrent snapshot; no allocation, blocking, or error object.
     validity bits describe available estimates or device measurements. */
     mc_result(MC_CALL* get_timing)(void* instance, mc_output_timing* timing);
+
+    /* preferred format for this instance's device; callable before prepare.
+    empty ID selects the system default. */
+    mc_result(MC_CALL* get_default_format)(void* instance, mc_string_view device_id, mc_audio_format* format);
 };
 
 #define MC_OUTPUT_VTABLE_DEFAULT                                                                                       \
-    { sizeof(mc_output_vtable), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+    { sizeof(mc_output_vtable), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 /* device strings and records are callback-scoped; copy to retain them. */
 typedef void(MC_CALL* mc_output_device_fn)(void* user_data, const mc_output_device* device);
@@ -230,9 +234,6 @@ typedef struct mc_output_factory {
     /* report the default device through read, or MC_ERROR_NOT_FOUND when unavailable. */
     mc_result(MC_CALL* read_default_device)(void* context, mc_output_device_fn read, void* user_data);
 
-    /* copy the preferred format for a device; empty ID selects default. */
-    mc_result(MC_CALL* get_default_format)(void* context, mc_string_view device_id, mc_audio_format* format);
-
     /* transfer instance ownership to out_instance, initially null. a nonnull
     partial instance returned on failure must support stop; the host successfully
     stops it before destroy. services include plugin-scoped preferences and stay
@@ -242,7 +243,7 @@ typedef struct mc_output_factory {
         void* context, const mc_plugin_services* services, void** out_instance, mc_error** error);
 } mc_output_factory;
 
-#define MC_OUTPUT_FACTORY_DEFAULT { sizeof(mc_output_factory), NULL, NULL, NULL, NULL, NULL, NULL }
+#define MC_OUTPUT_FACTORY_DEFAULT { sizeof(mc_output_factory), NULL, NULL, NULL, NULL, NULL }
 
 #ifdef __cplusplus
 }

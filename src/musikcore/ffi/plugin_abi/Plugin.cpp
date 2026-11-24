@@ -216,7 +216,7 @@ namespace musik { namespace core { namespace ffi {
             }
             if (id == MC_PLUGIN_CAPABILITY_OUTPUT) {
                 return validFactory<mc_output_factory>(capability, [](const auto& factory, const auto& methods) {
-                    return factory.visit_devices && factory.read_default_device && factory.get_default_format &&
+                    return factory.visit_devices && factory.read_default_device && methods.get_default_format &&
                         methods.prepare && methods.queue_audio_buffer && methods.pause && methods.resume &&
                         methods.set_volume && methods.get_volume && methods.stop && methods.drain && methods.get_timing;
                 });

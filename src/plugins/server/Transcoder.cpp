@@ -45,6 +45,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <map>
+#include <common/FilesystemPath.h>
 #include <filesystem>
 #include <functional>
 #include <chrono>
@@ -71,7 +72,7 @@ static EncoderOwner getEncoder(Context& context, const std::string& format) {
 }
 
 static std::string cachePath(Context& context) {
-    fs::path fsPath = fs::u8path(context.dataDirectory) / "cache" / "transcoder";
+    fs::path fsPath = musik::core::sdk::fs::pathFromUtf8(context.dataDirectory) / "cache" / "transcoder";
     if (!fs::exists(fsPath)) {
         fs::create_directories(fsPath);
     }
@@ -81,7 +82,7 @@ static std::string cachePath(Context& context) {
 static void iterateTranscodeCache(Context& context, std::function<void(fs::path)> cb) {
     if (cb) {
         fs::directory_iterator end;
-        fs::directory_iterator file(fs::u8path(cachePath(context)));
+        fs::directory_iterator file(musik::core::sdk::fs::pathFromUtf8(cachePath(context)));
         while (file != end) {
             if (!is_directory(file->status())) {
                 cb(file->path());
@@ -138,12 +139,12 @@ static void getTempAndFinalFilename(
     std::string& finalFn)
 {
     const auto leaf = std::to_string(std::hash<std::string>()(uri)) + "-" + std::to_string(bitrate) + "." + format;
-    finalFn = pathToUtf8(fs::u8path(cachePath(context)) / fs::u8path(leaf));
+    finalFn = pathToUtf8(musik::core::sdk::fs::pathFromUtf8(cachePath(context)) / musik::core::sdk::fs::pathFromUtf8(leaf));
 
     static std::atomic<uint64_t> sequence { 0 };
     do {
         tempFn = finalFn + "." + std::to_string(sequence.fetch_add(1)) + ".tmp";
-    } while (fs::exists(fs::u8path(tempFn)));
+    } while (fs::exists(musik::core::sdk::fs::pathFromUtf8(tempFn)));
 }
 
 std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
@@ -161,7 +162,7 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
     }
     std::string temp, destination;
     getTempAndFinalFilename(context, uri, bitrate, format, temp, destination);
-    const auto path = fs::u8path(destination);
+    const auto path = musik::core::sdk::fs::pathFromUtf8(destination);
     if (fs::exists(path)) {
         if (auto cached = server::OpenFileBody(*context.media, destination)) {
             std::error_code error;

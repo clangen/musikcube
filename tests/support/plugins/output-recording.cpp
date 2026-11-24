@@ -24,7 +24,7 @@ namespace {
 
     class RecordingOutput {
     public:
-        RecordingOutput() { record("create", 6); }
+        explicit RecordingOutput(const mc_plugin_services* services) : services(services) { record("create", 6); }
         ~RecordingOutput() { record("destroy", 7); }
 
         mc_result Prepare(const mc_output_options& options, const mc_output_callbacks& callbacks) {
@@ -164,7 +164,20 @@ namespace {
             read(data, &device);
             return MC_OK;
         }
-        static mc_result GetDefaultFormat(mc_string_view id, mc_audio_format& format) {
+        mc_result GetDefaultFormat(mc_string_view id, mc_audio_format& format) {
+            if (std::getenv("MUSIKCORE_TEST_OUTPUT_PREFERENCES")) {
+                if (!services || !services->preferences) {
+                    return MC_ERROR_INVALID_ARGUMENT;
+                }
+                bool enabled = false;
+                const auto* prefs = services->preferences;
+                const auto result = prefs->read_boolean(prefs->context, { "fixture", 7 }, false, &enabled);
+                if (result != MC_OK || !enabled) {
+                    return MC_ERROR_INVALID_ARGUMENT;
+                }
+                format = { sizeof(format), 44100, 2, 0 };
+                return MC_OK;
+            }
             const bool usb = id.length && std::string_view(id.data, id.length) == "usb";
             if (usb && !usbConnected()) {
                 return MC_ERROR_NOT_FOUND;
@@ -174,6 +187,7 @@ namespace {
         }
 
     private:
+        const mc_plugin_services* services;
         mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
         std::mutex mutex;
         std::condition_variable changed;

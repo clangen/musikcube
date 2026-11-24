@@ -31,14 +31,16 @@ namespace runtime_tests {
         const auto check = [&](bool enabled, bool nextEnabled) -> bool {
             api::Context context(options);
             const auto plugins = api::ListPlugins();
-            /* Null Output is the staged C output. check each native output
-            here when it migrates; the catalog below already checks its DLL. */
+            /* check C output discovery alongside the legacy DLL catalog. */
             {
                 const auto outputs = audio::outputs::GetAllOutputs();
-                if (!TEST_CHECK(outputs.size() == (enabled ? 1u : 0u))) {
+                if (!TEST_CHECK(outputs.size() == (enabled ? 2u : 0u))) {
                     return false;
                 }
                 if (enabled && !TEST_CHECK(std::string_view(outputs.front()->Name()) == "Null Output")) {
+                    return false;
+                }
+                if (enabled && !TEST_CHECK(std::string_view(outputs.back()->Name()) == "WASAPI")) {
                     return false;
                 }
                 const auto visualizers = api::ListVisualizers();

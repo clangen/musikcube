@@ -1,5 +1,6 @@
 #include "ServerMedia.h"
 #include <cmath>
+#include <common/FilesystemPath.h>
 #include <filesystem>
 
 namespace server {
@@ -102,7 +103,7 @@ namespace server {
         }
 
         void TakeTemporaryFile(std::string& filename) {
-            temporary.path = std::filesystem::u8path(filename);
+            temporary.path = musik::core::sdk::fs::pathFromUtf8(filename);
             filename.clear();
         }
 

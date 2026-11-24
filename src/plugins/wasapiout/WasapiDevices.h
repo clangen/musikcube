@@ -32,37 +32,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/ISchema.h>
-#include "WasapiOut.h"
+#pragma once
 
-class WasapiPlugin : public musik::core::sdk::IPlugin {
-    public:
-        void Release() override { delete this; }
-        const char* Name() override { return "Wasapi IOutput"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "871cb3c2-0002-49cd-9410-5207cb3cfd4a"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-};
+#include <musikcore/plugin/output.h>
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
+struct IAudioClient;
+
+namespace wasapi {
+    mc_result VisitDevices(mc_output_device_fn read, void* user);
+    mc_result ReadDefaultDevice(mc_output_device_fn read, void* user);
+    mc_result GetDefaultFormat(const mc_plugin_services* services, mc_string_view id, mc_audio_format& format);
+    mc_result OpenClient(mc_string_view id, IAudioClient** client);
 }
-
-extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
-    return new WasapiPlugin();
-}
-
-extern "C" __declspec(dllexport) musik::core::sdk::IOutput* GetAudioOutput() {
-    return new WasapiOut();
-}
-
-extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferences* prefs);
-
-extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema();

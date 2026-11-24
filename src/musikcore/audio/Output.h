@@ -104,7 +104,7 @@ namespace musik { namespace core { namespace audio {
         std::vector<Device> Devices() const;
         std::string PinnedDeviceId() const;
         bool SetDefaultDevice(const char* device);
-        int GetDefaultSampleRate() const;
+        int GetDefaultSampleRate();
 
         mc_result Pause();
         mc_result Resume();
@@ -133,6 +133,7 @@ namespace musik { namespace core { namespace audio {
         static void MC_CALL Completed(void*, uint64_t, mc_result) noexcept;
         static void MC_CALL Ready(void*) noexcept;
         mc_result Prepare(const mc_pcm_view& pcm, const std::atomic_bool& revoked);
+        mc_result EnsureInstance();
         mc_string_view PlaybackDeviceId() const;
         std::unique_lock<std::timed_mutex> LockForControl();
         mc_result SetPaused(bool pause);

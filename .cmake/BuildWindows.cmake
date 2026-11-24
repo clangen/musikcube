@@ -157,6 +157,7 @@ function(windows_plugin target)
   endif()
   list(TRANSFORM PLUGIN_UNPARSED_ARGUMENTS PREPEND "src/plugins/${PLUGIN_DIRECTORY}/")
   add_library(${target} MODULE ${PLUGIN_UNPARSED_ARGUMENTS})
+  target_compile_features(${target} PRIVATE cxx_std_20)
   windows_project_sources(${target} "src/plugins/${PLUGIN_DIRECTORY}")
   target_link_libraries(${target} PRIVATE musikcube_windows)
   set_target_properties(${target} PROPERTIES
@@ -199,12 +200,13 @@ musikcube_configure_c_plugin(nullout)
 target_link_libraries(nullout PRIVATE Threads::Threads)
 target_compile_features(nullout PRIVATE cxx_std_20)
 
-windows_plugin(server BlockingTranscoder.cpp HttpServer.cpp main.cpp ServerMedia.cpp Snapshots.cpp
+windows_plugin(server BlockingTranscoder.cpp HttpServer.cpp main.cpp ServerControls.cpp ServerMedia.cpp Snapshots.cpp
   Transcoder.cpp TranscodingAudioDataStream.cpp Util.cpp WebSocketServer.cpp)
+musikcube_configure_c_plugin(server)
 target_compile_features(server PRIVATE cxx_std_20)
 target_compile_definitions(server PRIVATE MHD_W32LIB BUILDING_MHD_LIB)
 target_include_directories(server PRIVATE "${PROJECT_SOURCE_DIR}/include")
-target_link_libraries(server PRIVATE vendor::zlib vendor::microhttpd ws2_32)
+target_link_libraries(server PRIVATE musikcore vendor::zlib vendor::microhttpd ws2_32)
 
 windows_plugin(stockencoders FfmpegEncoder.cpp LameEncoder.cpp main.cpp)
 musikcube_configure_c_plugin(stockencoders)
@@ -219,7 +221,9 @@ target_compile_definitions(taglib_plugin PRIVATE TAGLIB_STATIC)
 target_compile_options(taglib_plugin PRIVATE "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/EHa>")
 target_link_libraries(taglib_plugin PRIVATE vendor::taglib vendor::zlib)
 
-windows_plugin(wasapiout WasapiOut.cpp wasapiout_plugin.cpp)
+windows_plugin(wasapiout WasapiOutput.cpp WasapiDevices.cpp plugin.cpp)
+musikcube_configure_c_plugin(wasapiout)
+target_compile_features(wasapiout PRIVATE cxx_std_20)
 target_link_libraries(wasapiout PRIVATE winmm)
 
 windows_plugin(waveout WaveOut.cpp WaveOutBuffer.cpp waveout_plugin.cpp)
@@ -245,7 +249,6 @@ foreach(target directsoundout gmedecoder nullout supereqdsp taglib_plugin
   target_link_options(${target} PRIVATE /SUBSYSTEM:WINDOWS)
 endforeach()
 
-add_dependencies(musikcore musikcube_runtime)
 add_library(musikcube_ui_runtime OBJECT
   src/common/runtime/Message.cpp src/common/runtime/MessageQueue.cpp src/3rdparty/src/wcwidth.c)
 target_link_libraries(musikcube_ui_runtime PRIVATE musikcube_windows)

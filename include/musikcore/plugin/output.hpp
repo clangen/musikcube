@@ -36,9 +36,9 @@ namespace musik { namespace core { namespace plugin {
                 static_assert(std::is_same_v<decltype(std::declval<const T&>().GetVolume()), double>,
                     "output GetVolume must return double");
                 static constexpr mc_output_vtable methods { sizeof(mc_output_vtable), Destroy, Prepare,
-                    QueueAudioBuffer, Pause, Resume, SetVolume, GetVolume, Stop, Drain, GetTiming };
+                    QueueAudioBuffer, Pause, Resume, SetVolume, GetVolume, Stop, Drain, GetTiming, GetDefaultFormat };
                 static constexpr mc_output_factory factory { sizeof(mc_output_factory), nullptr, &methods, VisitDevices,
-                    ReadDefaultDevice, GetDefaultFormat, Create };
+                    ReadDefaultDevice, Create };
                 mc_plugin_capability capability = MC_PLUGIN_CAPABILITY_DEFAULT;
                 capability.id = { MC_PLUGIN_CAPABILITY_OUTPUT, sizeof(MC_PLUGIN_CAPABILITY_OUTPUT) - 1 };
                 capability.api = &factory;
@@ -144,10 +144,10 @@ namespace musik { namespace core { namespace plugin {
                 });
             }
 
-            static mc_result MC_CALL GetDefaultFormat(void*, mc_string_view device, mc_audio_format* format) noexcept {
+            static mc_result MC_CALL GetDefaultFormat(void* instance, mc_string_view device, mc_audio_format* format) noexcept {
                 *format = MC_AUDIO_FORMAT_DEFAULT;
                 return Invoke([&] {
-                    return T::GetDefaultFormat(device, *format);
+                    return static_cast<T*>(instance)->GetDefaultFormat(device, *format);
                 });
             }
 
@@ -192,9 +192,9 @@ namespace musik { namespace core { namespace plugin {
     before calling callbacks.ready; returning PCM through completed does not
     replace that notification. the host supplies ready for these implementations.
 
-    static device methods: VisitDevices(mc_output_device_fn, void*),
-    ReadDefaultDevice(mc_output_device_fn, void*), and
-    GetDefaultFormat(mc_string_view, mc_audio_format&), each returning mc_result.
+    static device methods: VisitDevices(mc_output_device_fn, void*) and
+    ReadDefaultDevice(mc_output_device_fn, void*). An instance supplies
+    GetDefaultFormat(mc_string_view, mc_audio_format&) before prepare.
     T has a default or const mc_plugin_services* constructor; services stay
     host-owned through destruction. constructors create unopened state.
     optional GetTiming(mc_output_timing&) const noexcept is nonblocking and

@@ -259,19 +259,23 @@ namespace musik { namespace core { namespace audio {
             }
         }
         std::lock_guard lock(this->ordinary);
-        if (this->instance) {
+        if (this->prepared.load()) {
             return false;
         }
         this->device = requested;
         return true;
     }
 
-    int Output::GetDefaultSampleRate() const {
+    int Output::GetDefaultSampleRate() {
         std::lock_guard lock(this->ordinary);
         const auto deviceId = this->PlaybackDeviceId();
+        std::lock_guard lifecycle(this->lifecycle);
+        if (this->EnsureInstance() != MC_OK) {
+            return -1;
+        }
         mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
-        const auto result = this->factory.Invoke([&](const auto& factory) {
-            return factory.get_default_format(factory.context, deviceId, &format);
+        const auto result = this->factory.Invoke([&](const auto&) {
+            return this->api->get_default_format(this->instance, deviceId, &format);
         });
         return result == MC_OK && format.sample_rate <= INT_MAX ? static_cast<int>(format.sample_rate) : -1;
     }
@@ -374,6 +378,33 @@ namespace musik { namespace core { namespace audio {
         return this->volume.load();
     }
 
+    mc_result Output::EnsureInstance() {
+        if (this->instance) {
+            return MC_OK;
+        }
+        const auto result = this->factory.Invoke([&](const auto& factory) {
+            this->api = factory.instance_api;
+            return factory.create(factory.context, &this->services, &this->instance, nullptr);
+        });
+        if (this->instance) {
+            activeInstances.fetch_add(1);
+        }
+        if (result != MC_OK) {
+            this->StopBackend();
+            if (this->instance) {
+                this->factory.Invoke([&](const auto&) {
+                    this->api->destroy(this->instance);
+                    return MC_OK;
+                });
+                activeInstances.fetch_sub(1);
+                this->instance = nullptr;
+            }
+            return result;
+        }
+        musik::contract::Assert(this->instance != nullptr, "output factory succeeded without an instance");
+        return MC_OK;
+    }
+
     mc_result Output::Prepare(const mc_pcm_view& pcm, const std::atomic_bool& revoked) {
         /* the next track may need a different sample rate or larger buffers.
         keep the current setup when it fits, so gapless playback stays seamless;
@@ -405,31 +436,9 @@ namespace musik { namespace core { namespace audio {
             return MC_ERROR_CANCELLED;
         }
 
-        /* create the plugin object when audio first arrives, so listing outputs
-        does not open devices or start workers. keep it for later tracks. */
-        if (!this->instance) {
-            const auto result = this->factory.Invoke([&](const auto& factory) {
-                this->api = factory.instance_api;
-                return factory.create(factory.context, &this->services, &this->instance, nullptr);
-            });
-            if (this->instance) {
-                activeInstances.fetch_add(1);
-            }
-            if (result != MC_OK) {
-                /* a factory can start workers before reporting failure. stop
-                them before freeing the object they might still be using. */
-                this->StopBackend();
-                if (this->instance) {
-                    this->factory.Invoke([&](const auto&) {
-                        this->api->destroy(this->instance);
-                        return MC_OK;
-                    });
-                    activeInstances.fetch_sub(1);
-                    this->instance = nullptr;
-                }
-                return result;
-            }
-            musik::contract::Assert(this->instance != nullptr, "output factory succeeded without an instance");
+        const auto created = this->EnsureInstance();
+        if (created != MC_OK) {
+            return created;
         }
 
         /* reuse the plugin object, but release its old device resources before

@@ -2108,6 +2108,10 @@ stage; migrated families must not keep a parallel former-SDK path.
   from when its samples become audible. Specify a media-to-output timeline and
   fallback for unknown device timing, including seek and crossfade overlap.
   Exercise a backend that returns copied PCM before playback.
+- [ ] Implement device timing for output ports where reliable, and document
+  backend-specific deferrals. Timing snapshots must stay bounded, nonblocking,
+  and allocation-free; test validity flags, generation changes, pause/resume,
+  and the distinction between returned buffers and audible playback.
 - [x] Keep Stop reachable during a blocking write. Pause and resume give a
   paced write a short time to finish, then return `MC_ERROR_IN_FLIGHT` if the
   device is still busy. A rejected pause or resume preserves the prior state
@@ -2123,6 +2127,9 @@ stage; migrated families must not keep a parallel former-SDK path.
   restores the selected track's gain and that a stopped or
   failed replacement cannot bring back the previous track.
 - [ ] **OUT-003** Add debug instrumentation for forbidden real-time host calls.
+- [ ] Run the shared `tests/support/plugins/OutputContract.h` checks for each
+  output provider using an appropriate device or deterministic fixture. Null
+  and WASAPI currently run them; other backends retain their specific tests.
 - [x] **OUT-004** Convert `nullout` as the first production output.
   - [x] Ship a C-only shared library with synchronous, interruptible producer pacing.
     `plugins.null_output` exercises its factory/instances and native unload;
@@ -2181,6 +2188,28 @@ stage; migrated families must not keep a parallel former-SDK path.
 - [ ] **OUT-010** Convert `sndioout`.
 - [ ] **OUT-011** Convert Windows `directsoundout`.
 - [ ] **OUT-012** Convert Windows `wasapiout`.
+  The shared-mode provider now registers the C output and configuration APIs.
+  `plugins.wasapi_output` covers a Windows endpoint, settings, PCM completion,
+  pause/resume, drain, timing, interrupted writes, and teardown. The clock
+  snapshot is a bounded 128-bit atomic publication: a 16-bit generation and
+  48-bit frame count plus a 64-bit monotonic timestamp; generation wraps after
+  65535 preparations. The last valid snapshot remains available until stop or
+  reprepare. Live default-device changes, device loss, and interruption of a
+  stalled drain remain manual or future deterministic checks. Routing drains
+  the old endpoint when possible; a disconnected endpoint can discard audio
+  already copied to it. Exclusive mode may be a separate plugin; defer that
+  decision until its format negotiation and device behavior are designed.
+  The legacy preferences scope was `Wasapi IOutput`; the C provider uses
+  `WASAPI`, and old scoped settings and pinned device IDs are not migrated.
+  Shared-mode playback now waits on WASAPI's buffer event, a stop event, and
+  device notifications. WASAPI chooses the shared-mode event buffer size, so
+  the former `buffer_length_seconds` setting is retired and saved values are
+  ignored. No separate software buffer is introduced.
+  The host creates an unopened output before querying its preferred format;
+  the instance reads scoped services supplied at creation. Moving this query
+  from the factory to the instance changes the experimental output plugin ABI;
+  providers must be rebuilt. `plugins.output_host` exercises preferences before
+  playback and `plugins.wasapi_output` checks the WASAPI setting and lifecycle.
 - [ ] **OUT-013** Convert Windows `waveout`.
 
 #### DSP and remaining plugin categories

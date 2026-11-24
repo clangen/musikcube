@@ -856,7 +856,21 @@ namespace {
                 }
                 asio::io_context sockets;
                 using Tcp = asio::ip::tcp;
-                Tcp::acceptor occupied(sockets, { Tcp::v4(), 0 });
+                Tcp::acceptor occupied(sockets);
+                occupied.open(Tcp::v4());
+#ifdef _WIN32
+                /* Windows permits another listener to reuse a bound port unless
+                the first socket requests exclusive ownership before bind. */
+                const BOOL exclusive = TRUE;
+                if (setsockopt(occupied.native_handle(), SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+                        reinterpret_cast<const char*>(&exclusive), sizeof(exclusive)) != 0)
+                {
+                    std::fputs("Could not reserve the test port exclusively\n", stderr);
+                    return false;
+                }
+#endif
+                occupied.bind({ Tcp::v4(), 0 });
+                occupied.listen();
                 auto unavailable = *original;
                 unavailable.audioPort = occupied.local_endpoint().port();
                 const auto failedReload = ConfigureServer(unavailable);

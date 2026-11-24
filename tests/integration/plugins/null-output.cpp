@@ -3,6 +3,7 @@
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <type_traits>
 #include "../../support/plugins/PluginCandidates.h"
+#include "../../support/plugins/OutputContract.h"
 #include <musikcore/plugin/output.h>
 
 #include <array>
@@ -350,6 +351,9 @@ int main(int argc, char** argv) {
         require(capability.Invoke([](const mc_output_factory& factory) {
             require(factory.instance_api && factory.instance_api->struct_size == sizeof(mc_output_vtable),
                 "instance methods are part of the C contract");
+            mc_output_options contractOptions = MC_OUTPUT_OPTIONS_DEFAULT;
+            contractOptions.format = { sizeof(mc_audio_format), 1000, 1, 0 };
+            output_contract::Check(factory, nullptr, contractOptions);
             checkPacing(factory);
             checkAdmission(factory);
             checkStop(factory);
@@ -384,8 +388,7 @@ int main(int argc, char** argv) {
         auto copied = capability;
         require(copied.Invoke([&](const mc_output_factory& factory) {
             copied = {};
-            mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
-            return factory.get_default_format(factory.context, { nullptr, 0 }, &format);
+            return factory.read_default_device(factory.context, [](void*, const mc_output_device*) {}, nullptr);
         }) == MC_OK,
             "typed call survives resetting its original view");
         require(registry.Shutdown() == MC_OK && !mapped(path), "worker and instances stop before native unload");

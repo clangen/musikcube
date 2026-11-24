@@ -63,7 +63,7 @@ public:
 
     static mc_result VisitDevices(mc_output_device_fn read, void* data);
     static mc_result ReadDefaultDevice(mc_output_device_fn read, void* data);
-    static mc_result GetDefaultFormat(mc_string_view device, mc_audio_format& format);
+    mc_result GetDefaultFormat(mc_string_view device, mc_audio_format& format);
 
 private:
     struct Slot {

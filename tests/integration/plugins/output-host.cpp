@@ -155,14 +155,31 @@ int main(int argc, char** argv) {
                 return MC_OK;
             };
             Output output(factory, "output.test", "Recording", "", preferences);
+            require(output.GetDefaultSampleRate() == 44100,
+                "format query receives scoped preferences before playback");
+            require(Output::InstanceCount() == 1, "format query creates one unopened output");
             Output::Writer writer(output, sink);
             output.Resume();
             require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "output receives preferences at creation");
             writer.ProcessCompletions();
         }
         environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES", false);
+        require(Output::InstanceCount() == 0, "queried output is destroyed at scope exit");
         sink.returnedBuffers.clear();
         sink.completed = 0;
+        calls.clear();
+    }
+    if (!fatal) {
+        calls.clear();
+        {
+            Output output(factory, "output.test", "Recording", "");
+            environmentFlag("MUSIKCORE_TEST_PARTIAL_OUTPUT_CREATE", true);
+            require(output.GetDefaultSampleRate() < 0, "failed early creation reports an unknown format");
+            environmentFlag("MUSIKCORE_TEST_PARTIAL_OUTPUT_CREATE", false);
+            require(Output::InstanceCount() == 0 &&
+                calls == std::vector<std::string>({ "create", "stop", "destroy" }),
+                "failed early creation cleans partial state before returning");
+        }
         calls.clear();
     }
     if (fatal) {

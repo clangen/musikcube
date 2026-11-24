@@ -37,6 +37,9 @@ endforeach()
 add_library(musikcore_byte_decoder MODULE support/plugins/byte-decoder.c)
 target_include_directories(musikcore_byte_decoder PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_compile_definitions(musikcore_byte_decoder PRIVATE MC_BUILDING_PLUGIN)
+if(MSVC)
+  target_compile_options(musikcore_byte_decoder PRIVATE /experimental:c11atomics)
+endif()
 set_target_properties(musikcore_byte_decoder PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
   ARCHIVE_OUTPUT_DIRECTORY "${provider_output_directory}" LIBRARY_OUTPUT_DIRECTORY "${provider_output_directory}"
   RUNTIME_OUTPUT_DIRECTORY "${provider_output_directory}" SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -51,6 +54,9 @@ add_executable(musikcore_decoder_stream_test integration/plugins/decoder-stream.
 target_include_directories(musikcore_decoder_stream_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
 target_compile_features(musikcore_decoder_stream_test PRIVATE cxx_std_20)
 target_link_libraries(musikcore_decoder_stream_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+if(WIN32)
+  target_link_libraries(musikcore_decoder_stream_test PRIVATE ws2_32 mswsock)
+endif()
 set_target_properties(musikcore_decoder_stream_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 add_dependencies(musikcore_decoder_stream_test musikcore_byte_decoder)
 add_dependencies(musikcube_tests musikcore_decoder_stream_test)
@@ -127,7 +133,7 @@ add_executable(musikcore_audio_buffers_test unit/musikcore/audio-buffers.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
 target_include_directories(musikcore_audio_buffers_test PRIVATE
   "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
-target_compile_features(musikcore_audio_buffers_test PRIVATE cxx_std_17)
+target_compile_features(musikcore_audio_buffers_test PRIVATE cxx_std_20)
 set_target_properties(musikcore_audio_buffers_test PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 add_dependencies(musikcube_tests musikcore_audio_buffers_test)
