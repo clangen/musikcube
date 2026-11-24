@@ -500,6 +500,7 @@ namespace {
             return MC_OK;
         }
 
+        mc_result Flush() { return MC_ERROR_UNSUPPORTED; }
         mc_result Drain() {
             auto& sink = capture();
             std::unique_lock lock(sink.mutex);

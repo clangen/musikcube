@@ -104,7 +104,11 @@ namespace musik { namespace core { namespace ffi {
             const auto* methods = factory.instance_api;
             using Methods = std::remove_pointer_t<decltype(methods)>;
             return factory.create && methods && reinterpret_cast<uintptr_t>(methods) % alignof(Methods) == 0 &&
-                methods->struct_size >= sizeof(Methods) && methods->destroy && check(factory, *methods);
+                methods->struct_size >= (std::is_same_v<std::remove_cv_t<Methods>, mc_output_vtable>
+                    ? offsetof(mc_output_vtable, flush)
+                    : std::is_same_v<std::remove_cv_t<Methods>, mc_decoder_vtable>
+                        ? offsetof(mc_decoder_vtable, get_format) : sizeof(Methods)) &&
+                methods->destroy && check(factory, *methods);
         }
 
         bool validCapability(const std::string& id, const mc_plugin_capability& capability) {

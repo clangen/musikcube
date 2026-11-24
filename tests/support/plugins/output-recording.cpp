@@ -140,6 +140,7 @@ namespace {
             return MC_OK;
         }
         double GetVolume() const { return 1.0; }
+        mc_result Flush() { return MC_ERROR_UNSUPPORTED; }
         mc_result Drain() {
             record("drain", 5);
             return MC_OK;

@@ -2,6 +2,7 @@
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/settings.h>
 #include <musikcore/plugin/services.h>
+#include "../../support/plugins/OutputContract.h"
 #include <dlfcn.h>
 #include <algorithm>
 #include <cmath>
@@ -191,6 +192,8 @@ int main(int argc, char** argv) {
         close(gate[1]);
     }
     api->destroy(instance);
+    /* ALSA's null PCM does not implement hardware pause. */
+    output_contract::Check(*factory, nullptr, options, false);
     plugin.shutdown(state);
     dlclose(library);
 }

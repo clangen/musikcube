@@ -53,6 +53,7 @@ public:
     double GetVolume() const;
     mc_result Stop() noexcept;
     mc_result Drain();
+    mc_result Flush();
     mc_result GetTiming(mc_output_timing&) const noexcept;
 
     static mc_result VisitDevices(mc_output_device_fn, void*);

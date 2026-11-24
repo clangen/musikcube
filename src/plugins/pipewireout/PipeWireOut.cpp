@@ -571,3 +571,30 @@ mc_result PipeWireOut::Drain() {
     this->finished.notify_all();
     return result;
 }
+
+mc_result PipeWireOut::Flush() {
+    std::lock_guard lock(this->lifecycle);
+    if (!this->loop || this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    pw_thread_loop_lock(this->loop);
+    /* Prevent the process callback from copying old PCM while both the
+    PipeWire queue and the host's borrowed buffers are discarded. */
+    const int stopped = pw_stream_set_active(this->stream, false);
+    const int flushed = stopped < 0 ? stopped : pw_stream_flush(this->stream, false);
+    if (flushed >= 0) {
+        this->ReturnPending(MC_ERROR_CANCELLED);
+    }
+    const int resumed = flushed < 0 ? flushed : pw_stream_set_active(this->stream, true);
+    if (resumed >= 0) {
+        this->paused = false;
+        this->draining = false;
+        this->drained = false;
+        if (this->callbacks.ready) {
+            this->callbacks.ready(this->callbacks.context);
+        }
+    }
+    pw_thread_loop_signal(this->loop, false);
+    pw_thread_loop_unlock(this->loop);
+    return resumed < 0 ? MC_ERROR_IO : MC_OK;
+}

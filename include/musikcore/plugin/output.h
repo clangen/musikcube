@@ -141,8 +141,9 @@ typedef struct mc_output_timing {
 /* functions an output plugin implements to play PCM audio through its backend.
 musikcore uses them to prepare the device, send audio, and control playback.
 ordinary calls are caller-serialized; stop may overlap queue_audio_buffer or
-drain, and get_timing may overlap any call. tables are immutable and every
-method is required. default method pointers are null.
+drain, and get_timing may overlap any call. tables are immutable. Methods
+through get_default_format are required; flush is an optional extension.
+default method pointers are null.
 
 the host validates argument pointers, struct prefixes (including nested views),
 PCM counts/storage, formats, normalized volume, and required callbacks before
@@ -206,10 +207,15 @@ struct mc_output_vtable {
     /* preferred format for this instance's device; callable before prepare.
     empty ID selects the system default. */
     mc_result(MC_CALL* get_default_format)(void* instance, mc_string_view device_id, mc_audio_format* format);
+
+    /* Discard queued audio while keeping the prepared output usable. Finish
+    callbacks for discarded buffers before returning. Optional; older tables
+    end at get_default_format, and hosts fall back to stop and prepare. */
+    mc_result(MC_CALL* flush)(void* instance);
 };
 
 #define MC_OUTPUT_VTABLE_DEFAULT                                                                                       \
-    { sizeof(mc_output_vtable), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+    { sizeof(mc_output_vtable), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 /* device strings and records are callback-scoped; copy to retain them. */
 typedef void(MC_CALL* mc_output_device_fn)(void* user_data, const mc_output_device* device);

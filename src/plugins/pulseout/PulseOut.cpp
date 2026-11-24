@@ -395,3 +395,33 @@ mc_result PulseOut::Drain() {
     this->finished.notify_all();
     return outcome;
 }
+
+mc_result PulseOut::Flush() {
+    std::unique_lock lock(this->mutex);
+    if (this->stopped || !this->connection) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->active) {
+        return MC_ERROR_IN_FLIGHT;
+    }
+    this->controlActive = true;
+    auto* connection = this->connection;
+    const bool paused = this->paused;
+    lock.unlock();
+    const int result = pa_blocking_flush(connection, nullptr);
+    const int resumed = result >= 0 && paused ? pa_blocking_cork(connection, false, nullptr) : 0;
+    lock.lock();
+    this->controlActive = false;
+    this->finished.notify_all();
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (result < 0 || resumed < 0) {
+        return MC_ERROR_IO;
+    }
+    this->paused = false;
+    if (this->callbacks.ready) {
+        this->callbacks.ready(this->callbacks.context);
+    }
+    return MC_OK;
+}

@@ -51,6 +51,7 @@ namespace musik { namespace core { namespace audio {
             virtual bool OpenStream(std::string uri, musik::core::audio::Output* output) = 0;
             virtual void Interrupt() = 0;
             virtual int GetCapabilities() = 0;
+            virtual bool GetInitialFormat(mc_audio_format&) const { return false; }
             virtual mc_result DecodeStatus() const = 0;
             virtual bool Eof() = 0;
             virtual void Release() = 0;

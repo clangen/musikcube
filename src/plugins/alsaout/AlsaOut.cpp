@@ -386,3 +386,22 @@ mc_result AlsaOut::Drain() {
     }
     return outcome;
 }
+
+mc_result AlsaOut::Flush() {
+    std::lock_guard lock(this->mutex);
+    if (this->stopped || !this->pcm) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->operationActive) {
+        return MC_ERROR_IN_FLIGHT;
+    }
+    /* Drop queued frames and return the existing PCM handle to PREPARED. */
+    if (snd_pcm_drop(this->pcm) < 0 || snd_pcm_prepare(this->pcm) < 0) {
+        return MC_ERROR_IO;
+    }
+    this->paused = false;
+    if (this->callbacks.ready) {
+        this->callbacks.ready(this->callbacks.context);
+    }
+    return MC_OK;
+}

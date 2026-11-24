@@ -143,6 +143,15 @@ int Stream::GetCapabilities() {
     return this->capabilities;
 }
 
+bool Stream::GetInitialFormat(mc_audio_format& format) const {
+    format = MC_AUDIO_FORMAT_DEFAULT;
+    return this->decoder.instance &&
+        this->decoder.api->struct_size >= offsetof(mc_decoder_vtable, get_format) + sizeof(this->decoder.api->get_format) &&
+        this->decoder.api->get_format &&
+        this->decoder.api->get_format(this->decoder.instance, &format) == MC_OK &&
+        format.sample_rate > 0 && format.channels > 0;
+}
+
 bool Stream::OpenStream(std::string uri, Output* output) {
     const auto& media = musik::core::plugin::Environment().Media();
     const mc_string_view path { uri.data(), uri.size() };
@@ -298,7 +307,14 @@ inline Buffer* Stream::GetEmptyBuffer() {
 }
 
 IBuffer* Stream::GetNextProcessedOutputBuffer() {
-    this->RefillInternalBuffers();
+    /* Do not repeatedly fill the entire pool before the output has had a
+    chance to play it. In particular, a slow source can block the player
+    thread even though decoded audio is already waiting here. Refill in the
+    existing quarter-pool batches when the ready queue falls below one eighth. */
+    const auto lowWater = static_cast<size_t>(std::max(1, this->bufferCount / 8));
+    if (!this->rawBuffer || this->filledBuffers.size() < lowWater) {
+        this->RefillInternalBuffers();
+    }
 
     /* in the normal case we have buffers available in the filled queue. */
     if (this->filledBuffers.size()) {

@@ -165,6 +165,15 @@ void Player::Run() {
             this->listener.OnPlayerBuffered(this);
         }
         this->state.wait(State::Idle);
+        if (!this->Exited()) {
+            mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
+            if (this->stream->GetInitialFormat(format)) {
+                const auto result = this->writer.PrewarmOutput(format, 2048);
+                if (result != MC_OK && result != MC_ERROR_CANCELLED) {
+                    this->FailPlayback(result, "output preparation");
+                }
+            }
+        }
         for (;;) {
             this->WriteTrack();
             if (!this->playbackFailed && !this->Exited() && !this->HasPendingSeek()) {

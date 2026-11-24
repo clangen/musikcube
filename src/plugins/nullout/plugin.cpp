@@ -134,6 +134,18 @@ namespace {
             return this->stopped ? MC_ERROR_CANCELLED : MC_OK;
         }
 
+        mc_result Flush() {
+            std::lock_guard<std::mutex> lock(this->mutex);
+            if (this->stopped) {
+                return MC_ERROR_CANCELLED;
+            }
+            if (this->active) {
+                return MC_ERROR_IN_FLIGHT;
+            }
+            this->paused = false;
+            return MC_OK;
+        }
+
         mc_result SetVolume(double value) {
             this->volume = value;
             return MC_OK;

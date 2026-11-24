@@ -300,6 +300,13 @@ mc_result CoreAudioOut::Stop() noexcept {
     return MC_OK;
 }
 
+mc_result CoreAudioOut::Flush() {
+    /* AudioQueueReset may invoke buffer callbacks during reset. Until the
+    reset/callback ownership path is verified on macOS, use the host's
+    stop-and-reopen fallback rather than risk returning a token twice. */
+    return MC_ERROR_UNSUPPORTED;
+}
+
 mc_result CoreAudioOut::Pause() {
     if (!this->queue || AudioQueuePause(this->queue) != noErr) {
         return MC_ERROR_IO;

@@ -45,9 +45,13 @@ typedef struct mc_decoder_vtable {
 
     /* suggest a positive output rate before decoding. unsupported leaves the native rate in effect. */
     mc_result (MC_CALL* set_preferred_sample_rate)(void* instance, uint32_t sample_rate_hz);
+
+    /* Optional: report the PCM format after open, before the first decode.
+    Older decoders may omit this trailing member or return unsupported. */
+    mc_result (MC_CALL* get_format)(void* instance, mc_audio_format* format);
 } mc_decoder_vtable;
 
-#define MC_DECODER_VTABLE_DEFAULT { sizeof(mc_decoder_vtable), NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define MC_DECODER_VTABLE_DEFAULT { sizeof(mc_decoder_vtable), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 /* one codec instance. the creator owns destroy and keeps the input stream
 alive until it returns. copying this handle does not create another owner. */

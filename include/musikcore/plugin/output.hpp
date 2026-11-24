@@ -17,6 +17,7 @@ namespace musik { namespace core { namespace plugin {
         struct HasOutputTiming<T,
             std::void_t<decltype(std::declval<T&>().GetTiming(std::declval<mc_output_timing&>()))>> : std::true_type {};
 
+
         /* generates static C trampolines for one C++ implementation type.
         no adapter object is created, copied, or moved; only T owns device state.
         tables live in the plugin image and import no core implementation symbols. */
@@ -36,7 +37,8 @@ namespace musik { namespace core { namespace plugin {
                 static_assert(std::is_same_v<decltype(std::declval<const T&>().GetVolume()), double>,
                     "output GetVolume must return double");
                 static constexpr mc_output_vtable methods { sizeof(mc_output_vtable), Destroy, Prepare,
-                    QueueAudioBuffer, Pause, Resume, SetVolume, GetVolume, Stop, Drain, GetTiming, GetDefaultFormat };
+                    QueueAudioBuffer, Pause, Resume, SetVolume, GetVolume, Stop, Drain, GetTiming, GetDefaultFormat,
+                    Flush };
                 static constexpr mc_output_factory factory { sizeof(mc_output_factory), nullptr, &methods, VisitDevices,
                     ReadDefaultDevice, Create };
                 mc_plugin_capability capability = MC_PLUGIN_CAPABILITY_DEFAULT;
@@ -48,6 +50,11 @@ namespace musik { namespace core { namespace plugin {
 
         private:
             OutputAdapter() = delete;
+
+            static mc_result MC_CALL Flush(void* instance) noexcept {
+                try { return static_cast<T*>(instance)->Flush(); }
+                catch (...) { return MC_ERROR_INTERNAL; }
+            }
 
             /* contain ordinary implementation exceptions at the C boundary.
             queue, cleanup, and timing use their explicit noexcept contracts. */

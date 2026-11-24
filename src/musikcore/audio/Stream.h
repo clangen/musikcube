@@ -83,6 +83,7 @@ namespace musik { namespace core { namespace audio {
             bool OpenStream(std::string uri, musik::core::audio::Output* output) override;
             void Interrupt() override;
             int GetCapabilities() override;
+            bool GetInitialFormat(mc_audio_format& format) const override;
             mc_result DecodeStatus() const override { return this->decodeStatus; }
             bool Eof() override { return this->done; }
             void Release() override { delete this; }

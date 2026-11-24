@@ -161,10 +161,42 @@ namespace musik { namespace core { namespace audio {
         }
         /* keep reset and reopening one operation. an obsolete seek must never
         flush a replacement track or reopen admission after transport Stop. */
-        this->output.StopBackend();
+        if (this->output.prepared.load() &&
+            this->output.api->struct_size >= offsetof(mc_output_vtable, flush) + sizeof(this->output.api->flush) &&
+            this->output.api->flush)
+        {
+            const auto result = this->output.factory.Invoke([&](const auto&) {
+                return this->output.api->flush(this->output.instance);
+            });
+            if (result == MC_ERROR_UNSUPPORTED) {
+                this->output.StopBackend();
+            }
+            else if (result != MC_OK) {
+                return result;
+            }
+        }
+        else {
+            this->output.StopBackend();
+        }
         this->output.paused = false;
         this->output.NotifyWriters();
         return MC_OK;
+    }
+
+    mc_result Output::Writer::PrewarmOutput(const mc_audio_format& format, size_t frames) {
+        std::lock_guard ordinary(this->output.ordinary);
+        if (this->revoked.load() || this->output.stopped.load()) {
+            return MC_ERROR_CANCELLED;
+        }
+        /* Another track may still own a prepared output. Leave it alone;
+        ordinary queueing will negotiate its format at the transition. */
+        if (this->output.prepared.load()) {
+            return MC_OK;
+        }
+        mc_pcm_view pcm = MC_PCM_VIEW_DEFAULT;
+        pcm.format = format;
+        pcm.frame_count = frames;
+        return this->output.Prepare(pcm, this->revoked);
     }
 
     mc_result Output::Writer::Drain() {

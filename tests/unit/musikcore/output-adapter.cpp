@@ -83,6 +83,7 @@ struct TestOutput {
 
     /* synchronous processing leaves no backend queue. */
     mc_result Drain() { return MC_OK; }
+    mc_result Flush() { return MC_ERROR_UNSUPPORTED; }
 
     /* publish callback-scoped metadata through the generated factory. */
     static mc_result VisitDevices(mc_output_device_fn read, void* user) {

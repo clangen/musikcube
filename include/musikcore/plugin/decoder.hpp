@@ -46,6 +46,10 @@ namespace musik { namespace core { namespace plugin {
     };
 
     namespace detail {
+        template<typename T, typename = void> struct HasDecoderFormat : std::false_type {};
+        template<typename T>
+        struct HasDecoderFormat<T, std::void_t<decltype(std::declval<T&>().GetFormat(
+            std::declval<mc_audio_format&>()))>> : std::true_type {};
         /* owns one codec per stream. interrupt latches independently of the
         worker; the host wakes the input stream if the codec is reading. */
         template<typename Codec> struct DecoderInstance {
@@ -117,6 +121,14 @@ namespace musik { namespace core { namespace plugin {
                 return detail::useDecoder<Codec>(instance, [&](auto& self) {
                     return self.codec.SetPreferredSampleRate(rate);
                 });
+            },
+            [](void* instance, mc_audio_format* format) -> mc_result {
+                if constexpr (detail::HasDecoderFormat<Codec>::value) {
+                    return detail::useDecoder<Codec>(instance, [&](auto& self) {
+                        return self.codec.GetFormat(*format);
+                    });
+                }
+                return MC_ERROR_UNSUPPORTED;
             },
         };
         static const mc_decoder_factory factory {

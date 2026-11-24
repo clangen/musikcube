@@ -60,6 +60,7 @@ public:
     double GetVolume() const;
     mc_result Stop() noexcept;
     mc_result Drain();
+    mc_result Flush();
 
     static mc_result VisitDevices(mc_output_device_fn, void*);
     static mc_result ReadDefaultDevice(mc_output_device_fn, void*);

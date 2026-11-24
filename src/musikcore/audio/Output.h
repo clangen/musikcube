@@ -68,6 +68,7 @@ namespace musik { namespace core { namespace audio {
             void WaitForReturnedBuffer() noexcept { this->WaitForBufferChange(); }
 
             mc_result ResetForSeek();
+            mc_result PrewarmOutput(const mc_audio_format& format, size_t frames);
             mc_result Drain();
             mc_result StopAfterFailure();
             /* the transport can call this from another thread. calls already

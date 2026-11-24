@@ -180,7 +180,7 @@ struct WasapiOutput::State {
         LONG64 published[2] {};
     };
 
-    enum class Command { Prepare, Queue, Pause, Resume, Volume, Drain, Stop, Exit };
+    enum class Command { Prepare, Queue, Pause, Resume, Volume, Drain, Flush, Stop, Exit };
     struct Request {
         Command command;
         const mc_output_options* options = nullptr;
@@ -600,6 +600,19 @@ struct WasapiOutput::State {
                 return MC_OK;
             case Command::Volume: return this->SetVolume(request.number);
             case Command::Drain: return this->Drain();
+            case Command::Flush:
+                /* Reset requires a stopped client. Restart it immediately so
+                the endpoint stays open while the decoder seeks. */
+                if (!this->client || FAILED(this->client->Stop()) || FAILED(this->client->Reset()) ||
+                    FAILED(this->client->Start())) {
+                    return MC_ERROR_IO;
+                }
+                this->paused = false;
+                this->submittedFrames = 0;
+                this->timingPending = false;
+                this->generation = this->generation == UINT16_MAX ? 1 : this->generation + 1;
+                this->UpdateTiming();
+                return MC_OK;
             case Command::Stop: this->Close(); return MC_OK;
             case Command::Exit: this->Close(); return MC_OK;
         }
@@ -718,6 +731,7 @@ mc_result WasapiOutput::Stop() noexcept {
     return this->state->Submit(request);
 }
 mc_result WasapiOutput::Drain() { State::Request request { State::Command::Drain }; return this->state->Submit(request); }
+mc_result WasapiOutput::Flush() { State::Request request { State::Command::Flush }; return this->state->Submit(request); }
 mc_result WasapiOutput::GetTiming(mc_output_timing& timing) const noexcept {
     this->state->timing.Read(timing);
     return MC_OK;

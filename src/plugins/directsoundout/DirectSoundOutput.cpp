@@ -588,6 +588,43 @@ mc_result DirectSoundOutput::Drain() {
     return s.stopped ? MC_ERROR_CANCELLED : s.failure;
 }
 
+mc_result DirectSoundOutput::Flush() {
+    auto& s = *state;
+    std::lock_guard lock(s.mutex);
+    if (s.stopped || !s.directSound.buffer) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (s.failure != MC_OK) {
+        return s.failure;
+    }
+
+    /* Stop the cursor while clearing both the host queue and device buffer.
+    The device object stays open and resumes playing silence during the seek. */
+    if (FAILED(s.directSound.buffer->Stop()) ||
+        FAILED(s.directSound.ring.Silence(s.directSound.buffer.Get(), 0, s.directSound.ringFrames)) ||
+        FAILED(s.directSound.buffer->SetCurrentPosition(0))) {
+        return MC_ERROR_IO;
+    }
+    while (s.host.queue.TryPop()) {}
+    s.host.outstanding = 0;
+    s.played = 0;
+    const DWORD safetyFrames = std::min<DWORD>(s.directSound.ringFrames / 4,
+        std::max<DWORD>(1, s.format.sample_rate / 40 + (s.format.sample_rate % 40 != 0)));
+    s.directSound.ring.Reset(s.directSound.ringFrames, s.directSound.frameBytes, safetyFrames);
+    if (FAILED(s.directSound.buffer->Play(0, 0, DSBPLAY_LOOPING))) {
+        return MC_ERROR_IO;
+    }
+    s.paused = false;
+    s.directSound.lastUpdate = State::Clock::now();
+    s.generation = s.generation == UINT16_MAX ? 1 : s.generation + 1;
+    s.Publish();
+    s.changed.notify_all();
+    if (s.host.callbacks.ready) {
+        s.host.callbacks.ready(s.host.callbacks.context);
+    }
+    return MC_OK;
+}
+
 mc_result DirectSoundOutput::GetTiming(mc_output_timing& timing) const noexcept {
     state->timing.Read(timing);
     return MC_OK;
