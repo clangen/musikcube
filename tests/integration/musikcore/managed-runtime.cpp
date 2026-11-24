@@ -794,18 +794,43 @@ namespace {
             const auto snapshot = playback.Snapshot();
             return snapshot && snapshot->state == state;
         };
+        if (!inState(MC_PLAYBACK_STOPPED) || playback.Control(MC_PLAYBACK_PAUSE) != MC_OK ||
+            playback.Control(MC_PLAYBACK_RESUME) != MC_OK || !inState(MC_PLAYBACK_STOPPED))
+        {
+            std::fputs("Explicit pause/resume changed stopped playback\n", stderr);
+            return false;
+        }
         if (playback.Play(tracks, 0) != MC_OK ||
             !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PLAYING); }))
         {
             std::fputs("Managed playback did not start\n", stderr);
             return false;
         }
-        if (playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_OK ||
+        constexpr mc_playback_command pauseCommand = MC_PLAYBACK_PAUSE;
+        constexpr mc_playback_command resumeCommand = MC_PLAYBACK_RESUME;
+        if (playback.Control(pauseCommand) != MC_OK ||
+            !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PAUSED); }) ||
+            playback.Control(pauseCommand) != MC_OK || !inState(MC_PLAYBACK_PAUSED) ||
+            playback.Control(resumeCommand) != MC_OK ||
+            !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PLAYING); }) ||
+            playback.Control(resumeCommand) != MC_OK || !inState(MC_PLAYBACK_PLAYING) ||
+            playback.Control(pauseCommand) != MC_OK ||
             !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PAUSED); }) ||
             playback.Control(MC_PLAYBACK_RELOAD_OUTPUT) != MC_OK ||
             !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PREPARED); }))
         {
-            std::fputs("Managed playback did not dispatch the delayed output reload\n", stderr);
+            std::fputs("Managed playback did not apply explicit pause/resume and output reload\n", stderr);
+            return false;
+        }
+        if (playback.Control(MC_PLAYBACK_PAUSE) != MC_OK || !inState(MC_PLAYBACK_PREPARED) ||
+            playback.Control(MC_PLAYBACK_RESUME) != MC_OK ||
+            !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PLAYING); }) ||
+            playback.Control(MC_PLAYBACK_PAUSE) != MC_OK ||
+            !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PAUSED); }) ||
+            playback.Control(MC_PLAYBACK_RELOAD_OUTPUT) != MC_OK ||
+            !waitFor(context, host, [&] { return inState(MC_PLAYBACK_PREPARED); }))
+        {
+            std::fputs("Explicit pause/resume did not preserve prepared playback semantics\n", stderr);
             return false;
         }
 

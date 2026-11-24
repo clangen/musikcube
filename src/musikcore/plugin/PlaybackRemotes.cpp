@@ -237,7 +237,7 @@ namespace musik { namespace core { namespace plugin {
         static mc_result MC_CALL ControlAsync(void* context, mc_playback_command command, double value,
             mc_playback_remote_completion_fn completion, void* userData)
         {
-            if (!context || !completion || command < MC_PLAYBACK_TOGGLE_PAUSE || command > MC_PLAYBACK_RELOAD_OUTPUT ||
+            if (!context || !completion || command < MC_PLAYBACK_TOGGLE_PAUSE || command > MC_PLAYBACK_RESUME ||
                 ((command == MC_PLAYBACK_SET_POSITION || command == MC_PLAYBACK_SET_VOLUME) &&
                     (!std::isfinite(value) || value < 0 || (command == MC_PLAYBACK_SET_VOLUME && value > 1))))
             {
