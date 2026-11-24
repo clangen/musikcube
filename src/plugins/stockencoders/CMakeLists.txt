@@ -4,6 +4,7 @@ set (stockencoders_SOURCES
   FfmpegEncoder.cpp)
 
 add_library(stockencoders SHARED ${stockencoders_SOURCES})
+musikcube_configure_c_plugin(stockencoders)
 
 if (${BUILD_STANDALONE} MATCHES "true")
   include_directories(BEFORE ${VENDOR_INCLUDE_DIRECTORIES})

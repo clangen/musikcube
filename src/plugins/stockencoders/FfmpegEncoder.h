@@ -34,7 +34,8 @@
 
 #pragma once
 
-#include <musikcore/sdk/IBlockingEncoder.h>
+#include <musikcore/plugin/encoder.h>
+#include <musikcore/plugin.h>
 #include <musikcore/sdk/DataBuffer.h>
 #include <string>
 
@@ -55,19 +56,19 @@ using AVCodecCompat = const AVCodec;
 using AVCodecCompat = AVCodec;
 #endif
 
-class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
+class FfmpegEncoder {
 
     public:
-        FfmpegEncoder(const std::string& format);
+        FfmpegEncoder(const std::string& format, const mc_host_api& host);
 
-        virtual void Release() override;
-        virtual bool Initialize(const mc_stream& out, size_t rate, size_t channels, size_t bitrate) override;
-        virtual bool Encode(const mc_pcm_view& pcm) override;
-        virtual bool Finalize() override;
-
-
+        void Release();
+        bool Initialize(const mc_stream& out, size_t rate, size_t channels, size_t bitrate);
+        bool Encode(const mc_pcm_view& pcm);
+        bool Finalize();
 
     private:
+        void LogError(const std::string& message);
+        void LogAvError(const std::string& method, int error);
         void Cleanup();
         bool OpenOutputCodec(size_t rate, size_t channels, size_t bitrate);
         bool OpenOutputContext();
@@ -79,6 +80,7 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         AVFrame* ReallocFrame(AVFrame* original, AVSampleFormat format, int samplesPerChannel, int sampleRate);
         int SendReceiveAndWriteFrame(AVFrame* frame);
 
+        mc_host_api logHost;
         bool isValid;
         mc_stream out = MC_STREAM_DEFAULT;
         AVAudioFifo* outputFifo;

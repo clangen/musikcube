@@ -2,7 +2,7 @@
 #include <musikcore/musikcore.hpp>
 #include "../../support/check.h"
 #include <musikcore/audio/Outputs.h>
-#include <musikcore/audio/Streams.h>
+#include <musikcore/audio/Dsp.h>
 #include <musikcore/plugin/media.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/Preferences.h>
@@ -155,6 +155,17 @@ namespace runtime_tests {
         const auto encoded = path.u8string();
         const std::string filename(reinterpret_cast<const char*>(encoded.data()), encoded.size());
         const auto& media = musik::core::plugin::Environment().Media();
+        /* invalid encoder requests must fail before any factory can create one. */
+        mc_encoder invalid = MC_ENCODER_DEFAULT;
+        if (!TEST_CHECK(media.create_encoder(media.context, { nullptr, 0 }, &invalid, nullptr) ==
+                MC_ERROR_INVALID_ARGUMENT) ||
+            !TEST_CHECK(media.create_encoder(media.context, { ".mp3", 4 }, nullptr, nullptr) ==
+                MC_ERROR_INVALID_ARGUMENT) ||
+            !TEST_CHECK(media.create_encoder(media.context, { nullptr, 4 }, &invalid, nullptr) ==
+                MC_ERROR_INVALID_ARGUMENT))
+        {
+            return false;
+        }
         const mc_string_view pathView { filename.data(), filename.size() };
         const auto writeFlags = MC_STREAM_OPEN_WRITE | MC_STREAM_OPEN_CREATE | MC_STREAM_OPEN_TRUNCATE;
         mc_stream source = MC_STREAM_DEFAULT;
@@ -260,7 +271,7 @@ namespace runtime_tests {
         return TEST_CHECK(context.Close() == MC_OK);
     }
 
-    /* healthy sessions retire cached factories; failed host detachment must
+    /* healthy sessions retire providers; failed host detachment must
     abort before visiting later hooks or releasing playback/catalog owners. */
     bool checkFailure(bool caches) {
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
@@ -275,14 +286,19 @@ namespace runtime_tests {
             api::Context context(options);
             auto playback = context.GetPlayback();
             if (caches) {
-                /* populate the remaining encoder cache before stopping its providers. */
-                audio::streams::GetEncoderForType("runtime-fixture-unsupported-codec");
+                const auto& media = musik::core::plugin::Environment().Media();
+                mc_encoder encoder = MC_ENCODER_DEFAULT;
+                constexpr char format[] = "runtime-fixture-unsupported-codec";
+                if (!TEST_CHECK(media.create_encoder(media.context, { format, sizeof(format) - 1 }, &encoder,
+                        nullptr) == MC_ERROR_UNSUPPORTED)) {
+                    return false;
+                }
             }
             api::OpenTrackSearch(context, {}, [&](mc_result status, api::TrackResult, std::string_view) {
                 ++completions;
                 completed = status;
             });
-            const int expectedMask = caches ? (15 | 64) : 15;
+            const int expectedMask = 15;
             if (!TEST_CHECK(context.Shutdown() == MC_OK) ||
                 !TEST_CHECK((first->GetInt("cleanup_mask") & expectedMask) == expectedMask) ||
                 !TEST_CHECK((second->GetInt("cleanup_mask") & expectedMask) == expectedMask) ||
@@ -291,15 +307,6 @@ namespace runtime_tests {
                 !TEST_CHECK(context.Close() == MC_OK))
             {
                 return false;
-            }
-        }
-        if (caches) {
-            for (const auto& preferences : { first, second }) {
-                if (!TEST_CHECK(preferences->GetInt("encoder_acquisitions") > 0) ||
-                    !TEST_CHECK(preferences->GetInt("encoder_acquisitions") == preferences->GetInt("encoder_releases")))
-                {
-                    return false;
-                }
             }
         }
         /* a failed startup releases the process slot after successful rollback.

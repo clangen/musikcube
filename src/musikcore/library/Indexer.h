@@ -58,6 +58,8 @@
 
 namespace musik { namespace core {
 
+    namespace audio { class Stream; }
+
     class Indexer :
         public musik::core::IIndexer,
         public musik::core::sdk::IIndexerWriter,
@@ -177,6 +179,7 @@ namespace musik { namespace core {
             bool refreshMetadata { false };
             std::vector<std::string> paths;
             std::shared_ptr<musik::core::sdk::IIndexerSource> currentSource;
+            std::shared_ptr<musik::core::audio::Stream> analysisStream;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;

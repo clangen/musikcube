@@ -35,14 +35,14 @@
 #pragma once
 
 #include "ServerMedia.h"
-#include <musikcore/sdk/IStreamingEncoder.h>
+#include <musikcore/plugin/encoder.h>
 #include <fstream>
 
 /* produces compressed bytes on the HTTP worker as the client reads. the
 encoder owns each output block until the next encode or flush call. */
 class TranscodingAudioDataStream final : public server::ResponseBody {
 public:
-    TranscodingAudioDataStream(server::EncoderOwner<musik::core::sdk::IStreamingEncoder> encoder, size_t bitrate);
+    TranscodingAudioDataStream(server::EncoderOwner encoder, size_t bitrate);
     ~TranscodingAudioDataStream() override;
 
     bool Open(Context& context, const std::string& uri, bool requireDuration, const std::string& temporaryFile,
@@ -62,11 +62,11 @@ private:
     bool PublishCache();
 
     server::DecodedAudio source;
-    server::EncoderOwner<musik::core::sdk::IStreamingEncoder> encoder;
+    server::EncoderOwner encoder;
     size_t bitrate;
     bool initialized = false;
     bool flushed = false;
-    char* pending = nullptr;
+    const char* pending = nullptr;
     size_t pendingBytes = 0;
     uint64_t position = 0;
     std::ofstream cache;

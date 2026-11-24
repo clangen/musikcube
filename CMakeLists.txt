@@ -179,9 +179,9 @@ add_plugin("src/plugins/ffmpegdecoder" "ffmpegdecoder")
 add_plugin("src/plugins/gmedecoder" "gmedecoder")
 add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder")
 # encoders
-add_plugin("src/plugins/stockencoders" "stockencoders" GetEncoderFactory SetDebug SetEnvironment)
+add_plugin("src/plugins/stockencoders" "stockencoders")
 # dsps
-add_plugin("src/plugins/supereqdsp" "supereqdsp" GetDSP SetPreferences)
+add_plugin("src/plugins/supereqdsp" "supereqdsp")
 
 add_subdirectory(tests/support EXCLUDE_FROM_ALL)
 

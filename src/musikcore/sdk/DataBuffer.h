@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/sdk/IBuffer.h>
+#include <stddef.h>
 #include <string.h>
 
 template <typename T>

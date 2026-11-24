@@ -14,36 +14,46 @@ namespace fs = std::filesystem;
 namespace {
     /* select encode failure or emit two bytes per block and three at flush.
     the caller deliberately supplies a one-byte HTTP buffer. */
-    class TestEncoder final : public musik::core::sdk::IStreamingEncoder {
-    public:
-        explicit TestEncoder(bool fail)
-        : fail(fail) {}
-        void Release() override { delete this; }
-        bool Initialize(size_t, size_t, size_t) override { return true; }
-        int Encode(const mc_pcm_view&, char** data) override {
-            *data = block;
-            return fail ? -1 : 2;
-        }
-        int Flush(char** data) override {
-            *data = tail;
-            return 3;
-        }
-        bool Finalize(const char*) override { return true; }
-
-    private:
+    struct TestEncoder {
         bool fail;
         char block[2] { 'a', 'b' };
         char tail[3] { 'x', 'y', 'z' };
     };
 
-    /* a format trailer failure must keep incomplete encoded bytes out of the
-    cache even if the encoder accepted every input block. */
-    class BadTrailer final : public musik::core::sdk::IBlockingEncoder {
-    public:
-        void Release() override {}
-        bool Initialize(const mc_stream&, size_t, size_t, size_t) override { return true; }
-        bool Encode(const mc_pcm_view&) override { return true; }
-        bool Finalize() override { return false; }
+    const mc_encoder_vtable testEncoderApi {
+        sizeof(mc_encoder_vtable),
+        [](void* state) { delete static_cast<TestEncoder*>(state); },
+        1,
+        [](void*, const mc_stream*, uint32_t, uint32_t, uint32_t) -> mc_result { return MC_OK; },
+        [](void* state, const mc_pcm_view*, mc_encoded_block* out) -> mc_result {
+            auto& encoder = *static_cast<TestEncoder*>(state);
+            out->data = encoder.block;
+            out->length = 2;
+            return encoder.fail ? MC_ERROR_PLUGIN : MC_OK;
+        },
+        [](void* state, mc_encoded_block* out) -> mc_result {
+            out->data = static_cast<TestEncoder*>(state)->tail;
+            out->length = 3;
+            return MC_OK;
+        },
+        [](void*, mc_string_view) -> mc_result { return MC_OK; },
+    };
+
+    server::EncoderOwner testEncoder(bool fail) {
+        auto encoder = std::make_unique<mc_encoder>(mc_encoder MC_ENCODER_DEFAULT);
+        encoder->instance = new TestEncoder { fail };
+        encoder->api = &testEncoderApi;
+        return server::EncoderOwner(encoder.release());
+    }
+
+    const mc_encoder_vtable badTrailerApi {
+        sizeof(mc_encoder_vtable),
+        [](void*) {},
+        0,
+        [](void*, const mc_stream*, uint32_t, uint32_t, uint32_t) -> mc_result { return MC_OK; },
+        [](void*, const mc_pcm_view*, mc_encoded_block*) -> mc_result { return MC_OK; },
+        [](void*, mc_encoded_block*) -> mc_result { return MC_OK; },
+        [](void*, mc_string_view) -> mc_result { return MC_ERROR_PLUGIN; },
     };
 #ifdef TEST_SERVER_STOCK_ENCODER
     /* allow the real FLAC muxer to write its header, then simulate a full disk
@@ -93,13 +103,19 @@ namespace {
                 .channel_layout = 0,
             },
         };
-        server::EncoderOwner<musik::core::sdk::IEncoder> encoder(context.environment->GetEncoder(".flac"));
-        auto* flac = encoder ? encoder->AsBlocking() : nullptr;
-        if (!TEST_CHECK(flac && flac->Initialize(destination, 8000, 1, 128) && flac->Encode(pcm))) {
+        const auto& media = context.environment->Media();
+        mc_encoder encoder = MC_ENCODER_DEFAULT;
+        constexpr char format[] = ".flac";
+        if (!TEST_CHECK(media.create_encoder(media.context, { format, sizeof(format) - 1 }, &encoder, nullptr) == MC_OK)) {
             return false;
         }
+        mc_encoded_block block = MC_ENCODED_BLOCK_DEFAULT;
+        const bool prepared = encoder.api->initialize(encoder.instance, &destination, 8000, 1, 128) == MC_OK &&
+            encoder.api->encode(encoder.instance, &pcm, &block) == MC_OK;
         gate.fail = true;
-        return TEST_CHECK(!flac->Finalize());
+        const bool failed = encoder.api->finalize(encoder.instance, { nullptr, 0 }) != MC_OK;
+        encoder.api->destroy(encoder.instance);
+        return TEST_CHECK(prepared && failed);
     }
 #endif
 
@@ -130,7 +146,7 @@ namespace runtime_tests {
         char byte;
         size_t count = 0;
         {
-            TranscodingAudioDataStream body(server::EncoderOwner<TestEncoder>(new TestEncoder(false)), 128);
+            TranscodingAudioDataStream body(testEncoder(false), 128);
             if (!TEST_CHECK(body.Open(context, source, false, temp, cached)) ||
                 !TEST_CHECK(body.Read(0, &byte, 1, count) == MC_OK && count == 1 && byte == 'a') ||
                 !TEST_CHECK(fs::exists(musik::core::sdk::fs::pathFromUtf8(temp)) && !fs::exists(musik::core::sdk::fs::pathFromUtf8(cached))))
@@ -144,7 +160,7 @@ namespace runtime_tests {
 
         /* flush bytes can span several reads. publish only the exact final file. */
         {
-            TranscodingAudioDataStream body(server::EncoderOwner<TestEncoder>(new TestEncoder(false)), 128);
+            TranscodingAudioDataStream body(testEncoder(false), 128);
             if (!TEST_CHECK(body.Open(context, source, false, temp, cached))) {
                 return false;
             }
@@ -168,7 +184,7 @@ namespace runtime_tests {
         const auto live = path("live.bytes");
         std::ofstream(musik::core::sdk::fs::pathFromUtf8(live), std::ios::binary).write("123456", 6);
         {
-            TranscodingAudioDataStream body(server::EncoderOwner<TestEncoder>(new TestEncoder(false)), 128);
+            TranscodingAudioDataStream body(testEncoder(false), 128);
             if (!TEST_CHECK(body.Open(context, live, false, temp, cached)) || !TEST_CHECK(!body.IsCaching() && !body.Finish(context)) ||
                 !TEST_CHECK(body.Read(0, &byte, 1, count) == MC_OK && count == 1 && byte == 'a') ||
                 !TEST_CHECK(clean()))
@@ -181,7 +197,7 @@ namespace runtime_tests {
         encoded files independently. closing one must leave the other readable. */
         const auto secondTemp = path("audio-2.tmp");
         const auto uncached = [&](const std::string& filename) -> std::unique_ptr<server::ResponseBody> {
-            TranscodingAudioDataStream body(server::EncoderOwner<TestEncoder>(new TestEncoder(false)), 128);
+            TranscodingAudioDataStream body(testEncoder(false), 128);
             if (!body.Open(context, source, false, filename, {})) {
                 return {};
             }
@@ -206,7 +222,7 @@ namespace runtime_tests {
         /* errors before either encoder finishes must release resources and
         leave the source usable by a later request. */
         {
-            TranscodingAudioDataStream body(server::EncoderOwner<TestEncoder>(new TestEncoder(true)), 128);
+            TranscodingAudioDataStream body(testEncoder(true), 128);
             if (!TEST_CHECK(body.Open(context, source, false, temp, cached)) ||
                 !TEST_CHECK(body.Read(0, &byte, 1, count) == MC_ERROR_PLUGIN))
             {
@@ -218,7 +234,11 @@ namespace runtime_tests {
             return false;
         }
 #endif
-        BadTrailer broken;
+        mc_encoder broken {
+            .struct_size = sizeof(mc_encoder),
+            .instance = &context,
+            .api = &badTrailerApi,
+        };
         return TEST_CHECK(clean()) &&
             TEST_CHECK(!BlockingTranscoder::Run(context, broken, source, temp, cached, 128)) && TEST_CHECK(clean()) &&
             TEST_CHECK(TranscodingAudioDataStream::GetActiveCount() == 0);

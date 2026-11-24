@@ -767,3 +767,80 @@ if(APPLE AND TARGET coreaudioout AND TARGET ffmpegdecoder)
   set_tests_properties(musikcore.integration.plugins.coreaudio_output PROPERTIES
     LABELS "integration;musikcore;plugins;audio;hardware;contract" SKIP_RETURN_CODE 77 TIMEOUT 30)
 endif()
+
+
+if(TARGET supereqdsp)
+  add_library(musikcore_test_failing_dsp MODULE plugins/failing-dsp.c)
+  target_include_directories(musikcore_test_failing_dsp PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_definitions(musikcore_test_failing_dsp PRIVATE MC_BUILDING_PLUGIN)
+  set_target_properties(musikcore_test_failing_dsp PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/dsp"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/dsp"
+    SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  musikcube_restrict_exports(musikcore_test_failing_dsp mc_plugin_get_api)
+  add_dependencies(musikcore_runtime_hardening_test musikcore_test_failing_dsp musikcore_byte_decoder)
+  add_test(NAME musikcore.integration.plugins.dsp_failure COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_runtime_hardening_test>"
+    --stage --plugin "$<TARGET_FILE:musikcore_test_failing_dsp>" --plugin "$<TARGET_FILE:musikcore_byte_decoder>"
+    dsp_failure)
+  set_tests_properties(musikcore.integration.plugins.dsp_failure PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+  target_sources(musikcore_runtime_hardening_test PRIVATE ../integration/plugins/dsp.cpp)
+  target_compile_definitions(musikcore_runtime_hardening_test PRIVATE TEST_DSP_PROCESSING)
+  add_dependencies(musikcore_runtime_hardening_test supereqdsp)
+  add_test(NAME musikcore.integration.plugins.dsp_processing
+    COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+      "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_runtime_hardening_test>"
+      --stage --plugin "$<TARGET_FILE:supereqdsp>" dsp_processing)
+  set_tests_properties(musikcore.integration.plugins.dsp_processing PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+endif()
+
+if(BUILD_TESTING AND TARGET ffmpegdecoder AND TARGET musikcube_seed_library)
+  # exercise C analyzers through the real indexer and a deterministic WAV.
+  add_library(musikcore_test_analysis_block MODULE plugins/blocking-analysis-stream.cpp)
+  target_include_directories(musikcore_test_analysis_block PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_definitions(musikcore_test_analysis_block PRIVATE MC_BUILDING_PLUGIN)
+  target_compile_features(musikcore_test_analysis_block PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_test_analysis_block PRIVATE Threads::Threads)
+  set_target_properties(musikcore_test_analysis_block PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/analyzer"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/analyzer"
+    SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  musikcube_restrict_exports(musikcore_test_analysis_block mc_plugin_get_api)
+  add_dependencies(musikcube_tests musikcore_test_analysis_block)
+  add_dependencies(musikcube_integration_tests musikcore_test_analysis_block)
+  add_test(NAME musikcore.integration.plugins.analyzer_cancel
+    COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/check-analyzer-cancel.js"
+      "$<TARGET_FILE:musikcube_seed_library>" "$<TARGET_FILE:musikcore_test_analyzer>"
+      "$<TARGET_FILE:musikcore_test_analysis_block>" "$<TARGET_FILE:musikcore_analyzer_metadata_test>")
+  set_tests_properties(musikcore.integration.plugins.analyzer_cancel PROPERTIES
+    LABELS "integration;musikcore;plugins;indexer;audio;contract" TIMEOUT 40)
+  add_library(musikcore_test_analyzer MODULE plugins/analyzer.c)
+  target_include_directories(musikcore_test_analyzer PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_definitions(musikcore_test_analyzer PRIVATE MC_BUILDING_PLUGIN)
+  set_target_properties(musikcore_test_analyzer PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/analyzer"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/analyzer"
+    SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  musikcube_restrict_exports(musikcore_test_analyzer mc_plugin_get_api)
+  add_library(musikcore_test_failing_analyzer MODULE plugins/analyzer.c)
+  target_include_directories(musikcore_test_failing_analyzer PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_definitions(musikcore_test_failing_analyzer PRIVATE MC_BUILDING_PLUGIN ANALYZER_FAILING)
+  set_target_properties(musikcore_test_failing_analyzer PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/analyzer"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/analyzer"
+    SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  musikcube_restrict_exports(musikcore_test_failing_analyzer mc_plugin_get_api)
+  add_executable(musikcore_analyzer_metadata_test plugins/analyzer-metadata.c)
+  target_link_libraries(musikcore_analyzer_metadata_test PRIVATE musikcore_abi0_sqlite)
+  add_dependencies(musikcube_tests musikcore_test_analyzer musikcore_test_failing_analyzer musikcore_analyzer_metadata_test)
+  add_dependencies(musikcube_integration_tests musikcore_test_analyzer musikcore_test_failing_analyzer musikcore_analyzer_metadata_test)
+  add_test(NAME musikcore.integration.plugins.analyzer
+    COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/check-analyzer.js"
+      "$<TARGET_FILE:musikcube_seed_library>" "$<TARGET_FILE:musikcore_test_analyzer>"
+      "$<TARGET_FILE:musikcore_test_failing_analyzer>" "$<TARGET_FILE:musikcore_analyzer_metadata_test>")
+  set_tests_properties(musikcore.integration.plugins.analyzer PROPERTIES
+    LABELS "integration;musikcore;plugins;indexer;audio;contract" TIMEOUT 120)
+endif()

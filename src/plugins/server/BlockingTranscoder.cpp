@@ -46,7 +46,7 @@ namespace {
     };
 }
 
-bool BlockingTranscoder::Run(Context& context, musik::core::sdk::IBlockingEncoder& encoder, const std::string& uri,
+bool BlockingTranscoder::Run(Context& context, mc_encoder& encoder, const std::string& uri,
     const std::string& temp, const std::string& destination, size_t bitrate) {
     ActiveTranscode active;
     server::DecodedAudio input;
@@ -61,11 +61,12 @@ bool BlockingTranscoder::Run(Context& context, musik::core::sdk::IBlockingEncode
 
     mc_pcm_view pcm = MC_PCM_VIEW_DEFAULT;
     bool success = input.Read(pcm) == MC_OK && pcm.frame_count &&
-        encoder.Initialize(output.Handle(), pcm.format.sample_rate, pcm.format.channels, bitrate);
+        encoder.api->initialize(encoder.instance, &output.Handle(), pcm.format.sample_rate, pcm.format.channels, bitrate) == MC_OK;
     while (success && pcm.frame_count) {
-        success = encoder.Encode(pcm) && input.Read(pcm) == MC_OK;
+        mc_encoded_block block = MC_ENCODED_BLOCK_DEFAULT;
+        success = encoder.api->encode(encoder.instance, &pcm, &block) == MC_OK && input.Read(pcm) == MC_OK;
     }
-    success = success && encoder.Finalize();
+    success = success && encoder.api->finalize(encoder.instance, { nullptr, 0 }) == MC_OK;
     success = output.Close() && success;
 
     std::error_code error;

@@ -52,7 +52,7 @@
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/audio/Buffer.h>
-#include <musikcore/audio/Streams.h>
+#include <musikcore/audio/Dsp.h>
 #include <musikcore/audio/Outputs.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -174,20 +174,31 @@ static void broadcastEqualizerUpdated() {
 }
 
 static void getEqualizerPluginAndPrefs(
-    std::shared_ptr<IPlugin>& plugin,
+    musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory>& plugin,
     std::shared_ptr<Preferences>& prefs)
 {
-    plugin = PluginFactory::Instance().QueryGuid(SUPEREQ_PLUGIN_GUID);
-
+    plugin = musik::core::plugin::FindDspFactory(SUPEREQ_PLUGIN_GUID);
     if (plugin) {
-        prefs = Preferences::ForPlugin(plugin->Name());
+        for (const auto& info : musik::core::plugin::ListPlugins()) {
+            if (info.id == SUPEREQ_PLUGIN_GUID) {
+                prefs = Preferences::ForPlugin(info.name);
+                break;
+            }
+        }
     }
+}
+
+static void reloadEqualizer(const musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory>& plugin) {
+    plugin.Invoke([](const mc_dsp_factory& factory) {
+        factory.reload(factory.context);
+        return MC_OK;
+    });
 }
 
 static_assert(EqualizerBandCount == MC_EQUALIZER_BAND_COUNT);
 
 static bool writeEqualizerGains(const double* gains) {
-    std::shared_ptr<IPlugin> plugin;
+    musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> plugin;
     std::shared_ptr<Preferences> prefs;
     getEqualizerPluginAndPrefs(plugin, prefs);
     if (!prefs) {
@@ -196,7 +207,7 @@ static bool writeEqualizerGains(const double* gains) {
     for (size_t i = 0; i < EqualizerBandCount; ++i) {
         prefs->SetDouble(std::to_string(EqualizerBands[i]), gains[i]);
     }
-    plugin->Reload();
+    reloadEqualizer(plugin);
     broadcastEqualizerUpdated();
     return true;
 }
@@ -207,7 +218,7 @@ mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
     }
 
     return ffi::exception_barrier(nullptr, [&] {
-        std::shared_ptr<IPlugin> plugin;
+        musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> plugin;
         std::shared_ptr<Preferences> prefs;
         getEqualizerPluginAndPrefs(plugin, prefs);
         if (!prefs) {
@@ -229,7 +240,7 @@ mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
 
 mc_result MC_CALL mc_equalizer_set_enabled(bool enabled) {
     return ffi::exception_barrier(nullptr, [&] {
-        std::shared_ptr<IPlugin> plugin;
+        musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> plugin;
         std::shared_ptr<Preferences> prefs;
         getEqualizerPluginAndPrefs(plugin, prefs);
         if (!prefs) {
@@ -237,7 +248,7 @@ mc_result MC_CALL mc_equalizer_set_enabled(bool enabled) {
         }
         if (prefs->GetBool("enabled", false) != enabled) {
             prefs->SetBool("enabled", enabled);
-            plugin->Reload();
+            reloadEqualizer(plugin);
             broadcastEqualizerUpdated();
         }
         return MC_OK;
@@ -308,9 +319,6 @@ static class Environment: public IEnvironment {
 
         const mc_audio_scratch_buffer_api& AudioScratch() override { return ffi::audio_scratch_buffers::Host(); }
 
-        IEncoder* GetEncoder(const char* type) override {
-            return streams::GetEncoderForType(type);
-        }
 
         IDebug* GetDebug() override {
             return &debugger;
@@ -531,11 +539,25 @@ namespace musik { namespace core { namespace plugin {
         return pluginRegistry->ListPlugins();
     }
 
+    std::vector<std::shared_ptr<audio::Dsp>> CreateDsps() {
+        return mediaHost ? mediaHost->CreateDsps() : std::vector<std::shared_ptr<audio::Dsp>>();
+    }
+
     ffi::PluginRegistry::Factory<mc_output_factory> FindOutputFactory(std::string_view pluginId) {
         if (!pluginRegistry) {
             return {};
         }
         return pluginRegistry->Find<mc_output_factory>(pluginId);
+    }
+
+    ffi::PluginRegistry::Factory<mc_analyzer_factory> FindAnalyzerFactory(std::string_view pluginId) {
+        return pluginRegistry ? pluginRegistry->Find<mc_analyzer_factory>(pluginId)
+            : ffi::PluginRegistry::Factory<mc_analyzer_factory>();
+    }
+
+    ffi::PluginRegistry::Factory<mc_dsp_factory> FindDspFactory(std::string_view pluginId) {
+        return pluginRegistry ? pluginRegistry->Find<mc_dsp_factory>(pluginId)
+            : ffi::PluginRegistry::Factory<mc_dsp_factory>();
     }
 
     ffi::PluginRegistry::Factory<mc_configuration_api> FindConfiguration(std::string_view pluginId) {
@@ -627,7 +649,6 @@ namespace musik { namespace core { namespace plugin {
         bool failure = false;
         cleanup([] { Preferences::SavePluginPreferences(); }, failure);
         /* workers have stopped, so cached factories can release provider state. */
-        cleanup([] { musik::core::audio::streams::Shutdown(); }, failure);
         mediaHost.reset();
         musik::contract::Assert(audio::Output::InstanceCount() == 0,
             "output instances must be destroyed before plugin unload");

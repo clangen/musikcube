@@ -1,69 +1,28 @@
-//////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2004-2023 musikcube team
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//    * Redistributions of source code must retain the above copyright notice,
-//      this list of conditions and the following disclaimer.
-//
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//
-//    * Neither the name of the author nor the names of other contributors may
-//      be used to endorse or promote products derived from this software
-//      without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-////////////////////////////////////////////////////////////////////////////
-
-#include "constants.h"
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/ISchema.h>
-#include <musikcore/sdk/IDSP.h>
 #include "SuperEqDsp.h"
+#include <musikcore/plugin/dsp.hpp>
 
-class SuperEqPlugin : public musik::core::sdk::IPlugin {
-    public:
-        void Release() override { delete this; }
-        const char* Name() override { return "SuperEq IDSP"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "Naoki Shibata, Alexey Yakovenko, clangen"; }
-        const char* Guid() override { return "6f0ed53b-0f13-4220-9b0a-ca496b6421cc"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { SuperEqDsp::NotifyChanged(); }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-};
+namespace {
+    mc_result MC_CALL initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        return musik::core::plugin::RegisterDsp<SuperEqDsp>(*host);
+    }
 
-#ifdef WIN32
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
-#endif
-
-extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
-    return new SuperEqPlugin();
+    void MC_CALL shutdown(void*) {}
 }
 
-extern "C" DLLEXPORT musik::core::sdk::IDSP* GetDSP() {
-    return new SuperEqDsp();
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error)
+{
+    const auto result = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (result != MC_OK) {
+        return result;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "6f0ed53b-0f13-4220-9b0a-ca496b6421cc", 36 };
+    plugin->name = { "SuperEq IDSP", 12 };
+    plugin->version = { "1", 1 };
+    plugin->author = { "Naoki Shibata, Alexey Yakovenko, clangen", 40 };
+    plugin->initialize = initialize;
+    plugin->shutdown = shutdown;
+    return MC_OK;
 }
-
-extern "C" DLLEXPORT musik::core::sdk::ISchema* GetSchema();

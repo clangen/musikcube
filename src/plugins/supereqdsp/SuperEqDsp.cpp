@@ -35,15 +35,12 @@
 #include "constants.h"
 #include "SuperEqDsp.h"
 #include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/ISchema.h>
 #include <atomic>
+#include <string>
+#include <vector>
 #include <math.h>
 
-using namespace musik::core::sdk;
-
-static IPreferences* prefs = nullptr;
-static std::atomic<int> currentState;
+static std::atomic<uint64_t> currentState;
 
 static const std::vector<std::string> BANDS = {
     "65", "92", "131", "185", "262",
@@ -52,17 +49,13 @@ static const std::vector<std::string> BANDS = {
     "11840", "16744", "22000",
 };
 
-extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
-    ::prefs = prefs;
-}
-
-void SuperEqDsp::NotifyChanged() {
+void SuperEqDsp::NotifyChanged() noexcept {
     currentState.fetch_add(1);
 }
 
-SuperEqDsp::SuperEqDsp() {
-    this->enabled = ::prefs && ::prefs->GetBool("enabled", false);
-}
+SuperEqDsp::SuperEqDsp(const mc_plugin_services& services)
+: enabled(false)
+, preferences(*services.preferences) {}
 
 SuperEqDsp::~SuperEqDsp() {
     if (this->supereq) {
@@ -71,16 +64,12 @@ SuperEqDsp::~SuperEqDsp() {
     }
 }
 
-void SuperEqDsp::Release() {
-    delete this;
-}
-
-bool SuperEqDsp::Process(IBuffer* buffer) {
-    int channels = buffer->Channels();
-    int current = ::currentState.load();
+mc_result SuperEqDsp::Process(mc_audio_buffer_view& buffer) {
+    int channels = static_cast<int>(buffer.format.channels);
+    const auto current = ::currentState.load();
 
     if (!this->supereq || this->lastUpdated != current) {
-        this->enabled = ::prefs && ::prefs->GetBool("enabled", false);
+        this->preferences.read_boolean(this->preferences.context, { "enabled", 7 }, false, &this->enabled);
         this->lastUpdated = current;
 
         if (!this->supereq) {
@@ -92,7 +81,9 @@ bool SuperEqDsp::Process(IBuffer* buffer) {
         float bands[18];
 
         for (size_t i = 0; i < BANDS.size(); i++) {
-            double dB =  prefs->GetDouble(BANDS[i].c_str(), 0.0);
+            double dB = 0.0;
+            this->preferences.read_number(this->preferences.context,
+                { BANDS[i].data(), BANDS[i].size() }, 0.0, &dB);
             double amp = pow(10, dB / 20.f);
             bands[i] = (float) amp;
         }
@@ -101,18 +92,19 @@ bool SuperEqDsp::Process(IBuffer* buffer) {
             this->supereq,
             bands,
             params,
-            (float) buffer->SampleRate());
+            (float) buffer.format.sample_rate);
 
         paramlist_free(params);
     }
 
     if (!this->enabled) {
-        return false;
+        return MC_OK;
     }
 
-    return equ_modifySamples_float(
+    equ_modifySamples_float(
         this->supereq,
-        (char*) buffer->BufferPointer(),
-        buffer->Samples() / channels,
-        channels) != 0;
+        (char*) buffer.data,
+        buffer.frame_count,
+        channels);
+    return MC_OK;
 }

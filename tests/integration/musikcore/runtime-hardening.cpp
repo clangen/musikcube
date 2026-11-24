@@ -17,6 +17,14 @@ int main(int argc, char** argv) {
         return checkServerTranscode() ? 0 : 1;
     }
 #endif
+#ifdef TEST_DSP_PROCESSING
+    if (mode == "dsp_failure") {
+        return checkDspFailure() ? 0 : 1;
+    }
+    if (mode == "dsp_processing") {
+        return checkDspProcessing() ? 0 : 1;
+    }
+#endif
     if (mode == "indexer_cancel") {
         return checkIndexerCancel() ? 0 : 1;
     }

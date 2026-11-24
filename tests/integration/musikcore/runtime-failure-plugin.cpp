@@ -4,9 +4,7 @@ phase. preference markers survive because modules remain process-owned here. */
 #include <musikcore/sdk/IPlugin.h>
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IEncoderFactory.h>
 #include <stdexcept>
-#include <initializer_list>
 #include <cstdio>
 #include <cstdlib>
 
@@ -21,23 +19,6 @@ namespace {
             std::fprintf(stderr, "fatal-test: cleanup-bit=%d\n", bit);
         }
     }
-
-    /* acquisition/release counts also distinguish a cached reference from the
-    indexer's independent decoder-factory reference. */
-    void acquire(const char* key) {
-        preferences->SetInt(key, preferences->GetInt(key, 0) + 1);
-    }
-
-    /* the encoder family still uses session-owned C++ factories. */
-    class CodecFactory final : public musik::core::sdk::IEncoderFactory {
-    public:
-        musik::core::sdk::IEncoder* CreateEncoder(const char*) override { return nullptr; }
-        bool CanHandle(const char*) const override { return false; }
-        void Release() override {
-            mark(64);
-            acquire("encoder_releases");
-        }
-    } encoderFactory;
 
     /* static provider state is reset by each SetPreferences installation. */
     class FailurePlugin final : public musik::core::sdk::IPlugin {
@@ -62,11 +43,7 @@ extern "C" MC_PLUGIN_API void SetPreferences(musik::core::sdk::IPreferences* val
     preferences = value;
     tearingDown = false;
     preferences->SetInt("cleanup_mask", 0);
-    for (const auto* key : { "stream_acquisitions", "stream_releases", "decoder_acquisitions",
-        "decoder_releases", "encoder_acquisitions", "encoder_releases" })
-    {
-        preferences->SetInt(key, 0);
-    }
+
 }
 
 /* fail the first teardown phase on both modules, then verify all later phases. */
@@ -103,6 +80,3 @@ extern "C" MC_PLUGIN_API void SetDebug(void*) {
         mark(8);
     }
 }
-
-/* discovery keeps each factory until the managed session has quiesced. */
-extern "C" MC_PLUGIN_API musik::core::sdk::IEncoderFactory* GetEncoderFactory() { acquire("encoder_acquisitions"); return &encoderFactory; }

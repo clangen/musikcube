@@ -1,6 +1,7 @@
 #include "MediaHost.h"
 
 #include "Plugins.h"
+#include <musikcore/audio/Dsp.h>
 #include <common/Contract.h>
 #include <musikcore/ffi/common/error.h>
 #include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
@@ -71,6 +72,7 @@ namespace musik { namespace core { namespace plugin {
         .context = this,
         .create_stream = CreateStream,
         .create_decoder = CreateDecoder,
+        .create_encoder = CreateEncoder,
     } {
         const auto plugins = registry.ListPlugins();
         /* services contain pointers into these entries. finalize storage before
@@ -79,12 +81,16 @@ namespace musik { namespace core { namespace plugin {
         for (const auto& plugin : plugins) {
             auto streams = registry.Find<mc_stream_factory>(plugin.id);
             auto decoders = registry.Find<mc_decoder_factory>(plugin.id);
-            if (!plugin.enabled || (!streams && !decoders)) {
+            auto encoders = registry.Find<mc_encoder_factory>(plugin.id);
+            auto dsp = registry.Find<mc_dsp_factory>(plugin.id);
+            if (!plugin.enabled || (!streams && !decoders && !encoders && !dsp)) {
                 continue;
             }
             auto& provider = this->providers.emplace_back();
             provider.streams = streams;
             provider.decoders = decoders;
+            provider.encoders = encoders;
+            provider.dsp = dsp;
             provider.preferences = ReadSettingsService(plugin.name);
             provider.services = {
                 .struct_size = sizeof(mc_plugin_services),
@@ -95,6 +101,19 @@ namespace musik { namespace core { namespace plugin {
                 .preferences = &provider.preferences,
             };
         }
+    }
+
+    std::vector<std::shared_ptr<audio::Dsp>> MediaHost::CreateDsps() const {
+        std::vector<std::shared_ptr<audio::Dsp>> result;
+        for (const auto& provider : this->providers) {
+            if (provider.dsp) {
+                auto dsp = std::make_shared<audio::Dsp>(provider.dsp, provider.services);
+                if (dsp->IsValid()) {
+                    result.push_back(std::move(dsp));
+                }
+            }
+        }
+        return result;
     }
 
     mc_result MC_CALL MediaHost::CreateStream(void* context, mc_string_view uri, mc_stream* output, mc_error** error) {
@@ -151,6 +170,50 @@ namespace musik { namespace core { namespace plugin {
                 const auto result = tryCreate(provider.decoders, provider.services, hint, *output, claimed, error);
                 if (result != MC_OK || claimed) {
                     return result;
+                }
+            }
+            return MC_ERROR_UNSUPPORTED;
+        });
+    }
+    mc_result MC_CALL MediaHost::CreateEncoder(void* context, mc_string_view format, mc_encoder* output, mc_error** error) {
+        return ffi::exception_barrier(error, [&]() -> mc_result {
+            if (!output || output->struct_size < sizeof(*output) || output->instance ||
+                !format.length || !validView(format))
+            {
+                return MC_ERROR_INVALID_ARGUMENT;
+            }
+            auto& host = *static_cast<MediaHost*>(context);
+            for (const auto& provider : host.providers) {
+                if (!provider.encoders) {
+                    continue;
+                }
+                bool claimed = false;
+                const auto status = provider.encoders.Invoke([&](const auto& factory) -> mc_result {
+                    uint32_t supported = 0;
+                    const auto result = factory.can_handle(factory.context, format, &supported);
+                    if (result != MC_OK || !supported) {
+                        return result;
+                    }
+                    claimed = true;
+                    mc_encoder created = MC_ENCODER_DEFAULT;
+                    const auto made = factory.create(factory.context, &provider.services, format, &created, error);
+                    if (made != MC_OK) {
+                        musik::contract::Assert(!created.instance, "failed encoder factory returned an instance");
+                        return made;
+                    }
+                    if (!created.instance || !created.api ||
+                        reinterpret_cast<uintptr_t>(created.api) % alignof(mc_encoder_vtable) ||
+                        created.api->struct_size < sizeof(mc_encoder_vtable) || !created.api->destroy ||
+                        !created.api->initialize || !created.api->encode || !created.api->flush ||
+                        !created.api->finalize || created.api->streaming > 1)
+                    {
+                        musik::contract::Assert(false, "encoder factory returned an invalid instance");
+                    }
+                    *output = created;
+                    return MC_OK;
+                });
+                if (status != MC_OK || claimed) {
+                    return status;
                 }
             }
             return MC_ERROR_UNSUPPORTED;

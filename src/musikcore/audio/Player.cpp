@@ -264,7 +264,7 @@ void Player::WriteTrack() {
                 }
                 const auto status = this->stream->DecodeStatus();
                 if (status != MC_OK) {
-                    this->FailPlayback(status, "decode");
+                    this->FailPlayback(status, "audio processing");
                     break;
                 }
                 if (this->stream->Eof()) {
@@ -388,7 +388,7 @@ static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, i
 }
 
 void Player::ReturnUnusedBuffer(IBuffer* buffer) {
-    this->stream->OnBufferProcessedByPlayer(buffer);
+    this->stream->RecycleBuffer(buffer);
 }
 
 /* cancelled buffers return storage without advancing playback or showing

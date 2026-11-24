@@ -1138,7 +1138,7 @@ namespace {
                 return false;
             }
             const bool correct = correctFirstFrame(*buffer);
-            buffered->OnBufferProcessedByPlayer(buffer);
+            buffered->RecycleBuffer(buffer);
             if (!correct) {
                 std::fputs("Seeking before EOF returned stale or nonfractional PCM\n", stderr);
                 return false;
@@ -1150,7 +1150,7 @@ namespace {
             return false;
         }
         while (auto* buffer = stream->GetNextProcessedOutputBuffer()) {
-            stream->OnBufferProcessedByPlayer(buffer);
+            stream->RecycleBuffer(buffer);
         }
         if (!stream->Eof() || stream->SetPosition(seconds) != seconds) {
             std::fputs("Could not seek a stream after decoder EOF\n", stderr);
@@ -1162,7 +1162,7 @@ namespace {
             return false;
         }
         const bool correct = correctFirstFrame(*buffer);
-        stream->OnBufferProcessedByPlayer(buffer);
+        stream->RecycleBuffer(buffer);
         if (!correct) {
             std::fputs("Seeking after EOF returned stale or nonfractional PCM\n", stderr);
         }

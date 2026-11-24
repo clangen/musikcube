@@ -43,6 +43,8 @@
 #include <vector>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 
+namespace musik { namespace core { namespace audio { class Dsp; } } }
+
 namespace musik { namespace core { namespace plugin {
 
     void Initialize(const std::string& pluginDirectory);
@@ -54,9 +56,15 @@ namespace musik { namespace core { namespace plugin {
 
     musik::core::sdk::IEnvironment& Environment();
 
+    std::vector<std::shared_ptr<audio::Dsp>> CreateDsps();
+
     std::vector<ffi::PluginRegistry::PluginInfo> ListPlugins();
 
     ffi::PluginRegistry::Factory<mc_output_factory> FindOutputFactory(std::string_view pluginId);
+
+    ffi::PluginRegistry::Factory<mc_analyzer_factory> FindAnalyzerFactory(std::string_view pluginId);
+
+    ffi::PluginRegistry::Factory<mc_dsp_factory> FindDspFactory(std::string_view pluginId);
 
     ffi::PluginRegistry::Factory<mc_configuration_api> FindConfiguration(std::string_view pluginId);
 

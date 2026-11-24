@@ -41,7 +41,7 @@
 #include <musikcore/audio/IStream.h>
 #include <musikcore/audio/Output.h>
 
-#include <musikcore/sdk/IDSP.h>
+#include <musikcore/audio/Dsp.h>
 #include <musikcore/sdk/constants.h>
 
 #include <deque>
@@ -51,12 +51,13 @@
 namespace musik { namespace core { namespace audio {
 
     class Stream : public IStream {
-        using IDSP = musik::core::sdk::IDSP;
         using IBuffer = musik::core::sdk::IBuffer;
         using StreamFlags = musik::core::sdk::StreamFlags;
 
         public:
-            static IStreamPtr Create(
+            using Shared = std::shared_ptr<Stream>;
+
+            static Shared Create(
                 int samplesPerChannel = 2048,
                 double bufferLengthSeconds = 5,
                 StreamFlags options = StreamFlags::None);
@@ -76,7 +77,7 @@ namespace musik { namespace core { namespace audio {
             virtual ~Stream();
 
             IBuffer* GetNextProcessedOutputBuffer() override;
-            void OnBufferProcessedByPlayer(IBuffer* buffer) override;
+            void RecycleBuffer(IBuffer* buffer) override;
             double SetPosition(double seconds) override;
             double GetDuration() override;
             bool OpenStream(std::string uri, musik::core::audio::Output* output) override;
@@ -92,7 +93,7 @@ namespace musik { namespace core { namespace audio {
             void RefillInternalBuffers();
 
             typedef std::deque<Buffer*> BufferList;
-            typedef std::shared_ptr<IDSP> DspPtr;
+            typedef std::shared_ptr<Dsp> DspPtr;
             typedef std::vector<DspPtr> Dsps;
 
             long decoderSampleRate;

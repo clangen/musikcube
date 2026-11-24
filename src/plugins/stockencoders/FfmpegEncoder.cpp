@@ -35,7 +35,6 @@
 #include "FfmpegEncoder.h"
 #include <musikcore/plugin/stream.hpp>
 
-#include "shared.h"
 #include <algorithm>
 #include <random>
 #include <map>
@@ -48,7 +47,6 @@
 #define USE_FFMPEG7_CHANNEL_LAYOUT
 #endif
 
-using namespace musik::core::sdk;
 
 static const int IO_CONTEXT_BUFFER_SIZE = 4096;
 static const int DEFAULT_SAMPLE_RATE = 44100;
@@ -70,12 +68,6 @@ static std::map<std::string, AVCodecID> formatToCodec = {
     { ".wv", AV_CODEC_ID_WAVPACK },
 };
 
-static IDebug* debug = nullptr;
-
-extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
-    ::debug = debug;
-}
-
 static std::string getAvError(int errnum) {
     char buffer[AV_ERROR_MAX_STRING_SIZE];
     buffer[0] = '\0';
@@ -83,16 +75,16 @@ static std::string getAvError(int errnum) {
     return std::string(buffer);
 }
 
-static void logAvError(const std::string& method, int errnum) {
-    if (errnum != 0) {
-        std::string err = method + "() failed: " + getAvError(errnum);
-        ::debug->Warning(TAG, err.c_str());
+void FfmpegEncoder::LogError(const std::string& message) {
+    if (logHost.log) {
+        logHost.log(logHost.host_context, MC_LOG_WARNING,
+            { TAG, sizeof("FfmpegEncoder") - 1 }, { message.data(), message.size() });
     }
 }
 
-static void logError(const std::string& message) {
-    if (::debug) {
-        ::debug->Warning(TAG, message.c_str());
+void FfmpegEncoder::LogAvError(const std::string& method, int errnum) {
+    if (errnum != 0) {
+        LogError(method + "() failed: " + getAvError(errnum));
     }
 }
 
@@ -236,8 +228,9 @@ static int64_t seekCallback(void* opaque, int64_t offset, int whence) {
     return musik::core::plugin::seekStream(stream, offset, whence, actual) == MC_OK ? actual : AVERROR(EINVAL);
 }
 
-FfmpegEncoder::FfmpegEncoder(const std::string& format)
-: format(format) {
+FfmpegEncoder::FfmpegEncoder(const std::string& format, const mc_host_api& host)
+: logHost(host)
+, format(format) {
     this->isValid = false;
     this->resampler = nullptr;
     this->outputContext = nullptr;
@@ -260,19 +253,19 @@ FfmpegEncoder::FfmpegEncoder(const std::string& format)
 
 bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate) {
     if (!this->ioContext) {
-        logError("ioContext not initialized, cannot open output stream");
+        LogError("ioContext not initialized, cannot open output stream");
         return false;
     }
 
     this->outputFormatContext = avformat_alloc_context();
 
     if (!this->outputFormatContext) {
-        logError("avformat_alloc_context");
+        LogError("avformat_alloc_context");
         return false;
     }
 
     if (!this->format.size()) {
-        logError("invalid format specified: " + this->format);
+        LogError("invalid format specified: " + this->format);
         return false;
     }
 
@@ -286,7 +279,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     }
 
     if (!this->outputFormatContext->oformat) {
-        logError("av_guess_format");
+        LogError("av_guess_format");
         return false;
     }
 
@@ -294,13 +287,13 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 
     auto it = formatToCodec.find(this->format);
     if (it == formatToCodec.end()) {
-        logError("no codec for specified input format: " + this->format);
+        LogError("no codec for specified input format: " + this->format);
         return false;
     }
 
     this->outputCodec = avcodec_find_encoder(it->second);
     if (!this->outputCodec) {
-        logError("avcodec_find_encoder");
+        LogError("avcodec_find_encoder");
         return false;
     }
 
@@ -310,13 +303,13 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     AVStream* stream = avformat_new_stream(this->outputFormatContext, nullptr);
 
     if (!stream) {
-        logError("avformat_new_stream");
+        LogError("avformat_new_stream");
         return false;
     }
 
     this->outputContext = avcodec_alloc_context3(this->outputCodec);
     if (!this->outputContext) {
-        logError("avcodec_alloc_context3");
+        LogError("avcodec_alloc_context3");
         return false;
     }
 
@@ -332,7 +325,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     this->outputContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
     if (this->outputContext->sample_fmt == AV_SAMPLE_FMT_NONE) {
-        logError("invalid sample format resolved.");
+        LogError("invalid sample format resolved.");
         return false;
     }
 
@@ -351,7 +344,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
         this->outputContext, this->outputCodec, nullptr);
 
     if (error < 0) {
-        logAvError("avcodec_open2", error);
+        LogAvError("avcodec_open2", error);
         return false;
     }
 
@@ -360,7 +353,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     error = avcodec_parameters_from_context(stream->codecpar, this->outputContext);
 
     if (error < 0) {
-        logAvError("avcodec_parameters_from_context", error);
+        LogAvError("avcodec_parameters_from_context", error);
         return false;
     }
 
@@ -394,7 +387,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     error = swr_init(this->resampler);
 
     if (error < 0) {
-        logAvError("swr_init", error);
+        LogAvError("swr_init", error);
         return false;
     }
 
@@ -402,7 +395,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     this->outputFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, (int) channels, 1);
 
     if (!this->outputFifo) {
-        logError("av_audio_fifo_alloc");
+        LogError("av_audio_fifo_alloc");
         return false;
     }
 
@@ -508,7 +501,7 @@ bool FfmpegEncoder::Finalize() {
 bool FfmpegEncoder::WriteOutputTrailer() {
     int error = av_write_trailer(this->outputFormatContext);
     if (error < 0) {
-        logAvError("av_write_trailer", error);
+        LogAvError("av_write_trailer", error);
         return false;
     }
     return true;
@@ -517,7 +510,7 @@ bool FfmpegEncoder::WriteOutputTrailer() {
 bool FfmpegEncoder::WriteOutputHeader() {
     int error = avformat_write_header(this->outputFormatContext, nullptr);
     if (error < 0) {
-        logAvError("avformat_write_header", error);
+        LogAvError("avformat_write_header", error);
         return false;
     }
     return true;
@@ -537,7 +530,7 @@ bool FfmpegEncoder::WriteSamplesToFifo(const mc_pcm_view& pcm) {
     int error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + samplesPerChannel);
 
     if (error < 0) {
-        logAvError("av_audio_fifo_realloc", error);
+        LogAvError("av_audio_fifo_realloc", error);
         return false;
     }
 
@@ -547,7 +540,7 @@ bool FfmpegEncoder::WriteSamplesToFifo(const mc_pcm_view& pcm) {
         samplesPerChannel);
 
     if (samplesWritten != samplesPerChannel) {
-        logError("av_audio_fifo_write wrote incorrect number of samples");
+        LogError("av_audio_fifo_write wrote incorrect number of samples");
         return false;
     }
 
@@ -577,7 +570,7 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
             this->outputFifo, (void **) outputFrame->data, frameSize);
 
         if (framesRead < frameSize) {
-            logError("av_audio_fifo_read read the incorrect number of samples");
+            LogError("av_audio_fifo_read read the incorrect number of samples");
             return false;
         }
 
@@ -596,7 +589,7 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
             this->outputFrame);
 
         if (error < 0) {
-            logAvError("swr_convert_frame", error);
+            LogAvError("swr_convert_frame", error);
             return false;
         }
 
@@ -629,7 +622,7 @@ int FfmpegEncoder::SendReceiveAndWriteFrame(AVFrame* frame) {
     int error = avcodec_send_frame(this->outputContext, frame);
 
     if (error < 0) {
-        logAvError("av_codec_send_frame", error);
+        LogAvError("av_codec_send_frame", error);
     }
     else {
         error = 0;
@@ -643,11 +636,11 @@ int FfmpegEncoder::SendReceiveAndWriteFrame(AVFrame* frame) {
             if (error >= 0) {
                 error = av_write_frame(this->outputFormatContext, &outputPacket);
                 if (error < 0) {
-                    logAvError("av_write_frame", error);
+                    LogAvError("av_write_frame", error);
                 }
             }
             else if (error < 0 && error != AVERROR(EAGAIN)) {
-                logAvError("avcodec_receive_packet", error);
+                LogAvError("avcodec_receive_packet", error);
             }
             av_packet_unref(&outputPacket);
         }
@@ -718,7 +711,7 @@ AVFrame* FfmpegEncoder::ReallocFrame(
 #endif
         int error = av_frame_get_buffer(original, 0);
         if (error < 0) {
-            logAvError("av_frame_get_buffer", error);
+            LogAvError("av_frame_get_buffer", error);
             av_frame_free(&original);
             return nullptr;
         }

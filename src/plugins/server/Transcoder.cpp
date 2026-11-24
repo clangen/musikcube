@@ -38,7 +38,7 @@
 #include "TranscodingAudioDataStream.h"
 #include "Constants.h"
 #include "Util.h"
-#include <musikcore/sdk/IBlockingEncoder.h>
+#include <musikcore/plugin/encoder.h>
 
 #include <thread>
 #include <set>
@@ -54,10 +54,7 @@ using musik::core::sdk::fs::pathToUtf8;
 namespace fs = std::filesystem;
 
 using namespace std::chrono;
-using musik::core::sdk::IBlockingEncoder;
 using server::EncoderOwner;
-using musik::core::sdk::IEncoder;
-using musik::core::sdk::IStreamingEncoder;
 
 using musik::core::sdk::PathType;
 
@@ -65,9 +62,14 @@ static std::mutex transcoderMutex;
 static std::condition_variable waitForTranscode;
 static std::set<std::string> runningBlockingTranscoders;
 
-static IEncoder* getEncoder(Context& context, const std::string& format) {
-    std::string extension = "." + format;
-    return context.environment->GetEncoder(extension.c_str());
+static EncoderOwner getEncoder(Context& context, const std::string& format) {
+    const auto extension = "." + format;
+    auto encoder = std::make_unique<mc_encoder>(mc_encoder MC_ENCODER_DEFAULT);
+    const auto& media = context.environment->Media();
+    if (media.create_encoder(media.context, { extension.data(), extension.size() }, encoder.get(), nullptr) != MC_OK) {
+        return {};
+    }
+    return EncoderOwner(encoder.release());
 }
 
 static std::string cachePath(Context& context) {
@@ -157,7 +159,7 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
         return {};
     }
 
-    EncoderOwner<IEncoder> encoder(getEncoder(context, format));
+    EncoderOwner encoder(getEncoder(context, format));
     if (!encoder) {
         return {};
     }
@@ -172,7 +174,7 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
         }
     }
 
-    if (auto* streaming = encoder->AsStreaming()) {
+    if (encoder->api->streaming) {
         const bool synchronous = context.prefs->GetBool(serverprefs::SynchronousTranscoding.c_str(),
             defaults::transcoder_synchronous);
         const bool wait = synchronous || request == Request::CompleteFile || (request == Request::PartialTrack &&
@@ -184,9 +186,7 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
             PruneTranscodeCache(context);
         }
 
-        encoder.release();
-        EncoderOwner<IStreamingEncoder> owner(streaming);
-        auto body = std::make_unique<TranscodingAudioDataStream>(std::move(owner), bitrate);
+        auto body = std::make_unique<TranscodingAudioDataStream>(std::move(encoder), bitrate);
         if (!body->Open(context, uri, synchronous, (cache || wait) ? temp : "", cache ? destination : "")) {
             return {};
         }
@@ -201,10 +201,6 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
         return body->Finish(context);
     }
 
-    auto* blocking = encoder->AsBlocking();
-    if (!blocking) {
-        return {};
-    }
     {
         /* requests for the same encoding share one completed file. other
         formats or bitrates of the same source can progress independently. */
@@ -226,7 +222,7 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
         .destination = destination,
     };
     PruneTranscodeCache(context);
-    if (!BlockingTranscoder::Run(context, *blocking, uri, temp, destination, bitrate)) {
+    if (!BlockingTranscoder::Run(context, *encoder, uri, temp, destination, bitrate)) {
         return {};
     }
     return server::OpenFileBody(context, destination);

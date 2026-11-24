@@ -1,161 +1,95 @@
-//////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2004-2023 musikcube team
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//    * Redistributions of source code must retain the above copyright notice,
-//      this list of conditions and the following disclaimer.
-//
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//
-//    * Neither the name of the author nor the names of other contributors may
-//      be used to endorse or promote products derived from this software
-//      without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-#include <musikcore/sdk/IPlaybackRemote.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IEncoderFactory.h>
-#include <set>
-#include <algorithm>
-
-#include "shared.h"
-#include "LameEncoder.h"
 #include "FfmpegEncoder.h"
+#include "LameEncoder.h"
+#include <musikcore/plugin.h>
+#include <musikcore/plugin/encoder.hpp>
+#include <musikcore/sdk/version.h>
 
-#include <string>
 #include <algorithm>
+#include <cctype>
+#include <set>
+#include <string>
+#include <string_view>
 
-#ifdef WIN32
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT
-#endif
+namespace {
+    const std::set<std::string> formats {
+        ".mp3", "audio/mpeg", ".ogg", "audio/ogg", ".opus", ".flac", "audio/flac",
+        ".alac", ".aac", "audio/aac", ".m4a", ".wma", "audio/x-ms-wma", ".wv"
+    };
 
-#ifdef WIN32
-#include <Windows.h>
-#include <Objbase.h>
-#endif
+    std::string normalize(mc_string_view text) {
+        std::string result(text.data, text.length);
+        std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
+        return result;
+    }
 
-using namespace musik::core::sdk;
-
-static IEnvironment* environment = nullptr;
-
-static std::set<std::string> supportedFormats = {
-    ".mp3",
-    "audio/mpeg",
-    ".ogg",
-    "audio/ogg",
-    ".opus",
-    ".flac",
-    "audio/flac",
-    ".alac",
-    ".aac",
-    "audio/aac",
-    ".aac",
-    ".m4a",
-    ".wma",
-    "audio/x-ms-wma",
-    ".wv"
-};
-
-static class Plugin : public IPlugin {
-    public:
-        Plugin() { }
-        void Release() override { }
-        const char* Name() override { return "Stock Encoders (lame + ffmpeg)"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "d4d13803-a285-4481-ad1e-106131e0d523"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-} plugin;
-
-static class EncoderFactory: public IEncoderFactory {
-    public:
-        EncoderFactory() {
-#ifdef WIN32
-            CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-#endif
+    template<typename Work> mc_result invoke(Work&& work) noexcept {
+        try {
+            return work();
         }
-
-        void Release() override {
+        catch (...) {
+            return MC_ERROR_INTERNAL;
         }
+    }
 
-        IEncoder* CreateEncoder(const char* type) override {
-            auto lowerType = toLower(type);
-            if (isMp3(lowerType)) {
-                return new LameEncoder();
-            }
-            else if (supportedFormats.find(lowerType) != supportedFormats.end()) {
-                return new FfmpegEncoder(lowerType);
-            }
-            return nullptr;
-        }
+    struct PluginState {
+        mc_host_api host;
+        mc_encoder_factory factory;
+    };
 
-        bool CanHandle(const char* type) const override {
-            return supportedFormats.find(toLower(type)) != supportedFormats.end();
-        }
+    const mc_encoder_factory factoryTemplate {
+        sizeof(mc_encoder_factory),
+        nullptr,
+        [](void*, mc_string_view format, uint32_t* supported) {
+            return invoke([&]() -> mc_result {
+                *supported = formats.count(normalize(format)) ? 1 : 0;
+                return MC_OK;
+            });
+        },
+        [](void* context, const mc_plugin_services*, mc_string_view format, mc_encoder* output, mc_error**) {
+            return invoke([&]() -> mc_result {
+                auto type = normalize(format);
+                if (type == ".mp3" || type == "audio/mpeg") {
+                    output->instance = new LameEncoder();
+                    output->api = &musik::core::plugin::StreamingEncoderApi<LameEncoder>();
+                }
+                else {
+                    output->instance = new FfmpegEncoder(type, static_cast<PluginState*>(context)->host);
+                    output->api = &musik::core::plugin::BlockingEncoderApi<FfmpegEncoder>();
+                }
+                return MC_OK;
+            });
+        },
+    };
 
-    private:
-        std::string toLower(const char* type) const {
-            if (!type) {
-                return "";
-            }
-
-            std::string lowerType(type);
-            std::transform(lowerType.begin(), lowerType.end(), lowerType.begin(), ::tolower);
-            return lowerType;
-        }
-
-        bool endsWith(const std::string& s, const std::string& suffix) const {
-            return
-                s.size() >= suffix.size() &&
-                s.rfind(suffix) == (s.size() - suffix.size());
-        }
-
-        bool isMp3(const std::string& type) const {
-            return endsWith(type, ".mp3") || type == "audio/mpeg";
-        }
-
-        bool isOgg(const std::string& type) const {
-            return endsWith(type, ".ogg") || type == "audio/ogg" || type == "application/ogg";
-        }
-} encoderFactory;
-
-extern "C" DLL_EXPORT IPlugin* GetPlugin() {
-    return &plugin;
+    mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_error**) {
+        return invoke([&]() -> mc_result {
+            auto* state = new PluginState { *host, factoryTemplate };
+            *context = state;
+            state->factory.context = state;
+            mc_plugin_capability capability = MC_PLUGIN_CAPABILITY_DEFAULT;
+            capability.id = { MC_PLUGIN_CAPABILITY_ENCODER, sizeof(MC_PLUGIN_CAPABILITY_ENCODER) - 1 };
+            capability.api = &state->factory;
+            capability.api_size = sizeof(state->factory);
+            return host->register_capability(host->host_context, &capability);
+        });
+    }
 }
 
-extern "C" DLL_EXPORT IEncoderFactory* GetEncoderFactory() {
-    return &encoderFactory;
-}
-
-extern "C" DLL_EXPORT void SetEnvironment(musik::core::sdk::IEnvironment* env) {
-    environment = env;
-}
-
-IEnvironment* env() {
-    return environment;
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error)
+{
+    const auto status = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (status != MC_OK) {
+        return status;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "d4d13803-a285-4481-ad1e-106131e0d523", 36 };
+    plugin->name = { "Stock Encoders (lame + ffmpeg)", sizeof("Stock Encoders (lame + ffmpeg)") - 1 };
+    plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
+    plugin->author = { "clangen", 7 };
+    plugin->initialize = initialize;
+    plugin->shutdown = [](void* state) { delete static_cast<PluginState*>(state); };
+    return MC_OK;
 }

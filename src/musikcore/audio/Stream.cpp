@@ -36,7 +36,7 @@
 
 #include "Stream.h"
 #include <musikcore/audio/PlaybackMath.h>
-#include "Streams.h"
+#include "Dsp.h"
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
 #include <climits>
@@ -64,7 +64,7 @@ Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, StreamFlags op
 , capabilities(0)
 , rawBuffer(nullptr) {
     if (((int) this->options & (int) StreamFlags::NoDSP) == 0) {
-        dsps = streams::GetDspPlugins();
+        dsps = musik::core::plugin::CreateDsps();
     }
 }
 
@@ -88,8 +88,8 @@ Stream::~Stream() {
     }
 }
 
-IStreamPtr Stream::Create(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options) {
-    return IStreamPtr(new Stream(samplesPerChannel, bufferLengthSeconds, options));
+Stream::Shared Stream::Create(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options) {
+    return Stream::Shared(new Stream(samplesPerChannel, bufferLengthSeconds, options));
 }
 
 musik::core::audio::IStream* Stream::CreateUnmanaged(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options) {
@@ -225,7 +225,7 @@ void Stream::Interrupt() {
     }
 }
 
-void Stream::OnBufferProcessedByPlayer(IBuffer* buffer) {
+void Stream::RecycleBuffer(IBuffer* buffer) {
     this->recycledBuffers.push_back((Buffer*) buffer);
 }
 
@@ -305,8 +305,16 @@ IBuffer* Stream::GetNextProcessedOutputBuffer() {
         Buffer* buffer = this->filledBuffers.front();
         this->filledBuffers.pop_front();
 
-        for (std::shared_ptr<IDSP> dsp : this->dsps) {
-            dsp->Process(buffer);
+        for (const auto& dsp : this->dsps) {
+            const auto status = dsp->Process(*buffer);
+            if (status != MC_OK) {
+                /* a processor can fail after changing samples. never send
+                that partial block to the output. */
+                this->decodeStatus = status;
+                this->done = true;
+                this->recycledBuffers.push_back(buffer);
+                return nullptr;
+            }
         }
 
         return buffer;

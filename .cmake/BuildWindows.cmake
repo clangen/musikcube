@@ -214,9 +214,11 @@ target_include_directories(server PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(server PRIVATE vendor::zlib vendor::microhttpd ws2_32)
 
 windows_plugin(stockencoders FfmpegEncoder.cpp LameEncoder.cpp main.cpp)
+musikcube_configure_c_plugin(stockencoders)
 target_link_libraries(stockencoders PRIVATE vendor::lame ${windows_ffmpeg})
 
 windows_plugin(supereqdsp SuperEqDsp.cpp supereqdsp_plugin.cpp supereq/Equ.cpp supereq/Fftsg_fl.c)
+musikcube_configure_c_plugin(supereqdsp)
 
 windows_plugin(taglib_plugin taglib_plugin.cpp TaglibMetadataReader.cpp)
 target_compile_definitions(taglib_plugin PRIVATE TAGLIB_STATIC)

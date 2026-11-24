@@ -3,7 +3,7 @@
 set(provider_output_directory "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/providers")
 
 # provider fixtures compile as C and exchange only installed-shape function tables.
-set(provider_variants valid incompatible newer_minor truncated missing_shutdown bad_id bad_utf8 entry_fail init_fail bad_capability no_entry duplicate_id missing_version bad_output bad_stream bad_decoder bad_configuration)
+set(provider_variants valid incompatible newer_minor truncated missing_shutdown bad_id bad_utf8 entry_fail init_fail bad_capability no_entry duplicate_id missing_version bad_output bad_stream bad_decoder bad_configuration bad_encoder bad_dsp)
 set(provider_arguments)
 set(provider_targets)
 foreach(variant IN LISTS provider_variants)
@@ -275,6 +275,33 @@ foreach(mode IN ITEMS duplicate stale)
   set_tests_properties(musikcore.integration.plugins.output_${mode}_completion PROPERTIES
     LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 15)
 endforeach()
+
+# exercise the encoder ABI with a C-only provider and two independent instances.
+add_library(musikcore_byte_encoder MODULE support/plugins/byte-encoder.c)
+target_include_directories(musikcore_byte_encoder PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_definitions(musikcore_byte_encoder PRIVATE MC_BUILDING_PLUGIN)
+set_target_properties(musikcore_byte_encoder PROPERTIES C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+  ARCHIVE_OUTPUT_DIRECTORY "${provider_output_directory}"
+  LIBRARY_OUTPUT_DIRECTORY "${provider_output_directory}"
+  RUNTIME_OUTPUT_DIRECTORY "${provider_output_directory}"
+  SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+musikcube_restrict_exports(musikcore_byte_encoder mc_plugin_get_api)
+
+add_executable(musikcore_encoder_test integration/plugins/encoder.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/PluginRegistry.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/Plugin.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
+target_include_directories(musikcore_encoder_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+target_compile_features(musikcore_encoder_test PRIVATE cxx_std_20)
+target_link_libraries(musikcore_encoder_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+set_target_properties(musikcore_encoder_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcore_encoder_test musikcore_byte_encoder)
+add_dependencies(musikcube_tests musikcore_encoder_test)
+add_dependencies(musikcube_integration_tests musikcore_encoder_test)
+add_test(NAME musikcore.integration.plugins.encoder
+  COMMAND musikcore_encoder_test "$<TARGET_FILE:musikcore_byte_encoder>")
+set_tests_properties(musikcore.integration.plugins.encoder PROPERTIES
+  LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 15)
 
 # metadata callbacks cross the C boundary, including on allocation failure.
 add_executable(musikcore_metadata_writer_test unit/musikcore/metadata-writer.cpp

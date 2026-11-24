@@ -44,7 +44,7 @@ namespace {
 }
 
 TranscodingAudioDataStream::TranscodingAudioDataStream(
-    server::EncoderOwner<musik::core::sdk::IStreamingEncoder> encoder, size_t bitrate)
+    server::EncoderOwner encoder, size_t bitrate)
 : encoder(std::move(encoder))
 , bitrate(bitrate) {
     ++activeCount;
@@ -87,23 +87,25 @@ mc_result TranscodingAudioDataStream::EncodeNextBlock() {
     }
 
     if (!initialized) {
-        if (!pcm.frame_count || !encoder->Initialize(pcm.format.sample_rate, pcm.format.channels, bitrate)) {
+        if (!pcm.frame_count || encoder->api->initialize(encoder->instance, nullptr, pcm.format.sample_rate, pcm.format.channels, bitrate) != MC_OK) {
             return MC_ERROR_PLUGIN;
         }
         initialized = true;
     }
-    int encoded;
+    mc_encoded_block block = MC_ENCODED_BLOCK_DEFAULT;
+    mc_result encoded;
     if (pcm.frame_count) {
-        encoded = encoder->Encode(pcm, &pending);
+        encoded = encoder->api->encode(encoder->instance, &pcm, &block);
     }
     else {
-        encoded = encoder->Flush(&pending);
+        encoded = encoder->api->flush(encoder->instance, &block);
         flushed = true;
     }
-    if (encoded < 0 || (encoded && !pending)) {
+    if (encoded != MC_OK || (block.length && !block.data)) {
         return MC_ERROR_PLUGIN;
     }
-    pendingBytes = static_cast<size_t>(encoded);
+    pending = block.data;
+    pendingBytes = block.length;
     return MC_OK;
 }
 
@@ -115,7 +117,7 @@ bool TranscodingAudioDataStream::PublishCache() {
     if (cache.fail()) {
         return false;
     }
-    if (!encoder->Finalize(temporaryFile.c_str())) {
+    if (encoder->api->finalize(encoder->instance, { temporaryFile.data(), temporaryFile.size() }) != MC_OK) {
         return false;
     }
     if (cacheFile.empty()) {

@@ -35,13 +35,13 @@
 #pragma once
 
 #include "ServerMedia.h"
-#include <musikcore/sdk/IBlockingEncoder.h>
+#include <musikcore/plugin/encoder.h>
 
 class BlockingTranscoder {
 public:
     /* commit the temporary file only after every PCM block and the encoder
     trailer were written successfully. */
-    static bool Run(Context& context, musik::core::sdk::IBlockingEncoder& encoder, const std::string& uri,
+    static bool Run(Context& context, mc_encoder& encoder, const std::string& uri,
         const std::string& temp, const std::string& destination, size_t bitrate);
 
     static int GetActiveCount();

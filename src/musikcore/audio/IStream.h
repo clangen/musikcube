@@ -36,7 +36,6 @@
 
 #include <musikcore/config.h>
 #include <musikcore/sdk/IBuffer.h>
-#include <musikcore/sdk/IDSP.h>
 #include <musikcore/audio/Output.h>
 
 #include <list>
@@ -46,7 +45,7 @@ namespace musik { namespace core { namespace audio {
     class IStream {
         public:
             virtual musik::core::sdk::IBuffer* GetNextProcessedOutputBuffer() = 0;
-            virtual void OnBufferProcessedByPlayer(musik::core::sdk::IBuffer* buffer) = 0;
+            virtual void RecycleBuffer(musik::core::sdk::IBuffer* buffer) = 0;
             virtual double SetPosition(double seconds) = 0;
             virtual double GetDuration() = 0;
             virtual bool OpenStream(std::string uri, musik::core::audio::Output* output) = 0;

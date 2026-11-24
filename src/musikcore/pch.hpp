@@ -68,7 +68,7 @@
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/Stream.h>
-#include <musikcore/audio/Streams.h>
+#include <musikcore/audio/Dsp.h>
 #include <musikcore/audio/Visualizer.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/ScopedTransaction.h>
@@ -128,15 +128,10 @@
 #include <musikcore/sdk/DataBuffer.h>
 #include <musikcore/sdk/Filesystem.h>
 #include <musikcore/sdk/IAllocator.h>
-#include <musikcore/sdk/IAnalyzer.h>
-#include <musikcore/sdk/IBlockingEncoder.h>
 #include <musikcore/sdk/IBuffer.h>
 #include <musikcore/sdk/IBufferProvider.h>
 #include <musikcore/sdk/IDebug.h>
 #include <musikcore/sdk/IDevice.h>
-#include <musikcore/sdk/IDSP.h>
-#include <musikcore/sdk/IEncoder.h>
-#include <musikcore/sdk/IEncoderFactory.h>
 #include <musikcore/sdk/IEnvironment.h>
 #include <musikcore/sdk/IIndexerNotifier.h>
 #include <musikcore/sdk/IIndexerSource.h>
@@ -153,7 +148,6 @@
 #include <musikcore/sdk/IResource.h>
 #include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/ISpectrumVisualizer.h>
-#include <musikcore/sdk/IStreamingEncoder.h>
 #include <musikcore/sdk/ITagReader.h>
 #include <musikcore/sdk/ITagStore.h>
 #include <musikcore/sdk/ITrack.h>

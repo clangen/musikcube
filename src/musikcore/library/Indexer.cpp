@@ -52,7 +52,10 @@
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/sdk/IAnalyzer.h>
+#include <musikcore/plugin/analyzer.h>
+#include <musikcore/plugin/Plugins.h>
+#include <musikcore/plugin/MetadataWriter.h>
+#include <common/Contract.h>
 #include <musikcore/sdk/IIndexerSource.h>
 #include <musikcore/audio/Stream.h>
 #include <musikcore/support/ThreadGroup.h>
@@ -144,17 +147,29 @@ Indexer::~Indexer() {
 
 void Indexer::Shutdown() {
     if (this->thread) {
-        std::shared_ptr<IIndexerSource> source;
-        uint64_t generation;
         {
-            std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
-
+            std::lock_guard lock(this->stateMutex);
             this->syncQueue.clear();
             this->state = StateStopping;
-            source = this->currentSource;
-            generation = this->scanGeneration;
         }
-        this->InterruptSource(source, generation);
+        {
+            /* wait for an in-flight cancellation to release its stream before
+            shutdown can unload the stream provider. */
+            std::lock_guard lifecycle(this->sourceLifecycleMutex);
+            std::shared_ptr<IIndexerSource> source;
+            audio::Stream::Shared analysis;
+            uint64_t generation;
+            {
+                std::lock_guard lock(this->stateMutex);
+                source = this->currentSource;
+                analysis = this->analysisStream;
+                generation = this->scanGeneration;
+            }
+            this->InterruptSource(source, generation);
+            if (analysis) {
+                analysis->Interrupt();
+            }
+        }
 
         this->waitCondition.notify_all();
         this->thread->join();
@@ -167,17 +182,30 @@ void Indexer::Schedule(SyncType type) {
 }
 
 void Indexer::Cancel() {
-    std::shared_ptr<IIndexerSource> source;
     uint64_t generation;
     {
         std::lock_guard lock(this->stateMutex);
         this->syncQueue.clear();
         generation = this->scanGeneration;
-        if (this->state == StateIndexing && !this->cancelRequested.exchange(true)) {
+        if (this->state != StateIndexing || this->cancelRequested.exchange(true)) {
+            return;
+        }
+    }
+
+    std::lock_guard lifecycle(this->sourceLifecycleMutex);
+    std::shared_ptr<IIndexerSource> source;
+    audio::Stream::Shared analysis;
+    {
+        std::lock_guard lock(this->stateMutex);
+        if (this->state == StateIndexing && generation == this->scanGeneration && this->Bail()) {
             source = this->currentSource;
+            analysis = this->analysisStream;
         }
     }
     this->InterruptSource(source, generation);
+    if (analysis) {
+        analysis->Interrupt();
+    }
 }
 
 void Indexer::InterruptSource(const std::shared_ptr<IIndexerSource>& source, uint64_t generation) {
@@ -989,34 +1017,62 @@ void Indexer::ProcessAddRemoveQueue() {
     }
 }
 
+
+namespace {
+    struct AnalyzerInstance {
+        void* instance = nullptr;
+        const mc_analyzer_vtable* api = nullptr;
+        mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+        mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
+
+        ~AnalyzerInstance() {
+            if (instance) {
+                api->destroy(instance);
+            }
+        }
+    };
+}
+
 void Indexer::RunAnalyzers() {
-    typedef sdk::IAnalyzer PluginType;
-    typedef PluginFactory::ReleaseDeleter<PluginType> Deleter;
-    typedef std::shared_ptr<PluginType> PluginPtr;
-    typedef std::vector<PluginPtr> PluginVector;
-
-    /* short circuit if there aren't any analyzers */
-
-    PluginVector analyzers = PluginFactory::Instance()
-        .QueryInterface<PluginType, Deleter>("GetAudioAnalyzer");
-
+    const std::string dataDirectory = GetDataDirectory();
+    std::vector<std::unique_ptr<AnalyzerInstance>> analyzers;
+    for (const auto& plugin : musik::core::plugin::ListPlugins()) {
+        const auto factory = musik::core::plugin::FindAnalyzerFactory(plugin.id);
+        if (!plugin.enabled || !factory) {
+            continue;
+        }
+        auto analyzer = std::make_unique<AnalyzerInstance>();
+        analyzer->preferences = musik::core::plugin::ReadSettingsService(plugin.name);
+        analyzer->services.data_directory = { dataDirectory.data(), dataDirectory.size() };
+        analyzer->services.preferences = &analyzer->preferences;
+        analyzer->services.media = &musik::core::plugin::Environment().Media();
+        const auto status = factory.Invoke([&](const mc_analyzer_factory& table) {
+            analyzer->api = table.instance_api;
+            const auto result = table.create(table.context, &analyzer->services, &analyzer->instance, nullptr);
+            musik::contract::Assert(result == MC_OK || !analyzer->instance,
+                "failed analyzer factory returned an instance");
+            return result;
+        });
+        if (status != MC_OK) {
+            musik::debug::error(TAG, "could not create analyzer " + plugin.name +
+                " (" + std::to_string(status) + ")");
+            return;
+        }
+        musik::contract::Assert(analyzer->instance, "analyzer factory returned no instance");
+        analyzers.push_back(std::move(analyzer));
+    }
     if (analyzers.empty()) {
         return;
     }
 
-    /* for each track... */
-
     int64_t trackId = 0;
-
     db::Statement getNextTrack(
         "SELECT id FROM tracks WHERE id>? ORDER BY id LIMIT 1",
         this->dbConnection);
-
     getNextTrack.BindInt64(0, trackId);
 
-    while(getNextTrack.Step() == db::Row ) {
+    while (getNextTrack.Step() == db::Row) {
         trackId = getNextTrack.ColumnInt64(0);
-
         getNextTrack.ResetAndUnbind();
 
         auto track = std::make_shared<IndexerTrack>(trackId);
@@ -1024,55 +1080,73 @@ void Indexer::RunAnalyzers() {
         query.Run(this->dbConnection);
 
         if (query.GetStatus() == IQuery::Finished) {
-            PluginVector runningAnalyzers;
-
             TagStore store(track);
-            for (auto plugin : analyzers) {
-                if (plugin->Start(&store)) {
-                    runningAnalyzers.push_back(plugin);
+            const auto writer = musik::core::plugin::CreateMetadataWriter(store);
+            std::vector<AnalyzerInstance*> started;
+            std::vector<AnalyzerInstance*> running;
+            for (const auto& analyzer : analyzers) {
+                started.push_back(analyzer.get());
+                if (analyzer->api->begin(analyzer->instance, &writer, nullptr) == MC_OK) {
+                    running.push_back(analyzer.get());
                 }
             }
 
-            if (!runningAnalyzers.empty()) {
-                audio::IStreamPtr stream = audio::Stream::Create(2048, 2.0, StreamFlags::NoDSP);
+            bool decoded = false;
+            auto stream = audio::Stream::Create(2048, 2.0, StreamFlags::NoDSP);
+            {
+                std::lock_guard lock(this->stateMutex);
+                if (!this->Bail() && !running.empty()) {
+                    this->analysisStream = stream;
+                }
+            }
+            if (this->Bail() && stream) {
+                stream->Interrupt();
+            }
+            if (!running.empty() && stream && !this->Bail() && stream->OpenStream(track->Uri(), nullptr)) {
+                IBuffer* buffer = nullptr;
+                while (!this->Bail() && !running.empty() && (buffer = stream->GetNextProcessedOutputBuffer())) {
+                    const mc_pcm_view pcm {
+                        .struct_size = sizeof(mc_pcm_view),
+                        .data = buffer->BufferPointer(),
+                        .frame_count = static_cast<size_t>(buffer->Samples() / buffer->Channels()),
+                        .format = {
+                            .struct_size = sizeof(mc_audio_format),
+                            .sample_rate = static_cast<uint32_t>(buffer->SampleRate()),
+                            .channels = static_cast<uint32_t>(buffer->Channels()),
+                            .channel_layout = 0,
+                        },
+                    };
+                    std::erase_if(running, [&](AnalyzerInstance* analyzer) {
+                        return analyzer->api->process(analyzer->instance, &pcm, &writer, nullptr) != MC_OK;
+                    });
+                    /* analyzers consume each slice synchronously, so the next
+                    decode can reuse the same bounded pool. */
+                    stream->RecycleBuffer(buffer);
+                }
+                decoded = !this->Bail() && stream->Eof() && stream->DecodeStatus() == MC_OK;
+            }
 
-                if (stream) {
-                    if (stream->OpenStream(track->Uri(), nullptr)) {
+            {
+                std::lock_guard lock(this->stateMutex);
+                this->analysisStream.reset();
+            }
 
-                        /* decode the stream quickly, passing to all analyzers */
-
-                        IBuffer* buffer;
-
-                        while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
-                            PluginVector::iterator plugin = runningAnalyzers.begin();
-                            while(plugin != runningAnalyzers.end()) {
-                                if ((*plugin)->Analyze(&store, buffer)) {
-                                    ++plugin;
-                                }
-                                else {
-                                    plugin = runningAnalyzers.erase(plugin);
-                                }
-                            }
-                        }
-
-                        /* done with track decoding and analysis, let the plugins know */
-
-                        int successPlugins = 0;
-                        PluginVector::iterator plugin = analyzers.begin();
-
-                        for ( ; plugin != analyzers.end(); ++plugin) {
-                            if ((*plugin)->End(&store)) {
-                                successPlugins++;
-                            }
-                        }
-
-                        /* the analyzers can write metadata back to the DB, so if any of them
-                        completed successfully, then save the track. */
-
-                        if (successPlugins>0) {
-                            track->Save(this->dbConnection, this->libraryPath);
-                        }
-                    }
+            /* analyzers share one track record. if any fails, discard every
+            analyzer's edits for this track so partial results are not saved. */
+            const bool commit = decoded && !this->Bail() && running.size() == started.size();
+            bool success = commit;
+            for (auto* analyzer : started) {
+                const auto result = analyzer->api->finish(analyzer->instance, &writer, commit ? 1 : 0, nullptr);
+                if (result != MC_OK) {
+                    success = false;
+                }
+            }
+            if (success) {
+                /* serialize the final save with cancellation admission so a
+                cancelled scan cannot persist analyzer results afterward. */
+                std::lock_guard lock(this->stateMutex);
+                if (!this->Bail()) {
+                    track->Save(this->dbConnection, this->libraryPath);
                 }
             }
         }
@@ -1080,7 +1154,6 @@ void Indexer::RunAnalyzers() {
         if (this->Bail()) {
             return;
         }
-
         getNextTrack.BindInt64(0, trackId);
     }
 }

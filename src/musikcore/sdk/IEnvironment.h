@@ -35,7 +35,6 @@
 #pragma once
 
 #include "constants.h"
-#include "IEncoder.h"
 #include "IPreferences.h"
 #include <musikcore/output.h>
 #include "ITrackList.h"
@@ -49,7 +48,6 @@ namespace musik { namespace core { namespace sdk {
             virtual size_t GetPath(PathType type, char* dst, int size) = 0;
             virtual const mc_media_host_api& Media() = 0;
             virtual const mc_audio_scratch_buffer_api& AudioScratch() = 0;
-            virtual IEncoder* GetEncoder(const char* type) = 0;
             virtual IPreferences* GetPreferences(const char* name) = 0;
             virtual IDebug* GetDebug() = 0;
             virtual mc_result GetOutputConfiguration(mc_string_view driver,

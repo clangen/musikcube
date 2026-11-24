@@ -1,6 +1,8 @@
 #include "probe.h"
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/decoder.h>
+#include <musikcore/plugin/encoder.h>
+#include <musikcore/plugin/dsp.h>
 #include <musikcore/plugin/settings.h>
 #include <stdlib.h>
 #include <string.h>
@@ -79,7 +81,7 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
     if (register_again(state) != MC_ERROR_INVALID_ARGUMENT) {
         return MC_ERROR_INTERNAL;
     }
-#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION)
+#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION) || defined(BAD_ENCODER) || defined(BAD_DSP)
     /* registration must reject a sized factory with missing operations before
     playback can obtain a typed view of the provider. */
 #if defined(BAD_CONFIGURATION)
@@ -96,6 +98,12 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
         .integer_count = 1,
     };
     static const char id[] = MC_PLUGIN_CAPABILITY_CONFIGURATION;
+#elif defined(BAD_ENCODER)
+    static const mc_encoder_factory factory = MC_ENCODER_FACTORY_DEFAULT;
+    static const char id[] = MC_PLUGIN_CAPABILITY_ENCODER;
+#elif defined(BAD_DSP)
+    static const mc_dsp_factory factory = MC_DSP_FACTORY_DEFAULT;
+    static const char id[] = MC_PLUGIN_CAPABILITY_DSP;
 #elif defined(BAD_STREAM)
     static const mc_stream_factory factory = MC_STREAM_FACTORY_DEFAULT;
     static const char id[] = MC_PLUGIN_CAPABILITY_STREAM;

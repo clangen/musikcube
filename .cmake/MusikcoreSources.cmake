@@ -17,7 +17,7 @@ set(musikcore_sources
   src/musikcore/audio/UriPlayer.cpp
   src/musikcore/audio/Player.cpp
   src/musikcore/audio/Stream.cpp
-  src/musikcore/audio/Streams.cpp
+  src/musikcore/audio/Dsp.cpp
   src/musikcore/audio/Visualizer.cpp
   src/musikcore/db/Connection.cpp
   src/musikcore/db/ScopedTransaction.cpp

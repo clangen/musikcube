@@ -32,23 +32,23 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/IStreamingEncoder.h>
+#include <musikcore/plugin/encoder.h>
 #include <musikcore/sdk/DataBuffer.h>
 
 #pragma warning(push, 0)
 #include <lame/lame.h>
 #pragma warning(pop)
 
-class LameEncoder: public musik::core::sdk::IStreamingEncoder {
+class LameEncoder {
 
     public:
         LameEncoder();
 
-        virtual void Release() override;
-        virtual bool Initialize(size_t rate, size_t channels, size_t bitrate) override;
-        virtual int Encode(const mc_pcm_view& pcm, char** data) override;
-        virtual int Flush(char** data) override;
-        virtual bool Finalize(const char* uri) override;
+        void Release();
+        bool Initialize(size_t rate, size_t channels, size_t bitrate);
+        int Encode(const mc_pcm_view& pcm, char** data);
+        int Flush(char** data);
+        bool Finalize(const char* uri);
 
     private:
         DataBuffer<unsigned char> encodedBytes;

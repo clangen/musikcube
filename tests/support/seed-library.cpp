@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <string_view>
 
 namespace {
     using namespace musik::core::api;
@@ -33,6 +34,7 @@ namespace {
     struct SeedState {
         int64_t expected;
         bool indexed = false;
+        bool cancelled = false;
 
         static void MC_CALL OnIndexEvent(void* data, mc_indexer_event event, int scanned) {
             auto& state = *static_cast<SeedState*>(data);
@@ -40,10 +42,13 @@ namespace {
             if (event == MC_INDEXER_FINISHED && scanned >= state.expected) {
                 state.indexed = true;
             }
+            if (event == MC_INDEXER_CANCELLED) {
+                state.cancelled = true;
+            }
         }
     };
 
-    bool seed(const char* media, int64_t expected) {
+    bool seed(const char* media, int64_t expected, std::string_view action) {
         std::unique_ptr<test_host_event, decltype(&test_host_event_destroy)>
             event(test_host_event_create(), test_host_event_destroy);
         if (!event) {
@@ -63,8 +68,31 @@ namespace {
         Indexer indexer(context);
         if (context.SelectLibrary(MC_LIBRARY_LOCAL) != MC_OK ||
             indexer.SetCallback(SeedState::OnIndexEvent, &state) != MC_OK ||
-            indexer.AddPath(media) != MC_OK || indexer.Schedule(MC_INDEXER_SCAN_LOCAL) != MC_OK ||
-            !dispatchUntil(context, *event, [&] { return state.indexed; }))
+            indexer.AddPath(media) != MC_OK || indexer.Schedule(MC_INDEXER_SCAN_LOCAL) != MC_OK)
+        {
+            return false;
+        }
+        if (!action.empty()) {
+            /* the parent releases this read only after the plugin is blocked
+            inside open, so cancellation is tested at the real I/O boundary. */
+            if (std::getchar() == EOF) {
+                return false;
+            }
+            if (action == "shutdown") {
+                return context.Close() == MC_OK;
+            }
+            if (action == "cancel") {
+                if (indexer.Cancel() != MC_OK) {
+                    return false;
+                }
+                std::puts("cancel-sent");
+                std::fflush(stdout);
+                return dispatchUntil(context, *event, [&] { return state.cancelled; }) &&
+                    context.Close() == MC_OK;
+            }
+            return false;
+        }
+        if (!dispatchUntil(context, *event, [&] { return state.indexed; }))
         {
             std::fputs("Indexer did not finish\n", stderr);
             return false;
@@ -88,7 +116,7 @@ namespace {
 }
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
+    if (argc != 3 && argc != 4) {
         return 1;
     }
 
@@ -98,7 +126,7 @@ int main(int argc, char** argv) {
     }
 
     try {
-        return seed(argv[1], expected) ? 0 : 1;
+        return seed(argv[1], expected, argc == 4 ? argv[3] : "") ? 0 : 1;
     }
     catch (const Error& error) {
         std::fprintf(stderr, "Seeder failed: %s\n", error.what());

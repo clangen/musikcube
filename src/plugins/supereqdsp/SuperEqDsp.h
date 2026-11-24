@@ -34,23 +34,21 @@
 
 #pragma once
 
-#include <musikcore/sdk/IDSP.h>
+#include <musikcore/plugin/dsp.h>
 #include "supereq/Equ.h"
 
-using namespace musik::core::sdk;
-
-class SuperEqDsp : public IDSP {
+class SuperEqDsp {
     public:
-        SuperEqDsp();
+        explicit SuperEqDsp(const mc_plugin_services& services);
         ~SuperEqDsp();
 
-        virtual void Release() override;
-        virtual bool Process(IBuffer *buffer) override;
+        mc_result Process(mc_audio_buffer_view& buffer);
 
-        static void NotifyChanged();
+        static void NotifyChanged() noexcept;
 
     private:
         SuperEqState* supereq {nullptr};
-        int lastUpdated {0};
+        uint64_t lastUpdated { 0 };
         bool enabled;
+        mc_preferences_host_api preferences;
 };

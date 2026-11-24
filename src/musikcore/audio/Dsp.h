@@ -32,63 +32,36 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#pragma once
 
-#include "Streams.h"
-#include <musikcore/sdk/IEncoderFactory.h>
-#include <musikcore/plugin/PluginFactory.h>
-#include <mutex>
+#include <musikcore/config.h>
+#include <common/DeleteDefaults.h>
+#include <musikcore/plugin/dsp.h>
+#include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 
-using namespace musik::core::audio;
-using namespace musik::core::sdk;
-using musik::core::PluginFactory;
-
-using EncoderFactoryList = std::vector<std::shared_ptr<IEncoderFactory>>;
-using DspList = std::vector<std::shared_ptr<IDSP>>;
-
-namespace {
-    std::mutex initLock;
-    std::shared_ptr<const EncoderFactoryList> factories;
-
-    std::shared_ptr<const EncoderFactoryList> getFactories() {
-        std::lock_guard<std::mutex> lock(initLock);
-        if (!factories) {
-            using Deleter = PluginFactory::ReleaseDeleter<IEncoderFactory>;
-            factories = std::make_shared<EncoderFactoryList>(
-                PluginFactory::Instance().QueryInterface<IEncoderFactory, Deleter>("GetEncoderFactory"));
-        }
-        return factories;
-    }
-}
+#include <memory>
+#include <vector>
 
 namespace musik { namespace core { namespace audio {
 
-    namespace streams {
-        void Shutdown() {
-            std::shared_ptr<const EncoderFactoryList> retired;
-            {
-                std::lock_guard<std::mutex> lock(initLock);
-                retired.swap(factories);
-            }
-            /* provider Release may reenter core; do not hold the cache mutex. */
-        }
+    class Buffer;
 
-        IEncoder* GetEncoderForType(const char* type) {
-            const auto cache = getFactories();
+    /* owns one plugin processor and the services it uses for one playback stream. */
+    class Dsp {
+    public:
+        MUSIK_DELETE_COPY_AND_MOVE(Dsp);
 
-            for (const auto& factory : *cache) {
-                if (factory->CanHandle(type)) {
-                    return factory->CreateEncoder(type);
-                }
-            }
+        Dsp(musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> factory, const mc_plugin_services& services);
+        ~Dsp();
 
-            return nullptr;
-        }
+        bool IsValid() const { return instance != nullptr; }
+        mc_result Process(Buffer& buffer);
 
-        DspList GetDspPlugins() {
-            typedef PluginFactory::ReleaseDeleter<IDSP> Deleter;
-            return PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
-        }
+    private:
+        musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> factory;
+        const mc_dsp_vtable* api = nullptr;
+        void* instance = nullptr;
     };
+
 
 } } }

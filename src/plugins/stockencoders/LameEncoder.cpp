@@ -34,10 +34,8 @@
 
 #include "LameEncoder.h"
 #include <climits>
-#include "shared.h"
 #include <string>
 
-using namespace musik::core::sdk;
 
 #ifdef WIN32
 #include <windows.h>

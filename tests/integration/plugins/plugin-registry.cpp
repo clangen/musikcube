@@ -317,6 +317,8 @@ int main(int argc, char** argv) {
         BadStream,
         BadDecoder,
         BadConfiguration,
+        BadEncoder,
+        BadDsp,
         FixtureCount
     };
     require(argc == 2 || argc == FixtureCount, "fixture arguments supplied");
@@ -338,6 +340,9 @@ int main(int argc, char** argv) {
         /* a setting with an impossible default cannot be exposed to the settings editor. */
         checkRejected(argv[BadConfiguration], true, true, MC_ERROR_INVALID_ARGUMENT);
         checkRejected(argv[BadOutput], true, true, MC_ERROR_INVALID_ARGUMENT);
+        /* an incomplete encoder or DSP must never be published. */
+        checkRejected(argv[BadEncoder], true, true, MC_ERROR_INVALID_ARGUMENT);
+        checkRejected(argv[BadDsp], true, true, MC_ERROR_INVALID_ARGUMENT);
     }
     std::puts("provider identification/session-lifetime contracts passed");
 }

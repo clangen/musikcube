@@ -2,20 +2,24 @@
 
 #include "Context.h"
 #include <musikcore/plugin/media.h>
-#include <musikcore/sdk/IEncoder.h>
+#include <musikcore/plugin/encoder.h>
 #include <memory>
 #include <optional>
 #include <string>
 
 namespace server {
 
-    /* an encoder was allocated inside its plugin. EncoderOwner calls that
-    plugin's Release method when a request finishes or an encode fails. */
+    /* a response owns its encoder until the last encoded byte is consumed. */
     struct ReleaseEncoder {
-        void operator()(musik::core::sdk::IEncoder* encoder) const { encoder->Release(); }
+        void operator()(mc_encoder* encoder) const {
+            if (encoder) {
+                encoder->api->destroy(encoder->instance);
+                delete encoder;
+            }
+        }
     };
 
-    template<typename T> using EncoderOwner = std::unique_ptr<T, ReleaseEncoder>;
+    using EncoderOwner = std::unique_ptr<mc_encoder, ReleaseEncoder>;
 
     /* opens a URI through musikcore's stream providers. the server uses it to
     read track bytes or give a file encoder a writable destination. destroying
