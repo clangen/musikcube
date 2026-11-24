@@ -517,3 +517,4 @@ The modernization is complete when:
 - [ADR-0011: Analyzer track results](../docs/adr/0011-analyzer-track-results.md)
 - [ADR-0012: DSP processing failure](../docs/adr/0012-dsp-processing-failure.md)
 - [ADR-0013: Indexer source identity and checkpoints](../docs/adr/0013-indexer-source-identity-and-checkpoints.md)
+- [ADR-0014: Playback remote command lifetime](../docs/adr/0014-playback-remote-command-lifetime.md)

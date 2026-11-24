@@ -529,10 +529,8 @@ results/references. It rejects admission as unsupported. A bound empty range
 still validates projection support and connection generation, then returns an
 owned empty page without submitting an empty metadata query.
 
-Modern servers support an optional lossless projection on the existing typed
-batch query. Older servers can ignore it and return the legacy map; their
-conversion cannot preserve every NULL/empty distinction or guarantee hidden-row
-filtering. Tests cover modern parity and legacy fallback separately.
+Remote batch queries support a lossless projection that preserves NULL and
+empty values. Projected requests require a projected response.
 
 Playback has an owner-thread contract. Queue snapshots capture immutable
 revisions; edits, shuffle, and library changes invalidate stale positional
@@ -1050,7 +1048,7 @@ old-interface adapter. The interface-by-interface disposition is in the design.
 | `support/Preferences`, plugin catalog/settings C entry points | `IPreferences`, `ISchema`, plugin-name stores, reload calls | Use scoped preference/configuration tables. Decide persistence identity before changing filenames; render data descriptors without plugin-owned UI. |
 | `io/DataStreamFactory`, `io/LocalFileStream`, `audio/Streams`, `audio/Stream` | `IDataStream`, decoder/encoder factories, DSP enumeration and caches | Use C stream/factory contracts and engine-owned instances. Preserve create-before-open publication and interruption; absent families report unsupported or bypass DSP. |
 | `audio/Buffer`, `audio/Player`, `audio/Outputs`, transport headers, `audio/Crossfader` | SDK buffer/provider/output types and callbacks | Use opaque host buffers, typed output factories, explicit submission tokens, and core-owned playback state. Discover the bundled null-output DLL through the same loader as native outputs. |
-| `audio/PlaybackService`, `audio/Visualizer` | Playback-remotes, visualizer interfaces, borrowed playback-service pointers | Deliver owner-thread C snapshots and bounded read-only PCM/spectrum views. Active platform integrations become explicitly stopped/joined extensions. |
+| `audio/PlaybackService`, `audio/Visualizer` | Playback-remotes, visualizer interfaces, borrowed playback-service pointers | Deliver owner-thread C snapshots and bounded read-only PCM/spectrum views. Playback remotes stop and join any workers they own. |
 | `library/Indexer` | Tag readers, decoder factories, indexer sources, analyzers, SDK metadata writers | Use source-scoped C writers and typed factories. Keep checkpoint/rollback semantics; resolve source-ID and timestamp persistence before conversion. |
 | `library/ILibrary`, `library/LocalMetadataProxy`, `library/track/*`, `library/metadata/*` | SDK track/list/map/editor interfaces | Keep concrete metadata storage private to the core; expose existing C identities/results/pages through typed host calls. Do not recreate the exported C++ object graph. |
 | `library/query/*`, including `util/SdkWrappers` and `TrackQueryFragments` | SDK metadata wrappers and shared tag/category constants | Replace old interface results with private core data or existing C result types. Preserve typed backend routing and bound SQL; keep SQL in local query implementations. |
@@ -1072,7 +1070,7 @@ replacement stream tests protect its useful create/open/cancel contracts.
    - [ ] **PLG-CONTRACT-002** Define provisional C shapes for buffers, streams,
      decoders, blocking/streaming encoders, outputs/devices, DSP, analyzers,
      metadata writers/readers, indexer sources/writers, visualizers, playback
-     observers, configuration, and lifecycle extensions. Reuse existing C
+     remotes and configuration. Reuse existing C
      primitives/results where appropriate. Complete the contract-definition
      portions of AUD-002, STR-001, DCD-001/DCD-002, ENC-001/ENC-002, DST-001,
      TAG-001, IDX-001, OUT-001/OUT-002, DSP-001, and EXT-001 through EXT-005
@@ -1131,7 +1129,7 @@ replacement stream tests protect its useful create/open/cancel contracts.
      leaves no visible registrations and does not prevent other plugins loading.
      Make dependency injection explicit; no global `SetEnvironment` replacement
      that exposes the entire engine as one untyped service object. Supply typed
-     services at instance creation, with active extensions started only after
+     services at instance creation, with playback remotes started only after
      required services are ready. Prove stop/cancel/owner-dispatch-drain/join/
      instance-destruction ordering before final registry shutdown/unload, including
      workers holding peer-provider objects and awaiting host completions.
@@ -1348,7 +1346,7 @@ and mutable timing methods; adapters own no implicit lifecycle policy.
   before destroying services; the private registry check cannot protect earlier
   engine mutation. Public context dispatch/BUSY behavior is unchanged.
   GATE-600 covers stream and decoder quiescence. Full engine orchestration
-  and extension teardown remain PLG-CUTOVER-001 and the extension task below.
+  and playback-remote teardown remain PLG-CUTOVER-001 and the relevant tasks below.
 - [x] **SDK-009** Add the valid pure-C fixture plugin. Its test-only probe table
   exercises session-owned state without inventing a shipped provider family.
 - [x] **SDK-010** Add incompatible, truncated, missing-hook/version/entry,
@@ -1449,9 +1447,8 @@ behavior complete. Those remain the unchecked tasks above.
   results and track references to the originating library. Test switching
   between libraries with a request in flight in `musikcore.abi.library_switch`.
 - [x] **LIB-014** Dispatch local and remote ordered search/range reads through
-  typed library queries. Modern remote batch projections retain arbitrary and
-  multivalued tags and NULL/empty distinctions; legacy-server fallback limitations
-  are explicit. `musikcore.abi.remote_query_transport` and
+  typed library queries. Remote batch projections retain arbitrary and
+  multivalued tags and NULL/empty distinctions. `musikcore.abi.remote_query_transport` and
   `musikcore.integration.api.backend_parity` cover routing and projection parity.
 - [x] **LIB-015** Hold socket replies across cancellation, library selection,
   disconnect, and reconnect in `musikcore.abi.remote_query_transport`. Verify
@@ -2157,7 +2154,64 @@ stage; migrated families must not keep a parallel former-SDK path.
 - [ ] **EXT-001** Design schema/configuration descriptors as data.
 - [ ] **EXT-002** Migrate visualizer providers.
 - [ ] **EXT-003** Migrate playback-remote providers.
+  A playback remote receives playback changes and issues commands; it may be a
+  local integration or a network server. Design its C contract around that
+  role, including safe worker shutdown where needed. The C factory and event
+  tables are declared and malformed registrations are rejected by the registry.
+  `plugins.playback_remote_adapter` checks the header-only C++ helper; it does
+  not prove engine lifecycle order. `plugins.playback_remote_lifecycle` covers
+  activation, playback events, failed start cleanup, and ordinary shutdown
+  through the real runtime, including a worker waiting for a queued playback
+  command while shutdown cancels it, concurrent submission and dispatch, queue
+  saturation, and rejected submissions outside the active lifetime.
+  `plugins.playback_remote_stop_order` checks
+  that all remotes are stopped before any is joined; on Unix a worker is gated
+  on another remote's stop. `plugins.playback_remote_factory_throws` checks
+  fatal containment before touching an uncertain instance. The initial command
+  host supports bounded owner-thread control requests; individual request
+  cancellation is deliberately omitted for disconnects as recorded in
+  [ADR-0014](../docs/adr/0014-playback-remote-command-lifetime.md). Other host
+  operations and provider ports remain open. Failed remotes must wake their own
+  workers independently, so healthy remotes can remain active; see ADR-0014.
+  `plugins.playback_remote_startup_rollback` exercises that failure policy on
+  Unix while a healthy remote continues processing commands.
+  The lifecycle and stop-order tests passed under ThreadSanitizer on macOS;
+  Linux and Windows remain unverified.
 - [ ] **EXT-004** Migrate server integration without crossing C++ interfaces.
+  Server media helpers consume the C media and scratch-buffer services directly;
+  `server.transcode_body` and `api.remote_transcode` cover that path on macOS.
+  The proxy's external-ID lookup and playlist removal queries are in
+  `PlaylistTrackQueries.h` and retain their inputs; `library.playlist_track_queries`
+  checks lookup after the caller changes its input buffer.
+  The server registers as a C playback remote and uses the library host,
+  the public C playback API, and C settings and media services. The former
+  `IMetadataProxy` interface and injection path have been removed.
+  `plugins.playback_remote_lifecycle` exercises worker-side library and
+  playback calls; `api.managed_remote` covers cancellation of a stalled
+  remote-origin library read and transport-slot reuse. Finish validation:
+  Queue-page reads reuse the context's asynchronous requests. A disconnected
+  client's accepted read can occupy a bounded request slot until the upstream
+  replies or the plugin stops; work already sent upstream cannot be revoked.
+  Named structured library requests use the existing query registry through
+  the plugin host; unknown queries and arbitrary SQL are rejected.
+  Queue responses contain at most 1,000 tracks; clients request further pages
+  using the offset. Android's queue screen requests 75 tracks per page.
+  Server configuration is exposed through the plugin's settings schema; the
+  dedicated TUI screen uses generic plugin operations, and the core has no
+  server-specific configuration API.
+  `api.managed_remote` checks hidden-track direct lookups, visible-only search,
+  and playlist removal counts. `api.uri_player` checks that plugin settings
+  reject off-owner access before invoking a callback.
+  - [x] Bind the server's C playback remote to the local library and playback
+    services, and stop its network workers before releasing those services.
+  - [ ] Respect context threading when handling network requests and return
+    asynchronous results without blocking the owner or retaining disconnected clients.
+  - [ ] Replace library, playlist, playback, settings, output and indexer calls
+    with existing C operations; identify and test any genuinely missing operations.
+  - [ ] Validate the named JSON query protocol and remote-client wire behavior
+    without adding a raw SQL interface.
+  - [ ] Register the server and its settings through C plugin discovery, and
+    exercise start, reload, active requests and shutdown with real remote clients.
 - [ ] **EXT-005** Migrate platform hotkey and media-key plugins.
 - [ ] **SDK-013** Add contract fixtures and malformed cases for every supported
   provider family.
@@ -2285,6 +2339,9 @@ stage; migrated families must not keep a parallel former-SDK path.
   build.
 - [ ] **FIN-013** Publish API, SDK, ownership, threading, and example
   documentation with release artifacts.
+- [ ] **FIN-014** Audit `MC_CALL` in internal musikcore C++ code and remove it
+  from ordinary C++ methods. Keep it on exported C functions and on functions
+  or static thunks assigned to C ABI callback tables; verify Windows builds.
 
 #### Legacy binding cleanup inventory
 

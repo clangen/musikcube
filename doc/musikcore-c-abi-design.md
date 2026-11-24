@@ -827,8 +827,8 @@ The SDK should initially support:
 - Tag readers and tag stores.
 - Indexer sources.
 
-Plan the C shapes for visualizers, playback observers, analyzers, active
-integrations, and configuration alongside the foundational media contracts.
+Plan the C shapes for visualizers, playback remotes, analyzers, and
+configuration alongside the foundational media contracts.
 Implement one representative per family before backfilling remaining plugins;
 the engine replacement order is tracked in the LLD.
 
@@ -1020,7 +1020,7 @@ second model of a track, playlist, or playback state.
 | `IIndexerSource`, `IIndexerWriter`, `IIndexerNotifier` | Source factory/scan instance, source-scoped writer, rescan host operation | Keep scan hooks, validation, item writes/deletes/progress, interruption. Stable text source keys replace C++ hashes; checkpoint semantics are explicit. |
 | `IAnalyzer` (`GetAudioAnalyzer`) | Analyzer factory and begin/process/finish object | Preserve the core's analysis hook even though a production implementation may be absent; writes use the metadata writer. |
 | `IVisualizer`, `IPcmVisualizer`, `ISpectrumVisualizer` | Visualizer factory/object and bounded PCM/spectrum views | Keep show/hide/visible/name plus frame delivery; no transient audio pointer retained. |
-| `IPlaybackRemote` | Playback observer plus lifecycle extension where a worker is needed | Keep track/state/time/volume/mode/queue notifications; use typed host commands instead of a stored `IPlaybackService*`. |
+| `IPlaybackRemote` | Playback remote factory and instance | Keep track/state/time/volume/mode/queue notifications and typed host commands; stop and join workers owned by the remote. |
 | `IPreferences`, `ISchema`, `Configure`/`Reload` | Plugin-scoped preference table and data-driven configuration capability | Keep typed values/defaults/ranges/choices/persistence; activation/restart effects are explicit. |
 | `IMetadataProxy`, `ITrack`, `ITrackList`, editor/map/value interfaces | Existing C identities/results/pages and typed catalog/playback host calls | Preserve useful operations without recreating the C++ object graph. Identify missing typed operations before server conversion. |
 | `IEnvironment`, `IDebug`, `SetEnvironment`/`SetDebug`/`SetPreferences`/`SetMetadataProxy`/`SetIndexerNotifier` | Bootstrap diagnostics and scoped, typed instance services | No global setter protocol. Factories register first; runtime services are supplied when an instance is created. |
@@ -1105,19 +1105,12 @@ typedef struct mc_visualizer {
     const mc_visualizer_vtable *api;
 } mc_visualizer;
 
-typedef struct mc_playback_observer_vtable mc_playback_observer_vtable;
-typedef struct mc_playback_observer {
+typedef struct mc_playback_remote_vtable mc_playback_remote_vtable;
+typedef struct mc_playback_remote {
     uint32_t struct_size;
     void *instance;
-    const mc_playback_observer_vtable *api;
-} mc_playback_observer;
-
-typedef struct mc_extension_vtable mc_extension_vtable;
-typedef struct mc_extension {
-    uint32_t struct_size;
-    void *instance;
-    const mc_extension_vtable *api;
-} mc_extension;
+    const mc_playback_remote_vtable *api;
+} mc_playback_remote;
 
 typedef struct mc_audio_scratch_buffer mc_audio_scratch_buffer;
 typedef struct mc_metadata_record mc_metadata_record;
@@ -1419,7 +1412,7 @@ lookups distinguish an absent record from a stored negative timestamp. A
 source-scoped host operation requests a later rescan without exposing a C++
 object across the boundary.
 
-#### Visualizers, playback observers, and lifecycle extensions
+#### Visualizers and playback remotes
 
 ```c
 typedef struct mc_spectrum_frame {
@@ -1446,21 +1439,16 @@ struct mc_visualizer_vtable {
 
 typedef struct mc_plugin_playback_event {
     uint32_t struct_size;
-    uint32_t changed_flags;
+    mc_playback_event event;
     mc_playback_snapshot playback;
-    const mc_track_ref *track;     /* callback-only identity; clone to retain. */
-    uint64_t queue_revision;
+    const mc_track_ref *track;     /* callback-only identity. */
 } mc_plugin_playback_event;
 
-struct mc_playback_observer_vtable {
+struct mc_playback_remote_vtable {
     uint32_t struct_size;
     void (MC_CALL *destroy)(void *);
     void (MC_CALL *changed)(void *, const mc_plugin_playback_event *);
-};
-
-struct mc_extension_vtable {
-    uint32_t struct_size;
-    void (MC_CALL *destroy)(void *);
+    void (MC_CALL *queue_changed)(void *);
     mc_result (MC_CALL *start)(void *, mc_error **);
     void (MC_CALL *request_stop)(void *);
     mc_result (MC_CALL *join)(void *, mc_error **);
@@ -1478,18 +1466,16 @@ spacing sample_rate/N. The explicit media position is optional and does not
 promise presentation alignment until output-clock integration is implemented.
 
 Playback events preserve the old track/state/time/volume/mode/queue meanings,
-using one change mask and existing C snapshot/identity types. Delivery is owner-
-thread serialized; use typed host commands for actions. Observers cache copies
+using the existing C event, snapshot and identity types. Delivery is owner-
+thread serialized; use typed host commands for actions. Remotes cache copies
 for their worker threads. No `IPlaybackService*` or mutable track editor is stored
 across the boundary.
 
-Extensions cover server, media-key, hotkey, MPRIS, and similar active integrations.
-Their factories declare required existing `MC_SERVICE_*` bits. Start only after
-those services and all registrations are ready. Absent services leave the
-extension inactive with an explicit reason; loading a plugin does not silently
-expand context service selection. Initialization only allocates plugin state and
-registers factories: externally active workers belong to owned instances or an
-extension, not hidden work started during negotiation/initialization.
+Playback remotes cover the server, media keys, hotkeys, and MPRIS. Their
+instances start only after playback and its required services are ready. A
+context without playback leaves them inactive; loading a plugin does not expand
+context service selection. Workers belong to the remote instance, not plugin
+negotiation or initialization.
 
 Shutdown first stops new work, requests stop on all active integrations, and
 interrupts pending media I/O. Cancel/drain plugin-scoped host requests and owner-
@@ -1498,7 +1484,7 @@ that is waiting for its next dispatch. Join workers and destroy instances,
 including peer-provider objects they own, before final registry teardown
 and plugin shutdown/unload. That ordering avoids cross-plugin reference
 cycles and owner-thread callback/join deadlocks. It needs a dedicated gated
-integration test before the first asynchronous extension is migrated.
+integration test before the first asynchronous playback remote is migrated.
 
 The remaining factory structures are explicit as well. Immutable configuration
 is registered directly; it does not require an instance factory.
@@ -1542,20 +1528,12 @@ typedef struct mc_visualizer_factory {
     mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
 } mc_visualizer_factory;
 
-typedef struct mc_playback_observer_factory {
+typedef struct mc_playback_remote_factory {
     uint32_t struct_size;
     void *context;
-    const mc_playback_observer_vtable *instance_api;
+    const mc_playback_remote_vtable *instance_api;
     mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
-} mc_playback_observer_factory;
-
-typedef struct mc_extension_factory {
-    uint32_t struct_size;
-    void *context;
-    const mc_extension_vtable *instance_api;
-    mc_services required_services;
-    mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
-} mc_extension_factory;
+} mc_playback_remote_factory;
 
 ```
 

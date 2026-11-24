@@ -37,9 +37,8 @@ that remote libraries could not execute. Keep connection-generation identity
 with remote results and reject stale operations rather than retargeting them.
 
 Use the existing typed batch query for optional lossless metadata projection.
-That preserves the transport operation while allowing modern servers to retain
-NULL/empty distinctions. Legacy fallback is explicitly limited rather than
-claimed to provide semantics an older server cannot preserve.
+Projected remote requests require a projected response so that NULL and empty
+values remain distinct.
 
 ## Alternatives considered
 
