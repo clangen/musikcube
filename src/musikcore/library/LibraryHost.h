@@ -100,6 +100,9 @@ namespace musik { namespace core { namespace library { namespace query {
             static mc_result MC_CALL ReadThumbnail(void* context, int64_t thumbnailId,
                 mc_thumbnail_completion_fn completion, void* userData);
 
+            static mc_result MC_CALL ReadLibraryThumbnail(void* context, const mc_library* library,
+                int64_t thumbnailId, mc_thumbnail_completion_fn completion, void* userData);
+
             static mc_result MC_CALL SavePlaylistHost(void* context, int64_t playlistId, mc_string_view name,
                 const int64_t* trackIds, size_t count, int64_t* savedId);
 
@@ -119,6 +122,7 @@ namespace musik { namespace core { namespace library { namespace query {
             musik::core::ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory;
             std::mutex admissionMutex;
             bool stopping { false };
+            std::atomic_bool cancelled { false };
             mc_library_host_api hostApi;
     };
 

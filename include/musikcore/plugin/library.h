@@ -143,9 +143,16 @@ typedef struct mc_library_host_api {
 
     /* delete the playlist identified by a positive local library ID. */
     mc_result (MC_CALL* delete_playlist)(void* context, int64_t playlist_id);
+
+    /* read artwork from the supplied library identity, including a remote
+    origin. this blocking worker call is cancelled when the host stops. the
+    callback receives borrowed bytes only on success; keep library alive until
+    return. IDs are scoped to that library. */
+    mc_result (MC_CALL* read_library_thumbnail)(void* context, const mc_library* library,
+        int64_t thumbnail_id, mc_thumbnail_completion_fn completion, void* user_data);
 } mc_library_host_api;
 
-#define MC_LIBRARY_HOST_API_DEFAULT { sizeof(mc_library_host_api), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define MC_LIBRARY_HOST_API_DEFAULT { sizeof(mc_library_host_api), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 #ifdef __cplusplus
 }

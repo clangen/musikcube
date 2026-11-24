@@ -112,11 +112,13 @@ LibraryHost::LibraryHost(mc_context& context, musik::core::ILibraryPtr library,
     .append_playlist = AppendPlaylistHost,
     .remove_playlist_entries = RemovePlaylistEntries,
     .delete_playlist = DeletePlaylistHost,
+    .read_library_thumbnail = ReadLibraryThumbnail,
 } {
 
 }
 
 void LibraryHost::CancelReads() noexcept {
+    this->cancelled.store(true);
     {
         std::lock_guard lock(this->admissionMutex);
         this->stopping = true;
@@ -707,6 +709,38 @@ mc_result MC_CALL LibraryHost::ReadThumbnail(void* context, int64_t thumbnailId,
         std::vector<uint8_t> bytes;
         const std::atomic_bool canceled { false };
         const auto status = self.identity->queries->ReadThumbnail(thumbnailId, bytes, canceled);
+        if (status != MC_OK) {
+            return status;
+        }
+        try {
+            completion(MC_OK, { bytes.data(), bytes.size() }, nullptr, userData);
+        }
+        catch (...) {
+            musik::contract::Assert(false, "library plugin callback threw");
+        }
+        return MC_OK;
+    });
+}
+
+mc_result MC_CALL LibraryHost::ReadLibraryThumbnail(void* context, const mc_library* library, int64_t thumbnailId,
+    mc_thumbnail_completion_fn completion, void* userData)
+{
+    if (!context || !library || !library->identity || thumbnailId <= 0 || !completion) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        auto& self = *static_cast<LibraryHost*>(context);
+        if (self.cancelled.load()) {
+            return MC_ERROR_CANCELLED;
+        }
+        if (!library->identity->queries) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        std::vector<uint8_t> bytes;
+        const auto status = library->identity->queries->ReadThumbnail(thumbnailId, bytes, self.cancelled);
+        if (self.cancelled.load()) {
+            return MC_ERROR_CANCELLED;
+        }
         if (status != MC_OK) {
             return status;
         }

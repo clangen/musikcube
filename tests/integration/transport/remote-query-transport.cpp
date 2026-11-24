@@ -33,6 +33,9 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
+#include <fstream>
+#include <filesystem>
+#include <future>
 #include <mutex>
 #include <thread>
 #include <algorithm>
@@ -61,6 +64,22 @@ namespace {
             {
                 this->socket.clear_access_channels(websocketpp::log::alevel::all);
                 this->socket.init_asio(&this->io);
+                this->socket.set_http_handler([this](auto handle) {
+                    auto connection = this->socket.get_con_from_hdl(handle);
+                    if (connection->get_resource() == "/thumbnail/987654") {
+                        connection->set_status(websocketpp::http::status_code::ok);
+                        connection->set_body("remote artwork");
+                    }
+                    else if (connection->get_resource() == "/thumbnail/987655") {
+                        connection->defer_http_response();
+                        std::lock_guard lock(this->heldMutex);
+                        this->httpHeld = true;
+                        this->heldChanged.notify_all();
+                    }
+                    else {
+                        connection->set_status(websocketpp::http::status_code::not_found);
+                    }
+                });
                 this->socket.set_close_handler([this](auto) {
                     std::lock_guard<std::mutex> lock(this->heldMutex);
                     this->closed = true;
@@ -234,6 +253,11 @@ namespace {
             /* Expose the dynamically allocated listener port for isolated client preferences. */
             unsigned short Port() const { return this->port; }
 
+            bool WaitForArtworkRequest() {
+                std::unique_lock lock(this->heldMutex);
+                return this->heldChanged.wait_for(lock, std::chrono::seconds(5), [this] { return this->httpHeld; });
+            }
+
             bool WaitForHeldReply() {
                 std::unique_lock<std::mutex> lock(this->heldMutex);
                 return this->heldChanged.wait_for(lock, std::chrono::seconds(5), [this] {
@@ -302,6 +326,7 @@ namespace {
             std::function<void(bool)> held;
             bool closed = false;
             bool heldProjection = false;
+            bool httpHeld = false;
             bool released = false;
     };
 
@@ -1268,6 +1293,7 @@ namespace {
         auto options = mc_remote_options MC_REMOTE_OPTIONS_DEFAULT;
         options.host = { "127.0.0.1", 9 };
         options.websocket_port = server.Port();
+        options.http_port = server.Port();
         options.max_pending_queries = 1;
         RemoteSession session(options);
         std::optional<mc_result> connected;
@@ -1376,6 +1402,80 @@ namespace {
             return failure(__LINE__);
         }
         mc_track_result_destroy(&searchResult);
+
+        /* identical artwork IDs in different libraries must not silently use
+        the host's local catalog for a remote track. */
+        const auto thumbnailDir = std::filesystem::path(localLibrary->GetLibraryDirectory()) / "thumbs";
+        std::filesystem::create_directories(thumbnailDir);
+        {
+            std::ofstream image(thumbnailDir / "987654.jpg", std::ios::binary);
+            image << "local artwork";
+            if (!image) {
+                return failure(__LINE__);
+            }
+        }
+        hiddenRaw = nullptr;
+        mc_track_ref* hiddenTrack = nullptr;
+        mc_library* localOrigin = nullptr;
+        if (hiddenHost.tracks_by_ids(hiddenHost.context, &hiddenId, 1, &hiddenRaw) != MC_OK ||
+            mc_track_result_get_ref(hiddenRaw, 0, &hiddenTrack) != MC_OK ||
+            mc_track_ref_get_library(hiddenTrack, &localOrigin) != MC_OK)
+        {
+            return failure(__LINE__);
+        }
+        mc_track_result_destroy(&hiddenRaw);
+        mc_track_ref_destroy(&hiddenTrack);
+        struct Artwork { std::string bytes; unsigned callbacks = 0; };
+        const auto receiveArtwork = [](mc_result status, mc_byte_view bytes, const mc_error*, void* user) {
+            auto& output = *static_cast<Artwork*>(user);
+            if (status == MC_OK) {
+                output.bytes.assign(reinterpret_cast<const char*>(bytes.data), bytes.length);
+            }
+            ++output.callbacks;
+        };
+        Artwork localArtwork;
+        auto localRead = std::async(std::launch::async, [&] {
+            return hiddenHost.read_library_thumbnail(hiddenHost.context, localOrigin, hiddenId,
+                receiveArtwork, &localArtwork);
+        });
+        if (localRead.wait_for(std::chrono::seconds(5)) != std::future_status::ready || localRead.get() != MC_OK ||
+            localArtwork.callbacks != 1 || localArtwork.bytes != "local artwork")
+        {
+            return failure(__LINE__);
+        }
+        Artwork remoteArtwork;
+        auto remoteRead = std::async(std::launch::async, [&] {
+            return hiddenHost.read_library_thumbnail(hiddenHost.context, remoteLibrary.Get(), hiddenId,
+                receiveArtwork, &remoteArtwork);
+        });
+        if (remoteRead.wait_for(std::chrono::seconds(5)) != std::future_status::ready || remoteRead.get() != MC_OK ||
+            remoteArtwork.callbacks != 1 || remoteArtwork.bytes != "remote artwork")
+        {
+            return failure(__LINE__);
+        }
+        library::query::LibraryHost interrupted(*context.Get(), local, factory);
+        Artwork interruptedArtwork;
+        auto pendingArtwork = std::async(std::launch::async, [&] {
+            return interrupted.HostApi().read_library_thumbnail(interrupted.HostApi().context,
+                remoteLibrary.Get(), 987655, receiveArtwork, &interruptedArtwork);
+        });
+        if (!server.WaitForArtworkRequest()) {
+            return failure(__LINE__);
+        }
+        interrupted.CancelReads();
+        if (pendingArtwork.wait_for(std::chrono::seconds(5)) != std::future_status::ready ||
+            pendingArtwork.get() != MC_ERROR_CANCELLED || interruptedArtwork.callbacks != 0)
+        {
+            return failure(__LINE__);
+        }
+        library::query::LibraryHost stopped(*context.Get(), local, factory);
+        stopped.CancelReads();
+        if (stopped.HostApi().read_library_thumbnail(stopped.HostApi().context, localOrigin, hiddenId,
+            receiveArtwork, &localArtwork) != MC_ERROR_CANCELLED || localArtwork.callbacks != 1)
+        {
+            return failure(__LINE__);
+        }
+        mc_library_destroy(&localOrigin);
 
         /* duplicate and absent playlist entries must count only rows actually removed. */
         const mc_library_playlist_entry_key entries[] {
