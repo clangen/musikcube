@@ -1875,9 +1875,10 @@ remains deferred. This does not begin the new plugin C SDK. See
   `musikcore.integration.api.backend_parity` checks search and constraints
   against the local catalog and the loopback query server.
 - [ ] **API-URI-007** Implement and validate Windows CDDA device cancellation.
-  Its existing `Interrupt` is a no-op; SDK 23 creation now exposes the stream
-  before opening, but does not by itself cancel its synchronous device I/O.
-  Audit pre-open cancellation and blocked device reads on Windows hardware.
+  The C stream uses overlapped device requests and `CancelIoEx`, and the
+  physical-drive test covers pre-open and concurrent read interruption.
+  Still verify Stop during a deliberately blocked device request and disc
+  removal on Windows hardware; cancellation depends on the device driver.
 
 Native URI-player validation is included in the full-suite results above.
 The initial independent C++ review reproduced stale observer delivery and HTTP
@@ -2050,9 +2051,13 @@ stage; migrated families must not keep a parallel former-SDK path.
   macOS. `musikcube.ui.settings` checks the combined plugin row. `plugins.subsong_openmpt` also verifies that the decoder consumes a
   final block carrying EOF without requesting it again.
 - [ ] **PLG-DEC-004** Convert Windows `cddadecoder` and its stream/source
-  capabilities. CD audio playback is unavailable on this branch until its
-  device reads support cancellation. Verify Stop during a blocked read, disc
-  eject, and shutdown on a Windows machine with a drive.
+  capabilities. A single C plugin now registers the stream, decoder, and
+  indexer, with MusicBrainz metadata and generic labels when lookup fails.
+  `plugins.cdda_plugin` covers registration and device-change notifications;
+  `plugins.cdda_stream` covers cancellation and the MusicBrainz ID fixture.
+  Physical-drive tests cover reading, decoding, seeking, and indexing an
+  inserted disc. Verify playback in the app, Stop during a blocked read, disc
+  eject, and shutdown on Windows before closing this item.
 
 #### Tags and indexer sources
 

@@ -169,9 +169,10 @@ function(windows_plugin target)
     LIBRARY DESTINATION bin/plugins COMPONENT musikcorePlugins)
 endfunction()
 
-windows_plugin(cddadecoder CddaDataModel.cpp CddaDataStream.cpp CddaDataStreamFactory.cpp
-  CddaDecoder.cpp cddadecoder_plugin.cpp CddaDecoderFactory.cpp CddaIndexerSource.cpp)
-target_link_libraries(cddadecoder PRIVATE shlwapi vendor::curl)
+windows_plugin(cddadecoder CddaStream.cpp CddaPcmDecoder.cpp CddaIndexer.cpp CddaMetadata.cpp
+  CddaMediaMonitor.cpp plugin.cpp)
+musikcube_configure_c_plugin(cddadecoder)
+target_link_libraries(cddadecoder PRIVATE bcrypt vendor::curl)
 
 windows_plugin(directsoundout DirectSoundOutput.cpp DirectSoundDevices.cpp plugin.cpp)
 musikcube_configure_c_plugin(directsoundout)

@@ -695,6 +695,28 @@ set_tests_properties(musikcore.integration.runtime.stream_sdk_contract PROPERTIE
   LABELS "integration;musikcore;plugin;runtime;contract" TIMEOUT 30)
 
 if(WIN32)
+  add_executable(musikcore_cdda_plugin_test ../integration/plugins/cdda-plugin.cpp)
+  target_include_directories(musikcore_cdda_plugin_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_cdda_plugin_test PRIVATE cxx_std_20)
+  add_dependencies(musikcore_cdda_plugin_test cddadecoder)
+  add_dependencies(musikcube_tests musikcore_cdda_plugin_test)
+  add_dependencies(musikcube_integration_tests musikcore_cdda_plugin_test)
+  add_test(NAME musikcore.integration.plugins.cdda_plugin
+    COMMAND musikcore_cdda_plugin_test "$<TARGET_FILE:cddadecoder>")
+  set_tests_properties(musikcore.integration.plugins.cdda_plugin PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+  add_executable(musikcore_cdda_stream_test ../integration/plugins/cdda-stream.cpp
+    ../../src/plugins/cddadecoder/CddaStream.cpp ../../src/plugins/cddadecoder/CddaPcmDecoder.cpp
+    ../../src/plugins/cddadecoder/CddaMetadata.cpp)
+  target_include_directories(musikcore_cdda_stream_test PRIVATE "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/src/3rdparty/include")
+  target_compile_features(musikcore_cdda_stream_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_cdda_stream_test PRIVATE musikcube_windows bcrypt vendor::curl)
+  add_dependencies(musikcube_tests musikcore_cdda_stream_test)
+  add_dependencies(musikcube_integration_tests musikcore_cdda_stream_test)
+  add_test(NAME musikcore.integration.plugins.cdda_stream COMMAND musikcore_cdda_stream_test)
+  set_tests_properties(musikcore.integration.plugins.cdda_stream PROPERTIES
+    LABELS "integration;musikcore;plugins;audio" TIMEOUT 20)
   add_executable(musikcore_directsound_ring_test ../unit/musikcore/directsound-ring.cpp
     ../../src/plugins/directsoundout/DirectSoundDevices.cpp)
   target_include_directories(musikcore_directsound_ring_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
