@@ -11,6 +11,7 @@
 - Keep blocking I/O, allocations, and locks off real-time audio callbacks.
 - Treat application and plugin interfaces as contracts. Make compatibility changes deliberate and document their impact.
 - Define new public interfaces in C. Use C++ internally and generally keep C++ types and symbols out of exported interfaces.
+- C++ plugins in this repository may use the public header-only C++ RAII and convenience wrappers when they simplify ownership or calls; plugin ABI boundaries remain C.
 - Surface problems with existing SDK APIs to the maintainer immediately, with the proposed contract change and compatibility impact. Do not add workarounds, adapters, or legacy compatibility by default; let the maintainer audit and decide those tradeoffs. During explicitly autonomous work, resolve necessary SDK issues within the authorized scope, then report every such decision at completion and wait for maintainer acknowledgment before proceeding beyond that work.
 
 ## Formatting
@@ -25,7 +26,7 @@
 - Write nested namespaces on one line: `namespace musik { namespace core { namespace audio {`. Indent the body once and close with `} } }` on one line.
 - Indent class and struct members one four-space level; align `public`, `protected`, and `private` labels with the class braces.
 - Use the root `.clang-format` incrementally on selected C/C++ files and review the diff. Manually preserve conditional brace placement, declaration order, standalone `break;`, ternary indentation, and spaced namespace closings.
-- Write comment prose in lowercase with normal punctuation; preserve symbol names verbatim. Use `/* comment */` where supported, aligning wrapped text with the opening `/*` without extra indentation. Use `//` only when necessary, and native syntax where block comments are unavailable.
+- Write comment prose in lowercase with normal punctuation; preserve symbol names verbatim. Refer to functions and methods by their exact names with a `()` suffix, wrapped in backticks (for example, `Stop()`). Use `/* comment */` where supported, aligning wrapped text with the opening `/*` without extra indentation. Use `//` only when necessary, and native syntax where block comments are unavailable.
 - Keep APIs and SDKs readable by humans, including generated bindings and plugin declarations. Wrap long signatures at argument boundaries, leave blank lines between function declarations, and separate related groups with whitespace. Avoid dense tables of long single-line declarations; apply the same care to code examples in design documents.
 - Keep C++ plugin registration consistent across plugin types: use similarly named registration helpers and calling conventions, and keep adapter ownership and cleanup inside the SDK whenever practical.
 
