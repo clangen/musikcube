@@ -34,499 +34,540 @@
 
 #include "PipeWireOut.h"
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/ISchema.h>
-#include <musikcore/sdk/IDebug.h>
-#include <musikcore/sdk/String.h>
+#include <common/Contract.h>
 #include <spa/param/audio/format-utils.h>
-#include <spa/param/props.h>
-#include <spa/utils/result.h>
-#include <unistd.h>
-#include <chrono>
+#include <spa/utils/dict.h>
+#include <algorithm>
+#include <array>
+#include <charconv>
+#include <cstring>
+#include <limits>
+#include <mutex>
+#include <string>
+#include <utility>
+#include <vector>
 
-constexpr const char* TAG = "PipeWireOut";
-constexpr size_t SAMPLES_PER_BUFFER = 2048;
-constexpr size_t SAMPLE_SIZE_BYTES = sizeof(float);
-constexpr const char* PREF_DEVICE_ID = "device_id";
-constexpr const char* PREF_OUTPUT_BUFFER_SIZE_IN_SAMPLES = "output_buffer_size_in_samples";
-constexpr const char* PREF_OUTPUT_BUFFER_COUNT = "output_buffer_count";
-constexpr int DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES = 2048;
-constexpr int DEFAULT_OUTPUT_BUFFER_COUNT = 16;
+/* `Prepare()` starts a PipeWire thread loop, connects a stream to the selected
+device, and waits for it to become paused or streaming. musikcore supplies
+borrowed PCM blocks through `QueueAudioBuffer()`, which keeps them in a bounded
+queue until PipeWire calls `Process()`. that callback copies samples into a
+PipeWire buffer and returns each completed block to musikcore after the buffer
+is accepted. `Stop()` cancels remaining blocks and shuts down the stream. */
 
-static std::atomic<bool> pipeWireInitialized(false);
+namespace {
+    constexpr size_t DefaultCapacity = 32768;
+    constexpr int TimeoutSeconds = 5;
+    constexpr char BufferSizeKey[] = "output_buffer_size_in_samples";
+    constexpr char BufferCountKey[] = "output_buffer_count";
+    constexpr mc_integer_setting Settings[] = {
+        { .key = { BufferSizeKey, sizeof(BufferSizeKey) - 1 }, .default_value = 2048, .minimum = 256, .maximum = 32768 },
+        { .key = { BufferCountKey, sizeof(BufferCountKey) - 1 }, .default_value = 16, .minimum = 8, .maximum = 64 },
+    };
 
-static IPreferences* prefs = nullptr;
-static IDebug* debug = nullptr;
-
-extern "C" void SetDebug(IDebug* debug) {
-    ::debug = debug;
-}
-
-extern "C" void SetPreferences(IPreferences* prefs) {
-    ::prefs = prefs;
-    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
-    prefs->Save();
-}
-
-extern "C" musik::core::sdk::ISchema* GetSchema() {
-    auto schema = new TSchema<>();
-    schema->AddInt(
-        PREF_OUTPUT_BUFFER_SIZE_IN_SAMPLES,
-        DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES,
-        DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES / 8,
-        DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES * 16);
-    schema->AddInt(PREF_OUTPUT_BUFFER_COUNT, DEFAULT_OUTPUT_BUFFER_COUNT, 8, 64);
-    return schema;
-}
-
-static std::string getDeviceId() {
-    return getPreferenceString<std::string>(prefs, PREF_DEVICE_ID, "");
-}
-
-void PipeWireOut::OnStreamStateChanged(void* data, enum pw_stream_state old, enum pw_stream_state state, const char* error) {
-    ::debug->Info(TAG, str::Format("state changed from %d to %d. (%s)", old, state, error ? error : "no additional context").c_str());
-}
-
-void PipeWireOut::OnCoreDone(void* userdata, uint32_t id, int seq) {
-    auto context = static_cast<DeviceListContext*>(userdata);
-    if (seq == context->eventId) {
-        ::debug->Info(TAG, "device refresh finished");
-        pw_main_loop_quit(context->loop);
+    void initializePipeWire() {
+        static std::once_flag once;
+        std::call_once(once, [] { pw_init(nullptr, nullptr); });
     }
-}
 
-void PipeWireOut::OnCoreError(void* userdata, uint32_t id, int seq, int res, const char *message) {
-    auto context = static_cast<DeviceListContext*>(userdata);
-    pw_main_loop_quit(context->loop);
-}
+    struct Discovery {
+        pw_thread_loop* loop = nullptr;
+        pw_context* context = nullptr;
+        pw_core* core = nullptr;
+        pw_registry* registry = nullptr;
+        spa_hook coreListener {};
+        spa_hook registryListener {};
+        pw_core_events coreEvents {};
+        pw_registry_events registryEvents {};
+        std::vector<std::pair<std::string, std::string>> devices;
+        int sequence = 0;
+        bool done = false;
+        bool failed = false;
 
-void PipeWireOut::OnRegistryGlobal(void *userdata, uint32_t id, uint32_t permissions, const char *type, uint32_t version, const struct spa_dict *props) {
-    auto context = static_cast<DeviceListContext*>(userdata);
-    if (std::string(type) == "PipeWire:Interface:Device") {
-        std::string formattedName = "unknown device";
-        if (props) {
-            auto dict = pw_properties_new_dict(props);
-            auto name = pw_properties_get(dict, "device.nick");
-            if (!name || !strlen(name)) name = pw_properties_get(dict, "alsa.card_name");
-            if (!name || !strlen(name)) name = pw_properties_get(dict, "api.alsa.card.name");
-            if (!name || !strlen(name)) name = "unknown device";
-            auto addr = pw_properties_get(dict, "object.path");
-            if (!addr || !strlen(addr)) addr = pw_properties_get(dict, "device.bus-path");
-            formattedName = name;
-            if (addr && strlen(addr)) {
-                formattedName += " (" + std::string(addr) + ")";
+        ~Discovery() {
+            if (registry) {
+                pw_proxy_destroy(reinterpret_cast<pw_proxy*>(registry));
             }
-            pw_properties_free(dict);
+            if (core) {
+                pw_core_disconnect(core);
+            }
+            if (context) {
+                pw_context_destroy(context);
+            }
+            if (loop) {
+                pw_thread_loop_destroy(loop);
+            }
         }
-        ::debug->Info(TAG, str::Format("detected PipeWire:Interface:Device with id=%d", id).c_str());
-        context->instance->deviceList.Add(std::to_string(id), formattedName);
+    };
+
+    void discoveryDone(void* user, uint32_t, int sequence) noexcept {
+        auto& state = *static_cast<Discovery*>(user);
+        if (sequence == state.sequence) {
+            state.done = true;
+            pw_thread_loop_signal(state.loop, false);
+        }
     }
-}
 
-void PipeWireOut::OnDrained(void* data) {
-    ::debug->Info(TAG, "drained");
-    PipeWireOut* self = static_cast<PipeWireOut*>(data);
-    self->drainCondition.notify_all();
-}
+    void discoveryError(void* user, uint32_t, int, int, const char*) noexcept {
+        auto& state = *static_cast<Discovery*>(user);
+        state.failed = true;
+        pw_thread_loop_signal(state.loop, false);
+    }
 
-void PipeWireOut::OnStreamProcess(void* data) {
-    PipeWireOut* self = static_cast<PipeWireOut*>(data);
-
+    void discoveryGlobal(void* user, uint32_t id, uint32_t, const char* type, uint32_t,
+        const spa_dict* properties) noexcept
     {
-        std::unique_lock<std::recursive_mutex> lock(self->mutex);
-
-        if (self->state != State::Playing) {
+        if (!type || std::strcmp(type, PW_TYPE_INTERFACE_Device) != 0) {
             return;
         }
+        auto& state = *static_cast<Discovery*>(user);
+        const char* name = properties ? spa_dict_lookup(properties, "device.nick") : nullptr;
+        if (!name || !*name) {
+            name = properties ? spa_dict_lookup(properties, "alsa.card_name") : nullptr;
+        }
+        try {
+            state.devices.emplace_back(std::to_string(id), name && *name ? name : "unknown device");
+        }
+        catch (...) {
+            state.failed = true;
+            pw_thread_loop_signal(state.loop, false);
+        }
+    }
 
-        OutBufferContext& outContext = self->outBufferContext;
-
-        if (!outContext.Valid()) {
-            outContext.Initialize(pw_stream_dequeue_buffer(self->pwStream));
-            if (!outContext.Valid()) {
-                // std::cerr << "[PipeWire] no more output buffers available to fill\n";
-                return;
+    mc_result discover(Discovery& state) {
+        initializePipeWire();
+        state.loop = pw_thread_loop_new("musikcube-devices", nullptr);
+        if (!state.loop) {
+            return MC_ERROR_INTERNAL;
+        }
+        state.context = pw_context_new(pw_thread_loop_get_loop(state.loop), nullptr, 0);
+        if (!state.context) {
+            return MC_ERROR_INTERNAL;
+        }
+        state.core = pw_context_connect(state.context, nullptr, 0);
+        if (!state.core) {
+            return MC_ERROR_IO;
+        }
+        state.coreEvents.version = PW_VERSION_CORE_EVENTS;
+        state.coreEvents.done = discoveryDone;
+        state.coreEvents.error = discoveryError;
+        pw_core_add_listener(state.core, &state.coreListener, &state.coreEvents, &state);
+        state.registry = pw_core_get_registry(state.core, PW_VERSION_REGISTRY, 0);
+        if (!state.registry) {
+            return MC_ERROR_IO;
+        }
+        state.registryEvents.version = PW_VERSION_REGISTRY_EVENTS;
+        state.registryEvents.global = discoveryGlobal;
+        pw_registry_add_listener(state.registry, &state.registryListener, &state.registryEvents, &state);
+        if (pw_thread_loop_start(state.loop) < 0) {
+            return MC_ERROR_IO;
+        }
+        pw_thread_loop_lock(state.loop);
+        state.sequence = pw_core_sync(state.core, PW_ID_CORE, 0);
+        if (state.sequence < 0) {
+            state.failed = true;
+        }
+        timespec deadline {};
+        const int timed = pw_thread_loop_get_time(state.loop, &deadline, TimeoutSeconds * 1000000000LL);
+        while (timed == 0 && !state.done && !state.failed) {
+            if (pw_thread_loop_timed_wait_full(state.loop, &deadline) < 0) {
+                state.failed = true;
             }
         }
-
-        uint32_t channelCount;
-
-        while (outContext.remaining > 0 && !self->buffers.empty()) {
-            //std::cerr << "[PipeWire] " << outContext.remaining << " bytes still need to be filled...\n";
-
-            InBufferContext* inContext = self->buffers.front();
-            channelCount = (uint32_t) inContext->buffer->Channels();
-            uint32_t inBufferSize = (uint32_t) inContext->buffer->Bytes();
-            uint32_t bytesToCopy = std::min(outContext.remaining, inContext->remaining);
-
-            if (outContext.remaining >= inContext->remaining) {
-                self->buffers.pop_front();
-                self->bufferCondition.notify_all();
-            }
-
-            memcpy(outContext.writePtr, inContext->readPtr, bytesToCopy);
-            inContext->Advance(bytesToCopy); /* will `delete this` if emptied */
-            outContext.Advance(bytesToCopy);
-        }
-
-        if (outContext.remaining == 0) {
-            outContext.Finalize(self->pwStream, SAMPLE_SIZE_BYTES * channelCount);
-        }
+        const bool success = timed == 0 && state.done && !state.failed;
+        pw_thread_loop_unlock(state.loop);
+        pw_thread_loop_stop(state.loop);
+        return success ? MC_OK : MC_ERROR_IO;
     }
 }
 
-PipeWireOut::PipeWireOut() {
-    this->pwStreamEvents = { PW_VERSION_STREAM_EVENTS };
-    this->pwStreamEvents.state_changed = PipeWireOut::OnStreamStateChanged;
-    this->pwStreamEvents.process = PipeWireOut::OnStreamProcess;
-    this->pwStreamEvents.drained = PipeWireOut::OnDrained;
+const mc_configuration_api& PipeWireConfiguration() {
+    static const mc_configuration_api configuration {
+        .struct_size = sizeof(mc_configuration_api),
+        .integers = Settings,
+        .integer_count = sizeof(Settings) / sizeof(Settings[0]),
+        .booleans = nullptr,
+        .boolean_count = 0,
+        .numbers = nullptr,
+        .number_count = 0,
+        .texts = nullptr,
+        .text_count = 0,
+    };
+    return configuration;
 }
 
-PipeWireOut::~PipeWireOut() {
-    this->StopPipeWire();
+mc_result PipeWireOut::VisitDevices(mc_output_device_fn read, void* user) {
+    Discovery discovery;
+    const auto result = discover(discovery);
+    if (result == MC_OK) {
+        for (const auto& [id, name] : discovery.devices) {
+            const mc_output_device device { .id = { id.data(), id.size() }, .name = { name.data(), name.size() } };
+            read(user, &device);
+        }
+    }
+    return result;
 }
 
-void PipeWireOut::Release() {
-    delete this;
+mc_result PipeWireOut::ReadDefaultDevice(mc_output_device_fn, void*) {
+    return MC_ERROR_NOT_FOUND;
 }
 
-void PipeWireOut::Pause() {
+mc_result PipeWireOut::GetDefaultFormat(mc_string_view, mc_audio_format&) {
+    return MC_ERROR_UNSUPPORTED;
+}
+
+mc_result PipeWireOut::Prepare(const mc_output_options& options, const mc_output_callbacks& outputCallbacks) {
+    std::lock_guard lock(this->lifecycle);
+    initializePipeWire();
+    this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : DefaultCapacity;
+    int32_t bufferSize = Settings[0].default_value;
+    int32_t bufferCount = Settings[1].default_value;
+    if (this->services && this->services->preferences) {
+        const auto* preferences = this->services->preferences;
+        auto status = preferences->read_integer(preferences->context, &Settings[0], &bufferSize);
+        if (status == MC_OK) {
+            status = preferences->read_integer(preferences->context, &Settings[1], &bufferCount);
+        }
+        if (status != MC_OK) {
+            return status;
+        }
+    }
+
+    if (options.format.channels > SPA_AUDIO_MAX_CHANNELS ||
+        static_cast<uint64_t>(bufferSize) * options.format.channels * sizeof(float) > INT32_MAX)
     {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
-        this->state = State::Paused;
+        return MC_ERROR_UNSUPPORTED;
     }
-    {
-        if (this->pwThreadLoop && this->pwStream) {
-            pw_thread_loop_lock(this->pwThreadLoop);
-            pw_stream_set_active(this->pwStream, false);
-            pw_thread_loop_unlock(this->pwThreadLoop);
+
+    uint32_t target = PW_ID_ANY;
+    if (options.device_id.length) {
+        const auto begin = options.device_id.data;
+        const auto end = begin + options.device_id.length;
+        const auto parsed = std::from_chars(begin, end, target);
+        if (parsed.ec != std::errc() || parsed.ptr != end) {
+            return MC_ERROR_INVALID_ARGUMENT;
         }
     }
-}
 
-void PipeWireOut::Resume() {
-    {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
-        this->state = State::Playing;
+    this->maxQueuedBuffers = static_cast<size_t>(bufferCount);
+    this->format = options.format;
+    this->callbacks = outputCallbacks;
+    this->volume.store(static_cast<float>(options.initial_volume));
+    musik::contract::Assert(this->queuedBuffers.Empty(), "PipeWire prepared with buffers still owned");
+    this->queuedFrames = 0;
+    this->paused = this->failed = this->draining = this->drained = false;
+    this->stopped = false;
+    this->events = {};
+    this->events.version = PW_VERSION_STREAM_EVENTS;
+    this->events.state_changed = StateChanged;
+    this->events.process = Process;
+    this->events.drained = Drained;
+
+    this->loop = pw_thread_loop_new("musikcube-output", nullptr);
+    if (!this->loop) {
+        return MC_ERROR_INTERNAL;
     }
+    if (pw_thread_loop_start(this->loop) < 0) {
+        return MC_ERROR_IO;
+    }
+    this->loopStarted = true;
+
+    pw_thread_loop_lock(this->loop);
+    this->stream = pw_stream_new_simple(pw_thread_loop_get_loop(this->loop), "musikcube",
+        pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Playback", PW_KEY_MEDIA_ROLE, "Music", nullptr),
+        &this->events, this);
+    if (!this->stream) {
+        pw_thread_loop_unlock(this->loop);
+        return MC_ERROR_IO;
+    }
+
+    uint8_t storage[4096];
+    spa_pod_builder builder = SPA_POD_BUILDER_INIT(storage, sizeof(storage));
+    spa_audio_info_raw audio {};
+    audio.format = SPA_AUDIO_FORMAT_F32;
+    audio.channels = this->format.channels;
+    audio.rate = this->format.sample_rate;
+    const spa_pod* params[2];
+    params[0] = spa_format_audio_raw_build(&builder, SPA_PARAM_EnumFormat, &audio);
+    params[1] = static_cast<const spa_pod*>(spa_pod_builder_add_object(&builder,
+        SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
+        SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(bufferCount),
+        SPA_PARAM_BUFFERS_size, SPA_POD_Int(static_cast<int32_t>(bufferSize * options.format.channels * sizeof(float))),
+        SPA_PARAM_BUFFERS_stride, SPA_POD_Int(static_cast<int32_t>(options.format.channels * sizeof(float)))));
+    const auto flags = static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS);
+    if (!params[0] || !params[1] || pw_stream_connect(this->stream, PW_DIRECTION_OUTPUT, target, flags, params, 2) < 0) {
+        pw_thread_loop_unlock(this->loop);
+        return MC_ERROR_IO;
+    }
+
+    /* a server that never connects must not hold up output initialization. */
+    timespec deadline {};
+    const int timed = pw_thread_loop_get_time(this->loop, &deadline, TimeoutSeconds * 1000000000LL);
+    while (timed == 0 && !this->failed && pw_stream_get_state(this->stream, nullptr) != PW_STREAM_STATE_PAUSED &&
+        pw_stream_get_state(this->stream, nullptr) != PW_STREAM_STATE_STREAMING)
     {
-        if (this->pwThreadLoop && this->pwStream) {
-            pw_thread_loop_lock(this->pwThreadLoop);
-            pw_stream_set_active(this->pwStream, true);
-            pw_thread_loop_unlock(this->pwThreadLoop);
+        if (pw_thread_loop_timed_wait_full(this->loop, &deadline) < 0) {
+            this->failed = true;
         }
     }
+    const auto result = timed == 0 && !this->failed ? MC_OK : MC_ERROR_IO;
+    pw_thread_loop_unlock(this->loop);
+    return result;
 }
 
-void PipeWireOut::SetVolume(double volume) {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    if (this->pwThreadLoop && this->pwStream) {
-        pw_thread_loop_lock(this->pwThreadLoop);
-        float* channelVolumes = new float[this->channelCount];
-        for (long i = 0; i < this->channelCount; i++) {
-            channelVolumes[i] = volume;
+void PipeWireOut::StateChanged(void* user, pw_stream_state, pw_stream_state state, const char*) noexcept {
+    auto& output = *static_cast<PipeWireOut*>(user);
+    if (state == PW_STREAM_STATE_ERROR) {
+        output.failed = true;
+        output.ReturnPending(MC_ERROR_IO);
+        if (output.callbacks.ready) {
+            output.callbacks.ready(output.callbacks.context);
         }
-        pw_stream_set_control(
-            this->pwStream,
-            SPA_PROP_channelVolumes,
-            this->channelCount,
-            channelVolumes,
-            0);
-        delete[] channelVolumes;
-        pw_thread_loop_unlock(this->pwThreadLoop);
     }
-    this->volume = volume;
+    pw_thread_loop_signal(output.loop, false);
 }
 
-double PipeWireOut::GetVolume() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    return this->volume;
-}
-
-void PipeWireOut::Stop() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    this->DiscardInputBuffers();
-    this->state = State::Stopped;
-    if (this->pwThreadLoop && this->pwStream) {
-        pw_thread_loop_lock(this->pwThreadLoop);
-        pw_stream_set_active(this->pwStream, false);
-        pw_stream_flush(this->pwStream, false);
-        pw_thread_loop_unlock(this->pwThreadLoop);
+void PipeWireOut::ReturnPending(mc_result result) noexcept {
+    while (auto* queuedBuffer = this->queuedBuffers.Front()) {
+        const auto token = queuedBuffer->buffer.token;
+        this->queuedBuffers.TryPop();
+        this->callbacks.completed(this->callbacks.context, token, result);
     }
+    this->queuedFrames = 0;
 }
 
-void PipeWireOut::DiscardInputBuffers() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    for (auto& buffer : this->buffers) {
-        buffer->Discard();
+void PipeWireOut::Process(void* user) noexcept {
+    auto& output = *static_cast<PipeWireOut*>(user);
+    if (output.stopped || output.paused || output.failed) {
+        return;
     }
-    this->buffers.clear();
-    this->bufferCondition.notify_all();
-}
-
-void PipeWireOut::Drain() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    while (this->buffers.size()) {
-        bufferCondition.wait(lock);
+    pw_buffer* buffer = pw_stream_dequeue_buffer(output.stream);
+    if (!buffer) {
+        return;
     }
-    if (this->pwThreadLoop && this->pwStream) {
-        pw_thread_loop_lock(this->pwThreadLoop);
-        pw_stream_flush(this->pwStream, true);
-        pw_thread_loop_unlock(this->pwThreadLoop);
-        drainCondition.wait_for(lock, std::chrono::milliseconds(10000));
-    }
-}
 
-IDeviceList* PipeWireOut::GetDeviceList() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    this->RefreshDeviceList();
-    return this->deviceList.Clone();
-}
-
-bool PipeWireOut::SetDefaultDevice(const char* deviceId) {
-    if (getDeviceId() != deviceId) {
-        setDefaultDevice<IPreferences, Device, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
-    }
-    return true;
-}
-
-IDevice* PipeWireOut::GetDefaultDevice() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    this->RefreshDeviceList();
-    return this->deviceList.ResolveDevice(getDeviceId());
-}
-
-void PipeWireOut::StopPipeWire() {
-    ::debug->Info(TAG, "shutdown started");
-
-    this->Stop();
-
+    if (!buffer->buffer || buffer->buffer->n_datas == 0 || !buffer->buffer->datas[0].data ||
+        !buffer->buffer->datas[0].chunk || buffer->buffer->datas[0].maxsize < output.format.channels * sizeof(float))
     {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
-        this->state = State::Shutdown;
-    }
-
-    if (this->pwThreadLoop) {
-        pw_thread_loop_stop(this->pwThreadLoop);
-
-        if (this->pwStream) {
-            this->outBufferContext.Finalize(
-                this->pwStream,
-                SAMPLE_SIZE_BYTES * this->channelCount);
-            pw_stream_destroy(this->pwStream);
-            this->pwStream = nullptr;
+        output.failed = true;
+        output.ReturnPending(MC_ERROR_IO);
+        if (output.callbacks.ready) {
+            output.callbacks.ready(output.callbacks.context);
         }
-
-        pw_thread_loop_destroy(this->pwThreadLoop);
-        this->pwThreadLoop = nullptr;
+        pw_thread_loop_signal(output.loop, false);
+        pw_stream_queue_buffer(output.stream, buffer);
+        return;
     }
 
-    this->initialized = false;
-    this->channelCount = 0;
-    this->sampleRate = 0;
+    /* copy borrowed PCM into PipeWire's buffer before returning tokens to musikcore. */
+    auto& data = buffer->buffer->datas[0];
+    const size_t channels = output.format.channels;
+    const size_t stride = channels * sizeof(float);
+    const size_t maximum = data.maxsize / stride;
+    auto* destination = static_cast<float*>(data.data);
+    size_t frames = 0;
+    std::array<uint64_t, MaxQueuedBuffers> completed {};
+    size_t completedCount = 0;
+    const float gain = output.volume.load(std::memory_order_relaxed);
+    while (frames < maximum) {
+        auto* queuedBuffer = output.queuedBuffers.Front();
+        if (!queuedBuffer) {
+            break;
+        }
+        const size_t remaining = queuedBuffer->buffer.pcm.frame_count - queuedBuffer->framesCopied;
+        const size_t copy = std::min(maximum - frames, remaining);
+        const float* source = queuedBuffer->buffer.pcm.data + queuedBuffer->framesCopied * channels;
+        for (size_t i = 0; i < copy * channels; ++i) {
+            destination[frames * channels + i] = source[i] * gain;
+        }
+        frames += copy;
+        queuedBuffer->framesCopied += copy;
+        output.queuedFrames -= copy;
+        if (queuedBuffer->framesCopied == queuedBuffer->buffer.pcm.frame_count) {
+            completed[completedCount++] = queuedBuffer->buffer.token;
+            output.queuedBuffers.TryPop();
+        }
+    }
 
-    ::debug->Info(TAG, "shutdown complete");
+    const bool madeSpace = frames > 0;
+    if (!frames && !output.draining) {
+        std::memset(destination, 0, maximum * stride);
+        frames = maximum;
+    }
+    data.chunk->offset = 0;
+    data.chunk->stride = static_cast<int32_t>(stride);
+    data.chunk->size = static_cast<uint32_t>(frames * stride);
+
+    /* only report success once PipeWire has accepted the copied samples. */
+    const bool accepted = pw_stream_queue_buffer(output.stream, buffer) >= 0;
+    for (size_t i = 0; i < completedCount; ++i) {
+        output.callbacks.completed(output.callbacks.context, completed[i], accepted ? MC_OK : MC_ERROR_IO);
+    }
+    if (!accepted) {
+        output.failed = true;
+        output.ReturnPending(MC_ERROR_IO);
+    }
+    if ((madeSpace || !accepted) && output.callbacks.ready) {
+        output.callbacks.ready(output.callbacks.context);
+    }
+    if (completedCount || !accepted) {
+        pw_thread_loop_signal(output.loop, false);
+    }
 }
 
-bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
+void PipeWireOut::Drained(void* user) noexcept {
+    auto& output = *static_cast<PipeWireOut*>(user);
+    output.drained = true;
+    pw_thread_loop_signal(output.loop, false);
+}
 
-    this->pwThreadLoop = pw_thread_loop_new("musikcube", nullptr);
-    if (this->pwThreadLoop) {
-        int result;
-
-        if ((result = pw_thread_loop_start(this->pwThreadLoop)) != 0) {
-            ::debug->Error(TAG, str::Format("error starting thread loop: %s", spa_strerror(result)).c_str());
-            goto cleanup;
+mc_result PipeWireOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
+    std::lock_guard lock(this->lifecycle);
+    if (!this->loop || this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    pw_thread_loop_lock(this->loop);
+    mc_result result = MC_OK;
+    if (this->failed) {
+        result = MC_ERROR_IO;
+    }
+    else if (block.pcm.format.sample_rate != this->format.sample_rate ||
+        block.pcm.format.channels != this->format.channels ||
+        block.pcm.format.channel_layout != this->format.channel_layout)
+    {
+        result = MC_ERROR_INVALID_ARGUMENT;
+    }
+    else if (block.pcm.frame_count > this->capacity) {
+        result = MC_ERROR_BUFFER_TOO_SMALL;
+    }
+    else if (this->queuedBuffers.Size() == this->maxQueuedBuffers ||
+        this->queuedFrames > this->capacity - block.pcm.frame_count)
+    {
+        result = MC_ERROR_QUEUE_FULL;
+    }
+    else {
+        const QueuedBuffer queuedBuffer {
+            .buffer = block,
+            .framesCopied = 0,
         };
-
-        pw_thread_loop_lock(this->pwThreadLoop);
-
-        this->pwStream = pw_stream_new_simple(
-            pw_thread_loop_get_loop(this->pwThreadLoop),
-            "musikcube",
-            pw_properties_new(
-                PW_KEY_MEDIA_TYPE, "Audio",
-                PW_KEY_MEDIA_CATEGORY, "Playback",
-                PW_KEY_MEDIA_ROLE, "Music",
-                NULL),
-            &this->pwStreamEvents,
-            this);
-
-        if (this->pwStream) {
-            uint8_t builderBuffer[4096];
-            spa_pod_builder builder = SPA_POD_BUILDER_INIT(builderBuffer, sizeof(builderBuffer));
-            const spa_pod *params[2];
-
-            this->channelCount = buffer->Channels();
-            this->sampleRate = buffer->SampleRate();
-
-            spa_audio_info_raw audioInfo;
-            spa_zero(audioInfo);
-            audioInfo.format = SPA_AUDIO_FORMAT_F32;
-            audioInfo.channels = (uint32_t) this->channelCount;
-            audioInfo.rate = (uint32_t) this->sampleRate;
-
-            params[0] = spa_format_audio_raw_build(&builder, SPA_PARAM_EnumFormat, &audioInfo);
-
-            if (!params[0]) {
-                ::debug->Error(TAG, str::Format(
-                    "failed to create audio format. channels=%d, rate=%d",
-                    this->channelCount,
-                    this->sampleRate).c_str());
-                goto cleanup;
-            }
-
-            int pwOutputBufferSize = prefs->GetInt(PREF_OUTPUT_BUFFER_SIZE_IN_SAMPLES, DEFAULT_OUTPUT_BUFFER_SIZE_IN_SAMPLES);
-            int pwOutputBufferCount = prefs->GetInt(PREF_OUTPUT_BUFFER_COUNT, DEFAULT_OUTPUT_BUFFER_COUNT);
-
-            params[1] = (spa_pod*) spa_pod_builder_add_object(
-                &builder,
-                SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
-                SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(pwOutputBufferCount),
-                SPA_PARAM_BUFFERS_size, SPA_POD_Int(pwOutputBufferSize * SAMPLE_SIZE_BYTES * buffer->Channels()),
-                SPA_PARAM_BUFFERS_stride, SPA_POD_Int(SAMPLE_SIZE_BYTES * audioInfo.channels));
-
-            pw_stream_flags streamFlags = (pw_stream_flags)(
-                PW_STREAM_FLAG_AUTOCONNECT |
-                PW_STREAM_FLAG_MAP_BUFFERS);
-
-            result = pw_stream_connect(
-                this->pwStream,
-                PW_DIRECTION_OUTPUT,
-                this->deviceList.ResolveId(getDeviceId()),
-                streamFlags,
-                params,
-                2);
-
-            if (result == 0) {
-                pw_thread_loop_unlock(this->pwThreadLoop);
-                ::debug->Info(TAG, "new stream created and connected successfully");
-                this->SetVolume(this->volume);
-                this->initialized = true;
-                return true;
-            }
-            else {
-                ::debug->Error(TAG, str::Format(
-                    "error starting stream: %s",
-                    spa_strerror(result)).c_str());
-            }
+        if (this->queuedBuffers.TryPush(queuedBuffer)) {
+            this->queuedFrames += block.pcm.frame_count;
+        }
+        else {
+            result = MC_ERROR_QUEUE_FULL;
         }
     }
-
-cleanup:
-    if (this->pwStream) {
-        pw_stream_destroy(this->pwStream);
-        this->pwStream = nullptr;
-    }
-    pw_thread_loop_unlock(this->pwThreadLoop);
-    ::debug->Error(TAG, "stream not initialized");
-    this->StopPipeWire();
-    return false;
+    pw_thread_loop_unlock(this->loop);
+    return result;
 }
 
-OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
-    if (!this->initialized) {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
-        this->maxInternalBuffers = prefs->GetInt(PREF_OUTPUT_BUFFER_COUNT, DEFAULT_OUTPUT_BUFFER_COUNT);
-        if (!pipeWireInitialized) {
-            pw_init(nullptr, nullptr);
-            pipeWireInitialized = true;
-        }
-        this->RefreshDeviceList();
-        if (!this->StartPipeWire(buffer)) {
-            return OutputState::InvalidState;
-        }
+mc_result PipeWireOut::Pause() {
+    std::lock_guard lock(this->lifecycle);
+    if (!this->loop || this->stopped) {
+        return MC_ERROR_CANCELLED;
     }
-
-    if (this->channelCount != buffer->Channels() || this->sampleRate != buffer->SampleRate()) {
-        State lastState = this->state;
-        this->Drain();
-        this->StopPipeWire();
-        if (!this->StartPipeWire(buffer)) {
-            return OutputState::InvalidState;
-        }
-        this->state = lastState;
+    pw_thread_loop_lock(this->loop);
+    const int result = pw_stream_set_active(this->stream, false);
+    if (result >= 0) {
+        this->paused = true;
     }
-
-    if (this->state != State::Playing) {
-        return OutputState::InvalidState;
-    }
-
-    {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
-        if (this->buffers.size() >= maxInternalBuffers) {
-            return OutputState::BufferFull;
-        }
-        this->buffers.push_back(new InBufferContext(buffer, provider));
-        bufferCondition.notify_all();
-    }
-
-    return OutputState::BufferWritten;
+    pw_thread_loop_unlock(this->loop);
+    return result < 0 ? MC_ERROR_IO : MC_OK;
 }
 
-double PipeWireOut::Latency() {
-    /* CAL TODO: i see how to set latency, but not a good way to query
-    PipeWire to see what it actually is */
-    return 0.0;
+mc_result PipeWireOut::Resume() {
+    std::lock_guard lock(this->lifecycle);
+    if (!this->loop || this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    pw_thread_loop_lock(this->loop);
+    const int result = pw_stream_set_active(this->stream, true);
+    if (result >= 0) {
+        this->paused = false;
+        if (this->callbacks.ready && this->queuedBuffers.Size() < this->maxQueuedBuffers &&
+            this->queuedFrames < this->capacity)
+        {
+            this->callbacks.ready(this->callbacks.context);
+        }
+    }
+    pw_thread_loop_unlock(this->loop);
+    return result < 0 ? MC_ERROR_IO : MC_OK;
 }
 
-void PipeWireOut::RefreshDeviceList() {
-    /* https://github.com/PipeWire/pipewire/blob/master/src/tools/pw-dump.c */
+mc_result PipeWireOut::SetVolume(double value) {
+    this->volume.store(static_cast<float>(value));
+    return MC_OK;
+}
 
-    if (!pipeWireInitialized) {
-        pw_init(nullptr, nullptr);
-        pipeWireInitialized = true;
+double PipeWireOut::GetVolume() const {
+    return this->volume.load();
+}
+
+mc_result PipeWireOut::Stop() noexcept {
+    std::unique_lock lock(this->lifecycle);
+    if (!this->loop) {
+        this->stopped = true;
+        return MC_OK;
     }
 
-    DeviceListContext deviceListContext(this);
+    if (this->loopStarted) {
+        pw_thread_loop_lock(this->loop);
+        this->stopped = true;
+        if (this->stream) {
+            pw_stream_set_active(this->stream, false);
+            pw_stream_flush(this->stream, false);
+        }
+        this->ReturnPending(MC_ERROR_CANCELLED);
+        pw_thread_loop_signal(this->loop, false);
+        pw_thread_loop_unlock(this->loop);
 
-    deviceListContext.loop = pw_main_loop_new(nullptr);
-    if (!deviceListContext.loop) {
-        ::debug->Error(TAG, "RefreshDeviceList() could not create main loop");
-        return;
+        /* drains still use the loop after waking, so join them before stopping it. */
+        this->finished.wait(lock, [this] { return this->activeDrains == 0; });
+        pw_thread_loop_stop(this->loop);
+        this->loopStarted = false;
     }
 
-    auto loop = pw_main_loop_get_loop(deviceListContext.loop);
-    if (!loop) {
-        ::debug->Error(TAG, "RefreshDeviceList() could not resolve loop from main_loop??");
-        return;
+    if (this->stream) {
+        pw_stream_destroy(this->stream);
+        this->stream = nullptr;
+    }
+    pw_thread_loop_destroy(this->loop);
+    this->loop = nullptr;
+    return MC_OK;
+}
+
+mc_result PipeWireOut::Drain() {
+    std::unique_lock lock(this->lifecycle);
+    if (!this->loop || this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    pw_thread_loop_lock(this->loop);
+    if (this->paused) {
+        pw_thread_loop_unlock(this->loop);
+        return MC_ERROR_IN_FLIGHT;
     }
 
-    deviceListContext.context = pw_context_new(loop, nullptr, 0);
-    if (!deviceListContext.context) {
-        ::debug->Error(TAG, "RefreshDeviceList() could not create context");
-        return;
+    ++this->activeDrains;
+    auto* loop = this->loop;
+    lock.unlock();
+    this->draining = true;
+    this->drained = false;
+
+    /* first return queued buffers to musikcore, then wait for PipeWire's own drain. */
+    while (!this->queuedBuffers.Empty() && !this->stopped && !this->failed) {
+        pw_thread_loop_wait(loop);
+    }
+    if (!this->stopped && !this->failed && pw_stream_flush(this->stream, true) < 0) {
+        this->failed = true;
+    }
+    while (!this->drained && !this->stopped && !this->failed) {
+        pw_thread_loop_wait(loop);
     }
 
-    deviceListContext.core = pw_context_connect(deviceListContext.context, nullptr, 0);
-    if (deviceListContext.core == nullptr) {
-        ::debug->Error(TAG, "RefreshDeviceList() could not connect to core");
-        return;
-    }
-
-    pw_core_add_listener(
-        deviceListContext.core,
-        &deviceListContext.coreListener,
-        &deviceListContext.coreEvents,
-        &deviceListContext);
-
-    deviceListContext.registry = pw_core_get_registry(
-        deviceListContext.core, PW_VERSION_REGISTRY, 0);
-
-    if (deviceListContext.registry) {
-        pw_registry_add_listener(
-            deviceListContext.registry,
-            &deviceListContext.registryListener,
-            &deviceListContext.registryEvents,
-            &deviceListContext);
-
-        deviceListContext.eventId = pw_core_sync(
-            deviceListContext.core, PW_ID_CORE, 0);
-
-        this->deviceList.Reset();
-
-        pw_main_loop_run(deviceListContext.loop);
-    }
+    const auto result = this->stopped ? MC_ERROR_CANCELLED : this->failed ? MC_ERROR_IO : MC_OK;
+    this->draining = false;
+    pw_thread_loop_unlock(loop);
+    lock.lock();
+    --this->activeDrains;
+    this->finished.notify_all();
+    return result;
 }

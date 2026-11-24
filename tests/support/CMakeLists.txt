@@ -951,6 +951,11 @@ musikcube_configure_c_plugin(musikcore_playback_remote_fixture)
 set_target_properties(musikcore_playback_remote_fixture PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/playback-remote"
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/playback-remote")
+# fixtures load both from the build tree and from staged runtime/plugins.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set_target_properties(musikcore_playback_remote_fixture musikcore_playback_remote_peer PROPERTIES
+    INSTALL_RPATH "$ORIGIN:$ORIGIN/..:$ORIGIN/../lib:$ORIGIN/../../../../../bin")
+endif()
 if(APPLE)
   set_target_properties(musikcore_playback_remote_fixture PROPERTIES SUFFIX ".dylib")
   set_target_properties(musikcore_playback_remote_peer PROPERTIES SUFFIX ".dylib")
@@ -1012,3 +1017,196 @@ add_test(NAME musikcore.integration.plugins.playback_remote_start_throws
     -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-playback-remote-fatal.cmake")
 set_tests_properties(musikcore.integration.plugins.playback_remote_start_throws PROPERTIES
   LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET ffmpegdecoder AND TARGET taglibreader)
+  add_executable(musikcore_linux_output_runtime_test ../integration/plugins/linux-output-runtime.cpp host-wakeup.cpp)
+  target_include_directories(musikcore_linux_output_runtime_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_linux_output_runtime_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_linux_output_runtime_test PRIVATE musikcore Threads::Threads)
+  add_dependencies(musikcore_linux_output_runtime_test ffmpegdecoder taglibreader)
+  foreach(output IN ITEMS alsaout pulseout pipewireout)
+    if(TARGET ${output})
+      add_dependencies(musikcore_linux_output_runtime_test ${output})
+    endif()
+  endforeach()
+  add_dependencies(musikcube_tests musikcore_linux_output_runtime_test)
+  add_dependencies(musikcube_integration_tests musikcore_linux_output_runtime_test)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET alsaout)
+  add_executable(musikcore_alsa_output_test ../integration/plugins/alsa-output.cpp)
+  target_include_directories(musikcore_alsa_output_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_alsa_output_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_alsa_output_test PRIVATE ${CMAKE_DL_LIBS})
+  add_library(musikcore_alsa_stall SHARED plugins/alsa-stall.cpp)
+  target_include_directories(musikcore_alsa_stall PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
+  target_compile_features(musikcore_alsa_stall PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_alsa_stall PRIVATE ${CMAKE_DL_LIBS})
+  add_dependencies(musikcore_alsa_output_test musikcore_alsa_stall)
+  add_dependencies(musikcore_alsa_output_test alsaout)
+  add_dependencies(musikcube_tests musikcore_alsa_output_test)
+  add_dependencies(musikcube_integration_tests musikcore_alsa_output_test)
+  add_test(NAME musikcore.integration.plugins.alsa_output
+    COMMAND musikcore_alsa_output_test "$<TARGET_FILE:alsaout>")
+  set_tests_properties(musikcore.integration.plugins.alsa_output PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+  add_test(NAME musikcore.integration.plugins.alsa_output_cancel
+    COMMAND "${CMAKE_COMMAND}" -E env "LD_PRELOAD=$<TARGET_FILE:musikcore_alsa_stall>"
+      "$<TARGET_FILE:musikcore_alsa_output_test>" "$<TARGET_FILE:alsaout>" stalled)
+  set_tests_properties(musikcore.integration.plugins.alsa_output_cancel PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+  if(TARGET musikcore_linux_output_runtime_test)
+    add_test(NAME musikcore.integration.plugins.alsa_output_runtime
+      COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+        "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures" "$<TARGET_FILE:musikcore_linux_output_runtime_test>"
+        --stage --plugin "$<TARGET_FILE:alsaout>" AlsaOut null)
+    set_tests_properties(musikcore.integration.plugins.alsa_output_runtime PROPERTIES
+      LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 30)
+  endif()
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET pulseout)
+  add_library(musikcore_pulse_output_fixture SHARED
+    "${PROJECT_SOURCE_DIR}/src/plugins/pulseout/pulseout_plugin.cpp"
+    "${PROJECT_SOURCE_DIR}/src/plugins/pulseout/PulseOut.cpp"
+    plugins/pulse-stall.cpp)
+  target_include_directories(musikcore_pulse_output_fixture PRIVATE "${PROJECT_SOURCE_DIR}/src/plugins")
+  target_compile_features(musikcore_pulse_output_fixture PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_pulse_output_fixture PRIVATE ${LIBPULSE} Threads::Threads)
+  musikcube_configure_c_plugin(musikcore_pulse_output_fixture)
+  set_target_properties(musikcore_pulse_output_fixture PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/pulse-output")
+  add_executable(musikcore_pulse_output_test ../integration/plugins/pulse-output.cpp)
+  target_include_directories(musikcore_pulse_output_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_pulse_output_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_pulse_output_test PRIVATE ${CMAKE_DL_LIBS} Threads::Threads)
+  add_dependencies(musikcore_pulse_output_test musikcore_pulse_output_fixture)
+  add_dependencies(musikcube_tests musikcore_pulse_output_test)
+  add_dependencies(musikcube_integration_tests musikcore_pulse_output_test)
+  add_test(NAME musikcore.integration.plugins.pulse_output
+    COMMAND musikcore_pulse_output_test "$<TARGET_FILE:musikcore_pulse_output_fixture>" fixture)
+  set_tests_properties(musikcore.integration.plugins.pulse_output PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET pipewireout)
+  find_program(MUSIKCORE_DBUS_RUN_SESSION dbus-run-session)
+  find_program(MUSIKCORE_PIPEWIRE pipewire)
+  find_program(MUSIKCORE_PIPEWIRE_PULSE pipewire-pulse)
+  find_program(MUSIKCORE_WIREPLUMBER wireplumber)
+  find_program(MUSIKCORE_PACTL pactl)
+  find_program(MUSIKCORE_PW_DUMP pw-dump)
+  find_program(MUSIKCORE_PW_CLI pw-cli)
+  if(MUSIKCORE_DBUS_RUN_SESSION AND MUSIKCORE_PIPEWIRE AND MUSIKCORE_PIPEWIRE_PULSE AND
+      MUSIKCORE_WIREPLUMBER AND MUSIKCORE_PACTL AND MUSIKCORE_PW_DUMP AND MUSIKCORE_PW_CLI)
+    if(TARGET pulseout)
+      add_library(musikcore_pulse_nowait SHARED plugins/pulse-nowait.cpp)
+      target_include_directories(musikcore_pulse_nowait PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
+      target_link_libraries(musikcore_pulse_nowait PRIVATE ${CMAKE_DL_LIBS})
+      add_dependencies(musikcore_pulse_output_test musikcore_pulse_nowait pulseout)
+      add_test(NAME musikcore.integration.plugins.pulse_control_nowait
+        COMMAND "${MUSIKCORE_DBUS_RUN_SESSION}" -- "${MUSIKCORE_TEST_NODE}"
+          "${PROJECT_SOURCE_DIR}/tests/scripts/run-pipewire-output.js" "${PROJECT_BINARY_DIR}"
+          "$<TARGET_FILE:musikcore_pulse_output_test>" "$<TARGET_FILE:pulseout>" ""
+          "$<TARGET_FILE:musikcore_pulse_nowait>")
+      set_tests_properties(musikcore.integration.plugins.pulse_control_nowait PROPERTIES
+        LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 45 RESOURCE_LOCK isolated_pipewire)
+    endif()
+
+    add_executable(musikcore_pipewire_output_test ../integration/plugins/pipewire-output.cpp)
+    target_include_directories(musikcore_pipewire_output_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+    target_compile_features(musikcore_pipewire_output_test PRIVATE cxx_std_20)
+    target_link_libraries(musikcore_pipewire_output_test PRIVATE ${CMAKE_DL_LIBS} Threads::Threads)
+    add_dependencies(musikcore_pipewire_output_test pipewireout)
+    add_dependencies(musikcube_tests musikcore_pipewire_output_test)
+    add_dependencies(musikcube_integration_tests musikcore_pipewire_output_test)
+    add_test(NAME musikcore.integration.plugins.pipewire_output
+      COMMAND "${MUSIKCORE_DBUS_RUN_SESSION}" -- "${MUSIKCORE_TEST_NODE}"
+        "${PROJECT_SOURCE_DIR}/tests/scripts/run-pipewire-output.js" "${PROJECT_BINARY_DIR}"
+        "$<TARGET_FILE:musikcore_pipewire_output_test>" "$<TARGET_FILE:pipewireout>")
+    set_tests_properties(musikcore.integration.plugins.pipewire_output PROPERTIES
+      LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 45 RESOURCE_LOCK isolated_pipewire)
+    if(TARGET musikcore_linux_output_runtime_test)
+      foreach(driver IN ITEMS pipewire pulse)
+        if(TARGET ${driver}out)
+          if(driver STREQUAL "pipewire")
+            set(driver_name "PipeWire")
+          else()
+            set(driver_name "PulseAudio")
+          endif()
+          add_test(NAME musikcore.integration.plugins.${driver}_output_runtime
+            COMMAND "${MUSIKCORE_DBUS_RUN_SESSION}" -- "${MUSIKCORE_TEST_NODE}"
+              "${PROJECT_SOURCE_DIR}/tests/scripts/run-pipewire-output.js" "${PROJECT_BINARY_DIR}"
+              "$<TARGET_FILE:musikcore_linux_output_runtime_test>" "$<TARGET_FILE:${driver}out>" "${driver_name}")
+          set_tests_properties(musikcore.integration.plugins.${driver}_output_runtime PROPERTIES
+            LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 45 RESOURCE_LOCK isolated_pipewire)
+        endif()
+      endforeach()
+    endif()
+  endif()
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET mpris)
+  find_program(MUSIKCORE_DBUS_RUN_SESSION dbus-run-session)
+  if(MUSIKCORE_DBUS_RUN_SESSION)
+    if(USE_ELOGIND)
+      set(mpris_test_library "libelogind >= 239.3")
+    elseif(USE_BASU)
+      set(mpris_test_library basu)
+    else()
+      set(mpris_test_library libsystemd)
+    endif()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(MUSIKCORE_TEST_SDBUS REQUIRED IMPORTED_TARGET ${mpris_test_library})
+    add_library(musikcore_mpris_stall SHARED
+      "${PROJECT_SOURCE_DIR}/src/plugins/mpris/mpris.cpp"
+      "${PROJECT_SOURCE_DIR}/src/plugins/mpris/dbus.cpp"
+      "${PROJECT_SOURCE_DIR}/src/plugins/mpris/playback.cpp"
+      "${PROJECT_SOURCE_DIR}/src/plugins/mpris/plugin.cpp"
+      plugins/mpris-stall.cpp)
+    target_include_directories(musikcore_mpris_stall PRIVATE "${PROJECT_SOURCE_DIR}/src/plugins/mpris")
+    target_compile_definitions(musikcore_mpris_stall PRIVATE "$<TARGET_PROPERTY:mpris,INTERFACE_COMPILE_DEFINITIONS>")
+    target_compile_features(musikcore_mpris_stall PRIVATE cxx_std_20)
+    target_link_libraries(musikcore_mpris_stall PRIVATE musikcore PkgConfig::MUSIKCORE_TEST_SDBUS Threads::Threads)
+    musikcube_configure_c_plugin(musikcore_mpris_stall)
+    set_target_properties(musikcore_mpris_stall PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/mpris-stall"
+      BUILD_RPATH "$<TARGET_FILE_DIR:musikcore>")
+    add_executable(musikcore_mpris_test ../integration/plugins/mpris.cpp)
+    target_include_directories(musikcore_mpris_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+    target_compile_definitions(musikcore_mpris_test PRIVATE "$<TARGET_PROPERTY:mpris,INTERFACE_COMPILE_DEFINITIONS>")
+    target_compile_features(musikcore_mpris_test PRIVATE cxx_std_20)
+    target_link_libraries(musikcore_mpris_test PRIVATE PkgConfig::MUSIKCORE_TEST_SDBUS ${CMAKE_DL_LIBS} Threads::Threads)
+    add_dependencies(musikcore_mpris_test mpris musikcore_mpris_stall)
+    add_dependencies(musikcube_tests musikcore_mpris_test)
+    add_dependencies(musikcube_integration_tests musikcore_mpris_test)
+    add_test(NAME musikcore.integration.plugins.mpris
+      COMMAND "${MUSIKCORE_DBUS_RUN_SESSION}" -- "$<TARGET_FILE:musikcore_mpris_test>" "$<TARGET_FILE:mpris>")
+    set_tests_properties(musikcore.integration.plugins.mpris PROPERTIES
+      LABELS "integration;musikcore;plugins;contract" TIMEOUT 20)
+    add_test(NAME musikcore.integration.plugins.mpris_artwork_stall
+      COMMAND "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:musikcore>"
+        "${MUSIKCORE_DBUS_RUN_SESSION}" -- "$<TARGET_FILE:musikcore_mpris_test>"
+        "$<TARGET_FILE:musikcore_mpris_stall>" stall)
+    set_tests_properties(musikcore.integration.plugins.mpris_artwork_stall PROPERTIES
+      LABELS "integration;musikcore;plugins;contract" TIMEOUT 20)
+    add_executable(musikcore_mpris_runtime_test ../integration/plugins/mpris-runtime.cpp host-wakeup.cpp)
+    target_include_directories(musikcore_mpris_runtime_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+    target_compile_definitions(musikcore_mpris_runtime_test PRIVATE "$<TARGET_PROPERTY:mpris,INTERFACE_COMPILE_DEFINITIONS>")
+    target_compile_features(musikcore_mpris_runtime_test PRIVATE cxx_std_20)
+    target_link_libraries(musikcore_mpris_runtime_test PRIVATE musikcore PkgConfig::MUSIKCORE_TEST_SDBUS Threads::Threads)
+    add_dependencies(musikcore_mpris_runtime_test mpris nullout ffmpegdecoder taglibreader musikcube_seed_library)
+    add_dependencies(musikcube_tests musikcore_mpris_runtime_test)
+    add_dependencies(musikcube_integration_tests musikcore_mpris_runtime_test)
+    add_test(NAME musikcore.integration.plugins.mpris_runtime
+      COMMAND "${MUSIKCORE_DBUS_RUN_SESSION}" -- "${CMAKE_COMMAND}"
+        "-DNODE=${MUSIKCORE_TEST_NODE}" "-DSEED_SCRIPT=${PROJECT_SOURCE_DIR}/tests/scripts/seed-test-library.js"
+        "-DISOLATED_RUNNER=${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+        "-DBUILD_DIR=${PROJECT_BINARY_DIR}" "-DINDEXER=$<TARGET_FILE:musikcube_seed_library>"
+        "-DNULL_OUTPUT=$<TARGET_FILE:nullout>" "-DMPRIS_PLUGIN=$<TARGET_FILE:mpris>"
+        "-DMPRIS_RUNTIME_TEST=$<TARGET_FILE:musikcore_mpris_runtime_test>"
+        -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-indexed-library.cmake")
+    set_tests_properties(musikcore.integration.plugins.mpris_runtime PROPERTIES
+      LABELS "integration;musikcore;plugins;contract" TIMEOUT 90)
+  endif()
+endif()

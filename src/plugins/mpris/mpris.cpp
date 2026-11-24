@@ -1,372 +1,286 @@
-
 #include "mpris.h"
 #include "dbus.h"
-#include <map>
-#include <vector>
-#include <functional>
-#include <musikcore/sdk/IEnvironment.h>
 
-extern "C" {
-    #include <unistd.h>
-}
+#include <algorithm>
+#include <cerrno>
+#include <cstring>
+#include <limits>
+#include <poll.h>
+#include <sys/eventfd.h>
+#include <time.h>
+#include <unistd.h>
 
-std::string thumbnailPath;
-thread_local char localBuffer[4096];
-static MPRISRemote remote;
+namespace {
+    mc_string_view view(const char* text) {
+        return { text, std::strlen(text) };
+    }
 
-static const std::map<MPRISProperty, const std::vector<const char*>> MPRISPropertyNames =
-    {{MPRISProperty::Volume, {"Volume", NULL}},
-     {MPRISProperty::PlaybackStatus, {"PlaybackStatus", NULL}},
-     {MPRISProperty::LoopStatus, {"LoopStatus", NULL}},
-     {MPRISProperty::Shuffle, {"Shuffle", NULL}},
-     {MPRISProperty::Metadata, {"Metadata", NULL}}};
-
-static std::string GetMetadataString(ITrack* track, const char* key)
-{
-    track->GetString(key, localBuffer, sizeof(localBuffer));
-    return std::string(localBuffer);
-}
-
-static std::string GetThumbnailPath(ITrack* track)
-{
-    int64_t thumbnailId = track->GetInt64(track::ThumbnailId);
-    return thumbnailPath + std::to_string(thumbnailId) + ".jpg";
-}
-
-static class MPRISPlugin : public IPlugin {
-    public:
-        MPRISPlugin() { }
-        void Release() override { }
-        const char* Name() override { return "MPRIS interface"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "brunosmmm"; }
-        const char* Guid() override { return "457df67f-f489-415f-975e-282f470b1c10"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-} plugin;
-
-extern "C" void SetEnvironment(IEnvironment* environment) {
-    if (environment) {
-        environment->GetPath(PathType::Library, localBuffer, sizeof(localBuffer));
-        thumbnailPath = std::string(localBuffer) + "/thumbs/";
+    int timeoutMillis(sd_bus* bus) noexcept {
+        uint64_t deadline = UINT64_MAX;
+        if (sd_bus_get_timeout(bus, &deadline) < 0 || deadline == UINT64_MAX) {
+            return -1;
+        }
+        timespec now {};
+        if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) {
+            return 0;
+        }
+        const uint64_t current = static_cast<uint64_t>(now.tv_sec) * 1000000 + now.tv_nsec / 1000;
+        if (deadline <= current) {
+            return 0;
+        }
+        const auto remaining = deadline - current;
+        const auto millis = remaining / 1000 + (remaining % 1000 != 0);
+        return static_cast<int>(std::min<uint64_t>(millis, std::numeric_limits<int>::max()));
     }
 }
 
-extern "C" IPlugin* GetPlugin() {
-    return &plugin;
+MPRISRemote::MPRISRemote(const mc_plugin_services& services)
+    : host(services.host), remote(services.playback_remote), library(services.library) {}
+
+void MPRISRemote::Log(const char* message) const noexcept {
+    if (this->host && this->host->log) {
+        this->host->log(this->host->host_context, MC_LOG_WARNING, view("MPRIS"), view(message));
+    }
 }
 
-extern "C" IPlaybackRemote* GetPlaybackRemote() {
-    return &remote;
+void MPRISRemote::Wake() noexcept {
+    if (this->wake < 0) {
+        return;
+    }
+    const uint64_t signal = 1;
+    ssize_t result;
+    do {
+        result = write(this->wake, &signal, sizeof(signal));
+    } while (result < 0 && errno == EINTR);
+    if (result < 0 && errno != EAGAIN) {
+        this->Log("could not wake the D-Bus worker");
+        std::abort();
+    }
 }
 
-bool MPRISRemote::MPRISInit() {
-    std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
-
-    int ret = 0;
-    std::string requested_name;
-
-    if (this->mpris_initialized) {
-        return true;
-    }
-
-    ret = sd_bus_default_user(&(this->bus));
-    if (ret < 0) {
-        MPRISDeinit();
-        return false;
-    }
-
-    // add DBUS entries
-    ret = sd_bus_add_object_vtable(this->bus, NULL, "/org/mpris/MediaPlayer2",
-                                   "org.mpris.MediaPlayer2", musikcube_mp_table, this);
-    if (ret < 0) {
-        MPRISDeinit();
-        return false;
-    }
-    ret = sd_bus_add_object_vtable(this->bus, NULL, "/org/mpris/MediaPlayer2",
-                                   "org.mpris.MediaPlayer2.Player", musikcube_mpp_table, this);
-    if (ret < 0) {
-        MPRISDeinit();
-        return false;
-    }
-
-    requested_name = std::string("org.mpris.MediaPlayer2.musikcube.instance") + std::to_string(getpid());
-    ret = sd_bus_request_name(this->bus, requested_name.c_str(), 0);
-    if (ret < 0) {
-        MPRISDeinit();
-        return false;
-    }
-
-    // start loop
-    thread.reset(new std::thread(std::bind(&MPRISRemote::MPRISLoop, this)));
-
-    return true;
+void MPRISRemote::InitialState(void* context, const mc_playback_snapshot* snapshot, const mc_track_ref* track) noexcept {
+    mc_plugin_playback_event event = MC_PLUGIN_PLAYBACK_EVENT_DEFAULT;
+    event.playback = *snapshot;
+    event.track = track;
+    static_cast<MPRISRemote*>(context)->Changed(event);
 }
 
-void MPRISRemote::MPRISDeinit() {
+void MPRISRemote::Changed(const mc_plugin_playback_event& event) noexcept {
+    uint64_t serial = 0;
+    int64_t trackId = 0;
+    uint32_t flags = 0;
+    try {
+        {
+            std::lock_guard lock(this->stateMutex);
+            const bool durationChanged = this->snapshot.duration != event.playback.duration;
+            this->snapshot = event.playback;
+            this->sampled = std::chrono::steady_clock::now();
+
+            switch (event.event) {
+                case MC_PLAYBACK_CHANGED_TRACK:
+                    serial = ++this->generation;
+                    trackId = event.track ? mc_track_ref_get_id(event.track) : 0;
+                    this->currentTrackId = trackId;
+                    this->metadata = {};
+                    this->thumbnailId = 0;
+                    this->artworkLibrary.reset();
+                    this->artworkPending = true;
+                    if (trackId > 0) {
+                        this->metadata.trackid = "/org/mpris/MediaPlayer2/track/t" + std::to_string(serial);
+                        this->metadata.available = true;
+                    }
+                    flags = MetadataChanged | PositionChanged | ArtworkChanged;
+                    break;
+                case MC_PLAYBACK_CHANGED_STATE:
+                    flags = StateChanged;
+                    break;
+                case MC_PLAYBACK_CHANGED_POSITION:
+                    flags = PositionChanged;
+                    break;
+                case MC_PLAYBACK_CHANGED_VOLUME:
+                    flags = VolumeChanged;
+                    break;
+                case MC_PLAYBACK_CHANGED_MODE:
+                    flags = ModeChanged;
+                    break;
+                default:
+                    break;
+            }
+
+            if (durationChanged) {
+                flags |= MetadataChanged;
+            }
+        }
+
+        /* the owner-thread handle reads already loaded metadata without I/O. */
+        if (trackId > 0 && this->ownerPlayback) {
+            this->LoadMetadata(this->ownerPlayback->Get(), serial, trackId);
+        }
+        this->notifications.fetch_or(flags);
+        if (flags & ArtworkChanged) {
+            this->artworkChanged.notify_one();
+        }
+        this->Wake();
+    }
+    catch (...) {
+        this->Log("could not copy playback notification");
+    }
+}
+
+void MPRISRemote::QueueChanged() noexcept {}
+
+mc_result MPRISRemote::Start() {
+    if (!this->remote || !this->remote->read_state || !this->remote->control_async ||
+        !this->remote->with_playback_async)
     {
-        std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+
+    this->wake = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+    if (this->wake < 0) {
+        return MC_ERROR_IO;
+    }
+    if (sd_bus_open_user(&this->bus) < 0) {
+        return MC_ERROR_IO;
+    }
+
+    if (sd_bus_add_object_vtable(this->bus, nullptr, "/org/mpris/MediaPlayer2",
+        "org.mpris.MediaPlayer2", musikcube_mp_table, this) < 0 ||
+        sd_bus_add_object_vtable(this->bus, nullptr, "/org/mpris/MediaPlayer2",
+            "org.mpris.MediaPlayer2.Player", musikcube_mpp_table, this) < 0)
+    {
+        return MC_ERROR_IO;
+    }
+
+    const auto name = std::string("org.mpris.MediaPlayer2.musikcube.instance") + std::to_string(getpid());
+    if (sd_bus_request_name(this->bus, name.c_str(), 0) < 0) {
+        return MC_ERROR_IO;
+    }
+
+    /* start with a snapshot; the asynchronous handle supplies track metadata. */
+    this->stopping.store(false);
+    const auto status = this->remote->read_state(this->remote->context, InitialState, this);
+    if (status != MC_OK) {
+        return status;
+    }
+    const auto access = this->remote->with_playback_async(this->remote->context, PlaybackReady, this);
+    if (access != MC_OK) {
+        return access;
+    }
+
+    this->worker = std::thread(&MPRISRemote::Run, this);
+    this->artworkWorker = std::thread(&MPRISRemote::RunArtwork, this);
+    return MC_OK;
+}
+
+void MPRISRemote::RequestStop() noexcept {
+    {
+        std::lock_guard lock(this->stateMutex);
+        this->stopping.store(true);
+    }
+    this->artworkChanged.notify_all();
+    this->ownerPlayback.reset();
+    this->Wake();
+}
+
+mc_result MPRISRemote::Join() {
+    if (this->artworkWorker.joinable()) {
+        this->artworkWorker.join();
+    }
+    if (this->worker.joinable()) {
+        this->worker.join();
+    }
+
+    /* neither worker can use the bus, wake descriptor, or artwork now. */
+    if (this->bus) {
         sd_bus_close(this->bus);
         sd_bus_unref(this->bus);
-        bus = NULL;
-        stop_processing = true;
+        this->bus = nullptr;
     }
-    if (thread) {
-        thread->join();
-        thread.reset();
+    if (this->wake >= 0) {
+        close(this->wake);
+        this->wake = -1;
+    }
+    if (!this->artworkFile.empty()) {
+        unlink(this->artworkFile.c_str());
+        this->artworkFile.clear();
+    }
+    return MC_OK;
+}
+
+void MPRISRemote::EmitChanges(uint32_t flags) noexcept {
+    const char* path = "/org/mpris/MediaPlayer2";
+    const char* player = "org.mpris.MediaPlayer2.Player";
+    if (flags & StateChanged) {
+        sd_bus_emit_properties_changed(this->bus, path, player, "PlaybackStatus", nullptr);
+    }
+    if (flags & ModeChanged) {
+        sd_bus_emit_properties_changed(this->bus, path, player, "LoopStatus", "Shuffle", nullptr);
+    }
+    if (flags & VolumeChanged) {
+        sd_bus_emit_properties_changed(this->bus, path, player, "Volume", nullptr);
+    }
+    if (flags & MetadataChanged) {
+        sd_bus_emit_properties_changed(this->bus, path, player, "Metadata", nullptr);
+    }
+    if (flags & PositionChanged) {
+        const auto position = this->MPRISGetPosition();
+        sd_bus_emit_signal(this->bus, path, player, "Seeked", "x", position);
     }
 }
 
-void MPRISRemote::MPRISEmitChange(MPRISProperty prop) {
-    std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
-    if (bus) {
-        char** strv = (char**)(MPRISPropertyNames.at(prop).data());
-        sd_bus_emit_properties_changed_strv(bus, "/org/mpris/MediaPlayer2",
-                                            "org.mpris.MediaPlayer2.Player",
-                                            strv);
-        sd_bus_flush(bus);
-    }
-};
+void MPRISRemote::Run() noexcept {
+    while (!this->stopping.load()) {
+        const uint32_t flags = this->notifications.exchange(0);
+        this->EmitChanges(flags);
 
-void MPRISRemote::MPRISEmitSeek(double curpos) {
-    std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
-    if (bus) {
-        int64_t position = (int64_t)(curpos*1000*1000);
-        sd_bus_emit_signal(bus, "/org/mpris/MediaPlayer2",
-                           "org.mpris.MediaPlayer2.Player",
-                           "Seeked", "x", position);
-    }
-};
+        int processed = 0;
+        do {
+            processed = sd_bus_process(this->bus, nullptr);
+        } while (processed > 0 && !this->stopping.load());
+        if (processed < 0) {
+            this->Log("D-Bus connection failed");
+            return;
+        }
 
-void MPRISRemote::MPRISLoop() {
-    while (true) {
+        /* wait for either D-Bus work or a playback change without polling. */
+        const int busFd = sd_bus_get_fd(this->bus);
+        const int busEvents = sd_bus_get_events(this->bus);
+        if (busFd < 0 || busEvents < 0) {
+            this->Log("could not poll D-Bus connection");
+            return;
+        }
+        pollfd fds[2] {
+            { .fd = busFd, .events = static_cast<short>(busEvents), .revents = 0 },
+            { .fd = this->wake, .events = POLLIN, .revents = 0 },
+        };
+        const int result = poll(fds, 2, timeoutMillis(this->bus));
+        if (result < 0 && errno != EINTR) {
+            this->Log("D-Bus polling failed");
+            return;
+        }
+        if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            this->Log("D-Bus connection closed");
+            return;
+        }
+        if (fds[1].revents & POLLIN) {
+            uint64_t signals;
+            (void) read(this->wake, &signals, sizeof(signals));
+        }
+    }
+}
+
+void MPRISRemote::RunArtwork() noexcept {
+    for (;;) {
         {
-            std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
-            if (stop_processing || !bus) {
+            std::unique_lock lock(this->stateMutex);
+            this->artworkChanged.wait(lock, [this] {
+                return this->stopping.load() || this->artworkPending;
+            });
+            if (this->stopping.load()) {
                 return;
             }
-            if (sd_bus_process(bus, nullptr) == 0) {
-                if (sd_bus_wait(bus, 0) < 0) {
-                    break;
-                }
-            }
         }
-        usleep(500 * 1000);
+        this->RefreshArtwork();
     }
-}
-
-void MPRISRemote::OnTrackChanged(ITrack* track) {
-    if (playback) {
-        MPRISEmitChange(MPRISProperty::Metadata);
-        MPRISEmitSeek(playback->GetPosition());
-    }
-}
-
-void MPRISRemote::OnPlaybackStateChanged(PlaybackState state) {
-    if (playback) {
-        MPRISEmitChange(MPRISProperty::PlaybackStatus);
-    }
-}
-
-void MPRISRemote::OnVolumeChanged(double volume) {
-    if (playback) {
-        MPRISEmitChange(MPRISProperty::Volume);
-    }
-}
-
-void MPRISRemote::OnPlaybackTimeChanged(double time) {
-    if (playback) {
-        MPRISEmitChange(MPRISProperty::Metadata);
-        MPRISEmitSeek(time);
-    }
-}
-
-void MPRISRemote::OnModeChanged(RepeatMode repeatMode, bool shuffled) {
-    if (playback) {
-        MPRISEmitChange(MPRISProperty::LoopStatus);
-        MPRISEmitChange(MPRISProperty::Shuffle);
-    }
-}
-
-struct MPRISMetadataValues MPRISRemote::MPRISGetMetadata() {
-    struct MPRISMetadataValues metadata;
-    if (playback) {
-        auto curTrack = playback->GetPlayingTrack();
-        if (curTrack) {
-            metadata.artist = GetMetadataString(curTrack, track::Artist);
-            metadata.title = GetMetadataString(curTrack, track::Title);
-            metadata.albumArtist = GetMetadataString(curTrack, track::AlbumArtist);
-            metadata.genre = GetMetadataString(curTrack, track::Genre);
-            // TODO implement track ID properly using track index in playlist if possible
-            metadata.trackid = std::string("/1");
-            metadata.album = GetMetadataString(curTrack, track::Album);
-            metadata.discNumber = curTrack->GetInt32(track::DiscNum);
-            metadata.trackNumber = curTrack->GetInt32(track::TrackNum);
-            metadata.length = curTrack->GetInt64(track::Duration)*1000*1000;
-            metadata.albumArt = GetThumbnailPath(curTrack);
-            metadata.available = true;
-        }
-    }
-    return metadata;
-}
-
-void MPRISRemote::SetPlaybackService(IPlaybackService* playback) {
-    std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
-    this->playback = playback;
-    mpris_initialized = MPRISInit();
-}
-
-void MPRISRemote::MPRISNext() {
-    if (playback) {
-        playback->Next();
-    }
-}
-
-void MPRISRemote::MPRISPrev() {
-    if (playback) {
-        playback->Previous();
-    }
-}
-
-void MPRISRemote::MPRISPause() {
-    if (playback) {
-        auto state = playback->GetPlaybackState();
-        if (state == PlaybackState::Playing) {
-            playback->PauseOrResume();
-        }
-    }
-}
-
-void MPRISRemote::MPRISPlayPause() {
-    if (playback) {
-        playback->PauseOrResume();
-    }
-}
-
-void MPRISRemote::MPRISStop() {
-    if (playback) {
-        playback->Stop();
-    }
-}
-
-void MPRISRemote::MPRISPlay() {
-    if (playback) {
-        auto state = playback->GetPlaybackState();
-        if (state != PlaybackState::Playing) {
-            playback->PauseOrResume();
-        }
-    }
-}
-
-void MPRISRemote::MPRISSeek(int64_t position, bool relative) {
-    double _pos = ((double)position)/(1000*1000);
-    if (playback) {
-      if (!relative) {
-        playback->SetPosition(_pos);
-      }
-      else {
-        double curPos = playback->GetPosition();
-        playback->SetPosition(curPos+_pos);
-      }
-    }
-}
-
-const char* MPRISRemote::MPRISGetPlaybackStatus() {
-    if (playback) {
-        auto state = playback->GetPlaybackState();
-        switch (state) {
-        case PlaybackState::Playing:
-            return "Playing";
-        case PlaybackState::Paused:
-            return "Paused";
-        case PlaybackState::Prepared:
-        case PlaybackState::Stopped:
-        default:
-            break;
-        }
-    }
-    return "Stopped";
-}
-
-const char* MPRISRemote::MPRISGetLoopStatus() {
-    if (playback) {
-        auto state = playback->GetRepeatMode();
-        switch (state) {
-        case RepeatMode::Track:
-            return "Track";
-        case RepeatMode::List:
-            return "Playlist";
-        case RepeatMode::None:
-        default:
-            break;
-        }
-    }
-    return "None";
-}
-
-void MPRISRemote::MPRISSetLoopStatus(const char* state) {
-    if (playback) {
-        if (!strcmp(state, "None")) {
-            playback->SetRepeatMode(RepeatMode::None);
-        }
-        else if (!strcmp(state, "Playlist")) {
-            playback->SetRepeatMode(RepeatMode::List);
-        }
-        else if (!strcmp(state, "Track")) {
-            playback->SetRepeatMode(RepeatMode::Track);
-        }
-    }
-}
-
-uint64_t MPRISRemote::MPRISGetPosition() {
-    if (playback) {
-        return (uint64_t)(playback->GetPosition()*1000*1000);
-    }
-    return 0;
-}
-
-unsigned int MPRISRemote::MPRISGetShuffleStatus() {
-    if (playback) {
-        return playback->IsShuffled() ? 1: 0;
-    }
-    return 0;
-}
-
-void MPRISRemote::MPRISSetShuffleStatus(unsigned int state) {
-    if (playback)
-        {
-            unsigned int isShuffled = playback->IsShuffled() ? 1: 0;
-            if ((state & 0x1) ^ isShuffled) {
-                playback->ToggleShuffle();
-            }
-        }
-}
-
-double MPRISRemote::MPRISGetVolume() {
-    if (playback) {
-        return playback->GetVolume();
-    }
-    return 0.0;
-}
-
-void MPRISRemote::MPRISSetVolume(double vol) {
-    if (playback) {
-        playback->SetVolume(vol);
-    }
-}
-
-MPRISMetadataValues::MPRISMetadataValues() {
-    trackid = "";
-    length = 0;
-    artist = "";
-    title = "";
-    album = "";
-    albumArtist = "";
-    genre = "";
-    comment = "";
-    trackNumber = 0;
-    discNumber = 0;
-    available = false;
 }

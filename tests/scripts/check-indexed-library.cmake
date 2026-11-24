@@ -3,6 +3,10 @@
 if(DEFINED HTTP_DATASTREAM_PLUGIN)
   set(seed_duration --seconds 4)
 endif()
+if(DEFINED MPRIS_RUNTIME_TEST)
+  set(seed_duration --seconds 30)
+  set(seed_metadata --embedded-artwork)
+endif()
 if(BACKEND_PARITY)
   set(seed_metadata --embedded-lyrics)
 endif()
@@ -71,6 +75,15 @@ elseif(DEFINED MANAGED_RUNTIME_TEST)
     RESULT_VARIABLE status)
   if(NOT status STREQUAL "0")
     message(FATAL_ERROR "Managed runtime test failed (${status}); fixture: ${directory}")
+  endif()
+elseif(DEFINED MPRIS_RUNTIME_TEST)
+  execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"
+    "${BUILD_DIR}/tests/bin/isolated" "${MPRIS_RUNTIME_TEST}" --stage
+    --headless-output "${NULL_OUTPUT}" --plugin "${MPRIS_PLUGIN}"
+    --config-root "${config_directory}"
+    RESULT_VARIABLE status)
+  if(NOT status STREQUAL "0")
+    message(FATAL_ERROR "MPRIS runtime test failed (${status}); fixture: ${directory}")
   endif()
 elseif(DEFINED PLUGIN_PLAYBACK_TEST)
   execute_process(COMMAND "${NODE}" "${ISOLATED_RUNNER}"

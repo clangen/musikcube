@@ -31,76 +31,63 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include "pch.h"
-
-#include <musikcore/sdk/IOutput.h>
-#include <musikcore/sdk/IDevice.h>
-
-#include <list>
-#include <vector>
-#include <mutex>
+#include <musikcore/plugin/output.hpp>
+#include <alsa/asoundlib.h>
 #include <condition_variable>
-#include <thread>
-#include <functional>
+#include <mutex>
+#include <poll.h>
+#include <vector>
 
-class AlsaOut : public musik::core::sdk::IOutput {
-    public:
-        AlsaOut();
-        virtual ~AlsaOut();
+/* owns one nonblocking ALSA handle; a wake descriptor interrupts producer
+and drain waits before `Stop()` closes the handle. */
+class AlsaOut {
+public:
+    explicit AlsaOut(const mc_plugin_services* services) : services(services) {}
+    AlsaOut(const AlsaOut&) = delete;
+    AlsaOut(AlsaOut&&) = delete;
+    ~AlsaOut() = default;
+    AlsaOut& operator=(const AlsaOut&) = delete;
+    AlsaOut& operator=(AlsaOut&&) = delete;
 
-        /* IPlugin */
-        const char* Name() override { return "AlsaOut"; }
+    mc_result Prepare(const mc_output_options&, const mc_output_callbacks&);
+    mc_result QueueAudioBuffer(const mc_output_buffer&) noexcept;
+    mc_result Pause();
+    mc_result Resume();
+    mc_result SetVolume(double);
+    double GetVolume() const;
+    mc_result Stop() noexcept;
+    mc_result Drain();
 
-        /* IOutput */
-        void Release() override;
-        void Pause() override ;
-        void Resume() override;
-        void SetVolume(double volume) override;
-        double GetVolume() override;
-        void Stop() override;
-        double Latency() override;
-        void Drain() override;
+    static mc_result VisitDevices(mc_output_device_fn, void*);
+    static mc_result ReadDefaultDevice(mc_output_device_fn, void*);
+    static mc_result GetDefaultFormat(mc_string_view, mc_audio_format&);
 
-        musik::core::sdk::OutputState Play(
-            musik::core::sdk::IBuffer *buffer,
-            musik::core::sdk::IBufferProvider *provider) override;
+private:
+    mc_result WaitForDevice();
+    void EndOperation() noexcept;
 
-        musik::core::sdk::IDeviceList* GetDeviceList() override;
-        bool SetDefaultDevice(const char* deviceId) override;
-        musik::core::sdk::IDevice* GetDefaultDevice() override;
-        int GetDefaultSampleRate() override { return -1; }
+    mutable std::mutex mutex;
+    std::condition_variable operationEndedEvent;
+    const mc_plugin_services* services = nullptr;
+    snd_pcm_t* pcm = nullptr;
 
-    private:
-        struct BufferContext {
-            musik::core::sdk::IBuffer *buffer;
-            musik::core::sdk::IBufferProvider *provider;
-        };
+    /* `Stop()` writes to this eventfd to wake a thread waiting for the device.
+    -1 means the eventfd has not been opened or has already been closed. */
+    int wake = -1;
 
-        size_t CountBuffersWithProvider(musik::core::sdk::IBufferProvider* provider);
-        void SetFormat(musik::core::sdk::IBuffer *buffer);
-        void InitDevice();
-        void CloseDevice();
-        void WriteLoop();
-        std::string GetPreferredDeviceId();
+    /* `poll()` waits on these descriptors until ALSA is ready or `Stop()` wakes it.
+    ALSA supplies the device descriptors; the last entry is `wake`. */
+    std::vector<pollfd> descriptors;
 
-        std::string device;
-        snd_pcm_t* pcmHandle;
-        snd_pcm_hw_params_t* hardware;
-        snd_pcm_format_t pcmFormat;
-        snd_pcm_access_t pcmType;
-
-        size_t channels;
-        size_t rate;
-        double volume;
-        double latency;
-        volatile bool quit, paused, initialized;
-
-        std::unique_ptr<std::thread> writeThread;
-        std::recursive_mutex stateMutex;
-        std::condition_variable_any threadEvent;
-        std::mutex mutex;
-
-        std::list<std::shared_ptr<BufferContext>> buffers;
+    std::vector<float> scaled;
+    mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
+    mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
+    size_t capacity = 0;
+    double volume = 1.0;
+    bool stopped = true;
+    bool paused = false;
+    bool operationActive = false;
 };

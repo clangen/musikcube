@@ -46,6 +46,7 @@ struct pa_blocking {
     int hw_volume;
 
     int operation_success;
+    int cancelled;
 };
 
 #define CHECK_VALIDITY_RETURN_ANY(rerror, expression, error, ret)       \
@@ -68,7 +69,7 @@ struct pa_blocking {
 
 #define CHECK_DEAD_GOTO(p, rerror, label)                               \
     do {                                                                \
-        if (!(p)->context || !PA_CONTEXT_IS_GOOD(pa_context_get_state((p)->context)) || \
+        if ((p)->cancelled || !(p)->context || !PA_CONTEXT_IS_GOOD(pa_context_get_state((p)->context)) || \
             !(p)->stream || !PA_STREAM_IS_GOOD(pa_stream_get_state((p)->stream))) { \
             if (((p)->context && pa_context_get_state((p)->context) == PA_CONTEXT_FAILED) || \
                 ((p)->stream && pa_stream_get_state((p)->stream) == PA_STREAM_FAILED)) { \
@@ -99,15 +100,6 @@ static void context_state_cb(pa_context *c, void *userdata) {
         case PA_CONTEXT_SETTING_NAME:
             break;
     }
-}
-
-static void success_context_cb(pa_context *c, int success, void *userdata) {
-    pa_blocking *p = userdata;
-    assert(c);
-    assert(p);
-
-    p->operation_success = success;
-    pa_threaded_mainloop_signal(p->mainloop, 0);
 }
 
 static void stream_state_cb(pa_stream *s, void * userdata) {
@@ -158,15 +150,10 @@ pa_blocking* pa_blocking_new(
     pa_blocking *p;
     int error = PA_ERR_INTERNAL, r;
 
-    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY server\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, !server || *server, PA_ERR_INVALID, NULL);
-    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY dir\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, dir == PA_STREAM_PLAYBACK || dir == PA_STREAM_RECORD, PA_ERR_INVALID, NULL);
-    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY device\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, !dev || *dev, PA_ERR_INVALID, NULL);
-    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY spec\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, ss && pa_sample_spec_valid(ss), PA_ERR_INVALID, NULL);
-    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY channel map\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, !map || (pa_channel_map_valid(map) && map->channels == ss->channels), PA_ERR_INVALID, NULL)
 
     p = pa_xnew0(pa_blocking, 1);
@@ -176,19 +163,16 @@ pa_blocking* pa_blocking_new(
     p->hw_volume = -1;
 
     if (!(p->mainloop = pa_threaded_mainloop_new())) {
-        fprintf(stderr, "pulse_blocking_stream: failed to create main loop\n");
         goto fail;
     }
 
     if (!(p->context = pa_context_new(pa_threaded_mainloop_get_api(p->mainloop), name))) {
-        fprintf(stderr, "pulse_blocking_stream: failed to create context\n");
         goto fail;
     }
 
     pa_context_set_state_callback(p->context, context_state_cb, p);
 
     if (pa_context_connect(p->context, server, 0, NULL) < 0) {
-        fprintf(stderr, "pulse_blocking_stream: failed to connect context\n");
         error = pa_context_errno(p->context);
         goto fail;
     }
@@ -196,7 +180,6 @@ pa_blocking* pa_blocking_new(
     pa_threaded_mainloop_lock(p->mainloop);
 
     if (pa_threaded_mainloop_start(p->mainloop) < 0) {
-        fprintf(stderr, "pulse_blocking_stream: failed to start main loop\n");
         goto unlock_and_fail;
     }
 
@@ -206,12 +189,10 @@ pa_blocking* pa_blocking_new(
         state = pa_context_get_state(p->context);
 
         if (state == PA_CONTEXT_READY) {
-            fprintf(stderr, "pulse_blocking_stream: context is ready\n");
             break;
         }
 
         if (!PA_CONTEXT_IS_GOOD(state)) {
-            fprintf(stderr, "pulse_blocking_stream: context is bad\n");
             error = pa_context_errno(p->context);
             goto unlock_and_fail;
         }
@@ -221,7 +202,6 @@ pa_blocking* pa_blocking_new(
     }
 
     if (!(p->stream = pa_stream_new(p->context, stream_name, ss, map))) {
-        fprintf(stderr, "pulse_blocking_stream: failed to create stream\n");
         error = pa_context_errno(p->context);
         goto unlock_and_fail;
     }
@@ -243,7 +223,6 @@ pa_blocking* pa_blocking_new(
                                      |PA_STREAM_AUTO_TIMING_UPDATE);
 
     if (r < 0) {
-        fprintf(stderr, "pulse_blocking_stream: failed to connect stream to output device\n");
         error = pa_context_errno(p->context);
         goto unlock_and_fail;
     }
@@ -254,12 +233,10 @@ pa_blocking* pa_blocking_new(
         state = pa_stream_get_state(p->stream);
 
         if (state == PA_STREAM_READY) {
-            fprintf(stderr, "pulse_blocking_stream: stream is ready\n");
             break;
         }
 
         if (!PA_STREAM_IS_GOOD(state)) {
-            fprintf(stderr, "pulse_blocking_stream: stream is bad\n");
             error = pa_context_errno(p->context);
             goto unlock_and_fail;
         }
@@ -281,6 +258,15 @@ fail:
         *rerror = error;
     pa_blocking_free(p);
     return NULL;
+}
+
+void pa_blocking_cancel(pa_blocking *p) {
+    pa_threaded_mainloop_lock(p->mainloop);
+
+    /* wake writes and drains so they can observe cancellation before free. */
+    p->cancelled = 1;
+    pa_threaded_mainloop_signal(p->mainloop, 0);
+    pa_threaded_mainloop_unlock(p->mainloop);
 }
 
 void pa_blocking_free(pa_blocking *s) {
@@ -318,6 +304,7 @@ int pa_blocking_write(pa_blocking *p, const void*data, size_t length, int *rerro
         size_t l;
         int r;
 
+        /* a cancellation signal also wakes this wait when no space arrives. */
         while (!(l = pa_stream_writable_size(p->stream))) {
             pa_threaded_mainloop_wait(p->mainloop);
             CHECK_DEAD_GOTO(p, rerror, unlock_and_fail);
@@ -412,6 +399,25 @@ static void success_cb(pa_stream *s, int success, void *userdata) {
 
     p->operation_success = success;
     pa_threaded_mainloop_signal(p->mainloop, 0);
+}
+
+int pa_blocking_cork(pa_blocking *p, bool cork, int *rerror) {
+    pa_operation *operation = NULL;
+    pa_threaded_mainloop_lock(p->mainloop);
+    CHECK_DEAD_GOTO(p, rerror, fail);
+    /* control calls are serialized with stop, so do not wait for the server. */
+    operation = pa_stream_cork(p->stream, cork, NULL, NULL);
+    CHECK_SUCCESS_GOTO(p, rerror, operation, fail);
+    pa_operation_unref(operation);
+    pa_threaded_mainloop_unlock(p->mainloop);
+    return 0;
+fail:
+    if (operation) {
+        pa_operation_cancel(operation);
+        pa_operation_unref(operation);
+    }
+    pa_threaded_mainloop_unlock(p->mainloop);
+    return -1;
 }
 
 int pa_blocking_drain(pa_blocking *p, int *rerror) {
@@ -534,7 +540,6 @@ int pa_blocking_set_volume(pa_blocking *p, int volume, int *rerror) {
     pa_stream *s = NULL;
     uint32_t idx;
     pa_cvolume cv;
-    pa_volume_t v;
 
     assert(p);
 
@@ -551,15 +556,9 @@ int pa_blocking_set_volume(pa_blocking *p, int volume, int *rerror) {
     assert(s);
     pa_cvolume_set(&cv, p->channels, volume);
 
-    o = pa_context_set_sink_input_volume (p->context, idx, &cv, success_context_cb, p);
+    /* the caller cannot stop the output while it waits for a control call. */
+    o = pa_context_set_sink_input_volume (p->context, idx, &cv, NULL, NULL);
     CHECK_SUCCESS_GOTO(p, rerror, o, unlock_and_fail);
-
-    p->operation_success = 0;
-    while (pa_operation_get_state(o) == PA_OPERATION_RUNNING) {
-        pa_threaded_mainloop_wait(p->mainloop);
-        CHECK_DEAD_GOTO(p, rerror, unlock_and_fail);
-    }
-    CHECK_SUCCESS_GOTO(p, rerror, p->operation_success, unlock_and_fail);
 
     pa_operation_unref(o);
     pa_threaded_mainloop_unlock(p->mainloop);
@@ -635,7 +634,6 @@ int pa_blocking_has_hw_volume(pa_blocking *p, int *rerror) {
         pa_operation_unref(o);
     }
 
-    //fprintf(stderr, "success getting sink_id=%d\n", p->sink_id);
 
     if (p->sink_id != -1) {
         /* once we have the sink id, query it for hw volume info */
@@ -652,7 +650,6 @@ int pa_blocking_has_hw_volume(pa_blocking *p, int *rerror) {
         pa_operation_unref(o);
     }
     
-    //fprintf(stderr, "success getting hw_volume=%d\n", p->hw_volume);
     
     pa_threaded_mainloop_unlock(p->mainloop);
     return p->hw_volume == -1 ? 0 : p->hw_volume;

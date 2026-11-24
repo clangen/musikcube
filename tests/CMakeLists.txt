@@ -1,3 +1,9 @@
+add_executable(musikcore_fixed_ring_queue_test unit/common/fixed-ring-queue.cpp)
+target_include_directories(musikcore_fixed_ring_queue_test PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_compile_features(musikcore_fixed_ring_queue_test PRIVATE cxx_std_17)
+add_test(NAME musikcore.unit.common.fixed_ring_queue COMMAND musikcore_fixed_ring_queue_test)
+set_tests_properties(musikcore.unit.common.fixed_ring_queue PROPERTIES LABELS "unit;musikcore;common;contract")
+
 add_executable(musikcore_abi_header_test
   unit/musikcore/ffi/header.c
   unit/musikcore/ffi/header.cpp
@@ -126,7 +132,8 @@ add_test(NAME musikcore.abi.query COMMAND "${MUSIKCORE_TEST_NODE}" "${isolated_t
 set_tests_properties(musikcore.abi.query PROPERTIES LABELS "integration;musikcore;abi;contract" TIMEOUT 20)
 
 add_custom_target(musikcube_tests DEPENDS
-  musikcore_abi_header_test musikcore_abi0_c_test musikcore_abi_dispatch_test musikcore_abi_query_test)
+  musikcore_abi_header_test musikcore_fixed_ring_queue_test musikcore_abi0_c_test
+  musikcore_abi_dispatch_test musikcore_abi_query_test)
 
 # build both assertion modes even when the enclosing configuration selects one.
 # the subprocess driver checks real aborts without terminating the test runner.
@@ -313,7 +320,7 @@ set_tests_properties(musikcube.unit.ui_artifacts PROPERTIES
 
 # Level-specific targets keep a quick unit run from building the full app.
 add_custom_target(musikcube_unit_tests DEPENDS musikcore_contract_debug_test musikcore_contract_ndebug_test musikcore_abi_header_test
-  musikcore_message_queue_test musikcube_async_callback_scope_test musikcube_transport_format_test
+  musikcore_message_queue_test musikcore_fixed_ring_queue_test musikcube_async_callback_scope_test musikcube_transport_format_test
   musikcore_public_headers)
 add_custom_target(musikcube_integration_tests DEPENDS musikcore_abi0_c_test
   musikcore_abi_dispatch_test musikcore_abi_query_test musikcore_abi_arguments_test

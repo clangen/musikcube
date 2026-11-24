@@ -33,505 +33,356 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "AlsaOut.h"
+#include <musikcore/plugin/services.h>
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPreferences.h>
+#include <algorithm>
+#include <cerrno>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <limits>
+#include <string>
+#include <sys/eventfd.h>
+#include <unistd.h>
 
-static musik::core::sdk::IPreferences* prefs;
+namespace {
+    constexpr size_t DefaultCapacity = 32768;
+    constexpr char LatencyKey[] = "latency_ms";
+    constexpr mc_integer_setting LatencySetting {
+        .key = { LatencyKey, sizeof(LatencyKey) - 1 },
+        .default_value = 500,
+        .minimum = 10,
+        .maximum = 5000,
+    };
+    constexpr unsigned MicrosecondsPerMillisecond = 1000;
 
-#define BUFFER_COUNT 16
-#define PCM_ACCESS_TYPE SND_PCM_ACCESS_RW_INTERLEAVED
-#define PCM_FORMAT SND_PCM_FORMAT_FLOAT_LE
-#define PREF_DEVICE_ID "device_id"
+    void reportDevice(mc_output_device_fn read, void* user, const char* id, const char* name) {
+        const mc_output_device device {
+            .id = { id, std::strlen(id) },
+            .name = { name, std::strlen(name) },
+        };
+        read(user, &device);
+    }
+}
 
-#define LOCK(x) \
-    /*std::cerr << "locking " << x << "\n";*/ \
-    std::unique_lock<std::recursive_mutex> lock(this->stateMutex); \
-    /*std::cerr << "locked " << x << "\n";*/ \
+const mc_configuration_api& AlsaConfiguration() {
+    static const mc_configuration_api configuration {
+        .struct_size = sizeof(mc_configuration_api),
+        .integers = &LatencySetting,
+        .integer_count = 1,
+        .booleans = nullptr,
+        .boolean_count = 0,
+        .numbers = nullptr,
+        .number_count = 0,
+        .texts = nullptr,
+        .text_count = 0,
+    };
+    return configuration;
+}
 
-#define WAIT() this->threadEvent.wait(lock);
-#define NOTIFY() this->threadEvent.notify_all();
-#define CHECK_QUIT() if (this->quit) { return; }
-#define PRINT_ERROR(x) std::cerr << "AlsaOut: error! " << snd_strerror(x) << std::endl;
+mc_result AlsaOut::VisitDevices(mc_output_device_fn read, void* user) {
+    void** hints = nullptr;
+    if (snd_device_name_hint(-1, "pcm", &hints) < 0) {
+        return MC_ERROR_IO;
+    }
+    for (void** hint = hints; *hint; ++hint) {
+        char* name = snd_device_name_get_hint(*hint, "NAME");
+        char* direction = snd_device_name_get_hint(*hint, "IOID");
+        if (name && (!direction || std::strcmp(direction, "Input") != 0)) {
+            reportDevice(read, user, name, name);
+        }
+        std::free(direction);
+        std::free(name);
+    }
+    snd_device_name_free_hint(hints);
+    return MC_OK;
+}
 
-#define WRITE_BUFFER(handle, context, samples) \
-    err = snd_pcm_writei(handle, context->buffer->BufferPointer(), samples); \
-    if (err < 0) { PRINT_ERROR(err); }
+mc_result AlsaOut::ReadDefaultDevice(mc_output_device_fn read, void* user) {
+    reportDevice(read, user, "default", "Default");
+    return MC_OK;
+}
 
-static inline bool playable(snd_pcm_t* pcm) {
-    if (!pcm) {
-        return false;
+mc_result AlsaOut::GetDefaultFormat(mc_string_view, mc_audio_format&) {
+    /* ALSA may expose a range of rates without a preferred hardware rate. */
+    return MC_ERROR_UNSUPPORTED;
+}
+
+mc_result AlsaOut::Prepare(const mc_output_options& options, const mc_output_callbacks& outputCallbacks) {
+    std::lock_guard lock(this->mutex);
+    this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : DefaultCapacity;
+    if (this->capacity > std::numeric_limits<size_t>::max() / options.format.channels) {
+        return MC_ERROR_BUFFER_TOO_SMALL;
     }
 
-    snd_pcm_state_t state = snd_pcm_state(pcm);
+    int32_t latencyMs = LatencySetting.default_value;
+    if (this->services && this->services->preferences) {
+        const auto* preferences = this->services->preferences;
+        const auto result = preferences->read_integer(preferences->context, &LatencySetting, &latencyMs);
+        if (result != MC_OK) {
+            return result;
+        }
+    }
 
-    if (state == SND_PCM_STATE_RUNNING ||
-        state == SND_PCM_STATE_PREPARED)
+    const std::string device = options.device_id.length
+        ? std::string(options.device_id.data, options.device_id.length) : "default";
+
+    /* a stopped writer must be able to wake even if ALSA never becomes ready. */
+    this->wake = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+    if (this->wake < 0) {
+        return MC_ERROR_IO;
+    }
+    if (snd_pcm_open(&this->pcm, device.c_str(), SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) < 0) {
+        /* a listed device can disappear or become unavailable before open. */
+        if (device == "default" ||
+            snd_pcm_open(&this->pcm, "default", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) < 0)
+        {
+            return MC_ERROR_IO;
+        }
+    }
+    if (snd_pcm_set_params(this->pcm, SND_PCM_FORMAT_FLOAT_LE, SND_PCM_ACCESS_RW_INTERLEAVED,
+        options.format.channels, options.format.sample_rate, 1,
+        static_cast<unsigned>(latencyMs) * MicrosecondsPerMillisecond) < 0)
     {
-        return true;
+        return MC_ERROR_IO;
     }
 
-    std::cerr << "AlsaOut: invalid device state: " << (int) state << "\n";
-    return false;
+    const int count = snd_pcm_poll_descriptors_count(this->pcm);
+    if (count < 0) {
+        return MC_ERROR_IO;
+    }
+    this->descriptors.resize(static_cast<size_t>(count) + 1);
+    if (snd_pcm_poll_descriptors(this->pcm, this->descriptors.data(), count) < 0) {
+        return MC_ERROR_IO;
+    }
+    this->descriptors.back() = { .fd = this->wake, .events = POLLIN, .revents = 0 };
+
+    /* keep the host's PCM untouched while applying software volume. */
+    this->scaled.resize(this->capacity * options.format.channels);
+    this->format = options.format;
+    this->callbacks = outputCallbacks;
+    this->volume = options.initial_volume;
+    this->paused = false;
+    this->stopped = false;
+    return MC_OK;
 }
 
-using namespace musik::core::sdk;
-
-class AlsaDevice : public IDevice {
-    public:
-        AlsaDevice(const std::string& id, const std::string& name) {
-            this->id = id;
-            this->name = name;
-        }
-
-        virtual void Release() override {
-            delete this;
-        }
-
-        virtual const char* Name() const override {
-            return name.c_str();
-        }
-
-        virtual const char* Id() const override {
-            return id.c_str();
-        }
-
-    private:
-        std::string name, id;
-};
-
-class AlsaDeviceList : public musik::core::sdk::IDeviceList {
-    public:
-        virtual void Release() override {
-            delete this;
-        }
-
-        virtual size_t Count() const override {
-            return devices.size();
-        }
-
-        virtual const IDevice* At(size_t index) const override {
-            return &devices.at(index);
-        }
-
-        void Add(const std::string& id, const std::string& name) {
-            devices.push_back(AlsaDevice(id, name));
-        }
-
-    private:
-        std::vector<AlsaDevice> devices;
-};
-
-extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
-    ::prefs = prefs;
-    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
-    prefs->Save();
+mc_result AlsaOut::WaitForDevice() {
+    int result;
+    do {
+        result = poll(this->descriptors.data(), this->descriptors.size(), -1);
+    } while (result < 0 && errno == EINTR);
+    return result < 0 ? MC_ERROR_IO : MC_OK;
 }
 
-static std::string getDeviceId() {
-    return getPreferenceString<std::string>(prefs, PREF_DEVICE_ID, "");
+void AlsaOut::EndOperation() noexcept {
+    this->operationActive = false;
+    this->operationEndedEvent.notify_all();
 }
 
-AlsaOut::AlsaOut()
-: pcmHandle(nullptr)
-, device("default")
-, channels(2)
-, rate(44100)
-, volume(1.0)
-, quit(false)
-, paused(false)
-, latency(0)
-, initialized(false) {
-    std::cerr << "AlsaOut::AlsaOut() called" << std::endl;
-    this->writeThread.reset(new std::thread(std::bind(&AlsaOut::WriteLoop, this)));
-}
-
-AlsaOut::~AlsaOut() {
-    std::cerr << "AlsaOut: destructor\n";
-
+mc_result AlsaOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
     {
-        LOCK("dtor");
-        this->quit = true;
-        NOTIFY();
+        std::lock_guard lock(this->mutex);
+        if (this->stopped) {
+            return MC_ERROR_CANCELLED;
+        }
+        if (block.pcm.format.sample_rate != this->format.sample_rate ||
+            block.pcm.format.channels != this->format.channels ||
+            block.pcm.format.channel_layout != this->format.channel_layout)
+        {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        if (block.pcm.frame_count > this->capacity) {
+            return MC_ERROR_BUFFER_TOO_SMALL;
+        }
+        if (this->paused) {
+            return MC_ERROR_QUEUE_FULL;
+        }
+        if (this->operationActive) {
+            return MC_ERROR_IN_FLIGHT;
+        }
+
+        this->operationActive = true;
+        const size_t samples = block.pcm.frame_count * this->format.channels;
+        /* a cubic curve gives the volume control a more natural low range. */
+        const float volume = static_cast<float>(this->volume);
+        const float gain = volume * volume * volume;
+        for (size_t i = 0; i < samples; ++i) {
+            this->scaled[i] = block.pcm.data[i] * gain;
+        }
     }
 
-    std::cerr << "AlsaOut: joining...\n";
-    this->writeThread->join();
-
-    std::cerr << "AlsaOut: closing device...\n";
-    this->CloseDevice();
-
-    std::cerr << "AlsaOut: destroyed.\n";
-}
-
-void AlsaOut::CloseDevice() {
-    LOCK("CloseDevice()");
-    if (this->pcmHandle) {
-        std::cerr << "AlsaOut: closing PCM handle\n";
-        snd_pcm_close(this->pcmHandle);
-        this->pcmHandle = nullptr;
-        this->latency = 0.0;
-    }
-}
-
-musik::core::sdk::IDevice* AlsaOut::GetDefaultDevice() {
-    return findDeviceById<AlsaDevice, IOutput>(this, getDeviceId());
-}
-
-bool AlsaOut::SetDefaultDevice(const char* deviceId) {
-    return setDefaultDevice<IPreferences, AlsaDevice, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
-}
-
-IDeviceList* AlsaOut::GetDeviceList() {
-    AlsaDeviceList* result = new AlsaDeviceList();
-
-    /* https://stackoverflow.com/a/6870226 */
-    char** hints;
-    if (snd_device_name_hint(-1, "pcm", (void***)&hints) == 0) {
-        char** n = hints;
-        while (*n != nullptr) {
-            char *name = snd_device_name_get_hint(*n, "NAME");
-            if (name) {
-                std::string stdName = name;
-                if (stdName != "default") {
-                    result->Add(stdName, stdName);
-                }
-                free(name);
+    size_t written = 0;
+    mc_result outcome = MC_OK;
+    while (written < block.pcm.frame_count) {
+        bool wait = false;
+        {
+            std::lock_guard lock(this->mutex);
+            if (this->stopped) {
+                outcome = MC_ERROR_CANCELLED;
+                break;
             }
-            ++n;
-        }
 
-        snd_device_name_free_hint((void**) hints);
-    }
-
-    size_t n = result->Count();
-    return result;
-}
-
-std::string AlsaOut::GetPreferredDeviceId() {
-    std::string result;
-
-    if (prefs) {
-        std::string storedDeviceId = getDeviceId();
-
-        auto deviceList = GetDeviceList();
-        if (deviceList) {
-            for (size_t i = 0; i < deviceList->Count(); i++) {
-                if (deviceList->At(i)->Id() == storedDeviceId) {
-                    result = storedDeviceId;
-                    break;
-                }
+            const auto result = snd_pcm_writei(this->pcm, this->scaled.data() + written * this->format.channels,
+                block.pcm.frame_count - written);
+            if (result > 0) {
+                written += static_cast<size_t>(result);
             }
-            deviceList->Release();
+            else if (result == -EAGAIN || result == 0) {
+                wait = true;
+            }
+            else if (snd_pcm_recover(this->pcm, static_cast<int>(result), 1) < 0) {
+                outcome = MC_ERROR_IO;
+                break;
+            }
         }
-    }
 
-    return result;
-}
-
-void AlsaOut::InitDevice() {
-    int err, dir;
-    unsigned int rate = (unsigned int) this->rate;
-
-    std::string preferredDeviceId = this->GetPreferredDeviceId();
-    bool preferredOk = false;
-
-    if (preferredDeviceId.size() > 0) {
-        if ((err = snd_pcm_open(&this->pcmHandle, preferredDeviceId.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-            std::cerr << "AlsaOut: cannot opened preferred device id " << preferredDeviceId << ": " << snd_strerror(err) << std::endl;
-        }
-        else {
-            preferredOk = true;
-        }
-    }
-
-    if (!preferredOk && (err = snd_pcm_open(&this->pcmHandle, this->device.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-        std::cerr << "AlsaOut: cannot open audio device 'default' :" << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    if ((err = snd_pcm_hw_params_malloc(&hardware)) < 0) {
-        std::cerr << "AlsaOut: cannot allocate hardware parameter structure " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    if ((err = snd_pcm_hw_params_any(pcmHandle, hardware)) < 0) {
-        std::cerr << "AlsaOut: cannot initialize hardware parameter structure " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    if ((err = snd_pcm_hw_params_set_access(pcmHandle, hardware, PCM_ACCESS_TYPE)) < 0) {
-        std::cerr << "AlsaOut: cannot set access type " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    if ((err = snd_pcm_hw_params_set_format(pcmHandle, hardware, PCM_FORMAT)) < 0) {
-        std::cerr << "AlsaOut: cannot set sample format " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    if ((err = snd_pcm_hw_params_set_rate_near(pcmHandle, hardware, &rate, 0)) < 0) {
-        std::cerr << "AlsaOut: cannot set sample rate " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    if ((err = snd_pcm_hw_params_set_channels(pcmHandle, hardware, this->channels)) < 0) {
-        std::cerr << "AlsaOut: cannot set channel count " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    if ((err = snd_pcm_hw_params(pcmHandle, hardware)) < 0) {
-        std::cerr << "AlsaOut: cannot set parameters " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    snd_pcm_hw_params_free(hardware);
-
-    if ((err = snd_pcm_prepare (pcmHandle)) < 0) {
-        std::cerr << "AlsaOut: cannot prepare audio interface for use " << snd_strerror(err) << std::endl;
-        goto error;
-    }
-
-    snd_pcm_nonblock(pcmHandle, 0); /* operate in blocking mode for simplicity */
-
-    std::cerr << "AlsaOut: device seems to be prepared for use!\n";
-    this->initialized = true;
-
-    return;
-
-error:
-    this->CloseDevice();
-}
-
-void AlsaOut::Release() {
-    delete this;
-}
-
-double AlsaOut::Latency() {
-    if (latency <= 0.0f) {
-        LOCK("latency_calc");
-
-        if (this->pcmHandle && this->rate && this->channels) {
-            snd_pcm_uframes_t bufferSize = 0, periodSize = 0;
-            snd_pcm_get_params(this->pcmHandle, &bufferSize, &periodSize);
-
-            if (bufferSize) {
-                this->latency =
-                (double) bufferSize /
-                (double) (this->rate * this->channels * sizeof(float));
+        /* `Stop()` can signal the eventfd while this thread waits. */
+        if (wait) {
+            outcome = this->WaitForDevice();
+            if (outcome != MC_OK) {
+                break;
             }
         }
     }
 
-    return this->latency;
-}
+    mc_output_callbacks callback;
+    {
+        std::lock_guard lock(this->mutex);
+        if (this->stopped) {
+            outcome = MC_ERROR_CANCELLED;
+        }
+        callback = this->callbacks;
+    }
 
-void AlsaOut::Stop() {
-    std::list<std::shared_ptr<BufferContext> > toNotify;
+    /* return the borrowed buffer before allowing `Stop()` to close the device. */
+    callback.completed(callback.context, block.token, outcome);
 
     {
-        LOCK("stop");
-
-        std::swap(this->buffers, toNotify);
-
-        if (this->pcmHandle) {
-            snd_pcm_drop(this->pcmHandle);
-            this->CloseDevice();
-        }
+        std::lock_guard lock(this->mutex);
+        this->EndOperation();
     }
 
-    auto it = toNotify.begin();
-    while (it != toNotify.end()) {
-        ((*it)->provider)->OnBufferProcessed((*it)->buffer);
-        ++it;
+    return MC_OK;
+}
+
+mc_result AlsaOut::Pause() {
+    std::lock_guard lock(this->mutex);
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
     }
-}
-
-void AlsaOut::Pause() {
-    LOCK("pause");
-
-    if (this->pcmHandle) {
-        snd_pcm_pause(this->pcmHandle, 1);
-        this->paused = true;
+    if (snd_pcm_pause(this->pcm, 1) < 0) {
+        return MC_ERROR_IO;
     }
+    this->paused = true;
+    return MC_OK;
 }
 
-void AlsaOut::Resume() {
-    LOCK("resume");
-
-    if (this->pcmHandle) {
-        snd_pcm_pause(this->pcmHandle, 0);
-        this->paused = false;
-        NOTIFY();
+mc_result AlsaOut::Resume() {
+    std::lock_guard lock(this->mutex);
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
     }
+    if (this->paused && snd_pcm_pause(this->pcm, 0) < 0) {
+        return MC_ERROR_IO;
+    }
+    this->paused = false;
+    if (this->callbacks.ready) {
+        this->callbacks.ready(this->callbacks.context);
+    }
+    return MC_OK;
 }
 
-void AlsaOut::SetVolume(double volume) {
-    LOCK("set volume");
-    this->volume = volume;
+mc_result AlsaOut::SetVolume(double value) {
+    std::lock_guard lock(this->mutex);
+    this->volume = value;
+    return MC_OK;
 }
 
-double AlsaOut::GetVolume() {
+double AlsaOut::GetVolume() const {
+    std::lock_guard lock(this->mutex);
     return this->volume;
 }
 
-void AlsaOut::WriteLoop() {
-    {
-        LOCK("thread: init");
-        while (!quit && !initialized) {
-            WAIT();
+mc_result AlsaOut::Stop() noexcept {
+    std::unique_lock lock(this->mutex);
+    this->stopped = true;
+
+    /* wake a blocked write or drain, then wait until its callback has returned. */
+    if (this->wake >= 0) {
+        const uint64_t signal = 1;
+        ssize_t result;
+        do {
+            result = write(this->wake, &signal, sizeof(signal));
+        } while (result < 0 && errno == EINTR);
+        if (result < 0 && errno != EAGAIN) {
+            std::fputs("ALSA output: cannot wake a stopped producer\n", stderr);
+            std::abort();
         }
     }
+    this->operationEndedEvent.wait(lock, [this] { return !this->operationActive; });
 
-    {
-        while (!quit) {
-            std::shared_ptr<BufferContext> next;
-
-            {
-                LOCK("thread: waiting for buffer");
-                while (!quit && (!playable(this->pcmHandle) || !this->buffers.size())) {
-                    WAIT();
-                }
-
-                CHECK_QUIT();
-
-                next = this->buffers.front();
-                this->buffers.pop_front();
-            }
-
-            int err;
-
-            if (next) {
-                size_t samples = next->buffer->Samples();
-                size_t channels = next->buffer->Channels();
-                size_t samplesPerChannel = samples / channels;
-                float volume = (float) this->volume;
-
-                /* software volume; alsa doesn't support this internally. this is about
-                as terrible as an algorithm can be -- it's just a linear ramp. */
-                //std::cerr << "volume=" << volume << std::endl;
-                if (volume != 1.0f) {
-                    float *buffer = next->buffer->BufferPointer();
-                    for (size_t i = 0; i < samples; i++) {
-                        (*buffer) *= volume;
-                        ++buffer;
-                    }
-                }
-
-                {
-                    LOCK("WRITE_BUFFER()");
-                    if (this->pcmHandle) {
-                        WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel); /* sets 'err' */
-
-                        if (err == -EINTR || err == -EPIPE || err == -ESTRPIPE) {
-                            if (!snd_pcm_recover(this->pcmHandle, err, 1)) {
-                                /* try one more time... */
-                                WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel);
-                            }
-                        }
-                    }
-                }
-
-                if (err > 0 && err < (int) samplesPerChannel) {
-                    std::cerr << "AlsaOut: short write. expected=" << samplesPerChannel << ", actual=" << err << std::endl;
-                }
-
-                next->provider->OnBufferProcessed(next->buffer);
-            }
+    if (this->pcm) {
+        snd_pcm_drop(this->pcm);
+        if (snd_pcm_close(this->pcm) < 0) {
+            std::fputs("ALSA output: cannot close the device\n", stderr);
+            std::abort();
         }
+        this->pcm = nullptr;
     }
-
-    std::cerr << "AlsaOut: thread finished\n";
+    if (this->wake >= 0) {
+        close(this->wake);
+        this->wake = -1;
+    }
+    return MC_OK;
 }
 
-OutputState AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
-    this->SetFormat(buffer);
-
+mc_result AlsaOut::Drain() {
     {
-        LOCK("play");
-
-        if (this->paused) {
-            return OutputState::InvalidState;
+        std::lock_guard lock(this->mutex);
+        if (this->stopped) {
+            return MC_ERROR_CANCELLED;
         }
-
-        if (this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) {
-            return OutputState::BufferFull;
+        if (this->paused || this->operationActive) {
+            return MC_ERROR_IN_FLIGHT;
         }
-
-        std::shared_ptr<BufferContext> context(new BufferContext());
-        context->buffer = buffer;
-        context->provider = provider;
-
-        this->buffers.push_back(context);
-
-        if (!playable(this->pcmHandle)) {
-            std::cerr << "AlsaOut: sanity check -- stream not playable. adding buffer to queue anyway\n";
-        }
-        else {
-            NOTIFY();
-        }
+        this->operationActive = true;
     }
 
-    return OutputState::BufferWritten;
-}
-
-void AlsaOut::Drain() {
-    LOCK("drain");
-
-    if (this->pcmHandle) {
-        std::cerr << "draining...\n";
-        snd_pcm_drain(this->pcmHandle);
-        std::cerr << "drained\n";
-    }
-}
-
-void AlsaOut::SetFormat(IBuffer *buffer) {
-    LOCK("set format");
-
-    if (this->channels != buffer->Channels() ||
-        this->rate != buffer->SampleRate() ||
-        this->pcmHandle == nullptr)
-    {
-        this->channels = buffer->Channels();
-        this->rate = buffer->SampleRate();
-
-        this->CloseDevice();
-
-        this->InitDevice();
-
-        if (this->pcmHandle) {
-            int err = snd_pcm_set_params(
-                this->pcmHandle,
-                PCM_FORMAT,
-                PCM_ACCESS_TYPE,
-                this->channels,
-                this->rate,
-                1, /* allow resampling */
-                500000); /* 0.5s latency */
-
-            if (err > 0) {
-                std::cerr << "AlsaOut: set format error: " << snd_strerror(err) << std::endl;
+    mc_result outcome = MC_OK;
+    for (;;) {
+        {
+            std::lock_guard lock(this->mutex);
+            if (this->stopped) {
+                outcome = MC_ERROR_CANCELLED;
+                break;
             }
-            else {
-                this->SetVolume(this->volume);
+            const int result = snd_pcm_drain(this->pcm);
+            if (result >= 0) {
+                break;
+            }
+            if (result != -EAGAIN) {
+                outcome = MC_ERROR_IO;
+                break;
             }
         }
 
-        std::cerr << "AlsaOut: device format initialized from buffer\n";
-    }
-}
-
-size_t AlsaOut::CountBuffersWithProvider(IBufferProvider* provider) {
-    LOCK("count");
-
-    size_t count = 0;
-    auto it = this->buffers.begin();
-    while (it != this->buffers.end()) {
-        if ((*it)->provider == provider) {
-            ++count;
+        outcome = this->WaitForDevice();
+        if (outcome != MC_OK) {
+            break;
         }
-        ++it;
     }
 
-    return count;
+    {
+        std::lock_guard lock(this->mutex);
+        /* ALSA needs preparation after a completed drain before it can play again. */
+        if (this->stopped) {
+            outcome = MC_ERROR_CANCELLED;
+        }
+        else if (outcome == MC_OK && snd_pcm_prepare(this->pcm) < 0) {
+            outcome = MC_ERROR_IO;
+        }
+        this->EndOperation();
+    }
+    return outcome;
 }

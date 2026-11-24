@@ -56,9 +56,12 @@ function id3Frame(id, payload) {
 }
 
 /* Build deterministic optional metadata so indexed fixtures exercise present, absent, and multivalue tags. */
-function id3Tag(album, track, lyrics) {
+function id3Tag(album, track, lyrics, artwork) {
   const frames = [id3TextFrame('TALB', album)];
   if (lyrics) frames.push(id3Frame('USLT', Buffer.from('\0eng\0' + lyrics)));
+  if (artwork) frames.push(id3Frame('APIC', Buffer.concat([
+    Buffer.from('\0image/png\0\x03\0'), Buffer.alloc(40, 'a'),
+  ])));
   for (const [index, [id, values]] of extraTags.entries()) {
     if ((track + index) % 4 === 0) continue;
     const value = Array.isArray(values) ? values[(track - 1) % values.length] : values;
@@ -73,7 +76,7 @@ function id3Tag(album, track, lyrics) {
 }
 
 /* Generate a silent WAV in memory with RIFF and ID3 tags read by the production indexer. */
-function wave({ title, artist, album, genre, track, lyrics }, seconds, stereo) {
+function wave({ title, artist, album, genre, track, lyrics, artwork }, seconds, stereo) {
   const channels = stereo ? 2 : 1;
   const bytesPerSecond = 16000 * channels;
   const format = Buffer.alloc(stereo ? 40 : 16);
@@ -102,16 +105,17 @@ function wave({ title, artist, album, genre, track, lyrics }, seconds, stereo) {
   ]);
   return chunk('RIFF', Buffer.concat([
     Buffer.from('WAVE'), chunk('fmt ', format), chunk('LIST', info),
-    chunk('ID3 ', id3Tag(album, track, lyrics)), chunk('data', Buffer.alloc(bytesPerSecond * seconds)),
+    chunk('ID3 ', id3Tag(album, track, lyrics, artwork)), chunk('data', Buffer.alloc(bytesPerSecond * seconds)),
   ]));
 }
 
 /* Write either the small named contract fixture or a larger deterministic artist/album catalog. */
-function writeMedia(media, count, seconds, embeddedLyrics, stereo) {
+function writeMedia(media, count, seconds, embeddedLyrics, stereo, embeddedArtwork) {
   if (count === 2) {
     writeFileSync(join(media, '01-morning.wav'), wave({
       title: 'Morning Light', artist: 'Fixture Artist', album: 'Fixture Album', genre: 'Ambient', track: 1,
       lyrics: embeddedLyrics ? 'Fixture lyrics for track 1' : undefined,
+      artwork: embeddedArtwork,
     }, seconds, stereo));
     writeFileSync(join(media, '02-evening.wav'), wave({
       title: 'Evening Flight', artist: 'Fixture Artist', album: 'Fixture Album', genre: 'Electronic', track: 2,
@@ -157,6 +161,7 @@ function main() {
       tracks: { type: 'string', default: '2' },
       seconds: { type: 'string', default: '1' },
       'embedded-lyrics': { type: 'boolean' },
+      'embedded-artwork': { type: 'boolean' },
       stereo: { type: 'boolean' },
       indexer: { type: 'string' },
       'fixture-dir': { type: 'string' },
@@ -165,7 +170,7 @@ function main() {
     allowPositionals: true,
   });
   if (values.help) {
-    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--seconds <duration>] [--embedded-lyrics] [--stereo] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
+    console.log('Usage: node tests/scripts/seed-test-library.js [--tracks <count>] [--seconds <duration>] [--embedded-lyrics] [--embedded-artwork] [--stereo] [--indexer <executable>] [--fixture-dir <dir>] [configured-build-directory]');
     return;
   }
 
@@ -197,7 +202,7 @@ function main() {
   mkdirSync(media);
 
   console.log(`Generating ${count} fixture tracks under ${root}`);
-  writeMedia(media, count, seconds, values['embedded-lyrics'], values.stereo);
+  writeMedia(media, count, seconds, values['embedded-lyrics'], values.stereo, values['embedded-artwork']);
 
   /* Stage plugins and redirect preferences before starting production code so
      indexing cannot discover user paths or unrelated installed audio plugins. */

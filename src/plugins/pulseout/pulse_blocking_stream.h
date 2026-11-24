@@ -48,6 +48,12 @@ pa_blocking* pa_blocking_new(
     int *error                          /**< A pointer where the error code is stored when the routine returns NULL. It is OK to pass NULL here. */
     );
 
+/* wake writes and drains before the owner frees the connection. */
+void pa_blocking_cancel(pa_blocking *s);
+
+/* cork or uncork an active stream. */
+int pa_blocking_cork(pa_blocking *s, bool cork, int *error);
+
 /** Close and free the connection to the server. The connection object becomes invalid when this is called. */
 void pa_blocking_free(pa_blocking *s);
 

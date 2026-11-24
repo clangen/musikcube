@@ -1,41 +1,70 @@
 
 #include "mpris.h"
 #include "dbus.h"
+#include <cerrno>
+#include <cmath>
 
-//wrappers
+/* report rejected commands to the D-Bus client instead of pretending they ran. */
+static int commandError(sd_bus_error* error, mc_result result) {
+    if (result == MC_OK) {
+        return 0;
+    }
+    const int code = result == MC_ERROR_INVALID_ARGUMENT ? EINVAL
+        : result == MC_ERROR_QUEUE_FULL || result == MC_ERROR_IN_FLIGHT ? EBUSY : EIO;
+    return sd_bus_error_set_errno(error, code);
+}
+
 static int next_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
     MPRISRemote* remote = (MPRISRemote*)data;
-    remote->MPRISNext();
+    const auto status = remote->MPRISNext();
+    if (status != MC_OK) {
+        return commandError(err, status);
+    }
     return sd_bus_reply_method_return(m, "");
 }
 
 static int prev_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
     MPRISRemote* remote = (MPRISRemote*)data;
-    remote->MPRISPrev();
+    const auto status = remote->MPRISPrev();
+    if (status != MC_OK) {
+        return commandError(err, status);
+    }
     return sd_bus_reply_method_return(m, "");
 }
 
 static int pause_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
     MPRISRemote* remote = (MPRISRemote*)data;
-    remote->MPRISPause();
+    const auto status = remote->MPRISPause();
+    if (status != MC_OK) {
+        return commandError(err, status);
+    }
     return sd_bus_reply_method_return(m, "");
 }
 
 static int playpause_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
     MPRISRemote* remote = (MPRISRemote*)data;
-    remote->MPRISPlayPause();
+    const auto status = remote->MPRISPlayPause();
+    if (status != MC_OK) {
+        return commandError(err, status);
+    }
     return sd_bus_reply_method_return(m, "");
 }
 
 static int stop_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
     MPRISRemote* remote = (MPRISRemote*)data;
-    remote->MPRISStop();
+    const auto status = remote->MPRISStop();
+    if (status != MC_OK) {
+        return commandError(err, status);
+    }
     return sd_bus_reply_method_return(m, "");
 }
 
 static int play_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
     MPRISRemote* remote = (MPRISRemote*)data;
-    remote->MPRISPlay();
+    const auto status = remote->MPRISPlay();
+    if (status != MC_OK) {
+        return commandError(err, status);
+    }
     return sd_bus_reply_method_return(m, "");
 }
 
@@ -46,19 +75,25 @@ static int seek_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
     if (ret < 0) {
         return ret;
     }
-    remote->MPRISSeek(pos, true);
+    const auto status = remote->MPRISSeek(pos, true);
+    if (status != MC_OK) {
+        return commandError(err, status);
+    }
     return sd_bus_reply_method_return(m, "");
 }
 
 static int set_position_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
   MPRISRemote* remote = (MPRISRemote*)data;
-  const char buf[512] = "";
+  const char* buf = nullptr;
   int64_t pos = 0;
   int ret = sd_bus_message_read(m, "ox", &buf, &pos);
   if (ret < 0) {
     return ret;
   }
-  remote->MPRISSeek(pos, false);
+  const auto status = remote->MPRISSeek(pos, false, buf);
+  if (status != MC_OK) {
+    return commandError(err, status);
+  }
   return sd_bus_reply_method_return(m, "");
 }
 
@@ -88,8 +123,8 @@ static int set_loop_status(sd_bus* bus, const char* path, const char *iface,
     if (ret < 0) {
         return ret;
     }
-    remote->MPRISSetLoopStatus(_value);
-    return sd_bus_reply_method_return(value, "");
+    const auto status = remote->MPRISSetLoopStatus(_value);
+    return status == MC_OK ? 1 : commandError(err, status);
 }
 
 static int get_position(sd_bus* bus, const char* path, const char *iface,
@@ -120,8 +155,8 @@ static int set_shuffle_status(sd_bus* bus, const char* path, const char *iface,
     if (ret < 0) {
         return ret;
     }
-    remote->MPRISSetShuffleStatus(_value);
-    return sd_bus_reply_method_return(value, "");
+    const auto status = remote->MPRISSetShuffleStatus(_value);
+    return status == MC_OK ? 1 : commandError(err, status);
 }
 
 static int get_volume(sd_bus* bus, const char* path, const char *iface,
@@ -142,13 +177,16 @@ static int set_volume(sd_bus* bus, const char* path, const char *iface,
     if (ret < 0) {
         return ret;
     }
+    if (!std::isfinite(_value)) {
+        return commandError(err, MC_ERROR_INVALID_ARGUMENT);
+    }
     if (_value < 0.0) {
         _value = 0.0;
     } else if (_value > 1.0) {
         _value = 1.0;
     }
-    remote->MPRISSetVolume(_value);
-    return sd_bus_reply_method_return(value, "");
+    const auto status = remote->MPRISSetVolume(_value);
+    return status == MC_OK ? 1 : commandError(err, status);
 }
 
 static void sd_msg_append_dict(sd_bus_message* msg, const char* key, const void* value, char type) {
@@ -172,7 +210,7 @@ static void sd_msg_append_strlist_dict(sd_bus_message* msg, const char* key, con
     sd_bus_message_close_container(msg);
 }
 
-static int get_metadata(sd_bus* bus, const char* path, const char *iface,
+static int get_metadata_impl(sd_bus* bus, const char* path, const char *iface,
                         const char* prop, sd_bus_message* reply,
                         void* data, sd_bus_error* err)  {
     MPRISRemote* remote = (MPRISRemote*)data;
@@ -203,6 +241,17 @@ static int get_metadata(sd_bus* bus, const char* path, const char *iface,
         return ret;
     }
     return 0;
+}
+
+static int get_metadata(sd_bus* bus, const char* path, const char* iface,
+    const char* prop, sd_bus_message* reply, void* data, sd_bus_error* err)
+{
+    try {
+        return get_metadata_impl(bus, path, iface, prop, reply, data, err);
+    }
+    catch (...) {
+        return -ENOMEM;
+    }
 }
 
 static int sd_response_true(sd_bus* bus, const char* path, const char* iface,

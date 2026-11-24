@@ -1652,6 +1652,14 @@ compatibility between migration builds.
   canceling startup clears the track before playback reaches Playing.
 - [x] **PUB-004** Add playback commands and ordered state events.
   The app's transport keys and controls use `mc_playback_control`.
+  Explicit pause and resume commands are idempotent: pause affects playing
+  transport, resume affects paused or prepared transport, and stopped playback
+  stays stopped. `musikcore.integration.api.managed_runtime` verifies repeated
+  commands on the production playback path; `plugins.mpris` checks that the
+  D-Bus methods submit these commands through the playback-remote host.
+  `transport.gapless_control_failure_pcm` and
+  `transport.crossfade_control_failure_pcm` verify that device failures reach
+  the caller without falsely changing playback state.
   `musikcore.abi.indexed_query` exercises the bound service with a fake
   transport, including play now, play next, append, prepend, and rejection
   after switching libraries. Live playback subscriptions deliver one event
@@ -2078,6 +2086,10 @@ stage; migrated families must not keep a parallel former-SDK path.
 #### Audio outputs
 
 - [ ] **OUT-001** Finalize real-time-safe output and device contracts.
+  Output creation now receives instance-lifetime plugin-scoped preference
+  services; `plugins.output_host` checks that a provider can read them. This
+  strengthens the experimental output factory contract: hosts which previously
+  passed null must provide the service before loading providers that require it.
 - [x] **OUT-002** Implement buffer submission/recycle state machine.
   Production audio::Output publishes bounded token records before queueing and
   reports successful buffers to each player worker in submission order, including
@@ -2126,9 +2138,46 @@ stage; migrated families must not keep a parallel former-SDK path.
   disappearance and reconnection; live device loss during playback remains
   a manual follow-up.
 - [ ] **OUT-006** Convert `alsaout`.
+  The Linux ALSA provider now registers the C output factory and uses a
+  nonblocking PCM handle with an eventfd wakeup for stopped producers and
+  drains. `plugins.alsa_output` covers the real ALSA null device, PCM return,
+  drain/reuse, and cleanup; `plugins.alsa_output_cancel` gates a stalled write
+  and drain, then checks cancellation and exactly-once return. `binary.exports.alsaout`
+  verifies the C entry point. `plugins.alsa_output_runtime` exercises the
+  production decoder and player through the ALSA null device, including
+  validation of the configurable 10–5000 ms latency. `plugins.alsa_output_cancel`
+  checks that the saved latency and default reach ALSA in microseconds. Native
+  physical-device behavior remains open; do not close this gate on the
+  null-device checks alone.
 - [ ] **OUT-007** Convert `pipewireout`.
+  The PipeWire provider now uses the C output factory and preallocated PCM
+  storage. `plugins.pipewire_output` exercises a real isolated PipeWire null
+  sink, including pause, drain, and cancellation. `plugins.pipewire_output_runtime`
+  exercises the production decoder and player against an isolated null sink.
+  The historical preference
+  store was named `PipeWire IOutput`; the new provider uses `PipeWire`, so
+  existing scoped preferences and pinned devices are not migrated. Physical
+  devices and device loss remain open checks.
 - [ ] **OUT-008** Convert `portaudioout`.
 - [ ] **OUT-009** Convert `pulseout`.
+  The PulseAudio provider now uses the C output factory and receives scoped
+  preferences. `plugins.pulse_output` covers PCM return, drain/reuse, the linear
+  volume preference, and gated cancellation of stalled writes and drains using
+  a deterministic backend. The real provider was also exercised manually on a
+  temporary PulseAudio-compatible null sink. `plugins.pulse_output_runtime`
+  exercises the production decoder and player against an isolated null sink.
+  The historical preference store
+  was named for `PulseAudio IOutput`, while the C provider is named
+  `PulseAudio`; existing plugin-scoped settings and pinned device selection are
+  not automatically migrated. Physical device and device loss checks remain open.
+  A failed open of a pinned ALSA or PulseAudio device retries the system default.
+  PulseAudio pause, resume, and volume submit operations without waiting for a
+  server response because the host serializes controls with stop. Immediate
+  submission failures are reported; later server-side failures cannot be
+  returned to the caller. `plugins.pulse_control_nowait` checks this against a
+  real server. Follow-up: revisit whether
+  `pulse_blocking_stream.c` is needed; using the PulseAudio API directly may
+  simplify the provider.
 - [ ] **OUT-010** Convert `sndioout`.
 - [ ] **OUT-011** Convert Windows `directsoundout`.
 - [ ] **OUT-012** Convert Windows `wasapiout`.
@@ -2175,6 +2224,13 @@ stage; migrated families must not keep a parallel former-SDK path.
   workers independently, so healthy remotes can remain active; see ADR-0014.
   `plugins.playback_remote_startup_rollback` exercises that failure policy on
   Unix while a healthy remote continues processing commands.
+  The Linux MPRIS provider uses the C remote interface. `plugins.mpris` checks
+  D-Bus commands and snapshots; `plugins.mpris_runtime` exercises metadata,
+  artwork, commands, and shutdown through the real managed runtime. Its worker
+  uses the new origin-aware `read_library_thumbnail` library host operation;
+  `plugins.mpris_artwork_stall` verifies that D-Bus remains responsive while
+  the artwork worker is blocked. Shutdown still waits for an in-flight read.
+  `api.managed_remote` checks local and remote identities and cancellation.
   The lifecycle and stop-order tests passed under ThreadSanitizer on macOS;
   Linux and Windows remain unverified.
 - [ ] **EXT-004** Migrate server integration without crossing C++ interfaces.

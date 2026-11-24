@@ -32,31 +32,33 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.h"
-
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IOutput.h>
-
 #include "AlsaOut.h"
+#include <musikcore/plugin/registration.hpp>
 
-class AlsaPlugin : public musik::core::sdk::IPlugin {
-    public:
-        void Release() override { delete this; }
-        const char* Name() override { return "AlsaOut IOutput"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "Julian Cromarty, clangen"; }
-        const char* Guid() override { return "668a75e6-1816-4c75-a361-a9d48906f23f"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-};
+const mc_configuration_api& AlsaConfiguration();
 
-extern "C" musik::core::sdk::IPlugin* GetPlugin() {
-	return new AlsaPlugin();
+namespace {
+    mc_result MC_CALL initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        const auto result = musik::core::plugin::RegisterOutput<AlsaOut>(*host);
+        return result == MC_OK ? musik::core::plugin::RegisterConfiguration(*host, AlsaConfiguration()) : result;
+    }
+    void MC_CALL shutdown(void*) {}
 }
 
-extern "C" musik::core::sdk::IOutput* GetAudioOutput() {
-	return new AlsaOut();
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error)
+{
+    const auto result = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (result != MC_OK) {
+        return result;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "668a75e6-1816-4c75-a361-a9d48906f23f", 36 };
+    plugin->name = { "AlsaOut", 7 };
+    plugin->version = { "1", 1 };
+    plugin->author = { "Julian Cromarty, clangen", 24 };
+    plugin->initialize = initialize;
+    plugin->shutdown = shutdown;
+    return MC_OK;
 }

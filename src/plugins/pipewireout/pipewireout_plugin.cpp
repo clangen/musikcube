@@ -32,32 +32,33 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "config.h"
-
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/ISchema.h>
 #include "PipeWireOut.h"
+#include <musikcore/plugin/registration.hpp>
 
-class PipeWirePlugin : public musik::core::sdk::IPlugin {
-    public:
-        void Release() noexcept override { delete this; }
-        const char* Name() override  { return "PipeWire IOutput"; }
-        const char* Version() override  { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override  { return "clangen"; }
-        const char* Guid() override { return "ab79e0f2-53d8-4774-ad00-266a30c50427"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override  { }
-        int SdkVersion() override  { return musik::core::sdk::SdkVersion; }
-};
+const mc_configuration_api& PipeWireConfiguration();
 
-extern "C" musik::core::sdk::IPlugin* GetPlugin() {
-    return new PipeWirePlugin();
+namespace {
+    mc_result MC_CALL initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        const auto result = musik::core::plugin::RegisterOutput<PipeWireOut>(*host);
+        return result == MC_OK ? musik::core::plugin::RegisterConfiguration(*host, PipeWireConfiguration()) : result;
+    }
+    void MC_CALL shutdown(void*) {}
 }
 
-extern "C" musik::core::sdk::IOutput* GetAudioOutput() {
-    return new PipeWireOut();
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error)
+{
+    const auto result = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (result != MC_OK) {
+        return result;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "ab79e0f2-53d8-4774-ad00-266a30c50427", 36 };
+    plugin->name = { "PipeWire", 8 };
+    plugin->version = { "1", 1 };
+    plugin->author = { "clangen", 7 };
+    plugin->initialize = initialize;
+    plugin->shutdown = shutdown;
+    return MC_OK;
 }
-
-extern "C" musik::core::sdk::ISchema* GetSchema();

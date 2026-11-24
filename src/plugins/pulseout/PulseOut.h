@@ -31,59 +31,50 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include "pch.h"
-
-#include <musikcore/sdk/IOutput.h>
-#include <musikcore/sdk/IDevice.h>
-
-#include <mutex>
+#include <musikcore/plugin/output.hpp>
+#include <musikcore/plugin/services.h>
 #include "pulse_blocking_stream.h"
+#include <condition_variable>
+#include <mutex>
 
-class PulseOut : public musik::core::sdk::IOutput {
-    public:
-        PulseOut();
-        virtual ~PulseOut();
+/* owns a PulseAudio stream; stop cancels its mainloop waits before release. */
+class PulseOut {
+public:
+    explicit PulseOut(const mc_plugin_services* services) : services(services) {}
+    PulseOut(const PulseOut&) = delete;
+    PulseOut(PulseOut&&) = delete;
+    ~PulseOut() = default;
+    PulseOut& operator=(const PulseOut&) = delete;
+    PulseOut& operator=(PulseOut&&) = delete;
 
-        /* IPlugin */
-        const char* Name() override { return "PulseAudio"; }
+    mc_result Prepare(const mc_output_options&, const mc_output_callbacks&);
+    mc_result QueueAudioBuffer(const mc_output_buffer&) noexcept;
+    mc_result Pause();
+    mc_result Resume();
+    mc_result SetVolume(double);
+    double GetVolume() const;
+    mc_result Stop() noexcept;
+    mc_result Drain();
 
-        /* IOutput */
-        void Release() override;
-        void Pause() override;
-        void Resume() override;
-        void SetVolume(double volume) override;
-        double GetVolume() override;
-        void Stop() override;
-        double Latency() override;
-        void Drain() override;
+    static mc_result VisitDevices(mc_output_device_fn, void*);
+    static mc_result ReadDefaultDevice(mc_output_device_fn, void*);
+    static mc_result GetDefaultFormat(mc_string_view, mc_audio_format&);
 
-        musik::core::sdk::OutputState Play(
-            musik::core::sdk::IBuffer *buffer,
-            musik::core::sdk::IBufferProvider *provider) override;
-
-        musik::core::sdk::IDeviceList* GetDeviceList() override;
-        bool SetDefaultDevice(const char* deviceId) override;
-        musik::core::sdk::IDevice* GetDefaultDevice() override;
-        int GetDefaultSampleRate() override { return -1; }
-
-    private:
-        enum State {
-            StateStopped,
-            StatePaused,
-            StatePlaying
-        };
-
-        void OpenDevice(musik::core::sdk::IBuffer *buffer);
-        void CloseDevice();
-        std::string GetPreferredDeviceId();
-
-        std::recursive_mutex stateMutex;
-        pa_blocking* audioConnection;
-        State state;
-        int channels, rate;
-        double volume;
-        bool volumeUpdated;
-        bool linearVolume;
+private:
+    const mc_plugin_services* services;
+    mutable std::mutex mutex;
+    std::condition_variable finished;
+    pa_blocking* connection = nullptr;
+    mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
+    mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
+    size_t capacity = 0;
+    double volume = 1.0;
+    bool linearVolume = false;
+    bool stopped = true;
+    bool paused = false;
+    bool active = false;
+    bool controlActive = false;
 };

@@ -33,366 +33,365 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "PulseOut.h"
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <pulse/volume.h>
+
 #include <pulse/pulseaudio.h>
-#include <pulse/thread-mainloop.h>
-#include <math.h>
+#include <cmath>
+#include <cstring>
+#include <limits>
+#include <string>
+#include <utility>
 #include <vector>
 
-using namespace musik::core::sdk;
+namespace {
+    constexpr size_t DefaultCapacity = 32768;
+    constexpr char LinearVolumeKey[] = "force_linear_volume";
 
-typedef std::unique_lock<std::recursive_mutex> Lock;
-typedef musik::core::sdk::IOutput IOutput;
+    struct Discovery {
+        pa_threaded_mainloop* loop = nullptr;
+        std::vector<std::pair<std::string, std::string>> devices;
+        std::string defaultDevice;
+        bool failed = false;
+    };
 
-static musik::core::sdk::IPreferences* prefs = nullptr;
-
-#define PREF_FORCE_LINEAR_VOLUME "force_linear_volume"
-#define PREF_DEVICE_ID "device_id"
-
-class PulseDevice : public musik::core::sdk::IDevice {
-    public:
-        PulseDevice(const std::string& id, const std::string& name) {
-            this->id = id;
-            this->name = name;
-        }
-
-        virtual void Release() {
-            delete this;
-        }
-
-        virtual const char* Name() const {
-            return name.c_str();
-        }
-
-        virtual const char* Id() const {
-            return id.c_str();
-        }
-
-    private:
-        std::string name, id;
-};
-
-class PulseDeviceList : public musik::core::sdk::IDeviceList {
-    public:
-        virtual void Release() {
-            delete this;
-        }
-
-        virtual size_t Count() const {
-            return devices.size();
-        }
-
-        virtual const IDevice* At(size_t index) const {
-            return &devices.at(index);
-        }
-
-        void Add(const std::string& id, const std::string& name) {
-            devices.push_back(PulseDevice(id, name));
-        }
-
-    private:
-        std::vector<PulseDevice> devices;
-};
-
-struct DeviceListContext {
-    pa_threaded_mainloop* mainLoop;
-    PulseDeviceList* devices;
-};
-
-static void deviceEnumerator(pa_context* context, const pa_sink_info* info, int eol, void* userdata) {
-    DeviceListContext* deviceListContext = (DeviceListContext*) userdata;
-    if (info) {
-        deviceListContext->devices->Add(info->name, info->description);
+    void contextChanged(pa_context*, void* user) {
+        auto& state = *static_cast<Discovery*>(user);
+        pa_threaded_mainloop_signal(state.loop, 0);
     }
 
-    if (eol) {
-        pa_threaded_mainloop_signal(deviceListContext->mainLoop, 0);
-    }
-}
-
-static std::string getDeviceId() {
-    return getPreferenceString<std::string>(prefs, PREF_DEVICE_ID, "");
-}
-
-extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
-    ::prefs = prefs;
-    prefs->GetBool(PREF_FORCE_LINEAR_VOLUME, false);
-    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
-    prefs->Save();
-}
-
-PulseOut::PulseOut() {
-    std::cerr << "PulseOut::PulseOut() called" << std::endl;
-    this->audioConnection = nullptr;
-    this->state = StateStopped;
-    this->volume = 1.0f;
-    this->volumeUpdated = false;
-    this->channels = 0;
-    this->rate = 0;
-    this->linearVolume = false;
-}
-
-PulseOut::~PulseOut() {
-    std::cerr << "PulseOut: destructor\n";
-    this->CloseDevice();
-}
-
-void PulseOut::CloseDevice() {
-    Lock lock(this->stateMutex);
-    if (this->audioConnection) {
-        std::cerr << "PulseOut: closing device\n";
-
-        int error = 0;
-        pa_blocking_flush(this->audioConnection, &error);
-        pa_blocking_free(this->audioConnection);
-        this->audioConnection = nullptr;
-        this->rate = 0;
-        this->channels = 0;
-    }
-}
-
-void PulseOut::Drain() {
-    Lock lock(this->stateMutex);
-
-    if (this->state != StateStopped && this->audioConnection) {
-        std::cerr << "draining...\n";
-        pa_blocking_drain(this->audioConnection, 0);
-        std::cerr << "drained...\n";
-    }
-}
-
-musik::core::sdk::IDevice* PulseOut::GetDefaultDevice() {
-    return findDeviceById<PulseDevice, IOutput>(this, getDeviceId());
-}
-
-bool PulseOut::SetDefaultDevice(const char* deviceId) {
-    return setDefaultDevice<IPreferences, PulseDevice, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
-}
-
-musik::core::sdk::IDeviceList* PulseOut::GetDeviceList() {
-    PulseDeviceList* result = new PulseDeviceList();
-
-    auto mainLoop = pa_threaded_mainloop_new();
-    if (mainLoop) {
-        auto context = pa_context_new(pa_threaded_mainloop_get_api(mainLoop), "musikcube");
-        if (context) {
-            if (pa_context_connect(context, nullptr, (pa_context_flags_t) 0, nullptr) >= 0) {
-                if (pa_threaded_mainloop_start(mainLoop) >= 0) {
-                    bool contextOk = false;
-                    for (;;) {
-                        pa_context_state_t state;
-                        state = pa_context_get_state(context);
-
-                        if (state == PA_CONTEXT_READY) {
-                            contextOk = true;
-                            break;
-                        }
-                        else if (state == PA_CONTEXT_FAILED || state == PA_CONTEXT_TERMINATED) {
-                            break;
-                        }
-
-                        pa_threaded_mainloop_wait(mainLoop);
-                    }
-
-                    pa_threaded_mainloop_lock(mainLoop);
-
-                    if (contextOk) {
-                        DeviceListContext dlc;
-                        dlc.mainLoop = mainLoop;
-                        dlc.devices = result;
-
-                        auto op = pa_context_get_sink_info_list(context, deviceEnumerator, (void*) &dlc);
-                        if (op) {
-                            while (pa_operation_get_state(op) == PA_OPERATION_RUNNING) {
-                                pa_threaded_mainloop_wait(mainLoop);
-                            }
-
-                            pa_operation_unref(op);
-                        }
-                    }
-
-                    pa_threaded_mainloop_unlock(mainLoop);
-                }
-
-                pa_context_disconnect(context);
-                pa_context_unref(context);
+    void sinkInfo(pa_context*, const pa_sink_info* info, int end, void* user) {
+        auto& state = *static_cast<Discovery*>(user);
+        if (info && info->name) {
+            try {
+                state.devices.emplace_back(info->name, info->description ? info->description : info->name);
+            }
+            catch (...) {
+                state.failed = true;
             }
         }
-
-        pa_threaded_mainloop_stop(mainLoop);
-        pa_threaded_mainloop_free(mainLoop);
-    }
-
-    return result;
-}
-
-std::string PulseOut::GetPreferredDeviceId() {
-    std::string deviceId = getDeviceId();
-    auto device = findDeviceById<PulseDevice>(this, deviceId);
-    if (device) {
-        device->Release();
-        return deviceId;
-    }
-    return "";
-}
-
-void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
-    if (!this->audioConnection ||
-        this->rate != buffer->SampleRate() ||
-        this->channels != buffer->Channels())
-    {
-        int errorCode = 0;
-        this->CloseDevice();
-
-        pa_sample_spec spec;
-        spec.format = PA_SAMPLE_FLOAT32LE;
-        spec.channels = buffer->Channels();
-        spec.rate = buffer->SampleRate();
-
-        std::string deviceId = this->GetPreferredDeviceId();
-        std::cerr << "PulseOut: opening device " << deviceId << "\n";
-
-        /* output to preferred device id, as specified in prefs */
-        this->audioConnection = pa_blocking_new(
-            nullptr,
-            "musikcube",
-            PA_STREAM_PLAYBACK,
-            deviceId.size() ? deviceId.c_str() : nullptr,
-            "music",
-            &spec,
-            nullptr,
-            nullptr,
-            &errorCode);
-
-        if (!this->audioConnection) {
-            std::cerr << "PulseOut: failed to open device. errorCode=" << errorCode << "\n";
+        if (end) {
+            state.failed = state.failed || end < 0;
+            pa_threaded_mainloop_signal(state.loop, 0);
         }
+    }
 
-        if (!this->audioConnection && deviceId.size()) {
-            /* fall back to default if preferred is not found */
-            this->audioConnection = pa_blocking_new(
-                nullptr,
-                "musikcube",
-                PA_STREAM_PLAYBACK,
-                nullptr,
-                "music",
-                &spec,
-                nullptr,
-                nullptr,
-                &errorCode);
-
-            if (!this->audioConnection) {
-                std::cerr << "PulseOut: failed to open default device. errorCode=" << errorCode << "\n";
+    void serverInfo(pa_context*, const pa_server_info* info, void* user) {
+        auto& state = *static_cast<Discovery*>(user);
+        if (info && info->default_sink_name) {
+            try {
+                state.defaultDevice = info->default_sink_name;
             }
-        }
-
-        if (this->audioConnection) {
-            this->rate = buffer->SampleRate();
-            this->channels = buffer->Channels();
-            this->state = StatePlaying;
-            this->linearVolume = ::prefs->GetBool(PREF_FORCE_LINEAR_VOLUME, false);
-            this->SetVolume(this->volume);
-        }
-    }
-}
-
-void PulseOut::Release() {
-    std::cerr << "PulseOut: destroy\n";
-    delete this;
-}
-
-void PulseOut::Stop() {
-    Lock lock(this->stateMutex);
-    if (this->audioConnection) {
-        pa_blocking_flush(this->audioConnection, 0);
-        this->state = StateStopped;
-    }
-}
-
-void PulseOut::Pause() {
-    Lock lock(this->stateMutex);
-    if (this->audioConnection) {
-        pa_blocking_flush(this->audioConnection, 0);
-        this->state = StatePaused;
-    }
-}
-
-void PulseOut::Resume() {
-    Lock lock(this->stateMutex);
-    if (this->audioConnection) {
-        this->state = StatePlaying;
-    }
-}
-
-void PulseOut::SetVolume(double volume) {
-    Lock lock(this->stateMutex);
-    if (volume > 1.0) { volume = 1.0; }
-    if (volume < 0) { volume = 0; }
-    this->volume = volume;
-    this->volumeUpdated = false;
-    if (this->audioConnection) {
-        int normalized;
-        if (this->linearVolume) {
-            normalized = (int) round((double) PA_VOLUME_NORM * volume);
+            catch (...) {
+                state.failed = true;
+            }
         }
         else {
-            normalized = (int) pa_sw_volume_from_linear(this->volume);
+            state.failed = true;
         }
-        this->volumeUpdated = pa_blocking_set_volume(this->audioConnection, normalized, 0) == 0;
-        //std::cerr << "PulseOut: volumeUpdated = " << this->volumeUpdated << ", value = " << normalized << "\n";
+        pa_threaded_mainloop_signal(state.loop, 0);
+    }
+
+    mc_result discover(Discovery& state, bool defaultOnly) {
+        state.loop = pa_threaded_mainloop_new();
+        if (!state.loop) {
+            return MC_ERROR_INTERNAL;
+        }
+        pa_context* context = pa_context_new(pa_threaded_mainloop_get_api(state.loop), "musikcube");
+        if (!context) {
+            pa_threaded_mainloop_free(state.loop);
+            return MC_ERROR_INTERNAL;
+        }
+        pa_context_set_state_callback(context, contextChanged, &state);
+        if (pa_context_connect(context, nullptr, PA_CONTEXT_NOFLAGS, nullptr) < 0 ||
+            pa_threaded_mainloop_start(state.loop) < 0)
+        {
+            pa_context_disconnect(context);
+            pa_context_unref(context);
+            pa_threaded_mainloop_free(state.loop);
+            return MC_ERROR_IO;
+        }
+        pa_threaded_mainloop_lock(state.loop);
+        while (PA_CONTEXT_IS_GOOD(pa_context_get_state(context)) &&
+            pa_context_get_state(context) != PA_CONTEXT_READY)
+        {
+            pa_threaded_mainloop_wait(state.loop);
+        }
+        mc_result result = MC_ERROR_IO;
+        if (pa_context_get_state(context) == PA_CONTEXT_READY) {
+            pa_operation* operation = defaultOnly
+                ? pa_context_get_server_info(context, serverInfo, &state)
+                : pa_context_get_sink_info_list(context, sinkInfo, &state);
+            if (operation) {
+                while (pa_operation_get_state(operation) == PA_OPERATION_RUNNING &&
+                    PA_CONTEXT_IS_GOOD(pa_context_get_state(context)))
+                {
+                    pa_threaded_mainloop_wait(state.loop);
+                }
+                if (pa_operation_get_state(operation) == PA_OPERATION_DONE && !state.failed) {
+                    result = MC_OK;
+                }
+                pa_operation_unref(operation);
+            }
+        }
+        pa_context_disconnect(context);
+        pa_context_unref(context);
+        pa_threaded_mainloop_unlock(state.loop);
+        pa_threaded_mainloop_stop(state.loop);
+        pa_threaded_mainloop_free(state.loop);
+        return result;
+    }
+
+    void reportDevice(mc_output_device_fn read, void* user, const std::string& id, const std::string& name) {
+        const mc_output_device device {
+            .id = { id.data(), id.size() },
+            .name = { name.data(), name.size() },
+        };
+        read(user, &device);
     }
 }
 
-double PulseOut::GetVolume() {
+mc_result PulseOut::VisitDevices(mc_output_device_fn read, void* user) {
+    Discovery state;
+    const auto status = discover(state, false);
+    if (status == MC_OK) {
+        for (const auto& [id, name] : state.devices) {
+            reportDevice(read, user, id, name);
+        }
+    }
+    return status;
+}
+
+mc_result PulseOut::ReadDefaultDevice(mc_output_device_fn read, void* user) {
+    Discovery state;
+    const auto status = discover(state, true);
+    if (status == MC_OK && !state.defaultDevice.empty()) {
+        reportDevice(read, user, state.defaultDevice, state.defaultDevice);
+        return MC_OK;
+    }
+    return status == MC_OK ? MC_ERROR_NOT_FOUND : status;
+}
+
+mc_result PulseOut::GetDefaultFormat(mc_string_view, mc_audio_format&) {
+    return MC_ERROR_UNSUPPORTED;
+}
+
+mc_result PulseOut::Prepare(const mc_output_options& options, const mc_output_callbacks& outputCallbacks) {
+    std::lock_guard lock(this->mutex);
+    if (options.format.channels > PA_CHANNELS_MAX) {
+        return MC_ERROR_UNSUPPORTED;
+    }
+    this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : DefaultCapacity;
+    if (this->capacity > std::numeric_limits<size_t>::max() / options.format.channels / sizeof(float)) {
+        return MC_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    this->linearVolume = false;
+    if (this->services && this->services->preferences) {
+        const auto* prefs = this->services->preferences;
+        const mc_string_view key { LinearVolumeKey, sizeof(LinearVolumeKey) - 1 };
+        const auto status = prefs->read_boolean(prefs->context, key, false, &this->linearVolume);
+        if (status != MC_OK) {
+            return status;
+        }
+    }
+
+    const pa_sample_spec spec {
+        .format = PA_SAMPLE_FLOAT32NE,
+        .rate = options.format.sample_rate,
+        .channels = static_cast<uint8_t>(options.format.channels),
+    };
+    const std::string device(options.device_id.data ? options.device_id.data : "", options.device_id.length);
+    int error = 0;
+    this->connection = pa_blocking_new(nullptr, "musikcube", PA_STREAM_PLAYBACK,
+        device.empty() ? nullptr : device.c_str(), "musikcube", &spec, nullptr, nullptr, &error);
+    if (!this->connection && !device.empty()) {
+        /* a listed device can disappear or become unavailable before open. */
+        this->connection = pa_blocking_new(nullptr, "musikcube", PA_STREAM_PLAYBACK,
+            nullptr, "musikcube", &spec, nullptr, nullptr, &error);
+    }
+    if (!this->connection) {
+        return MC_ERROR_IO;
+    }
+
+    this->format = options.format;
+    this->callbacks = outputCallbacks;
+    this->volume = options.initial_volume;
+    const int normalized = this->linearVolume
+        ? static_cast<int>(std::round(PA_VOLUME_NORM * this->volume))
+        : static_cast<int>(pa_sw_volume_from_linear(this->volume));
+    if (pa_blocking_set_volume(this->connection, normalized, &error) < 0) {
+        return MC_ERROR_IO;
+    }
+    this->paused = false;
+    this->stopped = false;
+    return MC_OK;
+}
+
+mc_result PulseOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
+    std::unique_lock lock(this->mutex);
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (block.pcm.format.sample_rate != this->format.sample_rate ||
+        block.pcm.format.channels != this->format.channels ||
+        block.pcm.format.channel_layout != this->format.channel_layout)
+    {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    if (block.pcm.frame_count > this->capacity) {
+        return MC_ERROR_BUFFER_TOO_SMALL;
+    }
+    if (this->paused) {
+        return MC_ERROR_QUEUE_FULL;
+    }
+    if (this->active) {
+        return MC_ERROR_IN_FLIGHT;
+    }
+
+    /* `Stop()` can cancel the write while the mutex is released. the connection
+    remains alive until the completion callback returns. */
+    this->active = true;
+    auto* connection = this->connection;
+    lock.unlock();
+    int error = 0;
+    const int result = pa_blocking_write(connection, block.pcm.data,
+        block.pcm.frame_count * this->format.channels * sizeof(float), &error);
+    lock.lock();
+
+    const auto outcome = this->stopped ? MC_ERROR_CANCELLED : result < 0 ? MC_ERROR_IO : MC_OK;
+    const auto callback = this->callbacks;
+    lock.unlock();
+    callback.completed(callback.context, block.token, outcome);
+    lock.lock();
+    this->active = false;
+    this->finished.notify_all();
+    return MC_OK;
+}
+
+mc_result PulseOut::Pause() {
+    pa_blocking* connection;
+    {
+        std::lock_guard lock(this->mutex);
+        if (this->stopped) {
+            return MC_ERROR_CANCELLED;
+        }
+        this->controlActive = true;
+        connection = this->connection;
+    }
+
+    const int result = pa_blocking_cork(connection, true, nullptr);
+    std::lock_guard lock(this->mutex);
+    this->controlActive = false;
+    this->finished.notify_all();
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (result < 0) {
+        return MC_ERROR_IO;
+    }
+    this->paused = true;
+    return MC_OK;
+}
+
+mc_result PulseOut::Resume() {
+    pa_blocking* connection;
+    bool paused;
+    {
+        std::lock_guard lock(this->mutex);
+        if (this->stopped) {
+            return MC_ERROR_CANCELLED;
+        }
+        this->controlActive = true;
+        connection = this->connection;
+        paused = this->paused;
+    }
+
+    const int result = paused ? pa_blocking_cork(connection, false, nullptr) : 0;
+    std::lock_guard lock(this->mutex);
+    this->controlActive = false;
+    this->finished.notify_all();
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (result < 0) {
+        return MC_ERROR_IO;
+    }
+    this->paused = false;
+    if (this->callbacks.ready) {
+        this->callbacks.ready(this->callbacks.context);
+    }
+    return MC_OK;
+}
+
+mc_result PulseOut::SetVolume(double value) {
+    pa_blocking* connection;
+    int normalized;
+    {
+        std::lock_guard lock(this->mutex);
+        if (!this->connection || this->stopped) {
+            this->volume = value;
+            return MC_OK;
+        }
+        this->controlActive = true;
+        connection = this->connection;
+        normalized = this->linearVolume
+            ? static_cast<int>(std::round(PA_VOLUME_NORM * value))
+            : static_cast<int>(pa_sw_volume_from_linear(value));
+    }
+
+    const int result = pa_blocking_set_volume(connection, normalized, nullptr);
+    std::lock_guard lock(this->mutex);
+    this->controlActive = false;
+    this->finished.notify_all();
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (result < 0) {
+        return MC_ERROR_IO;
+    }
+    this->volume = value;
+    return MC_OK;
+}
+
+double PulseOut::GetVolume() const {
+    std::lock_guard lock(this->mutex);
     return this->volume;
 }
 
-OutputState PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
-    int error = 0;
+mc_result PulseOut::Stop() noexcept {
+    std::unique_lock lock(this->mutex);
+    this->stopped = true;
 
-    {
-        Lock lock(this->stateMutex);
-
-        if (this->state == StatePaused) {
-            return OutputState::InvalidState;
-        }
-
-        this->OpenDevice(buffer);
-
-        if (!this->audioConnection || this->state != StatePlaying) {
-            return OutputState::InvalidState;
-        }
-
-        if (!this->volumeUpdated) {
-            this->SetVolume(this->volume);
-        }
-
-        pa_blocking_write(
-            this->audioConnection,
-            buffer->BufferPointer(),
-            buffer->Samples() * sizeof(float),
-            &error);
-
-        if (error > 0) {
-            this->CloseDevice();
-            return (OutputState) 1000; /* try again in a second */
-        }
+    /* unblock a writer or drain before freeing the connection they use. */
+    if (this->connection) {
+        pa_blocking_cancel(this->connection);
     }
+    this->finished.wait(lock, [this] { return !this->active && !this->controlActive; });
 
-    provider->OnBufferProcessed(buffer);
-    return OutputState::BufferWritten;
+    if (this->connection) {
+        pa_blocking_free(this->connection);
+        this->connection = nullptr;
+    }
+    return MC_OK;
 }
 
-double PulseOut::Latency() {
-    Lock lock(this->stateMutex);
-
-    if (!this->audioConnection) {
-        return 0.0;
+mc_result PulseOut::Drain() {
+    std::unique_lock lock(this->mutex);
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->paused || this->active) {
+        return MC_ERROR_IN_FLIGHT;
     }
 
-    int error = 0;
-    unsigned long long latency = pa_blocking_get_latency(this->audioConnection, &error);
-    return (double) latency / 1000000.0; /* microseconds to seconds */
+    /* keep the connection alive while `Stop()` interrupts the unlocked drain. */
+    this->active = true;
+    auto* connection = this->connection;
+    lock.unlock();
+    const int result = pa_blocking_drain(connection, nullptr);
+    lock.lock();
+
+    const auto outcome = this->stopped ? MC_ERROR_CANCELLED : result < 0 ? MC_ERROR_IO : MC_OK;
+    this->active = false;
+    this->finished.notify_all();
+    return outcome;
 }
