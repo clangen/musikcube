@@ -917,6 +917,21 @@ double PlaybackService::GetVolume() {
     return transport->Volume();
 }
 
+mc_result PlaybackService::Pause() {
+    if (this->transport->GetPlaybackState() == PlaybackState::Playing) {
+        return this->transport->Pause();
+    }
+    return MC_OK;
+}
+
+mc_result PlaybackService::Resume() {
+    const auto state = this->transport->GetPlaybackState();
+    if (state == PlaybackState::Paused || state == PlaybackState::Prepared) {
+        return this->transport->Resume();
+    }
+    return MC_OK;
+}
+
 void PlaybackService::PauseOrResume() {
     const auto state = transport->GetPlaybackState();
     if (state == PlaybackState::Stopped) {

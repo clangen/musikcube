@@ -39,8 +39,6 @@ MC_API mc_result MC_CALL mc_playback_set_replay_gain(mc_replay_gain_mode mode);
 
 typedef uint32_t mc_playback_command;
 enum {
-    /* propagates device pause/resume errors. MC_ERROR_IN_FLIGHT lets the
-    caller retry or stop playback if the output is still busy. */
     MC_PLAYBACK_TOGGLE_PAUSE = 1,
     MC_PLAYBACK_STOP,
     MC_PLAYBACK_NEXT,
@@ -56,7 +54,9 @@ enum {
     MC_PLAYBACK_TOGGLE_SHUFFLE,
     MC_PLAYBACK_SET_POSITION,
     MC_PLAYBACK_SET_VOLUME,
-    MC_PLAYBACK_RELOAD_OUTPUT
+    MC_PLAYBACK_RELOAD_OUTPUT,
+    MC_PLAYBACK_PAUSE,
+    MC_PLAYBACK_RESUME
 };
 
 typedef uint32_t mc_playback_state;

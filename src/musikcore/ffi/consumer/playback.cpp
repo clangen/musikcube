@@ -51,7 +51,7 @@ mc_result MC_CALL mc_playback_get_snapshot(const mc_playback *playback, mc_playb
 mc_result MC_CALL mc_playback_control(mc_playback *playback, mc_playback_command command, double value) {
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         if (!playback) return MC_ERROR_INVALID_ARGUMENT;
-        if (command < MC_PLAYBACK_TOGGLE_PAUSE || command > MC_PLAYBACK_RELOAD_OUTPUT) {
+        if (command < MC_PLAYBACK_TOGGLE_PAUSE || command > MC_PLAYBACK_RESUME) {
             return MC_ERROR_UNSUPPORTED;
         }
         if ((command == MC_PLAYBACK_SET_POSITION || command == MC_PLAYBACK_SET_VOLUME) &&

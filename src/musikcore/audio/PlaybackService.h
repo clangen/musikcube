@@ -118,6 +118,8 @@ namespace musik { namespace core { namespace audio {
             size_t Count() override;
             double GetVolume() override;
             void SetVolume(double vol) override;
+            mc_result Pause();
+            mc_result Resume();
             void PauseOrResume() override;
             bool IsMuted() override;
             void ToggleMute() override;

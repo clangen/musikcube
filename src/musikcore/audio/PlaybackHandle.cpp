@@ -182,9 +182,9 @@ public:
             case MC_PLAYBACK_TOGGLE_SHUFFLE: this->service.ToggleShuffle(); break;
             case MC_PLAYBACK_SET_POSITION: this->service.SetPosition(value); break;
             case MC_PLAYBACK_SET_VOLUME: this->service.SetVolume(value); break;
-            case MC_PLAYBACK_RELOAD_OUTPUT:
-                this->service.ReloadOutput();
-                break;
+            case MC_PLAYBACK_RELOAD_OUTPUT: this->service.ReloadOutput(); break;
+            case MC_PLAYBACK_PAUSE: return this->service.Pause();
+            case MC_PLAYBACK_RESUME: return this->service.Resume();
             default: return MC_ERROR_UNSUPPORTED;
         }
         return MC_OK;
@@ -287,7 +287,8 @@ public:
         /* Project the track playback loaded before publishing the change event. */
         page.names = {
             MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION,
-            MC_TRACK_FIELD_GENRE, MC_TRACK_FIELD_EXTERNAL_ID, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_ALBUM_ID,
+            MC_TRACK_FIELD_GENRE, MC_TRACK_FIELD_EXTERNAL_ID, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_DISC,
+            MC_TRACK_FIELD_ALBUM_ID,
             MC_TRACK_FIELD_ALBUM_ARTIST, MC_TRACK_FIELD_ALBUM_ARTIST_ID, MC_TRACK_FIELD_VISUAL_ARTIST_ID,
             MC_TRACK_FIELD_VISUAL_GENRE_ID, MC_TRACK_FIELD_THUMBNAIL_ID
         };

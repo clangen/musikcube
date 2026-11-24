@@ -591,7 +591,8 @@ namespace {
         connection = {};
 
         setFailure(ControlFailure::Pause);
-        if (playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_ERROR_IO ||
+        if (playback.Control(MC_PLAYBACK_PAUSE) != MC_ERROR_IO ||
+            playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_ERROR_IO ||
             transport->GetPlaybackState() != sdk::PlaybackState::Playing)
         {
             std::fputs("Failed device pause was reported as a successful transition\n", stderr);
@@ -602,7 +603,8 @@ namespace {
             return false;
         }
         setFailure(ControlFailure::Resume);
-        if (playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_ERROR_IO ||
+        if (playback.Control(MC_PLAYBACK_RESUME) != MC_ERROR_IO ||
+            playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_ERROR_IO ||
             transport->GetPlaybackState() != sdk::PlaybackState::Paused)
         {
             std::fputs("Failed device resume was reported as a successful transition\n", stderr);

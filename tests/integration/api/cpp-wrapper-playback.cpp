@@ -718,12 +718,15 @@ namespace wrapper_tests {
             engineTrack->SetValue(MC_TRACK_FIELD_GENRE, "Playback genre");
             engineTrack->ClearValue(MC_TRACK_FIELD_EXTERNAL_ID);
             engineTrack->SetValue(MC_TRACK_FIELD_EXTERNAL_ID, "playing-external-id");
+            engineTrack->ClearValue(MC_TRACK_FIELD_DISC);
+            engineTrack->SetValue(MC_TRACK_FIELD_DISC, "2");
             stateTransport->state = sdk::PlaybackState::Stopped;
             stateTransport->stream = sdk::StreamState::Buffered;
             const auto metadata = statePlayback.CurrentTrackMetadata();
             if (!metadata || metadata->Id() != result.Id(1) ||
                 metadata->Title() != playbackTitle || !metadata->Album().empty() || metadata->Genre() != "Playback genre" ||
-                metadata->Value(MC_TRACK_FIELD_EXTERNAL_ID) != "playing-external-id")
+                metadata->Value(MC_TRACK_FIELD_EXTERNAL_ID) != "playing-external-id" ||
+                metadata->DiscNumber() != 2)
             {
                 return playbackFailure(__LINE__);
             }
