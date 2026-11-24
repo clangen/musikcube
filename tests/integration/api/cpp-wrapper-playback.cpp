@@ -5,6 +5,7 @@
 #include "../../support/ApiHost.h"
 #include <common/runtime/MessageQueue.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/library/track/Track.h>
 #include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -252,6 +253,35 @@ namespace wrapper_tests {
             if (playback->Play(result, 2) != MC_ERROR_NOT_FOUND ||
                 playback->Play(result, 1) != MC_OK || service.GetIndex() != 1 ||
                 !queueHas({ result.Id(0), result.Id(1) })) return playbackFailure(__LINE__);
+            /* the remote server reads this service when the decoder has no duration. */
+            transport->duration = -1;
+            if (service.GetDuration() != 1.0) {
+                return playbackFailure(__LINE__);
+            }
+            transport->StreamEvent.Publish(sdk::StreamState::Buffered, transport->Uri());
+            if (!AwaitTestHost(queue, [&] { return static_cast<bool>(service.GetPlaying()); })) {
+                return playbackFailure(__LINE__);
+            }
+            const auto playing = service.GetPlaying();
+            const auto originalDuration = playing->GetString("duration");
+            for (const auto value : { "", "invalid", "1e9999", "nan", "-5", "12seconds" }) {
+                playing->ClearValue("duration");
+                playing->SetValue("duration", value);
+                if (service.GetDuration() != 0.0) {
+                    return playbackFailure(__LINE__);
+                }
+            }
+            playing->ClearValue("duration");
+            playing->SetValue("duration", "12.5");
+            if (service.GetDuration() != 12.5) {
+                return playbackFailure(__LINE__);
+            }
+            playing->ClearValue("duration");
+            playing->SetValue("duration", originalDuration.c_str());
+            transport->duration = 30;
+            if (service.GetDuration() != 30.0) {
+                return playbackFailure(__LINE__);
+            }
             const auto original = playback->Queue();
             if (!original || playback->Move(*original, 1, 0) != MC_OK ||
                 !queueHas({ result.Id(1), result.Id(0) }) ||

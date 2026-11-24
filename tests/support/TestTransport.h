@@ -44,8 +44,8 @@ public:
     double Volume() override { return volume; }
     /* Record volume commands after the public boundary validates their range. */
     void SetVolume(double value) override { volume = value; }
-    /* Supply a fixed 30-second duration for reproducible seek and snapshot assertions. */
-    double GetDuration() override { return 30; }
+    /* supply a configurable duration for playback assertions. */
+    double GetDuration() override { return duration; }
     /* Expose the fake output's stored mute state. */
     bool IsMuted() override { return muted; }
     /* Record mute changes without touching hardware. */
@@ -73,6 +73,7 @@ public:
 
     PlaybackState state = PlaybackState::Playing;
     StreamState stream = StreamState::Stopped;
+    double duration = 30;
     double position = 0;
     double volume = 0.5;
     bool muted = false;

@@ -48,6 +48,7 @@
 #include <common/runtime/Message.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Playback.h>
+#include <cstdlib>
 #include <thread>
 #include <utility>
 #include <cmath>
@@ -982,7 +983,14 @@ double PlaybackService::GetDuration() {
     }
 
     if (track) {
-        (void) std::stod(track->GetString(constants::Track::DURATION));
+        const auto value = track->GetString(constants::Track::DURATION);
+        char* end = nullptr;
+        const double storedDuration = std::strtod(value.c_str(), &end);
+        if (end != value.c_str() && end == value.c_str() + value.size() &&
+            std::isfinite(storedDuration) && storedDuration >= 0)
+        {
+            return storedDuration;
+        }
     }
 
     return 0.0f;
