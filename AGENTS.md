@@ -27,6 +27,7 @@
 - Use the root `.clang-format` incrementally on selected C/C++ files and review the diff. Manually preserve conditional brace placement, declaration order, standalone `break;`, ternary indentation, and spaced namespace closings.
 - Write comment prose in lowercase with normal punctuation; preserve symbol names verbatim. Use `/* comment */` where supported, aligning wrapped text with the opening `/*` without extra indentation. Use `//` only when necessary, and native syntax where block comments are unavailable.
 - Keep APIs and SDKs readable by humans, including generated bindings and plugin declarations. Wrap long signatures at argument boundaries, leave blank lines between function declarations, and separate related groups with whitespace. Avoid dense tables of long single-line declarations; apply the same care to code examples in design documents.
+- Keep C++ plugin registration consistent across plugin types: use similarly named registration helpers and calling conventions, and keep adapter ownership and cleanup inside the SDK whenever practical.
 
 ## Implementation
 
