@@ -76,6 +76,18 @@ async function stage(root) {
     }
   }
 
+  /* zig does not supply the ELF DSO finalizer for shared-library links. */
+  const finalizer = join(toolchain, 'shared-finalizers.o');
+  const pendingFinalizer = mkdtempSync(join(tmp, 'finalizer-'));
+  try {
+    const object = join(pendingFinalizer, 'shared-finalizers.o');
+    run(zig, ['cc', '-target', target, '-mcpu=baseline', '-fPIC', '-c',
+      join(__dirname, 'zig-shared-finalizers.c'), '-o', object], env);
+    renameSync(object, finalizer);
+  } finally {
+    rmSync(pendingFinalizer, { recursive: true, force: true });
+  }
+
   /* Put the target and cache settings in the wrappers used by downstream builds. */
   mkdirSync(wrappers, { recursive: true });
   const commands = {
@@ -88,6 +100,17 @@ async function stage(root) {
     const wrapper = [
       '#!/bin/sh',
       ...Object.entries(toolchainEnv).map(([key, value]) => `export ${key}=${quote(value)}`),
+      ...(['cc', 'c++'].includes(name) ? [
+        'shared=false',
+        'compile_only=false',
+        'for arg do',
+        '  case "$arg" in',
+        '    -shared) shared=true ;;',
+        '    -c|-E|-S) compile_only=true ;;',
+        '  esac',
+        'done',
+        `if $shared && ! $compile_only; then set -- "$@" ${quote(finalizer)}; fi`,
+      ] : []),
       `exec ${quote(zig)} ${args} "$@"`,
       '',
     ].join('\n');

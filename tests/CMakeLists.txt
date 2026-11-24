@@ -95,6 +95,12 @@ find_program(MUSIKCORE_TEST_NODE NAMES node)
 if(NOT MUSIKCORE_TEST_NODE)
   message(FATAL_ERROR "Node.js is required for isolated ABI test fixtures")
 endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_CXX_COMPILER MATCHES "zig-[^/]+/bin/c[+][+]$")
+  add_test(NAME build.zig.shared_finalizers COMMAND "${MUSIKCORE_TEST_NODE}"
+    "${PROJECT_SOURCE_DIR}/tests/scripts/check-zig-shared-finalizers.js"
+    "${CMAKE_CXX_COMPILER}" "${CMAKE_C_COMPILER}" "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  set_tests_properties(build.zig.shared_finalizers PROPERTIES LABELS "integration;build;contract")
+endif()
 set(isolated_test "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js")
 set(isolated_root "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated")
 add_test(NAME musikcore.abi.inventory COMMAND "${MUSIKCORE_TEST_NODE}"
