@@ -2,6 +2,7 @@ set (server_SOURCES
   BlockingTranscoder.cpp
   HttpServer.cpp
   main.cpp
+  ServerControls.cpp
   ServerMedia.cpp
   Snapshots.cpp
   Transcoder.cpp
@@ -10,6 +11,7 @@ set (server_SOURCES
   WebSocketServer.cpp)
 
 add_library(server SHARED ${server_SOURCES})
+musikcube_configure_c_plugin(server)
 
 target_include_directories(server BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/include")
 target_include_directories(server BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
@@ -28,4 +30,4 @@ endif()
 find_library(LIBZ NAMES z)
 message(STATUS "[server] using " ${LIBMICROHTTPD} ", " ${LIBZ})
 
-target_link_libraries(server ${LIBZ} ${LIBMICROHTTPD} ${EXTRA_LIBS})
+target_link_libraries(server musikcore ${LIBZ} ${LIBMICROHTTPD} ${EXTRA_LIBS})

@@ -3,7 +3,7 @@
 set(provider_output_directory "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/providers")
 
 # provider fixtures compile as C and exchange only installed-shape function tables.
-set(provider_variants valid incompatible newer_minor truncated missing_shutdown bad_id bad_utf8 entry_fail init_fail bad_capability no_entry duplicate_id missing_version bad_output bad_stream bad_decoder bad_configuration bad_encoder bad_dsp bad_indexer bad_number_configuration duplicate_configuration)
+set(provider_variants valid incompatible newer_minor truncated missing_shutdown bad_id bad_utf8 entry_fail init_fail bad_capability no_entry duplicate_id missing_version bad_output bad_stream bad_decoder bad_configuration bad_encoder bad_dsp bad_indexer bad_number_configuration duplicate_configuration bad_playback_remote)
 set(provider_arguments)
 set(provider_targets)
 foreach(variant IN LISTS provider_variants)
@@ -242,6 +242,18 @@ add_test(NAME musikcore.unit.plugins.indexer_adapter COMMAND musikcore_indexer_a
 set_tests_properties(musikcore.unit.plugins.indexer_adapter PROPERTIES
   LABELS "unit;musikcore;plugins;contract" TIMEOUT 15)
 
+# verify the public C++ remote helper without linking private core code.
+add_executable(musikcore_playback_remote_adapter_test unit/musikcore/playback-remote-adapter.cpp)
+target_include_directories(musikcore_playback_remote_adapter_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_playback_remote_adapter_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_playback_remote_adapter_test PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_playback_remote_adapter_test)
+add_dependencies(musikcube_unit_tests musikcore_playback_remote_adapter_test)
+add_test(NAME musikcore.unit.plugins.playback_remote_adapter COMMAND musikcore_playback_remote_adapter_test)
+set_tests_properties(musikcore.unit.plugins.playback_remote_adapter PROPERTIES
+  LABELS "unit;musikcore;plugins" TIMEOUT 15)
+
 # a recording DLL proves validation and lifecycle order at the actual engine
 # output boundary; it uses the same C++ helper available to external plugins.
 add_library(musikcore_output_recording MODULE support/plugins/output-recording.cpp support/plugins/unload-probe.c)
@@ -321,6 +333,7 @@ add_executable(musikcore_metadata_writer_test unit/musikcore/metadata-writer.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
 target_include_directories(musikcore_metadata_writer_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
 target_compile_features(musikcore_metadata_writer_test PRIVATE cxx_std_20)
+set_target_properties(musikcore_metadata_writer_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 add_dependencies(musikcube_tests musikcore_metadata_writer_test)
 add_dependencies(musikcube_unit_tests musikcore_metadata_writer_test)
 add_test(NAME musikcore.unit.plugins.metadata_writer COMMAND musikcore_metadata_writer_test)

@@ -56,8 +56,6 @@ namespace fs = std::filesystem;
 using namespace std::chrono;
 using server::EncoderOwner;
 
-using musik::core::sdk::PathType;
-
 static std::mutex transcoderMutex;
 static std::condition_variable waitForTranscode;
 static std::set<std::string> runningBlockingTranscoders;
@@ -65,7 +63,7 @@ static std::set<std::string> runningBlockingTranscoders;
 static EncoderOwner getEncoder(Context& context, const std::string& format) {
     const auto extension = "." + format;
     auto encoder = std::make_unique<mc_encoder>(mc_encoder MC_ENCODER_DEFAULT);
-    const auto& media = context.environment->Media();
+    const auto& media = *context.media;
     if (media.create_encoder(media.context, { extension.data(), extension.size() }, encoder.get(), nullptr) != MC_OK) {
         return {};
     }
@@ -73,9 +71,7 @@ static EncoderOwner getEncoder(Context& context, const std::string& format) {
 }
 
 static std::string cachePath(Context& context) {
-    char buf[4096];
-    context.environment->GetPath(PathType::Data, buf, sizeof(buf));
-    fs::path fsPath = fs::u8path(buf) / "cache" / "transcoder";
+    fs::path fsPath = fs::u8path(context.dataDirectory) / "cache" / "transcoder";
     if (!fs::exists(fsPath)) {
         fs::create_directories(fsPath);
     }
@@ -117,7 +113,7 @@ void Transcoder::PruneTranscodeCache(Context& context) {
         }
     });
 
-    int maxSize = context.prefs->GetInt(
+    int maxSize = context.settings.Integer(
         serverprefs::CacheCount.c_str(),
         serverprefs::DefaultCacheCount);
 
@@ -167,7 +163,7 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
     getTempAndFinalFilename(context, uri, bitrate, format, temp, destination);
     const auto path = fs::u8path(destination);
     if (fs::exists(path)) {
-        if (auto cached = server::OpenFileBody(context, destination)) {
+        if (auto cached = server::OpenFileBody(*context.media, destination)) {
             std::error_code error;
             fs::last_write_time(path, fs::file_time_type::clock::now(), error);
             return cached;
@@ -175,12 +171,12 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
     }
 
     if (encoder->api->streaming) {
-        const bool synchronous = context.prefs->GetBool(serverprefs::SynchronousTranscoding.c_str(),
+        const bool synchronous = context.settings.Boolean(serverprefs::SynchronousTranscoding.c_str(),
             defaults::transcoder_synchronous);
         const bool wait = synchronous || request == Request::CompleteFile || (request == Request::PartialTrack &&
-            context.prefs->GetBool(prefs::transcoder_synchronous_fallback.c_str(),
+            context.settings.Boolean(prefs::transcoder_synchronous_fallback.c_str(),
                 defaults::transcoder_synchronous_fallback));
-        const bool cache = context.prefs->GetInt(serverprefs::CacheCount.c_str(),
+        const bool cache = context.settings.Integer(serverprefs::CacheCount.c_str(),
             serverprefs::DefaultCacheCount) > 0;
         if (cache) {
             PruneTranscodeCache(context);
@@ -208,7 +204,7 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
         if (!runningBlockingTranscoders.insert(destination).second) {
             waitForTranscode.wait(lock, [&] { return !runningBlockingTranscoders.count(destination); });
             lock.unlock();
-            return server::OpenFileBody(context, destination);
+            return server::OpenFileBody(*context.media, destination);
         }
     }
     struct Completion {
@@ -225,7 +221,7 @@ std::unique_ptr<server::ResponseBody> Transcoder::Transcode(
     if (!BlockingTranscoder::Run(context, *encoder, uri, temp, destination, bitrate)) {
         return {};
     }
-    return server::OpenFileBody(context, destination);
+    return server::OpenFileBody(*context.media, destination);
 }
 
 int Transcoder::GetActiveCount() {

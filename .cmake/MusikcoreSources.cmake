@@ -28,7 +28,7 @@ set(musikcore_sources
   src/musikcore/library/Indexer.cpp
   src/musikcore/library/LibraryFactory.cpp
   src/musikcore/library/LocalLibrary.cpp
-  src/musikcore/library/LocalMetadataProxy.cpp
+  src/musikcore/library/LibraryHost.cpp
   src/musikcore/library/QueryRegistry.cpp
   src/musikcore/library/RemoteLibrary.cpp
   src/musikcore/library/query/AlbumListQuery.cpp
@@ -60,6 +60,7 @@ set(musikcore_sources
   src/musikcore/net/WebSocketClient.cpp
   src/musikcore/plugin/PluginFactory.cpp
   src/musikcore/plugin/MediaHost.cpp
+  src/musikcore/plugin/PlaybackRemotes.cpp
   src/musikcore/plugin/MetadataWriter.cpp
   src/musikcore/plugin/TagReader.cpp
   src/musikcore/plugin/IndexerSource.cpp

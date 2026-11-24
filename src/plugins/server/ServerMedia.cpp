@@ -10,8 +10,7 @@ namespace server {
         }
     }
 
-    bool MediaStream::Open(Context& context, const std::string& uri, mc_stream_open_flags flags) {
-        const auto& media = context.environment->Media();
+    bool MediaStream::Open(const mc_media_host_api& media, const std::string& uri, mc_stream_open_flags flags) {
         const mc_string_view path {
             .data = uri.data(),
             .length = uri.size(),
@@ -33,12 +32,15 @@ namespace server {
         }
     }
 
-    bool DecodedAudio::Open(Context& context, const std::string& uri) {
-        if (!input.Open(context, uri, MC_STREAM_OPEN_READ)) {
+    bool DecodedAudio::Open(
+        const mc_media_host_api& media,
+        const mc_audio_scratch_buffer_api& buffers,
+        const std::string& uri)
+    {
+        if (!input.Open(media, uri, MC_STREAM_OPEN_READ)) {
             return false;
         }
 
-        const auto& media = context.environment->Media();
         if (media.create_decoder(media.context, &input.Handle(), &decoder, nullptr) != MC_OK ||
             decoder.api->open(decoder.instance, &input.Handle(), nullptr) != MC_OK)
         {
@@ -46,7 +48,7 @@ namespace server {
         }
 
         /* the codec supplies the actual format with its first block. */
-        scratch = &context.environment->AudioScratch();
+        scratch = &buffers;
         const mc_audio_format initial {
             .struct_size = sizeof(mc_audio_format),
             .sample_rate = 44100,
@@ -83,8 +85,8 @@ namespace server {
 
     class FileBody final : public ResponseBody {
     public:
-        bool Open(Context& context, const std::string& filename) {
-            if (!file.Open(context, filename, MC_STREAM_OPEN_READ)) {
+        bool Open(const mc_media_host_api& media, const std::string& filename) {
+            if (!file.Open(media, filename, MC_STREAM_OPEN_READ)) {
                 return false;
             }
             const auto& stream = file.Handle();
@@ -154,20 +156,20 @@ namespace server {
         bool ended = false;
     };
 
-    static std::unique_ptr<FileBody> openFile(Context& context, const std::string& filename) {
+    static std::unique_ptr<FileBody> openFile(const mc_media_host_api& media, const std::string& filename) {
         auto body = std::make_unique<FileBody>();
-        if (!body->Open(context, filename)) {
+        if (!body->Open(media, filename)) {
             return {};
         }
         return body;
     }
 
-    std::unique_ptr<ResponseBody> OpenFileBody(Context& context, const std::string& filename) {
-        return openFile(context, filename);
+    std::unique_ptr<ResponseBody> OpenFileBody(const mc_media_host_api& media, const std::string& filename) {
+        return openFile(media, filename);
     }
 
-    std::unique_ptr<ResponseBody> TakeTemporaryFileBody(Context& context, std::string& filename) {
-        auto body = openFile(context, filename);
+    std::unique_ptr<ResponseBody> TakeTemporaryFileBody(const mc_media_host_api& media, std::string& filename) {
+        auto body = openFile(media, filename);
         if (body) {
             body->TakeTemporaryFile(filename);
         }

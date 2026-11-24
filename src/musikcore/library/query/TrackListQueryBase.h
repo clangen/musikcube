@@ -84,8 +84,6 @@ namespace musik { namespace core { namespace library { namespace query {
             int GetLimit() const noexcept { return this->limit; }
             int GetOffset() const noexcept { return this->offset; }
 
-            /* for IMetadataProxy */
-
             std::string GetLimitAndOffset() {
                 if (this->limit > 0 && this->offset >= 0) {
                     return u8fmt("LIMIT %d OFFSET %d", this->limit, this->offset);

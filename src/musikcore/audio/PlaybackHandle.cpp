@@ -287,7 +287,9 @@ public:
         /* Project the track playback loaded before publishing the change event. */
         page.names = {
             MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ARTIST, MC_TRACK_FIELD_ALBUM, MC_TRACK_FIELD_DURATION,
-            MC_TRACK_FIELD_GENRE
+            MC_TRACK_FIELD_GENRE, MC_TRACK_FIELD_EXTERNAL_ID, MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_ALBUM_ID,
+            MC_TRACK_FIELD_ALBUM_ARTIST, MC_TRACK_FIELD_ALBUM_ARTIST_ID, MC_TRACK_FIELD_VISUAL_ARTIST_ID,
+            MC_TRACK_FIELD_VISUAL_GENRE_ID, MC_TRACK_FIELD_THUMBNAIL_ID
         };
         query::ProjectedTrackPage::Row row { playing->GetId(), {} };
         row.fields.reserve(page.names.size());

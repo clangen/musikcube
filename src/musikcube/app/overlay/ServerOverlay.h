@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/server.hpp>
+#include <musikcore/plugins.hpp>
 
 #include <cursespp/Checkbox.h>
 #include <cursespp/TextInput.h>
@@ -44,6 +44,18 @@
 
 namespace musik {
     namespace cube {
+        struct ServerConfiguration {
+            bool metadataEnabled;
+            bool audioEnabled;
+            bool ipv6;
+            bool synchronousTranscoding;
+            uint16_t metadataPort;
+            uint16_t audioPort;
+            int32_t cacheCount;
+            int32_t activeTranscodeLimit;
+            std::string password;
+        };
+
         class ServerOverlay:
             public cursespp::OverlayBase,
             public sigslot::has_slots<>
@@ -56,12 +68,12 @@ namespace musik {
             virtual bool KeyPress(const std::string& key);
 
         private:
-            explicit ServerOverlay(const musik::core::api::ServerConfiguration& configuration);
+            explicit ServerOverlay(const ServerConfiguration& configuration);
 
             void RecalculateSize();
             void InitViews();
             bool Save();
-            void Load(const musik::core::api::ServerConfiguration& configuration);
+            void Load(const ServerConfiguration& configuration);
 
             int width, height, x, y;
 

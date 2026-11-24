@@ -42,6 +42,11 @@ typedef void (MC_CALL *mc_output_configuration_fn)(void* user_data, const mc_out
 /* Call on the runtime's owner thread. The snapshot is valid only during read.
    The ABI-only runtime returns MC_ERROR_UNSUPPORTED. */
 MC_API mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void* user_data);
+/* Read a specific driver's devices without changing the active driver. */
+MC_API mc_result MC_CALL mc_output_read_driver_configuration(
+    mc_string_view driver, mc_output_configuration_fn read, void* user_data);
+/* Select a driver and device together. An empty device selects its default. */
+MC_API mc_result MC_CALL mc_output_configure(mc_string_view driver, mc_string_view device_id);
 /* Select an available driver by name. Unknown names return MC_ERROR_NOT_FOUND. */
 MC_API mc_result MC_CALL mc_output_select_driver(mc_string_view driver);
 /* Select a device on the effective driver. An empty ID restores its default.

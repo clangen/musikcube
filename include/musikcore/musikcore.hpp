@@ -15,7 +15,6 @@
 #include <musikcore/track-result-window.hpp>
 #include <musikcore/visualizer.hpp>
 #include <musikcore/preferences.hpp>
-#include <musikcore/server.hpp>
 #include <musikcore/plugins.hpp>
 
 #include <musikcore/paths.hpp>

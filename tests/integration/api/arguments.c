@@ -98,6 +98,8 @@ int main(void) {
     CHECK(indexer_state == MC_INDEXER_IDLE);
     CHECK(mc_indexer_schedule(context, MC_INDEXER_REBUILD + 1) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_output_read_configuration(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_output_read_driver_configuration(name, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
+    CHECK(mc_output_configure(name, malformed) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_output_select_driver(name) == MC_ERROR_UNSUPPORTED);
     CHECK(mc_output_select_device(name, malformed) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_output_set_transport(MC_OUTPUT_GAPLESS) == MC_ERROR_UNSUPPORTED);
@@ -115,8 +117,6 @@ int main(void) {
     CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, NULL, 0) == MC_OK);
     CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, &preference, 1) == MC_ERROR_UNSUPPORTED);
     CHECK(mc_preferences_write(MC_PREFERENCE_SETTINGS, &preference, SIZE_MAX) == MC_ERROR_INVALID_ARGUMENT);
-    CHECK(mc_server_read_configuration(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
-    CHECK(mc_server_configure(NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_plugins_list(NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     CHECK(mc_plugin_set_enabled(name, false) == MC_ERROR_NOT_FOUND);
     CHECK(mc_plugin_write_setting(name, &preference) == MC_ERROR_NOT_FOUND);

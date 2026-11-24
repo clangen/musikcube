@@ -207,6 +207,18 @@ RemoteLibrary::ConnectionQueryStatus RemoteLibrary::EnqueueForConnection(
     return ConnectionQueryStatus::Accepted;
 }
 
+void RemoteLibrary::DiscardConnectionQuery(const Query& query) {
+    std::lock_guard lock(this->queueMutex);
+    for (auto it = this->queriesInFlight.begin(); it != this->queriesInFlight.end(); ++it) {
+        if (!it->second->notify && it->second->query == query) {
+            /* a late network reply is ignored and no longer consumes a slot. */
+            this->wsc.DiscardQuery(it->first);
+            this->queriesInFlight.erase(it);
+            return;
+        }
+    }
+}
+
 int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {
     if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
         auto defaultLocalLibrary = LibraryFactory::Instance().DefaultLocalLibrary();

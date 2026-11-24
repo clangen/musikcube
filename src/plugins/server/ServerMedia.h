@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Context.h"
 #include <musikcore/plugin/media.h>
 #include <musikcore/plugin/encoder.h>
 #include <memory>
@@ -32,7 +31,7 @@ namespace server {
         ~MediaStream();
         MediaStream& operator=(const MediaStream&) = delete;
 
-        bool Open(Context& context, const std::string& uri, mc_stream_open_flags flags);
+        bool Open(const mc_media_host_api& media, const std::string& uri, mc_stream_open_flags flags);
         bool Close();
         const mc_stream& Handle() const { return stream; }
 
@@ -50,7 +49,7 @@ namespace server {
         ~DecodedAudio();
         DecodedAudio& operator=(const DecodedAudio&) = delete;
 
-        bool Open(Context& context, const std::string& uri);
+        bool Open(const mc_media_host_api& media, const mc_audio_scratch_buffer_api& scratch, const std::string& uri);
         mc_result Read(mc_pcm_view& pcm);
         bool HasDuration() const;
 
@@ -74,7 +73,7 @@ namespace server {
     };
 
     /* on success the response takes ownership and clears the filename. */
-    std::unique_ptr<ResponseBody> TakeTemporaryFileBody(Context& context, std::string& filename);
+    std::unique_ptr<ResponseBody> TakeTemporaryFileBody(const mc_media_host_api& media, std::string& filename);
 
-    std::unique_ptr<ResponseBody> OpenFileBody(Context& context, const std::string& filename);
+    std::unique_ptr<ResponseBody> OpenFileBody(const mc_media_host_api& media, const std::string& filename);
 }

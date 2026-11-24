@@ -203,6 +203,12 @@ namespace musik { namespace core { namespace ffi {
                     return factory.reload && methods.process;
                 });
             }
+            if (id == MC_PLUGIN_CAPABILITY_PLAYBACK_REMOTE) {
+                return validFactory<mc_playback_remote_factory>(capability, [](const auto&, const auto& methods) {
+                    return methods.changed && methods.queue_changed && methods.start && methods.request_stop &&
+                        methods.join;
+                });
+            }
             if (id == MC_PLUGIN_CAPABILITY_ANALYZER) {
                 return validFactory<mc_analyzer_factory>(capability, [](const auto&, const auto& methods) {
                     return methods.begin && methods.process && methods.finish;

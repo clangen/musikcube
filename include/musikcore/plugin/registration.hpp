@@ -5,6 +5,7 @@
 #include <musikcore/plugin/decoder.h>
 #include <musikcore/plugin/dsp.h>
 #include <musikcore/plugin/encoder.h>
+#include <musikcore/plugin/playback-remote.h>
 #include <musikcore/plugin/indexer.h>
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/settings.h>
@@ -41,6 +42,10 @@ namespace musik { namespace core { namespace plugin {
         return detail::RegisterTable(host, MC_PLUGIN_CAPABILITY_DSP, factory);
     }
 
+    inline mc_result RegisterPlaybackRemote(const mc_host_api& host, const mc_playback_remote_factory& factory) {
+        return detail::RegisterTable(host, MC_PLUGIN_CAPABILITY_PLAYBACK_REMOTE, factory);
+    }
+
     inline mc_result RegisterEncoder(const mc_host_api& host, const mc_encoder_factory& factory) {
         return detail::RegisterTable(host, MC_PLUGIN_CAPABILITY_ENCODER, factory);
     }
@@ -66,6 +71,7 @@ namespace musik { namespace core { namespace plugin {
     mc_result RegisterDecoder(const mc_host_api&, const mc_decoder_factory&&) = delete;
     mc_result RegisterOutput(const mc_host_api&, const mc_output_factory&&) = delete;
     mc_result RegisterDsp(const mc_host_api&, const mc_dsp_factory&&) = delete;
+    mc_result RegisterPlaybackRemote(const mc_host_api&, const mc_playback_remote_factory&&) = delete;
     mc_result RegisterEncoder(const mc_host_api&, const mc_encoder_factory&&) = delete;
     mc_result RegisterTagReader(const mc_host_api&, const mc_tag_reader_factory&&) = delete;
     mc_result RegisterAnalyzer(const mc_host_api&, const mc_analyzer_factory&&) = delete;

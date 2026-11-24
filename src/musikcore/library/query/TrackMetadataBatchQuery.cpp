@@ -116,21 +116,24 @@ std::string TrackMetadataBatchQuery::SerializeQuery() {
             { "trackIds", this->trackIds }
         }}
     };
-    /* Old servers ignore fields and return full tracks. */
-    if (!this->projection.empty()) output["options"]["fields"] = this->projection;
+    if (!this->projection.empty()) {
+        output["options"]["fields"] = this->projection;
+    }
     return output.dump();
 }
 
 std::string TrackMetadataBatchQuery::SerializeResult() {
     if (this->hasProjectedPage) {
-        /* Value lists keep missing ([]) distinct from empty text ([""]). */
+        /* value lists keep missing ([]) distinct from empty text ([""]). */
         nlohmann::json rows = nlohmann::json::array();
-        for (const auto& row : this->page.rows) rows.push_back({{"id", row.id}, {"values", row.fields}});
+        for (const auto& row : this->page.rows) {
+            rows.push_back({{"id", row.id}, {"values", row.fields}});
+        }
         return nlohmann::json{{"projectedPage", {{"fields", this->page.names}, {"rows", rows}}}}.dump();
     }
     nlohmann::json idToTrackMap;
     for (auto& kv : this->result) {
-        auto trackJson = TrackToJson(kv.second, false);;
+        auto trackJson = TrackToJson(kv.second, false);
         idToTrackMap[std::to_string(kv.first)] = trackJson;
     }
     nlohmann::json output = {
@@ -143,16 +146,20 @@ void TrackMetadataBatchQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     const auto response = nlohmann::json::parse(data);
     if (response.contains("projectedPage")) {
-        /* Reject replies for other fields or tracks. Sort once so the caller
-           can look up each requested ID. */
+        /* reject mismatched replies and sort once for the caller's ID lookups. */
         const auto& projected = response.at("projectedPage");
         ProjectedTrackPage page;
         page.names = projected.at("fields").get<std::vector<std::string>>();
         if (this->projection.empty() || page.names != this->projection ||
-            projected.at("rows").size() > this->trackIds.size()) throw std::invalid_argument("Invalid projected fields");
+            projected.at("rows").size() > this->trackIds.size())
+        {
+            throw std::invalid_argument("Invalid projected fields");
+        }
         for (const auto& row : projected.at("rows")) {
-            ProjectedTrackPage::Row value{row.at("id").get<int64_t>(),
-                row.at("values").get<std::vector<std::vector<std::string>>>()};
+            ProjectedTrackPage::Row value {
+                .id = row.at("id").get<int64_t>(),
+                .fields = row.at("values").get<std::vector<std::vector<std::string>>>(),
+            };
             if (!this->trackIds.count(value.id) || value.fields.size() != this->projection.size()) {
                 throw std::invalid_argument("Invalid projected row");
             }
@@ -160,14 +167,18 @@ void TrackMetadataBatchQuery::DeserializeResult(const std::string& data) {
         }
         std::sort(page.rows.begin(), page.rows.end(), [](const auto& a, const auto& b) { return a.id < b.id; });
         for (size_t i = 1; i < page.rows.size(); ++i) {
-            if (page.rows[i - 1].id == page.rows[i].id) throw std::invalid_argument("Duplicate projected row");
+            if (page.rows[i - 1].id == page.rows[i].id) {
+                throw std::invalid_argument("Duplicate projected row");
+            }
         }
         this->page = std::move(page);
         this->hasProjectedPage = true;
         this->SetStatus(IQuery::Finished);
         return;
     }
-    /* Older servers ignore the optional projection and return their legacy map. */
+    if (!this->projection.empty()) {
+        throw std::invalid_argument("Missing projected page");
+    }
     auto input = response["result"];
     for (const auto& kv : input.items()) {
         int64_t id = std::atoll(kv.key().c_str());

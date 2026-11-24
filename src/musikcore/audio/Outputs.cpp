@@ -178,6 +178,22 @@ mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, 
     return outputs::ReadConfiguration({ nullptr, 0 }, read, data);
 }
 
+mc_result MC_CALL mc_output_read_driver_configuration(
+    mc_string_view driver, mc_output_configuration_fn read, void* data)
+{
+    if (!ffi::valid_text(driver, false) || !read) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return outputs::ReadConfiguration(driver, read, data);
+}
+
+mc_result MC_CALL mc_output_configure(mc_string_view driver, mc_string_view deviceId) {
+    if (!ffi::valid_text(driver, false) || !ffi::valid_text(deviceId)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return outputs::Configure(driver, deviceId);
+}
+
 mc_result MC_CALL mc_output_select_driver(mc_string_view driver) {
     if (!ffi::valid_text(driver, false)) {
         return MC_ERROR_INVALID_ARGUMENT;

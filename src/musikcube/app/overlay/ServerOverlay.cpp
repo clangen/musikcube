@@ -79,7 +79,73 @@ static int getIntFromTextInput(TextInput* input, int defaultValue = -1) {
     return defaultValue;
 }
 
-ServerOverlay::ServerOverlay(const api::ServerConfiguration& configuration)
+namespace {
+    constexpr std::string_view serverPluginId = "9fc897a3-dfd5-4524-a0fc-b02f46aea4a9";
+
+    std::optional<ServerConfiguration> readServerConfiguration() {
+        const auto settings = api::ReadPluginSettings(serverPluginId);
+        if (!settings) {
+            return std::nullopt;
+        }
+        ServerConfiguration result { true, true, false, false, 7905, 7906, 50, 4, {} };
+        for (const auto& field : *settings) {
+            if (field.key == "websocket_server_enabled") {
+                result.metadataEnabled = std::get<bool>(field.value);
+            }
+            else if (field.key == "http_server_enabled") {
+                result.audioEnabled = std::get<bool>(field.value);
+            }
+            else if (field.key == "use_ipv6") {
+                result.ipv6 = std::get<bool>(field.value);
+            }
+            else if (field.key == "transcoder_synchronous") {
+                result.synchronousTranscoding = std::get<bool>(field.value);
+            }
+            else if (field.key == "websocket_server_port") {
+                result.metadataPort = (uint16_t) std::get<int32_t>(field.value);
+            }
+            else if (field.key == "http_server_port") {
+                result.audioPort = (uint16_t) std::get<int32_t>(field.value);
+            }
+            else if (field.key == "transcoder_cache_count") {
+                result.cacheCount = std::get<int32_t>(field.value);
+            }
+            else if (field.key == "transcoder_max_active_count") {
+                result.activeTranscodeLimit = std::get<int32_t>(field.value);
+            }
+            else if (field.key == "password") {
+                result.password = std::get<std::string>(field.value);
+            }
+        }
+        return result;
+    }
+
+    mc_result configureServer(const ServerConfiguration& value) {
+        const std::pair<std::string_view, api::PreferenceValue> fields[] {
+            { "websocket_server_enabled", value.metadataEnabled },
+            { "http_server_enabled", value.audioEnabled },
+            { "use_ipv6", value.ipv6 },
+            { "transcoder_synchronous", value.synchronousTranscoding },
+            { "websocket_server_port", (int32_t) value.metadataPort },
+            { "http_server_port", (int32_t) value.audioPort },
+            { "transcoder_cache_count", value.cacheCount },
+            { "transcoder_max_active_count", value.activeTranscodeLimit },
+            { "password", value.password },
+        };
+        std::vector<mc_preference_entry> entries;
+        entries.reserve(std::size(fields));
+        for (const auto& [key, setting] : fields) {
+            entries.push_back(std::visit([key](const auto& item) { return api::Preference(key, item); }, setting));
+        }
+        const auto status = api::WritePluginSettings(serverPluginId, entries);
+        if (status != MC_OK) {
+            return status;
+        }
+        return api::ApplyPluginSettings(serverPluginId);
+    }
+}
+
+ServerOverlay::ServerOverlay(const ServerConfiguration& configuration)
 : OverlayBase()
 {
     this->width = this->height = 0;
@@ -233,16 +299,16 @@ void ServerOverlay::Layout() {
 }
 
 void ServerOverlay::ShowOverlay() {
-    if (const auto configuration = api::ReadServerConfiguration()) {
+    if (const auto configuration = readServerConfiguration()) {
         App::Overlays().Push(std::shared_ptr<ServerOverlay>(new ServerOverlay(*configuration)));
     }
 }
 
 bool ServerOverlay::Available() {
-    return api::ReadServerConfiguration().has_value();
+    return readServerConfiguration().has_value();
 }
 
-void ServerOverlay::Load(const api::ServerConfiguration& configuration) {
+void ServerOverlay::Load(const ServerConfiguration& configuration) {
     this->enableWssCb->SetChecked(configuration.metadataEnabled);
     this->enableHttpCb->SetChecked(configuration.audioEnabled);
     this->enableSyncTransCb->SetChecked(configuration.synchronousTranscoding);
@@ -256,16 +322,16 @@ void ServerOverlay::Load(const api::ServerConfiguration& configuration) {
 }
 
 bool ServerOverlay::Save() {
-    const int wssPort = getIntFromTextInput(this->wssPortInput.get(), MC_SERVER_DEFAULT_METADATA_PORT);
-    const int httpPort = getIntFromTextInput(this->httpPortInput.get(), MC_SERVER_DEFAULT_AUDIO_PORT);
-    const int cacheCount = getIntFromTextInput(this->transCacheInput.get(), MC_SERVER_DEFAULT_CACHE_COUNT);
-    const int maxTransCount = getIntFromTextInput(this->maxTransInput.get(), MC_SERVER_DEFAULT_ACTIVE_TRANSCODE_LIMIT);
+    const int wssPort = getIntFromTextInput(this->wssPortInput.get(), 7905);
+    const int httpPort = getIntFromTextInput(this->httpPortInput.get(), 7906);
+    const int cacheCount = getIntFromTextInput(this->transCacheInput.get(), 50);
+    const int maxTransCount = getIntFromTextInput(this->maxTransInput.get(), 4);
 
     if (wssPort <= 0 || wssPort > UINT16_MAX || httpPort <= 0 || httpPort > UINT16_MAX) {
         return false;
     }
 
-    return api::ConfigureServer({
+    return configureServer({
         this->enableWssCb->IsChecked(), this->enableHttpCb->IsChecked(), this->ipv6Cb->IsChecked(),
         this->enableSyncTransCb->IsChecked(), static_cast<uint16_t>(wssPort), static_cast<uint16_t>(httpPort),
         cacheCount, maxTransCount, this->pwInput->GetText()

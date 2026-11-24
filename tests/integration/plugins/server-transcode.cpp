@@ -61,7 +61,7 @@ namespace {
     bool checkWriteFailure(Context& context) {
         server::MediaStream output;
         const auto path = musik::core::sdk::fs::pathFromUtf8(musik::core::api::ReadPath(MC_PATH_DATA)) / "failed.flac";
-        if (!TEST_CHECK(output.Open(context, musik::core::sdk::fs::pathToUtf8(path),
+        if (!TEST_CHECK(output.Open(*context.media, musik::core::sdk::fs::pathToUtf8(path),
                 MC_STREAM_OPEN_WRITE | MC_STREAM_OPEN_CREATE | MC_STREAM_OPEN_TRUNCATE)))
         {
             return false;
@@ -103,7 +103,7 @@ namespace {
                 .channel_layout = 0,
             },
         };
-        const auto& media = context.environment->Media();
+        const auto& media = *context.media;
         mc_encoder encoder = MC_ENCODER_DEFAULT;
         constexpr char format[] = ".flac";
         if (!TEST_CHECK(media.create_encoder(media.context, { format, sizeof(format) - 1 }, &encoder, nullptr) == MC_OK)) {
@@ -129,7 +129,10 @@ namespace runtime_tests {
         opts.services = MC_SERVICE_PLUGINS;
         musik::core::api::Context runtime(opts);
         Context context;
-        context.environment = &musik::core::plugin::Environment();
+        context.media = &musik::core::plugin::Environment().Media();
+        context.scratch = &musik::core::plugin::Environment().AudioScratch();
+        context.preferences = musik::core::plugin::ReadSettingsService("musikcube Server (wss, http)");
+        context.dataDirectory = musik::core::api::ReadPath(MC_PATH_DATA);
         const auto root = musik::core::sdk::fs::pathFromUtf8(musik::core::api::ReadPath(MC_PATH_DATA));
         const auto path = [&](const char* name) {
             return musik::core::sdk::fs::pathToUtf8(root / name);

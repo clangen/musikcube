@@ -55,6 +55,45 @@ extern "C" void MC_CALL dispatch_test_completion(mc_result result, void *data) {
 namespace {
     const auto deadline = std::chrono::seconds(5);
 
+    /* a reload from an earlier callback must settle a plugin request already
+    moved into the same dispatch batch, before the old plugin can be freed. */
+    bool check_scoped_batch_cancellation(State& state) {
+        using musik::core::ffi::cancel_owned_requests;
+        using musik::core::ffi::reserve_external_request;
+        using musik::core::ffi::RequestEffect;
+        int owner = 0;
+        unsigned callbacks = 0;
+        unsigned discarded = 0;
+        bool settledBeforeReload = false;
+        mc_request_id first = 0, second = 0;
+        std::function<void(mc_result)> finishFirst, finishSecond;
+        if (reserve_external_request(state.context, [&](mc_result result, void*) {
+                if (result == MC_OK) {
+                    ++callbacks;
+                }
+                cancel_owned_requests(*state.context, &owner);
+                settledBeforeReload = callbacks == 2;
+            }, nullptr, &first, finishFirst) != MC_OK ||
+            reserve_external_request(state.context, [&](mc_result result, void*) {
+                if (result == MC_OK) {
+                    ++callbacks;
+                }
+            }, nullptr, &second, finishSecond, RequestEffect::Read, {}, &owner,
+                [&] { ++discarded; }) != MC_OK)
+        {
+            return false;
+        }
+        /* both replies are ready before dispatch takes its snapshot. */
+        finishFirst(MC_OK);
+        finishSecond(MC_OK);
+        if (mc_context_dispatch(state.context) != MC_OK || callbacks != 2 || discarded != 1 || !settledBeforeReload) {
+            return false;
+        }
+        /* a late producer cannot invoke a callback a second time. */
+        finishSecond(MC_OK);
+        return mc_context_dispatch(state.context) == MC_OK && callbacks == 2;
+    }
+
     /* Wait with a deadline until the requested number of producer hooks has entered. */
     bool wait_for_wakeups(State &state, unsigned count) {
         std::unique_lock<std::mutex> lock(state.mutex);
@@ -487,6 +526,7 @@ int main() {
         run_check("shutdown with a wakeup in flight", check_shutdown_wakeup) &&
         run_check("shutdown and destroy during callback", check_callback_lifecycle) &&
         run_check("cancel peer request during callback", check_callback_cancellation) &&
+        run_check("cancel scoped request in dispatch batch", check_scoped_batch_cancellation) &&
         run_check("completion and cancellation terminal selection races", check_terminal_races) &&
         run_check("external reply after cancellation and destruction", check_external_reply) &&
         run_check("shutdown cancels and joins active work", check_shutdown_cancellable_worker) &&

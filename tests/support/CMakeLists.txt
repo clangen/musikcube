@@ -26,6 +26,20 @@ endif()
 
 if(BUILD_TESTING)
 
+  add_executable(musikcore_playlist_track_queries_test ../integration/library/playlist-track-queries.cpp)
+  target_include_directories(musikcore_playlist_track_queries_test PRIVATE
+    "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})
+  target_link_libraries(musikcore_playlist_track_queries_test PRIVATE ${core_fixture_library} Threads::Threads)
+  if(WIN32)
+    target_link_libraries(musikcore_playlist_track_queries_test PRIVATE
+      musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+  endif()
+  add_dependencies(musikcube_tests musikcore_playlist_track_queries_test)
+  add_dependencies(musikcube_integration_tests musikcore_playlist_track_queries_test)
+  add_test(NAME musikcore.integration.library.playlist_track_queries COMMAND musikcore_playlist_track_queries_test)
+  set_tests_properties(musikcore.integration.library.playlist_track_queries PROPERTIES
+    LABELS "integration;musikcore;library;contract")
+
   if(APPLE)
     add_test(NAME musikcore.integration.binary.macos_package COMMAND "${MUSIKCORE_TEST_NODE}"
       "${PROJECT_SOURCE_DIR}/tests/scripts/check-macos-package.js"
@@ -76,7 +90,8 @@ if(BUILD_TESTING)
     TIMEOUT 20)
   add_test(NAME musikcore.integration.api.managed_remote COMMAND "${MUSIKCORE_TEST_NODE}"
     "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
-    "$<TARGET_FILE:musikcore_remote_query_transport_test>" --stage --managed)
+    "$<TARGET_FILE:musikcore_remote_query_transport_test>" --stage --managed
+    "$<TARGET_FILE:musikcore_playback_remote_fixture>")
   set_tests_properties(musikcore.integration.api.managed_remote PROPERTIES
     LABELS "integration;musikcore;api;transport;contract" TIMEOUT 20)
 
@@ -916,3 +931,84 @@ if(BUILD_TESTING AND TARGET ffmpegdecoder AND TARGET musikcube_seed_library)
   set_tests_properties(musikcore.integration.plugins.analyzer PROPERTIES
     LABELS "integration;musikcore;plugins;indexer;audio;contract" TIMEOUT 120)
 endif()
+
+# a real C plugin verifies playback remote activation and shutdown order.
+add_library(musikcore_playback_remote_fixture MODULE ../integration/plugins/playback-remote-plugin.cpp)
+add_dependencies(musikcore_remote_query_transport_test musikcore_playback_remote_fixture)
+add_library(musikcore_playback_remote_peer MODULE ../integration/plugins/playback-remote-plugin.cpp)
+target_include_directories(musikcore_playback_remote_peer PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_playback_remote_peer PRIVATE cxx_std_17)
+target_compile_definitions(musikcore_playback_remote_peer PRIVATE MUSIKCORE_TEST_REMOTE_PEER)
+target_link_libraries(musikcore_playback_remote_peer PRIVATE musikcore Threads::Threads)
+musikcube_configure_c_plugin(musikcore_playback_remote_peer)
+set_target_properties(musikcore_playback_remote_peer PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/playback-remote-peer"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/playback-remote-peer")
+target_include_directories(musikcore_playback_remote_fixture PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_playback_remote_fixture PRIVATE cxx_std_17)
+target_link_libraries(musikcore_playback_remote_fixture PRIVATE musikcore Threads::Threads)
+musikcube_configure_c_plugin(musikcore_playback_remote_fixture)
+set_target_properties(musikcore_playback_remote_fixture PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/playback-remote"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/playback-remote")
+if(APPLE)
+  set_target_properties(musikcore_playback_remote_fixture PROPERTIES SUFFIX ".dylib")
+  set_target_properties(musikcore_playback_remote_peer PROPERTIES SUFFIX ".dylib")
+endif()
+add_executable(musikcore_playback_remote_lifecycle_test ../integration/plugins/playback-remote.cpp host-wakeup.cpp)
+target_include_directories(musikcore_playback_remote_lifecycle_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_playback_remote_lifecycle_test PRIVATE cxx_std_17)
+target_link_libraries(musikcore_playback_remote_lifecycle_test PRIVATE ${core_fixture_library} Threads::Threads)
+if(WIN32)
+  target_link_libraries(musikcore_playback_remote_lifecycle_test PRIVATE
+    musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+endif()
+add_dependencies(musikcore_playback_remote_lifecycle_test musikcore_playback_remote_fixture musikcore_playback_remote_peer nullout)
+add_dependencies(musikcube_tests musikcore_playback_remote_lifecycle_test)
+add_dependencies(musikcube_integration_tests musikcore_playback_remote_lifecycle_test)
+add_test(NAME musikcore.integration.plugins.playback_remote_lifecycle
+  COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
+    --stage --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>" --plugin "$<TARGET_FILE:nullout>")
+set_tests_properties(musikcore.integration.plugins.playback_remote_lifecycle PROPERTIES
+  LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
+add_test(NAME musikcore.integration.plugins.playback_remote_stop_order
+  COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
+    --stage --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>"
+    --plugin "$<TARGET_FILE:musikcore_playback_remote_peer>" --plugin "$<TARGET_FILE:nullout>" two)
+set_tests_properties(musikcore.integration.plugins.playback_remote_stop_order PROPERTIES
+  LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
+if(UNIX)
+  add_test(NAME musikcore.integration.plugins.playback_remote_startup_rollback
+    COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+      "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
+      --stage --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>"
+      --plugin "$<TARGET_FILE:musikcore_playback_remote_peer>" --plugin "$<TARGET_FILE:nullout>" startup-failure)
+  set_tests_properties(musikcore.integration.plugins.playback_remote_startup_rollback PROPERTIES
+    LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
+endif()
+add_test(NAME musikcore.integration.plugins.playback_remote_factory_throws
+  COMMAND "${CMAKE_COMMAND}"
+    "-DNODE=${MUSIKCORE_TEST_NODE}"
+    "-DRUNNER=${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "-DROOT=${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "-DTEST_BINARY=$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
+    "-DPLUGIN=$<TARGET_FILE:musikcore_playback_remote_fixture>"
+    "-DOUTPUT=$<TARGET_FILE:nullout>"
+    -DMODE=throw
+    -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-playback-remote-fatal.cmake")
+set_tests_properties(musikcore.integration.plugins.playback_remote_factory_throws PROPERTIES
+  LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
+add_test(NAME musikcore.integration.plugins.playback_remote_start_throws
+  COMMAND "${CMAKE_COMMAND}"
+    "-DNODE=${MUSIKCORE_TEST_NODE}"
+    "-DRUNNER=${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "-DROOT=${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "-DTEST_BINARY=$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
+    "-DPLUGIN=$<TARGET_FILE:musikcore_playback_remote_fixture>"
+    "-DOUTPUT=$<TARGET_FILE:nullout>"
+    -DMODE=throw-start
+    -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-playback-remote-fatal.cmake")
+set_tests_properties(musikcore.integration.plugins.playback_remote_start_throws PROPERTIES
+  LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)

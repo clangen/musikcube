@@ -263,6 +263,11 @@ std::string WebSocketClient::EnqueueQuery(Query query, uint64_t generation) {
     return messageId;
 }
 
+void WebSocketClient::DiscardQuery(const std::string& messageId) {
+    std::lock_guard lock(this->mutex);
+    this->messageIdToQuery.erase(messageId);
+}
+
 void WebSocketClient::Connect(
     const std::string& host,
     unsigned short port,

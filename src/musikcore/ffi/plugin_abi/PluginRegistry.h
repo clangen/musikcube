@@ -7,6 +7,7 @@
 #include <musikcore/plugin/tag.h>
 #include <musikcore/plugin/indexer.h>
 #include <musikcore/plugin/dsp.h>
+#include <musikcore/plugin/playback-remote.h>
 #include <musikcore/plugin/analyzer.h>
 #include <musikcore/plugin/encoder.h>
 #include <musikcore/plugin/output.h>
@@ -153,6 +154,9 @@ namespace musik { namespace core { namespace ffi {
             }
             else if constexpr (std::is_same_v<T, mc_dsp_factory>) {
                 return MC_PLUGIN_CAPABILITY_DSP;
+            }
+            else if constexpr (std::is_same_v<T, mc_playback_remote_factory>) {
+                return MC_PLUGIN_CAPABILITY_PLAYBACK_REMOTE;
             }
             else if constexpr (std::is_same_v<T, mc_analyzer_factory>) {
                 return MC_PLUGIN_CAPABILITY_ANALYZER;

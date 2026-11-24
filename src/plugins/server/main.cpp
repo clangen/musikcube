@@ -34,172 +34,149 @@
 
 #include "Constants.h"
 #include "Context.h"
-
 #include "HttpServer.h"
 #include "WebSocketServer.h"
 
-#include <musikcore/sdk/IPlaybackRemote.h>
-#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/plugin.h>
+#include <musikcore/plugin/playback-remote.hpp>
+#include <musikcore/sdk/version.h>
 
-#include <thread>
+#include <cstring>
 
-#ifdef WIN32
-#define DLL_EXPORT __declspec(dllexport)
-#else
-#define DLL_EXPORT
-#endif
-
-using namespace musik::core::sdk;
-
-static Context context;
-
-static class PlaybackRemote : public IPlaybackRemote {
-    private:
-        HttpServer httpServer;
-        WebSocketServer webSocketServer;
-
-    public:
-        PlaybackRemote()
-        : httpServer(context)
-        , webSocketServer(context) {
-#ifdef ENABLE_DEBUG
-            freopen("z:\\webserver.log", "w", stderr);
-#endif
-        }
-
-        ~PlaybackRemote() {
-            this->Stop();
-        }
-
-        virtual void Release() {
-        }
-
-        void Reload() {
-            auto wl = context.lock.Write();
-            this->Stop();
-            this->CheckRunningStatus();
-        }
-
-        void CheckRunningStatus() {
-            if (!thread && context.environment && context.playback && context.prefs && context.metadataProxy) {
-                this->Start();
-                thread.reset(new std::thread(std::bind(&PlaybackRemote::ThreadProc, this)));
-            }
-            else if (thread && (!context.environment || !context.playback || !context.prefs || !context.metadataProxy)) {
-                this->Stop();
-            }
-        }
-
-        virtual void SetPlaybackService(IPlaybackService* playback) {
-            auto wl = context.lock.Write();
-            context.playback = playback;
-            this->CheckRunningStatus();
-        }
-
-        virtual void OnTrackChanged(ITrack* track) {
-            webSocketServer.OnTrackChanged(track);
-        }
-
-        virtual void OnPlaybackStateChanged(PlaybackState state) {
-            webSocketServer.OnPlaybackStateChanged(state);
-        }
-
-        virtual void OnVolumeChanged(double volume) {
-            webSocketServer.OnVolumeChanged(volume);
-        }
-
-        virtual void OnPlaybackTimeChanged(double time) {
-            webSocketServer.OnPlaybackTimeChanged(time);
-        }
-
-        virtual void OnModeChanged(RepeatMode repeatMode, bool shuffled) {
-            webSocketServer.OnModeChanged(repeatMode, shuffled);
-        }
-
-        virtual void OnPlayQueueChanged() {
-            webSocketServer.OnPlayQueueChanged();
-        }
-
-    private:
-        void ThreadProc() {
-            httpServer.Wait();
-            webSocketServer.Wait();
-        }
-
-        void Start() {
-            if (context.prefs->GetBool(serverprefs::AudioEnabled.c_str(), true)) {
-                httpServer.Start();
-            }
-            if (context.prefs->GetBool(serverprefs::MetadataEnabled.c_str(), true)) {
-                webSocketServer.Start();
-            }
-        }
-
-        void Stop() {
-            httpServer.Stop();
-            webSocketServer.Stop();
-            if (this->thread) {
-                this->thread->join();
-                this->thread.reset();
-            }
-        }
-
-        std::shared_ptr<std::thread> thread;
-} remote;
-
-static class Plugin : public IPlugin {
-    public:
-        virtual void Release() { }
-        virtual const char* Name() { return "musikcube Server (wss, http)"; }
-        virtual const char* Version() { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return serverprefs::PluginGuid; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { remote.Reload(); }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
-} plugin;
-
-extern "C" DLL_EXPORT IPlugin* GetPlugin() {
-    return &plugin;
-}
-
-extern "C" DLL_EXPORT IPlaybackRemote* GetPlaybackRemote() {
-    return &remote;
-}
-
-extern "C" DLL_EXPORT void SetEnvironment(musik::core::sdk::IEnvironment* env) {
-    auto wl = context.lock.Write();
-    context.environment = env;
-    remote.CheckRunningStatus();
-}
-
-extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs) {
-    auto wl = context.lock.Write();
-    context.prefs = prefs;
-
-    if (prefs) {
-        prefs->GetBool(serverprefs::MetadataEnabled.c_str(), true);
-        prefs->GetInt(serverprefs::MetadataPort.c_str(), serverprefs::DefaultMetadataPort);
-        prefs->GetInt(serverprefs::AudioPort.c_str(), serverprefs::DefaultAudioPort);
-        prefs->GetBool(serverprefs::AudioEnabled.c_str(), true);
-        prefs->GetString(serverprefs::Password.c_str(), nullptr, 0, defaults::password.c_str());
-        prefs->GetInt(serverprefs::CacheCount.c_str(), serverprefs::DefaultCacheCount);
-        prefs->GetBool(serverprefs::SynchronousTranscoding.c_str(), defaults::transcoder_synchronous);
-        prefs->GetBool(prefs::transcoder_synchronous_fallback.c_str(), defaults::transcoder_synchronous_fallback);
-        prefs->Save();
+namespace {
+    mc_string_view text(const char* value) {
+        return { value, std::strlen(value) };
     }
 
-    remote.CheckRunningStatus();
+    const mc_configuration_api& configuration() {
+        static const mc_integer_setting integers[] {
+            {
+                .key = text(serverprefs::MetadataPort.c_str()),
+                .default_value = serverprefs::DefaultMetadataPort,
+                .minimum = 1,
+                .maximum = 65535,
+            },
+            {
+                .key = text(serverprefs::AudioPort.c_str()),
+                .default_value = serverprefs::DefaultAudioPort,
+                .minimum = 1,
+                .maximum = 65535,
+            },
+            {
+                .key = text(serverprefs::CacheCount.c_str()),
+                .default_value = serverprefs::DefaultCacheCount,
+                .minimum = 0,
+                .maximum = 100000,
+            },
+            {
+                .key = text(serverprefs::ActiveTranscodeLimit.c_str()),
+                .default_value = serverprefs::DefaultActiveTranscodeLimit,
+                .minimum = 0,
+                .maximum = 100000,
+            },
+        };
+        static const mc_boolean_setting booleans[] {
+            { .key = text(serverprefs::MetadataEnabled.c_str()), .default_value = true },
+            { .key = text(serverprefs::AudioEnabled.c_str()), .default_value = true },
+            { .key = text(serverprefs::UseIpv6.c_str()), .default_value = defaults::use_ipv6 },
+            { .key = text(serverprefs::SynchronousTranscoding.c_str()), .default_value = defaults::transcoder_synchronous },
+            { .key = text(prefs::transcoder_synchronous_fallback.c_str()), .default_value = defaults::transcoder_synchronous_fallback },
+        };
+        static const mc_text_setting texts[] {
+            { .key = text(serverprefs::Password.c_str()), .default_value = text("") },
+        };
+        static const mc_configuration_api value {
+            .struct_size = sizeof(mc_configuration_api),
+            .integers = integers,
+            .integer_count = sizeof(integers) / sizeof(integers[0]),
+            .booleans = booleans,
+            .boolean_count = sizeof(booleans) / sizeof(booleans[0]),
+            .numbers = nullptr,
+            .number_count = 0,
+            .texts = texts,
+            .text_count = sizeof(texts) / sizeof(texts[0]),
+        };
+
+        return value;
+    }
+
+    /* owns both network servers for one playback session. */
+    class ServerRemote {
+    public:
+        explicit ServerRemote(const mc_plugin_services& services)
+        : httpServer(this->context)
+        , webSocketServer(this->context)
+        {
+            this->context.preferences = *services.preferences;
+            this->context.dataDirectory.assign(services.data_directory.data ? services.data_directory.data : "",
+                services.data_directory.length);
+            this->context.host = services.host;
+            this->context.library = services.library;
+            this->context.media = services.media;
+            this->context.scratch = services.audio_scratch;
+            this->context.playbackRemote = services.playback_remote;
+        }
+
+        void Changed(const mc_plugin_playback_event&) noexcept {
+            this->webSocketServer.PostPlaybackChanged(false);
+        }
+
+        void QueueChanged() noexcept {
+            this->webSocketServer.PostPlaybackChanged(true);
+        }
+
+        mc_result Start() {
+            this->context.stopping.store(false);
+            if (this->context.settings.Boolean(serverprefs::AudioEnabled, true) && !this->httpServer.Start()) {
+                return MC_ERROR_IO;
+            }
+            if (this->context.settings.Boolean(serverprefs::MetadataEnabled, true) && !this->webSocketServer.Start()) {
+                return MC_ERROR_IO;
+            }
+            return MC_OK;
+        }
+
+        void RequestStop() noexcept {
+            /* the owner cancels pending playback calls before joining workers. */
+            this->context.stopping.store(true);
+        }
+
+        mc_result Join() {
+            const bool httpStopped = this->httpServer.Stop();
+            const bool websocketStopped = this->webSocketServer.Stop();
+            return httpStopped && websocketStopped ? MC_OK : MC_ERROR_IO;
+        }
+
+    private:
+        Context context;
+        HttpServer httpServer;
+        WebSocketServer webSocketServer;
+    };
+
+    mc_result MC_CALL initialize(const mc_host_api* host, void**, mc_error**) {
+        const auto configured = musik::core::plugin::RegisterConfiguration(*host, configuration());
+        if (configured != MC_OK) {
+            return configured;
+        }
+        return musik::core::plugin::RegisterPlaybackRemote<ServerRemote>(*host);
+    }
+
+    void MC_CALL shutdown(void*) {}
 }
 
-extern "C" DLL_EXPORT void SetMetadataProxy(musik::core::sdk::IMetadataProxy* metadataProxy) {
-    auto wl = context.lock.Write();
-    context.metadataProxy = metadataProxy;
-    remote.CheckRunningStatus();
-}
-
-extern "C" DLL_EXPORT void SetDebug(musik::core::sdk::IDebug*  debug) {
-    auto wl = context.lock.Write();
-    context.debug = debug;
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error)
+{
+    const auto status = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (status != MC_OK) {
+        return status;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = text(serverprefs::PluginGuid);
+    plugin->name = text("musikcube Server (wss, http)");
+    plugin->version = text(MUSIKCUBE_VERSION_WITH_COMMIT_HASH);
+    plugin->author = text("clangen");
+    plugin->initialize = initialize;
+    plugin->shutdown = shutdown;
+    return MC_OK;
 }

@@ -152,6 +152,58 @@ namespace {
             return false;
         }
 
+        /* plugin schema access must reject worker threads before touching the registry. */
+        mc_result readStatus = MC_OK;
+        mc_result writeStatus = MC_OK;
+        mc_result batchStatus = MC_OK;
+        unsigned workerCallbacks = 0;
+        std::thread worker([&] {
+            const auto read = [](void* data, const mc_plugin_setting*) {
+                ++*static_cast<unsigned*>(data);
+            };
+            mc_preference_entry entry {};
+            entry.key = { "max_cache_files", 15 };
+            entry.value.type = MC_PREFERENCE_INTEGER;
+            entry.value.data.integer = 1;
+            readStatus = mc_plugin_read_settings(id, read, &workerCallbacks);
+            writeStatus = mc_plugin_write_setting(id, &entry);
+            batchStatus = mc_plugin_write_settings(id, &entry, 1);
+        });
+        worker.join();
+        if (!TEST_CHECK(readStatus == MC_ERROR_WRONG_THREAD && writeStatus == MC_ERROR_WRONG_THREAD &&
+            batchStatus == MC_ERROR_WRONG_THREAD && workerCallbacks == 0))
+        {
+            return false;
+        }
+
+        /* reject the entire batch when a later value violates the schema. */
+        mc_preference_entry batch[2] {};
+        batch[0].key = { "max_cache_files", 15 };
+        batch[0].value.type = MC_PREFERENCE_INTEGER;
+        batch[0].value.data.integer = 4;
+        batch[1].key = { "read_timeout_seconds", 20 };
+        batch[1].value.type = MC_PREFERENCE_INTEGER;
+        batch[1].value.data.integer = 0;
+        if (!TEST_CHECK(mc_plugin_write_settings(id, batch, 2) == MC_ERROR_INVALID_ARGUMENT)) {
+            return false;
+        }
+        /* duplicate keys are ambiguous and must not change the saved value. */
+        batch[1] = batch[0];
+        batch[1].value.data.integer = 5;
+        if (!TEST_CHECK(mc_plugin_write_settings(id, batch, 2) == MC_ERROR_INVALID_ARGUMENT)) {
+            return false;
+        }
+        settings = {};
+        if (!TEST_CHECK(mc_plugin_read_settings(id, [](void* data, const mc_plugin_setting* setting) {
+            auto& observed = *static_cast<Settings*>(data);
+            ++observed.count;
+            if (std::string_view(setting->key.data, setting->key.length) == "max_cache_files") {
+                observed.maxFiles = setting->value.data.integer;
+            }
+        }, &settings) == MC_OK) || !TEST_CHECK(settings.maxFiles == 0)) {
+            return false;
+        }
+
         const auto replay = [&](const char* route) {
             const auto url = http + route;
             for (unsigned pass = 0; pass < 2; ++pass) {
@@ -159,6 +211,32 @@ namespace {
                     !await(context, event, [&] { return state(player) == MC_PLAYER_FINISHED; }, route))
                 {
                     return false;
+                }
+                if (pass == 0 && std::string_view(route) == "/cached") {
+                    /* finished playback can precede the worker closing its source.
+                    wait for that close to publish the cache before replaying it. */
+                    const auto directory = std::filesystem::u8path(api::ReadPath(MC_PATH_DATA)) /
+                        "cache" / "httpclient";
+                    const auto prefix = "musikcube_" + std::to_string(std::hash<std::string> {}(url)) + "_";
+                    const auto deadline = Clock::now() + std::chrono::seconds(3);
+                    bool published = false;
+                    while (!published && Clock::now() < deadline) {
+                        std::error_code error;
+                        for (std::filesystem::directory_iterator it(directory, error), end;
+                            !error && it != end; it.increment(error))
+                        {
+                            if (it->path().filename().string().starts_with(prefix)) {
+                                published = true;
+                                break;
+                            }
+                        }
+                        if (!published) {
+                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                        }
+                    }
+                    if (!TEST_CHECK(published)) {
+                        return false;
+                    }
                 }
             }
             return true;

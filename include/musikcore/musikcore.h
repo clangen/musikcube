@@ -12,7 +12,6 @@
 #include <musikcore/indexer.h>
 #include <musikcore/visualizer.h>
 #include <musikcore/preferences.h>
-#include <musikcore/server.h>
 #include <musikcore/plugins.h>
 
 #include <musikcore/paths.h>

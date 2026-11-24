@@ -38,68 +38,10 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/IValue.h>
 
 #ifdef WIN32
 #include <Windows.h>
 #endif
-
-#ifdef __APPLE__
-extern __thread char threadLocalBuffer[4096];
-#else
-extern thread_local char threadLocalBuffer[4096];
-#endif
-
-template <typename K, typename V>
-typename std::unordered_map<K, V>::const_iterator
-static FindKeyByValue(const std::unordered_map<K, V>& map, const V& value) {
-    return std::find_if(map.begin(), map.end(), [&value](const std::pair<K, V> &p) {
-        return p.second == value;
-    });
-}
-
-static std::string GetPreferenceString(
-    musik::core::sdk::IPreferences* prefs,
-    const std::string& key,
-    const std::string& defaultValue)
-{
-    prefs->GetString(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer), defaultValue.c_str());
-    return std::string(threadLocalBuffer);
-}
-
-template <typename MetadataT>
-static std::string GetMetadataString(
-    MetadataT* metadata,
-    const std::string& key,
-    const std::string& defaultValue = "missing metadata!")
-{
-    if (!metadata) { return defaultValue; }
-    metadata->GetString(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
-    return std::string(threadLocalBuffer);
-}
-
-template <typename MetadataT>
-static int GetMetadataInt32(MetadataT* metadata, const std::string& key, int defaultValue = 0) {
-    return !metadata ? defaultValue : metadata->GetInt32(key.c_str(), defaultValue);
-}
-
-template <typename MetadataT>
-static int64_t GetMetadataInt64(MetadataT* metadata, const std::string& key, int64_t defaultValue = 0LL) {
-    return !metadata ? defaultValue : metadata->GetInt64(key.c_str(), defaultValue);
-}
-
-static std::string GetValueString(
-    musik::core::sdk::IValue* value,
-    const std::string& defaultValue = "missing metadata!")
-{
-    if (!value) { return defaultValue; }
-    value->GetValue(threadLocalBuffer, sizeof(threadLocalBuffer));
-    return std::string(threadLocalBuffer);
-}
-
-extern musik::core::sdk::IValue* CreateValue(
-    const std::string& value, int64_t id, const std::string& type);
 
 extern std::string urlEncode(const std::string& s);
 

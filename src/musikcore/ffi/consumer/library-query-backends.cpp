@@ -25,6 +25,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <unordered_set>
 
 namespace query = musik::core::library::query;
@@ -384,17 +385,25 @@ namespace {
     template<typename Result, typename Command, typename Convert, typename Completion>
     mc_result submitRemote(mc_context *context, const std::shared_ptr<musik::core::library::RemoteLibrary> &library,
         uint64_t generation, const char* operation, std::shared_ptr<Command> command, Convert convert, Completion completion,
-        void *user_data, mc_request_id *out_request, RequestEffect effect = RequestEffect::Read)
+        void *user_data, mc_request_id *out_request, RequestEffect effect = RequestEffect::Read,
+        const void* owner = nullptr)
     {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
         if (effect == RequestEffect::Mutation) {
             *output = std::make_unique<Result>();
         }
+        const auto cancelled = owner ? std::make_shared<std::atomic_bool>(false) : nullptr;
+        std::function<void()> cancelExternal;
+        if (cancelled) {
+            cancelExternal = [library, command] {
+                library->DiscardConnectionQuery(command);
+            };
+        }
         std::function<void(mc_result)> finish;
         const auto status = reserve_external_request(context, [=](mc_result result, void *data) {
             const CompletionError error(result, operation);
             completion(result, result == MC_OK ? output->release() : nullptr, error.Get(), data);
-        }, user_data, out_request, finish, effect);
+        }, user_data, out_request, finish, effect, cancelled, owner, std::move(cancelExternal));
         if (status != MC_OK) return status;
 
         /* Backend submission follows admission so even an immediate failure completes on dispatch. */
@@ -408,6 +417,12 @@ namespace {
                         return convert(*command, *output);
                     }));
                 });
+            /* cancellation can win before transport admission. discard again
+            after enqueue so that race cannot leave an unanswered slot behind. */
+            if (cancelled && cancelled->load()) {
+                library->DiscardConnectionQuery(command);
+                return MC_ERROR_CANCELLED;
+            }
             using Admission = musik::core::library::RemoteLibrary::ConnectionQueryStatus;
             if (admission == Admission::Busy) return MC_ERROR_BUSY;
             return admission == Admission::Accepted ? MC_OK : MC_ERROR_IO;
@@ -735,14 +750,7 @@ namespace {
 
         mc_result ReadPage(mc_context *context, std::vector<int64_t> ids,
             std::vector<std::string> fields, bool keepMissing, mc_track_query_completion_fn completion,
-            void *user_data, mc_request_id *out_request) const override {
-            for (const auto &field : fields) {
-                if (field != MC_TRACK_FIELD_ID && field != MC_TRACK_FIELD_TITLE && field != MC_TRACK_FIELD_ARTIST &&
-                    field != MC_TRACK_FIELD_ALBUM && field != MC_TRACK_FIELD_DURATION &&
-                    field != MC_TRACK_FIELD_TRACK && field != MC_TRACK_FIELD_RATING &&
-                    field != MC_TRACK_FIELD_LYRICS) return MC_ERROR_UNSUPPORTED;
-            }
-
+            void *user_data, mc_request_id *out_request, const void* owner = nullptr) const override {
             if (ids.empty()) {
                 /* Empty projections still honor field support and the origin generation. */
                 const auto output = std::make_shared<std::unique_ptr<mc_track_page>>(std::make_unique<mc_track_page>());
@@ -752,7 +760,7 @@ namespace {
                 }, [=](mc_result status, void* data) {
                     const CompletionError error(status, "Read track details");
                     completion(status, status == MC_OK ? output->release() : nullptr, error.Get(), data);
-                }, user_data, out_request);
+                }, user_data, out_request, {}, RequestEffect::Read, owner);
             }
 
             const auto command = std::make_shared<query::TrackMetadataBatchQuery>(
@@ -761,34 +769,26 @@ namespace {
                 [ids = std::move(ids), fields = std::move(fields), keepMissing](auto &batch, auto &output) -> mc_result {
                     auto page = std::make_unique<mc_track_page>();
                     page->names = fields;
+                    if (!batch.HasProjectedPage()) {
+                        return MC_ERROR_IO;
+                    }
+                    const auto& rows = batch.Page().rows;
                     for (const auto id : ids) {
-                        if (batch.HasProjectedPage()) {
-                            const auto& rows = batch.Page().rows;
-                            const auto found = std::lower_bound(rows.begin(), rows.end(), id,
-                                [](const auto& row, int64_t value) { return row.id < value; });
-                            if (found == rows.end() || found->id != id) {
-                                if (!keepMissing) return MC_ERROR_NOT_FOUND;
-                                page->rows.push_back({id, std::vector<std::vector<std::string>>(fields.size())});
+                        const auto found = std::lower_bound(rows.begin(), rows.end(), id,
+                            [](const auto& row, int64_t value) { return row.id < value; });
+                        if (found == rows.end() || found->id != id) {
+                            if (!keepMissing) {
+                                return MC_ERROR_NOT_FOUND;
                             }
-                            else page->rows.push_back(*found);
-                            continue;
+                            page->rows.push_back({id, std::vector<std::vector<std::string>>(fields.size())});
                         }
-                        const auto track = batch.Result().find(id);
-                        if (track == batch.Result().end() && !keepMissing) return MC_ERROR_NOT_FOUND;
-
-                        /* The server returns an ID map. Restore the snapshot order and missing slots. */
-                        query::ProjectedTrackPage::Row row{ id, std::vector<std::vector<std::string>>(fields.size()) };
-                        if (track != batch.Result().end()) {
-                            for (size_t i = 0; i < fields.size(); ++i) {
-                                row.fields[i].push_back(fields[i] == MC_TRACK_FIELD_ID
-                                    ? std::to_string(id) : track->second->GetString(fields[i].c_str()));
-                            }
+                        else {
+                            page->rows.push_back(*found);
                         }
-                        page->rows.push_back(std::move(row));
                     }
                     output = std::move(page);
                     return MC_OK;
-                }, completion, user_data, out_request);
+                }, completion, user_data, out_request, RequestEffect::Read, owner);
         }
 
     private:

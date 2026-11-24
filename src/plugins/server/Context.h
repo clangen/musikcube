@@ -34,14 +34,16 @@
 
 #pragma once
 
-#include <musikcore/sdk/IMetadataProxy.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/IPlaybackService.h>
-#include <musikcore/sdk/IEnvironment.h>
-#include <musikcore/sdk/IDebug.h>
+#include <musikcore/plugin.h>
+#include <musikcore/plugin/library.h>
+#include <musikcore/plugin/playback-remote.h>
+#include "Settings.h"
 
 #include <shared_mutex>
 #include <mutex>
+#include <atomic>
+#include <string_view>
+#include <utility>
 
 class ReadWriteLock {
     typedef std::shared_mutex Mutex;
@@ -64,17 +66,26 @@ class ReadWriteLock {
 };
 
 struct Context {
-    Context() {
-        this->metadataProxy = nullptr;
-        this->prefs = nullptr;
-        this->playback = nullptr;
-        this->debug = nullptr;
+    void Log(mc_log_level level, std::string_view component, std::string_view message) const {
+        const mc_string_view tag {
+            .data = component.data(),
+            .length = component.size(),
+        };
+        const mc_string_view text {
+            .data = message.data(),
+            .length = message.size(),
+        };
+        this->host->log(this->host->host_context, level, tag, text);
     }
 
-    musik::core::sdk::IMetadataProxy* metadataProxy;
-    musik::core::sdk::IPreferences* prefs;
-    musik::core::sdk::IPlaybackService* playback;
-    musik::core::sdk::IEnvironment* environment;
-    musik::core::sdk::IDebug* debug;
+    std::string dataDirectory;
+    const mc_host_api* host { nullptr };
+    const mc_library_host_api* library { nullptr };
+    const mc_media_host_api* media { nullptr };
+    const mc_audio_scratch_buffer_api* scratch { nullptr };
+    const mc_playback_remote_host_api* playbackRemote { nullptr };
+    mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+    ServerSettings settings { preferences };
     ReadWriteLock lock;
+    std::atomic<bool> stopping { false };
 };

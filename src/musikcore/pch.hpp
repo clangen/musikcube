@@ -82,7 +82,7 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/LocalMetadataProxy.h>
+#include <musikcore/library/LibraryHost.h>
 #include <musikcore/library/metadata/MetadataMap.h>
 #include <musikcore/library/metadata/MetadataMapList.h>
 #include <musikcore/library/query/AlbumListQuery.h>
@@ -135,7 +135,6 @@
 #include <musikcore/sdk/IEnvironment.h>
 #include <musikcore/sdk/IMap.h>
 #include <musikcore/sdk/IMapList.h>
-#include <musikcore/sdk/IMetadataProxy.h>
 #include <musikcore/sdk/IOutput.h>
 #include <musikcore/sdk/IPcmVisualizer.h>
 #include <musikcore/sdk/IPlaybackRemote.h>

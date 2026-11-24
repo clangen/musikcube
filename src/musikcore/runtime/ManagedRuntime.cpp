@@ -9,6 +9,7 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/plugin/Plugins.h>
+#include <musikcore/plugin/PlaybackRemotes.h>
 #include <musikcore/plugin/PluginFactory.h>
 #include <common/runtime/MessageQueue.h>
 #include <common/runtime/Message.h>
@@ -201,6 +202,12 @@ namespace musik { namespace core { namespace ffi {
                 std::static_pointer_cast<library::LocalLibrary>(this->local)->ResumePendingMigrationScan();
             }
 
+            if (this->playback) {
+                this->playbackRemotes = std::make_unique<plugin::PlaybackRemotes>(context, this->local,
+                    *this->playback, *this->queue);
+                musik::core::plugin::BindPlaybackRemotes(*this->playbackRemotes);
+            }
+
             this->notifier = std::thread([this, &context] {
                 std::unique_lock lock(this->mutex);
                 while (!this->stopping.load()) {
@@ -290,6 +297,8 @@ namespace musik { namespace core { namespace ffi {
             }
 
             bool failure = false;
+            musik::core::plugin::UnbindPlaybackRemotes();
+            this->playbackRemotes.reset();
             for (auto& weak : this->players) {
                 if (const auto player = weak.lock()) {
                     Cleanup([&] { player->Shutdown(); }, failure);
@@ -462,6 +471,7 @@ namespace musik { namespace core { namespace ffi {
         std::shared_ptr<CoreNotifications> notifications;
         mc_context* context = nullptr;
         std::unique_ptr<audio::PlaybackService> playback;
+        std::unique_ptr<plugin::PlaybackRemotes> playbackRemotes;
         std::vector<std::weak_ptr<UriPlayerSession>> players;
         std::mutex mutex;
         std::condition_variable changed;

@@ -7,6 +7,8 @@
 typedef struct mc_media_host_api mc_media_host_api;
 typedef struct mc_indexer_source_host_api mc_indexer_source_host_api;
 typedef struct mc_host_api mc_host_api;
+typedef struct mc_playback_remote_host_api mc_playback_remote_host_api;
+typedef struct mc_library_host_api mc_library_host_api;
 
 /* host-owned services available to a plugin instance through destroy. a
 decoder receives audio_scratch so it can write directly into the host's buffer. */
@@ -35,8 +37,14 @@ struct mc_plugin_services {
 
     /* bootstrap callbacks, required for indexer sources and valid through destroy. */
     const mc_host_api* host;
+
+    /* playback commands for a playback remote; valid until the remote is destroyed. */
+    const mc_playback_remote_host_api* playback_remote;
+
+    /* local library operations; valid until the plugin instance is destroyed. */
+    const mc_library_host_api* library;
 };
 
-#define MC_PLUGIN_SERVICES_DEFAULT { sizeof(mc_plugin_services), NULL, NULL, NULL, { NULL, 0 }, NULL, NULL, NULL }
+#define MC_PLUGIN_SERVICES_DEFAULT { sizeof(mc_plugin_services), NULL, NULL, NULL, { NULL, 0 }, NULL, NULL, NULL, NULL, NULL }
 
 #endif

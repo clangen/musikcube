@@ -74,6 +74,14 @@ namespace musik { namespace core { namespace api {
         return fields;
     }
 
+    inline mc_result ApplyPluginSettings(std::string_view id) {
+        return mc_plugin_apply_settings({ id.data(), id.size() });
+    }
+
+    inline mc_result WritePluginSettings(std::string_view id, const std::vector<mc_preference_entry>& entries) {
+        return mc_plugin_write_settings({ id.data(), id.size() }, entries.data(), entries.size());
+    }
+
     inline mc_result WritePluginSetting(std::string_view id, std::string_view key, const PreferenceValue& value) {
         const auto entry = std::visit([key](const auto& data) { return Preference(key, data); }, value);
         return mc_plugin_write_setting({ id.data(), id.size() }, &entry);

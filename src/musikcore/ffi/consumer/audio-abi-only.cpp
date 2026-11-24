@@ -13,7 +13,6 @@
 #include "../common/primitives.h"
 #include "request.h"
 #include "preferences-shape.h"
-#include "server-shape.h"
 
 std::unique_ptr<musik::core::ffi::ContextRuntime> musik::core::ffi::make_context_runtime() {
     return {};
@@ -45,14 +44,6 @@ mc_result MC_CALL mc_preferences_list_keys(mc_preference_scope scope, mc_prefere
     return read && musik::core::ffi::valid_preference_scope(scope) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }
 
-mc_result MC_CALL mc_server_read_configuration(mc_server_configuration_fn read, void*) {
-    return read ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
-}
-
-mc_result MC_CALL mc_server_configure(const mc_server_configuration* configuration) {
-    return musik::core::ffi::valid_server_configuration(configuration) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
-}
-
 mc_result MC_CALL mc_plugins_list(mc_plugin_info_fn read, void*) {
     return read ? MC_OK : MC_ERROR_INVALID_ARGUMENT;
 }
@@ -72,8 +63,22 @@ mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference
         : MC_ERROR_INVALID_ARGUMENT;
 }
 
+mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preference_entry* entries, size_t count) {
+    using namespace musik::core::ffi;
+    return valid_text(id, false) && valid_preference_entries(entries, count) ? MC_ERROR_NOT_FOUND : MC_ERROR_INVALID_ARGUMENT;
+}
+
 mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void*) {
     return read ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_output_read_driver_configuration(mc_string_view driver, mc_output_configuration_fn read, void*) {
+    return musik::core::ffi::valid_text(driver, false) && read ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+}
+
+mc_result MC_CALL mc_output_configure(mc_string_view driver, mc_string_view deviceId) {
+    return musik::core::ffi::valid_text(driver, false) && musik::core::ffi::valid_text(deviceId)
+        ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }
 
 mc_result MC_CALL mc_output_select_driver(mc_string_view driver) {
@@ -238,4 +243,8 @@ mc_result MC_CALL mc_lastfm_read_account(mc_online_text_fn read, void*) {
 
 mc_result MC_CALL mc_lastfm_unlink(void) {
     return MC_ERROR_UNSUPPORTED;
+}
+
+mc_result MC_CALL mc_plugin_apply_settings(mc_string_view id) {
+    return musik::core::ffi::valid_text(id, false) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }

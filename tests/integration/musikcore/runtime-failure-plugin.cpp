@@ -46,17 +46,6 @@ extern "C" MC_PLUGIN_API void SetPreferences(musik::core::sdk::IPreferences* val
 
 }
 
-/* fail the first teardown phase on both modules, then verify all later phases. */
-extern "C" MC_PLUGIN_API void SetMetadataProxy(void* proxy) {
-    if (!proxy) {
-        tearingDown = true;
-        mark(1);
-        if (preferences->GetBool("fail_teardown", false)) {
-            throw std::runtime_error("deliberate metadata teardown failure");
-        }
-    }
-}
-
 /* later hooks still have to run after the preceding hook failed. */
 extern "C" MC_PLUGIN_API void SetIndexerNotifier(void* notifier) {
     if (!notifier) {
@@ -67,6 +56,11 @@ extern "C" MC_PLUGIN_API void SetIndexerNotifier(void* notifier) {
 /* optionally fail after playback/catalog creation to exercise startup rollback. */
 extern "C" MC_PLUGIN_API void SetEnvironment(void* environment) {
     if (!environment) {
+        tearingDown = true;
+        mark(1);
+        if (preferences->GetBool("fail_teardown", false)) {
+            throw std::runtime_error("deliberate environment teardown failure");
+        }
         mark(4);
     }
     else if (preferences->GetBool("fail_startup", false)) {

@@ -378,6 +378,10 @@ mc_result MC_CALL mc_plugins_list(mc_plugin_info_fn read, void* data) {
     if (!read) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
+    const auto thread = plugin::ValidateCallingThread();
+    if (thread != MC_OK) {
+        return thread;
+    }
     return ffi::exception_barrier(nullptr, [&] {
         for (const auto& plugin : pluginCatalog()) {
             const mc_plugin_info row {
@@ -394,6 +398,10 @@ mc_result MC_CALL mc_plugin_set_enabled(mc_string_view filename, bool enabled) {
     if (!ffi::valid_text(filename, false)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
+    const auto thread = plugin::ValidateCallingThread();
+    if (thread != MC_OK) {
+        return thread;
+    }
     return ffi::exception_barrier(nullptr, [&] {
         auto key = pluginText(filename);
         const auto plugins = pluginCatalog();
@@ -408,6 +416,10 @@ mc_result MC_CALL mc_plugin_set_enabled(mc_string_view filename, bool enabled) {
 mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_fn read, void* data) {
     if (!read || !ffi::valid_text(id, false)) {
         return MC_ERROR_INVALID_ARGUMENT;
+    }
+    const auto thread = plugin::ValidateCallingThread();
+    if (thread != MC_OK) {
+        return thread;
     }
     return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         const auto pluginId = pluginText(id);
@@ -521,68 +533,102 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
     });
 }
 
-mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference_entry* entry) {
-    if (!entry || !ffi::valid_text(id, false) || !ffi::valid_preference_entries(entry, 1)) {
+mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preference_entry* entries, size_t count) {
+    if (!ffi::valid_text(id, false) || !ffi::valid_preference_entries(entries, count)) {
         return MC_ERROR_INVALID_ARGUMENT;
+    }
+    const auto thread = plugin::ValidateCallingThread();
+    if (thread != MC_OK) {
+        return thread;
     }
     return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         const auto pluginId = pluginText(id);
         const auto configuration = plugin::FindConfiguration(pluginId);
+        nlohmann::json updates = nlohmann::json::object();
         if (configuration) {
             const auto catalog = plugin::ListPlugins();
             const auto item = std::ranges::find(catalog, pluginId, &ffi::PluginRegistry::PluginInfo::id);
             if (item == catalog.end()) {
                 return MC_ERROR_NOT_FOUND;
             }
-            return configuration.Invoke([&](const mc_configuration_api& schema) -> mc_result {
-                for (size_t i = 0; i < schema.integer_count; ++i) {
-                    const auto& field = schema.integers[i];
-                    if (pluginText(field.key) != pluginText(entry->key)) {
-                        continue;
-                    }
-                    if (entry->value.type != MC_PREFERENCE_INTEGER ||
-                        entry->value.data.integer < field.minimum || entry->value.data.integer > field.maximum)
-                    {
+            const auto valid = configuration.Invoke([&](const mc_configuration_api& schema) -> mc_result {
+                for (size_t index = 0; index < count; ++index) {
+                    const auto& entry = entries[index];
+                    const auto key = pluginText(entry.key);
+                    if (updates.contains(std::string(key))) {
                         return MC_ERROR_INVALID_ARGUMENT;
                     }
-                    const auto prefs = Preferences::ForPlugin(item->name);
-                    return prefs->SetValues({ { std::string(pluginText(field.key)), entry->value.data.integer } }, true)
-                        ? MC_OK
-                        : MC_ERROR_IO;
-                }
-                const auto prefs = Preferences::ForPlugin(item->name);
-                for (size_t i = 0; i < schema.boolean_count; ++i) {
-                    if (pluginText(schema.booleans[i].key) == pluginText(entry->key)) {
-                        if (entry->value.type != MC_PREFERENCE_BOOLEAN) {
-                            return MC_ERROR_INVALID_ARGUMENT;
+                    bool found = false;
+                    for (size_t i = 0; i < schema.integer_count; ++i) {
+                        const auto& field = schema.integers[i];
+                        if (pluginText(field.key) == key) {
+                            if (entry.value.type != MC_PREFERENCE_INTEGER || entry.value.data.integer < field.minimum ||
+                                entry.value.data.integer > field.maximum)
+                            {
+                                return MC_ERROR_INVALID_ARGUMENT;
+                            }
+                            found = true;
+                            break;
                         }
-                        return prefs->SetValues({ { std::string(pluginText(entry->key)), entry->value.data.boolean } },
-                            true) ? MC_OK : MC_ERROR_IO;
                     }
-                }
-                for (size_t i = 0; i < schema.number_count; ++i) {
-                    const auto& field = schema.numbers[i];
-                    if (pluginText(field.key) == pluginText(entry->key)) {
-                        if (entry->value.type != MC_PREFERENCE_NUMBER || entry->value.data.number < field.minimum ||
-                            entry->value.data.number > field.maximum)
-                        {
-                            return MC_ERROR_INVALID_ARGUMENT;
+                    for (size_t i = 0; !found && i < schema.boolean_count; ++i) {
+                        if (pluginText(schema.booleans[i].key) == key) {
+                            if (entry.value.type != MC_PREFERENCE_BOOLEAN) {
+                                return MC_ERROR_INVALID_ARGUMENT;
+                            }
+                            found = true;
                         }
-                        return prefs->SetValues({ { std::string(pluginText(entry->key)), entry->value.data.number } },
-                            true) ? MC_OK : MC_ERROR_IO;
                     }
-                }
-                for (size_t i = 0; i < schema.text_count; ++i) {
-                    if (pluginText(schema.texts[i].key) == pluginText(entry->key)) {
-                        if (entry->value.type != MC_PREFERENCE_TEXT) {
-                            return MC_ERROR_INVALID_ARGUMENT;
+                    for (size_t i = 0; !found && i < schema.number_count; ++i) {
+                        const auto& field = schema.numbers[i];
+                        if (pluginText(field.key) == key) {
+                            if (entry.value.type != MC_PREFERENCE_NUMBER || entry.value.data.number < field.minimum ||
+                                entry.value.data.number > field.maximum)
+                            {
+                                return MC_ERROR_INVALID_ARGUMENT;
+                            }
+                            found = true;
                         }
-                        return prefs->SetValues({ { std::string(pluginText(entry->key)),
-                            std::string(pluginText(entry->value.data.text)) } }, true) ? MC_OK : MC_ERROR_IO;
                     }
+                    for (size_t i = 0; !found && i < schema.text_count; ++i) {
+                        if (pluginText(schema.texts[i].key) == key) {
+                            if (entry.value.type != MC_PREFERENCE_TEXT) {
+                                return MC_ERROR_INVALID_ARGUMENT;
+                            }
+                            found = true;
+                        }
+                    }
+                    if (!found) {
+                        return MC_ERROR_NOT_FOUND;
+                    }
+                    updates[std::string(key)] = Preferences::EncodeValue(entry.value);
                 }
-                return MC_ERROR_NOT_FOUND;
+                return MC_OK;
             });
+            if (valid != MC_OK) {
+                return valid;
+            }
+            return !count || Preferences::ForPlugin(item->name)->SetValues(updates, true) ? MC_OK : MC_ERROR_IO;
+        }
+        const auto catalog = pluginCatalog();
+        return std::ranges::any_of(catalog, [&](const auto& item) { return item.id == pluginId; })
+            ? MC_ERROR_UNSUPPORTED : MC_ERROR_NOT_FOUND;
+    });
+}
+
+mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference_entry* entry) {
+    if (!entry || !ffi::valid_text(id, false) || !ffi::valid_preference_entries(entry, 1)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    const auto thread = plugin::ValidateCallingThread();
+    if (thread != MC_OK) {
+        return thread;
+    }
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
+        const auto pluginId = pluginText(id);
+        const auto configuration = plugin::FindConfiguration(pluginId);
+        if (configuration) {
+            return mc_plugin_write_settings(id, entry, 1);
         }
         const auto plugin = PluginFactory::Instance().QueryGuid(std::string(pluginId));
         if (!plugin) {
@@ -615,5 +661,14 @@ mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference
                 : MC_ERROR_IO;
         }
         return MC_ERROR_NOT_FOUND;
+    });
+}
+
+mc_result MC_CALL mc_plugin_apply_settings(mc_string_view id) {
+    if (!ffi::valid_text(id, false)) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return ffi::exception_barrier(nullptr, [&] {
+        return plugin::ApplySettings(pluginText(id));
     });
 }

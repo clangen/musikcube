@@ -60,7 +60,9 @@ mc_locale_select
 mc_locale_translate
 mc_log_write
 mc_lyrics_find_async
+mc_output_configure
 mc_output_read_configuration
+mc_output_read_driver_configuration
 mc_output_select_device
 mc_output_select_driver
 mc_output_set_transport
@@ -102,9 +104,11 @@ mc_player_seek
 mc_player_set_callback
 mc_player_set_volume
 mc_player_stop
+mc_plugin_apply_settings
 mc_plugin_read_settings
 mc_plugin_set_enabled
 mc_plugin_write_setting
+mc_plugin_write_settings
 mc_plugins_list
 mc_preferences_list_keys
 mc_preferences_read
@@ -118,8 +122,6 @@ mc_remote_session_open_library
 mc_remote_session_state
 mc_remote_session_set_callback
 mc_request_cancel
-mc_server_configure
-mc_server_read_configuration
 mc_subscription_delivery_active
 mc_subscription_delivery_enter
 mc_subscription_delivery_leave

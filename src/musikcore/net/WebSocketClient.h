@@ -116,6 +116,7 @@ namespace musik { namespace core { namespace net {
             /* optional authenticated capability, scoped to one live connection. */
             bool SupportsContextualFacets(uint64_t generation) const;
             std::string EnqueueQuery(Query query, uint64_t generation = 0);
+            void DiscardQuery(const std::string& messageId);
 
             void SetMessageQueue(musik::core::runtime::IMessageQueue* messageQueue);
 

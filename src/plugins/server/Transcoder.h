@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include "Context.h"
+
 #include "ServerMedia.h"
 
 class Transcoder {

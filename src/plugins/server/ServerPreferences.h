@@ -1,6 +1,5 @@
 #pragma once
 
-#include <musikcore/server.h>
 #include <string>
 
 namespace musik { namespace core { namespace serverprefs {
@@ -16,8 +15,8 @@ namespace musik { namespace core { namespace serverprefs {
     inline const std::string SynchronousTranscoding = "transcoder_synchronous";
     inline const std::string Password = "password";
 
-    inline constexpr int DefaultMetadataPort = MC_SERVER_DEFAULT_METADATA_PORT;
-    inline constexpr int DefaultAudioPort = MC_SERVER_DEFAULT_AUDIO_PORT;
-    inline constexpr int DefaultCacheCount = MC_SERVER_DEFAULT_CACHE_COUNT;
-    inline constexpr int DefaultActiveTranscodeLimit = MC_SERVER_DEFAULT_ACTIVE_TRANSCODE_LIMIT;
+    inline constexpr int DefaultMetadataPort = 7905;
+    inline constexpr int DefaultAudioPort = 7906;
+    inline constexpr int DefaultCacheCount = 50;
+    inline constexpr int DefaultActiveTranscodeLimit = 4;
 } } }

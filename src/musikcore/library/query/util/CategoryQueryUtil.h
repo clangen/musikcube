@@ -190,7 +190,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "{{limit_and_offset}} ";
 
         /* ALBUM_LIST_QUERY is like a specialized REGULAR_PROPERTY_QUERY used by
-        LocalMetadataProxy to return album resources with thumbnail, artist,
+        LibraryHost to return album resources with thumbnail, artist,
         and other supplementary information. */
 
         static const std::string ALBUM_LIST_FILTER =

@@ -127,6 +127,7 @@ namespace musik { namespace core { namespace library {
             const musik::core::net::WebSocketClient& WebSocketClient() const;
             enum class ConnectionQueryStatus { Accepted, Busy, Unavailable };
             ConnectionQueryStatus EnqueueForConnection(Query query, uint64_t generation, Callback callback);
+            void DiscardConnectionQuery(const Query& query);
 
         private:
             class QueryCompletedMessage;

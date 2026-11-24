@@ -2,6 +2,7 @@
 #include <musikcore/plugin/audio.h>
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/indexer.h>
+#include <musikcore/plugin/playback-remote.h>
 #include <musikcore/plugin/tag.h>
 
 #include <stdio.h>
@@ -147,6 +148,9 @@ int main(void) {
     const mc_indexer_source_vtable source_methods = MC_INDEXER_SOURCE_VTABLE_DEFAULT;
     const mc_indexer_source_factory source_factory = MC_INDEXER_SOURCE_FACTORY_DEFAULT;
     const mc_tag_reader_factory tag_factory = MC_TAG_READER_FACTORY_DEFAULT;
+    const mc_playback_remote_factory remote = MC_PLAYBACK_REMOTE_FACTORY_DEFAULT;
+    const mc_playback_remote_vtable remote_methods = MC_PLAYBACK_REMOTE_VTABLE_DEFAULT;
+    const mc_plugin_playback_event remote_event = MC_PLUGIN_PLAYBACK_EVENT_DEFAULT;
 
     /* unset cancellation and PCM expose no implicit resource lifetime. */
     require(cancel.struct_size == sizeof(cancel) && !cancel.context && !cancel.is_cancelled, "cancel");
@@ -173,5 +177,11 @@ int main(void) {
         "indexer source operations");
     require(source_factory.struct_size == sizeof(source_factory) && !source_factory.create, "indexer source factory");
     require(tag_factory.struct_size == sizeof(tag_factory) && !tag_factory.create, "tag reader factory");
+    /* an empty remote cannot start a worker or claim runtime services. */
+    require(remote.struct_size == sizeof(remote) && !remote.create, "remote factory");
+    require(remote_methods.struct_size == sizeof(remote_methods) && !remote_methods.start &&
+        !remote_methods.request_stop && !remote_methods.join, "remote lifecycle");
+    require(remote_event.struct_size == sizeof(remote_event) && !remote_event.track,
+        "remote event");
     return 0;
 }

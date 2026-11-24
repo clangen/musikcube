@@ -37,7 +37,7 @@
 #include <string>
 #include <unordered_map>
 #include "Util.h"
-#include <musikcore/support/ServerPreferences.h>
+#include "ServerPreferences.h"
 
 namespace serverprefs = musik::core::serverprefs;
 
@@ -215,28 +215,5 @@ namespace broadcast {
     static const std::string play_queue_changed = "play_queue_changed";
 }
 
-static auto PLAYBACK_STATE_TO_STRING = std::unordered_map<musik::core::sdk::PlaybackState, std::string>({
-    { musik::core::sdk::PlaybackState::Stopped, "stopped" },
-    { musik::core::sdk::PlaybackState::Playing, "playing" },
-    { musik::core::sdk::PlaybackState::Prepared, "prepared" },
-    { musik::core::sdk::PlaybackState::Paused, "paused" }
-});
-
-static auto REPEAT_MODE_TO_STRING = std::unordered_map<musik::core::sdk::RepeatMode, std::string>({
-    { musik::core::sdk::RepeatMode::None, "none" },
-    { musik::core::sdk::RepeatMode::Track, "track" },
-    { musik::core::sdk::RepeatMode::List, "list" }
-});
-
-static auto REPLAYGAIN_MODE_TO_STRING = std::unordered_map<musik::core::sdk::ReplayGainMode, std::string>({
-    { musik::core::sdk::ReplayGainMode::Disabled, "disabled" },
-    { musik::core::sdk::ReplayGainMode::Album, "album" },
-    { musik::core::sdk::ReplayGainMode::Track, "track" },
-});
-
-static auto TRANSPORT_TYPE_TO_STRING = std::unordered_map<musik::core::sdk::TransportType, std::string>({
-    { musik::core::sdk::TransportType::Gapless, "gapless" },
-    { musik::core::sdk::TransportType::Crossfade, "crossfade" },
-});
-
 static const int ApiVersion = 20;
+static const int ClientSdkVersion = 24;

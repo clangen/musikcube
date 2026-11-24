@@ -58,13 +58,12 @@ class TrackMetadataBatchQuery: public QueryBase {
             musik::core::ILibraryPtr library,
             std::vector<std::string> projection = {});
 
-        /* Old servers return full tracks even when fields were requested.
-           Check this before choosing Page() or Result(). */
+        /* Check whether this query requested a projected page. */
         bool HasProjectedPage() const noexcept { return this->hasProjectedPage; }
         /* Rows are sorted by ID. The caller restores its original order and repeated IDs. */
         const ProjectedTrackPage& Page() const noexcept { return this->page; }
 
-        /* Full tracks, used when no fields were requested or an old server ignored them. */
+        /* Full tracks, used when no fields were requested. */
         const IdToTrackMap& Result() noexcept {
             return this->result;
         }

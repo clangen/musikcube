@@ -322,6 +322,7 @@ int main(int argc, char** argv) {
         BadIndexer,
         BadNumberConfiguration,
         DuplicateConfiguration,
+        BadPlaybackRemote,
         FixtureCount
     };
     require(argc == 2 || argc == FixtureCount, "fixture arguments supplied");
@@ -351,6 +352,8 @@ int main(int argc, char** argv) {
         /* numeric ranges and keys shared across setting types must be valid. */
         checkRejected(argv[BadNumberConfiguration], true, true, MC_ERROR_INVALID_ARGUMENT);
         checkRejected(argv[DuplicateConfiguration], true, true, MC_ERROR_INVALID_ARGUMENT);
+        /* incomplete remote lifecycle callbacks must not be published. */
+        checkRejected(argv[BadPlaybackRemote], true, true, MC_ERROR_INVALID_ARGUMENT);
     }
     std::puts("provider identification/session-lifetime contracts passed");
 }

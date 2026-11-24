@@ -35,24 +35,6 @@
 #include "Util.h"
 #include <sstream>
 
-#ifdef __APPLE__
-__thread char threadLocalBuffer[4096];
-#else
-thread_local char threadLocalBuffer[4096];
-#endif
-
-using namespace musik::core::sdk;
-
-static size_t CopyString(const std::string& src, char* dst, size_t size) {
-    size_t len = src.size() + 1; /* space for the null terminator */
-    if (dst) {
-        size_t copied = src.copy(dst, size - 1);
-        dst[copied] = '\0';
-        return copied + 1;
-    }
-    return len;
-}
-
 /* toHex, urlEncode, fromHex, urlDecode are stolen from here:
 http://dlib.net/dlib/server/server_http.cpp.html */
 static inline unsigned char toHex(unsigned char x) {
@@ -119,30 +101,4 @@ std::string urlDecode(const std::string& str) {
     }
 
     return result;
-}
-
-IValue* CreateValue(
-    const std::string& value, int64_t id, const std::string& type)
-{
-    struct Value : IValue {
-        int64_t id;
-        std::string value, type;
-
-        Value(const std::string& value, int64_t id, const std::string& type) {
-            this->value = value;
-            this->id = id;
-            this->type = type;
-        }
-
-        virtual int64_t GetId() { return id; }
-        virtual Class GetClass() { return IResource::Class::Value; }
-        virtual const char* GetType() { return type.c_str(); }
-        virtual void Release() { delete this; }
-
-        virtual size_t GetValue(char* dst, size_t size) {
-            return CopyString(value, dst, size);
-        }
-    };
-
-    return new Value(value, id, type);
 }

@@ -22,14 +22,14 @@ namespace {
     diagnostic allocation while retaining the label through dispatch. */
     template<typename Result, typename Work, typename Completion>
     mc_result submitLibraryRequest(mc_context *context, const char* operation, Work work, Completion completion,
-        void *user_data, mc_request_id *out_request)
+        void *user_data, mc_request_id *out_request, const void* owner = nullptr)
     {
         const auto output = std::make_shared<std::unique_ptr<Result>>();
         const auto canceled = std::make_shared<std::atomic_bool>(false);
         return submit_request(context, [=] { return work(*output, *canceled); }, [=](mc_result result, void *data) {
             const CompletionError error(result, operation);
             completion(result, result == MC_OK ? output->release() : nullptr, error.Get(), data);
-        }, user_data, out_request, canceled);
+        }, user_data, out_request, canceled, RequestEffect::Read, owner);
     }
 
     bool copyFields(const mc_string_view *fields, size_t count, size_t maximum,
@@ -545,9 +545,9 @@ uint64_t MC_CALL mc_track_result_get_album_duration(const mc_track_result *track
     return album == durations.end() ? 0 : album->second;
 }
 
-mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track_result *tracks,
+mc_result musik::core::ffi::read_track_result_scoped(mc_context *context, const mc_track_result *tracks,
     const mc_track_range *range, mc_track_query_completion_fn completion,
-    void *user_data, mc_request_id *out_request) {
+    void *user_data, mc_request_id *out_request, const void* owner) {
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
         *out_request = 0;
@@ -555,7 +555,12 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
             return MC_ERROR_INVALID_ARGUMENT;
         }
 
-        const auto &limits = context_track_query_limits(*context);
+        static const TrackQueryLimits pluginLimits {
+            MC_TRACK_QUERY_DEFAULT_LIMIT,
+            MC_TRACK_QUERY_MAX_LIMIT,
+            MC_TRACK_QUERY_MAX_FIELDS,
+        };
+        const auto &limits = owner ? pluginLimits : context_track_query_limits(*context);
         const auto offset = read_option(range, &mc_track_range::offset, offsetof(mc_track_range, offset));
         const auto limit = read_option(range, &mc_track_range::limit, offsetof(mc_track_range, limit));
         const auto count = read_option(range, &mc_track_range::field_count, offsetof(mc_track_range, field_count));
@@ -573,7 +578,7 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
         if (data->library->async) {
             return data->library->async->ReadPage(context,
                 { data->ids.begin() + start, data->ids.begin() + start + size },
-                std::move(names), true, completion, user_data, out_request);
+                std::move(names), true, completion, user_data, out_request, owner);
         }
         return submitLibraryRequest<mc_track_page>(context, "Read track details",
             [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) -> mc_result {
@@ -581,8 +586,15 @@ mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track
                 page.reset(new mc_track_page);
                 page->names = names;
                 return MC_OK;
-            }, completion, user_data, out_request);
+            }, completion, user_data, out_request, owner);
     });
+}
+
+mc_result MC_CALL mc_track_result_read_async(mc_context *context, const mc_track_result *tracks,
+    const mc_track_range *range, mc_track_query_completion_fn completion,
+    void *user_data, mc_request_id *out_request)
+{
+    return musik::core::ffi::read_track_result_scoped(context, tracks, range, completion, user_data, out_request, nullptr);
 }
 
 void MC_CALL mc_track_result_destroy(mc_track_result **tracks) {

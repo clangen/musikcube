@@ -34,37 +34,35 @@
 
 #pragma once
 
-#include <musikcore/sdk/ITrackList.h>
+#include <musikcore/playback.h>
+#include <chrono>
 #include <map>
+#include <memory>
 #include <string>
 
+/* keeps a recent queue snapshot for each connected device. */
 class Snapshots {
-    public:
-        using TrackList = musik::core::sdk::ITrackList;
+public:
+    /* valid until this device's snapshot is replaced, removed, or pruned. */
+    const mc_play_queue* Get(const std::string& key);
 
-        ~Snapshots();
+    /* consumes the owned queue and clears the caller's pointer. */
+    void Put(const std::string& key, mc_play_queue** queue);
+    void Remove(const std::string& key);
+    void Prune();
+    void Reset();
 
-        TrackList* Get(const std::string& key);
-        void Put(const std::string& key, TrackList* tracks);
-        void Remove(const std::string& key);
-        void Prune();
-        void Reset();
+private:
+    struct QueueDeleter {
+        void operator()(mc_play_queue* queue) const noexcept {
+            mc_play_queue_destroy(&queue);
+        }
+    };
 
-    private:
-        struct CacheKey {
-            CacheKey(): CacheKey(nullptr, 0) {
-            }
-            CacheKey(const CacheKey& ck) {
-                this->tracks = ck.tracks;
-                this->expiry = ck.expiry;
-            }
-            CacheKey(TrackList* tl, int64_t ex) {
-                this->tracks = tl;
-                this->expiry = ex;
-            }
-            TrackList* tracks;
-            int64_t expiry;
-        };
+    struct Snapshot {
+        std::unique_ptr<mc_play_queue, QueueDeleter> queue;
+        std::chrono::steady_clock::time_point expiry;
+    };
 
-        std::map<std::string, CacheKey> cache;
+    std::map<std::string, Snapshot> cache;
 };

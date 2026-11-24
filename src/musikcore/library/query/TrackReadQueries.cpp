@@ -207,7 +207,9 @@ namespace musik { namespace core { namespace library { namespace query {
                 columns.push_back(i);
             }
         }
-        sql += " FROM tracks t WHERE t.visible = 1 AND ";
+        sql += visibility == TrackVisibility::IncludeHidden
+            ? " FROM tracks t WHERE "
+            : " FROM tracks t WHERE t.visible = 1 AND ";
         if (ids) sql += "t.id IN (" + placeholders(limit) + ") ORDER BY t.id";
         else sql += "(?1 = '' OR instr(t.title, ?1) > 0) ORDER BY t.id LIMIT ?2 OFFSET ?3";
 

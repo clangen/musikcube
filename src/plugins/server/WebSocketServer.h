@@ -35,8 +35,6 @@
 #include "Context.h"
 #include "Snapshots.h"
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/ITrack.h>
 
 #pragma warning(push, 0)
 #include <websocketpp/config/asio_no_tls.hpp>
@@ -47,6 +45,7 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <thread>
 
 class WebSocketServer {
     public:
@@ -57,12 +56,7 @@ class WebSocketServer {
         bool Stop();
         void Wait();
 
-        void OnTrackChanged(musik::core::sdk::ITrack* track);
-        void OnPlaybackStateChanged(musik::core::sdk::PlaybackState state);
-        void OnPlaybackTimeChanged(double time);
-        void OnVolumeChanged(double volume);
-        void OnModeChanged(musik::core::sdk::RepeatMode repeatMode, bool shuffled);
-        void OnPlayQueueChanged();
+        void PostPlaybackChanged(bool queue) noexcept;
 
     private:
         /* our special server config that supports gzip */
@@ -109,14 +103,22 @@ class WebSocketServer {
         using message_ptr = server::message_ptr;
         using ConnectionList = std::map<connection_hdl, bool, std::owner_less<connection_hdl>>;
         using json = nlohmann::json;
-        using ITrackList = musik::core::sdk::ITrackList;
-        using ITrack = musik::core::sdk::ITrack;
+
+        struct QueueResponse;
+
+        void DispatchPlayback(std::function<mc_result(mc_playback*)> operation,
+            std::function<void(mc_result)> completion, connection_hdl connection = {});
+        void PostToIo(std::function<void()> operation, connection_hdl connection = {}) noexcept;
+        void CloseConnection(connection_hdl connection) noexcept;
+        void DispatchCommand(connection_hdl connection, json request,
+            std::function<mc_result(mc_playback*)> operation);
 
         /* vars */
         Context& context;
         ConnectionList connections;
         ReadWriteLock connectionLock;
         std::shared_ptr<server> wss;
+        std::mutex serverMutex;
         std::shared_ptr<std::thread> thread;
         std::mutex exitMutex;
         std::condition_variable exitCondition;
@@ -127,6 +129,8 @@ class WebSocketServer {
         std::string lastPlaybackOverview;
 
         void ThreadProc();
+            static void MC_CALL QueueResponseCompleted(mc_result status, mc_track_page* page,
+            const mc_error* error, void* data) noexcept;
         void HandleAuthentication(connection_hdl connection, json& request);
         void HandleRequest(connection_hdl connection, json& request);
 
@@ -138,15 +142,18 @@ class WebSocketServer {
         void RespondWithFailure(connection_hdl connection, json& request);
         void RespondWithSuccess(connection_hdl connection, const std::string& name, const std::string& id);
 
-        void RespondWithSendRawQuery(connection_hdl connection, json& request);
+        void RespondWithLibraryQuery(connection_hdl connection, json& request);
         void RespondWithSetVolume(connection_hdl connection, json& request);
         void RespondWithPlaybackOverview(connection_hdl connection, json& request);
-        bool RespondWithTracks(connection_hdl connection, json& request, ITrackList* tracks, int limit, int offset);
+        bool RespondWithTracks(connection_hdl connection, json& request, mc_track_result* tracks, int limit, int offset);
         void RespondWithQueryTracks(connection_hdl connection, json& request);
         void RespondWithQueryTracksByExternalIds(connection_hdl connection, json& request);
         void RespondWithPlayQueueTracks(connection_hdl connection, json& request);
+        void SendQueueTracks(connection_hdl connection, json& request, const mc_play_queue* queue);
         void RespondWithQueryAlbums(connection_hdl connection, json& request);
         void RespondWithPlayTracks(connection_hdl connection, json& request);
+        void DispatchPlayTracks(connection_hdl connection, json request, mc_track_result* tracks,
+            size_t index, double time);
         void RespondWithQueryTracksByCategory(connection_hdl connection, json& request);
         void RespondWithListCategories(connection_hdl connection, json& request);
         void RespondWithQueryCategory(connection_hdl connection, json& request);
@@ -155,11 +162,13 @@ class WebSocketServer {
         void RespondWithPlayTracksByCategory(connection_hdl connection, json& request);
         void RespondWithEnvironment(connection_hdl connection, json& request);
         void RespondWithCurrentTime(connection_hdl connection, json& request);
+        mc_track_result* ResolvePlaylistTracks(json& options);
         void RespondWithSavePlaylist(connection_hdl connection, json& request);
         void RespondWithRenamePlaylist(connection_hdl connection, json& request);
         void RespondWithDeletePlaylist(connection_hdl connection, json& request);
         void RespondWithAppendToPlaylist(connection_hdl connection, json& request);
         void RespondWithRemoveTracksFromPlaylist(connection_hdl connection, json& request);
+        void RespondWithControl(connection_hdl connection, json& request, std::string_view operation, bool includeOptions);
         void RespondWithRunIndexer(connection_hdl connection, json& request);
         void RespondWithListOutputDrivers(connection_hdl connection, json& request);
         void RespondWithSetDefaultOutputDriver(connection_hdl connection, json& request);
@@ -172,14 +181,12 @@ class WebSocketServer {
         void RespondWithSnapshotPlayQueue(connection_hdl connection, json& request);
         void RespondWithInvalidatePlayQueueSnapshot(connection_hdl connection, json& request);
 
-        void BroadcastPlaybackOverview();
         void BroadcastPlayQueueChanged();
 
         void GetLimitAndOffset(json& options, int& limit, int& offset);
-        ITrackList* QueryTracksByCategory(json& request, int& limit, int& offset);
-        ITrackList* QueryTracks(json& request, int& limit, int& offset);
-        json ReadTrackMetadata(ITrack* track);
-        void BuildPlaybackOverview(json& options);
+        mc_track_result* QueryTracksByCategory(json& request, int& limit, int& offset);
+        mc_track_result* QueryTracks(json& request, int& limit, int& offset);
+        void BuildPlaybackOverview(json& options, mc_playback* playback);
 
         void OnOpen(connection_hdl connection);
         void OnClose(connection_hdl connection);

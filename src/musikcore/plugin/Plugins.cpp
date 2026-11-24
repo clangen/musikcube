@@ -37,12 +37,15 @@
 #include "Plugins.h"
 #include "PluginFactory.h"
 #include "MediaHost.h"
+#include "PlaybackRemotes.h"
 #include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
 #include <musikcore/equalizer.h>
 #include "../ffi/common/error.h"
-#include "../ffi/consumer/server-shape.h"
+#include "../ffi/common/primitives.h"
 #include <cmath>
 #include <filesystem>
+#include <mutex>
+#include <thread>
 #include <musikcore/sdk/Filesystem.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 
@@ -56,8 +59,7 @@
 #include <musikcore/audio/Outputs.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/ServerPreferences.h>
-#include <musikcore/library/LocalMetadataProxy.h>
+#include <musikcore/library/LibraryHost.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <common/runtime/Message.h>
 #include <musikcore/support/Messages.h>
@@ -72,84 +74,18 @@ using namespace musik::core::library::query;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 
-static uint16_t serverPort(Preferences& prefs, const std::string& key, int fallback) {
-    const auto port = prefs.GetInt(key, fallback);
-    return static_cast<uint16_t>(port > 0 && port <= UINT16_MAX ? port : fallback);
-}
-
-mc_result MC_CALL mc_server_read_configuration(mc_server_configuration_fn read, void* data) {
-    if (!read) {
-        return MC_ERROR_INVALID_ARGUMENT;
-    }
-
-    return ffi::exception_barrier(nullptr, [&] {
-        const auto server = PluginFactory::Instance().QueryGuid(serverprefs::PluginGuid);
-        if (!server) {
-            return MC_ERROR_UNSUPPORTED;
-        }
-
-        const auto settings = Preferences::ForPlugin(server->Name());
-        const auto password = settings->GetString(serverprefs::Password);
-        const mc_server_configuration configuration {
-            settings->GetBool(serverprefs::MetadataEnabled, false),
-            settings->GetBool(serverprefs::AudioEnabled, false),
-            settings->GetBool(serverprefs::UseIpv6, false),
-            settings->GetBool(serverprefs::SynchronousTranscoding, false),
-            serverPort(*settings, serverprefs::MetadataPort, serverprefs::DefaultMetadataPort),
-            serverPort(*settings, serverprefs::AudioPort, serverprefs::DefaultAudioPort),
-            std::max(0, settings->GetInt(serverprefs::CacheCount, serverprefs::DefaultCacheCount)),
-            std::max(0, settings->GetInt(serverprefs::ActiveTranscodeLimit, serverprefs::DefaultActiveTranscodeLimit)),
-            { password.data(), password.size() }
-        };
-        read(data, &configuration);
-        return MC_OK;
-    });
-}
-
-mc_result MC_CALL mc_server_configure(const mc_server_configuration* configuration) {
-    if (!ffi::valid_server_configuration(configuration)) {
-        return MC_ERROR_INVALID_ARGUMENT;
-    }
-
-    return ffi::exception_barrier(nullptr, [&] {
-        const auto server = PluginFactory::Instance().QueryGuid(serverprefs::PluginGuid);
-        if (!server) {
-            return MC_ERROR_UNSUPPORTED;
-        }
-
-        const auto& options = *configuration;
-        const auto settings = Preferences::ForPlugin(server->Name());
-        const auto password = std::string(options.password.data ? options.password.data : "", options.password.length);
-        if (!settings->SetValues({
-            { serverprefs::MetadataEnabled, options.metadata_enabled },
-            { serverprefs::AudioEnabled, options.audio_enabled },
-            { serverprefs::UseIpv6, options.ipv6 },
-            { serverprefs::SynchronousTranscoding, options.synchronous_transcoding },
-            { serverprefs::MetadataPort, options.metadata_port },
-            { serverprefs::AudioPort, options.audio_port },
-            { serverprefs::CacheCount, options.cache_count },
-            { serverprefs::ActiveTranscodeLimit, options.active_transcode_limit },
-            { serverprefs::Password, password }
-        }, true))
-        {
-            return MC_ERROR_IO;
-        }
-
-        server->Reload();
-        return MC_OK;
-    });
-}
-
+static musik::core::plugin::PlaybackRemotes* playbackRemotes = nullptr;
+static std::mutex playbackRemotesMutex;
+static std::thread::id playbackRemotesOwner;
+static std::thread::id pluginSessionOwner;
 typedef void(*SetEnvironment)(IEnvironment*);
 typedef void(*SetDebug)(IDebug*);
-typedef void(*SetMetadataProxy)(IMetadataProxy*);
 
 static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
 
 static IMessageQueue* messageQueue = nullptr;
 static ILibraryPtr defaultLibrary;
 static IPlaybackService* playbackService = nullptr;
-static LocalMetadataProxy* metadataProxy = nullptr;
 static std::shared_ptr<Preferences> playbackPrefs;
 static std::unique_ptr<musik::core::ffi::PluginRegistry> pluginRegistry;
 static std::unique_ptr<musik::core::plugin::MediaHost> mediaHost;
@@ -443,7 +379,48 @@ static class Environment: public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
+    mc_result ValidateCallingThread() {
+        std::lock_guard lock(playbackRemotesMutex);
+        if (pluginSessionOwner == std::thread::id {}) {
+            return MC_ERROR_UNSUPPORTED;
+        }
+        return pluginSessionOwner == std::this_thread::get_id() ? MC_OK : MC_ERROR_WRONG_THREAD;
+    }
+
+    mc_result ApplySettings(std::string_view pluginId) {
+        PlaybackRemotes* remotes;
+        {
+            std::lock_guard lock(playbackRemotesMutex);
+            if (!playbackRemotes) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            if (playbackRemotesOwner != std::this_thread::get_id()) {
+                return MC_ERROR_WRONG_THREAD;
+            }
+            remotes = playbackRemotes;
+        }
+        return remotes->Reload(pluginId);
+    }
+
+    void BindPlaybackRemotes(PlaybackRemotes& remotes) {
+        std::lock_guard lock(playbackRemotesMutex);
+        musik::contract::Assert(!playbackRemotes, "playback remotes are already bound");
+        playbackRemotes = &remotes;
+        playbackRemotesOwner = std::this_thread::get_id();
+    }
+
+    void UnbindPlaybackRemotes() {
+        std::lock_guard lock(playbackRemotesMutex);
+        playbackRemotes = nullptr;
+        playbackRemotesOwner = {};
+    }
+
     void Initialize(const std::string& pluginDirectory) {
+        {
+            std::lock_guard lock(playbackRemotesMutex);
+            musik::contract::Assert(pluginSessionOwner == std::thread::id {}, "plugin session is already active");
+            pluginSessionOwner = std::this_thread::get_id();
+        }
         auto& factory = PluginFactory::Instance(pluginDirectory);
         factory.BeginSession();
 
@@ -477,24 +454,11 @@ namespace musik { namespace core { namespace plugin {
     }
 
     void BindServices(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
-        /* metadata proxies */
-        delete metadataProxy;
         ::messageQueue = messageQueue;
         ::defaultLibrary = library;
         ::playbackService = playbackService;
         ::playbackPrefs = Preferences::ForComponent(prefs::components::Playback);
 
-        /* even if the local client is connected to a remote server, the metadata proxy
-        always uses the default local library. */
-        ::metadataProxy = library ? new LocalMetadataProxy(library) : nullptr;
-
-        if (library) {
-            PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
-                "SetMetadataProxy",
-                [](musik::core::sdk::IPlugin* plugin, SetMetadataProxy func) {
-                    func(metadataProxy);
-                }, PluginFactory::FunctionSelection::Session);
-        }
 
         /* environment */
         PluginFactory::Instance().QueryFunction<SetEnvironment>(
@@ -529,6 +493,11 @@ namespace musik { namespace core { namespace plugin {
 
     std::vector<std::shared_ptr<audio::Dsp>> CreateDsps() {
         return mediaHost ? mediaHost->CreateDsps() : std::vector<std::shared_ptr<audio::Dsp>>();
+    }
+
+    ffi::PluginRegistry::Factory<mc_playback_remote_factory> FindPlaybackRemoteFactory(std::string_view pluginId) {
+        return pluginRegistry ? pluginRegistry->Find<mc_playback_remote_factory>(pluginId)
+            : ffi::PluginRegistry::Factory<mc_playback_remote_factory>();
     }
 
     ffi::PluginRegistry::Factory<mc_output_factory> FindOutputFactory(std::string_view pluginId) {
@@ -633,10 +602,6 @@ namespace musik { namespace core { namespace plugin {
     void UnbindServices() {
         musik::core::plugin::ValidateShutdown();
         try {
-            PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
-                "SetMetadataProxy", [](musik::core::sdk::IPlugin*, SetMetadataProxy function) {
-                    function(nullptr);
-                }, PluginFactory::FunctionSelection::Session);
             PluginFactory::Instance().QueryFunction<SetEnvironment>(
                 "SetEnvironment", [](musik::core::sdk::IPlugin*, SetEnvironment function) {
                     function(nullptr);
@@ -673,12 +638,14 @@ namespace musik { namespace core { namespace plugin {
         }, failure);
         cleanup([] { PluginFactory::Instance().EndSession(); }, failure);
 
-        delete metadataProxy;
         ::messageQueue = nullptr;
-        ::metadataProxy = nullptr;
         ::defaultLibrary.reset();
         ::playbackService = nullptr;
         ::playbackPrefs.reset();
+        {
+            std::lock_guard lock(playbackRemotesMutex);
+            pluginSessionOwner = {};
+        }
         if (failure) {
             throw std::runtime_error("Plugin service shutdown failed");
         }

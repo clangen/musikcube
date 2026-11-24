@@ -47,6 +47,10 @@ namespace musik { namespace core { namespace audio { class Dsp; } } }
 
 namespace musik { namespace core { namespace plugin {
 
+    class PlaybackRemotes;
+
+    mc_result ValidateCallingThread();
+
     void Initialize(const std::string& pluginDirectory);
 
     void BindServices(
@@ -54,11 +58,18 @@ namespace musik { namespace core { namespace plugin {
         musik::core::sdk::IPlaybackService* playback,
         musik::core::ILibraryPtr library);
 
+    mc_result ApplySettings(std::string_view pluginId);
+
+    void BindPlaybackRemotes(PlaybackRemotes& remotes);
+    void UnbindPlaybackRemotes();
+
     musik::core::sdk::IEnvironment& Environment();
 
     std::vector<std::shared_ptr<audio::Dsp>> CreateDsps();
 
     std::vector<ffi::PluginRegistry::PluginInfo> ListPlugins();
+
+    ffi::PluginRegistry::Factory<mc_playback_remote_factory> FindPlaybackRemoteFactory(std::string_view pluginId);
 
     ffi::PluginRegistry::Factory<mc_output_factory> FindOutputFactory(std::string_view pluginId);
 

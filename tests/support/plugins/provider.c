@@ -5,6 +5,7 @@
 #include <musikcore/plugin/dsp.h>
 #include <musikcore/plugin/settings.h>
 #include <musikcore/plugin/indexer.h>
+#include <musikcore/plugin/playback-remote.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -82,7 +83,7 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
     if (register_again(state) != MC_ERROR_INVALID_ARGUMENT) {
         return MC_ERROR_INTERNAL;
     }
-#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION) || defined(BAD_ENCODER) || defined(BAD_DSP) || defined(BAD_INDEXER) || defined(BAD_NUMBER_CONFIGURATION) || defined(DUPLICATE_CONFIGURATION)
+#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION) || defined(BAD_ENCODER) || defined(BAD_DSP) || defined(BAD_INDEXER) || defined(BAD_NUMBER_CONFIGURATION) || defined(DUPLICATE_CONFIGURATION) || defined(BAD_PLAYBACK_REMOTE)
     /* registration must reject a sized factory with missing operations before
     playback can obtain a typed view of the provider. */
 #if defined(BAD_CONFIGURATION)
@@ -115,6 +116,9 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
         .texts = &text, .text_count = 1,
     };
     static const char id[] = MC_PLUGIN_CAPABILITY_CONFIGURATION;
+#elif defined(BAD_PLAYBACK_REMOTE)
+    static const mc_playback_remote_factory factory = MC_PLAYBACK_REMOTE_FACTORY_DEFAULT;
+    static const char id[] = MC_PLUGIN_CAPABILITY_PLAYBACK_REMOTE;
 #elif defined(BAD_INDEXER)
     static const mc_indexer_source_factory factory = MC_INDEXER_SOURCE_FACTORY_DEFAULT;
     static const char id[] = MC_PLUGIN_CAPABILITY_INDEXER_SOURCE;
@@ -142,7 +146,7 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
 #endif
 #if !defined(BAD_OUTPUT) && !defined(BAD_STREAM) && !defined(BAD_DECODER) && !defined(BAD_CONFIGURATION) && \
     !defined(BAD_ENCODER) && !defined(BAD_DSP) && !defined(BAD_INDEXER) && !defined(BAD_CAPABILITY) && \
-    !defined(BAD_NUMBER_CONFIGURATION) && !defined(DUPLICATE_CONFIGURATION)
+    !defined(BAD_NUMBER_CONFIGURATION) && !defined(DUPLICATE_CONFIGURATION) && !defined(BAD_PLAYBACK_REMOTE)
     /* exercise the same mixed setting types needed by index source plugins. */
     static const mc_boolean_setting boolean = { .key = { "enabled", 7 }, .default_value = true };
     static const mc_number_setting number = {

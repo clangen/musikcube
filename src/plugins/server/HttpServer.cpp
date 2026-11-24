@@ -41,7 +41,6 @@
 #include <limits>
 #include <string_view>
 
-#include <musikcore/sdk/ITrack.h>
 #include <musikcore/sdk/String.h>
 
 #pragma warning(push, 0)
@@ -300,7 +299,7 @@ static bool isAuthenticated(MHD_Connection *connection, Context& context) {
                 std::string decoded = websocketpp::base64_decode(encoded);
                 std::vector<std::string> userPass = str::Split(decoded, ":");
                 if (userPass.size() == 2) {
-                    std::string password = GetPreferenceString(context.prefs, serverprefs::Password, defaults::password);
+                    std::string password = context.settings.Text(serverprefs::Password, defaults::password);
                     return userPass[0] == "default" && userPass[1] == password;
                 }
             }
@@ -332,7 +331,7 @@ bool HttpServer::Start() {
         Transcoder::RemoveTempTranscodeFiles(this->context);
 
         MHD_FLAG ipVersion = MHD_NO_FLAG;
-        if (context.prefs->GetBool(serverprefs::UseIpv6.c_str(), defaults::use_ipv6)) {
+        if (context.settings.Boolean(serverprefs::UseIpv6.c_str(), defaults::use_ipv6)) {
             ipVersion = MHD_USE_IPv6;
         }
 
@@ -344,7 +343,7 @@ bool HttpServer::Start() {
 #endif
 
         int serverPort =
-            context.prefs->GetInt(serverprefs::AudioPort.c_str(), serverprefs::DefaultAudioPort);
+            context.settings.Integer(serverprefs::AudioPort.c_str(), serverprefs::DefaultAudioPort);
 
         httpServer = MHD_start_daemon(
             serverFlags,
@@ -398,7 +397,7 @@ MHD_Result HttpServer::HandleRequest(
     auto server = static_cast<HttpServer*>(cls);
 
 #ifdef ENABLE_DEBUG
-    server->context.debug->Info(TAG, str::Format("new request: %s", url).c_str());
+    server->context.Log(MC_LOG_INFO, TAG, str::Format("new request: %s", url).c_str());
 #endif
 
     struct MHD_Response* response = nullptr;
@@ -406,13 +405,17 @@ MHD_Result HttpServer::HandleRequest(
     int status = MHD_HTTP_NOT_FOUND;
 
     try {
-        if (method && std::string(method) == "GET") {
+        if (server->context.stopping.load()) {
+            status = MHD_HTTP_SERVICE_UNAVAILABLE;
+            response = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+        }
+        else if (method && std::string(method) == "GET") {
             if (!isAuthenticated(connection, server->context)) {
                 status = 401; /* unauthorized */
                 static const char* error = "unauthorized";
                 response = MHD_create_response_from_buffer(strlen(error), (void*)error, MHD_RESPMEM_PERSISTENT);
 #ifdef ENABLE_DEBUG
-                server->context.debug->Warning(TAG, "unauthorized request, returning a 401");
+                server->context.Log(MC_LOG_WARNING, TAG, "unauthorized request, returning a 401");
 #endif
             }
             else {
@@ -442,7 +445,7 @@ MHD_Result HttpServer::HandleRequest(
 
     if (response) {
 #ifdef ENABLE_DEBUG
-        server->context.debug->Info(TAG, str::Format("return http %d", status).c_str());
+        server->context.Log(MC_LOG_INFO, TAG, str::Format("return http %d", status).c_str());
 #endif
 
         ret = MHD_queue_response(connection, status, response);
@@ -459,7 +462,7 @@ int HttpServer::HandleAudioTrackRequest(
     std::vector<std::string>& pathParts)
 {
     size_t bitrate = getUnsignedUrlParam(connection, "bitrate", 0);
-    int maxActiveTranscoders = server->context.prefs->GetInt(
+    int maxActiveTranscoders = server->context.settings.Integer(
         serverprefs::ActiveTranscodeLimit.c_str(),
         serverprefs::DefaultActiveTranscodeLimit);
 
@@ -470,25 +473,50 @@ int HttpServer::HandleAudioTrackRequest(
 
     int status = MHD_HTTP_OK;
 
-    ITrack* track = nullptr;
     bool byExternalId = (pathParts.at(1) == fragment::external_id);
-
+    mc_track_result* rawTracks = nullptr;
+    const auto& library = *server->context.library;
     if (byExternalId) {
         std::string externalId = urlDecode(pathParts.at(2));
-        track = server->context.metadataProxy->QueryTrackByExternalId(externalId.c_str());
+        const mc_string_view id { externalId.data(), externalId.size() };
+        library.tracks_by_external_ids(library.context, &id, 1, &rawTracks);
     }
     else if (pathParts.at(1) == fragment::id) {
-        uint64_t id = std::stoull(urlDecode(pathParts.at(2)));
-        track = server->context.metadataProxy->QueryTrackById(id);
+        const int64_t id = std::stoll(urlDecode(pathParts.at(2)));
+        library.tracks_by_ids(library.context, &id, 1, &rawTracks);
     }
 
-    if (track) {
-        const std::string duration = GetMetadataString(track, key::duration);
-        const std::string filename = GetMetadataString(track, key::filename);
-        const std::string title = GetMetadataString(track, key::title, "");
-        const std::string externalId = GetMetadataString(track, key::external_id, "");
-
-        track->Release();
+    auto destroyTracks = [](mc_track_result* tracks) { mc_track_result_destroy(&tracks); };
+    std::unique_ptr<mc_track_result, decltype(destroyTracks)> tracks(rawTracks, destroyTracks);
+    enum TrackField : size_t { Duration, Filename, Title, ExternalId };
+    const mc_string_view fields[] {
+        { .data = MC_TRACK_FIELD_DURATION, .length = sizeof(MC_TRACK_FIELD_DURATION) - 1 },
+        { .data = MC_TRACK_FIELD_FILENAME, .length = sizeof(MC_TRACK_FIELD_FILENAME) - 1 },
+        { .data = MC_TRACK_FIELD_TITLE, .length = sizeof(MC_TRACK_FIELD_TITLE) - 1 },
+        { .data = MC_TRACK_FIELD_EXTERNAL_ID, .length = sizeof(MC_TRACK_FIELD_EXTERNAL_ID) - 1 },
+    };
+    auto range = mc_track_range MC_TRACK_RANGE_DEFAULT;
+    range.limit = 1;
+    range.fields = fields;
+    range.field_count = sizeof(fields) / sizeof(fields[0]);
+    mc_track_page* rawPage = nullptr;
+    if (tracks && mc_track_result_get_count(tracks.get()) &&
+        library.read_tracks(library.context, tracks.get(), &range, &rawPage) == MC_OK)
+    {
+        auto destroyPage = [](mc_track_page* page) { mc_track_page_destroy(&page); };
+        std::unique_ptr<mc_track_page, decltype(destroyPage)> page(rawPage, destroyPage);
+        if (!page || !mc_track_page_get_count(page.get())) {
+            response = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+            return MHD_HTTP_NOT_FOUND;
+        }
+        const auto value = [&](size_t field) {
+            const auto text = mc_track_page_get_string(page.get(), 0, field);
+            return std::string(text.data ? text.data : "", text.length);
+        };
+        const std::string duration = value(Duration);
+        const std::string filename = value(Filename);
+        const std::string title = value(Title);
+        const std::string externalId = value(ExternalId);
 
         std::string format;
 
@@ -514,7 +542,7 @@ int HttpServer::HandleAudioTrackRequest(
         }
         auto body = bitrate
             ? Transcoder::Transcode(server->context, filename, bitrate, format, request)
-            : ::server::OpenFileBody(server->context, filename);
+            : ::server::OpenFileBody(*server->context.media, filename);
         if (!body) {
             response = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
             return MHD_HTTP_NOT_FOUND;
@@ -563,24 +591,23 @@ int HttpServer::HandleThumbnailRequest(
 {
     int status = MHD_HTTP_NOT_FOUND;
 
-    char pathBuffer[4096];
-    server->context.environment->GetPath(PathType::Library, pathBuffer, sizeof(pathBuffer));
-
-    if (strlen(pathBuffer)) {
-        const auto leaf = std::fs::u8path(pathParts.at(1) + ".jpg");
-        if (leaf.has_parent_path() || leaf.has_root_name()) {
-            return MHD_HTTP_NOT_FOUND;
+    size_t consumed = 0;
+    const auto id = std::stoll(pathParts.at(1), &consumed);
+    if (consumed != pathParts.at(1).size() || id <= 0) {
+        return status;
+    }
+    const auto& library = *server->context.library;
+    const auto read = [](mc_result result, mc_byte_view bytes, const mc_error*, void* data) {
+        auto& output = *static_cast<MHD_Response**>(data);
+        if (result == MC_OK) {
+            output = MHD_create_response_from_buffer(bytes.length, const_cast<uint8_t*>(bytes.data), MHD_RESPMEM_MUST_COPY);
         }
-        const auto file = std::fs::u8path(pathBuffer) / "thumbs" / leaf;
-        auto body = ::server::OpenFileBody(server->context, pathToUtf8(file));
-        if (body) {
-            response = makeFileResponse(std::move(body), {}, status);
-            if (response) {
-                MHD_add_response_header(response, "Cache-Control", "public, max-age=31536000");
-                MHD_add_response_header(response, "Content-Type", "image/jpeg");
-                MHD_add_response_header(response, "Server", "musikcube server");
-            }
-        }
+    };
+    if (library.read_thumbnail(library.context, id, read, &response) == MC_OK && response) {
+        status = MHD_HTTP_OK;
+        MHD_add_response_header(response, "Cache-Control", "public, max-age=31536000");
+        MHD_add_response_header(response, "Content-Type", "image/jpeg");
+        MHD_add_response_header(response, "Server", "musikcube server");
     }
 
     return status;

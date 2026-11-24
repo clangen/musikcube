@@ -33,70 +33,49 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "Snapshots.h"
-#include <chrono>
-#include <algorithm>
 
-using TrackList = Snapshots::TrackList;
-using namespace std::chrono;
+#include <utility>
 
-static const int64_t SIX_HOURS_MILLIS = 1000 * 60 * 60 * 6;
-
-static inline int64_t now() {
-    return duration_cast<milliseconds>(
-        system_clock::now().time_since_epoch()).count();
+namespace {
+    constexpr auto snapshotLifetime = std::chrono::hours(6);
 }
 
-static inline int64_t expiry() {
-    return SIX_HOURS_MILLIS + now();
-}
-
-static inline bool expired(int64_t expiry) {
-    return now() >= expiry;
-}
-
-Snapshots::~Snapshots() {
-    Reset();
-}
-
-TrackList* Snapshots::Get(const std::string& key) {
-    auto it = this->cache.find(key);
-    if (it != this->cache.end()) {
-        this->cache[key] = CacheKey(it->second.tracks, expiry());
-        return it->second.tracks;
+const mc_play_queue* Snapshots::Get(const std::string& key) {
+    const auto it = this->cache.find(key);
+    if (it == this->cache.end()) {
+        return nullptr;
     }
-    return nullptr;
+    it->second.expiry = std::chrono::steady_clock::now() + snapshotLifetime;
+    return it->second.queue.get();
 }
 
-void Snapshots::Put(const std::string& key, TrackList* tracks) {
+void Snapshots::Put(const std::string& key, mc_play_queue** queue) {
     this->Prune();
-    this->Remove(key);
-    this->cache[key] = CacheKey(tracks, expiry());
+    std::unique_ptr<mc_play_queue, QueueDeleter> owned(*queue);
+    *queue = nullptr;
+    this->cache.insert_or_assign(key, Snapshot {
+        .queue = std::move(owned),
+        .expiry = std::chrono::steady_clock::now() + snapshotLifetime,
+    });
 }
 
 void Snapshots::Remove(const std::string& key) {
     this->Prune();
-    auto it = this->cache.find(key);
-    if (it != this->cache.end()) {
-        it->second.tracks->Release();
-        this->cache.erase(it);
-    }
+    this->cache.erase(key);
 }
 
 void Snapshots::Prune() {
-    auto it = this->cache.begin();
-    while (it != this->cache.end()) {
-        if (expired(it->second.expiry)) {
-            it->second.tracks->Release();
+    const auto now = std::chrono::steady_clock::now();
+    for (auto it = this->cache.begin(); it != this->cache.end();) {
+        if (it->second.expiry <= now) {
             it = this->cache.erase(it);
-            continue;
         }
-        ++it;
+        else {
+            ++it;
+        }
     }
 }
 
 void Snapshots::Reset() {
-    for (auto it : cache) {
-        it.second.tracks->Release();
-    }
     this->cache.clear();
 }

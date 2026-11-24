@@ -63,7 +63,7 @@ TranscodingAudioDataStream::~TranscodingAudioDataStream() {
 
 bool TranscodingAudioDataStream::Open(Context& context, const std::string& uri, bool requireDuration,
     const std::string& temporaryFile, const std::string& cacheFile) {
-    if (!source.Open(context, uri)) {
+    if (!source.Open(*context.media, *context.scratch, uri)) {
         return false;
     }
     const bool finite = source.HasDuration();
@@ -190,9 +190,9 @@ std::unique_ptr<server::ResponseBody> TranscodingAudioDataStream::Finish(Context
         }
     } while (bytes);
     if (!cacheFile.empty()) {
-        return server::OpenFileBody(context, cacheFile);
+        return server::OpenFileBody(*context.media, cacheFile);
     }
-    return server::TakeTemporaryFileBody(context, temporaryFile);
+    return server::TakeTemporaryFileBody(*context.media, temporaryFile);
 }
 
 int TranscodingAudioDataStream::GetActiveCount() {

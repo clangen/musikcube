@@ -9,6 +9,8 @@
 #include <atomic>
 #include <algorithm>
 #include <condition_variable>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <system_error>
 #include <list>
@@ -21,6 +23,12 @@
 #include <vector>
 
 namespace {
+    /* the ABI-only target has no application logger during failed teardown. */
+    [[noreturn]] void failPluginScope(const char* message) noexcept {
+        std::fprintf(stderr, "musikcore fatal plugin request failure: %s\n", message);
+        std::abort();
+    }
+
     enum class RequestState { queued, running, ready };
 
     struct ExternalRequests {
@@ -38,6 +46,8 @@ namespace {
         std::shared_ptr<std::atomic_bool> cancel;
         musik::core::ffi::RequestEffect effect;
         bool external;
+        const void* owner;
+        std::function<void()> cancel_external;
     };
 }
 
@@ -340,13 +350,16 @@ namespace {
                 });
             }
         }
-        for (const auto &request : ready) {
+        while (!ready.empty()) {
+            /* remove the active callback first; a preceding callback may stop
+            another plugin and cancel its remaining entries in this batch. */
+            auto request = std::move(ready.front());
+            ready.pop_front();
             musik::core::ffi::exception_barrier(nullptr, [&] {
                 request.completion(request.result, request.user_data);
                 return MC_OK;
             });
         }
-        ready.clear();
 
         lock.lock();
         context.dispatching = false;
@@ -730,7 +743,7 @@ namespace musik { namespace core { namespace ffi {
 
     mc_result submit_request(mc_context *context, std::function<mc_result()> work,
         RequestCompletion completion, void *user_data, mc_request_id *out_request,
-        std::shared_ptr<std::atomic_bool> cancel, RequestEffect effect)
+        std::shared_ptr<std::atomic_bool> cancel, RequestEffect effect, const void* owner)
     {
         return exception_barrier(nullptr, [&]() -> mc_result {
             if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
@@ -745,7 +758,7 @@ namespace musik { namespace core { namespace ffi {
             if (!context->worker.joinable()) context->worker = std::thread(run_worker, std::ref(*context));
             const auto id = context->next_request;
             context->requests.push_back({ id, std::move(work), std::move(completion), user_data,
-                RequestState::queued, MC_OK, std::move(cancel), effect, false });
+                RequestState::queued, MC_OK, std::move(cancel), effect, false, owner, {} });
 
             *out_request = id;
             ++context->next_request;
@@ -756,7 +769,7 @@ namespace musik { namespace core { namespace ffi {
 
     mc_result reserve_external_request(mc_context *context, RequestCompletion completion,
         void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish, RequestEffect effect,
-        std::shared_ptr<std::atomic_bool> cancel) {
+        std::shared_ptr<std::atomic_bool> cancel, const void* owner, std::function<void()> cancel_external) {
         std::lock_guard<std::mutex> lock(context->mutex);
         if (context->stopping) return MC_ERROR_BUSY;
         if (context->requests.size() >= max_requests || !context->next_request) return MC_ERROR_QUEUE_FULL;
@@ -783,10 +796,48 @@ namespace musik { namespace core { namespace ffi {
         };
 
         context->requests.push_back({ id, {}, std::move(completion), user_data, RequestState::running, MC_OK,
-            std::move(cancel), effect, true });
+            std::move(cancel), effect, true, owner, std::move(cancel_external) });
         *out_request = id;
         ++context->next_request;
         return MC_OK;
+    }
+
+    void cancel_owned_requests(mc_context& context, const void* owner) noexcept {
+        std::list<Request> requests;
+        {
+            std::lock_guard<std::mutex> lock(context.mutex);
+            if (context.dispatcher != std::thread::id {} && context.dispatcher != std::this_thread::get_id()) {
+                failPluginScope("requests cancelled on the wrong thread");
+            }
+            const auto detach = [&](std::list<Request>& source) {
+                for (auto it = source.begin(); it != source.end();) {
+                    auto current = it++;
+                    if (current->owner != owner) {
+                        continue;
+                    }
+                    if (current->state != RequestState::ready) {
+                        current->result = MC_ERROR_CANCELLED;
+                        if (current->cancel) {
+                            current->cancel->store(true);
+                        }
+                    }
+                    requests.splice(requests.end(), source, current);
+                }
+            };
+            detach(context.requests);
+            detach(context.dispatch_batch);
+        }
+        for (auto& request : requests) {
+            try {
+                if (request.cancel_external) {
+                    request.cancel_external();
+                }
+                request.completion(request.result, request.user_data);
+            }
+            catch (...) {
+                failPluginScope("request cancellation or completion failed");
+            }
+        }
     }
 
 } } }
@@ -1041,6 +1092,8 @@ mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id id) {
             return MC_ERROR_IN_FLIGHT;
         }
 
+        /* copy the hook before changing state; it runs outside the context lock. */
+        const auto cancelExternal = request->cancel_external;
         /* Select the terminal result under lock, then notify the host outside it. */
         request->state = RequestState::ready;
         request->result = MC_ERROR_CANCELLED;
@@ -1050,6 +1103,9 @@ mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id id) {
         const bool notify = select_wakeup(*context);
 
         lock.unlock();
+        if (cancelExternal) {
+            cancelExternal();
+        }
         if (notify) signal_host(*context);
         return MC_OK;
     });

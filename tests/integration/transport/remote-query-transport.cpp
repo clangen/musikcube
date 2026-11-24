@@ -10,9 +10,11 @@
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/DeletePlaylistQuery.h>
 #include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/LibraryHost.h>
 #include <musikcore/musikcore.hpp>
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/plugin/Plugins.h>
+#include <musikcore/plugin/services.h>
 #include "CoreRuntime.h"
 #include "ApiHost.h"
 #include "../../support/profile.hpp"
@@ -21,6 +23,7 @@
 #include <musikcore/db/Statement.h>
 #include <common/runtime/MessageQueue.h>
 #include <musikcore/sdk/version.h>
+#include <musikcore/sdk/Filesystem.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/Common.h>
@@ -54,7 +57,7 @@ namespace {
         public:
             /* Bind a dynamic loopback port and select real typed-query forwarding or controlled mock replies. */
             explicit Server(bool catalog = false, musik::core::ILibraryPtr local = {},
-                std::string version = {}, bool closeAfterAuthentication = false)
+                std::string version = {}, bool closeAfterAuthentication = false, bool holdFirstProjection = false)
             {
                 this->socket.clear_access_channels(websocketpp::log::alevel::all);
                 this->socket.init_asio(&this->io);
@@ -63,7 +66,8 @@ namespace {
                     this->closed = true;
                     this->heldChanged.notify_all();
                 });
-                this->socket.set_message_handler([this, catalog, local, version = std::move(version), closeAfterAuthentication](auto connection, auto message) {
+                this->socket.set_message_handler([this, catalog, local, version = std::move(version),
+                    closeAfterAuthentication, holdFirstProjection](auto connection, auto message) {
                     const nlohmann::json request = nlohmann::json::parse(message->get_payload());
                     auto reply = nlohmann::json { { "id", request.at("id") }, { "name", request.at("name") } };
                     if (request.at("name") == "authenticate") {
@@ -103,8 +107,8 @@ namespace {
                         this->Send(connection, reply);
                     }
                     else if (catalog) {
-                        /* Legacy responses deliberately omit projectedPage to prove
-                           the new client still reads an older server's map format. */
+                        /* Return projected pages for modern metadata reads, including
+                        an absent second track so missing values remain observable. */
                         const auto query = nlohmann::json::parse(request.at("options").at("raw_query_data").get<std::string>());
                         if (query.at("name") == SearchTrackListQuery::kQueryName) {
                             reply["options"]["raw_query_data"] = R"({"result":{"headers":[0],"durations":{"0":10},"trackList":[42,17]}})";
@@ -144,12 +148,53 @@ namespace {
                                 { "result", query.at("options").at("playlistId") == kPlaylistId }
                             }.dump();
                         }
+                        else if (query.at("name") == "TrackMetadataBatchQuery" &&
+                            query.at("options").contains("fields") && !query.at("options").at("fields").empty())
+                        {
+                            const auto& options = query.at("options");
+                            const auto& fields = options.at("fields");
+                            auto rows = nlohmann::json::array();
+                            bool hasTrack = false;
+                            for (const auto& id : options.at("trackIds")) {
+                                hasTrack |= id == 42;
+                            }
+                            if (hasTrack) {
+                                auto values = nlohmann::json::array();
+                                for (const auto& field : fields) {
+                                    if (field == MC_TRACK_FIELD_TITLE) {
+                                        values.push_back(nlohmann::json::array({ "Origin" }));
+                                    }
+                                    else if (field == MC_TRACK_FIELD_ID) {
+                                        values.push_back(nlohmann::json::array({ "42" }));
+                                    }
+                                    else {
+                                        values.push_back(nlohmann::json::array());
+                                    }
+                                }
+                                rows.push_back({ { "id", 42 }, { "values", std::move(values) } });
+                            }
+                            reply["options"]["raw_query_data"] = nlohmann::json {
+                                { "projectedPage", { { "fields", fields }, { "rows", std::move(rows) } } }
+                            }.dump();
+                        }
                         else {
                             reply["options"]["raw_query_data"] =
                                 R"({"result":{"42":{"id":42,"title":"Origin","replayGain":{}}}})";
                         }
                         const bool heldSearch = query.at("name") == SearchTrackListQuery::kQueryName &&
                             query.at("options").at("filter") == kHeldSearch;
+                        if (holdFirstProjection) {
+                            /* hold only the first metadata reply, so a second
+                            remote read can prove the canceled slot is reusable. */
+                            if (!this->heldProjection && query.at("name") == "TrackMetadataBatchQuery") {
+                                this->heldProjection = true;
+                                this->HoldReply(connection, reply);
+                            }
+                            else {
+                                this->Send(connection, reply);
+                            }
+                            return;
+                        }
                         if (++this->requests >= 3 || heldSearch) {
                             /* Keep replies pending until the test selects cancellation,
                                a reconnect, or shutdown; timing sleeps cannot establish
@@ -204,8 +249,20 @@ namespace {
                 }
                 auto action = std::move(this->held);
                 this->held = {};
-                asio::post(this->io, [action, disconnect] { action(disconnect); });
+                this->released = false;
+                asio::post(this->io, [this, action, disconnect] {
+                    action(disconnect);
+                    std::lock_guard guard(this->heldMutex);
+                    this->released = true;
+                    this->heldChanged.notify_all();
+                });
                 return true;
+            }
+
+            /* wait until the held reply has been queued on the connection. */
+            bool WaitForReleasedReply() {
+                std::unique_lock lock(this->heldMutex);
+                return this->heldChanged.wait_for(lock, std::chrono::seconds(5), [this] { return this->released; });
             }
 
             /* wait for the peer's close handshake before checking that a later
@@ -244,6 +301,8 @@ namespace {
             std::condition_variable heldChanged;
             std::function<void(bool)> held;
             bool closed = false;
+            bool heldProjection = false;
+            bool released = false;
     };
 
     /* Owns observations shared by the test and client threads. Neither copyable nor movable. */
@@ -323,8 +382,6 @@ namespace {
             return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && ready(); });
         };
 
-        /* Drain the lazy database-upgrade scan before scheduling the test scan. */
-        LibraryFactory::Instance().DefaultLocalLibrary()->Indexer()->Shutdown();
         if (!wait([&] { return context.GetLibrary().has_value(); }) ||
             context.GetLibraryStatus().kind != MC_LIBRARY_REMOTE ||
             context.GetLibraryStatus().state != MC_LIBRARY_CONNECTED ||
@@ -348,9 +405,23 @@ namespace {
             }, &indexEvents) != MC_OK ||
             indexer.Schedule(MC_INDEXER_SCAN_LOCAL) != MC_OK ||
             !wait([&] {
-                return context.Dispatch() == MC_OK && !indexEvents.empty() &&
-                    indexEvents.back() == MC_INDEXER_FINISHED;
-            }) || indexEvents.front() != MC_INDEXER_STARTED || indexer.SetCallback(nullptr) != MC_OK)
+                const auto started = std::find(indexEvents.begin(), indexEvents.end(), MC_INDEXER_STARTED);
+                return started != indexEvents.end() &&
+                    std::find(started, indexEvents.end(), MC_INDEXER_FINISHED) != indexEvents.end();
+            }))
+        {
+            return failure(__LINE__);
+        }
+
+        /* An initial upgrade scan may have produced the events above. Once it
+        finishes, schedule another scan and require its own start and finish. */
+        indexEvents.clear();
+        if (indexer.Schedule(MC_INDEXER_SCAN_LOCAL) != MC_OK ||
+            !wait([&] {
+                const auto started = std::find(indexEvents.begin(), indexEvents.end(), MC_INDEXER_STARTED);
+                return started != indexEvents.end() &&
+                    std::find(started, indexEvents.end(), MC_INDEXER_FINISHED) != indexEvents.end();
+            }) || indexer.SetCallback(nullptr) != MC_OK)
         {
             return failure(__LINE__);
         }
@@ -1186,7 +1257,289 @@ namespace {
         return wait([&] { return status.has_value(); }) && status == MC_OK && session.State() == MC_REMOTE_CONNECTED;
     }
 
-    bool checkManagedRemote() {
+    /* cancellation releases the transport slot before the old reply arrives. */
+    bool checkLibraryHostReadCancellation(musik::core::api::Context& context,
+        musik::core::runtime::MessageQueue& host, const std::string& fixture)
+    {
+        using namespace musik::core;
+        using namespace musik::core::api;
+
+        Server server(true, {}, {}, false, true);
+        auto options = mc_remote_options MC_REMOTE_OPTIONS_DEFAULT;
+        options.host = { "127.0.0.1", 9 };
+        options.websocket_port = server.Port();
+        options.max_pending_queries = 1;
+        RemoteSession session(options);
+        std::optional<mc_result> connected;
+        session.Connect(context, [&](mc_result status, mc_remote_state, std::string_view) { connected = status; });
+        const auto wait = [&](auto ready) {
+            return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && ready(); });
+        };
+        if (!wait([&] { return connected.has_value(); }) || connected != MC_OK) {
+            return failure(__LINE__);
+        }
+
+        auto remoteLibrary = session.OpenLibrary();
+        std::optional<mc_result> searched;
+        TrackResult tracks;
+        OpenTrackSearch(context, remoteLibrary, {}, [&](mc_result status, TrackResult result, std::string_view) {
+            searched = status;
+            tracks = std::move(result);
+        });
+        if (!wait([&] { return searched.has_value(); }) || searched != MC_OK || tracks.Size() == 0) {
+            return failure(__LINE__);
+        }
+
+        /* callback storage outlives both hosts, even when an assertion fails. */
+        struct Outcome {
+            std::mutex mutex;
+            std::condition_variable changed;
+            mc_result submission { MC_ERROR_INTERNAL };
+            mc_result status { MC_ERROR_INTERNAL };
+            std::string title;
+            std::thread::id owner { std::this_thread::get_id() };
+            unsigned calls { 0 };
+            bool submitted { false };
+            bool wrongThread { false };
+        };
+        Outcome cancelled;
+        Outcome admitted;
+        Outcome afterLateReply;
+
+        /* use a real registered plugin so completions pass through the same
+        lifecycle guard as callbacks owned by a running playback remote. */
+        ffi::PluginRegistry registry;
+        const auto directory = musik::core::sdk::fs::pathFromUtf8(fixture).parent_path();
+        if (registry.Initialize(musik::core::sdk::fs::pathToUtf8(directory)) != MC_OK) {
+            return failure(__LINE__);
+        }
+        const auto factory = registry.Find<mc_playback_remote_factory>("org.musikcube.test.playback-remote");
+        if (!factory) {
+            return failure(__LINE__);
+        }
+        auto local = LibraryFactory::Instance().DefaultLocalLibrary();
+        library::query::LibraryHost first(*context.Get(), local, factory);
+        library::query::LibraryHost second(*context.Get(), local, factory);
+        auto firstServices = mc_plugin_services MC_PLUGIN_SERVICES_DEFAULT;
+        auto secondServices = mc_plugin_services MC_PLUGIN_SERVICES_DEFAULT;
+        firstServices.library = &first.HostApi();
+        secondServices.library = &second.HostApi();
+
+        /* direct plugin lookups must still see hidden tracks, while searches stay filtered. */
+        const auto localLibrary = std::dynamic_pointer_cast<library::LocalLibrary>(local);
+        db::Connection fixtureDb;
+        if (!localLibrary || fixtureDb.Open(localLibrary->GetDatabaseFilename()) != db::Okay ||
+            fixtureDb.Execute("INSERT INTO tracks (id, title, external_id, visible) "
+                "VALUES (987654, 'Hidden fixture', 'hidden-fixture', 0)") != db::Okay ||
+            fixtureDb.Execute("INSERT INTO playlist_tracks (playlist_id, track_external_id, source_id, sort_order) "
+                "VALUES (987654, 'hidden-fixture', 0, 0)") != db::Okay)
+        {
+            return failure(__LINE__);
+        }
+        const auto& hiddenHost = first.HostApi();
+        const mc_string_view externalId { "hidden-fixture", 14 };
+        const mc_string_view titleField { MC_TRACK_FIELD_TITLE, sizeof(MC_TRACK_FIELD_TITLE) - 1 };
+        auto hiddenRange = mc_track_range MC_TRACK_RANGE_DEFAULT;
+        hiddenRange.fields = &titleField;
+        hiddenRange.field_count = 1;
+        hiddenRange.limit = 1;
+        const auto readsHidden = [&](mc_track_result* tracks) {
+            mc_track_page* page = nullptr;
+            const auto status = hiddenHost.read_tracks(hiddenHost.context, tracks, &hiddenRange, &page);
+            mc_track_result_destroy(&tracks);
+            const auto title = page ? mc_track_page_get_string(page, 0, 0) : mc_string_view {};
+            const bool found = status == MC_OK && title.length == 14 &&
+                std::string_view(title.data, title.length) == "Hidden fixture";
+            mc_track_page_destroy(&page);
+            return found;
+        };
+        mc_track_result* hiddenRaw = nullptr;
+        if (hiddenHost.tracks_by_external_ids(hiddenHost.context, &externalId, 1, &hiddenRaw) != MC_OK ||
+            !hiddenRaw || !readsHidden(hiddenRaw))
+        {
+            return failure(__LINE__);
+        }
+        const int64_t hiddenId = 987654;
+        hiddenRaw = nullptr;
+        if (hiddenHost.tracks_by_ids(hiddenHost.context, &hiddenId, 1, &hiddenRaw) != MC_OK ||
+            !hiddenRaw || !readsHidden(hiddenRaw))
+        {
+            return failure(__LINE__);
+        }
+        auto search = mc_track_search MC_TRACK_SEARCH_DEFAULT;
+        search.text = { "Hidden fixture", 14 };
+        mc_track_result* searchResult = nullptr;
+        if (hiddenHost.search_tracks(hiddenHost.context, &search, -1, 0, &searchResult) != MC_OK ||
+            !searchResult || mc_track_result_get_count(searchResult) != 0)
+        {
+            mc_track_result_destroy(&searchResult);
+            return failure(__LINE__);
+        }
+        mc_track_result_destroy(&searchResult);
+
+        /* duplicate and absent playlist entries must count only rows actually removed. */
+        const mc_library_playlist_entry_key entries[] {
+            { .external_id = externalId, .position = 0 },
+            { .external_id = externalId, .position = 0 },
+        };
+        size_t removed = 0;
+        if (hiddenHost.remove_playlist_entries(hiddenHost.context, 987654, entries, 2, &removed) != MC_OK ||
+            removed != 1 ||
+            hiddenHost.remove_playlist_entries(hiddenHost.context, 987654, entries, 1, &removed) != MC_OK || removed != 0)
+        {
+            return failure(__LINE__);
+        }
+        if (fixtureDb.Execute("DELETE FROM tracks WHERE id=987654") != db::Okay) {
+            return failure(__LINE__);
+        }
+
+        /* only registered queries run; malformed input and forged SQL never reach the database. */
+        const auto& localHost = first.HostApi();
+        std::string response;
+        unsigned callbacks = 0;
+        struct QueryReply {
+            std::string* text;
+            unsigned* callbacks;
+        } reply { &response, &callbacks };
+        const auto receive = [](void* data, mc_string_view text) {
+            auto& result = *static_cast<QueryReply*>(data);
+            result.text->assign(text.data, text.length);
+            ++*result.callbacks;
+        };
+        const auto invoke = [&](std::string_view input) {
+            return localHost.run_query(localHost.context, { input.data(), input.size() }, receive, &reply);
+        };
+        if (invoke(R"({"name":"AllCategoriesQuery","options":null})") != MC_OK || callbacks != 1 ||
+            nlohmann::json::parse(response, nullptr, false).is_discarded())
+        {
+            return failure(__LINE__);
+        }
+        /* invalid operation values must be rejected before constructing a query. */
+        if (invoke(R"({"name":"TrackMetadataQuery","options":{"type":999,"track":{"id":1}}})") !=
+                MC_ERROR_INVALID_ARGUMENT ||
+            invoke(R"({"name":"SavePlaylistQuery","options":{"op":999,"playlistName":"x","categoryType":"","playlistId":1,"categoryId":0,"tracks":null}})") !=
+                MC_ERROR_INVALID_ARGUMENT || callbacks != 1)
+        {
+            return failure(__LINE__);
+        }
+        const std::string invalid[] {
+            "SELECT * FROM tracks",
+            R"({"name":"SQL","options":{"sql":"SELECT * FROM tracks"}})",
+            R"({"name":"CategoryTrackListQuery","options":{"filter":"","sortType":999,"regularPredicateList":[],"extendedPredicateList":[]}})",
+            R"({"name":"SearchTrackListQuery","options":{"filter":"","sortType":999}})",
+            R"({"name":"CategoryTrackListQuery","options":{"filter":"","sortType":0,"regularPredicateList":[["id) OR 1=1 --",1]],"extendedPredicateList":[]}})",
+            R"({"name":"CategoryListQuery","options":{"trackField":"evil","outputType":1,"regularPredicateList":[],"extendedPredicateList":[]}})",
+        };
+        for (const auto& input : invalid) {
+            const auto status = invoke(input);
+            if ((status != MC_ERROR_INVALID_ARGUMENT && status != MC_ERROR_UNSUPPORTED) || callbacks != 1) {
+                return failure(__LINE__);
+            }
+        }
+        const mc_string_view field {
+            .data = MC_TRACK_FIELD_TITLE,
+            .length = sizeof(MC_TRACK_FIELD_TITLE) - 1,
+        };
+        auto range = mc_track_range MC_TRACK_RANGE_DEFAULT;
+        range.limit = 1;
+        range.fields = &field;
+        range.field_count = 1;
+
+        const auto complete = [](mc_result status, mc_track_page* page, const mc_error*, void* data) {
+            auto& outcome = *static_cast<Outcome*>(data);
+            std::string title;
+            if (status == MC_OK && page && mc_track_page_get_count(page)) {
+                const auto value = mc_track_page_get_string(page, 0, 0);
+                title.assign(value.data ? value.data : "", value.length);
+            }
+            mc_track_page_destroy(&page);
+            std::lock_guard lock(outcome.mutex);
+            outcome.status = status;
+            outcome.title = std::move(title);
+            outcome.wrongThread |= std::this_thread::get_id() != outcome.owner;
+            ++outcome.calls;
+            outcome.changed.notify_all();
+        };
+        const auto submit = [&](const mc_plugin_services& services, Outcome& outcome) {
+            const auto& api = *services.library;
+            const auto status = api.read_tracks_async(api.context, tracks.Get(), &range, complete, &outcome);
+            std::lock_guard lock(outcome.mutex);
+            outcome.submission = status;
+            outcome.submitted = true;
+            outcome.changed.notify_all();
+        };
+        const auto awaitSubmission = [](Outcome& outcome) {
+            std::unique_lock lock(outcome.mutex);
+            return outcome.changed.wait_for(lock, std::chrono::seconds(5), [&] { return outcome.submitted; });
+        };
+        const auto completed = [&](Outcome& outcome) {
+            return wait([&] {
+                std::lock_guard lock(outcome.mutex);
+                return outcome.calls != 0;
+            });
+        };
+
+        /* accepted requests are settled before the remote can be destroyed. */
+        std::thread firstWorker(submit, std::cref(firstServices), std::ref(cancelled));
+        const bool held = server.WaitForHeldReply();
+        const bool firstSubmitted = awaitSubmission(cancelled);
+        if (!held || !firstSubmitted) {
+            first.CancelReads();
+            session.Disconnect();
+        }
+        firstWorker.join();
+        if (!held || !firstSubmitted || cancelled.submission != MC_OK) {
+            if (held) {
+                server.ReleaseHeld(false);
+            }
+            return failure(__LINE__);
+        }
+        first.CancelReads();
+        {
+            std::lock_guard lock(cancelled.mutex);
+            if (cancelled.calls != 1 || cancelled.status != MC_ERROR_CANCELLED || cancelled.wrongThread) {
+                server.ReleaseHeld(false);
+                return failure(__LINE__);
+            }
+        }
+
+        /* a different host shares this session's one-slot transport. */
+        std::thread secondWorker(submit, std::cref(secondServices), std::ref(admitted));
+        const bool secondSubmitted = awaitSubmission(admitted);
+        if (!secondSubmitted) {
+            second.CancelReads();
+        }
+        secondWorker.join();
+        if (!secondSubmitted || admitted.submission != MC_OK || !completed(admitted) ||
+            admitted.calls != 1 || admitted.status != MC_OK || admitted.title != "Origin" || admitted.wrongThread)
+        {
+            second.CancelReads();
+            server.ReleaseHeld(false);
+            return failure(__LINE__);
+        }
+
+        /* a successful read after the late reply proves it did not poison the
+        connection or invoke the canceled request a second time. */
+        if (!server.ReleaseHeld(false) || !server.WaitForReleasedReply()) {
+            return failure(__LINE__);
+        }
+        std::thread thirdWorker(submit, std::cref(secondServices), std::ref(afterLateReply));
+        const bool thirdSubmitted = awaitSubmission(afterLateReply);
+        if (!thirdSubmitted) {
+            second.CancelReads();
+        }
+        thirdWorker.join();
+        if (!thirdSubmitted || afterLateReply.submission != MC_OK || !completed(afterLateReply) ||
+            afterLateReply.calls != 1 || afterLateReply.status != MC_OK ||
+            afterLateReply.title != "Origin" || afterLateReply.wrongThread || cancelled.calls != 1)
+        {
+            second.CancelReads();
+            return failure(__LINE__);
+        }
+        return session.Disconnect() == MC_OK;
+    }
+
+    bool checkManagedRemote(const std::string& fixture) {
         using namespace musik::core;
         using namespace musik::core::api;
 
@@ -1442,6 +1795,10 @@ namespace {
         {
             return failure(__LINE__);
         }
+        if (!checkLibraryHostReadCancellation(context, host, fixture)) {
+            return failure(__LINE__);
+        }
+
         /* a caller-owned session can outlive its context without retaining
         host callback state or delivering a queued initial notification. */
         bool afterShutdown = false;
@@ -1476,7 +1833,7 @@ int main(int argc, char** argv) {
             return checkRemoteVersions() ? 0 : 1;
         }
         if (argc > 1 && std::strcmp(argv[1], "--managed") == 0) {
-            return checkManagedRemote() ? 0 : 1;
+            return argc == 3 && checkManagedRemote(argv[2]) ? 0 : 1;
         }
         Server server;
         Listener listener;

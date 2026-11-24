@@ -50,12 +50,14 @@ bool BlockingTranscoder::Run(Context& context, mc_encoder& encoder, const std::s
     const std::string& temp, const std::string& destination, size_t bitrate) {
     ActiveTranscode active;
     server::DecodedAudio input;
-    if (!input.Open(context, uri) || !input.HasDuration()) {
+    if (!input.Open(*context.media, *context.scratch, uri) || !input.HasDuration()) {
         return false;
     }
 
     server::MediaStream output;
-    if (!output.Open(context, temp, MC_STREAM_OPEN_WRITE | MC_STREAM_OPEN_CREATE | MC_STREAM_OPEN_TRUNCATE)) {
+    if (!output.Open(*context.media, temp,
+        MC_STREAM_OPEN_WRITE | MC_STREAM_OPEN_CREATE | MC_STREAM_OPEN_TRUNCATE))
+    {
         return false;
     }
 

@@ -1,6 +1,11 @@
 #include <musikcore/musikcore.hpp>
+#include <plugins/server/ServerPreferences.h>
 #include <asio/io_context.hpp>
 #include <asio/ip/tcp.hpp>
+#include <asio/steady_timer.hpp>
+#include <nlohmann/json.hpp>
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
 
 #include <algorithm>
 #include <atomic>
@@ -14,6 +19,7 @@
 #include <thread>
 
 namespace {
+    namespace api = musik::core::api;
     using namespace musik::core::api;
     using namespace std::chrono_literals;
 
@@ -146,13 +152,93 @@ namespace {
             before->enabled != after->enabled && after->bands[0].gain == gains.front();
     }
 
+    using namespace musik::core::serverprefs;
+    constexpr int MC_SERVER_DEFAULT_METADATA_PORT = DefaultMetadataPort;
+    constexpr int MC_SERVER_DEFAULT_AUDIO_PORT = DefaultAudioPort;
+    constexpr int MC_SERVER_DEFAULT_CACHE_COUNT = DefaultCacheCount;
+    constexpr int MC_SERVER_DEFAULT_ACTIVE_TRANSCODE_LIMIT = DefaultActiveTranscodeLimit;
+
+    struct ServerConfiguration {
+        bool metadataEnabled;
+        bool audioEnabled;
+        bool ipv6;
+        bool synchronousTranscoding;
+        uint16_t metadataPort;
+        uint16_t audioPort;
+        int32_t cacheCount;
+        int32_t activeTranscodeLimit;
+        std::string password;
+    };
+
+    constexpr std::string_view serverPluginId = "9fc897a3-dfd5-4524-a0fc-b02f46aea4a9";
+
+    std::optional<ServerConfiguration> ReadServerConfiguration() {
+        const auto settings = api::ReadPluginSettings(serverPluginId);
+        if (!settings) {
+            return std::nullopt;
+        }
+        ServerConfiguration result { true, true, false, false, 7905, 7906, 50, 4, {} };
+        for (const auto& field : *settings) {
+            if (field.key == "websocket_server_enabled") {
+                result.metadataEnabled = std::get<bool>(field.value);
+            }
+            else if (field.key == "http_server_enabled") {
+                result.audioEnabled = std::get<bool>(field.value);
+            }
+            else if (field.key == "use_ipv6") {
+                result.ipv6 = std::get<bool>(field.value);
+            }
+            else if (field.key == "transcoder_synchronous") {
+                result.synchronousTranscoding = std::get<bool>(field.value);
+            }
+            else if (field.key == "websocket_server_port") {
+                result.metadataPort = (uint16_t) std::get<int32_t>(field.value);
+            }
+            else if (field.key == "http_server_port") {
+                result.audioPort = (uint16_t) std::get<int32_t>(field.value);
+            }
+            else if (field.key == "transcoder_cache_count") {
+                result.cacheCount = std::get<int32_t>(field.value);
+            }
+            else if (field.key == "transcoder_max_active_count") {
+                result.activeTranscodeLimit = std::get<int32_t>(field.value);
+            }
+            else if (field.key == "password") {
+                result.password = std::get<std::string>(field.value);
+            }
+        }
+        return result;
+    }
+
+    mc_result ConfigureServer(const ServerConfiguration& value) {
+        const std::pair<std::string_view, api::PreferenceValue> fields[] {
+            { "websocket_server_enabled", value.metadataEnabled },
+            { "http_server_enabled", value.audioEnabled },
+            { "use_ipv6", value.ipv6 },
+            { "transcoder_synchronous", value.synchronousTranscoding },
+            { "websocket_server_port", (int32_t) value.metadataPort },
+            { "http_server_port", (int32_t) value.audioPort },
+            { "transcoder_cache_count", value.cacheCount },
+            { "transcoder_max_active_count", value.activeTranscodeLimit },
+            { "password", value.password },
+        };
+        for (const auto& [key, setting] : fields) {
+            const auto status = api::WritePluginSetting(serverPluginId, key, setting);
+            if (status != MC_OK) {
+                return status;
+            }
+        }
+        const auto status = api::ApplyPluginSettings(serverPluginId);
+        return status == MC_ERROR_UNSUPPORTED ? MC_OK : status;
+    }
+
     bool checkServerConfiguration(bool expectedAvailable) {
         ServerConfiguration updated {
             false, false, false, false, MC_SERVER_DEFAULT_METADATA_PORT, MC_SERVER_DEFAULT_AUDIO_PORT,
             MC_SERVER_DEFAULT_CACHE_COUNT + 1, MC_SERVER_DEFAULT_ACTIVE_TRANSCODE_LIMIT, "runtime fixture"
         };
         if (!expectedAvailable) {
-            return !ReadServerConfiguration() && ConfigureServer(updated) == MC_ERROR_UNSUPPORTED;
+            return !ReadServerConfiguration();
         }
         if (ConfigureServer(updated) != MC_OK) {
             return false;
@@ -165,8 +251,7 @@ namespace {
             return false;
         }
 
-        updated.metadataPort = 0;
-        return ConfigureServer(updated) == MC_ERROR_INVALID_ARGUMENT;
+        return WritePluginSetting(serverPluginId, "http_server_port", int32_t { 0 }) == MC_ERROR_INVALID_ARGUMENT;
     }
 
     /* both the real remote client and the direct HTTP probe authenticate to this
@@ -322,6 +407,144 @@ namespace {
         return true;
     }
 
+    /* the live queue can contain tracks whose metadata comes from this same
+    server. its network worker must stay available to answer that nested read. */
+    bool checkSelfRemoteQueue(Context& context, Host& host, Playback& playback, const TrackResult& tracks) {
+        const auto expectedId = tracks.Id(0);
+        for (size_t i = 0; i < 1000; ++i) {
+            if (playback.InsertResult(tracks, MC_PLAYBACK_TRACK_APPEND) != MC_OK) {
+                return false;
+            }
+        }
+        const auto configuration = ReadServerConfiguration();
+        if (!configuration) {
+            return false;
+        }
+        const auto port = configuration->metadataPort;
+        std::atomic<bool> finished { false };
+        std::atomic<bool> succeeded { false };
+        std::thread probe([&] {
+            using Client = websocketpp::client<websocketpp::config::asio_client>;
+            using json = nlohmann::json;
+            try {
+                Client client;
+                client.clear_access_channels(websocketpp::log::alevel::all);
+                client.clear_error_channels(websocketpp::log::elevel::all);
+                client.init_asio();
+                asio::steady_timer deadline(client.get_io_context());
+                deadline.expires_after(15s);
+                const auto finish = [&](bool passed) {
+                    if (!finished.load()) {
+                        succeeded.store(passed);
+                        finished.store(true);
+                        Host::Wake(&host);
+                    }
+                    deadline.cancel();
+                    client.stop();
+                };
+                deadline.async_wait([&](const asio::error_code& error) {
+                    if (!error) {
+                        finish(false);
+                    }
+                });
+                const auto send = [&](websocketpp::connection_hdl connection,
+                    const char* name, const char* id, json options)
+                {
+                    const json request {
+                        { "name", name },
+                        { "type", "request" },
+                        { "id", id },
+                        { "device_id", "self-remote-queue-test" },
+                        { "options", std::move(options) },
+                    };
+                    websocketpp::lib::error_code error;
+                    client.send(connection, request.dump(), websocketpp::frame::opcode::text, error);
+                    if (error) {
+                        finish(false);
+                    }
+                };
+                client.set_open_handler([&](auto connection) {
+                    send(connection, "authenticate", "auth", { { "password", fixturePassword } });
+                });
+                client.set_fail_handler([&](auto) { finish(false); });
+                client.set_close_handler([&](auto) { finish(false); });
+                client.set_message_handler([&](auto connection, auto message) {
+                    try {
+                        const auto response = json::parse(message->get_payload());
+                        const auto id = response.value("id", std::string());
+                        if (id == "auth") {
+                            if (!response.at("options").value("authenticated", false)) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "query_play_queue_tracks", "queue", {
+                                { "type", "live" }, { "limit", -1 }, { "offset", 0 },
+                            });
+                        }
+                        else if (id == "queue") {
+                            const auto& rows = response.at("options").at("data");
+                            bool found = false;
+                            for (const auto& row : rows) {
+                                found |= row.value("id", (int64_t) 0) == expectedId &&
+                                    row.value("title", std::string()).find("Morning Light") != std::string::npos;
+                            }
+                            if (!found || rows.size() != 1000) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "query_play_queue_tracks", "queue-next", {
+                                { "type", "live" }, { "offset", 1000 },
+                            });
+                        }
+                        else if (id == "queue-next") {
+                            const auto& rows = response.at("options").at("data");
+                            if (rows.size() != 1 || rows[0].value("id", (int64_t) 0) != expectedId) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "list_categories", "categories", json::object());
+                        }
+                        else if (id == "categories") {
+                            const auto& fields = response.at("options").at("data");
+                            bool found = false;
+                            for (const auto& field : fields) {
+                                found |= field == "artist";
+                            }
+                            finish(found);
+                        }
+                    }
+                    catch (...) {
+                        finish(false);
+                    }
+                });
+                websocketpp::lib::error_code error;
+                auto connection = client.get_connection("ws://127.0.0.1:" + std::to_string(port), error);
+                if (error) {
+                    finish(false);
+                }
+                else {
+                    client.connect(connection);
+                    client.run();
+                }
+                if (!finished.load()) {
+                    finish(false);
+                }
+            }
+            catch (...) {
+                succeeded.store(false);
+                finished.store(true);
+                Host::Wake(&host);
+            }
+        });
+        const bool completed = waitFor(context, host, [&] { return finished.load(); });
+        probe.join();
+        if (!completed || !succeeded.load()) {
+            std::fputs("Self-remote queue query or subsequent category query failed\n", stderr);
+            return false;
+        }
+        return true;
+    }
+
     bool checkRemoteAudio(Context& context, Host& host, Playback& playback, std::string_view format, bool rangeFallback) {
         if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK ||
             !waitFor(context, host, [&] { return context.GetLibraryStatus().state == MC_LIBRARY_CONNECTED; }))
@@ -363,6 +586,69 @@ namespace {
         {
             std::fputs("Playback did not retain the remote track's loaded metadata\n", stderr);
             return false;
+        }
+
+        if (format.empty()) {
+            if (!checkSelfRemoteQueue(context, host, playback, remoteTrack)) {
+                return false;
+            }
+            /* switching between remote tracks must not block the server that
+            supplies their metadata while playback notifications are pending. */
+            TrackResult nextTrack;
+            std::optional<mc_result> nextOpened;
+            OpenTrackSearch(context, TrackSearch { "Evening Flight" },
+                [&](mc_result status, TrackResult result, std::string_view) {
+                    nextOpened = status;
+                    nextTrack = std::move(result);
+                });
+            if (!waitFor(context, host, [&] { return nextOpened.has_value(); }) ||
+                nextOpened != MC_OK || nextTrack.Size() != 1 || playback.Play(nextTrack, 0) != MC_OK ||
+                !waitFor(context, host, [&] {
+                    const auto current = playback.CurrentTrackMetadata();
+                    return current && current->Id() == nextTrack.Id(0);
+                }))
+            {
+                std::fputs("Could not switch between tracks from the local server\n", stderr);
+                return false;
+            }
+
+            /* exercise the real server's category and playlist wire operations. */
+            std::optional<bool> fieldsOk;
+            ListCategoryFields(context, [&](mc_result status, std::vector<std::string> fields, std::string_view) {
+                fieldsOk = status == MC_OK && std::ranges::find(fields, "artist") != fields.end();
+            });
+            if (!waitFor(context, host, [&] { return fieldsOk.has_value(); }) || !*fieldsOk) {
+                std::fputs("Remote category fields did not round trip\n", stderr);
+                return false;
+            }
+            auto library = context.GetLibrary();
+            if (!library) {
+                return false;
+            }
+            std::optional<mc_result> saved;
+            int64_t playlistId = 0;
+            SavePlaylist(context, *library, 0, "Server cutover fixture", { remoteTrack.Id(0) },
+                [&](mc_result status, int64_t id, std::string_view) { saved = status; playlistId = id; });
+            if (!waitFor(context, host, [&] { return saved.has_value(); }) || saved != MC_OK || playlistId <= 0) {
+                std::fputs("Remote playlist creation failed\n", stderr);
+                return false;
+            }
+            std::optional<bool> readOk;
+            OpenPlaylist(context, *library, playlistId,
+                [&](mc_result status, TrackResult tracks, std::string_view) {
+                    readOk = status == MC_OK && tracks.Size() == 1 && tracks.Id(0) == remoteTrack.Id(0);
+                });
+            if (!waitFor(context, host, [&] { return readOk.has_value(); }) || !*readOk) {
+                std::fputs("Remote playlist read failed\n", stderr);
+                return false;
+            }
+            std::optional<mc_result> deleted;
+            DeletePlaylist(context, *library, playlistId,
+                [&](mc_result status, int64_t, std::string_view) { deleted = status; });
+            if (!waitFor(context, host, [&] { return deleted.has_value(); }) || deleted != MC_OK) {
+                std::fputs("Remote playlist deletion failed\n", stderr);
+                return false;
+            }
         }
         return true;
     }
@@ -535,6 +821,37 @@ namespace {
             if (!checkRemoteAudio(context, host, playback, format, rangeFallback)) {
                 return false;
             }
+            if (format.empty()) {
+                /* a failed restart keeps the new settings and stops the old
+                listener; callers can correct the port and restart it. */
+                const auto original = ReadServerConfiguration();
+                if (!original) {
+                    std::fputs("Could not read server settings before reload failure check\n", stderr);
+                    return false;
+                }
+                asio::io_context sockets;
+                using Tcp = asio::ip::tcp;
+                Tcp::acceptor occupied(sockets, { Tcp::v4(), 0 });
+                auto unavailable = *original;
+                unavailable.audioPort = occupied.local_endpoint().port();
+                const auto failedReload = ConfigureServer(unavailable);
+                if (failedReload != MC_ERROR_PLUGIN) {
+                    std::fprintf(stderr, "Expected failed server restart, got %d\n", failedReload);
+                    return false;
+                }
+                const auto saved = ReadServerConfiguration();
+                if (!saved || saved->audioPort != unavailable.audioPort) {
+                    std::fputs("Failed server restart did not retain its settings\n", stderr);
+                    return false;
+                }
+                Tcp::socket previous(sockets);
+                asio::error_code error;
+                previous.connect({ asio::ip::address_v4::loopback(), original->audioPort }, error);
+                if (error != asio::error::connection_refused || ConfigureServer(*original) != MC_OK) {
+                    std::fputs("Failed server restart did not stop or recover the listener\n", stderr);
+                    return false;
+                }
+            }
             const auto plugins = ListPlugins();
             const auto server = std::find_if(plugins.begin(), plugins.end(), [](const auto& plugin) {
                 return plugin.filename.starts_with("libserver.") || plugin.filename == "server.dll";
@@ -549,7 +866,44 @@ namespace {
             return false;
         }
 
-        if (context.Shutdown() != MC_OK || playback.Control(MC_PLAYBACK_STOP) == MC_OK ||
+        /* applying a plugin's settings must remain on the runtime owner thread. */
+        std::mutex gateMutex;
+        std::condition_variable gate;
+        bool started = false;
+        std::atomic<bool> finished { false };
+        std::atomic<mc_result> offOwner { MC_ERROR_INTERNAL };
+        std::atomic<bool> badSettingsAccess { false };
+        std::thread configure([&] {
+            offOwner.store(ApplyPluginSettings(serverPluginId));
+            {
+                std::lock_guard lock(gateMutex);
+                started = true;
+                gate.notify_one();
+            }
+            while (!finished.load()) {
+                ApplyPluginSettings(serverPluginId);
+                const mc_string_view id { serverPluginId.data(), serverPluginId.size() };
+                const auto status = mc_plugin_read_settings(id, [](void* data, const mc_plugin_setting*) {
+                    static_cast<std::atomic<bool>*>(data)->store(true);
+                }, &badSettingsAccess);
+                if (status != MC_ERROR_WRONG_THREAD && status != MC_ERROR_UNSUPPORTED) {
+                    badSettingsAccess.store(true);
+                }
+            }
+        });
+        {
+            std::unique_lock lock(gateMutex);
+            if (!gate.wait_for(lock, 5s, [&] { return started; })) {
+                finished.store(true);
+                lock.unlock();
+                configure.join();
+                return false;
+            }
+        }
+        const auto shutdown = context.Shutdown();
+        finished.store(true);
+        configure.join();
+        if (offOwner.load() != MC_ERROR_WRONG_THREAD || badSettingsAccess.load() || shutdown != MC_OK || playback.Control(MC_PLAYBACK_STOP) == MC_OK ||
             Indexer(context).Schedule(MC_INDEXER_SCAN_LOCAL) != MC_ERROR_BUSY)
         {
             std::fputs("Shut-down runtime still admitted work\n", stderr);
@@ -623,15 +977,19 @@ int main(int argc, char** argv) {
             transcodeFormat = option.substr(transcodeOption.size());
         }
     }
-    /* Persist disabled listeners before starting the isolated plugin runtime. */
-    if (!checkServerConfiguration(server)) {
-        std::fputs("Server configuration did not round trip through the public API\n", stderr);
-        return 1;
-    }
-
-    if (remoteAudio && !configureLoopbackAudio(transcodeFormat, synchronous, noTranscodeCache)) {
-        std::fputs("Could not configure the loopback server\n", stderr);
-        return 1;
+    /* configure the plugin through its public schema before starting playback. */
+    {
+        auto setup = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+        setup.services = MC_SERVICE_PLUGINS;
+        Context plugins(setup);
+        if (!checkServerConfiguration(server)) {
+            std::fputs("Server plugin settings did not round trip\n", stderr);
+            return 1;
+        }
+        if (remoteAudio && !configureLoopbackAudio(transcodeFormat, synchronous, noTranscodeCache)) {
+            std::fputs("Could not configure the loopback server\n", stderr);
+            return 1;
+        }
     }
 
     LogProbe log;

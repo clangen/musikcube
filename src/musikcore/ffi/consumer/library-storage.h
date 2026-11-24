@@ -23,7 +23,7 @@ struct AsyncTrackReader : PlaybackOrigin {
     virtual mc_result Search(mc_context *, const std::shared_ptr<const LibraryIdentity> &,
         const musik::core::library::query::TrackSearchQuery &, mc_track_search_completion_fn, void *, mc_request_id *) const = 0;
     virtual mc_result ReadPage(mc_context *, std::vector<int64_t>, std::vector<std::string>, bool,
-        mc_track_query_completion_fn, void *, mc_request_id *) const = 0;
+        mc_track_query_completion_fn, void *, mc_request_id *, const void* owner = nullptr) const = 0;
 };
 
 struct mc_track_page : musik::core::library::query::ProjectedTrackPage {};

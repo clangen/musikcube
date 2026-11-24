@@ -41,11 +41,18 @@ namespace musik { namespace core { namespace library { namespace query {
         std::vector<Row> rows;
     };
 
+    enum class TrackVisibility {
+        VisibleOnly,
+        IncludeHidden
+    };
+
     /* When IDs are supplied, count rows from that ordered range rather than a title search. */
     struct TrackPageQuery {
         TrackPageQuery(const std::string &search, const std::vector<std::string> &fields,
-            size_t offset, size_t limit, const int64_t *ids = nullptr, bool keepMissing = true)
-            : search(search), fields(fields), offset(offset), limit(limit), ids(ids), keepMissing(keepMissing) {}
+            size_t offset, size_t limit, const int64_t *ids = nullptr, bool keepMissing = true,
+            TrackVisibility visibility = TrackVisibility::VisibleOnly)
+            : search(search), fields(fields), offset(offset), limit(limit), ids(ids), keepMissing(keepMissing),
+              visibility(visibility) {}
 
         const std::string &search;
         const std::vector<std::string> &fields;
@@ -53,6 +60,7 @@ namespace musik { namespace core { namespace library { namespace query {
         size_t limit;
         const int64_t *ids = nullptr;
         bool keepMissing = true;
+        TrackVisibility visibility = TrackVisibility::VisibleOnly;
 
         bool Run(sqlite3 *database, ProjectedTrackPage &page) const;
     };

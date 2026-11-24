@@ -390,10 +390,7 @@ MC_API bool MC_CALL mc_track_result_starts_album(const mc_track_result *tracks, 
 /* Total seconds for the album group starting at row. Other positions return zero. */
 MC_API uint64_t MC_CALL mc_track_result_get_album_duration(const mc_track_result *tracks, size_t row);
 /* Read current metadata. Removed tracks retain their IDs and have no values.
-   Remote reads support ID, title, artist, album, duration, track number, rating, and lyrics.
-   A remote read that requests any other field returns MC_ERROR_UNSUPPORTED.
-   Current servers preserve missing/empty values and hidden rows through a typed
-   projection. Legacy servers can return their older, less precise metadata map.
+   Local and remote reads preserve missing and empty values through a typed projection.
    The submitted request retains the result data after the caller releases the handle. */
 MC_API mc_result MC_CALL mc_track_result_read_async(
     mc_context *context, const mc_track_result *tracks, const mc_track_range *range,
