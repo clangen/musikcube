@@ -354,7 +354,7 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_NAME STREQUAL "Linux
   add_test(NAME musikcube.integration.packaging.standalone_elf
     COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/check-standalone-elf.js"
     "${CMAKE_C_COMPILER}" "${PROJECT_SOURCE_DIR}/script/scan-standalone.js"
-    "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures")
+    "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures" "${PROJECT_SOURCE_DIR}/script/patch-rpath.sh")
   set_tests_properties(musikcube.integration.packaging.standalone_elf PROPERTIES
     LABELS "integration;musikcube;packaging;contract" TIMEOUT 20)
 endif()

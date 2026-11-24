@@ -20,9 +20,9 @@ macro(add_plugin plugin_dir plugin_name)
         if(NOT has_exports)
             musikcube_restrict_exports(${plugin_name} GetPlugin ${ARGN})
         endif()
-        # Standalone plugins resolve vendor libraries in the sibling lib directory.
+        # Standalone plugins resolve the core in the parent and vendors in lib.
         if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND BUILD_STANDALONE)
-            set_target_properties(${plugin_name} PROPERTIES INSTALL_RPATH "$ORIGIN:$ORIGIN/../lib")
+            set_target_properties(${plugin_name} PROPERTIES INSTALL_RPATH "$ORIGIN:$ORIGIN/..:$ORIGIN/../lib")
         endif()
         message(STATUS "[add-plugin] ${BoldGreen}added ${plugin_name}${ColorReset}")
         add_dependencies(musikcube ${plugin_name})

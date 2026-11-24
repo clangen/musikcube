@@ -4,7 +4,7 @@ const { spawnSync } = require('node:child_process');
 const { copyFileSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } = require('node:fs');
 const { join } = require('node:path');
 
-const [compiler, scanner, staging] = process.argv.slice(2);
+const [compiler, scanner, staging, patchRpath] = process.argv.slice(2);
 mkdirSync(staging, { recursive: true });
 const root = mkdtempSync(join(staging, 'elf-audit-'));
 const lib = join(root, 'lib');
@@ -35,6 +35,25 @@ try {
   writeFileSync(source, 'int fixture(void); int main(void) { return fixture(); }\n');
   compile(source, join(lib, dependency), '-Wl,-rpath,$ORIGIN/lib', '-o', join(root, 'musikcube'));
   copyFileSync(join(root, 'musikcube'), join(root, 'musikcubed'));
+
+  /* run the production patcher on a server-like plugin that depends on the core. */
+  const packageRoot = join(root, 'patched', 'bin');
+  mkdirSync(join(packageRoot, 'lib'), { recursive: true });
+  mkdirSync(join(packageRoot, 'plugins'));
+  copyFileSync(join(lib, dependency), join(packageRoot, 'lib', dependency));
+  copyFileSync(join(root, 'musikcube'), join(packageRoot, 'musikcube'));
+  copyFileSync(join(root, 'musikcubed'), join(packageRoot, 'musikcubed'));
+  writeFileSync(source, 'int fixture(void) { return 0; }\n');
+  compile('-shared', '-fPIC', '-Wl,-soname,libmusikcore.so', source,
+    '-o', join(packageRoot, 'libmusikcore.so'));
+  writeFileSync(source, 'int fixture(void); int server(void) { return fixture(); }\n');
+  compile('-shared', '-fPIC', source, join(packageRoot, 'libmusikcore.so'),
+    '-o', join(packageRoot, 'plugins', 'libserver.so'));
+  const patched = spawnSync('sh', [patchRpath], { cwd: join(root, 'patched'), encoding: 'utf8' });
+  assert.equal(patched.status, 0, patched.stderr);
+  const patchedAudit = spawnSync(process.execPath, [scanner, packageRoot, '--target', 'x86_64'],
+    { encoding: 'utf8' });
+  assert.equal(patchedAudit.status, 0, patchedAudit.stderr);
 
   const good = audit('x86_64');
   assert.equal(good.status, 0, good.stderr);

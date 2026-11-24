@@ -11,9 +11,7 @@ if [ "$PLATFORM" = 'Linux' ]; then
     chmod -x ./bin/plugins/*
     chmod -x ./bin/*.so
 
-    # update the RPATH so libraries in libs/ can discover each other,
-    # and plugins can discover themselves, and libs/ (but not the
-    # other way around)
+    # plugins also need the core library in the parent directory.
 
     FILES="./bin/lib/*"
     for f in $FILES
@@ -24,7 +22,7 @@ if [ "$PLATFORM" = 'Linux' ]; then
     FILES="./bin/plugins/*.so"
     for f in $FILES
     do
-        patchelf --set-rpath "\$ORIGIN:\$ORIGIN/../lib" "$f" || exit $?
+        patchelf --set-rpath "\$ORIGIN:\$ORIGIN/..:\$ORIGIN/../lib" "$f" || exit $?
     done
 
     patchelf --set-rpath "\$ORIGIN:\$ORIGIN/lib" bin/musikcube || exit $?
