@@ -3,6 +3,9 @@
 #include "../common/error.h"
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/decoder.h>
+#include <musikcore/plugin/dsp.h>
+#include <musikcore/plugin/analyzer.h>
+#include <musikcore/plugin/encoder.h>
 
 #include <climits>
 #include <cstring>
@@ -127,6 +130,15 @@ namespace musik { namespace core { namespace ffi {
                 }
                 return true;
             }
+            if (id == MC_PLUGIN_CAPABILITY_ENCODER) {
+                if (capability.api_size < sizeof(mc_encoder_factory) ||
+                    reinterpret_cast<uintptr_t>(capability.api) % alignof(mc_encoder_factory))
+                {
+                    return false;
+                }
+                const auto& factory = *static_cast<const mc_encoder_factory*>(capability.api);
+                return factory.can_handle && factory.create;
+            }
             if (id == MC_PLUGIN_CAPABILITY_STREAM) {
                 return validFactory<mc_stream_factory>(capability, [](const auto& factory, const auto& methods) {
                     return factory.can_handle && methods.open && methods.close && methods.interrupt && methods.get_info &&
@@ -137,6 +149,16 @@ namespace musik { namespace core { namespace ffi {
                 return validFactory<mc_decoder_factory>(capability, [](const auto& factory, const auto& methods) {
                     return factory.can_handle && methods.open && methods.interrupt && methods.decode && methods.seek &&
                         methods.get_duration && methods.set_preferred_sample_rate;
+                });
+            }
+            if (id == MC_PLUGIN_CAPABILITY_DSP) {
+                return validFactory<mc_dsp_factory>(capability, [](const auto& factory, const auto& methods) {
+                    return factory.reload && methods.process;
+                });
+            }
+            if (id == MC_PLUGIN_CAPABILITY_ANALYZER) {
+                return validFactory<mc_analyzer_factory>(capability, [](const auto&, const auto& methods) {
+                    return methods.begin && methods.process && methods.finish;
                 });
             }
             if (id == MC_PLUGIN_CAPABILITY_OUTPUT) {

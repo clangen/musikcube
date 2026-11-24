@@ -4,6 +4,9 @@
 
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/decoder.h>
+#include <musikcore/plugin/dsp.h>
+#include <musikcore/plugin/analyzer.h>
+#include <musikcore/plugin/encoder.h>
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/settings.h>
 #include "PluginCallState.h"
@@ -130,8 +133,17 @@ namespace musik { namespace core { namespace ffi {
             else if constexpr (std::is_same_v<T, mc_stream_factory>) {
                 return MC_PLUGIN_CAPABILITY_STREAM;
             }
+            else if constexpr (std::is_same_v<T, mc_encoder_factory>) {
+                return MC_PLUGIN_CAPABILITY_ENCODER;
+            }
             else if constexpr (std::is_same_v<T, mc_decoder_factory>) {
                 return MC_PLUGIN_CAPABILITY_DECODER;
+            }
+            else if constexpr (std::is_same_v<T, mc_dsp_factory>) {
+                return MC_PLUGIN_CAPABILITY_DSP;
+            }
+            else if constexpr (std::is_same_v<T, mc_analyzer_factory>) {
+                return MC_PLUGIN_CAPABILITY_ANALYZER;
             }
             else {
                 static_assert(std::is_same_v<T, mc_output_factory>, "unsupported plugin factory type");
