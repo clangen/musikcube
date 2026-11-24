@@ -1,5 +1,6 @@
 #include <common/FilesystemPath.h>
 #include <musikcore/context.h>
+#include <musikcore/plugins.h>
 #include "../../support/host-wakeup.h"
 #include <chrono>
 
@@ -24,6 +25,62 @@ struct Observations {
     unsigned failedShutdown = 0;
     unsigned rejected = 0;
 };
+
+/* copy callback-scoped values so the test can check them after reading. */
+struct Settings {
+    bool enabled = false;
+    double seconds = 0;
+    std::string label;
+    unsigned count = 0;
+};
+
+static void MC_CALL recordSetting(void* data, const mc_plugin_setting* setting) {
+    auto& settings = *static_cast<Settings*>(data);
+    const std::string key(setting->key.data, setting->key.length);
+    if (key == "enabled" && setting->value.type == MC_PREFERENCE_BOOLEAN) {
+        settings.enabled = setting->value.data.boolean;
+        ++settings.count;
+    }
+    else if (key == "seconds" && setting->value.type == MC_PREFERENCE_NUMBER) {
+        settings.seconds = setting->value.data.number;
+        ++settings.count;
+    }
+    else if (key == "label" && setting->value.type == MC_PREFERENCE_TEXT) {
+        settings.label.assign(setting->value.data.text.data, setting->value.data.text.length);
+        ++settings.count;
+    }
+}
+
+/* settings are read and written through the same public API as the app UI. */
+static void checkSettings() {
+    const mc_string_view plugin { "org.musikcube.fixture", 21 };
+    Settings defaults;
+    require(mc_plugin_read_settings(plugin, recordSetting, &defaults) == MC_OK && defaults.count == 3 &&
+        defaults.enabled && defaults.seconds == 2.5 && defaults.label == "default", "read mixed defaults");
+
+    mc_preference_entry entry {};
+    entry.key = { "seconds", 7 };
+    entry.value.type = MC_PREFERENCE_NUMBER;
+    entry.value.data.number = 11.0;
+    require(mc_plugin_write_setting(plugin, &entry) == MC_ERROR_INVALID_ARGUMENT, "reject out-of-range setting");
+    entry.value.type = MC_PREFERENCE_BOOLEAN;
+    entry.value.data.boolean = true;
+    require(mc_plugin_write_setting(plugin, &entry) == MC_ERROR_INVALID_ARGUMENT, "reject wrong setting type");
+    entry.value.type = MC_PREFERENCE_NUMBER;
+    entry.value.data.number = 3.5;
+    require(mc_plugin_write_setting(plugin, &entry) == MC_OK, "save number");
+    entry.key = { "enabled", 7 };
+    entry.value.type = MC_PREFERENCE_BOOLEAN;
+    entry.value.data.boolean = false;
+    require(mc_plugin_write_setting(plugin, &entry) == MC_OK, "save boolean");
+    entry.key = { "label", 5 };
+    entry.value.type = MC_PREFERENCE_TEXT;
+    entry.value.data.text = { "saved", 5 };
+    require(mc_plugin_write_setting(plugin, &entry) == MC_OK, "save text");
+    Settings saved;
+    require(mc_plugin_read_settings(plugin, recordSetting, &saved) == MC_OK && saved.count == 3 &&
+        !saved.enabled && saved.seconds == 3.5 && saved.label == "saved", "read saved mixed settings");
+}
 
 /* observe accepted and rejected providers through normal runtime diagnostics;
 failed initialization must roll back without preventing a usable context. */
@@ -97,6 +154,9 @@ int main(int argc, char** argv) {
         }
         require(seen.initialized == 1 && seen.rejected == 2, "optional provider failures leave the valid session usable");
         require(seen.failedInitialize == 1 && seen.failedShutdown == 1, "partial provider state rolled back exactly once");
+        if (run == 0) {
+            checkSettings();
+        }
         require(mc_context_destroy(&context) == MC_OK && !context, "context shuts down provider session cleanly");
         test_host_event_destroy(event);
     }

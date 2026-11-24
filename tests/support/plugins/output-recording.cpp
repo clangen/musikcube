@@ -205,14 +205,14 @@ namespace {
         recordedFactory.create = create;
         auto record = *capability;
         record.api = &recordedFactory;
-        return host->register_capability(host->host_context, &record);
+        return host->register_plugin_capability(host->host_context, &record);
     }
 
     mc_result MC_CALL initialize(const mc_host_api* api, void** state, mc_error**) {
         host = api;
         *state = nullptr;
         auto fixtureHost = *api;
-        fixtureHost.register_capability = registerOutput;
+        fixtureHost.register_plugin_capability = registerOutput;
         return musik::core::plugin::RegisterOutput<RecordingOutput>(fixtureHost);
     }
     void MC_CALL shutdown(void*) {

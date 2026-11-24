@@ -64,6 +64,9 @@ namespace musik { namespace core { namespace plugin {
 
     ffi::PluginRegistry::Factory<mc_analyzer_factory> FindAnalyzerFactory(std::string_view pluginId);
 
+    ffi::PluginRegistry::Factory<mc_tag_reader_factory> FindTagReaderFactory(std::string_view pluginId);
+    ffi::PluginRegistry::Factory<mc_indexer_source_factory> FindIndexerSourceFactory(std::string_view pluginId);
+
     ffi::PluginRegistry::Factory<mc_dsp_factory> FindDspFactory(std::string_view pluginId);
 
     ffi::PluginRegistry::Factory<mc_configuration_api> FindConfiguration(std::string_view pluginId);

@@ -61,6 +61,8 @@ set(musikcore_sources
   src/musikcore/plugin/PluginFactory.cpp
   src/musikcore/plugin/MediaHost.cpp
   src/musikcore/plugin/MetadataWriter.cpp
+  src/musikcore/plugin/TagReader.cpp
+  src/musikcore/plugin/IndexerSource.cpp
   src/musikcore/plugin/Plugins.cpp
   src/common/runtime/Message.cpp
   src/common/runtime/MessageQueue.cpp

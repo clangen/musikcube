@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/String.h>
 #include <string>
 #include <set>
@@ -76,18 +75,6 @@ static const std::set<std::string> FORMATS = {
     ".vgm", ".gym", ".spc", ".sap", ".nsfe",
     ".nsf", ".ay", ".gbs", ".hes", ".kss"
 };
-
-static inline musik::core::sdk::ISchema* CreateSchema() {
-    auto schema = new musik::core::sdk::TSchema<>();
-    schema->AddBool(KEY_ALWAYS_LOOP_FOREVER, DEFAULT_ALWAYS_LOOP_FOREVER);
-    schema->AddBool(KEY_IGNORE_EMBEDDED_TRACK_LENGTH, DEFAULT_IGNORE_EMBEDDED_TRACK_LENGTH);
-    schema->AddDouble(KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH);
-    schema->AddDouble(KEY_TRACK_FADE_OUT_LENGTH, DEFAULT_FADE_OUT_LENGTH);
-    schema->AddDouble(KEY_MINIMUM_TRACK_LENGTH, DEFAULT_MINIMUM_TRACK_LENGTH);
-    schema->AddBool(KEY_EXCLUDE_SOUND_EFFECTS, DEFAULT_EXCLUDE_SOUND_EFFECTS);
-    schema->AddBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U);
-    return schema;
-}
 
 static inline bool canHandle(std::string fn) {
     std::transform(fn.begin(), fn.end(), fn.begin(), ::tolower);

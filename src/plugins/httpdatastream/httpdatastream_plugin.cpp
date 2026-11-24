@@ -1,3 +1,4 @@
+#include <musikcore/plugin/registration.hpp>
 //////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2004-2023 musikcube team
@@ -153,26 +154,16 @@ namespace {
         };
     };
 
-    template<typename T> mc_result registerTable(const mc_host_api& host, mc_string_view id, const T& table) {
-        const mc_plugin_capability capability {
-            .struct_size = sizeof(mc_plugin_capability),
-            .id = id,
-            .api = &table,
-            .api_size = sizeof(T),
-        };
-        return host.register_capability(host.host_context, &capability);
-    }
-
     mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_error**) {
         return call([&]() -> mc_result {
             auto* provider = new Provider;
             *context = provider;
             const auto configured =
-                registerTable(*host, text(MC_PLUGIN_CAPABILITY_CONFIGURATION), HttpDataStream::Configuration());
+                musik::core::plugin::RegisterConfiguration(*host, HttpDataStream::Configuration());
             if (configured != MC_OK) {
                 return configured;
             }
-            return registerTable(*host, text(MC_PLUGIN_CAPABILITY_STREAM), provider->factory);
+            return musik::core::plugin::RegisterStream(*host, provider->factory);
         });
     }
 

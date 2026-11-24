@@ -4,6 +4,7 @@ set (taglibreader_SOURCES
 )
 
 add_library(taglibreader SHARED ${taglibreader_SOURCES})
+musikcube_configure_c_plugin(taglibreader)
 
 find_library(LIBZ z)
 

@@ -319,6 +319,9 @@ int main(int argc, char** argv) {
         BadConfiguration,
         BadEncoder,
         BadDsp,
+        BadIndexer,
+        BadNumberConfiguration,
+        DuplicateConfiguration,
         FixtureCount
     };
     require(argc == 2 || argc == FixtureCount, "fixture arguments supplied");
@@ -343,6 +346,11 @@ int main(int argc, char** argv) {
         /* an incomplete encoder or DSP must never be published. */
         checkRejected(argv[BadEncoder], true, true, MC_ERROR_INVALID_ARGUMENT);
         checkRejected(argv[BadDsp], true, true, MC_ERROR_INVALID_ARGUMENT);
+        /* an incomplete source factory cannot reach the indexer. */
+        checkRejected(argv[BadIndexer], true, true, MC_ERROR_INVALID_ARGUMENT);
+        /* numeric ranges and keys shared across setting types must be valid. */
+        checkRejected(argv[BadNumberConfiguration], true, true, MC_ERROR_INVALID_ARGUMENT);
+        checkRejected(argv[DuplicateConfiguration], true, true, MC_ERROR_INVALID_ARGUMENT);
     }
     std::puts("provider identification/session-lifetime contracts passed");
 }

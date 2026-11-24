@@ -35,6 +35,7 @@ namespace musik { namespace core { namespace ffi {
         bool IsSameImage(const Plugin& other) const;
         bool HasId(std::string_view id) const;
         PluginRegistry::PluginInfo Describe(bool enabled) const;
+        const mc_host_api& Host() const { return this->host; }
 
         mc_result Identify(mc_error** error = nullptr);
         mc_result Initialize(mc_error** error = nullptr);

@@ -133,9 +133,6 @@
 #include <musikcore/sdk/IDebug.h>
 #include <musikcore/sdk/IDevice.h>
 #include <musikcore/sdk/IEnvironment.h>
-#include <musikcore/sdk/IIndexerNotifier.h>
-#include <musikcore/sdk/IIndexerSource.h>
-#include <musikcore/sdk/IIndexerWriter.h>
 #include <musikcore/sdk/IMap.h>
 #include <musikcore/sdk/IMapList.h>
 #include <musikcore/sdk/IMetadataProxy.h>
@@ -148,7 +145,6 @@
 #include <musikcore/sdk/IResource.h>
 #include <musikcore/sdk/ISchema.h>
 #include <musikcore/sdk/ISpectrumVisualizer.h>
-#include <musikcore/sdk/ITagReader.h>
 #include <musikcore/sdk/ITagStore.h>
 #include <musikcore/sdk/ITrack.h>
 #include <musikcore/sdk/ITrackList.h>

@@ -223,48 +223,14 @@ namespace runtime_tests {
             return true;
         };
 #ifdef TEST_STREAM_gmedecoder
-        if (!checkNested("gme", "nested.spc")) {
+        if (!TEST_CHECK(bool(musik::core::plugin::FindIndexerSourceFactory("org.musikcube.decoder.gme"))) ||
+            !checkNested("gme", "nested.spc")) {
             return false;
         }
 #endif
 #ifdef TEST_STREAM_openmptdecoder
-        if (!checkNested("libopenmpt", "nested.mod")) {
-            return false;
-        }
-#endif
-        /* a saved disabled codec also suppresses its new indexer until the
-        user explicitly enables indexing. listing plugins must not itself
-        create an override that masks the inherited setting. */
-        auto checkIndexerSelection = [](std::string_view mediaId, std::string_view indexerId) {
-            const auto plugins = api::ListPlugins();
-            const auto find = [&](std::string_view id) {
-                return std::find_if(plugins.begin(), plugins.end(), [&](const auto& plugin) { return plugin.id == id; });
-            };
-            const auto media = find(mediaId);
-            const auto indexer = find(indexerId);
-            if (!TEST_CHECK(media != plugins.end() && indexer != plugins.end()) ||
-                !TEST_CHECK(api::SetPluginEnabled(media->filename, false) == MC_OK))
-            {
-                return false;
-            }
-            const auto indexerEnabled = [&] {
-                for (const auto& item : api::ListPlugins()) {
-                    if (item.id == indexerId) {
-                        return item.enabled;
-                    }
-                }
-                return false;
-            };
-            return TEST_CHECK(!indexerEnabled()) && TEST_CHECK(api::SetPluginEnabled(indexer->filename, true) == MC_OK) &&
-                TEST_CHECK(indexerEnabled());
-        };
-#ifdef TEST_STREAM_gmedecoder
-        if (!checkIndexerSelection("org.musikcube.decoder.gme", "2c4eee19-6585-4984-a631-b52ff7d6d564")) {
-            return false;
-        }
-#endif
-#ifdef TEST_STREAM_openmptdecoder
-        if (!checkIndexerSelection("org.musikcube.decoder.openmpt", "c367f42f-389a-4378-966c-1f96dad6a66a")) {
+        if (!TEST_CHECK(bool(musik::core::plugin::FindIndexerSourceFactory("org.musikcube.decoder.openmpt"))) ||
+            !checkNested("libopenmpt", "nested.mod")) {
             return false;
         }
 #endif

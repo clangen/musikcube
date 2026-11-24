@@ -120,7 +120,7 @@ template<typename T> static const mc_output_factory& factoryFor() {
     const mc_output_factory* factory = nullptr;
     mc_host_api host = MC_HOST_API_DEFAULT;
     host.host_context = &factory;
-    host.register_capability = [](void* context, const mc_plugin_capability* capability) -> mc_result {
+    host.register_plugin_capability = [](void* context, const mc_plugin_capability* capability) -> mc_result {
         require(std::string(capability->id.data, capability->id.length) == MC_PLUGIN_CAPABILITY_OUTPUT,
             "adapter supplies the output capability identifier");
         require(capability->api_size == sizeof(mc_output_factory), "adapter supplies the correct table size");

@@ -63,7 +63,6 @@
 #include <musikcore/support/Messages.h>
 
 #include <musikcore/sdk/IDebug.h>
-#include <musikcore/sdk/IIndexerNotifier.h>
 #include <musikcore/sdk/IEnvironment.h>
 
 using namespace musik;
@@ -144,7 +143,6 @@ mc_result MC_CALL mc_server_configure(const mc_server_configuration* configurati
 typedef void(*SetEnvironment)(IEnvironment*);
 typedef void(*SetDebug)(IDebug*);
 typedef void(*SetMetadataProxy)(IMetadataProxy*);
-typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
 
 static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
 
@@ -498,16 +496,6 @@ namespace musik { namespace core { namespace plugin {
                 }, PluginFactory::FunctionSelection::Session);
         }
 
-        /* indexer */
-        IIndexerNotifier* indexerNotifier =
-            library ? dynamic_cast<IIndexerNotifier*>(library->Indexer()) : nullptr;
-
-        PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
-            "SetIndexerNotifier",
-            [indexerNotifier](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
-                func(indexerNotifier);
-            }, PluginFactory::FunctionSelection::Session);
-
         /* environment */
         PluginFactory::Instance().QueryFunction<SetEnvironment>(
             "SetEnvironment",
@@ -555,6 +543,16 @@ namespace musik { namespace core { namespace plugin {
             : ffi::PluginRegistry::Factory<mc_analyzer_factory>();
     }
 
+    ffi::PluginRegistry::Factory<mc_tag_reader_factory> FindTagReaderFactory(std::string_view pluginId) {
+        return pluginRegistry ? pluginRegistry->Find<mc_tag_reader_factory>(pluginId)
+            : ffi::PluginRegistry::Factory<mc_tag_reader_factory>();
+    }
+
+    ffi::PluginRegistry::Factory<mc_indexer_source_factory> FindIndexerSourceFactory(std::string_view pluginId) {
+        return pluginRegistry ? pluginRegistry->Find<mc_indexer_source_factory>(pluginId)
+            : ffi::PluginRegistry::Factory<mc_indexer_source_factory>();
+    }
+
     ffi::PluginRegistry::Factory<mc_dsp_factory> FindDspFactory(std::string_view pluginId) {
         return pluginRegistry ? pluginRegistry->Find<mc_dsp_factory>(pluginId)
             : ffi::PluginRegistry::Factory<mc_dsp_factory>();
@@ -600,6 +598,21 @@ namespace musik { namespace core { namespace plugin {
         });
     }
 
+    static mc_result MC_CALL readText(void* context, mc_string_view key, mc_string_view fallback,
+        mc_preference_text_fn read, void* userData)
+    {
+        if (!read || !ffi::valid_text(key, false) || !ffi::valid_text(fallback)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return ffi::exception_barrier(nullptr, [&] {
+            const std::string keyText(key.data, key.length);
+            const std::string fallbackText(fallback.data ? fallback.data : "", fallback.length);
+            const auto value = static_cast<Preferences*>(context)->GetString(keyText, fallbackText);
+            read(userData, { value.data(), value.size() });
+            return MC_OK;
+        });
+    }
+
     mc_preferences_host_api ReadSettingsService(const std::string& pluginName) {
         return {
             .struct_size = sizeof(mc_preferences_host_api),
@@ -607,6 +620,7 @@ namespace musik { namespace core { namespace plugin {
             .read_integer = readInteger,
             .read_boolean = readBoolean,
             .read_number = readNumber,
+            .read_text = readText,
         };
     }
 
@@ -621,10 +635,6 @@ namespace musik { namespace core { namespace plugin {
         try {
             PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
                 "SetMetadataProxy", [](musik::core::sdk::IPlugin*, SetMetadataProxy function) {
-                    function(nullptr);
-                }, PluginFactory::FunctionSelection::Session);
-            PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
-                "SetIndexerNotifier", [](musik::core::sdk::IPlugin*, SetIndexerNotifier function) {
                     function(nullptr);
                 }, PluginFactory::FunctionSelection::Session);
             PluginFactory::Instance().QueryFunction<SetEnvironment>(

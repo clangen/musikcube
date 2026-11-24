@@ -1,6 +1,7 @@
 #include "FfmpegEncoder.h"
 #include "LameEncoder.h"
 #include <musikcore/plugin.h>
+#include <musikcore/plugin/registration.hpp>
 #include <musikcore/plugin/encoder.hpp>
 #include <musikcore/sdk/version.h>
 
@@ -68,11 +69,7 @@ namespace {
             auto* state = new PluginState { *host, factoryTemplate };
             *context = state;
             state->factory.context = state;
-            mc_plugin_capability capability = MC_PLUGIN_CAPABILITY_DEFAULT;
-            capability.id = { MC_PLUGIN_CAPABILITY_ENCODER, sizeof(MC_PLUGIN_CAPABILITY_ENCODER) - 1 };
-            capability.api = &state->factory;
-            capability.api_size = sizeof(state->factory);
-            return host->register_capability(host->host_context, &capability);
+            return musik::core::plugin::RegisterEncoder(*host, state->factory);
         });
     }
 }

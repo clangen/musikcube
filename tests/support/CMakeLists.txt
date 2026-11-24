@@ -478,6 +478,7 @@ set_tests_properties(musikcore.integration.runtime.indexer_cancel PROPERTIES
 
 add_library(musikcore_runtime_indexer MODULE ../integration/musikcore/runtime-indexer-plugin.cpp)
 target_include_directories(musikcore_runtime_indexer PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_compile_definitions(musikcore_runtime_indexer PRIVATE MC_BUILDING_PLUGIN)
 set_target_properties(musikcore_runtime_indexer PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-indexer"
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-indexer"
@@ -549,7 +550,7 @@ foreach(name IN ITEMS CurrentSdk ObsoleteSdk)
   add_dependencies(musikcore_runtime_hardening_test musikcore_sdk_${name})
 endforeach()
 # exercise the real virtual-URI providers when their optional codec libraries are installed.
-if(TARGET ffmpegdecoder OR TARGET gmedecoder OR TARGET openmptdecoder OR TARGET libopenmptdecoder)
+if(TARGET taglibreader OR TARGET ffmpegdecoder OR TARGET gmedecoder OR TARGET openmptdecoder OR TARGET libopenmptdecoder)
   add_executable(musikcore_codec_providers_test "${PROJECT_SOURCE_DIR}/tests/integration/plugins/codec-providers.cpp"
     "${PROJECT_SOURCE_DIR}/src/musikcore/io/LocalFileSource.cpp"
     "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/AudioScratchBuffers.cpp"
@@ -561,9 +562,12 @@ if(TARGET ffmpegdecoder OR TARGET gmedecoder OR TARGET openmptdecoder OR TARGET 
   target_link_libraries(musikcore_codec_providers_test PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
   add_dependencies(musikcube_tests musikcore_codec_providers_test)
   add_dependencies(musikcube_integration_tests musikcore_codec_providers_test)
-  foreach(provider IN ITEMS ffmpegdecoder gmedecoder openmptdecoder libopenmptdecoder)
+  foreach(provider IN ITEMS taglibreader ffmpegdecoder gmedecoder openmptdecoder libopenmptdecoder)
     if(TARGET ${provider})
-      if(provider STREQUAL ffmpegdecoder)
+      if(provider STREQUAL taglibreader)
+        set(family taglib)
+        set(scenario taglib_metadata)
+      elseif(provider STREQUAL ffmpegdecoder)
         set(family ffmpeg)
         set(scenario ffmpeg_resample)
       elseif(provider STREQUAL gmedecoder)
@@ -585,6 +589,79 @@ if(TARGET ffmpegdecoder OR TARGET gmedecoder OR TARGET openmptdecoder OR TARGET 
 endif()
 
 # exercise the real nested sources through the runtime when their optional libraries are installed.
+add_library(musikcore_indexer_gate MODULE ../integration/plugins/indexer-gate-plugin.cpp)
+target_include_directories(musikcore_indexer_gate PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_indexer_gate PRIVATE cxx_std_20)
+musikcube_configure_c_plugin(musikcore_indexer_gate)
+set_target_properties(musikcore_indexer_gate PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/indexer-gate"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/indexer-gate")
+if(APPLE)
+  set_target_properties(musikcore_indexer_gate PROPERTIES SUFFIX ".dylib")
+endif()
+add_executable(musikcore_indexer_gate_test ../integration/plugins/indexer-gate.cpp host-wakeup.cpp)
+target_include_directories(musikcore_indexer_gate_test PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(musikcore_indexer_gate_test PRIVATE ${core_fixture_library} Threads::Threads)
+target_compile_features(musikcore_indexer_gate_test PRIVATE cxx_std_20)
+set_target_properties(musikcore_indexer_gate_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+if(WIN32)
+  target_link_libraries(musikcore_indexer_gate_test PRIVATE
+    musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+endif()
+add_dependencies(musikcore_indexer_gate_test musikcore_indexer_gate)
+add_dependencies(musikcube_tests musikcore_indexer_gate_test)
+add_dependencies(musikcube_integration_tests musikcore_indexer_gate_test)
+foreach(mode IN ITEMS cancel fail database ignore)
+  add_test(NAME musikcore.integration.plugins.indexer_${mode}
+    COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_indexer_gate_test>" --stage
+    --plugin "$<TARGET_FILE:musikcore_indexer_gate>" "${mode}")
+  set_tests_properties(musikcore.integration.plugins.indexer_${mode} PROPERTIES
+    LABELS "integration;musikcore;plugins;indexer;contract" TIMEOUT 30)
+endforeach()
+
+# a source that fails to initialize must stop before a scan can remove its tracks.
+add_test(NAME musikcore.integration.plugins.indexer_create-fail
+  COMMAND "${CMAKE_COMMAND}"
+    "-DNODE=${MUSIKCORE_TEST_NODE}"
+    "-DRUNNER=${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "-DROOT=${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+    "-DTEST_BINARY=$<TARGET_FILE:musikcore_indexer_gate_test>"
+    "-DPLUGIN=$<TARGET_FILE:musikcore_indexer_gate>"
+    -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-indexer-source-fatal.cmake")
+set_tests_properties(musikcore.integration.plugins.indexer_create-fail PROPERTIES
+  LABELS "integration;musikcore;plugins;indexer;contract" TIMEOUT 30)
+
+if(TARGET gmedecoder OR TARGET openmptdecoder OR TARGET libopenmptdecoder)
+  add_executable(musikcore_indexer_providers_test
+    ../integration/plugins/indexer-providers.cpp host-wakeup.cpp)
+  target_include_directories(musikcore_indexer_providers_test PRIVATE "${PROJECT_SOURCE_DIR}/src")
+  target_link_libraries(musikcore_indexer_providers_test PRIVATE ${core_fixture_library} Threads::Threads)
+  target_compile_features(musikcore_indexer_providers_test PRIVATE cxx_std_20)
+  set_target_properties(musikcore_indexer_providers_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+  if(WIN32)
+    target_link_libraries(musikcore_indexer_providers_test PRIVATE
+      musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+  endif()
+  add_dependencies(musikcube_tests musikcore_indexer_providers_test)
+  add_dependencies(musikcube_integration_tests musikcore_indexer_providers_test)
+  foreach(provider IN ITEMS gme openmpt)
+    set(indexer_target ${provider}decoder)
+    if(provider STREQUAL "openmpt" AND TARGET libopenmptdecoder)
+      set(indexer_target libopenmptdecoder)
+    endif()
+    if(TARGET ${indexer_target})
+      add_dependencies(musikcore_indexer_providers_test ${indexer_target})
+      add_test(NAME musikcore.integration.plugins.indexer_${provider}
+        COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+        "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_indexer_providers_test>" --stage
+        --plugin "$<TARGET_FILE:${indexer_target}>" @origin "${provider}")
+      set_tests_properties(musikcore.integration.plugins.indexer_${provider} PROPERTIES
+        LABELS "integration;musikcore;plugins;indexer;contract" TIMEOUT 60)
+    endif()
+  endforeach()
+endif()
+
 set(stream_sdk_plugins)
 foreach(provider IN ITEMS gmedecoder openmptdecoder)
   set(target "${provider}")
@@ -592,12 +669,7 @@ foreach(provider IN ITEMS gmedecoder openmptdecoder)
     set(target libopenmptdecoder)
   endif()
   if(TARGET ${target})
-    if(provider STREQUAL "gmedecoder")
-      set(indexer gmeindexer)
-    else()
-      set(indexer openmptindexer)
-    endif()
-    list(APPEND stream_sdk_plugins --plugin "$<TARGET_FILE:${target}>" --plugin "$<TARGET_FILE:${indexer}>")
+    list(APPEND stream_sdk_plugins --plugin "$<TARGET_FILE:${target}>")
     target_compile_definitions(musikcore_runtime_hardening_test PRIVATE TEST_STREAM_${provider})
     add_dependencies(musikcore_runtime_hardening_test ${target})
   endif()

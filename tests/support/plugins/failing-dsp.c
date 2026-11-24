@@ -29,7 +29,7 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** state, mc_er
     capability.id = (mc_string_view) { MC_PLUGIN_CAPABILITY_DSP, sizeof(MC_PLUGIN_CAPABILITY_DSP) - 1 };
     capability.api = &factory;
     capability.api_size = sizeof(factory);
-    return host->register_capability(host->host_context, &capability);
+    return host->register_plugin_capability(host->host_context, &capability);
 }
 
 static void MC_CALL shutdown_plugin(void* state) { (void) state; }

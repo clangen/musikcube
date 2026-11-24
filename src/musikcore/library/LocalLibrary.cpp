@@ -44,6 +44,7 @@
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/library/Indexer.h>
+#include <musikcore/library/IndexerSourceId.h>
 #include <common/runtime/Message.h>
 #include <musikcore/debug.h>
 
@@ -62,7 +63,7 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace std::chrono;
 
-#define DATABASE_VERSION 10
+#define DATABASE_VERSION 11
 #define VERBOSE_LOGGING 1
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -180,6 +181,8 @@ void LocalLibrary::ResumePendingMigrationScan() {
     if (!this->indexer) {
         return;
     }
+
+    static_cast<core::Indexer*>(this->indexer)->StartPendingSourceScans();
 
     auto pending = std::make_shared<query::MigrationScanQuery>();
     this->EnqueueAndWait(pending);
@@ -488,6 +491,26 @@ static void upgradeV9ToV10(db::Connection& db) {
     executeSchema(db, "UPDATE tracks set disc=1 where disc is null or disc like \"\"");
 }
 
+static void upgradeV10ToV11(db::Connection& db) {
+    /* historical built-in virtual URIs identify their source without relying
+    on the old compiler-dependent hash. keep playlist references in sync. */
+    const auto migrate = [&](const char* plugin, const char* source, const char* prefix) {
+        const auto id = library::IndexerSourceId(plugin, source);
+        const std::string pattern = std::string(prefix) + "%";
+        db::Statement tracks("UPDATE tracks SET source_id=? WHERE source_id<>0 AND external_id LIKE ?", db);
+        tracks.BindInt32(0, id);
+        tracks.BindText(1, pattern);
+        requireSchema(tracks.Step() == db::Done);
+        db::Statement playlists("UPDATE playlist_tracks SET source_id=? WHERE source_id<>0 AND track_external_id LIKE ?", db);
+        playlists.BindInt32(0, id);
+        playlists.BindText(1, pattern);
+        requireSchema(playlists.Step() == db::Done);
+    };
+    migrate("org.musikcube.decoder.gme", "GME IDecoder", "gme://");
+    migrate("org.musikcube.decoder.openmpt", "libopenmpt", "libopenmpt://");
+    executeSchema(db, "DROP TABLE IF EXISTS indexer_source_ids");
+}
+
 static void setVersion(db::Connection& db, int version) {
     executeSchema(db, "DELETE FROM version");
     db::Statement stmt("INSERT INTO version VALUES(?)", db);
@@ -739,6 +762,10 @@ static void createSchema(db::Connection& db) {
 
     if (lastVersion >= 1 && lastVersion < 10) {
         upgradeV9ToV10(db);
+    }
+
+    if (lastVersion >= 1 && lastVersion < 11) {
+        upgradeV10ToV11(db);
     }
 
     /* verify persisted queue and views before advancing the schema version. */

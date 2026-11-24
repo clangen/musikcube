@@ -4,6 +4,7 @@
 #include <musikcore/plugin/encoder.h>
 #include <musikcore/plugin/dsp.h>
 #include <musikcore/plugin/settings.h>
+#include <musikcore/plugin/indexer.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -58,7 +59,7 @@ static mc_result MC_CALL register_again(void* context) {
 #ifdef BAD_CAPABILITY
     capability.api_size -= 1;
 #endif
-    const mc_result result = state->host->register_capability(state->host->host_context, &capability);
+    const mc_result result = state->host->register_plugin_capability(state->host->host_context, &capability);
     memset(id, '?', sizeof(id) - 1);
     return result;
 }
@@ -81,7 +82,7 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
     if (register_again(state) != MC_ERROR_INVALID_ARGUMENT) {
         return MC_ERROR_INTERNAL;
     }
-#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION) || defined(BAD_ENCODER) || defined(BAD_DSP)
+#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION) || defined(BAD_ENCODER) || defined(BAD_DSP) || defined(BAD_INDEXER) || defined(BAD_NUMBER_CONFIGURATION) || defined(DUPLICATE_CONFIGURATION)
     /* registration must reject a sized factory with missing operations before
     playback can obtain a typed view of the provider. */
 #if defined(BAD_CONFIGURATION)
@@ -98,6 +99,25 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
         .integer_count = 1,
     };
     static const char id[] = MC_PLUGIN_CAPABILITY_CONFIGURATION;
+#elif defined(BAD_NUMBER_CONFIGURATION)
+    static const mc_number_setting field = {
+        .key = { "number", 6 }, .default_value = 2, .minimum = 3, .maximum = 4, .precision = 1,
+    };
+    static const mc_configuration_api factory = {
+        .struct_size = sizeof(mc_configuration_api), .numbers = &field, .number_count = 1,
+    };
+    static const char id[] = MC_PLUGIN_CAPABILITY_CONFIGURATION;
+#elif defined(DUPLICATE_CONFIGURATION)
+    static const mc_boolean_setting boolean = { .key = { "same", 4 }, .default_value = true };
+    static const mc_text_setting text = { .key = { "same", 4 }, .default_value = { "", 0 } };
+    static const mc_configuration_api factory = {
+        .struct_size = sizeof(mc_configuration_api), .booleans = &boolean, .boolean_count = 1,
+        .texts = &text, .text_count = 1,
+    };
+    static const char id[] = MC_PLUGIN_CAPABILITY_CONFIGURATION;
+#elif defined(BAD_INDEXER)
+    static const mc_indexer_source_factory factory = MC_INDEXER_SOURCE_FACTORY_DEFAULT;
+    static const char id[] = MC_PLUGIN_CAPABILITY_INDEXER_SOURCE;
 #elif defined(BAD_ENCODER)
     static const mc_encoder_factory factory = MC_ENCODER_FACTORY_DEFAULT;
     static const char id[] = MC_PLUGIN_CAPABILITY_ENCODER;
@@ -118,7 +138,31 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
     capability.id = (mc_string_view) { id, sizeof(id) - 1 };
     capability.api = &factory;
     capability.api_size = sizeof(factory);
-    return host->register_capability(host->host_context, &capability);
+    return host->register_plugin_capability(host->host_context, &capability);
+#endif
+#if !defined(BAD_OUTPUT) && !defined(BAD_STREAM) && !defined(BAD_DECODER) && !defined(BAD_CONFIGURATION) && \
+    !defined(BAD_ENCODER) && !defined(BAD_DSP) && !defined(BAD_INDEXER) && !defined(BAD_CAPABILITY) && \
+    !defined(BAD_NUMBER_CONFIGURATION) && !defined(DUPLICATE_CONFIGURATION)
+    /* exercise the same mixed setting types needed by index source plugins. */
+    static const mc_boolean_setting boolean = { .key = { "enabled", 7 }, .default_value = true };
+    static const mc_number_setting number = {
+        .key = { "seconds", 7 }, .default_value = 2.5, .minimum = 0.0, .maximum = 10.0, .precision = 1,
+    };
+    static const mc_text_setting text = { .key = { "label", 5 }, .default_value = { "default", 7 } };
+    static const mc_configuration_api settings = {
+        .struct_size = sizeof(mc_configuration_api),
+        .booleans = &boolean, .boolean_count = 1,
+        .numbers = &number, .number_count = 1,
+        .texts = &text, .text_count = 1,
+    };
+    mc_plugin_capability settingsCapability = MC_PLUGIN_CAPABILITY_DEFAULT;
+    settingsCapability.id = (mc_string_view) { MC_PLUGIN_CAPABILITY_CONFIGURATION,
+        sizeof(MC_PLUGIN_CAPABILITY_CONFIGURATION) - 1 };
+    settingsCapability.api = &settings;
+    settingsCapability.api_size = sizeof(settings);
+    if (host->register_plugin_capability(host->host_context, &settingsCapability) != MC_OK) {
+        return MC_ERROR_INTERNAL;
+    }
 #endif
 #ifdef INIT_FAIL
     make_error(state, error);
@@ -154,14 +198,14 @@ MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
         return MC_ERROR_UNSUPPORTED;
     }
     if (!host || host->struct_size < sizeof(mc_host_api) || !host->log || !host->create_error || !host->destroy_error ||
-        !host->register_capability || !output || output->struct_size < sizeof(mc_plugin_api) ||
+        !host->register_plugin_capability || !output || output->struct_size < sizeof(mc_plugin_api) ||
         version != host->abi_version)
     {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     note(host, "negotiate");
     mc_plugin_capability unavailable = MC_PLUGIN_CAPABILITY_DEFAULT;
-    if (host->register_capability(host->host_context, &unavailable) != MC_ERROR_IN_FLIGHT) {
+    if (host->register_plugin_capability(host->host_context, &unavailable) != MC_ERROR_IN_FLIGHT) {
         return MC_ERROR_INTERNAL;
     }
 #ifdef ENTRY_FAIL

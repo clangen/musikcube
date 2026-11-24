@@ -75,7 +75,7 @@ namespace {
         capability.id = { MC_PLUGIN_CAPABILITY_STREAM, sizeof(MC_PLUGIN_CAPABILITY_STREAM) - 1 };
         capability.api = &factory;
         capability.api_size = sizeof(factory);
-        return host->register_capability(host->host_context, &capability);
+        return host->register_plugin_capability(host->host_context, &capability);
     }
 
     void MC_CALL shutdown(void*) {}

@@ -60,29 +60,19 @@ async function checkSettings(terminal, { staged, hasServer }) {
     await terminal.waitFor(() => terminal.screen.text().split('\n').some(
       row => row.includes('Null Output') && row.includes('[v')), 'complete Null plugin row');
     const pluginRows = terminal.screen.text().split('\n').filter(row => row.includes('[v'));
-    /* toggling the codec changes both checkboxes. pressing space again must
-    target the same filename after the catalog refreshes. */
+    /* the decoder and indexer are one plugin with one enabled setting. */
     const codec = staged.find(name => /^(?:lib)?gmedecoder\./.test(name));
-    const indexer = staged.find(name => /^(?:lib)?gmeindexer\./.test(name));
-    if (codec && indexer) {
+    if (codec) {
       const row = pluginRows.findIndex(line => line.includes(`(${codec})`));
-      if (row < 0) {
-        throw new Error(`Missing plugin row for ${codec}`);
+      if (row < 0 || pluginRows.filter(line => line.includes('GME IDecoder')).length !== 1) {
+        throw new Error('Expected one combined GME plugin row');
       }
-
-      const expectPair = async mark => {
-        for (const filename of [codec, indexer]) {
-          await terminal.expect(`${mark} GME IDecoder (${filename})`);
-        }
-      };
-
-      await expectPair('[x]');
+      await terminal.expect(`[x] GME IDecoder (${codec})`);
       terminal.send(HOME + DOWN.repeat(row) + ' ');
-      await expectPair('[ ]');
+      await terminal.expect(`[ ] GME IDecoder (${codec})`);
       terminal.send(' ');
-      await expectPair('[x]');
+      await terminal.expect(`[x] GME IDecoder (${codec})`);
     }
-
     const nullRow = pluginRows.findIndex(row => row.includes('Null Output'));
     terminal.send(HOME + DOWN.repeat(nullRow) + '\r');
     /* C null output intentionally has no settings schema. its row must remain

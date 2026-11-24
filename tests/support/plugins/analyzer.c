@@ -128,7 +128,7 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
         .api = &factory,
         .api_size = sizeof(factory),
     };
-    return host->register_capability(host->host_context, &capability);
+    return host->register_plugin_capability(host->host_context, &capability);
 }
 
 static void MC_CALL shutdown_plugin(void* context) { (void) context; }

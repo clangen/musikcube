@@ -108,7 +108,7 @@ static mc_result MC_CALL start(const mc_host_api* host, void** context, mc_error
     capability.id = (mc_string_view) { MC_PLUGIN_CAPABILITY_ENCODER, sizeof(MC_PLUGIN_CAPABILITY_ENCODER) - 1 };
     capability.api = &state->factory;
     capability.api_size = sizeof(state->factory);
-    return host->register_capability(host->host_context, &capability);
+    return host->register_plugin_capability(host->host_context, &capability);
 }
 
 /* a live encoder at unload makes this test fail instead of hiding a use-after-free. */

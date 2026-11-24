@@ -43,7 +43,7 @@ namespace musik { namespace core { namespace plugin {
                 capability.id = { MC_PLUGIN_CAPABILITY_OUTPUT, sizeof(MC_PLUGIN_CAPABILITY_OUTPUT) - 1 };
                 capability.api = &factory;
                 capability.api_size = sizeof(factory);
-                return host.register_capability(host.host_context, &capability);
+                return host.register_plugin_capability(host.host_context, &capability);
             }
 
         private:

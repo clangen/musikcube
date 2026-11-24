@@ -534,7 +534,7 @@ namespace {
             .api = &gatedFactory,
             .api_size = sizeof(gatedFactory),
         };
-        const auto status = host->register_capability(host->host_context, &capability);
+        const auto status = host->register_plugin_capability(host->host_context, &capability);
         return status == MC_OK ? musik::core::plugin::RegisterOutput<CaptureOutput>(*host) : status;
     }
     void MC_CALL shutdown(void*) {}

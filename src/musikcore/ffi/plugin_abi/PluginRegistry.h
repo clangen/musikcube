@@ -4,6 +4,8 @@
 
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/decoder.h>
+#include <musikcore/plugin/tag.h>
+#include <musikcore/plugin/indexer.h>
 #include <musikcore/plugin/dsp.h>
 #include <musikcore/plugin/analyzer.h>
 #include <musikcore/plugin/encoder.h>
@@ -65,6 +67,7 @@ namespace musik { namespace core { namespace ffi {
             unsupported features produce an empty view, with no allocation. */
             Factory(const PluginRegistry& registry, std::string_view pluginId)
             : api(static_cast<const T*>(registry.FindTable(pluginId, CapabilityId<T>())))
+            , host(registry.FindHost(pluginId))
             , calls(&registry.calls) {}
 
             Factory(const Factory&) = default;
@@ -76,6 +79,8 @@ namespace musik { namespace core { namespace ffi {
 
             /* checks for a populated view, not whether its session is alive. */
             explicit operator bool() const noexcept { return this->api != nullptr; }
+
+            const mc_host_api* Host() const noexcept { return this->host; }
 
             /* worker calls only; preserve the typed view if operation resets
             its original Factory. the engine session keeps the DLL loaded. */
@@ -90,6 +95,7 @@ namespace musik { namespace core { namespace ffi {
 
         private:
             const T* api = nullptr;
+            const mc_host_api* host = nullptr;
             PluginCallState* calls = nullptr;
         };
 
@@ -133,6 +139,12 @@ namespace musik { namespace core { namespace ffi {
             else if constexpr (std::is_same_v<T, mc_stream_factory>) {
                 return MC_PLUGIN_CAPABILITY_STREAM;
             }
+            else if constexpr (std::is_same_v<T, mc_tag_reader_factory>) {
+                return MC_PLUGIN_CAPABILITY_TAG_READER;
+            }
+            else if constexpr (std::is_same_v<T, mc_indexer_source_factory>) {
+                return MC_PLUGIN_CAPABILITY_INDEXER_SOURCE;
+            }
             else if constexpr (std::is_same_v<T, mc_encoder_factory>) {
                 return MC_PLUGIN_CAPABILITY_ENCODER;
             }
@@ -152,6 +164,7 @@ namespace musik { namespace core { namespace ffi {
         }
 
         const void* FindTable(std::string_view pluginId, const char* capabilityId) const;
+        const mc_host_api* FindHost(std::string_view pluginId) const;
         mc_result ValidateCallingThread() const;
         mc_result Discover(const std::string& directory, const Selection& select);
         mc_result Load(const std::string& filename, mc_error** error, const Selection& select);

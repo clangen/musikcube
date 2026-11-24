@@ -3,6 +3,9 @@
 #include "../common/error.h"
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/decoder.h>
+#include <musikcore/plugin/tag.h>
+#include <musikcore/plugin/indexer.h>
+#include <cmath>
 #include <musikcore/plugin/dsp.h>
 #include <musikcore/plugin/analyzer.h>
 #include <musikcore/plugin/encoder.h>
@@ -117,6 +120,15 @@ namespace musik { namespace core { namespace ffi {
                 {
                     return false;
                 }
+                if ((table.boolean_count && (!table.booleans ||
+                        reinterpret_cast<uintptr_t>(table.booleans) % alignof(mc_boolean_setting))) ||
+                    (table.number_count && (!table.numbers ||
+                        reinterpret_cast<uintptr_t>(table.numbers) % alignof(mc_number_setting))) ||
+                    (table.text_count && (!table.texts ||
+                        reinterpret_cast<uintptr_t>(table.texts) % alignof(mc_text_setting))))
+                {
+                    return false;
+                }
 
                 std::unordered_set<std::string_view> keys;
                 for (size_t i = 0; i < table.integer_count; ++i) {
@@ -128,7 +140,42 @@ namespace musik { namespace core { namespace ffi {
                         return false;
                     }
                 }
+                for (size_t i = 0; i < table.boolean_count; ++i) {
+                    const auto& setting = table.booleans[i];
+                    if (!validId(setting.key) || !keys.emplace(setting.key.data, setting.key.length).second) {
+                        return false;
+                    }
+                }
+                for (size_t i = 0; i < table.number_count; ++i) {
+                    const auto& setting = table.numbers[i];
+                    if (!validId(setting.key) || !std::isfinite(setting.default_value) ||
+                        !std::isfinite(setting.minimum) || !std::isfinite(setting.maximum) ||
+                        setting.default_value < setting.minimum || setting.default_value > setting.maximum ||
+                        setting.precision < 0 || !keys.emplace(setting.key.data, setting.key.length).second)
+                    {
+                        return false;
+                    }
+                }
+                for (size_t i = 0; i < table.text_count; ++i) {
+                    const auto& setting = table.texts[i];
+                    if (!validId(setting.key) || !validText(setting.default_value) ||
+                        !keys.emplace(setting.key.data, setting.key.length).second)
+                    {
+                        return false;
+                    }
+                }
                 return true;
+            }
+            if (id == MC_PLUGIN_CAPABILITY_TAG_READER) {
+                return validFactory<mc_tag_reader_factory>(capability, [](const auto& factory, const auto& methods) {
+                    return factory.can_read && methods.read;
+                });
+            }
+            if (id == MC_PLUGIN_CAPABILITY_INDEXER_SOURCE) {
+                return validFactory<mc_indexer_source_factory>(capability, [](const auto&, const auto& methods) {
+                    return methods.get_info && methods.begin_scan && methods.scan && methods.validate_track &&
+                        methods.end_scan && methods.interrupt;
+                });
             }
             if (id == MC_PLUGIN_CAPABILITY_ENCODER) {
                 if (capability.api_size < sizeof(mc_encoder_factory) ||

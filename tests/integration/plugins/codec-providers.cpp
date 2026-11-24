@@ -5,16 +5,37 @@
 #include <musikcore/io/LocalFileSource.h>
 #include <musikcore/plugin/media.h>
 #include <musikcore/plugin/settings.h>
+#include <musikcore/plugin/tag.h>
 
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <map>
 
 namespace fs = std::filesystem;
 namespace scratch = musik::core::ffi::audio_scratch_buffers;
 using musik::core::ffi::PluginRegistry;
 
 namespace {
+    struct CapturedTags {
+        std::map<std::string, std::string> values;
+        std::vector<uint8_t> artwork;
+        float trackGain = 1.0f;
+    };
+
+    /* capture the fields that the real reader writes for a tagged WAV file. */
+    mc_result MC_CALL captureTag(void* context, mc_string_view key, mc_string_view value) {
+        auto& tags = static_cast<CapturedTags*>(context)->values;
+        tags[std::string(key.data, key.length)] = std::string(value.data, value.length);
+        return MC_OK;
+    }
+
+    mc_result MC_CALL hasTag(void* context, mc_string_view key, uint32_t* present) {
+        const auto& tags = static_cast<CapturedTags*>(context)->values;
+        *present = tags.count(std::string(key.data, key.length)) != 0;
+        return MC_OK;
+    }
+
     /* failures remain visible in release builds. each scenario owns a fresh
     registry and temporary directory so copies cannot share codec state. */
     void check(bool ok, const char* what) {
@@ -82,6 +103,63 @@ namespace {
         for (size_t i = 0; i < rate; ++i) {
             word(8192, 2);
         }
+    }
+
+    /* a RIFF INFO chunk keeps this fixture independent of external encoders. */
+    void addWaveTags(const fs::path& path) {
+        std::fstream file(path, std::ios::binary | std::ios::in | std::ios::out);
+        file.seekp(0, std::ios::end);
+        const auto writeWord = [&](uint32_t value) {
+            for (unsigned i = 0; i < 4; ++i) {
+                file.put(static_cast<char>(value >> (8 * i)));
+            }
+        };
+        file.write("LIST", 4);
+        writeWord(40);
+        file.write("INFOINAM", 8);
+        writeWord(12);
+        file.write("Test title\0\0", 12);
+        file.write("IART", 4);
+        writeWord(8);
+        file.write("Artist\0\0", 8);
+        /* ID3 carries cover art and replay gain, which RIFF INFO cannot store. */
+        std::string frames;
+        const auto frame = [&](const char* id, const std::string& data) {
+            frames.append(id, 4);
+            const auto size = static_cast<uint32_t>(data.size());
+            for (int shift = 24; shift >= 0; shift -= 8) {
+                frames.push_back(static_cast<char>(size >> shift));
+            }
+            frames.append(2, '\0');
+            frames += data;
+        };
+        std::string gain(1, '\0');
+        gain += "REPLAYGAIN_TRACK_GAIN";
+        gain.push_back('\0');
+        gain += "-6.0 dB";
+        frame("TXXX", gain);
+        std::string picture(1, '\0');
+        picture.append("image/png", 9);
+        picture.push_back('\0');
+        picture.push_back(3);
+        picture.push_back('\0');
+        picture.append(40, 'a');
+        frame("APIC", picture);
+        std::string id3("ID3\x03\0\0", 6);
+        const auto size = static_cast<uint32_t>(frames.size());
+        for (int shift = 21; shift >= 0; shift -= 7) {
+            id3.push_back(static_cast<char>((size >> shift) & 0x7f));
+        }
+        id3 += frames;
+        file.write("ID3 ", 4);
+        writeWord(static_cast<uint32_t>(id3.size()));
+        file.write(id3.data(), id3.size());
+        if (id3.size() % 2) {
+            file.put('\0');
+        }
+        const auto end = file.tellp();
+        file.seekp(4);
+        writeWord(static_cast<uint32_t>(end) - 8);
     }
 
     /* observe the actual destination granted to FFmpeg by host scratch. the
@@ -333,10 +411,13 @@ int main(int argc, char** argv) {
     const std::string_view family = argv[2];
     const bool gme = family == "gme";
     const bool ffmpeg = family == "ffmpeg";
-    const char* plugin = ffmpeg ? "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c"
+    const bool taglib = family == "taglib";
+    const char* plugin = taglib ? "c77ea7a4-5d57-4f17-8521-aba8eeadeda7"
+        : ffmpeg                ? "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c"
         : gme                   ? "org.musikcube.decoder.gme"
                                 : "org.musikcube.decoder.openmpt";
-    auto file = musik::core::sdk::fs::pathFromUtf8(argv[1]) / (ffmpeg ? "rate.wav" : gme ? "selection.nsf" : "selection.mod");
+    auto file = musik::core::sdk::fs::pathFromUtf8(argv[1]) /
+        (ffmpeg || taglib ? "rate.wav" : gme ? "selection.nsf" : "selection.mod");
     const auto utf8 = file.u8string();
     const std::string path(utf8.begin(), utf8.end());
     mc_media_host_api media = MC_MEDIA_HOST_API_DEFAULT;
@@ -360,7 +441,53 @@ int main(int argc, char** argv) {
                   return info.id == plugin;
               }) == MC_OK,
         "start registry");
-    if (ffmpeg) {
+    if (taglib) {
+        /* exercise the shipped plugin with actual tags, not a fake reader. */
+        writeWave(file);
+        addWaveTags(file);
+        CapturedTags tags;
+        mc_metadata_writer writer = MC_METADATA_WRITER_DEFAULT;
+        writer.context = &tags;
+        writer.set_value = captureTag;
+        writer.contains = hasTag;
+        writer.contains_artwork = [](void* context, uint32_t* present) -> mc_result {
+            *present = !static_cast<CapturedTags*>(context)->artwork.empty();
+            return MC_OK;
+        };
+        writer.set_artwork = [](void* context, mc_byte_view data) -> mc_result {
+            static_cast<CapturedTags*>(context)->artwork.assign(data.data, data.data + data.length);
+            return MC_OK;
+        };
+        writer.set_replay_gain = [](void* context, const mc_replay_gain_values* gain) -> mc_result {
+            static_cast<CapturedTags*>(context)->trackGain = gain->track_gain;
+            return MC_OK;
+        };
+        const auto factory = registry.Find<mc_tag_reader_factory>(plugin);
+        check(factory.Invoke([&](const auto& api) {
+            uint32_t supported = 0;
+            check(api.can_read(api.context, { "wav", 3 }, &supported) == MC_OK && supported, "accept WAV tags");
+            void* instance = nullptr;
+            check(api.create(api.context, &services, &instance, nullptr) == MC_OK, "create tag reader");
+            const auto status = api.instance_api->read(instance, { path.data(), path.size() }, &writer, nullptr);
+            api.instance_api->destroy(instance);
+            return status;
+        }) == MC_OK, "read WAV tags");
+        check(tags.values["title"] == "Test title" && tags.values["artist"] == "Artist", "preserve title and artist");
+        check(std::string(tags.artwork.begin(), tags.artwork.end()) == std::string(40, 'a'), "preserve cover art");
+        check(std::abs(tags.trackGain - (-6.0f)) < 0.001f, "preserve replay gain");
+
+        /* a failed host write must make the whole read fail so indexing does
+        not treat partially written tags as a successful result. */
+        writer.set_value = [](void*, mc_string_view, mc_string_view) -> mc_result { return MC_ERROR_IO; };
+        check(factory.Invoke([&](const auto& api) {
+            void* instance = nullptr;
+            check(api.create(api.context, &services, &instance, nullptr) == MC_OK, "create reader for failure");
+            const auto result = api.instance_api->read(instance, { path.data(), path.size() }, &writer, nullptr);
+            api.instance_api->destroy(instance);
+            return result;
+        }) == MC_ERROR_IO, "report metadata write failure");
+    }
+    else if (ffmpeg) {
         writeWave(file);
         const auto factory = registry.Find<mc_decoder_factory>(plugin);
         check(factory.Invoke([&](const auto& api) {

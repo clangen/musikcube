@@ -33,7 +33,6 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <musikcore/sdk/IDataStreamFactory.h>
-#include <musikcore/sdk/ITagReader.h>
 #include <string>
 
 using namespace musik::core::sdk;

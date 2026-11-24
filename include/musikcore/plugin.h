@@ -65,7 +65,7 @@ typedef struct mc_host_api {
     returns MC_ERROR_WRONG_THREAD off-owner,
     MC_ERROR_IN_FLIGHT outside initialize, or MC_ERROR_INVALID_ARGUMENT for a bad
     descriptor/duplicate ID. */
-    mc_result (MC_CALL* register_capability)(void* host_context, const mc_plugin_capability* capability);
+    mc_result (MC_CALL* register_plugin_capability)(void* host_context, const mc_plugin_capability* capability);
 } mc_host_api;
 
 #define MC_HOST_API_DEFAULT { sizeof(mc_host_api), MC_PLUGIN_ABI_VERSION, NULL, NULL, NULL, NULL, NULL }
@@ -124,7 +124,7 @@ static inline mc_result mc_plugin_validate_host_api(
         return MC_ERROR_UNSUPPORTED;
     }
     if (!host || host->struct_size < sizeof(*host) || host->abi_version != host_abi_version ||
-        !host->log || !host->create_error || !host->destroy_error || !host->register_capability ||
+        !host->log || !host->create_error || !host->destroy_error || !host->register_plugin_capability ||
         !out_plugin || out_plugin->struct_size < sizeof(*out_plugin))
     {
         return MC_ERROR_INVALID_ARGUMENT;

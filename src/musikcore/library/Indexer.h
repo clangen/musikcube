@@ -36,9 +36,9 @@
 
 #include <chrono>
 #include <musikcore/db/Connection.h>
-#include <musikcore/sdk/ITagReader.h>
-#include <musikcore/sdk/IIndexerWriter.h>
-#include <musikcore/sdk/IIndexerNotifier.h>
+#include <musikcore/plugin/TagReader.h>
+#include <musikcore/plugin/IndexerSource.h>
+#include <musikcore/sdk/ITagStore.h>
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/ThreadGroup.h>
@@ -61,9 +61,7 @@ namespace musik { namespace core {
     namespace audio { class Stream; }
 
     class Indexer :
-        public musik::core::IIndexer,
-        public musik::core::sdk::IIndexerWriter,
-        public musik::core::sdk::IIndexerNotifier
+        public musik::core::IIndexer
     {
         public:
             Indexer(
@@ -86,21 +84,20 @@ namespace musik { namespace core {
                 return this->state;
             }
 
-            /* IIndexerWriter */
-            musik::core::sdk::ITagStore* CreateWriter() override;
-            bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri) override;
-            bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
-            int RemoveAll(musik::core::sdk::IIndexerSource* source) override;
-            void CommitProgress(musik::core::sdk::IIndexerSource* source, unsigned updatedTracks) override;
-            int64_t GetLastModifiedTime(musik::core::sdk::IIndexerSource* source, const char* id) override;
+            musik::core::sdk::ITagStore* CreateWriter();
+            bool RemoveByUri(musik::core::plugin::IndexerSource* source, const char* uri);
+            bool RemoveByExternalId(musik::core::plugin::IndexerSource* source, const char* id);
+            int RemoveAll(musik::core::plugin::IndexerSource* source);
+            void CommitProgress(musik::core::plugin::IndexerSource* source, unsigned updatedTracks);
+            bool GetLastModifiedTime(musik::core::plugin::IndexerSource* source, const char* id, int64_t& modified);
 
             bool Save(
-                musik::core::sdk::IIndexerSource* source,
+                musik::core::plugin::IndexerSource* source,
                 musik::core::sdk::ITagStore* store,
-                const char* externalId = "") override;
+                const char* externalId = "");
 
-            /* IIndexerNotifier */
-            void ScheduleRescan(musik::core::sdk::IIndexerSource* source) override;
+            bool ScheduleRescan(musik::core::plugin::IndexerSource* source);
+            void StartPendingSourceScans();
 
         private:
             struct AddRemoveContext {
@@ -114,14 +111,14 @@ namespace musik { namespace core {
             };
 
             typedef std::vector<std::shared_ptr<
-                musik::core::sdk::ITagReader>> TagReaderList;
+                musik::core::plugin::TagReader>> TagReaderList;
 
             typedef std::vector<std::shared_ptr<
-                musik::core::sdk::IIndexerSource>> IndexerSourceList;
+                musik::core::plugin::IndexerSource>> IndexerSourceList;
 
             void ThreadLoop();
             void CompleteScan();
-            void InterruptSource(const std::shared_ptr<musik::core::sdk::IIndexerSource>& source, uint64_t generation);
+            void InterruptSource(const std::shared_ptr<musik::core::plugin::IndexerSource>& source, uint64_t generation);
 
             void Synchronize(const SyncContext& context, asio::io_context* io);
 
@@ -133,7 +130,7 @@ namespace musik { namespace core {
             void SyncPlaylistTracksOrder();
 
             musik::core::sdk::ScanResult SyncSource(
-                musik::core::sdk::IIndexerSource* source,
+                musik::core::plugin::IndexerSource* source,
                 const std::vector<std::string>& paths);
 
             void ProcessAddRemoveQueue();
@@ -142,7 +139,7 @@ namespace musik { namespace core {
             std::set<int> GetOrphanedSourceIds();
             int RemoveAllForSourceId(int sourceId);
 
-            void Schedule(SyncType type, musik::core::sdk::IIndexerSource *source);
+            bool Schedule(SyncType type, musik::core::plugin::IndexerSource *source);
             void IncrementTracksScanned(int delta = 1);
 
             void SyncDirectory(
@@ -164,6 +161,9 @@ namespace musik { namespace core {
             std::atomic<State> state;
             std::atomic<bool> cancelRequested { false };
             std::mutex stateMutex;
+            bool shuttingDown { false };
+            bool sourcesActive { false };
+            std::set<musik::core::plugin::IndexerSource*> pendingSourceRescans;
             std::recursive_mutex sourceLifecycleMutex;
             uint64_t scanGeneration { 0 };
             std::condition_variable_any waitCondition;
@@ -178,7 +178,7 @@ namespace musik { namespace core {
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
             bool refreshMetadata { false };
             std::vector<std::string> paths;
-            std::shared_ptr<musik::core::sdk::IIndexerSource> currentSource;
+            std::shared_ptr<musik::core::plugin::IndexerSource> currentSource;
             std::shared_ptr<musik::core::audio::Stream> analysisStream;
     };
 

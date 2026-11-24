@@ -1,6 +1,8 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/audio.h>
 #include <musikcore/plugin/output.h>
+#include <musikcore/plugin/indexer.h>
+#include <musikcore/plugin/tag.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +46,7 @@ static void MC_CALL destroy_error(void* context, mc_error** error) {
 }
 
 /* registration belongs to initialize, never entry validation. */
-static mc_result MC_CALL register_capability(void* context, const mc_plugin_capability* capability) {
+static mc_result MC_CALL register_plugin_capability(void* context, const mc_plugin_capability* capability) {
     (void) context;
     (void) capability;
     ++bootstrap_calls;
@@ -58,7 +60,7 @@ static void checkEntryValidation(void) {
     host.log = log_message;
     host.create_error = create_error;
     host.destroy_error = destroy_error;
-    host.register_capability = register_capability;
+    host.register_plugin_capability = register_plugin_capability;
     mc_plugin_api plugin = MC_PLUGIN_API_DEFAULT;
     require(mc_plugin_validate_host_api(MC_PLUGIN_ABI_VERSION, &host, &plugin, NULL) == MC_OK,
         "valid host passes entry validation");
@@ -101,10 +103,10 @@ static void checkEntryValidation(void) {
     require(mc_plugin_validate_host_api(MC_PLUGIN_ABI_VERSION, &host, &plugin, NULL) == MC_ERROR_INVALID_ARGUMENT,
         "missing error destructor is rejected");
     host.destroy_error = destroy_error;
-    host.register_capability = NULL;
+    host.register_plugin_capability = NULL;
     require(mc_plugin_validate_host_api(MC_PLUGIN_ABI_VERSION, &host, &plugin, NULL) == MC_ERROR_INVALID_ARGUMENT,
         "missing registrar is rejected");
-    host.register_capability = register_capability;
+    host.register_plugin_capability = register_plugin_capability;
     require(mc_plugin_validate_host_api(MC_PLUGIN_ABI_VERSION, &host, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT,
         "null output table is rejected");
     plugin.struct_size = sizeof(uint32_t);
@@ -139,6 +141,12 @@ int main(void) {
     const mc_output_timing timing = MC_OUTPUT_TIMING_DEFAULT;
     const mc_output_vtable methods = MC_OUTPUT_VTABLE_DEFAULT;
     const mc_output_factory factory = MC_OUTPUT_FACTORY_DEFAULT;
+    const mc_indexer_writer writer = MC_INDEXER_WRITER_DEFAULT;
+    const mc_indexer_source_info source = MC_INDEXER_SOURCE_INFO_DEFAULT;
+    const mc_indexer_source_host_api source_host = MC_INDEXER_SOURCE_HOST_API_DEFAULT;
+    const mc_indexer_source_vtable source_methods = MC_INDEXER_SOURCE_VTABLE_DEFAULT;
+    const mc_indexer_source_factory source_factory = MC_INDEXER_SOURCE_FACTORY_DEFAULT;
+    const mc_tag_reader_factory tag_factory = MC_TAG_READER_FACTORY_DEFAULT;
 
     /* unset cancellation and PCM expose no implicit resource lifetime. */
     require(cancel.struct_size == sizeof(cancel) && !cancel.context && !cancel.is_cancelled, "cancel");
@@ -157,5 +165,13 @@ int main(void) {
     require(methods.struct_size == sizeof(methods) && !methods.destroy && !methods.queue_audio_buffer && !methods.stop,
         "vtable");
     require(factory.struct_size == sizeof(factory) && !factory.instance_api && !factory.create, "factory");
+    /* an empty source cannot accidentally write, rescan, or claim an identity. */
+    require(writer.struct_size == sizeof(writer) && !writer.create_record && !writer.save, "indexer writer");
+    require(source.struct_size == sizeof(source) && !source.source_key.length && !source.stable_ids, "indexer source");
+    require(source_host.struct_size == sizeof(source_host) && !source_host.request_rescan, "indexer source host");
+    require(source_methods.struct_size == sizeof(source_methods) && !source_methods.scan && !source_methods.interrupt,
+        "indexer source operations");
+    require(source_factory.struct_size == sizeof(source_factory) && !source_factory.create, "indexer source factory");
+    require(tag_factory.struct_size == sizeof(tag_factory) && !tag_factory.create, "tag reader factory");
     return 0;
 }

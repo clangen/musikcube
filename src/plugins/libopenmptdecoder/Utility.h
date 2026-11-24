@@ -36,7 +36,6 @@
 
 #include <string>
 
-#include <musikcore/sdk/ISchema.h>
 
 #pragma warning(push, 0)
 #include <libopenmpt/libopenmpt.h>
@@ -54,4 +53,3 @@ extern bool isFileTypeSupported(const char* type);
 extern bool isFileSupported(const std::string& filename);
 extern bool fileToByteArray(const std::string& path, char** target, int& size);
 extern std::string readMetadataValue(openmpt_module* module, const char* key, const char* defaultValue = "");
-extern musik::core::sdk::ISchema* createSchema();

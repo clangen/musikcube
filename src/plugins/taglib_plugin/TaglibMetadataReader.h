@@ -48,27 +48,26 @@
 
 #include <set>
 
-#include <musikcore/sdk/ITagReader.h>
+#include "MetadataWriter.h"
 
-class TaglibMetadataReader : public musik::core::sdk::ITagReader {
+class TaglibMetadataReader {
     public:
         TaglibMetadataReader();
         ~TaglibMetadataReader();
 
-        virtual bool Read(const char *uri, musik::core::sdk::ITagStore *target);
-        virtual bool CanRead(const char *extension);
-        virtual void Release();
+        bool Read(const char *uri, MetadataWriter *target);
+        bool CanRead(const char *extension);
 
     private:
         template <typename T> void ReadFromMap(
             const T& map,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         template <typename T> void ExtractValueForKey(
             const T& map,
             const std::string& inputKey,
             const std::string& outputKey,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         template <typename T> std::string ExtractValueForKey(
             const T& map,
@@ -77,18 +76,18 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
 
         template <typename T> void ExtractReplayGain(
             const T& map,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         template<typename T> void ReadBasicData(
             const T* tag,
             const char* uri,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         void ExtractValueForKey(
             const TagLib::MP4::ItemMap& map,
             const std::string& inputKey,
             const std::string& outputKey,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         std::string ExtractValueForKey(
             const TagLib::MP4::ItemMap& map,
@@ -102,52 +101,52 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
             const std::string& value,
             const std::string& valueKey,
             const std::string& totalKey,
-            musik::core::sdk::ITagStore* track
+            MetadataWriter* track
         );
 
         void SetTagValue(
             const char* key,
             const char* string,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         void SetTagValue(
             const char* key,
             const TagLib::String tagString,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         void SetTagValue(
             const char* key,
             const int tagInt,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         void SetTagValues(const char* key,
             const TagLib::ID3v2::FrameList &frame,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         void SetAudioProperties(
             TagLib::AudioProperties *audioProperties,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         void SetSlashSeparatedValues(
             const char* key,
             const TagLib::ID3v2::FrameList &frame,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         void SetSlashSeparatedValues(
             const char* key,
             TagLib::String tagString,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         bool ReadID3V2(
             const char* uri,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         bool ReadID3V2(
             TagLib::ID3v2::Tag *tag,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 
         bool ReadGeneric(
             const char* uri,
             const std::string& extension,
-            musik::core::sdk::ITagStore *target);
+            MetadataWriter *target);
 };

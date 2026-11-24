@@ -174,17 +174,17 @@ static float toReplayGainFloat(const std::string& input) {
     return 1.0f;
 }
 
-static inline void initReplayGain(ReplayGain& rg) {
-    rg.albumGain = rg.albumPeak = 1.0f;
-    rg.trackGain = rg.trackPeak = 1.0f;
+static inline void initReplayGain(mc_replay_gain_values& rg) {
+    rg.album_gain = rg.album_peak = 1.0f;
+    rg.track_gain = rg.track_peak = 1.0f;
 }
 
-static inline bool replayGainValid(ReplayGain& rg) {
-    return rg.albumGain != 1.0 || rg.albumPeak != 1.0 ||
-        rg.trackGain != 1.0 || rg.trackPeak != 1.0;
+static inline bool replayGainValid(mc_replay_gain_values& rg) {
+    return rg.album_gain != 1.0 || rg.album_peak != 1.0 ||
+        rg.track_gain != 1.0 || rg.track_peak != 1.0;
 }
 
-static inline void processAlbumArt(TagLib::List<TagLib::FLAC::Picture*> pictures, ITagStore* target) {
+static inline void processAlbumArt(TagLib::List<TagLib::FLAC::Picture*> pictures, MetadataWriter* target) {
     for (auto picture : pictures) {
         if (picture->type() == TagLib::FLAC::Picture::FrontCover) {
             auto byteVector = picture->data();
@@ -202,10 +202,6 @@ TaglibMetadataReader::TaglibMetadataReader() {
 TaglibMetadataReader::~TaglibMetadataReader() {
 }
 
-void TaglibMetadataReader::Release() {
-    delete this;
-}
-
 bool TaglibMetadataReader::CanRead(const char *extension) {
     if (extension && strlen(extension)) {
         std::string withoutLeadingDot = std::string(extension[0] == '.' ? &extension[1] : extension);
@@ -215,7 +211,7 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
     return false;
 }
 
-bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
+bool TaglibMetadataReader::Read(const char* uri, MetadataWriter *track) {
     std::string path(uri);
     std::string extension;
 
@@ -249,7 +245,7 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
 }
 
 bool TaglibMetadataReader::ReadGeneric(
-    const char* uri, const std::string& extension, ITagStore *target)
+    const char* uri, const std::string& extension, MetadataWriter *target)
 {
 #ifdef WIN32
     TagLib::FileRef file(utf8to16(uri).c_str());
@@ -351,7 +347,7 @@ void TaglibMetadataReader::ExtractValueForKey(
     const TagLib::MP4::ItemMap& map,
     const std::string& inputKey,
     const std::string& outputKey,
-    ITagStore *target)
+    MetadataWriter *target)
 {
     if (map.contains(inputKey.c_str())) {
         TagLib::StringList value = map[inputKey.c_str()].toStringList();
@@ -380,7 +376,7 @@ void TaglibMetadataReader::ExtractValueForKey(
     const T& map,
     const std::string& inputKey,
     const std::string& outputKey,
-    ITagStore *target)
+    MetadataWriter *target)
 {
     if (map.contains(inputKey.c_str())) {
         TagLib::StringList value = map[inputKey.c_str()];
@@ -391,7 +387,7 @@ void TaglibMetadataReader::ExtractValueForKey(
 }
 
 template <typename T>
-void TaglibMetadataReader::ReadFromMap(const T& map, ITagStore *target) {
+void TaglibMetadataReader::ReadFromMap(const T& map, MetadataWriter *target) {
     ExtractValueForKey(map, "DISCNUMBER", "disc", target);
     ExtractValueForKey(map, "ALBUM ARTIST", "album_artist", target);
     ExtractValueForKey(map, "ALBUMARTIST", "album_artist", target);
@@ -399,7 +395,7 @@ void TaglibMetadataReader::ReadFromMap(const T& map, ITagStore *target) {
 }
 
 template<typename T>
-void TaglibMetadataReader::ReadBasicData(const T* tag, const char* uri, ITagStore *target) {
+void TaglibMetadataReader::ReadBasicData(const T* tag, const char* uri, MetadataWriter *target) {
     if (tag) {
         this->SetTagValue("title", tag->title(), target);
         this->SetTagValue("album", tag->album(), target);
@@ -436,15 +432,15 @@ std::string TaglibMetadataReader::ExtractValueForKey(
 }
 
 template <typename T>
-void TaglibMetadataReader::ExtractReplayGain(const T& map, ITagStore *target)
+void TaglibMetadataReader::ExtractReplayGain(const T& map, MetadataWriter *target)
 {
     try {
-        ReplayGain replayGain;
+        mc_replay_gain_values replayGain = MC_REPLAY_GAIN_VALUES_DEFAULT;
         initReplayGain(replayGain);
-        replayGain.trackGain = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_TRACK_GAIN", "1.0"));
-        replayGain.trackPeak = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_TRACK_PEAK", "1.0"));
-        replayGain.albumGain = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_ALBUM_GAIN", "1.0"));
-        replayGain.albumPeak = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_ALBUM_PEAK", "1.0"));
+        replayGain.track_gain = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_TRACK_GAIN", "1.0"));
+        replayGain.track_peak = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_TRACK_PEAK", "1.0"));
+        replayGain.album_gain = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_ALBUM_GAIN", "1.0"));
+        replayGain.album_peak = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_ALBUM_PEAK", "1.0"));
 
         if (replayGainValid(replayGain)) {
             target->SetReplayGain(replayGain);
@@ -456,7 +452,7 @@ void TaglibMetadataReader::ExtractReplayGain(const T& map, ITagStore *target)
 }
 
 void TaglibMetadataReader::SetTagValueWithPossibleTotal(
-    const std::string& value, const std::string& valueKey, const std::string& totalKey, ITagStore* track)
+    const std::string& value, const std::string& valueKey, const std::string& totalKey, MetadataWriter* track)
 {
     std::vector<std::string> parts = str::Split(value, "/");
     this->SetTagValue(valueKey.c_str(), parts[0].c_str(), track);
@@ -465,7 +461,7 @@ void TaglibMetadataReader::SetTagValueWithPossibleTotal(
     }
 }
 
-bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
+bool TaglibMetadataReader::ReadID3V2(const char* uri, MetadataWriter *track) {
     TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
 
 #ifdef WIN32
@@ -488,7 +484,7 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
     return false;
 }
 
-bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track) {
+bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, MetadataWriter *track) {
     try {
         if (id3v2) {
             TagLib::ID3v2::FrameListMap allTags = id3v2->frameListMap();
@@ -526,7 +522,7 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
 
             auto txxx = allTags["TXXX"];
             if (!txxx.isEmpty()) {
-                ReplayGain replayGain;
+                mc_replay_gain_values replayGain = MC_REPLAY_GAIN_VALUES_DEFAULT;
                 initReplayGain(replayGain);
 
                 for (auto current : txxx) {
@@ -537,16 +533,16 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
                         auto values = utif->fieldList();
                         if (values.size() > 0) {
                             if (name == "REPLAYGAIN_TRACK_GAIN") {
-                                replayGain.trackGain = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
+                                replayGain.track_gain = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
                             }
                             else if (name == "REPLAYGAIN_TRACK_PEAK") {
-                                replayGain.trackPeak = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
+                                replayGain.track_peak = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
                             }
                             else if (name == "REPLAYGAIN_ALBUM_GAIN") {
-                                replayGain.albumGain = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
+                                replayGain.album_gain = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
                             }
                             else if (name == "REPLAYGAIN_ALBUM_PEAK") {
-                                replayGain.albumPeak = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
+                                replayGain.album_peak = toReplayGainFloat(utif->fieldList().back().to8Bit(true));
                             }
                         }
                     }
@@ -704,7 +700,7 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
 void TaglibMetadataReader::SetTagValue(
     const char* key,
     const TagLib::String tagString,
-    ITagStore *track)
+    MetadataWriter *track)
 {
     std::string value(tagString.to8Bit(true));
     track->SetValue(key, value.c_str());
@@ -713,14 +709,14 @@ void TaglibMetadataReader::SetTagValue(
 void TaglibMetadataReader::SetTagValue(
     const char* key,
     const char* string,
-    ITagStore *track)
+    MetadataWriter *track)
 {
     std::string temp(string);
     track->SetValue(key, temp.c_str());
 }
 
 void TaglibMetadataReader::SetTagValue(
-    const char* key, const int tagInt, ITagStore *target)
+    const char* key, const int tagInt, MetadataWriter *target)
 {
     target->SetValue(key, std::to_string(tagInt).c_str());
 }
@@ -728,7 +724,7 @@ void TaglibMetadataReader::SetTagValue(
 void TaglibMetadataReader::SetTagValues(
     const char* key,
     const TagLib::ID3v2::FrameList &frame,
-    ITagStore *target)
+    MetadataWriter *target)
 {
     if (!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
@@ -743,7 +739,7 @@ void TaglibMetadataReader::SetTagValues(
 }
 
 void TaglibMetadataReader::SetSlashSeparatedValues(
-    const char* key, TagLib::String tagString, ITagStore *track)
+    const char* key, TagLib::String tagString, MetadataWriter *track)
 {
     if (!tagString.isEmpty()) {
         std::string value(tagString.to8Bit(true));
@@ -758,7 +754,7 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
 void TaglibMetadataReader::SetSlashSeparatedValues(
     const char* key,
     const TagLib::ID3v2::FrameList &frame,
-    ITagStore *track)
+    MetadataWriter *track)
 {
     if (!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
@@ -770,7 +766,7 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
 }
 
 void TaglibMetadataReader::SetAudioProperties(
-    TagLib::AudioProperties *audioProperties, ITagStore *track)
+    TagLib::AudioProperties *audioProperties, MetadataWriter *track)
 {
     if (audioProperties) {
         std::string duration = std::to_string(audioProperties->lengthInSeconds());

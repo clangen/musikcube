@@ -3,13 +3,19 @@
 #include "../../support/check.h"
 #include <musikcore/musikcore.hpp>
 #include <musikcore/library/LibraryFactory.h>
-#include <musikcore/plugin/PluginFactory.h>
+#include <musikcore/plugin/Plugins.h>
+#include <common/FilesystemPath.h>
 
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 namespace runtime_tests {
     namespace {
@@ -60,7 +66,7 @@ namespace runtime_tests {
         };
     }
 
-    /* prove that an old provider interrupt cannot overlap the next scan's flag reset. */
+    /* prove that a provider interrupt cannot overlap the next scan's flag reset. */
     bool checkIndexerProviderCancel() {
         using namespace musik::core;
         runtime::MessageQueue host;
@@ -70,15 +76,28 @@ namespace runtime_tests {
         api::Context context(options);
         using Wait = bool (*)();
         using Signal = void (*)();
-        Wait waitScan = nullptr;
-        Wait fenced = nullptr;
-        Signal nextStarted = nullptr;
-        PluginFactory::Instance().QueryFunction<Wait>("indexer_fixture_wait_scan",
-            [&](auto*, Wait value) { waitScan = value; });
-        PluginFactory::Instance().QueryFunction<Wait>("indexer_fixture_fenced",
-            [&](auto*, Wait value) { fenced = value; });
-        PluginFactory::Instance().QueryFunction<Signal>("indexer_fixture_next_started",
-            [&](auto*, Signal value) { nextStarted = value; });
+        std::string filename;
+        for (const auto& plugin : musik::core::plugin::ListPlugins()) {
+            if (plugin.id == "org.musikcube.test.runtime-indexer") {
+                filename = plugin.filename;
+            }
+        }
+#ifdef _WIN32
+        auto handle = LoadLibraryW(musik::core::sdk::fs::pathFromUtf8(filename).c_str());
+        const auto symbol = [&](const char* name) { return GetProcAddress(handle, name); };
+        const auto close = [&] { if (handle) { FreeLibrary(handle); } };
+#else
+        auto handle = dlopen(filename.c_str(), RTLD_NOW | RTLD_LOCAL);
+        const auto symbol = [&](const char* name) { return handle ? dlsym(handle, name) : nullptr; };
+        const auto close = [&] { if (handle) { dlclose(handle); } };
+#endif
+        struct CloseLibrary {
+            decltype(close)& function;
+            ~CloseLibrary() { function(); }
+        } closeLibrary { close };
+        auto waitScan = reinterpret_cast<Wait>(symbol("indexer_fixture_wait_scan"));
+        auto fenced = reinterpret_cast<Wait>(symbol("indexer_fixture_fenced"));
+        auto nextStarted = reinterpret_cast<Signal>(symbol("indexer_fixture_next_started"));
         if (!TEST_CHECK(waitScan && fenced && nextStarted)) {
             return false;
         }

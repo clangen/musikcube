@@ -34,10 +34,11 @@
 
 #include "Utility.h"
 #include "OpenMptIndexerSource.h"
-#include <musikcore/sdk/IDebug.h>
-#include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/Filesystem.h>
 #include <string>
+#include <algorithm>
+#include <memory>
+#include <exception>
 #include <sstream>
 #include <set>
 #include <map>
@@ -49,23 +50,22 @@
 
 using namespace musik::core::sdk;
 
-extern IDebug* debug;
-extern IPreferences* prefs;
 
-static void openmptLogFunc(const char *message, void *userdata) {
-    if (debug) {
-        debug->Info("OpenMptIndexerSource", message);
-    }
+static void openmptLogFunc(const char* message, void* userdata) {
+    static_cast<OpenMptIndexerSource*>(userdata)->Log(message);
 }
 
-OpenMptIndexerSource::OpenMptIndexerSource() {
+OpenMptIndexerSource::OpenMptIndexerSource(const mc_host_api& host, const mc_plugin_services& services)
+: services(host, services) {}
+
+const std::string& OpenMptIndexerSource::Key() {
+    return PLUGIN_NAME;
 }
 
-OpenMptIndexerSource::~OpenMptIndexerSource() {
-}
 
-void OpenMptIndexerSource::Release() {
-    delete this;
+
+void OpenMptIndexerSource::Log(const char* message) {
+    this->services.Info("OpenMptIndexerSource", message);
 }
 
 void OpenMptIndexerSource::OnBeforeScan() {
@@ -78,30 +78,30 @@ void OpenMptIndexerSource::OnAfterScan() {
     invalidFiles.clear();
 }
 
-ScanResult OpenMptIndexerSource::Scan(
-    IIndexerWriter* indexer,
+bool OpenMptIndexerSource::Scan(
+    musik::core::plugin::IndexerWriter* indexer,
     const char** indexerPaths,
-    unsigned indexerPathsCount)
+    size_t indexerPathsCount)
 {
     /* keep these for later, for the removal phase */
     for (size_t i = 0; i < indexerPathsCount; i++) {
         this->paths.insert(fs::canonicalizePath(std::string(indexerPaths[i])));
     }
 
-    auto checkFile = [this, indexer](const std::string& path) {
-        if (isFileSupported(path)) {
+    std::exception_ptr failure;
+    auto checkFile = [this, indexer, &failure](const std::string& path) {
+        if (!failure && isFileSupported(path)) {
             try {
-                this->UpdateMetadata(path, this, indexer);
+                this->UpdateMetadata(path, indexer);
             }
             catch (...) {
-                std::string error = str::Format("error reading metadata for %s", path.c_str());
-                debug->Error(PLUGIN_NAME.c_str(), error.c_str());
+                failure = std::current_exception();
             }
         }
     };
 
-    auto checkInterrupt = [this]() -> bool {
-        return this->interrupt;
+    auto checkInterrupt = [this, &failure]() -> bool {
+        return this->interrupt || failure != nullptr;
     };
 
     for (auto& path : this->paths) {
@@ -110,9 +110,14 @@ ScanResult OpenMptIndexerSource::Scan(
         }
     }
 
-    indexer->CommitProgress(this, bounded_unsigned_sum(this->filesIndexed));
+    if (failure) {
+        std::rethrow_exception(failure);
+    }
 
-    return ScanCommit;
+    indexer->CommitProgress(std::min<unsigned>(
+        bounded_unsigned(this->filesIndexed), MC_INDEXER_PROGRESS_MAX));
+
+    return true;
 }
 
 void OpenMptIndexerSource::Interrupt() {
@@ -120,19 +125,18 @@ void OpenMptIndexerSource::Interrupt() {
 }
 
 void OpenMptIndexerSource::ScanTrack(
-    IIndexerWriter* indexer,
-    ITagStore* tagStore,
+    musik::core::plugin::IndexerWriter* indexer,
     const char* externalId)
 {
     std::string fn;
     int trackNum;
-    if (indexer::parseExternalId(PLUGIN_NAME, std::string(externalId), fn, trackNum)) {
+    if (musik::core::plugin::ParseExternalId(PLUGIN_NAME, std::string(externalId), fn, trackNum)) {
         fn = fs::canonicalizePath(fn);
 
         /* if the file doesn't exist anymore, or it was flagged as invalid,
         we remove it */
         if (!fs::fileExists(fn) || invalidFiles.find(fn) != invalidFiles.end()) {
-            indexer->RemoveByExternalId(this, externalId);
+            indexer->RemoveByExternalId(externalId);
             return;
         }
 
@@ -144,60 +148,68 @@ void OpenMptIndexerSource::ScanTrack(
             }
         }
 
-        indexer->RemoveByExternalId(this, externalId);
+        indexer->RemoveByExternalId(externalId);
     }
 }
 
-int OpenMptIndexerSource::SourceId() {
-    return static_cast<int>(std::hash<std::string>()(PLUGIN_NAME));
-}
 
-static std::string formatDefaultValue(const char* key, const char* defaultValue, std::string type) {
-#ifdef __APPLE__
-    static __thread char threadLocalBuffer[4096];
-#else
-    static thread_local char threadLocalBuffer[4096];
-#endif
+
+static std::string formatDefaultValue(const musik::core::plugin::IndexerServices& services,
+    const char* key, const char* defaultValue, std::string type)
+{
     type = type.empty() ? "mod" : type;
-    prefs->GetString(key, threadLocalBuffer, 4096, defaultValue);
-    std::string value(threadLocalBuffer);
-    threadLocalBuffer[0] = 0;
-    return str::Format(value, type.c_str());
+    const auto pattern = services.Text(key, defaultValue);
+    /* user-entered text may contain printf directives that are unsafe to execute. */
+    std::string value;
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        if (pattern[i] == '%' && i + 1 < pattern.size() && pattern[i + 1] == 's') {
+            value += type;
+            ++i;
+        }
+        else if (pattern[i] == '%' && i + 1 < pattern.size() && pattern[i + 1] == '%') {
+            value += '%';
+            ++i;
+        }
+        else {
+            value += pattern[i];
+        }
+    }
+    return value;
 }
 
 void OpenMptIndexerSource::UpdateMetadata(
     std::string fn,
-    IIndexerSource* source,
-    IIndexerWriter* indexer)
+    musik::core::plugin::IndexerWriter* indexer)
 {
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
     int64_t modifiedTime = fs::getLastModifiedTime(fn);
-    const std::string firstExternalId = indexer::createExternalId(PLUGIN_NAME, fn, 0);
-    int64_t modifiedDbTime = indexer->GetLastModifiedTime(this, firstExternalId.c_str());
-    if (modifiedDbTime < 0 || modifiedTime != modifiedDbTime) {
+    const std::string firstExternalId = musik::core::plugin::CreateExternalId(PLUGIN_NAME, fn, 0);
+    const auto modifiedDbTime = indexer->GetLastModifiedTime(firstExternalId);
+    if (!modifiedDbTime || modifiedTime != *modifiedDbTime) {
         fn = fs::canonicalizePath(fn);
         char* fileBytes = nullptr;
         int fileBytesSize = 0;
         if (fileToByteArray(fn, &fileBytes, fileBytesSize)) {
+            std::unique_ptr<char, decltype(&free)> fileOwner(fileBytes, free);
             openmpt_module* module = openmpt_module_create_from_memory2(
                 fileBytes, (size_t)fileBytesSize, openmptLogFunc, this,
                 nullptr, nullptr, nullptr, nullptr, nullptr);
+            std::unique_ptr<openmpt_module, decltype(&openmpt_module_destroy)> moduleOwner(module, openmpt_module_destroy);
 
             if (!module) {
-                debug->Error(PLUGIN_NAME.c_str(), str::Format("error opening %s", fn.c_str()).c_str());
+                this->services.Error(PLUGIN_NAME.c_str(), str::Format("error opening %s", fn.c_str()).c_str());
                 invalidFiles.insert(fn);
             }
             else {
                 std::string directory = fs::getDirectory(fn);
                 std::string extension = fs::getFileExtension(fn);
                 const int32_t count = openmpt_module_get_num_subsongs(module);
-                const char* keys = openmpt_module_get_metadata_keys(module);
                 if (count > 0) {
                     for (int32_t i = 0; i < count; i++) {
                         openmpt_module_select_subsong(module, i);
 
-                        const std::string externalId = indexer::createExternalId(PLUGIN_NAME, fn, i);
+                        const std::string externalId = musik::core::plugin::CreateExternalId(PLUGIN_NAME, fn, i);
                         const std::string trackNum = std::to_string(i + 1);
                         const std::string modifiedTimeStr = std::to_string(modifiedTime);
 
@@ -205,7 +217,7 @@ void OpenMptIndexerSource::UpdateMetadata(
                         if (!album.size()) {
                             album = readMetadataValue(module, "container").c_str();
                             if (!album.size()) {
-                                album = formatDefaultValue(
+                                album = formatDefaultValue(this->services,
                                     KEY_DEFAULT_ALBUM_NAME, DEFAULT_ALBUM_NAME, extension);
                             }
                         }
@@ -217,42 +229,40 @@ void OpenMptIndexerSource::UpdateMetadata(
 
                         std::string artist = readMetadataValue(module, "artist");
                         if (!artist.size()) {
-                            artist = formatDefaultValue(
+                            artist = formatDefaultValue(this->services,
                                 KEY_DEFAULT_ARTIST_NAME, DEFAULT_ARTIST_NAME, extension);
                         }
 
                         const std::string duration = std::to_string(
                             openmpt_module_get_duration_seconds(module));
 
-                        auto track = indexer->CreateWriter();
-                        track->SetValue("filename", externalId.c_str());
-                        track->SetValue("directory", directory.c_str());
-                        track->SetValue("filetime", modifiedTimeStr.c_str());
-                        track->SetValue("track", trackNum.c_str());
-                        track->SetValue("album", album.c_str());
-                        track->SetValue("title", title.c_str());
-                        track->SetValue("genre", "Electronic");
-                        track->SetValue("artist", artist.c_str());
-                        track->SetValue("album_artist", artist.c_str());
-                        track->SetValue("duration", duration.c_str());
+                        musik::core::plugin::IndexerRecord track(indexer->Get());
+                        track.SetValue("filename", externalId.c_str());
+                        track.SetValue("directory", directory.c_str());
+                        track.SetValue("filetime", modifiedTimeStr.c_str());
+                        track.SetValue("track", trackNum.c_str());
+                        track.SetValue("album", album.c_str());
+                        track.SetValue("title", title.c_str());
+                        track.SetValue("genre", "Electronic");
+                        track.SetValue("artist", artist.c_str());
+                        track.SetValue("album_artist", artist.c_str());
+                        track.SetValue("duration", duration.c_str());
 
-                        indexer->Save(source, track, externalId.c_str());
-                        track->Release();
+                        indexer->Save(track, externalId);
                         ++tracksIndexed;
                     }
                 }
 
-                openmpt_module_destroy(module);
-                module = nullptr;
+
             }
 
-            free(fileBytes);
         }
     }
 
     /* we commit progress every so often */
     if (++this->filesIndexed % 300 == 0) {
-        indexer->CommitProgress(this, bounded_unsigned_sum(this->filesIndexed, this->tracksIndexed));
+        indexer->CommitProgress(std::min<unsigned>(
+            bounded_unsigned_sum(this->filesIndexed, this->tracksIndexed), MC_INDEXER_PROGRESS_MAX));
         this->filesIndexed = this->tracksIndexed = 0;
     }
 }

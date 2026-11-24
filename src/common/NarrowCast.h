@@ -51,7 +51,12 @@ inline int bounded_int(std::size_t value) {
     return static_cast<int>(value > maximum ? maximum : value);
 }
 
-inline unsigned bounded_unsigned_sum(std::size_t first, std::size_t second = 0) {
+inline unsigned bounded_unsigned(std::size_t value) {
+    const auto maximum = static_cast<std::size_t>((std::numeric_limits<unsigned>::max)());
+    return static_cast<unsigned>(value > maximum ? maximum : value);
+}
+
+inline unsigned bounded_unsigned_sum(std::size_t first, std::size_t second) {
     const auto maximum = static_cast<std::size_t>((std::numeric_limits<unsigned>::max)());
     first = first > maximum ? maximum : first;
     second = second > maximum - first ? maximum - first : second;

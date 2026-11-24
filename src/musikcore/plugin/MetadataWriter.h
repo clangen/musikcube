@@ -1,6 +1,6 @@
 #pragma once
 
-#include <musikcore/plugin/analyzer.h>
+#include <musikcore/plugin/metadata.h>
 #include <musikcore/sdk/ITagStore.h>
 
 namespace musik { namespace core { namespace plugin {

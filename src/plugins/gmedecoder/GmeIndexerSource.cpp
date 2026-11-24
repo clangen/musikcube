@@ -34,11 +34,12 @@
 
 #include "Constants.h"
 #include "GmeIndexerSource.h"
-#include <musikcore/sdk/IDebug.h>
-#include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/String.h>
 #include <musikcore/sdk/Filesystem.h>
 #include <string>
+#include <algorithm>
+#include <memory>
+#include <exception>
 #include <sstream>
 #include <set>
 #include <map>
@@ -47,18 +48,16 @@
 
 using namespace musik::core::sdk;
 
-extern IDebug* debug;
-extern IPreferences* prefs;
 
-GmeIndexerSource::GmeIndexerSource() {
+GmeIndexerSource::GmeIndexerSource(const mc_host_api& host, const mc_plugin_services& services)
+: services(host, services) {}
+
+const std::string& GmeIndexerSource::Key() {
+    static const std::string key = PLUGIN_NAME;
+    return key;
 }
 
-GmeIndexerSource::~GmeIndexerSource() {
-}
 
-void GmeIndexerSource::Release() {
-    delete this;
-}
 
 void GmeIndexerSource::OnBeforeScan() {
     this->filesIndexed = this->tracksIndexed = 0;
@@ -70,30 +69,30 @@ void GmeIndexerSource::OnAfterScan() {
     invalidFiles.clear();
 }
 
-ScanResult GmeIndexerSource::Scan(
-    IIndexerWriter* indexer,
+bool GmeIndexerSource::Scan(
+    musik::core::plugin::IndexerWriter* indexer,
     const char** indexerPaths,
-    unsigned indexerPathsCount)
+    size_t indexerPathsCount)
 {
     /* keep these for later, for the removal phase */
     for (size_t i = 0; i < indexerPathsCount; i++) {
         this->paths.insert(fs::canonicalizePath(std::string(indexerPaths[i])));
     }
 
-    auto checkFile = [this, indexer](const std::string& path) {
-        if (canHandle(path)) {
+    std::exception_ptr failure;
+    auto checkFile = [this, indexer, &failure](const std::string& path) {
+        if (!failure && canHandle(path)) {
             try {
-                this->UpdateMetadata(path, this, indexer);
+                this->UpdateMetadata(path, indexer);
             }
             catch (...) {
-                std::string error = str::Format("error reading metadata for %s", path.c_str());
-                debug->Error(PLUGIN_NAME, error.c_str());
+                failure = std::current_exception();
             }
         }
     };
 
-    auto checkInterrupt = [this]() -> bool {
-        return this->interrupt;
+    auto checkInterrupt = [this, &failure]() -> bool {
+        return this->interrupt || failure != nullptr;
     };
 
     for (auto& path : this->paths) {
@@ -102,9 +101,14 @@ ScanResult GmeIndexerSource::Scan(
         }
     }
 
-    indexer->CommitProgress(this, bounded_unsigned_sum(this->filesIndexed));
+    if (failure) {
+        std::rethrow_exception(failure);
+    }
 
-    return ScanCommit;
+    indexer->CommitProgress(std::min<unsigned>(
+        bounded_unsigned(this->filesIndexed), MC_INDEXER_PROGRESS_MAX));
+
+    return true;
 }
 
 void GmeIndexerSource::Interrupt() {
@@ -112,19 +116,18 @@ void GmeIndexerSource::Interrupt() {
 }
 
 void GmeIndexerSource::ScanTrack(
-    IIndexerWriter* indexer,
-    ITagStore* tagStore,
+    musik::core::plugin::IndexerWriter* indexer,
     const char* externalId)
 {
     std::string fn;
     int trackNum;
-    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(externalId), fn, trackNum)) {
+    if (musik::core::plugin::ParseExternalId(EXTERNAL_ID_PREFIX, std::string(externalId), fn, trackNum)) {
         fn = fs::canonicalizePath(fn);
 
         /* if the file doesn't exist anymore, or it was flagged as invalid,
         we remove it */
         if (!fs::fileExists(fn) || invalidFiles.find(fn) != invalidFiles.end()) {
-            indexer->RemoveByExternalId(this, externalId);
+            indexer->RemoveByExternalId(externalId);
             return;
         }
 
@@ -136,75 +139,74 @@ void GmeIndexerSource::ScanTrack(
             }
         }
 
-        indexer->RemoveByExternalId(this, externalId);
+        indexer->RemoveByExternalId(externalId);
     }
 }
 
-int GmeIndexerSource::SourceId() {
-    return static_cast<int>(std::hash<std::string>()(PLUGIN_NAME));
-}
+
 
 void GmeIndexerSource::UpdateMetadata(
     std::string fn,
-    IIndexerSource* source,
-    IIndexerWriter* indexer)
+    musik::core::plugin::IndexerWriter* indexer)
 {
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
     int64_t modifiedTime = fs::getLastModifiedTime(fn);
-    const std::string firstExternalId = indexer::createExternalId(EXTERNAL_ID_PREFIX, fn, 0);
-    int64_t modifiedDbTime = indexer->GetLastModifiedTime(this, firstExternalId.c_str());
-    if (modifiedDbTime < 0 || modifiedTime != modifiedDbTime) {
+    const std::string firstExternalId = musik::core::plugin::CreateExternalId(EXTERNAL_ID_PREFIX, fn, 0);
+    const auto modifiedDbTime = indexer->GetLastModifiedTime(firstExternalId);
+    if (!modifiedDbTime || modifiedTime != *modifiedDbTime) {
         fn = fs::canonicalizePath(fn);
 
         Music_Emu* data = nullptr;
         gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
+        std::unique_ptr<Music_Emu, decltype(&gme_delete)> dataOwner(data, gme_delete);
         if (err) {
-            debug->Error(PLUGIN_NAME, str::Format("error opening %s", fn.c_str()).c_str());
+            this->services.Error(PLUGIN_NAME, str::Format("error opening %s", fn.c_str()).c_str());
             invalidFiles.insert(fn);
         }
         else {
-            double minTrackLength = prefs->GetDouble(
+            double minTrackLength = this->services.Number(
                 KEY_MINIMUM_TRACK_LENGTH, DEFAULT_MINIMUM_TRACK_LENGTH);
 
-            bool ignoreSfx = prefs->GetBool(
+            bool ignoreSfx = this->services.Boolean(
                 KEY_EXCLUDE_SOUND_EFFECTS, DEFAULT_EXCLUDE_SOUND_EFFECTS);
 
-            if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
+            if (this->services.Boolean(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
                 std::string m3u = getM3uFor(fn);
                 if (m3u.size()) {
                     err = gme_load_m3u(data, m3u.c_str());
                     if (err) {
-                        debug->Error(PLUGIN_NAME, str::Format("m3u found, but load failed '%s'", err).c_str());
+                        this->services.Error(PLUGIN_NAME, str::Format("m3u found, but load failed '%s'", err).c_str());
                     }
                 }
             }
 
             const std::string defaultDuration =
-                std::to_string(prefs->GetDouble(
+                std::to_string(this->services.Number(
                     KEY_DEFAULT_TRACK_LENGTH,
                     DEFAULT_TRACK_LENGTH));
 
             const std::string directory = fs::getDirectory<std::string>(fn);
 
             for (int i = 0; i < gme_track_count(data); i++) {
-                const std::string externalId = indexer::createExternalId(EXTERNAL_ID_PREFIX, fn, i);
+                const std::string externalId = musik::core::plugin::CreateExternalId(EXTERNAL_ID_PREFIX, fn, i);
                 const std::string trackNum = std::to_string(i + 1);
                 const std::string defaultTitle = "Track " + std::to_string(1 + i);
                 const std::string modifiedTimeStr = std::to_string(modifiedTime);
 
-                auto track = indexer->CreateWriter();
-                track->SetValue("filename", externalId.c_str());
-                track->SetValue("directory", directory.c_str());
-                track->SetValue("filetime", modifiedTimeStr.c_str());
-                track->SetValue("track", trackNum.c_str());
+                musik::core::plugin::IndexerRecord track(indexer->Get());
+                track.SetValue("filename", externalId.c_str());
+                track.SetValue("directory", directory.c_str());
+                track.SetValue("filetime", modifiedTimeStr.c_str());
+                track.SetValue("track", trackNum.c_str());
 
                 gme_info_t* info = nullptr;
                 err = gme_track_info(data, &info, i);
+                std::unique_ptr<gme_info_t, decltype(&gme_free_info)> infoOwner(info, gme_free_info);
                 if (err) {
-                    debug->Error(PLUGIN_NAME, str::Format("error getting track %d: %s", i, err).c_str());
-                    track->SetValue("duration", defaultDuration.c_str());
-                    track->SetValue("title", defaultTitle.c_str());
+                    this->services.Error(PLUGIN_NAME, str::Format("error getting track %d: %s", i, err).c_str());
+                    track.SetValue("duration", defaultDuration.c_str());
+                    track.SetValue("title", defaultTitle.c_str());
                 }
                 else if (info) {
                     /* don't index tracks that are shorter than the specified minimum length.
@@ -214,7 +216,6 @@ void GmeIndexerSource::UpdateMetadata(
                         info->length > 0 &&
                         info->length / 1000.0 < minTrackLength)
                     {
-                        gme_free_info(info);
                         continue;
                     }
 
@@ -222,27 +223,25 @@ void GmeIndexerSource::UpdateMetadata(
                         ? defaultDuration
                         : std::to_string((float) info->play_length / 1000.0f);
 
-                    track->SetValue("album", info->game);
-                    track->SetValue("album_artist", info->system);
-                    track->SetValue("genre", info->system);
-                    track->SetValue("duration", duration.c_str());
-                    track->SetValue("artist", strlen(info->author) ? info->author : info->system);
-                    track->SetValue("title", strlen(info->song) ? info->song : defaultTitle.c_str());
+                    track.SetValue("album", info->game);
+                    track.SetValue("album_artist", info->system);
+                    track.SetValue("genre", info->system);
+                    track.SetValue("duration", duration.c_str());
+                    track.SetValue("artist", strlen(info->author) ? info->author : info->system);
+                    track.SetValue("title", strlen(info->song) ? info->song : defaultTitle.c_str());
                 }
 
-                gme_free_info(info);
-                indexer->Save(source, track, externalId.c_str());
-                track->Release();
+                indexer->Save(track, externalId);
                 ++tracksIndexed;
             }
         }
 
-        gme_delete(data);
     }
 
     /* we commit progress every so often */
     if (++this->filesIndexed % 300 == 0) {
-        indexer->CommitProgress(this, bounded_unsigned_sum(this->filesIndexed, this->tracksIndexed));
+        indexer->CommitProgress(std::min<unsigned>(
+            bounded_unsigned_sum(this->filesIndexed, this->tracksIndexed), MC_INDEXER_PROGRESS_MAX));
         this->filesIndexed = this->tracksIndexed = 0;
     }
 }

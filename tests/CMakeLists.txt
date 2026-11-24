@@ -257,8 +257,8 @@ if(APPLE)
 endif()
 
 # Compile each public header in its own translation unit using public includes only.
-set(public_c_headers plugin/analyzer plugin/dsp plugin/encoder plugin/settings plugin/audio plugin/services plugin/media plugin/stream plugin/decoder plugin/output abi context subscriptions library playback player output equalizer indexer visualizer preferences server plugins plugin paths locale log online musikcore)
-set(public_cpp_headers plugin/encoder plugin/dsp plugin/decoder plugin/output plugin/stream plugin/subtrack-source context subscriptions library playback player output equalizer indexer visualizer preferences server plugins paths locale log online musikcore track-result-window detail/async detail/track-page-cache)
+set(public_c_headers plugin/indexer plugin/tag plugin/metadata plugin/analyzer plugin/dsp plugin/encoder plugin/settings plugin/audio plugin/services plugin/media plugin/stream plugin/decoder plugin/output abi context subscriptions library playback player output equalizer indexer visualizer preferences server plugins plugin paths locale log online musikcore)
+set(public_cpp_headers plugin/registration plugin/indexer plugin/encoder plugin/dsp plugin/decoder plugin/output plugin/stream plugin/subtrack-source context subscriptions library playback player output equalizer indexer visualizer preferences server plugins paths locale log online musikcore track-result-window detail/async detail/track-page-cache)
 set(header_sources)
 foreach(header IN LISTS public_c_headers)
   foreach(language IN ITEMS c cpp)

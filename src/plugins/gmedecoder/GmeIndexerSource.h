@@ -35,47 +35,32 @@
 
 #pragma once
 
-#include <musikcore/sdk/IIndexerSource.h>
-#include <functional>
-#include <set>
+#include <musikcore/plugin/indexer.hpp>
 #include <atomic>
-#include <map>
+#include <set>
+#include <string>
 
-class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
-    public:
-        GmeIndexerSource();
-        ~GmeIndexerSource();
+class GmeIndexerSource {
+public:
+    GmeIndexerSource(const mc_host_api& host, const mc_plugin_services& services);
 
-        /* IIndexerSource */
-        virtual void Release();
-        virtual void OnBeforeScan();
-        virtual void OnAfterScan();
-        virtual int SourceId();
+    static const std::string& Key();
 
-        virtual musik::core::sdk::ScanResult Scan(
-            musik::core::sdk::IIndexerWriter* indexer,
-            const char** indexerPaths,
-            unsigned indexerPathsCount);
+    void OnBeforeScan();
+    void OnAfterScan();
+    bool Scan(musik::core::plugin::IndexerWriter* writer, const char** paths, size_t count);
+    void ScanTrack(musik::core::plugin::IndexerWriter* writer, const char* externalId);
+    void Interrupt();
+    bool HasStableIds() const { return true; }
+    bool NeedsTrackScan() const { return true; }
 
-        virtual void ScanTrack(
-            musik::core::sdk::IIndexerWriter* indexer,
-            musik::core::sdk::ITagStore* tagStore,
-            const char* externalId);
+private:
+    void UpdateMetadata(std::string path, musik::core::plugin::IndexerWriter* writer);
 
-        virtual void Interrupt();
-
-        virtual bool NeedsTrackScan() { return true; }
-
-        virtual bool HasStableIds() { return true; }
-
-    private:
-        void UpdateMetadata(
-            std::string fn,
-            musik::core::sdk::IIndexerSource* source,
-            musik::core::sdk::IIndexerWriter* indexer);
-
-        std::set<std::string> invalidFiles;
-        std::set<std::string> paths;
-        size_t filesIndexed, tracksIndexed;
-        std::atomic<bool> interrupt { false };
+    musik::core::plugin::IndexerServices services;
+    std::set<std::string> invalidFiles;
+    std::set<std::string> paths;
+    size_t filesIndexed { 0 };
+    size_t tracksIndexed { 0 };
+    std::atomic<bool> interrupt { false };
 };

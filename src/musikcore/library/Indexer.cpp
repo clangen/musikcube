@@ -56,7 +56,9 @@
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/plugin/MetadataWriter.h>
 #include <common/Contract.h>
-#include <musikcore/sdk/IIndexerSource.h>
+#include <musikcore/plugin/IndexerSource.h>
+#include <limits>
+#include <stdexcept>
 #include <musikcore/audio/Stream.h>
 #include <musikcore/support/ThreadGroup.h>
 
@@ -92,8 +94,6 @@ using namespace musik::core::library::query;
 
 using Thread = std::unique_ptr<std::thread>;
 
-using TagReaderDestroyer = PluginFactory::ReleaseDeleter<ITagReader>;
-using SourceDeleter = PluginFactory::ReleaseDeleter<IIndexerSource>;
 
 static void openLogFile() {
     if (!logFile) {
@@ -123,17 +123,41 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
         openLogFile();
     }
 
-    this->tagReaders = PluginFactory::Instance()
-        .QueryInterface<ITagReader, TagReaderDestroyer>("GetTagReader");
+    for (const auto& info : musik::core::plugin::ListPlugins()) {
+        if (!info.enabled) {
+            continue;
+        }
 
-    this->sources = PluginFactory::Instance()
-        .QueryInterface<IIndexerSource, SourceDeleter>("GetIndexerSource");
+        if (const auto factory = musik::core::plugin::FindTagReaderFactory(info.id)) {
+            this->tagReaders.push_back(std::make_shared<musik::core::plugin::TagReader>(factory, info.name));
+        }
+
+        if (const auto factory = musik::core::plugin::FindIndexerSourceFactory(info.id)) {
+            try {
+                this->sources.push_back(
+                    std::make_shared<musik::core::plugin::IndexerSource>(factory, info.id, info.name, *this));
+            }
+            catch (const std::runtime_error& error) {
+                const auto message = "could not start indexer source " + info.name + ": " + error.what();
+                debug::error(TAG, message);
+                musik::contract::Assert(false, message.c_str());
+            }
+        }
+    }
 
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
 
     db::Connection connection;
-    connection.Open(this->dbFilename.c_str());
+    if (connection.Open(this->dbFilename.c_str()) != db::Okay) {
+        throw std::runtime_error("could not open indexer catalog");
+    }
+    std::set<int> sourceIds;
+    for (const auto& source : this->sources) {
+        if (!sourceIds.insert(source->SourceId()).second) {
+            throw std::runtime_error("indexer source IDs must be unique");
+        }
+    }
     db::Statement stmt("SELECT path FROM paths ORDER BY id", connection);
     while (stmt.Step() == db::Row) {
         this->paths.push_back(stmt.ColumnText(0));
@@ -146,6 +170,11 @@ Indexer::~Indexer() {
 }
 
 void Indexer::Shutdown() {
+    {
+        std::lock_guard lock(this->stateMutex);
+        this->shuttingDown = true;
+        this->pendingSourceRescans.clear();
+    }
     if (this->thread) {
         {
             std::lock_guard lock(this->stateMutex);
@@ -156,7 +185,7 @@ void Indexer::Shutdown() {
             /* wait for an in-flight cancellation to release its stream before
             shutdown can unload the stream provider. */
             std::lock_guard lifecycle(this->sourceLifecycleMutex);
-            std::shared_ptr<IIndexerSource> source;
+            std::shared_ptr<musik::core::plugin::IndexerSource> source;
             audio::Stream::Shared analysis;
             uint64_t generation;
             {
@@ -175,6 +204,11 @@ void Indexer::Shutdown() {
         this->thread->join();
         this->thread.reset();
     }
+
+    /* the registry unloads before the library is destroyed. release plugin
+    instances now, after workers stop and while their code is still mapped. */
+    this->sources.clear();
+    this->tagReaders.clear();
 }
 
 void Indexer::Schedule(SyncType type) {
@@ -193,7 +227,7 @@ void Indexer::Cancel() {
     }
 
     std::lock_guard lifecycle(this->sourceLifecycleMutex);
-    std::shared_ptr<IIndexerSource> source;
+    std::shared_ptr<musik::core::plugin::IndexerSource> source;
     audio::Stream::Shared analysis;
     {
         std::lock_guard lock(this->stateMutex);
@@ -208,7 +242,7 @@ void Indexer::Cancel() {
     }
 }
 
-void Indexer::InterruptSource(const std::shared_ptr<IIndexerSource>& source, uint64_t generation) {
+void Indexer::InterruptSource(const std::shared_ptr<musik::core::plugin::IndexerSource>& source, uint64_t generation) {
     if (!source) {
         return;
     }
@@ -225,8 +259,12 @@ void Indexer::InterruptSource(const std::shared_ptr<IIndexerSource>& source, uin
     }
 }
 
-void Indexer::Schedule(SyncType type, IIndexerSource* source) {
+bool Indexer::Schedule(SyncType type, musik::core::plugin::IndexerSource* source) {
     std::unique_lock<decltype(this->stateMutex)> lock(this->stateMutex);
+
+    if (this->shuttingDown || (source && !this->sourcesActive)) {
+        return false;
+    }
 
     if (!this->thread) {
         this->state = StateIdle;
@@ -236,7 +274,7 @@ void Indexer::Schedule(SyncType type, IIndexerSource* source) {
     const int sourceId = source ? source->SourceId() : 0;
     for (const SyncContext& context : this->syncQueue) {
         if (context.type == type && context.sourceId == sourceId) {
-            return;
+            return true;
         }
     }
 
@@ -246,6 +284,7 @@ void Indexer::Schedule(SyncType type, IIndexerSource* source) {
     syncQueue.push_back(context);
 
     this->waitCondition.notify_all();
+    return true;
 }
 
 void Indexer::AddPath(const std::string& path) {
@@ -467,7 +506,7 @@ void Indexer::ReadMetadataFromFile(
             try {
                 if ((*it)->CanRead(track.GetString("extension").c_str())) {
                     APPEND_LOG("can read")
-                    if ((*it)->Read(pathToUtf8(file).c_str(), &store)) {
+                    if ((*it)->Read(pathToUtf8(file), store)) {
                         APPEND_LOG("did read")
                         saveToDb = true;
                         break;
@@ -522,8 +561,13 @@ void Indexer::ReadMetadataFromFile(
 inline void Indexer::IncrementTracksScanned(int delta) {
     std::unique_lock<std::mutex> lock(IndexerTrack::sharedWriteMutex);
 
-    this->incrementalUrisScanned.fetch_add(delta);
-    this->totalUrisScanned.fetch_add(delta);
+    /* progress is reported as an int; saturate rather than wrapping on long scans. */
+    const auto add = [delta](int value) {
+        return static_cast<int>(std::min<int64_t>(std::numeric_limits<int>::max(),
+            static_cast<int64_t>(value) + delta));
+    };
+    this->incrementalUrisScanned = add(this->incrementalUrisScanned.load());
+    this->totalUrisScanned = add(this->totalUrisScanned.load());
 
     const int interval = prefs->GetInt(
         prefs::keys::IndexerTransactionInterval, TRANSACTION_INTERVAL);
@@ -600,7 +644,7 @@ void Indexer::SyncDirectory(
 }
 
 ScanResult Indexer::SyncSource(
-    IIndexerSource* source,
+    musik::core::plugin::IndexerSource* source,
     const std::vector<std::string>& paths)
 {
     debug::info(TAG, u8fmt("indexer source %d running...", source->SourceId()));
@@ -642,23 +686,17 @@ ScanResult Indexer::SyncSource(
         /* finally, allow the source to update metadata for any tracks that it
         previously indexed, if it needs to. */
         {
-            if (!this->Bail() && source->NeedsTrackScan()) {
+            if (result == ScanCommit && !this->Bail() && source->NeedsTrackScan()) {
                 db::Statement tracks(
                     "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
                     this->dbConnection);
 
                 tracks.BindInt32(0, source->SourceId());
                 while (!this->Bail() && tracks.Step() == db::Row) {
-                    TrackPtr track = std::make_shared<IndexerTrack>(tracks.ColumnInt64(0));
-                    track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
-
                     if (logFile) {
-                        fprintf(logFile, "    - %s\n", track->GetString(constants::Track::FILENAME).c_str());
+                        fprintf(logFile, "    - %s\n", tracks.ColumnText(1));
                     }
-
-                    TagStore* store = new TagStore(track);
-                    source->ScanTrack(this, store, tracks.ColumnText(2));
-                    store->Release();
+                    source->ScanTrack(this, tracks.ColumnText(2));
                 }
             }
         }
@@ -669,7 +707,16 @@ ScanResult Indexer::SyncSource(
         debug::error(TAG, u8fmt("indexer source %d crashed", source->SourceId()));
     }
 
+    if (this->Bail()) {
+        source->Abort();
+        result = ScanRollback;
+    }
+
     source->OnAfterScan();
+
+    if (source->Failed()) {
+        result = ScanRollback;
+    }
 
     return result;
 }
@@ -815,7 +862,7 @@ void Indexer::SyncDelete() {
         db::Statement allTracks(
             "SELECT t.id, t.filename "
             "FROM tracks t "
-            "WHERE source_id == 0", /* IIndexerSources delete their own tracks */
+            "WHERE source_id == 0", /* musik::core::plugin::IndexerSources delete their own tracks */
             this->dbConnection);
 
         while (allTracks.Step() == db::Row && !this->Bail()) {
@@ -1162,7 +1209,7 @@ ITagStore* Indexer::CreateWriter() {
     return new TagStore(std::make_shared<IndexerTrack>(0));
 }
 
-bool Indexer::Save(IIndexerSource* source, ITagStore* store, const char* externalId) {
+bool Indexer::Save(musik::core::plugin::IndexerSource* source, ITagStore* store, const char* externalId) {
     if (!source || source->SourceId() == 0 || !store) {
         return false;
     }
@@ -1179,13 +1226,15 @@ bool Indexer::Save(IIndexerSource* source, ITagStore* store, const char* externa
         if (it) {
             it->SetValue(constants::Track::EXTERNAL_ID, externalId);
             it->SetValue(constants::Track::SOURCE_ID, std::to_string(source->SourceId()).c_str());
-            return it->Save(this->dbConnection, this->libraryPath);
+            const auto errors = this->dbConnection.ErrorCount();
+            const bool saved = it->Save(this->dbConnection, this->libraryPath);
+            return saved && this->dbConnection.ErrorCount() == errors;
         }
     }
     return false;
 }
 
-bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
+bool Indexer::RemoveByUri(musik::core::plugin::IndexerSource* source, const char* uri) {
     if (!source || source->SourceId() == 0) {
         return false;
     }
@@ -1201,10 +1250,10 @@ bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
     stmt.BindInt32(0, source->SourceId());
     stmt.BindText(1, uri);
 
-    return (stmt.Step() == db::Okay);
+    return (stmt.Step() == db::Done);
 }
 
-bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
+bool Indexer::RemoveByExternalId(musik::core::plugin::IndexerSource* source, const char* id) {
     if (!source || source->SourceId() == 0) {
         return false;
     }
@@ -1220,10 +1269,10 @@ bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
     stmt.BindInt32(0, source->SourceId());
     stmt.BindText(1, id);
 
-    return (stmt.Step() == db::Okay);
+    return (stmt.Step() == db::Done);
 }
 
-int Indexer::RemoveAll(IIndexerSource* source) {
+int Indexer::RemoveAll(musik::core::plugin::IndexerSource* source) {
     if (!source) {
         return 0;
     }
@@ -1235,16 +1284,20 @@ int Indexer::RemoveAll(IIndexerSource* source) {
 int Indexer::RemoveAllForSourceId(int sourceId) {
     db::Statement stmt("DELETE FROM tracks WHERE source_id=?", this->dbConnection);
     stmt.BindInt32(0, sourceId);
-    return (stmt.Step() == db::Okay) ? dbConnection.LastModifiedRowCount() : 0;
+    if (stmt.Step() != db::Done) {
+        return -1;
+    }
+    return dbConnection.LastModifiedRowCount();
 }
 
-void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {
-    if (source &&
-        this->currentSource &&
-        this->currentSource->SourceId() == source->SourceId() &&
-        trackTransaction)
-    {
-        trackTransaction->CommitAndRestart();
+void Indexer::CommitProgress(musik::core::plugin::IndexerSource* source, unsigned updatedTracks) {
+    if (!source || !this->currentSource || this->currentSource->SourceId() != source->SourceId() || !trackTransaction) {
+        throw std::runtime_error("indexer checkpoint is outside an active source scan");
+    }
+    const auto errors = this->dbConnection.ErrorCount();
+    trackTransaction->CommitAndRestart();
+    if (this->dbConnection.ErrorCount() != errors) {
+        throw std::runtime_error("indexer checkpoint failed");
     }
 
     if (updatedTracks) {
@@ -1252,21 +1305,51 @@ void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {
     }
 }
 
-int64_t Indexer::GetLastModifiedTime(IIndexerSource* source, const char* externalId) {
+bool Indexer::GetLastModifiedTime(musik::core::plugin::IndexerSource* source, const char* externalId,
+    int64_t& modified)
+{
     if (source && externalId && strlen(externalId)) {
         db::Statement stmt("SELECT filetime FROM tracks t where source_id=? AND external_id=?", dbConnection);
         stmt.BindInt32(0, source->SourceId());
         stmt.BindText(1, externalId);
-        if (stmt.Step() == db::Row) {
-            return stmt.ColumnInt64(0);
+        const auto result = stmt.Step();
+        if (result == db::Row) {
+            modified = stmt.ColumnInt64(0);
+            return true;
+        }
+        if (result != db::Done) {
+            throw std::runtime_error("could not read indexer source modification time");
         }
     }
 
-    return -1;
+    return false;
 }
 
-void Indexer::ScheduleRescan(IIndexerSource* source) {
-    if (source && source->SourceId() != 0) {
+bool Indexer::ScheduleRescan(musik::core::plugin::IndexerSource* source) {
+    if (!source) {
+        return false;
+    }
+    {
+        std::lock_guard lock(this->stateMutex);
+        if (this->shuttingDown) {
+            return false;
+        }
+        if (!this->sourcesActive) {
+            this->pendingSourceRescans.insert(source);
+            return true;
+        }
+    }
+    return this->Schedule(SyncType::Sources, source);
+}
+
+void Indexer::StartPendingSourceScans() {
+    std::set<musik::core::plugin::IndexerSource*> pending;
+    {
+        std::lock_guard lock(this->stateMutex);
+        this->sourcesActive = true;
+        pending.swap(this->pendingSourceRescans);
+    }
+    for (auto* source : pending) {
         this->Schedule(SyncType::Sources, source);
     }
 }

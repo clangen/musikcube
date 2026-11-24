@@ -159,7 +159,7 @@ add_dependencies(musikcube musikcore)
 add_dependencies(musikcubed musikcore)
 
 # tag readers
-add_plugin("src/plugins/taglib_plugin" "taglibreader" GetTagReader)
+add_plugin("src/plugins/taglib_plugin" "taglibreader")
 # outputs
 add_plugin("src/plugins/alsaout" "alsaout" GetAudioOutput SetPreferences)
 add_plugin("src/plugins/coreaudioout" "coreaudioout")

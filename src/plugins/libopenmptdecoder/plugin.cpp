@@ -34,15 +34,27 @@
 
 #include <musikcore/sdk/version.h>
 #include "OpenMptDecoder.h"
+#include "OpenMptIndexerSource.h"
+#include <musikcore/plugin/registration.hpp>
 #include <musikcore/plugin/subtrack-source.hpp>
+
+const mc_configuration_api& OpenMptIndexerConfiguration();
 
 namespace {
     mc_result MC_CALL initialize(const mc_host_api* host, void**, mc_error**) {
-        const auto status = musik::core::plugin::RegisterDecoder<OpenMptDecoder>(*host);
+        auto status = musik::core::plugin::RegisterIndexerSource<OpenMptIndexerSource>(*host);
         if (status != MC_OK) {
             return status;
         }
-        return musik::core::plugin::SubtrackSource<OpenMptDecoder>::Register(*host);
+        status = musik::core::plugin::RegisterConfiguration(*host, OpenMptIndexerConfiguration());
+        if (status != MC_OK) {
+            return status;
+        }
+        status = musik::core::plugin::RegisterDecoder<OpenMptDecoder>(*host);
+        if (status != MC_OK) {
+            return status;
+        }
+        return musik::core::plugin::RegisterSubtrackSource<OpenMptDecoder>(*host);
     }
 }
 
@@ -58,7 +70,6 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
     plugin->author = { "clangen", 7 };
     plugin->initialize = initialize;
-    plugin->shutdown = [](void*) {
-    };
+    plugin->shutdown = [](void*) {};
     return MC_OK;
 }

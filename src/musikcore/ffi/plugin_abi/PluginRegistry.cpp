@@ -246,6 +246,18 @@ namespace musik { namespace core { namespace ffi {
         return nullptr;
     }
 
+    const mc_host_api* PluginRegistry::FindHost(std::string_view pluginId) const {
+        std::lock_guard<std::mutex> lock(this->mutex);
+        if (this->phase == Phase::Running) {
+            for (const auto& plugin : this->plugins) {
+                if (plugin->HasId(pluginId)) {
+                    return &plugin->Host();
+                }
+            }
+        }
+        return nullptr;
+    }
+
     void PluginRegistry::AssertCanShutdown() const {
         musik::contract::Assert(this->calls.IsOwnerThread(), "engine shutdown on the wrong plugin owner thread");
         musik::contract::Assert(!this->calls.IsActive(), "engine shutdown reentered an active plugin call");

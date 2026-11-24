@@ -114,7 +114,7 @@ namespace musik { namespace core { namespace plugin {
             capability.id = { MC_PLUGIN_CAPABILITY_STREAM, sizeof(MC_PLUGIN_CAPABILITY_STREAM) - 1 };
             capability.api = &factory;
             capability.api_size = sizeof(factory);
-            return host.register_capability(host.host_context, &capability);
+            return host.register_plugin_capability(host.host_context, &capability);
         }
 
     private:
@@ -199,5 +199,10 @@ namespace musik { namespace core { namespace plugin {
         std::mutex mutex;
         bool interrupted = false;
     };
+
+    /* register the stream that exposes a decoder's individual subtracks. */
+    template<typename Format> mc_result RegisterSubtrackSource(const mc_host_api& host) {
+        return SubtrackSource<Format>::Register(host);
+    }
 
 } } }

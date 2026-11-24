@@ -179,11 +179,8 @@ windows_plugin(ffmpegdecoder FfmpegDecoder.cpp plugin.cpp)
 musikcube_configure_c_plugin(ffmpegdecoder)
 target_link_libraries(ffmpegdecoder PRIVATE ${windows_ffmpeg})
 
-windows_plugin(gmedecoder GmeDecoder.cpp plugin.cpp)
+windows_plugin(gmedecoder GmeDecoder.cpp plugin.cpp IndexerPlugin.cpp GmeIndexerSource.cpp)
 musikcube_configure_c_plugin(gmedecoder)
-windows_plugin(gmeindexer DIRECTORY gmedecoder IndexerPlugin.cpp GmeIndexerSource.cpp)
-target_compile_definitions(gmeindexer PRIVATE MUSIKCUBE_PARENT_PLUGIN_FILENAME="$<TARGET_FILE_NAME:gmedecoder>")
-target_link_libraries(gmeindexer PRIVATE vendor::gme vendor::zlib)
 target_link_libraries(gmedecoder PRIVATE vendor::gme vendor::zlib)
 target_compile_definitions(gmedecoder PRIVATE NOMINMAX)
 
@@ -192,12 +189,8 @@ musikcube_configure_c_plugin(httpdatastream)
 target_compile_features(httpdatastream PRIVATE cxx_std_20)
 target_link_libraries(httpdatastream PRIVATE shlwapi vendor::curl)
 
-windows_plugin(libopenmptdecoder OpenMptDecoder.cpp plugin.cpp Utility.cpp)
+windows_plugin(libopenmptdecoder OpenMptDecoder.cpp plugin.cpp Utility.cpp IndexerPlugin.cpp OpenMptIndexerSource.cpp)
 musikcube_configure_c_plugin(libopenmptdecoder)
-windows_plugin(openmptindexer DIRECTORY libopenmptdecoder IndexerPlugin.cpp OpenMptIndexerSource.cpp Utility.cpp)
-target_compile_definitions(openmptindexer PRIVATE LIBOPENMPT_USE_DLL)
-target_compile_definitions(openmptindexer PRIVATE MUSIKCUBE_PARENT_PLUGIN_FILENAME="$<TARGET_FILE_NAME:libopenmptdecoder>")
-target_link_libraries(openmptindexer PRIVATE vendor::openmpt)
 target_compile_definitions(libopenmptdecoder PRIVATE LIBOPENMPT_USE_DLL)
 target_link_libraries(libopenmptdecoder PRIVATE vendor::openmpt)
 
@@ -221,6 +214,7 @@ windows_plugin(supereqdsp SuperEqDsp.cpp supereqdsp_plugin.cpp supereq/Equ.cpp s
 musikcube_configure_c_plugin(supereqdsp)
 
 windows_plugin(taglib_plugin taglib_plugin.cpp TaglibMetadataReader.cpp)
+musikcube_configure_c_plugin(taglib_plugin)
 target_compile_definitions(taglib_plugin PRIVATE TAGLIB_STATIC)
 target_compile_options(taglib_plugin PRIVATE "$<$<AND:$<CONFIG:Release>,$<COMPILE_LANGUAGE:CXX>>:/EHa>")
 target_link_libraries(taglib_plugin PRIVATE vendor::taglib vendor::zlib)
@@ -238,7 +232,7 @@ target_link_libraries(win32gdivis PRIVATE shlwapi)
 windows_plugin(win32globalhotkeys win32globalhotkeys_plugin.cpp)
 target_link_libraries(win32globalhotkeys PRIVATE winmm)
 
-foreach(target ffmpegdecoder libopenmptdecoder openmptindexer server stockencoders)
+foreach(target ffmpegdecoder libopenmptdecoder server stockencoders)
   target_compile_definitions(${target} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX _CRT_SECURE_NO_WARNINGS)
 endforeach()
 
