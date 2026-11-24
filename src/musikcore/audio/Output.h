@@ -3,6 +3,7 @@
 #include <common/DeleteDefaults.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <musikcore/sdk/IBuffer.h>
+#include <musikcore/plugin/services.h>
 #include <array>
 #include <atomic>
 #include <cstdint>
@@ -93,7 +94,7 @@ namespace musik { namespace core { namespace audio {
 
         Output() = default;
         Output(ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name,
-            std::string device);
+            std::string device, mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT);
         ~Output();
 
         static size_t InstanceCount() noexcept;
@@ -142,6 +143,8 @@ namespace musik { namespace core { namespace audio {
         std::string id;
         std::string name = "NoOutput";
         std::string device;
+        mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+        mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
         mutable std::timed_mutex ordinary;
         std::atomic<unsigned> waitingControls { 0 };
         std::mutex lifecycle;

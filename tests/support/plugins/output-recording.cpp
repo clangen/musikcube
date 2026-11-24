@@ -1,4 +1,5 @@
 #include <musikcore/plugin/output.hpp>
+#include <musikcore/plugin/services.h>
 #include <mutex>
 #include <condition_variable>
 #include <array>
@@ -193,6 +194,18 @@ namespace {
     /* emulate the C contract that permits a Stop-safe partial object on
     failed creation; the ordinary C++ helper always cleans constructor failure. */
     mc_result MC_CALL create(void* context, const mc_plugin_services* services, void** instance, mc_error** error) {
+        if (std::getenv("MUSIKCORE_TEST_OUTPUT_PREFERENCES")) {
+            if (!services || !services->preferences || !services->preferences->read_boolean) {
+                return MC_ERROR_PLUGIN;
+            }
+            bool value = false;
+            const mc_string_view key { "fixture", 7 };
+            if (services->preferences->read_boolean(services->preferences->context, key, false, &value) != MC_OK ||
+                !value)
+            {
+                return MC_ERROR_PLUGIN;
+            }
+        }
         const auto result = originalCreate(context, services, instance, error);
         return result == MC_OK && std::getenv("MUSIKCORE_TEST_PARTIAL_OUTPUT_CREATE") ? MC_ERROR_IO : result;
     }

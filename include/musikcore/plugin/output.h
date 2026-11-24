@@ -235,7 +235,8 @@ typedef struct mc_output_factory {
 
     /* transfer instance ownership to out_instance, initially null. a nonnull
     partial instance returned on failure must support stop; the host successfully
-    stops it before destroy. services stay host-owned through destruction;
+    stops it before destroy. services include plugin-scoped preferences and stay
+    host-owned through destruction;
     error is optional/host-owned. */
     mc_result(MC_CALL* create)(
         void* context, const mc_plugin_services* services, void** out_instance, mc_error** error);

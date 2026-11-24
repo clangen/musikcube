@@ -100,7 +100,8 @@ namespace musik { namespace core { namespace audio { namespace outputs {
             const auto factory = musik::core::plugin::FindOutputFactory(info.id);
             if (factory) {
                 result.push_back(
-                    std::make_shared<Output>(factory, info.id, info.name, prefs->GetString(deviceKey(info.id))));
+                    std::make_shared<Output>(factory, info.id, info.name, prefs->GetString(deviceKey(info.id)),
+                        musik::core::plugin::ReadSettingsService(info.name)));
             }
         }
         std::sort(result.begin(), result.end(), [](const auto& left, const auto& right) {

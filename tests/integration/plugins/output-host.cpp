@@ -142,6 +142,29 @@ int main(int argc, char** argv) {
     buffer.SetSamples(32);
     Sink sink;
     const auto factory = registry.Find<mc_output_factory>("output.test");
+    if (!fatal) {
+        /* output instances need their plugin-scoped preferences during creation. */
+        environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES", true);
+        {
+            mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+            preferences.read_boolean = [](void*, mc_string_view key, bool, bool* value) -> mc_result {
+                if (std::string_view(key.data, key.length) != "fixture") {
+                    return MC_ERROR_INVALID_ARGUMENT;
+                }
+                *value = true;
+                return MC_OK;
+            };
+            Output output(factory, "output.test", "Recording", "", preferences);
+            Output::Writer writer(output, sink);
+            output.Resume();
+            require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "output receives preferences at creation");
+            writer.ProcessCompletions();
+        }
+        environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES", false);
+        sink.returnedBuffers.clear();
+        sink.completed = 0;
+        calls.clear();
+    }
     if (fatal) {
         /* the runner rejects aborts after output destruction as well as normal
         return or stack unwinding. the logger records destruction below. */

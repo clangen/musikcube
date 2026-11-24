@@ -66,12 +66,17 @@ namespace musik { namespace core { namespace audio {
     }
 
     Output::Output(
-        ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name, std::string device)
+        ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name, std::string device,
+        mc_preferences_host_api preferences)
     : factory(std::move(factory))
     , id(std::move(id))
     , name(std::move(name))
     , device(std::move(device))
+    , preferences(preferences)
     {
+        if (this->preferences.read_boolean) {
+            this->services.preferences = &this->preferences;
+        }
     }
 
     Output::Writer::Writer(Output& output, CompletionSink& sink)
@@ -405,7 +410,7 @@ namespace musik { namespace core { namespace audio {
         if (!this->instance) {
             const auto result = this->factory.Invoke([&](const auto& factory) {
                 this->api = factory.instance_api;
-                return factory.create(factory.context, nullptr, &this->instance, nullptr);
+                return factory.create(factory.context, &this->services, &this->instance, nullptr);
             });
             if (this->instance) {
                 activeInstances.fetch_add(1);
