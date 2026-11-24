@@ -2004,13 +2004,14 @@ stage; migrated families must not keep a parallel former-SDK path.
 
 #### Data streams and encoders
 
-- [ ] **ENC-001** Define blocking encoder output to a host stream.
-- [ ] **ENC-002** Define streaming encoder packet/sink ownership.
-- [ ] **ENC-003** Implement encoder adapters and pure-C fixtures.
-- [ ] **ENC-004** Convert `stockencoders`. The server passes C PCM views and
-  writable C streams to both stock encoders. Factory discovery and encoder
-  lifecycle still use the C++ SDK. `server.transcode_body` and
-  `api.remote_transcode` cover the handoff and encode/finalize failure on macOS.
+- [x] **ENC-001** Define blocking encoder output to a host stream.
+- [x] **ENC-002** Define streaming encoder packet ownership.
+- [x] **ENC-003** Implement encoder adapters and pure-C fixtures.
+  `plugins.encoder` covers independent instances, packets, flush and unload.
+  The server transcode tests exercise the real factory on macOS.
+- [x] **ENC-004** Convert `stockencoders`. `server.transcode_body` covers
+  flush and output failure, and `api.remote_transcode` exercises the real
+  MP3 and FFmpeg providers on macOS. Windows and Linux remain to be verified.
 - [x] **DST-001** Define data-stream factory capability and creation tables.
 - [x] **DST-002** Implement data-stream factory adapters and fixtures.
 - [x] **DST-003** Convert `httpdatastream` alongside local file and FFmpeg
@@ -2121,8 +2122,21 @@ stage; migrated families must not keep a parallel former-SDK path.
 
 #### DSP and remaining plugin categories
 
-- [ ] **DSP-001** Define real-time DSP format negotiation and processing table.
-- [ ] **DSP-002** Convert `supereqdsp`.
+- [x] **DSP-001** Define in-place processing on the playback worker.
+- [x] **DSP-002** Convert `supereqdsp`. `plugins.dsp_processing` checks two
+  active processors created by the media host and live equalizer changes on macOS.
+  `plugins.dsp_failure` verifies that a partly modified buffer is discarded.
+  Windows and Linux
+  remain to be verified.
+- [x] Implement the analyzer factory and metadata writer on the indexer worker.
+  `plugins.analyzer` checks real indexing with successful and failing C
+  providers. Analyzer changes for a track are saved only when all participants
+  succeed, as recorded in ADR-0011. Cancellation waits for the current analyzer
+  call to return. `plugins.analyzer_cancel` covers cancellation and shutdown
+  during blocked stream open. The analyzer currently uses the internal Stream
+  pipeline over the C stream and decoder primitives. Reassess that remaining
+  C++ interface when consolidating decoded-audio consumers. Windows and Linux
+  remain to be verified.
 - [ ] **EXT-001** Design schema/configuration descriptors as data.
 - [ ] **EXT-002** Migrate visualizer providers.
 - [ ] **EXT-003** Migrate playback-remote providers.

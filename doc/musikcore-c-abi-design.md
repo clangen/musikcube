@@ -1399,68 +1399,18 @@ language. Add other family helpers as their C contracts and implementations exis
 
 #### DSP, metadata writers, tag readers, and analyzers
 
-```c
-struct mc_dsp_vtable {
-    uint32_t struct_size;
-    void (MC_CALL *destroy)(void *);
-    mc_result (MC_CALL *prepare)(void *, const mc_audio_format *, mc_error **);
-    mc_result (MC_CALL *configure)(void *, const mc_preference_entry *, size_t count, mc_error **);
-    mc_result (MC_CALL *reset)(void *);
-    mc_result (MC_CALL *process)(void *, mc_audio_buffer_view *);
-};
+The implemented DSP and analyzer contracts are in `plugin/dsp.h` and
+`plugin/analyzer.h`. DSP instances process one stream on its worker and
+receive settings reload notifications. Analyzers receive call-scoped PCM and
+metadata writers on the indexer worker. The current metadata store uses 1.0
+as the unset replay-gain sentinel and does not preserve empty text values.
 
-typedef struct mc_replay_gain_values {
-    uint32_t struct_size;
-    uint32_t present_flags;
-    double track_gain_db;
-    double track_peak;             /* linear amplitude. */
-    double album_gain_db;
-    double album_peak;
-} mc_replay_gain_values;
+Analyzer changes are saved per track only when every participating analyzer
+succeeds, as recorded in ADR-0011. Indexer cancellation waits for the current
+analyzer call to return.
 
-typedef struct mc_metadata_writer {
-    uint32_t struct_size;
-    void *context;
-    mc_result (MC_CALL *set_values)(void *, mc_string_view key, const mc_string_view *, size_t count);
-    mc_result (MC_CALL *clear)(void *, mc_string_view key);
-    mc_result (MC_CALL *contains)(void *, mc_string_view key, uint32_t *present);
-    mc_result (MC_CALL *set_artwork)(void *, mc_string_view mime_type, mc_byte_view);
-    mc_result (MC_CALL *contains_artwork)(void *, uint32_t *present);
-    mc_result (MC_CALL *set_replay_gain)(void *, const mc_replay_gain_values *);
-} mc_metadata_writer;
-
-struct mc_tag_reader_vtable {
-    uint32_t struct_size;
-    void (MC_CALL *destroy)(void *);
-    mc_result (MC_CALL *can_read)(void *, const mc_media_hint *, uint32_t *supported);
-    mc_result (MC_CALL *read)(void *, mc_string_view uri, const mc_metadata_writer *, mc_error **);
-    void (MC_CALL *interrupt)(void *);
-};
-
-struct mc_analyzer_vtable {
-    uint32_t struct_size;
-    void (MC_CALL *destroy)(void *);
-    mc_result (MC_CALL *begin)(void *, const mc_metadata_writer *, mc_error **);
-    mc_result (MC_CALL *process)(void *, const mc_pcm_view *, const mc_metadata_writer *, mc_error **);
-    mc_result (MC_CALL *finish)(void *, const mc_metadata_writer *, uint32_t commit, mc_error **);
-    void (MC_CALL *interrupt)(void *);
-};
-```
-
-DSP must not resize storage or change the negotiated format during process.
-Its process call is real-time safe. Prepare/configure/reset are serialized with
-processing at a controlled boundary outside the audio callback; live parameters
-must be applied without a processing-side allocation or unbounded lock. Stateful
-processors are created per stream, so crossfade streams do not share filter
-history accidentally.
-
-Metadata writers are host-owned, scoped views. They copy keys, values, artwork,
-and gain data during calls. Empty text is present; no values/clear is absent.
-Tag readers and analyzers never retain a writer after the call. Gain presence
-flags distinguish a missing value from a valid zero gain. Analyzer finish runs
-for both commit and cancellation/failure cleanup after begin was entered.
-Analyzers may perform worker computation; they are not invoked on a hardware
-callback or allowed to block playback there.
+Tag readers still need a C contract and can reuse the metadata writer as their
+real requirements are established.
 
 #### Indexer sources and source-scoped writes
 

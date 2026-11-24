@@ -513,3 +513,6 @@ The modernization is complete when:
 - [ADR-0007: explicit URI player resources](../docs/adr/0007-explicit-uri-player-resources.md)
 - [ADR-0008: C provider bootstrap and unload lifetime](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md)
 - [ADR-0009: Playback threading model](../docs/adr/0009-playback-threading-model.md)
+- [ADR-0010: Shared media services](../docs/adr/0010-shared-media-services-for-playback-and-transcoding.md)
+- [ADR-0011: Analyzer track results](../docs/adr/0011-analyzer-track-results.md)
+- [ADR-0012: DSP processing failure](../docs/adr/0012-dsp-processing-failure.md)
