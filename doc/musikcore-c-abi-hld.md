@@ -516,3 +516,4 @@ The modernization is complete when:
 - [ADR-0010: Shared media services](../docs/adr/0010-shared-media-services-for-playback-and-transcoding.md)
 - [ADR-0011: Analyzer track results](../docs/adr/0011-analyzer-track-results.md)
 - [ADR-0012: DSP processing failure](../docs/adr/0012-dsp-processing-failure.md)
+- [ADR-0013: Indexer source identity and checkpoints](../docs/adr/0013-indexer-source-identity-and-checkpoints.md)

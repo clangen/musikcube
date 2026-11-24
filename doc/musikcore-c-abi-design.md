@@ -1033,13 +1033,12 @@ Preserve that typed-query transport where needed. No new provider/remote API may
 execute caller-supplied SQL or expose a SQLite connection. This is not a claim
 that every existing query implementation has been security-audited here.
 
-Two persistence details require a deliberate migration decision before indexer
-conversion: current sources derive IDs from `std::hash<std::string>(PLUGIN_NAME)`,
-and filesystem modification values use milliseconds of the implementation's
-`file_clock` epoch. Neither is an appropriate language-neutral wire contract.
-The proposed source key and Unix timestamp below must be mapped to existing
-stored data explicitly; do not silently change database identities, force a
-reindex, or introduce a compatibility shim as part of an interface rename.
+Existing indexer sources derived numeric IDs from a standard-library hash and
+stored modification times as milliseconds in the platform's `file_clock` epoch.
+A schema migration rewrites the historical built-in source IDs using their
+virtual URI prefixes. The new source key and plugin ID derive a stable numeric ID. Modification times
+remain in each source's existing units and epoch; they are not Unix timestamps.
+The lookup reports absence separately, preserving valid negative values.
 
 #### Shared object, factory, and call rules
 
@@ -1089,19 +1088,8 @@ typedef struct mc_dsp {
     const mc_dsp_vtable *api;
 } mc_dsp;
 
-typedef struct mc_tag_reader_vtable mc_tag_reader_vtable;
-typedef struct mc_tag_reader {
-    uint32_t struct_size;
-    void *instance;
-    const mc_tag_reader_vtable *api;
-} mc_tag_reader;
-
-typedef struct mc_index_source_vtable mc_index_source_vtable;
-typedef struct mc_index_source {
-    uint32_t struct_size;
-    void *instance;
-    const mc_index_source_vtable *api;
-} mc_index_source;
+/* tag reader and indexer source instances use their factory's vtable directly;
+see plugin/tag.h and plugin/indexer.h for their current declarations. */
 
 typedef struct mc_analyzer_vtable mc_analyzer_vtable;
 typedef struct mc_analyzer {
@@ -1414,59 +1402,22 @@ real requirements are established.
 
 #### Indexer sources and source-scoped writes
 
-```c
-typedef struct mc_index_source_info {
-    uint32_t struct_size;
-    mc_string_view source_key;     /* stable text, scoped by plugin ID; copied by core. */
-    uint32_t flags;                /* stable external IDs; needs existing-track validation. */
-} mc_index_source_info;
-
-typedef uint32_t mc_scan_decision;
-enum { MC_SCAN_ROLLBACK = 0, MC_SCAN_COMMIT = 1 };
-
-typedef struct mc_index_writer {
-    uint32_t struct_size;
-    void *context;                 /* bound to this source and active scan. */
-    mc_result (MC_CALL *create_record)(void *, mc_metadata_record **);
-    mc_result (MC_CALL *get_writer)(void *, mc_metadata_record *, mc_metadata_writer *);
-    void (MC_CALL *destroy_record)(void *, mc_metadata_record **);
-    mc_result (MC_CALL *save)(void *, const mc_metadata_record *, mc_string_view external_id);
-    mc_result (MC_CALL *remove_uri)(void *, mc_string_view uri, uint64_t *removed);
-    mc_result (MC_CALL *remove_external_id)(void *, mc_string_view external_id, uint64_t *removed);
-    mc_result (MC_CALL *remove_all)(void *, uint64_t *removed);
-    mc_result (MC_CALL *last_modified)(void *, mc_string_view external_id, int64_t *unix_ns);
-    mc_result (MC_CALL *checkpoint)(void *, uint64_t updated_tracks);
-} mc_index_writer;
-
-struct mc_index_source_vtable {
-    uint32_t struct_size;
-    void (MC_CALL *destroy)(void *);
-    mc_result (MC_CALL *get_info)(void *, mc_index_source_info *);
-    mc_result (MC_CALL *begin_scan)(void *, mc_error **);
-    mc_result (MC_CALL *scan)(void *, const mc_string_view *paths, size_t path_count,
-        const mc_index_writer *, mc_scan_decision *, mc_error **);
-    mc_result (MC_CALL *validate_track)(void *, mc_string_view external_id,
-        const mc_index_writer *, const mc_metadata_writer *, mc_error **);
-    mc_result (MC_CALL *end_scan)(void *, mc_scan_decision, mc_error **);
-    void (MC_CALL *interrupt)(void *);
-};
-```
-
-The core supplies a fresh source instance/cancellation scope for an initial scan
-implementation. Paths/writers are valid for their call; writes are serialized
-on the scan worker. Writer operations cannot address another source or arbitrary
-SQL. Owned metadata records are released before the scan scope ends. Source
-identity uses stable text; the numeric database mapping stays inside the core.
-Unknown modification time is a result status, not a negative sentinel that might
-collide with a legitimate timestamp.
+The source, writer, metadata-record, and rescan contracts are declared in
+[`indexer.h`](../include/musikcore/plugin/indexer.h). A source instance remains
+alive for the indexer session and resets its cancellation state before each scan.
+Paths and writers are valid only for their calls; writes are serialized on the
+scan worker. Writer operations cannot address another source or arbitrary SQL.
+Owned metadata records are released before the scan scope ends. The core derives a stable numeric ID from the plugin ID and source key. A
+catalog migration updates historical built-in source IDs and playlist references
+using their virtual URI prefixes.
 
 Begin/end bracket the whole operation, including validation of existing tracks.
-End runs once after begin is entered; cancellation/errors force rollback of the
-current uncommitted batch. Checkpoint explicitly commits a batch and progress;
-earlier checkpoints are not undone by a later rollback. Preserve resumable scan
-behavior without claiming whole-scan atomicity. A rescan notification becomes a
-host operation scoped to this source, not an `IIndexerSource*` passed back into
-another module.
+End runs after begin, including on cancellation or failure. Cancellation and
+errors roll back the current uncommitted batch. A checkpoint commits a batch;
+earlier checkpoints are not undone by a later rollback. Modification-time
+lookups distinguish an absent record from a stored negative timestamp. A
+source-scoped host operation requests a later rescan without exposing a C++
+object across the boundary.
 
 #### Visualizers, playback observers, and lifecycle extensions
 
@@ -1564,15 +1515,16 @@ typedef struct mc_tag_reader_factory {
     uint32_t struct_size;
     void *context;
     const mc_tag_reader_vtable *instance_api;
+    mc_result (MC_CALL *can_read)(void *, mc_string_view extension, uint32_t *supported);
     mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
 } mc_tag_reader_factory;
 
-typedef struct mc_index_source_factory {
+typedef struct mc_indexer_source_factory {
     uint32_t struct_size;
     void *context;
-    const mc_index_source_vtable *instance_api;
+    const mc_indexer_source_vtable *instance_api;
     mc_result (MC_CALL *create)(void *, const mc_plugin_services *, void **, mc_error **);
-} mc_index_source_factory;
+} mc_indexer_source_factory;
 
 typedef struct mc_analyzer_factory {
     uint32_t struct_size;
@@ -1628,9 +1580,9 @@ the decoded PCM view to the encoder before reading another block.
 A plugin receives its own preference store and the application data directory.
 The HTTP source registers its integer settings with defaults and bounds. Its
 display name still selects the original preference file, preserving saved
-values. Each new transfer reads the current settings. GME and OpenMPT also read
-their existing component preferences. Their indexer companions still publish
-their full schemas through the C++ SDK.
+values. Each new transfer reads the current settings. GME and OpenMPT retain
+their existing component preferences and register their decoder, stream,
+indexer source, and settings together from one plugin each.
 
 The remaining design calls for media encoder factories, preference writes and
 saves, richer schema types and apply/restart semantics, and system, catalog,

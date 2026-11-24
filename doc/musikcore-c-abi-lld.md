@@ -2039,12 +2039,10 @@ stage; migrated families must not keep a parallel former-SDK path.
 - [x] **PLG-DEC-003** Convert `libopenmptdecoder`. The GME and OpenMPT
   media DLLs each register a stream and decoder. The installed C++17 plugin
   SDK provides `SubtrackSource` for indexed containers and `seekStream`
-  for codec callbacks using relative offsets. Ship the indexers alongside
-  their codecs. Each indexer declares its media plugin filename through
-  `GetParentPluginFilename` so its enable setting follows the codec until
-  overridden. `plugins.subsong_gme` and `runtime.stream_sdk_contract` cover
-  selection on macOS. `musikcube.ui.settings` checks both plugin rows after a
-  toggle. `plugins.subsong_openmpt` also verifies that the decoder consumes a
+  for codec callbacks using relative offsets. Each plugin also registers its
+  indexer source and settings, with one enabled setting for all capabilities.
+  `plugins.subsong_gme` and `runtime.stream_sdk_contract` cover selection on
+  macOS. `musikcube.ui.settings` checks the combined plugin row. `plugins.subsong_openmpt` also verifies that the decoder consumes a
   final block carrying EOF without requesting it again.
 - [ ] **PLG-DEC-004** Convert Windows `cddadecoder` and its stream/source
   capabilities. CD audio playback is unavailable on this branch until its
@@ -2053,13 +2051,32 @@ stage; migrated families must not keep a parallel former-SDK path.
 
 #### Tags and indexer sources
 
-- [ ] **TAG-001** Define metadata writer and tag reader/store tables.
-- [ ] **TAG-002** Implement adapters and deterministic tag fixtures.
+- [x] **TAG-001** Define metadata writer and tag reader/store tables.
+- [x] **TAG-002** Implement adapters and deterministic tag fixtures.
 - [ ] **TAG-003** Convert `taglib_plugin`.
+  The TagLib reader now uses the shared C metadata writer. On macOS,
+  `plugins.taglib_metadata` exercises tags, artwork, and replay gain through
+  the real plugin; indexed-query and browse tests exercise the application
+  path. Boundary failure cases and other platform checks remain open.
 - [ ] **IDX-001** Define indexer source, writer, cancellation, and
   commit/rollback tables.
+  The C source, source-scoped writer, rescan notification, and timestamp
+  lookup contracts are implemented; [ADR-0013](../docs/adr/0013-indexer-source-identity-and-checkpoints.md)
+  records the identity and checkpoint decisions. Platform validation remains open.
 - [ ] **IDX-002** Implement adapters and fixture source.
+  `plugins.indexer_cancel` and `plugins.indexer_fail` exercise cancellation,
+  checkpoints, rollback, and foreign-record rejection through the real runtime.
+  The host uses the C source boundary directly. The provider cancellation
+  fixture has been converted to exercise the same boundary. The C++ registration
+  helper receives the plugin-specific host through instance services;
+  `plugins.indexer_adapter` checks independent host sessions and rejects temporary
+  encoder tables. `plugins.indexer_create-fail` checks that a source creation
+  failure terminates startup with a diagnostic before another scan can run.
+  Platform checks remain open.
 - [ ] **IDX-003** Convert decoder-provided indexer sources.
+  GME and OpenMPT use C factories on macOS. `plugins.indexer_gme` and
+  `plugins.indexer_openmpt` cover indexing, existing-ID migration, restart, and
+  stale-track removal. Linux and Windows builds and runtime checks remain open.
 
 #### Audio outputs
 
