@@ -36,6 +36,7 @@
 #include "Constants.h"
 #include "ServerControls.h"
 
+#include <musikcore/playback.hpp>
 #include <musikcore/sdk/version.h>
 #include <musikcore/sdk/String.h>
 #include <array>
@@ -302,15 +303,17 @@ void WebSocketServer::DispatchPlayback(std::function<mc_result(mc_playback*)> op
     const auto status = this->context.playbackRemote->with_playback_async(
         this->context.playbackRemote->context, [](void* data, mc_result result, mc_playback* playback) {
             std::unique_ptr<Work> work(static_cast<Work*>(data));
-            if (result == MC_OK) {
-                try {
-                    result = work->operation(playback);
-                }
-                catch (...) {
-                    result = MC_ERROR_INTERNAL;
+            {
+                musik::core::api::Playback owned(playback);
+                if (result == MC_OK) {
+                    try {
+                        result = work->operation(owned.Get());
+                    }
+                    catch (...) {
+                        result = MC_ERROR_INTERNAL;
+                    }
                 }
             }
-            mc_playback_destroy(&playback);
             if (!work->server->context.stopping.load()) {
                 try {
                     auto completion = std::move(work->completion);
@@ -1407,12 +1410,12 @@ void WebSocketServer::RespondWithCurrentTime(connection_hdl connection, json& re
     this->DispatchPlayback([output](mc_playback* playback) {
         auto snapshot = mc_playback_snapshot MC_PLAYBACK_SNAPSHOT_DEFAULT;
         const auto status = mc_playback_get_snapshot(playback, &snapshot);
-        mc_track_ref* track = nullptr;
+        mc_track_ref* rawTrack = nullptr;
         int64_t id = -1;
-        if (status == MC_OK && mc_playback_get_current_track(playback, &track) == MC_OK) {
-            id = mc_track_ref_get_id(track);
+        if (status == MC_OK && mc_playback_get_current_track(playback, &rawTrack) == MC_OK) {
+            musik::core::api::TrackRef track(rawTrack);
+            id = track.Id();
         }
-        mc_track_ref_destroy(&track);
         *output = { { key::playing_current_time, snapshot.position }, { key::id, id } };
         return status;
     }, [this, connection, request, output](mc_result status) mutable {

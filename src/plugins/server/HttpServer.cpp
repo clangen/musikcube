@@ -41,6 +41,7 @@
 #include <limits>
 #include <string_view>
 
+#include <musikcore/library.hpp>
 #include <musikcore/sdk/String.h>
 
 #pragma warning(push, 0)
@@ -486,8 +487,7 @@ int HttpServer::HandleAudioTrackRequest(
         library.tracks_by_ids(library.context, &id, 1, &rawTracks);
     }
 
-    auto destroyTracks = [](mc_track_result* tracks) { mc_track_result_destroy(&tracks); };
-    std::unique_ptr<mc_track_result, decltype(destroyTracks)> tracks(rawTracks, destroyTracks);
+    musik::core::api::TrackResult tracks(rawTracks);
     enum TrackField : size_t { Duration, Filename, Title, ExternalId };
     const mc_string_view fields[] {
         { .data = MC_TRACK_FIELD_DURATION, .length = sizeof(MC_TRACK_FIELD_DURATION) - 1 },
@@ -500,18 +500,17 @@ int HttpServer::HandleAudioTrackRequest(
     range.fields = fields;
     range.field_count = sizeof(fields) / sizeof(fields[0]);
     mc_track_page* rawPage = nullptr;
-    if (tracks && mc_track_result_get_count(tracks.get()) &&
-        library.read_tracks(library.context, tracks.get(), &range, &rawPage) == MC_OK)
+    if (tracks && tracks.Size() &&
+        library.read_tracks(library.context, tracks.Get(), &range, &rawPage) == MC_OK)
     {
-        auto destroyPage = [](mc_track_page* page) { mc_track_page_destroy(&page); };
-        std::unique_ptr<mc_track_page, decltype(destroyPage)> page(rawPage, destroyPage);
-        if (!page || !mc_track_page_get_count(page.get())) {
+        musik::core::api::TrackPage page(rawPage);
+        if (!page || !page.Size()) {
             response = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
             return MHD_HTTP_NOT_FOUND;
         }
         const auto value = [&](size_t field) {
-            const auto text = mc_track_page_get_string(page.get(), 0, field);
-            return std::string(text.data ? text.data : "", text.length);
+            const auto text = page.Value(0, field);
+            return std::string(text.data() ? text.data() : "", text.size());
         };
         const std::string duration = value(Duration);
         const std::string filename = value(Filename);
