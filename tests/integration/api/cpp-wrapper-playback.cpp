@@ -258,6 +258,11 @@ namespace wrapper_tests {
             if (service.GetDuration() != 1.0) {
                 return playbackFailure(__LINE__);
             }
+            /* uncached streams can omit a duration even when the library knows it. */
+            const auto fallbackSnapshot = playback->Snapshot();
+            if (!fallbackSnapshot || fallbackSnapshot->duration != 1.0) {
+                return playbackFailure(__LINE__);
+            }
             transport->StreamEvent.Publish(sdk::StreamState::Buffered, transport->Uri());
             if (!AwaitTestHost(queue, [&] { return static_cast<bool>(service.GetPlaying()); })) {
                 return playbackFailure(__LINE__);

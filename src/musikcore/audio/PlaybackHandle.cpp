@@ -202,7 +202,7 @@ public:
             case PlaybackState::Playing: snapshot.state = MC_PLAYBACK_PLAYING; break;
         }
         snapshot.position = this->service.GetPosition();
-        snapshot.duration = this->service.GetTransport().GetDuration();
+        snapshot.duration = this->service.GetDuration();
         snapshot.volume = this->service.GetVolume();
         snapshot.muted = this->service.IsMuted();
         snapshot.shuffled = this->service.IsShuffled();
