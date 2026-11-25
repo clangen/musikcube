@@ -12,7 +12,7 @@ cmake --build --preset windows-release --parallel || (popd & exit /b 1)
 
 rem Build the external MilkDrop plugin when its checkout is available.
 if exist "..\milkdrop2-musikcube\milkdrop2-musikcube.sln" (
-  MSBuild.exe ..\milkdrop2-musikcube\milkdrop2-musikcube.sln /restore /p:RestorePackagesConfig=true /m /nologo /verbosity:minimal /p:Configuration=Release /p:Platform=x64 || (popd & exit /b 1)
+  MSBuild.exe ..\milkdrop2-musikcube\milkdrop2-musikcube.sln /restore /p:RestorePackagesConfig=true /m /nologo /verbosity:minimal /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v145 || (popd & exit /b 1)
 )
 
 popd
