@@ -1310,3 +1310,19 @@ if(UNIX AND TARGET sndioout)
   set_tests_properties(musikcore.integration.plugins.sndio_devices PROPERTIES
     LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET projectm)
+  add_executable(musikcore_projectm_test ../integration/plugins/projectm.cpp)
+  target_include_directories(musikcore_projectm_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_link_libraries(musikcore_projectm_test PRIVATE ${CMAKE_DL_LIBS})
+  target_compile_features(musikcore_projectm_test PRIVATE cxx_std_17)
+  set_target_properties(musikcore_projectm_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  add_dependencies(musikcore_projectm_test projectm)
+  add_dependencies(musikcube_tests musikcore_projectm_test)
+  add_dependencies(musikcube_integration_tests musikcore_projectm_test)
+  add_test(NAME musikcore.integration.plugins.projectm
+    COMMAND musikcore_projectm_test "$<TARGET_FILE:projectm>")
+  set_tests_properties(musikcore.integration.plugins.projectm PROPERTIES
+    ENVIRONMENT "SDL_VIDEODRIVER=dummy" LABELS "integration;musikcore;plugins;visualizer" TIMEOUT 20)
+endif()

@@ -32,6 +32,7 @@ const ignoredLibraries = mac
     'libalsaout.so',
     'libmpris.so',
     'libpipewireout.so',
+    'libprojectm.so',
     'libpulseout.so',
     'libsndioout.so',
   ]);
@@ -42,6 +43,7 @@ const optionalPluginLibraries = new Map([
   ['libmpris.so', 'libsystemd.so.0'],
   ['libpipewireout.so', 'libpipewire-0.3.so.0'],
   ['libportaudioout.so', 'libportaudio.so.2'],
+  ['libprojectm.so', 'libGL.so.1'],
   ['libpulseout.so', 'libpulse.so.0'],
   ['libsndioout.so', 'libsndio.so.7.0'],
 ]);

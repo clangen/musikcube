@@ -182,6 +182,7 @@ add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder")
 add_plugin("src/plugins/stockencoders" "stockencoders")
 # dsps
 add_plugin("src/plugins/supereqdsp" "supereqdsp")
+add_plugin("src/plugins/projectm" "projectm")
 
 add_subdirectory(tests/support EXCLUDE_FROM_ALL)
 

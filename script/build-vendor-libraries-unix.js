@@ -43,6 +43,8 @@ const commonRecipes = [
 ];
 
 const mac = process.platform === 'darwin';
+const projectm = require('./vendor-packages/unix/projectm');
+if (!mac) commonRecipes.push(projectm);
 const buildDirectory = process.cwd();
 const cache = join(buildDirectory, '.vendor-cache', 'downloads');
 const scratch = join(buildDirectory, '.vendor-cache', 'tmp');
@@ -93,6 +95,8 @@ function configureStaticDependencies(config, out, sysroot) {
     stageSysroot: sysroot ? () => stageZigSysroot(sysroot, destination) : () => {},
     stagePluginDependencies: sysroot ? undefined : (work) => {
       debianPluginDependencies.stage({ destination, download, run, work, target: config.rpi?.manifest });
+      debianPluginDependencies.stage({ destination, download, run, work,
+        target: config.rpi ? 'projectm-armhf' : 'projectm-amd64' });
       relocateSysrootLinks(destination);
     },
     sourceSysroot: sysroot ? undefined : destination,
@@ -279,7 +283,7 @@ function fetchPackages(work, recipes) {
 
 function cleanLibraries(lib) {
   for (const file of readdirSync(lib)) {
-    if (file.endsWith('.a') || file.endsWith('.la')) rmSync(join(lib, file));
+    if ((file.endsWith('.a') && !['libprojectM-4.a', 'libSDL2.a'].includes(file)) || file.endsWith('.la')) rmSync(join(lib, file));
   }
 
   if (mac) {
@@ -343,7 +347,9 @@ async function main() {
     /* Build the static prerequisites before their consumers. */
     const recipes = [ffmpeg, ...config.prerequisites, ...commonRecipes];
     const sources = fetchPackages(vendor, recipes);
-    for (const recipe of recipes) recipe.build({ sources, out, config, run });
+    for (const recipe of recipes) {
+      if (recipe !== projectm) recipe.build({ sources, out, config, run });
+    }
     /* Normalize the runtime libraries before the dependency audit. */
     cleanLibraries(lib);
     run(process.execPath, [join(__dirname, 'relink-dynamic-libraries.js'), 'bin/lib'], { cwd: vendor });
@@ -360,6 +366,7 @@ async function main() {
 
     /* These linker inputs are supplied by the host at runtime. */
     config.stagePluginDependencies?.(work);
+    if (!mac) projectm.build({ sources, out, config, run });
 
     /* Keep the previous vendor build until the replacement is in place. */
     const previous = join(work, 'previous');

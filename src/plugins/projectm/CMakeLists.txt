@@ -1,0 +1,41 @@
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  disable_plugin(projectm)
+else()
+  find_path(PROJECTM_INCLUDE_DIR projectM-4/projectM.h PATHS ${VENDOR_INCLUDE_DIRECTORIES})
+  find_path(PROJECTM_SDL_INCLUDE_DIR SDL2/SDL.h PATHS ${VENDOR_INCLUDE_DIRECTORIES})
+  find_path(PROJECTM_X11_INCLUDE_DIR X11/Xlib.h PATHS ${MUSIKCUBE_DEPENDENCY_INCLUDE_DIRS} ${VENDOR_INCLUDE_DIRECTORIES})
+  find_path(PROJECTM_IMGUI_DIR imgui.cpp PATHS ${VENDOR_INCLUDE_DIRECTORIES} PATH_SUFFIXES projectm-imgui)
+  find_path(PROJECTM_PRESETS_DIR README.md PATHS "${MUSIKCUBE_VENDOR_ROOT}/bin/share/projectM" NO_DEFAULT_PATH)
+  find_library(PROJECTM_SDL_LIBRARY NAMES libSDL2.a PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+  if(BUILD_STANDALONE)
+    find_library(PROJECTM_LIBRARY NAMES libprojectM-4.a PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+    if(PROJECTM_LIBRARY AND NOT PROJECTM_LIBRARY MATCHES "\\.a$")
+      message(FATAL_ERROR "The standalone projectM plugin requires the static projectM library")
+    endif()
+  else()
+    find_library(PROJECTM_LIBRARY NAMES projectM-4 PATHS ${VENDOR_LINK_DIRECTORIES})
+  endif()
+  find_library(PROJECTM_OPENGL_LIBRARY NAMES GL PATHS ${VENDOR_LINK_DIRECTORIES})
+  if(NOT PROJECTM_INCLUDE_DIR OR NOT PROJECTM_SDL_INCLUDE_DIR OR NOT PROJECTM_X11_INCLUDE_DIR OR NOT PROJECTM_IMGUI_DIR OR NOT PROJECTM_PRESETS_DIR OR NOT PROJECTM_SDL_LIBRARY OR NOT PROJECTM_LIBRARY OR NOT PROJECTM_OPENGL_LIBRARY)
+    if(BUILD_STANDALONE)
+      message(FATAL_ERROR "projectM, presets, static SDL2, Dear ImGui and OpenGL are required for the standalone Linux build")
+    endif()
+    disable_plugin(projectm)
+  else()
+    add_library(projectm SHARED plugin.cpp
+      "${PROJECTM_IMGUI_DIR}/imgui.cpp" "${PROJECTM_IMGUI_DIR}/imgui_draw.cpp"
+      "${PROJECTM_IMGUI_DIR}/imgui_tables.cpp" "${PROJECTM_IMGUI_DIR}/imgui_widgets.cpp"
+      "${PROJECTM_IMGUI_DIR}/backends/imgui_impl_sdl2.cpp"
+      "${PROJECTM_IMGUI_DIR}/backends/imgui_impl_opengl3.cpp")
+    musikcube_configure_c_plugin(projectm)
+    target_compile_features(projectm PRIVATE cxx_std_20)
+    target_compile_definitions(projectm PRIVATE PROJECTM_STATIC_DEFINE)
+    target_include_directories(projectm PRIVATE "${PROJECTM_INCLUDE_DIR}" "${PROJECTM_SDL_INCLUDE_DIR}"
+      "${PROJECTM_SDL_INCLUDE_DIR}/SDL2" "${PROJECTM_IMGUI_DIR}" "${PROJECTM_X11_INCLUDE_DIR}"
+      ${MUSIKCUBE_DEPENDENCY_INCLUDE_DIRS})
+    target_link_libraries(projectm PRIVATE "${PROJECTM_LIBRARY}" "${PROJECTM_SDL_LIBRARY}" "${PROJECTM_OPENGL_LIBRARY}" ${CMAKE_DL_LIBS} Threads::Threads)
+    add_custom_command(TARGET projectm POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy_directory "${PROJECTM_PRESETS_DIR}" "$<TARGET_FILE_DIR:projectm>/projectM")
+    install(DIRECTORY "${PROJECTM_PRESETS_DIR}/" DESTINATION share/musikcube/plugins/projectM COMPONENT musikcorePlugins)
+  endif()
+endif()
