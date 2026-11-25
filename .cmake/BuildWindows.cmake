@@ -13,7 +13,6 @@ include("${CMAKE_CURRENT_LIST_DIR}/WindowsSources.cmake")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set(MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin64" CACHE PATH
   "Production runtime directory; test builds can select a private directory under their build root")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>")

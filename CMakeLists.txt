@@ -10,6 +10,10 @@ if(POLICY CMP0091)
 endif()
 project(musikcube)
 
+if(WIN32)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 # FreeBSD's libc++ 19 keeps C++20 std::jthread behind this flag.
 if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")
