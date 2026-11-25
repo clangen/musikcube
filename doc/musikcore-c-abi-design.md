@@ -2062,15 +2062,12 @@ and tests rather than forwarding function count.
 
 - Which non-C++ languages should be used to validate the first release?
 - Should multiple contexts be supported initially, or explicitly rejected?
-- Should public and plugin ABI versions be independent from the beginning?
 - Which event-loop integration is needed beyond blocking/nonblocking event
   retrieval?
 - Which metadata fields need typed numeric storage rather than UTF-8 values?
 - Is a general track snapshot handle useful in addition to page results?
 - Should queue edits and track-list edits share one batch operation format?
 - Which advanced audio APIs must be public in ABI major version 1?
-- Should raw database access be removed entirely or moved to an unstable
-  extension header?
 - Which existing plugin categories belong in SDK version 1?
 - Should plugin discovery use a sidecar manifest, and if so, which fields are
   authoritative before the library is loaded?

@@ -317,7 +317,7 @@ The application-facing runtime owns:
 
 - Context creation and shutdown.
 - Request IDs and cancellation.
-- Request dispatch, wakeups, and notification polling.
+- Request dispatch, wakeups, and callback-based notifications.
 - Library queries and metadata pages.
 - Track lists and async cache windows.
 - Playback and queue commands and snapshots.
@@ -518,3 +518,5 @@ The modernization is complete when:
 - [ADR-0012: DSP processing failure](../docs/adr/0012-dsp-processing-failure.md)
 - [ADR-0013: Indexer source identity and checkpoints](../docs/adr/0013-indexer-source-identity-and-checkpoints.md)
 - [ADR-0014: Playback remote command lifetime](../docs/adr/0014-playback-remote-command-lifetime.md)
+- [ADR-0015: Database behind the library API](../docs/adr/0015-database-behind-library-api.md)
+- [ADR-0016: Independent application and plugin ABI versions](../docs/adr/0016-independent-application-and-plugin-abi-versions.md)
