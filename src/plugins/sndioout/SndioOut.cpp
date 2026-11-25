@@ -1,410 +1,373 @@
-//////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2004-2023 musikcube team
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//    * Redistributions of source code must retain the above copyright notice,
-//      this list of conditions and the following disclaimer.
-//
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//
-//    * Neither the name of the author nor the names of other contributors may
-//      be used to endorse or promote products derived from this software
-//      without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////
-
+/* `QueueAudioBuffer()` converts one host buffer and writes it to sndio. when
+sndio is full, the caller waits in poll; `Stop()` signals a pipe, waits for the
+caller to return the buffer, and then closes the device. sndio copies the PCM,
+so completion releases the host buffer before the device has finished playing.
+`sio_onmove()` records the last observed device position for `GetTiming()`.
+the other control operations are serialized by the host. */
 #include "SndioOut.h"
+#include <musikcore/plugin/services.h>
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <math.h>
-#include <limits.h>
-#include <iostream>
-#include <functional>
+#include <algorithm>
+#include <cerrno>
+#include <chrono>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <fcntl.h>
+#include <limits>
+#include <string>
+#include <unistd.h>
 
-#define BUFFER_COUNT 16
-#define ERROR(str) std::cerr << "SndioOut Error: " << str << "\n";
-#define INFO(str) std::cerr << "SndioOut Info: " << str << "\n";
-#define LOCK() std::unique_lock<std::mutex> lock(this->mutex);
-#define WAIT() this->threadEvent.wait(lock);
-#define NOTIFY() this->threadEvent.notify_all();
+namespace {
+    constexpr size_t DefaultCapacity = 32768;
 
-#define STOP() \
-  if(started) { \
-    if (!sio_stop(handle)) { \
-      INFO("failed to stop sndio") \
-      quit = true; \
-      continue; \
-    } \
-    else { \
-      INFO("stopped handle") \
-      started = false; \
-   } \
-  } \
-  else { \
-    INFO("already stopped") \
-  }
-
-#define START() \
-  if(!started) { \
-    if (!sio_start(handle)) { \
-      INFO("failed to start sndio") \
-      quit = true; \
-      continue; \
-    } \
-    else { \
-      INFO("started handle") \
-      started = true; \
-   } \
-  } \
-  else { \
-    INFO("handle already started") \
-  }
-
-#define PREF_DEVICE_ID "device_id"
-
-using namespace musik::core::sdk;
-
-static char* deviceId = nullptr;
-
-extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
-    size_t len = prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
-    if (len > 1) {
-        delete[] deviceId;
-        deviceId = new char[len];
-        prefs->GetString(PREF_DEVICE_ID, deviceId, len, "");
-        prefs->Save();
-        INFO("setting deviceId to " + std::string(deviceId));
+    void ReportDefault(mc_output_device_fn read, void* user) {
+        const mc_output_device device {
+            .id = { "default", 7 },
+            .name = { "Default", 7 },
+        };
+        read(user, &device);
     }
 }
 
-SndioOut::SndioOut() {
-    INFO("---------- sndout.ctor ----------")
-    this->volume = 1.0f;
-    this->state = StateStopped;
-    this->latency = 0.0;
-    this->writeThread.reset(new std::thread(
-        std::bind(&SndioOut::WriteLoop, this)));
+mc_result SndioOut::VisitDevices(mc_output_device_fn read, void* user) {
+    ReportDefault(read, user);
+    return MC_OK;
 }
 
-SndioOut::~SndioOut() {
-    this->PushCommand(Command::Quit);
-    INFO("joining thread")
-    this->writeThread->join();
-    INFO("thread finished")
+mc_result SndioOut::ReadDefaultDevice(mc_output_device_fn read, void* user) {
+    ReportDefault(read, user);
+    return MC_OK;
 }
 
-void SndioOut::Release() {
-    delete this;
+mc_result SndioOut::GetDefaultFormat(mc_string_view, mc_audio_format&) {
+    return MC_ERROR_UNSUPPORTED;
 }
 
-void SndioOut::PushCommand(Command command) {
-    //INFO("PushCommand.start")
+void SndioOut::ResetTiming() noexcept {
+    this->played.store(0);
+    this->playedTime.store(0);
+    this->generation.fetch_add(1);
+}
+
+void SndioOut::OnMove(void* context, int delta) noexcept {
+    auto& self = *static_cast<SndioOut*>(context);
+    if (delta > 0) {
+        self.played.fetch_add(static_cast<uint64_t>(delta));
+    }
+    const auto now = std::chrono::steady_clock::now().time_since_epoch();
+    self.playedTime.store(static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(now).count()));
+}
+
+mc_result SndioOut::GetTiming(mc_output_timing& timing) const noexcept {
+    const auto timestamp = this->playedTime.load();
+    if (timestamp) {
+        timing.valid_flags = MC_OUTPUT_TIMING_PLAYED;
+        timing.generation = this->generation.load();
+        timing.frames_played_by_driver = this->played.load();
+        timing.frames_played_timestamp_ns = timestamp;
+    }
+    return MC_OK;
+}
+
+mc_result SndioOut::Prepare(const mc_output_options& options, const mc_output_callbacks& outputCallbacks) {
+    std::lock_guard lock(this->mutex);
+    this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : DefaultCapacity;
+    if (this->capacity > std::numeric_limits<size_t>::max() / options.format.channels) {
+        return MC_ERROR_BUFFER_TOO_SMALL;
+    }
+    if (pipe(this->wake) != 0 || fcntl(this->wake[0], F_SETFL, O_NONBLOCK) < 0 ||
+        fcntl(this->wake[1], F_SETFL, O_NONBLOCK) < 0)
     {
-        LOCK()
-        commands.push_back(command);
+        return MC_ERROR_IO;
     }
-    NOTIFY()
-    //INFO("PushCommand.end")
+
+    std::string device = options.device_id.length
+        ? std::string(options.device_id.data, options.device_id.length)
+        : "default";
+    /* preserve the legacy custom-device preference when the default is selected. */
+    if (device == "default" && this->services && this->services->preferences) {
+        struct Preference { std::string value; bool failed = false; } preference;
+        const auto read = [](void* context, mc_string_view value) {
+            auto& result = *static_cast<Preference*>(context);
+            try {
+                result.value.assign(value.data ? value.data : "", value.length);
+            }
+            catch (...) {
+                result.failed = true;
+            }
+        };
+        const auto* preferences = this->services->preferences;
+        const auto status = preferences->read_text(preferences->context, { "device_id", 9 },
+            { "", 0 }, read, &preference);
+        if (status != MC_OK || preference.failed) {
+            return MC_ERROR_INTERNAL;
+        }
+        if (!preference.value.empty()) {
+            device = std::move(preference.value);
+        }
+    }
+    this->handle = sio_open(device == "default" ? SIO_DEVANY : device.c_str(), SIO_PLAY, 1);
+    if (!this->handle) {
+        return MC_ERROR_IO;
+    }
+
+    /* sndio may negotiate a different encoding; accept only the format we
+    convert to below, rather than sending it incompatible samples. */
+    sio_par parameters;
+    sio_initpar(&parameters);
+    parameters.bits = 16;
+    parameters.bps = sizeof(int16_t);
+    parameters.sig = 1;
+    parameters.le = SIO_LE_NATIVE;
+    parameters.pchan = options.format.channels;
+    parameters.rate = options.format.sample_rate;
+    parameters.appbufsz = parameters.rate / 4;
+    if (!sio_setpar(this->handle, &parameters) || !sio_getpar(this->handle, &parameters) ||
+        parameters.bits != 16 || parameters.bps != sizeof(int16_t) || !parameters.sig ||
+        parameters.le != SIO_LE_NATIVE || parameters.pchan != options.format.channels ||
+        parameters.rate != options.format.sample_rate)
+    {
+        return MC_ERROR_UNSUPPORTED;
+    }
+    this->samples.resize(this->capacity * options.format.channels);
+    this->descriptors.resize(static_cast<size_t>(sio_nfds(this->handle)) + 1);
+    this->format = options.format;
+    this->callbacks = outputCallbacks;
+    this->volume = options.initial_volume;
+    this->ResetTiming();
+    sio_onmove(this->handle, OnMove, this);
+    if (!sio_start(this->handle)) {
+        return MC_ERROR_IO;
+    }
+    this->started = true;
+    this->stopped = false;
+    this->paused = false;
+    return MC_OK;
 }
 
-void SndioOut::Pause() {
-    this->PushCommand(Command::Pause);
+mc_result SndioOut::WaitForDevice() {
+    int count;
+    {
+        std::lock_guard lock(this->mutex);
+        if (this->stopped) {
+            return MC_ERROR_CANCELLED;
+        }
+        count = sio_pollfd(this->handle, this->descriptors.data(), POLLOUT);
+        this->descriptors[count] = {
+            .fd = this->wake[0],
+            .events = POLLIN,
+            .revents = 0,
+        };
+    }
+    int result;
+    do {
+        result = poll(this->descriptors.data(), static_cast<nfds_t>(count + 1), -1);
+    } while (result < 0 && errno == EINTR);
+    if (result < 0) {
+        return MC_ERROR_IO;
+    }
+    std::lock_guard lock(this->mutex);
+    if (this->stopped || this->descriptors[count].revents) {
+        return MC_ERROR_CANCELLED;
+    }
+    return (sio_revents(this->handle, this->descriptors.data()) & POLLHUP) ? MC_ERROR_IO : MC_OK;
 }
 
-void SndioOut::Resume() {
-    this->PushCommand(Command::Resume);
+mc_result SndioOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
+    {
+        std::lock_guard lock(this->mutex);
+        if (this->stopped) {
+            return MC_ERROR_CANCELLED;
+        }
+        if (block.pcm.format.sample_rate != this->format.sample_rate ||
+            block.pcm.format.channels != this->format.channels ||
+            block.pcm.format.channel_layout != this->format.channel_layout)
+        {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        if (block.pcm.frame_count > this->capacity) {
+            return MC_ERROR_BUFFER_TOO_SMALL;
+        }
+        if (this->paused) {
+            return MC_ERROR_QUEUE_FULL;
+        }
+        if (this->operationActive) {
+            return MC_ERROR_IN_FLIGHT;
+        }
+
+        /* retain the host buffer until the converted samples are written. */
+        this->operationActive = true;
+        const float gain = static_cast<float>(this->volume * this->volume * this->volume);
+        for (size_t i = 0; i < block.pcm.frame_count * this->format.channels; ++i) {
+            const float input = block.pcm.data[i] * gain;
+            const float sample = std::isfinite(input) ? std::clamp(input, -1.0f, 1.0f) : 0.0f;
+            this->samples[i] = static_cast<int16_t>(std::lrint(sample * 32767.0f));
+        }
+    }
+
+    const size_t length = block.pcm.frame_count * this->format.channels * sizeof(int16_t);
+    const auto* bytes = reinterpret_cast<const unsigned char*>(this->samples.data());
+    size_t written = 0;
+    mc_result outcome = MC_OK;
+    /* a zero-length nonblocking write means poll until sndio or Stop() wakes us. */
+    while (written < length) {
+        size_t count;
+        {
+            std::lock_guard lock(this->mutex);
+            if (this->stopped) {
+                outcome = MC_ERROR_CANCELLED;
+                break;
+            }
+            count = sio_write(this->handle, bytes + written, length - written);
+            if (!count && sio_eof(this->handle)) {
+                outcome = MC_ERROR_IO;
+                break;
+            }
+        }
+        written += count;
+        if (!count && (outcome = this->WaitForDevice()) != MC_OK) {
+            break;
+        }
+    }
+
+    /* return each accepted token before Stop() can release the device. */
+    this->callbacks.completed(this->callbacks.context, block.token, outcome);
+    {
+        std::lock_guard lock(this->mutex);
+        this->operationActive = false;
+        this->operationEnded.notify_all();
+    }
+    return MC_OK;
 }
 
-void SndioOut::SetVolume(double volume) {
-    this->volume = volume;
-    this->PushCommand(Command::SetVolume);
+mc_result SndioOut::Pause() {
+    std::lock_guard lock(this->mutex);
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->operationActive) {
+        return MC_ERROR_IN_FLIGHT;
+    }
+
+    /* sndio has no pause operation; stop drains its queued audio. */
+    if (!this->paused && !sio_stop(this->handle)) {
+        return MC_ERROR_IO;
+    }
+    this->started = false;
+    this->paused = true;
+    return MC_OK;
 }
 
-double SndioOut::GetVolume() {
+mc_result SndioOut::Resume() {
+    std::lock_guard lock(this->mutex);
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->paused) {
+        this->ResetTiming();
+        if (!sio_start(this->handle)) {
+            return MC_ERROR_IO;
+        }
+        this->started = true;
+        this->paused = false;
+        if (this->callbacks.ready) {
+            this->callbacks.ready(this->callbacks.context);
+        }
+    }
+    return MC_OK;
+}
+
+mc_result SndioOut::SetVolume(double value) {
+    std::lock_guard lock(this->mutex);
+    this->volume = value;
+    return MC_OK;
+}
+
+double SndioOut::GetVolume() const {
+    std::lock_guard lock(this->mutex);
     return this->volume;
 }
 
-void SndioOut::Stop() {
-    this->PushCommand(Command::Stop);
-    this->DiscardBuffers();
-}
-
-void SndioOut::Drain() {
-    this->PushCommand(Command::Drain);
-}
-
-IDeviceList* SndioOut::GetDeviceList() {
-    return nullptr;
-}
-
-bool SndioOut::SetDefaultDevice(const char* deviceId) {
-    return false;
-}
-
-IDevice* SndioOut::GetDefaultDevice() {
-    return nullptr;
-}
-
-OutputState SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
-    std::this_thread::yield();
-
-    if (this->state != StatePlaying) {
-        return OutputState::InvalidState;
-    }
-
-    {
-        LOCK()
-        if (this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) {
-            return OutputState::BufferFull;
-        }
-        this->buffers.push_back(BufferContext{provider, buffer});
-    }
-
-    NOTIFY()
-    return OutputState::BufferWritten;
-}
-
-void SndioOut::WriteLoop() {
-    bool started = false;
-    sio_hdl* handle = nullptr;
-    sio_par pars = { 0 };
-    short* pcm = nullptr;
-    long pcmSamples = 0;
-    float ditherState = 0.0;
-    bool quit = false;
-    BufferContext next {nullptr, nullptr};
-
-    /* open the output device. we only do this once */
-    const char* device = (::deviceId && strlen(::deviceId)) ? deviceId : nullptr;
-    handle = sio_open(device, SIO_PLAY, 0);
-    if (handle == nullptr) {
-        INFO("failed to init device")
-        quit = true;
-    }
-    else {
-        if (!sio_start(handle)) {
-            INFO("device opened, but couldn't start")
-            quit = true;
-        }
-        else {
-            started = true;
-            INFO("device handle initialized")
+mc_result SndioOut::Stop() noexcept {
+    std::unique_lock lock(this->mutex);
+    this->stopped = true;
+    if (this->wake[1] >= 0) {
+        const char signal = 1;
+        ssize_t result;
+        do {
+            result = write(this->wake[1], &signal, 1);
+        } while (result < 0 && errno == EINTR);
+        if (result < 0 && errno != EAGAIN) {
+            std::fputs("sndio output: cannot wake the producer\n", stderr);
+            std::abort();
         }
     }
-
-    while (!quit) {
-        {
-            /* we wait until we have commands to process or samples to play */
-            LOCK()
-            while (!quit && !this->commands.size() &&
-                   (this->state != StatePlaying || !this->buffers.size()))
-            {
-                //INFO("waiting")
-                WAIT()
-                //INFO("done waiting")
-            }
-
-            if (quit) {
-                continue;
-            }
-
-            /* process commands */
-            for (auto command : this->commands) {
-                switch (command) {
-                    case Command::Pause: {
-                        INFO("command.pause")
-                        STOP()
-                        this->state = StatePaused;
-                    } break;
-                    case Command::Resume: {
-                        INFO("command.resume")
-                        START()
-                        this->state = StatePlaying;
-                    } break;
-                    case Command::Stop: {
-                        INFO("command.stop")
-                        STOP()
-                        this->state = StateStopped;
-                    } break;
-                    case Command::SetVolume: {
-                        INFO("command.setvolume")
-                        if (handle) {
-                            sio_setvol(handle, lround(this->volume * SIO_MAXVOL));
-                        }
-                    } break;
-                    case Command::Drain: {
-                        INFO("command.drain")
-                        STOP()
-                        START()
-                    } break;
-                    case Command::Quit: {
-                        quit = true;
-                        continue;
-                    } break;
-                }
-            }
-
-            this->commands.clear();
-
-            /* play the next buffer, if it exists */
-            if (started &&
-                this->state == StatePlaying &&
-                this->buffers.size())
-            {
-                next = this->buffers.front();
-                this->buffers.pop_front();
-            }
-            else {
-                //INFO(std::string("state=") + std::to_string((int) this->state));
-                //INFO(std::string("count=") + std::to_string((int) this->buffers.size()));
-                continue;
-            }
+    this->operationEnded.wait(lock, [this] { return !this->operationActive; });
+    if (this->handle) {
+        if (this->started) {
+            sio_flush(this->handle);
         }
-
-        auto buffer = next.buffer;
-
-        if (buffer) {
-            /* ensure our output params are setup properly based on this
-            buffer's params */
-            if (pars.pchan != buffer->Channels() ||
-                pars.rate != buffer->SampleRate())
-            {
-                INFO("updating output params")
-
-                STOP()
-
-                sio_initpar(&pars);
-                pars.pchan = buffer->Channels();
-                pars.rate = buffer->SampleRate();
-                pars.sig = 1;
-                pars.le = SIO_LE_NATIVE;
-                pars.bits = 16;
-                pars.appbufsz = (pars.rate * 250) / 1000;
-
-                if (!sio_setpar(handle, &pars)) {
-                    INFO("sio_setpar() failed");
-                    quit = true;
-                    continue;
-                }
-
-                if (!sio_getpar(handle, &pars)) {
-                    INFO("sio_getpar() failed");
-                    quit = true;
-                    continue;
-                }
-
-                START()
-
-                this->latency = (double) pars.bufsz / pars.pchan / pars.rate;
-            }
-
-            /* allocate PCM buffer, if needed. most of the time we'll be
-            able to re-use the previously allocated one. */
-            long samples = buffer->Samples();
-            if (!pcm || samples > pcmSamples) {
-                delete[] pcm;
-                pcm = new short[samples];
-                pcmSamples = samples;
-            }
-
-            /* convert to 16-bit PCM */
-            float* src = buffer->BufferPointer();
-            short* dst = pcm;
-            for (long i = 0; i < samples; i++) {
-                float sample = *src;
-                if (sample > 1.0f) sample = 1.0f;
-                if (sample < -1.0f) sample = -1.0f;
-                sample *= SHRT_MAX;
-
-                /* triangle (high pass) dither, based on Audacity's
-                implementation */
-                float r = (rand() / (float) RAND_MAX - 0.5f);
-                sample = sample + r - ditherState;
-                ditherState = r;
-
-                *dst = sample;
-                ++dst; ++src;
-            }
-
-            /* write the entire output buffer. this may require multiple passes;
-            that's ok, just loop until we're done */
-            char* data = (char*) pcm;
-            size_t dataLength = samples * sizeof(short);
-            size_t totalWritten = 0;
-
-            {
-//              LOCK()
-//              INFO("start write")
-                while (totalWritten < dataLength) {
-                    size_t remaining = dataLength - totalWritten;
-                    size_t written = sio_write(handle, data, remaining);
-                    if (written == 0) { INFO("failed to write!") break; }
-//                  else { std::cerr << "wrote " << written << " of " << remaining << " bytes\n"; }
-                    totalWritten += written;
-                    data += written;
-                }
-//              INFO("end write")
-            }
-
-            next.provider->OnBufferProcessed(buffer);
+        sio_close(this->handle);
+        this->handle = nullptr;
+    }
+    for (int& descriptor : this->wake) {
+        if (descriptor >= 0) {
+            close(descriptor);
         }
+        descriptor = -1;
     }
-
-    /* done, free remaining buffers and close the handle */
-    if (handle) {
-        INFO("closing")
-        sio_close(handle);
-        handle = nullptr;
-    }
-
-    this->DiscardBuffers();
-
-    delete[] pcm;
+    this->started = false;
+    return MC_OK;
 }
 
-double SndioOut::Latency() {
-    return this->latency;
-}
-
-void SndioOut::DiscardBuffers() {
-    std::list<BufferContext> toNotify;
-    {
-        LOCK()
-        std::swap(toNotify, this->buffers);
+mc_result SndioOut::Drain() {
+    std::lock_guard lock(this->mutex);
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->operationActive || this->paused) {
+        return MC_ERROR_IN_FLIGHT;
     }
 
-    for (auto& it : toNotify) {
-        it.provider->OnBufferProcessed(it.buffer);
+    /* sndio forces playback to start and drains the endpoint in sio_stop().
+    this call can delay a concurrent Stop() until the device has drained. */
+    if (!sio_stop(this->handle)) {
+        return MC_ERROR_IO;
     }
+    this->started = false;
+    this->ResetTiming();
+    if (!sio_start(this->handle)) {
+        return MC_ERROR_IO;
+    }
+    this->started = true;
+    return MC_OK;
 }
 
-size_t SndioOut::CountBuffersWithProvider(IBufferProvider* provider) {
-    size_t count = 0;
-    for (auto& it : this->buffers) {
-        if (it.provider == provider) {
-            ++count;
-        }
+mc_result SndioOut::Flush() {
+    std::lock_guard lock(this->mutex);
+    if (this->stopped) {
+        return MC_ERROR_CANCELLED;
     }
-    return count;
-}
+    if (this->operationActive) {
+        return MC_ERROR_IN_FLIGHT;
+    }
 
+    /* discard queued sound without closing the selected endpoint. */
+    if (this->started && !sio_flush(this->handle)) {
+        return MC_ERROR_IO;
+    }
+    this->started = false;
+    this->ResetTiming();
+    if (!sio_start(this->handle)) {
+        return MC_ERROR_IO;
+    }
+    this->started = true;
+    this->paused = false;
+    if (this->callbacks.ready) {
+        this->callbacks.ready(this->callbacks.context);
+    }
+    return MC_OK;
+}

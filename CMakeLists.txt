@@ -167,7 +167,7 @@ add_plugin("src/plugins/nullout" "nullout")
 add_plugin("src/plugins/pipewireout" "pipewireout" GetAudioOutput GetSchema SetDebug SetPreferences)
 add_plugin("src/plugins/portaudioout" "portaudioout")
 add_plugin("src/plugins/pulseout" "pulseout" GetAudioOutput SetPreferences)
-add_plugin("src/plugins/sndioout" "sndioout" GetAudioOutput SetPreferences)
+add_plugin("src/plugins/sndioout" "sndioout")
 # remotes
 add_plugin("src/plugins/macosmediakeys" "macosmediakeys")
 add_plugin("src/plugins/mpris" "mpris" GetPlaybackRemote SetEnvironment)
