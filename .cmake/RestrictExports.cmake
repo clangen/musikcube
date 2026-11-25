@@ -8,6 +8,15 @@ function(musikcube_restrict_exports target)
     return()
   endif()
 
+  # FreeBSD libc expects symbols supplied by the executable, including
+  # environ and __progname, to remain visible to the dynamic linker.
+  if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    get_target_property(kind ${target} TYPE)
+    if(kind STREQUAL "EXECUTABLE")
+      return()
+    endif()
+  endif()
+
   # Derive the linker rules and the binary audit from the same symbol list.
   set(exports ${ARGN})
   set(allowlist "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target}.exports.txt")
