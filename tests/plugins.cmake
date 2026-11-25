@@ -346,3 +346,17 @@ add_dependencies(musikcube_tests musikcore_metadata_writer_test)
 add_dependencies(musikcube_unit_tests musikcore_metadata_writer_test)
 add_test(NAME musikcore.unit.plugins.metadata_writer COMMAND musikcore_metadata_writer_test)
 set_tests_properties(musikcore.unit.plugins.metadata_writer PROPERTIES LABELS "unit;musikcore;plugins;contract" TIMEOUT 15)
+
+add_executable(musikcore_empty_plugin_session_test integration/plugins/empty-session.cpp)
+target_link_libraries(musikcore_empty_plugin_session_test PRIVATE musikcore)
+target_compile_features(musikcore_empty_plugin_session_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_empty_plugin_session_test PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_empty_plugin_session_test)
+add_dependencies(musikcube_integration_tests musikcore_empty_plugin_session_test)
+add_test(NAME musikcore.integration.plugins.empty_session
+  COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_empty_plugin_session_test>"
+    --stage @origin)
+set_tests_properties(musikcore.integration.plugins.empty_session PROPERTIES
+  LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
