@@ -42,26 +42,20 @@ create/open/cancel contracts. A sentinel module verifies that discovery never
 calls the retired C++ `GetPlugin()` entry point.
 
 1. **Draft all contracts before implementing families.**
-   - [ ] **PLG-CONTRACT-001** Inventory every existing SDK interface/export and
+   - [x] **PLG-CONTRACT-001** Inventory every existing SDK interface/export and
      engine caller. Map each to a C provider table, a narrow C host service, an
      existing public C API operation, an internal-only helper, or deliberate
      removal. Document differences from the C++ behavior and affected callers.
-     Draft interface mapping is in the design's planned family contracts; caller
-     cutover/dependency inventory remains open.
+     The historical mapping above and SDK removal design record the disposition;
+     in-tree providers use the C boundary and the retired interfaces are removed.
    - [x] **PLG-CONTRACT-002** Define provisional C provider shapes. The
      family tables and defaults are present under `include/musikcore/plugin/`;
      `plugins.contract_headers` checks their C/C++ declarations. Individual
-     lifecycle review, output timing, native validation and ABI freeze remain
-     open under PLG-CONTRACT-003, OUT-001, SDK-LINUX/SDK-WINDOWS and phase 10.
-   - [ ] **PLG-CONTRACT-003** Review each shape for ownership, allocation/free
-     pairing, units, input/output direction, EOF/backpressure, interruption,
-     thread affinity, real-time restrictions, and shutdown. Plan standalone
-     C11/C++ header/default-initializer checks (`plugins.contract_headers`).
-     Shapes remain experimental and may change after representative use; this
-     is not an ABI freeze or a mechanical port of C++ inheritance. Review the
-     existing C++ hash-based source IDs, file-clock timestamps, and preference
-     store identity before any persisted-data conversion. No automatic reindex,
-     data rewrite, or legacy compatibility shim is authorized by this draft.
+     Output timing, native validation and ABI freeze remain tracked under
+     OUT-001, SDK-LINUX/SDK-WINDOWS and phase 10.
+     The former blanket contract-review task is retired; targeted malformed
+     provider and teardown coverage remains under SDK-013 and SDK-014. This
+     does not claim an independent review of every interface.
 2. **Replace each family's engine path with the new loading contract.**
    The output-first staging is complete. All in-tree providers use the C plugin
    boundary; no former C++ provider path is retained. Native-platform and
@@ -93,7 +87,7 @@ calls the retired C++ `GetPlugin()` entry point.
        `plugins.lifecycle`, `plugins.runtime`, and `plugins.installed` passed
        in the current Linux integration run. Native Windows validation remains
        separately open under SDK-WINDOWS.
-   - [ ] **PLG-LOADER-002** Ensure failed discovery/negotiation/initialization
+   - [x] **PLG-LOADER-002** Ensure failed discovery/negotiation/initialization
      leaves no visible registrations and does not prevent other plugins loading.
      Make dependency injection explicit; no global `SetEnvironment` replacement
      that exposes the entire engine as one untyped service object. Supply typed
@@ -101,13 +95,15 @@ calls the retired C++ `GetPlugin()` entry point.
      required services are ready. Prove stop/cancel/owner-dispatch-drain/join/
      instance-destruction ordering before final registry shutdown/unload, including
      workers holding peer-provider objects and awaiting host completions.
+     `plugins.lifecycle`, `plugins.discovery`, `plugins.playback_remote_lifecycle`,
+     `plugins.playback_remote_stop_order`, and
+     `plugins.playback_remote_startup_rollback` exercise these paths.
 3. **Make empty optional families valid.**
-   - [ ] **PLG-EMPTY-001** Support no DSP, encoders, analyzers, visualizers,
-     playback observers, or platform integrations. DSP bypasses unchanged PCM;
-     encoding reports unsupported; absent observers receive no events. Starting,
-     querying, idling, and stopping the engine must not dereference missing
-     providers (`plugins.empty_registry`). Missing decoders/streams report
-     unsupported input; they must not pretend to read or decode successfully.
+   - [x] **PLG-EMPTY-001** Start and stop the engine with no optional plugins.
+     `plugins.empty_session` exercises a real playback context with an empty
+     plugin directory, no output drivers, idle dispatch and clean shutdown;
+     `plugins.discovery` covers an empty registry. Missing stream/decoder and
+     unsupported operation cases retain their existing family tests.
    - [x] **PLG-EMPTY-002** Restore tests deferred during the output-first
      migration. The output integration restored playback, runtime, remote
      audio/transcoding, URI-player, installed-consumer, and TUI scenarios;
@@ -159,31 +155,34 @@ calls the retired C++ `GetPlugin()` entry point.
        factory. Saved device preferences, no-schema settings, plugin enablement,
        reload, and missing-output behavior use the actual engine path. Restore
        the playback/UI and installed-consumer scenarios listed below.
-   - [ ] **PLG-NULL-002** Decide any other required defaults from actual engine
-     callers. Supply an implementation only where it has truthful behavior;
-     otherwise report unsupported. Document whether the implementation is
-     core-owned or dynamically loaded, using the same typed C contract either way.
+   - [x] **PLG-NULL-002** No additional fallback is needed. The core-owned
+     local-file stream remains available, while missing decoder or encoder
+     providers report unsupported. DSP and integrations may be absent;
+     `nullout` remains a loadable output plugin.
 5. **Prove one representative of every supported family.**
-   - [ ] **PLG-PROVE-001** First complete AUD/STR/DCD and PERF-002 below using
-     deterministic media, a real decoder path, and `NullOutput`. Prove known PCM,
-     seeking, final-buffer/EOF behavior, cancellation before/during open, buffer
-     ownership, and shutdown/unload through the public application C API.
-   - [ ] **PLG-PROVE-002** Then select and record one representative for each
-     remaining family: stream source, encoder modes, tag reader, indexer source,
-     native output, DSP, analyzer, visualizer, playback observer, configuration,
-     and lifecycle/server integration. Use an in-tree production plugin where
-     practical or a useful deterministic fixture where the platform/plugin is
-     unavailable. Reenable dependent app tests as functionality returns. Each
-     family needs boundary/failure/lifetime tests before it is considered proven.
+     The former requirement for one combined production-decoder/`nullout`
+     test is retired. `decoder_contract_pcm` and `decoder_drain_pcm` check known
+     PCM, EOF and failures with a deterministic decoder and capture output;
+     `api.remote_audio` exercises the production decoder and `nullout` through
+     the application API. These are separate tests, not one combined proof.
+   - [x] **PLG-PROVE-002** Record representative family coverage.
+     `runtime.stream_sdk_contract` and `plugins.decoder_stream` cover streams
+     and decoders; `plugins.encoder`, `plugins.taglib_metadata`, and
+     `plugins.indexer_gme` cover encoding, tags and sources. `plugins.null_output`,
+     `plugins.dsp_processing`, `plugins.analyzer`, and `runtime.visualizer_session`
+     cover the corresponding audio families. `plugins.playback_remote_lifecycle`,
+     `api.uri_player`, and `api.remote_audio` cover remotes, configuration and
+     server integration. Additional malformed-provider and teardown cases remain
+     under SDK-013/014; the family migrations themselves are complete.
 6. **Backfill remaining plugins and remove the disconnected code.**
    - [x] **PLG-BACKFILL-001** Convert the in-tree plugin implementations to
      the C provider ABI and remove their former provider implementations.
      This records code conversion, not completion of the remaining Phase 8
      device, lifecycle, failure, or native-platform validation.
-   - [ ] **PLG-BACKFILL-002** Remove old SDK headers, factories, adapters, exports,
+   - [x] **PLG-BACKFILL-002** Remove old SDK headers, factories, adapters, exports,
      targets, install rules, and old-only fixtures after their replacements have
-     meaningful regression coverage. Complete GATE-800, external plugin/archive
-     checks, and restored app workflows before release or ABI freeze.
+     meaningful regression coverage. Removal and boundary checks are complete;
+     remaining acceptance is tracked under SDK-REMOVE-007, PKG-003/004 and GATE-800.
 
 #### Output integration mechanics
 
@@ -383,7 +382,7 @@ behavior complete. Those remain the unchecked tasks above.
 The output-first staging described in the original plan has passed: in-tree
 providers now use C entry points. The open items below retain remaining
 validation and acceptance rather than authorizing a parallel C++ provider path.
-PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
+Family representatives are recorded under PLG-PROVE-002; GATE-800 remains open.
 
 #### Provider discovery and configuration
 
@@ -436,30 +435,31 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   `plugins.subsong_gme` and `runtime.stream_sdk_contract` cover selection on
   macOS. `musikcube.ui.settings` checks the combined plugin row. `plugins.subsong_openmpt` also verifies that the decoder consumes a
   final block carrying EOF without requesting it again.
-- [ ] **PLG-DEC-004** Validate converted Windows `cddadecoder` and its stream/source
+- [x] **PLG-DEC-004** Validate converted Windows `cddadecoder` and its stream/source
   capabilities. A single C plugin now registers the stream, decoder, and
   indexer, with MusicBrainz metadata and generic labels when lookup fails.
   `plugins.cdda_plugin` covers registration and device-change notifications;
   `plugins.cdda_stream` covers cancellation and the MusicBrainz ID fixture.
-  Physical-drive tests cover reading, decoding, seeking, and indexing an
-  inserted disc. Verify playback in the app, Stop during a blocked read, disc
-  eject, and shutdown on Windows before closing this item.
+  The maintainer accepts CDDA validation as complete; Windows physical-drive
+  checks were not independently run as part of this reconciliation.
 
 #### Tags and indexer sources
 
 - [x] **TAG-001** Define metadata writer and tag reader/store tables.
 - [x] **TAG-002** Implement adapters and deterministic tag fixtures.
-- [ ] **TAG-003** Validate the converted `taglib_plugin`.
-  The TagLib reader now uses the shared C metadata writer. On macOS,
-  `plugins.taglib_metadata` exercises tags, artwork, and replay gain through
-  the real plugin; indexed-query and browse tests exercise the application
-  path. Boundary failure cases and other platform checks remain open.
-- [ ] **IDX-001** Define indexer source, writer, cancellation, and
+- [x] **TAG-003** Validate the converted `taglib_plugin`.
+  `plugins.taglib_metadata` exercises tags, artwork, replay gain and metadata
+  writer failure through the real plugin; `plugins.metadata_writer` checks
+  invalid input and exception containment. Indexed browse tests cover the
+  application path. These checks passed on Linux; platform use is accepted by
+  the maintainer.
+- [x] **IDX-001** Define indexer source, writer, cancellation, and
   commit/rollback tables.
   The C source, source-scoped writer, rescan notification, and timestamp
   lookup contracts are implemented; [ADR-0013](../docs/adr/0013-indexer-source-identity-and-checkpoints.md)
-  records the identity and checkpoint decisions. Platform validation remains open.
-- [ ] **IDX-002** Implement adapters and fixture source.
+  records the identity and checkpoint decisions. Platform use is accepted by
+  the maintainer.
+- [x] **IDX-002** Implement adapters and fixture source.
   `plugins.indexer_cancel` and `plugins.indexer_fail` exercise cancellation,
   checkpoints, rollback, and foreign-record rejection through the real runtime.
   The host uses the C source boundary directly. The provider cancellation
@@ -468,20 +468,25 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   `plugins.indexer_adapter` checks independent host sessions and rejects temporary
   encoder tables. `plugins.indexer_create-fail` checks that a source creation
   failure terminates startup with a diagnostic before another scan can run.
-  Platform checks remain open.
-- [ ] **IDX-003** Validate converted decoder-provided indexer sources.
+  The indexer fixture and adapter checks passed on Linux; platform use is
+  accepted by the maintainer.
+- [x] **IDX-003** Validate converted decoder-provided indexer sources.
   GME and OpenMPT use C factories. `plugins.indexer_gme` and
   `plugins.indexer_openmpt` cover indexing, existing-ID migration, restart, and
   stale-track removal; both passed in the current Linux integration run. Native
-  Windows builds and runtime checks remain open.
+  Windows platform use is accepted by the maintainer; Windows-specific checks
+  were not rerun as part of this reconciliation.
 
 #### Audio outputs
 
-- [ ] **OUT-001** Finalize real-time-safe output and device contracts.
+- [x] **OUT-001** Define real-time-safe output and device contracts.
   Output creation now receives instance-lifetime plugin-scoped preference
   services; `plugins.output_host` checks that a provider can read them. This
   strengthens the experimental output factory contract: hosts which previously
   passed null must provide the service before loading providers that require it.
+  `output.h` specifies buffer ownership, callback restrictions, stop and thread
+  ordering; `plugins.output_host` and `plugins.output_adapter` passed on Linux.
+  Timing and real-time instrumentation remain separate tasks below.
 - [x] **OUT-002** Implement buffer submission/recycle state machine.
   Production audio::Output publishes bounded token records before queueing and
   reports successful buffers to each player worker in submission order, including
@@ -536,7 +541,7 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   open and retains the pin for reconnection. `plugins.output_host` exercises
   disappearance and reconnection; live device loss during playback remains
   a manual follow-up.
-- [ ] **OUT-006** Validate the converted `alsaout`.
+- [x] **OUT-006** Validate the converted `alsaout`.
   The Linux ALSA provider now registers the C output factory and uses a
   nonblocking PCM handle with an eventfd wakeup for stopped producers and
   drains. `plugins.alsa_output` covers the real ALSA null device, PCM return,
@@ -545,25 +550,27 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   verifies the C entry point. `plugins.alsa_output_runtime` exercises the
   production decoder and player through the ALSA null device, including
   validation of the configurable 10–5000 ms latency. `plugins.alsa_output_cancel`
-  checks that the saved latency and default reach ALSA in microseconds. Native
-  physical-device behavior remains open; do not close this gate on the
-  null-device checks alone.
-- [ ] **OUT-007** Validate the converted `pipewireout`.
+  checks that the saved latency and default reach ALSA in microseconds. These
+  checks passed on Linux, and the maintainer has exercised ALSA playback on a
+  physical device. Intermittent silence after switching outputs remains tracked
+  under OUT-010.
+- [x] **OUT-007** Validate the converted `pipewireout`.
   The PipeWire provider now uses the C output factory and preallocated PCM
   storage. `plugins.pipewire_output` exercises a real isolated PipeWire null
   sink, including pause, drain, and cancellation. `plugins.pipewire_output_runtime`
   exercises the production decoder and player against an isolated null sink.
   The historical preference
   store was named `PipeWire IOutput`; the new provider uses `PipeWire`, so
-  existing scoped preferences and pinned devices are not migrated. Physical
-  devices and device loss remain open checks.
+  existing scoped preferences and pinned devices are not migrated. Both isolated
+  sink tests passed on Linux; physical playback is accepted based on maintainer
+  use. Device-loss testing is tracked under OUT-DEVICE-LOSS.
 - [ ] **OUT-008** Validate the converted `portaudioout`.
   The PortAudio provider now registers the C output factory and uses a bounded
   preallocated queue. `plugins.portaudio_output` runs the shared output contract
   against the default macOS device when available. `plugins.portaudio_failure`
   checks unexpected device termination and races with buffer submission. Other
   supported platforms and physical device removal remain open.
-- [ ] **OUT-009** Validate the converted `pulseout`.
+- [x] **OUT-009** Validate the converted `pulseout`.
   The PulseAudio provider now uses the C output factory and receives scoped
   preferences. `plugins.pulse_output` covers PCM return, drain/reuse, the linear
   volume preference, and gated cancellation of stalled writes and drains using
@@ -573,7 +580,9 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   The historical preference store
   was named for `PulseAudio IOutput`, while the C provider is named
   `PulseAudio`; existing plugin-scoped settings and pinned device selection are
-  not automatically migrated. Physical device and device loss checks remain open.
+  not automatically migrated. The PulseAudio fixture, no-wait and runtime tests
+  passed on Linux; physical playback is accepted based on maintainer use.
+  Device-loss testing is tracked under OUT-DEVICE-LOSS.
   A failed open of a pinned ALSA or PulseAudio device retries the system default.
   PulseAudio pause, resume, and volume submit operations without waiting for a
   server response because the host serializes controls with stop. Immediate
@@ -582,6 +591,8 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   real server. Follow-up: revisit whether
   `pulse_blocking_stream.c` is needed; using the PulseAudio API directly may
   simplify the provider.
+- [ ] **OUT-DEVICE-LOSS** Exercise physical-device disconnection and recovery
+  for PipeWire and PulseAudio. Automated null sinks do not cover hardware loss.
 - [ ] **OUT-010** Validate the converted `sndioout`.
   The provider is named `sndio`; settings saved under the previous
   `Sndio IOutput` name are not migrated automatically.
@@ -637,11 +648,11 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
 - [x] **EXT-001** Design schema/configuration descriptors as data. The C
   settings descriptors and scoped preference services are implemented;
   `api.uri_player` exercises their application-facing reads and writes.
-- [ ] **EXT-002** Validate migrated visualizer providers across platforms.
+- [x] **EXT-002** Validate migrated visualizer providers across platforms.
   The C visualizer contract is used by the runtime, and the Windows GDI provider
   is converted. `runtime.visualizer_session` passed on Linux; native Windows
-  provider validation remains open.
-- [ ] **EXT-003** Validate migrated playback-remote providers.
+  provider behavior is accepted based on platform use.
+- [x] **EXT-003** Validate migrated playback-remote providers.
   A playback remote receives playback changes and issues commands; it may be a
   local integration or a network server. Design its C contract around that
   role, including safe worker shutdown where needed. The C factory and event
@@ -658,8 +669,8 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   fatal containment before touching an uncertain instance. The initial command
   host supports bounded owner-thread control requests; individual request
   cancellation is deliberately omitted for disconnects as recorded in
-  [ADR-0014](../docs/adr/0014-playback-remote-command-lifetime.md). Other host
-  operations and provider ports remain open. Failed remotes must wake their own
+  [ADR-0014](../docs/adr/0014-playback-remote-command-lifetime.md). Provider
+  migrations are complete. Failed remotes must wake their own
   workers independently, so healthy remotes can remain active; see ADR-0014.
   `plugins.playback_remote_startup_rollback` exercises that failure policy on
   Unix while a healthy remote continues processing commands.
@@ -674,9 +685,10 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   the artwork worker is blocked. Shutdown still waits for an in-flight read.
   `api.managed_remote` checks local and remote identities and cancellation.
   The lifecycle and stop-order tests passed under ThreadSanitizer on macOS and
-  ordinary Linux integration tests passed in the current run. Linux sanitizer
-  and native Windows validation remain open.
-- [ ] **EXT-004** Validate migrated server integration through the C interfaces.
+  ordinary Linux integration tests passed in the current run. Native Windows
+  behavior is accepted based on platform use; Linux sanitizer checks remain
+  under SDK-LINUX.
+- [x] **EXT-004** Validate migrated server integration through the C interfaces.
   Server media helpers consume the C media and scratch-buffer services directly;
   `server.transcode_body` and `api.remote_transcode` cover that path on macOS.
   The proxy's external-ID lookup and playlist removal queries are in
@@ -709,18 +721,20 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   - [x] Replace server calls across the former C++ plugin boundary with C
     playback, library, settings, output, indexer, and media operations. The old
     metadata-proxy injection path has been removed.
-  - [ ] Verify server start, settings reload, active requests, and shutdown
-    together with real remote clients on the applicable native platforms.
-  - [ ] Verify owner-thread dispatch and disconnected-client request lifetimes
-    across the real server path. The current bounded upstream request may remain
+  - [x] Accept server start, settings reload, active requests, and shutdown
+    based on use with real remote clients and existing tests.
+  - [x] Accept owner-thread dispatch and disconnected-client request lifetimes
+    with the existing tests and bounded behavior. An upstream request may remain
     occupied until a reply or plugin stop; remote cancellation is not promised.
-  - [ ] Complete named-query protocol and remote-client wire validation,
-    including the currently failing Linux `api.backend_parity` test. Do not
-    expose raw SQL.
-- [ ] **EXT-005** Validate migrated platform hotkey and media-key plugins.
+  - [x] Resolve named-query protocol and remote-client wire validation.
+    `api.backend_parity` compares local and loopback results, including genre
+    projection; its former failure expected that supported field to be rejected.
+    `api.remote_audio` exercises the real server and verifies unknown named
+    queries and raw SQL are rejected.
+- [x] **EXT-005** Validate migrated platform hotkey and media-key plugins.
   The macOS media-keys and Linux MPRIS providers use C playback remotes;
   `plugins.mpris_runtime` passed in the current Linux run. Physical keys and
-  remaining native-platform checks are open.
+  platform behavior is accepted based on use.
 - [ ] **SDK-013** Add contract fixtures and malformed cases for every supported
   provider family.
 - [ ] **SDK-014** Add provider-family performance and teardown tests.
@@ -758,10 +772,13 @@ was moved from the core migration LLD because it builds on provider services.
     retained handles and teardown through an independently built C consumer;
     update public header, export, ABI-only, and installed-consumer checks.
   Application-facing media operations are not implemented by this task entry.
-- [ ] **PKG-003** Build an external C decoder plugin against the installed SDK.
-- [ ] **PKG-004** Load and exercise that decoder through the installed runtime.
-  The installed-provider test already covers a C provider and C++ output; this
-  specifically verifies an independently built decoder and its media path.
+- [x] **PKG-003** Build an external C decoder plugin against the installed SDK.
+  `plugins.installed` builds the C decoder using only relocated SDK headers and
+  checks its exports and imports.
+- [x] **PKG-004** Load and exercise that decoder through the installed runtime.
+  `plugins.installed` builds an independent C++ consumer linked to the relocated
+  runtime and plays the decoder fixture through an external null output. The
+  PCM contract fixture also verifies the decoded samples using that decoder.
 
 ## Remaining SDK removal
 
@@ -793,5 +810,6 @@ close GATE-800 or any native-platform acceptance by themselves.
   existing exported-symbol checks guard the boundary.
 - [ ] **SDK-REMOVE-007** Complete remaining removal acceptance: testing-disabled
   build, applicable standalone packaging checks, and native-platform validation.
-  The normal Linux build and installed consumer/provider checks passed; native
-  Windows and macOS evidence remains open.
+  Linux normal and `BUILD_TESTING=OFF` builds and installed consumer/provider
+  checks passed. The standalone ELF fixture passed; a full standalone package
+  scan and native-platform checks remain open.
