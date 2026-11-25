@@ -106,6 +106,19 @@ int main(int argc, char** argv) {
     });
     wait(context, *event, [&] { return status != MC_ERROR_BUSY; });
     require(status == MC_OK && count == 1, "only checkpointed track survives rollback");
+    /* the checkpointed record has track gain without album gain. */
+    const auto databasePath = (musik::core::sdk::fs::pathFromUtf8(ReadPath(MC_PATH_DATA)) / "1" / "musik.db").u8string();
+    const std::string database(databasePath.begin(), databasePath.end());
+    sqlite3* raw = nullptr;
+    sqlite3_stmt* statement = nullptr;
+    require(sqlite3_open_v2(database.c_str(), &raw, SQLITE_OPEN_READONLY, nullptr) == SQLITE_OK,
+        "open catalog for replay gain");
+    require(sqlite3_prepare_v2(raw,
+        "SELECT r.track_gain FROM replay_gain r JOIN tracks t ON t.id=r.track_id WHERE t.filename='committed'",
+        -1, &statement, nullptr) == SQLITE_OK && sqlite3_step(statement) == SQLITE_ROW &&
+        sqlite3_column_double(statement, 0) == -6.0, "preserve track-only replay gain");
+    sqlite3_finalize(statement);
+    sqlite3_close(raw);
     require(context.Close() == MC_OK, "unload source after scan stops");
 
     if (createFailure) {

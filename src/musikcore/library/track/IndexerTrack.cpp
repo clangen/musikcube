@@ -411,7 +411,7 @@ void IndexerTrack::SaveReplayGain(db::Connection& dbConnection)
 
         {
             if (replayGain->album_gain != 1.0 || replayGain->album_peak != 1.0 ||
-                replayGain->album_gain != 1.0 || replayGain->album_peak != 1.0)
+                replayGain->track_gain != 1.0 || replayGain->track_peak != 1.0)
             {
                 db::Statement insert(
                     "INSERT INTO replay_gain "
