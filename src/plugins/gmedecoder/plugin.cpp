@@ -66,7 +66,7 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     }
     *plugin = MC_PLUGIN_API_DEFAULT;
     plugin->id = { "org.musikcube.decoder.gme", 25 };
-    plugin->name = { "GME IDecoder", 12 };
+    plugin->name = { "GME decoder", sizeof("GME decoder") - 1 };
     plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
     plugin->author = { "clangen", 7 };
     plugin->initialize = initialize;

@@ -64,14 +64,14 @@ async function checkSettings(terminal, { staged, hasServer }) {
     const codec = staged.find(name => /^(?:lib)?gmedecoder\./.test(name));
     if (codec) {
       const row = pluginRows.findIndex(line => line.includes(`(${codec})`));
-      if (row < 0 || pluginRows.filter(line => line.includes('GME IDecoder')).length !== 1) {
+      if (row < 0 || pluginRows.filter(line => line.includes('GME decoder')).length !== 1) {
         throw new Error('Expected one combined GME plugin row');
       }
-      await terminal.expect(`[x] GME IDecoder (${codec})`);
+      await terminal.expect(`[x] GME decoder (${codec})`);
       terminal.send(HOME + DOWN.repeat(row) + ' ');
-      await terminal.expect(`[ ] GME IDecoder (${codec})`);
+      await terminal.expect(`[ ] GME decoder (${codec})`);
       terminal.send(' ');
-      await terminal.expect(`[x] GME IDecoder (${codec})`);
+      await terminal.expect(`[x] GME decoder (${codec})`);
     }
     const nullRow = pluginRows.findIndex(row => row.includes('Null Output'));
     terminal.send(HOME + DOWN.repeat(nullRow) + '\r');

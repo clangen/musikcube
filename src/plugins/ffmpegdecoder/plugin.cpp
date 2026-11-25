@@ -49,7 +49,7 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     }
     *plugin = MC_PLUGIN_API_DEFAULT;
     plugin->id = { "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c", 36 };
-    plugin->name = { "ffmpeg IDecoder", 15 };
+    plugin->name = { "FFmpeg decoder", sizeof("FFmpeg decoder") - 1 };
     plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
     plugin->author = { "clangen", 7 };
     plugin->initialize = initialize;

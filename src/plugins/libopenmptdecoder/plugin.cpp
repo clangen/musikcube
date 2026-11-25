@@ -66,7 +66,7 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     }
     *plugin = MC_PLUGIN_API_DEFAULT;
     plugin->id = { "org.musikcube.decoder.openmpt", 29 };
-    plugin->name = { "libopenmpt IDecoder", 19 };
+    plugin->name = { "libopenmpt decoder", sizeof("libopenmpt decoder") - 1 };
     plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
     plugin->author = { "clangen", 7 };
     plugin->initialize = initialize;

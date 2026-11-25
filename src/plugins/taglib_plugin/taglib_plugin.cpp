@@ -79,7 +79,7 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     }
     *plugin = MC_PLUGIN_API_DEFAULT;
     plugin->id = { "c77ea7a4-5d57-4f17-8521-aba8eeadeda7", 36 };
-    plugin->name = { "Taglib 1.11 ITagReader (+ffmpeg)", sizeof("Taglib 1.11 ITagReader (+ffmpeg)") - 1 };
+    plugin->name = { "TagLib metadata reader", sizeof("TagLib metadata reader") - 1 };
     plugin->author = { "Daniel Önnerby, clangen", sizeof("Daniel Önnerby, clangen") - 1 };
     plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
     plugin->initialize = initialize;

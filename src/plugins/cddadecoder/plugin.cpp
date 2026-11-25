@@ -107,7 +107,7 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     }
     *plugin = MC_PLUGIN_API_DEFAULT;
     plugin->id = { "0862b76d-67cd-4e54-b5d1-6a2c8e5101a4", 36 };
-    plugin->name = { "CD Audio IDecoder, IDataStream", sizeof("CD Audio IDecoder, IDataStream") - 1 };
+    plugin->name = { "CD Audio", sizeof("CD Audio") - 1 };
     plugin->version = { MUSIKCUBE_VERSION_WITH_COMMIT_HASH, sizeof(MUSIKCUBE_VERSION_WITH_COMMIT_HASH) - 1 };
     plugin->author = { "musikcube", 9 };
     plugin->initialize = Initialize;

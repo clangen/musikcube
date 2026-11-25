@@ -161,7 +161,7 @@ void GmeIndexerSource::UpdateMetadata(
         gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
         std::unique_ptr<Music_Emu, decltype(&gme_delete)> dataOwner(data, gme_delete);
         if (err) {
-            this->services.Error(PLUGIN_NAME, str::Format("error opening %s", fn.c_str()).c_str());
+            this->services.Error("GME decoder", str::Format("error opening %s", fn.c_str()).c_str());
             invalidFiles.insert(fn);
         }
         else {
@@ -176,7 +176,7 @@ void GmeIndexerSource::UpdateMetadata(
                 if (m3u.size()) {
                     err = gme_load_m3u(data, m3u.c_str());
                     if (err) {
-                        this->services.Error(PLUGIN_NAME, str::Format("m3u found, but load failed '%s'", err).c_str());
+                        this->services.Error("GME decoder", str::Format("m3u found, but load failed '%s'", err).c_str());
                     }
                 }
             }
@@ -204,7 +204,7 @@ void GmeIndexerSource::UpdateMetadata(
                 err = gme_track_info(data, &info, i);
                 std::unique_ptr<gme_info_t, decltype(&gme_free_info)> infoOwner(info, gme_free_info);
                 if (err) {
-                    this->services.Error(PLUGIN_NAME, str::Format("error getting track %d: %s", i, err).c_str());
+                    this->services.Error("GME decoder", str::Format("error getting track %d: %s", i, err).c_str());
                     track.SetValue("duration", defaultDuration.c_str());
                     track.SetValue("title", defaultTitle.c_str());
                 }

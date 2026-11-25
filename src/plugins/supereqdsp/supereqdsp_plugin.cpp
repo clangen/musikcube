@@ -19,7 +19,7 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     }
     *plugin = MC_PLUGIN_API_DEFAULT;
     plugin->id = { "6f0ed53b-0f13-4220-9b0a-ca496b6421cc", 36 };
-    plugin->name = { "SuperEq IDSP", 12 };
+    plugin->name = { "SuperEq", sizeof("SuperEq") - 1 };
     plugin->version = { "1", 1 };
     plugin->author = { "Naoki Shibata, Alexey Yakovenko, clangen", 40 };
     plugin->initialize = initialize;

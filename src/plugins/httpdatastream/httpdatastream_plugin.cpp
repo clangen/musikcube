@@ -189,7 +189,7 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     }
     *plugin = MC_PLUGIN_API_DEFAULT;
     plugin->id = text("b153adad-ee98-4331-ad32-4ff7f34828cd");
-    plugin->name = text("HTTP IDataStream");
+    plugin->name = text("HTTP stream");
     plugin->author = text("clangen");
     plugin->version = text(MUSIKCUBE_VERSION_WITH_COMMIT_HASH);
     plugin->initialize = initialize;

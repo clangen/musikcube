@@ -33,8 +33,7 @@ extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
     }
     *plugin = MC_PLUGIN_API_DEFAULT;
     plugin->id = { "13903ab8-b387-4de9-86e3-14ba22057dcd", 36 };
-    /* keep the legacy name so the host finds existing plugin preferences. */
-    plugin->name = { "Sndio IOutput", 13 };
+    plugin->name = { "sndio", 5 };
     plugin->version = { "1", 1 };
     plugin->author = { "clangen", 7 };
     plugin->initialize = Initialize;

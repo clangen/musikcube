@@ -1738,6 +1738,10 @@ compatibility between migration builds.
   The remote settings include an opt-in for untrusted HTTPS certificates;
   `musikcore.integration.runtime.local_startup` checks the default and the
   resulting remote track policy.
+  The FFmpeg, GME, libopenmpt, CD Audio, TagLib, SuperEq, and HTTP stream
+  provider display names no longer contain legacy interface names. Their
+  plugin-scoped preferences use the new names; existing settings under the old
+  names are not migrated automatically. Indexer identity keys remain unchanged.
 - [x] **MIG-004** Migrate remaining library/category/directory views.
   Browse receives local playlist mutations through context dispatch.
   `musikcore.abi.dispatch` verifies notification ordering and
@@ -2199,6 +2203,8 @@ stage; migrated families must not keep a parallel former-SDK path.
   `pulse_blocking_stream.c` is needed; using the PulseAudio API directly may
   simplify the provider.
 - [ ] **OUT-010** Convert `sndioout`.
+  The provider is named `sndio`; settings saved under the previous
+  `Sndio IOutput` name are not migrated automatically.
 - [ ] **OUT-011** Convert Windows `directsoundout`.
 - [ ] **OUT-012** Convert Windows `wasapiout`.
   The shared-mode provider now registers the C output and configuration APIs.
