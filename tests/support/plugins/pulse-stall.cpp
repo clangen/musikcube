@@ -28,6 +28,7 @@ extern "C" void pa_blocking_cancel(pa_blocking* stream) {
 
 extern "C" void pa_blocking_free(pa_blocking* stream) { delete stream; }
 extern "C" int pa_blocking_cork(pa_blocking*, bool, int*) { return 0; }
+extern "C" int pa_blocking_flush(pa_blocking*, int*) { return 0; }
 
 extern "C" int pa_blocking_set_volume(pa_blocking*, int volume, int*) {
     const char* descriptor = std::getenv("MUSIKCUBE_TEST_PULSE_VOLUME_FD");

@@ -113,6 +113,7 @@ int main(int argc, char** argv) {
         require(api->set_volume(instance, 0.75) == MC_OK, "set volume without waiting for acknowledgement");
         forbidWait(0);
     }
+    require(api->flush(instance) == MC_OK, "flush keeps output usable");
     block.token = 8;
     require(api->queue_audio_buffer(instance, &block) == MC_OK && results.count == 2 &&
         results.token == 8 && results.status == MC_OK, "write again after draining");

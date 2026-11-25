@@ -6,8 +6,9 @@ const { stageTestRuntime } = require('./test-runtime');
 
 const [parent, executable, plugin, driver, preload] = process.argv.slice(2);
 if (!parent || !executable || !plugin) throw new Error('Expected fixture root, test executable, and plugin.');
-mkdirSync(parent, { recursive: true });
-const root = mkdtempSync(join(resolve(parent), 'pipewire-'));
+const fixtureParent = join(resolve(parent), 'tests', 'bin', 'isolated');
+mkdirSync(fixtureParent, { recursive: true });
+const root = mkdtempSync(join(fixtureParent, 'pipewire-'));
 chmodSync(root, 0o700);
 const env = { ...process.env, XDG_RUNTIME_DIR: root, PIPEWIRE_RUNTIME_DIR: root,
   XDG_CONFIG_HOME: join(root, 'config'), XDG_CACHE_HOME: join(root, 'cache'),
@@ -53,6 +54,13 @@ async function main() {
   if (!ready) throw new Error('PipeWire PulseAudio service did not start');
   const sink = run('pactl', ['load-module', 'module-null-sink', 'sink_name=musikcube_plugin_test']);
   if (sink.status !== 0) throw new Error(`Cannot create null sink: ${sink.stderr}`);
+  /* Some PulseAudio compatibility servers accept the module request without
+     publishing a module. Create a persistent native sink in that case. */
+  if (!sink.stdout.trim()) {
+    const created = run('pw-cli', ['create-node', 'adapter',
+      '{ factory.name = support.null-audio-sink node.name = musikcube_plugin_test media.class = Audio/Sink object.linger = true audio.position = [ FL FR ] }']);
+    if (created.status !== 0) throw new Error(`Cannot create PipeWire null sink: ${created.stderr}`);
+  }
   let id;
   let nodes = [];
   for (let i = 0; i < 100; ++i) {
@@ -67,7 +75,9 @@ async function main() {
     }
     await delay(100);
   }
-  if (!id) throw new Error(`The null sink was not published: ${nodes.map(node => node.info?.props?.['node.name']).join(', ')}`);
+  if (!id) {
+    throw new Error(`The null sink was not published: ${nodes.map(node => node.info?.props?.['node.name']).join(', ')}`);
+  }
   let command = executable;
   let args = preload ? [plugin, "no-wait"] : [plugin];
   if (driver) {
