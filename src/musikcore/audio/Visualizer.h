@@ -35,12 +35,20 @@
 #pragma once
 
 #include <musikcore/config.h>
-#include <musikcore/sdk/ISpectrumVisualizer.h>
-#include <musikcore/sdk/IPcmVisualizer.h>
+#include <musikcore/plugin/audio.h>
 
+/* Internal playback-facing helpers for the runtime's selected visualizer and
+shared spectrum meter. The runtime owns discovery, selection, and provider
+lifetimes in Visualizer.cpp; player workers only deliver borrowed audio here.
+
+This is distinct from include/musikcore/visualizer.h, which exposes controls
+to applications, and include/musikcore/plugin/visualizer.h, which defines the
+C ABI implemented and registered by visualizer plugins. */
 namespace musik { namespace core { namespace audio { namespace vis {
 
-    musik::core::sdk::IVisualizer* SelectedVisualizer();
+    bool WantsSpectrum();
+    void WritePcm(const mc_pcm_view& pcm) noexcept;
+    void WriteSpectrum(const float* bins, size_t count, uint32_t sampleRate) noexcept;
     bool SpectrumEnabled();
     void PublishSpectrum(const float* bins, uint32_t sampleRate);
     void Shutdown();

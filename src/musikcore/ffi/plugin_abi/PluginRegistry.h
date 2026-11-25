@@ -11,6 +11,7 @@
 #include <musikcore/plugin/analyzer.h>
 #include <musikcore/plugin/encoder.h>
 #include <musikcore/plugin/output.h>
+#include <musikcore/plugin/visualizer.h>
 #include <musikcore/plugin/settings.h>
 #include "PluginCallState.h"
 #include <functional>
@@ -160,6 +161,9 @@ namespace musik { namespace core { namespace ffi {
             }
             else if constexpr (std::is_same_v<T, mc_analyzer_factory>) {
                 return MC_PLUGIN_CAPABILITY_ANALYZER;
+            }
+            else if constexpr (std::is_same_v<T, mc_visualizer_factory>) {
+                return MC_PLUGIN_CAPABILITY_VISUALIZER;
             }
             else {
                 static_assert(std::is_same_v<T, mc_output_factory>, "unsupported plugin factory type");

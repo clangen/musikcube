@@ -1,81 +1,69 @@
-/* headless legacy visualizer for session-lifetime assertions. visibility and
-release counts use ordinary provider preferences; no window or audio device. */
-#include <musikcore/abi.h>
-#include <musikcore/sdk/IPcmVisualizer.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/constants.h>
+/* Headless C visualizer used to verify discovery and session teardown. */
+#include <musikcore/plugin.h>
+#include <musikcore/plugin/visualizer.hpp>
+
+#include <atomic>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <string>
 
 namespace {
-    musik::core::sdk::IPreferences* preferences = nullptr;
+    class Visualizer {
+    public:
+        static constexpr mc_visualizer_inputs Inputs = MC_VISUALIZER_INPUT_PCM | MC_VISUALIZER_INPUT_SPECTRUM;
+        static const char* Name() { return "Headless runtime visualizer"; }
 
-    /* retain observations across sessions so missing teardown cannot be hidden
-    by installing preferences again. */
-    void increment(const char* key) {
-        preferences->SetInt(key, preferences->GetInt(key, 0) + 1);
-    }
+        explicit Visualizer(const mc_plugin_services& services)
+        : marker(std::filesystem::u8path(std::string(services.data_directory.data, services.data_directory.length)) /
+            "visualizer-lifecycle.txt") {}
+        ~Visualizer() noexcept { Record('R'); }
 
-    /* exposes only identity; all behavior belongs to the acquired visualizer. */
-    class Plugin final : public musik::core::sdk::IPlugin {
-        public:
-            /* modules remain process-owned; the descriptor owns this static object. */
-            void Release() override {}
-            /* identify the fixture without relying on a platform-specific filename. */
-            const char* Name() override { return "RuntimeVisualizer"; }
-            /* supply stable discovery metadata for the legacy host. */
-            const char* Version() override { return "1"; }
-            /* identify the fixture author without external resources. */
-            const char* Author() override { return "musikcube tests"; }
-            /* keep preferences under a distinct provider identity. */
-            const char* Guid() override { return "RuntimeVisualizer"; }
-            /* this fixture has no configuration UI. */
-            bool Configurable() override { return false; }
-            /* discovery must never open a UI. */
-            void Configure() override {}
-            /* enablement affects the next session, with nothing to reload here. */
-            void Reload() override {}
-            /* use the supported legacy version so discovery reaches the test. */
-            int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-    } plugin;
+        mc_result Show() { visible.store(true); return MC_OK; }
+        mc_result Hide() { visible.store(false); Record('H'); return MC_OK; }
+        mc_result IsVisible(bool& value) { value = visible.load(); return MC_OK; }
+        mc_result WritePcm(const mc_pcm_view& pcm) {
+            if (pcm.frame_count != 1 || pcm.format.channels != 2) return MC_ERROR_INVALID_ARGUMENT;
+            Record('P');
+            return MC_OK;
+        }
+        mc_result WriteSpectrum(const float*, size_t count, uint32_t rate) {
+            if (count != 2 || rate != 44100) return MC_ERROR_INVALID_ARGUMENT;
+            Record('S');
+            return MC_OK;
+        }
 
-    /* models provider state that must retire even when Playback was never
-    requested. each discovery owns a distinct instance. */
-    class Visualizer final : public musik::core::sdk::IPcmVisualizer {
-        public:
-            /* record retirement separately from hiding the selected instance. */
-            void Release() override {
-                increment("releases");
-                delete this;
-            }
-            /* show changes only an in-memory flag; it cannot touch the desktop. */
-            void Show() override { this->visible = true; }
-            /* expose automatic shutdown hiding without needing UI synchronization. */
-            void Hide() override {
-                increment("hides");
-                this->visible = false;
-            }
-            /* let the public hide API distinguish shutdown from a surviving window. */
-            bool Visible() override { return this->visible; }
-            /* provide the public registry's stable display label. */
-            const char* Name() override { return "Headless runtime visualizer"; }
-            /* no audio is produced; this test exercises lifecycle only. */
-            void Write(musik::core::sdk::IBuffer*) override {}
-
-        private:
-            bool visible = false;
+    private:
+        void Record(char event) noexcept {
+            try { std::ofstream out(marker, std::ios::app); out << event; } catch (...) {}
+        }
+        std::filesystem::path marker;
+        std::atomic<bool> visible { false };
     };
+
+    mc_result MC_CALL Initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        return musik::core::plugin::RegisterVisualizer<Visualizer>(*host);
+    }
+    void MC_CALL Shutdown(void*) {}
 }
 
-/* expose the same entry points a separately built legacy plugin uses. */
-extern "C" MC_PLUGIN_API musik::core::sdk::IPlugin* GetPlugin() {
-    return &plugin;
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* api, mc_error** error)
+{
+    const auto result = mc_plugin_validate_host_api(version, host, api, error);
+    if (result != MC_OK) return result;
+    *api = MC_PLUGIN_API_DEFAULT;
+    api->id = { "runtime-visualizer", 18 };
+    api->name = { "RuntimeVisualizer", 17 };
+    api->version = { "1", 1 };
+    api->author = { "musikcube tests", 15 };
+    api->initialize = Initialize;
+    api->shutdown = Shutdown;
+    return MC_OK;
 }
 
-/* observe lifecycle through provider-owned preferences without private exports. */
-extern "C" MC_PLUGIN_API void SetPreferences(musik::core::sdk::IPreferences* value) {
-    preferences = value;
-}
-
-/* discovery transfers an owned reference that shutdown must release. */
-extern "C" MC_PLUGIN_API musik::core::sdk::IPcmVisualizer* GetPcmVisualizer() {
-    return new Visualizer();
-}
+/* A dual-entry module must be discovered only through its C capability.
+The old loader must not initialize its legacy visualizer entry point. */
+extern "C" MC_PLUGIN_API void* GetPlugin() { std::abort(); }
+extern "C" MC_PLUGIN_API void* GetPcmVisualizer() { std::abort(); }

@@ -507,6 +507,11 @@ namespace musik { namespace core { namespace plugin {
         return pluginRegistry->Find<mc_output_factory>(pluginId);
     }
 
+    ffi::PluginRegistry::Factory<mc_visualizer_factory> FindVisualizerFactory(std::string_view pluginId) {
+        return pluginRegistry ? pluginRegistry->Find<mc_visualizer_factory>(pluginId)
+            : ffi::PluginRegistry::Factory<mc_visualizer_factory>();
+    }
+
     ffi::PluginRegistry::Factory<mc_analyzer_factory> FindAnalyzerFactory(std::string_view pluginId) {
         return pluginRegistry ? pluginRegistry->Find<mc_analyzer_factory>(pluginId)
             : ffi::PluginRegistry::Factory<mc_analyzer_factory>();

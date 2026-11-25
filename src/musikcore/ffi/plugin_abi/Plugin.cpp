@@ -225,6 +225,15 @@ namespace musik { namespace core { namespace ffi {
                         methods.set_volume && methods.get_volume && methods.stop && methods.drain && methods.get_timing;
                 });
             }
+            if (id == MC_PLUGIN_CAPABILITY_VISUALIZER) {
+                return validFactory<mc_visualizer_factory>(capability, [](const auto& factory, const auto& methods) {
+                    constexpr auto allowed = MC_VISUALIZER_INPUT_PCM | MC_VISUALIZER_INPUT_SPECTRUM;
+                    return validText(factory.name) && factory.name.length && factory.inputs &&
+                        !(factory.inputs & ~allowed) && methods.show && methods.hide && methods.is_visible &&
+                        (!(factory.inputs & MC_VISUALIZER_INPUT_PCM) || methods.write_pcm) &&
+                        (!(factory.inputs & MC_VISUALIZER_INPUT_SPECTRUM) || methods.write_spectrum);
+                });
+            }
             return true;
         }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <musikcore/plugin.h>
+#include <musikcore/plugin/visualizer.h>
 #include <musikcore/plugin/analyzer.h>
 #include <musikcore/plugin/decoder.h>
 #include <musikcore/plugin/dsp.h>
@@ -38,6 +39,10 @@ namespace musik { namespace core { namespace plugin {
         return detail::RegisterTable(host, MC_PLUGIN_CAPABILITY_OUTPUT, factory);
     }
 
+    inline mc_result RegisterVisualizer(const mc_host_api& host, const mc_visualizer_factory& factory) {
+        return detail::RegisterTable(host, MC_PLUGIN_CAPABILITY_VISUALIZER, factory);
+    }
+
     inline mc_result RegisterDsp(const mc_host_api& host, const mc_dsp_factory& factory) {
         return detail::RegisterTable(host, MC_PLUGIN_CAPABILITY_DSP, factory);
     }
@@ -70,6 +75,7 @@ namespace musik { namespace core { namespace plugin {
     mc_result RegisterStream(const mc_host_api&, const mc_stream_factory&&) = delete;
     mc_result RegisterDecoder(const mc_host_api&, const mc_decoder_factory&&) = delete;
     mc_result RegisterOutput(const mc_host_api&, const mc_output_factory&&) = delete;
+    mc_result RegisterVisualizer(const mc_host_api&, const mc_visualizer_factory&&) = delete;
     mc_result RegisterDsp(const mc_host_api&, const mc_dsp_factory&&) = delete;
     mc_result RegisterPlaybackRemote(const mc_host_api&, const mc_playback_remote_factory&&) = delete;
     mc_result RegisterEncoder(const mc_host_api&, const mc_encoder_factory&&) = delete;

@@ -72,6 +72,7 @@ namespace musik { namespace core { namespace plugin {
     ffi::PluginRegistry::Factory<mc_playback_remote_factory> FindPlaybackRemoteFactory(std::string_view pluginId);
 
     ffi::PluginRegistry::Factory<mc_output_factory> FindOutputFactory(std::string_view pluginId);
+    ffi::PluginRegistry::Factory<mc_visualizer_factory> FindVisualizerFactory(std::string_view pluginId);
 
     ffi::PluginRegistry::Factory<mc_analyzer_factory> FindAnalyzerFactory(std::string_view pluginId);
 

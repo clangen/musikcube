@@ -36,7 +36,8 @@
 #include "Visualizer.h"
 
 #include <musikcore/ffi/common/error.h>
-#include <musikcore/plugin/PluginFactory.h>
+#include <musikcore/plugin/Plugins.h>
+#include <musikcore/support/Common.h>
 #include <musikcore/visualizer.h>
 
 #include <algorithm>
@@ -44,15 +45,58 @@
 #include <array>
 #include <cctype>
 #include <string_view>
+#include <stdexcept>
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::sdk;
 
 namespace {
     /* Keep registry entries alive while playback workers use borrowed pointers. */
-    std::vector<std::shared_ptr<IVisualizer>> visualizers;
-    std::atomic<IVisualizer*> selectedVisualizer { nullptr };
+    struct Visualizer {
+        using Factory = ffi::PluginRegistry::Factory<mc_visualizer_factory>;
+
+        Visualizer(Factory factory, const std::string& pluginName)
+        : factory(std::move(factory))
+        , preferences(plugin::ReadSettingsService(pluginName))
+        , directory(GetDataDirectory()) {
+            services.preferences = &preferences;
+            services.host = this->factory.Host();
+            services.media = &plugin::Environment().Media();
+            services.audio_scratch = &plugin::Environment().AudioScratch();
+            services.data_directory = { directory.data(), directory.size() };
+            const auto status = this->factory.Invoke([&](const auto& table) {
+                name.assign(table.name.data, table.name.length);
+                inputs = table.inputs;
+                api = table.instance_api;
+                return table.create(table.context, &services, &instance, nullptr);
+            });
+            if (status != MC_OK || !instance) {
+                if (instance && api) {
+                    api->destroy(instance);
+                    instance = nullptr;
+                }
+                throw std::runtime_error("visualizer creation failed");
+            }
+        }
+
+        ~Visualizer() {
+            if (instance) {
+                factory.Invoke([&](const auto&) { api->destroy(instance); return MC_OK; });
+            }
+        }
+
+        Factory factory;
+        mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+        std::string directory;
+        mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
+        std::string name;
+        mc_visualizer_inputs inputs = 0;
+        const mc_plugin_visualizer_vtable* api = nullptr;
+        void* instance = nullptr;
+    };
+
+    std::vector<std::unique_ptr<Visualizer>> visualizers;
+    std::atomic<Visualizer*> selectedVisualizer { nullptr };
     bool initialized = false;
     std::atomic<bool> spectrumEnabled { false };
     std::atomic<uint64_t> spectrumVersion { 0 };
@@ -61,8 +105,8 @@ namespace {
     std::array<std::atomic<float>, MC_VISUALIZER_SPECTRUM_BINS> spectrum {};
     static_assert(std::atomic<float>::is_always_lock_free);
 
-    std::string normalizedName(IVisualizer& visualizer) {
-        std::string name = visualizer.Name();
+    std::string normalizedName(const Visualizer& visualizer) {
+        std::string name = visualizer.name;
         std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
             return std::tolower(c);
         });
@@ -74,14 +118,18 @@ namespace {
             return;
         }
 
-        auto& factory = PluginFactory::Instance();
-        auto spectrum = factory.QueryInterface<ISpectrumVisualizer,
-            PluginFactory::ReleaseDeleter<ISpectrumVisualizer>>("GetSpectrumVisualizer");
-        auto pcm = factory.QueryInterface<IPcmVisualizer,
-            PluginFactory::ReleaseDeleter<IPcmVisualizer>>("GetPcmVisualizer");
-
-        std::vector<std::shared_ptr<IVisualizer>> discovered(spectrum.begin(), spectrum.end());
-        discovered.insert(discovered.end(), pcm.begin(), pcm.end());
+        std::vector<std::unique_ptr<Visualizer>> discovered;
+        for (const auto& info : plugin::ListPlugins()) {
+            auto factory = plugin::FindVisualizerFactory(info.id);
+            if (factory) {
+                try {
+                    discovered.push_back(std::make_unique<Visualizer>(factory, info.name));
+                }
+                catch (const std::exception&) {
+                    /* One unavailable visualizer must not hide the others. */
+                }
+            }
+        }
         std::sort(discovered.begin(), discovered.end(), [](const auto& left, const auto& right) {
             return normalizedName(*left) < normalizedName(*right);
         });
@@ -90,8 +138,31 @@ namespace {
     }
 }
 
-IVisualizer* vis::SelectedVisualizer() {
-    return selectedVisualizer.load();
+bool vis::WantsSpectrum() {
+    const auto* selected = selectedVisualizer.load();
+    return selected && (selected->inputs & MC_VISUALIZER_INPUT_SPECTRUM);
+}
+
+void vis::WritePcm(const mc_pcm_view& pcm) noexcept {
+    auto* selected = selectedVisualizer.load();
+    if (selected && (selected->inputs & MC_VISUALIZER_INPUT_PCM)) {
+        try {
+            selected->factory.Invoke([&](const auto&) { return selected->api->write_pcm(selected->instance, &pcm); });
+        }
+        catch (...) {}
+    }
+}
+
+void vis::WriteSpectrum(const float* bins, size_t count, uint32_t sampleRate) noexcept {
+    auto* selected = selectedVisualizer.load();
+    if (selected && (selected->inputs & MC_VISUALIZER_INPUT_SPECTRUM)) {
+        try {
+            selected->factory.Invoke([&](const auto&) {
+                return selected->api->write_spectrum(selected->instance, bins, count, sampleRate);
+            });
+        }
+        catch (...) {}
+    }
 }
 
 bool vis::SpectrumEnabled() {
@@ -150,7 +221,7 @@ mc_result MC_CALL mc_visualizer_read_spectrum(float* bins, size_t capacity, uint
 void vis::Shutdown() {
     spectrumEnabled.store(false, std::memory_order_relaxed);
     if (auto* selected = selectedVisualizer.exchange(nullptr)) {
-        selected->Hide();
+        selected->factory.Invoke([&](const auto&) { return selected->api->hide(selected->instance); });
     }
     /* worker users have stopped; the next session rediscovers enabled providers. */
     visualizers.clear();
@@ -162,12 +233,12 @@ mc_result MC_CALL mc_visualizer_list(mc_visualizer_list_fn read, void* data) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
 
-    return ffi::exception_barrier(nullptr, [&] {
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         initializeVisualizers();
         std::vector<mc_string_view> names;
         names.reserve(visualizers.size());
         for (const auto& visualizer : visualizers) {
-            const std::string_view name(visualizer->Name());
+            const std::string_view name(visualizer->name);
             names.push_back({ name.data(), name.size() });
         }
         read(data, names.data(), names.size());
@@ -176,7 +247,7 @@ mc_result MC_CALL mc_visualizer_list(mc_visualizer_list_fn read, void* data) {
 }
 
 mc_result MC_CALL mc_visualizer_show(size_t index) {
-    return ffi::exception_barrier(nullptr, [&] {
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         initializeVisualizers();
         if (index >= visualizers.size()) {
             return MC_ERROR_NOT_FOUND;
@@ -184,24 +255,43 @@ mc_result MC_CALL mc_visualizer_show(size_t index) {
 
         auto* visualizer = visualizers[index].get();
         auto* previous = selectedVisualizer.exchange(nullptr);
-        if (previous && previous != visualizer && previous->Visible()) {
-            previous->Hide();
+        if (previous && previous != visualizer) {
+            const auto hidden = previous->factory.Invoke([&](const auto&) { return previous->api->hide(previous->instance); });
+            if (hidden != MC_OK) {
+                selectedVisualizer.store(previous);
+                return hidden;
+            }
         }
-        visualizer->Show();
+        const auto shown = visualizer->factory.Invoke([&](const auto&) { return visualizer->api->show(visualizer->instance); });
+        if (shown != MC_OK) {
+            if (previous == visualizer) {
+                selectedVisualizer.store(previous);
+            }
+            return shown;
+        }
         selectedVisualizer.store(visualizer);
         return MC_OK;
     });
 }
 
 mc_result MC_CALL mc_visualizer_hide() {
-    return ffi::exception_barrier(nullptr, [&] {
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         auto* selected = selectedVisualizer.exchange(nullptr);
-        if (!selected || !selected->Visible()) {
+        if (!selected) {
             return MC_ERROR_NOT_FOUND;
         }
-
-        selected->Hide();
-        return MC_OK;
+        bool visible = false;
+        const auto checked = selected->factory.Invoke([&](const auto&) {
+            return selected->api->is_visible(selected->instance, &visible);
+        });
+        if (checked != MC_OK) {
+            selectedVisualizer.store(selected);
+            return checked;
+        }
+        if (!visible) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        return selected->factory.Invoke([&](const auto&) { return selected->api->hide(selected->instance); });
     });
 }
 
@@ -209,9 +299,11 @@ mc_result MC_CALL mc_visualizer_is_visible(bool* outVisible) {
     if (!outVisible) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return ffi::exception_barrier(nullptr, [&] {
+    return ffi::exception_barrier(nullptr, [&]() -> mc_result {
         auto* selected = selectedVisualizer.load();
-        *outVisible = selected && selected->Visible();
-        return MC_OK;
+        *outVisible = false;
+        return selected ? selected->factory.Invoke([&](const auto&) {
+            return selected->api->is_visible(selected->instance, outVisible);
+        }) : MC_OK;
     });
 }

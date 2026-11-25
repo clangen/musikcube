@@ -434,22 +434,26 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
 
     /* process visualizer data, and write to the selected plugin, if applicable */
 
-    auto* visualizer = vis::SelectedVisualizer();
-    auto* specVis = dynamic_cast<ISpectrumVisualizer*>(visualizer);
-    auto* pcmVis = dynamic_cast<IPcmVisualizer*>(visualizer);
-
-    const bool renderSpectrum = specVis && specVis->Visible();
+    const bool renderSpectrum = vis::WantsSpectrum();
     const bool captureSpectrum = vis::SpectrumEnabled();
     if ((renderSpectrum || captureSpectrum) && performFft(buffer, this->fftContext.get(), this->fftContext->spectrum.data(), FFT_N / 2)) {
         if (renderSpectrum) {
-            specVis->Write(this->fftContext->spectrum.data(), FFT_N / 2);
+            vis::WriteSpectrum(this->fftContext->spectrum.data(), FFT_N / 2,
+                static_cast<uint32_t>(buffer->SampleRate()));
         }
         if (captureSpectrum) {
             vis::PublishSpectrum(this->fftContext->spectrum.data(), static_cast<uint32_t>(buffer->SampleRate()));
         }
     }
-    if (pcmVis && pcmVis->Visible()) {
-        pcmVis->Write(buffer);
+    if (buffer->Channels() > 0 && buffer->SampleRate() > 0 && buffer->Samples() >= 0 &&
+        buffer->Samples() % buffer->Channels() == 0) {
+        const mc_pcm_view pcm {
+            sizeof(mc_pcm_view), buffer->BufferPointer(),
+            static_cast<size_t>(buffer->Samples() / buffer->Channels()),
+            { sizeof(mc_audio_format), static_cast<uint32_t>(buffer->SampleRate()),
+                static_cast<uint32_t>(buffer->Channels()), 0 },
+        };
+        vis::WritePcm(pcm);
     }
 
     const auto position = static_cast<Buffer*>(buffer)->Position();

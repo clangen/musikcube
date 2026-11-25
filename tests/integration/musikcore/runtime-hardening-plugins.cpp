@@ -3,6 +3,7 @@
 #include "../../support/check.h"
 #include <musikcore/audio/Outputs.h>
 #include <musikcore/audio/Dsp.h>
+#include <musikcore/audio/Visualizer.h>
 #include <musikcore/plugin/media.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/Preferences.h>
@@ -95,7 +96,8 @@ namespace runtime_tests {
     bool checkVisualizerSession() {
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
         options.services = MC_SERVICE_PLUGINS;
-        auto preferences = Preferences::ForPlugin("RuntimeVisualizer");
+        const auto marker = std::filesystem::u8path(api::ReadPath(MC_PATH_DATA)) / "visualizer-lifecycle.txt";
+        std::filesystem::remove(marker);
         api::Context context(options);
         size_t count = 0;
         const auto read = [](void* data, const mc_string_view*, size_t size) {
@@ -106,19 +108,27 @@ namespace runtime_tests {
             !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && !visible) ||
             !TEST_CHECK(mc_visualizer_list(read, &count) == MC_OK && count == 1) ||
             !TEST_CHECK(mc_visualizer_show(0) == MC_OK) ||
-            !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && visible) ||
-            !TEST_CHECK(context.Close() == MC_OK) ||
-            !TEST_CHECK(preferences->GetInt("hides") == 1 && preferences->GetInt("releases") == 1) ||
-            !TEST_CHECK(mc_visualizer_hide() == MC_ERROR_NOT_FOUND) ||
-            !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && !visible))
+            !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && visible))
         {
             return false;
         }
+        const float samples[] { 0.0f, 0.0f };
+        const mc_pcm_view pcm { sizeof(mc_pcm_view), samples, 1, { sizeof(mc_audio_format), 44100, 2, 0 } };
+        musik::core::audio::vis::WritePcm(pcm);
+        musik::core::audio::vis::WriteSpectrum(samples, 2, 44100);
         const auto plugins = api::ListPlugins();
         const auto plugin = std::find_if(plugins.begin(), plugins.end(), [](const auto& item) {
             return item.name == "RuntimeVisualizer";
         });
         if (!TEST_CHECK(plugin != plugins.end()) || !TEST_CHECK(api::SetPluginEnabled(plugin->filename, false) == MC_OK)) {
+            return false;
+        }
+        if (!TEST_CHECK(musik::core::audio::vis::WantsSpectrum()) ||
+            !TEST_CHECK(context.Close() == MC_OK) ||
+            !TEST_CHECK([&] { std::ifstream in(marker); std::string events; in >> events; return events == "PSHR"; }()) ||
+            !TEST_CHECK(mc_visualizer_hide() == MC_ERROR_NOT_FOUND) ||
+            !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && !visible))
+        {
             return false;
         }
         api::Context reopened(options);

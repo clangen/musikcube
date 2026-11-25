@@ -1,5 +1,6 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/audio.h>
+#include <musikcore/plugin/visualizer.h>
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/indexer.h>
 #include <musikcore/plugin/playback-remote.h>
@@ -142,6 +143,8 @@ int main(void) {
     const mc_output_timing timing = MC_OUTPUT_TIMING_DEFAULT;
     const mc_output_vtable methods = MC_OUTPUT_VTABLE_DEFAULT;
     const mc_output_factory factory = MC_OUTPUT_FACTORY_DEFAULT;
+    const mc_plugin_visualizer_vtable visualizer = MC_PLUGIN_VISUALIZER_VTABLE_DEFAULT;
+    const mc_visualizer_factory visualizer_factory = MC_VISUALIZER_FACTORY_DEFAULT;
     const mc_indexer_writer writer = MC_INDEXER_WRITER_DEFAULT;
     const mc_indexer_source_info source = MC_INDEXER_SOURCE_INFO_DEFAULT;
     const mc_indexer_source_host_api source_host = MC_INDEXER_SOURCE_HOST_API_DEFAULT;
@@ -169,6 +172,10 @@ int main(void) {
     require(methods.struct_size == sizeof(methods) && !methods.destroy && !methods.queue_audio_buffer && !methods.stop,
         "vtable");
     require(factory.struct_size == sizeof(factory) && !factory.instance_api && !factory.create, "factory");
+    require(visualizer.struct_size == sizeof(visualizer) && !visualizer.write_pcm && !visualizer.write_spectrum,
+        "visualizer vtable");
+    require(visualizer_factory.struct_size == sizeof(visualizer_factory) && !visualizer_factory.inputs &&
+        !visualizer_factory.create, "visualizer factory");
     /* an empty source cannot accidentally write, rescan, or claim an identity. */
     require(writer.struct_size == sizeof(writer) && !writer.create_record && !writer.save, "indexer writer");
     require(source.struct_size == sizeof(source) && !source.source_key.length && !source.stable_ids, "indexer source");

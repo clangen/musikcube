@@ -526,6 +526,7 @@ set_tests_properties(musikcore.integration.runtime.migration_scan PROPERTIES
 
 # a headless provider makes cache retirement testable without platform UI plugins.
 add_library(musikcore_runtime_visualizer MODULE ../integration/musikcore/runtime-visualizer-plugin.cpp)
+target_compile_definitions(musikcore_runtime_visualizer PRIVATE MC_BUILDING_PLUGIN)
 target_include_directories(musikcore_runtime_visualizer PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
 set_target_properties(musikcore_runtime_visualizer PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-visualizer"

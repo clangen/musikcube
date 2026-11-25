@@ -167,6 +167,12 @@ void PluginFactory::LoadPlugins() {
                 if (filename.substr(filename.size() - 4) == ".dll") {
                     HMODULE dll = LoadLibrary(u8to16(filename).c_str());
                     if (dll != NULL) {
+                        /* Visualizers must register through the C plugin ABI.
+                        Do not initialize a legacy module that exports one. */
+                        if (GetProcAddress(dll, "GetPcmVisualizer") || GetProcAddress(dll, "GetSpectrumVisualizer")) {
+                            FreeLibrary(dll);
+                            continue;
+                        }
                         /* every plugin has a "GetPlugin" method. */
                         CallGetPlugin getPluginCall = (CallGetPlugin) GetProcAddress(dll, "GetPlugin");
 
@@ -216,6 +222,10 @@ void PluginFactory::LoadPlugins() {
                         musik::debug::error(TAG, u8fmt("exception while loading plugin %s: %s", filename.c_str(), err).c_str());
                     }
                     else {
+                        if (dlsym(dll, "GetPcmVisualizer") || dlsym(dll, "GetSpectrumVisualizer")) {
+                            dlclose(dll);
+                            continue;
+                        }
                         CallGetPlugin getPluginCall;
                         *(void **)(&getPluginCall) = dlsym(dll, "GetPlugin");
 
