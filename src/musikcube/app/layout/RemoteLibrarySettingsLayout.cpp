@@ -109,6 +109,7 @@ void RemoteLibrarySettingsLayout::OnLayout() {
     this->httpTlsCheckbox->MoveAndResize(R(this->wssPortInput) + 1, y++, checkboxWidth, 1);
     this->pwLabel->MoveAndResize(0, y, labelWidth, 1);
     this->pwInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
+    this->untrustedHttpCheckbox->MoveAndResize(0, y++, cx, 1);
 
     this->transcoderCheckbox->MoveAndResize(
         0,
@@ -155,6 +156,8 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
 
     this->httpTlsCheckbox = std::make_shared<Checkbox>();
     this->httpTlsCheckbox->SetText(_TSTR("settings_library_type_remote_use_tls"));
+    this->untrustedHttpCheckbox = std::make_shared<Checkbox>();
+    this->untrustedHttpCheckbox->SetText(_TSTR("settings_library_type_remote_allow_untrusted_https"));
 
     this->pwLabel = std::make_shared<TextLabel>();
     this->pwLabel->SetText(_TSTR("settings_library_type_remote_password"), text::AlignRight);
@@ -180,6 +183,7 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->AddWindow(this->httpTlsCheckbox);
     this->AddWindow(this->pwLabel);
     this->AddWindow(this->pwInput);
+    this->AddWindow(this->untrustedHttpCheckbox);
     this->AddWindow(this->transcoderCheckbox);
     this->AddWindow(this->transcoderFormatDropdown);
     this->AddWindow(this->transcoderBitrateDropdown);
@@ -191,6 +195,7 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->httpPortInput->SetFocusOrder(order++);
     this->httpTlsCheckbox->SetFocusOrder(order++);
     this->pwInput->SetFocusOrder(order++);
+    this->untrustedHttpCheckbox->SetFocusOrder(order++);
     this->transcoderCheckbox->SetFocusOrder(order++);
     this->transcoderFormatDropdown->SetFocusOrder(order++);
     this->transcoderBitrateDropdown->SetFocusOrder(order++);
@@ -211,6 +216,8 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->wssTlsCheckbox->SetChecked(wssTls);
     this->httpPortInput->SetText(std::to_string(httpPort));
     this->httpTlsCheckbox->SetChecked(httpTls);
+    this->untrustedHttpCheckbox->SetChecked(
+        prefs.GetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS_ALLOW_UNTRUSTED_CERTIFICATE, false));
     this->pwInput->SetText(password);
 
     this->transcoderCheckbox->SetChecked(prefs.GetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED, false));
@@ -248,6 +255,7 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     auto password = this->pwInput->GetText();
     auto const wssTls = this->wssTlsCheckbox->IsChecked();
     auto const httpTls = this->httpTlsCheckbox->IsChecked();
+    auto const allowUntrustedHttp = this->untrustedHttpCheckbox->IsChecked();
     auto const transcoderEnabled = this->transcoderCheckbox->IsChecked();
 
     if (host.empty()) {
@@ -273,6 +281,7 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
         api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD, password),
         api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_TLS, wssTls),
         api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS, httpTls),
+        api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS_ALLOW_UNTRUSTED_CERTIFICATE, allowUntrustedHttp),
         api::Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED, transcoderEnabled)
     });
 

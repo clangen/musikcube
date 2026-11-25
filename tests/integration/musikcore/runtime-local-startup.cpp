@@ -3,6 +3,7 @@ the private URI provides a synchronous no-connect assertion; a loopback listener
 then proves that explicit selection/reconnect and persisted remote startup still connect. */
 #include <musikcore/musikcore.hpp>
 #include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include "../../support/check.h"
@@ -107,6 +108,22 @@ int main() {
         /* local creation and repeated local selection must leave the saved
         endpoint untouched, even when the persisted preferred catalog is remote. */
         api::Context context(options);
+        auto remote = std::static_pointer_cast<library::RemoteLibrary>(
+            LibraryFactory::Instance().DefaultRemoteLibrary());
+        LibraryTrack track(42, 1);
+        track.SetValue("filename", "track.mp3");
+        settings->SetBool(prefs::keys::RemoteLibraryHttpTls, true);
+        if (!TEST_CHECK(remote->GetTrackUri(&track, "").find("\"allowUntrustedCertificate\":false") != std::string::npos)) {
+            return 1;
+        }
+        settings->SetBool(prefs::keys::RemoteLibraryHttpTlsAllowUntrustedCertificate, true);
+        if (!TEST_CHECK(remote->GetTrackUri(&track, "").find("\"allowUntrustedCertificate\":true") != std::string::npos)) {
+            return 1;
+        }
+        settings->SetBool(prefs::keys::RemoteLibraryHttpTls, false);
+        if (!TEST_CHECK(remote->GetTrackUri(&track, "").find("\"allowUntrustedCertificate\":false") != std::string::npos)) {
+            return 1;
+        }
         if (!TEST_CHECK(context.GetLibraryStatus().kind == MC_LIBRARY_LOCAL) ||
             !TEST_CHECK(remoteUntouched()) ||
             !TEST_CHECK(context.SelectLibrary(MC_LIBRARY_LOCAL) == MC_OK) ||

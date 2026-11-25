@@ -164,6 +164,7 @@
     "settings_library_type_remote_tls_warning_overlay_message": "the musikcube server does not support ssl/tls out of the box.\n\nif you want to use ssl/tls you'll need to setup ssl termination using something like nginx.\n\nto find out more see the following wiki page:\n\n{{link}}",
     "settings_library_type_remote_tls_warning_overlay_title": "musikcube and tls",
     "settings_library_type_remote_use_tls": "use tls",
+    "settings_library_type_remote_allow_untrusted_https": "allow untrusted https certificates",
     "settings_library_type_remote_wss_port": "metadata port:",
     "settings_minimize_to_tray": "minimize to tray",
     "settings_needs_restart": "you will need to restart musikcube for this change to take effect.",

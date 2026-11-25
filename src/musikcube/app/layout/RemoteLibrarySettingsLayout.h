@@ -68,7 +68,7 @@ namespace musik { namespace cube {
             musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
             std::shared_ptr<cursespp::TextLabel> httpPortLabel, wssPortLabel, hostLabel, pwLabel;
             std::shared_ptr<cursespp::TextInput> httpPortInput, wssPortInput, hostInput, pwInput;
-            std::shared_ptr<cursespp::Checkbox> wssTlsCheckbox, httpTlsCheckbox, transcoderCheckbox;
+            std::shared_ptr<cursespp::Checkbox> wssTlsCheckbox, httpTlsCheckbox, untrustedHttpCheckbox, transcoderCheckbox;
             std::shared_ptr<cursespp::TextLabel> transcoderFormatDropdown, transcoderBitrateDropdown;
     };
 } }

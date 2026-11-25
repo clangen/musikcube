@@ -78,6 +78,8 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::RemoteLibraryLatencyTimeoutMs = MC_PREFERENCE_KEY_REMOTE_LIBRARY_LATENCY_TIMEOUT_MS;
     const std::string keys::RemoteLibraryWssTls = MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_TLS;
     const std::string keys::RemoteLibraryHttpTls = MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS;
+    const std::string keys::RemoteLibraryHttpTlsAllowUntrustedCertificate =
+        MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_TLS_ALLOW_UNTRUSTED_CERTIFICATE;
     const std::string keys::RemoteLibraryTlsWarningSuppressed = MC_PREFERENCE_KEY_REMOTE_LIBRARY_TLS_WARNING_SUPPRESSED;
     const std::string keys::RemoteLibraryTranscoderEnabled = MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED;
     const std::string keys::RemoteLibraryTranscoderFormat = MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT;

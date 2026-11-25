@@ -315,7 +315,7 @@ void SettingsLayout::OnLayout() {
             kLibraryTypePadding,
             3,
             cx - (kLibraryTypePadding * 2),
-            5);
+            6);
         libraryLayout = this->remoteLibraryLayout;
     }
     libraryLayout->Show();

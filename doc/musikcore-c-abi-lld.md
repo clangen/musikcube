@@ -1735,6 +1735,9 @@ compatibility between migration builds.
   Startup, layout and theme preferences, and remote endpoint settings also
   use the public store. `musikcore.integration.api.managed_remote` starts
   from endpoint settings written as a single public batch.
+  The remote settings include an opt-in for untrusted HTTPS certificates;
+  `musikcore.integration.runtime.local_startup` checks the default and the
+  resulting remote track policy.
 - [x] **MIG-004** Migrate remaining library/category/directory views.
   Browse receives local playlist mutations through context dispatch.
   `musikcore.abi.dispatch` verifies notification ordering and

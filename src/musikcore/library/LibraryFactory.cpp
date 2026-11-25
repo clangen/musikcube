@@ -74,6 +74,7 @@ static library::RemoteLibrary::ConnectionOptions remoteOptionsFromPreferences() 
     options.httpPort = port(keys::RemoteLibraryHttpPort, Remote::DefaultHttpPort);
     options.websocketTls = prefs->GetBool(keys::RemoteLibraryWssTls, false);
     options.httpTls = prefs->GetBool(keys::RemoteLibraryHttpTls, false);
+    options.httpTlsAllowUntrustedCertificate = prefs->GetBool(keys::RemoteLibraryHttpTlsAllowUntrustedCertificate, false);
     options.configured = prefs->GetBool(keys::RemoteLibraryViewed, false);
     options.latencyTimeoutMs = prefs->GetInt(keys::RemoteLibraryLatencyTimeoutMs,
         Remote::Client::DefaultLatencyTimeoutMs);
