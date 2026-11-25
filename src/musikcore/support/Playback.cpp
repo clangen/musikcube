@@ -36,7 +36,8 @@
 #include <system_error>
 #include "Playback.h"
 #include <musikcore/library/query/PersistedPlayQueueQuery.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
+#include <musikcore/library/IndexingTypes.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <cmath>
 
@@ -137,7 +138,7 @@ namespace musik {
             void SavePlaybackContext(ILibraryPtr library, PlaybackService& playback) {
                 if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
                     auto prefs = Session();
-                    if (playback.GetPlaybackState() != sdk::PlaybackState::Stopped) {
+                    if (playback.GetPlaybackState() != PlaybackState::Stopped) {
                         prefs->SetInt(keys::LastPlayQueueIndex, (int)playback.GetIndex());
 
                         /* streams with a negative duration are of indeterminate length,

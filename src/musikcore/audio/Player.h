@@ -35,7 +35,7 @@
 #pragma once
 
 #include <musikcore/audio/Output.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
 
 #include <atomic>
 #include <list>
@@ -88,10 +88,10 @@ namespace musik { namespace core { namespace audio {
         double GetDuration() const { return this->duration.load(); }
 
         void AddMixPoint(int id, double time);
-        bool HasCapability(sdk::Capability capability) const;
+        bool HasCapability(musik::core::audio::Capability capability) const;
 
         const std::string& GetUrl() const { return this->url; }
-        sdk::StreamState GetStreamState() const { return this->streamState.load(); }
+        musik::core::audio::StreamState GetStreamState() const { return this->streamState.load(); }
 
     private:
         friend class PlaybackWorkers;
@@ -122,7 +122,7 @@ namespace musik { namespace core { namespace audio {
         const Gain gain;
 
         std::atomic<State> state { State::Idle };
-        std::atomic<sdk::StreamState> streamState { sdk::StreamState::Buffering };
+        std::atomic<musik::core::audio::StreamState> streamState { musik::core::audio::StreamState::Buffering };
         std::atomic<Drain> drain;
         std::atomic<double> duration { -1.0 };
         std::atomic<int> capabilities { 0 };

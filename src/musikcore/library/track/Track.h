@@ -36,7 +36,7 @@
 
 #include <common/DeleteDefaults.h>
 #include <musikcore/library/ILibrary.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/library/IndexingTypes.h>
 #include <musikcore/plugin/metadata.h>
 #include <atomic>
 #include <vector>
@@ -67,7 +67,7 @@ namespace musik { namespace core {
 
             virtual int64_t GetId() = 0;
             virtual mc_replay_gain_values GetReplayGain() = 0;
-            virtual musik::core::sdk::MetadataState GetMetadataState() = 0;
+            virtual musik::core::MetadataState GetMetadataState() = 0;
 
             /* implementation specific */
             virtual void SetId(int64_t id) = 0;
@@ -76,7 +76,7 @@ namespace musik { namespace core {
             virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
             virtual MetadataIteratorRange GetAllValues() = 0;
             virtual TrackPtr Copy() = 0;
-            virtual void SetMetadataState(musik::core::sdk::MetadataState state) = 0;
+            virtual void SetMetadataState(musik::core::MetadataState state) = 0;
 
     };
 

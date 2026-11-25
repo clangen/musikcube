@@ -302,7 +302,7 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
     }
 }
 
-musik::core::sdk::TimeChangeMode PlaybackService::GetTimeChangeMode() noexcept {
+TimeChangeMode PlaybackService::GetTimeChangeMode() noexcept {
     return this->timeChangeMode;
 }
 
@@ -1131,12 +1131,12 @@ std::string PlaybackService::UriAtIndex(size_t index) {
 }
 
 static mc_playback_gain_settings readGainSettings(Preferences& prefs) {
-    const auto mode = prefs.GetInt(keys::ReplayGainMode, static_cast<int>(ReplayGainMode::Disabled));
+    const auto mode = prefs.GetInt(keys::ReplayGainMode, MC_REPLAY_GAIN_DISABLED);
     mc_replay_gain_mode replayGain = MC_REPLAY_GAIN_DISABLED;
-    if (mode == static_cast<int>(ReplayGainMode::Album)) {
+    if (mode == MC_REPLAY_GAIN_ALBUM) {
         replayGain = MC_REPLAY_GAIN_ALBUM;
     }
-    else if (mode != static_cast<int>(ReplayGainMode::Disabled)) {
+    else if (mode != MC_REPLAY_GAIN_DISABLED) {
         replayGain = MC_REPLAY_GAIN_TRACK;
     }
     return { prefs.GetDouble(keys::PreampDecibels, 0.0), replayGain };
@@ -1168,9 +1168,6 @@ mc_result MC_CALL mc_playback_set_replay_gain(mc_replay_gain_mode mode) {
     if (mode != MC_REPLAY_GAIN_DISABLED && mode != MC_REPLAY_GAIN_TRACK && mode != MC_REPLAY_GAIN_ALBUM) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    static_assert(static_cast<int>(ReplayGainMode::Disabled) == MC_REPLAY_GAIN_DISABLED);
-    static_assert(static_cast<int>(ReplayGainMode::Track) == MC_REPLAY_GAIN_TRACK);
-    static_assert(static_cast<int>(ReplayGainMode::Album) == MC_REPLAY_GAIN_ALBUM);
     return ffi::exception_barrier(nullptr, [&] {
         const auto prefs = Preferences::ForComponent(components::Playback);
         prefs->SetInt(keys::ReplayGainMode, static_cast<int>(mode));

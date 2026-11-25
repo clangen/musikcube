@@ -55,7 +55,7 @@ namespace wrapper_tests {
         /* hold startup before its playback-state transition so output reload always overlaps the
         pending stream, independently of decoder speed and host scheduling. */
         for (const auto mode : { audio::ITransport::StartMode::Immediate, audio::ITransport::StartMode::Wait }) {
-            for (const auto stream : { sdk::StreamState::Buffering, sdk::StreamState::Buffered }) {
+            for (const auto stream : { musik::core::audio::StreamState::Buffering, musik::core::audio::StreamState::Buffered }) {
                 runtime::MessageQueue reloadMessages;
                 const auto reloadTransport = std::make_shared<TestTransport>();
                 audio::PlaybackService reloadService(reloadMessages, local, reloadTransport);
@@ -91,7 +91,7 @@ namespace wrapper_tests {
                 if (reloadPlayback.Control(MC_PLAYBACK_RELOAD_OUTPUT) != MC_OK ||
                     !AwaitTestHost(reloadMessages, [&] { return reloadTransport->reloads == 2; }) ||
                     reloadTransport->starts != stoppedStarts ||
-                    reloadTransport->state != sdk::PlaybackState::Stopped)
+                    reloadTransport->state != musik::core::audio::PlaybackState::Stopped)
                 {
                     return playbackFailure(__LINE__);
                 }
@@ -195,13 +195,13 @@ namespace wrapper_tests {
             invalidSnapshot.struct_size = 0;
             if (mc_playback_get_snapshot(playback->Get(), &invalidSnapshot) != MC_ERROR_INVALID_ARGUMENT ||
                 invalidSnapshot.struct_size || invalidSnapshot.volume) return playbackFailure(__LINE__);
-            for (const auto state : {sdk::PlaybackState::Stopped, sdk::PlaybackState::Paused,
-                sdk::PlaybackState::Prepared, sdk::PlaybackState::Playing}) {
+            for (const auto state : {musik::core::audio::PlaybackState::Stopped, musik::core::audio::PlaybackState::Paused,
+                musik::core::audio::PlaybackState::Prepared, musik::core::audio::PlaybackState::Playing}) {
                 transport->state = state;
                 const auto stateSnapshot = playback->Snapshot();
-                const auto expectedState = state == sdk::PlaybackState::Stopped ? MC_PLAYBACK_STOPPED :
-                    state == sdk::PlaybackState::Paused ? MC_PLAYBACK_PAUSED :
-                    state == sdk::PlaybackState::Prepared ? MC_PLAYBACK_PREPARED : MC_PLAYBACK_PLAYING;
+                const auto expectedState = state == musik::core::audio::PlaybackState::Stopped ? MC_PLAYBACK_STOPPED :
+                    state == musik::core::audio::PlaybackState::Paused ? MC_PLAYBACK_PAUSED :
+                    state == musik::core::audio::PlaybackState::Prepared ? MC_PLAYBACK_PREPARED : MC_PLAYBACK_PLAYING;
                 if (!stateSnapshot || stateSnapshot->state != expectedState) return playbackFailure(__LINE__);
             }
             if (playback->Control(MC_PLAYBACK_SET_VOLUME, std::numeric_limits<double>::quiet_NaN()) != MC_ERROR_INVALID_ARGUMENT ||
@@ -212,12 +212,12 @@ namespace wrapper_tests {
             if (!empty || empty->Size() || empty->CurrentRow() != SIZE_MAX ||
                 playback->PlayQueueRow(*empty, 0) != MC_ERROR_NOT_FOUND) return playbackFailure(__LINE__);
             if (playback->Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_OK ||
-                transport->state != sdk::PlaybackState::Paused ||
+                transport->state != musik::core::audio::PlaybackState::Paused ||
                 playback->Control(MC_PLAYBACK_SET_VOLUME, 0.25) != MC_OK ||
                 transport->volume != 0.25 ||
                 playback->Control(MC_PLAYBACK_SET_VOLUME, 1.5) != MC_ERROR_INVALID_ARGUMENT ||
                 playback->Control(MC_PLAYBACK_STOP) != MC_OK ||
-                transport->state != sdk::PlaybackState::Stopped) return playbackFailure(__LINE__);
+                transport->state != musik::core::audio::PlaybackState::Stopped) return playbackFailure(__LINE__);
 
             if (playback->Control(MC_PLAYBACK_SET_POSITION, 12) != MC_OK ||
                 playback->Control(MC_PLAYBACK_TOGGLE_MUTE) != MC_OK) return playbackFailure(__LINE__);
@@ -261,7 +261,7 @@ namespace wrapper_tests {
             if (!fallbackSnapshot || fallbackSnapshot->duration != 1.0) {
                 return playbackFailure(__LINE__);
             }
-            transport->StreamEvent.Publish(sdk::StreamState::Buffered, transport->Uri());
+            transport->StreamEvent.Publish(musik::core::audio::StreamState::Buffered, transport->Uri());
             if (!AwaitTestHost(queue, [&] { return static_cast<bool>(service.GetPlaying()); })) {
                 return playbackFailure(__LINE__);
             }
@@ -297,7 +297,7 @@ namespace wrapper_tests {
             const auto first = result.Track(0);
             const auto second = result.Track(1);
             if (playback->UseTrack(first, MC_PLAYBACK_TRACK_PLAY_NOW) != MC_OK ||
-                transport->state != sdk::PlaybackState::Playing ||
+                transport->state != musik::core::audio::PlaybackState::Playing ||
                 !queueHas({ first.Id() }) ||
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_APPEND) != MC_OK ||
                 playback->UseTrack(second, MC_PLAYBACK_TRACK_PLAY_NEXT) != MC_OK ||
@@ -372,7 +372,7 @@ namespace wrapper_tests {
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_APPEND) == MC_ERROR_NOT_FOUND &&
                 playback->UseTrack(first, MC_PLAYBACK_TRACK_PREPEND) == MC_ERROR_NOT_FOUND &&
                 service.Count() == 0;
-            const bool cleared = service.Count() == 0 && transport->state == sdk::PlaybackState::Stopped;
+            const bool cleared = service.Count() == 0 && transport->state == musik::core::audio::PlaybackState::Stopped;
             service.SelectLibrary(local);
             if (!rejected || !cleared || !captureMatches()) return playbackFailure(__LINE__);
 
@@ -453,7 +453,7 @@ namespace wrapper_tests {
             wake = query_test_wakeup_count();
             api::OpenPlaylist(context, *source, playlistId, load);
             if (!query_test_wait_for_wakeup(wake + 1) || context.Dispatch() != MC_OK || loaded != MC_OK ||
-                transport->state != sdk::PlaybackState::Stopped) return playbackFailure(__LINE__);
+                transport->state != musik::core::audio::PlaybackState::Stopped) return playbackFailure(__LINE__);
             const auto loadedQueue = playback->Queue();
             size_t loadedCount = 0;
             const auto ids = loadedQueue ? loadedQueue->Ids(loadedCount) : nullptr;
@@ -577,14 +577,14 @@ namespace wrapper_tests {
                 [&](mc_playback_event) { ++destroyedCalls; });
 
             if (statePlayback.Play(result, 1) != MC_OK) return playbackFailure(__LINE__);
-            stateTransport->state = sdk::PlaybackState::Prepared;
-            stateTransport->PlaybackEvent.Publish(sdk::PlaybackState::Prepared);
-            stateTransport->stream = sdk::StreamState::Buffered;
-            stateTransport->StreamEvent.Publish(sdk::StreamState::Buffered, stateTransport->Uri());
+            stateTransport->state = musik::core::audio::PlaybackState::Prepared;
+            stateTransport->PlaybackEvent.Publish(musik::core::audio::PlaybackState::Prepared);
+            stateTransport->stream = musik::core::audio::StreamState::Buffered;
+            stateTransport->StreamEvent.Publish(musik::core::audio::StreamState::Buffered, stateTransport->Uri());
             stateTransport->VolumeChanged.Publish();
             stateTransport->VolumeChanged.Publish();
             stateTransport->TimeChanged.Publish(0);
-            stateService.SetRepeatMode(sdk::RepeatMode::Track);
+            stateService.SetRepeatMode(musik::core::audio::RepeatMode::Track);
 
             /* Deliver each distinct event once, with the registration filter copied at subscribe time. */
             stateMessages.Dispatch();
@@ -694,7 +694,7 @@ namespace wrapper_tests {
                 return playbackFailure(__LINE__);
             }
 
-            for (const auto state : {sdk::PlaybackState::Paused, sdk::PlaybackState::Prepared, sdk::PlaybackState::Playing}) {
+            for (const auto state : {musik::core::audio::PlaybackState::Paused, musik::core::audio::PlaybackState::Prepared, musik::core::audio::PlaybackState::Playing}) {
                 stateTransport->state = state;
                 const auto stateQueue = statePlayback.Queue();
                 const auto current = statePlayback.CurrentTrack();
@@ -718,8 +718,8 @@ namespace wrapper_tests {
             engineTrack->SetValue(MC_TRACK_FIELD_EXTERNAL_ID, "playing-external-id");
             engineTrack->ClearValue(MC_TRACK_FIELD_DISC);
             engineTrack->SetValue(MC_TRACK_FIELD_DISC, "2");
-            stateTransport->state = sdk::PlaybackState::Stopped;
-            stateTransport->stream = sdk::StreamState::Buffered;
+            stateTransport->state = musik::core::audio::PlaybackState::Stopped;
+            stateTransport->stream = musik::core::audio::StreamState::Buffered;
             const auto metadata = statePlayback.CurrentTrackMetadata();
             if (!metadata || metadata->Id() != result.Id(1) ||
                 metadata->Title() != playbackTitle || !metadata->Album().empty() || metadata->Genre() != "Playback genre" ||
@@ -728,7 +728,7 @@ namespace wrapper_tests {
             {
                 return playbackFailure(__LINE__);
             }
-            stateTransport->state = sdk::PlaybackState::Playing;
+            stateTransport->state = musik::core::audio::PlaybackState::Playing;
 
             const auto initialGain = engineTrack->GetReplayGain();
             mc_replay_gain_values gain = MC_REPLAY_GAIN_VALUES_DEFAULT;
@@ -767,7 +767,7 @@ namespace wrapper_tests {
             }
 
             /* Cancel an immediate start before the transport ever enters Playing. */
-            stateTransport->PlaybackEvent.Publish(sdk::PlaybackState::Stopped);
+            stateTransport->PlaybackEvent.Publish(musik::core::audio::PlaybackState::Stopped);
             stateMessages.Dispatch();
             stateMessages.Dispatch();
             unsigned trackChanges = 0;
@@ -779,8 +779,8 @@ namespace wrapper_tests {
                 return playbackFailure(__LINE__);
             }
 
-            stateTransport->state = sdk::PlaybackState::Stopped;
-            for (const auto stream : { sdk::StreamState::Buffering, sdk::StreamState::Buffered }) {
+            stateTransport->state = musik::core::audio::PlaybackState::Stopped;
+            for (const auto stream : { musik::core::audio::StreamState::Buffering, musik::core::audio::StreamState::Buffered }) {
                 stateTransport->stream = stream;
                 stateTransport->StreamEvent.Publish(stream, stateTransport->Uri());
                 stateMessages.Dispatch();
@@ -793,7 +793,7 @@ namespace wrapper_tests {
             if (statePlayback.Control(MC_PLAYBACK_STOP) != MC_OK) {
                 return playbackFailure(__LINE__);
             }
-            stateTransport->StreamEvent.Publish(sdk::StreamState::Stopped, stateTransport->Uri());
+            stateTransport->StreamEvent.Publish(musik::core::audio::StreamState::Stopped, stateTransport->Uri());
             stateMessages.Dispatch();
             stateMessages.Dispatch();
             if (trackChanges != 2 || statePlayback.CurrentTrack() || stateService.GetPlaying()) {

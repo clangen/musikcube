@@ -35,7 +35,6 @@
 #pragma once
 
 #include <common/Utf8.h>
-#include "common/LegacyConstants.h"
 
 #include <memory>
 

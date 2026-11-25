@@ -1,7 +1,7 @@
 #pragma once
 
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/library/IndexingTypes.h>
 #include <string>
 
 namespace musik { namespace core { class Indexer; } }
@@ -19,7 +19,7 @@ namespace musik { namespace core { namespace plugin {
 
         void OnBeforeScan();
         void OnAfterScan();
-        sdk::ScanResult Scan(Indexer* writer, const char** paths, unsigned count);
+        musik::core::ScanResult Scan(Indexer* writer, const char** paths, unsigned count);
         void ScanTrack(Indexer* writer, const char* externalId);
         bool NeedsTrackScan();
         void Interrupt();

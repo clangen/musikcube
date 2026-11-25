@@ -52,7 +52,7 @@
 #include <thread>
 #include <unordered_map>
 #include <utility>
-#include "LegacyConstants.h"
+#include "version.h"
 
 namespace musik { namespace core { namespace sdk {
     template <typename T>

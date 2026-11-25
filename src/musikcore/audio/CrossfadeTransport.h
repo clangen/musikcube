@@ -39,7 +39,7 @@
 #include <musikcore/audio/PlaybackWorkers.h>
 #include <musikcore/audio/Crossfader.h>
 #include <musikcore/audio/Output.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
 
 #include <thread>
 #include <mutex>
@@ -78,8 +78,8 @@ namespace musik { namespace core { namespace audio {
 
             void ReloadOutput() override;
 
-            musik::core::sdk::PlaybackState GetPlaybackState() override;
-            musik::core::sdk::StreamState GetStreamState() override;
+            musik::core::audio::PlaybackState GetPlaybackState() override;
+            musik::core::audio::StreamState GetStreamState() override;
 
         private:
             using Lock = std::unique_lock<std::recursive_mutex>;
@@ -116,8 +116,8 @@ namespace musik { namespace core { namespace audio {
                 Crossfader& crossfader;
             };
 
-            void RaiseStreamEvent(musik::core::sdk::StreamState type, Player const* player);
-            void SetPlaybackState(musik::core::sdk::PlaybackState state);
+            void RaiseStreamEvent(musik::core::audio::StreamState type, Player const* player);
+            void SetPlaybackState(musik::core::audio::PlaybackState state);
 
             void OnCrossfaderEmptied();
             void StopImmediately();
@@ -130,8 +130,8 @@ namespace musik { namespace core { namespace audio {
             void OnPlayerStopped(Player* player) override;
 
             Intent intent { Intent::Prepare };
-            musik::core::sdk::PlaybackState playbackState;
-            musik::core::sdk::StreamState activePlayerState { musik::core::sdk::StreamState::Stopped };
+            musik::core::audio::PlaybackState playbackState;
+            musik::core::audio::StreamState activePlayerState { musik::core::audio::StreamState::Stopped };
             std::recursive_mutex stateMutex;
             Crossfader crossfader;
             PlayerContext active;

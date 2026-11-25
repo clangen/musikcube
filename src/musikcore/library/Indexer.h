@@ -130,7 +130,7 @@ namespace musik { namespace core {
 
             void SyncPlaylistTracksOrder();
 
-            musik::core::sdk::ScanResult SyncSource(
+            musik::core::ScanResult SyncSource(
                 musik::core::plugin::IndexerSource* source,
                 const std::vector<std::string>& paths);
 

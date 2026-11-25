@@ -41,7 +41,7 @@
 #include <musikcore/audio/Output.h>
 
 #include <musikcore/audio/Dsp.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
 
 #include <deque>
 #include <list>
@@ -50,7 +50,6 @@
 namespace musik { namespace core { namespace audio {
 
     class Stream {
-        using StreamFlags = musik::core::sdk::StreamFlags;
 
         public:
             using Shared = std::shared_ptr<Stream>;
@@ -58,10 +57,10 @@ namespace musik { namespace core { namespace audio {
             static Shared Create(
                 int samplesPerChannel = 2048,
                 double bufferLengthSeconds = 5,
-                StreamFlags options = StreamFlags::None);
+                musik::core::audio::StreamFlags options = musik::core::audio::StreamFlags::None);
 
         private:
-            Stream(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options);
+            Stream(int samplesPerChannel, double bufferLengthSeconds, musik::core::audio::StreamFlags options);
 
         public:
             ~Stream();
@@ -104,7 +103,7 @@ namespace musik { namespace core { namespace audio {
             long decoderSamplesRemain;
             uint64_t decoderPosition;
 
-            musik::core::sdk::StreamFlags options;
+            musik::core::audio::StreamFlags options;
             int samplesPerChannel;
             long samplesPerBuffer;
             int bufferCount;

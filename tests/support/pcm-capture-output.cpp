@@ -3,7 +3,6 @@
 
 #include <musikcore/plugin/stream.h>
 #include <musikcore/plugin/output.hpp>
-#include <common/LegacyConstants.h>
 
 #include <algorithm>
 #include <array>
@@ -18,7 +17,6 @@
 #include <vector>
 
 namespace {
-    using namespace musik::core::sdk;
     using namespace playback_fixture;
     using namespace std::chrono_literals;
     using Clock = std::chrono::steady_clock;

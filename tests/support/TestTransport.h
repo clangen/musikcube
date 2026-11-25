@@ -5,8 +5,8 @@
 /* Supplies deterministic transport state without opening an audio device. */
 class TestTransport final : public musik::core::audio::ITransport {
 public:
-    using PlaybackState = musik::core::sdk::PlaybackState;
-    using StreamState = musik::core::sdk::StreamState;
+    using PlaybackState = musik::core::audio::PlaybackState;
+    using StreamState = musik::core::audio::StreamState;
 
     /* Record the URI and model prepared versus playing state without decoding or opening a device. */
     void Start(const std::string& value, Gain, StartMode mode) override {

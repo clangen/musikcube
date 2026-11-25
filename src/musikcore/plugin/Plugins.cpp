@@ -110,7 +110,11 @@ static void reloadEqualizer(const musik::core::ffi::PluginRegistry::Factory<mc_d
     });
 }
 
-static_assert(EqualizerBandCount == MC_EQUALIZER_BAND_COUNT);
+static constexpr size_t EqualizerBands[] = {
+    65, 92, 131, 185, 262, 370, 523, 740, 1047, 1480,
+    2093, 2960, 4186, 5920, 8372, 11840, 16744, 22000,
+};
+static_assert(std::size(EqualizerBands) == MC_EQUALIZER_BAND_COUNT);
 
 static bool writeEqualizerGains(const double* gains) {
     musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> plugin;
@@ -119,7 +123,7 @@ static bool writeEqualizerGains(const double* gains) {
     if (!prefs) {
         return false;
     }
-    for (size_t i = 0; i < EqualizerBandCount; ++i) {
+    for (size_t i = 0; i < MC_EQUALIZER_BAND_COUNT; ++i) {
         prefs->SetDouble(std::to_string(EqualizerBands[i]), gains[i]);
     }
     reloadEqualizer(plugin);
@@ -143,7 +147,7 @@ mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
         mc_equalizer_state snapshot = MC_EQUALIZER_STATE_DEFAULT;
         snapshot.struct_size = state->struct_size;
         snapshot.enabled = prefs->GetBool("enabled", false);
-        for (size_t i = 0; i < EqualizerBandCount; ++i) {
+        for (size_t i = 0; i < MC_EQUALIZER_BAND_COUNT; ++i) {
             snapshot.bands[i] = {
                 static_cast<uint32_t>(EqualizerBands[i]), prefs->GetDouble(std::to_string(EqualizerBands[i]), 0.0)
             };

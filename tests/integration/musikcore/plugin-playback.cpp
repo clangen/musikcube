@@ -17,7 +17,7 @@ namespace {
     using namespace musik::core;
     using namespace musik::core::audio;
     using namespace std::chrono_literals;
-    using State = sdk::PlaybackState;
+    using State = musik::core::audio::PlaybackState;
 
     constexpr char unavailableOutput[] = "Unavailable test output";
     constexpr std::string_view nullOutput = "Null Output";

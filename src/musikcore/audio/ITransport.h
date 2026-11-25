@@ -35,7 +35,7 @@
 #pragma once
 
 #include <musikcore/config.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/subscriptions.hpp>
 
@@ -49,8 +49,8 @@ namespace musik { namespace core { namespace audio {
                 Immediate = 0, Wait = 1
             };
 
-            api::Subscriptions<musik::core::sdk::StreamState, std::string> StreamEvent;
-            api::Subscriptions<musik::core::sdk::PlaybackState> PlaybackEvent;
+            api::Subscriptions<musik::core::audio::StreamState, std::string> StreamEvent;
+            api::Subscriptions<musik::core::audio::PlaybackState> PlaybackEvent;
             api::Subscriptions<> VolumeChanged;
             api::Subscriptions<double> TimeChanged;
 
@@ -86,8 +86,8 @@ namespace musik { namespace core { namespace audio {
 
             virtual void ReloadOutput() = 0;
 
-            virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
-            virtual musik::core::sdk::StreamState GetStreamState() = 0;
+            virtual musik::core::audio::PlaybackState GetPlaybackState() = 0;
+            virtual musik::core::audio::StreamState GetStreamState() = 0;
     };
 
 } } }

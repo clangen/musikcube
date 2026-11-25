@@ -202,11 +202,11 @@ mc_replay_gain_values IndexerTrack::GetReplayGain() {
     throw std::runtime_error("not implemented");
 }
 
-MetadataState IndexerTrack::GetMetadataState() {
+musik::core::MetadataState IndexerTrack::GetMetadataState() {
     throw std::runtime_error("not implemented");
 }
 
-void IndexerTrack::SetMetadataState(MetadataState state) {
+void IndexerTrack::SetMetadataState(musik::core::MetadataState state) {
     /* not used, but needs to be stubbed because Indexer uses TrackMetadataQuery,
     which calls this method */
 }

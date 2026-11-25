@@ -34,14 +34,14 @@
 
 #pragma once
 
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
 #include <musikcore/audio/ITransport.h>
 #include <musikcore/support/Preferences.h>
 
 namespace musik { namespace core { namespace audio {
     class MasterTransport : public musik::core::audio::ITransport {
         public:
-            using Type = musik::core::sdk::TransportType;
+            using Type = musik::core::audio::TransportType;
 
             MasterTransport();
             ~MasterTransport() override;
@@ -69,15 +69,15 @@ namespace musik { namespace core { namespace audio {
 
             void ReloadOutput() override;
 
-            musik::core::sdk::PlaybackState GetPlaybackState() override;
-            musik::core::sdk::StreamState GetStreamState() override;
+            musik::core::audio::PlaybackState GetPlaybackState() override;
+            musik::core::audio::StreamState GetStreamState() override;
 
             void SwitchTo(Type type);
             Type GetType() noexcept;
 
         private:
-            void OnStreamEvent(musik::core::sdk::StreamState type, std::string url);
-            void OnPlaybackEvent(musik::core::sdk::PlaybackState type);
+            void OnStreamEvent(musik::core::audio::StreamState type, std::string url);
+            void OnPlaybackEvent(musik::core::audio::PlaybackState type);
             void OnVolumeChanged();
             void OnTimeChanged(double time);
 

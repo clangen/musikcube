@@ -61,14 +61,14 @@ namespace musik { namespace core {
             int GetInt32(const char* key, unsigned int defaultValue = 0);
             std::string Uri() override;
             mc_replay_gain_values GetReplayGain() override;
-            musik::core::sdk::MetadataState GetMetadataState() override;
+            musik::core::MetadataState GetMetadataState() override;
 
             MetadataIteratorRange GetValues(const char* metakey) override;
             MetadataIteratorRange GetAllValues() override;
             TrackPtr Copy() override;
             int64_t GetId() override;
             void SetId(int64_t trackId) noexcept override { this->trackId = trackId; }
-            void SetMetadataState(musik::core::sdk::MetadataState state)  override;
+            void SetMetadataState(musik::core::MetadataState state)  override;
 
             bool NeedsToBeIndexed(
                 const std::filesystem::path &file,

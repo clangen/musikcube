@@ -190,7 +190,7 @@ namespace musik { namespace core { namespace ffi {
                             if (!this->track) {
                                 return MC_ERROR_NOT_FOUND;
                             }
-                            if (this->track->GetStreamState() == sdk::StreamState::Buffering) {
+                            if (this->track->GetStreamState() == musik::core::audio::StreamState::Buffering) {
                                 return MC_ERROR_BUSY;
                             }
                             if (!this->track->SetPosition(value)) {

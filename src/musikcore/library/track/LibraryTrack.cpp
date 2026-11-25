@@ -43,21 +43,21 @@ using namespace musik::core::sdk;
 LibraryTrack::LibraryTrack() noexcept
 : id(0)
 , libraryId(0)
-, state(MetadataState::NotLoaded)
+, state(musik::core::MetadataState::NotLoaded)
 , gain(nullptr) {
 }
 
 LibraryTrack::LibraryTrack(int64_t id, int libraryId)
 : id(id)
 , libraryId(libraryId)
-, state(MetadataState::NotLoaded)
+, state(musik::core::MetadataState::NotLoaded)
 , gain(nullptr) {
 }
 
 LibraryTrack::LibraryTrack(int64_t id, ILibraryPtr library)
 : id(id)
 , libraryId(library->Id())
-, state(MetadataState::NotLoaded)
+, state(musik::core::MetadataState::NotLoaded)
 , gain(nullptr) {
 }
 
@@ -122,11 +122,11 @@ void LibraryTrack::SetReplayGain(const mc_replay_gain_values& replayGain) {
     *this->gain = replayGain;
 }
 
-MetadataState LibraryTrack::GetMetadataState() noexcept {
+musik::core::MetadataState LibraryTrack::GetMetadataState() noexcept {
     return this->state;
 }
 
-void LibraryTrack::SetMetadataState(musik::core::sdk::MetadataState state) noexcept {
+void LibraryTrack::SetMetadataState(musik::core::MetadataState state) noexcept {
     this->state = state;
 }
 

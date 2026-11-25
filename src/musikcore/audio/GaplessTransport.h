@@ -38,7 +38,7 @@
 #include <musikcore/audio/ITransport.h>
 #include <musikcore/audio/PlaybackWorkers.h>
 #include <musikcore/audio/Output.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
 
 #include <thread>
 #include <mutex>
@@ -76,8 +76,8 @@ namespace musik { namespace core { namespace audio {
 
             void ReloadOutput() override;
 
-            musik::core::sdk::PlaybackState GetPlaybackState() override;
-            musik::core::sdk::StreamState GetStreamState() override;
+            musik::core::audio::PlaybackState GetPlaybackState() override;
+            musik::core::audio::StreamState GetStreamState() override;
 
         private:
             using LockT = std::unique_lock<std::recursive_mutex>;
@@ -91,8 +91,8 @@ namespace musik { namespace core { namespace audio {
 
             void SetNextCanStart(bool nextCanStart);
 
-            void RaiseStreamEvent(musik::core::sdk::StreamState type, Player const* player);
-            void SetPlaybackState(musik::core::sdk::PlaybackState state);
+            void RaiseStreamEvent(musik::core::audio::StreamState type, Player const* player);
+            void SetPlaybackState(musik::core::audio::PlaybackState state);
 
             void OnPlayerStarted(Player* player) override;
             void OnPlayerBuffered(Player* player) override;
@@ -104,8 +104,8 @@ namespace musik { namespace core { namespace audio {
             void ResetActivePlayer();
             void ResetNextPlayer();
 
-            musik::core::sdk::PlaybackState playbackState;
-            musik::core::sdk::StreamState activePlayerState { musik::core::sdk::StreamState::Stopped };
+            musik::core::audio::PlaybackState playbackState;
+            musik::core::audio::StreamState activePlayerState { musik::core::audio::StreamState::Stopped };
             StartMode activeStartMode { StartMode::Immediate };
             std::recursive_mutex stateMutex;
             std::shared_ptr<musik::core::audio::Output> output;

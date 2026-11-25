@@ -16,7 +16,6 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
-using namespace musik::core::sdk;
 
 namespace {
     struct QueueObserver {

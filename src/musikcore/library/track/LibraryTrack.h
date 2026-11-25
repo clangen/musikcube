@@ -68,8 +68,8 @@ namespace musik { namespace core {
 
             /* track data. */
             mc_replay_gain_values GetReplayGain() noexcept override;
-            musik::core::sdk::MetadataState GetMetadataState() noexcept override;
-            void SetMetadataState(musik::core::sdk::MetadataState state) noexcept override;
+            musik::core::MetadataState GetMetadataState() noexcept override;
+            void SetMetadataState(musik::core::MetadataState state) noexcept override;
 
             MetadataIteratorRange GetValues(const char* metakey) override;
             MetadataIteratorRange GetAllValues() noexcept override;
@@ -80,7 +80,7 @@ namespace musik { namespace core {
             int libraryId;
             Track::MetadataMap metadata;
             std::mutex mutex;
-            std::atomic<musik::core::sdk::MetadataState> state;
+            std::atomic<musik::core::MetadataState> state;
             mc_replay_gain_values* gain;
     };
 

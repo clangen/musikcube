@@ -15,8 +15,8 @@ public:
     void SetReplayGain(const mc_replay_gain_values& value) override { gain = value; ++gainWrites; }
     int64_t GetId() override { return 0; }
     mc_replay_gain_values GetReplayGain() override { return gain; }
-    musik::core::sdk::MetadataState GetMetadataState() override {
-        return musik::core::sdk::MetadataState::NotLoaded;
+    musik::core::MetadataState GetMetadataState() override {
+        return musik::core::MetadataState::NotLoaded;
     }
     void SetId(int64_t) override {}
     std::string GetString(const char*) override { return {}; }
@@ -24,7 +24,7 @@ public:
     MetadataIteratorRange GetValues(const char*) override { return { values.begin(), values.end() }; }
     MetadataIteratorRange GetAllValues() override { return { values.begin(), values.end() }; }
     musik::core::TrackPtr Copy() override { return {}; }
-    void SetMetadataState(musik::core::sdk::MetadataState) override {}
+    void SetMetadataState(musik::core::MetadataState) override {}
     mc_replay_gain_values gain = MC_REPLAY_GAIN_VALUES_DEFAULT;
     int gainWrites = 0;
 private:

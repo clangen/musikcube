@@ -277,7 +277,7 @@ void MainController::OnTransportButtonClicked(win32cpp::Button* button) {
         playback.Previous();
     }
     else if (button == this->pauseButton) {
-        if (playback.GetPlaybackState() == musik::core::sdk::PlaybackState::Stopped) {
+        if (playback.GetPlaybackState() == musik::core::audio::PlaybackState::Stopped) {
             std::vector<int> selected = this->trackListView->SelectedRows();
             if (selected.size()) {
                 this->OnTrackListRowActivated(this->trackListView, selected[0]);
@@ -292,12 +292,12 @@ void MainController::OnTransportButtonClicked(win32cpp::Button* button) {
     }
 }
 
-void MainController::OnPlaybackStateChanged(musik::core::sdk::PlaybackState state) {
+void MainController::OnPlaybackStateChanged(musik::core::audio::PlaybackState state) {
     if (this->pauseButton) {
         switch (state) {
-            case musik::core::sdk::PlaybackState::Paused:
+            case musik::core::audio::PlaybackState::Paused:
                 this->pauseButton->SetCaption(_T("resume")); break;
-            case musik::core::sdk::PlaybackState::Playing:
+            case musik::core::audio::PlaybackState::Playing:
                 this->pauseButton->SetCaption(_T("pause")); break;
         }
 

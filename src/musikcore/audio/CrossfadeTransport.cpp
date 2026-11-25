@@ -411,7 +411,7 @@ void CrossfadeTransport::SetPlaybackState(PlaybackState state) {
     }
 }
 
-void CrossfadeTransport::RaiseStreamEvent(musik::core::sdk::StreamState type, Player const* player) {
+void CrossfadeTransport::RaiseStreamEvent(StreamState type, Player const* player) {
     bool eventIsFromActivePlayer = false;
     {
         Lock lock(this->stateMutex);

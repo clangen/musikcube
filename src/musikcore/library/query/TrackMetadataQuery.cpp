@@ -64,7 +64,7 @@ TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Typ
 }
 
 bool TrackMetadataQuery::OnRun(Connection& db) {
-    result->SetMetadataState(MetadataState::Loading);
+    result->SetMetadataState(musik::core::MetadataState::Loading);
 
     const bool queryById = this->result->GetId() != 0;
 
@@ -102,11 +102,11 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
         else {
             tracks::ParseIdsOnlyTrackMetadata(result, trackQuery);
         }
-        result->SetMetadataState(MetadataState::Loaded);
+        result->SetMetadataState(musik::core::MetadataState::Loaded);
         return true;
     }
 
-    result->SetMetadataState(MetadataState::Missing);
+    result->SetMetadataState(musik::core::MetadataState::Missing);
     return false;
 }
 

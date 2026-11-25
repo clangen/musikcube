@@ -1073,7 +1073,7 @@ namespace {
             return failure(__LINE__);
         }
         const auto transport = std::make_shared<TestTransport>();
-        transport->state = sdk::PlaybackState::Stopped;
+        transport->state = musik::core::audio::PlaybackState::Stopped;
         runtime::MessageQueue playbackMessages;
         /* this fixture supplies its own queue; finish startup before submitting
         commands, as the production context does. session restoration is outside
@@ -1132,9 +1132,9 @@ namespace {
         {
             return failure(__LINE__);
         }
-        transport->state = sdk::PlaybackState::Stopped;
-        transport->stream = sdk::StreamState::Buffering;
-        transport->StreamEvent.Publish(sdk::StreamState::Buffering, transport->Uri());
+        transport->state = musik::core::audio::PlaybackState::Stopped;
+        transport->stream = musik::core::audio::StreamState::Buffering;
+        transport->StreamEvent.Publish(musik::core::audio::StreamState::Buffering, transport->Uri());
         playbackMessages.Dispatch();
         playbackMessages.Dispatch();
         if (trackChanges != 1 || !playback.CurrentTrack()) {

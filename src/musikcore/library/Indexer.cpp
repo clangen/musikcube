@@ -401,7 +401,7 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
             it->OnAfterScan();
             break;
         }
-        if (this->SyncSource(it.get(), paths) == ScanRollback) {
+        if (this->SyncSource(it.get(), paths) == musik::core::ScanRollback) {
             this->trackTransaction->Cancel();
         }
         {
@@ -635,18 +635,18 @@ void Indexer::SyncDirectory(
     }
 }
 
-ScanResult Indexer::SyncSource(
+musik::core::ScanResult Indexer::SyncSource(
     musik::core::plugin::IndexerSource* source,
     const std::vector<std::string>& paths)
 {
     debug::info(TAG, u8fmt("indexer source %d running...", source->SourceId()));
 
     if (source->SourceId() == 0) {
-        return ScanRollback;
+        return musik::core::ScanRollback;
     }
 
     /* only commit if explicitly succeeded */
-    ScanResult result = ScanRollback;
+    musik::core::ScanResult result = musik::core::ScanRollback;
 
     try {
         /* alloc/init fun interop; we pass all paths to the indexer source */
@@ -678,7 +678,7 @@ ScanResult Indexer::SyncSource(
         /* finally, allow the source to update metadata for any tracks that it
         previously indexed, if it needs to. */
         {
-            if (result == ScanCommit && !this->Bail() && source->NeedsTrackScan()) {
+            if (result == musik::core::ScanCommit && !this->Bail() && source->NeedsTrackScan()) {
                 db::Statement tracks(
                     "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
                     this->dbConnection);
@@ -701,13 +701,13 @@ ScanResult Indexer::SyncSource(
 
     if (this->Bail()) {
         source->Abort();
-        result = ScanRollback;
+        result = musik::core::ScanRollback;
     }
 
     source->OnAfterScan();
 
     if (source->Failed()) {
-        result = ScanRollback;
+        result = musik::core::ScanRollback;
     }
 
     return result;

@@ -70,9 +70,9 @@ calls the retired C++ `GetPlugin()` entry point.
      path, factory, provider interfaces, and `Get*`/`Set*` hook wiring.
      `runtime.stream_sdk_contract` and `plugins.playback_remote_lifecycle`
      include a legacy-entry sentinel; `plugins.playback_remote_stop_order`
-     covers C remote shutdown. Removing the SDK-era interfaces still used
-     inside core and adding a source/binary guard are separate work under
-     SDK-REMOVE-001 through SDK-REMOVE-006 and GATE-800.
+     covers C remote shutdown. SDK-era internal interfaces and the boundary
+     guard are covered by SDK-REMOVE-001 through SDK-REMOVE-007; GATE-800
+     remains open.
    - [x] **PLG-LOADER-001** Consolidate loading and engine-session ownership in
      `PluginRegistry`. It discovers candidates, validates their C entry tables,
      initializes them, and publishes capabilities transactionally. `Plugin` owns
@@ -316,7 +316,7 @@ and mutable timing methods; adapters own no implicit lifecycle policy.
   GATE-600 covers stream and decoder quiescence. Full engine orchestration
   and playback-remote teardown remain covered by the relevant lifecycle tasks
   below; internal SDK cleanup is tracked under SDK-REMOVE-001 through
-  SDK-REMOVE-006.
+  SDK-REMOVE-007.
 - [x] **SDK-009** Add the valid pure-C fixture plugin. Its test-only probe table
   exercises session-owned state without inventing a shipped provider family.
 - [x] **SDK-010** Add incompatible, truncated, missing-hook/version/entry,
@@ -770,7 +770,7 @@ plan for the core interfaces and incidental machinery that outlived the plugin
 cutover. These tasks complete the internal cleanup in PLG-BACKFILL-002; they do not
 close GATE-800 or any native-platform acceptance by themselves.
 
-- [ ] **SDK-REMOVE-001** Inventory remaining interface callers, ownership,
+- [x] **SDK-REMOVE-001** Inventory remaining interface callers, ownership,
   backend/thread boundaries, and old-only adapters and select the smallest
   useful replacements; characterize affected public/runtime behavior.
 - [x] **SDK-REMOVE-002** Remove unused preference/utility surfaces and move
@@ -788,11 +788,10 @@ close GATE-800 or any native-platform acceptance by themselves.
   custom keys, paged results and persisted identifiers.
   Linux integration and targeted contract tests cover these changes; native
   platform acceptance remains separately tracked.
-- [ ] **SDK-REMOVE-006** Remove all remaining obsolete SDK interfaces, wrappers,
-  PCH/build/install entries and legacy-only tests. Add a scoped source/binary
-  boundary guard; run normal, testing-disabled, installed consumer/provider,
-  platform, and packaging checks applicable to the change.
-
-  The old `sdk/I*.h` interfaces and their wrappers have been removed, and
-  `musikcore.integration.plugins.retired_sdk_boundary` guards the source
-  boundary. Testing-disabled, native-platform and packaging checks remain.
+- [x] **SDK-REMOVE-006** Remove obsolete SDK interfaces, wrappers, PCH/build/
+  install entries and legacy-only tests. The retired-SDK source check and
+  existing exported-symbol checks guard the boundary.
+- [ ] **SDK-REMOVE-007** Complete remaining removal acceptance: testing-disabled
+  build, applicable standalone packaging checks, and native-platform validation.
+  The normal Linux build and installed consumer/provider checks passed; native
+  Windows and macOS evidence remains open.

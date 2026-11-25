@@ -138,12 +138,12 @@ namespace {
         bool prepared = false;
         while (Clock::now() < deadline) {
             const auto state = transport.GetPlaybackState();
-            if (state == sdk::PlaybackState::Playing && !prepared) {
+            if (state == musik::core::audio::PlaybackState::Playing && !prepared) {
                 /* PlaybackService prepares its automatic successor when playback starts. */
                 transport.PrepareNextTrack(second.string(), ITransport::Gain {});
                 prepared = true;
             }
-            if (prepared && state == sdk::PlaybackState::Stopped && read(nullptr, 0) != 0) {
+            if (prepared && state == musik::core::audio::PlaybackState::Stopped && read(nullptr, 0) != 0) {
                 return true;
             }
             std::this_thread::sleep_for(2ms);
@@ -424,8 +424,8 @@ namespace {
         bool finished = false;
         auto connection = transport.StreamEvent.Subscribe([&](auto state, const std::string&) {
             std::lock_guard lock(mutex);
-            failures += state == musik::core::sdk::StreamState::OpenFailed;
-            finished |= state == musik::core::sdk::StreamState::Finished;
+            failures += state == musik::core::audio::StreamState::OpenFailed;
+            finished |= state == musik::core::audio::StreamState::Finished;
             changed.notify_all();
         });
         transport.Start(file.string(), {}, ITransport::StartMode::Immediate);
@@ -461,19 +461,19 @@ namespace {
         else if (action == PausedReplacement::FailedOpen) {
             std::promise<void> failure;
             auto failed = transport.StreamEvent.Subscribe([&](auto state, const std::string&) {
-                if (state == sdk::StreamState::OpenFailed) {
+                if (state == musik::core::audio::StreamState::OpenFailed) {
                     failure.set_value();
                 }
             });
             std::atomic_bool claimedPlaying = false;
             auto playing = transport.PlaybackEvent.Subscribe([&](auto state) {
-                if (state == sdk::PlaybackState::Playing) {
+                if (state == musik::core::audio::PlaybackState::Playing) {
                     claimedPlaying = true;
                 }
             });
             transport.Start((first.parent_path() / "absent.wav").string(), {}, ITransport::StartMode::Immediate);
             if (failure.get_future().wait_for(3s) != std::future_status::ready ||
-                transport.GetPlaybackState() != sdk::PlaybackState::Stopped || claimedPlaying.load())
+                transport.GetPlaybackState() != musik::core::audio::PlaybackState::Stopped || claimedPlaying.load())
             {
                 std::fputs("Failed replacement did not stop cleanly from pause\n", stderr);
                 return false;
@@ -496,7 +496,7 @@ namespace {
             return frame.left > 0.01f;
         });
         if (!audible || (action != PausedReplacement::Direct && oldTrackHeard) ||
-            transport.GetPlaybackState() != sdk::PlaybackState::Playing)
+            transport.GetPlaybackState() != musik::core::audio::PlaybackState::Playing)
         {
             std::fputs("Replacement track remained silent or a stopped track resumed\n", stderr);
             return false;
@@ -529,7 +529,7 @@ namespace {
         const bool reachedFullGain = std::any_of(frames.begin() + start, frames.end(), [](const auto& frame) {
             return frame.right > 0.475f && std::abs(frame.left) < sampleTolerance;
         });
-        if (!reachedFullGain || transport.GetPlaybackState() != sdk::PlaybackState::Playing) {
+        if (!reachedFullGain || transport.GetPlaybackState() != musik::core::audio::PlaybackState::Playing) {
             std::fputs("Seek left the selected track at its paused fade gain\n", stderr);
             return false;
         }
@@ -546,7 +546,7 @@ namespace {
         auto ready = buffered.get_future();
         mc_result command = MC_OK;
         auto subscription = transport.StreamEvent.Subscribe([&](auto state, const std::string&) {
-            if (state == sdk::StreamState::Buffering) {
+            if (state == musik::core::audio::StreamState::Buffering) {
                 if (prepare) {
                     transport.SetPosition(0.25);
                 }
@@ -554,12 +554,12 @@ namespace {
                     command = transport.Pause();
                 }
             }
-            else if (state == sdk::StreamState::Buffered) {
+            else if (state == musik::core::audio::StreamState::Buffered) {
                 buffered.set_value();
             }
         });
         transport.Start(file.string(), {}, start);
-        const auto expected = prepare ? sdk::PlaybackState::Prepared : sdk::PlaybackState::Paused;
+        const auto expected = prepare ? musik::core::audio::PlaybackState::Prepared : musik::core::audio::PlaybackState::Paused;
         return ready.wait_for(3s) == std::future_status::ready && command == MC_OK &&
             transport.GetPlaybackState() == expected && transport.Resume() == MC_OK;
     }
@@ -580,7 +580,7 @@ namespace {
         auto playback = OpenFixturePlayback(service);
         std::promise<void> started;
         auto connection = transport->PlaybackEvent.Subscribe([&](auto state) {
-            if (state == sdk::PlaybackState::Playing) {
+            if (state == musik::core::audio::PlaybackState::Playing) {
                 started.set_value();
             }
         });
@@ -593,7 +593,7 @@ namespace {
         setFailure(ControlFailure::Pause);
         if (playback.Control(MC_PLAYBACK_PAUSE) != MC_ERROR_IO ||
             playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_ERROR_IO ||
-            transport->GetPlaybackState() != sdk::PlaybackState::Playing)
+            transport->GetPlaybackState() != musik::core::audio::PlaybackState::Playing)
         {
             std::fputs("Failed device pause was reported as a successful transition\n", stderr);
             return false;
@@ -605,14 +605,14 @@ namespace {
         setFailure(ControlFailure::Resume);
         if (playback.Control(MC_PLAYBACK_RESUME) != MC_ERROR_IO ||
             playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) != MC_ERROR_IO ||
-            transport->GetPlaybackState() != sdk::PlaybackState::Paused)
+            transport->GetPlaybackState() != musik::core::audio::PlaybackState::Paused)
         {
             std::fputs("Failed device resume was reported as a successful transition\n", stderr);
             return false;
         }
         setFailure(ControlFailure::None);
         return playback.Control(MC_PLAYBACK_TOGGLE_PAUSE) == MC_OK &&
-            transport->GetPlaybackState() == sdk::PlaybackState::Playing;
+            transport->GetPlaybackState() == musik::core::audio::PlaybackState::Playing;
     }
 
     /* read known PCM back from the output of a public URI player. the C
@@ -771,7 +771,7 @@ namespace {
             std::abort();
         }
         return control.get() == MC_ERROR_IN_FLIGHT &&
-            transport.GetPlaybackState() == sdk::PlaybackState::Stopped;
+            transport.GetPlaybackState() == musik::core::audio::PlaybackState::Stopped;
     }
 
     struct ProcessUsage {
@@ -871,7 +871,7 @@ namespace {
             }
             setFailure(ControlFailure::PauseOutgoing);
             if (transport->Pause() != MC_OK ||
-                transport->GetPlaybackState() != sdk::PlaybackState::Paused ||
+                transport->GetPlaybackState() != musik::core::audio::PlaybackState::Paused ||
                 !wait(CaptureEvent::OnlyOneOutputPaused, 0))
             {
                 std::fputs("Pausing the selected track did not retire the failing fade tail\n", stderr);
@@ -1016,7 +1016,7 @@ namespace {
         bool playing = false;
         CrossfadeTransport transport;
         auto connection = transport.PlaybackEvent.Subscribe([&](auto state) {
-            if (state == sdk::PlaybackState::Playing) {
+            if (state == musik::core::audio::PlaybackState::Playing) {
                 std::lock_guard lock(mutex);
                 playing = true;
                 changed.notify_one();
@@ -1044,7 +1044,7 @@ namespace {
             std::fputs("Failed prepared source did not finish cleanup\n", stderr);
             return false;
         }
-        if (transport.GetPlaybackState() != sdk::PlaybackState::Playing || transport.Uri() != first.string()) {
+        if (transport.GetPlaybackState() != musik::core::audio::PlaybackState::Playing || transport.Uri() != first.string()) {
             std::fputs("Failure preparing the next crossfade source stopped the active track\n", stderr);
             return false;
         }
@@ -1067,7 +1067,7 @@ namespace {
         std::condition_variable changed;
         bool decodedEof = false;
         auto connection = transport.StreamEvent.Subscribe([&](auto state, const std::string&) {
-            if (state == sdk::StreamState::AlmostDone) {
+            if (state == musik::core::audio::StreamState::AlmostDone) {
                 std::lock_guard lock(mutex);
                 decodedEof = true;
                 changed.notify_all();

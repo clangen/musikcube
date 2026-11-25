@@ -216,7 +216,7 @@ bool Stream::OpenStream(std::string uri, Output* output) {
         return failed("stream information", status);
     }
     if (info.flags & MC_STREAM_CAN_PREFETCH) {
-        this->capabilities |= (int) musik::core::sdk::Capability::Prebuffer;
+        this->capabilities |= (int) Capability::Prebuffer;
         this->RefillInternalBuffers();
     }
     if (this->decodeStatus != MC_OK) {

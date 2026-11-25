@@ -79,7 +79,7 @@ namespace musik { namespace core { namespace audio {
         public:
             /* Published on the service queue's dispatcher. */
             api::Subscriptions<size_t, musik::core::TrackPtr> TrackChanged;
-            api::Subscriptions<musik::core::sdk::PlaybackState> PlaybackStateChanged;
+            api::Subscriptions<musik::core::audio::PlaybackState> PlaybackStateChanged;
             api::Subscriptions<> QueueEdited;
 
             PlaybackService(
@@ -105,10 +105,10 @@ namespace musik { namespace core { namespace audio {
             bool Previous();
             void Shutdown();
             void Stop()  { transport->Stop(); }
-            musik::core::sdk::RepeatMode GetRepeatMode()  { return this->repeatMode; }
-            void SetRepeatMode(musik::core::sdk::RepeatMode mode);
+            musik::core::audio::RepeatMode GetRepeatMode()  { return this->repeatMode; }
+            void SetRepeatMode(musik::core::audio::RepeatMode mode);
             void ToggleRepeatMode();
-            musik::core::sdk::PlaybackState GetPlaybackState();
+            musik::core::audio::PlaybackState GetPlaybackState();
             bool IsShuffled();
             void ToggleShuffle();
             size_t GetIndex() noexcept;
@@ -124,8 +124,8 @@ namespace musik { namespace core { namespace audio {
             void SetPosition(double seconds);
             double GetDuration();
             musik::core::TrackPtr GetTrack(size_t index);
-            musik::core::sdk::TimeChangeMode GetTimeChangeMode() noexcept;
-            void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) noexcept;
+            musik::core::audio::TimeChangeMode GetTimeChangeMode() noexcept;
+            void SetTimeChangeMode(musik::core::audio::TimeChangeMode) noexcept;
             void ReloadOutput();
 
             /* TODO: include in SDK? */
@@ -187,8 +187,8 @@ namespace musik { namespace core { namespace audio {
             Editor Edit();
 
         private:
-            void OnStreamEvent(musik::core::sdk::StreamState eventType, std::string uri);
-            void OnPlaybackEvent(musik::core::sdk::PlaybackState eventType);
+            void OnStreamEvent(musik::core::audio::StreamState eventType, std::string uri);
+            void OnPlaybackEvent(musik::core::audio::PlaybackState eventType);
             void OnTrackChanged(size_t pos, musik::core::TrackPtr track);
             void OnVolumeChanged();
             void OnTimeChanged(double time);
@@ -235,8 +235,8 @@ namespace musik { namespace core { namespace audio {
             size_t index, nextIndex;
             ITransport::StartMode requestedStartMode { ITransport::StartMode::Immediate };
 
-            musik::core::sdk::RepeatMode repeatMode;
-            musik::core::sdk::TimeChangeMode timeChangeMode;
+            musik::core::audio::RepeatMode repeatMode;
+            musik::core::audio::TimeChangeMode timeChangeMode;
 
             double seekPosition;
 

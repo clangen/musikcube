@@ -40,7 +40,7 @@
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/PlaybackMath.h>
 #include <musikcore/audio/Visualizer.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
 
 #include <algorithm>
 #include <array>

@@ -105,7 +105,7 @@ namespace musik { namespace core { namespace library { namespace query {
             gain.track_peak = trackQuery.IsNull(24) ? 1.0f : trackQuery.ColumnFloat(24);
             result->SetReplayGain(gain);
 
-            result->SetMetadataState(musik::core::sdk::MetadataState::Loaded);
+            result->SetMetadataState(musik::core::MetadataState::Loaded);
         }
 
         static inline void ParseIdsOnlyTrackMetadata(
@@ -115,7 +115,7 @@ namespace musik { namespace core { namespace library { namespace query {
             result->SetValue(constants::Track::EXTERNAL_ID, trackQuery.ColumnText(0));
             result->SetValue(constants::Track::SOURCE_ID, trackQuery.ColumnText(1));
 
-            result->SetMetadataState(musik::core::sdk::MetadataState::Loaded);
+            result->SetMetadataState(musik::core::MetadataState::Loaded);
         }
 
     }

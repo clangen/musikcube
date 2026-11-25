@@ -282,9 +282,9 @@ namespace musik { namespace core { namespace plugin {
         this->failed = this->failed || result != MC_OK;
     }
 
-    sdk::ScanResult IndexerSource::Scan(Indexer* writer, const char** paths, unsigned count) {
+    musik::core::ScanResult IndexerSource::Scan(Indexer* writer, const char** paths, unsigned count) {
         if (this->failed) {
-            return sdk::ScanRollback;
+            return musik::core::ScanRollback;
         }
         std::vector<mc_string_view> views;
         views.reserve(count);
@@ -297,7 +297,7 @@ namespace musik { namespace core { namespace plugin {
             return factory.instance_api->scan(this->instance, views.data(), views.size(), &table, &this->decision, nullptr);
         });
         this->failed = result != MC_OK || scope.Failed() || this->decision != MC_INDEXER_SCAN_COMMIT;
-        return !this->failed && this->decision == MC_INDEXER_SCAN_COMMIT ? sdk::ScanCommit : sdk::ScanRollback;
+        return !this->failed && this->decision == MC_INDEXER_SCAN_COMMIT ? musik::core::ScanCommit : musik::core::ScanRollback;
     }
 
     void IndexerSource::ScanTrack(Indexer* writer, const char* id) {

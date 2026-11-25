@@ -6,7 +6,8 @@ endif()
 foreach(path IN ITEMS
     "${SOURCE}/src/musikcore/plugin/PluginFactory.h"
     "${SOURCE}/src/musikcore/plugin/PluginFactory.cpp"
-    "${SOURCE}/src/musikcore/audio/IStream.h")
+    "${SOURCE}/src/musikcore/audio/IStream.h"
+    "${SOURCE}/src/common/LegacyConstants.h")
   if(EXISTS "${path}")
     message(FATAL_ERROR "Retired plugin implementation reintroduced: ${path}")
   endif()

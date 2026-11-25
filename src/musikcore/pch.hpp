@@ -119,7 +119,8 @@
 #include <common/runtime/IMessageTarget.h>
 #include <common/runtime/Message.h>
 #include <common/runtime/MessageQueue.h>
-#include <common/LegacyConstants.h>
+#include <musikcore/audio/PlaybackTypes.h>
+#include <musikcore/library/IndexingTypes.h>
 #include <common/Filesystem.h>
 #include <musikcore/plugin/metadata.h>
 #include <common/String.h>

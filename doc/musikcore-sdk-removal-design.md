@@ -31,9 +31,10 @@ containers. Local and remote library backends still need their internal
 polymorphic boundary. The C API and plugin ABI are unchanged.
 
 The former SDK utilities have been moved to internal shared code. The HTTP
-client remains private because it depends on libcurl; filesystem, string,
-version and legacy internal constants are also private. The fixed-capacity ring
-queue is available as an installed, header-only plugin utility. The old
+client remains private because it depends on libcurl; filesystem, string and
+version helpers are also private. Unused SDK constants are removed; remaining
+playback and indexing types belong to their internal subsystems. The fixed-capacity
+ring queue is available as an installed, header-only plugin utility. The old
 `ReplayGain` type has been replaced by `mc_replay_gain_values`, and the LAME
 encoder uses standard vectors in place of `DataBuffer`.
 
