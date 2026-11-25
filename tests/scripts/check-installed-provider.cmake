@@ -32,8 +32,10 @@ run("${CMAKE_COMMAND}" -S "${SOURCE}/tests/support/plugins" -B "${external}"
 run("${CMAKE_COMMAND}" --build "${external}" ${config_arguments})
 file(READ "${external}/artifact-${TEST_CONFIG}.txt" fixture)
 file(READ "${external}/output-artifact-${TEST_CONFIG}.txt" output_fixture)
+file(READ "${external}/decoder-artifact-${TEST_CONFIG}.txt" decoder_fixture)
+file(READ "${external}/decoder-consumer-${TEST_CONFIG}.txt" decoder_consumer)
 
-foreach(plugin IN ITEMS "${fixture}" "${output_fixture}")
+foreach(plugin IN ITEMS "${fixture}" "${output_fixture}" "${decoder_fixture}")
   if(UNIX)
     # both C and C++ implementations expose only C and call through host tables.
     file(WRITE "${root}/exports.txt" "mc_plugin_get_api\n")
@@ -47,4 +49,27 @@ foreach(plugin IN ITEMS "${fixture}" "${output_fixture}")
 endforeach()
 run("${HOST}" "${fixture}")
 run("${OUTPUT_HOST}" "${output_fixture}")
+set(decoder_plugins "${root}/decoder-plugins")
+file(MAKE_DIRECTORY "${decoder_plugins}")
+file(COPY "${decoder_fixture}" "${output_fixture}" DESTINATION "${decoder_plugins}")
+file(WRITE "${root}/media.bytes" "0123456789abcdef")
+file(MAKE_DIRECTORY "${root}/config")
+set(isolated_environment "HOME=${root}/config" "XDG_CONFIG_HOME=${root}/config" "APPDATA=${root}/config")
+if(WIN32)
+  file(GLOB installed_dlls "${relocated}/bin/*.dll")
+  get_filename_component(consumer_directory "${decoder_consumer}" DIRECTORY)
+  file(COPY ${installed_dlls} DESTINATION "${consumer_directory}")
+  run("${CMAKE_COMMAND}" -E env ${isolated_environment}
+    "${decoder_consumer}" "${decoder_plugins}" "${root}/media.bytes")
+else()
+  run("${CMAKE_COMMAND}" -E env ${isolated_environment}
+    "LD_LIBRARY_PATH=${relocated}/share/musikcube" "DYLD_LIBRARY_PATH=${relocated}/share/musikcube"
+    "${decoder_consumer}" "${decoder_plugins}" "${root}/media.bytes")
+endif()
+if(DECODER_HOST AND CAPTURE_OUTPUT)
+  get_filename_component(capture_name "${CAPTURE_OUTPUT}" NAME)
+  run("${NODE}" "${SOURCE}/tests/scripts/run-isolated-test.js"
+    "${root}/runs" "${DECODER_HOST}" --stage --plugin "${decoder_fixture}"
+    --plugin "${CAPTURE_OUTPUT}" decoder_contract "${capture_name}" @origin)
+endif()
 file(REMOVE_RECURSE "${root}")

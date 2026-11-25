@@ -25,3 +25,19 @@ set_target_properties(output_fixture PROPERTIES CXX_VISIBILITY_PRESET hidden
   VISIBILITY_INLINES_HIDDEN ON SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/output-artifact-$<CONFIG>.txt"
   CONTENT "$<TARGET_FILE:output_fixture>")
+
+# compile the media fixture as an external C decoder against installed headers.
+add_library(decoder_fixture MODULE byte-decoder.c)
+target_include_directories(decoder_fixture PRIVATE ${public_headers})
+target_compile_definitions(decoder_fixture PRIVATE MC_BUILDING_PLUGIN)
+set_target_properties(decoder_fixture PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+  C_VISIBILITY_PRESET hidden SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/decoder-artifact-$<CONFIG>.txt"
+  CONTENT "$<TARGET_FILE:decoder_fixture>")
+
+add_executable(decoder_consumer decoder-consumer.cpp)
+target_compile_features(decoder_consumer PRIVATE cxx_std_17)
+target_link_libraries(decoder_consumer PRIVATE musikcore::musikcore Threads::Threads)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/decoder-consumer-$<CONFIG>.txt"
+  CONTENT "$<TARGET_FILE:decoder_consumer>")

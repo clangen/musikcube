@@ -842,11 +842,19 @@ add_test(NAME musikcore.integration.plugins.runtime COMMAND "${MUSIKCORE_TEST_NO
   --plugin "$<TARGET_FILE:musikcore_provider_incompatible>" --plugin "$<TARGET_FILE:musikcore_provider_init_fail>")
 set_tests_properties(musikcore.integration.plugins.runtime PROPERTIES
   LABELS "integration;musikcore;plugins;runtime;contract" TIMEOUT 45)
+set(installed_decoder_arguments)
+if(TARGET musikcore_playback_pcm_test AND TARGET musikcore_pcm_capture_output)
+  list(APPEND installed_decoder_arguments
+    "-DNODE=${MUSIKCORE_TEST_NODE}"
+    "-DDECODER_HOST=$<TARGET_FILE:musikcore_playback_pcm_test>"
+    "-DCAPTURE_OUTPUT=$<TARGET_FILE:musikcore_pcm_capture_output>")
+endif()
 add_test(NAME musikcore.integration.plugins.installed COMMAND "${CMAKE_COMMAND}"
   "-DBUILD_DIR=${PROJECT_BINARY_DIR}" "-DSOURCE=${PROJECT_SOURCE_DIR}" "-DTEST_CONFIG=$<CONFIG>"
   "-DHOST=$<TARGET_FILE:musikcore_plugin_registry_test>" "-DNM=${CMAKE_NM}"
   "-DTEST_GENERATOR=${CMAKE_GENERATOR}" "-DTEST_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
   "-DOUTPUT_HOST=$<TARGET_FILE:musikcore_null_output_test>"
+  ${installed_decoder_arguments}
   -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-installed-provider.cmake")
 set_tests_properties(musikcore.integration.plugins.installed PROPERTIES
   LABELS "integration;musikcore;plugins;packaging;contract" TIMEOUT 90)
