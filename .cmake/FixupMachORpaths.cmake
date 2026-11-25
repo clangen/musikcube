@@ -8,6 +8,9 @@ endif()
 
 file(GLOB binaries "${MUSIKCORE_RUNTIME}/*.dylib"
   "${MUSIKCORE_RUNTIME}/lib/*.dylib" "${MUSIKCORE_RUNTIME}/plugins/*.dylib")
+if(EXISTS "${MUSIKCORE_RUNTIME}/plugins/musikcube-projectm")
+  list(APPEND binaries "${MUSIKCORE_RUNTIME}/plugins/musikcube-projectm")
+endif()
 foreach(name IN ITEMS musikcube musikcubed)
   if(EXISTS "${MUSIKCORE_RUNTIME}/${name}")
     list(APPEND binaries "${MUSIKCORE_RUNTIME}/${name}")

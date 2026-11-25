@@ -44,7 +44,7 @@ const commonRecipes = [
 
 const mac = process.platform === 'darwin';
 const projectm = require('./vendor-packages/unix/projectm');
-if (!mac) commonRecipes.push(projectm);
+commonRecipes.push(projectm);
 const buildDirectory = process.cwd();
 const cache = join(buildDirectory, '.vendor-cache', 'downloads');
 const scratch = join(buildDirectory, '.vendor-cache', 'tmp');
@@ -366,7 +366,7 @@ async function main() {
 
     /* These linker inputs are supplied by the host at runtime. */
     config.stagePluginDependencies?.(work);
-    if (!mac) projectm.build({ sources, out, config, run });
+    projectm.build({ sources, out, config, run });
 
     /* Keep the previous vendor build until the replacement is in place. */
     const previous = join(work, 'previous');

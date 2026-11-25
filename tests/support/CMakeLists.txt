@@ -1311,7 +1311,7 @@ if(UNIX AND TARGET sndioout)
     LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET projectm)
+if((CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE) AND TARGET projectm)
   add_executable(musikcore_projectm_test ../integration/plugins/projectm.cpp)
   target_include_directories(musikcore_projectm_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
   target_link_libraries(musikcore_projectm_test PRIVATE ${CMAKE_DL_LIBS})
@@ -1324,5 +1324,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET projectm)
   add_test(NAME musikcore.integration.plugins.projectm
     COMMAND musikcore_projectm_test "$<TARGET_FILE:projectm>")
   set_tests_properties(musikcore.integration.plugins.projectm PROPERTIES
-    ENVIRONMENT "SDL_VIDEODRIVER=dummy" LABELS "integration;musikcore;plugins;visualizer" TIMEOUT 20)
+    LABELS "integration;musikcore;plugins;visualizer" TIMEOUT 30)
+  if(NOT APPLE)
+    set_tests_properties(musikcore.integration.plugins.projectm PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy")
+  endif()
 endif()

@@ -1,8 +1,9 @@
 # projectM visualizer
 
-The Linux plugin uses SDL2 and Dear ImGui, linked into the plugin. It opens a
-separate OpenGL window on X11 or Wayland. The host needs an OpenGL driver and
-the libraries for its desktop session.
+The plugin uses SDL2 and Dear ImGui, linked into the plugin. It opens a
+separate OpenGL window on macOS, X11, or Wayland. The host needs an OpenGL
+driver and the libraries for its desktop session.
+On macOS, a bundled helper owns the window and receives audio from the plugin.
 
 The bundled presets live in the `projectM` directory beside the plugin and are
 loaded automatically. To use another collection of `.milk` presets, enter its
@@ -13,5 +14,5 @@ Use the left and right arrow keys to change presets, Space to toggle automatic
 advance, F for fullscreen, Tab to hide or show the controls, and Escape to
 close the window. The controls also adjust the automatic advance interval.
 
-The standalone vendor build requires a host C compiler and Expat development
-files to build its Wayland protocol generator.
+The Linux standalone vendor build requires a host C compiler and Expat
+development files to build its Wayland protocol generator.

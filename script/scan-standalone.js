@@ -83,12 +83,17 @@ const validLibraries = mac
     '/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox',
     '/System/Library/Frameworks/AudioUnit.framework/Versions/A/AudioUnit',
     '/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon',
+    '/System/Library/Frameworks/Cocoa.framework/Versions/A/Cocoa',
     '/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio',
     '/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics',
     '/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia',
     '/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices',
     '/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo',
     '/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation',
+    '/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit',
+    '/System/Library/Frameworks/Metal.framework/Versions/A/Metal',
+    '/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL',
+    '/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore',
     '/opt/homebrew/opt/portaudio/lib/libportaudio.2.dylib',
     '/usr/local/opt/portaudio/lib/libportaudio.2.dylib',
   ])
@@ -477,6 +482,9 @@ const main = async () => {
     await ldd('musikcubed');
     await ldd(`libmusikcore${filetype}`);
     await lddDir('plugins');
+    if (mac && (await readdir(join(root, 'plugins'))).includes('musikcube-projectm')) {
+      await ldd('plugins/musikcube-projectm');
+    }
     await lddDir('lib');
   }
 

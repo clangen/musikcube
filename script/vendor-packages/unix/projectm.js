@@ -35,6 +35,11 @@ exports.packages = {
   ],
 };
 
+/* macOS uses Cocoa and does not need the Linux Wayland protocol generator. */
+if (process.platform === 'darwin') {
+  delete exports.packages.projectm_wayland_scanner;
+}
+
 const configureOptions = [
   '-DCMAKE_BUILD_TYPE=Release',
   '-DBUILD_SHARED_LIBS=OFF',
@@ -63,28 +68,34 @@ exports.build = function(context) {
   const sdlSource = context.sources.projectm_sdl_headers;
   const sdlBuild = join(sdlSource, 'build');
   mkdirSync(sdlBuild, { recursive: true });
-  const scannerSource = join(context.sources.projectm_wayland_scanner, 'src');
-  const scanner = join(sdlBuild, 'wayland-scanner');
-  writeFileSync(join(sdlBuild, 'wayland-version.h'),
-    '#define WAYLAND_VERSION_MAJOR 1\n#define WAYLAND_VERSION_MINOR 18\n' +
-    '#define WAYLAND_VERSION_MICRO 0\n#define WAYLAND_VERSION "1.18.0"\n');
-  context.run('cc', ['-std=gnu11', '-I' + sdlBuild, '-I' + scannerSource,
-    join(scannerSource, 'scanner.c'), join(scannerSource, 'wayland-util.c'), '-lexpat', '-o', scanner],
-  { env: process.env });
+  const scannerOptions = [];
+  if (process.platform !== 'darwin') {
+    const scannerSource = join(context.sources.projectm_wayland_scanner, 'src');
+    const scanner = join(sdlBuild, 'wayland-scanner');
+    writeFileSync(join(sdlBuild, 'wayland-version.h'),
+      '#define WAYLAND_VERSION_MAJOR 1\n#define WAYLAND_VERSION_MINOR 18\n' +
+      '#define WAYLAND_VERSION_MICRO 0\n#define WAYLAND_VERSION "1.18.0"\n');
+    context.run('cc', ['-std=gnu11', '-I' + sdlBuild, '-I' + scannerSource,
+      join(scannerSource, 'scanner.c'), join(scannerSource, 'wayland-util.c'), '-lexpat', '-o', scanner],
+    { env: process.env });
+    scannerOptions.push('-DWAYLAND_SCANNER=' + scanner);
+  }
   context.run('cmake', [
     ...context.config.cmake, '-S', sdlSource, '-B', sdlBuild,
-    '-DCMAKE_INSTALL_PREFIX=' + context.out, '-DWAYLAND_SCANNER=' + scanner,
+    '-DCMAKE_INSTALL_PREFIX=' + context.out, ...scannerOptions,
     '-DCMAKE_BUILD_TYPE=Release', '-DSDL_SHARED=OFF', '-DSDL_STATIC=ON',
     '-DSDL_STATIC_PIC=ON', '-DSDL_TEST=OFF', '-DSDL_AUDIO=OFF', '-DSDL_JOYSTICK=OFF',
     '-DSDL_HAPTIC=OFF', '-DSDL_SENSOR=OFF', '-DSDL_VULKAN=OFF', '-DSDL_WAYLAND_LIBDECOR=OFF',
   ], { env: context.config.env });
-  const sdlConfig = readFileSync(join(sdlBuild, 'SDL_config.h.intermediate'), 'utf8');
-  if (!sdlConfig.includes('#define SDL_VIDEO_DRIVER_X11 1') ||
-      !sdlConfig.includes('#define SDL_VIDEO_DRIVER_WAYLAND 1')) {
-    throw new Error('SDL must be built with both X11 and Wayland support');
+  if (process.platform !== 'darwin') {
+    const sdlConfig = readFileSync(join(sdlBuild, 'SDL_config.h.intermediate'), 'utf8');
+    if (!sdlConfig.includes('#define SDL_VIDEO_DRIVER_X11 1') ||
+        !sdlConfig.includes('#define SDL_VIDEO_DRIVER_WAYLAND 1')) {
+      throw new Error('SDL must be built with both X11 and Wayland support');
+    }
+    rmSync(join(sdlBuild, 'wayland-generated-protocols'), { recursive: true, force: true });
+    mkdirSync(join(sdlBuild, 'wayland-generated-protocols'), { recursive: true });
   }
-  rmSync(join(sdlBuild, 'wayland-generated-protocols'), { recursive: true, force: true });
-  mkdirSync(join(sdlBuild, 'wayland-generated-protocols'), { recursive: true });
   context.run('cmake', ['--build', sdlBuild, '--parallel', context.config.jobs.slice(2)], { env: context.config.env });
   context.run('cmake', ['--install', sdlBuild], { env: context.config.env });
   buildCmake(context, 'projectm', configureOptions);

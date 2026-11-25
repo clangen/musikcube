@@ -65,10 +65,27 @@ int main(int argc, char** argv) {
     void* instance = nullptr;
     require(visualizer->create(visualizer->context, &services, &instance, nullptr) == MC_OK && instance,
         "create visualizer");
+#ifdef __APPLE__
+    /* the helper must present its first frame before show reports success. */
+    require(visualizer->instance_api->show(instance) == MC_OK, "open and render the helper window");
+    bool visible = false;
+    require(visualizer->instance_api->is_visible(instance, &visible) == MC_OK && visible, "show window");
+    float pcm[] { 0.1f, -0.1f, 0.2f, -0.2f };
+    auto view = mc_pcm_view MC_PCM_VIEW_DEFAULT;
+    view.data = pcm;
+    view.frame_count = 2;
+    view.format.channels = 2;
+    view.format.sample_rate = 44100;
+    require(visualizer->instance_api->write_pcm(instance, &view) == MC_OK, "accept PCM");
+    require(visualizer->instance_api->hide(instance) == MC_OK, "close helper");
+    require(visualizer->instance_api->show(instance) == MC_OK, "reopen helper");
+    require(visualizer->instance_api->hide(instance) == MC_OK, "close reopened helper");
+#else
     require(visualizer->instance_api->show(instance) == MC_ERROR_IO, "report unavailable OpenGL context");
     bool visible = true;
     require(visualizer->instance_api->is_visible(instance, &visible) == MC_OK && !visible, "remain hidden");
     require(visualizer->instance_api->hide(instance) == MC_OK, "stop failed startup");
+#endif
     visualizer->instance_api->destroy(instance);
     plugin.shutdown(state);
     dlclose(library);
