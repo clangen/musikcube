@@ -54,8 +54,8 @@ calls the retired C++ `GetPlugin()` entry point.
      Output timing, native validation and ABI freeze remain tracked under
      OUT-001, SDK-LINUX/SDK-WINDOWS and phase 10.
      The former blanket contract-review task is retired; targeted malformed
-     provider and teardown coverage remains under SDK-013 and SDK-014. This
-     does not claim an independent review of every interface.
+     provider coverage is recorded under SDK-013 and teardown work remains
+     under SDK-014. This does not claim an independent review of every interface.
 2. **Replace each family's engine path with the new loading contract.**
    The output-first staging is complete. All in-tree providers use the C plugin
    boundary; no former C++ provider path is retained. Native-platform and
@@ -66,7 +66,7 @@ calls the retired C++ `GetPlugin()` entry point.
      include a legacy-entry sentinel; `plugins.playback_remote_stop_order`
      covers C remote shutdown. SDK-era internal interfaces and the boundary
      guard are covered by SDK-REMOVE-001 through SDK-REMOVE-007; GATE-800
-     remains open.
+     records the completed cutover.
    - [x] **PLG-LOADER-001** Consolidate loading and engine-session ownership in
      `PluginRegistry`. It discovers candidates, validates their C entry tables,
      initializes them, and publishes capabilities transactionally. `Plugin` owns
@@ -372,7 +372,12 @@ behavior complete. Those remain the unchecked tasks above.
 - [ ] **SDK-LINUX** Run lifecycle, installed-provider/export checks, shared-runtime
   restart, and ASan/UBSan on native Linux. Verify ELF visibility, loader search
   paths, and actual `dlclose` after workers/instances finish, including passive
-  capability views that must not delay unload.
+  capability views that must not delay unload. Linux ASan/UBSan lifecycle,
+  discovery, installed-provider, output and remote lifecycle checks passed with
+  isolated provider fixtures. Loading the host's system FFmpeg dependency also
+  loads `libgomp`; a standalone `dlopen()`/`dlclose()` of that system library
+  reproduces a 104-byte LeakSanitizer report. Resolve or explicitly accept this
+  environment-specific sanitizer limitation before closing the gate.
 - [ ] **SDK-WINDOWS** Run the same provider checks on native Windows. Verify cdecl
   function tables, DLL exports/imports/search paths, and UTF-8/Unicode filenames.
   The intentionally missing-entry fixture must not advertise the provider export.
@@ -382,7 +387,8 @@ behavior complete. Those remain the unchecked tasks above.
 The output-first staging described in the original plan has passed: in-tree
 providers now use C entry points. The open items below retain remaining
 validation and acceptance rather than authorizing a parallel C++ provider path.
-Family representatives are recorded under PLG-PROVE-002; GATE-800 remains open.
+Family representatives are recorded under PLG-PROVE-002; the phase-eight
+cutover gate is complete.
 
 #### Provider discovery and configuration
 
@@ -598,7 +604,10 @@ Family representatives are recorded under PLG-PROVE-002; GATE-800 remains open.
   `Sndio IOutput` name are not migrated automatically.
   An intermittent silence after switching outputs was observed with sndio and
   ALSA; restarting playback recovered it. Cached tracks appeared correlated,
-  but the cause and a reliable automated reproduction remain open.
+  but the cause and a reliable automated reproduction remain open. On older
+  sndio without `sio_flush()`, a seek uses the host's stop-and-reprepare path;
+  closing the device can drain queued audio and delay stop or seek. The
+  `plugins.sndio_no_flush` and `plugins.output_host` tests cover this fallback.
 - [ ] **OUT-011** Validate the converted Windows `directsoundout`.
   The provider registers a C output factory; `plugins.directsound_output` and
   `plugins.directsound_ring` are present. Native Windows execution remains open.
@@ -735,19 +744,24 @@ Family representatives are recorded under PLG-PROVE-002; GATE-800 remains open.
   The macOS media-keys and Linux MPRIS providers use C playback remotes;
   `plugins.mpris_runtime` passed in the current Linux run. Physical keys and
   platform behavior is accepted based on use.
-- [ ] **SDK-013** Add contract fixtures and malformed cases for every supported
-  provider family.
+- [x] **SDK-013** Add contract fixtures and malformed cases for every supported
+  provider family. `plugins.lifecycle` rejects incomplete output, stream,
+  decoder, encoder, DSP, indexer, settings, playback-remote, tag-reader,
+  analyzer and visualizer factories before their callbacks run.
 - [ ] **SDK-014** Add provider-family performance and teardown tests.
 
 #### Phase 8 gate
 
-- [ ] **GATE-800** The engine uses only PluginRegistry and the
+- [x] **GATE-800** The engine uses only PluginRegistry and the
   new C contracts. All shipped plugins use the C SDK or an explicitly approved
   non-plugin integration; no active engine dependency, exported plugin function,
   build target, or installed header preserves the old C++ SDK. Required app
   workflows and plugin tests are restored; missing optional families and
   a missing output remain supported idle configurations; bundled `nullout`
-  supplies headless playback.
+  supplies headless playback. `retired_sdk_boundary`, `plugins.empty_session`,
+  `plugins.installed`, `plugins.null_output`, `api.uri_player`, and
+  `api.remote_audio` passed on Linux. Platform and sanitizer acceptance remain
+  tracked independently under SDK-LINUX, SDK-WINDOWS and SDK-REMOVE-007.
 
 
 ## Application media APIs
@@ -785,7 +799,7 @@ was moved from the core migration LLD because it builds on provider services.
 The [SDK removal design](musikcore-sdk-removal-design.md) is the implementation
 plan for the core interfaces and incidental machinery that outlived the plugin
 cutover. These tasks complete the internal cleanup in PLG-BACKFILL-002; they do not
-close GATE-800 or any native-platform acceptance by themselves.
+replace the separate native-platform acceptance checks.
 
 - [x] **SDK-REMOVE-001** Inventory remaining interface callers, ownership,
   backend/thread boundaries, and old-only adapters and select the smallest
@@ -808,8 +822,9 @@ close GATE-800 or any native-platform acceptance by themselves.
 - [x] **SDK-REMOVE-006** Remove obsolete SDK interfaces, wrappers, PCH/build/
   install entries and legacy-only tests. The retired-SDK source check and
   existing exported-symbol checks guard the boundary.
-- [ ] **SDK-REMOVE-007** Complete remaining removal acceptance: testing-disabled
-  build, applicable standalone packaging checks, and native-platform validation.
-  Linux normal and `BUILD_TESTING=OFF` builds and installed consumer/provider
-  checks passed. The standalone ELF fixture passed; a full standalone package
-  scan and native-platform checks remain open.
+- [x] **SDK-REMOVE-007** Complete removal acceptance: testing-disabled build,
+  standalone packaging checks and native-platform acceptance. Linux normal and
+  `BUILD_TESTING=OFF` builds, installed consumer/provider checks, and a full
+  Zig/glibc 2.28 standalone dependency scan passed. The maintainer accepts
+  Windows and macOS platform use; these platforms were not rebuilt in this run.
+  The separate SDK-LINUX sanitizer limitation remains open.
