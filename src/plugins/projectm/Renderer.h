@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PresetDirectory.h"
+#include "PresetSearch.h"
 #include <projectM-4/projectM.h>
 #include <SDL2/SDL.h>
 #include <imgui.h>
@@ -12,6 +13,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <filesystem>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -40,8 +42,8 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-        window = SDL_CreateWindow("musikcube - projectM", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960,
-            540, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+        window = SDL_CreateWindow("musikcube - projectM", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960, 540,
+            SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
         if (window) {
             context = SDL_GL_CreateContext(window);
         }
@@ -68,13 +70,17 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
     bool advanceRequested = false;
     bool controlsVisible = true;
     bool automatic = true;
+    enum class Panel { None, Settings, Find };
+    Panel panel = Panel::None;
+    float controlsAlpha = 1.0f;
+    std::array<char, 256> search {};
+    std::mt19937 random { std::random_device {}() };
 #ifdef PROJECTM_HAS_TRANSITION_CONTROLS
     bool reduceTransitionWork = true;
 #endif
     bool fullscreen = false;
     float duration = 30.0f;
     float inputGain = 4.0f;
-    float inputPeak = 0.0f;
     std::array<char, 4096> presetDirectory {};
     if (const char* path = std::getenv("MUSIKCUBE_PROJECTM_PRESETS")) {
         std::strncpy(presetDirectory.data(), path, presetDirectory.size() - 1);
@@ -102,12 +108,30 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
             projectm_load_preset_file(visualizer, presets[current].c_str(), false);
         }
     };
-    auto switchPreset = [&](int direction) {
-        if (!presets.empty()) {
-            current = direction > 0 ? (current + 1) % presets.size()
-                                    : (current + presets.size() - 1) % presets.size();
+    auto selectPreset = [&](size_t index) {
+        if (index < presets.size()) {
+            current = index;
             projectm_load_preset_file(visualizer, presets[current].c_str(), true);
         }
+    };
+    auto switchPreset = [&](int direction) {
+        if (!presets.empty()) {
+            selectPreset(
+                direction > 0 ? (current + 1) % presets.size() : (current + presets.size() - 1) % presets.size());
+        }
+    };
+    auto randomPreset = [&] {
+        if (presets.empty()) {
+            return;
+        }
+        size_t index = 0;
+        if (presets.size() > 1) {
+            index = std::uniform_int_distribution<size_t>(0, presets.size() - 2)(random);
+            if (index >= current) {
+                ++index;
+            }
+        }
+        selectPreset(index);
     };
 
     if (success) {
@@ -132,6 +156,11 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL2_ProcessEvent(&event);
+            if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEWHEEL ||
+                event.type == SDL_KEYDOWN || event.type == SDL_TEXTINPUT)
+            {
+                controlsAlpha = 1.0f;
+            }
             if (event.type == SDL_QUIT ||
                 (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE))
             {
@@ -152,8 +181,7 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
                         switchPreset(1);
                         break;
                     case SDLK_SPACE:
-                        automatic = !automatic;
-                        projectm_set_preset_locked(visualizer, !automatic);
+                        randomPreset();
                         break;
                     case SDLK_f:
                         fullscreen = !fullscreen;
@@ -164,10 +192,11 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
         }
         if (advanceRequested) {
             advanceRequested = false;
-            switchPreset(1);
+            if (automatic) {
+                switchPreset(1);
+            }
         }
-        inputPeak *= 0.95f;
-        input.ReadAudio(visualizer, inputGain, inputPeak);
+        input.ReadAudio(visualizer, inputGain);
         int width = 0;
         int height = 0;
         SDL_GL_GetDrawableSize(window, &width, &height);
@@ -177,18 +206,20 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplSDL2_NewFrame();
             ImGui::NewFrame();
-            if (controlsVisible) {
-                ImGui::SetNextWindowBgAlpha(0.8f);
-                ImGui::Begin("projectM controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-                ImGui::InputText("Preset directory", presetDirectory.data(), presetDirectory.size());
-                if (ImGui::Button("Load presets")) {
-                    loadPresets();
+            bool mouseOverControls = false;
+            if (controlsVisible && controlsAlpha > 0.0f) {
+                constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                    ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove;
+                const float right = ImGui::GetIO().DisplaySize.x - 10.0f;
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, controlsAlpha);
+                ImGui::SetNextWindowPos(ImVec2(right, 10.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+                ImGui::SetNextWindowBgAlpha(0.8f * controlsAlpha);
+                ImGui::Begin("projectM toolbar", nullptr, flags);
+                if (ImGui::Button(automatic ? "Lock preset" : "Unlock preset")) {
+                    automatic = !automatic;
+                    projectm_set_preset_locked(visualizer, !automatic);
                 }
                 ImGui::SameLine();
-                ImGui::Text("%zu presets", presets.size());
-                if (!presets.empty()) {
-                    ImGui::TextUnformatted(std::filesystem::path(presets[current]).filename().string().c_str());
-                }
                 if (ImGui::Button("Previous")) {
                     switchPreset(-1);
                 }
@@ -196,24 +227,95 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
                 if (ImGui::Button("Next")) {
                     switchPreset(1);
                 }
-                if (ImGui::Checkbox("Automatic advance", &automatic)) {
-                    projectm_set_preset_locked(visualizer, !automatic);
-                }
-                if (ImGui::SliderFloat("Duration (seconds)", &duration, 5.0f, 300.0f, "%.0f")) {
-                    projectm_set_preset_duration(visualizer, duration);
-                }
-#ifdef PROJECTM_HAS_TRANSITION_CONTROLS
-                if (ImGui::Checkbox("Reduce transition work", &reduceTransitionWork)) {
-                    projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, reduceTransitionWork ? 2 : 1);
-                }
-#endif
-                ImGui::SliderFloat("Audio gain", &inputGain, 1.0f, 8.0f, "%.2fx");
-                ImGui::ProgressBar(std::min(inputPeak, 1.0f), ImVec2(180, 0), "Input level");
                 ImGui::SameLine();
-                ImGui::Text("%.2f", inputPeak);
-                ImGui::TextUnformatted("Left/Right: preset  Space: auto  F: fullscreen");
-                ImGui::TextUnformatted("Tab: controls  Escape: close");
+                if (ImGui::Button("Random")) {
+                    randomPreset();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Settings")) {
+                    panel = panel == Panel::Settings ? Panel::None : Panel::Settings;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Find")) {
+                    panel = panel == Panel::Find ? Panel::None : Panel::Find;
+                }
+                const auto toolbarPos = ImGui::GetWindowPos();
+                const auto toolbarSize = ImGui::GetWindowSize();
+                mouseOverControls = ImGui::IsMouseHoveringRect(toolbarPos,
+                    ImVec2(toolbarPos.x + toolbarSize.x, toolbarPos.y + toolbarSize.y));
+                const float panelTop = ImGui::GetWindowPos().y + ImGui::GetWindowHeight() + 6.0f;
                 ImGui::End();
+
+                ImGui::SetNextWindowPos(ImVec2(10.0f, ImGui::GetIO().DisplaySize.y - 10.0f), ImGuiCond_Always,
+                    ImVec2(0.0f, 1.0f));
+                ImGui::SetNextWindowBgAlpha(0.8f * controlsAlpha);
+                ImGui::Begin("Current preset", nullptr, flags | ImGuiWindowFlags_NoInputs);
+                ImGui::PushTextWrapPos(std::max(100.0f, ImGui::GetIO().DisplaySize.x - 40.0f));
+                const auto presetName = presets.empty() ? std::string("Built-in preset")
+                                                        : std::filesystem::path(presets[current]).stem().string();
+                ImGui::TextUnformatted(presetName.c_str());
+                ImGui::PopTextWrapPos();
+                ImGui::End();
+
+                if (panel != Panel::None) {
+                    ImGui::SetNextWindowPos(ImVec2(right, panelTop), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+                    ImGui::SetNextWindowBgAlpha(0.8f * controlsAlpha);
+                    ImGui::Begin(panel == Panel::Settings ? "projectM settings" : "Find preset", nullptr, flags);
+                    if (panel == Panel::Settings) {
+                        ImGui::SetNextItemWidth(360.0f);
+                        ImGui::InputText("Preset directory", presetDirectory.data(), presetDirectory.size());
+                        if (ImGui::Button("Load presets")) {
+                            loadPresets();
+                        }
+                        ImGui::SameLine();
+                        ImGui::Text("%zu presets", presets.size());
+                        if (ImGui::SliderFloat("Duration (seconds)", &duration, 5.0f, 300.0f, "%.0f")) {
+                            projectm_set_preset_duration(visualizer, duration);
+                        }
+#ifdef PROJECTM_HAS_TRANSITION_CONTROLS
+                        if (ImGui::Checkbox("Reduce transition work", &reduceTransitionWork)) {
+                            projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, reduceTransitionWork ? 2 : 1);
+                        }
+#endif
+                        ImGui::SliderFloat("Audio gain", &inputGain, 1.0f, 8.0f, "%.2fx");
+                    }
+                    else {
+                        ImGui::SetNextItemWidth(360.0f);
+                        ImGui::InputText("Search", search.data(), search.size());
+                        ImGui::BeginChild("Preset results", ImVec2(450, 300), true);
+                        for (size_t i = 0; i < presets.size(); ++i) {
+                            const auto name = std::filesystem::path(presets[i]).filename().string();
+                            if (ProjectMPresetMatches(name, search.data())) {
+                                ImGui::PushID(static_cast<int>(i));
+                                if (ImGui::Selectable(name.c_str(), i == current)) {
+                                    selectPreset(i);
+                                }
+                                ImGui::PopID();
+                            }
+                        }
+                        ImGui::EndChild();
+                    }
+                    const auto panelPos = ImGui::GetWindowPos();
+                    const auto panelSize = ImGui::GetWindowSize();
+                    mouseOverControls = mouseOverControls || ImGui::IsMouseHoveringRect(panelPos,
+                        ImVec2(panelPos.x + panelSize.x, panelPos.y + panelSize.y));
+                    ImGui::End();
+                }
+                ImGui::PopStyleVar();
+            }
+            /* ImGui retains mouse capture while a widget is active, even when
+            the pointer leaves it during a drag. */
+            if (panel != Panel::None && !mouseOverControls && !ImGui::GetIO().WantCaptureMouse) {
+                for (int button = 0; button < 3; ++button) {
+                    if (ImGui::IsMouseClicked(button)) {
+                        panel = Panel::None;
+                        break;
+                    }
+                }
+            }
+            /* keep active text editing and held buttons visible until the interaction ends. */
+            if (!ImGui::IsAnyItemActive() && !ImGui::GetIO().WantTextInput) {
+                controlsAlpha = std::max(0.0f, controlsAlpha - ImGui::GetIO().DeltaTime);
             }
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -7,7 +7,7 @@ const version = '4.1.8';
 const evalRevision = 'e8c311e86f4d8c082e96e02b6a33525034eee6d4';
 const sdlVersion = '2.30.11';
 const imguiVersion = '1.91.9b';
-const presetsRevision = 'fff71ea81223109f3558351667eef851f2781c96';
+const presetsRevision = 'c9a433306d8d4d24c0a0b091324ec2e4492d1828';
 
 exports.packages = {
   projectm: [
@@ -36,9 +36,9 @@ exports.packages = {
     'https://codeload.github.com/wayland-mirror/wayland/tar.gz/refs/tags/1.18.0',
   ],
   projectm_presets: [
-    `presets-en-d-${presetsRevision}`,
-    `presets-en-d-${presetsRevision}.tar.gz`,
-    `https://codeload.github.com/projectM-visualizer/presets-en-d/tar.gz/${presetsRevision}`,
+    `milkdrop2-musikcube-${presetsRevision}`,
+    `milkdrop2-musikcube-${presetsRevision}.tar.gz`,
+    `https://codeload.github.com/clangen/milkdrop2-musikcube/tar.gz/${presetsRevision}`,
   ],
 };
 
@@ -124,8 +124,12 @@ exports.build = function(context) {
   rmSync(evalDirectory, { recursive: true, force: true });
   cpSync(sources.projectm_eval, evalDirectory, { recursive: true });
 
-  cpSync(sources.projectm_presets, join(out, 'share/projectM'), { recursive: true });
-  sanitizePresets(join(out, 'share/projectM'));
+  const presets = join(out, 'share/projectM');
+  rmSync(presets, { recursive: true, force: true });
+  cpSync(join(sources.projectm_presets, 'resources/Milkdrop2/presets'), presets, { recursive: true });
+  sanitizePresets(presets);
+  writeFileSync(join(presets, 'README.md'),
+    `Milkdrop2 presets from https://github.com/clangen/milkdrop2-musikcube, revision ${presetsRevision}.\n`);
 
   const imgui = join(out, 'include/projectm-imgui');
   mkdirSync(join(imgui, 'backends'), { recursive: true });

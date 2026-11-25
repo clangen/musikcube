@@ -76,9 +76,9 @@ public:
     void Stop() noexcept { stopping.store(true); }
     void Finished() noexcept { visible.store(false, std::memory_order_release); }
 
-    void ReadAudio(projectm_handle visualizer, float gain, float& peak) noexcept {
+    void ReadAudio(projectm_handle visualizer, float gain) noexcept {
         queue.Drain([&](float* samples, size_t frames) {
-            peak = std::max(peak, ScaleVisualizerPcm(samples, frames * 2, gain));
+            ScaleVisualizerPcm(samples, frames * 2, gain);
             projectm_pcm_add_float(visualizer, samples, static_cast<unsigned>(frames), PROJECTM_STEREO);
         });
     }

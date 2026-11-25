@@ -2,6 +2,7 @@
 #include <musikcore/plugin/visualizer.h>
 #include "../../../src/plugins/projectm/Pcm.h"
 #include "../../../src/plugins/projectm/PresetDirectory.h"
+#include "../../../src/plugins/projectm/PresetSearch.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -38,8 +39,11 @@ namespace {
 }
 
 int main(int argc, char** argv) {
+    require(ProjectMPresetMatches("Blue WAVE.milk", "wave"), "match preset names without case sensitivity");
+    require(ProjectMPresetMatches("Blue WAVE.milk", ""), "empty search matches every preset");
+    require(!ProjectMPresetMatches("Blue WAVE.milk", "orange"), "exclude nonmatching presets");
     float samples[] = { -0.8f, 0.25f, 0.6f };
-    require(ScaleVisualizerPcm(samples, 3, 2.0f) == 0.8f, "report unscaled input peak");
+    ScaleVisualizerPcm(samples, 3, 2.0f);
     require(samples[0] == -1.0f && samples[1] == 0.5f && samples[2] == 1.0f, "apply and clip gain");
     require(argc == 2, "expected plugin path");
     void* library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);

@@ -10,8 +10,11 @@ loaded automatically. To use another collection of `.milk` presets, enter its
 directory in the controls and select **Load presets**, or set
 `MUSIKCUBE_PROJECTM_PRESETS` before starting the application.
 
-Use the left and right arrow keys to change presets, Space to toggle automatic
-advance, F for fullscreen, Tab to hide or show the controls, and Escape to
+The toolbar fades when the pointer is idle and returns when it moves. Use Find
+to search preset names, or Settings to change the directory, gain, and duration.
+
+Use the left and right arrow keys to change presets, Space for a random preset,
+F for fullscreen, Tab to hide or show the controls, and Escape to
 close the window. The controls also adjust the automatic advance interval.
 
 The Linux standalone vendor build requires a host C compiler and Expat

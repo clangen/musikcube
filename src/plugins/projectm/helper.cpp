@@ -34,7 +34,7 @@ namespace {
         void Stop() noexcept { stopping = true; }
         void Finished() noexcept {}
 
-        void ReadAudio(projectm_handle visualizer, float gain, float& peak) noexcept {
+        void ReadAudio(projectm_handle visualizer, float gain) noexcept {
             for (unsigned packets = 0; packets < 128; ++packets) {
                 ProjectMPcmPacket packet {};
                 const auto received = recv(socket, &packet, sizeof(packet), MSG_DONTWAIT);
@@ -54,7 +54,7 @@ namespace {
                 {
                     continue;
                 }
-                peak = std::max(peak, ScaleVisualizerPcm(packet.samples, packet.frames * 2, gain));
+                ScaleVisualizerPcm(packet.samples, packet.frames * 2, gain);
                 projectm_pcm_add_float(visualizer, packet.samples, packet.frames, PROJECTM_STEREO);
             }
         }

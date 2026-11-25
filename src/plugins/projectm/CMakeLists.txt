@@ -68,6 +68,7 @@ else()
       target_link_libraries(projectm PRIVATE "${PROJECTM_LIBRARY}" "${PROJECTM_SDL_LIBRARY}" "${PROJECTM_OPENGL_LIBRARY}" ${CMAKE_DL_LIBS} Threads::Threads)
     endif()
     add_custom_command(TARGET projectm POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E remove_directory "$<TARGET_FILE_DIR:projectm>/projectM"
       COMMAND "${CMAKE_COMMAND}" -E copy_directory "${PROJECTM_PRESETS_DIR}" "$<TARGET_FILE_DIR:projectm>/projectM")
     install(DIRECTORY "${PROJECTM_PRESETS_DIR}/" DESTINATION share/musikcube/plugins/projectM COMPONENT musikcorePlugins)
   endif()
