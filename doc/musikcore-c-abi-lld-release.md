@@ -123,9 +123,10 @@ External C decoder build/load checks (PKG-003/PKG-004) are tracked with the
   remains available to ABI contract tests and the test-only TUI pilot. This
   entry does not claim the target or its fixtures have been removed.
 - [ ] **FIN-008** Assign ABI major version 1 and platform SONAME/install-name/DLL
-  versioning.
+  versioning. Complete the [library query scope adendum](musikcore-c-abi-lld-library-scope.md)
+  and its SCOPE-014 acceptance gate before application ABI v1 freeze.
 - [ ] **FIN-009** Freeze and publish the export allowlist and public layout
-  baseline.
+  baseline after the library query scope contract and acceptance are complete.
 - [ ] **FIN-010** Preserve a v1 C consumer binary/source fixture.
 - [ ] **FIN-011** Preserve a v1 C plugin binary/source fixture.
 - [ ] **FIN-012** Test older v1 fixtures against every newer compatible v1

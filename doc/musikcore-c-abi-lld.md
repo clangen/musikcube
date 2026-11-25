@@ -7,10 +7,9 @@ implementation and platform evidence, including open gates. A checked task
 only covers the scope stated beside it.
 
 The C plugin registry now owns plugin discovery. The old C++ plugin factory,
-entry hooks, and plugin-facing interfaces have been removed. Core code still
-uses several former SDK interfaces and wrappers; their removal is planned in
-[the SDK removal design](musikcore-sdk-removal-design.md). No old plugin
-compatibility path is planned.
+entry hooks, and plugin-facing interfaces have been removed. The former SDK interfaces and wrappers have been removed; their history and
+remaining validation are recorded in [the SDK removal design](musikcore-sdk-removal-design.md).
+No old plugin compatibility path is planned.
 
 ## Document map
 
@@ -23,6 +22,8 @@ compatibility path is planned.
 - [Plugin migration tasks](musikcore-c-abi-lld-plugins.md): plugin architecture,
   provider families, application media APIs, remaining SDK removal, and their
   acceptance criteria.
+- [Library query scope adendum](musikcore-c-abi-lld-library-scope.md): reusable
+  source filtering and its required acceptance before application ABI v1 freeze.
 - [Release and cleanup gates](musikcore-c-abi-lld-release.md): phases 9–10,
   historical next steps, and progress reporting rules.
 - [SDK removal design](musikcore-sdk-removal-design.md): inventory, intended
@@ -43,25 +44,20 @@ The TagLib, indexer, MPRIS, and playback-remote entries now record the Linux
 checks that passed. Converted Windows DirectSound and visualizer providers are
 explicitly distinguished from their still-open native validation.
 
-The remaining unchecked items include actual unfinished core SDK removal,
-ABI-freeze and CI work, platform and physical-device validation, and deliberate
-future expansions. They are not all unimplemented migrations. Historical
+The remaining unchecked items include ABI-freeze and CI work, platform and
+physical-device validation, and deliberate future expansions. Internal SDK
+removal is complete; its acceptance evidence is recorded in the plugin LLD. They are not all unimplemented migrations. Historical
 staging text and task IDs are preserved for traceability; the checkboxes and
 remaining conditions in each entry govern acceptance.
 
-The most recent broad Linux integration run passed 183 of 190 tests. Its URI
-player fixture was corrected and passed on rerun; the MPRIS load test passed
-when the core library was on the loader path. Five failures remain to investigate:
-backend parity, paused crossfade, a PulseAudio fixture with an unresolved
-`pa_blocking_flush` symbol, and two audio-service tests unable to publish their
-isolated sink. These results do not establish whether the first two are
-regressions. No Windows or macOS validation is claimed for this cleanup.
+A historical Linux integration run exposed backend parity and isolated audio
+fixture failures. Those specific findings were subsequently addressed; consult
+the linked task entries for current evidence and remaining limitations.
 
 ## Active next steps
 
-1. Use the [SDK removal design](musikcore-sdk-removal-design.md) and the
-   [SDK removal tasks](musikcore-c-abi-lld-plugins.md#remaining-sdk-removal)
-   to replace the remaining internal interfaces in small, testable slices.
+1. Complete the [library query scope adendum](musikcore-c-abi-lld-library-scope.md)
+   before freezing the application ABI v1.
 2. Preserve the named runtime, provider, consumer, and platform acceptance
    checks in the linked task documents; track unresolved failures and missing
    native validation explicitly.
