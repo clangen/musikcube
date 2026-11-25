@@ -1,6 +1,7 @@
 const { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
 const { join } = require('node:path');
 const buildCmake = require('./build-with-cmake');
+const sanitizePresets = require('./sanitize-projectm-presets');
 
 const version = '4.1.8';
 const evalRevision = 'e8c311e86f4d8c082e96e02b6a33525034eee6d4';
@@ -124,6 +125,7 @@ exports.build = function(context) {
   cpSync(sources.projectm_eval, evalDirectory, { recursive: true });
 
   cpSync(sources.projectm_presets, join(out, 'share/projectM'), { recursive: true });
+  sanitizePresets(join(out, 'share/projectM'));
 
   const imgui = join(out, 'include/projectm-imgui');
   mkdirSync(join(imgui, 'backends'), { recursive: true });

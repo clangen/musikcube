@@ -7,15 +7,18 @@ PLATFORM=$(uname)
 if [ "$PLATFORM" = 'Linux' ]; then
     echo "[patch-rpath] patching Linux .so files..."
 
-    chmod -x ./bin/lib/*
-    chmod -x ./bin/plugins/*
-    chmod -x ./bin/*.so
+    for f in ./bin/lib/* ./bin/plugins/*.so ./bin/*.so; do
+        if [ -f "$f" ]; then
+            chmod -x "$f"
+        fi
+    done
 
     # plugins also need the core library in the parent directory.
 
     FILES="./bin/lib/*"
     for f in $FILES
     do
+        [ -f "$f" ] || continue
         patchelf --set-rpath "\$ORIGIN" "$f" || exit $?
     done
 
