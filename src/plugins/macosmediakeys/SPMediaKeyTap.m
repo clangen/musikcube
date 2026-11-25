@@ -9,10 +9,12 @@
 -(void)stopWatchingAppSwitching;
 -(void)eventTapThread;
 @end
-static SPMediaKeyTap *singleton = nil;
-
 static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon);
 
+static void *runEventTap(void *context) {
+	[(SPMediaKeyTap *) context eventTapThread];
+	return NULL;
+}
 
 // Inspired by http://gist.github.com/546311
 
@@ -24,8 +26,10 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 {
 	_delegate = delegate;
 	_mediaKeyAppList = [NSMutableArray new];
+	_tapCondition = [NSCondition new];
+	_tapThreadRunning = NO;
+	_tapThreadCreated = NO;
 	[self startWatchingAppSwitching];
-	singleton = self;
     _tapThreadRL=nil;
     _eventPort=nil;
     _eventPortSource=nil;
@@ -36,6 +40,7 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 	[self stopWatchingMediaKeys];
 	[self stopWatchingAppSwitching];
 	[_mediaKeyAppList release];
+	[_tapCondition release];
 	[super dealloc];
 }
 
@@ -69,21 +74,50 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 	if (_eventPort) {
 		_eventPortSource = CFMachPortCreateRunLoopSource(kCFAllocatorSystemDefault, _eventPort, 0);
 		if (_eventPortSource) {
-			// Let's do this in a separate thread so that a slow app doesn't lag the event tap
-			[NSThread detachNewThreadSelector:@selector(eventTapThread) toTarget:self withObject:nil];
+			/* wait for the run loop before reporting success so an immediate stop
+			can always wake the thread. */
+			[_tapCondition lock];
+			_tapThreadRunning = YES;
+			if (pthread_create(&_tapThread, NULL, runEventTap, self) != 0) {
+				_tapThreadRunning = NO;
+				[_tapCondition unlock];
+				return NO;
+			}
+			_tapThreadCreated = YES;
+			while (_tapThreadRunning && !_tapThreadRL) {
+				[_tapCondition wait];
+			}
+			[_tapCondition unlock];
 			return YES;
 		}
 	}
 
 	return NO;
 }
+-(void)requestStopWatchingMediaKeys;
+{
+	[_tapCondition lock];
+	if (_tapThreadRL) {
+		CFRunLoopRef runLoop = _tapThreadRL;
+		CFRunLoopPerformBlock(runLoop, kCFRunLoopCommonModes, ^{ CFRunLoopStop(runLoop); });
+		CFRunLoopWakeUp(runLoop);
+	}
+	[_tapCondition unlock];
+}
+
 -(void)stopWatchingMediaKeys;
 {
-	// TODO<nevyn>: Shut down thread, remove event tap port and source
-
-    if(_tapThreadRL){
-        CFRunLoopStop(_tapThreadRL);
-        _tapThreadRL=nil;
+    [self requestStopWatchingMediaKeys];
+    [_tapCondition lock];
+    if (_tapThreadCreated) {
+        pthread_t thread = _tapThread;
+        _tapThreadCreated = NO;
+        [_tapCondition unlock];
+        if (pthread_join(thread, NULL) != 0) {
+            NSLog(@"could not join the media key tap thread");
+            abort();
+        }
+        [_tapCondition lock];
     }
 
     if(_eventPort){
@@ -96,6 +130,7 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
         CFRelease(_eventPortSource);
         _eventPortSource=nil;
     }
+    [_tapCondition unlock];
 }
 
 #pragma mark -
@@ -175,12 +210,14 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 		oldSetting = _shouldInterceptMediaKeyEvents;
 		_shouldInterceptMediaKeyEvents = newSetting;
 	}
+	[_tapCondition lock];
 	if(_tapThreadRL && oldSetting != newSetting) {
 		id grab = [self grab];
 		[grab pauseTapOnTapThread:newSetting];
 		NSTimer *timer = [NSTimer timerWithTimeInterval:0 invocation:[grab invocation] repeats:NO];
 		CFRunLoopAddTimer(_tapThreadRL, (CFRunLoopTimerRef)timer, kCFRunLoopCommonModes);
 	}
+	[_tapCondition unlock];
 }
 
 #pragma mark
@@ -243,9 +280,19 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 
 -(void)eventTapThread;
 {
+	NSAutoreleasePool *pool = [NSAutoreleasePool new];
+	[_tapCondition lock];
 	_tapThreadRL = CFRunLoopGetCurrent();
 	CFRunLoopAddSource(_tapThreadRL, _eventPortSource, kCFRunLoopCommonModes);
+	[_tapCondition broadcast];
+	[_tapCondition unlock];
 	CFRunLoopRun();
+	[_tapCondition lock];
+	_tapThreadRL = nil;
+	_tapThreadRunning = NO;
+	[_tapCondition broadcast];
+	[_tapCondition unlock];
+	[pool drain];
 }
 
 #pragma mark Task switching callbacks

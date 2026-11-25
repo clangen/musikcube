@@ -1,389 +1,384 @@
-//////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2004-2023 musikcube team
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//    * Redistributions of source code must retain the above copyright notice,
-//      this list of conditions and the following disclaimer.
-//
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//
-//    * Neither the name of the author nor the names of other contributors may
-//      be used to endorse or promote products derived from this software
-//      without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////
-
 #include "PortAudioOut.h"
-#include "PcmFrames.h"
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPreferences.h>
-#include <musikcore/sdk/ISchema.h>
-#include <musikcore/sdk/IDebug.h>
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <exception>
+#include <mutex>
+#include <string_view>
 
+namespace {
+    /* PortAudio initialization is process-wide and must not race another
+    instance or a device enumeration. */
+    std::mutex initializationMutex;
 
-using namespace musik::core::sdk;
-using musik::core::audio::copyPcmFrames;
-using musik::core::audio::silencePcmFrames;
-
-#ifdef WIN32
-    #include <Windows.h>
-    #define usleep(x) Sleep(x / 1000);
-    #define DLLEXPORT __declspec(dllexport)
-#else
-    #include <unistd.h>
-    #define DLLEXPORT
-#endif
-
-#define MAX_BUFFER_COUNT 32
-#define PREF_DEFAULT_SAMPLE_RATE "default_sample_rate"
-#define PREF_DEFAULT_DEVICE "default_device"
-#define TAG "PortAudioOut"
-
-static IPreferences* prefs = nullptr;
-static IDebug* debug = nullptr;
-
-extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
-    ::debug = debug;
-}
-
-extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
-    ::prefs = prefs;
-}
-
-extern "C" DLLEXPORT musik::core::sdk::ISchema* GetSchema() {
-    auto schema = new TSchema<>();
-    return schema;
-}
-
-static void logPaError(const std::string method, PaError error) {
-    std::string err = method + "() return code: " + std::to_string(error);
-    if (error != 0) {
-        ::debug->Warning(TAG, err.c_str());
+    PaError initialize() {
+        std::lock_guard lock(initializationMutex);
+        return Pa_Initialize();
     }
-    else {
-        ::debug->Info(TAG, err.c_str());
+
+    void terminate() {
+        std::lock_guard lock(initializationMutex);
+        Pa_Terminate();
     }
-}
 
-int portAudioStreamCallback(
-    const void *input,
-    void *output,
-    unsigned long frameCount,
-    const PaStreamCallbackTimeInfo *timeInfo,
-    PaStreamCallbackFlags statusFlags,
-    void *userData)
-{
-    PortAudioOut* self = static_cast<PortAudioOut*>(userData);
-    const auto channels = self->formatContext.channels;
-    bool complete = false;
-    bool retired = false;
-
-    {
-        unsigned long remainingFrameCount = frameCount;
-        float* target = static_cast<float*>(output);
-
-        /* Device deadlines take priority over waiting for the producer. */
-        std::unique_lock lock(self->mutex, std::try_to_lock);
-        if (!lock) {
-            silencePcmFrames(target, frameCount, channels);
-            return paContinue;
+    PaDeviceIndex findDevice(mc_string_view id) {
+        if (!id.length) {
+            return Pa_GetDefaultOutputDevice();
         }
-        if (self->state == PortAudioOut::StatePaused ||
-            self->state == PortAudioOut::StateStopped)
-        {
-            silencePcmFrames(target, frameCount, channels);
-            return paAbort;
-        }
-
-        while (remainingFrameCount && !self->buffers.empty()) {
-            const auto& context = self->buffers.front();
-            auto buffer = context->buffer;
-            auto audio = buffer->BufferPointer();
-            auto const samples = buffer->Samples();
-
-            if (context->gain == -1) {
-                context->gain = self->volume;
-                if (self->volume != 1.0f) {
-                    const auto gain = static_cast<float>(std::max(0.0, self->volume));
-                    for (size_t i = 0; i < samples; i++) {
-                        (*audio) *= gain;
-                        ++audio;
-                    }
-                }
+        const std::string_view requested(id.data, id.length);
+        const auto count = Pa_GetDeviceCount();
+        for (PaDeviceIndex index = 0; index < count; ++index) {
+            const auto* info = Pa_GetDeviceInfo(index);
+            if (info && info->name && info->maxOutputChannels > 0 && requested == info->name) {
+                return index;
             }
-
-            auto framesToWrite = std::min(remainingFrameCount, context->remainingFrameCount);
-            copyPcmFrames(target, buffer->BufferPointer(), context->framesWritten, framesToWrite, channels);
-
-            context->framesWritten += framesToWrite;
-            context->remainingFrameCount -= framesToWrite;
-            if (context->remainingFrameCount == 0) {
-                /* Move the existing node so completion and deallocation run on the worker. */
-                self->retired.splice(self->retired.end(), self->buffers, self->buffers.begin());
-                retired = true;
-            }
-
-            target += framesToWrite * channels;
-            remainingFrameCount -= framesToWrite;
         }
-        silencePcmFrames(target, remainingFrameCount, channels);
-        complete = self->state == PortAudioOut::StateDraining && self->buffers.empty();
+        return paNoDevice;
     }
 
-    if (retired) {
-        self->SignalRetirement();
+    mc_result visitDevice(PaDeviceIndex index, mc_output_device_fn read, void* context) {
+        const auto* info = index == paNoDevice ? nullptr : Pa_GetDeviceInfo(index);
+        if (!info || !info->name || info->maxOutputChannels <= 0) {
+            return MC_ERROR_NOT_FOUND;
+        }
+        const mc_string_view name { info->name, std::strlen(info->name) };
+        const mc_output_device device { name, name };
+        read(context, &device);
+        return MC_OK;
     }
-
-    return complete ? paComplete : paContinue;
 }
 
-class PortAudioDevice : public IDevice {
-    public:
-        PortAudioDevice(PaDeviceIndex index, const std::string name) { this->index = index; this->name = name; }
-        virtual void Release() override { delete this; }
-        virtual const char* Name() const override { return name.c_str(); }
-        virtual const char* Id() const override { return name.c_str(); }
-        PaDeviceIndex Index() const { return index; }
-    private:
-        PaDeviceIndex index;
-        std::string name;
-};
-
-class PortAudioDeviceList : public musik::core::sdk::IDeviceList {
-    public:
-        virtual void Release() override { delete this; }
-        virtual size_t Count() const override { return devices.size(); }
-        virtual const IDevice* At(size_t index) const override { return &devices.at(index); }
-        void Add(PaDeviceIndex index, const std::string name) { devices.push_back(PortAudioDevice(index, name)); }
-    private:
-        std::vector<PortAudioDevice> devices;
-};
-
-PortAudioOut::PortAudioOut() {
-    this->volume = 1.0f;
-    this->state = StateStopped;
-    logPaError("Pa_Initialize", Pa_Initialize());
-    this->retirementWorker = std::jthread([this](std::stop_token stop) { this->RetireBuffers(stop); });
-}
+PortAudioOut::PortAudioOut() : initialized(initialize() == paNoError) {}
 
 PortAudioOut::~PortAudioOut() {
-    this->Stop();
-    this->retirementWorker.request_stop();
-    this->SignalRetirement();
-    this->retirementWorker.join();
-    logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
-    logPaError("Pa_CloseStream", Pa_CloseStream(this->paStream));
-    logPaError("Pa_Terminate", Pa_Terminate());
-    if (this->deviceList) {
-        this->deviceList->Release();
-        this->deviceList = nullptr;
-    }
-}
-
-void PortAudioOut::RetireBuffers(std::stop_token stop) {
-    while (true) {
-        this->retirementReady.acquire();
-        this->retirementSignaled.store(false);
-        decltype(this->retired) completed;
-        {
-            std::unique_lock lock(this->mutex);
-            if (stop.stop_requested() && this->retired.empty()) {
-                return;
-            }
-            completed.splice(completed.end(), this->retired);
-        }
-
-        for (const auto& context : completed) {
-            context->provider->OnBufferProcessed(context->buffer);
-        }
-        if (stop.stop_requested()) {
-            /* Stop may have queued another batch during a completion callback. */
-            this->SignalRetirement();
+    if (this->stream) {
+        if (this->Stop() != MC_OK) {
+            std::fputs("PortAudio output: failed to stop before destruction\n", stderr);
+            std::terminate();
         }
     }
-}
-
-void PortAudioOut::SignalRetirement() {
-    if (!this->retirementSignaled.exchange(true)) {
-        this->retirementReady.release();
+    if (this->initialized) {
+        terminate();
     }
 }
 
-void PortAudioOut::Release() {
-    delete this;
-}
-
-void PortAudioOut::Pause() {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    if (this->paStream) {
-        logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
-        this->state = StatePaused;
+mc_result PortAudioOut::VisitDevices(mc_output_device_fn read, void* context) {
+    if (initialize() != paNoError) {
+        return MC_ERROR_IO;
     }
-}
-
-void PortAudioOut::Resume() {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    if (this->paStream) {
-        logPaError("Pa_StartStream", Pa_StartStream(this->paStream));
-        this->state = StatePlaying;
+    const auto count = Pa_GetDeviceCount();
+    for (PaDeviceIndex index = 0; index < count; ++index) {
+        visitDevice(index, read, context);
     }
+    terminate();
+    return count < 0 ? MC_ERROR_IO : MC_OK;
 }
 
-void PortAudioOut::SetVolume(double volume) {
-    std::unique_lock lock(this->mutex);
-    this->volume = volume;
-}
-
-double PortAudioOut::GetVolume() {
-    std::unique_lock lock(this->mutex);
-    return this->volume;
-}
-
-void PortAudioOut::Stop() {
-    {
-        std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-        if (this->paStream) {
-            logPaError("Pa_AbortStream", Pa_AbortStream(this->paStream));
-            logPaError("Pa_AbortStream", Pa_CloseStream(this->paStream));
-            this->paStream = nullptr;
-        }
-        this->state = StateStopped;
-        this->retired.splice(this->retired.end(), this->buffers);
+mc_result PortAudioOut::ReadDefaultDevice(mc_output_device_fn read, void* context) {
+    if (initialize() != paNoError) {
+        return MC_ERROR_IO;
     }
-    this->SignalRetirement();
-}
-
-void PortAudioOut::Drain() {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    this->state = StateDraining;
-}
-
-IDeviceList* PortAudioOut::GetDeviceList() {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    PortAudioDeviceList* result = new PortAudioDeviceList();
-    PaDeviceIndex count = Pa_GetDeviceCount();
-    for (PaDeviceIndex i = 0; i < count; i++) {
-        const PaDeviceInfo* deviceInfo = Pa_GetDeviceInfo(i);
-        if (deviceInfo && deviceInfo->maxOutputChannels > 0) {
-            if (deviceInfo->name) {
-                const std::string name(deviceInfo->name);
-                if (name != "default") {
-                    result->Add(i, deviceInfo->name);
-                }
-            }
-        }
-    }
+    const auto result = visitDevice(Pa_GetDefaultOutputDevice(), read, context);
+    terminate();
     return result;
 }
 
-bool PortAudioOut::SetDefaultDevice(const char* deviceId) {
-    ::prefs->SetString(PREF_DEFAULT_DEVICE, deviceId ? deviceId : "");
-    return true;
+mc_result PortAudioOut::GetDefaultFormat(mc_string_view id, mc_audio_format& format) {
+    if (!this->initialized) {
+        return MC_ERROR_IO;
+    }
+    const auto device = findDevice(id);
+    const auto* info = device == paNoDevice ? nullptr : Pa_GetDeviceInfo(device);
+    if (!info || info->maxOutputChannels <= 0 || info->defaultSampleRate <= 0) {
+        return MC_ERROR_NOT_FOUND;
+    }
+    format = {
+        .struct_size = sizeof(format),
+        .sample_rate = static_cast<uint32_t>(info->defaultSampleRate),
+        .channels = static_cast<uint32_t>(std::min(info->maxOutputChannels, 2)),
+        .channel_layout = 0,
+    };
+    return MC_OK;
 }
 
-IDevice* PortAudioOut::GetDefaultDevice() {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    if (!this->deviceList) {
-        this->deviceList = this->GetDeviceList();
+mc_result PortAudioOut::StartStream() {
+    this->finished.store(false, std::memory_order_release);
+    this->requestedCompletion.store(false, std::memory_order_release);
+    return Pa_StartStream(this->stream) == paNoError ? MC_OK : MC_ERROR_IO;
+}
+
+mc_result PortAudioOut::Prepare(const mc_output_options& options, const mc_output_callbacks& callbacks) {
+    if (!this->initialized) {
+        return MC_ERROR_IO;
     }
-    const std::string defaultDeviceName =
-        getPreferenceString<std::string>(::prefs, PREF_DEFAULT_DEVICE, "default");
-    for (int i = 0; i < this->deviceList->Count(); i++) {
-        auto device = static_cast<const PortAudioDevice*>(this->deviceList->At(i));
-        if (device->Name() == defaultDeviceName) {
-            return new PortAudioDevice(device->Index(), defaultDeviceName);
+    const auto device = findDevice(options.device_id);
+    const auto* info = device == paNoDevice ? nullptr : Pa_GetDeviceInfo(device);
+    if (!info || options.format.channels > static_cast<uint32_t>(info->maxOutputChannels)) {
+        return MC_ERROR_NOT_FOUND;
+    }
+    PaStreamParameters output {};
+    output.device = device;
+    output.channelCount = static_cast<int>(options.format.channels);
+    output.sampleFormat = paFloat32;
+    output.suggestedLatency = info->defaultHighOutputLatency;
+    const auto result = Pa_OpenStream(&this->stream, nullptr, &output, options.format.sample_rate,
+        paFramesPerBufferUnspecified, paNoFlag, Callback, this);
+    if (result != paNoError) {
+        this->stream = nullptr;
+        return MC_ERROR_IO;
+    }
+    if (Pa_SetStreamFinishedCallback(this->stream, Finished) != paNoError) {
+        return MC_ERROR_IO;
+    }
+    this->format = options.format;
+    this->callbacks = callbacks;
+    this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : DefaultCapacity;
+    this->volume.store(static_cast<float>(options.initial_volume));
+    this->paused.store(false);
+    this->draining.store(false);
+    this->producers.store(0);
+    this->failureClaimed.store(false);
+    this->stopped.store(false);
+    return this->StartStream();
+}
+
+void PortAudioOut::FinishProducer() noexcept {
+    auto state = this->producers.load();
+    for (;;) {
+        /* a failure that overlaps this submission must return its token before
+        `Stop()` can finish waiting for the producer. */
+        if ((state & FailureFlag) && (state & ~FailureFlag) == 1) {
+            this->ReturnFailedBuffers();
+        }
+        if (this->producers.compare_exchange_weak(state, state - 1)) {
+            this->producers.notify_all();
+            return;
         }
     }
-    return new PortAudioDevice(Pa_GetDefaultOutputDevice(), "default");
 }
 
-OutputState PortAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
-    bool bufferWritten = false;
+mc_result PortAudioOut::QueueAudioBuffer(const mc_output_buffer& buffer) noexcept {
+    /* `Stop()` must see every producer that can still accept a buffer. */
+    this->producers.fetch_add(1);
+    if (this->stopped.load()) {
+        this->FinishProducer();
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->producers.load() & FailureFlag) {
+        this->FinishProducer();
+        return MC_ERROR_IO;
+    }
+    if (buffer.pcm.frame_count > this->capacity) {
+        this->FinishProducer();
+        return MC_ERROR_BUFFER_TOO_SMALL;
+    }
+    const auto head = this->head.load(std::memory_order_relaxed);
+    const auto tail = this->tail.load(std::memory_order_acquire);
+    const auto queued = this->queuedFrames.load(std::memory_order_acquire);
+    if (head - tail >= SlotCount || buffer.pcm.frame_count > this->capacity - queued) {
+        this->FinishProducer();
+        return MC_ERROR_QUEUE_FULL;
+    }
+    this->queuedFrames.fetch_add(buffer.pcm.frame_count, std::memory_order_relaxed);
+    this->slots[head % SlotCount] = { buffer.pcm.data, buffer.pcm.frame_count, buffer.token };
+    this->head.store(head + 1, std::memory_order_release);
+    this->FinishProducer();
+    return MC_OK;
+}
 
+int PortAudioOut::Callback(const void*, void* output, unsigned long frames,
+    const PaStreamCallbackTimeInfo*, PaStreamCallbackFlags, void* context) noexcept
+{
+    auto& self = *static_cast<PortAudioOut*>(context);
+    auto* target = static_cast<float*>(output);
+    const auto channels = self.format.channels;
+    size_t remaining = frames;
+    if (self.paused.load(std::memory_order_acquire)) {
+        std::fill_n(target, remaining * channels, 0.0f);
+        return paContinue;
+    }
+    const float gain = self.volume.load(std::memory_order_relaxed);
+    while (remaining) {
+        const auto tail = self.tail.load(std::memory_order_relaxed);
+        if (tail == self.head.load(std::memory_order_acquire)) {
+            std::fill_n(target, remaining * channels, 0.0f);
+            break;
+        }
+        const auto& slot = self.slots[tail % SlotCount];
+        const size_t count = std::min(remaining, slot.frames - self.offset);
+        const auto* source = slot.samples + self.offset * channels;
+        for (size_t sample = 0; sample < count * channels; ++sample) {
+            target[sample] = source[sample] * gain;
+        }
+        target += count * channels;
+        remaining -= count;
+        self.offset += count;
+        self.queuedFrames.fetch_sub(count, std::memory_order_release);
+        if (self.offset == slot.frames) {
+            const auto token = slot.token;
+            self.offset = 0;
+            self.callbacks.completed(self.callbacks.context, token, MC_OK);
+            self.tail.store(tail + 1, std::memory_order_release);
+            self.callbacks.ready(self.callbacks.context);
+        }
+        else {
+            /* a frame-capacity rejection can become retryable before the
+            entire slot has finished playing. */
+            self.callbacks.ready(self.callbacks.context);
+        }
+    }
+    if (self.draining.load(std::memory_order_acquire) &&
+        self.head.load(std::memory_order_acquire) == self.tail.load(std::memory_order_acquire))
     {
-        std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-
-        if (this->state == StatePaused) {
-            return OutputState::InvalidState;
-        }
-
-        if (this->buffers.size() + this->retired.size() >= MAX_BUFFER_COUNT) {
-            int retryMs = buffer->SampleRate() / buffer->Samples();
-            return static_cast<OutputState>(retryMs);
-        }
-
-        if (!this->formatContext.IsSame(buffer)) {
-            this->Stop();
-            this->formatContext.From(buffer);
-        }
-
-        if (!this->paStream) {
-            auto device = static_cast<PortAudioDevice*>(this->GetDefaultDevice());
-            if (device) {
-                PaStreamParameters params = { 0 };
-                params.device = device->Index();
-                params.channelCount = buffer->Channels();
-                params.sampleFormat = paFloat32;
-                params.suggestedLatency = Pa_GetDeviceInfo(device->Index())->defaultHighOutputLatency;
-                params.hostApiSpecificStreamInfo = nullptr;
-                PaError result = Pa_OpenStream(
-                    &this->paStream,
-                    nullptr,
-                    &params,
-                    buffer->SampleRate(),
-                    buffer->Samples() / buffer->Channels(),
-                    0 /* stream flags */,
-                    portAudioStreamCallback,
-                    this);
-                logPaError("Pa_OpenStream", result);
-                if (result != paNoError) {
-                    return OutputState::InvalidState;
-                }
-                result = Pa_StartStream(this->paStream);
-                logPaError("Pa_StartStream", result);
-                device->Release();
-            }
-        }
-
-        this->state = StatePlaying;
-        this->buffers.push_back(std::make_shared<BufferContext>(buffer, provider));
-        return OutputState::BufferWritten;
+        self.requestedCompletion.store(true, std::memory_order_release);
+        return paComplete;
     }
-
-    return OutputState::InvalidState;
+    return paContinue;
 }
 
-double PortAudioOut::Latency() {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    if (this->paStream) {
-        const PaStreamInfo* info = Pa_GetStreamInfo(this->paStream);
-        if (info) {
-            return info->outputLatency;
-        }
-    }
-    return 0.0;
+void PortAudioOut::Wake() noexcept {
+    this->wakeGeneration.fetch_add(1, std::memory_order_release);
+    this->wakeGeneration.notify_all();
 }
 
-int PortAudioOut::GetDefaultSampleRate() {
-    return -1;
+void PortAudioOut::Finished(void* context) noexcept {
+    auto& self = *static_cast<PortAudioOut*>(context);
+    /* keep `Stop()` from returning tokens while this callback is still using
+    the queue, even if the device stops without a host request. */
+    self.producers.fetch_add(1);
+    if (!self.stopped.load() && !self.aborting.load(std::memory_order_acquire) &&
+        !self.requestedCompletion.load(std::memory_order_acquire))
+    {
+        /* a vanished device cannot consume the queue or free another slot. */
+        self.producers.fetch_or(FailureFlag);
+        self.callbacks.ready(self.callbacks.context);
+    }
+    self.finished.store(true, std::memory_order_release);
+    self.Wake();
+    self.FinishProducer();
+}
+
+mc_result PortAudioOut::Pause() {
+    std::lock_guard lock(this->streamMutex);
+    if (this->stopped.load(std::memory_order_acquire)) {
+        return MC_ERROR_CANCELLED;
+    }
+    this->paused.store(true, std::memory_order_release);
+    this->Wake();
+    return MC_OK;
+}
+
+mc_result PortAudioOut::Resume() {
+    std::lock_guard lock(this->streamMutex);
+    if (this->stopped.load(std::memory_order_acquire)) {
+        return MC_ERROR_CANCELLED;
+    }
+    this->paused.store(false, std::memory_order_release);
+    return MC_OK;
+}
+
+mc_result PortAudioOut::SetVolume(double value) {
+    this->volume.store(static_cast<float>(value), std::memory_order_relaxed);
+    return MC_OK;
+}
+
+double PortAudioOut::GetVolume() const {
+    return this->volume.load(std::memory_order_relaxed);
+}
+
+void PortAudioOut::ReturnPending(mc_result result) noexcept {
+    auto tail = this->tail.load(std::memory_order_relaxed);
+    const auto head = this->head.load(std::memory_order_acquire);
+    while (tail != head) {
+        this->callbacks.completed(this->callbacks.context, this->slots[tail % SlotCount].token, result);
+        ++tail;
+    }
+    this->tail.store(head, std::memory_order_release);
+    this->queuedFrames.store(0, std::memory_order_release);
+    this->offset = 0;
+}
+
+void PortAudioOut::ReturnFailedBuffers() noexcept {
+    if (!this->failureClaimed.exchange(true)) {
+        this->ReturnPending(MC_ERROR_IO);
+    }
+}
+
+mc_result PortAudioOut::Stop() noexcept {
+    this->stopped.store(true);
+    this->Wake();
+    auto producers = this->producers.load();
+    while (producers & ~FailureFlag) {
+        this->producers.wait(producers, std::memory_order_acquire);
+        producers = this->producers.load();
+    }
+    std::lock_guard lock(this->streamMutex);
+    if (!this->stream) {
+        return MC_OK;
+    }
+    const auto aborted = Pa_AbortStream(this->stream);
+    if (aborted != paNoError && aborted != paStreamIsStopped) {
+        return MC_ERROR_IO;
+    }
+    this->ReturnPending(MC_ERROR_CANCELLED);
+    if (Pa_CloseStream(this->stream) != paNoError) {
+        return MC_ERROR_IO;
+    }
+    this->stream = nullptr;
+    return MC_OK;
+}
+
+mc_result PortAudioOut::Drain() {
+    if (this->paused.load(std::memory_order_acquire)) {
+        return MC_ERROR_IN_FLIGHT;
+    }
+    this->draining.store(true, std::memory_order_release);
+    for (;;) {
+        const auto generation = this->wakeGeneration.load(std::memory_order_acquire);
+        if (this->stopped.load(std::memory_order_acquire)) {
+            return MC_ERROR_CANCELLED;
+        }
+        if (this->producers.load() & FailureFlag) {
+            return MC_ERROR_IO;
+        }
+        if (this->paused.load(std::memory_order_acquire)) {
+            return MC_ERROR_IN_FLIGHT;
+        }
+        if (this->finished.load(std::memory_order_acquire)) {
+            break;
+        }
+        this->wakeGeneration.wait(generation, std::memory_order_acquire);
+    }
+    this->draining.store(false, std::memory_order_release);
+    std::lock_guard lock(this->streamMutex);
+    if (this->stopped.load(std::memory_order_acquire)) {
+        return MC_ERROR_CANCELLED;
+    }
+    if (this->producers.load() & FailureFlag) {
+        return MC_ERROR_IO;
+    }
+    /* a callback returning paComplete drains the device but PortAudio still
+    requires `Pa_StopStream()` before the stream can be started again. */
+    const auto stopped = Pa_StopStream(this->stream);
+    if (stopped != paNoError && stopped != paStreamIsStopped) {
+        return MC_ERROR_IO;
+    }
+    return this->StartStream();
+}
+
+mc_result PortAudioOut::Flush() {
+    std::lock_guard lock(this->streamMutex);
+    if (this->stopped.load(std::memory_order_acquire)) {
+        return MC_ERROR_CANCELLED;
+    }
+    this->aborting.store(true, std::memory_order_release);
+    const auto result = Pa_AbortStream(this->stream);
+    this->aborting.store(false, std::memory_order_release);
+    if (result != paNoError && result != paStreamIsStopped) {
+        return MC_ERROR_IO;
+    }
+    this->ReturnPending(MC_ERROR_CANCELLED);
+    this->draining.store(false, std::memory_order_release);
+    return this->StartStream();
 }

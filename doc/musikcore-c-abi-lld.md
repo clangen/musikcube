@@ -2171,6 +2171,11 @@ stage; migrated families must not keep a parallel former-SDK path.
   existing scoped preferences and pinned devices are not migrated. Physical
   devices and device loss remain open checks.
 - [ ] **OUT-008** Convert `portaudioout`.
+  The PortAudio provider now registers the C output factory and uses a bounded
+  preallocated queue. `plugins.portaudio_output` runs the shared output contract
+  against the default macOS device when available. `plugins.portaudio_failure`
+  checks unexpected device termination and races with buffer submission. Other
+  supported platforms and physical device removal remain open.
 - [ ] **OUT-009** Convert `pulseout`.
   The PulseAudio provider now uses the C output factory and receives scoped
   preferences. `plugins.pulse_output` covers PCM return, drain/reuse, the linear
@@ -2259,6 +2264,9 @@ stage; migrated families must not keep a parallel former-SDK path.
   workers independently, so healthy remotes can remain active; see ADR-0014.
   `plugins.playback_remote_startup_rollback` exercises that failure policy on
   Unix while a healthy remote continues processing commands.
+  The macOS media-keys provider uses the C playback remote and joins its event
+  tap before unloading. `plugins.macos_media_keys` exercises repeated
+  start/stop/join cycles; physical key handling remains a manual macOS check.
   The Linux MPRIS provider uses the C remote interface. `plugins.mpris` checks
   D-Bus commands and snapshots; `plugins.mpris_runtime` exercises metadata,
   artwork, commands, and shutdown through the real managed runtime. Its worker

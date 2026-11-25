@@ -32,18 +32,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IPlaybackRemote.h>
-#include <musikcore/sdk/IDebug.h>
-#include <mutex>
-#include <iostream>
+#include <musikcore/plugin/playback-remote.hpp>
+#include <musikcore/playback.h>
+#include <atomic>
 #include "SPMediaKeyTap.h"
-
-using namespace musik::core::sdk;
-
-static const char* TAG = "macosmediakeys";
-static IDebug* debug = nullptr;
 
 struct IKeyProcessor {
     virtual void ProcessKeyCode(int keyCode) = 0;
@@ -54,95 +46,104 @@ struct IKeyProcessor {
     IKeyProcessor* processor;
 }
 - (BOOL) register;
+- (void) requestStop;
 - (void) unregister;
 - (void) setKeyProcessor: (IKeyProcessor*) processor;
 @end
 
-static class Plugin: public IPlugin {
-    public:
-        void Release() override { }
-        const char* Name() override { return "MediaKeys IPlaybackRemote"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "e850a2eb-5aaa-4322-b63e-bf1c1593805b"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-} plugin;
+namespace {
+    void MC_CALL commandComplete(void*, mc_result) {}
 
-class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
-    public:
-        PlaybackRemote() {
-            this->mediaKeys = [[MediaKeys alloc] init];
-            if ([this->mediaKeys register]) {
-                [this->mediaKeys setKeyProcessor: this];
-                if (debug) debug->Info(TAG, "listening to media keys");
-            }
-            else {
-                if (debug) debug->Error(TAG, "failed to register media keys listener");
-                this->Unregister();
-            }
-        }
-
-        void Release() override {
-            this->Unregister();
-            delete this;
-        }
-
-        void Unregister() {
-            if (this->mediaKeys) {
-                [this->mediaKeys unregister];
-                [this->mediaKeys release];
-                this->mediaKeys = nullptr;
-                if (debug) debug->Info(TAG, "unregistered media keys");
-            }
-        }
-
-        void SetPlaybackService(IPlaybackService* playback) override {
-            std::unique_lock<decltype(mutex)> lock(mutex);
-            this->playback = playback;
-        }
-
-        void ProcessKeyCode(int keyCode) override {
-            std::unique_lock<decltype(mutex)> lock(mutex);
-            if (this->playback) {
-                switch (keyCode) {
-                    case NX_KEYTYPE_PLAY: {
-                        auto state = this->playback->GetPlaybackState();
-                        if (state == PlaybackState::Stopped) {
-                            if (this->playback->Count()) {
-                                this->playback->Play(0);
-                            }
-                        }
-                        else {
-                            this->playback->PauseOrResume();
-                        }
-                    } return;
-                    case NX_KEYTYPE_FAST:
-                    case NX_KEYTYPE_NEXT:
-                        this->playback->Next();
-                        return;
-                    case NX_KEYTYPE_REWIND:
-                    case NX_KEYTYPE_PREVIOUS:
-                        this->playback->Previous();
-                        return;
+    /* playback handles are delivered on the owner thread and belong to this callback. */
+    void MC_CALL playOrPause(void*, mc_result result, mc_playback* playback) {
+        if (result == MC_OK && playback) {
+            auto snapshot = mc_playback_snapshot MC_PLAYBACK_SNAPSHOT_DEFAULT;
+            if (mc_playback_get_snapshot(playback, &snapshot) == MC_OK) {
+                if (snapshot.state == MC_PLAYBACK_STOPPED) {
+                    mc_play_queue* queue = nullptr;
+                    mc_track_result* tracks = nullptr;
+                    if (mc_playback_get_queue(playback, &queue) == MC_OK && queue &&
+                        mc_play_queue_get_tracks(queue, &tracks) == MC_OK && tracks)
+                    {
+                        (void) mc_playback_play_result(playback, tracks, 0);
+                    }
+                    mc_track_result_destroy(&tracks);
+                    mc_play_queue_destroy(&queue);
+                }
+                else {
+                    (void) mc_playback_control(playback, MC_PLAYBACK_TOGGLE_PAUSE, 0);
                 }
             }
         }
+        if (playback) {
+            mc_playback_destroy(&playback);
+        }
+    }
 
-        void OnTrackChanged(ITrack* track) override { }
-        void OnPlaybackStateChanged(PlaybackState state) override { }
-        void OnPlaybackTimeChanged(double time) override { }
-        void OnVolumeChanged(double volume) override { }
-        void OnModeChanged(RepeatMode repeatMode, bool shuffled) override { }
-        void OnPlayQueueChanged() override { }
+    class PlaybackRemote : public IKeyProcessor {
+    public:
+        explicit PlaybackRemote(const mc_plugin_services& services)
+        : host(*services.playback_remote) {}
+
+        void Changed(const mc_plugin_playback_event&) noexcept {}
+        void QueueChanged() noexcept {}
+
+        mc_result Start() {
+            this->stopping.store(false);
+            this->mediaKeys = [[MediaKeys alloc] init];
+            [this->mediaKeys setKeyProcessor:this];
+            return [this->mediaKeys register] ? MC_OK : MC_ERROR_IO;
+        }
+
+        void RequestStop() noexcept {
+            this->stopping.store(true);
+            if (this->mediaKeys) {
+                [this->mediaKeys requestStop];
+            }
+        }
+
+        mc_result Join() {
+            if (this->mediaKeys) {
+                /* callbacks may still be running until the tap thread exits. */
+                [this->mediaKeys unregister];
+                [this->mediaKeys release];
+                this->mediaKeys = nil;
+            }
+            return MC_OK;
+        }
+
+        void ProcessKeyCode(int keyCode) override {
+            if (this->stopping.load()) {
+                return;
+            }
+            switch (keyCode) {
+                case NX_KEYTYPE_PLAY:
+                    (void) this->host.with_playback_async(this->host.context, playOrPause, nullptr);
+                    break;
+                case NX_KEYTYPE_FAST:
+                case NX_KEYTYPE_NEXT:
+                    (void) this->host.control_async(this->host.context, MC_PLAYBACK_NEXT, 0, commandComplete, nullptr);
+                    break;
+                case NX_KEYTYPE_REWIND:
+                case NX_KEYTYPE_PREVIOUS:
+                    (void) this->host.control_async(this->host.context, MC_PLAYBACK_PREVIOUS, 0, commandComplete, nullptr);
+                    break;
+            }
+        }
 
     private:
-        std::mutex mutex;
-        IPlaybackService* playback { nullptr };
-        MediaKeys* mediaKeys { nullptr };
-};
+        mc_playback_remote_host_api host;
+        MediaKeys* mediaKeys { nil };
+        std::atomic<bool> stopping { true };
+    };
+
+    mc_result MC_CALL initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        return musik::core::plugin::RegisterPlaybackRemote<PlaybackRemote>(*host);
+    }
+
+    void MC_CALL shutdown(void*) {}
+}
 
 @implementation MediaKeys
 - (id) init {
@@ -168,7 +169,7 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
     int keyFlags = ([event data1] & 0x0000FFFF);
     int keyState = (((keyFlags & 0xFF00) >> 8)) == 0xA;
 
-    if (keyState == 1) {
+    if (keyState == 1 && processor) {
         processor->ProcessKeyCode(keyCode);
     }
 }
@@ -180,22 +181,32 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
     return NO;
 }
 
+- (void) requestStop {
+    [keyTap requestStopWatchingMediaKeys];
+}
+
 - (void) unregister {
     if (keyTap) {
         [keyTap stopWatchingMediaKeys];
         [keyTap release];
+        keyTap = nil;
     }
 }
 @end
 
-extern "C" IPlugin* GetPlugin() {
-    return &plugin;
-}
-
-extern "C" IPlaybackRemote* GetPlaybackRemote() {
-    return new PlaybackRemote();
-}
-
-extern "C" void SetDebug(IDebug* debug) {
-    ::debug = debug;
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error)
+{
+    const auto result = mc_plugin_validate_host_api(version, host, plugin, error);
+    if (result != MC_OK) {
+        return result;
+    }
+    *plugin = MC_PLUGIN_API_DEFAULT;
+    plugin->id = { "e850a2eb-5aaa-4322-b63e-bf1c1593805b", 36 };
+    plugin->name = { "macOS Media Keys", 16 };
+    plugin->version = { "1", 1 };
+    plugin->author = { "clangen", 7 };
+    plugin->initialize = initialize;
+    plugin->shutdown = shutdown;
+    return MC_OK;
 }

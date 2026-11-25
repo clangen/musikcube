@@ -79,6 +79,7 @@ const validLibraries = mac
     '/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit',
     '/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices',
     '/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox',
+    '/System/Library/Frameworks/AudioUnit.framework/Versions/A/AudioUnit',
     '/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon',
     '/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio',
     '/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics',

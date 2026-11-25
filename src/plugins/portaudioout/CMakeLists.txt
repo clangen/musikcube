@@ -1,15 +1,17 @@
-set (portaudioout_SOURCES
-  portaudioout_plugin.cpp
-  PortAudioOut.cpp
-)
-
-find_library(LIBPORTAUDIO "portaudio")
-
-if ("${LIBPORTAUDIO}" STREQUAL "LIBPORTAUDIO-NOTFOUND")
-  disable_plugin(portaudioout)
-else()
-  add_library(portaudioout SHARED ${portaudioout_SOURCES})
-  include_directories("${BSD_PATH_PREFIX}/include")
-  target_link_libraries(portaudioout ${LIBPORTAUDIO})
-  message(STATUS "[portaudioout] using libportaudio at: ${LIBPORTAUDIO}")
+find_library(LIBPORTAUDIO portaudio)
+if(LIBPORTAUDIO)
+  get_filename_component(PORTAUDIO_LIBRARY_DIR "${LIBPORTAUDIO}" DIRECTORY)
+  find_path(PORTAUDIO_INCLUDE_DIR portaudio.h HINTS "${PORTAUDIO_LIBRARY_DIR}/../include")
 endif()
+
+if(NOT LIBPORTAUDIO OR NOT PORTAUDIO_INCLUDE_DIR)
+  disable_plugin(portaudioout)
+  return()
+endif()
+
+add_library(portaudioout SHARED portaudioout_plugin.cpp PortAudioOut.cpp)
+musikcube_configure_c_plugin(portaudioout)
+target_compile_features(portaudioout PRIVATE cxx_std_20)
+target_include_directories(portaudioout PRIVATE "${PORTAUDIO_INCLUDE_DIR}")
+target_link_libraries(portaudioout PRIVATE ${LIBPORTAUDIO} Threads::Threads)
+message(STATUS "[portaudioout] using ${LIBPORTAUDIO}")

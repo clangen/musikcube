@@ -906,6 +906,46 @@ if(APPLE AND TARGET coreaudioout AND TARGET ffmpegdecoder)
 endif()
 
 
+if(APPLE AND TARGET portaudioout)
+  add_executable(musikcore_portaudio_failure_test
+    ../unit/musikcore/portaudio-output.cpp "${PROJECT_SOURCE_DIR}/src/plugins/portaudioout/PortAudioOut.cpp")
+  target_include_directories(musikcore_portaudio_failure_test PRIVATE
+    "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src" "${PORTAUDIO_INCLUDE_DIR}")
+  target_compile_features(musikcore_portaudio_failure_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_portaudio_failure_test PRIVATE Threads::Threads)
+  add_dependencies(musikcube_tests musikcore_portaudio_failure_test)
+  add_test(NAME musikcore.unit.plugins.portaudio_failure COMMAND musikcore_portaudio_failure_test)
+  set_tests_properties(musikcore.unit.plugins.portaudio_failure PROPERTIES
+    LABELS "unit;musikcore;plugins;audio;contract" TIMEOUT 10)
+
+  add_executable(musikcore_portaudio_output_test ../integration/plugins/portaudio-output.cpp)
+  target_include_directories(musikcore_portaudio_output_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_portaudio_output_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_portaudio_output_test PRIVATE ${CMAKE_DL_LIBS} Threads::Threads)
+  add_dependencies(musikcore_portaudio_output_test portaudioout)
+  add_dependencies(musikcube_tests musikcore_portaudio_output_test)
+  add_dependencies(musikcube_integration_tests musikcore_portaudio_output_test)
+  add_test(NAME musikcore.integration.plugins.portaudio_output
+    COMMAND musikcore_portaudio_output_test "$<TARGET_FILE:portaudioout>")
+  set_tests_properties(musikcore.integration.plugins.portaudio_output PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;hardware;contract" SKIP_RETURN_CODE 77 TIMEOUT 30)
+endif()
+
+if(APPLE AND TARGET macosmediakeys)
+  find_library(MACOS_MEDIA_KEYS_APPKIT AppKit REQUIRED)
+  add_executable(musikcore_macos_media_keys_test ../integration/plugins/macos-media-keys.mm)
+  target_include_directories(musikcore_macos_media_keys_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_macos_media_keys_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_macos_media_keys_test PRIVATE ${MACOS_MEDIA_KEYS_APPKIT} ${CMAKE_DL_LIBS})
+  add_dependencies(musikcore_macos_media_keys_test macosmediakeys)
+  add_dependencies(musikcube_tests musikcore_macos_media_keys_test)
+  add_dependencies(musikcube_integration_tests musikcore_macos_media_keys_test)
+  add_test(NAME musikcore.integration.plugins.macos_media_keys
+    COMMAND "$<TARGET_FILE:musikcore_macos_media_keys_test>" "$<TARGET_FILE:macosmediakeys>")
+  set_tests_properties(musikcore.integration.plugins.macos_media_keys PROPERTIES
+    LABELS "integration;musikcore;plugins;contract" SKIP_RETURN_CODE 77 TIMEOUT 30)
+endif()
+
 if(TARGET supereqdsp)
   add_library(musikcore_test_failing_dsp MODULE plugins/failing-dsp.c)
   target_include_directories(musikcore_test_failing_dsp PRIVATE "${PROJECT_SOURCE_DIR}/include")
