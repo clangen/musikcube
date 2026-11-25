@@ -1,0 +1,657 @@
+Source: https://github.com/johnneerdael/ProjectM-Android/blob/2ac06c7253fb2956df3645779bf688c07d617419/tools/projectm-patches/0002-render-target-resize-program-cache-shader-state.patch
+Author: John Neerdael
+License: LGPL-2.1 (same as projectM)
+Local change: advertise the optional transition controls with a feature macro.
+
+Subject: [PATCH] projectM TV: smooth switches and blends on TV hardware
+
+Changes for ProjectM TV (Android TV, NVIDIA SHIELD profiling), on top of 4.1.7:
+
+- projectm_opengl_render_frame_fbo(): render into a caller-supplied framebuffer
+  (same name as later projectM versions), so the app can render below the
+  surface size and upscale.
+- Framebuffer::SetSize() scales the old color contents into the new textures:
+  a render size change no longer restarts every preset (almost all presets draw
+  on top of their previous frame).
+- Process-wide cache of linked program binaries (glGetProgramBinary /
+  glProgramBinary), keyed by shader source, shared by all instances:
+  projectm_opengl_program_cache_stats(). A second instance on a background
+  thread links the next preset's programs, so the switch on the render thread
+  no longer waits ~0.3-0.5 s per program in the driver's compiler.
+- Shader: uniform locations looked up once per program, and glUseProgram only
+  when a different program is bound (custom shapes bound the same program
+  several times per instance, each time forcing the driver to revalidate).
+- projectm_opengl_set_outgoing_preset_frame_divisor(): during a soft cut, the
+  outgoing preset can render every n-th frame (its last frame is blended in
+  between), halving its CPU cost when blends are CPU-bound.
+
+---
+diff --git a/src/api/include/projectM-4/render_opengl.h b/src/api/include/projectM-4/render_opengl.h
+index 0a061f765..6fd68e863 100644
+--- a/src/api/include/projectM-4/render_opengl.h
++++ b/src/api/include/projectM-4/render_opengl.h
+@@ -41,6 +41,42 @@ extern "C" {
+  */
+ PROJECTM_EXPORT void projectm_opengl_render_frame(projectm_handle instance);
+ 
++/* identifies the optional transition controls in this patched build. */
++#define PROJECTM_HAS_TRANSITION_CONTROLS 1
++
++/**
++ * @brief Renders a single frame into the given framebuffer object instead of the default one.
++ *
++ * The framebuffer must have a color attachment at least as large as the window size set with
++ * projectm_set_window_size(). Passing 0 is the same as projectm_opengl_render_frame().
++ *
++ * @param instance The projectM instance handle.
++ * @param framebuffer_object_id The OpenGL framebuffer object to draw the frame into.
++ */
++PROJECTM_EXPORT void projectm_opengl_render_frame_fbo(projectm_handle instance, uint32_t framebuffer_object_id);
++
++/**
++ * @brief Statistics of the process-wide cache of linked shader programs.
++ *
++ * Programs are cached by their source code and shared by all instances: a program another instance
++ * (e.g. on another thread with its own context) already linked loads in milliseconds.
++ *
++ * @param hits Receives the number of programs loaded from the cache.
++ * @param misses Receives the number of programs that were compiled.
++ */
++PROJECTM_EXPORT void projectm_opengl_program_cache_stats(uint32_t* hits, uint32_t* misses);
++
++/**
++ * @brief During a soft-cut transition, renders the outgoing preset only every n-th frame.
++ *
++ * The outgoing preset fades out and its last frame is blended in between, so a divisor of 2 halves
++ * its cost with little visible difference. 1 (the default) renders it every frame.
++ *
++ * @param instance The projectM instance handle.
++ * @param divisor Render the outgoing preset every divisor-th frame, at least 1.
++ */
++PROJECTM_EXPORT void projectm_opengl_set_outgoing_preset_frame_divisor(projectm_handle instance, uint32_t divisor);
++
+ #ifdef __cplusplus
+ } // extern "C"
+ #endif
+diff --git a/src/libprojectM/ProjectM.cpp b/src/libprojectM/ProjectM.cpp
+index 88fa014ba..bc6097647 100644
+--- a/src/libprojectM/ProjectM.cpp
++++ b/src/libprojectM/ProjectM.cpp
+@@ -29,6 +29,7 @@
+ 
+ #include <Renderer/CopyTexture.hpp>
+ #include <Renderer/PresetTransition.hpp>
++#include <Renderer/Shader.hpp>
+ #include <Renderer/TextureManager.hpp>
+ #include <Renderer/TransitionShaderManager.hpp>
+ 
+@@ -90,8 +91,11 @@ void ProjectM::ResetTextures()
+     m_textureManager = std::make_unique<Renderer::TextureManager>(m_textureSearchPaths);
+ }
+ 
+-void ProjectM::RenderFrame()
++void ProjectM::RenderFrame(uint32_t targetFramebufferObject)
+ {
++    // Other code (or a new context) may have changed the current program since the last frame.
++    Renderer::Shader::InvalidateBoundProgram();
++
+     // Don't render if window area is zero.
+     if (m_windowWidth == 0 || m_windowHeight == 0)
+     {
+@@ -163,18 +167,23 @@ void ProjectM::RenderFrame()
+     }
+ 
+ 
+-    // ToDo: Call the to-be-implemented render method in Renderer
+-    m_activePreset->RenderFrame(audioData, renderContext);
++    // During a transition the outgoing preset may render at a fraction of the frame rate: it is
++    // fading out, and its last frame is blended meanwhile. This saves most of its (CPU) cost.
++    bool inTransition = m_transition != nullptr && m_transitioningPreset != nullptr;
++    if (!inTransition || m_outgoingPresetFrameDivisor <= 1 || m_frameCount % m_outgoingPresetFrameDivisor == 0)
++    {
++        // ToDo: Call the to-be-implemented render method in Renderer
++        m_activePreset->RenderFrame(audioData, renderContext);
++    }
+ 
+-    // ToDo: Allow external apps to provide a custom target framebuffer.
+-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
++    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, targetFramebufferObject);
+     glViewport(0, 0, renderContext.viewportSizeX, renderContext.viewportSizeY);
+ 
+ #ifdef USE_GLES
+     // On WebGL2 / Chrome ANGLE, the default framebuffer's draw buffer must
+     // be explicitly set to GL_BACK after preset rendering, which may leave
+     // per-FBO draw buffer state that leaks into FBO 0 on some drivers.
+-    GLenum backBuf = GL_BACK;
++    GLenum backBuf = targetFramebufferObject == 0 ? GL_BACK : GL_COLOR_ATTACHMENT0;
+     glDrawBuffers(1, &backBuf);
+ #endif
+ 
+@@ -193,6 +202,8 @@ void ProjectM::RenderFrame()
+ 
+ void ProjectM::Initialize()
+ {
++    Renderer::Shader::InvalidateBoundProgram();
++
+     /** Initialise start time */
+     m_timeKeeper = std::make_unique<TimeKeeper>(m_presetDuration,
+                                                 m_softCutDuration,
+@@ -234,6 +245,8 @@ void ProjectM::SetWindowSize(uint32_t width, uint32_t height)
+ 
+ void ProjectM::StartPresetTransition(std::unique_ptr<Preset>&& preset, bool hardCut)
+ {
++    Renderer::Shader::InvalidateBoundProgram();
++
+     m_presetChangeNotified = m_presetLocked;
+ 
+     if (preset == nullptr)
+@@ -268,6 +281,11 @@ void ProjectM::StartPresetTransition(std::unique_ptr<Preset>&& preset, bool hard
+     }
+ }
+ 
++void ProjectM::SetOutgoingPresetFrameDivisor(uint32_t divisor)
++{
++    m_outgoingPresetFrameDivisor = divisor > 0 ? divisor : 1;
++}
++
+ auto ProjectM::WindowWidth() -> int
+ {
+     return m_windowWidth;
+diff --git a/src/libprojectM/ProjectM.hpp b/src/libprojectM/ProjectM.hpp
+index b84e29335..72fd2292f 100644
+--- a/src/libprojectM/ProjectM.hpp
++++ b/src/libprojectM/ProjectM.hpp
+@@ -101,7 +101,15 @@ public:
+ 
+     void ResetTextures();
+ 
+-    void RenderFrame();
++    /**
++     * @brief Renders a frame into the given framebuffer object (0: the default framebuffer).
++     */
++    void RenderFrame(uint32_t targetFramebufferObject = 0);
++
++    /**
++     * @brief During a transition, renders the outgoing preset only every n-th frame (1: every frame).
++     */
++    void SetOutgoingPresetFrameDivisor(uint32_t divisor);
+ 
+     void SetBeatSensitivity(float sensitivity);
+ 
+@@ -188,6 +196,7 @@ private:
+     uint32_t m_meshY{24};              //!< Per-point mesh vertical resolution.
+     uint32_t m_targetFps{35};          //!< Target frames per second.
+     uint32_t m_windowWidth{0};            //!< EvaluateFrameData window width. If 0, nothing is rendered.
++    uint32_t m_outgoingPresetFrameDivisor{1}; //!< Render the outgoing preset every n-th frame during a transition.
+     uint32_t m_windowHeight{0};           //!< EvaluateFrameData window height. If 0, nothing is rendered.
+     double m_presetDuration{30.0};   //!< Preset duration in seconds.
+     double m_softCutDuration{3.0};   //!< Soft cut transition time.
+diff --git a/src/libprojectM/ProjectMCWrapper.cpp b/src/libprojectM/ProjectMCWrapper.cpp
+index cbf5f6edc..95f9c7f15 100644
+--- a/src/libprojectM/ProjectMCWrapper.cpp
++++ b/src/libprojectM/ProjectMCWrapper.cpp
+@@ -3,6 +3,7 @@
+ #include <projectM-4/projectM.h>
+ 
+ #include <Audio/AudioConstants.hpp>
++#include <Renderer/Shader.hpp>
+ 
+ #include <cstring>
+ #include <sstream>
+@@ -171,6 +172,33 @@ void projectm_opengl_render_frame(projectm_handle instance)
+     projectMInstance->RenderFrame();
+ }
+ 
++void projectm_opengl_render_frame_fbo(projectm_handle instance, uint32_t framebuffer_object_id)
++{
++    auto projectMInstance = handle_to_instance(instance);
++    projectMInstance->RenderFrame(framebuffer_object_id);
++}
++
++void projectm_opengl_set_outgoing_preset_frame_divisor(projectm_handle instance, uint32_t divisor)
++{
++    auto projectMInstance = handle_to_instance(instance);
++    projectMInstance->SetOutgoingPresetFrameDivisor(divisor);
++}
++
++void projectm_opengl_program_cache_stats(uint32_t* hits, uint32_t* misses)
++{
++    uint32_t cacheHits{};
++    uint32_t cacheMisses{};
++    libprojectM::Renderer::Shader::ProgramCacheStats(cacheHits, cacheMisses);
++    if (hits != nullptr)
++    {
++        *hits = cacheHits;
++    }
++    if (misses != nullptr)
++    {
++        *misses = cacheMisses;
++    }
++}
++
+ void projectm_set_beat_sensitivity(projectm_handle instance, float sensitivity)
+ {
+     auto projectMInstance = handle_to_instance(instance);
+diff --git a/src/libprojectM/Renderer/Framebuffer.cpp b/src/libprojectM/Renderer/Framebuffer.cpp
+index 455cdae4b..9aab63b3a 100644
+--- a/src/libprojectM/Renderer/Framebuffer.cpp
++++ b/src/libprojectM/Renderer/Framebuffer.cpp
+@@ -86,18 +86,45 @@ bool Framebuffer::SetSize(int width, int height)
+         return false;
+     }
+ 
++    int oldWidth = m_width;
++    int oldHeight = m_height;
+     m_width = width;
+     m_height = height;
+ 
++    // Color contents are scaled into the new textures, so presets that draw on top of their previous
++    // frame (almost all of them) continue seamlessly instead of starting over after a resize.
++    GLuint copyFramebuffer = 0;
+     for (auto& attachments : m_attachments)
+     {
+-        Bind(attachments.first);
+         for (auto& texture : attachments.second)
+         {
++            std::shared_ptr<class Texture> oldTexture = texture.second->Texture();
+             texture.second->SetSize(width, height);
++            Bind(attachments.first);
+             glFramebufferTexture2D(GL_FRAMEBUFFER, texture.first, GL_TEXTURE_2D, texture.second->Texture()->TextureID(), 0);
++
++            if (texture.second->Type() != TextureAttachment::AttachmentType::Color || texture.first != GL_COLOR_ATTACHMENT0 ||
++                !oldTexture || oldTexture == texture.second->Texture() || oldTexture->TextureID() == 0 ||
++                oldWidth <= 0 || oldHeight <= 0)
++            {
++                continue;
++            }
++            if (copyFramebuffer == 0)
++            {
++                glGenFramebuffers(1, &copyFramebuffer);
++            }
++            glBindFramebuffer(GL_READ_FRAMEBUFFER, copyFramebuffer);
++            glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, oldTexture->TextureID(), 0);
++            glReadBuffer(GL_COLOR_ATTACHMENT0);
++            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebufferIds.at(attachments.first));
++            glBlitFramebuffer(0, 0, oldWidth, oldHeight, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+         }
+     }
++    if (copyFramebuffer != 0)
++    {
++        glBindFramebuffer(GL_FRAMEBUFFER, 0);
++        glDeleteFramebuffers(1, &copyFramebuffer);
++    }
+     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+ 
+     return true;
+diff --git a/src/libprojectM/Renderer/Shader.cpp b/src/libprojectM/Renderer/Shader.cpp
+index 4a64ab9db..fae64689b 100644
+--- a/src/libprojectM/Renderer/Shader.cpp
++++ b/src/libprojectM/Renderer/Shader.cpp
+@@ -2,11 +2,154 @@
+ 
+ #include <glm/gtc/type_ptr.hpp>
+ 
++#include <atomic>
++#include <list>
++#include <mutex>
+ #include <vector>
+ 
+ namespace libprojectM {
+ namespace Renderer {
+ 
++namespace {
++
++// Program bound on this thread's context, to skip redundant glUseProgram calls (each one makes the
++// driver validate its state again at the next draw call).
++constexpr GLuint unknownProgram = ~0u;
++thread_local GLuint boundProgram = unknownProgram;
++
++// Linked program binaries by shader source, shared by all projectM instances in the process. A
++// program that was linked before (by any instance, on any thread) is loaded with glProgramBinary
++// in milliseconds instead of being compiled again, which can take hundreds of milliseconds.
++class ProgramCache
++{
++public:
++    static constexpr size_t maxBytes = 8 * 1024 * 1024;
++
++    static auto Instance() -> ProgramCache&
++    {
++        static ProgramCache cache;
++        return cache;
++    }
++
++    auto Load(GLuint program, const std::string& key) -> bool
++    {
++#ifdef USE_GLES
++        GLenum format{};
++        std::vector<char> binary;
++        {
++            std::lock_guard<std::mutex> lock(m_mutex);
++            auto it = Find(key);
++            if (it == m_entries.end())
++            {
++                m_misses++;
++                return false;
++            }
++            format = it->format;
++            binary = it->binary;
++            m_entries.splice(m_entries.begin(), m_entries, it);
++        }
++        glProgramBinary(program, format, binary.data(), static_cast<GLsizei>(binary.size()));
++        GLint linked{GL_FALSE};
++        glGetProgramiv(program, GL_LINK_STATUS, &linked);
++        std::lock_guard<std::mutex> lock(m_mutex);
++        if (linked == GL_TRUE)
++        {
++            m_hits++;
++            return true;
++        }
++        auto it = Find(key); // rejected by the driver: compile normally
++        if (it != m_entries.end())
++        {
++            m_bytes -= it->key.size() + it->binary.size();
++            m_entries.erase(it);
++        }
++        m_misses++;
++#else
++        (void) program;
++        (void) key;
++#endif
++        return false;
++    }
++
++    void Store(GLuint program, const std::string& key)
++    {
++#ifdef USE_GLES
++        GLint length{};
++        glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, &length);
++        if (length <= 0 || static_cast<size_t>(length) > maxBytes / 4)
++        {
++            return;
++        }
++        Entry entry{key, 0, std::vector<char>(static_cast<size_t>(length))};
++        GLsizei written{};
++        glGetProgramBinary(program, length, &written, &entry.format, entry.binary.data());
++        if (written <= 0)
++        {
++            return;
++        }
++        entry.binary.resize(static_cast<size_t>(written));
++
++        std::lock_guard<std::mutex> lock(m_mutex);
++        auto it = Find(key);
++        if (it != m_entries.end())
++        {
++            m_bytes -= it->key.size() + it->binary.size();
++            m_entries.erase(it);
++        }
++        m_bytes += entry.key.size() + entry.binary.size(); // the key is the full shader source
++        m_entries.push_front(std::move(entry));
++        while (m_bytes > maxBytes && !m_entries.empty())
++        {
++            m_bytes -= m_entries.back().key.size() + m_entries.back().binary.size();
++            m_entries.pop_back();
++        }
++#else
++        (void) program;
++        (void) key;
++#endif
++    }
++
++    void Stats(uint32_t& hits, uint32_t& misses)
++    {
++        std::lock_guard<std::mutex> lock(m_mutex);
++        hits = m_hits;
++        misses = m_misses;
++    }
++
++private:
++    struct Entry
++    {
++        std::string key;
++        GLenum format;
++        std::vector<char> binary;
++    };
++
++    auto Find(const std::string& key) -> std::list<Entry>::iterator
++    {
++        for (auto it = m_entries.begin(); it != m_entries.end(); ++it)
++        {
++            if (it->key == key)
++            {
++                return it;
++            }
++        }
++        return m_entries.end();
++    }
++
++    std::mutex m_mutex;
++    std::list<Entry> m_entries; //!< Most recently used first.
++    size_t m_bytes{};
++    uint32_t m_hits{};
++    uint32_t m_misses{};
++};
++
++} // namespace
++
++void Shader::ProgramCacheStats(uint32_t& hits, uint32_t& misses)
++{
++    ProgramCache::Instance().Stats(hits, misses);
++}
++
+ Shader::Shader()
+     : m_shaderProgram(glCreateProgram())
+ {
+@@ -16,6 +159,10 @@ Shader::~Shader()
+ {
+     if (m_shaderProgram)
+     {
++        if (boundProgram == m_shaderProgram)
++        {
++            boundProgram = unknownProgram;
++        }
+         glDeleteProgram(m_shaderProgram);
+     }
+ }
+@@ -23,12 +170,22 @@ Shader::~Shader()
+ void Shader::CompileProgram(const std::string& vertexShaderSource,
+                             const std::string& fragmentShaderSource)
+ {
++    m_uniformLocations.clear();
++    std::string cacheKey = vertexShaderSource + '\0' + fragmentShaderSource;
++    if (ProgramCache::Instance().Load(m_shaderProgram, cacheKey))
++    {
++        return;
++    }
++
+     auto vertexShader = CompileShader(vertexShaderSource, GL_VERTEX_SHADER);
+     auto fragmentShader = CompileShader(fragmentShaderSource, GL_FRAGMENT_SHADER);
+ 
+     glAttachShader(m_shaderProgram, vertexShader);
+     glAttachShader(m_shaderProgram, fragmentShader);
+ 
++#ifdef USE_GLES
++    glProgramParameteri(m_shaderProgram, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
++#endif
+     glLinkProgram(m_shaderProgram);
+ 
+     // Shader objects are no longer needed after linking, free the memory.
+@@ -41,6 +198,7 @@ void Shader::CompileProgram(const std::string& vertexShaderSource,
+     glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &programLinked);
+     if (programLinked == GL_TRUE)
+     {
++        ProgramCache::Instance().Store(m_shaderProgram, cacheKey);
+         return;
+     }
+ 
+@@ -73,20 +231,39 @@ bool Shader::Validate(std::string& validationMessage) const
+ 
+ void Shader::Bind() const
+ {
+-    if (m_shaderProgram > 0)
++    if (m_shaderProgram > 0 && boundProgram != m_shaderProgram)
+     {
+         glUseProgram(m_shaderProgram);
++        boundProgram = m_shaderProgram;
+     }
+ }
+ 
+ void Shader::Unbind()
+ {
+     glUseProgram(0);
++    boundProgram = 0;
+ }
+ 
+-void Shader::SetUniformFloat(const char* uniform, float value) const
++void Shader::InvalidateBoundProgram()
+ {
++    boundProgram = unknownProgram;
++}
++
++auto Shader::UniformLocation(const char* uniform) const -> GLint
++{
++    auto it = m_uniformLocations.find(uniform);
++    if (it != m_uniformLocations.end())
++    {
++        return it->second;
++    }
+     auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    m_uniformLocations.emplace(uniform, location);
++    return location;
++}
++
++void Shader::SetUniformFloat(const char* uniform, float value) const
++{
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -96,7 +273,7 @@ void Shader::SetUniformFloat(const char* uniform, float value) const
+ 
+ void Shader::SetUniformInt(const char* uniform, int value) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -106,7 +283,7 @@ void Shader::SetUniformInt(const char* uniform, int value) const
+ 
+ void Shader::SetUniformFloat2(const char* uniform, const glm::vec2& values) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -116,7 +293,7 @@ void Shader::SetUniformFloat2(const char* uniform, const glm::vec2& values) cons
+ 
+ void Shader::SetUniformInt2(const char* uniform, const glm::ivec2& values) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -126,7 +303,7 @@ void Shader::SetUniformInt2(const char* uniform, const glm::ivec2& values) const
+ 
+ void Shader::SetUniformFloat3(const char* uniform, const glm::vec3& values) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -136,7 +313,7 @@ void Shader::SetUniformFloat3(const char* uniform, const glm::vec3& values) cons
+ 
+ void Shader::SetUniformInt3(const char* uniform, const glm::ivec3& values) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -146,7 +323,7 @@ void Shader::SetUniformInt3(const char* uniform, const glm::ivec3& values) const
+ 
+ void Shader::SetUniformFloat4(const char* uniform, const glm::vec4& values) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -156,7 +333,7 @@ void Shader::SetUniformFloat4(const char* uniform, const glm::vec4& values) cons
+ 
+ void Shader::SetUniformInt4(const char* uniform, const glm::ivec4& values) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -166,7 +343,7 @@ void Shader::SetUniformInt4(const char* uniform, const glm::ivec4& values) const
+ 
+ void Shader::SetUniformMat3x4(const char* uniform, const glm::mat3x4& values) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+@@ -176,7 +353,7 @@ void Shader::SetUniformMat3x4(const char* uniform, const glm::mat3x4& values) co
+ 
+ void Shader::SetUniformMat4x4(const char* uniform, const glm::mat4x4& values) const
+ {
+-    auto location = glGetUniformLocation(m_shaderProgram, uniform);
++    auto location = UniformLocation(uniform);
+     if (location < 0)
+     {
+         return;
+diff --git a/src/libprojectM/Renderer/Shader.hpp b/src/libprojectM/Renderer/Shader.hpp
+index e3b0e6639..bd7300994 100644
+--- a/src/libprojectM/Renderer/Shader.hpp
++++ b/src/libprojectM/Renderer/Shader.hpp
+@@ -12,8 +12,10 @@
+ #include <glm/mat3x4.hpp>
+ #include <glm/mat4x4.hpp>
+ 
++#include <cstdint>
+ #include <map>
+ #include <string>
++#include <unordered_map>
+ 
+ namespace libprojectM {
+ namespace Renderer {
+@@ -91,6 +93,18 @@ public:
+      */
+     static void Unbind();
+ 
++    /**
++     * @brief Forgets which program is bound, so the next Bind() calls glUseProgram. Call when other
++     *        code may have changed the current program (or the context is new).
++     */
++    static void InvalidateBoundProgram();
++
++    /**
++     * @brief Number of programs loaded from the process-wide program binary cache, and of
++     *        programs that had to be compiled.
++     */
++    static void ProgramCacheStats(uint32_t& hits, uint32_t& misses);
++
+     /**
+      * @brief Sets a single float uniform.
+      * The program must be bound before calling this method!
+@@ -189,7 +203,13 @@ private:
+      */
+     auto CompileShader(const std::string& source, GLenum type) -> GLuint;
+ 
++    /**
++     * @brief Location of a uniform, looked up once per program.
++     */
++    auto UniformLocation(const char* uniform) const -> GLint;
++
+     GLuint m_shaderProgram{}; //!< The program ID.
++    mutable std::unordered_map<std::string, GLint> m_uniformLocations; //!< Uniform locations by name.
+ };
+ 
+ } // namespace Renderer

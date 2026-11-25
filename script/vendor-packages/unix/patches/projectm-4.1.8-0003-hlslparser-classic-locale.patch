@@ -1,0 +1,27 @@
+Source: https://github.com/johnneerdael/ProjectM-Android/blob/2ac06c7253fb2956df3645779bf688c07d617419/tools/projectm-patches/0003-hlslparser-classic-locale.patch
+Author: John Neerdael
+License: LGPL-2.1 (same as projectM)
+Local change: omit the parsing locale change already in projectM 4.1.8.
+
+Subject: [PATCH] hlslparser: use the prebuilt "C" locale for float conversions
+
+std::locale("C") constructs a named locale on every call. The HLSL tokenizer and
+generator do that for every float literal, and on Android (libc++, bionic) each
+construction costs roughly a millisecond: most of the 0.5 s it took to translate
+a typical preset's warp and composite shaders. std::locale::classic() is the
+same locale, built once.
+
+---
+diff --git a/vendor/hlslparser/src/Engine.cpp b/vendor/hlslparser/src/Engine.cpp
+index 4120f3224..a0c1113cf 100644
+--- a/vendor/hlslparser/src/Engine.cpp
++++ b/vendor/hlslparser/src/Engine.cpp
+@@ -42,7 +42,7 @@ int String_Printf(char * buffer, int size, const char * format, ...) {
+ 
+ int String_FormatFloat(char * buffer, int size, float value) {
+     std::ostringstream oss;
+-    oss.imbue(std::locale("C"));
++    oss.imbue(std::locale::classic()); // the prebuilt "C" locale: std::locale("C") builds one per call
+     oss << value;
+ 
+     return String_Printf(buffer, size, "float(%s)", oss.str().c_str());

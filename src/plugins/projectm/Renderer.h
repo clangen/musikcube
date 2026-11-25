@@ -68,6 +68,9 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
     bool advanceRequested = false;
     bool controlsVisible = true;
     bool automatic = true;
+#ifdef PROJECTM_HAS_TRANSITION_CONTROLS
+    bool reduceTransitionWork = true;
+#endif
     bool fullscreen = false;
     float duration = 30.0f;
     float inputGain = 4.0f;
@@ -117,6 +120,11 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
             },
             &advanceRequested);
         loadPresets();
+#ifdef PROJECTM_HAS_TRANSITION_CONTROLS
+        /* two presets render during a fade. update the outgoing one at half rate
+        to leave more time for the incoming preset and controls. */
+        projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, 2);
+#endif
         SDL_GL_SetSwapInterval(1);
     }
     input.Started(success);
@@ -194,6 +202,11 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
                 if (ImGui::SliderFloat("Duration (seconds)", &duration, 5.0f, 300.0f, "%.0f")) {
                     projectm_set_preset_duration(visualizer, duration);
                 }
+#ifdef PROJECTM_HAS_TRANSITION_CONTROLS
+                if (ImGui::Checkbox("Reduce transition work", &reduceTransitionWork)) {
+                    projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, reduceTransitionWork ? 2 : 1);
+                }
+#endif
                 ImGui::SliderFloat("Audio gain", &inputGain, 1.0f, 8.0f, "%.2fx");
                 ImGui::ProgressBar(std::min(inputPeak, 1.0f), ImVec2(180, 0), "Input level");
                 ImGui::SameLine();

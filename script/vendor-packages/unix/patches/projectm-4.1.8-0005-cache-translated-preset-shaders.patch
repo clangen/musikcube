@@ -1,0 +1,181 @@
+Source: https://github.com/johnneerdael/ProjectM-Android/blob/2ac06c7253fb2956df3645779bf688c07d617419/tools/projectm-patches/0005-cache-translated-preset-shaders.patch
+Author: John Neerdael
+License: LGPL-2.1 (same as projectM)
+
+Subject: [PATCH] Cache translated preset shaders
+
+The HLSL-to-GLSL translation of a preset's warp and composite shaders took about
+13 ms per preset on the render thread even when the linked program itself came
+from the program cache (patch 0002), because that cache is keyed by the GLSL
+source. The translated GLSL is now cached as well, keyed by everything the
+translation depends on (shader type, preset code, sampler and texsize
+declarations), shared by all instances and threads and bounded to 64 entries.
+ProjectM TV's background instance translates the next preset first, so the
+render thread goes straight to the cached program.
+
+---
+diff --git a/src/libprojectM/MilkdropPreset/MilkdropShader.cpp b/src/libprojectM/MilkdropPreset/MilkdropShader.cpp
+index fa769d5c7..8e0018ccf 100644
+--- a/src/libprojectM/MilkdropPreset/MilkdropShader.cpp
++++ b/src/libprojectM/MilkdropPreset/MilkdropShader.cpp
+@@ -13,6 +13,8 @@
+ #include <glm/mat4x4.hpp>
+ 
+ #include <algorithm>
++#include <list>
++#include <mutex>
+ #include <regex>
+ #include <set>
+ 
+@@ -593,6 +595,61 @@ void MilkdropShader::GetReferencedSamplers(const std::string& program)
+     }
+ }
+ 
++namespace {
++
++// Translated GLSL by everything the translation depends on (shader type, preset code and the
++// sampler/texsize declarations), shared by all instances and threads: a preset that another
++// instance (on a background thread) already translated skips the HLSL parser on the render thread.
++class TranslationCache
++{
++public:
++    static constexpr size_t maxEntries = 64;
++
++    static auto Instance() -> TranslationCache&
++    {
++        static TranslationCache cache;
++        return cache;
++    }
++
++    auto Find(const std::string& key, std::string& glsl) -> bool
++    {
++        std::lock_guard<std::mutex> lock(m_mutex);
++        for (auto it = m_entries.begin(); it != m_entries.end(); ++it)
++        {
++            if (it->first == key)
++            {
++                glsl = it->second;
++                m_entries.splice(m_entries.begin(), m_entries, it);
++                return true;
++            }
++        }
++        return false;
++    }
++
++    void Store(const std::string& key, const std::string& glsl)
++    {
++        std::lock_guard<std::mutex> lock(m_mutex);
++        for (const auto& entry : m_entries)
++        {
++            if (entry.first == key)
++            {
++                return;
++            }
++        }
++        m_entries.emplace_front(key, glsl);
++        if (m_entries.size() > maxEntries)
++        {
++            m_entries.pop_back();
++        }
++    }
++
++private:
++    std::mutex m_mutex;
++    std::list<std::pair<std::string, std::string>> m_entries; //!< Most recently used first.
++};
++
++} // namespace
++
+ void MilkdropShader::TranspileHLSLShader(const PresetState& presetState, std::string& program)
+ {
+     std::string shaderTypeString = "composite";
+@@ -601,6 +658,45 @@ void MilkdropShader::TranspileHLSLShader(const PresetState& presetState, std::st
+         shaderTypeString = "warp";
+     }
+ 
++    // Collect unique samplers and texsize uniforms
++    std::set<std::string> samplerDeclarations;
++    std::set<std::string> texSizeDeclarations;
++    for (const auto& desc : m_mainTextureDescriptors)
++    {
++        samplerDeclarations.insert(desc.SamplerDeclaration());
++        texSizeDeclarations.insert(desc.TexSizeDeclaration());
++    }
++    for (const auto& desc : presetState.blurTexture.GetDescriptorsForBlurLevel(m_maxBlurLevelRequired))
++    {
++        samplerDeclarations.insert(desc.SamplerDeclaration());
++        // No texsize_blur1 etc.
++    }
++    for (const auto& desc : m_textureSamplerDescriptors)
++    {
++        samplerDeclarations.insert(desc.SamplerDeclaration());
++        texSizeDeclarations.insert(desc.TexSizeDeclaration());
++    }
++
++    const std::string& vertexShader = m_type == ShaderType::WarpShader
++                                          ? MilkdropStaticShaders::Get()->GetPresetWarpVertexShader()
++                                          : MilkdropStaticShaders::Get()->GetPresetCompVertexShader();
++
++    std::string cacheKey = shaderTypeString + '\0' + program;
++    for (const auto& declaration : samplerDeclarations)
++    {
++        cacheKey += '\0' + declaration;
++    }
++    for (const auto& declaration : texSizeDeclarations)
++    {
++        cacheKey += '\0' + declaration;
++    }
++    std::string cachedGlsl;
++    if (TranslationCache::Instance().Find(cacheKey, cachedGlsl))
++    {
++        m_shader.CompileProgram(vertexShader, cachedGlsl);
++        return;
++    }
++
+     M4::GLSLGenerator generator;
+     M4::Allocator allocator;
+ 
+@@ -631,25 +727,6 @@ void MilkdropShader::TranspileHLSLShader(const PresetState& presetState, std::st
+         sourcePreprocessed.replace(matches.position(), matches.length(), "");
+     }
+ 
+-    // Collect unique samplers and texsize uniforms
+-    std::set<std::string> samplerDeclarations;
+-    std::set<std::string> texSizeDeclarations;
+-    for (const auto& desc : m_mainTextureDescriptors)
+-    {
+-        samplerDeclarations.insert(desc.SamplerDeclaration());
+-        texSizeDeclarations.insert(desc.TexSizeDeclaration());
+-    }
+-    for (const auto& desc : presetState.blurTexture.GetDescriptorsForBlurLevel(m_maxBlurLevelRequired))
+-    {
+-        samplerDeclarations.insert(desc.SamplerDeclaration());
+-        // No texsize_blur1 etc.
+-    }
+-    for (const auto& desc : m_textureSamplerDescriptors)
+-    {
+-        samplerDeclarations.insert(desc.SamplerDeclaration());
+-        texSizeDeclarations.insert(desc.TexSizeDeclaration());
+-    }
+-
+     // Now insert them on top.
+     for (const auto& texSizeDeclaration : texSizeDeclarations)
+     {
+@@ -677,14 +754,9 @@ void MilkdropShader::TranspileHLSLShader(const PresetState& presetState, std::st
+ 
+     // Now we have GLSL source for the preset shader program (hopefully it's valid!)
+     // Compile the preset shader fragment shader with the standard vertex shader and cross our fingers.
+-    if (m_type == ShaderType::WarpShader)
+-    {
+-        m_shader.CompileProgram(MilkdropStaticShaders::Get()->GetPresetWarpVertexShader(), generator.GetResult());
+-    }
+-    else
+-    {
+-        m_shader.CompileProgram(MilkdropStaticShaders::Get()->GetPresetCompVertexShader(), generator.GetResult());
+-    }
++    // Cached only after it compiled: a translation that fails to compile is not reused.
++    m_shader.CompileProgram(vertexShader, generator.GetResult());
++    TranslationCache::Instance().Store(cacheKey, generator.GetResult());
+ }
+ 
+ void MilkdropShader::UpdateMaxBlurLevel(BlurTexture::BlurLevel requestedLevel)

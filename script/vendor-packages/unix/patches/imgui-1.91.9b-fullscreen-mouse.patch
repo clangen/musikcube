@@ -1,0 +1,25 @@
+--- a/backends/imgui_impl_sdl2.cpp
++++ b/backends/imgui_impl_sdl2.cpp
+@@ -653,9 +653,19 @@
+         {
+             // Single-viewport mode: mouse position in client window coordinates (io.MousePos is (0,0) when the mouse is on the upper-left corner of the app window)
+             int window_x, window_y, mouse_x_global, mouse_y_global;
+-            SDL_GetGlobalMouseState(&mouse_x_global, &mouse_y_global);
+-            SDL_GetWindowPosition(bd->Window, &window_x, &window_y);
+-            io.AddMousePosEvent((float)(mouse_x_global - window_x), (float)(mouse_y_global - window_y));
++            /* fullscreen desktop coordinates can differ from the window's client
++            origin on macOS. SDL already tracks the pointer in window points. */
++            if (SDL_GetWindowFlags(bd->Window) & SDL_WINDOW_FULLSCREEN)
++            {
++                SDL_GetMouseState(&mouse_x_global, &mouse_y_global);
++                io.AddMousePosEvent((float)mouse_x_global, (float)mouse_y_global);
++            }
++            else
++            {
++                SDL_GetGlobalMouseState(&mouse_x_global, &mouse_y_global);
++                SDL_GetWindowPosition(bd->Window, &window_x, &window_y);
++                io.AddMousePosEvent((float)(mouse_x_global - window_x), (float)(mouse_y_global - window_y));
++            }
+         }
+     }
+ }
