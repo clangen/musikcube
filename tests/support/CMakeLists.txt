@@ -1283,6 +1283,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET mpris)
 endif()
 
 if(UNIX AND TARGET sndioout)
+  add_executable(musikcore_sndio_no_flush_test ../unit/musikcore/sndio-no-flush.cpp
+    "${PROJECT_SOURCE_DIR}/src/plugins/sndioout/SndioOut.cpp")
+  target_include_directories(musikcore_sndio_no_flush_test PRIVATE "${PROJECT_SOURCE_DIR}/src/plugins")
+  target_compile_features(musikcore_sndio_no_flush_test PRIVATE cxx_std_20)
+  target_compile_definitions(musikcore_sndio_no_flush_test PRIVATE MUSIKCUBE_SNDIO_HAS_FLUSH=0)
+  target_link_libraries(musikcore_sndio_no_flush_test PRIVATE "${LIBSNDIO}" Threads::Threads)
+  set_target_properties(musikcore_sndio_no_flush_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  add_dependencies(musikcube_unit_tests musikcore_sndio_no_flush_test)
+  add_dependencies(musikcube_tests musikcore_sndio_no_flush_test)
+  add_test(NAME musikcore.unit.plugins.sndio_no_flush COMMAND musikcore_sndio_no_flush_test)
+  set_tests_properties(musikcore.unit.plugins.sndio_no_flush PROPERTIES
+    LABELS "unit;musikcore;plugins;audio;contract" TIMEOUT 20)
   add_executable(musikcore_sndio_devices_test ../integration/plugins/sndio-devices.cpp)
   target_include_directories(musikcore_sndio_devices_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
   target_link_libraries(musikcore_sndio_devices_test PRIVATE ${CMAKE_DL_LIBS})

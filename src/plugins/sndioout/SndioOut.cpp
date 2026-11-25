@@ -307,9 +307,13 @@ mc_result SndioOut::Stop() noexcept {
     }
     this->operationEnded.wait(lock, [this] { return !this->operationActive; });
     if (this->handle) {
+#if MUSIKCUBE_SNDIO_HAS_FLUSH
         if (this->started) {
             sio_flush(this->handle);
         }
+#else
+        /* older sndio may drain queued audio while closing. */
+#endif
         sio_close(this->handle);
         this->handle = nullptr;
     }
@@ -355,6 +359,7 @@ mc_result SndioOut::Flush() {
         return MC_ERROR_IN_FLIGHT;
     }
 
+#if MUSIKCUBE_SNDIO_HAS_FLUSH
     /* discard queued sound without closing the selected endpoint. */
     if (this->started && !sio_flush(this->handle)) {
         return MC_ERROR_IO;
@@ -370,4 +375,8 @@ mc_result SndioOut::Flush() {
         this->callbacks.ready(this->callbacks.context);
     }
     return MC_OK;
+#else
+    /* older sndio cannot discard queued sound; the host closes and reopens it. */
+    return MC_ERROR_UNSUPPORTED;
+#endif
 }
