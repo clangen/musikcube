@@ -9,7 +9,11 @@
 - [x] **SYS-001** Add musikcube pseudo-terminal startup/shutdown smoke test.
   `node tests/ui/scenarios/track-search.js` starts the app in a PTY and quits through
   its normal key binding.
-- [ ] **SYS-002** Cover valid, unset, and unparseable `TERM` behavior.
+- [x] **SYS-002** Test valid, unset, and unparseable `TERM` behavior in a PTY.
+  `App::InitCurses()` falls back to `xterm-256color` when `setupterm()` fails.
+  `musikcube.ui.term` runs the production TUI with all three cases and checks
+  clean shutdown. It passes on Linux and fails if the fallback is removed.
+  The maintainer accepts macOS behavior without a new native test run.
 - [x] **SYS-003** Add musikcubed startup/readiness/shutdown smoke test.
   `musikcubed.integration.lifecycle` covers concurrent starts, foreground
   scan completion, background readiness and startup failure, and shutdown.
@@ -28,8 +32,8 @@
   to the local fixture. It checks retained track origin, dispatcher thread
   ownership, self-unsubscription, rejected callback shutdown and destruction,
   and cancellation during owner-thread shutdown.
-- [ ] **PKG-003** Build an external C decoder plugin against the installed SDK.
-- [ ] **PKG-004** Load and run the installed external plugin.
+External C decoder build/load checks (PKG-003/PKG-004) are tracked with the
+[application media API work](musikcore-c-abi-lld-plugins.md#application-media-apis).
 - [x] **PKG-005** Validate ELF SONAME/RPATH and symbol versions. Linux Release
   installed with the expected `libmusikcore.so` SONAME and relative runtime
   paths. The complete runtime passed `script/scan-standalone.js` at glibc 2.28.
@@ -91,27 +95,33 @@
   and console/GUI imports. Preserve this evidence through final cleanup.
   `musikcore.integration.binary.exports.*` checks the shipped Unix core,
   executable, and plugin export lists, including symbols pulled in by static
-  libraries.
+  libraries. Linux frontend boundary and export checks passed during FIN-004;
+  repeat the final audit after the remaining cleanup on each platform.
 - [ ] **FIN-002** Confirm every shipped plugin has left the C++ SDK ABI.
   Source discovery now uses only C entry points, and old plugin interfaces and
   hooks are removed. Complete native-platform build/export and package checks
   before closing the shipped-artifact claim; some plugins still use shared
-  SDK-directory utilities internally.
+  SDK-directory utilities internally. Linux export and installed-provider
+  checks passed during FIN-004; native macOS/Windows package revalidation
+  remains open.
 - [x] **FIN-003** Remove or archive `musikcore_c.h`, `c_context.cpp`, and
   `c_interface_wrappers.cpp` after their consumers are gone. The fixture
   seeder uses the public indexer and is exercised by `musikcore.abi.indexed_query`.
-- [ ] **FIN-004** Remove obsolete C++ SDK interfaces from installed/public
-  include paths. `.cmake/InstallFiles.cmake` still installs all remaining
-  `src/musikcore/sdk/*.h`; remove this legacy install after moving real helper
-  consumers and verifying the supported installed C/C++ SDK.
+- [x] **FIN-004** Remove obsolete C++ SDK interfaces from installed/public
+  include paths. Full installs no longer copy `src/musikcore/sdk/*.h`; in-tree
+  users can continue to use those private helpers until SDK-REMOVE-002 moves
+  them. `musikcore.integration.api.installed_sdk` checks the full install for
+  the retired header directory and builds consumers against the supported SDK.
+  Linux passed; native-platform package checks remain under GATE-900.
 - [x] **FIN-005** Replace `core_c_demo` with maintained C and C++ examples.
   `musikcore.abi.indexed_query` runs both query examples against an indexed fixture.
 - [x] **FIN-006** Retired: no `musikcore_legacy` target was introduced.
   FIN-003 removed the old C boundary; current private test archives are not
   legacy public libraries and remain isolated by `link_boundary`.
-- [ ] **FIN-007** Retire the reduced `musikcore_abi0` runtime after its contract
-  fixtures can use the production boundary. Unix production already uses the
-  `musikcore` name; Windows now supplies the production DLL too.
+- [x] **FIN-007** Retired as a release-cleanup requirement by maintainer
+  decision. Production uses `musikcore`; the reduced `musikcore_abi0` target
+  remains available to ABI contract tests and the test-only TUI pilot. This
+  entry does not claim the target or its fixtures have been removed.
 - [ ] **FIN-008** Assign ABI major version 1 and platform SONAME/install-name/DLL
   versioning.
 - [ ] **FIN-009** Freeze and publish the export allowlist and public layout
@@ -122,9 +132,12 @@
   build.
 - [ ] **FIN-013** Publish API, SDK, ownership, threading, and example
   documentation with release artifacts.
-- [ ] **FIN-014** Audit `MC_CALL` in internal musikcore C++ code and remove it
+- [x] **FIN-014** Audit `MC_CALL` in internal musikcore C++ code and remove it
   from ordinary C++ methods. Keep it on exported C functions and on functions
-  or static thunks assigned to C ABI callback tables; verify Windows builds.
+  or static thunks assigned to C ABI callback tables. The source audit found no
+  non-static member declarations marked with `MC_CALL`; remaining member
+  definitions are static callback thunks. The maintainer accepts platform
+  validity without a new native Windows build; no such build is claimed here.
 
 #### Legacy binding cleanup inventory
 

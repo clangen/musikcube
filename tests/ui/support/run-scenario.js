@@ -92,7 +92,7 @@ function stagePilot(runtime, binaryDir) {
 
 /* Launch the PTY with isolated settings, then run the selected checks. */
 async function checkWorkflow(runtime, database, screenshots,
-  { pilot = false, windows = false, windowsHost, cache, scenario = 'all', playbackMode = 'gapless' } = {}) {
+  { pilot = false, windows = false, windowsHost, cache, scenario = 'all', playbackMode = 'gapless', termValue } = {}) {
   const fixture = dirname(dirname(dirname(database)));
   /* Keep startup from reindexing the fixture. */
   const settings = join(fixture, 'musikcube', 'settings.json');
@@ -125,6 +125,10 @@ async function checkWorkflow(runtime, database, screenshots,
     LC_ALL: process.platform === 'darwin' ? 'en_US.UTF-8' : 'C.UTF-8',
   };
   delete env.LANGUAGE;
+  if (scenario === 'term') {
+    if (termValue === undefined) delete env.TERM;
+    else env.TERM = termValue;
+  }
   if (scenario === 'transport') {
     env.MUSIKCORE_TEST_OUTPUT_DELAY_MS = '900';
   }
@@ -155,7 +159,7 @@ async function checkWorkflow(runtime, database, screenshots,
     if (pilot || scenario === 'search' || scenario === 'all') {
       Object.assign(result, await checkSearch(terminal, { pilot, windows, cache, openSearch, capture }));
       if (!pilot && scenario === 'search') await checkSortOrder(terminal);
-    } else if (scenario !== 'settings') {
+    } else if (!['settings', 'term'].includes(scenario)) {
       terminal.send(openSearch);
       await terminal.expect(FIRST_TRACK);
     }
@@ -223,7 +227,7 @@ async function main(defaultScenario) {
   });
 
   if (values.help) {
-    console.log(`Usage: node ${basename(process.argv[1])} [--build-dir <dir>] [--bin-dir <dir>] [--conpty-host <launcher.exe>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|settings|locale|lyrics|transport|all] [--capture-output <path>] [--playback-mode gapless|crossfade] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]`);
+    console.log(`Usage: node ${basename(process.argv[1])} [--build-dir <dir>] [--bin-dir <dir>] [--conpty-host <launcher.exe>] [--screenshots <dir>] [--tracks <count>] [--runs <count>] [--windows] [--scenario search|queue|playlists|browse|settings|locale|lyrics|transport|term|all] [--capture-output <path>] [--playback-mode gapless|crossfade] [--compare | --pilot-control <dir>] [--cache-pages <count>] [--prefetch-pages <count>]`);
     return;
   }
   if (isWindows && !values['conpty-host']) {
@@ -233,7 +237,7 @@ async function main(defaultScenario) {
     throw new Error('Windows builds do not provide the ABI-only search pilot');
   }
 
-  if (!['search', 'queue', 'playlists', 'browse', 'settings', 'locale', 'lyrics', 'transport', 'all'].includes(values.scenario)) {
+  if (!['search', 'queue', 'playlists', 'browse', 'settings', 'locale', 'lyrics', 'transport', 'term', 'all'].includes(values.scenario)) {
     throw new Error('Unknown UI scenario: ' + values.scenario);
   }
   if (values.scenario === 'transport' && !values['capture-output']) {
@@ -314,11 +318,21 @@ async function main(defaultScenario) {
 
     const results = await sampleVariants(variants, runs, async variant => {
       try {
-        return await checkWorkflow(variant.runtime, database,
-          variant.pilot ? undefined : screenshots, {
-            pilot: variant.pilot, windows, cache, scenario: values.scenario, playbackMode: values['playback-mode'],
-            windowsHost: isWindows ? resolve(values['conpty-host']) : undefined,
-          });
+        const options = {
+          pilot: variant.pilot, windows, cache, scenario: values.scenario, playbackMode: values['playback-mode'],
+          windowsHost: isWindows ? resolve(values['conpty-host']) : undefined,
+        };
+        if (values.scenario === 'term') {
+          for (const termValue of ['xterm-256color', undefined, 'musikcube-invalid-terminal']) {
+            try {
+              await checkWorkflow(variant.runtime, database, undefined, { ...options, termValue });
+            } catch (error) {
+              throw new Error(`TERM=${termValue ?? '<unset>'}: ${error.message}`, { cause: error });
+            }
+          }
+          return {};
+        }
+        return await checkWorkflow(variant.runtime, database, variant.pilot ? undefined : screenshots, options);
       } finally {
         fs.rmSync(join(fixture, 'musikcube', 'session.json'), { force: true });
       }

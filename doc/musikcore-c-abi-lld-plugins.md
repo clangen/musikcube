@@ -758,6 +758,10 @@ was moved from the core migration LLD because it builds on provider services.
     retained handles and teardown through an independently built C consumer;
     update public header, export, ABI-only, and installed-consumer checks.
   Application-facing media operations are not implemented by this task entry.
+- [ ] **PKG-003** Build an external C decoder plugin against the installed SDK.
+- [ ] **PKG-004** Load and exercise that decoder through the installed runtime.
+  The installed-provider test already covers a C provider and C++ output; this
+  specifically verifies an independently built decoder and its media path.
 
 ## Remaining SDK removal
 

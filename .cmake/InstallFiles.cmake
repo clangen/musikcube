@@ -15,10 +15,6 @@ endif()
 install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/plugins/"
   DESTINATION share/musikcube/plugins COMPONENT musikcorePlugins OPTIONAL FILES_MATCHING PATTERN "*.${plugin_extension}")
 
-# sdk header files
-file(GLOB sdk_headers "src/musikcore/sdk/*.h")
-install(FILES ${sdk_headers} DESTINATION include/musikcube/musikcore/sdk)
-
 # resources
 file(GLOB themes "src/musikcube/data/themes/*.json")
 file(COPY ${themes} DESTINATION bin/themes)
