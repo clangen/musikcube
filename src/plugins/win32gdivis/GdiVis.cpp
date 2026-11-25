@@ -1,273 +1,216 @@
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
-#include <iostream>
-#include <algorithm>
-
-#include <shlwapi.h>
-
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/ISpectrumVisualizer.h>
-#include <musikcore/sdk/IPlugin.h>
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <musikcore/plugin/visualizer.hpp>
 
 #include "MemoryDC.h"
+#include <windows.h>
 
-#define DLL_EXPORT __declspec(dllexport)
-#define MAX_FPS 10LL
-#define MILLIS_PER_FRAME (1000LL / MAX_FPS)
-#define WINDOW_CLASS_NAME L"GdiVis-musikcube"
-#define DEFAULT_WIDTH 550
-#define DEFAULT_HEIGHT 100
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <condition_variable>
+#include <cstring>
+#include <mutex>
+#include <thread>
 
-using namespace std::chrono;
+namespace {
+    constexpr wchar_t WindowClass[] = L"GdiVis-musikcube";
+    constexpr size_t SpectrumBins = 256;
+    HINSTANCE module = nullptr;
 
-static std::atomic<bool> quit(false);
-static std::atomic<bool> thread(false);
-static std::mutex pcmMutex, threadMutex;
-static std::condition_variable threadCondition;
-static HINSTANCE instance;
-static HBRUSH fg = CreateSolidBrush(RGB(255, 0, 0));
-static COLORREF bg = RGB(24, 24, 24);
-
-static int spectrumSize = 0;
-static float* spectrumIn = nullptr;
-static float* spectrumOut = nullptr;
-
-static void renderFrame(HWND hwnd) {
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(hwnd, &ps);
-    RECT& r = ps.rcPaint;
-
-    {
-        /* copy to the output buffer so we can write the input buffer
-        immediately if we want to. */
-        std::unique_lock<std::mutex> lock(pcmMutex);
-        memcpy(::spectrumOut, ::spectrumIn, ::spectrumSize * sizeof(float));
-    }
-
-    if (::spectrumOut && ::spectrumSize) {
-        win32cpp::MemoryDC memDc(hdc, ps.rcPaint);
-
-        RECT rect;
-        int barHeight;
-        const int barWidth = 7;
-        const int barY = DEFAULT_HEIGHT - 15;
-
-        int x = 20;
-        int n = spectrumSize / 4;
-        for (int bar = 0; bar < n; bar++) {
-            barHeight = 4 + (int)(spectrumOut[bar]);
-            rect.left = x;
-            rect.right = rect.left + barWidth;
-
-            int dstY = barY - barHeight;
-            for (int y = barY; y > dstY; y-=2) {
-                rect.top = y;
-                rect.bottom = rect.top - 1;
-                FillRect(memDc, &rect, fg);
-            }
-
-            x += barWidth + 1;
-        }
-    }
-
-    EndPaint(hwnd, &ps);
-}
-
-LRESULT CALLBACK staticWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg) {
-        case WM_CLOSE: {
-            DestroyWindow(hwnd);
-            UnregisterClass(WINDOW_CLASS_NAME, NULL);
-            return 0;
-        }
-
-        case WM_DESTROY: {
-            PostQuitMessage(0);
-            break;
-
-        case WM_CHAR:
-            if (wParam == 0x1B) { /* esc */
-                PostQuitMessage(0);
-            }
-            break;
-
-        case WM_PAINT:
-            renderFrame(hwnd);
-            break;
-        }
-    }
-
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-static void threadProc() {
-#ifdef DEBUG
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    _CrtSetBreakAlloc(60);
-#endif
-
-    WNDCLASSW wndClass;
-    wndClass.style = CS_DBLCLKS;
-    wndClass.lpfnWndProc = staticWndProc;
-    wndClass.cbClsExtra = 0;
-    wndClass.cbWndExtra = 0;
-    wndClass.hInstance = instance;
-    wndClass.hIcon = NULL;
-    wndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wndClass.hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH);
-    wndClass.lpszMenuName = NULL;
-    wndClass.lpszClassName = WINDOW_CLASS_NAME;
-
-    if (!RegisterClass(&wndClass)) {
-        DWORD dwError = GetLastError();
-        if (dwError != ERROR_CLASS_ALREADY_EXISTS) {
-            return;
-        }
-    }
-
-    int windowWidth = DEFAULT_WIDTH;
-    int windowHeight = DEFAULT_HEIGHT;
-
-    RECT rc;
-    SetRect(&rc, 0, 0, windowWidth, windowHeight);
-    AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, false);
-
-    HWND hwnd = CreateWindow(
-        WINDOW_CLASS_NAME,
-        L"GdiVis-musikcube",
-        WS_EX_TOOLWINDOW,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        (rc.right - rc.left),
-        (rc.bottom - rc.top),
-        0,
-        NULL,
-        instance,
-        0);
-
-    if (!hwnd) {
-        DWORD dwError = GetLastError();
-        return;
-    }
-
-    ShowWindow(hwnd, SW_SHOW);
-
-    MSG msg;
-    msg.message = WM_NULL;
-
-    PeekMessage(&msg, NULL, 0U, 0U, PM_NOREMOVE);
-    while (WM_QUIT != msg.message) {
-        if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE) != 0) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else {
-            if (quit) {
-                PostQuitMessage(0);
-            }
-            else {
-                DWORD start = GetTickCount();
-                InvalidateRect(hwnd, 0, false);
-                UpdateWindow(hwnd);
-                DWORD delta = (GetTickCount() - start);
-                if (MILLIS_PER_FRAME > delta) {
-                    Sleep(MILLIS_PER_FRAME - delta);
-                }
-            }
-        }
-    }
-
-    thread.store(false);
-
-    {
-        std::unique_lock<std::mutex> lock(threadMutex);
-        threadCondition.notify_all();
-    }
-}
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
-    if (reason == DLL_PROCESS_ATTACH) {
-        instance = hModule;
-    }
-    else if (reason == DLL_PROCESS_DETACH) {
-        std::unique_lock<std::mutex> lock(pcmMutex);
-        delete[] ::spectrumIn;
-        delete[] ::spectrumOut;
-        ::spectrumIn = nullptr;
-        ::spectrumOut = nullptr;
-    }
-    return true;
-}
-
-class VisualizerPlugin : public musik::core::sdk::IPlugin {
+    /* The UI thread owns the window and timer. Playback only tries to copy
+    into a fixed snapshot; it never waits for painting or allocates. */
+    class GdiVisualizer {
     public:
-        void Release() override { delete this; }
-        const char* Name() override { return "GdiVis"; }
-        const char* Version() override { return MUSIKCUBE_VERSION_WITH_COMMIT_HASH; }
-        const char* Author() override { return "clangen"; }
-        const char* Guid() override { return "4b0f37f7-96fe-438c-acf2-bbdd53ce1ddf"; }
-        bool Configurable() override { return false; }
-        void Configure() override { }
-        void Reload() override { }
-        int SdkVersion() override { return musik::core::sdk::SdkVersion; }
-};
+        static constexpr mc_visualizer_inputs Inputs = MC_VISUALIZER_INPUT_SPECTRUM;
+        static const char* Name() { return "GdiVis"; }
+        explicit GdiVisualizer(const mc_plugin_services&) {}
+        ~GdiVisualizer() noexcept { Hide(); }
 
-class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
-    public:
-        const char* Name() override {
-            return "GdiVis";
-        }
-
-        void Release() override {
-            this->Hide();
-            delete this;
-        }
-
-        void Write(float *spectrum, int size) override {
-            std::unique_lock<std::mutex> lock(pcmMutex);
-
-            if (::spectrumSize != size) {
-                delete[] ::spectrumIn;
-                delete[] ::spectrumOut;
-                ::spectrumSize = size;
-                ::spectrumIn = new float[size];
-                ::spectrumOut = new float[size];
+        mc_result Show() {
+            std::lock_guard lock(controlMutex);
+            if (visible.load()) {
+                return MC_OK;
+            }
+            if (worker.joinable()) {
+                worker.join();
             }
 
-            memcpy(::spectrumIn, spectrum, size * sizeof(float));
-        }
-
-        void Show() override {
-            if (!Visible()) {
-                quit.store(false);
-                thread.store(true);
-                std::thread background(threadProc);
-                background.detach();
+            {
+                std::lock_guard startupLock(startupMutex);
+                ready = false;
+                started = false;
             }
+            worker = std::thread([this] { Run(); });
+            std::unique_lock startupLock(startupMutex);
+            startupChanged.wait(startupLock, [this] { return ready; });
+            return started ? MC_OK : MC_ERROR_IO;
         }
 
-        void Hide() override {
-            if (Visible()) {
-                quit.store(true);
-
-                while (thread.load()) {
-                    std::unique_lock<std::mutex> lock(threadMutex);
-                    threadCondition.wait(lock);
+        mc_result Hide() noexcept {
+            std::lock_guard lock(controlMutex);
+            if (worker.joinable()) {
+                if (visible.load()) {
+                    PostThreadMessageW(threadId, WM_QUIT, 0, 0);
                 }
+                worker.join();
             }
+            return MC_OK;
         }
 
-        bool Visible() override {
-            return thread.load();
+        mc_result IsVisible(bool& result) {
+            result = visible.load();
+            return MC_OK;
         }
-};
 
-extern "C" DLL_EXPORT musik::core::sdk::IPlugin* GetPlugin() {
-    return new VisualizerPlugin();
+        mc_result WriteSpectrum(const float* bins, size_t count, uint32_t) noexcept {
+            if (!visible.load() || !bins) {
+                return MC_OK;
+            }
+            std::unique_lock lock(spectrumMutex, std::try_to_lock);
+            if (lock) {
+                const auto copied = std::min(count, spectrum.size());
+                std::copy_n(bins, copied, spectrum.begin());
+                std::fill(spectrum.begin() + copied, spectrum.end(), 0.0f);
+            }
+            return MC_OK;
+        }
+
+    private:
+        static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+            if (message == WM_NCCREATE) {
+                const auto* create = reinterpret_cast<const CREATESTRUCTW*>(lparam);
+                SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(create->lpCreateParams));
+            }
+            auto* self = reinterpret_cast<GdiVisualizer*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+            switch (message) {
+                case WM_CLOSE:
+                    DestroyWindow(hwnd);
+                    return 0;
+                case WM_DESTROY:
+                    PostQuitMessage(0);
+                    return 0;
+                case WM_CHAR:
+                    if (wparam == VK_ESCAPE) {
+                        DestroyWindow(hwnd);
+                        return 0;
+                    }
+                    break;
+                case WM_TIMER:
+                    InvalidateRect(hwnd, nullptr, FALSE);
+                    return 0;
+                case WM_PAINT:
+                    if (self) {
+                        self->Paint(hwnd);
+                        return 0;
+                    }
+                    break;
+            }
+            return DefWindowProcW(hwnd, message, wparam, lparam);
+        }
+
+        void Paint(HWND hwnd) {
+            PAINTSTRUCT paint {};
+            HDC dc = BeginPaint(hwnd, &paint);
+            std::array<float, SpectrumBins> frame {};
+            {
+                std::lock_guard lock(spectrumMutex);
+                frame = spectrum;
+            }
+            {
+                win32cpp::MemoryDC memory(dc, paint.rcPaint);
+                HBRUSH brush = CreateSolidBrush(RGB(255, 0, 0));
+                RECT client {};
+                GetClientRect(hwnd, &client);
+                FillRect(memory, &client, static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+                int x = 20;
+                const int bottom = client.bottom - 15;
+                for (size_t i = 0; i < SpectrumBins / 4; ++i) {
+                    const int height = 4 + static_cast<int>(std::clamp(frame[i], 0.0f, 80.0f));
+                    for (int y = bottom; y > bottom - height; y -= 2) {
+                        RECT bar { x, y - 1, x + 7, y };
+                        FillRect(memory, &bar, brush);
+                    }
+                    x += 8;
+                }
+                if (brush) DeleteObject(brush);
+            }
+            EndPaint(hwnd, &paint);
+        }
+
+        void Run() noexcept {
+            MSG message {};
+            PeekMessageW(&message, nullptr, 0, 0, PM_NOREMOVE);
+            threadId = GetCurrentThreadId();
+
+            WNDCLASSW windowClass {};
+            windowClass.hInstance = module;
+            windowClass.lpfnWndProc = WindowProc;
+            windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
+            windowClass.lpszClassName = WindowClass;
+            const auto registered = RegisterClassW(&windowClass);
+            const bool available = registered || GetLastError() == ERROR_CLASS_ALREADY_EXISTS;
+            HWND window = available ? CreateWindowW(WindowClass, L"GdiVis-musikcube", WS_OVERLAPPEDWINDOW,
+                CW_USEDEFAULT, CW_USEDEFAULT, 550, 140, nullptr, nullptr, module, this) : nullptr;
+            if (window) {
+                SetTimer(window, 1, 100, nullptr);
+                ShowWindow(window, SW_SHOW);
+                visible.store(true);
+            }
+            {
+                std::lock_guard lock(startupMutex);
+                started = window != nullptr;
+                ready = true;
+            }
+            startupChanged.notify_all();
+
+            if (window) {
+                while (GetMessageW(&message, nullptr, 0, 0) > 0) {
+                    TranslateMessage(&message);
+                    DispatchMessageW(&message);
+                }
+                if (IsWindow(window)) DestroyWindow(window);
+            }
+            visible.store(false);
+            if (registered) UnregisterClassW(WindowClass, module);
+        }
+
+        std::mutex controlMutex;
+        std::mutex startupMutex;
+        std::condition_variable startupChanged;
+        bool ready = false;
+        bool started = false;
+        std::atomic<bool> visible { false };
+        DWORD threadId = 0;
+        std::thread worker;
+        std::mutex spectrumMutex;
+        std::array<float, SpectrumBins> spectrum {};
+    };
+
+    mc_result MC_CALL Initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        return musik::core::plugin::RegisterVisualizer<GdiVisualizer>(*host);
+    }
+    void MC_CALL Shutdown(void*) {}
 }
 
-extern "C" DLL_EXPORT musik::core::sdk::ISpectrumVisualizer* GetSpectrumVisualizer() {
-    return new Visualizer();
+BOOL APIENTRY DllMain(HMODULE handle, DWORD reason, LPVOID) {
+    if (reason == DLL_PROCESS_ATTACH) module = handle;
+    return TRUE;
+}
+
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* api, mc_error** error)
+{
+    const auto result = mc_plugin_validate_host_api(version, host, api, error);
+    if (result != MC_OK) return result;
+    *api = MC_PLUGIN_API_DEFAULT;
+    api->id = { "4b0f37f7-96fe-438c-acf2-bbdd53ce1ddf", 36 };
+    api->name = { "GdiVis", 6 };
+    api->version = { "4.0.0", 5 };
+    api->author = { "clangen", 7 };
+    api->initialize = Initialize;
+    api->shutdown = Shutdown;
+    return MC_OK;
 }

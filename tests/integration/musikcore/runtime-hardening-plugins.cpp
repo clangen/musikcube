@@ -32,7 +32,7 @@ namespace runtime_tests {
         const auto check = [&](bool enabled, bool nextEnabled) -> bool {
             api::Context context(options);
             const auto plugins = api::ListPlugins();
-            /* check C output discovery alongside the legacy DLL catalog. */
+            /* Windows outputs and both remaining integrations use C factories. */
             {
                 const auto outputs = audio::outputs::GetAllOutputs();
                 if (!TEST_CHECK(outputs.size() == (enabled ? 3u : 0u))) {
@@ -43,6 +43,12 @@ namespace runtime_tests {
                     return false;
                 }
                 if (enabled && !TEST_CHECK(std::string_view(outputs.back()->Name()) == "WASAPI")) {
+                    return false;
+                }
+                if (!TEST_CHECK(static_cast<bool>(plugin::FindVisualizerFactory(
+                        "4b0f37f7-96fe-438c-acf2-bbdd53ce1ddf")) == enabled) ||
+                    !TEST_CHECK(static_cast<bool>(plugin::FindPlaybackRemoteFactory(
+                        "e2678930-ecd4-43b8-85e0-e41d634445b2")) == enabled)) {
                     return false;
                 }
                 const auto visualizers = api::ListVisualizers();

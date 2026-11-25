@@ -230,10 +230,12 @@ target_compile_features(wasapiout PRIVATE cxx_std_20)
 target_link_libraries(wasapiout PRIVATE winmm)
 
 windows_plugin(win32gdivis GdiVis.cpp MemoryDC.cpp)
+musikcube_configure_c_plugin(win32gdivis)
 target_compile_definitions(win32gdivis PRIVATE "$<$<CONFIG:Debug>:DEBUG>")
 target_link_libraries(win32gdivis PRIVATE shlwapi)
 
 windows_plugin(win32globalhotkeys win32globalhotkeys_plugin.cpp)
+musikcube_configure_c_plugin(win32globalhotkeys)
 target_link_libraries(win32globalhotkeys PRIVATE winmm)
 
 foreach(target ffmpegdecoder libopenmptdecoder server stockencoders)

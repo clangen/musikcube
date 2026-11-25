@@ -1,231 +1,197 @@
-//////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2004-2023 musikcube team
-//
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-//    * Redistributions of source code must retain the above copyright notice,
-//      this list of conditions and the following disclaimer.
-//
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//
-//    * Neither the name of the author nor the names of other contributors may
-//      be used to endorse or promote products derived from this software
-//      without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-//////////////////////////////////////////////////////////////////////////////
-
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include "config.h"
 
-#include <musikcore/sdk/constants.h>
-#include <musikcore/sdk/IPlugin.h>
-#include <musikcore/sdk/IPlaybackRemote.h>
+#include <musikcore/plugin/playback-remote.hpp>
+#include <windows.h>
 
+#include <algorithm>
+#include <atomic>
 #include <cmath>
+#include <condition_variable>
+#include <mutex>
+#include <stdexcept>
+#include <thread>
 
-musik::core::sdk::IPlaybackService* playback;
+namespace {
+    constexpr UINT HotkeyMessage = WM_APP + 42;
+    HMODULE module = nullptr;
+    class Hotkeys;
+    std::atomic<Hotkeys*> installed { nullptr };
 
-static HHOOK hook = nullptr;
-static HMODULE module = nullptr;
+    class Hotkeys {
+    public:
+        explicit Hotkeys(const mc_plugin_services& services)
+        : host(services.playback_remote), stopEvent(CreateEventW(nullptr, TRUE, FALSE, nullptr)) {
+            if (!stopEvent) throw std::runtime_error("cannot create hotkey stop event");
+        }
+        ~Hotkeys() noexcept {
+            RequestStop();
+            Join();
+            CloseHandle(stopEvent);
+        }
 
-LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
-    if (code == HC_ACTION && playback) {
-        if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) {
-            PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
-            switch (p->vkCode) {
-                case VK_MEDIA_NEXT_TRACK:
-                    playback->Next();
-                    return 0;
-                case VK_MEDIA_PLAY_PAUSE:
-                    playback->PauseOrResume();
-                    return 0;
-                case VK_MEDIA_PREV_TRACK:
-                    playback->Previous();
-                    return 0;
-                case VK_MEDIA_STOP:
-                    playback->Stop();
-                    return 0;
-            }
+        mc_result Start() {
+            if (!host) return MC_ERROR_UNSUPPORTED;
+            /* Avoid installing a global hook in console and debug sessions. */
+            if (GetConsoleWindow() || IsDebuggerPresent()) return MC_OK;
 
-            short ctrl = GetAsyncKeyState(VK_RCONTROL) & 0x8000;
-            short alt = GetAsyncKeyState(VK_RMENU) & 0x8000;
-            //bool win = GetAsyncKeyState(VK_LWIN) & 0x8000;
+            host->read_state(host->context, [](void* data, const mc_playback_snapshot* state, const mc_track_ref*) {
+                static_cast<Hotkeys*>(data)->volume.store(state->volume);
+            }, this);
+            accepting.store(true);
+            worker = std::thread([this] { Run(); });
+            std::unique_lock lock(startupMutex);
+            startupChanged.wait(lock, [this] { return ready; });
+            return installedSuccessfully ? MC_OK : MC_ERROR_IO;
+        }
 
-            double delta;
+        void Changed(const mc_plugin_playback_event& event) noexcept {
+            volume.store(event.playback.volume);
+        }
+        void QueueChanged() noexcept {}
+        void RequestStop() noexcept {
+            accepting.store(false);
+            SetEvent(stopEvent);
+        }
+        mc_result Join() {
+            if (worker.joinable()) worker.join();
+            return MC_OK;
+        }
 
-            if (ctrl && alt) {
-                switch (p->vkCode) {
-                    case VK_F1:
-                        playback->PauseOrResume();
-                        return 1;
+        bool Send(mc_playback_command command, double value = 0) noexcept {
+            if (!accepting.load()) return false;
+            const auto result = host->control_async(host->context, command, value,
+                [](void*, mc_result) {}, nullptr);
+            return result == MC_OK;
+        }
 
-                    case VK_F2:
-                        playback->Stop();
-                        return 1;
+        bool AdjustVolume(bool up) noexcept {
+            const double current = volume.load();
+            const double percent = std::round(current * 100.0);
+            const double step = up ? (percent >= 10.0 ? 0.05 : 0.01)
+                                   : (percent > 10.0 ? 0.05 : 0.01);
+            const double next = std::clamp(current + (up ? step : -step), 0.0, 1.0);
+            if (!Send(MC_PLAYBACK_SET_VOLUME, next)) return false;
+            volume.store(next);
+            return true;
+        }
 
-                    case VK_F3:
-                    case 'J':
-                    case 'j':
-                        playback->Previous();
-                        return 1;
-
-                    case VK_F4:
-                    case 'L':
-                    case 'l':
-                        playback->Next();
-                        return 1;
-
-                    case VK_F5:
-                    case 'K':
-                    case 'k':
-                        delta = round(playback->GetVolume() * 100.0) > 10.0 ? 0.05 : 0.01;
-                        playback->SetVolume(playback->GetVolume() - delta);
-                        return 1;
-
-                    case VK_F6:
-                    case 'I':
-                    case 'i':
-                        delta = round(playback->GetVolume() * 100.0) >= 10.0 ? 0.05 : 0.01;
-                        playback->SetVolume(playback->GetVolume() + delta);
-                        return 1;
-
-                    case VK_F7:
-                    case 'M':
-                    case 'm':
-                        playback->ToggleMute();
-                        return 1;
-
-                    case VK_F8:
-                        playback->ToggleShuffle();
-                        return 0;
+    private:
+        static LRESULT CALLBACK Hook(int code, WPARAM message, LPARAM data) {
+            auto* self = installed.load();
+            if (code == HC_ACTION && self && (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)) {
+                const auto* key = reinterpret_cast<const KBDLLHOOKSTRUCT*>(data);
+                switch (key->vkCode) {
+                    case VK_MEDIA_NEXT_TRACK:
+                    case VK_MEDIA_PLAY_PAUSE:
+                    case VK_MEDIA_PREV_TRACK:
+                    case VK_MEDIA_STOP:
+                        PostThreadMessageW(GetCurrentThreadId(), HotkeyMessage, key->vkCode, 0);
+                        break;
+                    default: {
+                        const bool control = (GetAsyncKeyState(VK_RCONTROL) & 0x8000) != 0;
+                        const bool alt = (GetAsyncKeyState(VK_RMENU) & 0x8000) != 0;
+                        if (!control || !alt) break;
+                        switch (key->vkCode) {
+                            case VK_F1: case VK_F2: case VK_F3: case VK_F4:
+                            case VK_F5: case VK_F6: case VK_F7: case VK_F8:
+                            case 'J': case 'L': case 'K': case 'I': case 'M':
+                                if (self->accepting.load() &&
+                                    PostThreadMessageW(GetCurrentThreadId(), HotkeyMessage, key->vkCode, 0) &&
+                                    key->vkCode != VK_F8) return 1;
+                                break;
+                        }
+                    }
                 }
             }
+            return CallNextHookEx(nullptr, code, message, data);
         }
-    }
 
-    return CallNextHookEx(nullptr, code, wParam, lParam);
+        void DispatchHotkey(WPARAM key) noexcept {
+            switch (key) {
+                case VK_MEDIA_PLAY_PAUSE: case VK_F1: Send(MC_PLAYBACK_TOGGLE_PAUSE); break;
+                case VK_MEDIA_STOP: case VK_F2: Send(MC_PLAYBACK_STOP); break;
+                case VK_MEDIA_PREV_TRACK: case VK_F3: case 'J': Send(MC_PLAYBACK_PREVIOUS); break;
+                case VK_MEDIA_NEXT_TRACK: case VK_F4: case 'L': Send(MC_PLAYBACK_NEXT); break;
+                case VK_F5: case 'K': AdjustVolume(false); break;
+                case VK_F6: case 'I': AdjustVolume(true); break;
+                case VK_F7: case 'M': Send(MC_PLAYBACK_TOGGLE_MUTE); break;
+                case VK_F8: Send(MC_PLAYBACK_TOGGLE_SHUFFLE); break;
+            }
+        }
+
+        void Run() noexcept {
+            /* Low-level hooks receive callbacks on the installing thread. */
+            MSG message {};
+            PeekMessageW(&message, nullptr, 0, 0, PM_NOREMOVE);
+            Hotkeys* empty = nullptr;
+            HHOOK hook = nullptr;
+            if (installed.compare_exchange_strong(empty, this)) {
+                hook = SetWindowsHookExW(WH_KEYBOARD_LL, Hook, module, 0);
+                if (!hook) installed.store(nullptr);
+            }
+            {
+                std::lock_guard lock(startupMutex);
+                installedSuccessfully = hook != nullptr;
+                ready = true;
+            }
+            startupChanged.notify_all();
+            if (!hook) return;
+
+            for (;;) {
+                const auto result = MsgWaitForMultipleObjects(1, &stopEvent, FALSE, INFINITE, QS_ALLINPUT);
+                if (result != WAIT_OBJECT_0 + 1) break;
+                while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)) {
+                    /* Return from the low-level hook before calling the host: the
+                       foreground app may be waiting for that hook to finish. */
+                    if (message.message == HotkeyMessage) {
+                        DispatchHotkey(message.wParam);
+                        continue;
+                    }
+                    TranslateMessage(&message);
+                    DispatchMessageW(&message);
+                }
+            }
+            UnhookWindowsHookEx(hook);
+            installed.store(nullptr);
+        }
+
+        const mc_playback_remote_host_api* host;
+        HANDLE stopEvent;
+        std::atomic<bool> accepting { false };
+        std::atomic<double> volume { 1.0 };
+        std::mutex startupMutex;
+        std::condition_variable startupChanged;
+        bool ready = false;
+        bool installedSuccessfully = false;
+        std::thread worker;
+    };
+
+    mc_result MC_CALL Initialize(const mc_host_api* host, void** state, mc_error**) {
+        *state = nullptr;
+        return musik::core::plugin::RegisterPlaybackRemote<Hotkeys>(*host);
+    }
+    void MC_CALL Shutdown(void*) {}
 }
 
-void installHook() {
-    /* note: don't install the hook if we're debugging or running as a true console
-    app, otherwise inputs get SUPER laggy. */
-    bool isConsoleApp = GetConsoleWindow() != nullptr;
-    if (!isConsoleApp && !IsDebuggerPresent() && !::hook) {
-        hook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)ShellProc, module, 0L);
-    }
-}
-
-void removeHook() {
-    if (::hook) {
-        UnhookWindowsHookEx(::hook);
-        ::hook = nullptr;
-    }
-}
-
-BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved) {
-    switch (reason) {
-        case DLL_PROCESS_ATTACH:
-            ::module = module;
-            break;
-
-        case DLL_PROCESS_DETACH:
-            ::module = nullptr;
-            removeHook();
-            break;
-    }
-
+BOOL APIENTRY DllMain(HMODULE handle, DWORD reason, LPVOID) {
+    if (reason == DLL_PROCESS_ATTACH) module = handle;
     return TRUE;
 }
 
-class MMShellHook:
-    public musik::core::sdk::IPlugin,
-    public musik::core::sdk::IPlaybackRemote {
-        public:
-            void Release() override {
-            }
-
-            const char* Name() override {
-                return "win32globalhotkeys";
-            }
-
-            const char* Version() override {
-                return MUSIKCUBE_VERSION_WITH_COMMIT_HASH;
-            }
-
-            const char* Author() override {
-                return "clangen";
-            }
-
-            const char* Guid() override {
-                return "e2678930-ecd4-43b8-85e0-e41d634445b2";
-            }
-
-            bool Configurable() override {
-                return false;
-            }
-
-            void Configure() override {
-            }
-
-            void Reload() override {
-            }
-
-            int SdkVersion() override {
-                return musik::core::sdk::SdkVersion;
-            }
-
-            void SetPlaybackService(musik::core::sdk::IPlaybackService* playback) override {
-                ::playback = playback;
-                if (playback) {
-                    installHook();
-                }
-                else {
-                    removeHook();
-                }
-            }
-
-            void OnTrackChanged(musik::core::sdk::ITrack* track) override {
-            }
-
-            void OnPlaybackStateChanged(musik::core::sdk::PlaybackState state) override {
-            }
-
-            void OnPlaybackTimeChanged(double time) override {
-            }
-
-            void OnVolumeChanged(double volume) override {
-            }
-
-            void OnModeChanged(musik::core::sdk::RepeatMode repeatMode, bool shuffled) override {
-            }
-
-            void OnPlayQueueChanged() override {
-            }
-};
-
-static MMShellHook plugin;
-
-extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {
-    return &plugin;
-}
-
-extern "C" __declspec(dllexport) musik::core::sdk::IPlaybackRemote* GetPlaybackRemote() {
-    return &plugin;
+extern "C" MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
+    uint32_t version, const mc_host_api* host, mc_plugin_api* api, mc_error** error)
+{
+    const auto result = mc_plugin_validate_host_api(version, host, api, error);
+    if (result != MC_OK) return result;
+    *api = MC_PLUGIN_API_DEFAULT;
+    api->id = { "e2678930-ecd4-43b8-85e0-e41d634445b2", 36 };
+    api->name = { "win32globalhotkeys", 18 };
+    api->version = { "4.0.0", 5 };
+    api->author = { "clangen", 7 };
+    api->initialize = Initialize;
+    api->shutdown = Shutdown;
+    return MC_OK;
 }
