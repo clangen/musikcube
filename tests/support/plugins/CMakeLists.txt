@@ -38,6 +38,10 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/decoder-artifact-$<CONFIG>.txt
 
 add_executable(decoder_consumer decoder-consumer.cpp)
 target_compile_features(decoder_consumer PRIVATE cxx_std_17)
+if(CONSUMER_SANITIZERS)
+  target_compile_options(decoder_consumer PRIVATE "$<$<CONFIG:Debug>:-fsanitize=${CONSUMER_SANITIZERS}>")
+  target_link_options(decoder_consumer PRIVATE "$<$<CONFIG:Debug>:-fsanitize=${CONSUMER_SANITIZERS}>")
+endif()
 target_link_libraries(decoder_consumer PRIVATE musikcore::musikcore Threads::Threads)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/decoder-consumer-$<CONFIG>.txt"
   CONTENT "$<TARGET_FILE:decoder_consumer>")

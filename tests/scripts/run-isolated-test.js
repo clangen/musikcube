@@ -22,9 +22,9 @@ if (expectAbort) args.shift();
 
 /* Production fixtures load a staged executable/plugins; standalone ABI tests
    can run directly with their existing shared-library search paths. */
-if (args[0] === '--stage') {
-  args.shift();
-  command = stageTestRuntime(resolve(executable), root);
+if (args[0] === '--stage' || args[0] === '--stage-minimal') {
+  const includeDefaultPlugins = args.shift() === '--stage';
+  command = stageTestRuntime(resolve(executable), root, includeDefaultPlugins);
 }
 
 if (args[0] === '--locale') {

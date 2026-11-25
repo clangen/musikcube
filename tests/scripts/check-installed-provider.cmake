@@ -28,6 +28,7 @@ if(WIN32)
 endif()
 run("${CMAKE_COMMAND}" -S "${SOURCE}/tests/support/plugins" -B "${external}"
   ${generator} "-DCMAKE_PREFIX_PATH=${relocated}" "-DCMAKE_BUILD_TYPE=${TEST_CONFIG}"
+  "-DCONSUMER_SANITIZERS=${CONSUMER_SANITIZERS}"
   "-DOUTPUT_SOURCE=${SOURCE}/src/plugins/nullout/plugin.cpp")
 run("${CMAKE_COMMAND}" --build "${external}" ${config_arguments})
 file(READ "${external}/artifact-${TEST_CONFIG}.txt" fixture)
@@ -69,7 +70,7 @@ endif()
 if(DECODER_HOST AND CAPTURE_OUTPUT)
   get_filename_component(capture_name "${CAPTURE_OUTPUT}" NAME)
   run("${NODE}" "${SOURCE}/tests/scripts/run-isolated-test.js"
-    "${root}/runs" "${DECODER_HOST}" --stage --plugin "${decoder_fixture}"
+    "${root}/runs" "${DECODER_HOST}" --stage-minimal --plugin "${decoder_fixture}"
     --plugin "${CAPTURE_OUTPUT}" decoder_contract "${capture_name}" @origin)
 endif()
 file(REMOVE_RECURSE "${root}")

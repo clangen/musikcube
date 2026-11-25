@@ -16,7 +16,7 @@ function copyRuntimeLibraries(source, destination) {
 
 /* Copy an executable and its runtime libraries into an isolated root, staging only the required test
    plugins. */
-function stageTestRuntime(executable, root) {
+function stageTestRuntime(executable, root, includeDefaultPlugins = true) {
   const runtime = join(root, 'runtime');
   mkdirSync(join(runtime, 'plugins'), { recursive: true });
 
@@ -32,7 +32,7 @@ function stageTestRuntime(executable, root) {
   }
 
   /* An allowlist prevents unrelated output/device plugins from affecting tests. */
-  for (const entry of readdirSync(join(source, 'plugins'), { withFileTypes: true })) {
+  for (const entry of includeDefaultPlugins ? readdirSync(join(source, 'plugins'), { withFileTypes: true }) : []) {
     if (!entry.isDirectory() && /^(lib)?(taglibreader|taglib_plugin|ffmpegdecoder)\.(dll|dylib|so)$/.test(entry.name)) {
       copyFileSync(join(source, 'plugins', entry.name), join(runtime, 'plugins', entry.name));
     }

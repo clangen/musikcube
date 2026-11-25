@@ -838,7 +838,7 @@ add_dependencies(musikcube_tests musikcore_provider_runtime_test musikcore_provi
 add_dependencies(musikcube_integration_tests musikcore_provider_runtime_test musikcore_provider_valid)
 add_test(NAME musikcore.integration.plugins.runtime COMMAND "${MUSIKCORE_TEST_NODE}"
   "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
-  "$<TARGET_FILE:musikcore_provider_runtime_test>" --stage --plugin "$<TARGET_FILE:musikcore_provider_valid>"
+  "$<TARGET_FILE:musikcore_provider_runtime_test>" --stage-minimal --plugin "$<TARGET_FILE:musikcore_provider_valid>"
   --plugin "$<TARGET_FILE:musikcore_provider_incompatible>" --plugin "$<TARGET_FILE:musikcore_provider_init_fail>")
 set_tests_properties(musikcore.integration.plugins.runtime PROPERTIES
   LABELS "integration;musikcore;plugins;runtime;contract" TIMEOUT 45)
@@ -854,6 +854,7 @@ add_test(NAME musikcore.integration.plugins.installed COMMAND "${CMAKE_COMMAND}"
   "-DHOST=$<TARGET_FILE:musikcore_plugin_registry_test>" "-DNM=${CMAKE_NM}"
   "-DTEST_GENERATOR=${CMAKE_GENERATOR}" "-DTEST_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
   "-DOUTPUT_HOST=$<TARGET_FILE:musikcore_null_output_test>"
+  "-DCONSUMER_SANITIZERS=${sanitizers_flags}"
   ${installed_decoder_arguments}
   -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-installed-provider.cmake")
 set_tests_properties(musikcore.integration.plugins.installed PROPERTIES
@@ -1044,14 +1045,14 @@ add_dependencies(musikcube_integration_tests musikcore_playback_remote_lifecycle
 add_test(NAME musikcore.integration.plugins.playback_remote_lifecycle
   COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
     "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
-    --stage --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>" --plugin "$<TARGET_FILE:musikcore_legacy_entry_fixture>"
+    --stage-minimal --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>" --plugin "$<TARGET_FILE:musikcore_legacy_entry_fixture>"
     --plugin "$<TARGET_FILE:nullout>")
 set_tests_properties(musikcore.integration.plugins.playback_remote_lifecycle PROPERTIES
   LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
 add_test(NAME musikcore.integration.plugins.playback_remote_stop_order
   COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
     "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
-    --stage --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>"
+    --stage-minimal --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>"
     --plugin "$<TARGET_FILE:musikcore_playback_remote_peer>" --plugin "$<TARGET_FILE:nullout>" two)
 set_tests_properties(musikcore.integration.plugins.playback_remote_stop_order PROPERTIES
   LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
@@ -1059,7 +1060,7 @@ if(UNIX)
   add_test(NAME musikcore.integration.plugins.playback_remote_startup_rollback
     COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
       "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
-      --stage --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>"
+      --stage-minimal --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>"
       --plugin "$<TARGET_FILE:musikcore_playback_remote_peer>" --plugin "$<TARGET_FILE:nullout>" startup-failure)
   set_tests_properties(musikcore.integration.plugins.playback_remote_startup_rollback PROPERTIES
     LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
