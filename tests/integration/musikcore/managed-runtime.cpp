@@ -510,7 +510,25 @@ namespace {
                             for (const auto& field : fields) {
                                 found |= field == "artist";
                             }
-                            finish(found);
+                            if (!found) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "send_raw_query", "unknown-query", {
+                                { "raw_query_data", R"({"name":"UnknownQuery","options":{}})" },
+                            });
+                        }
+                        else if (id == "unknown-query") {
+                            if (response.at("options").value("success", true)) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "send_raw_query", "raw-sql", {
+                                { "raw_query_data", "SELECT * FROM tracks" },
+                            });
+                        }
+                        else if (id == "raw-sql") {
+                            finish(!response.at("options").value("success", true));
                         }
                     }
                     catch (...) {
@@ -539,7 +557,7 @@ namespace {
         const bool completed = waitFor(context, host, [&] { return finished.load(); });
         probe.join();
         if (!completed || !succeeded.load()) {
-            std::fputs("Self-remote queue query or subsequent category query failed\n", stderr);
+            std::fputs("Self-remote queue, category, or invalid-query check failed\n", stderr);
             return false;
         }
         return true;

@@ -946,18 +946,30 @@ namespace {
             return failure(__LINE__);
         }
 
-        const auto beforeUnsupported = calls;
-        const auto emptyRemote = MakeTrackResult(*remote, nullptr, 0);
-        try {
-            ReadTracks(context, emptyRemote, { 0, 1, { MC_TRACK_FIELD_GENRE } }, receivePage(remotePage));
-            return failure(__LINE__);
-        }
-        catch (const Error& error) {
-            if (error.Result() != MC_ERROR_UNSUPPORTED) {
+        /* Genre projection is supported for both populated and empty results. */
+        for (bool overRemote : { false, true }) {
+            const auto& tracks = overRemote ? remoteTracks : localTracks;
+            auto& page = overRemote ? remotePage : localPage;
+            const auto expected = calls + 1;
+            ReadTracks(context, tracks, { 0, 2, { MC_TRACK_FIELD_GENRE } }, receivePage(page));
+            if (!dispatch(expected) || page.Size() != 2) {
                 return failure(__LINE__);
             }
         }
-        if (context.Dispatch() != MC_OK || calls != beforeUnsupported) {
+        for (size_t row = 0; row < localPage.Size(); ++row) {
+            if (localPage.ValueCount(row, 0) != remotePage.ValueCount(row, 0)) {
+                return failure(__LINE__);
+            }
+            for (size_t value = 0; value < localPage.ValueCount(row, 0); ++value) {
+                if (localPage.Value(row, 0, value) != remotePage.Value(row, 0, value)) {
+                    return failure(__LINE__);
+                }
+            }
+        }
+        const auto emptyRemote = MakeTrackResult(*remote, nullptr, 0);
+        const auto emptyGenreExpected = calls + 1;
+        ReadTracks(context, emptyRemote, { 0, 1, { MC_TRACK_FIELD_GENRE } }, receivePage(remotePage));
+        if (!dispatch(emptyGenreExpected) || !remotePage || remotePage.Size() || remotePage.FieldCount() != 1) {
             return failure(__LINE__);
         }
         const auto emptyExpected = calls + 1;
