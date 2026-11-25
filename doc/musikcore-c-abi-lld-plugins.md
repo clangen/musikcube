@@ -63,24 +63,16 @@ calls the retired C++ `GetPlugin()` entry point.
      store identity before any persisted-data conversion. No automatic reindex,
      data rewrite, or legacy compatibility shim is authorized by this draft.
 2. **Replace each family's engine path with the new loading contract.**
-   Maintainer-approved staging: integrate C outputs first while keeping existing
-   decoders, streams, DSP, and other families usable. No output compatibility
-   interface or fallback is retained. Full old-SDK removal remains open until
-   those families migrate; this supersedes the initial all-family disconnection.
-   - [ ] **PLG-CUTOVER-001** Remove the old discovery/startup path, factory
-     lookups/caches, `Get*`/`Set*` hook wiring, and engine dependencies on
-     `sdk::I*` interfaces. Simplify private types as callers move; engine-owned
-     types need not reproduce old interface/provider layers, particularly for
-     audio-buffer storage. Old plugin implementations may remain as disconnected
-     conversion references, outside active targets/installation. Add a source/
-     binary boundary check (`plugins.engine_boundary`) so they cannot be
-     reintroduced accidentally. The current names are PluginRegistry/Plugin;
-     C discovery is owned by the registry. The old factory, plugin entry hooks,
-     playback-remote callback path, and plugin-facing C++ interfaces have been
-     removed. `runtime.stream_sdk_contract` and
-     `plugins.playback_remote_lifecycle` include an old entry-point sentinel;
-     `plugins.playback_remote_stop_order` covers C remote shutdown. Internal
-     core SDK abstractions and the source/binary boundary check remain open.
+   The output-first staging is complete. All in-tree providers use the C plugin
+   boundary; no former C++ provider path is retained. Native-platform and
+   physical-device validation remain in the family tasks and platform gates.
+   - [x] **PLG-CUTOVER-001** Remove the former plugin discovery and startup
+     path, factory, provider interfaces, and `Get*`/`Set*` hook wiring.
+     `runtime.stream_sdk_contract` and `plugins.playback_remote_lifecycle`
+     include a legacy-entry sentinel; `plugins.playback_remote_stop_order`
+     covers C remote shutdown. Removing the SDK-era interfaces still used
+     inside core and adding a source/binary guard are separate work under
+     SDK-REMOVE-001 through SDK-REMOVE-006 and GATE-800.
    - [x] **PLG-LOADER-001** Consolidate loading and engine-session ownership in
      `PluginRegistry`. It discovers candidates, validates their C entry tables,
      initializes them, and publishes capabilities transactionally. `Plugin` owns
@@ -116,11 +108,11 @@ calls the retired C++ `GetPlugin()` entry point.
      querying, idling, and stopping the engine must not dereference missing
      providers (`plugins.empty_registry`). Missing decoders/streams report
      unsupported input; they must not pretend to read or decode successfully.
-   - [ ] **PLG-EMPTY-002** Establish applicable test sets during the rebuild.
-     Keep core/query/runtime/loader tests meaningful and green; explicitly record
-     which playback/indexing/UI scenarios require families not restored yet.
-     Never silently turn required regression tests into passing no-ops. Restore
-     their normal registration as each prerequisite family becomes available.
+   - [x] **PLG-EMPTY-002** Restore tests deferred during the output-first
+     migration. The output integration restored playback, runtime, remote
+     audio/transcoding, URI-player, installed-consumer, and TUI scenarios;
+     none remain disabled for that cutover. Later test failures and platform
+     acceptance are tracked independently, not treated as passing here.
 4. **Provide real null implementations for required defaults.**
    - [x] **PLG-NULL-001** Supply `nullout` as a loadable C output plugin.
      Prove pacing, pause/resume, paused-delivery backpressure, exactly-once return,
@@ -184,10 +176,10 @@ calls the retired C++ `GetPlugin()` entry point.
      unavailable. Reenable dependent app tests as functionality returns. Each
      family needs boundary/failure/lifetime tests before it is considered proven.
 6. **Backfill remaining plugins and remove the disconnected code.**
-   - [ ] **PLG-BACKFILL-001** Complete remaining conversion tasks in Phase 8
-     against the proven contracts. Remove each old implementation once replaced.
-     Keep native Linux/Windows implementation/validation work explicitly assigned
-     to their platform sessions; macOS evidence does not close those tasks.
+   - [x] **PLG-BACKFILL-001** Convert the in-tree plugin implementations to
+     the C provider ABI and remove their former provider implementations.
+     This records code conversion, not completion of the remaining Phase 8
+     device, lifecycle, failure, or native-platform validation.
    - [ ] **PLG-BACKFILL-002** Remove old SDK headers, factories, adapters, exports,
      targets, install rules, and old-only fixtures after their replacements have
      meaningful regression coverage. Complete GATE-800, external plugin/archive
@@ -322,7 +314,9 @@ and mutable timing methods; adapters own no implicit lifecycle policy.
   before destroying services; the private registry check cannot protect earlier
   engine mutation. Public context dispatch/BUSY behavior is unchanged.
   GATE-600 covers stream and decoder quiescence. Full engine orchestration
-  and playback-remote teardown remain PLG-CUTOVER-001 and the relevant tasks below.
+  and playback-remote teardown remain covered by the relevant lifecycle tasks
+  below; internal SDK cleanup is tracked under SDK-REMOVE-001 through
+  SDK-REMOVE-006.
 - [x] **SDK-009** Add the valid pure-C fixture plugin. Its test-only probe table
   exercises session-owned state without inventing a shipped provider family.
 - [x] **SDK-010** Add incompatible, truncated, missing-hook/version/entry,
@@ -707,16 +701,22 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   `api.managed_remote` checks hidden-track direct lookups, visible-only search,
   and playlist removal counts. `api.uri_player` checks that plugin settings
   reject off-owner access before invoking a callback.
-  - [x] Bind the server's C playback remote to the local library and playback
-    services, and stop its network workers before releasing those services.
-  - [ ] Respect context threading when handling network requests and return
-    asynchronous results without blocking the owner or retaining disconnected clients.
-  - [ ] Replace library, playlist, playback, settings, output and indexer calls
-    with existing C operations; identify and test any genuinely missing operations.
-  - [ ] Validate the named JSON query protocol and remote-client wire behavior
-    without adding a raw SQL interface.
-  - [ ] Register the server and its settings through C plugin discovery, and
-    exercise start, reload, active requests and shutdown with real remote clients.
+  - [x] Register the server and its configuration through C plugin discovery
+    and bind its playback remote to the host's playback and library services.
+    Stop network workers before releasing those services.
+    `server/main.cpp` registers both features; `api.remote_audio` and
+    `api.remote_transcode.*` exercise the real server and plugins on Linux.
+  - [x] Replace server calls across the former C++ plugin boundary with C
+    playback, library, settings, output, indexer, and media operations. The old
+    metadata-proxy injection path has been removed.
+  - [ ] Verify server start, settings reload, active requests, and shutdown
+    together with real remote clients on the applicable native platforms.
+  - [ ] Verify owner-thread dispatch and disconnected-client request lifetimes
+    across the real server path. The current bounded upstream request may remain
+    occupied until a reply or plugin stop; remote cancellation is not promised.
+  - [ ] Complete named-query protocol and remote-client wire validation,
+    including the currently failing Linux `api.backend_parity` test. Do not
+    expose raw SQL.
 - [ ] **EXT-005** Validate migrated platform hotkey and media-key plugins.
   The macOS media-keys and Linux MPRIS providers use C playback remotes;
   `plugins.mpris_runtime` passed in the current Linux run. Physical keys and
@@ -736,11 +736,34 @@ PLG-PROVE-002 and GATE-800 remain open until their full stated evidence exists.
   supplies headless playback.
 
 
+## Application media APIs
+
+The application-facing media API is separate from the C plugin SDK. This work
+was moved from the core migration LLD because it builds on provider services.
+
+- [ ] **PUB-008** Expose stream, decoder, and encoder operations to application
+  C consumers. The existing `mc_media_host_api` and scratch buffer table are
+  provider-session services, not application-owned APIs: their function tables
+  and instances can become invalid at plugin shutdown. Do not return them
+  directly from `mc_context`.
+  - [ ] Define application-owned C handles and operations for stream IO,
+    decoding to PCM, and encoding, including units, ownership, blocking and
+    interrupt behavior, EOF/finalization, diagnostics, and buffer lifetimes.
+    Keep the application and plugin ABI/version boundaries separate.
+  - [ ] Bind handles and in-flight operations to context shutdown. Ensure
+    decoder/input and encoder/output ordering; quiesce blocked work before
+    destroying providers, and make retained handles safe after shutdown.
+  - [ ] Prove invalid inputs are rejected before provider calls. Exercise
+    local/remote streams, decode, encode, cancellation, failed creation,
+    retained handles and teardown through an independently built C consumer;
+    update public header, export, ABI-only, and installed-consumer checks.
+  Application-facing media operations are not implemented by this task entry.
+
 ## Remaining SDK removal
 
 The [SDK removal design](musikcore-sdk-removal-design.md) is the implementation
 plan for the core interfaces and incidental machinery that outlived the plugin
-cutover. These tasks refine PLG-CUTOVER-001 and PLG-BACKFILL-002; they do not
+cutover. These tasks complete the internal cleanup in PLG-BACKFILL-002; they do not
 close GATE-800 or any native-platform acceptance by themselves.
 
 - [ ] **SDK-REMOVE-001** Inventory remaining interface callers, ownership,

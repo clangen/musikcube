@@ -112,7 +112,6 @@ namespace key {
     static const std::string raw_query_data = "raw_query_data";
     static const std::string authenticated = "authenticated";
     static const std::string environment = "environment";
-    static const std::string contextual_facets = "contextual_facets";
     static const std::string playlist_id = "playlist_id";
     static const std::string playlist_name = "playlist_name";
     static const std::string subquery = "subquery";

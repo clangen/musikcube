@@ -168,7 +168,6 @@ static json getEnvironment(Context& context) {
         { serverprefs::AudioPort, context.settings.Integer(serverprefs::AudioPort.c_str()) },
         { key::sdk_version, ClientSdkVersion },
         { key::app_version, MUSIKCUBE_VERSION },
-        { key::contextual_facets, true },
         { key::api_version, ApiVersion }
     };
 }

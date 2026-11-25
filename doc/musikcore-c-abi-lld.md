@@ -18,9 +18,11 @@ compatibility path is planned.
   build layout, component contracts, testing infrastructure, foundation gate,
   and validation baselines.
 - [Core migration tasks](musikcore-c-abi-lld-core.md): decisions and phases
-  0–3 and 5–7, including application API and runtime hardening.
+  0–3 and 5–7, including application API and runtime hardening. Complete in
+  its recorded scope; deferred work is identified in the checklist.
 - [Plugin migration tasks](musikcore-c-abi-lld-plugins.md): plugin architecture,
-  provider families, remaining SDK removal, and their acceptance criteria.
+  provider families, application media APIs, remaining SDK removal, and their
+  acceptance criteria.
 - [Release and cleanup gates](musikcore-c-abi-lld-release.md): phases 9–10,
   historical next steps, and progress reporting rules.
 - [SDK removal design](musikcore-sdk-removal-design.md): inventory, intended

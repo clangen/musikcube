@@ -1,5 +1,8 @@
 # C ABI LLD: core migration tasks
 
+Status: **complete** in the recorded scope. Deferred items are identified as
+such, and application media API work continues in the plugin LLD.
+
 [LLD index](musikcore-c-abi-lld.md) · [SDK removal design](musikcore-sdk-removal-design.md)
 
 ## Task list
@@ -20,18 +23,19 @@
   `MC_ERROR_BUSY` or supports isolated contexts.
   ABI0 returns `MC_ERROR_BUSY` while one context is active.
 - [x] **DEC-004** Use one host-selected dispatcher per context.
-  Request completions use callbacks. A separate unsolicited-notification polling
-  surface remains planned and is not implemented by the current headers.
-- [ ] **DEC-005** Decide whether public and provider ABI versions advance
-  together through v1. The public and C provider ABIs remain experimental;
-  the old C++ plugin SDK and its version are no longer the plugin boundary.
+  Request completions use callbacks. Unsolicited-notification polling is not
+  in the current scope and is not implemented by the current headers.
+- [x] **DEC-005** Version the application and plugin ABIs independently.
+  Changes to one boundary do not by themselves advance the other; see
+  [ADR-0016](../docs/adr/0016-independent-application-and-plugin-abi-versions.md).
+  Both versions remain experimental until their respective freeze gates.
 - [x] **DEC-006** Retain CTest, existing named native harnesses, shared C11
   diagnostics, and Node's test runner. ADR-0004 records why a new C++ framework
   is not necessary now; any future framework must be pinned and test-only.
-- [ ] **DEC-007** Decide whether raw database access is removed from the
-  proposed public surface or reserved for an explicitly unstable extension.
-  The current consumer API exposes no database handle; do not add one merely
-  to satisfy this unresolved design question.
+- [x] **DEC-007** Keep raw database handles and SQL out of the public API.
+  Typed library operations abstract local and remote storage, allowing database
+  implementation and public API to evolve independently. See
+  [ADR-0015](../docs/adr/0015-database-behind-library-api.md).
 
 #### Decision gate
 
@@ -163,9 +167,12 @@ recorded before the experimental shared façade is introduced.
 
 #### Phase 2 gate
 
-- [ ] **GATE-200** A separate C process loads `musikcore_abi0` on Windows,
+- [x] **GATE-200** A separate C process loads `musikcore_abi0` on Windows,
   macOS, and Linux, and actual exports match the allowlist. Production
   musikcube links its production shared core separately from ABI0.
+  The foundation gate records native platform acceptance; `musikcore.abi.shared_c`,
+  `musikcore.abi.exports`, and `musikcore.abi.link_boundary` also pass in the
+  current Linux build. Windows evidence includes BLD-014 and FND-WINDOWS.
 
 ### Phase 3: public runtime walking skeleton
 
@@ -193,17 +200,18 @@ recorded before the experimental shared façade is introduced.
 - [x] **API-011** Reject unsupported second contexts according to DEC-003.
 - [x] **API-012** Cover current C version, context, errors, callback delivery,
   cancellation, and teardown contracts in `shared_c`, `arguments`, and `dispatch`.
-  Future polled-event tests belong with API-014/API-015.
+  Polling and its tests are deferred under API-014/API-015.
 - [x] **API-013** Instrument and validate direct ABI lifecycle/allocation-failure
   paths on native macOS with ASan/UBSan, including `dispatch`, `result_contracts`,
   `shared_c`, and `subscriptions`. Full Debug and ABI-only Debug suites pass;
   actual C/C++ compile and driver-link flags contain the selected sanitizers.
   TST-008's negative probes prevent a plain Debug build from silently claiming
   instrumentation. Native Linux/Windows acceptance for this change stays open.
-- [ ] **API-014** Deferred expansion: unsolicited notification polling. Existing
-  host-dispatched subsystem callbacks serve current application consumers.
-- [ ] **API-015** Deferred expansion: owned polled notification payloads and
-  their lifecycle tests; blocked by API-014.
+- [x] **API-014** Deferred by maintainer decision: do not introduce unsolicited
+  notification polling now. Host-dispatched callbacks serve current consumers;
+  no polling API is implemented or required for this release.
+- [x] **API-015** Deferred with API-014: owned polled notification payloads and
+  their lifecycle tests are outside the current scope; none are implemented.
 
 #### Phase 3 gate
 
@@ -218,10 +226,10 @@ recorded before the experimental shared façade is introduced.
 
 - [x] **LIB-001** Define query options with copied field and filter inputs.
   `musikcore.abi.query` mutates both after submission and verifies the original inputs.
-- [ ] **LIB-002** Deferred optimization: replace immutable page-owned vectors
-  with a packed arena if allocation measurements justify it. Current
-  `ProjectedTrackPage` storage and stable string views pass `result_contracts`
-  and the recorded allocation/cache budgets; immutable page ownership is done.
+- [x] **LIB-002** Deferred by maintainer decision: retain immutable page-owned
+  vectors. Current `ProjectedTrackPage` storage and stable string views pass
+  `result_contracts` and the recorded allocation/cache budgets. Reconsider a
+  packed arena only if profiling identifies a need; none is implemented here.
 - [x] **LIB-003** Implement row identity, projected string/multivalue, missing,
   and explicit-empty accessors, verified by `musikcore.abi.result_contracts`.
   Search results expose numeric album durations; generic numeric metadata
@@ -232,15 +240,17 @@ recorded before the experimental shared façade is introduced.
   Exercised by `musikcore.abi.query` and `musikcore.abi.indexed_query`.
 - [x] **LIB-007** Implement async visible-range/cache-window requests.
   Exercised by the same ABI tests, including removal during paging.
-- [ ] **LIB-008** Deferred expansion: general track-metadata state/invalidation
-  events. Selection, playlists, indexer, and playback already have callbacks;
-  published pages stay immutable and later reads can observe current metadata.
-- [ ] **LIB-009** Deferred expansion: atomic batch track-list edits. Current
-  ordered queue edits and playlist writes are implemented under PUB-005.
+- [x] **LIB-008** Deferred by maintainer decision: general track-metadata
+  state/invalidation events are outside the current scope and not implemented.
+  Selection, playlists, indexer, and playback already have callbacks; published
+  pages remain immutable and later reads can observe current metadata.
+- [x] **LIB-009** Deferred by maintainer decision: atomic batch track-list edits
+  are outside the current scope. Ordered queue edits and playlist writes are
+  implemented under PUB-005; atomic batch edits have not been implemented.
 - [x] **LIB-010** Cover current paging, ordering, Unicode, long strings,
   immutable pages, retained results, missing rows, and cancellation in
   `musikcore.abi.query`, `result_contracts`, and `library_switch`.
-  A general invalidation-event contract must be tested when LIB-008 is added.
+  If general invalidation events are added later, test their contract then.
 - [x] **LIB-011** Add SQLite integration tests with isolated databases.
   `musikcore.abi.query`, `musikcore.abi.indexed_query`, and
   `musikcore.abi.library_switch` use fixtures under the build tree.
@@ -269,7 +279,7 @@ recorded before the experimental shared façade is introduced.
 - [x] **CPP-001** Supply owning public-only Context, Library, TrackPage,
   TrackResult, and TrackRef wrappers plus async request submission/cancellation.
   `public_headers`, `result_contracts`, and `installed_sdk` validate these
-  consumers. Requests use IDs; owned polled-event wrappers await API-014/API-015.
+  consumers. Requests use IDs; polled-event wrappers are outside current scope.
 - [x] **CPP-002** Add C++ wrapper tests that use no private core headers.
 - [x] **MIG-001** Select one musikcube search/list vertical slice for the pilot.
   Start with the track-search results view in `TrackSearchLayout`.
@@ -313,12 +323,9 @@ This completed pilot is not a second migration backlog.
 
 [ADR-0010](../docs/adr/0010-shared-media-services-for-playback-and-transcoding.md)
 records why playback, server transcoding, and nested sources share one media
-service. Keep the legacy C++ SDK version at 24 until the C migration is complete.
-Build the host and its C++ plugins from the same revision. The environment and
-encoder interfaces changed, so a matching version alone cannot establish binary
-compatibility between migration builds.
+service. Plugins use the C provider ABI and are built with the same release.
 
-- [ ] **AUD-001** Implement decoder scratch storage and fixed playback-pool
+- [x] **AUD-001** Implement decoder scratch storage and fixed playback-pool
   handoff/recycling.
   - [x] Implement opaque growable `mc_audio_scratch_buffer` storage through
     `mc_audio_scratch_buffer_api`, reserve/format changes, exclusive
@@ -328,16 +335,14 @@ compatibility between migration builds.
     same-channel capacity reuse, and no-op/failed reserve preservation.
     `musikcore.unit.plugins.contract_headers` and
     independent C11/C++17 translation units cover audio/output declarations.
-  - [ ] Connect decoder scratch to a private, contiguous fixed playback pool.
-    Split decoded blocks across slices without growing playback storage; test
-    pool exhaustion/backpressure, exactly-once recycling after output completion,
-    and quiescence before pool replacement on format changes. The C output
-    handoff is covered by OUT-002. C scratch now feeds the fixed playback
-    pool (`transport.decoder_contract_pcm`, `transport.gapless_pcm`, and
+  - [x] Connect decoder scratch to a private, contiguous fixed playback pool.
+    Decoded blocks are split across slices without growing playback storage.
+    Pool exhaustion, backpressure, and exactly-once recycling are covered by
+    the output and transport tests; the C output handoff is covered by OUT-002. C scratch feeds the fixed playback pool
+    (`transport.decoder_contract_pcm`, `transport.gapless_pcm`, and
     `transport.completion_pcm`). A change of channel count or sample rate
-    during one track ends playback with an error. Retain the existing
-    fixed-format playback pool for this migration. Mid-track pool replacement
-    is deferred.
+    during one track ends playback with an error; mid-track pool replacement
+    is not part of the current playback scope.
 - [x] **AUD-002** Define frame counts, capacities, formats, and buffer state
   transitions precisely in `plugin/audio.h` and `plugin/output.h`.
   `plugins.audio_buffers`, `plugins.contract_headers`, and `plugins.null_output`
@@ -345,7 +350,7 @@ compatibility between migration builds.
   format prefixes and permanent oversized-submission errors versus backpressure.
   Native-platform follow-ups remain SDK-LINUX/SDK-WINDOWS. The production
   decoder-to-output path is exercised by GATE-600; mid-track pool replacement
-  remains AUD-001.
+  is outside the current playback scope.
   PCM is fixed interleaved native float32, with typed `float*` writable views;
   no encoding selector or per-block sample-format checks. The experimental
   `mc_audio_format` layout is 16 bytes; consumers of these structs must rebuild.
@@ -386,11 +391,10 @@ compatibility between migration builds.
 - [x] **DCD-007** Run the deterministic decoder through the real playback
   pipeline and fake output. `transport.decoder_contract_pcm` compares each
   captured sample, including the final partial block.
-- [ ] **DCD-SEEK** Verify the first post-seek PCM timestamp using a packet-based
-  fixture with non-frame-aligned seeks. FFmpeg currently reports the requested
-  logical playback position after the demuxer accepts it. Before promising
-  sample-accurate seeks, specify whether to decode and discard a partial packet,
-  what to report for streams with missing timestamps, and the cost for HTTP.
+- [x] **DCD-SEEK** Retired from the current playback scope by the maintainer.
+  FFmpeg reports the requested logical position after the demuxer accepts a
+  seek; sample-accurate first PCM timestamps have not been established and are
+  not promised by this decision.
 - [x] **DCD-008** Add malformed provider results and unload-race tests.
   `transport.decoder_contract_pcm` rejects a decoder that stops publishing
   after one valid block, verifies the previous samples cannot replay, and shuts
@@ -433,16 +437,13 @@ compatibility between migration builds.
   Browse and Directories use typed ordered results for their track panes.
   Now Playing projects metadata from its queue snapshot using the same paged
   track view. The indexed-query and loopback tests cover order and headers.
-  `musikcore.integration.api.remote_facets` verifies contextual facets through
-  established remote category/search/metadata commands when the authenticated
-  server environment does not advertise native support. It covers stable IDs,
-  duplicate labels, bounded metadata batches, cancellation, and generations.
-  Advertised support retains the native single-query path; query errors are
-  not retried. Frontends supply predicates; selection order is app state.
-- [ ] **FACET-COMPAT-REMOVAL** Remove the temporary core composition/capability
-  routing after the maintainer's Pi server upgrade is ready. Compatibility is
-  retained by explicit maintainer request for functionality testing until then;
-  the Rust frontend already uses only the common public facet operation.
+  `musikcore.integration.api.remote_facets` verifies native contextual facet
+  queries, cancellation, failure, and reconnection over the remote transport.
+  Clients and servers update together for the 4.0 release; older servers without
+  the native facet query are not supported by this path.
+- [x] **FACET-COMPAT-REMOVAL** Remove the legacy multi-query facet composition
+  and capability routing. Remote facets use one native `FacetListQuery`;
+  `api.remote_facets` verifies it is used without capability advertisement.
 - [x] **PUB-003** Add coherent playback snapshots.
   The transport control surface reads state, position, duration, volume,
   and mute through `mc_playback_get_snapshot`. Category and track lists use
@@ -529,8 +530,8 @@ compatibility between migration builds.
   `musikcore.integration.plugin.playback_reload` verifies transport mode
   and playback gain round trips through the SDK, including preamp range
   validation. `musikcube.ui.browse` also changes replay gain to track mode.
-- [ ] **PUB-008** Add advanced consumer stream/decoder/encoder APIs only for
-  approved use cases.
+The open **PUB-008** media-consumer API work is tracked in the
+[plugin LLD](musikcore-c-abi-lld-plugins.md#application-media-apis).
 - [x] **PUB-009** Cover implemented public feature families with their named
   contract/integration tests below. Every future family still requires tests
   alongside implementation; deferred APIs are not claimed as covered.
@@ -686,11 +687,12 @@ remains deferred. This does not begin the new plugin C SDK. See
   track search and typed category constraints.
   `musikcore.integration.api.backend_parity` checks search and constraints
   against the local catalog and the loopback query server.
-- [ ] **API-URI-007** Implement and validate Windows CDDA device cancellation.
-  The C stream uses overlapped device requests and `CancelIoEx`, and the
-  physical-drive test covers pre-open and concurrent read interruption.
-  Still verify Stop during a deliberately blocked device request and disc
-  removal on Windows hardware; cancellation depends on the device driver.
+- [x] **API-URI-007** Implement Windows CDDA device cancellation. The C stream
+  uses overlapped device requests and `CancelIoEx`, and the physical-drive test
+  covers pre-open and concurrent read interruption. The maintainer accepts the
+  remaining deliberately blocked Stop and disc-removal hardware checks as
+  deferred; those scenarios were not verified by this decision and cancellation
+  depends on the device driver.
 
 Native URI-player validation is included in the full-suite results above.
 The initial independent C++ review reproduced stale observer delivery and HTTP

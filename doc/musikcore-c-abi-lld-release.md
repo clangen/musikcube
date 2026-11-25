@@ -146,7 +146,7 @@ Core consumer acceptance and packaging are complete in the recorded scope on
 `clangen/musikcore-c-abi-completion`. The active branch rebuilds the plugin
 architecture using the six-step order in Phase 4. Replacing plugin dependencies
 must preserve the public application C ABI and its ownership/threading contracts;
-capability availability may be temporarily reduced as documented under PLG-EMPTY-002.
+the former output-first test deferrals were restored under PLG-EMPTY-002.
 
 1. Keep shared subscription scope and URI lifecycle regressions green. The
    subscription fix centralizes delivery depth in the exported C implementation;

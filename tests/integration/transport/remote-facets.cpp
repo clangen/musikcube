@@ -56,8 +56,7 @@ namespace {
         return decodedCategories->Run(db) && decodedCategories->GetResult()->Count() == 3;
     }
 
-    /* serve controlled legacy and advertised facet replies on a real loopback
-    connection so routing, request counts and connection boundaries are observable. */
+    /* serve native facet replies on a real loopback connection. */
     class Server {
         public:
             /* start an isolated listener and worker without relying on a configured server. */
@@ -71,74 +70,29 @@ namespace {
                         reply["options"]["environment"]["app_version"] =
                             std::to_string(MUSIKCUBE_VERSION_MAJOR) + "." +
                             std::to_string(MUSIKCUBE_VERSION_MINOR) + ".0";
-                        if (this->advertise) {
-                            reply["options"]["environment"]["contextual_facets"] = true;
-                        }
                     }
                     else if (request.at("name") != "ping") {
                         const auto query = Json::parse(request.at("options").at("raw_query_data").get<std::string>());
                         ++this->commands;
-                        if (query.at("name") == "FacetListQuery") {
-                            if (!this->advertise) {
-                                this->valid = false;
-                            }
-                            if (!this->advertise || this->failFacet) {
-                                reply["options"]["success"] = false;
-                            }
-                            else {
-                                this->valid = this->valid && query.at("options").at("trackSearch") == "needle";
-                                reply["options"]["raw_query_data"] = R"({"result":[{"id":1,"value":"Same name","type":"genre"},{"id":3,"value":"Unknown","type":"genre"}]})";
-                            }
-                        }
-                        else if (query.at("name") == "CategoryListQuery") {
-                            const auto& predicates = query.at("options").at("regularPredicateList");
-                            this->valid = this->valid && predicates.dump() == R"([["artist",77],["album",88]])";
-                            reply["options"]["raw_query_data"] = R"({"result":[{"id":1,"value":"Same name","type":"genre"},{"id":2,"value":"Same name","type":"genre"},{"id":3,"value":"Unknown","type":"genre"}]})";
-                        }
-                        else if (query.at("name") == "CategoryTrackListQuery") {
-                            ++this->probes;
-                            const auto& options = query.at("options");
-                            const auto predicates = options.at("regularPredicateList").dump();
-                            this->valid = this->valid && (options.at("filter") == "needle" || options.at("filter") == "bulk") &&
-                                predicates == R"([["artist",77],["album",88]])";
-                            reply["options"]["raw_query_data"] =
-                                R"({"result":{"headers":[],"durations":{},"trackList":[42,17,42]}})";
-                            if (options.at("filter") == "bulk") {
-                                auto ids = Json::array();
-                                for (int64_t id = 1; id <= 1001; ++id) {
-                                    ids.push_back(id);
-                                }
-                                reply["options"]["raw_query_data"] = Json {
-                                    { "result", { { "headers", Json::array() }, { "durations", Json::object() }, { "trackList", ids } } }
-                                }.dump();
-                            }
-                            std::lock_guard<std::mutex> lock(this->mutex);
-                            if (this->hold) {
-                                this->hold = false;
-                                this->held = [this, connection, reply] {
-                                    this->Send(connection, reply);
-                                };
-                                this->changed.notify_all();
-                                return;
-                            }
-                        }
-                        else if (query.at("name") == "TrackMetadataBatchQuery") {
-                            /* legacy full-track maps expose actual visual category IDs;
-                            identical display names must not merge distinct categories. */
-                            const auto& ids = query.at("options").at("trackIds");
-                            this->valid = this->valid && ids.size() <= 500;
-                            Json tracks = Json::object();
-                            for (const auto& value : ids) {
-                                const auto id = value.get<int64_t>();
-                                tracks[std::to_string(id)] = {
-                                    { "id", id }, { "visual_genre_id", id == 17 ? "3" : "1" }, { "replayGain", Json::object() }
-                                };
-                            }
-                            reply["options"]["raw_query_data"] = Json { { "result", tracks } }.dump();
-                        }
-                        else {
+                        if (query.at("name") != "FacetListQuery") {
                             this->valid = false;
                             this->socket.close(connection, websocketpp::close::status::going_away, "unsupported query");
+                            return;
+                        }
+                        const auto& options = query.at("options");
+                        this->valid = this->valid && options.at("trackSearch") == "needle" &&
+                            options.at("regularPredicateList").dump() == R"([["artist",77],["album",88]])";
+                        if (this->failFacet) {
+                            reply["options"]["success"] = false;
+                        }
+                        else {
+                            reply["options"]["raw_query_data"] = R"({"result":[{"id":1,"value":"Same name","type":"genre"},{"id":3,"value":"Unknown","type":"genre"}]})";
+                        }
+                        std::lock_guard<std::mutex> lock(this->mutex);
+                        if (this->hold) {
+                            this->hold = false;
+                            this->held = [this, connection, reply] { this->Send(connection, reply); };
+                            this->changed.notify_all();
                             return;
                         }
                     }
@@ -165,7 +119,7 @@ namespace {
             /* expose the assigned loopback port without reserving a fixed system port. */
             unsigned short Port() const { return this->port; }
 
-            /* hold the next matching-track reply to establish a cancellation or reconnect race. */
+            /* hold the next facet reply to establish a cancellation or reconnect race. */
             void Hold() {
                 std::lock_guard<std::mutex> lock(this->mutex);
                 this->hold = true;
@@ -190,9 +144,7 @@ namespace {
             }
 
             std::atomic<unsigned> commands { 0 };
-            std::atomic<unsigned> probes { 0 };
             std::atomic<bool> valid { true };
-            std::atomic<bool> advertise { false };
             std::atomic<bool> failFacet { false };
 
         private:
@@ -231,8 +183,7 @@ namespace {
     }
 }
 
-/* exercise legacy composition, bounded metadata reads and advertised native routing
-through the public asynchronous API, with controlled cancellation and reconnects. */
+/* exercise native facet queries, cancellation, failure and reconnects through the public API. */
 int main() {
     using namespace musik::core;
     using namespace musik::core::api;
@@ -274,133 +225,61 @@ int main() {
         }
         return id;
     };
-    /* distinguish same-name categories by ID and retain the matching unknown category. */
+    /* a server without a capability flag must receive exactly one native query. */
     Result result;
     submit(result, true);
     if (!wait([&] { return result.calls == 1; }) || result.status != MC_OK ||
-        result.ids != std::vector<int64_t> { 1, 3 } || !server.valid || server.commands != 3)
+        result.ids != std::vector<int64_t> { 1, 3 } || !server.valid || server.commands != 1)
     {
-        std::fprintf(stderr, "contextual facets failed: status=%d commands=%u probes=%u\n",
-            result.status, server.commands.load(), server.probes.load());
+        std::fprintf(stderr, "native facets failed: status=%d commands=%u\n", result.status, server.commands.load());
         return 1;
     }
-    /* empty text must need only one constrained category query. */
-    Result unfiltered;
-    submit(unfiltered, false);
-    if (!wait([&] { return unfiltered.calls == 1; }) || unfiltered.status != MC_OK ||
-        unfiltered.ids.size() != 3 || server.commands != 4)
-    {
-        std::fprintf(stderr, "unfiltered facets failed: status=%d commands=%u\n", unfiltered.status, server.commands.load());
+    server.failFacet = true;
+    Result failed;
+    submit(failed, true);
+    if (!wait([&] { return failed.calls == 1; }) || failed.status != MC_ERROR_IO || server.commands != 2) {
         return 1;
     }
-    /* more than two metadata batches must remain bounded to 500 IDs per wire command. */
-    Result bulk;
-    submit(bulk, true, "bulk");
-    if (!wait([&] { return bulk.calls == 1; }) || bulk.status != MC_OK ||
-        bulk.ids != std::vector<int64_t> { 1, 3 } || server.commands != 9 || !server.valid)
-    {
-        std::fprintf(stderr, "bounded facet batches failed: status=%d commands=%u\n", bulk.status, server.commands.load());
-        return 1;
-    }
-    /* cancel while the track reply is held; releasing it must not start metadata reads. */
+    server.failFacet = false;
     server.Hold();
     Result canceled;
-    const auto canceledId = submit(canceled, true);
-    if (!server.WaitHeld() || mc_request_cancel(context.Get(), canceledId) != MC_OK ||
+    const auto id = submit(canceled, true);
+    if (!server.WaitHeld() || mc_request_cancel(context.Get(), id) != MC_OK ||
         !wait([&] { return canceled.calls == 1; }) || canceled.status != MC_ERROR_CANCELLED)
     {
-        std::fprintf(stderr, "facet cancellation failed: status=%d calls=%u\n", canceled.status, canceled.calls);
         return 1;
     }
     server.Release();
-    Result barrier;
-    /* cancellation releases the API slot before the held wire reply arrives.
-    retry only admission failures, bounded by a deadline, until that slot drains. */
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-    do {
-        barrier = {};
-        submit(barrier, false);
-        if (!wait([&] { return barrier.calls == 1; })) {
-            return 1;
-        }
-    } while (barrier.status == MC_ERROR_BUSY && std::chrono::steady_clock::now() < deadline);
-    if (barrier.status != MC_OK || canceled.calls != 1 || server.probes != 3 || server.commands != 12) {
-        std::fprintf(stderr, "post-cancel facets failed: status=%d calls=%u probes=%u\n",
-            barrier.status, barrier.calls, server.probes.load());
+    if (session.Disconnect() != MC_OK) {
         return 1;
     }
-
-    /* a reconnect must not send any successor probe into the new generation. */
+    connected.reset();
+    session.Connect(context, [&](mc_result status, mc_remote_state, std::string_view) { connected = status; });
+    if (!wait([&] { return connected.has_value(); }) || connected != MC_OK) {
+        return 1;
+    }
+    library = session.OpenLibrary();
+    /* retire an in-flight request with its connection before reconnecting. */
     server.Hold();
     Result disconnected;
     submit(disconnected, true);
     if (!server.WaitHeld() || session.Disconnect() != MC_OK ||
         !wait([&] { return disconnected.calls == 1; }) || disconnected.status != MC_ERROR_IO)
     {
-        std::fprintf(stderr, "facet disconnect failed: status=%d calls=%u\n",
-            disconnected.status, disconnected.calls);
         return 1;
     }
     connected.reset();
-    session.Connect(context, [&](mc_result status, mc_remote_state, std::string_view) {
-        connected = status;
-    });
+    session.Connect(context, [&](mc_result status, mc_remote_state, std::string_view) { connected = status; });
     if (!wait([&] { return connected.has_value(); }) || connected != MC_OK) {
         return 1;
     }
     library = session.OpenLibrary();
     server.Release();
     Result reconnected;
-    submit(reconnected, false);
+    submit(reconnected, true);
     if (!wait([&] { return reconnected.calls == 1; }) || reconnected.status != MC_OK ||
-        disconnected.calls != 1 || server.probes != 4 || server.commands != 15 || !server.valid)
-    {
-        return 1;
-    }
-
-    /* advertised support keeps current servers on one native query. a genuine
-    query failure remains an error, never a capability retry or composition. */
-    if (session.Disconnect() != MC_OK) {
-        return 1;
-    }
-    server.advertise = true;
-    connected.reset();
-    session.Connect(context, [&](mc_result status, mc_remote_state, std::string_view) { connected = status; });
-    if (!wait([&] { return connected.has_value(); }) || connected != MC_OK) {
-        return 1;
-    }
-    library = session.OpenLibrary();
-    Result native;
-    submit(native, true);
-    if (!wait([&] { return native.calls == 1; }) || native.status != MC_OK ||
-        native.ids != std::vector<int64_t> { 1, 3 } || server.commands != 16)
-    {
-        std::fprintf(stderr, "advertised native facets did not use one command: status=%d commands=%u\n",
-            native.status, server.commands.load());
-        return 1;
-    }
-    server.failFacet = true;
-    Result failed;
-    submit(failed, true);
-    if (!wait([&] { return failed.calls == 1; }) || failed.status != MC_ERROR_IO || server.commands != 17) {
-        return 1;
-    }
-    /* a new handshake without the capability must retire the previous native routing decision. */
-    if (session.Disconnect() != MC_OK) {
-        return 1;
-    }
-    server.advertise = false;
-    server.failFacet = false;
-    connected.reset();
-    session.Connect(context, [&](mc_result status, mc_remote_state, std::string_view) { connected = status; });
-    if (!wait([&] { return connected.has_value(); }) || connected != MC_OK) {
-        return 1;
-    }
-    library = session.OpenLibrary();
-    Result reset;
-    submit(reset, true);
-    if (!wait([&] { return reset.calls == 1; }) || reset.status != MC_OK ||
-        reset.ids != std::vector<int64_t> { 1, 3 } || server.commands != 20 || !server.valid)
+        reconnected.ids != std::vector<int64_t> { 1, 3 } || canceled.calls != 1 ||
+        disconnected.calls != 1 || server.commands != 5 || !server.valid)
     {
         return 1;
     }

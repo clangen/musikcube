@@ -1,5 +1,8 @@
 # C ABI LLD: foundation and runtime
 
+Status: **complete** in the recorded foundation-gate scope. Later regressions,
+platform validation, and follow-up work remain tracked in the other LLDs.
+
 [LLD index](musikcore-c-abi-lld.md) · [SDK removal design](musikcore-sdk-removal-design.md)
 
 ## Constraints from the current repository
@@ -11,17 +14,16 @@
 - The retired legacy C boundary (`c_context.cpp`, `c_interface_wrappers.cpp`,
   and `musikcore_c.h`) has been removed. The new consumer boundary lives in
   `src/musikcore/ffi/consumer`.
-- Existing plugins export C-named entry points that exchange C++ SDK pointers.
+- Plugins use the C provider entry point; the former C++ plugin entry points have been removed.
 - CTest now runs header, lifecycle, dispatch, query, wrapper, backend-switch,
   export, and production/remote integration tests.
 - Production binaries and plugins currently share source-tree output
   directories in several configurations.
 
-The core-completion branch preserves the working application baseline. The
-provider branch keeps targets buildable and unavailable capabilities explicit
-while families are restored; it does not keep the old plugin architecture active
-merely to preserve functionality during reconstruction. Record temporary test
-prerequisites under PLG-EMPTY-002.
+The core-completion branch preserves the earlier application baseline. The
+provider migration now uses the C plugin path; former output-first test
+deferrals have been restored under PLG-EMPTY-002. Remaining native-platform
+validation and internal SDK removal are tracked in the plugin LLD.
 
 ## Proposed source layout
 
@@ -234,7 +236,8 @@ Coordinate wakeup coalescing/rearming with enqueue under the same synchronizatio
 so a producer racing with the final drain cannot strand work. Invoke callbacks
 and wakeup hooks outside the queue lock.
 
-Unsolicited notification polling remains unimplemented. When added, reserve
+Unsolicited notification polling is deferred and remains unimplemented. If it
+is introduced later, reserve
 lossless terminal/state notification capacity at admission, coalesce only the
 documented progress/invalidation records, and transfer ownership on dequeue.
 This future mechanism must preserve the separation selected in ADR-0002.
