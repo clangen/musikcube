@@ -9,6 +9,12 @@ if(POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW)
 endif()
 project(musikcube)
+
+# FreeBSD's libc++ 19 keeps C++20 std::jthread behind this flag.
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexperimental-library")
+endif()
+
 set (musikcube_VERSION_MAJOR 4)
 set (musikcube_VERSION_MINOR 0)
 set (musikcube_VERSION_PATCH 0)
