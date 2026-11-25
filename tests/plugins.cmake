@@ -3,7 +3,7 @@
 set(provider_output_directory "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/providers")
 
 # provider fixtures compile as C and exchange only installed-shape function tables.
-set(provider_variants valid incompatible newer_minor truncated missing_shutdown bad_id bad_utf8 entry_fail init_fail bad_capability no_entry duplicate_id missing_version bad_output bad_stream bad_decoder bad_configuration bad_encoder bad_dsp bad_indexer bad_number_configuration duplicate_configuration bad_playback_remote)
+set(provider_variants valid incompatible newer_minor truncated missing_shutdown bad_id bad_utf8 entry_fail init_fail bad_capability no_entry duplicate_id missing_version bad_output bad_stream bad_decoder bad_configuration bad_encoder bad_dsp bad_indexer bad_number_configuration duplicate_configuration bad_playback_remote bad_tag_reader bad_analyzer bad_visualizer)
 set(provider_arguments)
 set(provider_targets)
 foreach(variant IN LISTS provider_variants)

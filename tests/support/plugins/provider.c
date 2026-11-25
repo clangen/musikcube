@@ -6,6 +6,9 @@
 #include <musikcore/plugin/settings.h>
 #include <musikcore/plugin/indexer.h>
 #include <musikcore/plugin/playback-remote.h>
+#include <musikcore/plugin/tag.h>
+#include <musikcore/plugin/analyzer.h>
+#include <musikcore/plugin/visualizer.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,6 +16,44 @@
 static const mc_string_view tag = { "failed-fixture", 14 };
 #else
 static const mc_string_view tag = { "fixture", 7 };
+#endif
+
+#if defined(BAD_TAG_READER) || defined(BAD_ANALYZER) || defined(BAD_VISUALIZER)
+/* rejected factories must never create an instance. */
+static mc_result MC_CALL rejected_create(void* context, const mc_plugin_services* services,
+    void** instance, mc_error** error)
+{
+    (void) context;
+    (void) services;
+    (void) instance;
+    (void) error;
+    abort();
+}
+
+static void MC_CALL rejected_destroy(void* instance) {
+    (void) instance;
+}
+#endif
+
+#ifdef BAD_TAG_READER
+static mc_result MC_CALL rejected_can_read(void* context, mc_string_view extension, uint32_t* supported) {
+    (void) context;
+    (void) extension;
+    (void) supported;
+    abort();
+}
+#endif
+
+#ifdef BAD_VISUALIZER
+static mc_result MC_CALL rejected_visibility(void* instance) {
+    (void) instance;
+    abort();
+}
+static mc_result MC_CALL rejected_is_visible(void* instance, bool* visible) {
+    (void) instance;
+    (void) visible;
+    abort();
+}
 #endif
 
 /* each initialized session owns its host pointer and table. the native image
@@ -83,7 +124,7 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
     if (register_again(state) != MC_ERROR_INVALID_ARGUMENT) {
         return MC_ERROR_INTERNAL;
     }
-#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION) || defined(BAD_ENCODER) || defined(BAD_DSP) || defined(BAD_INDEXER) || defined(BAD_NUMBER_CONFIGURATION) || defined(DUPLICATE_CONFIGURATION) || defined(BAD_PLAYBACK_REMOTE)
+#if defined(BAD_OUTPUT) || defined(BAD_STREAM) || defined(BAD_DECODER) || defined(BAD_CONFIGURATION) || defined(BAD_ENCODER) || defined(BAD_DSP) || defined(BAD_INDEXER) || defined(BAD_NUMBER_CONFIGURATION) || defined(DUPLICATE_CONFIGURATION) || defined(BAD_PLAYBACK_REMOTE) || defined(BAD_TAG_READER) || defined(BAD_ANALYZER) || defined(BAD_VISUALIZER)
     /* registration must reject a sized factory with missing operations before
     playback can obtain a typed view of the provider. */
 #if defined(BAD_CONFIGURATION)
@@ -119,6 +160,45 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
 #elif defined(BAD_PLAYBACK_REMOTE)
     static const mc_playback_remote_factory factory = MC_PLAYBACK_REMOTE_FACTORY_DEFAULT;
     static const char id[] = MC_PLUGIN_CAPABILITY_PLAYBACK_REMOTE;
+#elif defined(BAD_TAG_READER)
+    static const mc_tag_reader_vtable methods = {
+        .struct_size = sizeof(methods),
+        .destroy = rejected_destroy,
+    };
+    static const mc_tag_reader_factory factory = {
+        .struct_size = sizeof(factory),
+        .instance_api = &methods,
+        .can_read = rejected_can_read,
+        .create = rejected_create,
+    };
+    static const char id[] = MC_PLUGIN_CAPABILITY_TAG_READER;
+#elif defined(BAD_ANALYZER)
+    static const mc_analyzer_vtable methods = {
+        .struct_size = sizeof(methods),
+        .destroy = rejected_destroy,
+    };
+    static const mc_analyzer_factory factory = {
+        .struct_size = sizeof(factory),
+        .instance_api = &methods,
+        .create = rejected_create,
+    };
+    static const char id[] = MC_PLUGIN_CAPABILITY_ANALYZER;
+#elif defined(BAD_VISUALIZER)
+    static const mc_plugin_visualizer_vtable methods = {
+        .struct_size = sizeof(methods),
+        .destroy = rejected_destroy,
+        .show = rejected_visibility,
+        .hide = rejected_visibility,
+        .is_visible = rejected_is_visible,
+    };
+    static const mc_visualizer_factory factory = {
+        .struct_size = sizeof(factory),
+        .instance_api = &methods,
+        .name = { "fixture", 7 },
+        .inputs = MC_VISUALIZER_INPUT_PCM,
+        .create = rejected_create,
+    };
+    static const char id[] = MC_PLUGIN_CAPABILITY_VISUALIZER;
 #elif defined(BAD_INDEXER)
     static const mc_indexer_source_factory factory = MC_INDEXER_SOURCE_FACTORY_DEFAULT;
     static const char id[] = MC_PLUGIN_CAPABILITY_INDEXER_SOURCE;
@@ -146,7 +226,8 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
 #endif
 #if !defined(BAD_OUTPUT) && !defined(BAD_STREAM) && !defined(BAD_DECODER) && !defined(BAD_CONFIGURATION) && \
     !defined(BAD_ENCODER) && !defined(BAD_DSP) && !defined(BAD_INDEXER) && !defined(BAD_CAPABILITY) && \
-    !defined(BAD_NUMBER_CONFIGURATION) && !defined(DUPLICATE_CONFIGURATION) && !defined(BAD_PLAYBACK_REMOTE)
+    !defined(BAD_NUMBER_CONFIGURATION) && !defined(DUPLICATE_CONFIGURATION) && !defined(BAD_PLAYBACK_REMOTE) && \
+    !defined(BAD_TAG_READER) && !defined(BAD_ANALYZER) && !defined(BAD_VISUALIZER)
     /* exercise the same mixed setting types needed by index source plugins. */
     static const mc_boolean_setting boolean = { .key = { "enabled", 7 }, .default_value = true };
     static const mc_number_setting number = {
