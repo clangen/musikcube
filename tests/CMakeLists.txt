@@ -1,6 +1,8 @@
 add_executable(musikcore_fixed_ring_queue_test unit/common/fixed-ring-queue.cpp)
 target_include_directories(musikcore_fixed_ring_queue_test PRIVATE "${PROJECT_SOURCE_DIR}/src")
 target_compile_features(musikcore_fixed_ring_queue_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_fixed_ring_queue_test PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 add_test(NAME musikcore.unit.common.fixed_ring_queue COMMAND musikcore_fixed_ring_queue_test)
 set_tests_properties(musikcore.unit.common.fixed_ring_queue PROPERTIES LABELS "unit;musikcore;common;contract")
 

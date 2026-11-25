@@ -45,6 +45,7 @@
 #include <common/runtime/MessageQueue.h>
 
 #include <cassert>
+#include <climits>
 
 using namespace cursespp;
 using namespace musik::core::runtime;

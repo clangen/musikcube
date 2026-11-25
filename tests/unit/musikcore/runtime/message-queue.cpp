@@ -90,7 +90,6 @@ namespace {
 
         queue.Dispatch();
         CHECK(target.seen.size() == 3);
-        return true;
         for (size_t i = 0; i < target.seen.size(); ++i) {
             CHECK(target.seen[i].type == static_cast<int>(i + 1));
             CHECK(target.seen[i].first == static_cast<int64_t>((i + 1) * 10 + 1));
@@ -99,6 +98,7 @@ namespace {
         CHECK(!queue.Contains(&target) && queue.NextTime() == -1);
         queue.Dispatch();
         CHECK(target.seen.size() == 3);
+        return true;
     }
 
     /* Removing one type/target must release those payloads immediately without

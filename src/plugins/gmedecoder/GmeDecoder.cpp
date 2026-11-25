@@ -36,6 +36,7 @@
 #include "GmeDecoder.h"
 #include <musikcore/plugin/settings.h>
 #include <musikcore/plugin/subtrack-source.hpp>
+#include <climits>
 #include <cmath>
 #include <memory>
 
