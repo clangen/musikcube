@@ -14,7 +14,7 @@ namespace musik { namespace core { namespace plugin {
     , dataDirectory(GetDataDirectory()) {
         this->services.preferences = &this->preferences;
         this->services.data_directory = { this->dataDirectory.data(), this->dataDirectory.size() };
-        this->services.media = &Environment().Media();
+        this->services.media = &Media();
     }
 
     bool TagReader::CanRead(const std::string& extension) const {

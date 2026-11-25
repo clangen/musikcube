@@ -13,8 +13,7 @@ endif()
 add_subdirectory("${SUPPORT}" support)
 
 # Fixture executables/modules must never enter a tests-disabled target graph.
-foreach(target IN ITEMS musikcore_runtime_hardening_test musikcore_runtime_failure_First
-    musikcore_runtime_failure_Second musikcore_remote_query_transport_test musikcore_pcm_capture_output)
+foreach(target IN ITEMS musikcore_runtime_hardening_test musikcore_legacy_entry_fixture musikcore_remote_query_transport_test musikcore_pcm_capture_output)
   if(TARGET ${target})
     message(FATAL_ERROR "Test target ${target} was created with BUILD_TESTING=OFF")
   endif()

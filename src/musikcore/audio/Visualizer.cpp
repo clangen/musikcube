@@ -61,8 +61,8 @@ namespace {
         , directory(GetDataDirectory()) {
             services.preferences = &preferences;
             services.host = this->factory.Host();
-            services.media = &plugin::Environment().Media();
-            services.audio_scratch = &plugin::Environment().AudioScratch();
+            services.media = &plugin::Media();
+            services.audio_scratch = &plugin::AudioScratch();
             services.data_directory = { directory.data(), directory.size() };
             const auto status = this->factory.Invoke([&](const auto& table) {
                 name.assign(table.name.data, table.name.length);

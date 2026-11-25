@@ -35,8 +35,6 @@
 #pragma once
 
 #include <musikcore/library/ILibrary.h>
-#include <musikcore/sdk/IEnvironment.h>
-#include <musikcore/sdk/IPlaybackService.h>
 #include <common/runtime/IMessage.h>
 #include <string>
 #include <string_view>
@@ -53,17 +51,15 @@ namespace musik { namespace core { namespace plugin {
 
     void Initialize(const std::string& pluginDirectory);
 
-    void BindServices(
-        musik::core::runtime::IMessageQueue* messageQueue,
-        musik::core::sdk::IPlaybackService* playback,
-        musik::core::ILibraryPtr library);
+    void BindServices(musik::core::runtime::IMessageQueue* messageQueue);
 
     mc_result ApplySettings(std::string_view pluginId);
 
     void BindPlaybackRemotes(PlaybackRemotes& remotes);
     void UnbindPlaybackRemotes();
 
-    musik::core::sdk::IEnvironment& Environment();
+    const mc_media_host_api& Media();
+    const mc_audio_scratch_buffer_api& AudioScratch();
 
     std::vector<std::shared_ptr<audio::Dsp>> CreateDsps();
 

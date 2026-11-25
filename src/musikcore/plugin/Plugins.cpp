@@ -35,7 +35,6 @@
 #include "pch.hpp"
 #include <stdexcept>
 #include "Plugins.h"
-#include "PluginFactory.h"
 #include "MediaHost.h"
 #include "PlaybackRemotes.h"
 #include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
@@ -64,9 +63,6 @@
 #include <common/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 
-#include <musikcore/sdk/IDebug.h>
-#include <musikcore/sdk/IEnvironment.h>
-
 using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -78,27 +74,12 @@ static musik::core::plugin::PlaybackRemotes* playbackRemotes = nullptr;
 static std::mutex playbackRemotesMutex;
 static std::thread::id playbackRemotesOwner;
 static std::thread::id pluginSessionOwner;
-typedef void(*SetEnvironment)(IEnvironment*);
-typedef void(*SetDebug)(IDebug*);
 
 static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
 
 static IMessageQueue* messageQueue = nullptr;
-static ILibraryPtr defaultLibrary;
-static IPlaybackService* playbackService = nullptr;
-static std::shared_ptr<Preferences> playbackPrefs;
 static std::unique_ptr<musik::core::ffi::PluginRegistry> pluginRegistry;
 static std::unique_ptr<musik::core::plugin::MediaHost> mediaHost;
-
-static void saveEnvironment() {
-    if (::playbackPrefs) {
-        ::playbackPrefs->Save();
-    }
-    if (::messageQueue) {
-        ::messageQueue->Broadcast(
-            Message::Create(nullptr, message::EnvironmentUpdated));
-    }
-}
 
 static void broadcastEqualizerUpdated() {
     if (::messageQueue) {
@@ -203,180 +184,6 @@ mc_result MC_CALL mc_equalizer_set_gains(const double* gains, size_t count) {
     });
 }
 
-static class Debug: public IDebug {
-    public:
-        void Verbose(const char* tag, const char* message) override {
-            musik::debug::verbose(tag, message);
-        }
-
-        void Info(const char* tag, const char* message) override {
-            musik::debug::info(tag, message);
-        }
-
-        void Warning(const char* tag, const char* message) override {
-            musik::debug::warning(tag, message);
-        }
-
-        void Error(const char* tag, const char* message) override {
-            musik::debug::error(tag, message);
-        }
-} debugger;
-
-static class NullDebug: public IDebug { /* used during shutdown */
-    public:
-        void Verbose(const char* tag, const char* message) override {}
-        void Info(const char* tag, const char* message) override {}
-        void Warning(const char* tag, const char* message) override {}
-        void Error(const char* tag, const char* message) override {}
-} nullDebugger;
-
-static class Environment: public IEnvironment {
-    public:
-        size_t GetPath(PathType type, char* dst, int size) override {
-            std::string path;
-            switch (type) {
-                case PathType::UserHome: path = GetHomeDirectory(); break;
-                case PathType::Data: path = GetDataDirectory(); break;
-                case PathType::Application: path = GetApplicationDirectory(); break;
-                case PathType::Plugins: path = PluginFactory::Instance().Directory(); break;
-                case PathType::Library: {
-                    if (defaultLibrary) {
-                        path = GetDataDirectory() + std::to_string(defaultLibrary->Id()) + "/";
-                    }
-                    break;
-                }
-            }
-            return CopyString(path, dst, size);
-        }
-
-        const mc_media_host_api& Media() override { return mediaHost->Api(); }
-
-        const mc_audio_scratch_buffer_api& AudioScratch() override { return ffi::audio_scratch_buffers::Host(); }
-
-
-        IDebug* GetDebug() override {
-            return &debugger;
-        }
-
-        IPreferences* GetPreferences(const char* name) override {
-            return Preferences::Unmanaged(name ? name : std::string());
-        }
-
-        mc_result GetOutputConfiguration(mc_string_view driver, mc_output_configuration_fn read, void* data) override {
-            return outputs::ReadConfiguration(driver, read, data);
-        }
-
-        mc_result SelectOutput(mc_string_view driver, mc_string_view device) override {
-            const auto result = outputs::Configure(driver, device);
-            if (result == MC_OK && ::playbackService) {
-                ::playbackService->ReloadOutput();
-                saveEnvironment();
-            }
-            return result;
-        }
-
-        TransportType GetTransportType() override {
-            if (::playbackPrefs) {
-                return (TransportType) ::playbackPrefs->GetInt(
-                    prefs::keys::Transport.c_str(), (int) TransportType::Gapless);
-            }
-            return TransportType::Gapless;
-        }
-
-        void SetTransportType(TransportType type) override {
-            if (::playbackPrefs) {
-                auto currentType = GetTransportType();
-                if (currentType != type) {
-                    ::playbackPrefs->SetInt(prefs::keys::Transport.c_str(), (int) type);
-                    if (::playbackService) {
-                        ::playbackService->ReloadOutput();
-                    }
-                    saveEnvironment();
-                }
-            }
-        }
-
-        void ReindexMetadata() override {
-            if (::defaultLibrary && ::defaultLibrary->Indexer()) {
-                ::defaultLibrary->Indexer()->Schedule(IIndexer::SyncType::Local);
-            }
-        }
-
-        void RebuildMetadata() override {
-            if (::defaultLibrary && ::defaultLibrary->Indexer()) {
-                ::defaultLibrary->Indexer()->Schedule(IIndexer::SyncType::Rebuild);
-            }
-        }
-
-        ReplayGainMode GetReplayGainMode() override {
-            if (::playbackPrefs) {
-                return (ReplayGainMode) ::playbackPrefs->GetInt(
-                    prefs::keys::ReplayGainMode.c_str(),
-                    (int) ReplayGainMode::Disabled);
-            }
-            return ReplayGainMode::Disabled;
-        }
-
-        void SetReplayGainMode(ReplayGainMode mode) override {
-            if (::playbackPrefs) {
-                ::playbackPrefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) mode);
-                saveEnvironment();
-            }
-        }
-
-        float GetPreampGain() override {
-            if (::playbackPrefs) {
-                return (float) ::playbackPrefs->GetDouble(
-                    prefs::keys::PreampDecibels.c_str(), 0.0f);
-            }
-            return 1.0f;
-        }
-
-        void SetPreampGain(float gain) override {
-            if (::playbackPrefs) {
-                if (gain > 20.0f) { gain = 20.0f; }
-                if (gain < -20.0f) { gain = -20.0f; }
-                ::playbackPrefs->SetDouble(prefs::keys::PreampDecibels.c_str(), gain);
-                saveEnvironment();
-            }
-        }
-
-        bool GetEqualizerBandValues(double target[], size_t count) override {
-            mc_equalizer_state state = MC_EQUALIZER_STATE_DEFAULT;
-            if (!target || count != EqualizerBandCount || mc_equalizer_get_state(&state) != MC_OK) {
-                return false;
-            }
-            for (size_t i = 0; i < count; ++i) {
-                target[i] = state.bands[i].gain;
-            }
-            return true;
-        }
-
-        bool SetEqualizerBandValues(double values[], size_t count) override {
-            return values && count == EqualizerBandCount && writeEqualizerGains(values);
-        }
-
-        bool GetEqualizerEnabled() override {
-            mc_equalizer_state state = MC_EQUALIZER_STATE_DEFAULT;
-            return mc_equalizer_get_state(&state) == MC_OK && state.enabled;
-        }
-
-        void SetEqualizerEnabled(bool enabled) override {
-            mc_equalizer_set_enabled(enabled);
-        }
-
-        void ReloadPlaybackOutput() override {
-            if (playbackService) {
-                playbackService->ReloadOutput();
-            }
-        }
-
-        const char* GetAppVersion() override {
-            return MUSIKCUBE_VERSION;
-        }
-
-} environment;
-
 namespace musik { namespace core { namespace plugin {
 
     mc_result ValidateCallingThread() {
@@ -421,29 +228,27 @@ namespace musik { namespace core { namespace plugin {
             musik::contract::Assert(pluginSessionOwner == std::thread::id {}, "plugin session is already active");
             pluginSessionOwner = std::this_thread::get_id();
         }
-        auto& factory = PluginFactory::Instance(pluginDirectory);
-        factory.BeginSession();
+        /* keep the first validated directory for later sessions that omit it. */
+        static std::string selectedDirectory;
+        auto directory = pluginDirectory.empty()
+            ? (selectedDirectory.empty() ? GetPluginDirectory() : selectedDirectory)
+            : pluginDirectory;
+        const auto path = musik::core::sdk::fs::pathFromUtf8(directory);
+        if (!pluginDirectory.empty() && !std::filesystem::is_directory(path)) {
+            throw std::invalid_argument("Plugin directory does not exist");
+        }
+        directory = musik::core::sdk::fs::pathToUtf8(std::filesystem::weakly_canonical(path));
+        if (!selectedDirectory.empty() && selectedDirectory != directory) {
+            throw std::invalid_argument("Plugins have already been discovered in another directory");
+        }
+        selectedDirectory = directory;
 
-        /* preferences */
-        Preferences::LoadPluginPreferences();
-
-        /* debug */
-        PluginFactory::Instance().QueryFunction<SetDebug>(
-            "SetDebug",
-            [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
-            func(&debugger);
-        }, PluginFactory::FunctionSelection::Session);
-
-        /* discover C plugins for this engine session. the registry owns selected
-        DLLs until their users finish and session teardown closes them. */
         pluginRegistry = std::make_unique<musik::core::ffi::PluginRegistry>(
             [](mc_log_level level, mc_string_view tag, mc_string_view text) {
                 mc_log_write(level, tag, text);
             });
         const auto preferences = Preferences::ForComponent(prefs::components::Plugins);
-        /* both contracts use the process-selected directory, including when
-        an embedded host omits its directory on a later session. */
-        const auto status = pluginRegistry->Initialize(factory.Directory(), [&](const auto& plugin) {
+        const auto status = pluginRegistry->Initialize(directory, [&](const auto& plugin) {
             const auto leaf = musik::core::sdk::fs::pathToUtf8(std::filesystem::u8path(plugin.filename).filename());
             return preferences->GetBool(leaf, true);
         });
@@ -453,26 +258,19 @@ namespace musik { namespace core { namespace plugin {
         mediaHost = std::make_unique<MediaHost>(*pluginRegistry);
     }
 
-    void BindServices(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
-        ::messageQueue = messageQueue;
-        ::defaultLibrary = library;
-        ::playbackService = playbackService;
-        ::playbackPrefs = Preferences::ForComponent(prefs::components::Playback);
-
-
-        /* environment */
-        PluginFactory::Instance().QueryFunction<SetEnvironment>(
-            "SetEnvironment",
-            [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
-                func(&environment);
-            }, PluginFactory::FunctionSelection::Session);
+    void BindServices(IMessageQueue* queue) {
+        ::messageQueue = queue;
     }
 
-    IEnvironment& Environment() {
-        return environment;
+    const mc_media_host_api& Media() {
+        return mediaHost->Api();
     }
 
-    /* finish independent teardown phases even when a legacy hook throws. */
+    const mc_audio_scratch_buffer_api& AudioScratch() {
+        return ffi::audio_scratch_buffers::Host();
+    }
+
+    /* finish independent teardown phases even when one phase fails. */
     template<typename Work>
     static void cleanup(Work&& work, bool& failure) noexcept {
         try {
@@ -606,22 +404,6 @@ namespace musik { namespace core { namespace plugin {
 
     void UnbindServices() {
         musik::core::plugin::ValidateShutdown();
-        try {
-            PluginFactory::Instance().QueryFunction<SetEnvironment>(
-                "SetEnvironment", [](musik::core::sdk::IPlugin*, SetEnvironment function) {
-                    function(nullptr);
-                }, PluginFactory::FunctionSelection::Session);
-            PluginFactory::Instance().QueryFunction<SetDebug>(
-                "SetDebug", [](musik::core::sdk::IPlugin*, SetDebug function) {
-                    function(&nullDebugger);
-                }, PluginFactory::FunctionSelection::Session);
-        }
-        catch (...) {
-            /* a failed host detachment cannot prove that plugin workers stopped
-            using playback/library state. do not destroy services or unload code. */
-            musik::contract::Assert(false, "plugin host detachment failed; worker quiescence is not safe");
-        }
-        ::playbackService = nullptr;
     }
 
     void Shutdown() {
@@ -641,12 +423,8 @@ namespace musik { namespace core { namespace plugin {
                 }
             }
         }, failure);
-        cleanup([] { PluginFactory::Instance().EndSession(); }, failure);
 
         ::messageQueue = nullptr;
-        ::defaultLibrary.reset();
-        ::playbackService = nullptr;
-        ::playbackPrefs.reset();
         {
             std::lock_guard lock(playbackRemotesMutex);
             pluginSessionOwner = {};

@@ -38,7 +38,6 @@
 
 
 #include <musikcore/sdk/IPlaybackService.h>
-#include <musikcore/sdk/IPlaybackRemote.h>
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/track/TrackList.h>
 #include <musikcore/library/ILibrary.h>
@@ -205,10 +204,7 @@ namespace musik { namespace core { namespace audio {
             void OnTimeChanged(double time);
             void OnIndexerFinished(int trackCount);
 
-            void NotifyRemotesModeChanged();
             void PrepareNextTrack();
-            void InitRemotes();
-            void ResetRemotes();
             void MarkTrackAsPlayed(int64_t trackId);
 
             void PlayAt(size_t index, ITransport::StartMode mode);
@@ -240,7 +236,6 @@ namespace musik { namespace core { namespace audio {
             musik::core::TrackList unshuffled;
             std::recursive_mutex playlistMutex;
 
-            std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote>> remotes;
             std::shared_ptr<musik::core::Preferences> playbackPrefs;
             std::shared_ptr<musik::core::Preferences> appPrefs;
             musik::core::TrackPtr playingTrack;

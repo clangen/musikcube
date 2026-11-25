@@ -35,8 +35,8 @@ namespace musik { namespace core { namespace plugin {
         , libraryHost(context, std::move(local), this->factory)
         {
             this->services.preferences = &this->preferences;
-            this->services.media = &Environment().Media();
-            this->services.audio_scratch = &Environment().AudioScratch();
+            this->services.media = &Media();
+            this->services.audio_scratch = &AudioScratch();
             this->services.host = this->factory.Host();
             this->services.data_directory = { this->directory.data(), this->directory.size() };
             this->remoteHost.context = this;

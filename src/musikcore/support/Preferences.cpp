@@ -40,7 +40,6 @@
 #include <musikcore/ffi/consumer/preferences-shape.h>
 #include <musikcore/ffi/common/error.h>
 #include <musikcore/debug.h>
-#include <musikcore/plugin/PluginFactory.h>
 #include <unordered_map>
 
 using nlohmann::json;
@@ -107,17 +106,6 @@ static std::string pluginFilename(std::string name) {
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
     name = "plugin_" + name; /* filename = nowhitespace(tolower(name)).json */
     return name;
-}
-
-void Preferences::LoadPluginPreferences() {
-    typedef void(*SetPreferencesPlugin)(musik::core::sdk::IPreferences*);
-
-    PluginFactory::Instance().QueryFunction<SetPreferencesPlugin>(
-        "SetPreferences",
-        [](musik::core::sdk::IPlugin* plugin, SetPreferencesPlugin func) {
-            auto prefs = Preferences::ForPlugin(plugin->Name());
-            func(prefs.get());
-        });
 }
 
 void Preferences::SavePluginPreferences() {

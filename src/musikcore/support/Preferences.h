@@ -59,7 +59,6 @@ namespace musik { namespace core {
                 ModeAutoSave
             };
 
-            static void LoadPluginPreferences();
             static void SavePluginPreferences();
 
             static musik::core::sdk::IPreferences* Unmanaged(const std::string& name);

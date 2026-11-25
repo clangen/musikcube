@@ -129,8 +129,8 @@ namespace runtime_tests {
         opts.services = MC_SERVICE_PLUGINS;
         musik::core::api::Context runtime(opts);
         Context context;
-        context.media = &musik::core::plugin::Environment().Media();
-        context.scratch = &musik::core::plugin::Environment().AudioScratch();
+        context.media = &musik::core::plugin::Media();
+        context.scratch = &musik::core::plugin::AudioScratch();
         context.preferences = musik::core::plugin::ReadSettingsService("musikcube Server (wss, http)");
         context.dataDirectory = musik::core::api::ReadPath(MC_PATH_DATA);
         const auto root = musik::core::sdk::fs::pathFromUtf8(musik::core::api::ReadPath(MC_PATH_DATA));

@@ -24,5 +24,5 @@ namespace runtime_tests {
     bool checkOwner();
     bool checkIndexerCancel();
     bool checkIndexerProviderCancel();
-    bool checkFailure(bool caches = false);
+    bool checkCaches();
 }

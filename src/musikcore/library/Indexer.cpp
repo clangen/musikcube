@@ -48,7 +48,6 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
-#include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -1086,7 +1085,7 @@ void Indexer::RunAnalyzers() {
         analyzer->preferences = musik::core::plugin::ReadSettingsService(plugin.name);
         analyzer->services.data_directory = { dataDirectory.data(), dataDirectory.size() };
         analyzer->services.preferences = &analyzer->preferences;
-        analyzer->services.media = &musik::core::plugin::Environment().Media();
+        analyzer->services.media = &musik::core::plugin::Media();
         const auto status = factory.Invoke([&](const mc_analyzer_factory& table) {
             analyzer->api = table.instance_api;
             const auto result = table.create(table.context, &analyzer->services, &analyzer->instance, nullptr);

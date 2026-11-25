@@ -544,24 +544,18 @@ add_test(NAME musikcore.integration.runtime.visualizer_session COMMAND "${MUSIKC
 set_tests_properties(musikcore.integration.runtime.visualizer_session PROPERTIES
   LABELS "integration;musikcore;runtime;visualizer;contract" TIMEOUT 30)
 
-# SDK 22 objects must retire before unload, without querying their factories.
-foreach(name IN ITEMS CurrentSdk ObsoleteSdk)
-  add_library(musikcore_sdk_${name} MODULE ../integration/musikcore/sdk-version-plugin.cpp)
-  target_include_directories(musikcore_sdk_${name} PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
-  target_compile_definitions(musikcore_sdk_${name} PRIVATE SDK_FIXTURE_NAME="${name}")
-  if(name STREQUAL "ObsoleteSdk")
-    target_compile_definitions(musikcore_sdk_${name} PRIVATE SDK_FIXTURE_OBSOLETE)
-  endif()
-  set_target_properties(musikcore_sdk_${name} PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/sdk-version"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/sdk-version"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/sdk-version"
-    DISABLE_PRECOMPILE_HEADERS ON)
-  if(APPLE)
-    set_target_properties(musikcore_sdk_${name} PROPERTIES SUFFIX ".dylib")
-  endif()
-  add_dependencies(musikcore_runtime_hardening_test musikcore_sdk_${name})
-endforeach()
+# Old entry points must not be called during C plugin discovery.
+add_library(musikcore_legacy_entry_fixture MODULE plugins/legacy-entry-sentinel.cpp)
+target_include_directories(musikcore_legacy_entry_fixture PRIVATE "${PROJECT_SOURCE_DIR}/include")
+set_target_properties(musikcore_legacy_entry_fixture PROPERTIES
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/legacy-entry"
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/legacy-entry"
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/legacy-entry"
+  DISABLE_PRECOMPILE_HEADERS ON)
+if(APPLE)
+  set_target_properties(musikcore_legacy_entry_fixture PROPERTIES SUFFIX ".dylib")
+endif()
+add_dependencies(musikcore_runtime_hardening_test musikcore_legacy_entry_fixture)
 # exercise the real virtual-URI providers when their optional codec libraries are installed.
 if(TARGET taglibreader OR TARGET ffmpegdecoder OR TARGET gmedecoder OR TARGET openmptdecoder OR TARGET libopenmptdecoder)
   add_executable(musikcore_codec_providers_test "${PROJECT_SOURCE_DIR}/tests/integration/plugins/codec-providers.cpp"
@@ -690,8 +684,7 @@ endforeach()
 add_test(NAME musikcore.integration.runtime.stream_sdk_contract COMMAND "${MUSIKCORE_TEST_NODE}"
   "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
   "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage
-  --plugin "$<TARGET_FILE:musikcore_sdk_CurrentSdk>"
-  --plugin "$<TARGET_FILE:musikcore_sdk_ObsoleteSdk>" ${stream_sdk_plugins} stream_sdk_contract)
+  --plugin "$<TARGET_FILE:musikcore_legacy_entry_fixture>" ${stream_sdk_plugins} stream_sdk_contract)
 set_tests_properties(musikcore.integration.runtime.stream_sdk_contract PROPERTIES
   LABELS "integration;musikcore;plugin;runtime;contract" TIMEOUT 30)
 
@@ -776,30 +769,11 @@ if(UNIX AND CMAKE_NM)
   endforeach()
 endif()
 
-# Two independent legacy providers fail the same hook in the same session.
-foreach(name IN ITEMS First Second)
-  add_library(musikcore_runtime_failure_${name} MODULE ../integration/musikcore/runtime-failure-plugin.cpp)
-  target_include_directories(musikcore_runtime_failure_${name} PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
-  target_compile_definitions(musikcore_runtime_failure_${name} PRIVATE RUNTIME_FIXTURE_NAME="RuntimeFailure${name}")
-  set_target_properties(musikcore_runtime_failure_${name} PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-failure"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-failure"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/runtime-failure"
-    DISABLE_PRECOMPILE_HEADERS ON)
-  if(APPLE)
-    set_target_properties(musikcore_runtime_failure_${name} PROPERTIES SUFFIX ".dylib")
-  endif()
-  add_dependencies(musikcore_runtime_hardening_test musikcore_runtime_failure_${name})
-endforeach()
-foreach(case IN ITEMS caches)
-  add_test(NAME musikcore.integration.runtime.${case} COMMAND "${MUSIKCORE_TEST_NODE}"
-    "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
-    "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage
-    --plugin "$<TARGET_FILE:musikcore_runtime_failure_First>"
-    --plugin "$<TARGET_FILE:musikcore_runtime_failure_Second>" ${case})
-  set_tests_properties(musikcore.integration.runtime.${case} PROPERTIES
-    LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
-endforeach()
+add_test(NAME musikcore.integration.runtime.caches COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_runtime_hardening_test>" --stage caches)
+set_tests_properties(musikcore.integration.runtime.caches PROPERTIES
+  LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
 
 if(UNIX AND TARGET musikcubed)
   add_dependencies(musikcube_tests musikcubed)
@@ -877,15 +851,6 @@ if(TARGET nullout)
   musikcore_add_null_output_contract_test()
 
 endif()
-
-# fatal hook failures are child-process contracts: the first failed detachment
-# must stop teardown before other hooks or service destruction can run.
-add_test(NAME musikcore.integration.runtime.failure COMMAND "${CMAKE_COMMAND}"
-  "-DNODE=${MUSIKCORE_TEST_NODE}" "-DSOURCE=${PROJECT_SOURCE_DIR}"
-  "-DROOT=${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "-DHELPER=$<TARGET_FILE:musikcore_runtime_hardening_test>"
-  "-DFIRST=$<TARGET_FILE:musikcore_runtime_failure_First>" "-DSECOND=$<TARGET_FILE:musikcore_runtime_failure_Second>"
-  -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-runtime-fatal-detachment.cmake")
-set_tests_properties(musikcore.integration.runtime.failure PROPERTIES LABELS "integration;musikcore;runtime;contract" TIMEOUT 30)
 
 # native hardware coverage also drives the public URI player through the
 # existing decoder. the isolated runner protects user catalogs/preferences.
@@ -1058,13 +1023,15 @@ if(WIN32)
   target_link_libraries(musikcore_playback_remote_lifecycle_test PRIVATE
     musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
 endif()
-add_dependencies(musikcore_playback_remote_lifecycle_test musikcore_playback_remote_fixture musikcore_playback_remote_peer nullout)
+add_dependencies(musikcore_playback_remote_lifecycle_test musikcore_playback_remote_fixture musikcore_playback_remote_peer
+  musikcore_legacy_entry_fixture nullout)
 add_dependencies(musikcube_tests musikcore_playback_remote_lifecycle_test)
 add_dependencies(musikcube_integration_tests musikcore_playback_remote_lifecycle_test)
 add_test(NAME musikcore.integration.plugins.playback_remote_lifecycle
   COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
     "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_playback_remote_lifecycle_test>"
-    --stage --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>" --plugin "$<TARGET_FILE:nullout>")
+    --stage --plugin "$<TARGET_FILE:musikcore_playback_remote_fixture>" --plugin "$<TARGET_FILE:musikcore_legacy_entry_fixture>"
+    --plugin "$<TARGET_FILE:nullout>")
 set_tests_properties(musikcore.integration.plugins.playback_remote_lifecycle PROPERTIES
   LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
 add_test(NAME musikcore.integration.plugins.playback_remote_stop_order

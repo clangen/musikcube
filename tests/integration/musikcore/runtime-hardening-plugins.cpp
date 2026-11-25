@@ -147,33 +147,14 @@ namespace runtime_tests {
     create-before-open ownership through the environment and shared core path. */
     bool checkStreamSdkContract() {
         const auto directory = api::ReadPath(MC_PATH_DATA);
-#ifdef WIN32
-        _putenv_s("MUSIKCUBE_SDK_TEST_MARKERS", directory.c_str());
-#else
-        setenv("MUSIKCUBE_SDK_TEST_MARKERS", directory.c_str(), 1);
-#endif
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
         options.services = MC_SERVICE_PLUGINS;
         api::Context context(options);
-        /* unload observations survive after the obsolete module is gone. */
-        const auto readMarker = [&](const char* name) {
-            std::ifstream file(std::filesystem::u8path(directory) / name);
-            return std::string(std::istreambuf_iterator<char>(file), {});
-        };
-        /* require one object released before unload. additional native probes
-        may unload the image without creating another object. */
-        const auto obsolete = readMarker("ObsoleteSdk.log");
-        const bool releasedBeforeUnload = obsolete.size() >= 3 && obsolete.substr(0, 3) == "GRU" &&
-            obsolete.find_first_not_of('U', 3) == std::string::npos;
-        if (!TEST_CHECK(readMarker("CurrentSdk.log") == "G") || !TEST_CHECK(releasedBeforeUnload))
-        {
-            return false;
-        }
 
         const auto path = std::filesystem::u8path(directory) / "not-opened-yet.bin";
         const auto encoded = path.u8string();
         const std::string filename(reinterpret_cast<const char*>(encoded.data()), encoded.size());
-        const auto& media = musik::core::plugin::Environment().Media();
+        const auto& media = musik::core::plugin::Media();
         /* invalid encoder requests must fail before any factory can create one. */
         mc_encoder invalid = MC_ENCODER_DEFAULT;
         if (!TEST_CHECK(media.create_encoder(media.context, { nullptr, 0 }, &invalid, nullptr) ==
@@ -256,55 +237,32 @@ namespace runtime_tests {
         return TEST_CHECK(context.Close() == MC_OK);
     }
 
-    /* healthy sessions retire providers; failed host detachment must
-    abort before visiting later hooks or releasing playback/catalog owners. */
-    bool checkFailure(bool caches) {
+    /* shutdown retires pending work and invalidates handles before reopening. */
+    bool checkCaches() {
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
         options.services = MC_SERVICE_ALL;
-        auto first = Preferences::ForPlugin("RuntimeFailureFirst");
-        auto second = Preferences::ForPlugin("RuntimeFailureSecond");
-        first->SetBool("fail_teardown", !caches);
-        second->SetBool("fail_teardown", !caches);
-        {
-            unsigned completions = 0;
-            mc_result completed = MC_ERROR_BUSY;
-            api::Context context(options);
-            auto playback = context.GetPlayback();
-            if (caches) {
-                const auto& media = musik::core::plugin::Environment().Media();
-                mc_encoder encoder = MC_ENCODER_DEFAULT;
-                constexpr char format[] = "runtime-fixture-unsupported-codec";
-                if (!TEST_CHECK(media.create_encoder(media.context, { format, sizeof(format) - 1 }, &encoder,
-                        nullptr) == MC_ERROR_UNSUPPORTED)) {
-                    return false;
-                }
-            }
-            api::OpenTrackSearch(context, {}, [&](mc_result status, api::TrackResult, std::string_view) {
-                ++completions;
-                completed = status;
-            });
-            const int expectedMask = 15;
-            if (!TEST_CHECK(context.Shutdown() == MC_OK) ||
-                !TEST_CHECK((first->GetInt("cleanup_mask") & expectedMask) == expectedMask) ||
-                !TEST_CHECK((second->GetInt("cleanup_mask") & expectedMask) == expectedMask) ||
-                !TEST_CHECK(completions == 1 && (completed == MC_OK || completed == MC_ERROR_CANCELLED)) ||
-                !TEST_CHECK(!playback.Snapshot()) ||
-                !TEST_CHECK(context.Close() == MC_OK))
-            {
-                return false;
-            }
+        unsigned completions = 0;
+        mc_result completed = MC_ERROR_BUSY;
+        api::Context context(options);
+        auto playback = context.GetPlayback();
+        const auto& media = musik::core::plugin::Media();
+        mc_encoder encoder = MC_ENCODER_DEFAULT;
+        constexpr char format[] = "runtime-fixture-unsupported-codec";
+        if (!TEST_CHECK(media.create_encoder(media.context, { format, sizeof(format) - 1 }, &encoder,
+                nullptr) == MC_ERROR_UNSUPPORTED)) {
+            return false;
         }
-        /* a failed startup releases the process slot after successful rollback.
-        unsafe rollback instead follows the fatal detachment subprocess above. */
-        first->SetBool("fail_startup", true);
-        mc_context* failed = nullptr;
-        const auto result = mc_context_create(&options, &failed, nullptr);
-        first->SetBool("fail_startup", false);
-        if (!TEST_CHECK(result == MC_ERROR_INTERNAL && !failed)) {
+        api::OpenTrackSearch(context, {}, [&](mc_result status, api::TrackResult, std::string_view) {
+            ++completions;
+            completed = status;
+        });
+        if (!TEST_CHECK(context.Shutdown() == MC_OK) ||
+            !TEST_CHECK(completions == 1 && (completed == MC_OK || completed == MC_ERROR_CANCELLED)) ||
+            !TEST_CHECK(!playback.Snapshot()) || !TEST_CHECK(context.Close() == MC_OK))
+        {
             return false;
         }
         api::Context reopened(options);
-        return TEST_CHECK(reopened.Shutdown() == MC_OK) &&
-            TEST_CHECK(reopened.Close() == MC_OK);
+        return TEST_CHECK(reopened.Shutdown() == MC_OK) && TEST_CHECK(reopened.Close() == MC_OK);
     }
 }

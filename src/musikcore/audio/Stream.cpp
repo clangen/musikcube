@@ -153,7 +153,7 @@ bool Stream::GetInitialFormat(mc_audio_format& format) const {
 }
 
 bool Stream::OpenStream(std::string uri, Output* output) {
-    const auto& media = musik::core::plugin::Environment().Media();
+    const auto& media = musik::core::plugin::Media();
     const mc_string_view path { uri.data(), uri.size() };
     const auto failed = [](const char* operation, mc_result status) {
         if (status != MC_ERROR_CANCELLED) {

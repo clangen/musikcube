@@ -43,7 +43,6 @@
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/query/MarkTrackPlayedQuery.h>
-#include <musikcore/plugin/PluginFactory.h>
 #include <common/runtime/MessageQueue.h>
 #include <common/runtime/Message.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -184,7 +183,6 @@ void PlaybackService::Initialize(bool synchronousRestore) {
     /* remote work needs the host dispatcher; never wait on an unconnected catalog. */
     playback::LoadPlaybackContext(library, *this,
         synchronousRestore && this->library->GetType() == ILibrary::Type::Local);
-    this->InitRemotes();
 }
 
 void PlaybackService::Shutdown() {
@@ -200,7 +198,6 @@ void PlaybackService::Shutdown() {
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
     savePreferences(*this, *playbackPrefs);
-    this->ResetRemotes();
     this->lastFm.Stop();
     this->transport->Destroy();
 }
@@ -245,23 +242,6 @@ void PlaybackService::SelectLibrary(ILibraryPtr library) {
         this->indexCancelled = indexer->Cancelled.Subscribe([this](int updates) { this->OnIndexerFinished(updates); });
     }
     POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
-}
-
-void PlaybackService::InitRemotes() {
-    typedef PluginFactory::ReleaseDeleter<IPlaybackRemote> Deleter;
-
-    this->remotes = PluginFactory::Instance()
-        .QueryInterface<IPlaybackRemote, Deleter>("GetPlaybackRemote");
-
-    for (auto it : remotes) {
-        it->SetPlaybackService(this);
-    }
-}
-
-void PlaybackService::ResetRemotes() {
-    for (auto it : remotes) {
-        it->SetPlaybackService(nullptr);
-    }
 }
 
 void PlaybackService::PrepareNextTrack() {
@@ -467,10 +447,6 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             }
         }
 
-        for (auto it : remotes) {
-            it->OnPlaybackStateChanged(static_cast<PlaybackState>(eventType));
-        }
-
         this->PlaybackStateChanged.Publish(static_cast<PlaybackState>(eventType));
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_STATE);
     }
@@ -502,37 +478,20 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
     }
     else if (type == MESSAGE_VOLUME_CHANGED) {
-        const double volume = transport->Volume();
-        for (auto it : remotes) {
-            it->OnVolumeChanged(volume);
-        }
-
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_VOLUME);
     }
     else if (type == MESSAGE_MODE_CHANGED) {
-        this->NotifyRemotesModeChanged();
-
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_MODE);
     }
     else if (type == MESSAGE_SHUFFLED) {
-        this->NotifyRemotesModeChanged();
-
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_MODE);
     }
     else if (type == MESSAGE_TIME_CHANGED) {
-
         this->NotifyPlaybackChanged(MC_PLAYBACK_CHANGED_POSITION);
-        for (auto remote : this->remotes) {
-            remote->OnPlaybackTimeChanged(transport->Position());
-        }
     }
     else if (type == MESSAGE_NOTIFY_EDITED ||
              type == MESSAGE_NOTIFY_RESET)
     {
-        for (auto it : remotes) {
-            it->OnPlayQueueChanged();
-        }
-
         this->QueueEdited.Publish();
     }
     else if (type == MESSAGE_SEEK) {
@@ -603,13 +562,6 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     }
 }
 
-void PlaybackService::NotifyRemotesModeChanged() {
-    const bool shuffled = this->IsShuffled();
-    for (auto it : remotes) {
-        it->OnModeChanged(repeatMode, shuffled);
-    }
-}
-
 void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
     bool changed;
     {
@@ -645,10 +597,6 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
             POST_DELAYED(this, MESSAGE_MARK_TRACK_PLAYED, track->GetId(), 0, delay);
             POST_DELAYED(this, MESSAGE_MARK_TRACK_PLAYING, track->GetId(), 0, 2500LL);
         }
-    }
-
-    for (auto it : remotes) {
-        it->OnTrackChanged(track.get());
     }
 }
 

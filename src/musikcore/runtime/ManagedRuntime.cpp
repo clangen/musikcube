@@ -10,7 +10,6 @@
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/plugin/PlaybackRemotes.h>
-#include <musikcore/plugin/PluginFactory.h>
 #include <common/runtime/MessageQueue.h>
 #include <common/runtime/Message.h>
 #include <musikcore/debug.h>
@@ -144,14 +143,12 @@ namespace musik { namespace core { namespace ffi {
                 this->StartLogging(log != nullptr);
             }
 
-            /* provider discovery precedes indexer/decoder creation. a registry-only
-            context does not attach application hosts to legacy plugins. */
+            /* provider discovery precedes indexer and decoder creation. */
             if (services & MC_SERVICE_PLUGINS) {
-                const auto& directory = musik::core::PluginFactory::Instance(pluginDirectory).Directory();
                 /* only session initialization needs plugin rollback. discovery
                 rejection must not initialize the default registry during cleanup. */
                 this->pluginsInitialized = true;
-                musik::core::plugin::Initialize(directory);
+                musik::core::plugin::Initialize(pluginDirectory);
             }
             if (services & MC_SERVICE_LIBRARY) {
                 this->librariesInitialized = true;
@@ -188,10 +185,9 @@ namespace musik { namespace core { namespace ffi {
                 this->PublishSelection(true);
             }
 
-            /* metadata and optional scanner bindings always use the local catalog.
-            legacy playback remotes attach only when playback is selected. */
+            /* metadata and optional scanner bindings use the local catalog. */
             if (this->pluginsInitialized) {
-                musik::core::plugin::BindServices(this->queue.get(), this->playback.get(), this->local);
+                musik::core::plugin::BindServices(this->queue.get());
             }
             if (this->playback) {
                 this->playback->Initialize(true);

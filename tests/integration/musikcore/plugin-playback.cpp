@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 
     {
         CoreRuntime runtime;
-        musik::core::plugin::BindServices(&runtime.Queue(), nullptr, LibraryFactory::Instance().DefaultLocalLibrary());
+        musik::core::plugin::BindServices(&runtime.Queue());
         if (!reloadDuringPlayback(argv[1])) {
             return 1;
         }

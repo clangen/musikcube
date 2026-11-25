@@ -1054,11 +1054,9 @@ old-interface adapter. The interface-by-interface disposition is in the design.
 | `library/query/*`, including `util/SdkWrappers` and `TrackQueryFragments` | SDK metadata wrappers and shared tag/category constants | Replace old interface results with private core data or existing C result types. Preserve typed backend routing and bound SQL; keep SQL in local query implementations. |
 | `support/Common`, `support/Playback`, `support/LastFm`, `support/Auddio`, `i18n/Locale`, `net/WebSocketClient`, `ffi/consumer/remote-session`, `pch.hpp` | SDK filesystem, strings, HTTP helpers, constants, and transitive includes | Extract reusable implementation helpers into private core/common headers. These are not new C ABI families. Remove transitive SDK includes after direct callers move. |
 
-`runtime.stream_sdk_contract` currently still exercises the old factory and
-stream path. Independent C discovery can probe a rejected old image again; its
-fixture asserts one old object released before unload, not a fixed count of
-native-image probes. Remove that old-only fixture under PLG-BACKFILL-002 when
-replacement stream tests protect its useful create/open/cancel contracts.
+`runtime.stream_sdk_contract` exercises C provider discovery and stream
+create/open/cancel contracts. A sentinel module verifies that discovery never
+calls the retired C++ `GetPlugin()` entry point.
 
 1. **Draft all contracts before implementing families.**
    - [ ] **PLG-CONTRACT-001** Inventory every existing SDK interface/export and
@@ -1104,9 +1102,12 @@ replacement stream tests protect its useful create/open/cancel contracts.
      conversion references, outside active targets/installation. Add a source/
      binary boundary check (`plugins.engine_boundary`) so they cannot be
      reintroduced accidentally. The current names are PluginRegistry/Plugin;
-     C discovery is now owned by the registry, but the old engine interfaces still need
-     removal. Inventory capabilities lost until restored;
-     document explicit C API unsupported outcomes during the rebuild.
+     C discovery is owned by the registry. The old factory, plugin entry hooks,
+     playback-remote callback path, and plugin-facing C++ interfaces have been
+     removed. `runtime.stream_sdk_contract` and
+     `plugins.playback_remote_lifecycle` include an old entry-point sentinel;
+     `plugins.playback_remote_stop_order` covers C remote shutdown. Internal
+     core SDK abstractions and the source/binary boundary check remain open.
    - [ ] **PLG-LOADER-001** Consolidate loading and engine-session ownership in
      `PluginRegistry`. It discovers candidates, validates their C entry tables,
      initializes them, and publishes capabilities transactionally. `Plugin` owns
@@ -1267,8 +1268,8 @@ crossfade transitions, seek, held completions, paused teardown, retired short-tr
 cancellation, and queue/callback failure. Terminal transport Destroy cancels
 retired sessions and joins workers before plugin unload, even while a caller
 retains the transport. Failure regressions require exactly one OpenFailed and
-no natural Finished/automatic-next event. Throwing host detachment terminates
-before later hooks or native unload (`runtime.failure`).
+no natural Finished/automatic-next event. C playback remote tests cover startup
+rollback, stop ordering, and fatal exceptions at provider boundaries.
 
 The macOS gate `plugins.coreaudio_output` uses the physical
 AudioQueue with silent buffers, device UID selection, immediate/repeated drain,
@@ -1815,7 +1816,7 @@ compatibility between migration builds.
   `musikcore.integration.runtime.database_failure` checks schema/marker rollback.
 - [x] **API-SERVICES-005** Retire visualizer state for every provider session,
   including Plugins-only contexts. `musikcore.integration.runtime.visualizer_session`
-  uses a headless legacy provider to check hide/release and disabled-provider
+  uses a headless C provider to check hide/release and disabled-provider
   rediscovery after context destruction.
 
 Selection is immutable for the context lifetime; ordinary scan and playback
@@ -1867,8 +1868,7 @@ remains deferred. This does not begin the new plugin C SDK. See
 - [x] **API-URI-006** Migrate in-tree stream factories and environment callers to
   SDK 23. In `musikcore.integration.runtime.stream_sdk_contract`, verify creation
   leaves disk untouched, cancelled publication prevents opening, explicit opening
-  still writes correctly, accepted plugins are acquired once, and SDK 22 plugins
-  are released before unload without querying incompatible factories. Real GME
+  still writes correctly, and the retired C++ entry point is never called. Real GME
   and OpenMPT providers also cover unopened release, successful nested opening,
   and cancellation before opening. Windows runs the same contract against GME
   and OpenMPT. Windows CDDA device cancellation is tracked in API-URI-007.
@@ -1910,9 +1910,11 @@ claim module-unload support or per-context configuration-root isolation.
 - [x] **RTH-003** Distinguish wrong-thread use from reentrancy and preserve owner
   recovery. `musikcore.integration.runtime.owner`, `musikcore.abi.dispatch`, and
   production `playback_commands` require `MC_ERROR_WRONG_THREAD`.
-- [x] **RTH-004** Finish all provider teardown hooks after a failure and drain
-  accepted callbacks before reporting it. `musikcore.integration.runtime.failure`
-  uses two throwing providers and verifies startup rollback and destruction retry.
+- [x] **RTH-004** Retire provider work and drain accepted callbacks at shutdown.
+  `musikcore.integration.runtime.caches` checks callback completion and stale
+  handles. Playback remote startup rollback, stop ordering, and fatal provider
+  exceptions have separate C provider tests. The retired C++ detachment-hook
+  failure test no longer applies because those hooks were removed.
 - [x] **RTH-005** Isolate public read snapshots from legacy shared-cache writers.
   `musikcore.integration.runtime.read_isolation` holds an uncommitted WAL write
   while the public API must read the previously committed title.

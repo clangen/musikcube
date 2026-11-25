@@ -37,7 +37,6 @@
 
 #include <musikcore/debug.h>
 #include <musikcore/audio/GaplessTransport.h>
-#include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/audio/Outputs.h>
 #include <algorithm>
 

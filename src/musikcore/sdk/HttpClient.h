@@ -124,23 +124,7 @@ namespace musik { namespace core { namespace sdk {
 
     template <typename T>
     std::string HttpClient<T>::DefaultUserAgent() {
-#ifdef _WIN64
-        static const std::string PLATFORM = "win64";
-#elif WIN32
-        static const std::string PLATFORM = "win32";
-#elif defined __APPLE__
-        static const std::string PLATFORM = "macos";
-#elif defined __FreeBSD__
-        static const std::string PLATFORM = "freebsd";
-#elif defined __OpenBSD__
-        static const std::string PLATFORM = "openbsd";
-#else
-        static const std::string PLATFORM = "linux";
-#endif
-
-        return "musikcore sdk " +
-            std::to_string(SdkVersion) + "." +
-            "(" + PLATFORM + ")";
+        return musik::cube::userAgent();
     }
 
     template <typename T>

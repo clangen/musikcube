@@ -58,7 +58,7 @@ set(musikcore_sources
   src/musikcore/library/track/TrackList.cpp
   src/musikcore/net/RawWebSocketClient.cpp
   src/musikcore/net/WebSocketClient.cpp
-  src/musikcore/plugin/PluginFactory.cpp
+  src/musikcore/plugin/PluginCatalog.cpp
   src/musikcore/plugin/MediaHost.cpp
   src/musikcore/plugin/PlaybackRemotes.cpp
   src/musikcore/plugin/MetadataWriter.cpp

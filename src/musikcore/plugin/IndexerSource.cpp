@@ -197,7 +197,7 @@ namespace musik { namespace core { namespace plugin {
         /* the source may retain these services until its instance is destroyed. */
         this->services.preferences = &this->preferences;
         this->services.data_directory = { this->dataDirectory.data(), this->dataDirectory.size() };
-        this->services.media = &Environment().Media();
+        this->services.media = &Media();
 
         /* let the source request a rescan when its external data changes. */
         this->sourceHost.context = this;

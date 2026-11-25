@@ -40,7 +40,6 @@
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/PlaybackMath.h>
 #include <musikcore/audio/Visualizer.h>
-#include <musikcore/plugin/PluginFactory.h>
 #include <musikcore/sdk/constants.h>
 
 #include <algorithm>

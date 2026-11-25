@@ -57,7 +57,6 @@ using namespace musik::win;
 using namespace win32cpp;
 
 int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR commandLine, int showCommand) {
-    Preferences::LoadPluginPreferences();
 
     Application::Initialize(instance, previousInstance, commandLine, showCommand);
     Application& app = Application::Instance();
