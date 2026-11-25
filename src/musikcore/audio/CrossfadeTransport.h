@@ -39,7 +39,7 @@
 #include <musikcore/audio/PlaybackWorkers.h>
 #include <musikcore/audio/Crossfader.h>
 #include <musikcore/audio/Output.h>
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 
 #include <thread>
 #include <mutex>

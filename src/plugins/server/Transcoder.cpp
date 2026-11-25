@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "Transcoder.h"
-#include "musikcore/sdk/Filesystem.h"
+#include "common/Filesystem.h"
 #include "BlockingTranscoder.h"
 #include "TranscodingAudioDataStream.h"
 #include "Constants.h"

@@ -79,7 +79,7 @@ AlbumListQuery::AlbumListQuery(
     const category::PredicateList predicates,
     const std::string& filter)
 {
-    result = std::make_shared<MetadataMapList>();
+    result = std::make_shared<std::vector<AlbumRecord>>();
 
     if (filter.size()) {
         std::string wild = filter;
@@ -94,16 +94,12 @@ AlbumListQuery::~AlbumListQuery() {
 
 }
 
-MetadataMapListPtr AlbumListQuery::GetResult() noexcept {
+std::shared_ptr<std::vector<AlbumRecord>> AlbumListQuery::GetResult() noexcept {
     return this->result;
 }
 
-musik::core::sdk::IMapList* AlbumListQuery::GetSdkResult() {
-    return this->result->GetSdkValue();
-}
-
 bool AlbumListQuery::OnRun(Connection& db) {
-    result = std::make_shared<MetadataMapList>();
+    result = std::make_shared<std::vector<AlbumRecord>>();
 
     category::ArgumentList args;
 
@@ -130,16 +126,20 @@ bool AlbumListQuery::OnRun(Connection& db) {
     while (stmt.Step() == Row) {
         const int64_t albumId = stmt.ColumnInt64(0);
         std::string albumName = stmt.ColumnText(1);
-        auto row = std::make_shared<MetadataMap>(albumId, albumName, "album");
+        AlbumRecord row {
+            .id = albumId,
+            .value = albumName,
+            .type = "album",
+            .metadata = {
+                { constants::Track::ALBUM_ID, stmt.ColumnText(0) },
+                { constants::Track::ALBUM, albumName },
+                { constants::Track::ALBUM_ARTIST_ID, stmt.ColumnText(2) },
+                { constants::Track::ALBUM_ARTIST, stmt.ColumnText(3) },
+                { constants::Track::THUMBNAIL_ID, stmt.ColumnText(4) },
+            },
+        };
 
-        row->Set(constants::Track::ALBUM_ID, stmt.ColumnText(0));
-        row->Set(constants::Track::ALBUM, albumName);
-        row->Set(constants::Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
-        row->Set(constants::Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
-        row->Set(constants::Track::ALBUM_ARTIST, stmt.ColumnText(3));
-        row->Set(constants::Track::THUMBNAIL_ID, stmt.ColumnText(4));
-
-        result->Add(row);
+        result->push_back(std::move(row));
     }
 
     return true;
@@ -160,7 +160,7 @@ std::string AlbumListQuery::SerializeQuery() {
 
 std::string AlbumListQuery::SerializeResult() {
     nlohmann::json result = {
-        { "result", MetadataMapListToJson(*this->result) }
+        { "result", MetadataMapsToJson(*this->result) }
     };
     return result.dump();
 }
@@ -168,8 +168,8 @@ std::string AlbumListQuery::SerializeResult() {
 void AlbumListQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     auto json = nlohmann::json::parse(data);
-    this->result = std::make_shared<MetadataMapList>();
-    MetadataMapListFromJson(json["result"], *this->result);
+    this->result = std::make_shared<std::vector<AlbumRecord>>();
+    MetadataMapsFromJson(json["result"], *this->result);
     this->SetStatus(IQuery::Finished);
 }
 

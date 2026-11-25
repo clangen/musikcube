@@ -37,7 +37,7 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/plugin/TagReader.h>
 #include <musikcore/plugin/IndexerSource.h>
-#include <musikcore/sdk/ITagStore.h>
+
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/ThreadGroup.h>
@@ -56,6 +56,8 @@
 #include <map>
 
 namespace musik { namespace core {
+
+    class IndexerTrack;
 
     namespace audio { class Stream; }
 
@@ -83,7 +85,7 @@ namespace musik { namespace core {
                 return this->state;
             }
 
-            musik::core::sdk::ITagStore* CreateWriter();
+            std::unique_ptr<musik::core::IndexerTrack> CreateWriter();
             bool RemoveByUri(musik::core::plugin::IndexerSource* source, const char* uri);
             bool RemoveByExternalId(musik::core::plugin::IndexerSource* source, const char* id);
             int RemoveAll(musik::core::plugin::IndexerSource* source);
@@ -92,7 +94,7 @@ namespace musik { namespace core {
 
             bool Save(
                 musik::core::plugin::IndexerSource* source,
-                musik::core::sdk::ITagStore* store,
+                musik::core::IndexerTrack* store,
                 const char* externalId = "");
 
             bool ScheduleRescan(musik::core::plugin::IndexerSource* source);

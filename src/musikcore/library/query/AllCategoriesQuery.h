@@ -36,8 +36,7 @@
 
 #include <common/DeleteDefaults.h>
 #include <musikcore/library/QueryBase.h>
-#include <musikcore/library/query/util/SdkWrappers.h>
-#include <musikcore/sdk/IValueList.h>
+#include <musikcore/library/query/CategoryValue.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -45,14 +44,13 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             static const std::string kQueryName;
 
-            using Result = SdkValueList::Shared;
+            using Result = std::shared_ptr<CategoryValues>;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(AllCategoriesQuery)
 
             AllCategoriesQuery();
 
             virtual Result GetResult() noexcept;
-            musik::core::sdk::IValueList* GetSdkResult();
 
             /* IQuery */
             std::string Name() override { return kQueryName; }

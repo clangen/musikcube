@@ -41,7 +41,6 @@
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/query/TrackMetadataQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
-#include <musikcore/library/query/util/SdkWrappers.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <common/NarrowCast.h>
@@ -63,18 +62,6 @@ static constexpr int64_t kCacheWindowTimeoutMs = 150LL;
 TrackList::TrackList(ILibraryPtr library)
 : cacheSize(kDefaultCacheSize)
 , library(library) {
-}
-
-TrackList::TrackList(TrackList* other)
-: cacheSize(kDefaultCacheSize)
-, ids(other->ids)
-, library(other->library) {
-}
-
-TrackList::TrackList(std::shared_ptr<TrackList> other)
-    : cacheSize(kDefaultCacheSize)
-    , ids(other->ids)
-    , library(other->library) {
 }
 
 TrackList::TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount)
@@ -194,10 +181,6 @@ TrackPtr TrackList::GetWithTimeout(size_t index, size_t timeoutMs) const {
     return TrackPtr();
 }
 
-ITrack* TrackList::GetTrack(size_t index) const {
-    return this->Get(index)->GetSdkValue();
-}
-
 int64_t TrackList::GetId(size_t index) const {
     return this->ids.at(index);
 }
@@ -209,10 +192,6 @@ void TrackList::CopyFrom(const TrackList& from) {
         from.ids.begin(),
         from.ids.end(),
         std::back_inserter(this->ids));
-}
-
-void TrackList::CopyTo(TrackList& to) {
-    to.CopyFrom(this);
 }
 
 int TrackList::IndexOf(int64_t id) const {
@@ -353,52 +332,4 @@ void TrackList::SetCacheWindowSize(size_t size) {
     and an entire window above, then an entire window below */
     this->cacheSize = (size * 2) + 1;
     this->PruneCache();
-}
-
-ITrackList* TrackList::GetSdkValue() {
-    return new SdkTrackList(shared_from_this());
-}
-
-/* * * * * TrackListEditor * * * * */
-
-template <typename T>
-struct NoDeleter {
-    void operator()(T* t) noexcept {
-    }
-};
-
-TrackListEditor::TrackListEditor(std::shared_ptr<TrackList> trackList) noexcept {
-    this->trackList = trackList;
-}
-
-TrackListEditor::TrackListEditor(TrackList& trackList) {
-    this->trackList = std::shared_ptr<TrackList>(&trackList, NoDeleter<TrackList>());
-}
-
-void TrackListEditor::Add(const int64_t id) {
-    this->trackList->Add(id);
-}
-
-bool TrackListEditor::Insert(int64_t id, size_t index) {
-    return this->trackList->Insert(id, index);
-}
-
-bool TrackListEditor::Swap(size_t index1, size_t index2) {
-    return this->trackList->Swap(index1, index2);
-}
-
-bool TrackListEditor::Move(size_t from, size_t to) {
-    return this->trackList->Move(from, to);
-}
-
-bool TrackListEditor::Delete(size_t index) {
-    return this->trackList->Delete(index);
-}
-
-void TrackListEditor::Clear() {
-    this->trackList->Clear();
-}
-
-void TrackListEditor::Shuffle() {
-    this->trackList->Shuffle();
 }

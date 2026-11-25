@@ -38,7 +38,7 @@
 
 #include <filesystem>
 #include "HotkeysLayout.h"
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
 #include <cursespp/DialogOverlay.h>

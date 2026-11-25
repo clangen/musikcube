@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 #include <string>
 #include <set>
 #include <iostream>

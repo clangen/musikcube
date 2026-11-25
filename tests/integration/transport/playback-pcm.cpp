@@ -684,7 +684,7 @@ namespace {
         CoreRuntime runtime;
         auto output = outputs::SelectedOutput();
         struct Sink final : Output::CompletionSink {
-            void CompleteBuffer(sdk::IBuffer*, mc_result result) override { outcome = result; }
+            void CompleteBuffer(audio::Buffer*, mc_result result) override { outcome = result; }
             mc_result outcome = MC_ERROR_IN_FLIGHT;
         } sink;
         std::array<float, 2> samples {};
@@ -1117,7 +1117,7 @@ namespace {
     the stream pool, including when the requested position is fractional. */
     bool seekAfterEof(const std::filesystem::path& file) {
         constexpr double seconds = 0.5;
-        const auto correctFirstFrame = [](sdk::IBuffer& buffer) {
+        const auto correctFirstFrame = [](audio::Buffer& buffer) {
             const auto expected = ramp(sampleRate / 2);
             return buffer.Samples() >= 2 &&
                 std::abs(buffer.BufferPointer()[0] - static_cast<float>(expected[0]) / pcmScale) < sampleTolerance &&

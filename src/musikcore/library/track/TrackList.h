@@ -34,8 +34,6 @@
 
 #pragma once
 
-#include <musikcore/sdk/ITrackList.h>
-#include <musikcore/sdk/ITrackListEditor.h>
 
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/ILibrary.h>
@@ -46,24 +44,17 @@
 
 namespace musik { namespace core {
 
-    class TrackList :
-        public musik::core::sdk::ITrackList,
-        public std::enable_shared_from_this<TrackList>
-    {
+    class TrackList : public std::enable_shared_from_this<TrackList> {
         public:
             TrackList(ILibraryPtr library);
-            TrackList(TrackList* other);
-            TrackList(std::shared_ptr<TrackList> other);
             TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount);
 
-            /* ITrackList */
-            size_t Count() const noexcept override;
-            int64_t GetId(size_t index) const override;
-            int IndexOf(int64_t id) const override;
-            musik::core::sdk::ITrack* GetTrack(size_t index) const override;
-            void Release() noexcept override { /* not used now */ }
+            /* track identities. */
+            size_t Count() const noexcept;
+            int64_t GetId(size_t index) const;
+            int IndexOf(int64_t id) const;
 
-            /* TrackListEditor passes through to us */
+            /* queue edits. */
             void Add(const int64_t id);
             bool Insert(int64_t id, size_t index);
             bool Swap(size_t index1, size_t index2);
@@ -80,12 +71,9 @@ namespace musik { namespace core {
             void ResetForLibrary(ILibraryPtr library) noexcept;
             void Swap(TrackList& list) noexcept;
             void CopyFrom(const TrackList& from);
-            void CopyTo(TrackList& to);
             void CacheWindow(size_t from, size_t to, bool async) const;
             void SetCacheWindowSize(size_t size);
             const std::vector<int64_t> GetIds() const { return ids; };
-
-            musik::core::sdk::ITrackList* GetSdkValue();
 
         private:
             struct QueryWindow {
@@ -116,23 +104,4 @@ namespace musik { namespace core {
             ILibraryPtr library;
     };
 
-    class TrackListEditor : public musik::core::sdk::ITrackListEditor {
-        public:
-            TrackListEditor(std::shared_ptr<TrackList> trackList) noexcept;
-            TrackListEditor(TrackList& trackList);
-
-            virtual ~TrackListEditor() { }
-
-            void Add(const int64_t id) override;
-            bool Insert(int64_t id, size_t index) override;
-            bool Swap(size_t index1, size_t index2) override;
-            bool Move(size_t from, size_t to) override;
-            bool Delete(size_t index) override;
-            void Clear() override;
-            void Shuffle() override;
-            void Release() noexcept override { /* nothing yet */ }
-
-        private:
-            std::shared_ptr<TrackList> trackList;
-    };
 } }

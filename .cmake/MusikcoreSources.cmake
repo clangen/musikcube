@@ -50,11 +50,8 @@ set(musikcore_sources
   src/musikcore/library/query/TrackMetadataQuery.cpp
   src/musikcore/library/query/util/CategoryQueryUtil.cpp
   src/musikcore/library/query/util/Serialization.cpp
-  src/musikcore/library/metadata/MetadataMap.cpp
-  src/musikcore/library/metadata/MetadataMapList.cpp
   src/musikcore/library/track/IndexerTrack.cpp
   src/musikcore/library/track/LibraryTrack.cpp
-  src/musikcore/library/track/Track.cpp
   src/musikcore/library/track/TrackList.cpp
   src/musikcore/net/RawWebSocketClient.cpp
   src/musikcore/net/WebSocketClient.cpp

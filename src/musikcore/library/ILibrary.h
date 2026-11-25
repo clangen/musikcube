@@ -41,10 +41,11 @@
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/subscriptions.hpp>
-#include <musikcore/sdk/ITrack.h>
 #include <common/runtime/IMessageQueue.h>
 
 namespace musik { namespace core {
+
+    class Track;
 
     static size_t kWaitIndefinite = std::numeric_limits<size_t>::max();
 
@@ -68,7 +69,7 @@ namespace musik { namespace core {
             class IResourceLocator {
                 public:
                     virtual std::string GetTrackUri(
-                        musik::core::sdk::ITrack* track,
+                        musik::core::Track* track,
                         const std::string& defaultUri = "") = 0;
             };
 

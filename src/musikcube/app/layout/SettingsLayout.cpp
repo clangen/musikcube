@@ -45,7 +45,7 @@
 
 #include <musikcore/output.hpp>
 #include <musikcore/locale.hpp>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>

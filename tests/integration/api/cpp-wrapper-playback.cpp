@@ -138,16 +138,14 @@ namespace wrapper_tests {
             if (cachePlayback.Play(result, 0) != MC_OK) {
                 return playbackFailure(__LINE__);
             }
-            /* GetTrack transfers a temporary SDK wrapper; release it after each
-            read so cache invalidation is tested without retaining stale wrappers. */
+            /* release each retained track before checking cache invalidation. */
             const auto readRating = [&]() -> std::optional<int64_t> {
-                auto* track = cacheService.GetTrack(0);
+                const auto track = cacheService.GetTrack(0);
                 if (!track) {
                     return std::nullopt;
                 }
-                const auto rating = track->GetInt64("rating");
-                track->Release();
-                return rating;
+                const auto value = track->GetString("rating");
+                return value.empty() ? 0 : std::stoll(value);
             };
             const auto original = readRating();
             if (!original || !local->Indexer()) {
@@ -733,7 +731,9 @@ namespace wrapper_tests {
             stateTransport->state = sdk::PlaybackState::Playing;
 
             const auto initialGain = engineTrack->GetReplayGain();
-            engineTrack->SetReplayGain({ 1.0f, 0.5f, 1.0f, 1.0f });
+            mc_replay_gain_values gain = MC_REPLAY_GAIN_VALUES_DEFAULT;
+            gain.track_peak = 0.5f;
+            engineTrack->SetReplayGain(gain);
             const auto gainSnapshot = statePlayback.Snapshot();
             engineTrack->SetReplayGain(initialGain);
             if (!gainSnapshot || !gainSnapshot->has_replay_gain) {

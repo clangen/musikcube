@@ -3,7 +3,7 @@
 
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/tag.h>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 #include <new>
 #include <string>

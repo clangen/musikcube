@@ -2,7 +2,7 @@
 
 #include <common/DeleteDefaults.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
-#include <musikcore/sdk/IBuffer.h>
+#include <musikcore/audio/Buffer.h>
 #include <musikcore/plugin/services.h>
 #include <array>
 #include <atomic>
@@ -26,7 +26,7 @@ namespace musik { namespace core { namespace audio {
         tells it whether to process the samples or just recycle the buffer. */
         struct CompletionSink {
             virtual ~CompletionSink() = default;
-            virtual void CompleteBuffer(musik::core::sdk::IBuffer*, mc_result) = 0;
+            virtual void CompleteBuffer(musik::core::audio::Buffer*, mc_result) = 0;
         };
 
         struct Device {
@@ -53,7 +53,7 @@ namespace musik { namespace core { namespace audio {
             ~Writer();
 
             /* on MC_ERROR_QUEUE_FULL the worker keeps the buffer and can retry it. */
-            mc_result TryQueueAudioBuffer(musik::core::sdk::IBuffer& buffer);
+            mc_result TryQueueAudioBuffer(musik::core::audio::Buffer& buffer);
             /* after MC_ERROR_QUEUE_FULL, wait for another chance to queue the
             same buffer. a seek or stop can interrupt the wait. */
             void WaitForQueueSpace() noexcept { this->WaitForBufferChange(); }
@@ -126,7 +126,7 @@ namespace musik { namespace core { namespace audio {
             static constexpr uint64_t Returning = 1;
             static constexpr uint64_t Returned = 2;
             std::atomic<uint64_t> token { Empty };
-            musik::core::sdk::IBuffer* buffer = nullptr;
+            musik::core::audio::Buffer* buffer = nullptr;
             mc_result outcome = MC_OK;
         };
 

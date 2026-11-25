@@ -43,25 +43,21 @@
 #include <musikcore/config.h>
 #include <musikcore/preferences.h>
 #include <musikcore/db/Connection.h>
-#include <musikcore/sdk/IPreferences.h>
 
 #pragma warning(push, 0)
 #include <nlohmann/json.hpp>
 #pragma warning(pop)
 
 namespace musik { namespace core {
-    class Preferences : public musik::core::sdk::IPreferences {
+    class Preferences {
         public:
             enum Mode {
-                ModeTransient,
                 ModeReadOnly,
                 ModeReadWrite,
                 ModeAutoSave
             };
 
             static void SavePluginPreferences();
-
-            static musik::core::sdk::IPreferences* Unmanaged(const std::string& name);
 
             static std::shared_ptr<Preferences>
                 ForPlugin(const std::string& pluginName);
@@ -71,22 +67,8 @@ namespace musik { namespace core {
 
             ~Preferences();
 
-            /* IPreferences (for plugin use) */
-            virtual void Release() override;
+            void Save();
 
-            bool GetBool(const char* key, bool defaultValue = false) override;
-            int GetInt(const char* key, int defaultValue = 0) override;
-            double GetDouble(const char* key, double defaultValue = 0.0f) override;
-            int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "") override;
-
-            void SetBool(const char* key, bool value) override;
-            void SetInt(const char* key, int value) override;
-            void SetDouble(const char* key, double value) override;
-            void SetString(const char* key, const char* value) override;
-
-            void Save() override;
-
-            /* easier interface for internal use */
             bool GetBool(const std::string& key, bool defaultValue = false);
             /* read the first saved value of the requested type. a missing key
             stays missing so it can continue to inherit its default. */

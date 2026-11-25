@@ -34,15 +34,13 @@
 
 #pragma once
 
-#include <musikcore/config.h>
-#include <musikcore/sdk/IBuffer.h>
+#include <common/DeleteDefaults.h>
 
 namespace musik { namespace core { namespace audio {
 
-    class Buffer;
     class Stream;
 
-    class Buffer : public musik::core::sdk::IBuffer {
+    class Buffer {
         public:
             enum Flags {
                 NoFlags = 0,
@@ -50,20 +48,21 @@ namespace musik { namespace core { namespace audio {
                 NoDelete = 2
             };
 
+            MUSIK_DELETE_COPY_AND_MOVE(Buffer);
+
             Buffer(Flags flags = NoFlags) noexcept;
             Buffer(float* buffer, int samples) noexcept;
 
-            virtual ~Buffer();
+            ~Buffer();
 
-            long SampleRate() const noexcept override;
-            void SetSampleRate(long sampleRate) noexcept override;
-            int Channels() const noexcept override;
-            void SetChannels(int channels) noexcept override;
-            float* BufferPointer() const noexcept override;
-            long Samples() const noexcept override;
-            void SetSamples(long samples) override;
-            long Bytes() const noexcept override;
-            void Release() noexcept override { delete this; }
+            long SampleRate() const noexcept;
+            void SetSampleRate(long sampleRate) noexcept;
+            int Channels() const noexcept;
+            void SetChannels(int channels) noexcept;
+            float* BufferPointer() const noexcept;
+            long Samples() const noexcept;
+            void SetSamples(long samples);
+            long Capacity() const noexcept;
 
             double Position() const noexcept;
             void SetPosition(double position) noexcept;
@@ -71,8 +70,6 @@ namespace musik { namespace core { namespace audio {
             void CopyFormat(Buffer* fromBuffer) noexcept;
 
         private:
-            void ResizeBuffer();
-
             float *buffer;
             long samples;
             long internalBufferSize;

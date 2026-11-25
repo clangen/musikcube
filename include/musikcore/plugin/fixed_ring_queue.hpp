@@ -7,8 +7,9 @@
 #include <utility>
 
 namespace musik {
-    /* fixed storage for a FIFO queue. callers synchronize concurrent access;
-    the queue does not allocate storage or overwrite an unconsumed value. */
+    /* fixed storage for a FIFO queue; the queue itself does not allocate or
+    overwrite unconsumed values. callers must synchronize concurrent access.
+    the queue owns its values and cannot be copied or moved. */
     template<typename T, std::size_t Capacity>
     class FixedRingQueue {
         static_assert(Capacity > 0, "a ring queue needs at least one slot");

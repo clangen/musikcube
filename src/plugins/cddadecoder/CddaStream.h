@@ -1,7 +1,7 @@
 #pragma once
 
 #include <musikcore/plugin/stream.h>
-#include <common/FixedRingQueue.h>
+#include <musikcore/plugin/fixed_ring_queue.hpp>
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif

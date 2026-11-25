@@ -36,10 +36,9 @@
 
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/query/util/CategoryQueryUtil.h>
-#include <musikcore/library/query/util/SdkWrappers.h>
+#include <musikcore/library/query/CategoryValue.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/db/Connection.h>
-#include <musikcore/sdk/IValueList.h>
 #include <musikcore/support/Common.h>
 #include <memory>
 
@@ -50,7 +49,7 @@ namespace musik { namespace core { namespace library { namespace query {
             static const std::string kQueryName;
             static const std::string kFacetQueryName;
 
-            using Result = SdkValueList::Shared;
+            using Result = std::shared_ptr<CategoryValues>;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(CategoryListQuery)
 
@@ -75,7 +74,6 @@ namespace musik { namespace core { namespace library { namespace query {
 
             Result GetResult() noexcept;
             int GetIndexOf(int64_t id);
-            musik::core::sdk::IValueList* GetSdkResult();
 
             /* IQuery */
             std::string Name() override { return this->facet ? kFacetQueryName : kQueryName; }

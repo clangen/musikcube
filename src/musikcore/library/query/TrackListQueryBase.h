@@ -76,10 +76,6 @@ namespace musik { namespace core { namespace library { namespace query {
                 this->offset = offset;
             }
 
-            virtual musik::core::sdk::ITrackList* GetSdkResult() {
-                return new WrappedTrackList(GetResult());
-            }
-
         protected:
             int GetLimit() const noexcept { return this->limit; }
             int GetOffset() const noexcept { return this->offset; }
@@ -129,38 +125,6 @@ namespace musik { namespace core { namespace library { namespace query {
         private:
             int limit, offset;
 
-            class WrappedTrackList : public musik::core::sdk::ITrackList {
-                public:
-                    WrappedTrackList(Result wrapped) noexcept {
-                        this->wrapped = wrapped;
-                    }
-
-                    virtual ~WrappedTrackList() {
-                    }
-
-                    void Release() noexcept override {
-                        delete this;
-                    }
-
-                    size_t Count() const override {
-                        return this->wrapped->Count();
-                    }
-
-                    int64_t GetId(size_t index) const override {
-                        return this->wrapped->GetId(index);
-                    }
-
-                    int IndexOf(int64_t id) const override {
-                        return this->wrapped->IndexOf(id);
-                    }
-
-                    musik::core::sdk::ITrack* GetTrack(size_t index) const override  {
-                        return this->wrapped->GetTrack(index);
-                    }
-
-                private:
-                    Result wrapped;
-            };
     };
 
 } } } }

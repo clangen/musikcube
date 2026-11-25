@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "musikcore/sdk/Filesystem.h"
+#include "common/Filesystem.h"
 
 #include <musikcore/debug.h>
 #include <musikcore/library/Indexer.h>
@@ -497,14 +497,13 @@ void Indexer::ReadMetadataFromFile(
         bool saveToDb = false;
 
         /* read the tag from the plugin */
-        TagStore store(track);
         typedef TagReaderList::iterator Iterator;
         Iterator it = this->tagReaders.begin();
         while (it != this->tagReaders.end()) {
             try {
                 if ((*it)->CanRead(track.GetString("extension").c_str())) {
                     APPEND_LOG("can read")
-                    if ((*it)->Read(pathToUtf8(file), store)) {
+                    if ((*it)->Read(pathToUtf8(file), track)) {
                         APPEND_LOG("did read")
                         saveToDb = true;
                         break;
@@ -1120,8 +1119,7 @@ void Indexer::RunAnalyzers() {
         query.Run(this->dbConnection);
 
         if (query.GetStatus() == IQuery::Finished) {
-            TagStore store(track);
-            const auto writer = musik::core::plugin::CreateMetadataWriter(store);
+            const auto writer = musik::core::plugin::CreateMetadataWriter(*track);
             std::vector<AnalyzerInstance*> started;
             std::vector<AnalyzerInstance*> running;
             for (const auto& analyzer : analyzers) {
@@ -1143,7 +1141,7 @@ void Indexer::RunAnalyzers() {
                 stream->Interrupt();
             }
             if (!running.empty() && stream && !this->Bail() && stream->OpenStream(track->Uri(), nullptr)) {
-                IBuffer* buffer = nullptr;
+                audio::Buffer* buffer = nullptr;
                 while (!this->Bail() && !running.empty() && (buffer = stream->GetNextProcessedOutputBuffer())) {
                     const mc_pcm_view pcm {
                         .struct_size = sizeof(mc_pcm_view),
@@ -1198,33 +1196,19 @@ void Indexer::RunAnalyzers() {
     }
 }
 
-ITagStore* Indexer::CreateWriter() {
-    return new TagStore(std::make_shared<IndexerTrack>(0));
+std::unique_ptr<IndexerTrack> Indexer::CreateWriter() {
+    return std::make_unique<IndexerTrack>(0);
 }
 
-bool Indexer::Save(musik::core::plugin::IndexerSource* source, ITagStore* store, const char* externalId) {
-    if (!source || source->SourceId() == 0 || !store) {
+bool Indexer::Save(musik::core::plugin::IndexerSource* source, IndexerTrack* track, const char* externalId) {
+    if (!source || source->SourceId() == 0 || !track || !externalId || !*externalId) {
         return false;
     }
-
-    if (!externalId || strlen(externalId) == 0) {
-        return false;
-    }
-
-    /* two levels of unpacking with dynamic_casts. don't tell anyone,
-    it'll be our little secret. */
-    TagStore* ts = dynamic_cast<TagStore*>(store);
-    if (ts) {
-        IndexerTrack* it = ts->As<IndexerTrack*>();
-        if (it) {
-            it->SetValue(constants::Track::EXTERNAL_ID, externalId);
-            it->SetValue(constants::Track::SOURCE_ID, std::to_string(source->SourceId()).c_str());
-            const auto errors = this->dbConnection.ErrorCount();
-            const bool saved = it->Save(this->dbConnection, this->libraryPath);
-            return saved && this->dbConnection.ErrorCount() == errors;
-        }
-    }
-    return false;
+    track->SetValue(constants::Track::EXTERNAL_ID, externalId);
+    track->SetValue(constants::Track::SOURCE_ID, std::to_string(source->SourceId()).c_str());
+    const auto errors = this->dbConnection.ErrorCount();
+    const bool saved = track->Save(this->dbConnection, this->libraryPath);
+    return saved && this->dbConnection.ErrorCount() == errors;
 }
 
 bool Indexer::RemoveByUri(musik::core::plugin::IndexerSource* source, const char* uri) {

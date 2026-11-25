@@ -35,7 +35,7 @@
 #pragma once
 
 #include <musikcore/config.h>
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 #include <musikcore/audio/Player.h>
 #include <musikcore/subscriptions.hpp>
 

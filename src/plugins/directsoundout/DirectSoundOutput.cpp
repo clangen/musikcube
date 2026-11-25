@@ -1,6 +1,6 @@
 #include "DirectSoundOutput.h"
 #include "DirectSoundDevices.h"
-#include <common/FixedRingQueue.h>
+#include <musikcore/plugin/fixed_ring_queue.hpp>
 
 #define NOMINMAX
 #include <windows.h>

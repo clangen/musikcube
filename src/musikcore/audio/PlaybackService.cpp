@@ -102,7 +102,7 @@ class PlaybackService::StreamMessage: public Message {
     this->messageQueue.Post( \
         musik::core::runtime::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
-static inline void loadPreferences(ITransport& transport, IPlaybackService& playback, Preferences& prefs) {
+static inline void loadPreferences(ITransport& transport, PlaybackService& playback, Preferences& prefs) {
     double volume = prefs.GetDouble(keys::Volume, 1.0f);
     volume = std::max(0.0f, std::min(1.0f, (float)volume));
     transport.SetVolume(volume);
@@ -120,7 +120,7 @@ static inline void loadPreferences(ITransport& transport, IPlaybackService& play
     playback.SetTimeChangeMode(timeChangeMode);
 }
 
-static inline void savePreferences(IPlaybackService& playback, Preferences& prefs) {
+static inline void savePreferences(PlaybackService& playback, Preferences& prefs) {
     prefs.SetDouble(keys::Volume, playback.GetVolume());
     prefs.SetInt(keys::RepeatMode, static_cast<int>(playback.GetRepeatMode()));
     prefs.SetInt(keys::TimeChangeMode, static_cast<int>(playback.GetTimeChangeMode()));
@@ -745,33 +745,6 @@ void PlaybackService::Play(const TrackList& tracks, size_t index) {
     POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
 }
 
-void PlaybackService::Play(const musik::core::sdk::ITrackList* source, size_t index) {
-    if (source) {
-        /* see if we have a TrackList -- if we do we can optimize the copy */
-        const TrackList* sourceTrackList = dynamic_cast<const TrackList*>(source);
-
-        if (sourceTrackList) {
-            this->Play(*sourceTrackList, index);
-            return;
-        }
-
-        /* otherwise use slower impl to be compatible with SDK */
-        {
-            std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-            if (source != &playlist) {
-                this->CopyFrom(source);
-                this->unshuffled.Clear();
-            }
-        }
-
-        if (index <= source->Count()) {
-            this->Play(index);
-        }
-
-        POST(this, MESSAGE_NOTIFY_RESET, 0, 0);
-    }
-}
-
 void PlaybackService::ReloadOutput() {
     messageQueue.Debounce(Message::Create(this, MESSAGE_RELOAD_OUTPUT), 500);
 }
@@ -798,38 +771,6 @@ void PlaybackService::CopyFrom(const TrackList& source) {
     }
 
     POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
-}
-
-void PlaybackService::CopyFrom(const musik::core::sdk::ITrackList* source) {
-    if (source) {
-        /* see if we have a TrackList -- if we do we can optimize the copy */
-        const TrackList* sourceTrackList = dynamic_cast<const TrackList*>(source);
-
-        if (sourceTrackList) {
-            this->CopyFrom(*sourceTrackList);
-            return;
-        }
-
-        /* otherwise we gotta do it one at a time */
-        std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-
-        this->queueOrigin.reset();
-        this->playlist.Clear();
-        for (size_t i = 0; i < source->Count(); i++) {
-            this->playlist.Add(source->GetId(i));
-        }
-        ++this->queueRevision;
-
-        this->index = NO_POSITION;
-        this->nextIndex = NO_POSITION;
-
-        if (this->playingTrack) {
-            this->index = playlist.IndexOf(this->playingTrack->GetId());
-            POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
-        }
-
-        POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
-    }
 }
 
 void PlaybackService::PlayAt(size_t index, ITransport::StartMode mode) {
@@ -959,34 +900,14 @@ double PlaybackService::GetDuration() {
     return 0.0f;
 }
 
-ITrack* PlaybackService::GetTrack(size_t index) {
-    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    if (this->library->GetConnectionState() != ILibrary::ConnectionState::Connected) {
-        return nullptr;
+TrackPtr PlaybackService::GetTrack(size_t index) {
+    std::lock_guard lock(this->playlistMutex);
+    if (this->library->GetConnectionState() != ILibrary::ConnectionState::Connected ||
+        (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)) || index >= this->playlist.Count())
+    {
+        return {};
     }
-
-    if (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)) return nullptr;
-
-    const size_t count = this->playlist.Count();
-
-    if (count && index < this->playlist.Count()) {
-        auto track = this->playlist.GetWithTimeout(index, TRACK_TIMEOUT_MS() * 10);
-        if (track) {
-            return track->GetSdkValue();
-        }
-    }
-
-    return nullptr;
-}
-
-ITrack* PlaybackService::GetPlayingTrack() {
-    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-
-    if (this->playingTrack) {
-        return this->playingTrack->GetSdkValue();
-    }
-
-    return nullptr;
+    return this->playlist.GetWithTimeout(index, TRACK_TIMEOUT_MS() * 10);
 }
 
 TrackPtr PlaybackService::GetPlaying() {
@@ -1017,35 +938,6 @@ Editor PlaybackService::Edit() {
         this->playlistMutex);
 }
 
-ITrackListEditor* PlaybackService::EditPlaylist() {
-    /* the internal implementation of this class has a stubbed
-    Release() method to avoid programmer error. if the SDK is
-    requesting an Editor we need to actually release resources. */
-    class SdkTrackListEditor : public PlaybackService::Editor {
-        public:
-            SdkTrackListEditor(
-                PlaybackService& playback,
-                TrackList& tracks,
-                Queue& queue,
-                Mutex& mutex)
-            : PlaybackService::Editor(playback, tracks, queue, mutex) {
-            }
-
-            virtual ~SdkTrackListEditor() {
-            }
-
-            virtual void Release() noexcept {
-                delete this;
-            }
-    };
-
-    return new SdkTrackListEditor(
-        *this,
-        this->playlist,
-        this->messageQueue,
-        this->playlistMutex);
-}
-
 void PlaybackService::OnStreamEvent(StreamState eventType, std::string uri) {
     POST_STREAM_MESSAGE(this, (int64_t) eventType, uri);
 }
@@ -1068,12 +960,8 @@ void PlaybackService::OnIndexerFinished(int trackCount) {
     this->unshuffled.ClearCache();
 }
 
-/* our Editor interface. we proxy all of the ITrackListEditor methods so we
-can track and maintain our currently playing index as tracks move around
-in the backing store. lots of annoying book keeping. we have to do it this
-way because it's possible to have the same item in the playlist multiple
-times -- otherwise we could just cache the ID and then look it up when we
-have finished all operations. */
+/* track the playing position as entries move: duplicate tracks make an ID
+lookup insufficient to identify the playing queue entry. */
 
 PlaybackService::Editor::Editor(
     PlaybackService& playback,
@@ -1081,10 +969,10 @@ PlaybackService::Editor::Editor(
     Queue& queue,
     Mutex& mutex)
 : playback(playback)
+, tracks(tracks)
 , queue(queue)
 , lock(mutex)
 , edited(false) {
-    this->tracks = IEditor(new musik::core::TrackListEditor(tracks));
     this->playIndex = playback.GetIndex();
     this->nextTrackInvalidated = false;
 }
@@ -1128,7 +1016,7 @@ PlaybackService::Editor::~Editor() {
 }
 
 bool PlaybackService::Editor::Insert(int64_t id, size_t index) {
-    if (this->tracks->Insert(id, index)) {
+    if (this->tracks.Insert(id, index)) {
         this->edited = true;
         if (this->playIndex != NO_POSITION && index <= this->playIndex) {
             ++this->playIndex;
@@ -1144,7 +1032,7 @@ bool PlaybackService::Editor::Insert(int64_t id, size_t index) {
 }
 
 bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
-    if (this->tracks->Swap(index1, index2)) {
+    if (this->tracks.Swap(index1, index2)) {
         this->edited = true;
         if (index1 == this->playIndex) {
             this->playIndex = index2;
@@ -1161,7 +1049,7 @@ bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
 }
 
 bool PlaybackService::Editor::Move(size_t from, size_t to) {
-    if (this->tracks->Move(from, to)) {
+    if (this->tracks.Move(from, to)) {
         this->edited = true;
         if (from == this->playIndex) {
             this->playIndex = to;
@@ -1180,7 +1068,7 @@ bool PlaybackService::Editor::Move(size_t from, size_t to) {
 }
 
 bool PlaybackService::Editor::Delete(size_t index) {
-    if (this->tracks->Delete(index)) {
+    if (this->tracks.Delete(index)) {
         this->edited = true;
         if (this->playback.Count() == 0) {
             this->playIndex = NO_POSITION;
@@ -1200,7 +1088,7 @@ bool PlaybackService::Editor::Delete(size_t index) {
 }
 
 void PlaybackService::Editor::Add(const int64_t id) {
-    this->tracks->Add(id);
+    this->tracks.Add(id);
 
     if (this->playback.Count() - 1 == this->playIndex + 1) {
         this->nextTrackInvalidated = true;
@@ -1231,10 +1119,6 @@ void PlaybackService::Editor::Shuffle() {
     this->edited = true;
 }
 
-void PlaybackService::Editor::Release() noexcept {
-    /* nothing! */
-}
-
 std::string PlaybackService::UriAtIndex(size_t index) {
     std::lock_guard lock(this->playlistMutex);
     if (index < this->playlist.Count()) {
@@ -1244,13 +1128,6 @@ std::string PlaybackService::UriAtIndex(size_t index) {
         }
     }
     return "";
-}
-
-ITrackList* PlaybackService::Clone() {
-    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    std::shared_ptr<TrackList> to = std::make_shared<TrackList>(this->library);
-    this->playlist.CopyTo(*to.get());
-    return to->GetSdkValue();
 }
 
 static mc_playback_gain_settings readGainSettings(Preferences& prefs) {
@@ -1316,8 +1193,8 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
         if (track) {
             const auto rg = track->GetReplayGain();
             const bool album = settings.replay_gain == MC_REPLAY_GAIN_ALBUM;
-            const float gain = album ? rg.albumGain : rg.trackGain;
-            const float peak = album ? rg.albumPeak : rg.trackPeak;
+            const float gain = album ? rg.album_gain : rg.track_gain;
+            const float peak = album ? rg.album_peak : rg.track_peak;
             if (gain != 1.0f) {
                 /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
                 result.gain = powf(10.0f, (gain / 20.0f));

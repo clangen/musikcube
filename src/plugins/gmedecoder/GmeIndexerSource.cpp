@@ -34,8 +34,8 @@
 
 #include "Constants.h"
 #include "GmeIndexerSource.h"
-#include <musikcore/sdk/String.h>
-#include <musikcore/sdk/Filesystem.h>
+#include <common/String.h>
+#include <common/Filesystem.h>
 #include <string>
 #include <algorithm>
 #include <memory>

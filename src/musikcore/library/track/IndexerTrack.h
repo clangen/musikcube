@@ -47,23 +47,20 @@ namespace musik { namespace core {
             IndexerTrack(int64_t trackId);
             virtual ~IndexerTrack();
 
-            /* ITagStore */
+            /* metadata writes. */
             void SetValue(const char* metakey, const char* value) override;
             void ClearValue(const char* metakey) override;
             bool Contains(const char* metakey) override;
             void SetThumbnail(const char *data, long size) override;
             bool ContainsThumbnail() override;
-            void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
+            void SetReplayGain(const mc_replay_gain_values& replayGain) override;
 
-            /* ITrack */
+            /* track data. */
             std::string GetString(const char* metakey) override;
-            int GetString(const char* key, char* dst, int size) override;
-            long long GetInt64(const char* key, long long defaultValue = 0LL) override;
-            int GetInt32(const char* key, unsigned int defaultValue = 0) override;
-            double GetDouble(const char* key, double defaultValue = 0.0f) override;
+            long long GetInt64(const char* key, long long defaultValue = 0LL);
+            int GetInt32(const char* key, unsigned int defaultValue = 0);
             std::string Uri() override;
-            int Uri(char* dst, int size) override;
-            musik::core::sdk::ReplayGain GetReplayGain() override;
+            mc_replay_gain_values GetReplayGain() override;
             musik::core::sdk::MetadataState GetMetadataState() override;
 
             MetadataIteratorRange GetValues(const char* metakey) override;
@@ -99,7 +96,7 @@ namespace musik { namespace core {
                     ~InternalMetadata();
 
                     Track::MetadataMap metadata;
-                    std::shared_ptr<musik::core::sdk::ReplayGain> replayGain;
+                    std::shared_ptr<mc_replay_gain_values> replayGain;
                     char *thumbnailData;
                     int thumbnailSize;
             };

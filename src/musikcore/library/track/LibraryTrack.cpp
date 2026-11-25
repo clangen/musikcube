@@ -78,42 +78,6 @@ std::string LibraryTrack::GetString(const char* metakey) {
     return "";
 }
 
-long long LibraryTrack::GetInt64(const char* key, long long defaultValue) {
-    try {
-        std::string value = GetString(key);
-        if (value.size()) {
-            return std::stoll(GetString(key));
-        }
-    }
-    catch (...) {
-    }
-    return defaultValue;
-}
-
-int LibraryTrack::GetInt32(const char* key, unsigned int defaultValue) {
-    try {
-        std::string value = GetString(key);
-        if (value.size()) {
-            return std::stol(GetString(key));
-        }
-    }
-    catch (...) {
-    }
-    return defaultValue;
-}
-
-double LibraryTrack::GetDouble(const char* key, double defaultValue) {
-    try {
-        std::string value = GetString(key);
-        if (value.size()) {
-            return std::stod(GetString(key));
-        }
-    }
-    catch (...) {
-    }
-    return defaultValue;
-}
-
 void LibraryTrack::SetValue(const char* metakey, const char* value) {
     if (value) {
         std::string strValue(value);
@@ -149,12 +113,12 @@ bool LibraryTrack::ContainsThumbnail() {
     return false;
 }
 
-void LibraryTrack::SetReplayGain(const ReplayGain& replayGain) {
+void LibraryTrack::SetReplayGain(const mc_replay_gain_values& replayGain) {
     if (this->gain) {
         delete this->gain;
         this->gain = nullptr;
     }
-    this->gain = new ReplayGain();
+    this->gain = new mc_replay_gain_values();
     *this->gain = replayGain;
 }
 
@@ -166,28 +130,16 @@ void LibraryTrack::SetMetadataState(musik::core::sdk::MetadataState state) noexc
     this->state = state;
 }
 
-ReplayGain LibraryTrack::GetReplayGain() noexcept {
+mc_replay_gain_values LibraryTrack::GetReplayGain() noexcept {
     if (this->gain) {
         return *gain;
     }
-    ReplayGain gain;
-    gain.albumGain = 1.0;
-    gain.albumPeak = 1.0;
-    gain.trackGain = 1.0;
-    gain.trackPeak = 1.0;
+    mc_replay_gain_values gain = MC_REPLAY_GAIN_VALUES_DEFAULT;
     return gain;
 }
 
 std::string LibraryTrack::Uri() {
     return this->GetString("filename");
-}
-
-int LibraryTrack::GetString(const char* key, char* dst, int size) {
-    return (int) CopyString(this->GetString(key), dst, size);
-}
-
-int LibraryTrack::Uri(char* dst, int size) {
-    return (int) CopyString(this->Uri(), dst, size);
 }
 
 Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {

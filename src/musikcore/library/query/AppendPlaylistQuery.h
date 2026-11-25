@@ -53,12 +53,6 @@ namespace musik { namespace core { namespace library { namespace query {
                 std::shared_ptr<musik::core::TrackList> tracks,
                 const int offset = -1) noexcept;
 
-            AppendPlaylistQuery(
-                musik::core::ILibraryPtr library,
-                const int64_t playlistId,
-                musik::core::sdk::ITrackList *tracks,
-                const int offset = -1) noexcept;
-
             /* IQuery */
             std::string Name() override { return kQueryName; }
 
@@ -78,7 +72,6 @@ namespace musik { namespace core { namespace library { namespace query {
 
             musik::core::ILibraryPtr library;
             std::shared_ptr<musik::core::TrackList> sharedTracks;
-            musik::core::sdk::ITrackList* rawTracks;
             int64_t playlistId;
             int offset;
             bool result{ false };

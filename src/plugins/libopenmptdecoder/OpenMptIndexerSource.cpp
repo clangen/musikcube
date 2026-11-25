@@ -34,7 +34,7 @@
 
 #include "Utility.h"
 #include "OpenMptIndexerSource.h"
-#include <musikcore/sdk/Filesystem.h>
+#include <common/Filesystem.h>
 #include <string>
 #include <algorithm>
 #include <memory>

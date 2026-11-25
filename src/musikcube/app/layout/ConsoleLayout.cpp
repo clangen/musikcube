@@ -35,7 +35,7 @@
 #include <stdafx.h>
 #include <app/layout/ConsoleLayout.h>
 #include <app/util/Locale.h>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>

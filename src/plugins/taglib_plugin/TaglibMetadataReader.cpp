@@ -34,7 +34,7 @@
 
 #include "TaglibMetadataReader.h"
 
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 
 #include <taglib/tlist.h>
 #include <taglib/tfile.h>

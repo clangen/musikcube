@@ -39,7 +39,7 @@
 
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/playback-remote.hpp>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 #include <cstring>
 

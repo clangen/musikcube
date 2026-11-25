@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <musikcore/plugin/encoder.h>
-#include <musikcore/sdk/DataBuffer.h>
+#include <vector>
 
 #pragma warning(push, 0)
 #include <lame/lame.h>
@@ -51,7 +51,7 @@ class LameEncoder {
         bool Finalize(const char* uri);
 
     private:
-        DataBuffer<unsigned char> encodedBytes;
-        DataBuffer<float> downmix;
+        std::vector<unsigned char> encodedBytes;
+        std::vector<float> downmix;
         lame_t lame;
 };

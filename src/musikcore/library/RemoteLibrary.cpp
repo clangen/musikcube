@@ -34,6 +34,7 @@
 
 #include "pch.hpp"
 
+#include <musikcore/library/track/Track.h>
 #include <musikcore/library/RemoteLibrary.h>
 #include <musikcore/config.h>
 #include <musikcore/support/Common.h>
@@ -465,14 +466,11 @@ void RemoteLibrary::OnClientQueryFailed(Client* client, const std::string& messa
 
 /* RemoteLibrary::RemoteResourceLocator */
 
-std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) {
+std::string RemoteLibrary::GetTrackUri(musik::core::Track* track, const std::string& defaultUri) {
     std::string type = ".mp3";
 
-    char buffer[4096];
-    buffer[0] = 0;
-    const int size = track->Uri(buffer, sizeof(buffer));
-    if (size) {
-        std::string originalUri = buffer;
+    const auto originalUri = track->Uri();
+    if (!originalUri.empty()) {
         const std::string::size_type lastDot = originalUri.find_last_of(".");
         if (lastDot != std::string::npos) {
             type = originalUri.substr(lastDot);
@@ -491,7 +489,7 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
 
     nlohmann::json path = {
         { "uri", uri },
-        { "originalUri", std::string(buffer) },
+        { "originalUri", originalUri },
         { "type", type },
         { "password", config.password },
         { "allowUntrustedCertificate", config.httpTls && config.httpTlsAllowUntrustedCertificate }

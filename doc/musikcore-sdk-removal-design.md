@@ -24,24 +24,22 @@ compatibility impact as required by repository guidance.
 
 ## Current inventory
 
-The following are concrete starting points, not a claim that every caller has
-been mapped. Search includes, inherited types, aliases, virtual overrides,
-callbacks, wrapper construction, exports, tests, and build manifests for each
-slice before changing it.
+The former `sdk/I*.h` interfaces and their plugin-era wrappers have been
+removed. Audio buffers and playback operations now use their internal owners;
+track, metadata, category and album results use concrete objects or standard
+containers. Local and remote library backends still need their internal
+polymorphic boundary. The C API and plugin ABI are unchanged.
 
-| Area | Remaining SDK types and machinery | Intended direction |
-| --- | --- | --- |
-| Audio | `IBuffer`; `audio::Buffer`, stream/player/output handoff and recycling | Use an owned internal PCM buffer and explicit borrowing/return. Preserve token ownership, ordering, bounded allocation and cancellation. |
-| Playback and queue | `IPlaybackService`, `ITrackList`, `ITrackListEditor`, `ITrack`; playback helpers and editor proxies | Use concrete playback operations and task-oriented queue editing with ownership and locking at the owning layer. Preserve remote/local backend behavior and public callback ordering. |
-| Metadata and library | `IResource`, `IMap`, `IMapList`, `IValue`, `IValueList`, `ITrack`, `ITagStore`; `GetSdkValue()`, `SdkWrapper`, `Retain()`/`Release()`, query SDK wrappers | Replace SDK-shaped object graphs with internal owned data and typed query/results as appropriate. Remove wrapper allocations and manual lifetime protocols only after all actual callers move. |
-| Preferences | `IPreferences`, `Preferences::Unmanaged()` and plugin-era accessor surface | Use the existing concrete preference store and scoped C services. Determine actual callers and ownership before removing transient/unmanaged behavior. |
-| General helpers | `DataBuffer`, filesystem and string utilities, HTTP helper, replay-gain definitions, constants and version | Keep useful shared functionality in a suitable private/common location for real core and in-tree plugin users. Remove unused or SDK-specific surfaces; do not delete functioning utilities solely due to their directory. |
+The former SDK utilities have been moved to internal shared code. The HTTP
+client remains private because it depends on libcurl; filesystem, string,
+version and legacy internal constants are also private. The fixed-capacity ring
+queue is available as an installed, header-only plugin utility. The old
+`ReplayGain` type has been replaced by `mc_replay_gain_values`, and the LAME
+encoder uses standard vectors in place of `DataBuffer`.
 
-Some in-tree C plugins still include SDK-directory utility headers. Those are
-implementation dependencies, not old provider ABI entry points. Moving a helper
-must account for Windows, macOS, Linux, standalone packaging, and the plugins
-that use it. C++ convenience wrappers under `include/musikcore/plugin/` are the
-new supported wrappers and are not part of this removal.
+The scoped retired-SDK source check prevents the removed interfaces and plugin
+entry points from returning. Native-platform and packaging acceptance remains
+open in the LLD; Linux test results do not establish those guarantees.
 
 ## Replacement approach
 

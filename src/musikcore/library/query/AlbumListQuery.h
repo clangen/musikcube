@@ -36,7 +36,8 @@
 
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/query/util/CategoryQueryUtil.h>
-#include <musikcore/library/metadata/MetadataMapList.h>
+#include <musikcore/library/query/AlbumRecord.h>
+#include <vector>
 #include <musikcore/db/Connection.h>
 #include <common/DeleteDefaults.h>
 
@@ -68,7 +69,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             /* IQuery */
             std::string Name() override { return kQueryName; }
-            musik::core::MetadataMapListPtr GetResult() noexcept;
+            std::shared_ptr<std::vector<AlbumRecord>> GetResult() noexcept;
 
             /* ISerializableQuery */
             std::string SerializeQuery() override;
@@ -77,7 +78,6 @@ namespace musik { namespace core { namespace library { namespace query {
             static std::shared_ptr<AlbumListQuery> DeserializeQuery(const std::string& data);
 
             /* AlbumListQuery */
-            musik::core::sdk::IMapList* GetSdkResult();
 
         protected:
             /* QueryBase */
@@ -85,7 +85,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             std::string filter;
             category::PredicateList regular, extended;
-            musik::core::MetadataMapListPtr result;
+            std::shared_ptr<std::vector<AlbumRecord>> result;
     };
 
 } } } }

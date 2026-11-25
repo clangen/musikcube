@@ -37,7 +37,6 @@
 #include <musikcore/support/LastFm.h>
 
 
-#include <musikcore/sdk/IPlaybackService.h>
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/track/TrackList.h>
 #include <musikcore/library/ILibrary.h>
@@ -54,7 +53,6 @@ struct LibraryIdentity;
 namespace musik { namespace core { namespace audio {
 
     class PlaybackService :
-        public musik::core::sdk::IPlaybackService,
         public musik::core::runtime::IMessageTarget
     {
         enum MessageType {
@@ -101,39 +99,34 @@ namespace musik { namespace core { namespace audio {
             /* IMessageTarget */
             void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
-            /* IPlaybackService */
-            void Play(size_t index) override;
-            bool Next() override;
-            bool Previous() override;
+            /* playback commands and state. */
+            void Play(size_t index);
+            bool Next();
+            bool Previous();
             void Shutdown();
-            void Stop()  override { transport->Stop(); }
-            musik::core::sdk::RepeatMode GetRepeatMode()  override { return this->repeatMode; }
-            void SetRepeatMode(musik::core::sdk::RepeatMode mode) override;
-            void ToggleRepeatMode() override;
-            musik::core::sdk::PlaybackState GetPlaybackState() override;
-            bool IsShuffled() override;
-            void ToggleShuffle() override;
-            size_t GetIndex() noexcept override;
-            size_t Count() override;
-            double GetVolume() override;
-            void SetVolume(double vol) override;
+            void Stop()  { transport->Stop(); }
+            musik::core::sdk::RepeatMode GetRepeatMode()  { return this->repeatMode; }
+            void SetRepeatMode(musik::core::sdk::RepeatMode mode);
+            void ToggleRepeatMode();
+            musik::core::sdk::PlaybackState GetPlaybackState();
+            bool IsShuffled();
+            void ToggleShuffle();
+            size_t GetIndex() noexcept;
+            size_t Count();
+            double GetVolume();
+            void SetVolume(double vol);
             mc_result Pause();
             mc_result Resume();
-            void PauseOrResume() override;
-            bool IsMuted() override;
-            void ToggleMute() override;
-            double GetPosition() override;
-            void SetPosition(double seconds) override;
-            double GetDuration() override;
-            musik::core::sdk::ITrack* GetTrack(size_t index) override;
-            musik::core::sdk::ITrack* GetPlayingTrack() override;
-            void CopyFrom(const musik::core::sdk::ITrackList* source) override;
-            void Play(const musik::core::sdk::ITrackList* source, size_t index) override;
-            musik::core::sdk::ITrackListEditor* EditPlaylist() override;
-            musik::core::sdk::TimeChangeMode GetTimeChangeMode() noexcept override;
-            void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) noexcept override;
-            void ReloadOutput() override;
-            musik::core::sdk::ITrackList* Clone() override;
+            void PauseOrResume();
+            bool IsMuted();
+            void ToggleMute();
+            double GetPosition();
+            void SetPosition(double seconds);
+            double GetDuration();
+            musik::core::TrackPtr GetTrack(size_t index);
+            musik::core::sdk::TimeChangeMode GetTimeChangeMode() noexcept;
+            void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) noexcept;
+            void ReloadOutput();
 
             /* TODO: include in SDK? */
             virtual bool HotSwap(const TrackList& source, size_t index = 0);
@@ -156,22 +149,19 @@ namespace musik { namespace core { namespace audio {
             /* required to make changes to the playlist. this little data structure
             privately owns a lock to the internal data structure and will release
             that lock when it's destructed. */
-            class Editor : public musik::core::sdk::ITrackListEditor {
+            class Editor {
                 public:
-                    using IEditor = std::shared_ptr<musik::core::sdk::ITrackListEditor>;
-
                     Editor(Editor&& other);
-                    virtual ~Editor();
+                    ~Editor();
 
-                    /* ITrackListEditor */
-                    bool Insert(int64_t id, size_t index) override;
-                    bool Swap(size_t index1, size_t index2) override;
-                    bool Move(size_t from, size_t to) override;
-                    bool Delete(size_t index) override;
-                    void Add(const int64_t id) override;
-                    void Clear() override;
-                    void Shuffle() override;
-                    void Release() noexcept override;
+                    /* edit the locked queue. */
+                    bool Insert(int64_t id, size_t index);
+                    bool Swap(size_t index1, size_t index2);
+                    bool Move(size_t from, size_t to);
+                    bool Delete(size_t index);
+                    void Add(const int64_t id);
+                    void Clear();
+                    void Shuffle();
 
                 private:
                     friend class PlaybackService;
@@ -186,7 +176,7 @@ namespace musik { namespace core { namespace audio {
                         Mutex& mutex);
 
                     PlaybackService& playback;
-                    IEditor tracks;
+                    TrackList& tracks;
                     Queue& queue;
                     Lock lock;
                     size_t playIndex;

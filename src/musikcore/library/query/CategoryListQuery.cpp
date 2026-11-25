@@ -32,11 +32,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include <iterator>
 #include "pch.hpp"
 #include "CategoryListQuery.h"
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/util/Serialization.h>
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/i18n/Locale.h>
 #include <common/Utf8.h>
@@ -91,7 +92,7 @@ CategoryListQuery::CategoryListQuery(
 : trackField(trackField)
 , filter(filter)
 , matchType(matchType) {
-    result = std::make_shared<SdkValueList>();
+    result = std::make_shared<CategoryValues>();
 
     if (this->filter.size() && this->matchType == MatchType::Substring) {
         /* transform "FilteR" => "%filter%" */
@@ -123,14 +124,10 @@ CategoryListQuery::Result CategoryListQuery::GetResult() noexcept {
     return this->result;
 }
 
-musik::core::sdk::IValueList* CategoryListQuery::GetSdkResult() {
-    return new SdkValueList(this->result);
-}
-
 int CategoryListQuery::GetIndexOf(int64_t id) {
     auto result = this->GetResult();
-    for (size_t i = 0; i < result->Count(); i++) {
-        if (id == result->GetAt(i)->GetId()) {
+    for (size_t i = 0; i < result->size(); i++) {
+        if (id == result->at(i).id) {
             return (int) i;
         }
     }
@@ -224,32 +221,35 @@ void CategoryListQuery::QueryExtended(musik::core::db::Connection &db) {
 }
 
 void CategoryListQuery::ProcessResult(musik::core::db::Statement &stmt) {
-    SdkValueList unknowns;
+    CategoryValues unknowns;
     while (stmt.Step() == Row) {
         int64_t id = stmt.ColumnInt64(0);
         std::string displayValue = str::Trim(stmt.ColumnText(1));
 
         /* we track empty / blank values separately, then sort them to the bottom
         of the returned list so they don't pollute the first results */
-        if (!displayValue.size()) {
-            unknowns.Add(std::make_shared<SdkValue>(
-                u8fmt(_TSTR("unknown_category_value"), unknowns.Count() + 1),
-                id,
-                this->trackField
-            ));
+        if (displayValue.empty()) {
+            unknowns.push_back({
+                .value = u8fmt(_TSTR("unknown_category_value"), unknowns.size() + 1),
+                .id = id,
+                .type = this->trackField,
+            });
         }
         else {
-            result->Add(std::make_shared<SdkValue>(displayValue, id, this->trackField));
+            result->push_back({
+                .value = std::move(displayValue),
+                .id = id,
+                .type = this->trackField,
+            });
         }
     }
 
-    for (size_t i = 0; i < unknowns.Count(); i++) {
-        result->Add(unknowns.At(i));
-    }
+    result->insert(result->end(), std::make_move_iterator(unknowns.begin()),
+        std::make_move_iterator(unknowns.end()));
 }
 
 bool CategoryListQuery::OnRun(Connection& db) {
-    result = std::make_shared<SdkValueList>();
+    result = std::make_shared<CategoryValues>();
 
     switch (this->outputType) {
         case OutputType::Playlist: QueryPlaylist(db); break;
@@ -289,7 +289,7 @@ std::string CategoryListQuery::SerializeResult() {
 void CategoryListQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     auto json = nlohmann::json::parse(data);
-    this->result = std::make_shared<SdkValueList>();
+    this->result = std::make_shared<CategoryValues>();
     ValueListFromJson(json["result"], *this->result);
     this->SetStatus(IQuery::Finished);
 }

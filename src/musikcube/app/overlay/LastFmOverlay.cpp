@@ -36,7 +36,7 @@
 #include <app/util/OpenUrl.h>
 #include "LastFmOverlay.h"
 #include <musikcore/online.hpp>
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 #include <cursespp/App.h>
 #include <map>
 #include <vector>

@@ -40,7 +40,7 @@
 #include <musikcore/audio/Player.h>
 #include <musikcore/audio/PlaybackMath.h>
 #include <musikcore/audio/Visualizer.h>
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 
 #include <algorithm>
 #include <array>
@@ -225,7 +225,7 @@ void Player::Run() {
 
 void Player::WriteTrack() {
     const float gain = playbackGain(this->gain.preamp * this->gain.gain, this->gain.peak, this->gain.peakValid);
-    IBuffer* buffer = nullptr;
+    Buffer* buffer = nullptr;
 
     while (!this->Exited()) {
         this->writer.ProcessCompletions();
@@ -331,7 +331,7 @@ static const HammingWindow& getHammingWindow() {
     return window;
 }
 
-static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, int outputSize) {
+static inline bool performFft(Buffer* buffer, FftContext* fft, float* output, int outputSize) {
     if (!buffer || !fft || !fft->cfg || !output || outputSize != FFT_N / 2) {
         return false;
     }
@@ -395,13 +395,13 @@ static inline bool performFft(IBuffer* buffer, FftContext* fft, float* output, i
     return true;
 }
 
-void Player::ReturnUnusedBuffer(IBuffer* buffer) {
+void Player::ReturnUnusedBuffer(Buffer* buffer) {
     this->stream->RecycleBuffer(buffer);
 }
 
 /* cancelled buffers return storage without advancing playback or showing
 visualizer frames that the output discarded. this runs on the player worker. */
-void Player::CompleteBuffer(IBuffer* buffer, mc_result outcome) {
+void Player::CompleteBuffer(Buffer* buffer, mc_result outcome) {
     if (outcome == MC_OK) {
         this->OnBufferProcessed(buffer);
     }
@@ -428,7 +428,7 @@ void Player::FailPlayback(mc_result status, const char* operation) {
     }
 }
 
-void Player::OnBufferProcessed(IBuffer *buffer) {
+void Player::OnBufferProcessed(Buffer *buffer) {
     std::list<MixPoint> mixPointsHit;
 
     /* process visualizer data, and write to the selected plugin, if applicable */
@@ -455,7 +455,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         vis::WritePcm(pcm);
     }
 
-    const auto position = static_cast<Buffer*>(buffer)->Position();
+    const auto position = buffer->Position();
     this->ReturnUnusedBuffer(buffer);
     const auto latency = this->output->Latency();
     {

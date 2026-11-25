@@ -35,9 +35,9 @@
 #pragma once
 
 #include <common/DeleteDefaults.h>
-#include <musikcore/sdk/ITagStore.h>
 #include <musikcore/library/ILibrary.h>
-#include <musikcore/sdk/ITrack.h>
+#include <common/LegacyConstants.h>
+#include <musikcore/plugin/metadata.h>
 #include <atomic>
 #include <vector>
 #include <map>
@@ -47,45 +47,27 @@ namespace musik { namespace core {
     class Track;
     typedef std::shared_ptr<Track> TrackPtr;
 
-    class Track :
-        public musik::core::sdk::ITrack,
-        public std::enable_shared_from_this<Track>
-    {
+    class Track {
         public:
             typedef std::multimap<std::string, std::string> MetadataMap;
             typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;
 
-            virtual musik::core::ILibraryPtr Library() noexcept;
-            virtual int LibraryId() noexcept;
+            virtual musik::core::ILibraryPtr Library() noexcept { return {}; }
+            virtual int LibraryId() noexcept { return 0; }
 
-            /* ITrack is a ready only interface; we use the ITagStore interface
-            for writing. we replicate the interface here, and have TagStore pass
-            through to us */
+            virtual ~Track() = default;
+
+            /* metadata changes made while indexing. */
             virtual void SetValue(const char* key, const char* value) = 0;
             virtual void ClearValue(const char* key) = 0;
             virtual void SetThumbnail(const char* data, long size) = 0;
             virtual bool Contains(const char* key) = 0;
             virtual bool ContainsThumbnail() = 0;
-            virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) = 0;
+            virtual void SetReplayGain(const mc_replay_gain_values& replayGain) = 0;
 
-            /* IResource */
-            int64_t GetId() override;
-            Class GetClass() override;
-            const char* GetType() override;
-
-            /* IValue */
-            size_t GetValue(char* dst, size_t size) override;
-
-            /* IMap */
-            void Release() noexcept override;
-            int GetString(const char* key, char* dst, int size) override = 0;
-            long long GetInt64(const char* key, long long defaultValue = 0LL) override = 0;
-            int GetInt32(const char* key, unsigned int defaultValue = 0) override = 0;
-            double GetDouble(const char* key, double defaultValue = 0.0f) override = 0;
-
-            /* ITrack */
-            void Retain() noexcept override;
-            int Uri(char* dst, int size) override = 0;
+            virtual int64_t GetId() = 0;
+            virtual mc_replay_gain_values GetReplayGain() = 0;
+            virtual musik::core::sdk::MetadataState GetMetadataState() = 0;
 
             /* implementation specific */
             virtual void SetId(int64_t id) = 0;
@@ -96,35 +78,6 @@ namespace musik { namespace core {
             virtual TrackPtr Copy() = 0;
             virtual void SetMetadataState(musik::core::sdk::MetadataState state) = 0;
 
-            /* for SDK interop */
-            ITrack* GetSdkValue();
-    };
-
-    class TagStore : public musik::core::sdk::ITagStore {
-        public:
-            DELETE_CLASS_DEFAULTS(TagStore)
-
-            TagStore(TrackPtr track) noexcept;
-            TagStore(Track& track);
-
-            virtual ~TagStore() noexcept { }
-
-            template <typename T> T As() {
-                return dynamic_cast<T>(track.get());
-            }
-
-            void Retain() noexcept override;
-            void Release() noexcept override;
-            void SetValue(const char* key, const char* value) override;
-            void ClearValue(const char* key) override;
-            bool Contains(const char* key) override;
-            bool ContainsThumbnail() override;
-            void SetThumbnail(const char* data, long size) override;
-            void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
-
-        private:
-            TrackPtr track;
-            std::atomic<int> count;
     };
 
 } }

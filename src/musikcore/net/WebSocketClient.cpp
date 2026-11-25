@@ -35,9 +35,9 @@
 #include "pch.hpp"
 
 #include <musikcore/net/WebSocketClient.h>
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 #include <common/runtime/Message.h>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 #ifdef _MSC_VER
 #pragma warning(push, 0)

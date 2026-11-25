@@ -36,7 +36,7 @@
 #include "config.h"
 #include "HttpDataStream.h"
 #include <musikcore/plugin.h>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 namespace {
     constexpr mc_string_view text(std::string_view s) {

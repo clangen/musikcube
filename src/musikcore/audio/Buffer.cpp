@@ -32,15 +32,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-
 #include <musikcore/audio/Buffer.h>
-
-#ifdef WIN32
-    #define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
-#else
-    #define CopyFloat(dst, src, num) memcpy((float*) dst, (float*)src, (num) * sizeof(float))
-#endif
+#include <algorithm>
+#include <climits>
+#include <cstring>
+#include <stdexcept>
 
 using namespace musik::core::audio;
 
@@ -95,8 +91,19 @@ long Buffer::Samples() const noexcept {
 }
 
 void Buffer::SetSamples(long samples) {
+    if (samples < 0) {
+        throw std::invalid_argument("negative buffer size");
+    }
+    if (samples > this->internalBufferSize) {
+        if (flags & (ImmutableSize | NoDelete)) {
+            throw std::runtime_error("buffer cannot be resized");
+        }
+        float* next = new float[samples];
+        delete[] this->buffer;
+        this->buffer = next;
+        this->internalBufferSize = samples;
+    }
     this->samples = samples;
-    this->ResizeBuffer();
 }
 
 void Buffer::CopyFormat(Buffer* fromBuffer) noexcept {
@@ -106,21 +113,8 @@ void Buffer::CopyFormat(Buffer* fromBuffer) noexcept {
     }
 }
 
-void Buffer::ResizeBuffer() {
-    if (this->samples > this->internalBufferSize) {
-        if (flags & ImmutableSize && this->internalBufferSize > 0) {
-            throw std::runtime_error("buffer cannot be resized");
-        }
-
-        delete[] this->buffer;
-        this->buffer = new float[this->samples];
-        this->internalBufferSize = this->samples;
-    }
-}
-
-/* logical bytes; backing store may be be larger */
-long Buffer::Bytes() const noexcept {
-    return sizeof(float) * this->samples;
+long Buffer::Capacity() const noexcept {
+    return this->internalBufferSize;
 }
 
 double Buffer::Position() const noexcept {
@@ -132,18 +126,27 @@ void Buffer::SetPosition(double position) noexcept {
 }
 
 void Buffer::Copy(float const* buffer, long samples, long offset) {
+    if (samples < 0 || offset < 0 || offset > LONG_MAX - samples || (samples && !buffer)) {
+        throw std::invalid_argument("invalid buffer copy");
+    }
     const long length = offset + samples;
     if (length > this->internalBufferSize) {
-        float *newBuffer = new float[length];
-        CopyFloat(newBuffer, this->buffer, this->internalBufferSize);
-        CopyFloat(newBuffer + offset, buffer, samples);
+        if (flags & (ImmutableSize | NoDelete)) {
+            throw std::runtime_error("buffer cannot be resized");
+        }
+        float* next = new float[length];
+        if (this->internalBufferSize) {
+            std::memcpy(next, this->buffer, this->internalBufferSize * sizeof(float));
+        }
+        if (samples) {
+            std::memcpy(next + offset, buffer, samples * sizeof(float));
+        }
         delete[] this->buffer;
-        this->buffer = newBuffer;
+        this->buffer = next;
         this->internalBufferSize = length;
     }
-    else {
-        CopyFloat(this->buffer + offset, buffer, samples);
+    else if (samples) {
+        std::memcpy(this->buffer + offset, buffer, samples * sizeof(float));
     }
-
     this->samples = std::max(this->samples, length);
 }

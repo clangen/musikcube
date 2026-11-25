@@ -25,7 +25,7 @@ namespace musik { namespace core { namespace plugin {
         return status == MC_OK && supported;
     }
 
-    bool TagReader::Read(const std::string& uri, sdk::ITagStore& store) const {
+    bool TagReader::Read(const std::string& uri, Track& store) const {
         const auto writer = CreateMetadataWriter(store);
         return this->factory.Invoke([&](const auto& table) {
             void* instance = nullptr;

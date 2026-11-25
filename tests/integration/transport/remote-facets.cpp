@@ -1,6 +1,7 @@
 #include "ApiHost.h"
 #include <musikcore/musikcore.hpp>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
+#include <musikcore/library/query/AlbumListQuery.h>
 #include <musikcore/library/query/CategoryListQuery.h>
 #include <musikcore/library/query/CategoryTrackListQuery.h>
 #include <musikcore/db/Connection.h>
@@ -53,7 +54,24 @@ namespace {
         }
         query::CategoryListQuery categories(query::CategoryListQuery::MatchType::Substring, "genre", selections);
         const auto decodedCategories = query::CategoryListQuery::DeserializeQuery(categories.SerializeQuery());
-        return decodedCategories->Run(db) && decodedCategories->GetResult()->Count() == 3;
+        return decodedCategories->Run(db) && decodedCategories->GetResult()->size() == 3;
+    }
+
+    /* album query results cross the server wire with custom metadata intact. */
+    bool checkAlbumWire() {
+        using namespace musik::core::library::query;
+        const auto original = Json::parse(R"({"result":[{"id":42,"value":"Album","type":"album","metadata":{"album_artist":"Artist","visual_album_artist_id":"17","thumbnail_id":"bad","custom_field":"value"}}]})");
+        AlbumListQuery query;
+        query.DeserializeResult(original.dump());
+        const auto rows = query.GetResult();
+        if (rows->size() != 1 || rows->front().id != 42 || rows->front().value != "Album" ||
+            AlbumText(rows->front(), "custom_field") != "value" ||
+            AlbumInteger(rows->front(), "visual_album_artist_id") != 17 ||
+            AlbumInteger(rows->front(), "thumbnail_id") != 0)
+        {
+            return false;
+        }
+        return Json::parse(query.SerializeResult()) == original;
     }
 
     /* serve native facet replies on a real loopback connection. */
@@ -187,6 +205,10 @@ namespace {
 int main() {
     using namespace musik::core;
     using namespace musik::core::api;
+    if (!checkAlbumWire()) {
+        std::fprintf(stderr, "album wire metadata did not round trip\n");
+        return 1;
+    }
     if (!checkExistingQuerySemantics()) {
         std::fprintf(stderr, "existing category wire semantics did not preserve text and both selections\n");
         return 1;

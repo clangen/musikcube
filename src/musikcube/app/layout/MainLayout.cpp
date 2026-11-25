@@ -42,7 +42,7 @@
 #include <cursespp/ToastOverlay.h>
 
 #include <common/runtime/Message.h>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>

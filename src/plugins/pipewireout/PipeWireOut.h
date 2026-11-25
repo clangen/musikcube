@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <common/FixedRingQueue.h>
+#include <musikcore/plugin/fixed_ring_queue.hpp>
 #include <musikcore/plugin/output.hpp>
 #include <musikcore/plugin/services.h>
 #include <pipewire/pipewire.h>

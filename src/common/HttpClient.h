@@ -42,13 +42,17 @@
 #pragma warning(pop)
 #endif
 
-#include <functional>
 #include <algorithm>
-#include <thread>
+#include <functional>
+#include <memory>
 #include <mutex>
-#include <unordered_map>
 #include <set>
-#include "constants.h"
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <utility>
+#include "LegacyConstants.h"
 
 namespace musik { namespace core { namespace sdk {
     template <typename T>

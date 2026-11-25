@@ -38,7 +38,7 @@
 
 #include "config.h"
 #include "LruDiskCache.h"
-#include <musikcore/sdk/Filesystem.h>
+#include <common/Filesystem.h>
 
 #include <algorithm>
 #include <cerrno>

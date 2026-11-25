@@ -3,7 +3,7 @@
 
 #include <musikcore/plugin/stream.h>
 #include <musikcore/plugin/output.hpp>
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 
 #include <algorithm>
 #include <array>

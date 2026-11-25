@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 #include "OpenMptDecoder.h"
 #include "OpenMptIndexerSource.h"
 #include <musikcore/plugin/registration.hpp>

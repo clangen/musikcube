@@ -136,14 +136,6 @@ std::shared_ptr<Preferences> Preferences::ForPlugin(const std::string& pluginNam
     return pluginCache[name];
 }
 
-musik::core::sdk::IPreferences* Preferences::Unmanaged(const std::string& name) {
-    if (!name.size()) {
-        return new Preferences(name, ModeTransient);
-    }
-
-    return Preferences::ForPlugin("unmanaged_" + name).get();
-}
-
 std::shared_ptr<Preferences> Preferences::ForComponent(
     const std::string& c, Preferences::Mode mode)
 {
@@ -179,12 +171,6 @@ Preferences::Preferences(const std::string& component, Mode mode) {
 Preferences::~Preferences() {
     if (this->mode == ModeAutoSave) {
         this->Save();
-    }
-}
-
-void Preferences::Release() {
-    if (this->mode == ModeTransient) {
-        delete this;
     }
 }
 
@@ -263,7 +249,7 @@ bool Preferences::SetValues(const nlohmann::json& values, bool persist) {
     auto updated = this->json.is_object() ? this->json : json::object();
     updated.update(values);
     if (persist && (this->mode == ModeReadOnly ||
-        (this->mode != ModeTransient && !stringToFile(FILENAME(this->component), updated.dump(2)))))
+        !stringToFile(FILENAME(this->component), updated.dump(2))))
     {
         return false;
     }
@@ -315,42 +301,7 @@ bool Preferences::Flush() {
     if (this->mode == ModeReadOnly) {
         return false;
     }
-    return this->mode == ModeTransient || stringToFile(FILENAME(this->component), this->json.dump(2));
-}
-
-/* SDK IPreferences interface */
-
-bool Preferences::GetBool(const char* key, bool defaultValue) {
-    return this->GetBool(std::string(key), defaultValue);
-}
-
-int Preferences::GetInt(const char* key, int defaultValue) {
-    return this->GetInt(std::string(key), defaultValue);
-}
-
-double Preferences::GetDouble(const char* key, double defaultValue) {
-    return this->GetDouble(std::string(key), defaultValue);
-}
-
-int Preferences::GetString(const char* key, char* dst, size_t size, const char* defaultValue) {
-    std::string value = this->GetString(std::string(key), defaultValue);
-    return (int) CopyString(value, dst, size);
-}
-
-void Preferences::SetBool(const char* key, bool value) {
-    this->SetBool(std::string(key), value);
-}
-
-void Preferences::SetInt(const char* key, int value) {
-    this->SetInt(std::string(key), value);
-}
-
-void Preferences::SetDouble(const char* key, double value) {
-    this->SetDouble(std::string(key), value);
-}
-
-void Preferences::SetString(const char* key, const char* value) {
-    this->SetString(std::string(key), value);
+    return stringToFile(FILENAME(this->component), this->json.dump(2));
 }
 
 namespace {

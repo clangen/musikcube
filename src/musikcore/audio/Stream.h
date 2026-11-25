@@ -38,11 +38,10 @@
 #include <musikcore/config.h>
 #include <musikcore/plugin/media.h>
 #include <musikcore/audio/Buffer.h>
-#include <musikcore/audio/IStream.h>
 #include <musikcore/audio/Output.h>
 
 #include <musikcore/audio/Dsp.h>
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 
 #include <deque>
 #include <list>
@@ -50,8 +49,7 @@
 
 namespace musik { namespace core { namespace audio {
 
-    class Stream : public IStream {
-        using IBuffer = musik::core::sdk::IBuffer;
+    class Stream {
         using StreamFlags = musik::core::sdk::StreamFlags;
 
         public:
@@ -62,31 +60,22 @@ namespace musik { namespace core { namespace audio {
                 double bufferLengthSeconds = 5,
                 StreamFlags options = StreamFlags::None);
 
-            static IStream* CreateUnmanaged(
-                int samplesPerChannel = 2048,
-                double bufferLengthSeconds = 5,
-                StreamFlags options = StreamFlags::None);
-
         private:
-            Stream(
-                int samplesPerChannel,
-                double bufferLengthSeconds,
-                StreamFlags options);
+            Stream(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options);
 
         public:
-            virtual ~Stream();
+            ~Stream();
 
-            IBuffer* GetNextProcessedOutputBuffer() override;
-            void RecycleBuffer(IBuffer* buffer) override;
-            double SetPosition(double seconds) override;
-            double GetDuration() override;
-            bool OpenStream(std::string uri, musik::core::audio::Output* output) override;
-            void Interrupt() override;
-            int GetCapabilities() override;
-            bool GetInitialFormat(mc_audio_format& format) const override;
-            mc_result DecodeStatus() const override { return this->decodeStatus; }
-            bool Eof() override { return this->done; }
-            void Release() override { delete this; }
+            Buffer* GetNextProcessedOutputBuffer();
+            void RecycleBuffer(Buffer* buffer);
+            double SetPosition(double seconds);
+            double GetDuration();
+            bool OpenStream(std::string uri, musik::core::audio::Output* output);
+            void Interrupt();
+            int GetCapabilities();
+            bool GetInitialFormat(mc_audio_format& format) const;
+            mc_result DecodeStatus() const { return this->decodeStatus; }
+            bool Eof() { return this->done; }
 
         private:
             bool GetNextBufferFromDecoder();

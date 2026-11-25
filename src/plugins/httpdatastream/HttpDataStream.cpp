@@ -40,7 +40,7 @@ interfaces before any system header declares stat or seek. */
 
 #include "config.h"
 #include "HttpDataStream.h"
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 #include <musikcore/plugin.h>
 #include <../../3rdparty/include/nlohmann/json.hpp>
 #include <../../3rdparty/include/websocketpp/base64/base64.hpp>

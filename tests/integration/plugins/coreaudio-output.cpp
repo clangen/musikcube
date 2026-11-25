@@ -13,18 +13,11 @@ using musik::core::ffi::PluginRegistry;
 
 /* silent, fixed storage exercises the actual AudioQueue without accessing
 user media or changing the system's selected/default audio device. */
-struct Silence final : musik::core::sdk::IBuffer {
-    long SampleRate() const override { return rate; }
-    void SetSampleRate(long value) override { rate = value; }
-    int Channels() const override { return 2; }
-    void SetChannels(int) override {}
-    float* BufferPointer() const override { return const_cast<float*>(samples.data()); }
-    long Samples() const override { return samples.size(); }
-    void SetSamples(long) override {}
-    long Bytes() const override { return samples.size() * sizeof(float); }
-    void Release() override {}
+struct Silence {
     std::array<float, 8192> samples {};
-    long rate = 48000;
+    musik::core::audio::Buffer block { samples.data(), static_cast<int>(samples.size()) };
+
+    operator musik::core::audio::Buffer&() { return block; }
 };
 
 /* never compile assertions out of packaged-runtime validation. */
@@ -38,7 +31,7 @@ static void require(bool condition, const char* message) {
 /* only the test/player thread consumes completions; cancellation also returns
 storage exactly once, while the hardware callback only publishes records. */
 struct Sink final : Output::CompletionSink {
-    void CompleteBuffer(musik::core::sdk::IBuffer*, mc_result result) override {
+    void CompleteBuffer(musik::core::audio::Buffer*, mc_result result) override {
         require(result == MC_OK || result == MC_ERROR_CANCELLED, "meaningful completion outcome");
         ++count;
         successful += result == MC_OK;
@@ -180,8 +173,8 @@ int main(int argc, char** argv) {
     for (unsigned run = 0; run < 3; ++run) {
         Output output(factory, "coreaudio", "CoreAudio", run == 1 ? nativeDefault : "");
         Silence silence;
-        silence.rate = output.GetDefaultSampleRate();
-        require(silence.rate > 0, "device preferred format is available before prepare");
+        silence.block.SetSampleRate(output.GetDefaultSampleRate());
+        require(silence.block.SampleRate() > 0, "device preferred format is available before prepare");
         Sink sink;
         Output::Writer writer(output, sink);
         output.Resume();
@@ -204,7 +197,7 @@ int main(int argc, char** argv) {
         /* stop closes admission until the host resumes and prepares a fresh
         device generation; a format change must also drain/reprepare safely. */
         output.Resume();
-        silence.rate = silence.rate == 44100 ? 48000 : 44100;
+        silence.block.SetSampleRate(silence.block.SampleRate() == 44100 ? 48000 : 44100);
         require(writer.TryQueueAudioBuffer(silence) == MC_OK, "new generation accepts changed rate");
         waitFor(writer, sink, 3);
         output.Stop();

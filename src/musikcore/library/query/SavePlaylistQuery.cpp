@@ -86,15 +86,6 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
     musik::core::ILibraryPtr library,
     const std::string& playlistName,
-    musik::core::sdk::ITrackList* tracks)
-{
-    return std::shared_ptr<SavePlaylistQuery>(
-        new SavePlaylistQuery(library, playlistName, tracks));
-}
-
-std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
-    musik::core::ILibraryPtr library,
-    const std::string& playlistName,
     const std::string& categoryType,
     int64_t categoryId)
 {
@@ -106,15 +97,6 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
     musik::core::ILibraryPtr library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
-{
-    return std::shared_ptr<SavePlaylistQuery>(
-        new SavePlaylistQuery(library, playlistId, tracks));
-}
-
-std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
-    musik::core::ILibraryPtr library,
-    const int64_t playlistId,
-    musik::core::sdk::ITrackList* tracks)
 {
     return std::shared_ptr<SavePlaylistQuery>(
         new SavePlaylistQuery(library, playlistId, tracks));
@@ -167,21 +149,7 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->playlistId = -1;
     this->categoryId = -1;
     this->playlistName = playlistName;
-    this->tracks.rawTracks = nullptr;
-    this->tracks.sharedTracks = tracks;
-    this->op = Operation::Create;
-}
-
-SavePlaylistQuery::SavePlaylistQuery(
-    musik::core::ILibraryPtr library,
-    const std::string& playlistName,
-    musik::core::sdk::ITrackList* tracks)
-{
-    this->library = library;
-    this->playlistId = -1;
-    this->categoryId = -1;
-    this->playlistName = playlistName;
-    this->tracks.rawTracks = tracks;
+    this->tracks = tracks;
     this->op = Operation::Create;
 }
 
@@ -206,18 +174,7 @@ SavePlaylistQuery::SavePlaylistQuery(
 {
     this->library = library;
     this->playlistId = playlistId;
-    this->tracks.sharedTracks = tracks;
-    this->op = Operation::Replace;
-}
-
-SavePlaylistQuery::SavePlaylistQuery(
-    musik::core::ILibraryPtr library,
-    const int64_t playlistId,
-    musik::core::sdk::ITrackList* tracks)
-{
-    this->library = library;
-    this->playlistId = playlistId;
-    this->tracks.rawTracks = tracks;
+    this->tracks = tracks;
     this->op = Operation::Replace;
 }
 
@@ -260,7 +217,7 @@ int64_t SavePlaylistQuery::GetPlaylistId() const noexcept {
 bool SavePlaylistQuery::AddTracksToPlaylist(
     musik::core::db::Connection &db,
     int64_t playlistId,
-    TrackListWrapper& tracks)
+    const std::shared_ptr<TrackList>& tracks)
 {
     int offset = 0;
 
@@ -276,8 +233,8 @@ bool SavePlaylistQuery::AddTracksToPlaylist(
     Statement insertTrack(INSERT_PLAYLIST_TRACK_QUERY.c_str(), db);
 
     TrackPtr track;
-    for (size_t i = 0; i < tracks.Count(); i++) {
-        track = tracks.Get(this->library, i);
+    for (size_t i = 0; tracks && i < tracks->Count(); i++) {
+        track = tracks->Get(i);
         if (track) {
             insertTrack.Reset();
             insertTrack.BindText(0, track->GetString("external_id"));
@@ -303,8 +260,7 @@ bool SavePlaylistQuery::AddCategoryTracksToPlaylist(
 
     if (query->GetStatus() == IQuery::Finished) {
         auto tracks = query->GetResult();
-        TrackListWrapper wrapper(tracks);
-        if (this->AddTracksToPlaylist(db, playlistId, wrapper)) {
+        if (this->AddTracksToPlaylist(db, playlistId, tracks)) {
             return true;
         }
     }
@@ -327,7 +283,7 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
     this->playlistId = db.LastInsertedId();
 
     /* add tracks to playlist */
-    if (this->tracks.Exists()) {
+    if (this->tracks) {
         if (!this->AddTracksToPlaylist(db, this->playlistId, this->tracks)) {
             transaction.Cancel();
             return false;
@@ -374,7 +330,7 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
 bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
     ScopedTransaction transaction(db);
 
-    const bool result = this->tracks.Exists()
+    const bool result = this->tracks
         ? this->AddTracksToPlaylist(db, this->playlistId, this->tracks)
         : this->AddCategoryTracksToPlaylist(db, this->playlistId);
 
@@ -420,61 +376,11 @@ void SavePlaylistQuery::SendPlaylistMutationBroadcast() {
     }
 }
 
-/* SUPPORTING TYPES */
-
-SavePlaylistQuery::TrackListWrapper::TrackListWrapper() noexcept {
-    this->rawTracks = nullptr;
-}
-
-SavePlaylistQuery::TrackListWrapper::TrackListWrapper(
-    std::shared_ptr<musik::core::TrackList> shared) noexcept
-{
-    this->rawTracks = nullptr;
-    this->sharedTracks = shared;
-}
-
-bool SavePlaylistQuery::TrackListWrapper::Exists() noexcept {
-    return this->sharedTracks || this->rawTracks;
-}
-
-size_t SavePlaylistQuery::TrackListWrapper::Count() {
-    if (sharedTracks) {
-        return sharedTracks->Count();
-    }
-
-    return rawTracks ? rawTracks->Count() : 0;
-}
-
-TrackPtr SavePlaylistQuery::TrackListWrapper::Get(
-    musik::core::ILibraryPtr library, size_t index)
-{
-    if (sharedTracks) {
-        return sharedTracks->Get(index);
-    }
-
-    TrackPtr result = std::make_shared<LibraryTrack>(rawTracks->GetId(index), library);
-    if (rawTracks) {
-        auto query = std::make_shared<TrackMetadataQuery>(
-            result, library, TrackMetadataQuery::Type::IdsOnly);
-
-        library->EnqueueAndWait(query);
-    }
-
-    return result;
-}
-
-ITrackList* SavePlaylistQuery::TrackListWrapper::Get() noexcept {
-    if (sharedTracks) {
-        return sharedTracks.get();
-    }
-    return rawTracks;
-}
-
 /* ISerializableQuery */
 
 std::string SavePlaylistQuery::SerializeQuery() {
-    nlohmann::json tracksJson = tracks.Get()
-        ? ITrackListToJsonIdList(*tracks.Get())
+    nlohmann::json tracksJson = tracks
+        ? TrackListToJsonIdList(*tracks)
         : nlohmann::json();
     nlohmann::json output = {
         { "name", kQueryName },
@@ -515,7 +421,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::DeserializeQuery(
     output->categoryType = options["categoryType"].get<std::string>();
     output->playlistId = options["playlistId"].get<int64_t>();
     output->categoryId = options["categoryId"].get<int64_t>();
-    output->tracks.sharedTracks = std::make_shared<TrackList>(library);
-    TrackListFromJson(options["tracks"], *output->tracks.sharedTracks, library, true);
+    output->tracks = std::make_shared<TrackList>(library);
+    TrackListFromJson(options["tracks"], *output->tracks, library, true);
     return output;
 }

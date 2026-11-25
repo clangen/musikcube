@@ -2,7 +2,7 @@
    connection generation. A retained search result or track reference can
    therefore survive selection changes without resolving in a new catalog. */
 
-#include <musikcore/sdk/FilesystemPath.h>
+#include <common/FilesystemPath.h>
 #include "library-query-backends.h"
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/library/RemoteLibrary.h>
@@ -53,15 +53,15 @@ namespace {
     mc_result collectAlbums(query::AlbumListQuery& command, std::unique_ptr<AlbumEntries>& output) {
         auto albums = std::make_unique<AlbumEntries>();
         const auto result = command.GetResult();
-        albums->titles.reserve(result->Count());
-        albums->artists.reserve(result->Count());
-        albums->entries.reserve(result->Count());
-        for (size_t i = 0; i < result->Count(); ++i) {
-            const auto entry = result->GetSharedAt(i);
-            const auto& title = albums->titles.emplace_back(entry->GetTypeValue());
-            const auto& artist = albums->artists.emplace_back(entry->Get(MC_TRACK_FIELD_ALBUM_ARTIST));
-            albums->entries.push_back({ entry->GetId(), { title.data(), title.size() },
-                { artist.data(), artist.size() }, entry->GetInt64(MC_TRACK_FIELD_THUMBNAIL_ID) });
+        albums->titles.reserve(result->size());
+        albums->artists.reserve(result->size());
+        albums->entries.reserve(result->size());
+        for (size_t i = 0; i < result->size(); ++i) {
+            const auto& entry = result->at(i);
+            const auto& title = albums->titles.emplace_back(entry.value);
+            const auto& artist = albums->artists.emplace_back(query::AlbumText(entry, MC_TRACK_FIELD_ALBUM_ARTIST));
+            albums->entries.push_back({ entry.id, { title.data(), title.size() },
+                { artist.data(), artist.size() }, query::AlbumInteger(entry, MC_TRACK_FIELD_THUMBNAIL_ID) });
         }
         output = std::move(albums);
         return MC_OK;
@@ -86,12 +86,12 @@ namespace {
     mc_result collectEntries(query::CategoryListQuery& command, std::unique_ptr<Entries>& output) {
         auto list = std::make_unique<Entries>();
         const auto result = command.GetResult();
-        list->names.reserve(result->Count());
-        list->entries.reserve(result->Count());
-        for (size_t i = 0; i < result->Count(); ++i) {
-            const auto entry = result->At(i);
-            const auto& name = list->names.emplace_back(entry->ToString());
-            list->entries.push_back({entry->GetId(), {name.data(), name.size()}});
+        list->names.reserve(result->size());
+        list->entries.reserve(result->size());
+        for (size_t i = 0; i < result->size(); ++i) {
+            const auto& entry = result->at(i);
+            const auto& name = list->names.emplace_back(entry.value);
+            list->entries.push_back({entry.id, {name.data(), name.size()}});
         }
         output = std::move(list);
         return MC_OK;
@@ -113,10 +113,10 @@ namespace {
     mc_result collectFields(query::AllCategoriesQuery& command, std::unique_ptr<CategoryFields>& output) {
         output = std::make_unique<CategoryFields>();
         const auto result = command.GetResult();
-        output->names.reserve(result->Count());
-        output->views.reserve(result->Count());
-        for (size_t i = 0; i < result->Count(); ++i) {
-            const auto& name = output->names.emplace_back(result->At(i)->ToString());
+        output->names.reserve(result->size());
+        output->views.reserve(result->size());
+        for (size_t i = 0; i < result->size(); ++i) {
+            const auto& name = output->names.emplace_back(result->at(i).value);
             output->views.push_back({ name.data(), name.size() });
         }
         return MC_OK;

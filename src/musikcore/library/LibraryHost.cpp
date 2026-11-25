@@ -534,15 +534,15 @@ mc_result MC_CALL LibraryHost::ListCategoriesHost(void* context, mc_string_view 
         }
         const auto values = query->GetResult();
         std::vector<std::string> text;
-        text.reserve(values->Count());
-        for (size_t i = 0; i < values->Count(); ++i) {
-            text.push_back(values->At(i)->ToString());
+        text.reserve(values->size());
+        for (size_t i = 0; i < values->size(); ++i) {
+            text.push_back(values->at(i).value);
         }
         std::vector<mc_category_entry> entries;
         entries.reserve(text.size());
         for (size_t i = 0; i < text.size(); ++i) {
             entries.push_back({
-                .id = values->At(i)->GetId(),
+                .id = values->at(i).id,
                 .value = { text[i].data(), text[i].size() },
             });
         }
@@ -583,9 +583,9 @@ mc_result MC_CALL LibraryHost::ListCategoryFields(void* context,
         }
         const auto fields = query->GetResult();
         std::vector<std::string> values;
-        values.reserve(fields->Count());
-        for (size_t i = 0; i < fields->Count(); ++i) {
-            values.push_back(fields->At(i)->ToString());
+        values.reserve(fields->size());
+        for (size_t i = 0; i < fields->size(); ++i) {
+            values.push_back(fields->at(i).value);
         }
         std::vector<mc_string_view> views;
         views.reserve(values.size());
@@ -627,15 +627,15 @@ mc_result MC_CALL LibraryHost::ListFilteredCategories(void* context, mc_string_v
         }
         const auto values = query->GetResult();
         std::vector<std::string> text;
-        text.reserve(values->Count());
-        for (size_t i = 0; i < values->Count(); ++i) {
-            text.push_back(values->At(i)->ToString());
+        text.reserve(values->size());
+        for (size_t i = 0; i < values->size(); ++i) {
+            text.push_back(values->at(i).value);
         }
         std::vector<mc_category_entry> entries;
         entries.reserve(text.size());
         for (size_t i = 0; i < text.size(); ++i) {
             entries.push_back({
-                .id = values->At(i)->GetId(),
+                .id = values->at(i).id,
                 .value = { .data = text[i].data(), .length = text[i].size() },
             });
         }
@@ -667,25 +667,25 @@ mc_result MC_CALL LibraryHost::ListAlbumsHost(void* context, mc_string_view filt
         }
         const auto values = query->GetResult();
         std::vector<std::string> titles, artists;
-        titles.reserve(values->Count());
-        artists.reserve(values->Count());
-        for (size_t i = 0; i < values->Count(); ++i) {
-            const auto album = values->GetSharedAt(i);
-            titles.push_back(album->GetTypeValue());
-            artists.push_back(album->Get(MC_TRACK_FIELD_ALBUM_ARTIST));
+        titles.reserve(values->size());
+        artists.reserve(values->size());
+        for (size_t i = 0; i < values->size(); ++i) {
+            const auto& album = values->at(i);
+            titles.push_back(album.value);
+            artists.push_back(AlbumText(album, MC_TRACK_FIELD_ALBUM_ARTIST));
         }
         std::vector<mc_library_album> albums;
-        albums.reserve(values->Count());
-        for (size_t i = 0; i < values->Count(); ++i) {
-            const auto album = values->GetSharedAt(i);
+        albums.reserve(values->size());
+        for (size_t i = 0; i < values->size(); ++i) {
+            const auto& album = values->at(i);
             albums.push_back({
-                .id = album->GetId(),
+                .id = album.id,
                 .title = { .data = titles[i].data(), .length = titles[i].size() },
-                .artist_id = album->GetInt64(MC_TRACK_FIELD_ALBUM_ARTIST_ID),
-                .has_artist_id = !album->Get(MC_TRACK_FIELD_ALBUM_ARTIST_ID).empty(),
+                .artist_id = AlbumInteger(album, MC_TRACK_FIELD_ALBUM_ARTIST_ID),
+                .has_artist_id = !AlbumText(album, MC_TRACK_FIELD_ALBUM_ARTIST_ID).empty(),
                 .artist = { .data = artists[i].data(), .length = artists[i].size() },
-                .thumbnail_id = album->GetInt64(MC_TRACK_FIELD_THUMBNAIL_ID),
-                .has_thumbnail_id = !album->Get(MC_TRACK_FIELD_THUMBNAIL_ID).empty(),
+                .thumbnail_id = AlbumInteger(album, MC_TRACK_FIELD_THUMBNAIL_ID),
+                .has_thumbnail_id = !AlbumText(album, MC_TRACK_FIELD_THUMBNAIL_ID).empty(),
             });
         }
         try {

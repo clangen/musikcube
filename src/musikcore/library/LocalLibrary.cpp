@@ -34,8 +34,9 @@
 
 #include "pch.hpp"
 #include <sqlite3.h>
-#include "musikcore/sdk/Filesystem.h"
+#include "common/Filesystem.h"
 
+#include <musikcore/library/track/Track.h>
 #include <musikcore/library/LocalLibrary.h>
 #include <musikcore/config.h>
 #include <musikcore/library/QueryBase.h>
@@ -70,12 +71,11 @@ using namespace std::chrono;
 class LocalResourceLocator: public ILibrary::IResourceLocator {
     public:
         std::string GetTrackUri(
-            musik::core::sdk::ITrack* track,
+            musik::core::Track* track,
             const std::string& defaultUri) override
         {
-            char buffer[4096];
-            const int size = track->Uri(buffer, sizeof(buffer));
-            return size > 0 ? std::string(buffer) : defaultUri;
+            auto uri = track->Uri();
+            return uri.empty() ? defaultUri : uri;
         }
 } sResourceLocator;
 

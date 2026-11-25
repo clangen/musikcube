@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 #include <musikcore/audio/ITransport.h>
 #include <musikcore/support/Preferences.h>
 

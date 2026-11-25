@@ -58,21 +58,16 @@ namespace musik { namespace core {
             std::string GetString(const char* metakey) override;
             std::string Uri() override;
 
-            /* ITagStore */
+            /* metadata writes. */
             void SetValue(const char* metakey, const char* value) override;
             void ClearValue(const char* metakey) override;
             bool Contains(const char* metakey) override;
             void SetThumbnail(const char* data, long size) override;
             bool ContainsThumbnail() override;
-            void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
+            void SetReplayGain(const mc_replay_gain_values& replayGain) override;
 
-            /* ITrack */
-            long long GetInt64(const char* key, long long defaultValue = 0LL) override;
-            int GetInt32(const char* key, unsigned int defaultValue = 0) override;
-            double GetDouble(const char* key, double defaultValue = 0.0f) override;
-            int GetString(const char* key, char* dst, int size) override;
-            int Uri(char* dst, int size) override;
-            musik::core::sdk::ReplayGain GetReplayGain() noexcept override;
+            /* track data. */
+            mc_replay_gain_values GetReplayGain() noexcept override;
             musik::core::sdk::MetadataState GetMetadataState() noexcept override;
             void SetMetadataState(musik::core::sdk::MetadataState state) noexcept override;
 
@@ -86,7 +81,7 @@ namespace musik { namespace core {
             Track::MetadataMap metadata;
             std::mutex mutex;
             std::atomic<musik::core::sdk::MetadataState> state;
-            musik::core::sdk::ReplayGain* gain;
+            mc_replay_gain_values* gain;
     };
 
 } }

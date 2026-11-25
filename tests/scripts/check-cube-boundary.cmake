@@ -32,8 +32,6 @@ if(NOT usesContext)
   message(FATAL_ERROR "Expected ${APP} to import mc_context_create")
 endif()
 
-# Shared header-only utilities are part of the existing installed SDK.
-set(shared_headers sdk/Filesystem.h sdk/HttpClient.h sdk/String.h sdk/version.h)
 file(GLOB_RECURSE units
   "${SOURCE}/src/${HOST}/*.cpp" "${SOURCE}/src/${HOST}/*.h" "${SOURCE}/src/${HOST}/*.hpp")
 foreach(unit IN LISTS units)
@@ -43,7 +41,7 @@ foreach(unit IN LISTS units)
   file(STRINGS "${unit}" includes REGEX "^[ \t]*#[ \t]*include[ \t]+[<\"]([.][.]/)*musikcore/")
   foreach(include IN LISTS includes)
     string(REGEX REPLACE "^.*[<\"]([.][.]/)*musikcore/([^>\"]+)[>\"].*$" "\\2" header "${include}")
-    if(NOT EXISTS "${SOURCE}/include/musikcore/${header}" AND NOT header IN_LIST shared_headers)
+    if(NOT EXISTS "${SOURCE}/include/musikcore/${header}")
       file(RELATIVE_PATH unit_name "${SOURCE}" "${unit}")
       message(FATAL_ERROR "${unit_name} includes a private header: musikcore/${header}")
     endif()

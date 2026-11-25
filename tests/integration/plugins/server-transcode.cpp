@@ -2,7 +2,7 @@
 #include "../../support/check.h"
 #include <musikcore/musikcore.hpp>
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/sdk/Filesystem.h>
+#include <common/Filesystem.h>
 #include <plugins/server/BlockingTranscoder.h>
 #include <plugins/server/TranscodingAudioDataStream.h>
 

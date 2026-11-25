@@ -34,9 +34,8 @@
 
 #pragma once
 
-#include <musikcore/audio/IStream.h>
 #include <musikcore/audio/Output.h>
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 
 #include <atomic>
 #include <list>
@@ -46,6 +45,7 @@
 namespace musik { namespace core { namespace audio {
 
     struct FftContext;
+    class Stream;
 
     /* decodes one track and sends its samples to an output. a URI player or
     catalog transport can select another track while this one returns its last
@@ -108,14 +108,14 @@ namespace musik { namespace core { namespace audio {
         void Run();
         void WriteTrack();
         bool WaitForBuffers(bool interruptForSeek = false);
-        void ReturnUnusedBuffer(sdk::IBuffer* buffer);
-        void CompleteBuffer(sdk::IBuffer* buffer, mc_result outcome) override;
-        void OnBufferProcessed(sdk::IBuffer* buffer);
+        void ReturnUnusedBuffer(Buffer* buffer);
+        void CompleteBuffer(Buffer* buffer, mc_result outcome) override;
+        void OnBufferProcessed(Buffer* buffer);
         void FailPlayback(mc_result status, const char* operation = "output");
         bool Exited() const { return this->state.load() == State::Quit; }
 
         const std::shared_ptr<Output> output;
-        const IStreamPtr stream;
+        const std::shared_ptr<Stream> stream;
         Output::Writer writer;
         EventListener& listener;
         const std::string url;

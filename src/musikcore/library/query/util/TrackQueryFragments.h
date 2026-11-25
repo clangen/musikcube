@@ -38,7 +38,7 @@
 #include <musikcore/library/track/Track.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/db/Connection.h>
-#include <musikcore/sdk/ReplayGain.h>
+#include <musikcore/plugin/metadata.h>
 #include <memory>
 
 namespace musik { namespace core { namespace library { namespace query {
@@ -98,11 +98,11 @@ namespace musik { namespace core { namespace library { namespace query {
             result->SetValue(constants::Track::EXTERNAL_ID, trackQuery.ColumnText(19));
             result->SetValue(constants::Track::RATING, trackQuery.ColumnText(20));
 
-            musik::core::sdk::ReplayGain gain;
-            gain.albumGain = trackQuery.IsNull(21) ? 1.0f : trackQuery.ColumnFloat(21);
-            gain.albumPeak = trackQuery.IsNull(22) ? 1.0f : trackQuery.ColumnFloat(22);
-            gain.trackGain = trackQuery.IsNull(23) ? 1.0f : trackQuery.ColumnFloat(23);
-            gain.trackPeak = trackQuery.IsNull(24) ? 1.0f : trackQuery.ColumnFloat(24);
+            mc_replay_gain_values gain = MC_REPLAY_GAIN_VALUES_DEFAULT;
+            gain.album_gain = trackQuery.IsNull(21) ? 1.0f : trackQuery.ColumnFloat(21);
+            gain.album_peak = trackQuery.IsNull(22) ? 1.0f : trackQuery.ColumnFloat(22);
+            gain.track_gain = trackQuery.IsNull(23) ? 1.0f : trackQuery.ColumnFloat(23);
+            gain.track_peak = trackQuery.IsNull(24) ? 1.0f : trackQuery.ColumnFloat(24);
             result->SetReplayGain(gain);
 
             result->SetMetadataState(musik::core::sdk::MetadataState::Loaded);

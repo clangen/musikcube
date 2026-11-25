@@ -38,7 +38,7 @@
 #include <app/util/Messages.h>
 #include <app/util/Locale.h>
 #include <musikcore/online.hpp>
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>

@@ -50,3 +50,7 @@ target_link_libraries(session PRIVATE musikcore::musikcore Threads::Threads)
 set_target_properties(session PROPERTIES
   C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
   CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+
+add_executable(fixed_queue fixed_queue.cpp)
+target_link_libraries(fixed_queue PRIVATE musikcore::musikcore)
+set_target_properties(fixed_queue PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)

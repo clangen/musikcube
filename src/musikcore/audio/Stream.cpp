@@ -92,10 +92,6 @@ Stream::Shared Stream::Create(int samplesPerChannel, double bufferLengthSeconds,
     return Stream::Shared(new Stream(samplesPerChannel, bufferLengthSeconds, options));
 }
 
-musik::core::audio::IStream* Stream::CreateUnmanaged(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options) {
-    return new Stream(samplesPerChannel, bufferLengthSeconds, options);
-}
-
 double Stream::SetPosition(double requestedSeconds) {
     double actualSeconds = -1;
     if (!this->decoder.instance ||
@@ -249,8 +245,8 @@ void Stream::Interrupt() {
     }
 }
 
-void Stream::RecycleBuffer(IBuffer* buffer) {
-    this->recycledBuffers.push_back((Buffer*) buffer);
+void Stream::RecycleBuffer(Buffer* buffer) {
+    this->recycledBuffers.push_back(buffer);
 }
 
 bool Stream::GetNextBufferFromDecoder() {
@@ -321,7 +317,7 @@ inline Buffer* Stream::GetEmptyBuffer() {
     return nullptr;
 }
 
-IBuffer* Stream::GetNextProcessedOutputBuffer() {
+Buffer* Stream::GetNextProcessedOutputBuffer() {
     /* Do not repeatedly fill the entire pool before the output has had a
     chance to play it. In particular, a slow source can block the player
     thread even though decoded audio is already waiting here. Refill in the

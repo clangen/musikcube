@@ -57,35 +57,35 @@ using namespace musik::core::library::query::serialization;
 const std::string AllCategoriesQuery::kQueryName = "AllCategoriesQuery";
 
 AllCategoriesQuery::AllCategoriesQuery() {
-    this->result = std::make_shared<SdkValueList>();
+    this->result = std::make_shared<CategoryValues>();
 }
 
 AllCategoriesQuery::Result AllCategoriesQuery::GetResult() noexcept {
     return this->result;
 }
 
-musik::core::sdk::IValueList* AllCategoriesQuery::GetSdkResult() {
-    return new SdkValueList(this->result);
-}
-
 bool AllCategoriesQuery::OnRun(Connection& db) {
-    this->result = std::make_shared<SdkValueList>();
+    this->result = std::make_shared<CategoryValues>();
     Statement stmt("SELECT DISTINCT name FROM meta_keys ORDER BY name", db);
 
-    this->result->Add(std::make_shared<SdkValue>("album", 0, "category"));
-    this->result->Add(std::make_shared<SdkValue>("artist", 0, "category"));
-    this->result->Add(std::make_shared<SdkValue>("album_artist", 0, "category"));
-    this->result->Add(std::make_shared<SdkValue>("genre", 0, "category"));
+    const auto add = [&](std::string value) {
+        this->result->push_back({
+            .value = std::move(value),
+            .id = 0,
+            .type = "category",
+        });
+    };
+    add("album");
+    add("artist");
+    add("album_artist");
+    add("genre");
 
     while (stmt.Step() == db::Row) {
-        this->result->Add(std::make_shared<SdkValue>(
-            stmt.ColumnText(0), 0, "category"
-        ));
+        add(stmt.ColumnText(0));
     }
 
-    using Value = const SdkValue::Shared;
-    this->result->Sort([](Value& a, Value& b) -> bool {
-        return a->ToString() < b->ToString();
+    std::sort(this->result->begin(), this->result->end(), [](const auto& a, const auto& b) {
+        return a.value < b.value;
     });
 
     return true;
@@ -103,7 +103,7 @@ std::string AllCategoriesQuery::SerializeQuery() {
 
 std::string AllCategoriesQuery::SerializeResult() {
     nlohmann::json output = {
-        { "result", ValueListToJson(this->result) }
+        { "result", ValueListToJson(*this->result) }
     };
     return output.dump();
 }
@@ -111,7 +111,7 @@ std::string AllCategoriesQuery::SerializeResult() {
 void AllCategoriesQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     auto json = nlohmann::json::parse(data);
-    this->result = std::make_shared<SdkValueList>();
+    this->result = std::make_shared<CategoryValues>();
     ValueListFromJson(json["result"], *this->result);
     this->SetStatus(IQuery::Finished);
 }

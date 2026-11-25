@@ -166,8 +166,8 @@ namespace wrapper_tests {
             std::pair{MC_TRACK_FIELD_ALBUM, &album}, std::pair{MC_TRACK_FIELD_ARTIST, &artist}}) {
             using Categories = library::query::CategoryListQuery;
             const auto categories = std::make_shared<Categories>(Categories::MatchType::Substring, key);
-            if (selected->EnqueueAndWait(categories, kWaitIndefinite) < 0 || !categories->GetResult()->Count()) return false;
-            api::OpenCategory(context, *source, key, categories->GetResult()->At(0)->GetId(),
+            if (selected->EnqueueAndWait(categories, kWaitIndefinite) < 0 || !categories->GetResult()->size()) return false;
+            api::OpenCategory(context, *source, key, categories->GetResult()->at(0).id,
                 MC_TRACK_SEARCH_ALBUM, receive(*result));
             if (!query_test_wait_for_wakeup(++wake) || context.Dispatch() != MC_OK ||
                 result->Size() != 2 || !result->StartsAlbum(0) || result->StartsAlbum(1) ||

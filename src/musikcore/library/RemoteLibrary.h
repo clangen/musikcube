@@ -119,7 +119,7 @@ namespace musik { namespace core { namespace library {
             void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError reason) override;
 
             /* IResourceLocator */
-            std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
+            std::string GetTrackUri(musik::core::Track* track, const std::string& defaultUri) override;
 
             /* RemoteLibrary */
             void Connect();

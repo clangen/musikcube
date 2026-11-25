@@ -1,4 +1,5 @@
 #include "MetadataWriter.h"
+#include <musikcore/library/track/Track.h>
 
 #include <musikcore/ffi/common/error.h>
 #include <musikcore/ffi/common/primitives.h>
@@ -15,7 +16,7 @@ namespace musik { namespace core { namespace plugin {
             return ffi::exception_barrier(nullptr, [&] {
                 const std::string keyText(key.data, key.length);
                 const std::string valueText(value.data, value.length);
-                static_cast<sdk::ITagStore*>(context)->SetValue(keyText.c_str(), valueText.c_str());
+                static_cast<Track*>(context)->SetValue(keyText.c_str(), valueText.c_str());
                 return MC_OK;
             });
         }
@@ -26,7 +27,7 @@ namespace musik { namespace core { namespace plugin {
             }
             return ffi::exception_barrier(nullptr, [&] {
                 const std::string text(key.data, key.length);
-                static_cast<sdk::ITagStore*>(context)->ClearValue(text.c_str());
+                static_cast<Track*>(context)->ClearValue(text.c_str());
                 return MC_OK;
             });
         }
@@ -37,7 +38,7 @@ namespace musik { namespace core { namespace plugin {
             }
             return ffi::exception_barrier(nullptr, [&] {
                 const std::string text(key.data, key.length);
-                *present = static_cast<sdk::ITagStore*>(context)->Contains(text.c_str()) ? 1 : 0;
+                *present = static_cast<Track*>(context)->Contains(text.c_str()) ? 1 : 0;
                 return MC_OK;
             });
         }
@@ -47,7 +48,7 @@ namespace musik { namespace core { namespace plugin {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
             return ffi::exception_barrier(nullptr, [&] {
-                static_cast<sdk::ITagStore*>(context)->SetThumbnail(reinterpret_cast<const char*>(bytes.data),
+                static_cast<Track*>(context)->SetThumbnail(reinterpret_cast<const char*>(bytes.data),
                     static_cast<long>(bytes.length));
                 return MC_OK;
             });
@@ -58,7 +59,7 @@ namespace musik { namespace core { namespace plugin {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
             return ffi::exception_barrier(nullptr, [&] {
-                *present = static_cast<sdk::ITagStore*>(context)->ContainsThumbnail() ? 1 : 0;
+                *present = static_cast<Track*>(context)->ContainsThumbnail() ? 1 : 0;
                 return MC_OK;
             });
         }
@@ -68,20 +69,14 @@ namespace musik { namespace core { namespace plugin {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
             return ffi::exception_barrier(nullptr, [&] {
-                const sdk::ReplayGain values {
-                    .trackGain = gain->track_gain,
-                    .trackPeak = gain->track_peak,
-                    .albumGain = gain->album_gain,
-                    .albumPeak = gain->album_peak,
-                };
-                static_cast<sdk::ITagStore*>(context)->SetReplayGain(values);
+                static_cast<Track*>(context)->SetReplayGain(*gain);
                 return MC_OK;
             });
         }
 
     }
 
-    mc_metadata_writer CreateMetadataWriter(sdk::ITagStore& store) {
+    mc_metadata_writer CreateMetadataWriter(Track& store) {
         return {
             .struct_size = sizeof(mc_metadata_writer),
             .context = &store,

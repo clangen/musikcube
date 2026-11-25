@@ -773,19 +773,26 @@ close GATE-800 or any native-platform acceptance by themselves.
 - [ ] **SDK-REMOVE-001** Inventory remaining interface callers, ownership,
   backend/thread boundaries, and old-only adapters and select the smallest
   useful replacements; characterize affected public/runtime behavior.
-- [ ] **SDK-REMOVE-002** Remove unused preference/utility surfaces and move
+- [x] **SDK-REMOVE-002** Remove unused preference/utility surfaces and move
   genuinely shared helpers to an appropriate internal/common owner. Update
   in-tree plugins, build manifests, and direct includes across platforms.
-- [ ] **SDK-REMOVE-003** Replace `IBuffer` and its audio handoff with a direct
+  Shared helpers are private; the fixed ring queue is an installed C++ utility.
+- [x] **SDK-REMOVE-003** Replace `IBuffer` and its audio handoff with a direct
   ownership model. Preserve fixed-pool, completion, cancellation and real-time
   guarantees; run output, transport and player contract tests.
-- [ ] **SDK-REMOVE-004** Replace `IPlaybackService`, track-list/editor APIs and
+- [x] **SDK-REMOVE-004** Replace `IPlaybackService`, track-list/editor APIs and
   unnecessary proxy machinery with owner-directed operations. Verify queue,
   playback, notifications and remote/local behavior through real entry points.
-- [ ] **SDK-REMOVE-005** Remove metadata/track/resource SDK object graphs and
+- [x] **SDK-REMOVE-005** Remove metadata/track/resource SDK object graphs and
   wrappers, preserving typed query backend routing, data/track lifetimes,
   custom keys, paged results and persisted identifiers.
+  Linux integration and targeted contract tests cover these changes; native
+  platform acceptance remains separately tracked.
 - [ ] **SDK-REMOVE-006** Remove all remaining obsolete SDK interfaces, wrappers,
   PCH/build/install entries and legacy-only tests. Add a scoped source/binary
   boundary guard; run normal, testing-disabled, installed consumer/provider,
   platform, and packaging checks applicable to the change.
+
+  The old `sdk/I*.h` interfaces and their wrappers have been removed, and
+  `musikcore.integration.plugins.retired_sdk_boundary` guards the source
+  boundary. Testing-disabled, native-platform and packaging checks remain.

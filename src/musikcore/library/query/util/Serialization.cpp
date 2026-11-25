@@ -58,60 +58,58 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         }
 
-        nlohmann::json MetadataMapListToJson(const MetadataMapList& input) {
+        nlohmann::json MetadataMapsToJson(const std::vector<AlbumRecord>& input) {
             nlohmann::json result;
-            for (size_t i = 0; i < input.Count(); i++) {
-                nlohmann::json outputMetadata;
-                auto inputMap = input.GetSharedAt(i);
-                inputMap->Each([&outputMetadata](const std::string& key, const std::string& value) {
-                    outputMetadata[key] = value;
-                });
-                result.push_back({
-                    { "id", inputMap->GetId() },
-                    { "value", inputMap->GetTypeValue() },
-                    { "type", inputMap->GetType() },
-                    { "metadata", outputMetadata }
-                });
-            }
-            return result;
-        }
-
-        void MetadataMapListFromJson(const nlohmann::json& input, MetadataMapList& output) {
-            output.Clear();
-            for (size_t i = 0; i < input.size(); i++) {
-                auto& element = input[i];
-                auto outputMap = std::make_shared<MetadataMap>(
-                    element.value("id", -1LL),
-                    element.value("value", "unknown"),
-                    element.value("type", "unknown"));
-                auto& metadata = element["metadata"];
-                for (auto& kv : metadata.items()) {
-                    outputMap->Set(kv.key().c_str(), kv.value().get<std::string>().c_str());
+            for (const auto& album : input) {
+                nlohmann::json metadata;
+                for (const auto& [key, value] : album.metadata) {
+                    metadata[key] = value;
                 }
-                output.Add(outputMap);
-            }
-        }
-
-        nlohmann::json ValueListToJson(const SdkValueList& input) {
-            nlohmann::json result;
-            input.Each([&result](auto value) {
                 result.push_back({
-                    { "value", value->ToString() },
-                    { "id", value->GetId() },
-                    { "type", value->GetType() }
+                    { "id", album.id },
+                    { "value", album.value },
+                    { "type", album.type },
+                    { "metadata", metadata },
                 });
-            });
+            }
             return result;
         }
 
-        void ValueListFromJson(const nlohmann::json& input, SdkValueList& output) {
-            output.Clear();
-            for (auto& v : input) {
-                output.Add(std::make_shared<SdkValue>(
-                    v["value"],
-                    v["id"],
-                    v["type"]
-               ));
+        void MetadataMapsFromJson(const nlohmann::json& input, std::vector<AlbumRecord>& output) {
+            output.clear();
+            for (const auto& element : input) {
+                AlbumRecord album {
+                    .id = element.value("id", -1LL),
+                    .value = element.value("value", "unknown"),
+                    .type = element.value("type", "unknown"),
+                };
+                for (const auto& kv : element["metadata"].items()) {
+                    album.metadata.emplace(kv.key(), kv.value().get<std::string>());
+                }
+                output.push_back(std::move(album));
+            }
+        }
+
+        nlohmann::json ValueListToJson(const CategoryValues& input) {
+            nlohmann::json result;
+            for (const auto& value : input) {
+                result.push_back({
+                    { "value", value.value },
+                    { "id", value.id },
+                    { "type", value.type },
+                });
+            }
+            return result;
+        }
+
+        void ValueListFromJson(const nlohmann::json& input, CategoryValues& output) {
+            output.clear();
+            for (const auto& value : input) {
+                output.push_back({
+                    .value = value["value"].get<std::string>(),
+                    .id = value["id"].get<int64_t>(),
+                    .type = value["type"].get<std::string>(),
+                });
             }
         }
 
@@ -149,10 +147,10 @@ namespace musik { namespace core { namespace library { namespace query {
 
                 auto replayGain = input->GetReplayGain();
                 output["replayGain"] = {
-                    { "albumGain", replayGain.albumGain },
-                    { "albumPeak", replayGain.albumPeak },
-                    { "trackGain", replayGain.trackGain },
-                    { "trackPeak", replayGain.trackPeak }
+                    { "albumGain", replayGain.album_gain },
+                    { "albumPeak", replayGain.album_peak },
+                    { "trackGain", replayGain.track_gain },
+                    { "trackPeak", replayGain.track_peak }
                 };
             }
 
@@ -191,11 +189,11 @@ namespace musik { namespace core { namespace library { namespace query {
 
                 auto replayGainJson = input["replayGain"];
                 replayGainJson = replayGainJson.is_null() ? nlohmann::json() : replayGainJson;
-                musik::core::sdk::ReplayGain replayGain;
-                replayGain.albumGain = replayGainJson.value("albumGain", 1.0f);
-                replayGain.albumPeak = replayGainJson.value("albumPeak", 1.0f);
-                replayGain.trackGain = replayGainJson.value("trackGain", 1.0f);
-                replayGain.trackPeak = replayGainJson.value("trackPeak", 1.0f);
+                mc_replay_gain_values replayGain = MC_REPLAY_GAIN_VALUES_DEFAULT;
+                replayGain.album_gain = replayGainJson.value("albumGain", 1.0f);
+                replayGain.album_peak = replayGainJson.value("albumPeak", 1.0f);
+                replayGain.track_gain = replayGainJson.value("trackGain", 1.0f);
+                replayGain.track_peak = replayGainJson.value("trackPeak", 1.0f);
                 output->SetReplayGain(replayGain);
             }
 
@@ -229,7 +227,7 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         }
 
-        nlohmann::json ITrackListToJsonIdList(const ITrackList& input) {
+        nlohmann::json TrackListToJsonIdList(const TrackList& input) {
             nlohmann::json output;
             for (size_t i = 0; i < input.Count(); i++) {
                 output.push_back(input.GetId(i));

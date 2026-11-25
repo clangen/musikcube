@@ -1,5 +1,11 @@
+add_test(NAME musikcore.integration.plugins.retired_sdk_boundary
+  COMMAND "${CMAKE_COMMAND}" "-DSOURCE=${PROJECT_SOURCE_DIR}"
+    -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-retired-plugin-sdk.cmake")
+set_tests_properties(musikcore.integration.plugins.retired_sdk_boundary PROPERTIES
+  LABELS "integration;musikcore;plugins;contract" TIMEOUT 20)
+
 add_executable(musikcore_fixed_ring_queue_test unit/common/fixed-ring-queue.cpp)
-target_include_directories(musikcore_fixed_ring_queue_test PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_include_directories(musikcore_fixed_ring_queue_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_compile_features(musikcore_fixed_ring_queue_test PRIVATE cxx_std_17)
 set_target_properties(musikcore_fixed_ring_queue_test PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")

@@ -208,8 +208,8 @@ public:
         snapshot.shuffled = this->service.IsShuffled();
         if (const auto track = this->service.GetPlaying()) {
             const auto gain = track->GetReplayGain();
-            snapshot.has_replay_gain = gain.albumGain != 1.0f || gain.albumPeak != 1.0f ||
-                gain.trackGain != 1.0f || gain.trackPeak != 1.0f;
+            snapshot.has_replay_gain = gain.album_gain != 1.0f || gain.album_peak != 1.0f ||
+                gain.track_gain != 1.0f || gain.track_peak != 1.0f;
         }
         switch (this->service.GetRepeatMode()) {
             case RepeatMode::None:

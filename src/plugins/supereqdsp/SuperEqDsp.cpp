@@ -34,7 +34,6 @@
 
 #include "constants.h"
 #include "SuperEqDsp.h"
-#include <musikcore/sdk/constants.h>
 #include <atomic>
 #include <string>
 #include <vector>

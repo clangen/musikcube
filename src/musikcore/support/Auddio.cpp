@@ -37,7 +37,7 @@
 #include "OnlineTransfer.h"
 #include "Common.h"
 #include <common/NarrowCast.h>
-#include <musikcore/sdk/HttpClient.h>
+#include <common/HttpClient.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <sstream>

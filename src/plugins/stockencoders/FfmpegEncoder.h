@@ -36,7 +36,6 @@
 
 #include <musikcore/plugin/encoder.h>
 #include <musikcore/plugin.h>
-#include <musikcore/sdk/DataBuffer.h>
 #include <string>
 
 extern "C" {

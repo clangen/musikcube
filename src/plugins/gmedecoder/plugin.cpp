@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 #include "GmeDecoder.h"
 #include "GmeIndexerSource.h"
 #include <musikcore/plugin/registration.hpp>

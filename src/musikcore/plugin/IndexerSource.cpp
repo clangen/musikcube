@@ -3,6 +3,7 @@
 #include "MetadataWriter.h"
 #include "Plugins.h"
 #include <musikcore/library/Indexer.h>
+#include <musikcore/library/track/IndexerTrack.h>
 #include <musikcore/library/IndexerSourceId.h>
 #include <common/Contract.h>
 #include <musikcore/ffi/common/error.h>
@@ -26,7 +27,7 @@ namespace musik { namespace core { namespace plugin {
 
             ~IndexerWriterScope() {
                 for (auto* record : this->records) {
-                    record->Release();
+                    delete record;
                 }
             }
 
@@ -56,8 +57,8 @@ namespace musik { namespace core { namespace plugin {
                 return result;
             }
 
-            static sdk::ITagStore* Store(mc_metadata_record* record) {
-                return reinterpret_cast<sdk::ITagStore*>(record);
+            static IndexerTrack* Store(mc_metadata_record* record) {
+                return reinterpret_cast<IndexerTrack*>(record);
             }
 
             static mc_result MC_CALL CreateRecord(void* context, mc_metadata_record** output) {
@@ -66,18 +67,14 @@ namespace musik { namespace core { namespace plugin {
                 }
                 auto& self = *static_cast<IndexerWriterScope*>(context);
                 return self.Observe(ffi::exception_barrier(nullptr, [&] {
-                    auto* record = self.writer.CreateWriter();
+                    auto record = self.writer.CreateWriter();
                     if (!record) {
                         return MC_ERROR_INTERNAL;
                     }
-                    try {
-                        self.records.insert(record);
-                    }
-                    catch (...) {
-                        record->Release();
-                        throw;
-                    }
-                    *output = reinterpret_cast<mc_metadata_record*>(record);
+                    auto* raw = record.get();
+                    self.records.insert(raw);
+                    record.release();
+                    *output = reinterpret_cast<mc_metadata_record*>(raw);
                     return MC_OK;
                 }));
             }
@@ -99,7 +96,7 @@ namespace musik { namespace core { namespace plugin {
                 auto& self = *static_cast<IndexerWriterScope*>(context);
                 auto* store = Store(*record);
                 musik::contract::Assert(self.records.erase(store) == 1, "destroying a foreign indexer record");
-                store->Release();
+                delete store;
                 *record = nullptr;
             }
 
@@ -180,7 +177,7 @@ namespace musik { namespace core { namespace plugin {
 
             Indexer& writer;
             IndexerSource& source;
-            std::unordered_set<sdk::ITagStore*> records;
+            std::unordered_set<IndexerTrack*> records;
             bool failed { false };
         };
     }

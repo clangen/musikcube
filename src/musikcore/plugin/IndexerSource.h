@@ -1,7 +1,7 @@
 #pragma once
 
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 #include <string>
 
 namespace musik { namespace core { class Indexer; } }

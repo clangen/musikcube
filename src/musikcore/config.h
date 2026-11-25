@@ -35,7 +35,7 @@
 #pragma once
 
 #include <common/Utf8.h>
-#include "sdk/constants.h"
+#include "common/LegacyConstants.h"
 
 #include <memory>
 

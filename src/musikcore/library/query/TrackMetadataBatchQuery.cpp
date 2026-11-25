@@ -38,9 +38,9 @@
 #include <musikcore/library/query/util/Serialization.h>
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/query/util/TrackQueryFragments.h>
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 
-#include <musikcore/sdk/ReplayGain.h>
+#include <musikcore/plugin/metadata.h>
 #include <algorithm>
 #include <stdexcept>
 

@@ -124,6 +124,13 @@ int main() {
         if (!TEST_CHECK(remote->GetTrackUri(&track, "").find("\"allowUntrustedCertificate\":false") != std::string::npos)) {
             return 1;
         }
+        /* long provider URIs must survive remote-track wrapping intact. */
+        LibraryTrack longTrack(43, 1);
+        const std::string longUri = std::string(5000, 'a') + "-tail.mp3";
+        longTrack.SetValue("filename", longUri.c_str());
+        if (!TEST_CHECK(remote->GetTrackUri(&longTrack, "").find(longUri) != std::string::npos)) {
+            return 1;
+        }
         if (!TEST_CHECK(context.GetLibraryStatus().kind == MC_LIBRARY_LOCAL) ||
             !TEST_CHECK(remoteUntouched()) ||
             !TEST_CHECK(context.SelectLibrary(MC_LIBRARY_LOCAL) == MC_OK) ||

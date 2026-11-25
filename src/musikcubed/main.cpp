@@ -21,7 +21,7 @@
 #include <ev++.h>
 
 #include <musikcore/musikcore.hpp>
-#include "../musikcore/sdk/version.h"
+#include "common/version.h"
 
 namespace api = musik::core::api;
 

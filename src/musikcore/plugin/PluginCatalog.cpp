@@ -5,7 +5,7 @@
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/sdk/Filesystem.h>
+#include <common/Filesystem.h>
 #include <algorithm>
 #include <filesystem>
 #include <string_view>

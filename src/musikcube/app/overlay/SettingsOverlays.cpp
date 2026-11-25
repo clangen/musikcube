@@ -39,7 +39,7 @@
 
 #include <app/util/Locale.h>
 #include <musikcore/preferences.hpp>
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 
 #include <musikcube/app/util/PreferenceKeys.h>
 #include <musikcube/app/util/Hotkeys.h>

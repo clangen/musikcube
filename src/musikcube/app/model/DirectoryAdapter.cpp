@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include <musikcore/paths.hpp>
-#include <musikcore/sdk/Filesystem.h>
+#include <common/Filesystem.h>
 
 #include <cursespp/Text.h>
 #include <cursespp/ScrollAdapterBase.h>

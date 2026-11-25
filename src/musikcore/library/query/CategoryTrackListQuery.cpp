@@ -40,7 +40,7 @@
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/util/Serialization.h>
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;

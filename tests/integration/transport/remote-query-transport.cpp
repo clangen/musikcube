@@ -22,8 +22,8 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <common/runtime/MessageQueue.h>
-#include <musikcore/sdk/version.h>
-#include <musikcore/sdk/Filesystem.h>
+#include <common/version.h>
+#include <common/Filesystem.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/Common.h>

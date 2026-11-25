@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "HttpServer.h"
-#include "musikcore/sdk/Filesystem.h"
+#include "common/Filesystem.h"
 #include "Constants.h"
 #include "Util.h"
 #include "Transcoder.h"
@@ -42,7 +42,7 @@
 #include <string_view>
 
 #include <musikcore/library.hpp>
-#include <musikcore/sdk/String.h>
+#include <common/String.h>
 
 #pragma warning(push, 0)
 #include <websocketpp/base64/base64.hpp>

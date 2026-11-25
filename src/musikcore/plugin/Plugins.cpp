@@ -45,12 +45,12 @@
 #include <filesystem>
 #include <mutex>
 #include <thread>
-#include <musikcore/sdk/Filesystem.h>
+#include <common/Filesystem.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 
 #include <musikcore/debug.h>
 #include <common/Contract.h>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/audio/Buffer.h>

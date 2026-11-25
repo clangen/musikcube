@@ -1,6 +1,7 @@
 #include <common/FilesystemPath.h>
 #include "../../support/FatalScope.h"
 #include <musikcore/audio/Output.h>
+#include <musikcore/audio/Buffer.h>
 
 #include "../../support/plugins/PluginCandidates.h"
 #include <cstdio>
@@ -15,22 +16,12 @@
 using musik::core::audio::Output;
 /* fixed test storage exercises the host boundary without decoder or catalog
 services. metadata may be changed deliberately to test malformed views. */
-struct Buffer final : musik::core::sdk::IBuffer {
-    long SampleRate() const override { return rate; }
-    void SetSampleRate(long value) override { rate = value; }
-    int Channels() const override { return channels; }
-    void SetChannels(int value) override { channels = value; }
-    float* BufferPointer() const override { return missingData ? nullptr : const_cast<float*>(samples.data()); }
-    long Samples() const override { return count; }
-    void SetSamples(long value) override { count = value; }
-    long Bytes() const override { return bytes; }
-    void Release() override {}
+struct Buffer {
     std::array<float, 32> samples {};
-    long rate = 48000;
-    int channels = 2;
-    long count = 32;
-    long bytes = sizeof(samples);
-    bool missingData = false;
+    musik::core::audio::Buffer block { samples.data(), static_cast<int>(samples.size()) };
+
+    Buffer() { block.SetSampleRate(48000); }
+    operator musik::core::audio::Buffer&() { return block; }
 };
 using musik::core::ffi::PluginRegistry;
 
@@ -46,7 +37,7 @@ static void require(bool condition, const char* message) {
 /* completion must be consumed by the player worker, including inline plugin
 completion. the backend callback may not invoke FFT or recycle PCM itself. */
 struct Sink final : Output::CompletionSink {
-    void CompleteBuffer(musik::core::sdk::IBuffer* buffer, mc_result outcome) override {
+    void CompleteBuffer(musik::core::audio::Buffer* buffer, mc_result outcome) override {
         require(outcome == MC_OK || outcome == MC_ERROR_CANCELLED || outcome == expectedFailure,
             "completion has the expected outcome");
         returnedBuffers.push_back(buffer);
@@ -54,7 +45,7 @@ struct Sink final : Output::CompletionSink {
         cancelled += outcome == MC_ERROR_CANCELLED;
         failed += outcome != MC_OK && outcome != MC_ERROR_CANCELLED;
     }
-    std::vector<musik::core::sdk::IBuffer*> returnedBuffers;
+    std::vector<musik::core::audio::Buffer*> returnedBuffers;
     unsigned completed = 0;
     unsigned cancelled = 0;
     unsigned failed = 0;
@@ -73,6 +64,27 @@ static void environmentFlag(const char* name, bool enabled) {
 /* load a recording DLL through the production registry, then exercise the
 same owning boundary used by playback rather than a test-only validator. */
 int main(int argc, char** argv) {
+    /* a failed resize must leave the fixed playback slice valid. */
+    std::array<float, 32> fixedStorage {};
+    musik::core::audio::Buffer fixed(fixedStorage.data(), static_cast<int>(fixedStorage.size()));
+    bool rejected = false;
+    try {
+        fixed.SetSamples(34);
+    }
+    catch (const std::exception&) {
+        rejected = true;
+    }
+    require(rejected && fixed.Samples() == 32 && fixed.BufferPointer() == fixedStorage.data(),
+        "failed resize preserves the fixed playback slice");
+    rejected = false;
+    try {
+        fixed.Copy(fixedStorage.data(), 2, 31);
+    }
+    catch (const std::exception&) {
+        rejected = true;
+    }
+    require(rejected && fixed.Samples() == 32 && fixed.BufferPointer() == fixedStorage.data(),
+        "out-of-bounds copy preserves the fixed playback slice");
     const std::string mode = argc == 3 ? argv[1] : "";
     const bool fatal = mode == "--fatal-stop" || mode == "--fatal-duplicate" || mode == "--fatal-stale";
     require(argc == 2 || fatal, "recording DLL supplied");
@@ -137,9 +149,9 @@ int main(int argc, char** argv) {
     });
     require(registry.Initialize(candidates.Directory()) == MC_OK, "recording DLL loads");
     Buffer buffer;
-    buffer.SetSampleRate(48000);
-    buffer.SetChannels(2);
-    buffer.SetSamples(32);
+    buffer.block.SetSampleRate(48000);
+    buffer.block.SetChannels(2);
+    buffer.block.SetSamples(32);
     Sink sink;
     const auto factory = registry.Find<mc_output_factory>("output.test");
     if (!fatal) {
@@ -211,33 +223,23 @@ int main(int argc, char** argv) {
         /* malformed decoder metadata must fail before creating a backend. the
         C view is now built internally, so callers cannot supply mismatched
         storage, format, or struct prefixes separately. */
-        buffer.missingData = true;
-        require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "missing storage");
-        buffer.missingData = false;
-        buffer.channels = 0;
+        musik::core::audio::Buffer missing(nullptr, 32);
+        require(writer.TryQueueAudioBuffer(missing) == MC_ERROR_INVALID_ARGUMENT, "missing storage");
+        buffer.block.SetChannels(0);
         require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "zero channel count");
-        buffer.channels = 2;
-        buffer.rate = 0;
+        buffer.block.SetChannels(2);
+        buffer.block.SetSampleRate(0);
         require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "zero sample rate");
         if (static_cast<uint64_t>(std::numeric_limits<long>::max()) > UINT32_MAX) {
-            buffer.rate = std::numeric_limits<long>::max();
+            buffer.block.SetSampleRate(std::numeric_limits<long>::max());
             require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "sample rate exceeds C field");
         }
-        buffer.rate = 48000;
-        buffer.count = -1;
-        require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "negative sample count");
-        buffer.count = 0;
+        buffer.block.SetSampleRate(48000);
+        buffer.block.SetSamples(0);
         require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "empty buffer");
-        buffer.count = 31;
+        buffer.block.SetSamples(31);
         require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "partial audio frame");
-        buffer.count = 34;
-        require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "samples exceed backing storage");
-        buffer.count = std::numeric_limits<long>::max() - 1;
-        require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "oversized sample count");
-        buffer.count = 32;
-        buffer.bytes = -1;
-        require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "negative storage capacity");
-        buffer.bytes = sizeof(buffer.samples);
+        buffer.block.SetSamples(32);
         output.SetVolume(std::numeric_limits<double>::quiet_NaN());
         output.SetVolume(-0.1);
         output.SetVolume(1.1);
@@ -256,9 +258,9 @@ int main(int argc, char** argv) {
         /* a valid first block does not make later decoder metadata trustworthy.
         reject a later overrun without calling the already-prepared backend. */
         const auto beforeInvalid = calls.size();
-        buffer.count = 34;
+        buffer.block.SetChannels(3);
         require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_INVALID_ARGUMENT, "later malformed block rejected");
-        buffer.count = 32;
+        buffer.block.SetChannels(2);
         require(calls.size() == beforeInvalid, "invalid later block never reaches plugin");
 
         /* same-format gapless blocks keep the device generation alive. */
@@ -266,14 +268,14 @@ int main(int argc, char** argv) {
         writer.ProcessCompletions();
         require(calls.back() == "queue" && calls.size() == started.size() + 1, "gapless does not reprepare");
         /* a different format drains the prior generation before reprepare. */
-        buffer.SetSampleRate(44100);
+        buffer.block.SetSampleRate(44100);
         const auto beforeChange = calls.size();
         require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "format-changing transition");
         writer.ProcessCompletions();
         const std::vector<std::string> transition(calls.begin() + beforeChange, calls.end());
         require(transition == std::vector<std::string>({ "drain", "stop", "prepare", "queue" }),
             "old audio drains before the device generation changes");
-        buffer.SetSampleRate(48000);
+        buffer.block.SetSampleRate(48000);
         output.Stop();
         require(writer.TryQueueAudioBuffer(buffer) == MC_ERROR_CANCELLED, "stop closes admission");
         output.Resume();
@@ -487,7 +489,7 @@ int main(int argc, char** argv) {
         Output::Writer replacement(output, newSink);
         Buffer oldStorage;
         Buffer changedStorage;
-        changedStorage.rate = 44100;
+        changedStorage.block.SetSampleRate(44100);
         output.Resume();
         require(retired.TryQueueAudioBuffer(oldStorage) == MC_OK, "format transition begins with pending audio");
         {
@@ -547,7 +549,7 @@ int main(int argc, char** argv) {
         require(newTrack.TryQueueAudioBuffer(second) == MC_OK, "next block reuses the freed slot");
 
         newTrack.ProcessCompletions();
-        require(incoming.returnedBuffers == std::vector<musik::core::sdk::IBuffer*> { &first, &second },
+        require(incoming.returnedBuffers == std::vector<musik::core::audio::Buffer*> { &first.block, &second.block },
             "completed buffers reach the player in track order after slot reuse");
     }
 
@@ -565,14 +567,14 @@ int main(int argc, char** argv) {
         require(writer.TryQueueAudioBuffer(failed) == MC_OK, "device accepts and then fails the next buffer");
 
         writer.ProcessCompletions();
-        require(returned.returnedBuffers == std::vector<musik::core::sdk::IBuffer*> { &failed } &&
+        require(returned.returnedBuffers == std::vector<musik::core::audio::Buffer*> { &failed.block } &&
                 returned.failed == 1,
             "worker receives the failed buffer before stopping the driver");
 
         require(writer.StopAfterFailure() == MC_OK, "worker can stop the failed driver");
         writer.ProcessCompletions();
         require(!writer.HasPending() && returned.completed == 2 && returned.cancelled == 1 &&
-                returned.returnedBuffers.back() == &held,
+                returned.returnedBuffers.back() == &held.block,
             "stop returns the first buffer exactly once");
     }
 

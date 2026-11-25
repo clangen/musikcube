@@ -86,7 +86,7 @@ int LameEncoder::Encode(const mc_pcm_view& pcm, char** data) {
     }
     size_t requiredBytes = numSamples + (numSamples + 3) / 4 + 7200;
 
-    encodedBytes.reset(requiredBytes);
+    encodedBytes.resize(requiredBytes);
 
     int encodeCount = -1;
 
@@ -97,15 +97,15 @@ int LameEncoder::Encode(const mc_pcm_view& pcm, char** data) {
                 lame,
                 pcm.data,
                 numSamples,
-                encodedBytes.data,
-                encodedBytes.length);
+                encodedBytes.data(),
+                encodedBytes.size());
     }
     /* non-stereo. convert to stereo! */
     else {
-        downmix.reset(numSamples * 2);
+        downmix.resize(numSamples * 2);
 
         const float* from = pcm.data;
-        float* to = downmix.data;
+        float* to = downmix.data();
 
         if (channels == 1) {
             /* mono: duplicate the channel to L and R */
@@ -129,34 +129,34 @@ int LameEncoder::Encode(const mc_pcm_view& pcm, char** data) {
         encodeCount =
             lame_encode_buffer_interleaved_ieee_float(
                 lame,
-                downmix.data,
+                downmix.data(),
                 numSamples,
-                encodedBytes.data,
-                encodedBytes.length);
+                encodedBytes.data(),
+                encodedBytes.size());
     }
 
     if (encodeCount < 0) {
         return -1;
     }
 
-    encodedBytes.length = (size_t)encodeCount;
+    encodedBytes.resize(static_cast<size_t>(encodeCount));
 
-    *data = reinterpret_cast<char*>(encodedBytes.data);
-    return encodedBytes.length;
+    *data = reinterpret_cast<char*>(encodedBytes.data());
+    return encodedBytes.size();
 }
 
 int LameEncoder::Flush(char** data) {
     /* 7200 bytes minimum is required for the flush op; see lame.h */
-    if (encodedBytes.length < 7200) {
-        encodedBytes.reset(7200);
+    if (encodedBytes.size() < 7200) {
+        encodedBytes.resize(7200);
     }
 
     int count = lame_encode_flush(
         lame,
-        encodedBytes.data,
-        encodedBytes.length);
+        encodedBytes.data(),
+        encodedBytes.size());
 
-    *data = reinterpret_cast<char*>(encodedBytes.data);
+    *data = reinterpret_cast<char*>(encodedBytes.data());
     return count;
 }
 

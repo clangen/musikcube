@@ -36,7 +36,7 @@
 #include <system_error>
 #include "Playback.h"
 #include <musikcore/library/query/PersistedPlayQueueQuery.h>
-#include <musikcore/sdk/constants.h>
+#include <common/LegacyConstants.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <cmath>
 
@@ -80,20 +80,20 @@ namespace musik {
                 transport.SetVolume(transport.Volume() - delta);
             }
 
-            void SeekForward(IPlaybackService& playback) {
+            void SeekForward(PlaybackService& playback) {
                 playback.SetPosition(playback.GetPosition() + 10.0f);
             }
 
-            void SeekBack(IPlaybackService& playback) {
+            void SeekBack(PlaybackService& playback) {
                 playback.SetPosition(playback.GetPosition() - 10.0f);
             }
 
-            void SeekForwardProportional(IPlaybackService& playback) {
+            void SeekForwardProportional(PlaybackService& playback) {
                 double moveBy = 0.05f * playback.GetDuration();
                 playback.SetPosition(playback.GetPosition() + moveBy);
             }
 
-            void SeekBackProportional(IPlaybackService& playback) {
+            void SeekBackProportional(PlaybackService& playback) {
                 double moveBy = 0.05f * playback.GetDuration();
                 playback.SetPosition(playback.GetPosition() - moveBy);
             }

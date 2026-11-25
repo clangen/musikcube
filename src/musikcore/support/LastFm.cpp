@@ -38,7 +38,7 @@
 #include "OnlineTransfer.h"
 
 #include <musikcore/support/Preferences.h>
-#include <musikcore/sdk/HttpClient.h>
+#include <common/HttpClient.h>
 #include <musikcore/support/PreferenceKeys.h>
 
 #include <sstream>

@@ -1,4 +1,4 @@
-#include <common/FixedRingQueue.h>
+#include <musikcore/plugin/fixed_ring_queue.hpp>
 
 #include <cstdio>
 #include <memory>

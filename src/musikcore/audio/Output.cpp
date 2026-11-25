@@ -16,7 +16,7 @@ namespace musik { namespace core { namespace audio {
         /* buffers can contain a short final block or a new track's format.
         read their properties once; only build the C view after checking that
         the claimed samples fit in storage and contain complete audio frames. */
-        mc_result readPcmView(const sdk::IBuffer& buffer, mc_pcm_view& pcm) {
+        mc_result readPcmView(const Buffer& buffer, mc_pcm_view& pcm) {
             const auto rate = buffer.SampleRate();
             const auto channels = buffer.Channels();
             if (rate <= 0 || static_cast<uint64_t>(rate) > UINT32_MAX || channels <= 0) {
@@ -24,12 +24,12 @@ namespace musik { namespace core { namespace audio {
             }
 
             const auto samples = buffer.Samples();
-            const auto bytes = buffer.Bytes();
+            const auto capacity = buffer.Capacity();
             const auto data = buffer.BufferPointer();
-            if (!data || samples <= 0 || bytes <= 0 || samples % channels != 0) {
+            if (!data || samples <= 0 || capacity <= 0 || samples % channels != 0) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
-            if (static_cast<uint64_t>(samples) > static_cast<uint64_t>(bytes) / sizeof(float)) {
+            if (samples > capacity) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
 
@@ -507,7 +507,7 @@ namespace musik { namespace core { namespace audio {
         return MC_OK;
     }
 
-    mc_result Output::Writer::TryQueueAudioBuffer(sdk::IBuffer& buffer) {
+    mc_result Output::Writer::TryQueueAudioBuffer(Buffer& buffer) {
         mc_pcm_view pcm = MC_PCM_VIEW_DEFAULT;
         const auto valid = readPcmView(buffer, pcm);
         if (valid != MC_OK) {

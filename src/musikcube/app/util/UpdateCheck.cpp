@@ -45,8 +45,8 @@
 #include <cursespp/DialogOverlay.h>
 
 #include <common/runtime/Message.h>
-#include <musikcore/sdk/HttpClient.h>
-#include <musikcore/sdk/version.h>
+#include <common/HttpClient.h>
+#include <common/version.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>

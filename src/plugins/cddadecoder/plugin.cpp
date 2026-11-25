@@ -3,7 +3,7 @@
 #include "CddaIndexer.h"
 
 #include <musikcore/plugin/registration.hpp>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 namespace {
     template<typename Operation> mc_result Call(Operation&& operation) noexcept {

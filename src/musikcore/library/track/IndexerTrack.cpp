@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "musikcore/sdk/Filesystem.h"
+#include "common/Filesystem.h"
 
 #include <musikcore/library/track/IndexerTrack.h>
 
@@ -147,17 +147,6 @@ int IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
     return defaultValue;
 }
 
-double IndexerTrack::GetDouble(const char* key, double defaultValue) {
-    try {
-        std::string value = GetString(key);
-        if (value.size()) {
-            return std::stod(GetString(key));
-        }
-    } catch (...) {
-    }
-    return defaultValue;
-}
-
 void IndexerTrack::SetValue(const char* metakey, const char* value) {
     if (metakey && value && strlen(value)) {
         this->internalMetadata->metadata.insert(
@@ -205,11 +194,11 @@ bool IndexerTrack::ContainsThumbnail() {
     return this->GetThumbnailId() != 0;
 }
 
-void IndexerTrack::SetReplayGain(const ReplayGain& replayGain) {
-    this->internalMetadata->replayGain = std::make_shared<ReplayGain>(replayGain);
+void IndexerTrack::SetReplayGain(const mc_replay_gain_values& replayGain) {
+    this->internalMetadata->replayGain = std::make_shared<mc_replay_gain_values>(replayGain);
 }
 
-ReplayGain IndexerTrack::GetReplayGain() {
+mc_replay_gain_values IndexerTrack::GetReplayGain() {
     throw std::runtime_error("not implemented");
 }
 
@@ -224,14 +213,6 @@ void IndexerTrack::SetMetadataState(MetadataState state) {
 
 std::string IndexerTrack::Uri() {
     return this->GetString("filename");
-}
-
-int IndexerTrack::GetString(const char* key, char* dst, int size) {
-    return (int) CopyString(this->GetString(key), dst, size);
-}
-
-int IndexerTrack::Uri(char* dst, int size) {
-    return (int) CopyString(this->Uri(), dst, size);
 }
 
 Track::MetadataIteratorRange IndexerTrack::GetValues(const char* metakey) {
@@ -429,8 +410,8 @@ void IndexerTrack::SaveReplayGain(db::Connection& dbConnection)
         }
 
         {
-            if (replayGain->albumGain != 1.0 || replayGain->albumPeak != 1.0 ||
-                replayGain->albumGain != 1.0 || replayGain->albumPeak != 1.0)
+            if (replayGain->album_gain != 1.0 || replayGain->album_peak != 1.0 ||
+                replayGain->album_gain != 1.0 || replayGain->album_peak != 1.0)
             {
                 db::Statement insert(
                     "INSERT INTO replay_gain "
@@ -439,10 +420,10 @@ void IndexerTrack::SaveReplayGain(db::Connection& dbConnection)
                     dbConnection);
 
                 insert.BindInt64(0, this->trackId);
-                insert.BindFloat(1, replayGain->albumGain);
-                insert.BindFloat(2, replayGain->albumPeak);
-                insert.BindFloat(3, replayGain->trackGain);
-                insert.BindFloat(4, replayGain->trackPeak);
+                insert.BindFloat(1, replayGain->album_gain);
+                insert.BindFloat(2, replayGain->album_peak);
+                insert.BindFloat(3, replayGain->track_gain);
+                insert.BindFloat(4, replayGain->track_peak);
 
                 insert.Step();
             }

@@ -37,8 +37,8 @@
 #include "ServerControls.h"
 
 #include <musikcore/playback.hpp>
-#include <musikcore/sdk/version.h>
-#include <musikcore/sdk/String.h>
+#include <common/version.h>
+#include <common/String.h>
 #include <array>
 #include <limits>
 #include <charconv>

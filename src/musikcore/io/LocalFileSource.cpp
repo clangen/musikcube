@@ -5,7 +5,7 @@ interfaces before any system header declares stat or seek. */
 #endif
 
 #include "LocalFileSource.h"
-#include <musikcore/sdk/FilesystemPath.h>
+#include <common/FilesystemPath.h>
 
 #include <algorithm>
 #include <atomic>

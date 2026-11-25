@@ -43,8 +43,8 @@
 #endif
 
 #include "CategoryQueryUtil.h"
-#include <musikcore/library/metadata/MetadataMapList.h>
-#include <musikcore/library/query/util/SdkWrappers.h>
+#include <musikcore/library/query/AlbumRecord.h>
+#include <musikcore/library/query/CategoryValue.h>
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/track/TrackList.h>
 #include <musikcore/library/ILibrary.h>
@@ -60,19 +60,19 @@ namespace musik { namespace core { namespace library { namespace query {
             const nlohmann::json& input,
             musik::core::library::query::category::PredicateList& output);
 
-        nlohmann::json MetadataMapListToJson(
-            const musik::core::MetadataMapList& input);
+        nlohmann::json MetadataMapsToJson(
+            const std::vector<AlbumRecord>& input);
 
-        void MetadataMapListFromJson(
+        void MetadataMapsFromJson(
             const nlohmann::json& input,
-            musik::core::MetadataMapList& output);
+            std::vector<AlbumRecord>& output);
 
         nlohmann::json ValueListToJson(
-            const musik::core::library::query::SdkValueList& input);
+            const musik::core::library::query::CategoryValues& input);
 
         void ValueListFromJson(
             const nlohmann::json& input,
-            musik::core::library::query::SdkValueList& output);
+            musik::core::library::query::CategoryValues& output);
 
         nlohmann::json TrackToJson(
             const musik::core::TrackPtr input,
@@ -93,8 +93,8 @@ namespace musik { namespace core { namespace library { namespace query {
             musik::core::ILibraryPtr library,
             bool onlyIds);
 
-        nlohmann::json ITrackListToJsonIdList(
-            const musik::core::sdk::ITrackList& input);
+        nlohmann::json TrackListToJsonIdList(
+            const musik::core::TrackList& input);
 
         template <typename SetType, typename DataType>
         void JsonArrayToSet(const nlohmann::json& input, SetType& output) {

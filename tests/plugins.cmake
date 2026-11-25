@@ -273,6 +273,7 @@ set_target_properties(musikcore_output_recording PROPERTIES SUFFIX "${CMAKE_SHAR
   RUNTIME_OUTPUT_DIRECTORY "${provider_output_directory}")
 musikcube_restrict_exports(musikcore_output_recording mc_plugin_get_api)
 add_executable(musikcore_output_host_test integration/plugins/output-host.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/audio/Buffer.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/audio/Output.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/Plugin.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/PluginRegistry.cpp"
@@ -337,7 +338,8 @@ set_tests_properties(musikcore.integration.plugins.encoder PROPERTIES
 add_executable(musikcore_metadata_writer_test unit/musikcore/metadata-writer.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/plugin/MetadataWriter.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
-target_include_directories(musikcore_metadata_writer_test PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src")
+target_include_directories(musikcore_metadata_writer_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/src/3rdparty/include")
 target_compile_features(musikcore_metadata_writer_test PRIVATE cxx_std_20)
 set_target_properties(musikcore_metadata_writer_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 add_dependencies(musikcube_tests musikcore_metadata_writer_test)

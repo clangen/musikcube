@@ -1,61 +1,14 @@
 #include "../../support/check.h"
 
 #include <musikcore/audio/PlaybackMath.h>
-#include <musikcore/sdk/DataBuffer.h>
 #include <plugins/portaudioout/PcmFrames.h>
 
 #include <array>
 #include <limits>
-#include <new>
 
 using namespace musik::core::audio;
 
-namespace {
-    /* force a growth failure without exhausting the machine's memory. */
-    struct FailingElement {
-        static inline bool failNext = false;
-        int value = 0;
-
-        FailingElement() {
-            if (failNext) {
-                failNext = false;
-                throw std::bad_alloc();
-            }
-        }
-    };
-
-    bool preservesBufferOnFailedGrowth() {
-        DataBuffer<FailingElement> buffer;
-        buffer.reset(1);
-        buffer.pos()->value = 42;
-        FailingElement::failNext = true;
-        try {
-            buffer.reset(2);
-        }
-        catch (const std::bad_alloc&) {
-            return buffer.avail() == 1 && buffer.pos()->value == 42;
-        }
-        return false;
-    }
-}
-
 int main() {
-    if (!TEST_CHECK(preservesBufferOnFailedGrowth())) {
-        return 1;
-    }
-    DataBuffer<char> first;
-    DataBuffer<char> second;
-    first.append("abcd", 4);
-    second.append("xyz", 3);
-    first.inc(2);
-    second.inc(1);
-    first.swap(second);
-    if (!TEST_CHECK(first.avail() == 2 && *first.pos() == 'y') ||
-        !TEST_CHECK(second.avail() == 2 && *second.pos() == 'c'))
-    {
-        return 1;
-    }
-
     for (const std::size_t channels : { 1, 2, 6 }) {
         std::array<float, 24> source {};
         std::array<float, 26> target;

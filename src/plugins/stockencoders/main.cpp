@@ -3,7 +3,7 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/registration.hpp>
 #include <musikcore/plugin/encoder.hpp>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 #include <algorithm>
 #include <cctype>

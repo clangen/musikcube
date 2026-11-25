@@ -80,19 +80,6 @@ AppendPlaylistQuery::AppendPlaylistQuery(
     const int offset) noexcept
 : library(library)
 , sharedTracks(tracks)
-, rawTracks(nullptr)
-, playlistId(playlistId)
-, offset(offset) {
-
-}
-
-AppendPlaylistQuery::AppendPlaylistQuery(
-    musik::core::ILibraryPtr library,
-    const int64_t playlistId,
-    musik::core::sdk::ITrackList *tracks,
-    const int offset) noexcept
-: library(library)
-, rawTracks(tracks)
 , playlistId(playlistId)
 , offset(offset) {
 
@@ -101,7 +88,7 @@ AppendPlaylistQuery::AppendPlaylistQuery(
 bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
     this->result = false;
 
-    const ITrackList* tracks = sharedTracks ? sharedTracks.get() : rawTracks;
+    const TrackList* tracks = sharedTracks.get();
 
     if (!tracks || !tracks->Count() || playlistId == 0) {
         this->result = true;
@@ -177,13 +164,13 @@ void AppendPlaylistQuery::SendPlaylistMutationBroadcast() {
 /* ISerializableQuery */
 
 std::string AppendPlaylistQuery::SerializeQuery() {
-    const ITrackList* tracks = rawTracks ? rawTracks : sharedTracks.get();
+    const TrackList* tracks = sharedTracks.get();
     nlohmann::json output = {
     { "name", kQueryName },
         { "options", {
             { "playlistId", this->playlistId },
             { "offset", this->offset },
-            { "tracks", ITrackListToJsonIdList(*tracks) }
+            { "tracks", TrackListToJsonIdList(*tracks) }
         }}
     };
     return output.dump();

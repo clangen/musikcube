@@ -54,11 +54,6 @@ namespace musik { namespace core { namespace library { namespace query {
             static std::shared_ptr<SavePlaylistQuery> Save(
                 musik::core::ILibraryPtr library,
                 const std::string& playlistName,
-                musik::core::sdk::ITrackList* tracks);
-
-            static std::shared_ptr<SavePlaylistQuery> Save(
-                musik::core::ILibraryPtr library,
-                const std::string& playlistName,
                 const std::string& categoryType,
                 int64_t categoryId);
 
@@ -66,11 +61,6 @@ namespace musik { namespace core { namespace library { namespace query {
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
-
-            static std::shared_ptr<SavePlaylistQuery> Replace(
-                musik::core::ILibraryPtr library,
-                const int64_t playlistId,
-                musik::core::sdk::ITrackList* tracks);
 
             static std::shared_ptr<SavePlaylistQuery> Rename(
                 musik::core::ILibraryPtr library,
@@ -115,11 +105,6 @@ namespace musik { namespace core { namespace library { namespace query {
             SavePlaylistQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& playlistName,
-                musik::core::sdk::ITrackList* tracks);
-
-            SavePlaylistQuery(
-                musik::core::ILibraryPtr library,
-                const std::string& playlistName,
                 const std::string& categoryType,
                 int64_t categoryId);
 
@@ -127,11 +112,6 @@ namespace musik { namespace core { namespace library { namespace query {
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
-
-            SavePlaylistQuery(
-                musik::core::ILibraryPtr library,
-                const int64_t playlistId,
-                musik::core::sdk::ITrackList* tracks);
 
             SavePlaylistQuery(
                 musik::core::ILibraryPtr library,
@@ -147,21 +127,6 @@ namespace musik { namespace core { namespace library { namespace query {
             SavePlaylistQuery(musik::core::ILibraryPtr library); /* for query (de)serialization */
 
             void SendPlaylistMutationBroadcast();
-
-            struct TrackListWrapper {
-                DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackListWrapper)
-
-                TrackListWrapper() noexcept;
-                TrackListWrapper(std::shared_ptr<musik::core::TrackList> shared) noexcept;
-
-                bool Exists() noexcept;
-                size_t Count();
-                TrackPtr Get(musik::core::ILibraryPtr library, size_t index);
-                musik::core::sdk::ITrackList* Get() noexcept;
-
-                std::shared_ptr<musik::core::TrackList> sharedTracks;
-                musik::core::sdk::ITrackList* rawTracks;
-            };
 
             enum class Operation: int {
                 Create = 1,
@@ -180,14 +145,14 @@ namespace musik { namespace core { namespace library { namespace query {
             bool AddTracksToPlaylist(
                 musik::core::db::Connection &db,
                 int64_t playlistId,
-                TrackListWrapper& tracks);
+                const std::shared_ptr<musik::core::TrackList>& tracks);
 
             bool result{ false };
             Operation op;
             musik::core::ILibraryPtr library;
             std::string playlistName, categoryType;
             int64_t playlistId, categoryId;
-            TrackListWrapper tracks;
+            std::shared_ptr<musik::core::TrackList> tracks;
     };
 
 } } } }

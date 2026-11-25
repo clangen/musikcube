@@ -72,12 +72,12 @@
 #include <common/runtime/IMessageTarget.h>
 #include <common/runtime/Message.h>
 #include <common/runtime/MessageQueue.h>
-#include <musikcore/sdk/Filesystem.h>
-#include <musikcore/sdk/String.h>
+#include <common/Filesystem.h>
+#include <common/String.h>
 #include <common/DeleteDefaults.h>
 #include <common/NarrowCast.h>
 #include <common/Utf8.h>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 
 #include <cursespp/cursespp/App.h>
 #include <cursespp/cursespp/AppLayout.h>

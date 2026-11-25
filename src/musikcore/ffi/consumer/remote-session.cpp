@@ -7,7 +7,7 @@
 #include "request.h"
 
 #include <musikcore/library/RemoteLibrary.h>
-#include <musikcore/sdk/version.h>
+#include <common/version.h>
 #include <common/runtime/MessageQueue.h>
 
 #include <atomic>
