@@ -340,7 +340,8 @@ namespace musik { namespace core { namespace audio {
             return lock;
         }
         this->waitingControls.fetch_add(1);
-        lock.try_lock_for(ControlWait);
+        /* the caller checks owns_lock() after the wait. */
+        (void) lock.try_lock_for(ControlWait);
         this->waitingControls.fetch_sub(1);
         this->NotifyWriters();
         return lock;
