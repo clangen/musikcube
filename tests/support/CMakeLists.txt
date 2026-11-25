@@ -1300,3 +1300,18 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET mpris)
       LABELS "integration;musikcore;plugins;contract" TIMEOUT 90)
   endif()
 endif()
+
+if(UNIX AND TARGET sndioout)
+  add_executable(musikcore_sndio_devices_test ../integration/plugins/sndio-devices.cpp)
+  target_include_directories(musikcore_sndio_devices_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_link_libraries(musikcore_sndio_devices_test PRIVATE ${CMAKE_DL_LIBS})
+  set_target_properties(musikcore_sndio_devices_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  add_dependencies(musikcore_sndio_devices_test sndioout)
+  add_dependencies(musikcube_integration_tests musikcore_sndio_devices_test)
+  add_dependencies(musikcube_tests musikcore_sndio_devices_test)
+  add_test(NAME musikcore.integration.plugins.sndio_devices
+    COMMAND musikcore_sndio_devices_test "$<TARGET_FILE:sndioout>")
+  set_tests_properties(musikcore.integration.plugins.sndio_devices PROPERTIES
+    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+endif()

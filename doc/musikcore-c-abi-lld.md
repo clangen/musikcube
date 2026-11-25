@@ -2205,6 +2205,9 @@ stage; migrated families must not keep a parallel former-SDK path.
 - [ ] **OUT-010** Convert `sndioout`.
   The provider is named `sndio`; settings saved under the previous
   `Sndio IOutput` name are not migrated automatically.
+  An intermittent silence after switching outputs was observed with sndio and
+  ALSA; restarting playback recovered it. Cached tracks appeared correlated,
+  but the cause and a reliable automated reproduction remain open.
 - [ ] **OUT-011** Convert Windows `directsoundout`.
 - [ ] **OUT-012** Convert Windows `wasapiout`.
   The shared-mode provider now registers the C output and configuration APIs.

@@ -31,8 +31,8 @@ namespace {
     }
 }
 
-mc_result SndioOut::VisitDevices(mc_output_device_fn read, void* user) {
-    ReportDefault(read, user);
+mc_result SndioOut::VisitDevices(mc_output_device_fn, void*) {
+    /* sndio does not enumerate endpoints; the host offers the default. */
     return MC_OK;
 }
 
