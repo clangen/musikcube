@@ -155,9 +155,16 @@ bool Stream::GetInitialFormat(mc_audio_format& format) const {
 bool Stream::OpenStream(std::string uri, Output* output) {
     const auto& media = musik::core::plugin::Environment().Media();
     const mc_string_view path { uri.data(), uri.size() };
-    mc_stream source = MC_STREAM_DEFAULT;
-    if (media.create_stream(media.context, path, &source, nullptr) != MC_OK) {
+    const auto failed = [](const char* operation, mc_result status) {
+        if (status != MC_ERROR_CANCELLED) {
+            musik::debug::error(TAG, std::string(operation) + " failed (status " + std::to_string(status) + ")");
+        }
         return false;
+    };
+    mc_stream source = MC_STREAM_DEFAULT;
+    auto status = media.create_stream(media.context, path, &source, nullptr);
+    if (status != MC_OK) {
+        return failed("stream creation", status);
     }
 
     /* publish each handle before calling into the provider. Stop can now wake
@@ -169,12 +176,14 @@ bool Stream::OpenStream(std::string uri, Output* output) {
             return false;
         }
     }
-    if (source.api->open(source.instance, path, MC_STREAM_OPEN_READ, nullptr) != MC_OK) {
-        return false;
+    status = source.api->open(source.instance, path, MC_STREAM_OPEN_READ, nullptr);
+    if (status != MC_OK) {
+        return failed("stream open", status);
     }
     mc_decoder codec = MC_DECODER_DEFAULT;
-    if (media.create_decoder(media.context, &this->dataStream, &codec, nullptr) != MC_OK) {
-        return false;
+    status = media.create_decoder(media.context, &this->dataStream, &codec, nullptr);
+    if (status != MC_OK) {
+        return failed("decoder creation", status);
     }
     {
         std::lock_guard lock(this->sourceMutex);
@@ -183,8 +192,9 @@ bool Stream::OpenStream(std::string uri, Output* output) {
             return false;
         }
     }
-    if (codec.api->open(codec.instance, &this->dataStream, nullptr) != MC_OK) {
-        return false;
+    status = codec.api->open(codec.instance, &this->dataStream, nullptr);
+    if (status != MC_OK) {
+        return failed("decoder open", status);
     }
 
     const auto rate = output ? output->GetDefaultSampleRate() : 0;
@@ -200,18 +210,23 @@ bool Stream::OpenStream(std::string uri, Output* output) {
         .channels = 2,
         .channel_layout = 0,
     };
-    if (buffers.create(buffers.context, &initial, 0, &this->scratch, nullptr) != MC_OK) {
-        return false;
+    status = buffers.create(buffers.context, &initial, 0, &this->scratch, nullptr);
+    if (status != MC_OK) {
+        return failed("decoder buffer creation", status);
     }
     mc_stream_info info = MC_STREAM_INFO_DEFAULT;
-    if (source.api->get_info(source.instance, &info) != MC_OK) {
-        return false;
+    status = source.api->get_info(source.instance, &info);
+    if (status != MC_OK) {
+        return failed("stream information", status);
     }
     if (info.flags & MC_STREAM_CAN_PREFETCH) {
         this->capabilities |= (int) musik::core::sdk::Capability::Prebuffer;
         this->RefillInternalBuffers();
     }
-    return this->decodeStatus == MC_OK;
+    if (this->decodeStatus != MC_OK) {
+        return failed("initial decode", this->decodeStatus);
+    }
+    return true;
 }
 
 void Stream::Interrupt() {

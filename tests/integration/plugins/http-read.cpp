@@ -44,9 +44,10 @@ namespace {
 /* each client loads the shipped provider and creates a stream before any disk
 work. separate client processes can share the same application data directory. */
 template<typename Work>
-static void withHttpStream(const std::string& directory, const std::string& data, Work work) {
+static void withHttpStream(const std::string& directory, const std::string& data, Work work,
+    musik::core::ffi::PluginRegistry::Logger logger = {}) {
     using musik::core::ffi::PluginRegistry;
-    PluginRegistry registry;
+    PluginRegistry registry(std::move(logger));
     require(registry.Initialize(directory) == MC_OK, "load registry");
     const auto factory = registry.Find<mc_stream_factory>(HttpId);
     require(static_cast<bool>(factory), "find HTTP source");
@@ -139,5 +140,32 @@ int checkProgressiveHttpRead(const char* pluginPath) {
         require(read() == MC_OK && !bytes && state == MC_READ_END, "EOF after the final byte");
         writer.join();
     });
+    std::string diagnostic;
+    std::mutex diagnosticMutex;
+    auto logger = [&](mc_log_level level, mc_string_view, mc_string_view message) {
+        if (level == MC_LOG_ERROR) {
+            std::lock_guard lock(diagnosticMutex);
+            diagnostic.assign(message.data, message.length);
+        }
+    };
+    withHttpStream(files.Directory(), data, [&](const mc_stream& stream) {
+        asio::io_context sockets;
+        using Tcp = asio::ip::tcp;
+        Tcp::acceptor listener(sockets, { asio::ip::address_v4::loopback(), 0 });
+        const auto url = "http://127.0.0.1:" + std::to_string(listener.local_endpoint().port()) + "/secret-token";
+        std::thread server([&] {
+            Tcp::iostream socket;
+            listener.accept(socket.rdbuf()->socket());
+            std::string line;
+            while (std::getline(socket, line) && line != "\r") {}
+            socket << "HTTP/1.0 404 Not Found\r\nContent-Length: 0\r\n\r\n" << std::flush;
+        });
+        const auto status = stream.api->open(stream.instance, { url.data(), url.size() }, MC_STREAM_OPEN_READ, nullptr);
+        server.join();
+        require(status == MC_ERROR_IO, "HTTP failure reaches caller");
+        std::lock_guard lock(diagnosticMutex);
+        require(diagnostic.find("404") != std::string::npos, "HTTP failure is logged with status");
+        require(diagnostic.find("secret-token") == std::string::npos, "HTTP diagnostic excludes URL secrets");
+    }, logger);
     return 0;
 }

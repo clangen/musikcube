@@ -51,7 +51,7 @@ class HttpDataStream {
 public:
     static constexpr std::string_view RemoteTrack = "musikcore://remote-track/";
 
-    static mc_result Create(LruDiskCache& cache, const mc_plugin_services& services, void** instance);
+    static mc_result Create(LruDiskCache& cache, const mc_host_api& host, const mc_plugin_services& services, void** instance);
     static const mc_configuration_api& Configuration();
 
     ~HttpDataStream();
@@ -74,7 +74,7 @@ private:
         int readTimeout;
     };
 
-    HttpDataStream(LruDiskCache& cache, Options options);
+    HttpDataStream(LruDiskCache& cache, const mc_host_api& host, Options options);
 
     void Download() noexcept;
     mc_result Transfer();
@@ -85,6 +85,7 @@ private:
     static int CurlProgress(void* context, curl_off_t, curl_off_t, curl_off_t, curl_off_t);
 
     LruDiskCache& cache;
+    const mc_host_api& host;
     Options options;
     std::filesystem::path partial;
     size_t cacheId {};

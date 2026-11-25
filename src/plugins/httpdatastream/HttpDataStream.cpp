@@ -41,6 +41,7 @@ interfaces before any system header declares stat or seek. */
 #include "config.h"
 #include "HttpDataStream.h"
 #include <musikcore/sdk/String.h>
+#include <musikcore/plugin.h>
 #include <../../3rdparty/include/nlohmann/json.hpp>
 #include <../../3rdparty/include/websocketpp/base64/base64.hpp>
 
@@ -102,7 +103,9 @@ const mc_configuration_api& HttpDataStream::Configuration() {
     return schema;
 }
 
-mc_result HttpDataStream::Create(LruDiskCache& cache, const mc_plugin_services& services, void** instance) {
+mc_result HttpDataStream::Create(
+    LruDiskCache& cache, const mc_host_api& host, const mc_plugin_services& services, void** instance)
+{
     if (!services.preferences || !services.data_directory.length) {
         return MC_ERROR_UNSUPPORTED;
     }
@@ -126,12 +129,13 @@ mc_result HttpDataStream::Create(LruDiskCache& cache, const mc_plugin_services& 
     const auto directory = services.data_directory;
     options.directory =
         std::filesystem::u8path(directory.data, directory.data + directory.length) / "cache" / "httpclient";
-    *instance = new HttpDataStream(cache, std::move(options));
+    *instance = new HttpDataStream(cache, host, std::move(options));
     return MC_OK;
 }
 
-HttpDataStream::HttpDataStream(LruDiskCache& cache, Options options)
+HttpDataStream::HttpDataStream(LruDiskCache& cache, const mc_host_api& host, Options options)
 : cache(cache)
+, host(host)
 , options(std::move(options)) {
 }
 
@@ -369,12 +373,14 @@ mc_result HttpDataStream::Transfer() {
         return MC_ERROR_IO;
     }
     auto* handle = curl.get();
+    char curlError[CURL_ERROR_SIZE] {};
     std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> headers(
         authorization.empty() ? nullptr : curl_slist_append(nullptr, authorization.c_str()), curl_slist_free_all);
     if (!authorization.empty() && !headers) {
         return MC_ERROR_IO;
     }
     curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, curlError);
     curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers.get());
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, allowUntrusted ? 0L : 1L);
     if (allowUntrusted) {
@@ -412,7 +418,21 @@ mc_result HttpDataStream::Transfer() {
         /* retry transient failures only before consuming body bytes. a second
         response appended to a partial track would corrupt the decoder's input. */
         std::unique_lock lock(mutex);
-        if (received || retryWeight >= 10 || (response >= 400 && response < 500 && response != 429)) {
+        if (received || retryWeight >= 10 || (response >= 400 && response < 500 && response != 429) ||
+            status == CURLE_PEER_FAILED_VERIFICATION)
+        {
+            if (!cancelled && this->host.log) {
+                std::string message = "HTTP transfer failed: ";
+                message += curl_easy_strerror(status);
+                if (status == CURLE_PEER_FAILED_VERIFICATION && std::strstr(curlError, "certificate has expired")) {
+                    message += " (certificate has expired)";
+                }
+                if (response) {
+                    message += " (HTTP " + std::to_string(response) + ")";
+                }
+                constexpr mc_string_view component { "HttpDataStream", sizeof("HttpDataStream") - 1 };
+                this->host.log(this->host.host_context, MC_LOG_ERROR, component, view(message));
+            }
             break;
         }
         retryWeight += response == 429 ? 1 : 2;

@@ -78,12 +78,15 @@ namespace {
         return MC_OK;
     }
 
+    struct Provider;
+    mc_result createStream(Provider&, const mc_plugin_services&, void**);
+
     mc_result MC_CALL create(void* context, const mc_plugin_services* services, void** instance, mc_error**) {
         if (!services) {
             return MC_ERROR_UNSUPPORTED;
         }
         return call([&] {
-            return HttpDataStream::Create(*static_cast<LruDiskCache*>(context), *services, instance);
+            return createStream(*static_cast<Provider*>(context), *services, instance);
         });
     }
 
@@ -144,19 +147,25 @@ namespace {
     /* active streams share a cache index for this engine session. the registry
     keeps the immutable factory and its cache alive through the last destroy. */
     struct Provider {
+        explicit Provider(const mc_host_api& host) : host(host) {}
+        const mc_host_api& host;
         LruDiskCache cache;
         mc_stream_factory factory {
             .struct_size = sizeof(mc_stream_factory),
-            .context = &cache,
+            .context = this,
             .instance_api = &Methods,
             .can_handle = canHandle,
             .create = create,
         };
     };
 
+    mc_result createStream(Provider& provider, const mc_plugin_services& services, void** instance) {
+        return HttpDataStream::Create(provider.cache, provider.host, services, instance);
+    }
+
     mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_error**) {
         return call([&]() -> mc_result {
-            auto* provider = new Provider;
+            auto* provider = new Provider(*host);
             *context = provider;
             const auto configured =
                 musik::core::plugin::RegisterConfiguration(*host, HttpDataStream::Configuration());
