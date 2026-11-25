@@ -69,6 +69,7 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
     size_t current = 0;
     bool advanceRequested = false;
     bool controlsVisible = true;
+    bool confirmClose = false;
     bool automatic = true;
     enum class Panel { None, Settings, Find };
     Panel panel = Panel::None;
@@ -166,11 +167,32 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
             {
                 input.Stop();
             }
-            if (event.type == SDL_KEYDOWN && !event.key.repeat && !ImGui::GetIO().WantCaptureKeyboard) {
+            if (event.type == SDL_KEYDOWN && !event.key.repeat && confirmClose) {
                 switch (event.key.keysym.sym) {
-                    case SDLK_ESCAPE:
+                    case SDLK_RETURN:
+                    case SDLK_KP_ENTER:
+                    case SDLK_y:
                         input.Stop();
+                        confirmClose = false;
                         break;
+                    case SDLK_ESCAPE:
+                    case SDLK_n:
+                        confirmClose = false;
+                        break;
+                }
+            }
+            else if (event.type == SDL_KEYDOWN && !event.key.repeat && event.key.keysym.sym == SDLK_ESCAPE) {
+                if (controlsVisible && panel != Panel::None) {
+                    panel = Panel::None;
+                }
+                else {
+                    confirmClose = true;
+                }
+            }
+            else if (event.type == SDL_KEYDOWN && !event.key.repeat && !confirmClose &&
+                !ImGui::GetIO().WantCaptureKeyboard)
+            {
+                switch (event.key.keysym.sym) {
                     case SDLK_TAB:
                         controlsVisible = !controlsVisible;
                         break;
@@ -313,8 +335,42 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
                     }
                 }
             }
-            /* keep active text editing and held buttons visible until the interaction ends. */
-            if (!ImGui::IsAnyItemActive() && !ImGui::GetIO().WantTextInput) {
+            constexpr const char* closeDialog = "Close projectM?";
+            if (confirmClose && !ImGui::IsPopupOpen(closeDialog)) {
+                ImGui::OpenPopup(closeDialog);
+            }
+            const auto displaySize = ImGui::GetIO().DisplaySize;
+            ImGui::SetNextWindowPos(ImVec2(displaySize.x * 0.5f, displaySize.y * 0.5f),
+                ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            if (ImGui::BeginPopupModal(closeDialog, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+                if (!confirmClose) {
+                    ImGui::CloseCurrentPopup();
+                }
+                else {
+                    ImGui::TextUnformatted("Are you sure you want to close?");
+                    const auto& style = ImGui::GetStyle();
+                    const float buttonsWidth = ImGui::CalcTextSize("Yes").x + ImGui::CalcTextSize("No").x +
+                        style.FramePadding.x * 4.0f + style.ItemSpacing.x;
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                        std::max(0.0f, ImGui::GetContentRegionAvail().x - buttonsWidth));
+                    if (ImGui::Button("Yes")) {
+                        input.Stop();
+                        confirmClose = false;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("No")) {
+                        confirmClose = false;
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+                ImGui::EndPopup();
+            }
+            /* keep open panels visible even when the pointer and keyboard are idle. */
+            if (panel != Panel::None || confirmClose) {
+                controlsAlpha = 1.0f;
+            }
+            else if (!ImGui::IsAnyItemActive() && !ImGui::GetIO().WantTextInput) {
                 controlsAlpha = std::max(0.0f, controlsAlpha - ImGui::GetIO().DeltaTime);
             }
             ImGui::Render();
