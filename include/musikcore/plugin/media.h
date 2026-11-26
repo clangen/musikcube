@@ -11,8 +11,8 @@ extern "C" {
 /* lets a plugin open another resource through the same providers used by
 playback. a subsong source uses this for its container; the server uses it
 to select the decoder for a requested track. calls may run on workers. */
-typedef struct mc_media_host_api {
-    /* readable bytes; initialize with MC_MEDIA_HOST_API_DEFAULT. */
+typedef struct mc_plugin_media_service {
+    /* readable bytes; initialize with MC_PLUGIN_MEDIA_SERVICE_DEFAULT. */
     uint32_t struct_size;
 
     /* host-owned session state. pass unchanged to each operation. */
@@ -31,9 +31,9 @@ typedef struct mc_media_host_api {
     /* select a compressor by extension or MIME type. the caller destroys it. */
     mc_result (MC_CALL* create_encoder)(
         void* context, mc_string_view format, mc_encoder* out_encoder, mc_error** error);
-} mc_media_host_api;
+} mc_plugin_media_service;
 
-#define MC_MEDIA_HOST_API_DEFAULT { sizeof(mc_media_host_api), NULL, NULL, NULL, NULL }
+#define MC_PLUGIN_MEDIA_SERVICE_DEFAULT { sizeof(mc_plugin_media_service), NULL, NULL, NULL, NULL }
 
 #ifdef __cplusplus
 }

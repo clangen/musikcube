@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-struct LibraryInstance;
+namespace musik { namespace core { namespace library { class Library; } } }
 struct TrackResultData;
 
 enum class QueueEdit { Move, Remove, Clear };

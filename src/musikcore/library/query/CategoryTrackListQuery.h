@@ -52,25 +52,25 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_CLASS_DEFAULTS(CategoryTrackListQuery)
 
             CategoryTrackListQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
             CategoryTrackListQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const std::string& column,
                 int64_t id,
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
             CategoryTrackListQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const category::Predicate predicate,
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
             CategoryTrackListQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const category::PredicateList predicates,
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
@@ -89,7 +89,7 @@ namespace musik { namespace core { namespace library { namespace query {
             std::string SerializeResult() override;
             void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<CategoryTrackListQuery> DeserializeQuery(
-                musik::core::ILibraryPtr library, const std::string& data);
+                musik::core::LibraryBackend::Shared library, const std::string& data);
 
         protected:
             /* QueryBase */
@@ -105,7 +105,7 @@ namespace musik { namespace core { namespace library { namespace query {
             void ProcessResult(musik::core::db::Statement& stmt);
 
             /* regular instance variables */
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             bool parseHeaders;
             size_t hash;
             std::string orderBy;

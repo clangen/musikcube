@@ -99,8 +99,8 @@ typedef void (MC_CALL* mc_preference_text_fn)(void* user_data, mc_string_view va
 
 /* read the saved preferences scoped to the factory's plugin. a stream can
 snapshot settings at creation so later edits only affect new requests. */
-typedef struct mc_preferences_host_api {
-    /* available bytes. initialize with MC_PREFERENCES_HOST_API_DEFAULT. */
+typedef struct mc_plugin_preferences_service {
+    /* available bytes. initialize with MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT. */
     uint32_t struct_size;
 
     /* host-owned preference store. pass unchanged to read_integer. */
@@ -119,9 +119,9 @@ typedef struct mc_preferences_host_api {
     /* read text with a fallback; the callback's view is valid only during the call. */
     mc_result(MC_CALL* read_text)(void* context, mc_string_view key, mc_string_view fallback,
         mc_preference_text_fn read, void* user_data);
-} mc_preferences_host_api;
+} mc_plugin_preferences_service;
 
-#define MC_PREFERENCES_HOST_API_DEFAULT { sizeof(mc_preferences_host_api), NULL, NULL, NULL, NULL, NULL }
+#define MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT { sizeof(mc_plugin_preferences_service), NULL, NULL, NULL, NULL, NULL }
 
 #ifdef __cplusplus
 }

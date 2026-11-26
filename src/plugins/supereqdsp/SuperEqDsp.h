@@ -50,5 +50,5 @@ class SuperEqDsp {
         SuperEqState* supereq {nullptr};
         uint64_t lastUpdated { 0 };
         bool enabled;
-        mc_preferences_host_api preferences;
+        mc_plugin_preferences_service preferences;
 };

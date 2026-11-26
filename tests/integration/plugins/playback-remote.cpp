@@ -351,5 +351,48 @@ int main(int argc, char** argv) {
     require(accessCompleted, "playback access runs on the owner thread");
     require(activeAccess.Close() == MC_OK, "close after playback access");
 
+    /* the indexer service uses the same owner-thread command and shutdown
+    contract, independently of the playback service table. */
+#ifdef _WIN32
+    _putenv_s("MUSIKCORE_TEST_REMOTE_ACCESS", "");
+    _putenv_s("MUSIKCORE_TEST_REMOTE_INDEXER", "1");
+#else
+    unsetenv("MUSIKCORE_TEST_REMOTE_ACCESS");
+    setenv("MUSIKCORE_TEST_REMOTE_INDEXER", "1", 1);
+#endif
+    options.services = MC_SERVICE_PLAYBACK | MC_SERVICE_INDEXER;
+    const auto readEvents = [&] {
+        std::ifstream input(path);
+        return std::string(std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>());
+    };
+    std::ofstream(path, std::ios::trunc).close();
+    musik::core::api::Context pendingIndexer(options);
+    require(pendingIndexer.Close() == MC_OK, "close with queued indexer scheduling");
+    const auto cancelledIndexer = readEvents();
+    const auto cancelledAt = cancelledIndexer.find("cancelled\n");
+    require(cancelledAt != std::string::npos &&
+            cancelledIndexer.find("cancelled\n", cancelledAt + 1) == std::string::npos &&
+            cancelledIndexer.find("stop\n") < cancelledAt && cancelledAt < cancelledIndexer.find("join\n") &&
+            cancelledIndexer.find("wrong-thread") == std::string::npos,
+        "queued indexer completion cancels once on owner before join");
+
+    std::ofstream(path, std::ios::trunc).close();
+    musik::core::api::Context activeIndexer(options);
+    bool indexerCompleted = false;
+    const auto indexerDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (!indexerCompleted && std::chrono::steady_clock::now() < indexerDeadline) {
+        require(activeIndexer.Dispatch() == MC_OK, "dispatch plugin indexer scheduling");
+        indexerCompleted = readEvents().find("command\n") != std::string::npos;
+        if (!indexerCompleted) {
+            test_host_event_wait_for(wakeup.get(), 100);
+        }
+    }
+    require(indexerCompleted && activeIndexer.Close() == MC_OK, "plugin indexer scheduling completes");
+    const auto indexed = readEvents();
+    const auto completedAt = indexed.find("command\n");
+    require(indexed.find("command\n", completedAt + 1) == std::string::npos &&
+            indexed.find("wrong-thread") == std::string::npos &&
+            indexed.find("late-indexer-accepted") == std::string::npos && completedAt < indexed.find("stop\n"),
+        "indexer scheduling completes once on owner before shutdown");
     return 0;
 }

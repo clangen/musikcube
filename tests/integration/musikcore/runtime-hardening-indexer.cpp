@@ -1,11 +1,11 @@
 #include <musikcore/library/Indexer.h>
-#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/LocalLibraryBackend.h>
 #include <musikcore/library/query/SourceListQuery.h>
 #include "runtime-hardening-cases.h"
 #include "../../support/ApiHost.h"
 #include "../../support/check.h"
 #include <musikcore/musikcore.hpp>
-#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/LibraryBackends.h>
 #include <musikcore/plugin/Plugins.h>
 #include <common/FilesystemPath.h>
 
@@ -105,7 +105,7 @@ namespace runtime_tests {
             return false;
         }
         unsigned starts = 0;
-        auto started = LibraryFactory::Instance().DefaultLocalLibrary()->Indexer()->Started.Subscribe([&] {
+        auto started = musik::core::library::DefaultLocalBackend()->Indexer()->Started.Subscribe([&] {
             if (++starts == 2) {
                 nextStarted();
             }
@@ -138,7 +138,7 @@ namespace runtime_tests {
         }
         /* source discovery can be constructed after shutdown. it must retain
         descriptions for loaded providers even when they had no catalog rows. */
-        auto library = LibraryFactory::Instance().DefaultLocalLibrary();
+        auto library = musik::core::library::DefaultLocalBackend();
         const auto sources = library->Sources();
         if (!TEST_CHECK(!sources.empty())) {
             return false;
@@ -151,7 +151,7 @@ namespace runtime_tests {
         if (!TEST_CHECK(database.Open(":memory:") == db::Okay)) {
             return false;
         }
-        library::LocalLibrary::CreateDatabase(database);
+        library::LocalLibraryBackend::CreateDatabase(database);
         library::query::SourceListQuery discovery(library);
         if (!TEST_CHECK(discovery.Run(database))) {
             return false;
@@ -189,7 +189,7 @@ namespace runtime_tests {
         options.flags = MC_CONTEXT_START_LOCAL;
         api::Context context(options);
         api::Indexer scanner(context);
-        auto* native = LibraryFactory::Instance().DefaultLocalLibrary()->Indexer();
+        auto* native = musik::core::library::DefaultLocalBackend()->Indexer();
         ScanGate gate;
         auto started = native->Started.Subscribe([&] {
             gate.Started();

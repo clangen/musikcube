@@ -31,7 +31,7 @@ namespace server {
         ~MediaStream();
         MediaStream& operator=(const MediaStream&) = delete;
 
-        bool Open(const mc_media_host_api& media, const std::string& uri, mc_stream_open_flags flags);
+        bool Open(const mc_plugin_media_service& media, const std::string& uri, mc_stream_open_flags flags);
         bool Close();
         const mc_stream& Handle() const { return stream; }
 
@@ -49,14 +49,14 @@ namespace server {
         ~DecodedAudio();
         DecodedAudio& operator=(const DecodedAudio&) = delete;
 
-        bool Open(const mc_media_host_api& media, const mc_audio_scratch_buffer_api& scratch, const std::string& uri);
+        bool Open(const mc_plugin_media_service& media, const mc_plugin_audio_scratch_service& scratch, const std::string& uri);
         mc_result Read(mc_pcm_view& pcm);
         bool HasDuration() const;
 
     private:
         MediaStream input;
         mc_decoder decoder = MC_DECODER_DEFAULT;
-        const mc_audio_scratch_buffer_api* scratch = nullptr;
+        const mc_plugin_audio_scratch_service* scratch = nullptr;
         mc_audio_scratch_buffer* buffer = nullptr;
         mc_decode_state state = MC_DECODE_MORE;
     };
@@ -73,7 +73,7 @@ namespace server {
     };
 
     /* on success the response takes ownership and clears the filename. */
-    std::unique_ptr<ResponseBody> TakeTemporaryFileBody(const mc_media_host_api& media, std::string& filename);
+    std::unique_ptr<ResponseBody> TakeTemporaryFileBody(const mc_plugin_media_service& media, std::string& filename);
 
-    std::unique_ptr<ResponseBody> OpenFileBody(const mc_media_host_api& media, const std::string& filename);
+    std::unique_ptr<ResponseBody> OpenFileBody(const mc_plugin_media_service& media, const std::string& filename);
 }

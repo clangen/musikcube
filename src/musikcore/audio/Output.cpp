@@ -67,7 +67,7 @@ namespace musik { namespace core { namespace audio {
 
     Output::Output(
         ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name, std::string device,
-        mc_preferences_host_api preferences)
+        mc_plugin_preferences_service preferences)
     : factory(std::move(factory))
     , id(std::move(id))
     , name(std::move(name))

@@ -36,7 +36,7 @@
 
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/track/Track.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <unordered_set>
 #include <unordered_map>
 #include <musikcore/library/query/TrackReadQueries.h>
@@ -55,7 +55,7 @@ class TrackMetadataBatchQuery: public QueryBase {
            so missing values stay distinct from empty strings. */
         TrackMetadataBatchQuery(
             std::unordered_set<int64_t> trackIds,
-            musik::core::ILibraryPtr library,
+            musik::core::LibraryBackend::Shared library,
             std::vector<std::string> projection = {});
 
         /* Check whether this query requested a projected page. */
@@ -76,14 +76,14 @@ class TrackMetadataBatchQuery: public QueryBase {
         std::string SerializeResult() override;
         void DeserializeResult(const std::string& data) override;
         static std::shared_ptr<TrackMetadataBatchQuery> DeserializeQuery(
-            musik::core::ILibraryPtr library, const std::string& data);
+            musik::core::LibraryBackend::Shared library, const std::string& data);
 
     protected:
         /* QueryBase */
         bool OnRun(musik::core::db::Connection& db) override;
 
     private:
-        musik::core::ILibraryPtr library;
+        musik::core::LibraryBackend::Shared library;
         std::unordered_set<int64_t> trackIds;
         IdToTrackMap result;
         /* Empty means full tracks; otherwise these names set the page's column order. */

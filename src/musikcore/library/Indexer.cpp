@@ -45,7 +45,7 @@
 #include <musikcore/library/query/TrackMetadataQuery.h>
 #include <musikcore/library/query/MigrationScanQuery.h>
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/LibraryBackends.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/support/Common.h>
@@ -324,7 +324,7 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
     if (this->Bail()) {
         return;
     }
-    LocalLibrary::CreateIndexes(this->dbConnection);
+    LocalLibraryBackend::CreateIndexes(this->dbConnection);
 
     IndexerTrack::OnIndexerStarted(this->dbConnection);
 
@@ -341,7 +341,7 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
     auto type = context.type;
     const auto sourceId = context.sourceId;
     if (type == SyncType::Rebuild) {
-        LocalLibrary::InvalidateTrackMetadata(this->dbConnection);
+        LocalLibraryBackend::InvalidateTrackMetadata(this->dbConnection);
 
         /* for sources with stable ids: just nuke all of the records and allow
         a rebuild from scratch; things like playlists will remain intact.
@@ -432,7 +432,7 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
         this->trackTransaction->CommitAndRestart();
 
         /* re-index */
-        LocalLibrary::CreateIndexes(this->dbConnection);
+        LocalLibraryBackend::CreateIndexes(this->dbConnection);
     }
 }
 
@@ -1062,7 +1062,7 @@ namespace {
     struct AnalyzerInstance {
         void* instance = nullptr;
         const mc_analyzer_vtable* api = nullptr;
-        mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+        mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
         mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
 
         ~AnalyzerInstance() {
@@ -1116,7 +1116,7 @@ void Indexer::RunAnalyzers() {
         getNextTrack.ResetAndUnbind();
 
         auto track = std::make_shared<IndexerTrack>(trackId);
-        TrackMetadataQuery query(track, LibraryFactory::Instance().DefaultLocalLibrary());
+        TrackMetadataQuery query(track, musik::core::library::DefaultLocalBackend());
         query.Run(this->dbConnection);
 
         if (query.GetStatus() == IQuery::Finished) {

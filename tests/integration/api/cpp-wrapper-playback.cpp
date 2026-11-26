@@ -33,9 +33,8 @@ namespace wrapper_tests {
        queue-state drift are detected without hardware. */
     bool checkPlaybackCommands() {
         using namespace musik::core;
-        auto& factory = LibraryFactory::Instance();
-        const auto local = factory.DefaultLocalLibrary();
-        const auto remote = factory.DefaultRemoteLibrary();
+        const auto local = musik::core::library::DefaultLocalBackend();
+        const auto remote = musik::core::library::DefaultRemoteBackend();
         const auto source = OpenFixtureLibrary();
         if (!source) return playbackFailure(__LINE__);
         api::TrackResult result;

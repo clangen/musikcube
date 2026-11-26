@@ -181,7 +181,7 @@ namespace musik { namespace core { namespace plugin {
 
     private:
         const mc_host_api& host;
-        const mc_preferences_host_api& preferences;
+        const mc_plugin_preferences_service& preferences;
     };
 
     /* converts a compatible C++ source into C callbacks at compile time,

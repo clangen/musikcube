@@ -12,7 +12,7 @@
 The host owns the rescan service until this monitor has stopped and joined. */
 class CddaMediaMonitor {
 public:
-    explicit CddaMediaMonitor(const mc_indexer_source_host_api& service);
+    explicit CddaMediaMonitor(const mc_plugin_indexer_service& service);
     ~CddaMediaMonitor();
     CddaMediaMonitor(const CddaMediaMonitor&) = delete;
     CddaMediaMonitor& operator=(const CddaMediaMonitor&) = delete;
@@ -24,7 +24,7 @@ private:
     static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
     void Run() noexcept;
 
-    const mc_indexer_source_host_api& service;
+    const mc_plugin_indexer_service& service;
     CddaVolumeChanges volumeChanges;
     std::thread worker;
     std::mutex mutex;

@@ -49,7 +49,7 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_CLASS_DEFAULTS(GetPlaylistQuery)
 
             GetPlaylistQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 int64_t playlistId);
 
             /* IQuery */
@@ -68,14 +68,14 @@ namespace musik { namespace core { namespace library { namespace query {
             std::string SerializeResult() override;
             void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<GetPlaylistQuery> DeserializeQuery(
-                musik::core::ILibraryPtr library, const std::string& data);
+                musik::core::LibraryBackend::Shared library, const std::string& data);
 
         protected:
             /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             int64_t playlistId;
             size_t hash;
             Result result;

@@ -11,7 +11,7 @@ reads, final samples, and seeks without relying on a codec or an audio device. *
 enum { sample_rate = 8, block_frames = 4 };
 
 typedef struct byte_decoder {
-    const mc_audio_scratch_buffer_api* scratch;
+    const mc_plugin_audio_scratch_service* scratch;
     const mc_stream* stream;
     atomic_bool cancelled;
     uint64_t length;
@@ -105,7 +105,7 @@ static mc_result MC_CALL decode(
     if (status != MC_OK) {
         return status;
     }
-    const mc_audio_scratch_buffer_api* scratch = decoder->scratch;
+    const mc_plugin_audio_scratch_service* scratch = decoder->scratch;
     const mc_audio_format format = { sizeof(mc_audio_format), decoder->rate, 1, 0 };
     status = scratch->set_format(scratch->context, buffer, &format);
     if (status != MC_OK) {

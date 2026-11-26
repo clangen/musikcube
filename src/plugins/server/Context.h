@@ -37,6 +37,7 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/library.h>
 #include <musikcore/plugin/playback-remote.h>
+#include <musikcore/plugin/indexer.h>
 #include "Settings.h"
 
 #include <shared_mutex>
@@ -80,11 +81,12 @@ struct Context {
 
     std::string dataDirectory;
     const mc_host_api* host { nullptr };
-    const mc_library_host_api* library { nullptr };
-    const mc_media_host_api* media { nullptr };
-    const mc_audio_scratch_buffer_api* scratch { nullptr };
-    const mc_playback_remote_host_api* playbackRemote { nullptr };
-    mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+    const mc_plugin_library_service* library { nullptr };
+    const mc_plugin_media_service* media { nullptr };
+    const mc_plugin_audio_scratch_service* scratch { nullptr };
+    const mc_plugin_playback_service* playback { nullptr };
+    const mc_plugin_indexer_service* indexer { nullptr };
+    mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
     ServerSettings settings { preferences };
     ReadWriteLock lock;
     std::atomic<bool> stopping { false };

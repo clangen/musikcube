@@ -6,7 +6,7 @@
 #include "library-query-backends.h"
 #include "request.h"
 
-#include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/library/RemoteLibraryBackend.h>
 #include <common/version.h>
 #include <common/runtime/MessageQueue.h>
 
@@ -15,14 +15,14 @@
 #include <thread>
 
 namespace {
-    using RemoteLibrary = musik::core::library::RemoteLibrary;
+    using RemoteLibraryBackend = musik::core::library::RemoteLibraryBackend;
     using Queue = musik::core::runtime::MessageQueue;
-    using State = RemoteLibrary::ConnectionState;
+    using State = RemoteLibraryBackend::ConnectionState;
 
     mc_remote_state publicState(State state,
-        RemoteLibrary::Client::ConnectionError error = RemoteLibrary::Client::ConnectionError::None)
+        RemoteLibraryBackend::Client::ConnectionError error = RemoteLibraryBackend::Client::ConnectionError::None)
     {
-        if (state == State::Disconnected && error == RemoteLibrary::Client::ConnectionError::IncompatibleVersion) {
+        if (state == State::Disconnected && error == RemoteLibraryBackend::Client::ConnectionError::IncompatibleVersion) {
             return MC_REMOTE_INCOMPATIBLE_VERSION;
         }
         switch (state) {
@@ -45,11 +45,11 @@ namespace {
 }
 
 struct mc_remote_session {
-    mc_remote_session(RemoteLibrary::ConnectionOptions options, uint64_t maxPendingQueries)
+    mc_remote_session(RemoteLibraryBackend::ConnectionOptions options, uint64_t maxPendingQueries)
     : queue(std::make_shared<Queue>())
-    , library(new RemoteLibrary("Remote", 0, this->queue.get(),
+    , library(new RemoteLibraryBackend("Remote", 0, this->queue.get(),
         [options = std::move(options)] { return options; }, false, maxPendingQueries),
-        [keepQueue = this->queue](RemoteLibrary* remote) { delete remote; })
+        [keepQueue = this->queue](RemoteLibraryBackend* remote) { delete remote; })
     {
         this->stateChanged = this->library->ConnectionStateChanged.Subscribe([this](State state) { this->OnState(state); });
         this->pump = std::thread([this] {
@@ -92,10 +92,10 @@ struct mc_remote_session {
             observer->Notify();
         }
         const auto socket = this->library->WebSocketClient().ConnectionState();
-        if (state == State::Connected && socket == RemoteLibrary::Client::State::Connected) {
+        if (state == State::Connected && socket == RemoteLibraryBackend::Client::State::Connected) {
             this->Complete(MC_OK, MC_REMOTE_CONNECTED);
         }
-        else if (state != State::Connecting && socket == RemoteLibrary::Client::State::Disconnected) {
+        else if (state != State::Connecting && socket == RemoteLibraryBackend::Client::State::Disconnected) {
             const auto status = musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
                 if (reported == MC_REMOTE_INCOMPATIBLE_VERSION) {
                     const auto required = std::to_string(MUSIKCUBE_VERSION_MAJOR) + "." +
@@ -128,7 +128,7 @@ struct mc_remote_session {
     }
 
     const std::shared_ptr<Queue> queue;
-    const std::shared_ptr<RemoteLibrary> library;
+    const std::shared_ptr<RemoteLibraryBackend> library;
     std::mutex mutex;
     std::function<void(mc_result, mc_remote_state, const std::string&)> pending;
     const std::shared_ptr<std::atomic<mc_remote_state>> observedState =
@@ -186,7 +186,7 @@ mc_result MC_CALL mc_remote_session_create(const mc_remote_options *options, mc_
     }
 
     return exception_barrier(nullptr, [&]() -> mc_result {
-        RemoteLibrary::ConnectionOptions config;
+        RemoteLibraryBackend::ConnectionOptions config;
         config.host.assign(options->host.data, options->host.length);
         if (options->password.length) {
             config.password.assign(options->password.data, options->password.length);
@@ -206,7 +206,7 @@ mc_result MC_CALL mc_remote_session_create(const mc_remote_options *options, mc_
             offsetof(mc_remote_options, max_pending_queries) + sizeof(options->max_pending_queries) &&
             options->max_pending_queries
                 ? options->max_pending_queries
-                : RemoteLibrary::DefaultMaxPendingQueries;
+                : RemoteLibraryBackend::DefaultMaxPendingQueries;
         *out_session = new mc_remote_session(std::move(config), maxPendingQueries);
         return MC_OK;
     });

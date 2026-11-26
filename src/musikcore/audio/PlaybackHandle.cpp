@@ -132,18 +132,18 @@ void PlaybackService::DeliverPlaybackNotification(IMessage& message) {
     static_cast<PlaybackNotification&>(message).deliver();
 }
 
-bool PlaybackService::MatchesOrigin(const LibraryInstance& origin) const {
-    return origin.playbackOrigin && origin.playbackOrigin->Matches(this->library.get());
+bool PlaybackService::MatchesOrigin(const musik::core::library::Library& origin) const {
+    return origin.NativeBackend() && origin.Matches(this->library.get());
 }
 
-std::shared_ptr<const LibraryInstance> PlaybackService::CaptureOrigin(int libraryId) const {
+std::shared_ptr<const musik::core::library::Library> PlaybackService::CaptureOrigin(int libraryId) const {
     if (this->library->Id() != libraryId) {
         return {};
     }
 
-    std::shared_ptr<const LibraryInstance> origin;
+    std::shared_ptr<const musik::core::library::Library> origin;
     ffi::exception_barrier(nullptr, [&] {
-        origin = ffi::CreateLibraryInstance(this->library);
+        origin = ffi::CreateLibrary(this->library);
         return MC_OK;
     });
     return origin;
@@ -343,7 +343,7 @@ public:
     mc_result ReplaceQueue(const TrackResultData& result) override {
         const auto status = this->CheckSession();
         if (status != MC_OK) return status;
-        if (!result.library->playbackOrigin) return MC_ERROR_UNSUPPORTED;
+        if (!result.library || !result.library->NativeBackend()) return MC_ERROR_UNSUPPORTED;
 
         std::unique_lock<std::recursive_mutex> lock(this->service.playlistMutex);
         if (!this->service.MatchesOrigin(*result.library)) return MC_ERROR_NOT_FOUND;
@@ -360,7 +360,7 @@ public:
         if (status != MC_OK) {
             return status;
         }
-        if (!result.library->playbackOrigin) {
+        if (!result.library || !result.library->NativeBackend()) {
             return MC_ERROR_UNSUPPORTED;
         }
 
@@ -461,7 +461,7 @@ public:
     }
 
 private:
-    bool PlayingTrackAvailable(const TrackPtr& track, const std::shared_ptr<const LibraryInstance>& origin) const {
+    bool PlayingTrackAvailable(const TrackPtr& track, const std::shared_ptr<const musik::core::library::Library>& origin) const {
         if (!track || !origin || !this->service.MatchesOrigin(*origin)) {
             return false;
         }
@@ -497,10 +497,10 @@ private:
         this->queueObserver->pending = true;
     }
 
-    mc_result InsertOrderedIds(const std::shared_ptr<const LibraryInstance>& origin,
+    mc_result InsertOrderedIds(const std::shared_ptr<const musik::core::library::Library>& origin,
         const int64_t* ids, size_t count, mc_playback_track_action action)
     {
-        if (!origin->playbackOrigin) {
+        if (!origin || !origin->NativeBackend()) {
             return MC_ERROR_UNSUPPORTED;
         }
         auto editor = this->service.Edit();
@@ -531,9 +531,9 @@ private:
         return MC_OK;
     }
 
-    mc_result PlayOrderedIds(const std::shared_ptr<const LibraryInstance>& origin,
+    mc_result PlayOrderedIds(const std::shared_ptr<const musik::core::library::Library>& origin,
         const int64_t* ids, size_t count, size_t row) {
-        if (!origin->playbackOrigin) return MC_ERROR_UNSUPPORTED;
+        if (!origin || !origin->NativeBackend()) return MC_ERROR_UNSUPPORTED;
         if (!this->service.MatchesOrigin(*origin)) return MC_ERROR_NOT_FOUND;
 
         /* Install the snapshot directly in the engine's queue. */

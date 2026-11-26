@@ -10,7 +10,7 @@
 #include <atomic>
 #include <string>
 
-struct LibraryInstance;
+namespace musik { namespace core { namespace library { class Library; } } }
 
 namespace musik { namespace core { namespace ffi {
 
@@ -33,7 +33,7 @@ namespace musik { namespace core { namespace ffi {
         virtual mc_result CreatePlayer(mc_player**) { return MC_ERROR_UNSUPPORTED; }
         virtual mc_result OpenPlayback(mc_playback** out) = 0;
         virtual mc_result SelectLibrary(mc_library_kind kind) = 0;
-        virtual mc_result SelectLibrary(const std::shared_ptr<const LibraryInstance>&) {
+        virtual mc_result SelectLibrary(const std::shared_ptr<const musik::core::library::Library>&) {
             return MC_ERROR_UNSUPPORTED;
         }
         virtual mc_result ReconnectRemote() = 0;
@@ -71,13 +71,13 @@ namespace musik { namespace core { namespace ffi {
         std::string serverVersion;
     };
 
-    std::shared_ptr<const LibraryInstance> context_library(const mc_context& context);
-    mc_result set_context_library(mc_context& context, std::shared_ptr<const LibraryInstance> library,
+    std::shared_ptr<const musik::core::library::Library> context_library(const mc_context& context);
+    mc_result set_context_library(mc_context& context, std::shared_ptr<const musik::core::library::Library> library,
         LibraryStatus status);
     void publish_indexer_event(mc_context& context, mc_indexer_event event, int updates);
     void publish_playlist_event(mc_context& context, mc_playlist_event event, int64_t playlistId);
     void publish_equalizer_event(mc_context& context);
-    mc_result publish_library_selection(mc_context& context, std::shared_ptr<const LibraryInstance> library,
+    mc_result publish_library_selection(mc_context& context, std::shared_ptr<const musik::core::library::Library> library,
         LibraryStatus status, bool selectionChanged);
 
     using RequestCompletion = std::function<void(mc_result, void *)>;

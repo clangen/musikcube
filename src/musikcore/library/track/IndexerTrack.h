@@ -36,7 +36,7 @@
 
 #include <musikcore/config.h>
 #include <musikcore/library/track/Track.h>
-#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/LocalLibraryBackend.h>
 
 #include <filesystem>
 

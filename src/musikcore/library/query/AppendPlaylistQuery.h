@@ -48,7 +48,7 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_CLASS_DEFAULTS(AppendPlaylistQuery)
 
             AppendPlaylistQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks,
                 const int offset = -1) noexcept;
@@ -61,7 +61,7 @@ namespace musik { namespace core { namespace library { namespace query {
             std::string SerializeResult() override;
             void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<AppendPlaylistQuery> DeserializeQuery(
-                musik::core::ILibraryPtr library, const std::string& data);
+                musik::core::LibraryBackend::Shared library, const std::string& data);
 
         protected:
             /* QueryBase */
@@ -70,7 +70,7 @@ namespace musik { namespace core { namespace library { namespace query {
         private:
             void SendPlaylistMutationBroadcast();
 
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             std::shared_ptr<musik::core::TrackList> sharedTracks;
             int64_t playlistId;
             int offset;

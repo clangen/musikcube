@@ -52,7 +52,7 @@ static void withHttpStream(const std::string& directory, const std::string& data
     const auto factory = registry.Find<mc_stream_factory>(HttpId);
     require(static_cast<bool>(factory), "find HTTP source");
 
-    mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+    mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
     preferences.read_integer = [](void*, const mc_integer_setting* field, int32_t* value) -> mc_result {
         const std::string_view key(field->key.data, field->key.length);
         *value = key == "precache_buffer_size_bytes" || key == "chunk_size_bytes" ? Chunk : field->default_value;

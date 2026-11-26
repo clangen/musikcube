@@ -36,7 +36,7 @@
 
 
 #include <musikcore/library/track/Track.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 
 
 #include <unordered_map>
@@ -46,8 +46,8 @@ namespace musik { namespace core {
 
     class TrackList : public std::enable_shared_from_this<TrackList> {
         public:
-            TrackList(ILibraryPtr library);
-            TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount);
+            TrackList(LibraryBackend::Shared library);
+            TrackList(LibraryBackend::Shared library, const int64_t* trackIds, size_t trackIdCount);
 
             /* track identities. */
             size_t Count() const noexcept;
@@ -68,7 +68,7 @@ namespace musik { namespace core {
             TrackPtr GetWithTimeout(size_t index, size_t timeoutMs) const;
             void ClearCache() noexcept;
             /* Call after outstanding cache reads have settled. */
-            void ResetForLibrary(ILibraryPtr library) noexcept;
+            void ResetForLibrary(LibraryBackend::Shared library) noexcept;
             void Swap(TrackList& list) noexcept;
             void CopyFrom(const TrackList& from);
             void CacheWindow(size_t from, size_t to, bool async) const;
@@ -101,7 +101,7 @@ namespace musik { namespace core {
             mutable QueryWindow nextWindow;
 
             std::vector<int64_t> ids;
-            ILibraryPtr library;
+            LibraryBackend::Shared library;
     };
 
 } }

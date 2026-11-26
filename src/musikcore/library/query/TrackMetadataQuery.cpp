@@ -57,7 +57,7 @@ using namespace musik::core::sdk;
 
 const std::string TrackMetadataQuery::kQueryName = "TrackMetadataQuery";
 
-TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Type type) noexcept {
+TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, LibraryBackend::Shared library, Type type) noexcept {
     this->result = target;
     this->library = library;
     this->type = type;
@@ -118,7 +118,7 @@ std::string TrackMetadataQuery::SerializeQuery() {
         { "options", {
             { "type", this->type },
             { "track", TrackToJson(this->result, true) }
-        }}
+        } }
     };
     return output.dump();
 }
@@ -140,7 +140,7 @@ void TrackMetadataQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<TrackMetadataQuery> TrackMetadataQuery::DeserializeQuery(
-    musik::core::ILibraryPtr library, const std::string& data)
+    musik::core::LibraryBackend::Shared library, const std::string& data)
 {
     auto json = nlohmann::json::parse(data);
     auto parsedTrack = std::make_shared<LibraryTrack>(-1LL, library);

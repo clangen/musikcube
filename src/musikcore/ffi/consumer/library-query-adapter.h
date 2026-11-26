@@ -14,6 +14,7 @@
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/query/TrackMetadataBatchQuery.h>
 #include "library-storage.h"
+#include "library-query-catalog.h"
 #include "request.h"
 #include "../common/error.h"
 #include "../common/primitives.h"
@@ -26,7 +27,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
     namespace query = musik::core::library::query;
 
     using namespace musik::core::ffi;
-    using musik::core::ILibraryPtr;
+    using musik::core::LibraryBackend;
 
     /* keeps list labels alive while their borrowed C views are delivered to
     the caller. the completed request owns this storage until its callback ends. */
@@ -149,7 +150,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         };
     }
 
-    inline auto savePlaylistCommand(const ILibraryPtr& library, int64_t id, const std::string& name,
+    inline auto savePlaylistCommand(const LibraryBackend::Shared& library, int64_t id, const std::string& name,
         const std::vector<int64_t>& ids, bool append, std::optional<int32_t> owner = {}) {
         const auto tracks = std::make_shared<musik::core::TrackList>(library, ids.data(), ids.size());
         if (append) {
@@ -182,7 +183,8 @@ namespace musik { namespace core { namespace ffi { namespace detail {
     }
 
     inline mc_result makeOrderedResult(query::TrackListQueryBase& command,
-        const std::shared_ptr<const LibraryInstance>& instance, std::unique_ptr<mc_track_result>& output) {
+        const std::shared_ptr<const musik::core::library::Library>& instance,
+        std::unique_ptr<mc_track_result>& output) {
         /* Some legacy queries return fresh shared owners from their accessors. */
         /* Retain each owner before borrowing its storage for conversion. */
         const auto rows = command.GetResult();
@@ -215,8 +217,8 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         return MC_OK;
     }
 
-    inline std::shared_ptr<query::TrackListQueryBase> selectionCommand(const ILibraryPtr& library, const std::string& category,
-        const std::string& directory, int64_t id, query::TrackSortType order) {
+    inline std::shared_ptr<query::TrackListQueryBase> selectionCommand(const LibraryBackend::Shared& library,
+        const std::string& category, const std::string& directory, int64_t id, query::TrackSortType order) {
         if (category.empty()) {
             return std::make_shared<query::DirectoryTrackListQuery>(library, directory);
         }
@@ -228,10 +230,18 @@ namespace musik { namespace core { namespace ffi { namespace detail {
     libraries. it builds typed queries and converts their results for C callers;
     the selected executor supplies scheduling and keeps the backend alive.
     keeping these operations together gives both backends the same scope rules. */
-    template<typename Executor> class LibraryQueryAdapter : public LibraryQueries {
+    template<typename Executor> class LibraryQueryAdapter : public musik::core::library::Library {
     public:
-        mc_result OpenPlaylist(mc_context* context, const std::shared_ptr<const LibraryInstance>& instance, int64_t id,
-            mc_track_search_completion_fn completion, void* data, mc_request_id* request) const override {
+        using musik::core::library::Library::Library;
+
+        mc_result ReadThumbnailAsync(mc_context* context, int64_t id, mc_thumbnail_completion_fn completion, void* data,
+            mc_request_id* request) const override {
+            return SubmitCatalogThumbnail(context, this->shared_from_this(), id, completion, data, request);
+        }
+
+        mc_result OpenPlaylist(mc_context* context, int64_t id, mc_track_search_completion_fn completion, void* data,
+            mc_request_id* request) const override {
+            const auto instance = this->shared_from_this();
             return this->Self().template Submit<mc_track_result>(
                 context, "Open playlist", std::make_shared<query::GetPlaylistQuery>(this->Self().library, id),
                 [instance](auto& command, auto& output) {
@@ -240,16 +250,17 @@ namespace musik { namespace core { namespace ffi { namespace detail {
                 completion, data, request);
         }
 
-        mc_result OpenSelection(mc_context* context, const std::shared_ptr<const LibraryInstance>& instance,
-            std::string category, std::string directory, int64_t id, query::TrackSortType order,
-            mc_track_search_completion_fn completion, void* data, mc_request_id* request) const override {
+        mc_result OpenSelection(mc_context* context, std::string category, std::string directory, int64_t id,
+            query::TrackSortType order, mc_track_search_completion_fn completion, void* data,
+            mc_request_id* request) const override {
+            const auto instance = this->shared_from_this();
             const auto command = selectionCommand(this->Self().library, category, directory, id, order);
             return this->Self().template Submit<mc_track_result>(
                 context, category.empty() ? "Open folder" : "Open category", command,
                 [instance](auto& query, auto& output) {
                     return makeOrderedResult(query, instance, output);
                 },
-                completion, data, request, RequestEffect::Read, instance->scope);
+                completion, data, request, RequestEffect::Read, instance->GetScopeState());
         }
 
         mc_result ListCategoryFields(mc_context* context, mc_category_fields_completion_fn completion, void* data,
@@ -259,8 +270,8 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         }
 
         mc_result ListCategories(mc_context* context, std::string field, std::string filter, mc_track_search_mode mode,
-            mc_category_list_completion_fn completion, void* data, mc_request_id* request,
-            std::shared_ptr<LibraryScopeState> scopeState) const override {
+            mc_category_list_completion_fn completion, void* data, mc_request_id* request) const override {
+            const auto scopeState = this->GetScopeState();
             using MatchType = query::CategoryListQuery::MatchType;
             const auto match = mode == MC_TRACK_SEARCH_REGEX ? MatchType::Regex : MatchType::Substring;
             const auto command = std::make_shared<query::CategoryListQuery>(match, field, filter);
@@ -271,7 +282,8 @@ namespace musik { namespace core { namespace ffi { namespace detail {
 
         mc_result ListFacets(mc_context* context, std::string field, std::string search,
             query::category::PredicateList selections, mc_category_list_completion_fn completion, void* data,
-            mc_request_id* request, std::shared_ptr<LibraryScopeState> scopeState) const override {
+            mc_request_id* request) const override {
+            const auto scopeState = this->GetScopeState();
             auto command = std::make_shared<query::CategoryListQuery>(
                 query::CategoryListQuery::MatchType::Substring, field, std::move(selections));
             command->SetFacetSearch(std::move(search));
@@ -281,7 +293,8 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         }
 
         mc_result ListAlbums(mc_context* context, std::string filter, mc_album_list_completion_fn completion,
-            void* data, mc_request_id* request, std::shared_ptr<LibraryScopeState> scopeState) const override {
+            void* data, mc_request_id* request) const override {
+            const auto scopeState = this->GetScopeState();
             return this->Self().template Submit<AlbumEntries>(context, "List albums",
                 std::make_shared<query::AlbumListQuery>(filter), collectAlbums,
                 deliverEntries<AlbumEntries>(completion), data, request, RequestEffect::Read, scopeState);
@@ -295,7 +308,8 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         }
 
         mc_result ListPlaylists(mc_context* context, mc_playlist_list_completion_fn completion, void* data,
-            mc_request_id* request, std::shared_ptr<LibraryScopeState> scopeState) const override {
+            mc_request_id* request) const override {
+            const auto scopeState = this->GetScopeState();
             return this->Self().template Submit<PlaylistEntries>(context, "List playlists", listPlaylistsCommand(),
                 collectEntries<PlaylistEntries>, deliverEntries<PlaylistEntries>(completion), data, request,
                 RequestEffect::Read, scopeState);

@@ -49,12 +49,12 @@ namespace musik {
             mc_result PauseOrResume(musik::core::audio::ITransport& transport);
 
             void LoadPlaybackContext(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 musik::core::audio::PlaybackService& playback,
                 bool synchronous = false);
 
             void SavePlaybackContext(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 musik::core::audio::PlaybackService& playback);
         }
     }

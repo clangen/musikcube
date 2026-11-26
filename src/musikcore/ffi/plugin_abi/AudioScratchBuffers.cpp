@@ -126,9 +126,9 @@ namespace musik { namespace core { namespace ffi { namespace audio_scratch_buffe
         return status;
     }
 
-    const mc_audio_scratch_buffer_api& Host() {
-        static const mc_audio_scratch_buffer_api api {
-            .struct_size = sizeof(mc_audio_scratch_buffer_api),
+    const mc_plugin_audio_scratch_service& Host() {
+        static const mc_plugin_audio_scratch_service api {
+            .struct_size = sizeof(mc_plugin_audio_scratch_service),
             .context = nullptr,
             .create = create,
             .set_format = setFormat,

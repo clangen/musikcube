@@ -6,7 +6,7 @@
 #include <iterator>
 #include <stdexcept>
 
-CddaMediaMonitor::CddaMediaMonitor(const mc_indexer_source_host_api& service)
+CddaMediaMonitor::CddaMediaMonitor(const mc_plugin_indexer_service& service)
 : service(service) {
     /* Start only after every member used by Run has been constructed. */
     this->worker = std::thread([this] { this->Run(); });

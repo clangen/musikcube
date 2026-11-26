@@ -114,7 +114,8 @@ namespace {
             this->context.library = services.library;
             this->context.media = services.media;
             this->context.scratch = services.audio_scratch;
-            this->context.playbackRemote = services.playback_remote;
+            this->context.playback = services.playback;
+            this->context.indexer = services.indexer;
         }
 
         void Changed(const mc_plugin_playback_event&) noexcept {

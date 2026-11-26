@@ -44,14 +44,14 @@ namespace musik { namespace core { namespace library { namespace query {
             static const std::string kQueryName;
 
             static PersistedPlayQueueQuery* Save(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 musik::core::audio::PlaybackService& playback)
             {
                 return new PersistedPlayQueueQuery(library, playback, Type::Save);
             }
 
             static PersistedPlayQueueQuery* Restore(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 musik::core::audio::PlaybackService& playback,
                 int savedIndex)
             {
@@ -73,12 +73,12 @@ namespace musik { namespace core { namespace library { namespace query {
             enum class Type { Save, Restore };
 
             PersistedPlayQueueQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 musik::core::audio::PlaybackService& playback,
                 Type type,
                 int savedIndex = -1) noexcept;
 
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             musik::core::audio::PlaybackService& playback;
             Type type;
             int savedIndex;

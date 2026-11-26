@@ -43,7 +43,7 @@ using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
-using musik::core::ILibraryPtr;
+using musik::core::LibraryBackend;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
@@ -52,7 +52,7 @@ using namespace musik::core::library::query;
 const std::string NowPlayingTrackListQuery::kQueryName = "NowPlayingTrackListQuery";
 
 NowPlayingTrackListQuery::NowPlayingTrackListQuery(
-    ILibraryPtr library, musik::core::audio::PlaybackService& playback)
+    LibraryBackend::Shared library, musik::core::audio::PlaybackService& playback)
 : library(library)
 , playback(playback) {
     this->result = std::make_shared<TrackList>(library);

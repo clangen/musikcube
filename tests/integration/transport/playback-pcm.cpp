@@ -576,7 +576,7 @@ namespace {
         else {
             transport = std::make_shared<GaplessTransport>();
         }
-        PlaybackService service(runtime.Queue(), LibraryFactory::Instance().DefaultLocalLibrary(), transport);
+        PlaybackService service(runtime.Queue(), musik::core::library::DefaultLocalBackend(), transport);
         auto playback = OpenFixturePlayback(service);
         std::promise<void> started;
         auto connection = transport->PlaybackEvent.Subscribe([&](auto state) {
@@ -851,7 +851,7 @@ namespace {
         std::unique_ptr<PlaybackService> service;
         if (throughService) {
             service = std::make_unique<PlaybackService>(runtime.Queue(),
-                LibraryFactory::Instance().DefaultLocalLibrary(), transport);
+                musik::core::library::DefaultLocalBackend(), transport);
         }
         transport->Start(first.string(), {}, ITransport::StartMode::Immediate);
         if (!shortSource) {
@@ -962,7 +962,7 @@ namespace {
         WaitCapture wait, void (*gateQueue)(), CoreRuntime& runtime)
     {
         auto transport = std::make_shared<GatedFadeTransport>();
-        PlaybackService service(runtime.Queue(), LibraryFactory::Instance().DefaultLocalLibrary(), transport);
+        PlaybackService service(runtime.Queue(), musik::core::library::DefaultLocalBackend(), transport);
         transport->Start(first.string(), {}, ITransport::StartMode::Immediate);
         if (!wait(CaptureEvent::Resumed, 3000)) {
             std::fputs("First crossfade output did not start\n", stderr);

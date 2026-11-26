@@ -35,12 +35,12 @@
 #include "pch.hpp"
 
 #include <musikcore/library/track/Track.h>
-#include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/library/RemoteLibraryBackend.h>
 #include <musikcore/config.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/library/Indexer.h>
 #include <musikcore/library/IQuery.h>
-#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/LibraryBackends.h>
 #include <musikcore/library/QueryRegistry.h>
 #include <common/runtime/Message.h>
 #include <common/NarrowCast.h>
@@ -69,9 +69,9 @@ using namespace std::chrono;
 #define MESSAGE_RECONNECT_SOCKET 5001
 #define MESSAGE_UPDATE_CONNECTION_STATE 5002
 
-class RemoteLibrary::QueryCompletedMessage: public Message {
+class RemoteLibraryBackend::QueryCompletedMessage: public Message {
     public:
-        using QueryContextPtr = RemoteLibrary::QueryContextPtr;
+        using QueryContextPtr = RemoteLibraryBackend::QueryContextPtr;
 
         QueryCompletedMessage(IMessageTarget* target, QueryContextPtr context)
         : Message(target, MESSAGE_QUERY_COMPLETED, 0, 0) {
@@ -86,7 +86,7 @@ class RemoteLibrary::QueryCompletedMessage: public Message {
         QueryContextPtr context;
 };
 
-RemoteLibrary::RemoteLibrary(std::string name, int id, MessageQueue* messageQueue,
+RemoteLibraryBackend::RemoteLibraryBackend(std::string name, int id, MessageQueue* messageQueue,
     OptionsProvider options, bool reconnect, uint64_t maxPendingQueries)
 : options(std::move(options))
 , reconnect(reconnect)
@@ -98,28 +98,28 @@ RemoteLibrary::RemoteLibrary(std::string name, int id, MessageQueue* messageQueu
 , exit(false)
 {
     this->identifier = std::to_string(id);
-    this->thread = std::make_unique<std::thread>(std::bind(&RemoteLibrary::ThreadProc, this));
+    this->thread = std::make_unique<std::thread>(std::bind(&RemoteLibraryBackend::ThreadProc, this));
     if (this->messageQueue) {
         this->messageQueue->Register(this);
     }
 }
 
-RemoteLibrary::~RemoteLibrary() {
+RemoteLibraryBackend::~RemoteLibraryBackend() {
     this->Close();
     if (this->messageQueue) {
         this->messageQueue->Unregister(this);
     }
 }
 
-int RemoteLibrary::Id() {
+int RemoteLibraryBackend::Id() {
     return this->id;
 }
 
-const std::string& RemoteLibrary::Name() {
+const std::string& RemoteLibraryBackend::Name() {
     return this->name;
 }
 
-void RemoteLibrary::Close() {
+void RemoteLibraryBackend::Close() {
     this->Disconnect();
 
     std::unique_ptr<std::thread> thread;
@@ -140,11 +140,11 @@ void RemoteLibrary::Close() {
     }
 }
 
-bool RemoteLibrary::IsConfigured() {
+bool RemoteLibraryBackend::IsConfigured() {
     return this->options().configured;
 }
 
-static inline bool isQueryDone(RemoteLibrary::Query query) {
+static inline bool isQueryDone(RemoteLibraryBackend::Query query) {
     switch (query->GetStatus()) {
         case IQuery::Idle:
         case IQuery::Running:
@@ -154,7 +154,7 @@ static inline bool isQueryDone(RemoteLibrary::Query query) {
     }
 }
 
-bool RemoteLibrary::IsQueryInFlight(Query query) {
+bool RemoteLibraryBackend::IsQueryInFlight(Query query) {
     for (auto& kv : this->queriesInFlight) {
         if (query == kv.second->query) {
             return true;
@@ -168,11 +168,11 @@ bool RemoteLibrary::IsQueryInFlight(Query query) {
     return false;
 }
 
-int RemoteLibrary::Enqueue(QueryPtr query, Callback callback) {
+int RemoteLibraryBackend::Enqueue(QueryPtr query, Callback callback) {
     return this->EnqueueAndWait(query, 0LL, callback);
 }
 
-RemoteLibrary::ConnectionQueryStatus RemoteLibrary::EnqueueForConnection(
+RemoteLibraryBackend::ConnectionQueryStatus RemoteLibraryBackend::EnqueueForConnection(
     Query query, uint64_t generation, Callback callback) {
     std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
     if (this->exit || !generation || generation != this->wsc.ConnectionGeneration()) {
@@ -197,7 +197,7 @@ RemoteLibrary::ConnectionQueryStatus RemoteLibrary::EnqueueForConnection(
     return ConnectionQueryStatus::Accepted;
 }
 
-void RemoteLibrary::DiscardConnectionQuery(const Query& query) {
+void RemoteLibraryBackend::DiscardConnectionQuery(const Query& query) {
     std::lock_guard lock(this->queueMutex);
     for (auto it = this->queriesInFlight.begin(); it != this->queriesInFlight.end(); ++it) {
         if (!it->second->notify && it->second->query == query) {
@@ -209,9 +209,9 @@ void RemoteLibrary::DiscardConnectionQuery(const Query& query) {
     }
 }
 
-int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {
+int RemoteLibraryBackend::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {
     if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
-        auto defaultLocalLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
+        auto defaultLocalLibrary = musik::core::library::DefaultLocalBackend();
         return defaultLocalLibrary->EnqueueAndWait(query, timeoutMs, callback);
     }
 
@@ -256,7 +256,7 @@ int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback cal
     return -1;
 }
 
-RemoteLibrary::QueryContextPtr RemoteLibrary::GetNextQuery() {
+RemoteLibraryBackend::QueryContextPtr RemoteLibraryBackend::GetNextQuery() {
     std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
     while (this->queryQueue.empty() && !this->exit) {
         this->queueCondition.wait(lock);
@@ -271,7 +271,7 @@ RemoteLibrary::QueryContextPtr RemoteLibrary::GetNextQuery() {
     }
 }
 
-void RemoteLibrary::ThreadProc() {
+void RemoteLibraryBackend::ThreadProc() {
     while (!this->exit) {
         auto query = GetNextQuery();
         if (query) {
@@ -280,14 +280,14 @@ void RemoteLibrary::ThreadProc() {
     }
 }
 
-void RemoteLibrary::NotifyQueryCompleted(QueryContextPtr context) {
+void RemoteLibraryBackend::NotifyQueryCompleted(QueryContextPtr context) {
     this->QueryCompleted.Publish(context->query.get());
     if (context->callback) {
         context->callback(context->query);
     }
 }
 
-void RemoteLibrary::OnQueryCompleted(QueryContextPtr context) {
+void RemoteLibraryBackend::OnQueryCompleted(QueryContextPtr context) {
     if (context) {
         if (!context->notify) {
             /* ABI requests deliver through their own dispatcher. */
@@ -302,7 +302,7 @@ void RemoteLibrary::OnQueryCompleted(QueryContextPtr context) {
     }
 }
 
-void RemoteLibrary::OnQueryCompleted(const std::string& messageId, Query query) {
+void RemoteLibraryBackend::OnQueryCompleted(const std::string& messageId, Query query) {
     QueryContextPtr context;
 
     {
@@ -320,7 +320,7 @@ void RemoteLibrary::OnQueryCompleted(const std::string& messageId, Query query) 
     this->syncQueryCondition.notify_all();
 }
 
-void RemoteLibrary::RunQuery(QueryContextPtr context) {
+void RemoteLibraryBackend::RunQuery(QueryContextPtr context) {
     std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
 #if 0
     this->RunQueryOnLoopback(context);
@@ -329,7 +329,7 @@ void RemoteLibrary::RunQuery(QueryContextPtr context) {
 #endif
 }
 
-void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context) {
+void RemoteLibraryBackend::RunQueryOnLoopback(QueryContextPtr context) {
     if (context) {
         /* do everything via loopback to the local library for testing. we do, however,
         go through the motions by serializing the inbound query to a string, then
@@ -337,7 +337,7 @@ void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context) {
         locally, serialize the result, then deserialize it again to emulate the entire
         round trip. */
 
-        auto localLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
+        auto localLibrary = musik::core::library::DefaultLocalBackend();
         localLibrary->SetMessageQueue(*this->messageQueue);
 
         auto localQuery = QueryRegistry::CreateLocalQueryFor(
@@ -360,7 +360,7 @@ void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context) {
     }
 }
 
-void RemoteLibrary::RunQueryOnWebSocketClient(QueryContextPtr context) {
+void RemoteLibraryBackend::RunQueryOnWebSocketClient(QueryContextPtr context) {
     if (context->query) {
         const std::string messageId = wsc.EnqueueQuery(context->query);
         if (!messageId.empty()) {
@@ -374,7 +374,7 @@ void RemoteLibrary::RunQueryOnWebSocketClient(QueryContextPtr context) {
     }
 }
 
-void RemoteLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
+void RemoteLibraryBackend::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
     if (this->messageQueue && this->messageQueue != &queue) {
         this->messageQueue->Unregister(this);
     }
@@ -383,13 +383,13 @@ void RemoteLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) 
     this->wsc.SetMessageQueue(messageQueue);
 }
 
-musik::core::Indexer* RemoteLibrary::Indexer() {
+musik::core::Indexer* RemoteLibraryBackend::Indexer() {
     return nullptr;
 }
 
 /* IMessageTarget */
 
-void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
+void RemoteLibraryBackend::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == MESSAGE_QUERY_COMPLETED) {
         auto context = dynamic_cast<QueryCompletedMessage*>(&message)->GetContext();
         if (context) {
@@ -410,11 +410,11 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
 
 /* WebSocketClient::Listener */
 
-void RemoteLibrary::OnClientInvalidPassword(Client* client) {
+void RemoteLibraryBackend::OnClientInvalidPassword(Client* client) {
     this->messageQueue->Post(Message::Create(this, MESSAGE_UPDATE_CONNECTION_STATE, (int) ConnectionState::AuthenticationFailure));
 }
 
-void RemoteLibrary::OnClientStateChanged(Client* client, State newState, State oldState) {
+void RemoteLibraryBackend::OnClientStateChanged(Client* client, State newState, State oldState) {
     static std::map<State, ConnectionState> kConnectionStateMap = {
         { State::Disconnected, ConnectionState::Disconnected },
         { State::Disconnecting, ConnectionState::Disconnected },
@@ -444,18 +444,18 @@ void RemoteLibrary::OnClientStateChanged(Client* client, State newState, State o
     }
 }
 
-void RemoteLibrary::OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) {
+void RemoteLibraryBackend::OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) {
     this->OnQueryCompleted(messageId, query);
 }
 
-void RemoteLibrary::OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError result) {
+void RemoteLibraryBackend::OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError result) {
     query->Invalidate();
     this->OnQueryCompleted(messageId, query);
 }
 
-/* RemoteLibrary::RemoteResourceLocator */
+/* RemoteLibraryBackend::RemoteResourceLocator */
 
-std::string RemoteLibrary::GetTrackUri(musik::core::Track* track, const std::string& defaultUri) {
+std::string RemoteLibraryBackend::GetTrackUri(musik::core::Track* track, const std::string& defaultUri) {
     std::string type = ".mp3";
 
     const auto originalUri = track->Uri();
@@ -487,7 +487,7 @@ std::string RemoteLibrary::GetTrackUri(musik::core::Track* track, const std::str
     return "musikcore://remote-track/" + path.dump();
 }
 
-bool RemoteLibrary::ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes, size_t limit,
+bool RemoteLibraryBackend::ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes, size_t limit,
     const std::atomic_bool& canceled)
 {
     const std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), &curl_easy_cleanup);
@@ -544,13 +544,13 @@ bool RemoteLibrary::ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes, size_
         (result == CURLE_PARTIAL_FILE && length == static_cast<curl_off_t>(bytes.size() + 1)));
 }
 
-/* RemoteLibrary */
+/* RemoteLibraryBackend */
 
-const net::WebSocketClient& RemoteLibrary::WebSocketClient() const {
+const net::WebSocketClient& RemoteLibraryBackend::WebSocketClient() const {
     return this->wsc;
 }
 
-void RemoteLibrary::Connect() {
+void RemoteLibraryBackend::Connect() {
     if (this->exit) {
         return;
     }
@@ -560,6 +560,6 @@ void RemoteLibrary::Connect() {
         config.websocketTls, config.latencyTimeoutMs, config.ignoreVersionMismatch);
 }
 
-void RemoteLibrary::Disconnect() {
+void RemoteLibraryBackend::Disconnect() {
     this->wsc.Disconnect();
 }

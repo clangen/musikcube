@@ -770,7 +770,7 @@ The application-facing media API is separate from the C plugin SDK. This work
 was moved from the core migration LLD because it builds on provider services.
 
 - [ ] **PUB-008** Expose stream, decoder, and encoder operations to application
-  C consumers. The existing `mc_media_host_api` and scratch buffer table are
+  C consumers. The existing `mc_plugin_media_service` and scratch buffer table are
   provider-session services, not application-owned APIs: their function tables
   and instances can become invalid at plugin shutdown. Do not return them
   directly from `mc_context`.

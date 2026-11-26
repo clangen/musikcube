@@ -188,7 +188,7 @@ namespace musik { namespace core { namespace plugin {
     , indexer(indexer)
     , preferences(ReadSettingsService(name))
     , services MC_PLUGIN_SERVICES_DEFAULT
-    , sourceHost MC_INDEXER_SOURCE_HOST_API_DEFAULT
+    , sourceHost MC_PLUGIN_INDEXER_SERVICE_DEFAULT
     , dataDirectory(GetDataDirectory())
     , pluginId(pluginId)
     , label(name) {
@@ -206,7 +206,7 @@ namespace musik { namespace core { namespace plugin {
             });
         };
 
-        this->services.indexer_source = &this->sourceHost;
+        this->services.indexer = &this->sourceHost;
         this->services.host = this->factory.Host();
 
         mc_result result = MC_ERROR_INTERNAL;

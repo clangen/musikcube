@@ -86,7 +86,7 @@ namespace {
         }
 
         Factory factory;
-        mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+        mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
         std::string directory;
         mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
         std::string name;

@@ -37,7 +37,7 @@
 #include <musikcore/config.h>
 #include <musikcore/db/Connection.h>
 
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/library/QueryBase.h>
 
@@ -49,22 +49,23 @@
 
 namespace musik { namespace core { namespace library {
 
-    class LocalLibrary :
-        public ILibrary,
+    /* owns a local catalog, its query worker and optional indexer. */
+    class LocalLibraryBackend :
+        public LibraryBackend,
         public musik::core::runtime::IMessageTarget,
-        public std::enable_shared_from_this<LocalLibrary>
+        public std::enable_shared_from_this<LocalLibraryBackend>
     {
         public:
             using LocalQuery = musik::core::library::query::QueryBase;
             using LocalQueryPtr = std::shared_ptr<LocalQuery>;
             using MessageQueue = musik::core::runtime::IMessageQueue;
 
-            static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer = true);
+            static LibraryBackend::Shared Create(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer = true);
 
-            LocalLibrary(const LocalLibrary&) = delete;
-            virtual ~LocalLibrary();
+            LocalLibraryBackend(const LocalLibraryBackend&) = delete;
+            virtual ~LocalLibraryBackend();
 
-            /* ILibrary */
+            /* LibraryBackend */
             int Enqueue(QueryPtr query, Callback cb = Callback()) override;
             int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) override;
             musik::core::Indexer *Indexer() override;
@@ -107,7 +108,7 @@ namespace musik { namespace core { namespace library {
             using QueryContextPtr = std::shared_ptr<QueryContext>;
             using QueryList = std::list<QueryContextPtr>;
 
-            LocalLibrary(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer); /* ctor */
+            LocalLibraryBackend(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer); /* ctor */
 
             void RunQuery(QueryContextPtr context, bool notify = true);
             void ThreadProc();

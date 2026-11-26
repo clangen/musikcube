@@ -74,7 +74,7 @@ static std::string GET_MAX_SORT_ORDER_QUERY =
     "SELECT COALESCE(MAX(sort_order), -1) from playlist_tracks where playlist_id = ?";
 
 AppendPlaylistQuery::AppendPlaylistQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks,
     const int offset) noexcept
@@ -173,7 +173,7 @@ std::string AppendPlaylistQuery::SerializeQuery() {
             { "playlistId", this->playlistId },
             { "offset", this->offset },
             { "tracks", TrackListToJsonIdList(*tracks) }
-        }}
+        } }
     };
     return output.dump();
 }
@@ -193,7 +193,7 @@ void AppendPlaylistQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<AppendPlaylistQuery> AppendPlaylistQuery::DeserializeQuery(
-    musik::core::ILibraryPtr library, const std::string& data)
+    musik::core::LibraryBackend::Shared library, const std::string& data)
 {
     auto options = nlohmann::json::parse(data)["options"];
     auto trackList = std::make_shared<TrackList>(library);

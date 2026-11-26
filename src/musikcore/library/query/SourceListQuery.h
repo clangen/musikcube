@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 #include <map>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -19,7 +19,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
         inline static const std::string kQueryName = "SourceListQuery";
 
-        explicit SourceListQuery(const ILibraryPtr& library = {}) {
+        explicit SourceListQuery(const LibraryBackend::Shared& library = {}) {
             if (library) {
                 this->loaded = library->Sources();
             }
@@ -58,7 +58,7 @@ namespace musik { namespace core { namespace library { namespace query {
             this->SetStatus(db::IQuery::Finished);
         }
 
-        static std::shared_ptr<SourceListQuery> DeserializeQuery(const std::string& data, const ILibraryPtr& library = {}) {
+        static std::shared_ptr<SourceListQuery> DeserializeQuery(const std::string& data, const LibraryBackend::Shared& library = {}) {
             const auto request = nlohmann::json::parse(data);
             if (request.at("name") != kQueryName || !request.at("options").empty()) {
                 throw std::invalid_argument("invalid source-list options");

@@ -213,7 +213,7 @@ int main(int argc, char** argv) {
     double seconds = 0;
     Require(decoder.GetDuration(seconds) == MC_OK && seconds > 0, "decoder reports track duration");
 
-    mc_audio_scratch_buffer_api scratch = MC_AUDIO_SCRATCH_BUFFER_API_DEFAULT;
+    mc_plugin_audio_scratch_service scratch = MC_PLUGIN_AUDIO_SCRATCH_SERVICE_DEFAULT;
     scratch.set_format = SetFormat;
     scratch.reserve = Reserve;
     scratch.begin_write = Begin;

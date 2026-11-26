@@ -2,7 +2,7 @@
 the private URI provides a synchronous no-connect assertion; a loopback listener
 then proves that explicit selection/reconnect and persisted remote startup still connect. */
 #include <musikcore/musikcore.hpp>
-#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/LibraryBackends.h>
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -84,8 +84,8 @@ namespace {
     /* inspect only the connection-intent seam, since public selected-library
     status alone previously hid an unwanted connection to the background remote. */
     bool remoteUntouched() {
-        const auto remote = std::static_pointer_cast<library::RemoteLibrary>(
-            LibraryFactory::Instance().DefaultRemoteLibrary());
+        const auto remote = std::static_pointer_cast<library::RemoteLibraryBackend>(
+            musik::core::library::DefaultRemoteBackend());
         return remote->WebSocketClient().Uri().empty();
     }
 }
@@ -99,7 +99,7 @@ int main() {
     settings->SetInt(prefs::keys::RemoteLibraryWssPort, probe.Port());
     settings->SetBool(prefs::keys::RemoteLibraryWssTls, false);
     settings->SetBool(prefs::keys::RemoteLibraryViewed, true);
-    settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
+    settings->SetInt(prefs::keys::LibraryType, static_cast<int>(LibraryBackend::Type::Remote));
 
     auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
     options.services = MC_SERVICE_LIBRARY;
@@ -108,8 +108,8 @@ int main() {
         /* local creation and repeated local selection must leave the saved
         endpoint untouched, even when the persisted preferred catalog is remote. */
         api::Context context(options);
-        auto remote = std::static_pointer_cast<library::RemoteLibrary>(
-            LibraryFactory::Instance().DefaultRemoteLibrary());
+        auto remote = std::static_pointer_cast<library::RemoteLibraryBackend>(
+            musik::core::library::DefaultRemoteBackend());
         LibraryTrack track(42, 1);
         track.SetValue("filename", "track.mp3");
         settings->SetBool(prefs::keys::RemoteLibraryHttpTls, true);

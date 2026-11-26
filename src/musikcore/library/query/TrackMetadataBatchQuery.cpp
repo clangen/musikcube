@@ -62,7 +62,7 @@ using namespace musik::core::sdk;
 
 const std::string TrackMetadataBatchQuery::kQueryName = "TrackMetadataBatchQuery";
 
-TrackMetadataBatchQuery::TrackMetadataBatchQuery(std::unordered_set<int64_t> trackIds, ILibraryPtr library,
+TrackMetadataBatchQuery::TrackMetadataBatchQuery(std::unordered_set<int64_t> trackIds, LibraryBackend::Shared library,
     std::vector<std::string> projection)
 : library(std::move(library))
 , trackIds(std::move(trackIds))
@@ -114,7 +114,7 @@ std::string TrackMetadataBatchQuery::SerializeQuery() {
         { "name", kQueryName },
         { "options", {
             { "trackIds", this->trackIds }
-        }}
+        } }
     };
     if (!this->projection.empty()) {
         output["options"]["fields"] = this->projection;
@@ -190,7 +190,7 @@ void TrackMetadataBatchQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<TrackMetadataBatchQuery> TrackMetadataBatchQuery::DeserializeQuery(
-    musik::core::ILibraryPtr library, const std::string& data)
+    musik::core::LibraryBackend::Shared library, const std::string& data)
 {
     using SetType = std::unordered_set <int64_t>;
     auto json = nlohmann::json::parse(data);

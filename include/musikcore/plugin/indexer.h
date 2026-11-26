@@ -2,6 +2,7 @@
 #define MUSIKCORE_PLUGIN_INDEXER_H
 
 #include <musikcore/plugin/metadata.h>
+#include <musikcore/indexer.h>
 #include <musikcore/plugin/services.h>
 
 #ifdef __cplusplus
@@ -16,21 +17,34 @@ extern "C" {
 /* a track assembled by an indexer source before it is saved to the library. */
 typedef struct mc_metadata_record mc_metadata_record;
 
-/* lets an indexer source request a later rescan when its external data changes.
-the service remains valid until the source instance is destroyed. */
-struct mc_indexer_source_host_api {
-    /* available bytes. initialize with MC_INDEXER_SOURCE_HOST_API_DEFAULT. */
+/* completes an accepted scheduling request on the runtime owner thread. */
+typedef void(MC_CALL* mc_plugin_indexer_completion_fn)(void* user_data, mc_result result);
+
+/* indexing operations granted to a plugin for its instance lifetime. source
+plugins receive only their source-bound rescan callback; general scan scheduling
+is supplied separately to plugins that are allowed to control the library. */
+struct mc_plugin_indexer_service {
+    /* available bytes. initialize with MC_PLUGIN_INDEXER_SERVICE_DEFAULT. */
     uint32_t struct_size;
 
-    /* host-owned source state, passed unchanged to request_rescan. */
+    /* host-owned scheduling state, passed unchanged to each granted callback. */
     void* context;
 
-    /* enqueue a scan of this source; safe to call from source worker threads.
-    requests made during startup are queued; shutdown returns MC_ERROR_CANCELLED. */
+    /* optional source-bound rescan callback; null for general scheduling services.
+    safe on source workers. requests during startup are queued; shutdown returns
+    MC_ERROR_CANCELLED. this callback cannot request another source's scan. */
     mc_result (MC_CALL* request_rescan)(void* context);
+
+    /* optional general scheduling callback. enqueue from any thread after start
+    and before stop; source-only services leave this null. accepted requests
+    complete once on the owner thread, including cancellation at shutdown.
+    completion may run before submission returns. rejected requests have no
+    callback. shares the plugin command queue with playback operations. */
+    mc_result(MC_CALL* schedule_async)(
+        void* context, mc_indexer_scan scan, mc_plugin_indexer_completion_fn completion, void* user_data);
 };
 
-#define MC_INDEXER_SOURCE_HOST_API_DEFAULT { sizeof(mc_indexer_source_host_api), NULL, NULL }
+#define MC_PLUGIN_INDEXER_SERVICE_DEFAULT { sizeof(mc_plugin_indexer_service), NULL, NULL, NULL }
 
 /* writes tracks owned by one source during its current scan. records and
 writers are valid only until the scan callback returns. i/o and internal errors

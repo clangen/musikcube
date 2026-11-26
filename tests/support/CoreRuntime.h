@@ -2,7 +2,7 @@
 
 #include <musikcore/debug.h>
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/LibraryBackends.h>
 #include <musikcore/library.hpp>
 #include <musikcore/playback.hpp>
 #include <musikcore/plugin/Plugins.h>
@@ -17,10 +17,10 @@ public:
         musik::debug::Start();
         try {
             musik::core::plugin::Initialize({});
-            musik::core::LibraryFactory::Initialize(this->queue);
+            musik::core::library::Initialize(this->queue);
         }
         catch (...) {
-            musik::core::LibraryFactory::Shutdown();
+            musik::core::library::Shutdown();
             musik::core::plugin::UnbindServices();
             musik::core::plugin::Shutdown();
             musik::debug::Shutdown();
@@ -29,7 +29,7 @@ public:
     }
     /* Stop library workers before unloading plugins and shutting down debugging. */
     ~CoreRuntime() {
-        musik::core::LibraryFactory::Shutdown();
+        musik::core::library::Shutdown();
         musik::core::plugin::UnbindServices();
         musik::core::plugin::Shutdown();
         musik::debug::Shutdown();
@@ -45,7 +45,7 @@ private:
 };
 
 std::shared_ptr<const musik::core::api::Library> OpenFixtureLibrary(
-    musik::core::ILibrary::Type kind = musik::core::ILibrary::Type::Local);
+    musik::core::LibraryBackend::Type kind = musik::core::LibraryBackend::Type::Local);
 
 inline musik::core::api::Playback OpenFixturePlayback(musik::core::audio::PlaybackService& service) {
     mc_playback* handle = nullptr;

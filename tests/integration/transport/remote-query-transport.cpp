@@ -9,8 +9,8 @@
 #include <musikcore/library/query/AllCategoriesQuery.h>
 #include <musikcore/library/query/SavePlaylistQuery.h>
 #include <musikcore/library/query/DeletePlaylistQuery.h>
-#include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/LibraryHost.h>
+#include <musikcore/library/LibraryBackends.h>
+#include <musikcore/plugin/PluginLibraryService.h>
 #include <musikcore/musikcore.hpp>
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/plugin/Plugins.h>
@@ -61,7 +61,7 @@ namespace {
     class Server {
         public:
             /* Bind a dynamic loopback port and select real typed-query forwarding or controlled mock replies. */
-            explicit Server(bool catalog = false, musik::core::ILibraryPtr local = {},
+            explicit Server(bool catalog = false, musik::core::LibraryBackend::Shared local = {},
                 std::string version = {}, bool closeAfterAuthentication = false, bool holdFirstProjection = false)
             {
                 this->socket.clear_access_channels(websocketpp::log::alevel::all);
@@ -396,7 +396,7 @@ namespace {
         const auto settings = musik::core::Preferences::ForComponent(prefs::components::Settings);
         settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
-        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
+        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(LibraryBackend::Type::Remote));
         settings->SetBool(prefs::keys::SaveSessionOnExit, false);
         struct SelectionNotice {
             Context* context = nullptr;
@@ -575,7 +575,7 @@ namespace {
         }
 
         /* Reconnecting creates a new generation even when the endpoint stays the same. */
-        const auto remote = std::dynamic_pointer_cast<library::RemoteLibrary>(LibraryFactory::Instance().DefaultRemoteLibrary());
+        const auto remote = std::dynamic_pointer_cast<library::RemoteLibraryBackend>(musik::core::library::DefaultRemoteBackend());
         remote->Connect();
         if (context.SelectLibrary(MC_LIBRARY_REMOTE) != MC_OK) {
             return failure(__LINE__);
@@ -1131,12 +1131,12 @@ namespace {
         CoreRuntime runtime;
         auto& host = runtime.Queue();
         const auto settings = musik::core::Preferences::ForComponent(prefs::components::Settings);
-        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
+        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(LibraryBackend::Type::Local));
         const auto local = OpenFixtureLibrary();
         if (!local) {
             return failure(__LINE__);
         }
-        Server server(false, LibraryFactory::Instance().DefaultLocalLibrary());
+        Server server(false, musik::core::library::DefaultLocalBackend());
         mc_remote_state connectionState = MC_REMOTE_DISCONNECTED;
         Context context(TestHostOptions(host));
         mc_remote_options options = MC_REMOTE_OPTIONS_DEFAULT;
@@ -1160,7 +1160,7 @@ namespace {
             return failure(__LINE__);
         }
         const auto remote = std::make_shared<const Library>(session.OpenLibrary());
-        if (LibraryFactory::Instance().DefaultRemoteLibrary()->Indexer() != nullptr) {
+        if (musik::core::library::DefaultRemoteBackend()->Indexer() != nullptr) {
             return failure(__LINE__);
         }
 
@@ -1553,12 +1553,12 @@ namespace {
         /* Playback still binds to the app's selected backend. */
         settings->SetString(prefs::keys::RemoteLibraryHostname, loopback.data());
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
-        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Remote));
-        const auto appRemote = std::static_pointer_cast<library::RemoteLibrary>(
-            LibraryFactory::Instance().DefaultRemoteLibrary());
+        settings->SetInt(prefs::keys::LibraryType, static_cast<int>(LibraryBackend::Type::Remote));
+        const auto appRemote = std::static_pointer_cast<library::RemoteLibraryBackend>(
+            musik::core::library::DefaultRemoteBackend());
         appRemote->Connect();
         std::shared_ptr<const Library> playbackLibrary;
-        if (!AwaitTestHost(host, [&] { return bool(playbackLibrary = OpenFixtureLibrary(ILibrary::Type::Remote)); })) {
+        if (!AwaitTestHost(host, [&] { return bool(playbackLibrary = OpenFixtureLibrary(LibraryBackend::Type::Remote)); })) {
             return failure(__LINE__);
         }
         TrackResult queueTracks;
@@ -1879,16 +1879,16 @@ namespace {
         if (!factory) {
             return failure(__LINE__);
         }
-        auto local = LibraryFactory::Instance().DefaultLocalLibrary();
-        library::query::LibraryHost first(*context.Get(), local, factory);
-        library::query::LibraryHost second(*context.Get(), local, factory);
+        auto local = musik::core::library::DefaultLocalBackend();
+        plugin::PluginLibraryService first(*context.Get(), local, factory);
+        plugin::PluginLibraryService second(*context.Get(), local, factory);
         auto firstServices = mc_plugin_services MC_PLUGIN_SERVICES_DEFAULT;
         auto secondServices = mc_plugin_services MC_PLUGIN_SERVICES_DEFAULT;
-        firstServices.library = &first.HostApi();
-        secondServices.library = &second.HostApi();
+        firstServices.library = &first.Api();
+        secondServices.library = &second.Api();
 
         /* direct plugin lookups must still see hidden tracks, while searches stay filtered. */
-        const auto localLibrary = std::dynamic_pointer_cast<library::LocalLibrary>(local);
+        const auto localLibrary = std::dynamic_pointer_cast<library::LocalLibraryBackend>(local);
         db::Connection fixtureDb;
         if (!localLibrary || fixtureDb.Open(localLibrary->GetDatabaseFilename()) != db::Okay ||
             fixtureDb.Execute("INSERT INTO tracks (id, title, external_id, visible) "
@@ -1898,7 +1898,7 @@ namespace {
         {
             return failure(__LINE__);
         }
-        const auto& hiddenHost = first.HostApi();
+        const auto& hiddenHost = first.Api();
         /* rejected replacement must neither report success nor rename the
         source-owned playlist after its contents fail validation. */
         if (fixtureDb.Execute("INSERT INTO playlists (id, name, source_id) VALUES (987655, 'Keep title', 7)") !=
@@ -2015,10 +2015,10 @@ namespace {
         {
             return failure(__LINE__);
         }
-        library::query::LibraryHost interrupted(*context.Get(), local, factory);
+        plugin::PluginLibraryService interrupted(*context.Get(), local, factory);
         Artwork interruptedArtwork;
         auto pendingArtwork = std::async(std::launch::async, [&] {
-            return interrupted.HostApi().read_library_thumbnail(interrupted.HostApi().context,
+            return interrupted.Api().read_library_thumbnail(interrupted.Api().context,
                 remoteLibrary.Get(), 987655, receiveArtwork, &interruptedArtwork);
         });
         if (!server.WaitForArtworkRequest()) {
@@ -2030,9 +2030,9 @@ namespace {
         {
             return failure(__LINE__);
         }
-        library::query::LibraryHost stopped(*context.Get(), local, factory);
+        plugin::PluginLibraryService stopped(*context.Get(), local, factory);
         stopped.CancelReads();
-        if (stopped.HostApi().read_library_thumbnail(stopped.HostApi().context, localOrigin, hiddenId,
+        if (stopped.Api().read_library_thumbnail(stopped.Api().context, localOrigin, hiddenId,
             receiveArtwork, &localArtwork) != MC_ERROR_CANCELLED || localArtwork.callbacks != 1)
         {
             return failure(__LINE__);
@@ -2056,7 +2056,7 @@ namespace {
         }
 
         /* only registered queries run; malformed input and forged SQL never reach the database. */
-        const auto& localHost = first.HostApi();
+        const auto& localHost = first.Api();
         std::string response;
         unsigned callbacks = 0;
         struct QueryReply {

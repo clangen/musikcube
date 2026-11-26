@@ -42,7 +42,7 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
-#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/LocalLibraryBackend.h>
 #include <common/Contract.h>
 
 #include <unordered_map>

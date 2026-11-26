@@ -46,7 +46,7 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DirectoryTrackListQuery)
 
             DirectoryTrackListQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const std::string& directory,
                 const std::string& filter = "");
 
@@ -64,14 +64,14 @@ namespace musik { namespace core { namespace library { namespace query {
             std::string SerializeResult() override;
             void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<DirectoryTrackListQuery> DeserializeQuery(
-                musik::core::ILibraryPtr library, const std::string& data);
+                musik::core::LibraryBackend::Shared library, const std::string& data);
 
         protected:
             /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             std::string directory, filter;
             Result result;
             Headers headers;

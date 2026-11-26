@@ -74,13 +74,13 @@
 #include <musikcore/db/SqliteExtensions.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/debug.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <musikcore/library/Indexer.h>
 #include <musikcore/library/IQuery.h>
-#include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/LibraryBackends.h>
+#include <musikcore/library/LocalLibraryBackend.h>
 #include <musikcore/library/LocalLibraryConstants.h>
-#include <musikcore/library/LibraryHost.h>
+#include <musikcore/plugin/PluginLibraryService.h>
 #include <musikcore/library/query/AlbumListQuery.h>
 #include <musikcore/library/query/AllCategoriesQuery.h>
 #include <musikcore/library/query/AppendPlaylistQuery.h>
@@ -105,7 +105,7 @@
 #include <musikcore/library/query/util/TrackSort.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/QueryRegistry.h>
-#include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/library/RemoteLibraryBackend.h>
 #include <musikcore/library/track/IndexerTrack.h>
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/track/Track.h>

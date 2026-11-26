@@ -1,6 +1,6 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
-#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/LocalLibraryBackend.h>
 #include <musikcore/library/query/SourceListQuery.h>
 #include <musikcore/library.h>
 
@@ -41,7 +41,7 @@ namespace {
 int main() {
     db::Connection database;
     require(database.Open(":memory:") == db::Okay, "open catalog");
-    musik::core::library::LocalLibrary::CreateDatabase(database);
+    musik::core::library::LocalLibraryBackend::CreateDatabase(database);
     execute(database, "INSERT INTO playlists (id,name,user_id) VALUES (41,'Existing',3)");
     checkOwnership(database);
 
@@ -54,9 +54,9 @@ int main() {
     execute(database, "INSERT INTO playlists VALUES (41,'Existing',3)");
     execute(database, "INSERT INTO playlist_tracks VALUES (41,'track',7,0),(41,'track',7,1)");
     execute(database, "UPDATE version SET version=11");
-    musik::core::library::LocalLibrary::CreateDatabase(database);
+    musik::core::library::LocalLibraryBackend::CreateDatabase(database);
     checkOwnership(database);
-    musik::core::library::LocalLibrary::CreateDatabase(database);
+    musik::core::library::LocalLibraryBackend::CreateDatabase(database);
 
     execute(database, "INSERT INTO playlist_tracks VALUES (41,'file',0,2),(42,'file',0,0),(43,'provider',7,0)");
     require(database.Execute("INSERT INTO playlist_tracks VALUES (43,'other',0,1)") != db::Okay,
@@ -88,7 +88,7 @@ int main() {
     auto remote = query::SourceListQuery::DeserializeQuery(sources.SerializeQuery());
     remote->DeserializeResult(sources.SerializeResult());
     require(remote->GetResult().size() == rows.size(), "source wire round trip");
-    musik::core::library::LocalLibrary::CreateDatabase(database);
+    musik::core::library::LocalLibraryBackend::CreateDatabase(database);
     require(sources.Run(database) && sources.GetResult().size() == rows.size(),
         "retain referenced sources without a provider instance");
     mc_request_id request = 17;

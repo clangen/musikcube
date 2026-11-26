@@ -90,8 +90,8 @@ namespace wrapper_tests {
         using namespace musik::core::library;
         using namespace musik::core::library::query;
 
-        const auto local = LibraryFactory::Instance().DefaultLocalLibrary();
-        const auto remote = LibraryFactory::Instance().DefaultRemoteLibrary();
+        const auto local = musik::core::library::DefaultLocalBackend();
+        const auto remote = musik::core::library::DefaultRemoteBackend();
         const auto roundTrip = [&](db::ISerializableQuery& remoteQuery) {
             const auto server = QueryRegistry::CreateLocalQueryFor(
                 remoteQuery.Name(), remoteQuery.SerializeQuery(), local);
@@ -145,7 +145,7 @@ namespace wrapper_tests {
     /* Compare category/directory selections and read reordered duplicate IDs through the selected backend. */
     bool checkBrowseReads(const char* directory) {
         using namespace musik::core;
-        const auto selected = LibraryFactory::Instance().DefaultLocalLibrary();
+        const auto selected = musik::core::library::DefaultLocalBackend();
         const auto source = OpenFixtureLibrary();
         if (!source) return false;
 
@@ -232,7 +232,7 @@ namespace wrapper_tests {
         if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || tracks.Size() != 2) return false;
 
         /* Closing the origin rejects reads even while its database file is present. */
-        LibraryFactory::Instance().DefaultLocalLibrary()->Close();
+        musik::core::library::DefaultLocalBackend()->Close();
         OpenTrackSearch(context, *library, TrackSearch{ "Fixture Artist" },
             [&](mc_result status, TrackResult, std::string_view) { completed = status; });
         return query_test_wait_for_wakeup(wakes + 2) && context.Dispatch() == MC_OK && completed == MC_ERROR_IO;

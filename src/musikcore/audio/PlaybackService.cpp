@@ -62,7 +62,7 @@ using namespace musik::core::audio;
 using namespace musik::core::library::query;
 
 using musik::core::TrackPtr;
-using musik::core::ILibraryPtr;
+using musik::core::LibraryBackend;
 using musik::core::audio::ITransport;
 using Editor = PlaybackService::Editor;
 
@@ -134,7 +134,7 @@ the specified timeout we consider it a failure and stop playback. */
 
 PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
-    ILibraryPtr library,
+    LibraryBackend::Shared library,
     std::shared_ptr<ITransport> transport)
 : playlist(library)
 , unshuffled(library)
@@ -168,7 +168,7 @@ PlaybackService::PlaybackService(
 
 PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
-    ILibraryPtr library)
+    LibraryBackend::Shared library)
 : PlaybackService(messageQueue, library, std::make_shared<MasterTransport>()) {
     messageQueue.Register(this);
 }
@@ -182,7 +182,7 @@ void PlaybackService::Initialize(bool synchronousRestore) {
     loadPreferences(*this->transport, *this, *playbackPrefs);
     /* remote work needs the host dispatcher; never wait on an unconnected catalog. */
     playback::LoadPlaybackContext(library, *this,
-        synchronousRestore && this->library->GetType() == ILibrary::Type::Local);
+        synchronousRestore && this->library->GetType() == LibraryBackend::Type::Local);
 }
 
 void PlaybackService::Shutdown() {
@@ -202,7 +202,7 @@ void PlaybackService::Shutdown() {
     this->transport->Destroy();
 }
 
-void PlaybackService::SelectLibrary(ILibraryPtr library) {
+void PlaybackService::SelectLibrary(LibraryBackend::Shared library) {
     auto previous = this->library;
     if (previous == library) {
         return;
@@ -902,7 +902,7 @@ double PlaybackService::GetDuration() {
 
 TrackPtr PlaybackService::GetTrack(size_t index) {
     std::lock_guard lock(this->playlistMutex);
-    if (this->library->GetConnectionState() != ILibrary::ConnectionState::Connected ||
+    if (this->library->GetConnectionState() != LibraryBackend::ConnectionState::Connected ||
         (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)) || index >= this->playlist.Count())
     {
         return {};
@@ -917,7 +917,7 @@ TrackPtr PlaybackService::GetPlaying() {
 
 TrackPtr PlaybackService::TrackAtIndexWithTimeout(size_t index) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-    if (this->library->GetConnectionState() != ILibrary::ConnectionState::Connected) {
+    if (this->library->GetConnectionState() != LibraryBackend::ConnectionState::Connected) {
         return TrackPtr();
     }
 

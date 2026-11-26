@@ -121,7 +121,7 @@ namespace {
     };
 
     /* project rows after the owner thread has released the queue snapshot. */
-    Page readTracks(const mc_library_host_api& library, const mc_track_result* tracks, size_t offset, size_t limit) {
+    Page readTracks(const mc_plugin_library_service& library, const mc_track_result* tracks, size_t offset, size_t limit) {
         auto range = mc_track_range MC_TRACK_RANGE_DEFAULT;
         range.offset = offset;
         range.limit = limit;
@@ -326,8 +326,8 @@ void WebSocketServer::DispatchPlayback(std::function<mc_result(mc_playback*)> op
         .completion = std::move(completion),
     });
     auto* pending = work.release();
-    const auto status = this->context.playbackRemote->with_playback_async(
-        this->context.playbackRemote->context, [](void* data, mc_result result, mc_playback* playback) {
+    const auto status = this->context.playback->with_playback_async(
+        this->context.playback->context, [](void* data, mc_result result, mc_playback* playback) {
             std::unique_ptr<Work> work(static_cast<Work*>(data));
             {
                 musik::core::api::Playback owned(playback);
@@ -612,7 +612,7 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
     if (!name.size() || !id.size()) {
         RespondWithInvalidRequest(connection, name, id);
     }
-    else if (context.playbackRemote) {
+    else if (context.playback) {
         if (request.find(message::options) == request.end()) {
             request[message::options] = {};
         }

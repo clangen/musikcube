@@ -46,7 +46,7 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_CLASS_DEFAULTS(SearchTrackListQuery)
 
             SearchTrackListQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 MatchType matchType,
                 const std::string& filter,
                 TrackSortType sort);
@@ -66,14 +66,14 @@ namespace musik { namespace core { namespace library { namespace query {
             std::string SerializeResult() override;
             void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<SearchTrackListQuery> DeserializeQuery(
-                musik::core::ILibraryPtr library, const std::string& data);
+                musik::core::LibraryBackend::Shared library, const std::string& data);
 
         protected:
             /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             MatchType matchType;
             size_t hash;
 

@@ -11,7 +11,7 @@ namespace server {
         }
     }
 
-    bool MediaStream::Open(const mc_media_host_api& media, const std::string& uri, mc_stream_open_flags flags) {
+    bool MediaStream::Open(const mc_plugin_media_service& media, const std::string& uri, mc_stream_open_flags flags) {
         const mc_string_view path {
             .data = uri.data(),
             .length = uri.size(),
@@ -34,8 +34,8 @@ namespace server {
     }
 
     bool DecodedAudio::Open(
-        const mc_media_host_api& media,
-        const mc_audio_scratch_buffer_api& buffers,
+        const mc_plugin_media_service& media,
+        const mc_plugin_audio_scratch_service& buffers,
         const std::string& uri)
     {
         if (!input.Open(media, uri, MC_STREAM_OPEN_READ)) {
@@ -86,7 +86,7 @@ namespace server {
 
     class FileBody final : public ResponseBody {
     public:
-        bool Open(const mc_media_host_api& media, const std::string& filename) {
+        bool Open(const mc_plugin_media_service& media, const std::string& filename) {
             if (!file.Open(media, filename, MC_STREAM_OPEN_READ)) {
                 return false;
             }
@@ -157,7 +157,7 @@ namespace server {
         bool ended = false;
     };
 
-    static std::unique_ptr<FileBody> openFile(const mc_media_host_api& media, const std::string& filename) {
+    static std::unique_ptr<FileBody> openFile(const mc_plugin_media_service& media, const std::string& filename) {
         auto body = std::make_unique<FileBody>();
         if (!body->Open(media, filename)) {
             return {};
@@ -165,11 +165,11 @@ namespace server {
         return body;
     }
 
-    std::unique_ptr<ResponseBody> OpenFileBody(const mc_media_host_api& media, const std::string& filename) {
+    std::unique_ptr<ResponseBody> OpenFileBody(const mc_plugin_media_service& media, const std::string& filename) {
         return openFile(media, filename);
     }
 
-    std::unique_ptr<ResponseBody> TakeTemporaryFileBody(const mc_media_host_api& media, std::string& filename) {
+    std::unique_ptr<ResponseBody> TakeTemporaryFileBody(const mc_plugin_media_service& media, std::string& filename) {
         auto body = openFile(media, filename);
         if (body) {
             body->TakeTemporaryFile(filename);

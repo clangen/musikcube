@@ -521,3 +521,5 @@ The modernization is complete when:
 - [ADR-0015: Database behind the library API](../docs/adr/0015-database-behind-library-api.md)
 - [ADR-0016: Independent application and plugin ABI versions](../docs/adr/0016-independent-application-and-plugin-abi-versions.md)
 - [ADR-0017: Library scope and query lifetime](../docs/adr/0017-library-scope-query-lifetime.md)
+
+- [ADR-0018: Library layers and plugin services](../docs/adr/0018-library-layers-and-plugin-services.md)

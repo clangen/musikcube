@@ -39,7 +39,7 @@
 
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/track/TrackList.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/support/Preferences.h>
 #include <common/runtime/IMessageQueue.h>
@@ -48,7 +48,7 @@
 #include <mutex>
 #include <thread>
 
-struct LibraryInstance;
+namespace musik { namespace core { namespace library { class Library; } } }
 
 namespace musik { namespace core { namespace audio {
 
@@ -84,12 +84,12 @@ namespace musik { namespace core { namespace audio {
 
             PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 std::shared_ptr<musik::core::audio::ITransport> transport);
 
             PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
-                musik::core::ILibraryPtr library);
+                musik::core::LibraryBackend::Shared library);
 
             virtual ~PlaybackService();
 
@@ -138,7 +138,7 @@ namespace musik { namespace core { namespace audio {
             void CopyTo(musik::core::TrackList& target);
             void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetPlaying();
-            void SelectLibrary(musik::core::ILibraryPtr library);
+            void SelectLibrary(musik::core::LibraryBackend::Shared library);
             void InvalidateDisconnectedCatalog();
             mc_result OpenHandle(mc_playback** out);
 
@@ -209,8 +209,8 @@ namespace musik { namespace core { namespace audio {
             static std::shared_ptr<PlaybackEvents> CreatePlaybackEvents();
             void NotifyPlaybackChanged(mc_playback_event event);
             void DeliverPlaybackNotification(runtime::IMessage& message);
-            bool MatchesOrigin(const LibraryInstance& origin) const;
-            std::shared_ptr<const LibraryInstance> CaptureOrigin(int libraryId) const;
+            bool MatchesOrigin(const musik::core::library::Library& origin) const;
+            std::shared_ptr<const musik::core::library::Library> CaptureOrigin(int libraryId) const;
 
             ITransport::Connections transportConnections;
             api::Subscriptions<int>::Connection indexFinished;
@@ -219,8 +219,8 @@ namespace musik { namespace core { namespace audio {
             bool stopped = false;
             musik::core::TrackList playlist;
             uint64_t queueRevision = 0;
-            std::shared_ptr<const LibraryInstance> queueOrigin;
-            std::shared_ptr<const LibraryInstance> playingOrigin;
+            std::shared_ptr<const musik::core::library::Library> queueOrigin;
+            std::shared_ptr<const musik::core::library::Library> playingOrigin;
             std::shared_ptr<PlaybackEvents> apiEvents;
             const std::thread::id apiOwner = std::this_thread::get_id();
             musik::core::TrackList unshuffled;
@@ -230,7 +230,7 @@ namespace musik { namespace core { namespace audio {
             std::shared_ptr<musik::core::Preferences> appPrefs;
             musik::core::TrackPtr playingTrack;
 
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             std::shared_ptr<musik::core::audio::ITransport> transport;
             size_t index, nextIndex;
             ITransport::StartMode requestedStartMode { ITransport::StartMode::Immediate };

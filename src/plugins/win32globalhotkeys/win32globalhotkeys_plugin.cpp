@@ -23,7 +23,7 @@ namespace {
     class Hotkeys {
     public:
         explicit Hotkeys(const mc_plugin_services& services)
-        : host(services.playback_remote), stopEvent(CreateEventW(nullptr, TRUE, FALSE, nullptr)) {
+        : host(services.playback), stopEvent(CreateEventW(nullptr, TRUE, FALSE, nullptr)) {
             if (!stopEvent) throw std::runtime_error("cannot create hotkey stop event");
         }
         ~Hotkeys() noexcept {
@@ -158,7 +158,7 @@ namespace {
             installed.store(nullptr);
         }
 
-        const mc_playback_remote_host_api* host;
+        const mc_plugin_playback_service* host;
         HANDLE stopEvent;
         std::atomic<bool> accepting { false };
         std::atomic<double> volume { 1.0 };

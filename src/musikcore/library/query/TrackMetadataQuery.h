@@ -36,7 +36,7 @@
 
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/track/Track.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -50,7 +50,7 @@ class TrackMetadataQuery : public QueryBase {
 
         TrackMetadataQuery(
             musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library,
+            musik::core::LibraryBackend::Shared library,
             Type type = Type::Full) noexcept;
 
         TrackPtr Result() {
@@ -67,7 +67,7 @@ class TrackMetadataQuery : public QueryBase {
         std::string SerializeResult() override;
         void DeserializeResult(const std::string& data) override;
         static std::shared_ptr<TrackMetadataQuery> DeserializeQuery(
-            musik::core::ILibraryPtr library, const std::string& data);
+            musik::core::LibraryBackend::Shared library, const std::string& data);
 
     protected:
         /* QueryBase */
@@ -75,7 +75,7 @@ class TrackMetadataQuery : public QueryBase {
 
     private:
         Type type;
-        musik::core::ILibraryPtr library;
+        musik::core::LibraryBackend::Shared library;
         musik::core::TrackPtr result;
 };
 

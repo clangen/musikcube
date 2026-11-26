@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <common/runtime/IMessage.h>
 #include <string>
 #include <string_view>
@@ -58,8 +58,8 @@ namespace musik { namespace core { namespace plugin {
     void BindPlaybackRemotes(PlaybackRemotes& remotes);
     void UnbindPlaybackRemotes();
 
-    const mc_media_host_api& Media();
-    const mc_audio_scratch_buffer_api& AudioScratch();
+    const mc_plugin_media_service& Media();
+    const mc_plugin_audio_scratch_service& AudioScratch();
 
     std::vector<std::shared_ptr<audio::Dsp>> CreateDsps();
 
@@ -79,7 +79,7 @@ namespace musik { namespace core { namespace plugin {
 
     ffi::PluginRegistry::Factory<mc_configuration_api> FindConfiguration(std::string_view pluginId);
 
-    mc_preferences_host_api ReadSettingsService(const std::string& pluginName);
+    mc_plugin_preferences_service ReadSettingsService(const std::string& pluginName);
 
     void ValidateShutdown();
     void UnbindServices();

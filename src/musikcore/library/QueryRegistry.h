@@ -35,7 +35,7 @@
 #pragma once
 
 #include <musikcore/library/IQuery.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <string>
 #include <memory>
 
@@ -43,7 +43,7 @@ namespace musik { namespace core { namespace library {
 
     namespace QueryRegistry {
         std::shared_ptr<musik::core::db::ISerializableQuery> CreateLocalQueryFor(
-            const std::string& name, const std::string& data, musik::core::ILibraryPtr library);
+            const std::string& name, const std::string& data, musik::core::LibraryBackend::Shared library);
 
         bool IsLocalOnlyQuery(const std::string& queryName);
     }

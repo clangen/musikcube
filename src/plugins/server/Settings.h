@@ -11,7 +11,7 @@
 /* reads the server's saved settings through the host-provided service. */
 class ServerSettings {
 public:
-    explicit ServerSettings(const mc_preferences_host_api& preferences) : preferences(preferences) {}
+    explicit ServerSettings(const mc_plugin_preferences_service& preferences) : preferences(preferences) {}
 
     bool Boolean(std::string_view key, bool fallback = false) const {
         bool value = fallback;
@@ -65,5 +65,5 @@ private:
         };
     }
 
-    const mc_preferences_host_api& preferences;
+    const mc_plugin_preferences_service& preferences;
 };

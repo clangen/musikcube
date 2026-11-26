@@ -35,7 +35,7 @@
 #pragma once
 
 #include <common/DeleteDefaults.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <musikcore/library/IndexingTypes.h>
 #include <musikcore/plugin/metadata.h>
 #include <atomic>
@@ -52,7 +52,7 @@ namespace musik { namespace core {
             typedef std::multimap<std::string, std::string> MetadataMap;
             typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;
 
-            virtual musik::core::ILibraryPtr Library() noexcept { return {}; }
+            virtual musik::core::LibraryBackend::Shared Library() noexcept { return {}; }
             virtual int LibraryId() noexcept { return 0; }
 
             virtual ~Track() = default;

@@ -1,6 +1,7 @@
 #include <musikcore/library.h>
 
 #include "library-storage.h"
+#include "library-query-catalog.h"
 
 #include "request.h"
 #include "../common/error.h"
@@ -18,39 +19,6 @@ namespace query = musik::core::library::query;
 namespace {
     using namespace musik::core::ffi;
 
-    /* action labels have static lifetime so successful requests need no extra
-    diagnostic allocation while retaining the label through dispatch. */
-    template<typename Result, typename Work, typename Completion>
-    mc_result submitLibraryRequest(mc_context *context, const char* operation, Work work, Completion completion,
-        void *user_data, mc_request_id *out_request, const void* owner = nullptr,
-        std::shared_ptr<LibraryScopeState> scopeState = {},
-        std::shared_ptr<const query::LibraryQueryScope> snapshot = {})
-    {
-        const auto scopeRequest = scopeState ? ScopedLibraryRequest::Create(scopeState, snapshot) : nullptr;
-        const auto output = std::make_shared<std::unique_ptr<Result>>();
-        const auto canceled = std::make_shared<std::atomic_bool>(false);
-        const auto status = submit_request(
-            context,
-            [=]() -> mc_result {
-                if (scopeState && !scopeState->IsCurrent(snapshot)) {
-                    return MC_ERROR_CANCELLED;
-                }
-                return work(*output, *canceled);
-            },
-            [=, keepScope = scopeRequest](mc_result result, void* data) {
-                if (scopeState && !scopeState->AdmitCompletion(snapshot)) {
-                    result = MC_ERROR_CANCELLED;
-                }
-                const CompletionError error(result, operation);
-                completion(result, result == MC_OK ? output->release() : nullptr, error.Get(), data);
-            },
-            user_data, out_request, canceled, RequestEffect::Read, owner);
-        if (status == MC_OK && scopeRequest) {
-            scopeRequest->Bind(context, *out_request);
-        }
-        return status;
-    }
-
     bool copyFields(const mc_string_view *fields, size_t count, size_t maximum,
         std::vector<std::string> &names) {
         if ((count && !fields) || count > maximum || count > static_cast<size_t>(PTRDIFF_MAX) / sizeof(*fields)) return false;
@@ -62,25 +30,6 @@ namespace {
         return true;
     }
 
-    mc_result readPage(const LibraryInstance &library, const query::TrackPageQuery &query,
-        std::unique_ptr<mc_track_page> &output, const std::atomic_bool& canceled) {
-        if (!library.backend) return MC_ERROR_UNSUPPORTED;
-        auto page = std::unique_ptr<mc_track_page>(new mc_track_page);
-        if (!library.backend->Run(query, *page, canceled)) return MC_ERROR_IO;
-        for (const auto& row : page->rows) if (row.id <= 0) return MC_ERROR_IO;
-        output = std::move(page);
-        return MC_OK;
-    }
-
-    mc_result openSearch(const std::shared_ptr<const LibraryInstance> &library, const query::TrackSearchQuery &query,
-        std::unique_ptr<mc_track_result> &output, const std::atomic_bool& canceled) {
-        auto result = std::make_shared<TrackResultData>();
-        if (!library->backend->Run(query, *result, canceled)) return MC_ERROR_IO;
-        if (!valid_ids(result->ids.data(), result->ids.size())) return MC_ERROR_IO;
-        result->library = library;
-        output.reset(new mc_track_result{ std::move(result) });
-        return MC_OK;
-    }
 
 }
 
@@ -97,11 +46,7 @@ mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_librar
         }
 
         std::string target(locator.data, locator.length);
-        auto backend = kind == MC_LIBRARY_LOCAL ? query::OpenTrackReadBackend(target + "/musik.db") : nullptr;
-        auto instance = std::make_shared<LibraryInstance>();
-        instance->locator = std::move(target);
-        instance->backend = std::move(backend);
-        instance->kind = kind;
+        auto instance = detail::CreateCatalogLibrary(std::move(target), kind);
         *out_library = new mc_library{ std::move(instance) };
         return MC_OK;
     });
@@ -121,10 +66,9 @@ mc_result MC_CALL mc_context_set_library(mc_context* context, const mc_library* 
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         musik::core::ffi::LibraryStatus status;
         if (library) {
-            status.kind = library->instance->kind;
+            status.kind = library->instance->Kind();
             status.configured = true;
-            if (status.kind == MC_LIBRARY_LOCAL ||
-                (library->instance->async && library->instance->async->Matches(library->instance->async->Backend().get())))
+            if (status.kind == MC_LIBRARY_LOCAL || library->instance->Matches(library->instance->NativeBackend().get()))
             {
                 status.state = MC_LIBRARY_CONNECTED;
             }
@@ -162,11 +106,8 @@ mc_result MC_CALL mc_library_list_albums_async(mc_context* context, const mc_lib
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        if (!instance->queries) {
-            return MC_ERROR_UNSUPPORTED;
-        }
-        return instance->queries->ListAlbums(context, std::string(filter.data ? filter.data : "", filter.length),
-            completion, user_data, out_request, instance->scope);
+        return instance->ListAlbums(
+            context, std::string(filter.data ? filter.data : "", filter.length), completion, user_data, out_request);
     });
 }
 
@@ -185,20 +126,7 @@ mc_result MC_CALL mc_library_read_thumbnail_async(mc_context* context, const mc_
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        if (!instance->queries) {
-            return MC_ERROR_UNSUPPORTED;
-        }
-        using Image = std::vector<uint8_t>;
-        return submitLibraryRequest<Image>(context, "Load album artwork",
-            [=](std::unique_ptr<Image>& output, const std::atomic_bool& canceled) {
-                output.reset(new Image);
-                return instance->queries->ReadThumbnail(thumbnail_id, *output, canceled);
-            },
-            [=](mc_result status, Image* bytes, const mc_error* error, void* data) {
-                const std::unique_ptr<Image> owned(bytes);
-                completion(status, bytes ? mc_byte_view { bytes->data(), bytes->size() } : mc_byte_view {},
-                    error, data);
-            }, user_data, out_request);
+        return instance->ReadThumbnailAsync(context, thumbnail_id, completion, user_data, out_request);
     });
 }
 
@@ -214,9 +142,7 @@ mc_result MC_CALL mc_track_set_rating_async(mc_context* context, const mc_track_
     }
 
     return exception_barrier(nullptr, [&]() -> mc_result {
-        const auto& queries = track->library->queries;
-        return queries ? queries->SetTrackRating(context, track->id, rating, completion, user_data, out_request)
-            : MC_ERROR_UNSUPPORTED;
+        return track->library->SetTrackRating(context, track->id, rating, completion, user_data, out_request);
     });
 }
 
@@ -230,8 +156,7 @@ mc_result MC_CALL mc_library_open_playlist_async(mc_context *context, const mc_l
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        if (!instance->queries) return MC_ERROR_UNSUPPORTED;
-        return instance->queries->OpenPlaylist(context, instance, playlist_id, completion, user_data, out_request);
+        return instance->OpenPlaylist(context, playlist_id, completion, user_data, out_request);
     });
 }
 
@@ -250,9 +175,7 @@ static mc_result openSelection(mc_context *context, const mc_library *library, m
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        if (!instance->queries) return MC_ERROR_UNSUPPORTED;
-        return instance->queries->OpenSelection(context, instance,
-            std::string(category.data ? category.data : "", category.length),
+        return instance->OpenSelection(context, std::string(category.data ? category.data : "", category.length),
             std::string(directory.data ? directory.data : "", directory.length), id,
             static_cast<query::TrackSortType>(order), completion, data, request);
     });
@@ -298,9 +221,7 @@ mc_result MC_CALL mc_library_list_category_fields_async(mc_context* context, con
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        return instance->queries
-            ? instance->queries->ListCategoryFields(context, completion, data, request)
-            : MC_ERROR_UNSUPPORTED;
+        return instance->ListCategoryFields(context, completion, data, request);
     });
 }
 
@@ -333,11 +254,8 @@ mc_result MC_CALL mc_library_list_categories_async(mc_context* context, const mc
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        if (!instance->queries) {
-            return MC_ERROR_UNSUPPORTED;
-        }
-        return instance->queries->ListCategories(context, std::string(field.data, field.length),
-            std::string(filter.data ? filter.data : "", filter.length), mode, completion, user_data, out_request, instance->scope);
+        return instance->ListCategories(context, std::string(field.data, field.length),
+            std::string(filter.data ? filter.data : "", filter.length), mode, completion, user_data, out_request);
     });
 }
 
@@ -371,14 +289,11 @@ mc_result MC_CALL mc_library_list_facets_async(mc_context* context, const mc_lib
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        if (!instance->queries) {
-            return MC_ERROR_UNSUPPORTED;
-        }
         std::string term(search.data ? search.data : "", search.length);
         const auto begin = term.find_first_not_of(" \t\n\r\f\v");
         term = begin == std::string::npos ? "" : term.substr(begin, term.find_last_not_of(" \t\n\r\f\v") - begin + 1);
-        return instance->queries->ListFacets(context, fields[field], std::move(term),
-            std::move(predicates), completion, data, request, instance->scope);
+        return instance->ListFacets(
+            context, fields[field], std::move(term), std::move(predicates), completion, data, request);
     });
 }
 
@@ -392,8 +307,7 @@ mc_result MC_CALL mc_library_list_playlists_async(mc_context *context, const mc_
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        const auto& reader = instance->queries;
-        return reader ? reader->ListPlaylists(context, completion, data, request, instance->scope) : MC_ERROR_UNSUPPORTED;
+        return instance->ListPlaylists(context, completion, data, request);
     });
 }
 
@@ -409,10 +323,8 @@ mc_result MC_CALL mc_library_save_playlist_async(mc_context *context, const mc_l
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        const auto& reader = instance->queries;
-        if (!reader) return MC_ERROR_UNSUPPORTED;
-        return reader->SavePlaylist(context, id, std::string(name.data ? name.data : "", name.length),
-            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, false, completion, data, request);
+        return instance->SavePlaylist(context, id, std::string(name.data ? name.data : "", name.length),
+            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t> {}, false, completion, data, request);
     });
 }
 
@@ -427,10 +339,8 @@ mc_result MC_CALL mc_library_append_playlist_async(mc_context *context, const mc
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        const auto& reader = instance->queries;
-        if (!reader) return MC_ERROR_UNSUPPORTED;
-        return reader->SavePlaylist(context, id, {},
-            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t>{}, true, completion, data, request);
+        return instance->SavePlaylist(context, id, {},
+            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t> {}, true, completion, data, request);
     });
 }
 
@@ -444,9 +354,7 @@ mc_result MC_CALL mc_library_rename_playlist_async(mc_context *context, const mc
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        const auto& reader = instance->queries;
-        if (!reader) return MC_ERROR_UNSUPPORTED;
-        return reader->RenamePlaylist(context, id, std::string(name.data, name.length), completion, data, request);
+        return instance->RenamePlaylist(context, id, std::string(name.data, name.length), completion, data, request);
     });
 }
 
@@ -460,8 +368,7 @@ mc_result MC_CALL mc_library_delete_playlist_async(mc_context *context, const mc
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        const auto& reader = instance->queries;
-        return reader ? reader->DeletePlaylist(context, id, completion, data, request) : MC_ERROR_UNSUPPORTED;
+        return instance->DeletePlaylist(context, id, completion, data, request);
     });
 }
 
@@ -497,19 +404,13 @@ mc_result MC_CALL mc_library_query_tracks_async(
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        if (!instance->backend) {
-            return MC_ERROR_UNSUPPORTED;
-        }
         const std::string term(search.length ? search.data : "", search.length);
-        const auto snapshot = instance->scope->Capture();
         std::vector<std::string> names;
-        if (!copyFields(fields, count, limits.max_fields, names)) return MC_ERROR_INVALID_ARGUMENT;
-        return submitLibraryRequest<mc_track_page>(context, "Read track details",
-            [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) {
-                query::TrackPageQuery typed(term, names, offset, page_limit);
-                typed.scope = *snapshot;
-                return readPage(*instance, typed, page, canceled);
-            }, completion, user_data, out_request, nullptr, instance->scope, snapshot);
+        if (!copyFields(fields, count, limits.max_fields, names)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        return instance->QueryTracks(
+            context, query::TrackPageQuery(term, names, offset, page_limit), completion, user_data, out_request);
     });
 }
 
@@ -533,20 +434,9 @@ mc_result MC_CALL mc_library_open_track_search_async(mc_context *context, const 
             return MC_ERROR_NOT_FOUND;
         }
         const std::string term(text.length ? text.data : "", text.length);
-        const auto snapshot = instance->scope->Capture();
-        query::TrackSearchQuery typed(term, mode == MC_TRACK_SEARCH_REGEX, static_cast<query::TrackSortType>(order));
-        typed.scope = *snapshot;
-        if (instance->async) {
-            return instance->async->Search(context, instance,
-                typed,
-                completion, user_data, out_request);
-        }
-        if (!instance->backend) return MC_ERROR_UNSUPPORTED;
-
-        return submitLibraryRequest<mc_track_result>(context, "Search library",
-            [=](std::unique_ptr<mc_track_result> &result, const std::atomic_bool& canceled) {
-                return openSearch(instance, typed, result, canceled);
-            }, completion, user_data, out_request, nullptr, instance->scope, snapshot);
+        return instance->Search(context,
+            query::TrackSearchQuery(term, mode == MC_TRACK_SEARCH_REGEX, static_cast<query::TrackSortType>(order)),
+            completion, user_data, out_request);
     });
 }
 
@@ -598,19 +488,8 @@ mc_result musik::core::ffi::read_track_result_scoped(mc_context *context, const 
         const auto data = tracks->data;
         const auto start = std::min(offset, data->ids.size());
         const auto size = std::min(limit ? limit : limits.default_limit, data->ids.size() - start);
-        if (!data->library->backend && !data->library->async) return MC_ERROR_UNSUPPORTED;
-        if (data->library->async) {
-            return data->library->async->ReadPage(context,
-                { data->ids.begin() + start, data->ids.begin() + start + size },
-                std::move(names), true, completion, user_data, out_request, owner);
-        }
-        return submitLibraryRequest<mc_track_page>(context, "Read track details",
-            [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) -> mc_result {
-                if (size) return readPage(*data->library, { "", names, 0, size, data->ids.data() + start }, page, canceled);
-                page.reset(new mc_track_page);
-                page->names = names;
-                return MC_OK;
-            }, completion, user_data, out_request, owner);
+        return data->library->ReadPage(context, { data->ids.begin() + start, data->ids.begin() + start + size },
+            std::move(names), true, completion, user_data, out_request, owner);
     });
 }
 
@@ -660,18 +539,8 @@ mc_result MC_CALL mc_track_ref_read_async(mc_context *context, const mc_track_re
         }
 
         const auto instance = *track;
-        if (!instance.library->backend && !instance.library->async) return MC_ERROR_UNSUPPORTED;
-        if (instance.library->async) {
-            return instance.library->async->ReadPage(context, { instance.id }, std::move(names),
-                false, completion, user_data, out_request);
-        }
-        return submitLibraryRequest<mc_track_page>(context, "Read track details",
-            [=](std::unique_ptr<mc_track_page> &page, const std::atomic_bool& canceled) -> mc_result {
-                /* A direct instance lookup distinguishes a removed row from missing tags. */
-                const auto status = readPage(*instance.library, { "", names, 0, 1, &instance.id, false }, page, canceled);
-                if (status != MC_OK) return status;
-                return page->rows.empty() ? MC_ERROR_NOT_FOUND : MC_OK;
-            }, completion, user_data, out_request);
+        return instance.library->ReadPage(
+            context, { instance.id }, std::move(names), false, completion, user_data, out_request);
     });
 }
 
@@ -730,8 +599,7 @@ mc_result MC_CALL mc_library_list_sources_async(mc_context* context, const mc_li
         if (!instance) {
             return MC_ERROR_NOT_FOUND;
         }
-        return instance->queries ? instance->queries->ListSources(context, completion, data, request)
-            : MC_ERROR_UNSUPPORTED;
+        return instance->ListSources(context, completion, data, request);
     });
 }
 
@@ -763,10 +631,10 @@ mc_result MC_CALL mc_library_set_scope(mc_library* library, const mc_library_sco
             value = query::LibraryQueryScope::ForSources(std::move(ids));
         }
         const auto instance = library->instance;
-        if (instance->scope->Replace(std::move(value))) {
+        if (instance->GetScopeState()->Replace(std::move(value))) {
             const mc_library alias { instance };
             const mc_library_scope_change event { &alias };
-            instance->scope->Notify(event);
+            instance->GetScopeState()->Notify(event);
         }
         return MC_OK;
     });
@@ -782,7 +650,7 @@ mc_result MC_CALL mc_library_get_scope(const mc_library* library, mc_library_sco
         if (!library || !out || *out) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
-        *out = new mc_library_scope_snapshot(library->instance->scope->Capture());
+        *out = new mc_library_scope_snapshot(library->instance->GetScopeState()->Capture());
         return MC_OK;
     });
 }
@@ -804,7 +672,7 @@ mc_result MC_CALL mc_library_subscribe_scope(const mc_library* library, mc_event
         if (!library || !callback || !out || *out) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
-        return library->instance->scope->Subscribe(callback, data, out);
+        return library->instance->GetScopeState()->Subscribe(callback, data, out);
     });
 }
 
@@ -833,9 +701,8 @@ mc_result MC_CALL mc_library_create_playlist_async(mc_context* context, const mc
             }
             owner = options->source_id;
         }
-        const auto& backend = library->instance->queries;
-        return backend ? backend->SavePlaylist(context, 0, std::string(name.data, name.length),
-            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t> {}, false,
-            completion, data, request, owner) : MC_ERROR_UNSUPPORTED;
+        return library->instance->SavePlaylist(context, 0, std::string(name.data, name.length),
+            count ? std::vector<int64_t>(ids, ids + count) : std::vector<int64_t> {}, false, completion, data, request,
+            owner);
     });
 }

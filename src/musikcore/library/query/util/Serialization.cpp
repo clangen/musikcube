@@ -216,7 +216,7 @@ namespace musik { namespace core { namespace library { namespace query {
             return output;
         }
 
-        void TrackListFromJson(const nlohmann::json& input, TrackList& output, ILibraryPtr library, bool onlyIds) {
+        void TrackListFromJson(const nlohmann::json& input, TrackList& output, LibraryBackend::Shared library, bool onlyIds) {
             output.Clear();
             if (onlyIds) {
                 for (auto& trackId : input) {

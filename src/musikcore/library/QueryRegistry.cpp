@@ -62,7 +62,7 @@ namespace musik { namespace core { namespace library {
 
     namespace QueryRegistry {
         std::shared_ptr<ISerializableQuery> CreateLocalQueryFor(
-            const std::string& name, const std::string& data, ILibraryPtr library)
+            const std::string& name, const std::string& data, LibraryBackend::Shared library)
         {
             if (name == SourceListQuery::kQueryName) {
                 return SourceListQuery::DeserializeQuery(data, library);

@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
     require(api->stop(instance) == MC_OK && api->stop(instance) == MC_OK, "stop is idempotent");
     require(api->queue_audio_buffer(instance, &block) == MC_ERROR_CANCELLED, "stopped output rejects audio");
     int32_t savedLatency = 125;
-    mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+    mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
     mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
     /* the shim makes ALSA return EAGAIN and holds its poll descriptor quiet.
     stop must wake the blocked producer and return its accepted token. */

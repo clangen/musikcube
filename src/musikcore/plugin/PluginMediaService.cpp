@@ -1,4 +1,4 @@
-#include "MediaHost.h"
+#include "PluginMediaService.h"
 
 #include "Plugins.h"
 #include <musikcore/audio/Dsp.h>
@@ -65,10 +65,10 @@ namespace musik { namespace core { namespace plugin {
         }
     }
 
-    MediaHost::MediaHost(const ffi::PluginRegistry& registry)
+    PluginMediaService::PluginMediaService(const ffi::PluginRegistry& registry)
     : dataDirectory(GetDataDirectory())
     , api {
-        .struct_size = sizeof(mc_media_host_api),
+        .struct_size = sizeof(mc_plugin_media_service),
         .context = this,
         .create_stream = CreateStream,
         .create_decoder = CreateDecoder,
@@ -103,7 +103,7 @@ namespace musik { namespace core { namespace plugin {
         }
     }
 
-    std::vector<std::shared_ptr<audio::Dsp>> MediaHost::CreateDsps() const {
+    std::vector<std::shared_ptr<audio::Dsp>> PluginMediaService::CreateDsps() const {
         std::vector<std::shared_ptr<audio::Dsp>> result;
         for (const auto& provider : this->providers) {
             if (provider.dsp) {
@@ -116,12 +116,12 @@ namespace musik { namespace core { namespace plugin {
         return result;
     }
 
-    mc_result MC_CALL MediaHost::CreateStream(void* context, mc_string_view uri, mc_stream* output, mc_error** error) {
+    mc_result MC_CALL PluginMediaService::CreateStream(void* context, mc_string_view uri, mc_stream* output, mc_error** error) {
         return ffi::exception_barrier(error, [&]() -> mc_result {
             if (!output || output->struct_size < sizeof(*output) || output->instance || !uri.length || !validView(uri)) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
-            auto& host = *static_cast<MediaHost*>(context);
+            auto& host = *static_cast<PluginMediaService*>(context);
             mc_media_hint hint = MC_MEDIA_HINT_DEFAULT;
             hint.uri = uri;
             for (const auto& provider : host.providers) {
@@ -135,7 +135,7 @@ namespace musik { namespace core { namespace plugin {
         });
     }
 
-    mc_result MC_CALL MediaHost::CreateDecoder(void* context, const mc_stream* input, mc_decoder* output, mc_error** error) {
+    mc_result MC_CALL PluginMediaService::CreateDecoder(void* context, const mc_stream* input, mc_decoder* output, mc_error** error) {
         return ffi::exception_barrier(error, [&]() -> mc_result {
             if (!output || output->struct_size < sizeof(*output) || output->instance || !input ||
                 input->struct_size < sizeof(*input) || !input->instance || !input->api ||
@@ -164,7 +164,7 @@ namespace musik { namespace core { namespace plugin {
                 .content_type = { mime.data(), mime.size() },
                 .extension = info.extension,
             };
-            auto& host = *static_cast<MediaHost*>(context);
+            auto& host = *static_cast<PluginMediaService*>(context);
             for (const auto& provider : host.providers) {
                 bool claimed = false;
                 const auto result = tryCreate(provider.decoders, provider.services, hint, *output, claimed, error);
@@ -175,14 +175,14 @@ namespace musik { namespace core { namespace plugin {
             return MC_ERROR_UNSUPPORTED;
         });
     }
-    mc_result MC_CALL MediaHost::CreateEncoder(void* context, mc_string_view format, mc_encoder* output, mc_error** error) {
+    mc_result MC_CALL PluginMediaService::CreateEncoder(void* context, mc_string_view format, mc_encoder* output, mc_error** error) {
         return ffi::exception_barrier(error, [&]() -> mc_result {
             if (!output || output->struct_size < sizeof(*output) || output->instance ||
                 !format.length || !validView(format))
             {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
-            auto& host = *static_cast<MediaHost*>(context);
+            auto& host = *static_cast<PluginMediaService*>(context);
             for (const auto& provider : host.providers) {
                 if (!provider.encoders) {
                     continue;

@@ -8,7 +8,7 @@ extern "C" {
 #endif
 
 /* growable decoder scratch storage, allocated by musikcore. decoders reuse it
-through mc_audio_scratch_buffer_api; it is not a slice of the fixed playback pool. */
+through mc_plugin_audio_scratch_service; it is not a slice of the fixed playback pool. */
 typedef struct mc_audio_scratch_buffer mc_audio_scratch_buffer;
 
 /* host services available to one plugin instance, supplied when it is created. */
@@ -72,8 +72,8 @@ typedef struct mc_media_hint {
 run on producer workers, never hardware callbacks. core separately manages a
 fixed playback pool and gives outputs read-only mc_pcm_view slices and tokens;
 this table cannot acquire, resize, or recycle those slices. */
-typedef struct mc_audio_scratch_buffer_api {
-    /* readable bytes; initialize with MC_AUDIO_SCRATCH_BUFFER_API_DEFAULT. */
+typedef struct mc_plugin_audio_scratch_service {
+    /* readable bytes; initialize with MC_PLUGIN_AUDIO_SCRATCH_SERVICE_DEFAULT. */
     uint32_t struct_size;
 
     /* host-owned state, valid for the instance lifetime; default null. */
@@ -117,10 +117,10 @@ typedef struct mc_audio_scratch_buffer_api {
     read is empty until end_write publishes another block; a decoder that makes
     no progress cannot accidentally replay its previous samples. */
     mc_result(MC_CALL* read_block)(void* context, mc_audio_scratch_buffer* buffer, mc_pcm_view* view);
-} mc_audio_scratch_buffer_api;
+} mc_plugin_audio_scratch_service;
 
-#define MC_AUDIO_SCRATCH_BUFFER_API_DEFAULT \
-    { sizeof(mc_audio_scratch_buffer_api), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define MC_PLUGIN_AUDIO_SCRATCH_SERVICE_DEFAULT                                                                        \
+    { sizeof(mc_plugin_audio_scratch_service), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 #ifdef __cplusplus
 }

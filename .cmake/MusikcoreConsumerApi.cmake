@@ -9,6 +9,7 @@ function(musikcore_add_consumer_api target remote_session_source)
     "${ffi}/plugin_abi/Plugin.cpp"
     "${ffi}/consumer/context.cpp"
     "${ffi}/consumer/library.cpp"
+    "${ffi}/consumer/library-query-catalog.cpp"
     "${remote_session_source}"
     "${ffi}/consumer/playback.cpp"
     "${ffi}/consumer/player.cpp"

@@ -48,7 +48,7 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_CLASS_DEFAULTS(NowPlayingTrackListQuery)
 
             NowPlayingTrackListQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 musik::core::audio::PlaybackService& playback);
 
             /* IQuery */
@@ -67,7 +67,7 @@ namespace musik { namespace core { namespace library { namespace query {
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             musik::core::audio::PlaybackService& playback;
             Result result;
             Headers headers;

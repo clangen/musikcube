@@ -50,51 +50,44 @@ namespace musik { namespace core {
 
     static size_t kWaitIndefinite = std::numeric_limits<size_t>::max();
 
-    class ILibrary {
+    /* native catalog/connection owner and typed-query scheduler. consumer
+    musik::core::library::Library objects retain this backend while adding per-instance scope
+    and asynchronous C API delivery. plugins use plugin::LibraryService. */
+    class LibraryBackend {
+    public:
+        using Shared = std::shared_ptr<LibraryBackend>;
+        using QueryPtr = std::shared_ptr<musik::core::db::IQuery>;
+        using Callback = std::function<void(QueryPtr)>;
+
+        enum class Type : int { Local = 1, Remote = 2 };
+
+        enum class ConnectionState : int { Disconnected = 0, Connected = 1, Connecting = 2, AuthenticationFailure = 3 };
+
+        class IResourceLocator {
         public:
-            using QueryPtr = std::shared_ptr<musik::core::db::IQuery>;
-            using Callback = std::function<void(QueryPtr)>;
+            virtual std::string GetTrackUri(musik::core::Track* track, const std::string& defaultUri = "") = 0;
+        };
 
-            enum class Type: int {
-                Local = 1,
-                Remote = 2
-            };
+        api::Subscriptions<musik::core::db::IQuery*> QueryCompleted;
+        api::Subscriptions<ConnectionState> ConnectionStateChanged;
 
-            enum class ConnectionState: int {
-                Disconnected = 0,
-                Connected = 1,
-                Connecting = 2,
-                AuthenticationFailure = 3
-            };
+        virtual ~LibraryBackend() {}
 
-            class IResourceLocator {
-                public:
-                    virtual std::string GetTrackUri(
-                        musik::core::Track* track,
-                        const std::string& defaultUri = "") = 0;
-            };
-
-            api::Subscriptions<musik::core::db::IQuery*> QueryCompleted;
-            api::Subscriptions<ConnectionState> ConnectionStateChanged;
-
-            virtual ~ILibrary() { }
-
-            virtual int Enqueue(QueryPtr query, Callback cb = Callback()) = 0;
-            virtual int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
-            virtual musik::core::Indexer *Indexer() = 0;
-            /* immutable provider descriptions survive indexer shutdown. */
-            virtual std::vector<std::pair<int32_t, std::string>> Sources() const { return {}; }
-            virtual int Id() = 0;
-            virtual const std::string& Name() = 0;
-            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
-            virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
-            virtual IResourceLocator& GetResourceLocator() = 0;
-            virtual bool IsConfigured() = 0;
-            virtual ConnectionState GetConnectionState() const = 0;
-            virtual Type GetType() const = 0;
-            virtual void Close() = 0;
+        virtual int Enqueue(QueryPtr query, Callback cb = Callback()) = 0;
+        virtual int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
+        virtual musik::core::Indexer* Indexer() = 0;
+        /* immutable provider descriptions survive indexer shutdown. */
+        virtual std::vector<std::pair<int32_t, std::string>> Sources() const { return {}; }
+        virtual int Id() = 0;
+        virtual const std::string& Name() = 0;
+        virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
+        virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
+        virtual IResourceLocator& GetResourceLocator() = 0;
+        virtual bool IsConfigured() = 0;
+        virtual ConnectionState GetConnectionState() const = 0;
+        virtual Type GetType() const = 0;
+        virtual void Close() = 0;
     };
 
-    typedef std::shared_ptr<ILibrary> ILibraryPtr;
 
-} }
+}}

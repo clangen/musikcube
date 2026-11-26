@@ -59,12 +59,12 @@ using namespace std::chrono;
 static constexpr size_t kDefaultCacheSize = 50;
 static constexpr int64_t kCacheWindowTimeoutMs = 150LL;
 
-TrackList::TrackList(ILibraryPtr library)
+TrackList::TrackList(LibraryBackend::Shared library)
 : cacheSize(kDefaultCacheSize)
 , library(library) {
 }
 
-TrackList::TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount)
+TrackList::TrackList(LibraryBackend::Shared library, const int64_t* trackIds, size_t trackIdCount)
 : cacheSize(kDefaultCacheSize)
 , library(library) {
     if (trackIds != nullptr && trackIdCount > 0) {
@@ -133,7 +133,7 @@ TrackPtr TrackList::Get(size_t index, bool async) const {
 
     auto target = TrackPtr(new LibraryTrack(id, this->library));
     std::shared_ptr<TrackMetadataQuery> query(new TrackMetadataQuery(target, this->library));
-    this->library->Enqueue(query, ILibrary::QuerySynchronous);
+    this->library->Enqueue(query, LibraryBackend::QuerySynchronous);
     if (query->GetStatus() == IQuery::Finished) {
         this->AddToCache(id, query->Result());
         return query->Result();
@@ -215,7 +215,7 @@ void TrackList::ClearCache() noexcept {
     this->cacheMap.clear();
 }
 
-void TrackList::ResetForLibrary(ILibraryPtr library) noexcept {
+void TrackList::ResetForLibrary(LibraryBackend::Shared library) noexcept {
     this->Clear();
     this->currentWindow.Reset();
     this->nextWindow.Reset();

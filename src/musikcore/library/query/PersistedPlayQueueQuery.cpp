@@ -45,7 +45,7 @@ using namespace musik::core::library::query;
 const std::string PersistedPlayQueueQuery::kQueryName = "PersistedPlayQueueQuery";
 
 PersistedPlayQueueQuery::PersistedPlayQueueQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     musik::core::audio::PlaybackService& playback,
     Type type,
     int savedIndex) noexcept

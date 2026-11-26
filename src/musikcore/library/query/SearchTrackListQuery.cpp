@@ -47,7 +47,7 @@
 #pragma warning(pop)
 #endif
 
-using musik::core::ILibraryPtr;
+using musik::core::LibraryBackend;
 
 using namespace musik::core;
 using namespace musik::core::db;
@@ -57,7 +57,7 @@ using namespace musik::core::library::query::serialization;
 const std::string SearchTrackListQuery::kQueryName = MC_LIBRARY_QUERY_SEARCH_TRACKS;
 
 SearchTrackListQuery::SearchTrackListQuery(
-    ILibraryPtr library,
+    LibraryBackend::Shared library,
     MatchType matchType,
     const std::string& filter,
     TrackSortType sort)
@@ -117,7 +117,7 @@ std::string SearchTrackListQuery::SerializeQuery() {
             { "filter", filter },
             { "matchType", matchType },
             { "sortType", sortType }
-        }}
+        } }
     };
     output["options"]["scope"] = EncodeScope(this->scope);
     return FinalizeSerializedQueryWithLimitAndOffset(output);
@@ -134,7 +134,7 @@ void SearchTrackListQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Finished);
 }
 
-std::shared_ptr<SearchTrackListQuery> SearchTrackListQuery::DeserializeQuery(musik::core::ILibraryPtr library, const std::string& data) {
+std::shared_ptr<SearchTrackListQuery> SearchTrackListQuery::DeserializeQuery(musik::core::LibraryBackend::Shared library, const std::string& data) {
     auto options = nlohmann::json::parse(data)["options"];
     auto result = std::make_shared<SearchTrackListQuery>(
         library,

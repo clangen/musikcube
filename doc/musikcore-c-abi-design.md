@@ -1181,7 +1181,7 @@ C APIs retain their normal size/argument validation responsibilities.
 #### Buffers, hints, and interruption
 
 `mc_audio_scratch_buffer` is growable decoder scratch storage, accessed through
-`mc_audio_scratch_buffer_api`. `reserve` ensures capacity in frames; it may allocate on
+`mc_plugin_audio_scratch_service`. `reserve` ensures capacity in frames; it may allocate on
 a producer worker but never waits for output space. Requests within capacity
 are no-ops; failed growth preserves existing storage and populated frames.
 The decoder ends each write before returning to core.
@@ -1538,6 +1538,17 @@ typedef struct mc_playback_remote_factory {
 ```
 
 #### Scoped services and configuration
+
+Host-provided per-instance tables use `mc_plugin_library_service`,
+`mc_plugin_playback_service`, `mc_plugin_indexer_service`,
+`mc_plugin_media_service`, `mc_plugin_preferences_service`, and
+`mc_plugin_audio_scratch_service`. The service bundle exposes `playback` and
+`indexer`; bootstrap logging/registration remains `mc_host_api`. General scans
+use `indexer.schedule_async`; source plugins receive only their own
+`indexer.request_rescan` callback. See
+[ADR-0018](../docs/adr/0018-library-layers-and-plugin-services.md) for ownership,
+source/layout compatibility and the experimental SDK rebuild requirement.
+
 
 The instance service bundle holds pointers to narrow, sized, typed tables. It
 is immutable and valid until that instance is destroyed; absent optional tables

@@ -766,7 +766,11 @@ namespace {
                             });
                         }
                         else if (id == "raw-sql") {
-                            finish(!response.at("options").value("success", true));
+                            if (response.at("options").value("success", true)) { finish(false); return; }
+                            send(connection, "run_indexer", "indexer-service", { { "type", "reindex" } });
+                        }
+                        else if (id == "indexer-service") {
+                            finish(response.at("options").value("success", false));
                         }
                     }
                     catch (...) {

@@ -5,7 +5,8 @@
 #include <common/runtime/IMessageQueue.h>
 #include <common/runtime/Message.h>
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/library/LibraryHost.h>
+#include <musikcore/plugin/PluginLibraryService.h>
+#include <musikcore/plugin/indexer.h>
 #include <musikcore/debug.h>
 #include <musikcore/ffi/common/error.h>
 #include <musikcore/support/Common.h>
@@ -22,7 +23,7 @@ namespace musik { namespace core { namespace plugin {
     public:
         MUSIK_DELETE_COPY_AND_MOVE(Remote);
 
-        Remote(mc_context& context, ILibraryPtr local, audio::PlaybackService& playback, runtime::IMessageQueue& queue,
+        Remote(mc_context& context, LibraryBackend::Shared local, audio::PlaybackService& playback, runtime::IMessageQueue& queue,
             ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory, const std::string& name,
             const std::string& id)
         : factory(std::move(factory))
@@ -32,20 +33,22 @@ namespace musik { namespace core { namespace plugin {
         , queue(queue)
         , service(playback)
         , context(context)
-        , libraryHost(context, std::move(local), this->factory)
+        , libraryService(context, std::move(local), this->factory)
         {
             this->services.preferences = &this->preferences;
             this->services.media = &Media();
             this->services.audio_scratch = &AudioScratch();
             this->services.host = this->factory.Host();
             this->services.data_directory = { this->directory.data(), this->directory.size() };
-            this->remoteHost.context = this;
-            this->remoteHost.read_state = ReadState;
-            this->remoteHost.control_async = ControlAsync;
-            this->remoteHost.with_playback_async = WithPlaybackAsync;
-            this->remoteHost.schedule_indexer_async = ScheduleIndexerAsync;
-            this->services.playback_remote = &this->remoteHost;
-            this->services.library = &this->libraryHost.HostApi();
+            this->playbackService.context = this;
+            this->playbackService.read_state = ReadState;
+            this->playbackService.control_async = ControlAsync;
+            this->playbackService.with_playback_async = WithPlaybackAsync;
+            this->indexerService.context = this;
+            this->indexerService.schedule_async = ScheduleIndexerAsync;
+            this->services.indexer = &this->indexerService;
+            this->services.playback = &this->playbackService;
+            this->services.library = &this->libraryService.Api();
 
             if (playback.OpenHandle(&this->playback) != MC_OK) {
                 throw std::runtime_error("could not open playback for remote");
@@ -99,7 +102,7 @@ namespace musik { namespace core { namespace plugin {
         std::string_view Id() const { return this->id; }
 
         void RequestStop() noexcept {
-            this->libraryHost.CancelReads();
+            this->libraryService.CancelReads();
             {
                 std::lock_guard lock(this->commandMutex);
                 this->accepting = false;
@@ -272,7 +275,7 @@ namespace musik { namespace core { namespace plugin {
         }
 
         static mc_result MC_CALL ScheduleIndexerAsync(void* context, mc_indexer_scan scan,
-            mc_playback_remote_completion_fn completion, void* userData)
+            mc_plugin_indexer_completion_fn completion, void* userData)
         {
             if (!context || !completion || scan > MC_INDEXER_REBUILD) {
                 return MC_ERROR_INVALID_ARGUMENT;
@@ -385,14 +388,15 @@ namespace musik { namespace core { namespace plugin {
 
         ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory;
         std::string id;
-        mc_preferences_host_api preferences;
+        mc_plugin_preferences_service preferences;
         std::string directory;
         runtime::IMessageQueue& queue;
         audio::PlaybackService& service;
         mc_context& context;
-        library::query::LibraryHost libraryHost;
+        plugin::PluginLibraryService libraryService;
         mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
-        mc_playback_remote_host_api remoteHost = MC_PLAYBACK_REMOTE_HOST_API_DEFAULT;
+        mc_plugin_playback_service playbackService = MC_PLUGIN_PLAYBACK_SERVICE_DEFAULT;
+        mc_plugin_indexer_service indexerService = MC_PLUGIN_INDEXER_SERVICE_DEFAULT;
         mc_playback* playback = nullptr;
         void* instance = nullptr;
         bool started = false;
@@ -403,7 +407,7 @@ namespace musik { namespace core { namespace plugin {
         bool accepting = false;
     };
 
-    PlaybackRemotes::PlaybackRemotes(mc_context& context, ILibraryPtr local,
+    PlaybackRemotes::PlaybackRemotes(mc_context& context, LibraryBackend::Shared local,
         audio::PlaybackService& playback, runtime::IMessageQueue& queue)
     : context(context)
     , local(std::move(local))

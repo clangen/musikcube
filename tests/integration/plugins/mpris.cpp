@@ -1,5 +1,6 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/playback-remote.h>
+#include <musikcore/plugin/indexer.h>
 #include SDBUS_HEADER
 #include <atomic>
 #include <chrono>
@@ -78,14 +79,16 @@ int main(int argc, char** argv) {
     require(entry(MC_PLUGIN_ABI_VERSION, &host, &plugin, nullptr) == MC_OK, "negotiate plugin");
     void* state = nullptr;
     require(plugin.initialize(&host, &state, nullptr) == MC_OK && factory, "register playback remote");
-    mc_playback_remote_host_api remote = MC_PLAYBACK_REMOTE_HOST_API_DEFAULT;
+    mc_plugin_playback_service remote = MC_PLUGIN_PLAYBACK_SERVICE_DEFAULT;
     remote.read_state = readState;
     remote.control_async = control;
     remote.with_playback_async = withPlayback;
-    remote.schedule_indexer_async = schedule;
+    mc_plugin_indexer_service indexer = MC_PLUGIN_INDEXER_SERVICE_DEFAULT;
+    indexer.schedule_async = schedule;
     mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
     services.host = &host;
-    services.playback_remote = &remote;
+    services.playback = &remote;
+    services.indexer = &indexer;
     void* instance = nullptr;
     require(factory->create(factory->context, &services, &instance, nullptr) == MC_OK && instance, "create remote");
     const auto* api = factory->instance_api;

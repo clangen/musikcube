@@ -4,11 +4,11 @@
 #include <musikcore/plugin/audio.h>
 #include <musikcore/plugin/settings.h>
 
-typedef struct mc_media_host_api mc_media_host_api;
-typedef struct mc_indexer_source_host_api mc_indexer_source_host_api;
+typedef struct mc_plugin_media_service mc_plugin_media_service;
+typedef struct mc_plugin_indexer_service mc_plugin_indexer_service;
 typedef struct mc_host_api mc_host_api;
-typedef struct mc_playback_remote_host_api mc_playback_remote_host_api;
-typedef struct mc_library_host_api mc_library_host_api;
+typedef struct mc_plugin_playback_service mc_plugin_playback_service;
+typedef struct mc_plugin_library_service mc_plugin_library_service;
 
 /* host-owned services available to a plugin instance through destroy. a
 decoder receives audio_scratch so it can write directly into the host's buffer. */
@@ -20,29 +20,30 @@ struct mc_plugin_services {
     const mc_cancel_token* cancel;
 
     /* required when creating a decoder. other plugin families may receive null. */
-    const mc_audio_scratch_buffer_api* audio_scratch;
+    const mc_plugin_audio_scratch_service* audio_scratch;
 
     /* shared stream and decoder factories. valid for the instance lifetime. */
-    const mc_media_host_api* media;
+    const mc_plugin_media_service* media;
 
     /* UTF-8 application data directory. the host owns the bytes. empty if unavailable. */
     mc_string_view data_directory;
 
     /* saved preferences for this plugin. required for output and indexer
     source instances and valid for the instance lifetime. */
-    const mc_preferences_host_api* preferences;
+    const mc_plugin_preferences_service* preferences;
 
-    /* source-scoped rescan requests. required for indexer source instances. */
-    const mc_indexer_source_host_api* indexer_source;
+    /* granted indexing operations. sources receive source-bound rescans;
+    playback remotes may receive general scan scheduling. */
+    const mc_plugin_indexer_service* indexer;
 
     /* bootstrap callbacks, required for indexer sources and valid through destroy. */
     const mc_host_api* host;
 
-    /* playback commands for a playback remote; valid until the remote is destroyed. */
-    const mc_playback_remote_host_api* playback_remote;
+    /* granted playback operations; valid until the plugin instance is destroyed. */
+    const mc_plugin_playback_service* playback;
 
     /* local library operations; valid until the plugin instance is destroyed. */
-    const mc_library_host_api* library;
+    const mc_plugin_library_service* library;
 };
 
 #define MC_PLUGIN_SERVICES_DEFAULT { sizeof(mc_plugin_services), NULL, NULL, NULL, { NULL, 0 }, NULL, NULL, NULL, NULL, NULL }

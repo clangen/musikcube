@@ -298,6 +298,8 @@ namespace musik { namespace core { namespace api {
         mc_library_scope_snapshot* value;
     };
 
+    /* application-facing owner of a C library handle. operations cross the C ABI;
+    the core library and its local/remote implementation stay private to musikcore. */
     class Library {
     public:
         explicit Library(std::string_view locator, mc_library_kind kind = MC_LIBRARY_LOCAL) {

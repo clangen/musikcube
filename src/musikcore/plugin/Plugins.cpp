@@ -35,7 +35,7 @@
 #include "pch.hpp"
 #include <stdexcept>
 #include "Plugins.h"
-#include "MediaHost.h"
+#include "PluginMediaService.h"
 #include "PlaybackRemotes.h"
 #include <musikcore/ffi/plugin_abi/AudioScratchBuffers.h>
 #include <musikcore/equalizer.h>
@@ -58,8 +58,8 @@
 #include <musikcore/audio/Outputs.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/library/LibraryHost.h>
-#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/plugin/PluginLibraryService.h>
+#include <musikcore/library/LibraryBackends.h>
 #include <common/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 
@@ -79,7 +79,7 @@ static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b64
 
 static IMessageQueue* messageQueue = nullptr;
 static std::unique_ptr<musik::core::ffi::PluginRegistry> pluginRegistry;
-static std::unique_ptr<musik::core::plugin::MediaHost> mediaHost;
+static std::unique_ptr<musik::core::plugin::PluginMediaService> mediaHost;
 
 static void broadcastEqualizerUpdated() {
     if (::messageQueue) {
@@ -259,18 +259,18 @@ namespace musik { namespace core { namespace plugin {
         if (status != MC_OK) {
             throw std::runtime_error("Could not initialize C plugin registry: " + std::to_string(status));
         }
-        mediaHost = std::make_unique<MediaHost>(*pluginRegistry);
+        mediaHost = std::make_unique<PluginMediaService>(*pluginRegistry);
     }
 
     void BindServices(IMessageQueue* queue) {
         ::messageQueue = queue;
     }
 
-    const mc_media_host_api& Media() {
+    const mc_plugin_media_service& Media() {
         return mediaHost->Api();
     }
 
-    const mc_audio_scratch_buffer_api& AudioScratch() {
+    const mc_plugin_audio_scratch_service& AudioScratch() {
         return ffi::audio_scratch_buffers::Host();
     }
 
@@ -389,9 +389,9 @@ namespace musik { namespace core { namespace plugin {
         });
     }
 
-    mc_preferences_host_api ReadSettingsService(const std::string& pluginName) {
+    mc_plugin_preferences_service ReadSettingsService(const std::string& pluginName) {
         return {
-            .struct_size = sizeof(mc_preferences_host_api),
+            .struct_size = sizeof(mc_plugin_preferences_service),
             .context = Preferences::ForPlugin(pluginName).get(),
             .read_integer = readInteger,
             .read_boolean = readBoolean,

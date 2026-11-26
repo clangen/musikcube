@@ -37,7 +37,7 @@
 #include <musikcore/config.h>
 #include <musikcore/db/Connection.h>
 
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/net/WebSocketClient.h>
 
@@ -51,12 +51,13 @@
 
 namespace musik { namespace core { namespace library {
 
-    class RemoteLibrary :
-        public ILibrary,
+    /* owns a remote connection and schedules typed queries on that connection. */
+    class RemoteLibraryBackend :
+        public LibraryBackend,
         public musik::core::runtime::IMessageTarget,
-        public std::enable_shared_from_this<RemoteLibrary>,
+        public std::enable_shared_from_this<RemoteLibraryBackend>,
         public musik::core::net::WebSocketClient::Listener,
-        public ILibrary::IResourceLocator
+        public LibraryBackend::IResourceLocator
     {
         public:
             static constexpr int DefaultWebSocketPort = 7905;
@@ -85,13 +86,13 @@ namespace musik { namespace core { namespace library {
 
             using OptionsProvider = std::function<ConnectionOptions()>;
 
-            RemoteLibrary(std::string name, int id, MessageQueue* messageQueue,
+            RemoteLibraryBackend(std::string name, int id, MessageQueue* messageQueue,
                 OptionsProvider options, bool reconnect, uint64_t maxPendingQueries = DefaultMaxPendingQueries);
-            RemoteLibrary(const RemoteLibrary&) = delete;
+            RemoteLibraryBackend(const RemoteLibraryBackend&) = delete;
 
-            virtual ~RemoteLibrary();
+            virtual ~RemoteLibraryBackend();
 
-            /* ILibrary */
+            /* LibraryBackend */
             int Enqueue(QueryPtr query, Callback = Callback()) override;
             int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback = Callback()) override;
             musik::core::Indexer *Indexer() override;
@@ -99,7 +100,7 @@ namespace musik { namespace core { namespace library {
             const std::string& Name() override;
             void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
             musik::core::runtime::IMessageQueue& GetMessageQueue() noexcept override { return *messageQueue; }
-            ILibrary::IResourceLocator& GetResourceLocator() noexcept override { return *this; }
+            LibraryBackend::IResourceLocator& GetResourceLocator() noexcept override { return *this; }
             bool IsConfigured() override;
             ConnectionState GetConnectionState() const override { return this->connectionState; }
             Type GetType() const noexcept override { return Type::Remote; }
@@ -120,7 +121,7 @@ namespace musik { namespace core { namespace library {
             /* IResourceLocator */
             std::string GetTrackUri(musik::core::Track* track, const std::string& defaultUri) override;
 
-            /* RemoteLibrary */
+            /* RemoteLibraryBackend */
             void Connect();
             void Disconnect();
             const musik::core::net::WebSocketClient& WebSocketClient() const;

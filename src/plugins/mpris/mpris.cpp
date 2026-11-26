@@ -35,7 +35,7 @@ namespace {
 }
 
 MPRISRemote::MPRISRemote(const mc_plugin_services& services)
-    : host(services.host), remote(services.playback_remote), library(services.library) {}
+    : host(services.host), remote(services.playback), library(services.library) {}
 
 void MPRISRemote::Log(const char* message) const noexcept {
     if (this->host && this->host->log) {

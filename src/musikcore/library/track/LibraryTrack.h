@@ -36,7 +36,7 @@
 
 #include <musikcore/config.h>
 #include <musikcore/library/track/Track.h>
-#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/LocalLibraryBackend.h>
 #include <musikcore/db/Connection.h>
 #include <mutex>
 #include <atomic>
@@ -47,7 +47,7 @@ namespace musik { namespace core {
         public:
             LibraryTrack() noexcept;
             LibraryTrack(int64_t id, int libraryId);
-            LibraryTrack(int64_t id, musik::core::ILibraryPtr library);
+            LibraryTrack(int64_t id, musik::core::LibraryBackend::Shared library);
             virtual ~LibraryTrack();
 
             int LibraryId() noexcept override;

@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "LibraryHost.h"
+#include "PluginLibraryService.h"
 
 #include <musikcore/debug.h>
 #include <common/Contract.h>
@@ -73,9 +73,10 @@
 #include <unordered_set>
 #include <chrono>
 
-#define TAG "LibraryHost"
+#define TAG "PluginLibraryService"
 
 using namespace musik::core;
+using musik::core::plugin::PluginLibraryService;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 using namespace musik::core::library;
@@ -85,14 +86,13 @@ using PredicateList = musik::core::library::query::category::PredicateList;
 
 /* DATA PROVIDER */
 
-LibraryHost::LibraryHost(mc_context& context, musik::core::ILibraryPtr library,
+PluginLibraryService::PluginLibraryService(mc_context& context, musik::core::LibraryBackend::Shared library,
     musik::core::ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory)
 : context(context)
-, library(library)
-, instance(musik::core::ffi::CreateLibraryInstance(library))
+, instance(musik::core::ffi::CreateLibrary(library))
 , factory(std::move(factory))
-, hostApi {
-    .struct_size = sizeof(mc_library_host_api),
+, api {
+    .struct_size = sizeof(mc_plugin_library_service),
     .context = this,
     .search_tracks = SearchTracks,
     .tracks_by_external_ids = TracksByExternalIds,
@@ -114,10 +114,9 @@ LibraryHost::LibraryHost(mc_context& context, musik::core::ILibraryPtr library,
     .delete_playlist = DeletePlaylistHost,
     .read_library_thumbnail = ReadLibraryThumbnail,
 } {
-
 }
 
-void LibraryHost::CancelReads() noexcept {
+void PluginLibraryService::CancelReads() noexcept {
     this->cancelled.store(true);
     {
         std::lock_guard lock(this->admissionMutex);
@@ -129,9 +128,8 @@ void LibraryHost::CancelReads() noexcept {
 namespace {
     /* the result owns its library instance, so it remains usable after the
     plugin releases the host service. */
-    mc_result trackResult(const std::shared_ptr<const LibraryInstance>& instance,
-        const std::shared_ptr<TrackListQueryBase>& query, mc_track_result** out)
-    {
+    mc_result trackResult(const std::shared_ptr<const musik::core::library::Library>& instance,
+        const std::shared_ptr<TrackListQueryBase>& query, mc_track_result** out) {
         const auto tracks = query->GetResult();
         if (!tracks) {
             return MC_ERROR_IO;
@@ -181,9 +179,8 @@ namespace {
     }
 }
 
-mc_result MC_CALL LibraryHost::SearchTracks(void* context, const mc_track_search* search,
-    int32_t limit, int32_t offset, mc_track_result** result)
-{
+mc_result MC_CALL PluginLibraryService::SearchTracks(
+    void* context, const mc_track_search* search, int32_t limit, int32_t offset, mc_track_result** result) {
     if (!context || !search || search->struct_size < sizeof(*search) || !result || *result ||
         !musik::core::ffi::valid_text(search->text) || search->mode > MC_TRACK_SEARCH_REGEX ||
         search->order > MC_TRACK_SEARCH_DURATION || limit < -1 || offset < 0)
@@ -191,30 +188,29 @@ mc_result MC_CALL LibraryHost::SearchTracks(void* context, const mc_track_search
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        const auto match = search->mode == MC_TRACK_SEARCH_REGEX
-            ? SearchTrackListQuery::MatchType::Regex : SearchTrackListQuery::MatchType::Substring;
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        const auto match = search->mode == MC_TRACK_SEARCH_REGEX ? SearchTrackListQuery::MatchType::Regex
+                                                                 : SearchTrackListQuery::MatchType::Substring;
         const std::string filter(search->text.data ? search->text.data : "", search->text.length);
-        auto query = std::make_shared<SearchTrackListQuery>(self.library, match, filter,
-            static_cast<TrackSortType>(search->order));
+        auto query = std::make_shared<SearchTrackListQuery>(
+            self.instance->NativeBackend(), match, filter, static_cast<TrackSortType>(search->order));
         if (limit >= 0) {
             query->SetLimitAndOffset(limit, offset);
         }
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         return trackResult(self.instance, query, result);
     });
 }
 
-mc_result MC_CALL LibraryHost::TracksByIds(void* context, const int64_t* ids,
-    size_t count, mc_track_result** result)
-{
+mc_result MC_CALL PluginLibraryService::TracksByIds(
+    void* context, const int64_t* ids, size_t count, mc_track_result** result) {
     if (!context || !result || *result || !musik::core::ffi::valid_ids(ids, count)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         auto data = std::make_shared<TrackResultData>();
         data->library = self.instance;
         if (count) {
@@ -226,9 +222,8 @@ mc_result MC_CALL LibraryHost::TracksByIds(void* context, const int64_t* ids,
     });
 }
 
-mc_result MC_CALL LibraryHost::TracksByExternalIds(void* context, const mc_string_view* ids,
-    size_t count, mc_track_result** result)
-{
+mc_result MC_CALL PluginLibraryService::TracksByExternalIds(
+    void* context, const mc_string_view* ids, size_t count, mc_track_result** result) {
     if (!context || !result || *result || (count && !ids) || count > PTRDIFF_MAX / sizeof(*ids)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
@@ -241,7 +236,7 @@ mc_result MC_CALL LibraryHost::TracksByExternalIds(void* context, const mc_strin
         return TracksByIds(context, nullptr, 0, result);
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         std::vector<std::string> storage;
         std::vector<const char*> values;
         storage.reserve(count);
@@ -252,82 +247,79 @@ mc_result MC_CALL LibraryHost::TracksByExternalIds(void* context, const mc_strin
         for (const auto& value : storage) {
             values.push_back(value.c_str());
         }
-        auto query = std::make_shared<ExternalIdListToTrackListQuery>(self.library, values.data(), count);
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        auto query =
+            std::make_shared<ExternalIdListToTrackListQuery>(self.instance->NativeBackend(), values.data(), count);
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         return trackResult(self.instance, query, result);
     });
 }
 
-mc_result MC_CALL LibraryHost::TracksByCategory(void* context, mc_string_view field, int64_t id,
-    mc_string_view filter, int32_t limit, int32_t offset, mc_track_result** result)
-{
+mc_result MC_CALL PluginLibraryService::TracksByCategory(void* context, mc_string_view field, int64_t id,
+    mc_string_view filter, int32_t limit, int32_t offset, mc_track_result** result) {
     if (!context || !result || *result || !musik::core::ffi::valid_text(field) ||
         !musik::core::ffi::valid_text(filter) || id < 0 || limit < -1 || offset < 0)
     {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         const std::string category(field.data ? field.data : "", field.length);
         const std::string term(filter.data ? filter.data : "", filter.length);
         std::shared_ptr<TrackListQueryBase> query;
         if (category == MC_LIBRARY_CATEGORY_PLAYLISTS && id > 0) {
-            query = std::make_shared<GetPlaylistQuery>(self.library, id);
+            query = std::make_shared<GetPlaylistQuery>(self.instance->NativeBackend(), id);
         }
         else if (!category.empty() && id > 0) {
-            query = std::make_shared<CategoryTrackListQuery>(self.library, category, id, term);
+            query = std::make_shared<CategoryTrackListQuery>(self.instance->NativeBackend(), category, id, term);
         }
         else {
-            query = std::make_shared<CategoryTrackListQuery>(self.library, term);
+            query = std::make_shared<CategoryTrackListQuery>(self.instance->NativeBackend(), term);
         }
         if (limit >= 0) {
             query->SetLimitAndOffset(limit, offset);
         }
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         return trackResult(self.instance, query, result);
     });
 }
 
-mc_result MC_CALL LibraryHost::TracksByCategories(void* context,
-    const mc_library_category_selection* selections, size_t selectionCount,
-    mc_string_view filter, mc_track_search_order order, int32_t limit, int32_t offset,
-    mc_track_result** result)
-{
+mc_result MC_CALL PluginLibraryService::TracksByCategories(void* context,
+    const mc_library_category_selection* selections, size_t selectionCount, mc_string_view filter,
+    mc_track_search_order order, int32_t limit, int32_t offset, mc_track_result** result) {
     if (!context || !result || *result || !validSelections(selections, selectionCount) ||
         !musik::core::ffi::valid_text(filter) || order > MC_TRACK_SEARCH_DURATION || limit < -1 || offset < 0)
     {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        auto query = std::make_shared<CategoryTrackListQuery>(self.library, copySelections(selections, selectionCount),
-            std::string(filter.data ? filter.data : "", filter.length), static_cast<TrackSortType>(order));
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        auto query = std::make_shared<CategoryTrackListQuery>(self.instance->NativeBackend(),
+            copySelections(selections, selectionCount), std::string(filter.data ? filter.data : "", filter.length),
+            static_cast<TrackSortType>(order));
         if (limit >= 0) {
             query->SetLimitAndOffset(limit, offset);
         }
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         return trackResult(self.instance, query, result);
     });
 }
 
-mc_result MC_CALL LibraryHost::ReadTracks(void* context, const mc_track_result* tracks,
-    const mc_track_range* range, mc_track_page** page)
-{
-    if (!context || !tracks || !tracks->data || !range || range->struct_size < sizeof(*range) ||
-        !page || *page || (range->field_count && !range->fields) ||
-        range->field_count > PTRDIFF_MAX / sizeof(*range->fields))
+mc_result MC_CALL PluginLibraryService::ReadTracks(
+    void* context, const mc_track_result* tracks, const mc_track_range* range, mc_track_page** page) {
+    if (!context || !tracks || !tracks->data || !range || range->struct_size < sizeof(*range) || !page || *page ||
+        (range->field_count && !range->fields) || range->field_count > PTRDIFF_MAX / sizeof(*range->fields))
     {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    auto& self = *static_cast<LibraryHost*>(context);
+    auto& self = *static_cast<PluginLibraryService*>(context);
     const auto origin = tracks->data->library;
-    if (origin != self.instance || !origin || !origin->backend) {
+    if (origin != self.instance || !origin || !origin->NativeBackend()) {
         return MC_ERROR_UNSUPPORTED;
     }
     for (size_t i = 0; i < range->field_count; ++i) {
@@ -348,14 +340,14 @@ mc_result MC_CALL LibraryHost::ReadTracks(void* context, const mc_track_result* 
         const size_t offset = std::min(range->offset, ids.size());
         const size_t available = ids.size() - offset;
         const size_t count = range->limit ? std::min(range->limit, available) : available;
-        if (count && origin->backend) {
+        if (count) {
             const std::string search;
             /* explicit IDs can refer to hidden tracks, including direct audio links. */
-            const TrackPageQuery query(search, fields, 0, count, ids.data() + offset, true,
-                TrackVisibility::IncludeHidden);
+            const TrackPageQuery query(
+                search, fields, 0, count, ids.data() + offset, true, TrackVisibility::IncludeHidden);
             const std::atomic_bool canceled { false };
-            if (!origin->backend->Run(query, *output, canceled)) {
-                return MC_ERROR_IO;
+            if (const auto status = origin->ReadPageNow(query, *output, canceled); status != MC_OK) {
+                return status;
             }
         }
         else {
@@ -366,14 +358,13 @@ mc_result MC_CALL LibraryHost::ReadTracks(void* context, const mc_track_result* 
     });
 }
 
-mc_result MC_CALL LibraryHost::ReadTracksAsync(void* context, const mc_track_result* tracks,
-    const mc_track_range* range, mc_track_query_completion_fn completion, void* userData)
-{
+mc_result MC_CALL PluginLibraryService::ReadTracksAsync(void* context, const mc_track_result* tracks,
+    const mc_track_range* range, mc_track_query_completion_fn completion, void* userData) {
     if (!context || !completion) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         struct Completion {
             musik::core::ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory;
             mc_track_query_completion_fn callback;
@@ -390,7 +381,8 @@ mc_result MC_CALL LibraryHost::ReadTracksAsync(void* context, const mc_track_res
         }
         mc_request_id request = 0;
         auto* state = callback.release();
-        const auto status = musik::core::ffi::read_track_result_scoped(&self.context, tracks, range,
+        const auto status = musik::core::ffi::read_track_result_scoped(
+            &self.context, tracks, range,
             [](mc_result result, mc_track_page* page, const mc_error* error, void* data) {
                 const std::unique_ptr<Completion> state(static_cast<Completion*>(data));
                 try {
@@ -403,7 +395,8 @@ mc_result MC_CALL LibraryHost::ReadTracksAsync(void* context, const mc_track_res
                 catch (...) {
                     musik::contract::Assert(false, "plugin page completion threw");
                 }
-            }, state, &request, &self);
+            },
+            state, &request, &self);
         if (status != MC_OK) {
             delete state;
         }
@@ -411,9 +404,8 @@ mc_result MC_CALL LibraryHost::ReadTracksAsync(void* context, const mc_track_res
     });
 }
 
-mc_result MC_CALL LibraryHost::RunQuery(void* context, mc_string_view queryJson,
-    mc_library_text_fn completion, void* userData)
-{
+mc_result MC_CALL PluginLibraryService::RunQuery(
+    void* context, mc_string_view queryJson, mc_library_text_fn completion, void* userData) {
     if (!context || !completion || !musik::core::ffi::valid_text(queryJson, false)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
@@ -431,9 +423,9 @@ mc_result MC_CALL LibraryHost::RunQuery(void* context, mc_string_view queryJson,
         const auto& options = parsed["options"];
         if (name == CategoryTrackListQuery::kQueryName || name == SearchTrackListQuery::kQueryName) {
             const auto sort = options.find("sortType");
-            if (sort == options.end() || !sort->is_number_integer() ||
-                *sort < 0 || *sort > static_cast<int>(TrackSortType::Duration) ||
-                !kTrackListSortOrderBy.contains(static_cast<TrackSortType>(sort->get<int>())) )
+            if (sort == options.end() || !sort->is_number_integer() || *sort < 0 ||
+                *sort > static_cast<int>(TrackSortType::Duration) ||
+                !kTrackListSortOrderBy.contains(static_cast<TrackSortType>(sort->get<int>())))
             {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
@@ -474,11 +466,11 @@ mc_result MC_CALL LibraryHost::RunQuery(void* context, mc_string_view queryJson,
                 return MC_ERROR_INVALID_ARGUMENT;
             }
         }
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         std::shared_ptr<musik::core::db::ISerializableQuery> query;
         try {
             query = musik::core::library::QueryRegistry::CreateLocalQueryFor(
-                parsed["name"].get<std::string>(), input, self.library);
+                parsed["name"].get<std::string>(), input, self.instance->NativeBackend());
         }
         catch (const nlohmann::json::exception&) {
             return MC_ERROR_INVALID_ARGUMENT;
@@ -489,8 +481,7 @@ mc_result MC_CALL LibraryHost::RunQuery(void* context, mc_string_view queryJson,
         if (!query) {
             return MC_ERROR_UNSUPPORTED;
         }
-        if (self.library->EnqueueAndWait(query) < 0 ||
-            query->GetStatus() != IQuery::Finished) {
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         const auto output = query->SerializeResult();
@@ -504,9 +495,8 @@ mc_result MC_CALL LibraryHost::RunQuery(void* context, mc_string_view queryJson,
     });
 }
 
-mc_result MC_CALL LibraryHost::ListCategoriesHost(void* context, mc_string_view field,
-    mc_string_view filter, mc_track_search_mode mode, mc_category_list_completion_fn completion, void* userData)
-{
+mc_result MC_CALL PluginLibraryService::ListCategoriesHost(void* context, mc_string_view field, mc_string_view filter,
+    mc_track_search_mode mode, mc_category_list_completion_fn completion, void* userData) {
     if (!context || !completion || !musik::core::ffi::valid_text(field, false) ||
         !musik::core::ffi::valid_text(filter, true) ||
         (mode != MC_TRACK_SEARCH_SUBSTRING && mode != MC_TRACK_SEARCH_REGEX))
@@ -514,12 +504,12 @@ mc_result MC_CALL LibraryHost::ListCategoriesHost(void* context, mc_string_view 
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        const auto match = mode == MC_TRACK_SEARCH_REGEX
-            ? CategoryListQuery::MatchType::Regex : CategoryListQuery::MatchType::Substring;
-        auto query = std::make_shared<CategoryListQuery>(match,
-            std::string(field.data, field.length), std::string(filter.data ? filter.data : "", filter.length));
-        self.library->EnqueueAndWait(query);
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        const auto match = mode == MC_TRACK_SEARCH_REGEX ? CategoryListQuery::MatchType::Regex
+                                                         : CategoryListQuery::MatchType::Substring;
+        auto query = std::make_shared<CategoryListQuery>(
+            match, std::string(field.data, field.length), std::string(filter.data ? filter.data : "", filter.length));
+        self.instance->NativeBackend()->EnqueueAndWait(query);
         if (query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
@@ -547,28 +537,27 @@ mc_result MC_CALL LibraryHost::ListCategoriesHost(void* context, mc_string_view 
     });
 }
 
-mc_result MC_CALL LibraryHost::DeletePlaylistHost(void* context, int64_t playlistId) {
+mc_result MC_CALL PluginLibraryService::DeletePlaylistHost(void* context, int64_t playlistId) {
     if (!context || playlistId <= 0) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        auto query = std::make_shared<DeletePlaylistQuery>(self.library, playlistId);
-        self.library->EnqueueAndWait(query);
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        auto query = std::make_shared<DeletePlaylistQuery>(self.instance->NativeBackend(), playlistId);
+        self.instance->NativeBackend()->EnqueueAndWait(query);
         return query->GetStatus() == IQuery::Finished ? MC_OK : MC_ERROR_IO;
     });
 }
 
-mc_result MC_CALL LibraryHost::ListCategoryFields(void* context,
-    mc_category_fields_completion_fn completion, void* userData)
-{
+mc_result MC_CALL PluginLibraryService::ListCategoryFields(
+    void* context, mc_category_fields_completion_fn completion, void* userData) {
     if (!context || !completion) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         auto query = std::make_shared<AllCategoriesQuery>();
-        self.library->EnqueueAndWait(query);
+        self.instance->NativeBackend()->EnqueueAndWait(query);
         if (query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
@@ -593,11 +582,10 @@ mc_result MC_CALL LibraryHost::ListCategoryFields(void* context,
     });
 }
 
-mc_result MC_CALL LibraryHost::ListFilteredCategories(void* context, mc_string_view field,
+mc_result MC_CALL PluginLibraryService::ListFilteredCategories(void* context, mc_string_view field,
     const mc_library_category_selection* selections, size_t selectionCount, mc_string_view filter,
-    mc_track_search_mode mode, bool facet, mc_string_view trackSearch,
-    mc_category_list_completion_fn completion, void* userData)
-{
+    mc_track_search_mode mode, bool facet, mc_string_view trackSearch, mc_category_list_completion_fn completion,
+    void* userData) {
     if (!context || !completion || !musik::core::ffi::valid_text(field, false) ||
         !musik::core::ffi::valid_text(filter) || !musik::core::ffi::valid_text(trackSearch) ||
         mode > MC_TRACK_SEARCH_REGEX || !validSelections(selections, selectionCount))
@@ -605,15 +593,15 @@ mc_result MC_CALL LibraryHost::ListFilteredCategories(void* context, mc_string_v
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        const auto match = mode == MC_TRACK_SEARCH_REGEX
-            ? CategoryListQuery::MatchType::Regex : CategoryListQuery::MatchType::Substring;
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        const auto match = mode == MC_TRACK_SEARCH_REGEX ? CategoryListQuery::MatchType::Regex
+                                                         : CategoryListQuery::MatchType::Substring;
         auto query = std::make_shared<CategoryListQuery>(match, std::string(field.data, field.length),
             copySelections(selections, selectionCount), std::string(filter.data ? filter.data : "", filter.length));
         if (facet) {
             query->SetFacetSearch(std::string(trackSearch.data ? trackSearch.data : "", trackSearch.length));
         }
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         const auto values = query->GetResult();
@@ -640,20 +628,19 @@ mc_result MC_CALL LibraryHost::ListFilteredCategories(void* context, mc_string_v
     });
 }
 
-mc_result MC_CALL LibraryHost::ListAlbumsHost(void* context, mc_string_view filter,
-    const mc_library_category_selection* selections, size_t selectionCount,
-    mc_library_album_list_fn completion, void* userData)
-{
+mc_result MC_CALL PluginLibraryService::ListAlbumsHost(void* context, mc_string_view filter,
+    const mc_library_category_selection* selections, size_t selectionCount, mc_library_album_list_fn completion,
+    void* userData) {
     if (!context || !completion || !musik::core::ffi::valid_text(filter) ||
         !validSelections(selections, selectionCount))
     {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        auto query = std::make_shared<AlbumListQuery>(copySelections(selections, selectionCount),
-            std::string(filter.data ? filter.data : "", filter.length));
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        auto query = std::make_shared<AlbumListQuery>(
+            copySelections(selections, selectionCount), std::string(filter.data ? filter.data : "", filter.length));
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         const auto values = query->GetResult();
@@ -689,17 +676,16 @@ mc_result MC_CALL LibraryHost::ListAlbumsHost(void* context, mc_string_view filt
     });
 }
 
-mc_result MC_CALL LibraryHost::ReadThumbnail(void* context, int64_t thumbnailId,
-    mc_thumbnail_completion_fn completion, void* userData)
-{
+mc_result MC_CALL PluginLibraryService::ReadThumbnail(
+    void* context, int64_t thumbnailId, mc_thumbnail_completion_fn completion, void* userData) {
     if (!context || thumbnailId <= 0 || !completion) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         std::vector<uint8_t> bytes;
         const std::atomic_bool canceled { false };
-        const auto status = self.instance->queries->ReadThumbnail(thumbnailId, bytes, canceled);
+        const auto status = self.instance->ReadThumbnail(thumbnailId, bytes, canceled);
         if (status != MC_OK) {
             return status;
         }
@@ -713,22 +699,21 @@ mc_result MC_CALL LibraryHost::ReadThumbnail(void* context, int64_t thumbnailId,
     });
 }
 
-mc_result MC_CALL LibraryHost::ReadLibraryThumbnail(void* context, const mc_library* library, int64_t thumbnailId,
-    mc_thumbnail_completion_fn completion, void* userData)
-{
+mc_result MC_CALL PluginLibraryService::ReadLibraryThumbnail(void* context, const mc_library* library,
+    int64_t thumbnailId, mc_thumbnail_completion_fn completion, void* userData) {
     if (!context || !library || !library->instance || thumbnailId <= 0 || !completion) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         if (self.cancelled.load()) {
             return MC_ERROR_CANCELLED;
         }
-        if (!library->instance->queries) {
+        if (!library->instance) {
             return MC_ERROR_UNSUPPORTED;
         }
         std::vector<uint8_t> bytes;
-        const auto status = library->instance->queries->ReadThumbnail(thumbnailId, bytes, self.cancelled);
+        const auto status = library->instance->ReadThumbnail(thumbnailId, bytes, self.cancelled);
         if (self.cancelled.load()) {
             return MC_ERROR_CANCELLED;
         }
@@ -745,9 +730,8 @@ mc_result MC_CALL LibraryHost::ReadLibraryThumbnail(void* context, const mc_libr
     });
 }
 
-mc_result MC_CALL LibraryHost::SavePlaylistHost(void* context, int64_t playlistId, mc_string_view name,
-    const int64_t* trackIds, size_t count, int64_t* savedId)
-{
+mc_result MC_CALL PluginLibraryService::SavePlaylistHost(
+    void* context, int64_t playlistId, mc_string_view name, const int64_t* trackIds, size_t count, int64_t* savedId) {
     if (!context || playlistId < 0 || !savedId || !musik::core::ffi::valid_text(name) ||
         (playlistId == 0 && !name.length) || !musik::core::ffi::valid_ids(trackIds, count))
     {
@@ -755,23 +739,23 @@ mc_result MC_CALL LibraryHost::SavePlaylistHost(void* context, int64_t playlistI
     }
     *savedId = 0;
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        auto tracks = std::make_shared<TrackList>(self.library);
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        auto tracks = std::make_shared<TrackList>(self.instance->NativeBackend());
         for (size_t i = 0; i < count; ++i) {
             tracks->Add(trackIds[i]);
         }
         const std::string title(name.data ? name.data : "", name.length);
-        auto query = playlistId ? SavePlaylistQuery::Replace(self.library, playlistId, tracks)
-            : SavePlaylistQuery::Save(self.library, title, tracks);
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        auto query = playlistId ? SavePlaylistQuery::Replace(self.instance->NativeBackend(), playlistId, tracks)
+                                : SavePlaylistQuery::Save(self.instance->NativeBackend(), title, tracks);
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         if (query->ResultCode() != MC_OK) {
             return query->ResultCode();
         }
         if (playlistId && !title.empty()) {
-            query = SavePlaylistQuery::Rename(self.library, playlistId, title);
-            if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+            query = SavePlaylistQuery::Rename(self.instance->NativeBackend(), playlistId, title);
+            if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
                 return MC_ERROR_IO;
             }
         }
@@ -783,41 +767,41 @@ mc_result MC_CALL LibraryHost::SavePlaylistHost(void* context, int64_t playlistI
     });
 }
 
-mc_result MC_CALL LibraryHost::RenamePlaylistHost(void* context, int64_t playlistId, mc_string_view name) {
+mc_result MC_CALL PluginLibraryService::RenamePlaylistHost(void* context, int64_t playlistId, mc_string_view name) {
     if (!context || playlistId <= 0 || !musik::core::ffi::valid_text(name, false)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        auto query = SavePlaylistQuery::Rename(self.library, playlistId, std::string(name.data, name.length));
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        auto query =
+            SavePlaylistQuery::Rename(self.instance->NativeBackend(), playlistId, std::string(name.data, name.length));
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         return query->ResultCode();
     });
 }
 
-mc_result MC_CALL LibraryHost::AppendPlaylistHost(void* context, int64_t playlistId,
-    const int64_t* trackIds, size_t count, int32_t offset)
-{
+mc_result MC_CALL PluginLibraryService::AppendPlaylistHost(
+    void* context, int64_t playlistId, const int64_t* trackIds, size_t count, int32_t offset) {
     if (!context || playlistId <= 0 || offset < -1 || !musik::core::ffi::valid_ids(trackIds, count)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
-        auto tracks = std::make_shared<TrackList>(self.library);
+        auto& self = *static_cast<PluginLibraryService*>(context);
+        auto tracks = std::make_shared<TrackList>(self.instance->NativeBackend());
         for (size_t i = 0; i < count; ++i) {
             tracks->Add(trackIds[i]);
         }
-        auto query = std::make_shared<AppendPlaylistQuery>(self.library, playlistId, tracks, offset);
-        return self.library->EnqueueAndWait(query) >= 0 && query->GetStatus() == IQuery::Finished
-            ? MC_OK : MC_ERROR_IO;
+        auto query = std::make_shared<AppendPlaylistQuery>(self.instance->NativeBackend(), playlistId, tracks, offset);
+        return self.instance->NativeBackend()->EnqueueAndWait(query) >= 0 && query->GetStatus() == IQuery::Finished
+            ? MC_OK
+            : MC_ERROR_IO;
     });
 }
 
-mc_result MC_CALL LibraryHost::RemovePlaylistEntries(void* context, int64_t playlistId,
-    const mc_library_playlist_entry_key* entries, size_t count, size_t* removed)
-{
+mc_result MC_CALL PluginLibraryService::RemovePlaylistEntries(
+    void* context, int64_t playlistId, const mc_library_playlist_entry_key* entries, size_t count, size_t* removed) {
     if (!context || playlistId <= 0 || !removed || (count && !entries) ||
         count > static_cast<size_t>(PTRDIFF_MAX) / sizeof(*entries))
     {
@@ -830,7 +814,7 @@ mc_result MC_CALL LibraryHost::RemovePlaylistEntries(void* context, int64_t play
     }
     *removed = 0;
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        auto& self = *static_cast<LibraryHost*>(context);
+        auto& self = *static_cast<PluginLibraryService*>(context);
         std::vector<std::string> strings;
         std::vector<const char*> ids;
         std::vector<int> positions;
@@ -844,9 +828,9 @@ mc_result MC_CALL LibraryHost::RemovePlaylistEntries(void* context, int64_t play
         for (const auto& value : strings) {
             ids.push_back(value.c_str());
         }
-        auto query = std::make_shared<RemoveFromPlaylistQuery>(self.library, playlistId,
-            ids.data(), positions.data(), count);
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        auto query = std::make_shared<RemoveFromPlaylistQuery>(
+            self.instance->NativeBackend(), playlistId, ids.data(), positions.data(), count);
+        if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         *removed = query->GetResult();

@@ -1,13 +1,14 @@
 #include "library-query-adapter.h"
+#include "library-query-catalog.h"
 #include "library-query-executors.h"
-#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/LocalLibraryBackend.h>
 #include <common/FilesystemPath.h>
 #include <fstream>
 
 namespace musik { namespace core { namespace ffi { namespace detail {
     /* operation borrows a static action label through asynchronous delivery. */
     template<typename Result, typename Command, typename Convert, typename Completion>
-    mc_result submitLocal(mc_context* context, const ILibraryPtr& library, const char* operation,
+    mc_result submitLocal(mc_context* context, const LibraryBackend::Shared& library, const char* operation,
         std::shared_ptr<Command> command, Convert convert, Completion completion, void* data, mc_request_id* request,
         RequestEffect effect = RequestEffect::Read, std::shared_ptr<LibraryScopeState> scopeState = {}) {
         const auto snapshot = scopeState ? scopeState->Capture() : nullptr;
@@ -77,12 +78,11 @@ namespace musik { namespace core { namespace ffi { namespace detail {
     library and SQLite reader alive for pending requests and retained results.
     the shared adapter supplies browsing operations; this class handles local
     execution and artwork files. neither copyable nor movable. */
-    class LocalTrackReadBackend final : public query::TrackReadBackend,
-                                        public PlaybackOrigin,
-                                        public LibraryQueryAdapter<LocalTrackReadBackend> {
+    class LocalLibrary final : public query::TrackReadBackend, public LibraryQueryAdapter<LocalLibrary> {
     public:
-        explicit LocalTrackReadBackend(std::shared_ptr<musik::core::library::LocalLibrary> library)
-        : library(std::move(library))
+        explicit LocalLibrary(std::shared_ptr<musik::core::library::LocalLibraryBackend> library)
+        : LibraryQueryAdapter(library->GetLibraryDirectory(), MC_LIBRARY_LOCAL)
+        , library(std::move(library))
         , reader(query::OpenTrackReadBackend(this->library->GetDatabaseFilename())) {}
 
         bool Run(const query::TrackSearchQuery& query, query::TrackSearchRows& rows,
@@ -95,9 +95,33 @@ namespace musik { namespace core { namespace ffi { namespace detail {
             return this->Dispatch(query, page, canceled);
         }
 
-        bool Matches(const musik::core::ILibrary* selected) const override { return selected == this->library.get(); }
+        bool Matches(const musik::core::LibraryBackend* selected) const override {
+            return selected == this->library.get();
+        }
 
-        ILibraryPtr Backend() const override { return this->library; }
+        LibraryBackend::Shared NativeBackend() const override { return this->library; }
+
+        mc_result ReadPageNow(const query::TrackPageQuery& query, query::ProjectedTrackPage& page,
+            const std::atomic_bool& cancelled) const override {
+            return this->Run(query, page, cancelled) ? MC_OK : MC_ERROR_IO;
+        }
+
+        mc_result QueryTracks(mc_context* context, const query::TrackPageQuery& query,
+            mc_track_query_completion_fn completion, void* data, mc_request_id* request) const override {
+            return SubmitCatalogQuery(context, this->shared_from_this(), *this, query, completion, data, request);
+        }
+
+        mc_result Search(mc_context* context, const query::TrackSearchQuery& query,
+            mc_track_search_completion_fn completion, void* data, mc_request_id* request) const override {
+            return SubmitCatalogSearch(context, this->shared_from_this(), *this, query, completion, data, request);
+        }
+
+        mc_result ReadPage(mc_context* context, std::vector<int64_t> ids, std::vector<std::string> fields,
+            bool keepMissing, mc_track_query_completion_fn completion, void* data, mc_request_id* request,
+            const void* owner) const override {
+            return SubmitCatalogPage(context, this->shared_from_this(), *this, std::move(ids), std::move(fields),
+                keepMissing, completion, data, request, owner);
+        }
 
         mc_result ReadThumbnail(
             int64_t id, std::vector<uint8_t>& bytes, const std::atomic_bool& canceled) const override {
@@ -121,7 +145,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         }
 
     private:
-        friend class LibraryQueryAdapter<LocalTrackReadBackend>;
+        friend class LibraryQueryAdapter<LocalLibrary>;
 
         template<typename Result, typename Command, typename Convert, typename Completion>
         mc_result Submit(mc_context* context, const char* operation, std::shared_ptr<Command> command, Convert convert,
@@ -139,19 +163,13 @@ namespace musik { namespace core { namespace ffi { namespace detail {
                 command->GetStatus() == musik::core::db::IQuery::Finished;
         }
 
-        const std::shared_ptr<musik::core::library::LocalLibrary> library;
+        const std::shared_ptr<musik::core::library::LocalLibraryBackend> library;
         const std::shared_ptr<const query::TrackReadBackend> reader;
     };
 
 
-    std::shared_ptr<const LibraryInstance> CreateLocalLibraryInstance(
-        const std::shared_ptr<library::LocalLibrary>& library) {
-        const auto backend = std::make_shared<LocalTrackReadBackend>(library);
-        auto instance = std::make_shared<LibraryInstance>();
-        instance->locator = library->GetLibraryDirectory();
-        instance->backend = backend;
-        instance->playbackOrigin = backend;
-        instance->queries = backend;
-        return instance;
+    std::shared_ptr<const musik::core::library::Library> CreateLocalLibrary(
+        const std::shared_ptr<library::LocalLibraryBackend>& library) {
+        return std::make_shared<LocalLibrary>(library);
     }
-}}}}
+} } } }

@@ -47,7 +47,7 @@
 #include <musikcore/library/query/CategoryValue.h>
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/track/TrackList.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -90,7 +90,7 @@ namespace musik { namespace core { namespace library { namespace query {
         void TrackListFromJson(
             const nlohmann::json& input,
             musik::core::TrackList& output,
-            musik::core::ILibraryPtr library,
+            musik::core::LibraryBackend::Shared library,
             bool onlyIds);
 
         nlohmann::json TrackListToJsonIdList(

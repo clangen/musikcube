@@ -99,7 +99,7 @@ namespace musik {
                 playback.SetPosition(playback.GetPosition() - moveBy);
             }
 
-            void LoadPlaybackContext(ILibraryPtr library, PlaybackService& playback, bool synchronous) {
+            void LoadPlaybackContext(LibraryBackend::Shared library, PlaybackService& playback, bool synchronous) {
                 if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
                     auto prefs = Session();
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
@@ -135,7 +135,7 @@ namespace musik {
                 }
             }
 
-            void SavePlaybackContext(ILibraryPtr library, PlaybackService& playback) {
+            void SavePlaybackContext(LibraryBackend::Shared library, PlaybackService& playback) {
                 if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
                     auto prefs = Session();
                     if (playback.GetPlaybackState() != PlaybackState::Stopped) {

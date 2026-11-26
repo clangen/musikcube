@@ -12,12 +12,12 @@ namespace musik { namespace core { namespace plugin {
     /* one session's immutable media providers. playback and server workers
     can probe concurrently, including a subsong provider opening its parent.
     the session stops those workers before destroying this host. */
-    class MediaHost {
+    class PluginMediaService {
     public:
-        MUSIK_DELETE_COPY_AND_MOVE(MediaHost);
-        explicit MediaHost(const ffi::PluginRegistry& registry);
+        MUSIK_DELETE_COPY_AND_MOVE(PluginMediaService);
+        explicit PluginMediaService(const ffi::PluginRegistry& registry);
 
-        const mc_media_host_api& Api() const { return this->api; }
+        const mc_plugin_media_service& Api() const { return this->api; }
 
         std::vector<std::shared_ptr<audio::Dsp>> CreateDsps() const;
 
@@ -27,7 +27,7 @@ namespace musik { namespace core { namespace plugin {
             ffi::PluginRegistry::Factory<mc_decoder_factory> decoders;
             ffi::PluginRegistry::Factory<mc_encoder_factory> encoders;
             ffi::PluginRegistry::Factory<mc_dsp_factory> dsp;
-            mc_preferences_host_api preferences;
+            mc_plugin_preferences_service preferences;
             mc_plugin_services services;
         };
 
@@ -36,7 +36,7 @@ namespace musik { namespace core { namespace plugin {
         static mc_result MC_CALL CreateEncoder(void*, mc_string_view, mc_encoder*, mc_error**);
 
         std::string dataDirectory;
-        mc_media_host_api api;
+        mc_plugin_media_service api;
         std::vector<Provider> providers;
     };
 

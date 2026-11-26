@@ -328,7 +328,7 @@ service. Plugins use the C provider ABI and are built with the same release.
 - [x] **AUD-001** Implement decoder scratch storage and fixed playback-pool
   handoff/recycling.
   - [x] Implement opaque growable `mc_audio_scratch_buffer` storage through
-    `mc_audio_scratch_buffer_api`, reserve/format changes, exclusive
+    `mc_plugin_audio_scratch_service`, reserve/format changes, exclusive
     `begin_write`/`end_write`, and read-only PCM publication.
     `musikcore.unit.plugins.audio_buffers` checks frame/sample units, overflow,
     failed/abandoned writes, nested-access rejection, copied-view isolation, and
@@ -367,7 +367,7 @@ service. Plugins use the C provider ABI and are built with the same release.
   engine-owned wrappers as needed; do not reintroduce `sdk::IDataStream`.
   The local file, HTTP and subtrack providers use the same C stream
   contract. Playback and server transcoding obtain these streams through
-  `mc_media_host_api`. See `runtime.stream_sdk_contract` and `api.uri_player` on macOS.
+  `mc_plugin_media_service`. See `runtime.stream_sdk_contract` and `api.uri_player` on macOS.
 - [x] **DCD-001** Define decoder factory capability advertisement.
   `musikcore.integration.plugins.lifecycle` rejects incomplete decoder and
   stream registrations. `musikcore.integration.plugins.decoder_stream` loads
@@ -807,3 +807,51 @@ unchanged. The dependent ad-hoc SDK check also now creates its fixture manifest
 before launching the TUI. The final extracted archive passes three runs; no
 production startup failure was established.
 
+
+## Library layers and plugin service names
+
+The accepted boundaries and compatibility impact are recorded in
+[ADR-0018](../docs/adr/0018-library-layers-and-plugin-services.md).
+
+- [x] **LIBLAY-001** Merge consumer library state and operation dispatch into
+  `musik::core::library::Library`. Remove `LibraryInstance`, `PlaybackOrigin`,
+  `AsyncTrackReader` and `LibraryQueries`; preserve scope, retained results,
+  copied query inputs, connection generations and cancellation. Local catalog,
+  remote transport and standalone read-only behavior retain their existing
+  operation sets. `api.library_scope`, `api.backend_parity`, `api.managed_remote`,
+  production query/search and selected-backend checks verify normal entry points.
+- [x] **LIBLAY-002** Make native implementations explicit and private. Use
+  `LibraryBackend`, `LocalLibraryBackend` and `RemoteLibraryBackend`. Replace
+  `LibraryFactory` and its unused registry surface with namespace initialization,
+  shutdown and default-backend access. `runtime.registry` verifies distinct IDs,
+  repeated default identity and persisted IDs across runtime restarts;
+  `runtime.services` and indexer cancellation tests exercise startup/shutdown.
+  The TUI and daemon build against the public context/library API; their
+  `integration.core_boundary` checks pass without native backend dependencies.
+- [x] **LIBLAY-003** Rename the six plugin service tables and default initializers,
+  their in-tree consumers and the `playback`/`indexer` bundle fields. Use
+  `PluginLibraryService` and `PluginMediaService` for existing C++ owners.
+  Keep bootstrap `mc_host_api` and provider capability IDs unchanged. The
+  application ABI remains unchanged; the experimental plugin SDK requires
+  rebuilding plugins and has no compatibility aliases.
+- [x] **LIBLAY-004** Move general scheduling from playback into the indexer service.
+  Preserve source-only rescan grants and shared command-queue lifetime rules.
+  `plugins.contract_headers` checks defaults, `runtime.indexer_provider_cancel`
+  checks the source-only service, and `plugins.playback_remote_lifecycle` checks
+  malformed/pre-start requests, accepted owner-thread completion, exactly-once
+  delivery and cancellation before unload. `api.remote_audio` exercises the
+  actual server's `run_indexer` request through the new service slot.
+- [x] **LIBLAY-005** Validate independent public headers, installed/relocated C/C++
+  consumers and the supported macOS TUI/daemon and plugin targets. The existing
+  local/remote library, server, lifecycle, rollback and export tests cover this
+  refactor. `api.installed_sdk` and `plugins.macos_media_keys` exercise the renamed
+  SDK outside core implementation code. The native macOS closeout run passed
+  all 29 selected CTest checks; the TUI, daemon, independent public headers and
+  related core/plugin test targets build successfully.
+- [x] **LIBLAY-PLATFORMS** The maintainer accepted the library/service source and
+  layout changes on the recorded macOS evidence without additional native Linux
+  or Windows runs (2026-11-25). No new native Linux/Windows result is claimed.
+  Broader provider and release-platform gates retain their own requirements.
+  The dormant `src/musikwin` GUI still uses historical private APIs and is outside
+  the supported CMake targets; it was not migrated or validated by this change.
+  This does not limit the supported Windows TUI's public context/library boundary.

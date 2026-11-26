@@ -75,7 +75,7 @@ struct mc_context {
     std::thread worker;
     std::shared_ptr<std::atomic_bool> active_cancel;
     std::thread::id dispatcher;
-    std::shared_ptr<const LibraryInstance> library;
+    std::shared_ptr<const musik::core::library::Library> library;
     musik::core::ffi::LibraryStatus libraryStatus;
     std::unique_ptr<musik::core::ffi::ContextRuntime> runtime;
     mc_indexer_event_fn indexerCallback = nullptr;
@@ -109,7 +109,7 @@ struct mc_context {
     size_t wakeups_in_flight = 0;
 };
 
-std::shared_ptr<const LibraryInstance> musik::core::ffi::context_library(const mc_context& context) {
+std::shared_ptr<const musik::core::library::Library> musik::core::ffi::context_library(const mc_context& context) {
     std::lock_guard<std::mutex> lock(context.mutex);
     return context.library;
 }
@@ -382,7 +382,7 @@ void musik::core::ffi::wake_context(mc_context& context) {
 }
 
 namespace {
-    mc_result update_library(mc_context& context, std::shared_ptr<const LibraryInstance> library,
+    mc_result update_library(mc_context& context, std::shared_ptr<const musik::core::library::Library> library,
         musik::core::ffi::LibraryStatus status, bool managed, bool selectionChanged)
     {
         bool wake = false;
@@ -423,7 +423,7 @@ namespace {
 }
 
 mc_result musik::core::ffi::set_context_library(mc_context& context,
-    std::shared_ptr<const LibraryInstance> library, LibraryStatus status)
+    std::shared_ptr<const musik::core::library::Library> library, LibraryStatus status)
 {
     if (context.services & MC_SERVICE_LIBRARY) {
         ContextRuntime* runtime;
@@ -443,7 +443,7 @@ mc_result musik::core::ffi::set_context_library(mc_context& context,
 }
 
 mc_result musik::core::ffi::publish_library_selection(mc_context& context,
-    std::shared_ptr<const LibraryInstance> library, LibraryStatus status, bool selectionChanged)
+    std::shared_ptr<const musik::core::library::Library> library, LibraryStatus status, bool selectionChanged)
 {
     return update_library(context, std::move(library), std::move(status), true, selectionChanged);
 }

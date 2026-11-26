@@ -1,7 +1,7 @@
 #include "runtime-hardening-cases.h"
 #include <musikcore/musikcore.hpp>
 #include "../../support/check.h"
-#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/LibraryBackends.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 
@@ -32,8 +32,9 @@ namespace runtime_tests {
             {
                 return false;
             }
-            if (library && !TEST_CHECK(bool(LibraryFactory::Instance().DefaultLocalLibrary()->Indexer()) ==
-                bool(effective & MC_SERVICE_INDEXER)))
+            if (library &&
+                !TEST_CHECK(bool(musik::core::library::DefaultLocalBackend()->Indexer()) ==
+                    bool(effective & MC_SERVICE_INDEXER)))
             {
                 return false;
             }
@@ -114,22 +115,35 @@ namespace runtime_tests {
     A repeated name must keep its origin, while different catalogs need
     distinct persisted IDs even when the settings file starts empty. */
     bool checkRegistry() {
-        auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
-        options.services = MC_SERVICE_ALL;
-        api::Context context(options);
-        auto& factory = LibraryFactory::Instance();
-        const auto local = factory.DefaultLocalLibrary();
-        const auto remote = factory.DefaultRemoteLibrary();
-        return TEST_CHECK(local->Id() != remote->Id()) &&
-            TEST_CHECK(factory.CreateLibrary(local->Name(), local->GetType()) == local) &&
-            TEST_CHECK(factory.CreateLibrary(remote->Name(), remote->GetType()) == remote);
+        int localId = 0, remoteId = 0;
+        for (unsigned session = 0; session < 2; ++session) {
+            auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
+            options.services = MC_SERVICE_ALL;
+            api::Context context(options);
+            const auto local = musik::core::library::DefaultLocalBackend();
+            const auto remote = musik::core::library::DefaultRemoteBackend();
+            if (!TEST_CHECK(local->Id() != remote->Id()) ||
+                !TEST_CHECK(musik::core::library::DefaultLocalBackend() == local) ||
+                !TEST_CHECK(musik::core::library::DefaultRemoteBackend() == remote))
+            {
+                return false;
+            }
+            if (session == 0) {
+                localId = local->Id();
+                remoteId = remote->Id();
+            }
+            else if (!TEST_CHECK(local->Id() == localId && remote->Id() == remoteId)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /* successful startup must finish restoring preferences before a caller
     changes playback; dispatch must not silently overwrite that new command. */
     bool checkStartup() {
         const auto settings = Preferences::ForComponent(prefs::components::Settings);
-        const auto remote = static_cast<int>(ILibrary::Type::Remote);
+        const auto remote = static_cast<int>(LibraryBackend::Type::Remote);
         settings->SetInt(prefs::keys::LibraryType, remote);
 
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;

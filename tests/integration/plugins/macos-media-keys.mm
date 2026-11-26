@@ -1,5 +1,6 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/playback-remote.h>
+#include <musikcore/plugin/indexer.h>
 
 #import <AppKit/AppKit.h>
 #include <cstdio>
@@ -59,14 +60,16 @@ int main(int argc, char** argv) {
         void* state = nullptr;
         require(plugin.initialize(&host, &state, nullptr) == MC_OK && factory, "registers playback remote");
 
-        auto remote = mc_playback_remote_host_api MC_PLAYBACK_REMOTE_HOST_API_DEFAULT;
+        auto remote = mc_plugin_playback_service MC_PLUGIN_PLAYBACK_SERVICE_DEFAULT;
         remote.read_state = readState;
         remote.control_async = control;
         remote.with_playback_async = withPlayback;
-        remote.schedule_indexer_async = schedule;
+        auto indexer = mc_plugin_indexer_service MC_PLUGIN_INDEXER_SERVICE_DEFAULT;
+        indexer.schedule_async = schedule;
         auto services = mc_plugin_services MC_PLUGIN_SERVICES_DEFAULT;
         services.host = &host;
-        services.playback_remote = &remote;
+        services.playback = &remote;
+        services.indexer = &indexer;
 
         /* immediate stop exercises the handoff between tap startup and thread exit. */
         for (int i = 0; i < 20; ++i) {

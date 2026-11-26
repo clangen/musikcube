@@ -2,7 +2,7 @@
 #include <musikcore/musikcore.hpp>
 #include "../../support/check.h"
 #include "../../support/host-wakeup.h"
-#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/LibraryBackends.h>
 #include <sqlite3.h>
 
 #include <chrono>

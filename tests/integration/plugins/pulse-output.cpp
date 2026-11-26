@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     require(entry(MC_PLUGIN_ABI_VERSION, &host, &plugin, nullptr) == MC_OK, "negotiate plugin");
     void* state = nullptr;
     require(plugin.initialize(&host, &state, nullptr) == MC_OK && factory, "register output");
-    mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+    mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
     preferences.read_boolean = [](void*, mc_string_view key, bool, bool* value) -> mc_result {
         require(key.length == 19 && std::memcmp(key.data, "force_linear_volume", 19) == 0,
             "read PulseAudio preference");

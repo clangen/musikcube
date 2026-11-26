@@ -51,8 +51,8 @@ typedef void (MC_CALL* mc_library_text_fn)(void* user_data, mc_string_view text)
 
 /* lets a plugin read the local library using specific operations. calls may
 block on the database and invoke their callbacks before returning. */
-typedef struct mc_library_host_api {
-    /* available bytes. initialize with MC_LIBRARY_HOST_API_DEFAULT. */
+typedef struct mc_plugin_library_service {
+    /* available bytes. initialize with MC_PLUGIN_LIBRARY_SERVICE_DEFAULT. */
     uint32_t struct_size;
 
     /* host-owned state; pass unchanged to each operation. */
@@ -150,9 +150,11 @@ typedef struct mc_library_host_api {
     return. IDs are scoped to that library. */
     mc_result (MC_CALL* read_library_thumbnail)(void* context, const mc_library* library,
         int64_t thumbnail_id, mc_thumbnail_completion_fn completion, void* user_data);
-} mc_library_host_api;
+} mc_plugin_library_service;
 
-#define MC_LIBRARY_HOST_API_DEFAULT { sizeof(mc_library_host_api), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }
+#define MC_PLUGIN_LIBRARY_SERVICE_DEFAULT                                                                              \
+    { sizeof(mc_plugin_library_service), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, \
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL }
 
 #ifdef __cplusplus
 }

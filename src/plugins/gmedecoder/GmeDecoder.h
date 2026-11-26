@@ -30,7 +30,7 @@ private:
     static constexpr size_t Channels = 2;
     static constexpr size_t BlockFrames = 1024;
 
-    const mc_preferences_host_api* preferences;
+    const mc_plugin_preferences_service* preferences;
     Music_Emu* emu = nullptr;
     std::array<short, BlockFrames * Channels> samples;
     int64_t durationFrames = -1;

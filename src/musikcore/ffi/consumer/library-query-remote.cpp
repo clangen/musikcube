@@ -1,13 +1,14 @@
 #include "library-query-adapter.h"
 #include "library-query-executors.h"
-#include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/library/RemoteLibraryBackend.h>
 
 namespace musik { namespace core { namespace ffi { namespace detail {
     /* operation borrows a static action label through asynchronous delivery. */
     template<typename Result, typename Command, typename Convert, typename Completion>
-    mc_result submitRemote(mc_context* context, const std::shared_ptr<musik::core::library::RemoteLibrary>& library,
-        uint64_t generation, const char* operation, std::shared_ptr<Command> command, Convert convert,
-        Completion completion, void* user_data, mc_request_id* out_request, RequestEffect effect = RequestEffect::Read,
+    mc_result submitRemote(mc_context* context,
+        const std::shared_ptr<musik::core::library::RemoteLibraryBackend>& library, uint64_t generation,
+        const char* operation, std::shared_ptr<Command> command, Convert convert, Completion completion,
+        void* user_data, mc_request_id* out_request, RequestEffect effect = RequestEffect::Read,
         std::shared_ptr<LibraryScopeState> scopeState = {}, const void* owner = nullptr) {
         const auto snapshot = scopeState ? scopeState->Capture() : nullptr;
         if (snapshot) {
@@ -60,7 +61,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
                 library->DiscardConnectionQuery(command);
                 return MC_ERROR_CANCELLED;
             }
-            using Admission = musik::core::library::RemoteLibrary::ConnectionQueryStatus;
+            using Admission = musik::core::library::RemoteLibraryBackend::ConnectionQueryStatus;
             if (admission == Admission::Busy) {
                 return MC_ERROR_BUSY;
             }
@@ -76,23 +77,24 @@ namespace musik { namespace core { namespace ffi { namespace detail {
     WebSocket and complete on the context dispatcher without blocking its worker.
     it retains the remote library and connection generation so old results cannot
     accidentally read from a replacement connection. neither copyable nor movable. */
-    class RemoteTrackReadBackend final : public AsyncTrackReader, public LibraryQueryAdapter<RemoteTrackReadBackend> {
+    class RemoteLibrary final : public LibraryQueryAdapter<RemoteLibrary> {
     public:
-        RemoteTrackReadBackend(std::shared_ptr<musik::core::library::RemoteLibrary> library, uint64_t generation)
-        : library(std::move(library))
+        RemoteLibrary(std::shared_ptr<musik::core::library::RemoteLibraryBackend> library, uint64_t generation)
+        : LibraryQueryAdapter("", MC_LIBRARY_REMOTE)
+        , library(std::move(library))
         , generation(generation) {}
 
-        bool Matches(const musik::core::ILibrary* selected) const override {
+        bool Matches(const musik::core::LibraryBackend* selected) const override {
             return selected == this->library.get() &&
                 this->library->WebSocketClient().ConnectionGeneration() == this->generation;
         }
 
-        ILibraryPtr Backend() const override { return this->library; }
+        LibraryBackend::Shared NativeBackend() const override { return this->library; }
 
 
-        mc_result Search(mc_context* context, const std::shared_ptr<const LibraryInstance>& instance,
-            const query::TrackSearchQuery& request, mc_track_search_completion_fn completion, void* user_data,
-            mc_request_id* out_request) const override {
+        mc_result Search(mc_context* context, const query::TrackSearchQuery& request,
+            mc_track_search_completion_fn completion, void* user_data, mc_request_id* out_request) const override {
+            const auto instance = this->shared_from_this();
             using Match = query::SearchTrackListQuery::MatchType;
             const auto command = std::make_shared<query::SearchTrackListQuery>(
                 this->library, request.regex ? Match::Regex : Match::Substring, request.filter, request.order);
@@ -101,7 +103,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
                 [instance](auto& search, auto& output) {
                     return makeOrderedResult(search, instance, output);
                 },
-                completion, user_data, out_request, RequestEffect::Read, instance->scope);
+                completion, user_data, out_request, RequestEffect::Read, instance->GetScopeState());
         }
 
 
@@ -170,7 +172,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         }
 
     private:
-        friend class LibraryQueryAdapter<RemoteTrackReadBackend>;
+        friend class LibraryQueryAdapter<RemoteLibrary>;
 
         template<typename Result, typename Command, typename Convert, typename Completion>
         mc_result Submit(mc_context* context, const char* operation, std::shared_ptr<Command> command, Convert convert,
@@ -180,21 +182,15 @@ namespace musik { namespace core { namespace ffi { namespace detail {
                 std::move(convert), std::move(completion), data, request, effect, std::move(scopeState));
         }
 
-        const std::shared_ptr<musik::core::library::RemoteLibrary> library;
+        const std::shared_ptr<musik::core::library::RemoteLibraryBackend> library;
         const uint64_t generation;
     };
-    std::shared_ptr<const LibraryInstance> CreateRemoteLibraryInstance(
-        const std::shared_ptr<library::RemoteLibrary>& library) {
+    std::shared_ptr<const musik::core::library::Library> CreateRemoteLibrary(
+        const std::shared_ptr<library::RemoteLibraryBackend>& library) {
         const auto generation = library->WebSocketClient().ConnectionGeneration();
         if (!generation) {
             return {};
         }
-        auto instance = std::make_shared<LibraryInstance>();
-        const auto backend = std::make_shared<RemoteTrackReadBackend>(library, generation);
-        instance->async = backend;
-        instance->playbackOrigin = backend;
-        instance->queries = backend;
-        instance->kind = MC_LIBRARY_REMOTE;
-        return instance;
+        return std::make_shared<RemoteLibrary>(library, generation);
     }
-}}}}
+} } } }

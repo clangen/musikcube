@@ -20,7 +20,11 @@ namespace {
     /* overlap a cancelled scan's interrupt with the following provider reset. */
     class Source {
     public:
-        Source(const mc_host_api&, const mc_plugin_services& services) : host(*services.indexer_source) {}
+        Source(const mc_host_api&, const mc_plugin_services& services) : host(*services.indexer) {
+            if (!this->host.request_rescan || this->host.schedule_async) {
+                throw std::runtime_error("source service must grant only source-bound rescans");
+            }
+        }
 
         static const std::string& Key() {
             static const std::string key = "runtime-indexer-fixture";
@@ -74,7 +78,7 @@ namespace {
         }
 
     private:
-        const mc_indexer_source_host_api& host;
+        const mc_plugin_indexer_service& host;
     };
 
     mc_result MC_CALL initialize(const mc_host_api* host, void**, mc_error**) {

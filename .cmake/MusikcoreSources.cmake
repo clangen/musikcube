@@ -26,11 +26,11 @@ set(musikcore_sources
   src/musikcore/i18n/Locale.cpp
   src/musikcore/io/LocalFileSource.cpp
   src/musikcore/library/Indexer.cpp
-  src/musikcore/library/LibraryFactory.cpp
-  src/musikcore/library/LocalLibrary.cpp
-  src/musikcore/library/LibraryHost.cpp
+  src/musikcore/library/LibraryBackends.cpp
+  src/musikcore/library/LocalLibraryBackend.cpp
+  src/musikcore/plugin/PluginLibraryService.cpp
   src/musikcore/library/QueryRegistry.cpp
-  src/musikcore/library/RemoteLibrary.cpp
+  src/musikcore/library/RemoteLibraryBackend.cpp
   src/musikcore/library/query/AlbumListQuery.cpp
   src/musikcore/library/query/AllCategoriesQuery.cpp
   src/musikcore/library/query/AppendPlaylistQuery.cpp
@@ -56,7 +56,7 @@ set(musikcore_sources
   src/musikcore/net/RawWebSocketClient.cpp
   src/musikcore/net/WebSocketClient.cpp
   src/musikcore/plugin/PluginCatalog.cpp
-  src/musikcore/plugin/MediaHost.cpp
+  src/musikcore/plugin/PluginMediaService.cpp
   src/musikcore/plugin/PlaybackRemotes.cpp
   src/musikcore/plugin/MetadataWriter.cpp
   src/musikcore/plugin/TagReader.cpp

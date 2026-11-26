@@ -6,8 +6,8 @@
 
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/audio/Visualizer.h>
-#include <musikcore/library/LibraryFactory.h>
-#include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/library/LibraryBackends.h>
+#include <musikcore/library/RemoteLibraryBackend.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/plugin/PlaybackRemotes.h>
 #include <common/runtime/MessageQueue.h>
@@ -154,18 +154,17 @@ namespace musik { namespace core { namespace ffi {
                 this->librariesInitialized = true;
                 /* suppress implicit network startup before the factory constructs its
                 remote, rather than selecting local after Connect already ran. */
-                musik::core::LibraryFactory::Initialize(this->queue,
+                musik::core::library::Initialize(this->queue,
                     (services & MC_SERVICE_INDEXER) != 0, !(flags & MC_CONTEXT_START_LOCAL));
-                auto& factory = musik::core::LibraryFactory::Instance();
-                this->local = factory.DefaultLocalLibrary();
-                this->remote = std::static_pointer_cast<library::RemoteLibrary>(factory.DefaultRemoteLibrary());
+                this->local = musik::core::library::DefaultLocalBackend();
+                this->remote = std::static_pointer_cast<library::RemoteLibraryBackend>(musik::core::library::DefaultRemoteBackend());
                 this->indexer = this->local->Indexer();
 
                 const auto prefs = Preferences::ForComponent(prefs::components::Settings);
-                const auto catalog = prefs->GetInt(prefs::keys::LibraryType, static_cast<int>(ILibrary::Type::Local));
+                const auto catalog = prefs->GetInt(prefs::keys::LibraryType, static_cast<int>(LibraryBackend::Type::Local));
                 const bool selectRemote = !(flags & MC_CONTEXT_START_LOCAL) &&
-                    catalog == static_cast<int>(ILibrary::Type::Remote);
-                this->active = selectRemote ? ILibraryPtr(this->remote) : this->local;
+                    catalog == static_cast<int>(LibraryBackend::Type::Remote);
+                this->active = selectRemote ? LibraryBackend::Shared(this->remote) : this->local;
                 this->remoteStateChanged = this->remote->ConnectionStateChanged.Subscribe([this](auto state) {
                     this->OnRemoteStateChanged(state);
                 });
@@ -195,7 +194,7 @@ namespace musik { namespace core { namespace ffi {
             if (this->indexer) {
                 /* automatic scans must see fully constructed catalogs, provider
                 bindings, and event subscriptions before their workers start. */
-                std::static_pointer_cast<library::LocalLibrary>(this->local)->ResumePendingMigrationScan();
+                std::static_pointer_cast<library::LocalLibraryBackend>(this->local)->ResumePendingMigrationScan();
             }
 
             if (this->playback) {
@@ -230,7 +229,7 @@ namespace musik { namespace core { namespace ffi {
 
         void ProcessMessage(runtime::IMessage&) override {
             if (this->explicitLibrary && !this->explicitInvalid &&
-                !this->explicitLibrary->playbackOrigin->Matches(this->active.get()))
+                !this->explicitLibrary->Matches(this->active.get()))
             {
                 /* A reconnect cannot rebind the selected handle to its new generation. */
                 this->explicitInvalid = true;
@@ -374,7 +373,7 @@ namespace musik { namespace core { namespace ffi {
             Cleanup([&] { this->playback.reset(); }, failure);
             if (this->librariesInitialized) {
                 this->librariesInitialized = false;
-                Cleanup([] { musik::core::LibraryFactory::Shutdown(); }, failure);
+                Cleanup([] { musik::core::library::Shutdown(); }, failure);
             }
             Cleanup([&] { this->queue->Close(); }, failure);
 
@@ -391,7 +390,7 @@ namespace musik { namespace core { namespace ffi {
             if (!this->local) {
                 return MC_ERROR_UNSUPPORTED;
             }
-            const ILibraryPtr selected = kind == MC_LIBRARY_LOCAL ? this->local : this->remote;
+            const LibraryBackend::Shared selected = kind == MC_LIBRARY_LOCAL ? this->local : this->remote;
             const bool changed = this->active != selected || this->explicitLibrary;
             this->explicitStateChanged.Reset();
             this->explicitLibrary.reset();
@@ -406,19 +405,19 @@ namespace musik { namespace core { namespace ffi {
             /* a local-only startup has never connected this remote. selection is
             the explicit opt-in, and must not restart an already pending connection. */
             if (kind == MC_LIBRARY_REMOTE &&
-                this->remote->WebSocketClient().ConnectionState() == library::RemoteLibrary::Client::State::Disconnected)
+                this->remote->WebSocketClient().ConnectionState() == library::RemoteLibraryBackend::Client::State::Disconnected)
             {
                 this->remote->Connect();
             }
             return MC_OK;
         }
 
-        mc_result SelectLibrary(const std::shared_ptr<const LibraryInstance>& library) override {
-            const auto& origin = library->playbackOrigin;
-            if (!origin) {
+        mc_result SelectLibrary(const std::shared_ptr<const musik::core::library::Library>& library) override {
+            const auto& origin = library;
+            if (!origin || !origin->NativeBackend()) {
                 return MC_ERROR_UNSUPPORTED;
             }
-            auto selected = origin->Backend();
+            auto selected = origin->NativeBackend();
             if (this->explicitLibrary == library && !this->explicitInvalid) {
                 return origin->Matches(selected.get()) ? MC_OK : MC_ERROR_NOT_FOUND;
             }
@@ -441,7 +440,7 @@ namespace musik { namespace core { namespace ffi {
     private:
         static constexpr int ExplicitLibraryChanged = 1;
 
-        void SwitchCatalog(ILibraryPtr selected) {
+        void SwitchCatalog(LibraryBackend::Shared selected) {
             if (this->playback) {
                 this->playback->InvalidateDisconnectedCatalog();
                 this->playback->SelectLibrary(selected);
@@ -472,11 +471,11 @@ namespace musik { namespace core { namespace ffi {
 
         void PublishSelection(bool selectionChanged) {
             auto status = CaptureLibraryStatus(this->active);
-            auto identity = status.state == MC_LIBRARY_CONNECTED ? CreateLibraryInstance(this->active) : nullptr;
+            auto identity = status.state == MC_LIBRARY_CONNECTED ? CreateLibrary(this->active) : nullptr;
             publish_library_selection(*this->context, std::move(identity), std::move(status), selectionChanged);
         }
 
-        void OnRemoteStateChanged(ILibrary::ConnectionState) {
+        void OnRemoteStateChanged(LibraryBackend::ConnectionState) {
             if (!this->explicitLibrary && this->active == this->remote) {
                 if (this->playback) {
                     this->playback->InvalidateDisconnectedCatalog();
@@ -498,10 +497,10 @@ namespace musik { namespace core { namespace ffi {
         }
 
         const std::shared_ptr<runtime::MessageQueue> queue = std::make_shared<runtime::MessageQueue>();
-        ILibraryPtr local;
-        std::shared_ptr<library::RemoteLibrary> remote;
-        ILibraryPtr active;
-        std::shared_ptr<const LibraryInstance> explicitLibrary;
+        LibraryBackend::Shared local;
+        std::shared_ptr<library::RemoteLibraryBackend> remote;
+        LibraryBackend::Shared active;
+        std::shared_ptr<const musik::core::library::Library> explicitLibrary;
         bool explicitInvalid = false;
         std::shared_ptr<CoreNotifications> notifications;
         mc_context* context = nullptr;
@@ -512,8 +511,8 @@ namespace musik { namespace core { namespace ffi {
         std::condition_variable changed;
         uint64_t dispatches = 0;
         Indexer* indexer = nullptr;
-        api::Subscriptions<ILibrary::ConnectionState>::Connection remoteStateChanged;
-        api::Subscriptions<ILibrary::ConnectionState>::Connection explicitStateChanged;
+        api::Subscriptions<LibraryBackend::ConnectionState>::Connection remoteStateChanged;
+        api::Subscriptions<LibraryBackend::ConnectionState>::Connection explicitStateChanged;
         api::Subscriptions<>::Connection indexStarted;
         api::Subscriptions<int>::Connection indexProgress;
         api::Subscriptions<int>::Connection indexFinished;

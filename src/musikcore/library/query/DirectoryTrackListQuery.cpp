@@ -43,7 +43,7 @@
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
-using musik::core::ILibraryPtr;
+using musik::core::LibraryBackend;
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;
@@ -53,7 +53,7 @@ using namespace musik::core::library;
 const std::string DirectoryTrackListQuery::kQueryName = MC_LIBRARY_QUERY_DIRECTORY_TRACKS;
 
 DirectoryTrackListQuery::DirectoryTrackListQuery(
-    ILibraryPtr library,
+    LibraryBackend::Shared library,
     const std::string& directory,
     const std::string& filter)
 {
@@ -134,7 +134,7 @@ std::string DirectoryTrackListQuery::SerializeQuery() {
         { "options", {
             { "directory", directory },
             { "filter", filter },
-        }}
+        } }
     };
     output["options"]["scope"] = EncodeScope(this->scope);
     return FinalizeSerializedQueryWithLimitAndOffset(output);
@@ -152,7 +152,7 @@ void DirectoryTrackListQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<DirectoryTrackListQuery> DirectoryTrackListQuery::DeserializeQuery(
-    ILibraryPtr library, const std::string& data)
+    LibraryBackend::Shared library, const std::string& data)
 {
     auto options = nlohmann::json::parse(data)["options"];
     auto result = std::make_shared<DirectoryTrackListQuery>(

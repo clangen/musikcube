@@ -37,7 +37,7 @@
 #include "common/Filesystem.h"
 
 #include <musikcore/library/track/Track.h>
-#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/LocalLibraryBackend.h>
 #include <musikcore/config.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/query/ConfiguredPathsQuery.h>
@@ -53,7 +53,7 @@
 #include <limits>
 #include <filesystem>
 
-static const std::string TAG = "LocalLibrary";
+static const std::string TAG = "LocalLibraryBackend";
 
 using musik::core::sdk::fs::pathToUtf8;
 
@@ -68,7 +68,7 @@ using namespace std::chrono;
 #define VERBOSE_LOGGING 1
 #define MESSAGE_QUERY_COMPLETED 5000
 
-class LocalResourceLocator: public ILibrary::IResourceLocator {
+class LocalResourceLocator: public LibraryBackend::IResourceLocator {
     public:
         std::string GetTrackUri(
             musik::core::Track* track,
@@ -79,9 +79,9 @@ class LocalResourceLocator: public ILibrary::IResourceLocator {
         }
 } sResourceLocator;
 
-class LocalLibrary::QueryCompletedMessage: public Message {
+class LocalLibraryBackend::QueryCompletedMessage: public Message {
     public:
-        using QueryContextPtr = LocalLibrary::QueryContextPtr;
+        using QueryContextPtr = LocalLibraryBackend::QueryContextPtr;
 
         QueryCompletedMessage(IMessageTarget* target, QueryContextPtr context)
         : Message(target, MESSAGE_QUERY_COMPLETED, 0, 0) {
@@ -96,12 +96,12 @@ class LocalLibrary::QueryCompletedMessage: public Message {
         QueryContextPtr context;
 };
 
-ILibraryPtr LocalLibrary::Create(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer) {
-    ILibraryPtr lib(new LocalLibrary(name, id, messageQueue, enableIndexer));
+LibraryBackend::Shared LocalLibraryBackend::Create(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer) {
+    LibraryBackend::Shared lib(new LocalLibraryBackend(name, id, messageQueue, enableIndexer));
     return lib;
 }
 
-LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer)
+LocalLibraryBackend::LocalLibraryBackend(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer)
 : messageQueue(messageQueue)
 , id(id)
 , name(name)
@@ -114,7 +114,7 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue,
         throw fs::filesystem_error("Could not open writable library database", musik::core::sdk::fs::pathFromUtf8(filename),
             std::make_error_code(std::errc::io_error));
     }
-    LocalLibrary::CreateDatabase(this->db);
+    LocalLibraryBackend::CreateDatabase(this->db);
 
     /* querying an existing catalog must not start scanners or load providers. */
     std::unique_ptr<core::Indexer> indexer;
@@ -128,7 +128,7 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue,
         this->messageQueue->Register(this);
     }
     try {
-        this->thread = new std::thread(std::bind(&LocalLibrary::ThreadProc, this));
+        this->thread = new std::thread(std::bind(&LocalLibraryBackend::ThreadProc, this));
     }
     catch (...) {
         if (this->messageQueue) {
@@ -139,22 +139,22 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue,
     this->indexer = indexer.release();
 }
 
-LocalLibrary::~LocalLibrary() {
+LocalLibraryBackend::~LocalLibraryBackend() {
     this->Close();
     if (this->messageQueue) {
         this->messageQueue->Unregister(this);
     }
 }
 
-int LocalLibrary::Id() {
+int LocalLibraryBackend::Id() {
     return this->id;
 }
 
-const std::string& LocalLibrary::Name() {
+const std::string& LocalLibraryBackend::Name() {
     return this->name;
 }
 
-void LocalLibrary::Close() {
+void LocalLibraryBackend::Close() {
     std::thread* thread = nullptr;
 
     {
@@ -178,7 +178,7 @@ void LocalLibrary::Close() {
     }
 }
 
-void LocalLibrary::ResumePendingMigrationScan() {
+void LocalLibraryBackend::ResumePendingMigrationScan() {
     if (!this->indexer) {
         return;
     }
@@ -195,7 +195,7 @@ void LocalLibrary::ResumePendingMigrationScan() {
     }
 }
 
-bool LocalLibrary::IsConfigured() {
+bool LocalLibraryBackend::IsConfigured() {
     if (this->indexer) {
         std::vector<std::string> paths;
         this->indexer->GetPaths(paths);
@@ -208,7 +208,7 @@ bool LocalLibrary::IsConfigured() {
     return query->GetResult();
 }
 
-std::string LocalLibrary::GetLibraryDirectory() {
+std::string LocalLibraryBackend::GetLibraryDirectory() {
     std::string directory(musik::core::GetDataDirectory());
 
     if (!this->identifier.empty()) {
@@ -225,15 +225,15 @@ std::string LocalLibrary::GetLibraryDirectory() {
     return directory;
 }
 
-std::string LocalLibrary::GetDatabaseFilename() {
+std::string LocalLibraryBackend::GetDatabaseFilename() {
     return this->GetLibraryDirectory() + "musik.db";
 }
 
-int LocalLibrary::Enqueue(QueryPtr query, Callback callback) {
+int LocalLibraryBackend::Enqueue(QueryPtr query, Callback callback) {
     return this->EnqueueAndWait(query, 0LL, callback);
 }
 
-int LocalLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {
+int LocalLibraryBackend::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {
     LocalQueryPtr localQuery = std::dynamic_pointer_cast<LocalQuery>(query);
 
     if (localQuery) {
@@ -278,7 +278,7 @@ int LocalLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback call
     return -1;
 }
 
-LocalLibrary::QueryContextPtr LocalLibrary::GetNextQuery() {
+LocalLibraryBackend::QueryContextPtr LocalLibraryBackend::GetNextQuery() {
     std::unique_lock<std::recursive_mutex> lock(this->mutex);
     while (!this->queryQueue.size() && !this->exit) {
         this->queueCondition.wait(lock);
@@ -294,7 +294,7 @@ LocalLibrary::QueryContextPtr LocalLibrary::GetNextQuery() {
     }
 }
 
-void LocalLibrary::ThreadProc() {
+void LocalLibraryBackend::ThreadProc() {
     while (!this->exit) {
         auto query = GetNextQuery();
         if (query) {
@@ -304,7 +304,7 @@ void LocalLibrary::ThreadProc() {
     }
 }
 
-void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
+void LocalLibraryBackend::RunQuery(QueryContextPtr context, bool notify) {
     if (context) {
         auto query = context->query;
 
@@ -335,7 +335,7 @@ void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
     }
 }
 
-void LocalLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
+void LocalLibraryBackend::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
     if (this->messageQueue && this->messageQueue != &queue) {
         this->messageQueue->Unregister(this);
     }
@@ -343,11 +343,11 @@ void LocalLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
     queue.Register(this);
 }
 
-ILibrary::IResourceLocator& LocalLibrary::GetResourceLocator() {
+LibraryBackend::IResourceLocator& LocalLibraryBackend::GetResourceLocator() {
     return sResourceLocator;
 }
 
-void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
+void LocalLibraryBackend::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == MESSAGE_QUERY_COMPLETED) {
         auto context = dynamic_cast<QueryCompletedMessage*>(&message)->GetContext();
         auto query = context->query;
@@ -360,7 +360,7 @@ void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
 }
 
-musik::core::Indexer* LocalLibrary::Indexer() {
+musik::core::Indexer* LocalLibraryBackend::Indexer() {
     return this->indexer;
 }
 
@@ -458,7 +458,7 @@ static void upgradeV5ToV6(db::Connection& db) {
 }
 
 static void upgradeV6ToV7(db::Connection& db) {
-    requireSchema(LocalLibrary::InvalidateTrackMetadata(db));
+    requireSchema(LocalLibraryBackend::InvalidateTrackMetadata(db));
     requireMigrationScan(db);
 }
 
@@ -466,7 +466,7 @@ static void upgradeV7ToV8(db::Connection& db) {
     if (!hasColumn(db, "tracks", "directory_id")) {
         executeSchema(db, "ALTER TABLE tracks ADD COLUMN directory_id INTEGER");
     }
-    requireSchema(LocalLibrary::InvalidateTrackMetadata(db));
+    requireSchema(LocalLibraryBackend::InvalidateTrackMetadata(db));
     requireMigrationScan(db);
 }
 
@@ -799,11 +799,11 @@ static void createSchema(db::Connection& db) {
     executeSchema(db, "SELECT track_id FROM last_session_play_queue ORDER BY id LIMIT 0");
     executeSchema(db, "SELECT * FROM tracks_view LIMIT 0");
     executeSchema(db, "SELECT * FROM extended_metadata LIMIT 0");
-    requireSchema(LocalLibrary::CreateIndexes(db));
+    requireSchema(LocalLibraryBackend::CreateIndexes(db));
     setVersion(db, DATABASE_VERSION);
 }
 
-void LocalLibrary::CreateDatabase(db::Connection& db) {
+void LocalLibraryBackend::CreateDatabase(db::Connection& db) {
     executeSchema(db, "BEGIN IMMEDIATE");
     try {
         createSchema(db);
@@ -815,7 +815,7 @@ void LocalLibrary::CreateDatabase(db::Connection& db) {
     }
 }
 
-void LocalLibrary::DropIndexes(db::Connection &db) {
+void LocalLibraryBackend::DropIndexes(db::Connection &db) {
     db.Execute("DROP INDEX IF EXISTS paths_index");
 
     db.Execute("DROP INDEX IF EXISTS genre_index");
@@ -853,7 +853,7 @@ static bool executeAll(db::Connection& db, std::initializer_list<const char*> st
     return okay;
 }
 
-bool LocalLibrary::CreateIndexes(db::Connection &db) {
+bool LocalLibraryBackend::CreateIndexes(db::Connection &db) {
     return executeAll(db, {
         "CREATE INDEX IF NOT EXISTS paths_index ON paths (path)",
 
@@ -887,7 +887,7 @@ bool LocalLibrary::CreateIndexes(db::Connection &db) {
     });
 }
 
-bool LocalLibrary::InvalidateTrackMetadata(db::Connection& db) {
+bool LocalLibraryBackend::InvalidateTrackMetadata(db::Connection& db) {
     return executeAll(db, {
         "UPDATE tracks SET filetime=0",
         "DELETE FROM track_meta;",

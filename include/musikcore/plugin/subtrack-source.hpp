@@ -138,7 +138,7 @@ namespace musik { namespace core { namespace plugin {
                 container.substr(0, slash).find_first_not_of("0123456789") == std::string_view::npos;
         }
 
-        explicit SubtrackSource(const mc_media_host_api& media)
+        explicit SubtrackSource(const mc_plugin_media_service& media)
         : media(media) {}
         ~SubtrackSource() {
             if (input.instance) {
@@ -193,7 +193,7 @@ namespace musik { namespace core { namespace plugin {
             return status;
         }
 
-        const mc_media_host_api& media;
+        const mc_plugin_media_service& media;
         mc_stream input = MC_STREAM_DEFAULT;
         std::string uri;
         std::mutex mutex;

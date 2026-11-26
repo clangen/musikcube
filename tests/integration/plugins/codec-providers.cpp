@@ -420,11 +420,11 @@ int main(int argc, char** argv) {
         (ffmpeg || taglib ? "rate.wav" : gme ? "selection.nsf" : "selection.mod");
     const auto utf8 = file.u8string();
     const std::string path(utf8.begin(), utf8.end());
-    mc_media_host_api media = MC_MEDIA_HOST_API_DEFAULT;
+    mc_plugin_media_service media = MC_PLUGIN_MEDIA_SERVICE_DEFAULT;
     media.create_stream = [](void*, mc_string_view, mc_stream* stream, mc_error**) {
         return musik::core::io::CreateLocalFileSource(*stream);
     };
-    mc_preferences_host_api prefs = MC_PREFERENCES_HOST_API_DEFAULT;
+    mc_plugin_preferences_service prefs = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
     prefs.read_number = readNumber;
     prefs.read_boolean = [](void*, mc_string_view, bool fallback, bool* result) -> mc_result {
         *result = fallback;

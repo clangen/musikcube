@@ -83,7 +83,7 @@ namespace {
     class PlaybackRemote : public IKeyProcessor {
     public:
         explicit PlaybackRemote(const mc_plugin_services& services)
-        : host(*services.playback_remote) {}
+        : host(*services.playback) {}
 
         void Changed(const mc_plugin_playback_event&) noexcept {}
         void QueueChanged() noexcept {}
@@ -132,7 +132,7 @@ namespace {
         }
 
     private:
-        mc_playback_remote_host_api host;
+        mc_plugin_playback_service host;
         MediaKeys* mediaKeys { nil };
         std::atomic<bool> stopping { true };
     };

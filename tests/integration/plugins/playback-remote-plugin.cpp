@@ -1,5 +1,6 @@
 #include <musikcore/plugin/playback-remote.hpp>
 #include <musikcore/plugin/library.h>
+#include <musikcore/plugin/indexer.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -33,11 +34,21 @@ namespace {
     class TestRemote {
     public:
         explicit TestRemote(const mc_plugin_services& services)
-        : host(*services.playback_remote), library(*services.library) {
+        : host(*services.playback)
+        , library(*services.library)
+        , indexer(services.indexer) {
             record("create\n");
             /* constructors cannot enqueue work before the host starts the remote. */
             this->preStartRejected = host.control_async(host.context, MC_PLAYBACK_SET_VOLUME, 0.5, Completed, this) ==
                 MC_ERROR_CANCELLED;
+            const auto* indexer = services.indexer;
+            this->preStartRejected = this->preStartRejected && indexer && indexer->schedule_async &&
+                !indexer->request_rescan &&
+                indexer->schedule_async(indexer->context, MC_INDEXER_SCAN_LOCAL, nullptr, this) ==
+                    MC_ERROR_INVALID_ARGUMENT &&
+                indexer->schedule_async(indexer->context, MC_INDEXER_REBUILD + 1, Completed, this) ==
+                    MC_ERROR_INVALID_ARGUMENT &&
+                indexer->schedule_async(indexer->context, MC_INDEXER_SCAN_LOCAL, Completed, this) == MC_ERROR_CANCELLED;
         }
         ~TestRemote() { record("destroy\n"); }
 
@@ -63,6 +74,9 @@ namespace {
             /* the owner can provide the initial state before any change event. */
             if (host.read_state(host.context, InitialState, this) != MC_OK) {
                 return MC_ERROR_PLUGIN;
+            }
+            if (std::getenv("MUSIKCORE_TEST_REMOTE_INDEXER")) {
+                return this->indexer->schedule_async(this->indexer->context, MC_INDEXER_SCAN_LOCAL, Completed, this);
             }
             if (std::getenv("MUSIKCORE_TEST_REMOTE_ACCESS")) {
                 /* queue access from a worker; the owner supplies a separate handle. */
@@ -241,6 +255,11 @@ namespace {
             if (host.control_async(host.context, MC_PLAYBACK_SET_VOLUME, 0.5, Completed, this) != MC_ERROR_CANCELLED) {
                 record("late-command-accepted\n");
             }
+            if (this->indexer->schedule_async(this->indexer->context, MC_INDEXER_SCAN_LOCAL, Completed, this) !=
+                MC_ERROR_CANCELLED)
+            {
+                record("late-indexer-accepted\n");
+            }
         }
         mc_result Join() {
             this->CheckOwner();
@@ -316,8 +335,9 @@ namespace {
             }
         }
 
-        const mc_playback_remote_host_api& host;
-        const mc_library_host_api& library;
+        const mc_plugin_playback_service& host;
+        const mc_plugin_library_service& library;
+        const mc_plugin_indexer_service* indexer;
         const std::thread::id owner { std::this_thread::get_id() };
         std::thread worker;
         std::mutex mutex;

@@ -32,9 +32,9 @@ namespace {
 }
 
 CddaIndexer::CddaIndexer(const mc_host_api&, const mc_plugin_services& services)
-: mediaMonitor(std::make_unique<CddaMediaMonitor>(*services.indexer_source)) {
+: mediaMonitor(std::make_unique<CddaMediaMonitor>(*services.indexer)) {
     /* Include discs already present when the source starts. */
-    services.indexer_source->request_rescan(services.indexer_source->context);
+    services.indexer->request_rescan(services.indexer->context);
 }
 
 CddaIndexer::~CddaIndexer() = default;

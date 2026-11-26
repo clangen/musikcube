@@ -3,27 +3,27 @@
 #include "library-storage.h"
 #include "request.h"
 #include "../common/error.h"
-#include <musikcore/library/LocalLibrary.h>
-#include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/library/LocalLibraryBackend.h>
+#include <musikcore/library/RemoteLibraryBackend.h>
 
-using musik::core::ILibraryPtr;
+using musik::core::LibraryBackend;
 
-std::shared_ptr<const LibraryInstance> musik::core::ffi::CreateLibraryInstance(const ILibraryPtr& selected) {
-    if (const auto local = std::dynamic_pointer_cast<library::LocalLibrary>(selected)) {
-        return detail::CreateLocalLibraryInstance(local);
+std::shared_ptr<const musik::core::library::Library> musik::core::ffi::CreateLibrary(const LibraryBackend::Shared& selected) {
+    if (const auto local = std::dynamic_pointer_cast<library::LocalLibraryBackend>(selected)) {
+        return detail::CreateLocalLibrary(local);
     }
-    if (const auto remote = std::dynamic_pointer_cast<library::RemoteLibrary>(selected)) {
-        return detail::CreateRemoteLibraryInstance(remote);
+    if (const auto remote = std::dynamic_pointer_cast<library::RemoteLibraryBackend>(selected)) {
+        return detail::CreateRemoteLibrary(remote);
     }
     return {};
 }
 
-mc_result musik::core::ffi::OpenLibraryHandle(const ILibraryPtr& library, mc_library** out) {
+mc_result musik::core::ffi::OpenLibraryHandle(const LibraryBackend::Shared& library, mc_library** out) {
     return exception_barrier(nullptr, [&]() -> mc_result {
         if (!library || !out || *out) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
-        auto instance = CreateLibraryInstance(library);
+        auto instance = CreateLibrary(library);
         if (!instance) {
             return MC_ERROR_IO;
         }
@@ -32,10 +32,10 @@ mc_result musik::core::ffi::OpenLibraryHandle(const ILibraryPtr& library, mc_lib
     });
 }
 
-musik::core::ffi::LibraryStatus musik::core::ffi::CaptureLibraryStatus(const ILibraryPtr& selected) {
+musik::core::ffi::LibraryStatus musik::core::ffi::CaptureLibraryStatus(const LibraryBackend::Shared& selected) {
     LibraryStatus status;
-    using ConnectionState = ILibrary::ConnectionState;
-    status.kind = selected->GetType() == ILibrary::Type::Local ? MC_LIBRARY_LOCAL : MC_LIBRARY_REMOTE;
+    using ConnectionState = LibraryBackend::ConnectionState;
+    status.kind = selected->GetType() == LibraryBackend::Type::Local ? MC_LIBRARY_LOCAL : MC_LIBRARY_REMOTE;
     status.configured = selected->IsConfigured();
     switch (selected->GetConnectionState()) {
         case ConnectionState::Disconnected:
@@ -51,7 +51,7 @@ musik::core::ffi::LibraryStatus musik::core::ffi::CaptureLibraryStatus(const ILi
             status.state = MC_LIBRARY_AUTHENTICATION_FAILED;
             break;
     }
-    if (const auto remote = std::dynamic_pointer_cast<library::RemoteLibrary>(selected)) {
+    if (const auto remote = std::dynamic_pointer_cast<library::RemoteLibraryBackend>(selected)) {
         const auto& socket = remote->WebSocketClient();
         status.endpoint = socket.Uri();
         status.serverVersion = socket.LastServerVersion();

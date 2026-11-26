@@ -54,7 +54,7 @@ LibraryTrack::LibraryTrack(int64_t id, int libraryId)
 , gain(nullptr) {
 }
 
-LibraryTrack::LibraryTrack(int64_t id, ILibraryPtr library)
+LibraryTrack::LibraryTrack(int64_t id, LibraryBackend::Shared library)
 : id(id)
 , libraryId(library->Id())
 , state(musik::core::MetadataState::NotLoaded)

@@ -35,7 +35,7 @@
 #pragma once
 
 #include <common/DeleteDefaults.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/db/Connection.h>
 
@@ -48,7 +48,7 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_CLASS_DEFAULTS(DeletePlaylistQuery)
 
             DeletePlaylistQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId) noexcept;
 
             /* IQuery */
@@ -59,7 +59,7 @@ namespace musik { namespace core { namespace library { namespace query {
             std::string SerializeResult() override;
             void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<DeletePlaylistQuery> DeserializeQuery(
-                musik::core::ILibraryPtr library, const std::string& data);
+                musik::core::LibraryBackend::Shared library, const std::string& data);
 
         protected:
             /* QueryBase */
@@ -69,7 +69,7 @@ namespace musik { namespace core { namespace library { namespace query {
             void SendPlaylistMutationBroadcast();
 
             int64_t playlistId;
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             bool result{ false };
     };
 

@@ -48,7 +48,7 @@ using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
-using musik::core::ILibraryPtr;
+using musik::core::LibraryBackend;
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;
@@ -58,7 +58,7 @@ using namespace musik::core::library::constants;
 const std::string CategoryTrackListQuery::kQueryName = MC_LIBRARY_QUERY_CATEGORY_TRACKS;
 
 CategoryTrackListQuery::CategoryTrackListQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const std::string& filter,
     TrackSortType sortType)
 : CategoryTrackListQuery(library, category::PredicateList(), filter, sortType)
@@ -66,7 +66,7 @@ CategoryTrackListQuery::CategoryTrackListQuery(
 }
 
 CategoryTrackListQuery::CategoryTrackListQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const std::string& column,
     int64_t id,
     const std::string& filter,
@@ -76,7 +76,7 @@ CategoryTrackListQuery::CategoryTrackListQuery(
 }
 
 CategoryTrackListQuery::CategoryTrackListQuery(
-    ILibraryPtr library,
+    LibraryBackend::Shared library,
     const category::Predicate predicate,
     const std::string& filter,
     TrackSortType sortType)
@@ -85,7 +85,7 @@ CategoryTrackListQuery::CategoryTrackListQuery(
 }
 
 CategoryTrackListQuery::CategoryTrackListQuery(
-    ILibraryPtr library,
+    LibraryBackend::Shared library,
     const category::PredicateList predicates,
     const std::string& filter,
     TrackSortType sortType)
@@ -231,7 +231,7 @@ std::string CategoryTrackListQuery::SerializeQuery() {
             { "regularPredicateList", PredicateListToJson(regular) },
             { "extendedPredicateList", PredicateListToJson(extended) },
             { "sortType", sortType }
-        }}
+        } }
     };
     output["options"]["scope"] = EncodeScope(this->scope);
     return FinalizeSerializedQueryWithLimitAndOffset(output);
@@ -249,7 +249,7 @@ void CategoryTrackListQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<CategoryTrackListQuery> CategoryTrackListQuery::DeserializeQuery(
-    musik::core::ILibraryPtr library, const std::string& data)
+    musik::core::LibraryBackend::Shared library, const std::string& data)
 {
     nlohmann::json options = nlohmann::json::parse(data)["options"];
     auto result = std::make_shared<CategoryTrackListQuery>(

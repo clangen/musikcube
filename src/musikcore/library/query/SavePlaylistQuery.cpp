@@ -75,7 +75,7 @@ static std::string GET_MAX_SORT_ORDER_QUERY =
 /* STATIC FACTORY METHODS */
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const std::string& playlistName,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
@@ -84,7 +84,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const std::string& playlistName,
     const std::string& categoryType,
     int64_t categoryId)
@@ -94,7 +94,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
@@ -103,7 +103,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const int64_t playlistId,
     const std::string& playlistName)
 {
@@ -112,7 +112,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
@@ -127,7 +127,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
 /* CONSTRUCTORS */
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const int64_t playlistId,
     const std::string& categoryType,
     int64_t categoryId)
@@ -141,7 +141,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const std::string& playlistName,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
@@ -154,7 +154,7 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const std::string& playlistName,
     const std::string& categoryType,
     int64_t categoryId)
@@ -168,7 +168,7 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
@@ -179,7 +179,7 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const int64_t playlistId,
     const std::string& categoryType,
     int64_t categoryId)
@@ -192,7 +192,7 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
-    musik::core::ILibraryPtr library,
+    musik::core::LibraryBackend::Shared library,
     const int64_t playlistId,
     const std::string& playlistName)
 {
@@ -203,7 +203,7 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->op = Operation::Rename;
 }
 
-SavePlaylistQuery::SavePlaylistQuery(musik::core::ILibraryPtr library) {
+SavePlaylistQuery::SavePlaylistQuery(musik::core::LibraryBackend::Shared library) {
     this->library = library;
     this->categoryId = -1;
 }
@@ -347,7 +347,7 @@ bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
     return result;
 }
 
-std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::CreateOwned(ILibraryPtr library,
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::CreateOwned(LibraryBackend::Shared library,
     const std::string& name, std::shared_ptr<TrackList> tracks, std::optional<int32_t> source)
 {
     auto query = SavePlaylistQuery::Save(library, name, std::move(tracks));
@@ -460,7 +460,7 @@ std::string SavePlaylistQuery::SerializeQuery() {
             { "playlistId", this->playlistId },
             { "categoryId", this->categoryId },
             { "tracks", tracksJson }
-        }}
+        } }
     };
     output["options"]["owner_source"] = this->ownerSource ? nlohmann::json(*this->ownerSource) : nlohmann::json();
     return output.dump();
@@ -484,7 +484,7 @@ void SavePlaylistQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::DeserializeQuery(
-    musik::core::ILibraryPtr library, const std::string& data)
+    musik::core::LibraryBackend::Shared library, const std::string& data)
 {
     auto options = nlohmann::json::parse(data)["options"];
     auto output = std::shared_ptr<SavePlaylistQuery>(new SavePlaylistQuery(library));

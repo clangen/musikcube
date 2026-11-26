@@ -110,8 +110,8 @@ private:
 
     /* host-owned services remain valid until this remote is destroyed. */
     const mc_host_api* host = nullptr;
-    const mc_playback_remote_host_api* remote = nullptr;
-    const mc_library_host_api* library = nullptr;
+    const mc_plugin_playback_service* remote = nullptr;
+    const mc_plugin_library_service* library = nullptr;
 
     /* owned playback handle; used and released on the owner thread. */
     std::optional<musik::core::api::Playback> ownerPlayback;

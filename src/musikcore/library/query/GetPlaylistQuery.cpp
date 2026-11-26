@@ -52,7 +52,7 @@ using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
 using musik::core::LibraryTrack;
-using musik::core::ILibraryPtr;
+using musik::core::LibraryBackend;
 
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
@@ -61,7 +61,7 @@ using namespace musik::core::library::query::serialization;
 
 const std::string GetPlaylistQuery::kQueryName = "GetPlaylistQuery";
 
-GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, int64_t playlistId) {
+GetPlaylistQuery::GetPlaylistQuery(LibraryBackend::Shared library, int64_t playlistId) {
     this->library = library;
     this->playlistId = playlistId;
     this->result = std::make_shared<TrackList>(library);
@@ -111,7 +111,7 @@ std::string GetPlaylistQuery::SerializeQuery() {
         { "name", kQueryName },
         { "options", {
             { "playlistId", playlistId },
-        }}
+        } }
     };
     return FinalizeSerializedQueryWithLimitAndOffset(output);
 }
@@ -128,7 +128,7 @@ void GetPlaylistQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<GetPlaylistQuery> GetPlaylistQuery::DeserializeQuery(
-    musik::core::ILibraryPtr library, const std::string& data)
+    musik::core::LibraryBackend::Shared library, const std::string& data)
 {
     auto options = nlohmann::json::parse(data)["options"];
     auto result = std::make_shared<GetPlaylistQuery>(

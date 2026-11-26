@@ -84,7 +84,7 @@ capture, pending-request registration and invalidation must agree on that orderi
 so a concurrent submission cannot escape invalidation. Callers need not manage
 public scope revisions; an internal generation may enforce this contract.
 
-The current `mc_library` stores a shared immutable `LibraryInstance`; preserve
+The current `mc_library` stores a shared immutable `musik::core::library::Library`; preserve
 backend ownership, remote routing, context selection and result/track lifetimes
 when adding instance-owned mutable scope state. Operations using the context's
 selected library observe that instance's scope. Different library instances and

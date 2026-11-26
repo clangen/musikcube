@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
         /* output instances need their plugin-scoped preferences during creation. */
         environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES", true);
         {
-            mc_preferences_host_api preferences = MC_PREFERENCES_HOST_API_DEFAULT;
+            mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
             preferences.read_boolean = [](void*, mc_string_view key, bool, bool* value) -> mc_result {
                 if (std::string_view(key.data, key.length) != "fixture") {
                     return MC_ERROR_INVALID_ARGUMENT;

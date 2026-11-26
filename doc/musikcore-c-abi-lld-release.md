@@ -135,6 +135,11 @@ External C decoder build/load checks (PKG-003/PKG-004) are tracked with the
   consumer checks. No new Linux/Windows scope acceptance is claimed by that exception.
 - [ ] **FIN-009** Freeze and publish the export allowlist and public layout
   baseline after the library query scope contract and acceptance are complete.
+  Include the renamed plugin service tables and indexer/playback service layout
+  changes from [ADR-0018](../docs/adr/0018-library-layers-and-plugin-services.md).
+  LIBLAY-PLATFORMS was closed by maintainer acceptance on 2026-11-25 without
+  additional native Linux/Windows runs. Broader provider and release-platform
+  gates retain their own requirements; no new platform results are claimed.
 - [ ] **FIN-010** Preserve a v1 C consumer binary/source fixture.
 - [ ] **FIN-011** Preserve a v1 C plugin binary/source fixture.
 - [ ] **FIN-012** Test older v1 fixtures against every newer compatible v1

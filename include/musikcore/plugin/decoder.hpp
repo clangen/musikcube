@@ -14,7 +14,7 @@ namespace musik { namespace core { namespace plugin {
     view and its copies expire when decode returns. */
     class DecoderBuffer {
     public:
-        DecoderBuffer(const mc_audio_scratch_buffer_api& api, mc_audio_scratch_buffer& buffer)
+        DecoderBuffer(const mc_plugin_audio_scratch_service& api, mc_audio_scratch_buffer& buffer)
         : api(api)
         , buffer(buffer) {}
 
@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace plugin {
         }
 
     private:
-        const mc_audio_scratch_buffer_api& api;
+        const mc_plugin_audio_scratch_service& api;
         mc_audio_scratch_buffer& buffer;
     };
 
@@ -58,7 +58,7 @@ namespace musik { namespace core { namespace plugin {
             , scratch(*services.audio_scratch) {}
 
             Codec codec;
-            const mc_audio_scratch_buffer_api& scratch;
+            const mc_plugin_audio_scratch_service& scratch;
             std::atomic<bool> interrupted { false };
         };
 

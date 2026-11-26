@@ -151,11 +151,11 @@ int main(int argc, char** argv) {
         plugin.initialize(&host, &pluginState, nullptr) == MC_OK && streamFactory && decoderFactory && indexerFactory,
         "register stream, decoder, and indexer together");
 
-    mc_indexer_source_host_api sourceHost = MC_INDEXER_SOURCE_HOST_API_DEFAULT;
+    mc_plugin_indexer_service sourceHost = MC_PLUGIN_INDEXER_SERVICE_DEFAULT;
     sourceHost.request_rescan = RequestRescan;
     mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
     services.host = &host;
-    services.indexer_source = &sourceHost;
+    services.indexer = &sourceHost;
     void* source = nullptr;
     Require(indexerFactory->create(indexerFactory->context, &services, &source, nullptr) == MC_OK && source,
         "create indexer and its device monitor");
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
         Require(decoderFactory->can_handle(decoderFactory->context, &hint, &supported) == MC_OK && supported,
             "decoder claims CD PCM");
 
-        mc_audio_scratch_buffer_api scratch = MC_AUDIO_SCRATCH_BUFFER_API_DEFAULT;
+        mc_plugin_audio_scratch_service scratch = MC_PLUGIN_AUDIO_SCRATCH_SERVICE_DEFAULT;
         scratch.set_format = SetFormat;
         scratch.reserve = Reserve;
         scratch.begin_write = BeginWrite;

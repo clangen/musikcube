@@ -1,4 +1,6 @@
 #include <musikcore/plugin.h>
+#include <musikcore/plugin/library.h>
+#include <musikcore/plugin/media.h>
 #include <musikcore/plugin/audio.h>
 #include <musikcore/plugin/visualizer.h>
 #include <musikcore/plugin/output.h>
@@ -135,7 +137,7 @@ int main(void) {
     const mc_cancel_token cancel = MC_CANCEL_TOKEN_DEFAULT;
     const mc_pcm_view pcm = MC_PCM_VIEW_DEFAULT;
     const mc_media_hint hint = MC_MEDIA_HINT_DEFAULT;
-    const mc_audio_scratch_buffer_api audio = MC_AUDIO_SCRATCH_BUFFER_API_DEFAULT;
+    const mc_plugin_audio_scratch_service audio = MC_PLUGIN_AUDIO_SCRATCH_SERVICE_DEFAULT;
     const mc_output output = MC_OUTPUT_DEFAULT;
     const mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
     const mc_output_options options = MC_OUTPUT_OPTIONS_DEFAULT;
@@ -147,7 +149,11 @@ int main(void) {
     const mc_visualizer_factory visualizer_factory = MC_VISUALIZER_FACTORY_DEFAULT;
     const mc_indexer_writer writer = MC_INDEXER_WRITER_DEFAULT;
     const mc_indexer_source_info source = MC_INDEXER_SOURCE_INFO_DEFAULT;
-    const mc_indexer_source_host_api source_host = MC_INDEXER_SOURCE_HOST_API_DEFAULT;
+    const mc_plugin_indexer_service source_host = MC_PLUGIN_INDEXER_SERVICE_DEFAULT;
+    const mc_plugin_playback_service playback_service = MC_PLUGIN_PLAYBACK_SERVICE_DEFAULT;
+    const mc_plugin_library_service library_service = MC_PLUGIN_LIBRARY_SERVICE_DEFAULT;
+    const mc_plugin_preferences_service preferences_service = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
+    const mc_plugin_media_service media_service = MC_PLUGIN_MEDIA_SERVICE_DEFAULT;
     const mc_indexer_source_vtable source_methods = MC_INDEXER_SOURCE_VTABLE_DEFAULT;
     const mc_indexer_source_factory source_factory = MC_INDEXER_SOURCE_FACTORY_DEFAULT;
     const mc_tag_reader_factory tag_factory = MC_TAG_READER_FACTORY_DEFAULT;
@@ -179,7 +185,20 @@ int main(void) {
     /* an empty source cannot accidentally write, rescan, or claim an identity. */
     require(writer.struct_size == sizeof(writer) && !writer.create_record && !writer.save, "indexer writer");
     require(source.struct_size == sizeof(source) && !source.source_key.length && !source.stable_ids, "indexer source");
-    require(source_host.struct_size == sizeof(source_host) && !source_host.request_rescan, "indexer source host");
+    require(
+        source_host.struct_size == sizeof(source_host) && !source_host.request_rescan && !source_host.schedule_async,
+        "indexer source host");
+    require(playback_service.struct_size == sizeof(playback_service) && !playback_service.read_state &&
+            !playback_service.control_async && !playback_service.with_playback_async,
+        "playback service");
+    require(library_service.struct_size == sizeof(library_service) && !library_service.search_tracks &&
+            !library_service.read_tracks_async && !library_service.run_query,
+        "library service");
+    require(preferences_service.struct_size == sizeof(preferences_service) && !preferences_service.context,
+        "preferences service");
+    require(media_service.struct_size == sizeof(media_service) && !media_service.create_stream &&
+            !media_service.create_decoder,
+        "media service");
     require(source_methods.struct_size == sizeof(source_methods) && !source_methods.scan && !source_methods.interrupt,
         "indexer source operations");
     require(source_factory.struct_size == sizeof(source_factory) && !source_factory.create, "indexer source factory");

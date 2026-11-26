@@ -25,7 +25,7 @@ namespace {
         const char* mode = std::getenv("MUSIKCORE_TEST_INDEX_MODE");
         if (mode && std::strcmp(mode, "create-fail") == 0) {
             /* requests made before creation fails must not retain a dead source. */
-            services->indexer_source->request_rescan(services->indexer_source->context);
+            services->indexer->request_rescan(services->indexer->context);
             return MC_ERROR_IO;
         }
         *output = new (std::nothrow) Source { static_cast<const mc_host_api*>(context) };

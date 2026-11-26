@@ -39,7 +39,7 @@
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/track/TrackList.h>
 #include <musikcore/db/Connection.h>
-#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LibraryBackend.h>
 #include <memory>
 
 namespace musik { namespace core { namespace library { namespace query {
@@ -49,40 +49,40 @@ namespace musik { namespace core { namespace library { namespace query {
             static const std::string kQueryName;
 
             static std::shared_ptr<SavePlaylistQuery> Save(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const std::string& playlistName,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             static std::shared_ptr<SavePlaylistQuery> Save(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const std::string& playlistName,
                 const std::string& categoryType,
                 int64_t categoryId);
 
             static std::shared_ptr<SavePlaylistQuery> Replace(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             static std::shared_ptr<SavePlaylistQuery> Rename(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId,
                 const std::string& playlistName);
 
             static std::shared_ptr<SavePlaylistQuery> Append(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             static std::shared_ptr<SavePlaylistQuery> Append(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId,
                 const std::string& categoryType,
                 int64_t categoryId);
 
             DELETE_CLASS_DEFAULTS(SavePlaylistQuery)
 
-            static std::shared_ptr<SavePlaylistQuery> CreateOwned(musik::core::ILibraryPtr library,
+            static std::shared_ptr<SavePlaylistQuery> CreateOwned(musik::core::LibraryBackend::Shared library,
                 const std::string& name, std::shared_ptr<musik::core::TrackList> tracks,
                 std::optional<int32_t> source);
             mc_result ResultCode() const { return this->result ? MC_OK : this->failure; }
@@ -97,7 +97,7 @@ namespace musik { namespace core { namespace library { namespace query {
             std::string SerializeResult() override;
             void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<SavePlaylistQuery> DeserializeQuery(
-                musik::core::ILibraryPtr library, const std::string& data);
+                musik::core::LibraryBackend::Shared library, const std::string& data);
 
         protected:
             /* QueryBase */
@@ -105,33 +105,33 @@ namespace musik { namespace core { namespace library { namespace query {
 
         private:
             SavePlaylistQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const std::string& playlistName,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             SavePlaylistQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const std::string& playlistName,
                 const std::string& categoryType,
                 int64_t categoryId);
 
             SavePlaylistQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             SavePlaylistQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId,
                 const std::string& categoryType,
                 int64_t categoryId);
 
             SavePlaylistQuery(
-                musik::core::ILibraryPtr library,
+                musik::core::LibraryBackend::Shared library,
                 const int64_t playlistId,
                 const std::string& newName);
 
-            SavePlaylistQuery(musik::core::ILibraryPtr library); /* for query (de)serialization */
+            SavePlaylistQuery(musik::core::LibraryBackend::Shared library); /* for query (de)serialization */
 
             void SendPlaylistMutationBroadcast();
 
@@ -159,7 +159,7 @@ namespace musik { namespace core { namespace library { namespace query {
             mc_result failure { MC_ERROR_IO };
             bool result{ false };
             Operation op;
-            musik::core::ILibraryPtr library;
+            musik::core::LibraryBackend::Shared library;
             std::string playlistName, categoryType;
             int64_t playlistId, categoryId;
             std::shared_ptr<musik::core::TrackList> tracks;

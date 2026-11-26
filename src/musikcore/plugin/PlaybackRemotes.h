@@ -9,7 +9,7 @@
 
 namespace musik { namespace core { namespace audio { class PlaybackService; } } }
 namespace musik { namespace core { namespace runtime { class IMessageQueue; } } }
-namespace musik { namespace core { class ILibrary; } }
+namespace musik { namespace core { class LibraryBackend; } }
 struct mc_context;
 
 namespace musik { namespace core { namespace plugin {
@@ -19,7 +19,7 @@ namespace musik { namespace core { namespace plugin {
     public:
         MUSIK_DELETE_COPY_AND_MOVE(PlaybackRemotes);
 
-        PlaybackRemotes(mc_context& context, std::shared_ptr<ILibrary> local,
+        PlaybackRemotes(mc_context& context, std::shared_ptr<LibraryBackend> local,
             audio::PlaybackService& playback, runtime::IMessageQueue& queue);
         ~PlaybackRemotes();
 
@@ -32,7 +32,7 @@ namespace musik { namespace core { namespace plugin {
         mc_result ValidateCallingThread() const;
 
         mc_context& context;
-        std::shared_ptr<ILibrary> local;
+        std::shared_ptr<LibraryBackend> local;
         audio::PlaybackService& playback;
         runtime::IMessageQueue& queue;
         std::thread::id owner;

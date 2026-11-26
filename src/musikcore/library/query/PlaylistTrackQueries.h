@@ -16,7 +16,7 @@ namespace musik { namespace core { namespace library { namespace query {
 class ExternalIdListToTrackListQuery : public TrackListQueryBase {
     public:
         ExternalIdListToTrackListQuery(
-            ILibraryPtr library,
+            LibraryBackend::Shared library,
             const char** externalIds,
             size_t externalIdCount)
         {
@@ -80,7 +80,7 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
         }
 
     private:
-        ILibraryPtr library;
+        LibraryBackend::Shared library;
         std::vector<std::string> externalIds;
         std::shared_ptr<TrackList> result;
 };
@@ -89,7 +89,7 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
 class RemoveFromPlaylistQuery : public QueryBase {
     public:
         RemoveFromPlaylistQuery(
-            ILibraryPtr library,
+            LibraryBackend::Shared library,
             int64_t playlistId,
             const char** externalIds,
             const int* sortOrders,
@@ -182,7 +182,7 @@ class RemoveFromPlaylistQuery : public QueryBase {
         }
 
     private:
-        ILibraryPtr library;
+        LibraryBackend::Shared library;
         int64_t playlistId;
         std::vector<std::string> externalIds;
         std::vector<int> sortOrders;

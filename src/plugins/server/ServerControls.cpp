@@ -309,6 +309,10 @@ bool ExecuteServerControl(mc_playback* playback, std::string_view operation,
 mc_result ScheduleServerIndexer(Context& context, const json& options,
     std::function<void(mc_result)> completion)
 {
+    if (!context.indexer || context.indexer->struct_size < sizeof(mc_plugin_indexer_service) ||
+        !context.indexer->schedule_async) {
+        return MC_ERROR_UNSUPPORTED;
+    }
     const auto scan = options.value("type", std::string("reindex")) == "rebuild"
         ? MC_INDEXER_REBUILD : MC_INDEXER_SCAN_LOCAL;
     auto* pending = new std::function<void(mc_result)>(
@@ -321,8 +325,8 @@ mc_result ScheduleServerIndexer(Context& context, const json& options,
                 std::terminate();
             }
         });
-    const auto status = context.playbackRemote->schedule_indexer_async(
-        context.playbackRemote->context, scan, [](void* data, mc_result result) noexcept {
+    const auto status = context.indexer->schedule_async(
+        context.indexer->context, scan, [](void* data, mc_result result) noexcept {
             std::unique_ptr<std::function<void(mc_result)>> callback(
                 static_cast<std::function<void(mc_result)>*>(data));
             (*callback)(result);

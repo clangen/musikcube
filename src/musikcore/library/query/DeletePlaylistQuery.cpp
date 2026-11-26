@@ -61,7 +61,7 @@ static std::string DELETE_PLAYLIST_TRACKS_QUERY =
 static std::string DELETE_PLAYLIST_QUERY =
     "DELETE FROM playlists WHERE id=?;";
 
-DeletePlaylistQuery::DeletePlaylistQuery(musik::core::ILibraryPtr library, int64_t playlistId) noexcept {
+DeletePlaylistQuery::DeletePlaylistQuery(musik::core::LibraryBackend::Shared library, int64_t playlistId) noexcept {
     this->library = library;
     this->playlistId = playlistId;
 }
@@ -100,7 +100,7 @@ std::string DeletePlaylistQuery::SerializeQuery() {
     { "name", kQueryName },
         { "options", {
             { "playlistId", this->playlistId },
-        }}
+        } }
     };
     return output.dump();
 }
@@ -120,7 +120,7 @@ void DeletePlaylistQuery::DeserializeResult(const std::string& data) {
 }
 
 std::shared_ptr<DeletePlaylistQuery> DeletePlaylistQuery::DeserializeQuery(
-    musik::core::ILibraryPtr library, const std::string& data)
+    musik::core::LibraryBackend::Shared library, const std::string& data)
 {
     auto options = nlohmann::json::parse(data)["options"];
     return std::make_shared<DeletePlaylistQuery>(library, options["playlistId"].get<int64_t>());

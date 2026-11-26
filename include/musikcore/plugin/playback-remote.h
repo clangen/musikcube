@@ -28,8 +28,8 @@ typedef void (MC_CALL* mc_playback_remote_state_fn)(
     void* user_data, const mc_playback_snapshot* snapshot, const mc_track_ref* track);
 
 /* lets a remote request playback commands from its own workers. */
-struct mc_playback_remote_host_api {
-    /* available bytes. initialize with MC_PLAYBACK_REMOTE_HOST_API_DEFAULT. */
+struct mc_plugin_playback_service {
+    /* available bytes. initialize with MC_PLUGIN_PLAYBACK_SERVICE_DEFAULT. */
     uint32_t struct_size;
 
     /* host-owned state; pass unchanged to each operation. */
@@ -56,14 +56,9 @@ struct mc_playback_remote_host_api {
     alive until completion. rejected requests have no callback. the command
     queue is shared with control_async and may return MC_ERROR_QUEUE_FULL. */
     mc_result (MC_CALL* with_playback_async)(void* context, mc_playback_remote_access_fn completion, void* user_data);
-
-    /* schedule a local library scan on the runtime owner thread. it shares
-    the same queue, completion, and shutdown rules as control_async. */
-    mc_result (MC_CALL* schedule_indexer_async)(void* context, mc_indexer_scan scan,
-        mc_playback_remote_completion_fn completion, void* user_data);
 };
 
-#define MC_PLAYBACK_REMOTE_HOST_API_DEFAULT { sizeof(mc_playback_remote_host_api), NULL, NULL, NULL, NULL, NULL }
+#define MC_PLUGIN_PLAYBACK_SERVICE_DEFAULT { sizeof(mc_plugin_playback_service), NULL, NULL, NULL, NULL }
 
 /* describes one playback change delivered to a remote. */
 typedef struct mc_plugin_playback_event {
