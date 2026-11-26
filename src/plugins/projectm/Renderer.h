@@ -92,7 +92,7 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
 #endif
     bool fullscreen = false;
     float duration = 30.0f;
-    float inputGain = 4.0f;
+    float inputGain = 1.0f;
     std::array<char, 4096> presetDirectory {};
     if (const char* path = std::getenv("MUSIKCUBE_PROJECTM_PRESETS")) {
         std::strncpy(presetDirectory.data(), path, presetDirectory.size() - 1);
