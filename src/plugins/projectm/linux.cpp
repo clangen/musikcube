@@ -13,7 +13,7 @@ namespace {
     void PluginLocation() {}
 }
 
-/* Linux owns the renderer on its own worker thread. */
+/* Linux and Windows own the renderer on its own worker thread. */
 class ProjectMBackend::Impl {
 public:
     ~Impl() noexcept { Hide(); }

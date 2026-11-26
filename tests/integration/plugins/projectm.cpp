@@ -7,8 +7,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <chrono>
+#include <thread>
+#ifndef _WIN32
 #include <dlfcn.h>
 #include <unistd.h>
+#endif
 
 namespace {
     const mc_visualizer_factory* visualizer = nullptr;
@@ -45,13 +49,21 @@ int main(int argc, char** argv) {
     float samples[] = { -0.8f, 0.25f, 0.6f };
     ScaleVisualizerPcm(samples, 3, 2.0f);
     require(samples[0] == -1.0f && samples[1] == 0.5f && samples[2] == 1.0f, "apply and clip gain");
-    require(argc == 2, "expected plugin path");
+    require(argc == 2 || (argc == 3 && std::strcmp(argv[2], "--opengl") == 0), "expected plugin path");
+#ifdef _WIN32
+    HMODULE library = LoadLibraryW(std::filesystem::path(argv[1]).c_str());
+#else
     void* library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+#endif
     require(library != nullptr, "load plugin");
+#ifdef _WIN32
+    auto entry = reinterpret_cast<mc_plugin_get_api_fn>(GetProcAddress(library, "mc_plugin_get_api"));
+#else
     auto entry = reinterpret_cast<mc_plugin_get_api_fn>(dlsym(library, "mc_plugin_get_api"));
+#endif
     require(entry != nullptr, "find entry point");
     const auto expectedPresets = std::filesystem::canonical(std::filesystem::path(argv[1]).parent_path() / "projectM");
-    require(chdir("/tmp") == 0, "change working directory");
+    std::filesystem::current_path(std::filesystem::temp_directory_path());
     const auto presets = ProjectMPresetDirectory(reinterpret_cast<void*>(entry));
     require(std::filesystem::canonical(presets) == expectedPresets, "find presets beside plugin");
     require(std::filesystem::exists(presets / "README.md"), "stage bundled preset collection");
@@ -85,12 +97,22 @@ int main(int argc, char** argv) {
     require(visualizer->instance_api->show(instance) == MC_OK, "reopen helper");
     require(visualizer->instance_api->hide(instance) == MC_OK, "close reopened helper");
 #else
-    require(visualizer->instance_api->show(instance) == MC_ERROR_IO, "report unavailable OpenGL context");
+    const bool opengl = argc == 3;
+    require(visualizer->instance_api->show(instance) == (opengl ? MC_OK : MC_ERROR_IO),
+        opengl ? "open OpenGL visualizer" : "report unavailable OpenGL context");
     bool visible = true;
-    require(visualizer->instance_api->is_visible(instance, &visible) == MC_OK && !visible, "remain hidden");
+    require(visualizer->instance_api->is_visible(instance, &visible) == MC_OK && visible == opengl,
+        "report visualizer visibility");
+    if (opengl) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
     require(visualizer->instance_api->hide(instance) == MC_OK, "stop failed startup");
 #endif
     visualizer->instance_api->destroy(instance);
     plugin.shutdown(state);
+#ifdef _WIN32
+    FreeLibrary(library);
+#else
     dlclose(library);
+#endif
 }

@@ -1329,7 +1329,7 @@ if(UNIX AND TARGET sndioout)
     LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
 endif()
 
-if((CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE) AND TARGET projectm)
+if((CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE OR WIN32) AND TARGET projectm)
   add_executable(musikcore_projectm_test ../integration/plugins/projectm.cpp)
   target_include_directories(musikcore_projectm_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
   target_link_libraries(musikcore_projectm_test PRIVATE ${CMAKE_DL_LIBS})

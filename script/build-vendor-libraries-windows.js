@@ -11,6 +11,7 @@ const {
 } = require('node:fs');
 const { delimiter, dirname, extname, join, resolve } = require('node:path');
 const { parseArgs } = require('node:util');
+const sanitizePresets = require('./vendor-packages/unix/sanitize-projectm-presets');
 
 const script = __dirname;
 const support = join(script, 'vendor-packages', 'windows');
@@ -20,11 +21,12 @@ const triplet = 'musikcube-x64';
 const vcpkgTag = '2025.10.17';
 const ffmpegTag = 'n8.0';
 const msysVersion = '2025-12-13';
+const projectmPresetsRevision = 'c9a433306d8d4d24c0a0b091324ec2e4492d1828';
 
 const sharedPackages = {
   curl: 'curl[core,ssl]', openssl: 'openssl', lame: 'mp3lame', libopenmpt: 'libopenmpt',
 };
-const staticPackages = ['libgme', 'taglib', 'zlib', 'libmicrohttpd'];
+const staticPackages = ['libgme', 'taglib', 'zlib', 'libmicrohttpd', 'projectm', 'sdl2'];
 const sharedLibraries = {
   curl: [['libcurl', 'libcurl', 'libcurl_imp', 'curl']],
   openssl: [['openssl', 'libssl', 'ssl'], ['openssl', 'libcrypto', 'crypto']],
@@ -278,6 +280,34 @@ function stageBundle(installed, ffmpeg, library, dumpbin) {
       if (!source) throw new Error('Missing static archive for ' + name + ' under ' + installed);
       copyFileSync(source, join(stage.lib, name));
     }
+    for (const config of ['lib', 'debug/lib']) {
+      const suffix = config === 'lib' ? '' : 'D';
+      for (const [name, releaseName, debugName] of [
+        ['projectM-4', 'libprojectM-4', 'libprojectM-4d'],
+        ['projectM-eval', 'projectM_eval', 'projectM_eval'],
+        ['projectM-eel', 'projectM_ns-eel2', 'projectM_ns-eel2'],
+        ['glew32', 'glew32', 'glew32d'], ['SDL2', 'SDL2-static', 'SDL2-staticd'],
+      ]) {
+        const source = join(installed, config, (suffix ? debugName : releaseName) + '.lib');
+        if (!existsSync(source)) throw new Error('Missing static archive: ' + source);
+        copyFileSync(source, join(stage.lib, name + suffix + '.lib'));
+      }
+    }
+    const imgui = join(work, 'imgui-1.91.9b');
+    const presets = join(work, 'milkdrop2-musikcube-' + projectmPresetsRevision);
+    cloneTag('https://github.com/ocornut/imgui.git', 'v1.91.9b', imgui);
+    if (!existsSync(join(presets, '.git'))) {
+      run('git.exe', ['init', presets]);
+      run('git.exe', ['-C', presets, 'fetch', '--depth', '1', 'https://github.com/clangen/milkdrop2-musikcube.git',
+        projectmPresetsRevision]);
+      run('git.exe', ['-C', presets, 'checkout', '--detach', 'FETCH_HEAD']);
+    }
+    cpSync(imgui, join(stage.headers, 'projectm-imgui'), { recursive: true, filter: path => !path.includes(join(imgui, '.git')) });
+    stage.presets = join(dir, 'projectM');
+    cpSync(join(presets, 'resources', 'Milkdrop2', 'presets'), stage.presets, { recursive: true });
+    sanitizePresets(stage.presets);
+    writeFileSync(join(stage.presets, 'README.md'),
+      `Milkdrop2 presets from https://github.com/clangen/milkdrop2-musikcube, revision ${projectmPresetsRevision}.\n`);
   }
 
   return stage;
@@ -312,6 +342,11 @@ function auditImports(dumpbin, directory) {
 function publishBundle(stage) {
   cpSync(stage.headers, join(vendor, 'include'), { recursive: true });
   cpSync(stage.lib, join(vendor, 'win64', 'lib'), { recursive: true });
+  if (stage.presets) {
+    const target = join(vendor, 'share', 'projectM');
+    rmSync(target, { recursive: true, force: true });
+    cpSync(stage.presets, target, { recursive: true });
+  }
 
   for (const group of readdirSync(stage.dll)) {
     const source = join(stage.dll, group);

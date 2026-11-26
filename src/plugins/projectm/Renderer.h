@@ -3,6 +3,9 @@
 #include "PresetDirectory.h"
 #include "PresetSearch.h"
 #include <projectM-4/projectM.h>
+#ifdef _WIN32
+#include <GL/glew.h>
+#endif
 #include <SDL2/SDL.h>
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
@@ -48,7 +51,15 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
             context = SDL_GL_CreateContext(window);
         }
         if (context) {
+#ifdef _WIN32
+            /* projectM uses GLEW on Windows, which needs the current context. */
+            glewExperimental = GL_TRUE;
+            if (glewInit() == GLEW_OK) {
+                visualizer = projectm_create();
+            }
+#else
             visualizer = projectm_create();
+#endif
         }
     }
 

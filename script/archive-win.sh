@@ -22,6 +22,7 @@ function archive {
   cp $SRC_DIR/musikcube-cmd.exe       $DST_DIR
   cp $SRC_DIR/*.dll                   $DST_DIR
   cp $SRC_DIR/plugins/*.dll           $DST_DIR/plugins
+  cp -rp "$SRC_DIR/plugins/projectM" "$DST_DIR/plugins"
   cp $SRC_DIR/themes/*.json           $DST_DIR/themes
   cp $SRC_DIR/locales/*.json          $DST_DIR/locales
   cp $SRC_DIR/fonts/*.ttf             $DST_DIR/fonts

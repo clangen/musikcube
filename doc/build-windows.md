@@ -39,6 +39,11 @@ node .\script\build-vendor-libraries.js --audit-directory .\bin64\Debug
 
 Both configurations use the same shared dependency DLLs. The static libraries used by plugins are built for the corresponding Release or Debug CRT.
 
+The projectM visualizer and its presets are included in the Windows build. Its
+OpenGL window requires a graphics driver that supports OpenGL 3.3. The vendor
+build currently uses the pinned vcpkg projectM 4.1.4 and SDL 2.32.10 packages;
+the Linux vendor build uses projectM 4.1.8 and SDL 2.30.11.
+
 After changing dependency versions or build flags, rerun the vendor script, run `script\clean-win.bat` to clear the old build and staged DLLs, and rebuild. FFmpeg's codec and format options are in `script/vendor-packages/windows/ffmpeg-options.txt`.
 
 ### Capture the GUI during resizing

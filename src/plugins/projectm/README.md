@@ -1,9 +1,10 @@
 # projectM visualizer
 
 The plugin uses SDL2 and Dear ImGui, linked into the plugin. It opens a
-separate OpenGL window on macOS, X11, or Wayland. The host needs an OpenGL
-driver and the libraries for its desktop session.
-On macOS, a bundled helper owns the window and receives audio from the plugin.
+separate OpenGL window on Windows, macOS, X11, or Wayland. Windows hosts need
+an OpenGL 3.3 driver. Linux hosts need an OpenGL driver and the libraries for
+their desktop session. On macOS, a bundled helper owns the window and receives
+audio from the plugin.
 
 The bundled presets live in the `projectM` directory beside the plugin and are
 loaded automatically. To use another collection of `.milk` presets, enter its

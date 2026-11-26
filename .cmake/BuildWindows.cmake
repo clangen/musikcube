@@ -202,6 +202,32 @@ musikcube_configure_c_plugin(nullout)
 target_link_libraries(nullout PRIVATE Threads::Threads)
 target_compile_features(nullout PRIVATE cxx_std_20)
 
+windows_vendor_library(projectm projectM-4 projectM-4D)
+windows_vendor_library(projectm_eval projectM-eval projectM-evalD)
+windows_vendor_library(projectm_eel projectM-eel projectM-eelD)
+windows_vendor_library(glew glew32 glew32D)
+windows_vendor_library(sdl2 SDL2 SDL2D)
+set(projectm_imgui "${windows_vendor}/include/projectm-imgui")
+set(projectm_presets "${windows_vendor}/share/projectM")
+if(NOT EXISTS "${projectm_imgui}/imgui.cpp" OR NOT EXISTS "${projectm_presets}/README.md")
+  message(FATAL_ERROR "Missing projectM assets. Run node script/build-vendor-libraries.js first.")
+endif()
+windows_plugin(projectm plugin.cpp linux.cpp)
+target_sources(projectm PRIVATE
+  "${projectm_imgui}/imgui.cpp" "${projectm_imgui}/imgui_draw.cpp"
+  "${projectm_imgui}/imgui_tables.cpp" "${projectm_imgui}/imgui_widgets.cpp"
+  "${projectm_imgui}/backends/imgui_impl_sdl2.cpp" "${projectm_imgui}/backends/imgui_impl_opengl3.cpp")
+musikcube_configure_c_plugin(projectm)
+target_compile_definitions(projectm PRIVATE PROJECTM_STATIC_DEFINE GLEW_STATIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
+target_include_directories(projectm PRIVATE "${projectm_imgui}" "${windows_vendor}/include/SDL2")
+target_link_libraries(projectm PRIVATE vendor::projectm vendor::projectm_eval vendor::projectm_eel vendor::glew vendor::sdl2
+  opengl32 imm32 version winmm setupapi)
+add_custom_command(TARGET projectm POST_BUILD
+  COMMAND "${CMAKE_COMMAND}" -E remove_directory "$<TARGET_FILE_DIR:projectm>/projectM"
+  COMMAND "${CMAKE_COMMAND}" -E copy_directory
+  "${projectm_presets}" "$<TARGET_FILE_DIR:projectm>/projectM")
+install(DIRECTORY "${projectm_presets}/" DESTINATION bin/plugins/projectM COMPONENT musikcorePlugins)
+
 windows_plugin(server BlockingTranscoder.cpp HttpServer.cpp main.cpp ServerControls.cpp ServerMedia.cpp Snapshots.cpp
   Transcoder.cpp TranscodingAudioDataStream.cpp Util.cpp WebSocketServer.cpp)
 musikcube_configure_c_plugin(server)

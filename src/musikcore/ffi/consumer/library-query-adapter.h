@@ -105,7 +105,8 @@ namespace musik { namespace core { namespace ffi { namespace detail {
             const auto& name = list->names.emplace_back(entry.value);
             if constexpr (std::is_same_v<Entries, PlaylistEntries>) {
                 list->entries.push_back({ entry.id, { name.data(), name.size() },
-                    entry.sourceId ? MC_PLAYLIST_SOURCE : MC_PLAYLIST_GLOBAL, entry.sourceId.value_or(0) });
+                    static_cast<uint32_t>(entry.sourceId ? MC_PLAYLIST_SOURCE : MC_PLAYLIST_GLOBAL),
+                    entry.sourceId.value_or(0) });
             }
             else {
                 list->entries.push_back({ entry.id, { name.data(), name.size() } });
