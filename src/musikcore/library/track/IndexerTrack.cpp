@@ -541,9 +541,10 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
         if we don't, insert it. */
 
         int64_t valueId = 0;
+        const std::string cacheKey = "metaValue-" + std::to_string(keyId) + "-" + it->second;
 
-        if (metadataIdCache.find("metaValue-" + it->second) != metadataIdCache.end()) {
-            valueId = metadataIdCache["metaValue-" + it->second];
+        if (metadataIdCache.find(cacheKey) != metadataIdCache.end()) {
+            valueId = metadataIdCache[cacheKey];
         }
         else {
             selectMetaValue.Reset();
@@ -564,7 +565,7 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
             }
 
             if (valueId != 0) {
-                metadataIdCache["metaValue-" + it->second] = valueId;
+                metadataIdCache[cacheKey] = valueId;
             }
         }
 
@@ -763,9 +764,10 @@ void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename
         std::string dir = NormalizeDir(
             pathToUtf8(std::filesystem::path(musik::core::sdk::fs::pathFromUtf8(filename)).parent_path()));
 
+        const std::string cacheKey = "directoryId-" + dir;
         int64_t dirId = -1;
-        if (metadataIdCache.find("directoryId-" + dir) != metadataIdCache.end()) {
-            dirId = metadataIdCache["directoryId-" + dir];
+        if (metadataIdCache.find(cacheKey) != metadataIdCache.end()) {
+            dirId = metadataIdCache[cacheKey];
         }
         else {
             db::Statement find("SELECT id FROM directories WHERE name=?", db);
@@ -782,13 +784,16 @@ void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename
             }
 
             if (dirId != -1) {
-                db::Statement update("UPDATE tracks SET directory_id=? WHERE id=?", db);
-                update.BindInt64(0, dirId);
-                update.BindInt64(1, this->trackId);
-                update.Step();
+                metadataIdCache[cacheKey] = dirId;
             }
         }
 
+        if (dirId != -1) {
+            db::Statement update("UPDATE tracks SET directory_id=? WHERE id=?", db);
+            update.BindInt64(0, dirId);
+            update.BindInt64(1, this->trackId);
+            update.Step();
+        }
     }
     catch (...) {
         /* not much we can do, but we don't want the app to die if we're

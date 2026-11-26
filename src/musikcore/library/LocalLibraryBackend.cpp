@@ -815,34 +815,6 @@ void LocalLibraryBackend::CreateDatabase(db::Connection& db) {
     }
 }
 
-void LocalLibraryBackend::DropIndexes(db::Connection &db) {
-    db.Execute("DROP INDEX IF EXISTS paths_index");
-
-    db.Execute("DROP INDEX IF EXISTS genre_index");
-    db.Execute("DROP INDEX IF EXISTS artist_index");
-    db.Execute("DROP INDEX IF EXISTS album_index");
-    db.Execute("DROP INDEX IF EXISTS thumbnail_index");
-
-    db.Execute("DROP INDEX IF EXISTS trackgenre_index1");
-    db.Execute("DROP INDEX IF EXISTS trackgenre_index2");
-    db.Execute("DROP INDEX IF EXISTS trackartist_index1");
-    db.Execute("DROP INDEX IF EXISTS trackartist_index2");
-    db.Execute("DROP INDEX IF EXISTS trackmeta_index1");
-    db.Execute("DROP INDEX IF EXISTS trackmeta_index2");
-    db.Execute("DROP INDEX IF EXISTS metakey_index1");
-    db.Execute("DROP INDEX IF EXISTS metavalues_index1");
-
-    db.Execute("DROP INDEX IF EXISTS tracks_external_id_index");
-    db.Execute("DROP INDEX IF EXISTS tracks_filename_id_index");
-    db.Execute("DROP INDEX IF EXISTS tracks_dirty_index");
-    db.Execute("DROP INDEX IF EXISTS tracks_external_id_filetime_index");
-    db.Execute("DROP INDEX IF EXISTS tracks_by_source_index");
-
-    db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_1");
-    db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_2");
-    db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_3");
-}
-
 static bool executeAll(db::Connection& db, std::initializer_list<const char*> statements) {
     bool okay = true;
     for (const auto* sql : statements) {
@@ -859,6 +831,9 @@ bool LocalLibraryBackend::CreateIndexes(db::Connection &db) {
 
         "CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)",
         "CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)",
+        "CREATE INDEX IF NOT EXISTS artist_name_index ON artists (name)",
+        "CREATE INDEX IF NOT EXISTS genre_name_index ON genres (name)",
+        "CREATE INDEX IF NOT EXISTS directory_name_index ON directories (name)",
         "CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)",
         "CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)",
 
@@ -871,12 +846,14 @@ bool LocalLibraryBackend::CreateIndexes(db::Connection &db) {
         "CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)",
         "CREATE INDEX IF NOT EXISTS metakey_index2 ON meta_keys (id, name)",
         "CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)",
+        "CREATE INDEX IF NOT EXISTS metavalues_key_content_index ON meta_values (meta_key_id, content)",
         "CREATE INDEX IF NOT EXISTS metavalues_index2 ON meta_values (content)",
         "CREATE INDEX IF NOT EXISTS metavalues_index3 ON meta_values (id, meta_key_id, content)",
         "CREATE INDEX IF NOT EXISTS metavalues_index4 ON meta_values (id, content)",
 
         "CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)",
         "CREATE INDEX IF NOT EXISTS tracks_filename_index ON tracks (filename)",
+        "CREATE INDEX IF NOT EXISTS tracks_album_index ON tracks (album_id)",
         "CREATE INDEX IF NOT EXISTS tracks_dirty_index ON tracks (id, filename, filesize, filetime)",
         "CREATE INDEX IF NOT EXISTS tracks_external_id_filetime_index ON tracks (external_id, filetime)",
         "CREATE INDEX IF NOT EXISTS tracks_by_source_index ON tracks (id, external_id, filename, source_id)",

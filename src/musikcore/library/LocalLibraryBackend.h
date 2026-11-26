@@ -93,7 +93,6 @@ namespace musik { namespace core { namespace library {
             static void CreateDatabase(db::Connection &db);
 
             /* indexes */
-            static void DropIndexes(db::Connection &db);
             static bool CreateIndexes(db::Connection &db);
             static bool InvalidateTrackMetadata(db::Connection &db);
 
