@@ -6,7 +6,7 @@ const {
 } = require('fs');
 const { join, resolve } = require('path');
 const {
-  ask, buildArchiveConfiguration, compilerNames, configureRpiArchive, configureZigArchive, takeOption,
+  buildArchiveConfiguration, compilerNames, configureRpiArchive, configureZigArchive, takeOption,
 } = require('./unix-build-config');
 
 const source = realpathSync(join(__dirname, '..'));
@@ -42,8 +42,10 @@ function buildApp(config, vendor, clean) {
   if (clean) {
     console.log('Cleaning the application build');
     if (buildDirectory === source) {
-      const cleanup = spawnSync('sh', [join(__dirname, 'clean-nix.sh')], { cwd: source, env, stdio: 'inherit' });
-      if (cleanup.error) throw cleanup.error;
+      if (existsSync(join(buildDirectory, 'CMakeCache.txt'))) {
+        run('cmake', ['--build', buildDirectory, '--target', 'clean'], env);
+      }
+      rmSync(join(buildDirectory, 'bin'), { recursive: true, force: true });
     } else {
       rmSync(buildDirectory, { recursive: true, force: true });
       mkdirSync(buildDirectory, { recursive: true });
@@ -52,23 +54,22 @@ function buildApp(config, vendor, clean) {
     console.log('Reusing the application build');
   }
 
+  mkdirSync(buildDirectory, { recursive: true });
   run('bash', [join(__dirname, 'stage-vendor-libraries.sh'), vendor], env, false, buildDirectory);
-  if (clean) {
-    const args = [
-      ...config.cmake,
-      '-DCMAKE_BUILD_TYPE=Release',
-      '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
-      '-DBUILD_STANDALONE=true',
-      '-DBUILD_TESTING=OFF',
-      '-DENABLE_PCH=true',
-      ...config.packageCmake,
-    ];
-    if (buildDirectory !== source) {
-      args.push('-DMUSIKCUBE_VENDOR_ROOT=' + vendor, '-DMUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY=' + join(buildDirectory, 'bin'));
-    }
-    run('cmake', [...args, '-S', source, '-B', buildDirectory], env);
-    run('make', [config.jobs], env, false, buildDirectory);
+  const args = [
+    ...config.cmake,
+    '-DCMAKE_BUILD_TYPE=Release',
+    '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+    '-DBUILD_STANDALONE=true',
+    '-DBUILD_TESTING=OFF',
+    '-DENABLE_PCH=true',
+    ...config.packageCmake,
+  ];
+  if (buildDirectory !== source) {
+    args.push('-DMUSIKCUBE_VENDOR_ROOT=' + vendor, '-DMUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY=' + join(buildDirectory, 'bin'));
   }
+  run('cmake', [...args, '-S', source, '-B', buildDirectory], env);
+  run('cmake', ['--build', buildDirectory, '--parallel', config.jobs.slice(2)], env);
 
   run('sh', [join(__dirname, 'patch-rpath.sh'), buildDirectory], env, false, buildDirectory);
 }
@@ -148,7 +149,6 @@ function scanArchive(output, { audit, env }) {
 
 function configureRpi(config) {
   config.prepare = (vendor) => configureRpiArchive(config, { root, vendor, run });
-  config.cleanBuild = () => true;
   config.buildDirectory = join(source, 'build', 'standalone', config.variant);
 }
 
@@ -156,7 +156,6 @@ const archiveConfigurations = new Map([
   ['zig', (config) => Object.assign(config, {
     acceptsSysroot: true,
     prepare: (vendor, sysroot) => configureZigArchive(config, { root, vendor, sysroot, run }),
-    cleanBuild: () => true,
   })],
   ['rpi-armv6', configureRpi],
   ['rpi-armv8', configureRpi],
@@ -166,7 +165,6 @@ function configuration(compiler) {
   const config = buildArchiveConfiguration(root, compiler);
   Object.assign(config, {
     buildDirectory: source,
-    cleanBuild: async () => !/^n$/i.test(await ask('clean and rebuild [y]? ', 'y')),
     scan: scanArchive,
     package: config.generatePackages ? createPackages : undefined,
   });
@@ -177,15 +175,24 @@ function configuration(compiler) {
 async function main() {
   const args = process.argv.slice(2);
   if (!args.length || args.includes('--help') || args.includes('-h')) {
-    console.log('Usage: node script/archive-standalone-unix.js <version> [--compiler=<name>] [--sysroot <path>]\n' +
+    console.log('Usage: node script/build-and-archive.js --version=<version> [--clean] [--skip-archive] [--compiler=<name>] [--sysroot <path>]\n' +
       `Linux compiler profiles: ${compilerNames.join(', ')}. Default uses Zig on Linux and the system compiler on macOS.`);
     if (!args.length) process.exitCode = 1;
     return;
   }
   const compiler = takeOption(args, '--compiler');
   const sysrootOption = takeOption(args, '--sysroot');
-  const [version, ...extra] = args;
-  if (!version || extra.length) throw new Error('Expected one archive version.');
+  const version = takeOption(args, '--version');
+  const takeFlag = (name) => {
+    const index = args.indexOf(name);
+    if (index === -1) return false;
+    args.splice(index, 1);
+    if (args.includes(name)) throw new Error(name + ' can only be specified once.');
+    return true;
+  };
+  const clean = takeFlag('--clean');
+  const skipArchive = takeFlag('--skip-archive');
+  if (!version || args.length) throw new Error('Expected --version=<version> and no positional arguments.');
   if (!/^[a-zA-Z0-9][a-zA-Z0-9._+-]*$/.test(version)) throw new Error('Invalid archive version: ' + version);
 
   const config = configuration(compiler);
@@ -201,7 +208,11 @@ async function main() {
   mkdirSync(config.env.TMPDIR, { recursive: true });
 
   if (config.buildDirectory === source) linkVendor(vendor);
-  buildApp(config, vendor, await config.cleanBuild());
+  buildApp(config, vendor, clean);
+  if (skipArchive) {
+    console.log('Build complete; skipping archives.');
+    return;
+  }
 
   /* Scan the staged archive before creating release files. */
   const outName = `musikcube_${version}_${config.osArch}`;

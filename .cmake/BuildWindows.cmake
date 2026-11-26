@@ -185,7 +185,7 @@ function(windows_project_sources target directory)
 endfunction()
 
 function(windows_plugin target)
-  cmake_parse_arguments(PLUGIN "" "DIRECTORY" "" ${ARGN})
+  cmake_parse_arguments(PLUGIN "SAMPLE" "DIRECTORY" "" ${ARGN})
   if(NOT PLUGIN_DIRECTORY)
     set(PLUGIN_DIRECTORY "${target}")
   endif()
@@ -199,8 +199,10 @@ function(windows_plugin target)
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins")
   add_dependencies(musikcube_runtime ${target})
-  install(TARGETS ${target} RUNTIME DESTINATION bin/plugins COMPONENT musikcorePlugins
-    LIBRARY DESTINATION bin/plugins COMPONENT musikcorePlugins)
+  if(NOT PLUGIN_SAMPLE)
+    install(TARGETS ${target} RUNTIME DESTINATION bin/plugins COMPONENT musikcorePlugins
+      LIBRARY DESTINATION bin/plugins COMPONENT musikcorePlugins)
+  endif()
 endfunction()
 
 windows_plugin(cddadecoder CddaStream.cpp CddaPcmDecoder.cpp CddaIndexer.cpp CddaMetadata.cpp
@@ -295,7 +297,7 @@ musikcube_configure_c_plugin(wasapiout)
 target_compile_features(wasapiout PRIVATE cxx_std_20)
 target_link_libraries(wasapiout PRIVATE winmm)
 
-windows_plugin(win32gdivis GdiVis.cpp MemoryDC.cpp)
+windows_plugin(win32gdivis SAMPLE GdiVis.cpp MemoryDC.cpp)
 musikcube_configure_c_plugin(win32gdivis)
 target_compile_definitions(win32gdivis PRIVATE "$<$<CONFIG:Debug>:DEBUG>")
 target_link_libraries(win32gdivis PRIVATE shlwapi)

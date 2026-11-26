@@ -17,7 +17,7 @@ From the directory containing the `musikcube` checkout:
 
 ```sh
 node musikcube/script/build-vendor-libraries.js --compiler=rpi-armv6
-node musikcube/script/archive-standalone-unix.js 4.0.0 --compiler=rpi-armv6
+node musikcube/script/build-and-archive.js --version=4.0.0 --compiler=rpi-armv6
 ```
 
 Use `rpi-armv8` in both commands for that target. The vendor build writes to `vendor-rpi-armv6` or `vendor-rpi-armv8` next to the checkout and reuses downloads in `.vendor-cache`. The app build is under `musikcube/build/standalone/<profile>/`. Release files are under `musikcube/dist/<version>/`.

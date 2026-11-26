@@ -1,4 +1,4 @@
-// Build and stage the Unix dependencies used by archive-standalone-unix.js.
+// Build and stage the Unix dependencies used by build-and-archive-unix.js.
 const { spawnSync } = require('child_process');
 const {
   closeSync,

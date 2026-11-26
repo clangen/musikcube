@@ -85,14 +85,15 @@ Use a C++20-capable compiler for the application build.
 Now that we have all required dependencies available it's time to compile the app itself. As mentioned above we want the resulting binary to be relocatable on the filesystem, so some special pre- and post-processing must happen. Specifically: we need to gather copies of all dependencies and rewrite their `rpaths` if necessary. We also need to collect and include resource files like themes and localization files, then create `.deb`, `.rpm`, and `.tar.bz2` archives for distribution. As in the previous step all of this complexity has been hidden behind a script.
 
 - `cd /build/musikcube`
-- `node ./script/archive-standalone-unix.js x.y.z`
+- `node ./script/build-and-archive.js --version=x.y.z`
   - `x.y.z` is the version of `musikcube` we'd like to appear in the filename. You can use anything you want, e.g. `0.0.0`
   - The build process will automatically discover and use the `/build/vendor-${arch}` directory created in the previous step.
+  - Add `--clean` for a clean build or `--skip-archive` to build without packaging.
 
 After the script has completed you should have a set of "relocatable" binaries in `/build/musikcube/dist/x.y.z/` that will work on most Linux distributions released in 2018 or later.
 
 ### Native Linux x86-64 standalone builds
 
-From the checkout, run `node ./script/archive-standalone-unix.js x.y.z`. The script automatically uses Zig and the sysroot staged in the Zig vendor directory. Use `--sysroot /path/to/sysroot` to override the staged copy. The script audits the Zig vendor libraries before building and checks the packaged ELF files against glibc 2.28.
+From the checkout, run `node ./script/build-and-archive.js --version=x.y.z`. The script automatically uses Zig and the sysroot staged in the Zig vendor directory. Use `--sysroot /path/to/sysroot` to override the staged copy. The script audits the Zig vendor libraries before building and checks the packaged ELF files against glibc 2.28.
 
 For 32-bit ARM standalone packages, see [Raspberry Pi cross-compilation](crosscompile-rpi.md).
