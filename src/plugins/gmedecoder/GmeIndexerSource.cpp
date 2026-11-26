@@ -36,6 +36,7 @@
 #include "GmeIndexerSource.h"
 #include <common/String.h>
 #include <common/Filesystem.h>
+#include <common/Utf8.h>
 #include <string>
 #include <algorithm>
 #include <memory>
@@ -93,6 +94,10 @@ bool GmeIndexerSource::Scan(
         if (!failure && canHandle(path)) {
             try {
                 this->UpdateMetadata(path, indexer);
+            }
+            catch (const std::exception& error) {
+                this->services.Error("GME decoder", "could not index " + path + ": " + u8sanitize(error.what()));
+                failure = std::current_exception();
             }
             catch (...) {
                 failure = std::current_exception();
@@ -160,7 +165,15 @@ void GmeIndexerSource::UpdateMetadata(
 {
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
-    int64_t modifiedTime = fs::getLastModifiedTime(fn);
+    int64_t modifiedTime;
+    try {
+        modifiedTime = fs::getLastModifiedTime(fn);
+    }
+    catch (const std::filesystem::filesystem_error&) {
+        /* a file can disappear or become unreadable while its directory is scanned. */
+        this->services.Error("GME decoder", "could not read file timestamp: " + fn);
+        return;
+    }
     const std::string firstExternalId = musik::core::plugin::CreateExternalId(EXTERNAL_ID_PREFIX, fn, 0);
     const auto modifiedDbTime = indexer->GetLastModifiedTime(firstExternalId);
     if (!modifiedDbTime || modifiedTime != *modifiedDbTime) {
@@ -232,12 +245,17 @@ void GmeIndexerSource::UpdateMetadata(
                         ? defaultDuration
                         : std::to_string((float) info->play_length / 1000.0f);
 
-                    track.SetValue("album", info->game);
-                    track.SetValue("album_artist", info->system);
-                    track.SetValue("genre", info->system);
+                    /* legacy GME metadata may contain bytes that are not UTF-8. */
+                    const auto game = u8sanitize(info->game ? info->game : "");
+                    const auto system = u8sanitize(info->system ? info->system : "");
+                    const auto artist = u8sanitize(info->author && *info->author ? info->author : system);
+                    const auto title = u8sanitize(info->song && *info->song ? info->song : defaultTitle);
+                    track.SetValue("album", game.c_str());
+                    track.SetValue("album_artist", system.c_str());
+                    track.SetValue("genre", system.c_str());
                     track.SetValue("duration", duration.c_str());
-                    track.SetValue("artist", strlen(info->author) ? info->author : info->system);
-                    track.SetValue("title", strlen(info->song) ? info->song : defaultTitle.c_str());
+                    track.SetValue("artist", artist.c_str());
+                    track.SetValue("title", title.c_str());
                 }
 
                 indexer->Save(track, externalId);

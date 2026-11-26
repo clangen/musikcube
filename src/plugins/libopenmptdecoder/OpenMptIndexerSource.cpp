@@ -35,6 +35,7 @@
 #include "Utility.h"
 #include "OpenMptIndexerSource.h"
 #include <common/Filesystem.h>
+#include <common/Utf8.h>
 #include <string>
 #include <algorithm>
 #include <memory>
@@ -192,7 +193,15 @@ void OpenMptIndexerSource::UpdateMetadata(
 {
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
-    int64_t modifiedTime = fs::getLastModifiedTime(fn);
+    int64_t modifiedTime;
+    try {
+        modifiedTime = fs::getLastModifiedTime(fn);
+    }
+    catch (const std::filesystem::filesystem_error&) {
+        /* a file can disappear or become unreadable while its directory is scanned. */
+        this->services.Error(PLUGIN_NAME.c_str(), "could not read file timestamp: " + fn);
+        return;
+    }
     const std::string firstExternalId = musik::core::plugin::CreateExternalId(PLUGIN_NAME, fn, 0);
     const auto modifiedDbTime = indexer->GetLastModifiedTime(firstExternalId);
     if (!modifiedDbTime || modifiedTime != *modifiedDbTime) {
@@ -250,6 +259,10 @@ void OpenMptIndexerSource::UpdateMetadata(
                         track.SetValue("directory", directory.c_str());
                         track.SetValue("filetime", modifiedTimeStr.c_str());
                         track.SetValue("track", trackNum.c_str());
+                        /* keep unexpected decoder text from aborting the whole scan. */
+                        album = u8sanitize(album);
+                        title = u8sanitize(title);
+                        artist = u8sanitize(artist);
                         track.SetValue("album", album.c_str());
                         track.SetValue("title", title.c_str());
                         track.SetValue("genre", "Electronic");
@@ -265,6 +278,10 @@ void OpenMptIndexerSource::UpdateMetadata(
 
             }
 
+        }
+        else {
+            /* an unreadable file should not prevent other modules from being scanned. */
+            this->services.Error(PLUGIN_NAME.c_str(), "could not read file: " + fn);
         }
     }
 

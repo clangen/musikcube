@@ -4,6 +4,7 @@
 #include <wchar.h>
 
 #include <algorithm>
+#include <iterator>
 #include <memory>
 
 #ifdef _MSC_VER
@@ -50,6 +51,23 @@ inline static size_t u8len(const std::string& str) {
     catch (...) {
         return str.length();
     }
+}
+
+/* metadata can contain legacy bytes that are not valid UTF-8. */
+inline static std::string u8sanitize(const std::string& input) {
+    std::string result;
+    auto current = input.begin();
+    while (current != input.end()) {
+        const auto invalid = utf8::find_invalid(current, input.end());
+        result.append(current, invalid);
+        if (invalid == input.end()) {
+            break;
+        }
+        /* replace_invalid() throws on a truncated sequence at the end. */
+        result.push_back('?');
+        current = std::next(invalid);
+    }
+    return result;
 }
 
 /* get the (raw) character index of the "nth" logical/display character */
