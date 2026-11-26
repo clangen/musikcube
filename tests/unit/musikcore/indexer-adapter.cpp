@@ -24,11 +24,14 @@ struct TestSource {
     void OnBeforeScan() {}
     void OnAfterScan() {}
     bool Scan(musik::core::plugin::IndexerWriter*, const char**, size_t) { return true; }
-    void ScanTrack(musik::core::plugin::IndexerWriter*, const char*) {}
+    void ScanTrack(musik::core::plugin::IndexerWriter*, const char*, int64_t modified) {
+        this->lastModified = modified;
+    }
     void Interrupt() {}
     bool HasStableIds() const { return true; }
     bool NeedsTrackScan() const { return false; }
     const mc_host_api* host;
+    int64_t lastModified { 0 };
 };
 
 /* capture registration without copying its plugin-owned table. */
@@ -45,6 +48,25 @@ static mc_result MC_CALL reject(void*, const mc_plugin_capability*) {
 
 /* two sessions may use the same generated factory without sharing their hosts. */
 int main() {
+    /* malformed selectors must not partially overwrite caller state. */
+    for (const char* invalid : { "gme://1junk/file.nsf", "gme://-1/file.nsf", "gme://1/",
+             "gme://999999999999999999999/file.nsf" })
+    {
+        std::string path = "unchanged";
+        int track = 42;
+        if (musik::core::plugin::ParseExternalId("gme", invalid, path, track) ||
+            path != "unchanged" || track != 42)
+        {
+            return EXIT_FAILURE;
+        }
+    }
+    std::string path;
+    int track = -1;
+    if (!musik::core::plugin::ParseExternalId("gme", "gme://12/C:\\music\\file.nsf", path, track) ||
+        path != "C:\\music\\file.nsf" || track != 12)
+    {
+        return EXIT_FAILURE;
+    }
     const mc_indexer_source_factory* firstFactory = nullptr;
     const mc_indexer_source_factory* secondFactory = nullptr;
     mc_host_api first = MC_HOST_API_DEFAULT;
@@ -87,7 +109,10 @@ int main() {
     {
         return EXIT_FAILURE;
     }
-    const bool correct = static_cast<TestSource*>(firstSource)->host == &first &&
+    mc_indexer_writer writer = MC_INDEXER_WRITER_DEFAULT;
+    const bool valid = firstFactory->instance_api->validate_track(firstSource, { "fixture", 7 },
+        -12345, &writer, nullptr) == MC_OK && static_cast<TestSource*>(firstSource)->lastModified == -12345;
+    const bool correct = valid && static_cast<TestSource*>(firstSource)->host == &first &&
         static_cast<TestSource*>(secondSource)->host == &second;
     firstFactory->instance_api->destroy(firstSource);
     secondFactory->instance_api->destroy(secondSource);

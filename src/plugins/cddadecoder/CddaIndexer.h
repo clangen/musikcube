@@ -25,7 +25,7 @@ public:
     void OnBeforeScan();
     void OnAfterScan();
     bool Scan(musik::core::plugin::IndexerWriter* writer, const char** paths, size_t count);
-    void ScanTrack(musik::core::plugin::IndexerWriter* writer, const char* externalId);
+    void ScanTrack(musik::core::plugin::IndexerWriter* writer, const char* externalId, int64_t lastModified);
     void Interrupt() noexcept;
     bool HasStableIds() const { return true; }
     bool NeedsTrackScan() const { return true; }

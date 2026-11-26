@@ -34,6 +34,7 @@
 
 #include "Constants.h"
 #include "GmeDecoder.h"
+#include "GmeFile.h"
 #include <musikcore/plugin/settings.h>
 #include <musikcore/plugin/subtrack-source.hpp>
 #include <climits>
@@ -117,7 +118,12 @@ mc_result GmeDecoder::ConfigureTrack(const std::string& path, int track) {
     if (m3u) {
         const auto playlist = getM3uFor(path);
         if (!playlist.empty()) {
-            gme_load_m3u(emu, playlist.c_str());
+            std::vector<char> bytes;
+            if (!ReadGmeFile(playlist, bytes) ||
+                gme_load_m3u_data(emu, bytes.data(), static_cast<long>(bytes.size())))
+            {
+                return MC_ERROR_IO;
+            }
         }
     }
     gme_info_t* metadata = nullptr;

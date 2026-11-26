@@ -4,6 +4,7 @@
 #include <musikcore/plugin/indexer.h>
 #include <musikcore/plugin.h>
 
+#include <charconv>
 #include <cstring>
 #include <new>
 #include <optional>
@@ -22,21 +23,23 @@ namespace musik { namespace core { namespace plugin {
     /* recover the container path and subtrack number from a previously saved URI. */
     inline bool ParseExternalId(const std::string& prefix, const std::string& id, std::string& path, int& track) {
         const auto beginning = prefix + "://";
-        if (id.compare(0, beginning.size(), beginning) != 0) {
+        if (prefix.empty() || id.compare(0, beginning.size(), beginning) != 0) {
             return false;
         }
         const auto slash = id.find('/', beginning.size());
-        if (slash == std::string::npos) {
+        if (slash == std::string::npos || slash == beginning.size() || slash + 1 == id.size()) {
             return false;
         }
-        try {
-            track = std::stoi(id.substr(beginning.size(), slash - beginning.size()));
-            path = id.substr(slash + 1);
-            return true;
-        }
-        catch (...) {
+        int parsed = 0;
+        const auto* first = id.data() + beginning.size();
+        const auto* end = id.data() + slash;
+        const auto result = std::from_chars(first, end, parsed);
+        if (result.ec != std::errc() || result.ptr != end || parsed < 0) {
             return false;
         }
+        path.assign(id, slash + 1, std::string::npos);
+        track = parsed;
+        return true;
     }
 
     /* builds a source-owned track during a scan and releases it automatically.
@@ -282,13 +285,13 @@ namespace musik { namespace core { namespace plugin {
             }
         }
 
-        static mc_result MC_CALL Validate(void* instance, mc_string_view id, const mc_indexer_writer* writer,
+        static mc_result MC_CALL Validate(void* instance, mc_string_view id, int64_t lastModified, const mc_indexer_writer* writer,
             mc_error**) noexcept
         {
             try {
                 const std::string text(id.data, id.length);
                 IndexerWriter output(*writer);
-                static_cast<Source*>(instance)->ScanTrack(&output, text.c_str());
+                static_cast<Source*>(instance)->ScanTrack(&output, text.c_str(), lastModified);
                 return MC_OK;
             }
             catch (...) {

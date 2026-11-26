@@ -153,6 +153,15 @@ int main(int argc, char** argv) {
         -1, &statement, nullptr) == SQLITE_OK && sqlite3_step(statement) == SQLITE_ROW &&
         sqlite3_column_double(statement, 0) == -6.0, "preserve track-only replay gain");
     sqlite3_finalize(statement);
+    require(sqlite3_prepare_v2(raw,
+        "SELECT count(DISTINCT k.name) FROM tracks t "
+        "JOIN track_meta tm ON tm.track_id=t.id "
+        "JOIN meta_values v ON v.id=tm.meta_value_id "
+        "JOIN meta_keys k ON k.id=v.meta_key_id "
+        "WHERE t.filename='committed' AND k.name IN ('fixture_a','fixture_b') AND v.content='shared'",
+        -1, &statement, nullptr) == SQLITE_OK && sqlite3_step(statement) == SQLITE_ROW &&
+        sqlite3_column_int(statement, 0) == 2, "preserve equal values under distinct metadata keys");
+    sqlite3_finalize(statement);
     sqlite3_close(raw);
     require(context.Close() == MC_OK, "unload source after scan stops");
 

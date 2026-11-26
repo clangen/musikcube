@@ -208,7 +208,7 @@ bool CddaIndexer::Scan(musik::core::plugin::IndexerWriter* writer, const char**,
     return !this->interrupted.load();
 }
 
-void CddaIndexer::ScanTrack(musik::core::plugin::IndexerWriter* writer, const char* externalId) {
+void CddaIndexer::ScanTrack(musik::core::plugin::IndexerWriter* writer, const char* externalId, int64_t) {
     const std::string_view id(externalId ? externalId : "");
     const bool uncertain = id.size() >= 10 && id.substr(0, 8) == "audiocd/" && id[9] == '/' &&
         this->uncertainDrives.contains(id[8]);

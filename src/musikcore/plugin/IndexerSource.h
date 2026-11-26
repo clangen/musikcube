@@ -20,7 +20,7 @@ namespace musik { namespace core { namespace plugin {
         void OnBeforeScan();
         void OnAfterScan();
         musik::core::ScanResult Scan(Indexer* writer, const char** paths, unsigned count);
-        void ScanTrack(Indexer* writer, const char* externalId);
+        void ScanTrack(Indexer* writer, const char* externalId, int64_t lastModified);
         bool NeedsTrackScan();
         void Interrupt();
         bool HasStableIds();

@@ -78,6 +78,12 @@ namespace {
                 result = metadata.set_value(metadata.context, { "filetime", 8 }, { "-1", 2 });
             }
             if (result == MC_OK) {
+                result = metadata.set_value(metadata.context, { "fixture_a", 9 }, { "shared", 6 });
+            }
+            if (result == MC_OK) {
+                result = metadata.set_value(metadata.context, { "fixture_b", 9 }, { "shared", 6 });
+            }
+            if (result == MC_OK) {
                 mc_replay_gain_values gain = MC_REPLAY_GAIN_VALUES_DEFAULT;
                 gain.track_gain = -6.0f;
                 result = metadata.set_replay_gain(metadata.context, &gain);
@@ -155,7 +161,10 @@ namespace {
         return MC_ERROR_PLUGIN;
     }
 
-    mc_result MC_CALL validate(void* instance, mc_string_view, const mc_indexer_writer*, mc_error**) {
+    mc_result MC_CALL validate(void* instance, mc_string_view, int64_t lastModified, const mc_indexer_writer*, mc_error**) {
+        if (lastModified != -1) {
+            return MC_ERROR_PLUGIN;
+        }
         auto& source = *static_cast<Source*>(instance);
         log(source, "waiting");
         std::unique_lock lock(source.mutex);

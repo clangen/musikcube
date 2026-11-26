@@ -41,7 +41,9 @@ slow file can exceed it. Ordinary file indexing also checks elapsed time between
 completed files while retaining its batched writes. Existing-track validation
 releases each read statement before calling the source and checkpoints mutations
 between entries, so filesystem checks do not retain a catalog reader or reserve
-its writer.
+its writer. The validation callback receives the existing record's stored
+modification time in the source's units. This lets a source detect stale
+subtracks without a separate database lookup for each record.
 
 Use private SQLite caches for catalog connections. Competing writes can wait
 through the busy handler instead of failing immediately on shared-cache table
@@ -69,6 +71,10 @@ interruption. Checkpoints bound that work; source implementations must tolerate
 resuming after a committed batch. Restricting writers to one source removes a
 powerful raw-SQL escape hatch, so new indexing operations require explicit host
 APIs when a real plugin needs them.
+
+Passing the stored time with validation changes the experimental plugin
+callback signature. Existing indexer plugins must rebuild against the updated
+SDK; the ABI version remains fixed until freeze.
 
 Skipping a failed source would keep the app running, but could remove its tracks
 as orphans. Deferring all orphan cleanup would preserve the tracks while also

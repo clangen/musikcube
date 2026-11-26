@@ -494,6 +494,10 @@ cutover gate is complete.
   supply it. `plugins.indexer_gme` and `plugins.indexer_openmpt` verify published
   names; `plugins.indexer_label-empty`, `plugins.indexer_label-invalid`, and
   `plugins.indexer_label-long` reject invalid labels before scanning.
+  Track validation also receives the stored source-specific modification time;
+  the experimental callback signature changed and indexer plugins must rebuild.
+  `plugins.indexer_adapter` and `plugins.indexer_playlist-validation` cover
+  forwarding through the wrapper and the production host.
   Platform use is accepted by
   the maintainer.
 - [x] **IDX-002** Implement adapters and fixture source.
@@ -517,7 +521,9 @@ cutover gate is complete.
 - [x] **IDX-003** Validate converted decoder-provided indexer sources.
   GME and OpenMPT use C factories. `plugins.indexer_gme` and
   `plugins.indexer_openmpt` cover indexing, existing-ID migration, restart, and
-  stale-track removal; both passed in the current Linux integration run. Native
+  stale-track removal; both passed in the current Linux integration run. The
+  Windows Release checks also cover Unicode filenames, shortened containers,
+  and recovery after a checkpoint before stale-subtrack validation. Native
   Windows platform use is accepted by the maintainer; Windows-specific checks
   were not rerun as part of this reconciliation.
 

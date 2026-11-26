@@ -136,9 +136,10 @@ typedef struct mc_indexer_source_vtable {
     mc_result (MC_CALL* scan)(void* instance, const mc_string_view* paths, size_t path_count,
         const mc_indexer_writer* writer, mc_indexer_scan_decision* decision, mc_error** error);
 
-    /* inspect an existing track and remove it through writer when stale. */
+    /* inspect an existing track and remove it through writer when stale.
+    last_modified is the track's stored filetime, in the source's own units. */
     mc_result (MC_CALL* validate_track)(void* instance, mc_string_view external_id,
-        const mc_indexer_writer* writer, mc_error** error);
+        int64_t last_modified, const mc_indexer_writer* writer, mc_error** error);
 
     /* finish after begin_scan, including on cancellation or failure. */
     mc_result (MC_CALL* end_scan)(void* instance, mc_indexer_scan_decision decision, mc_error** error);

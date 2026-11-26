@@ -325,8 +325,6 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
     if (this->Bail()) {
         return;
     }
-    LocalLibraryBackend::CreateIndexes(this->dbConnection);
-
     IndexerTrack::OnIndexerStarted(this->dbConnection);
 
     this->ProcessAddRemoveQueue();
@@ -436,9 +434,6 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
 
         /* close any pending transaction */
         this->trackTransaction->CommitAndRestart();
-
-        /* re-index */
-        LocalLibraryBackend::CreateIndexes(this->dbConnection);
     }
 }
 
@@ -694,7 +689,7 @@ musik::core::ScanResult Indexer::SyncSource(
         {
             if (result == musik::core::ScanCommit && !this->Bail() && source->NeedsTrackScan()) {
                 db::Statement tracks(
-                    "SELECT id, filename, external_id FROM tracks WHERE source_id=? AND id>? ORDER BY id LIMIT 1",
+                    "SELECT id, filename, external_id, filetime FROM tracks WHERE source_id=? AND id>? ORDER BY id LIMIT 1",
                     this->dbConnection);
                 int64_t previousId = 0;
                 while (!this->Bail()) {
@@ -708,10 +703,11 @@ musik::core::ScanResult Indexer::SyncSource(
                         fprintf(logFile, "    - %s\n", tracks.ColumnText(1));
                     }
                     const std::string externalId = tracks.ColumnText(2);
+                    const int64_t lastModified = tracks.ColumnInt64(3);
                     /* release the read statement before plugin i/o or writes.
                     keyset traversal also permits removing the current track. */
                     tracks.ResetAndUnbind();
-                    source->ScanTrack(this, externalId.c_str());
+                    source->ScanTrack(this, externalId.c_str(), lastModified);
                     if (this->trackTransaction &&
                         std::chrono::steady_clock::now() - this->lastBatchCommit >= MAX_BATCH_DURATION)
                     {

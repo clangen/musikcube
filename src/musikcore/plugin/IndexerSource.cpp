@@ -304,14 +304,14 @@ namespace musik { namespace core { namespace plugin {
         return !this->failed && this->decision == MC_INDEXER_SCAN_COMMIT ? musik::core::ScanCommit : musik::core::ScanRollback;
     }
 
-    void IndexerSource::ScanTrack(Indexer* writer, const char* id) {
+    void IndexerSource::ScanTrack(Indexer* writer, const char* id, int64_t lastModified) {
         if (this->failed) {
             return;
         }
         IndexerWriterScope scope(*writer, *this);
         const auto table = scope.Table();
         this->failed = this->factory.Invoke([&](const auto& factory) {
-            return factory.instance_api->validate_track(this->instance, { id, std::strlen(id) }, &table, nullptr);
+            return factory.instance_api->validate_track(this->instance, { id, std::strlen(id) }, lastModified, &table, nullptr);
         }) != MC_OK || scope.Failed();
     }
 

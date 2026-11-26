@@ -34,6 +34,7 @@
 
 #include "Constants.h"
 #include "GmeIndexerSource.h"
+#include "GmeFile.h"
 #include <common/String.h>
 #include <common/Filesystem.h>
 #include <common/Utf8.h>
@@ -73,10 +74,12 @@ void GmeIndexerSource::OnBeforeScan() {
     this->lastCheckpoint = std::chrono::steady_clock::now();
     this->interrupt = false;
     this->paths.clear();
+    this->files.clear();
 }
 
 void GmeIndexerSource::OnAfterScan() {
     invalidFiles.clear();
+    this->files.clear();
 }
 
 bool GmeIndexerSource::Scan(
@@ -131,33 +134,107 @@ void GmeIndexerSource::Interrupt() {
 
 void GmeIndexerSource::ScanTrack(
     musik::core::plugin::IndexerWriter* indexer,
-    const char* externalId)
+    const char* externalId,
+    int64_t lastModified)
 {
     std::string fn;
     int trackNum;
     if (musik::core::plugin::ParseExternalId(EXTERNAL_ID_PREFIX, std::string(externalId), fn, trackNum)) {
-        fn = fs::canonicalizePath(fn);
+        auto file = this->files.find(fn);
+        if (file == this->files.end()) {
+            fn = fs::canonicalizePath(fn);
+            file = this->files.find(fn);
+        }
+
+        bool exists;
+        if (file != this->files.end()) {
+            if (file->second.exists == -1) {
+                file->second.exists = fs::fileExists(fn) ? 1 : 0;
+            }
+            exists = file->second.exists == 1;
+        }
+        else {
+            exists = fs::fileExists(fn);
+        }
 
         /* if the file doesn't exist anymore, or it was flagged as invalid,
         we remove it */
-        if (!fs::fileExists(fn) || invalidFiles.find(fn) != invalidFiles.end()) {
+        if (!exists || invalidFiles.find(fn) != invalidFiles.end()) {
             indexer->RemoveByExternalId(externalId);
             return;
         }
 
         /* otherwise, we remove it if it doesn't exist in the list of paths
         we're supposed to be indexing */
-        for (auto& path : this->paths) {
-            if (fn.find(path) == 0) {
-                return; /* found a match, we're good */
+        bool withinPath = false;
+        for (const auto& path : this->paths) {
+            if (IsWithinDirectory(fn, path)) {
+                withinPath = true;
+                break;
             }
         }
+        if (!withinPath) {
+            indexer->RemoveByExternalId(externalId);
+            return;
+        }
 
-        indexer->RemoveByExternalId(externalId);
+        if (file == this->files.end() || file->second.lastModified == lastModified) {
+            return;
+        }
+        /* an older row may belong to a container that lost tracks. inspect
+        the current file once, retaining rows if the file cannot be read. */
+        if (file->second.trackCount == -1) {
+            file->second.trackCount = this->ReadTrackCount(fn);
+        }
+        if (file->second.trackCount >= 0 && trackNum >= file->second.trackCount) {
+            try {
+                if (fs::getLastModifiedTime(fn) == file->second.lastModified) {
+                    indexer->RemoveByExternalId(externalId);
+                }
+            }
+            catch (const std::filesystem::filesystem_error&) {
+                /* a file changed or disappeared after the source scan. */
+            }
+        }
     }
 }
 
+bool GmeIndexerSource::LoadPlaylist(Music_Emu* data, const std::string& path) {
+    if (!this->services.Boolean(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
+        return true;
+    }
+    const auto m3u = getM3uFor(path);
+    if (m3u.empty()) {
+        return true;
+    }
+    std::vector<char> playlist;
+    if (!ReadGmeFile(m3u, playlist)) {
+        this->services.Error("GME decoder", "could not read playlist: " + m3u);
+        return false;
+    }
+    else if (const auto error = gme_load_m3u_data(data, playlist.data(), static_cast<long>(playlist.size()))) {
+        this->services.Error("GME decoder", str::Format("m3u found, but load failed '%s'", error));
+        return false;
+    }
+    return true;
+}
 
+int GmeIndexerSource::ReadTrackCount(const std::string& path) {
+    std::vector<char> bytes;
+    Music_Emu* raw = nullptr;
+    if (!ReadGmeFile(path, bytes)) {
+        return -2;
+    }
+    const auto error = gme_open_data(bytes.data(), static_cast<long>(bytes.size()), &raw, gme_info_only);
+    std::unique_ptr<Music_Emu, decltype(&gme_delete)> data(raw, gme_delete);
+    if (error || !data) {
+        return -2;
+    }
+    if (!this->LoadPlaylist(data.get(), path)) {
+        return -2;
+    }
+    return gme_track_count(data.get());
+}
 
 void GmeIndexerSource::UpdateMetadata(
     std::string fn,
@@ -165,6 +242,7 @@ void GmeIndexerSource::UpdateMetadata(
 {
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
+    fn = fs::canonicalizePath(fn);
     int64_t modifiedTime;
     try {
         modifiedTime = fs::getLastModifiedTime(fn);
@@ -174,13 +252,20 @@ void GmeIndexerSource::UpdateMetadata(
         this->services.Error("GME decoder", "could not read file timestamp: " + fn);
         return;
     }
+    auto& file = this->files[fn];
+    file.lastModified = modifiedTime;
+    file.trackCount = -1;
+    file.exists = -1;
     const std::string firstExternalId = musik::core::plugin::CreateExternalId(EXTERNAL_ID_PREFIX, fn, 0);
     const auto modifiedDbTime = indexer->GetLastModifiedTime(firstExternalId);
     if (!modifiedDbTime || modifiedTime != *modifiedDbTime) {
-        fn = fs::canonicalizePath(fn);
-
+        std::vector<char> fileBytes;
+        if (!ReadGmeFile(fn, fileBytes)) {
+            this->services.Error("GME decoder", "could not read file: " + fn);
+            return;
+        }
         Music_Emu* data = nullptr;
-        gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
+        gme_err_t err = gme_open_data(fileBytes.data(), static_cast<long>(fileBytes.size()), &data, gme_info_only);
         std::unique_ptr<Music_Emu, decltype(&gme_delete)> dataOwner(data, gme_delete);
         if (err) {
             this->services.Error("GME decoder", str::Format("error opening %s", fn.c_str()).c_str());
@@ -193,15 +278,10 @@ void GmeIndexerSource::UpdateMetadata(
             bool ignoreSfx = this->services.Boolean(
                 KEY_EXCLUDE_SOUND_EFFECTS, DEFAULT_EXCLUDE_SOUND_EFFECTS);
 
-            if (this->services.Boolean(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
-                std::string m3u = getM3uFor(fn);
-                if (m3u.size()) {
-                    err = gme_load_m3u(data, m3u.c_str());
-                    if (err) {
-                        this->services.Error("GME decoder", str::Format("m3u found, but load failed '%s'", err).c_str());
-                    }
-                }
+            if (!this->LoadPlaylist(data, fn)) {
+                return;
             }
+            file.trackCount = gme_track_count(data);
 
             const std::string defaultDuration =
                 std::to_string(this->services.Number(
@@ -210,7 +290,7 @@ void GmeIndexerSource::UpdateMetadata(
 
             const std::string directory = fs::getDirectory<std::string>(fn);
 
-            for (int i = 0; i < gme_track_count(data); i++) {
+            for (int i = 0; i < file.trackCount && !this->interrupt; i++) {
                 const std::string externalId = musik::core::plugin::CreateExternalId(EXTERNAL_ID_PREFIX, fn, i);
                 const std::string trackNum = std::to_string(i + 1);
                 const std::string defaultTitle = "Track " + std::to_string(1 + i);
@@ -238,6 +318,7 @@ void GmeIndexerSource::UpdateMetadata(
                         info->length > 0 &&
                         info->length / 1000.0 < minTrackLength)
                     {
+                        indexer->RemoveByExternalId(externalId.c_str());
                         continue;
                     }
 

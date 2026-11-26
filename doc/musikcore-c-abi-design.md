@@ -376,14 +376,14 @@ uses the host default if no directory is supplied.
 The context owns all engine services by default. Set `options.services` to the
 services the host needs; prerequisite expansion is automatic and acyclic:
 
-| Requested service | Automatic prerequisites | What starts |
-| --- | --- | --- |
-| `MC_SERVICE_NONE` | None | Request processing, cancellation, wakeups, and dispatch only |
-| `MC_SERVICE_LIBRARY` | None | Configured local/remote catalogs and their query work |
-| `MC_SERVICE_PLUGINS` | None | Provider discovery, preferences, and a provider session |
-| `MC_SERVICE_INDEXER` | Library, Plugins | Local scanner and its providers |
-| `MC_SERVICE_PLAYBACK` | Library, Plugins | Player and its providers; no scanner |
-| `MC_SERVICE_ALL` (default) | All above | Full engine used by musikcube and musikcubed |
+| Requested service          | Automatic prerequisites | What starts                                                  |
+| -------------------------- | ----------------------- | ------------------------------------------------------------ |
+| `MC_SERVICE_NONE`          | None                    | Request processing, cancellation, wakeups, and dispatch only |
+| `MC_SERVICE_LIBRARY`       | None                    | Configured local/remote catalogs and their query work        |
+| `MC_SERVICE_PLUGINS`       | None                    | Provider discovery, preferences, and a provider session      |
+| `MC_SERVICE_INDEXER`       | Library, Plugins        | Local scanner and its providers                              |
+| `MC_SERVICE_PLAYBACK`      | Library, Plugins        | Player and its providers; no scanner                         |
+| `MC_SERVICE_ALL` (default) | All above               | Full engine used by musikcube and musikcubed                 |
 
 Combine bits with `|`. `mc_context_get_services` / C++ `Context::Services()` reports
 the expanded immutable configuration, including after shutdown. It is safe to
@@ -1006,25 +1006,25 @@ second model of a track, playlist, or playback state.
 
 #### Existing interfaces and their disposition
 
-| Existing C++ interface/helper | Planned C representation | Behavioral mapping / deliberate change |
-| --- | --- | --- |
-| `IPlugin`, exported `GetPlugin`, SDK version | Existing `mc_plugin_api` entry/lifecycle table | Identity and per-plugin initialization/state; one C entry point. |
-| `IResource::Release`, `Retain`, `IAllocator` | Typed object destruction; explicit clones only for shared core handles | Allocation is freed by its owner. No generic resource hierarchy or caller-selected allocator crosses the boundary. |
-| `IBuffer`, `IBufferProvider` | `mc_audio_scratch_buffer`, private fixed playback pool, PCM views, output completion sink | Replace interleaved sample counts with frames; output returns accepted buffers exactly once. |
-| `IDataStream`, `IDataStreamFactory` | Stream object/vtable and stream factory | Keep create/open/read/write/seek/info/interrupt/close; explicit byte counts and EOF. |
-| `IDecoder`, `IDecoderFactory` | Decoder object/vtable and decoder factory | Keep open/decode/seek/duration/preferred rate; return exhaustion with the decoded block. |
-| `IEncoder`, `IBlockingEncoder`, `IStreamingEncoder`, `IEncoderFactory` | Separate blocking and streaming encoder tables in one factory | Replace `AsBlocking`/`AsStreaming` with advertised modes; streaming bytes use a synchronous sink rather than an ownership-ambiguous `char**`. |
-| `IOutput`, `IDevice`, `IDeviceList` | Output object/vtable, output factory, device callbacks | Keep pause/resume/volume/stop/drain/latency/devices; make accepted/full/error outcomes explicit. |
-| `IDSP` | DSP factory and per-stream processor | Keep in-place processing; prepare/reset/configure outside real-time processing. |
-| `ITagReader`, `ITagStore`, `ReplayGain` | Tag reader, host metadata writer, replay-gain values with presence flags | Keep text/artwork/gain updates and contains/clear; preserve missing versus zero/empty. |
-| `IIndexerSource`, `IIndexerWriter`, `IIndexerNotifier` | Source factory/scan instance, source-scoped writer, rescan host operation | Keep scan hooks, validation, item writes/deletes/progress, interruption. Stable text source keys replace C++ hashes; checkpoint semantics are explicit. |
-| `IAnalyzer` (`GetAudioAnalyzer`) | Analyzer factory and begin/process/finish object | Preserve the core's analysis hook even though a production implementation may be absent; writes use the metadata writer. |
-| `IVisualizer`, `IPcmVisualizer`, `ISpectrumVisualizer` | Visualizer factory/object and bounded PCM/spectrum views | Keep show/hide/visible/name plus frame delivery; no transient audio pointer retained. |
-| `IPlaybackRemote` | Playback remote factory and instance | Keep track/state/time/volume/mode/queue notifications and typed host commands; stop and join workers owned by the remote. |
-| `IPreferences`, `ISchema`, `Configure`/`Reload` | Plugin-scoped preference table and data-driven configuration capability | Keep typed values/defaults/ranges/choices/persistence; activation/restart effects are explicit. |
-| `IMetadataProxy`, `ITrack`, `ITrackList`, editor/map/value interfaces | Existing C identities/results/pages and typed catalog/playback host calls | Preserve useful operations without recreating the C++ object graph. Identify missing typed operations before server conversion. |
-| `IEnvironment`, `IDebug`, `SetEnvironment`/`SetDebug`/`SetPreferences`/`SetMetadataProxy`/`SetIndexerNotifier` | Bootstrap diagnostics and scoped, typed instance services | No global setter protocol. Factories register first; runtime services are supplied when an instance is created. |
-| `String`, `DataBuffer`, `Filesystem`, `HttpClient`, constants/version helpers | Implementation helpers or shared C primitives, according to actual callers | Header-only C++ helpers are not binary interfaces to transliterate. Audit their engine dependencies before removing the old SDK directory. |
+| Existing C++ interface/helper                                                                                  | Planned C representation                                                                  | Behavioral mapping / deliberate change                                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `IPlugin`, exported `GetPlugin`, SDK version                                                                   | Existing `mc_plugin_api` entry/lifecycle table                                            | Identity and per-plugin initialization/state; one C entry point.                                                                                        |
+| `IResource::Release`, `Retain`, `IAllocator`                                                                   | Typed object destruction; explicit clones only for shared core handles                    | Allocation is freed by its owner. No generic resource hierarchy or caller-selected allocator crosses the boundary.                                      |
+| `IBuffer`, `IBufferProvider`                                                                                   | `mc_audio_scratch_buffer`, private fixed playback pool, PCM views, output completion sink | Replace interleaved sample counts with frames; output returns accepted buffers exactly once.                                                            |
+| `IDataStream`, `IDataStreamFactory`                                                                            | Stream object/vtable and stream factory                                                   | Keep create/open/read/write/seek/info/interrupt/close; explicit byte counts and EOF.                                                                    |
+| `IDecoder`, `IDecoderFactory`                                                                                  | Decoder object/vtable and decoder factory                                                 | Keep open/decode/seek/duration/preferred rate; return exhaustion with the decoded block.                                                                |
+| `IEncoder`, `IBlockingEncoder`, `IStreamingEncoder`, `IEncoderFactory`                                         | Separate blocking and streaming encoder tables in one factory                             | Replace `AsBlocking`/`AsStreaming` with advertised modes; streaming bytes use a synchronous sink rather than an ownership-ambiguous `char**`.           |
+| `IOutput`, `IDevice`, `IDeviceList`                                                                            | Output object/vtable, output factory, device callbacks                                    | Keep pause/resume/volume/stop/drain/latency/devices; make accepted/full/error outcomes explicit.                                                        |
+| `IDSP`                                                                                                         | DSP factory and per-stream processor                                                      | Keep in-place processing; prepare/reset/configure outside real-time processing.                                                                         |
+| `ITagReader`, `ITagStore`, `ReplayGain`                                                                        | Tag reader, host metadata writer, replay-gain values with presence flags                  | Keep text/artwork/gain updates and contains/clear; preserve missing versus zero/empty.                                                                  |
+| `IIndexerSource`, `IIndexerWriter`, `IIndexerNotifier`                                                         | Source factory/scan instance, source-scoped writer, rescan host operation                 | Keep scan hooks, validation, item writes/deletes/progress, interruption. Stable text source keys replace C++ hashes; checkpoint semantics are explicit. |
+| `IAnalyzer` (`GetAudioAnalyzer`)                                                                               | Analyzer factory and begin/process/finish object                                          | Preserve the core's analysis hook even though a production implementation may be absent; writes use the metadata writer.                                |
+| `IVisualizer`, `IPcmVisualizer`, `ISpectrumVisualizer`                                                         | Visualizer factory/object and bounded PCM/spectrum views                                  | Keep show/hide/visible/name plus frame delivery; no transient audio pointer retained.                                                                   |
+| `IPlaybackRemote`                                                                                              | Playback remote factory and instance                                                      | Keep track/state/time/volume/mode/queue notifications and typed host commands; stop and join workers owned by the remote.                               |
+| `IPreferences`, `ISchema`, `Configure`/`Reload`                                                                | Plugin-scoped preference table and data-driven configuration capability                   | Keep typed values/defaults/ranges/choices/persistence; activation/restart effects are explicit.                                                         |
+| `IMetadataProxy`, `ITrack`, `ITrackList`, editor/map/value interfaces                                          | Existing C identities/results/pages and typed catalog/playback host calls                 | Preserve useful operations without recreating the C++ object graph. Identify missing typed operations before server conversion.                         |
+| `IEnvironment`, `IDebug`, `SetEnvironment`/`SetDebug`/`SetPreferences`/`SetMetadataProxy`/`SetIndexerNotifier` | Bootstrap diagnostics and scoped, typed instance services                                 | No global setter protocol. Factories register first; runtime services are supplied when an instance is created.                                         |
+| `String`, `DataBuffer`, `Filesystem`, `HttpClient`, constants/version helpers                                  | Implementation helpers or shared C primitives, according to actual callers                | Header-only C++ helpers are not binary interfaces to transliterate. Audit their engine dependencies before removing the old SDK directory.              |
 
 `SendRawQuery` needs special care in this inventory: despite its name, the
 current method parses JSON and selects a named query through `QueryRegistry`.
@@ -1408,7 +1408,10 @@ Begin/end bracket the whole operation, including validation of existing tracks.
 End runs after begin, including on cancellation or failure. Cancellation and
 errors roll back the current uncommitted batch. A checkpoint commits a batch;
 earlier checkpoints are not undone by a later rollback. Modification-time
-lookups distinguish an absent record from a stored negative timestamp. A
+lookups distinguish an absent record from a stored negative timestamp. Track
+validation receives the record's stored modification time in the source's
+units, avoiding a separate lookup for each track. This changes the experimental
+indexer callback signature, so existing indexer plugins must rebuild. A
 source-scoped host operation requests a later rescan without exposing a C++
 object across the boundary.
 
@@ -1548,7 +1551,6 @@ use `indexer.schedule_async`; source plugins receive only their own
 `indexer.request_rescan` callback. See
 [ADR-0018](../docs/adr/0018-library-layers-and-plugin-services.md) for ownership,
 source/layout compatibility and the experimental SDK rebuild requirement.
-
 
 The instance service bundle holds pointers to narrow, sized, typed tables. It
 is immutable and valid until that instance is destroyed; absent optional tables

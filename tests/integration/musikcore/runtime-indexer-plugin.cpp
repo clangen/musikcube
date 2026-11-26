@@ -55,7 +55,7 @@ namespace {
             return true;
         }
 
-        void ScanTrack(musik::core::plugin::IndexerWriter*, const char*) {}
+        void ScanTrack(musik::core::plugin::IndexerWriter*, const char*, int64_t) {}
         bool HasStableIds() const { return true; }
         bool NeedsTrackScan() const { return false; }
 

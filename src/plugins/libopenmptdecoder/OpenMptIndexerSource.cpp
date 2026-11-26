@@ -82,10 +82,12 @@ void OpenMptIndexerSource::OnBeforeScan() {
     this->lastCheckpoint = std::chrono::steady_clock::now();
     this->interrupt = false;
     this->paths.clear();
+    this->files.clear();
 }
 
 void OpenMptIndexerSource::OnAfterScan() {
     invalidFiles.clear();
+    this->files.clear();
 }
 
 bool OpenMptIndexerSource::Scan(
@@ -136,30 +138,83 @@ void OpenMptIndexerSource::Interrupt() {
 
 void OpenMptIndexerSource::ScanTrack(
     musik::core::plugin::IndexerWriter* indexer,
-    const char* externalId)
+    const char* externalId,
+    int64_t lastModified)
 {
     std::string fn;
     int trackNum;
     if (musik::core::plugin::ParseExternalId(PLUGIN_NAME, std::string(externalId), fn, trackNum)) {
-        fn = fs::canonicalizePath(fn);
+        auto file = this->files.find(fn);
+        if (file == this->files.end()) {
+            fn = fs::canonicalizePath(fn);
+            file = this->files.find(fn);
+        }
+
+        bool exists;
+        if (file != this->files.end()) {
+            if (file->second.exists == -1) {
+                file->second.exists = fs::fileExists(fn) ? 1 : 0;
+            }
+            exists = file->second.exists == 1;
+        }
+        else {
+            exists = fs::fileExists(fn);
+        }
 
         /* if the file doesn't exist anymore, or it was flagged as invalid,
         we remove it */
-        if (!fs::fileExists(fn) || invalidFiles.find(fn) != invalidFiles.end()) {
+        if (!exists || invalidFiles.find(fn) != invalidFiles.end()) {
             indexer->RemoveByExternalId(externalId);
             return;
         }
 
         /* otherwise, we remove it if it doesn't exist in the list of paths
         we're supposed to be indexing */
-        for (auto& path : this->paths) {
-            if (fn.find(path) == 0) {
-                return; /* found a match, we're good */
+        bool withinPath = false;
+        for (const auto& path : this->paths) {
+            if (IsWithinDirectory(fn, path)) {
+                withinPath = true;
+                break;
             }
         }
+        if (!withinPath) {
+            indexer->RemoveByExternalId(externalId);
+            return;
+        }
 
-        indexer->RemoveByExternalId(externalId);
+        if (file == this->files.end() || file->second.lastModified == lastModified) {
+            return;
+        }
+        /* validation can follow an interrupted scan, so inspect the file if
+        this pass did not already read its current subsong count. */
+        if (file->second.trackCount == -1) {
+            file->second.trackCount = this->ReadTrackCount(fn);
+        }
+        if (file->second.trackCount >= 0 && trackNum >= file->second.trackCount) {
+            try {
+                if (fs::getLastModifiedTime(fn) == file->second.lastModified) {
+                    indexer->RemoveByExternalId(externalId);
+                }
+            }
+            catch (const std::filesystem::filesystem_error&) {
+                /* a file changed or disappeared after the source scan. */
+            }
+        }
     }
+}
+
+int OpenMptIndexerSource::ReadTrackCount(const std::string& path) {
+    char* bytes = nullptr;
+    int size = 0;
+    if (!fileToByteArray(path, &bytes, size)) {
+        return -2;
+    }
+    std::unique_ptr<char, decltype(&free)> file(bytes, free);
+    std::unique_ptr<openmpt_module, decltype(&openmpt_module_destroy)> module(
+        openmpt_module_create_from_memory2(bytes, static_cast<size_t>(size), openmptLogFunc, this,
+            nullptr, nullptr, nullptr, nullptr, nullptr),
+        openmpt_module_destroy);
+    return module ? openmpt_module_get_num_subsongs(module.get()) : -2;
 }
 
 
@@ -193,6 +248,7 @@ void OpenMptIndexerSource::UpdateMetadata(
 {
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
+    fn = fs::canonicalizePath(fn);
     int64_t modifiedTime;
     try {
         modifiedTime = fs::getLastModifiedTime(fn);
@@ -202,10 +258,13 @@ void OpenMptIndexerSource::UpdateMetadata(
         this->services.Error(PLUGIN_NAME.c_str(), "could not read file timestamp: " + fn);
         return;
     }
+    auto& file = this->files[fn];
+    file.lastModified = modifiedTime;
+    file.trackCount = -1;
+    file.exists = -1;
     const std::string firstExternalId = musik::core::plugin::CreateExternalId(PLUGIN_NAME, fn, 0);
     const auto modifiedDbTime = indexer->GetLastModifiedTime(firstExternalId);
     if (!modifiedDbTime || modifiedTime != *modifiedDbTime) {
-        fn = fs::canonicalizePath(fn);
         char* fileBytes = nullptr;
         int fileBytesSize = 0;
         if (fileToByteArray(fn, &fileBytes, fileBytesSize)) {
@@ -223,8 +282,9 @@ void OpenMptIndexerSource::UpdateMetadata(
                 std::string directory = fs::getDirectory(fn);
                 std::string extension = fs::getFileExtension(fn);
                 const int32_t count = openmpt_module_get_num_subsongs(module);
+                file.trackCount = count;
                 if (count > 0) {
-                    for (int32_t i = 0; i < count; i++) {
+                    for (int32_t i = 0; i < count && !this->interrupt; i++) {
                         openmpt_module_select_subsong(module, i);
 
                         const std::string externalId = musik::core::plugin::CreateExternalId(PLUGIN_NAME, fn, i);

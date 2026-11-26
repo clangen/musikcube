@@ -40,6 +40,11 @@
 #include <chrono>
 #include <set>
 #include <string>
+#include <unordered_map>
+
+#include <common/SubtrackFile.h>
+
+struct Music_Emu;
 
 class GmeIndexerSource {
 public:
@@ -51,17 +56,20 @@ public:
     void OnBeforeScan();
     void OnAfterScan();
     bool Scan(musik::core::plugin::IndexerWriter* writer, const char** paths, size_t count);
-    void ScanTrack(musik::core::plugin::IndexerWriter* writer, const char* externalId);
+    void ScanTrack(musik::core::plugin::IndexerWriter* writer, const char* externalId, int64_t lastModified);
     void Interrupt();
     bool HasStableIds() const { return true; }
     bool NeedsTrackScan() const { return true; }
 
 private:
     void UpdateMetadata(std::string path, musik::core::plugin::IndexerWriter* writer);
+    int ReadTrackCount(const std::string& path);
+    bool LoadPlaylist(Music_Emu* data, const std::string& path);
 
     musik::core::plugin::IndexerServices services;
     std::set<std::string> invalidFiles;
     std::set<std::string> paths;
+    std::unordered_map<std::string, musik::core::sdk::ScannedSubtrackFile> files;
     std::chrono::steady_clock::time_point lastCheckpoint;
     size_t filesIndexed { 0 };
     size_t tracksIndexed { 0 };
