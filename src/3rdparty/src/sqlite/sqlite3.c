@@ -117679,7 +117679,7 @@ SQLITE_PRIVATE void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
 SQLITE_PRIVATE int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   char *zTail;                  /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
-  zTail = strrchr(zName, '_');
+  zTail = (char*)strrchr(zName, '_');
   if( zTail==0 ) return 0;
   *zTail = 0;
   pTab = sqlite3FindTable(db, zName, 0);
