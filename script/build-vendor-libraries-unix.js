@@ -366,7 +366,16 @@ async function main() {
 
     /* These linker inputs are supplied by the host at runtime. */
     config.stagePluginDependencies?.(work);
-    projectm.build({ sources, out, config, run });
+    /* projectM needs the staged X11 and Wayland headers and pkg-config files. */
+    const projectmConfig = config.rpi ? {
+      ...config,
+      cmake: [...config.cmake, '--toolchain', join(__dirname, '../.cmake/RaspberryPiToolchain.cmake'),
+        '-DMUSIKCUBE_XTOOLS_FILE=' + config.toolchain.cmake,
+        '-DMUSIKCUBE_DEPENDENCY_ROOT=' + config.staticSysroot,
+        '-DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath-link,' +
+          join(config.staticSysroot, 'usr/lib/arm-linux-gnueabihf')],
+    } : config;
+    projectm.build({ sources, out, config: projectmConfig, run });
 
     /* Keep the previous vendor build until the replacement is in place. */
     const previous = join(work, 'previous');
