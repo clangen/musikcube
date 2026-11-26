@@ -79,10 +79,10 @@ const result = spawnSync(command, expanded, {
   timeout: 90000,
 });
 
-/* fatal fixtures disable Windows crash reporting so an abort exits with
-status 3. Unix reports SIGABRT. timeouts and other signals remain failures. */
+/* Windows reports either CRT abort or fast-fail termination; Unix reports
+SIGABRT. callers also check the expected fatal diagnostic. */
 const passed = !result.error && (expectAbort
-  ? result.signal === 'SIGABRT' || process.platform === 'win32' && result.status === 3
+  ? result.signal === 'SIGABRT' || process.platform === 'win32' && (result.status === 3 || (result.status >>> 0) === 0xc0000409)
   : result.status === 0);
 
 /* successful runs leave no state; failures retain their isolated evidence. */

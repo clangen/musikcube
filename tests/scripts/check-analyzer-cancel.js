@@ -72,8 +72,9 @@ async function run(action, root) {
   child.stderr.on('data', chunk => { errors += chunk; });
   child.stdout.on('data', chunk => {
     output += chunk;
+    const normalized = output.replace(/\r\n/g, '\n');
     const signal = gated ? 'analysis-finish\n' : 'analysis-open\n';
-    if (!released && output.includes(signal)) {
+    if (!released && normalized.includes(signal)) {
       released = true;
       if (action === 'artwork') {
         const database = findDatabase(join(directory, 'musikcube'));
@@ -90,7 +91,7 @@ async function run(action, root) {
         child.stdin.end('\n');
       }
     }
-    if (action === 'finish' && !gateReleased && output.includes('cancel-sent\n')) {
+    if (action === 'finish' && !gateReleased && normalized.includes('cancel-sent\n')) {
       gateReleased = true;
       writeFile(gate, 'x', error => {
         if (error) {

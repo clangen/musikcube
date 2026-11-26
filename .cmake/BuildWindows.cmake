@@ -322,7 +322,14 @@ windows_project_sources(musikcore_objects src/musikcore)
 
 set(MUSIKCORE_INSTALL_RUNTIME_DIR bin)
 include("${CMAKE_CURRENT_LIST_DIR}/InstallMusikcoreSdk.cmake")
-install(FILES ${windows_dlls} DESTINATION bin COMPONENT musikcoreSDK)
+set(windows_core_dlls
+  "${windows_vendor}/win64/dll/libcurl/libcurl.dll"
+  "${windows_vendor}/win64/dll/openssl/libcrypto-3-x64.dll"
+  "${windows_vendor}/win64/dll/openssl/libssl-3-x64.dll")
+install(FILES ${windows_core_dlls} DESTINATION bin COMPONENT musikcoreSDK)
+set(windows_plugin_dlls ${windows_dlls})
+list(REMOVE_ITEM windows_plugin_dlls ${windows_core_dlls})
+install(FILES ${windows_plugin_dlls} DESTINATION bin COMPONENT musikcorePlugins)
 
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT musikcube)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

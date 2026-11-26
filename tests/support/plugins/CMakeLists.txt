@@ -30,6 +30,9 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/output-artifact-$<CONFIG>.txt"
 add_library(decoder_fixture MODULE byte-decoder.c)
 target_include_directories(decoder_fixture PRIVATE ${public_headers})
 target_compile_definitions(decoder_fixture PRIVATE MC_BUILDING_PLUGIN)
+if(MSVC)
+  target_compile_options(decoder_fixture PRIVATE /experimental:c11atomics)
+endif()
 set_target_properties(decoder_fixture PROPERTIES
   C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
   C_VISIBILITY_PRESET hidden SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")

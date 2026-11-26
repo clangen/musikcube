@@ -1,10 +1,12 @@
 #!/bin/bash
 
+set -e
+
 VERSION=$1
 
 if [ -z "$VERSION" ]; then
   echo "usage: archive-win.sh <version>"
-  exit
+  exit 1
 fi
 
 function archive {
@@ -36,3 +38,13 @@ function archive {
 }
 
 archive "64"
+
+SDK_NAME="musikcore_sdk_${VERSION}_win64"
+SDK_DIR="dist/$VERSION/$SDK_NAME"
+rm -rf "$SDK_DIR"
+mkdir -p "$SDK_DIR"
+cmake --install build/windows-x64 --config Release --component musikcoreSDK --prefix "$SDK_DIR"
+pushd "$SDK_DIR"
+7z a -tzip "$SDK_NAME.zip" ./* -mx=9
+mv "$SDK_NAME.zip" ..
+popd

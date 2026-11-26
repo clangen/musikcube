@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common/DeleteDefaults.h>
+#include <common/FilesystemPath.h>
 
 #include <chrono>
 #include <filesystem>
@@ -34,7 +35,8 @@ public:
     /* preserve the native suffix while controlling discovery order. these
     fixtures have no dynamic dependencies other than the platform runtime. */
     std::string Add(const fs::path& source, const std::string& name) {
-        const auto destination = this->directory / (name + source.extension().string());
+        const auto destination = this->directory /
+            musik::core::sdk::fs::pathFromUtf8(name + source.extension().string());
         fs::copy_file(source, destination);
         const auto bytes = destination.u8string();
         return { reinterpret_cast<const char*>(bytes.data()), bytes.size() };

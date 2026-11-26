@@ -58,6 +58,10 @@ External C decoder build/load checks (PKG-003/PKG-004) are tracked with the
   `musikcube.integration.windows_core_dll` test verifies frontend imports and
   the C ABI export allowlist. Both staged configurations passed the Windows
   dependency audit.
+  The Windows release script also produces a separate SDK ZIP with the import
+  library, headers, CMake package, and core runtime dependencies. On 2026-11-26,
+  C and C++ consumers built against the extracted archive; `plugins.installed`
+  checks the relocated SDK and its Windows runtime DLL contents.
 - [x] **PKG-008** Run consumer, SDK 23 plugin, and application smoke tests from
   staged standalone archives. Native macOS extracted app startup/search/queue/
   shutdown passes three times; daemon lifecycle, competing starts, rescan, and

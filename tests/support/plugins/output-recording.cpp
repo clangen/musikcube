@@ -7,8 +7,18 @@
 #include <string_view>
 #include <cstdlib>
 #include <thread>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace {
+    bool environmentFlag(const char* name) {
+#ifdef _WIN32
+        return GetEnvironmentVariableA(name, nullptr, 0) != 0;
+#else
+        return std::getenv(name) != nullptr;
+#endif
+    }
     /* this fixture is loaded by one host per process. log calls reveal whether
     the real engine boundary forwards invalid work or inserts cleanup in order. */
     const mc_host_api* host = nullptr;
@@ -19,7 +29,7 @@ namespace {
 
     /* the test can unplug the pinned USB device between selection and Prepare. */
     bool usbConnected() {
-        return !std::getenv("MUSIKCORE_TEST_OUTPUT_USB_UNPLUGGED");
+        return !environmentFlag("MUSIKCORE_TEST_OUTPUT_USB_UNPLUGGED");
     }
 
     class RecordingOutput {
@@ -72,7 +82,7 @@ namespace {
                             this->capacityPending = false;
                             this->capacityReturned = true;
                         }
-                        if (!std::getenv("MUSIKCORE_TEST_OMIT_OUTPUT_READY")) {
+                        if (!environmentFlag("MUSIKCORE_TEST_OMIT_OUTPUT_READY")) {
                             this->callbacks.ready(this->callbacks.context);
                         }
                         record("capacity-ready", 14);
@@ -107,7 +117,7 @@ namespace {
 
         mc_result Stop() noexcept {
             record("stop", 4);
-            if (std::getenv("MUSIKCORE_TEST_FAIL_OUTPUT_STOP")) {
+            if (environmentFlag("MUSIKCORE_TEST_FAIL_OUTPUT_STOP")) {
                 return MC_ERROR_IO;
             }
             std::unique_lock lock(this->mutex);
@@ -166,7 +176,7 @@ namespace {
             return MC_OK;
         }
         mc_result GetDefaultFormat(mc_string_view id, mc_audio_format& format) {
-            if (std::getenv("MUSIKCORE_TEST_OUTPUT_PREFERENCES")) {
+            if (environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES")) {
                 if (!services || !services->preferences) {
                     return MC_ERROR_INVALID_ARGUMENT;
                 }
@@ -209,7 +219,7 @@ namespace {
     /* emulate the C contract that permits a Stop-safe partial object on
     failed creation; the ordinary C++ helper always cleans constructor failure. */
     mc_result MC_CALL create(void* context, const mc_plugin_services* services, void** instance, mc_error** error) {
-        if (std::getenv("MUSIKCORE_TEST_OUTPUT_PREFERENCES")) {
+        if (environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES")) {
             if (!services || !services->preferences || !services->preferences->read_boolean) {
                 return MC_ERROR_PLUGIN;
             }
@@ -222,7 +232,7 @@ namespace {
             }
         }
         const auto result = originalCreate(context, services, instance, error);
-        return result == MC_OK && std::getenv("MUSIKCORE_TEST_PARTIAL_OUTPUT_CREATE") ? MC_ERROR_IO : result;
+        return result == MC_OK && environmentFlag("MUSIKCORE_TEST_PARTIAL_OUTPUT_CREATE") ? MC_ERROR_IO : result;
     }
 
     /* preserve the immutable helper table while overriding only this fixture's

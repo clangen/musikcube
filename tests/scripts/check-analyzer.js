@@ -56,7 +56,9 @@ try {
       ...(mode === 'null-create' ? { MUSIKCUBE_ANALYZER_NULL_CREATE: '1', MUSIKCORE_TEST_EXPECT_ABORT: '1' } : {}) };
     const result = spawnSync(executable, [media, '1'], { env, encoding: 'utf8', timeout: 60000 });
     if (mode === 'null-create') {
-      assert.ok(result.signal === 'SIGABRT' || process.platform === 'win32' && result.status === 3,
+      assert.ok((result.signal === 'SIGABRT' || process.platform === 'win32' &&
+        (result.status === 3 || (result.status >>> 0) === 0xc0000409)) &&
+        result.stderr.includes('analyzer factory returned no instance'),
         result.stderr || 'a factory reporting success without an instance must terminate');
       continue;
     }
@@ -68,7 +70,7 @@ try {
       assert.equal(checked.status, 0, checked.stderr || 'unexpected persisted analyzer metadata');
       continue;
     }
-    const calls = readFileSync(log, 'utf8').trim().split('\n');
+    const calls = readFileSync(log, 'utf8').trim().split(/\r?\n/);
     assert.equal(calls.filter(call => call === 'begin').length, fail ? 2 : 1);
     assert.ok(calls.includes('process'));
     if (!fail) {

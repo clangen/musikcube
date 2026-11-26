@@ -32,7 +32,8 @@ function stageTestRuntime(executable, root, includeDefaultPlugins = true) {
   }
 
   /* An allowlist prevents unrelated output/device plugins from affecting tests. */
-  for (const entry of includeDefaultPlugins ? readdirSync(join(source, 'plugins'), { withFileTypes: true }) : []) {
+  const plugins = join(source, 'plugins');
+  for (const entry of includeDefaultPlugins && existsSync(plugins) ? readdirSync(plugins, { withFileTypes: true }) : []) {
     if (!entry.isDirectory() && /^(lib)?(taglibreader|taglib_plugin|ffmpegdecoder)\.(dll|dylib|so)$/.test(entry.name)) {
       copyFileSync(join(source, 'plugins', entry.name), join(runtime, 'plugins', entry.name));
     }

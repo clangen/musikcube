@@ -19,7 +19,7 @@ static void require(bool condition, const char* message) {
 /* selection gets copied metadata without exposing loading steps. disabled plugins remain listed without running their hooks. */
 static void checkDisabled(const std::string& valid) {
     PluginCandidates candidates(musik::core::sdk::fs::pathFromUtf8(valid).parent_path() / "discovery-runs");
-    const auto path = candidates.Add(musik::core::sdk::fs::pathFromUtf8(valid), "valid");
+    const auto path = candidates.Add(musik::core::sdk::fs::pathFromUtf8(valid), "valid-\xe9\x9f\xb3\xe6\xa5\xbd");
     unsigned initialized = 0;
     unsigned shutdown = 0;
     PluginRegistry registry([&](mc_log_level, mc_string_view, mc_string_view text) {
@@ -35,7 +35,9 @@ static void checkDisabled(const std::string& valid) {
                 }) == MC_OK,
         "disabled candidate is cataloged");
     const auto catalog = registry.ListPlugins();
-    require(catalog.size() == 1 && !catalog.front().enabled && catalog.front().filename == path,
+    require(catalog.size() == 1 && !catalog.front().enabled &&
+            musik::core::sdk::fs::pathFromUtf8(catalog.front().filename) ==
+                musik::core::sdk::fs::pathFromUtf8(path),
         "disabled metadata remains available after candidate unload");
     require(initialized == 0 && shutdown == 0, "disabled candidate never enters lifecycle hooks");
     require(!registry.Find<mc_output_factory>(catalog.front().id), "disabled plugin cannot supply an output");

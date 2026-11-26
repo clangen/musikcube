@@ -191,6 +191,18 @@ namespace {
             const auto count = static_cast<unsigned>(std::min<size_t>(capacity, INT_MAX));
             const auto n = readFile(file.fd, dst, count);
             if (n < 0) {
+#ifdef _WIN32
+                /* the CRT can reject a read at a very large offset past EOF.
+                confirm the position and file length before returning EOF. */
+                if (errno == EINVAL) {
+                    FileStat info {};
+                    const auto position = seekFile(file.fd, 0, SEEK_CUR);
+                    if (position >= 0 && statFile(file.fd, &info) == 0 && position >= info.st_size) {
+                        *state = MC_READ_END;
+                        return MC_OK;
+                    }
+                }
+#endif
                 return MC_ERROR_IO;
             }
             *bytes = static_cast<size_t>(n);

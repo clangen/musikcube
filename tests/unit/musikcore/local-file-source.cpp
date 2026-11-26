@@ -56,6 +56,9 @@ namespace {
             api->tell(file, &position) == MC_OK && position == largeOffset, "64-bit seek");
         require(api->seek(file, UINT64_MAX, nullptr) == MC_ERROR_INVALID_ARGUMENT &&
             api->tell(file, &position) == MC_OK && position == largeOffset, "reject unrepresentable offset");
+        require(api->seek(file, INT64_MAX, nullptr) == MC_OK, "seek to maximum offset");
+        require(api->read(file, data, sizeof(data), &count, &state, nullptr) == MC_OK &&
+            count == 0 && state == MC_READ_END, "read beyond end of file");
         require(api->close(file) == MC_OK, "close");
     }
 

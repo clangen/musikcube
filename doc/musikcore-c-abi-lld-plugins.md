@@ -391,9 +391,20 @@ behavior complete. Those remain the unchecked tasks above.
   playback-remote tests with leak detection enabled. Playback reload failed during
   fixture setup on the accepted 104-byte system-library leak, then passed with
   `ASAN_OPTIONS=detect_leaks=0`; address and undefined-behavior checks stayed on.
-- [ ] **SDK-WINDOWS** Run the same provider checks on native Windows. Verify cdecl
+- [x] **SDK-WINDOWS** Run the same provider checks on native Windows. Verify cdecl
   function tables, DLL exports/imports/search paths, and UTF-8/Unicode filenames.
   The intentionally missing-entry fixture must not advertise the provider export.
+  Native Windows x64 Release passed 70 focused provider, runtime and export
+  checks on 2026-11-26, including relocated SDK providers, lifecycle, restart,
+  Unicode discovery and the output providers. `plugins.installed` now inspects
+  the relocated C, C++ output and C decoder provider exports/imports and the
+  missing-entry fixture on Windows; all passed. The x64 ABI declares `MC_CALL`
+  as `__cdecl` and the native function-table tests pass. The maintainer accepts
+  the additional library exports in `gmedecoder.dll` and `projectm.dll` and the
+  legacy exports in `milkdrop2.dll`. The server currently imports `musikcore.dll`
+  through application API calls; replacing those calls with host services is a
+  separate SDK design issue. This x64 run does not distinguish calling
+  conventions as a 32-bit build would.
 
 ### Phase 8: representative families and remaining plugin conversions
 
@@ -649,13 +660,16 @@ cutover gate is complete.
   `plugins.sndio_no_flush` and `plugins.output_host` tests cover this fallback.
   `plugins.sndio_output` exercises the shared output contract using a Linux
   device fixture; it does not resolve the intermittent physical-output silence.
-- [ ] **OUT-011** Validate the converted Windows `directsoundout`.
+- [x] **OUT-011** Validate the converted Windows `directsoundout`.
   The provider registers a C output factory; `plugins.directsound_output` and
-  `plugins.directsound_ring` are present. Native Windows execution remains open.
-- [ ] **OUT-012** Validate the converted Windows `wasapiout`.
+  `plugins.directsound_ring` passed on native Windows Release on 2026-11-26 at
+  code commit `34f77d167`, including the available endpoint playback checks.
+- [x] **OUT-012** Validate the converted Windows `wasapiout`.
   The shared-mode provider now registers the C output and configuration APIs.
   `plugins.wasapi_output` covers a Windows endpoint, settings, PCM completion,
-  pause/resume, drain, timing, interrupted writes, and teardown. The clock
+  pause/resume, drain, timing, interrupted writes, and teardown.
+  Native Windows Release execution passed on 2026-11-26 at code commit
+  `34f77d167`, including the available endpoint playback checks. The clock
   snapshot is a bounded 128-bit atomic publication: a 16-bit generation and
   48-bit frame count plus a 64-bit monotonic timestamp; generation wraps after
   65535 preparations. The last valid snapshot remains available until stop or

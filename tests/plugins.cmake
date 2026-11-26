@@ -58,6 +58,9 @@ if(WIN32)
   target_link_libraries(musikcore_decoder_stream_test PRIVATE ws2_32 mswsock)
 endif()
 set_target_properties(musikcore_decoder_stream_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+if(WIN32)
+  set_target_properties(musikcore_decoder_stream_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:musikcore>")
+endif()
 add_dependencies(musikcore_decoder_stream_test musikcore_byte_decoder)
 add_dependencies(musikcube_tests musikcore_decoder_stream_test)
 add_dependencies(musikcube_integration_tests musikcore_decoder_stream_test)
@@ -351,7 +354,7 @@ add_executable(musikcore_empty_plugin_session_test integration/plugins/empty-ses
 target_link_libraries(musikcore_empty_plugin_session_test PRIVATE musikcore)
 target_compile_features(musikcore_empty_plugin_session_test PRIVATE cxx_std_17)
 set_target_properties(musikcore_empty_plugin_session_test PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+  RUNTIME_OUTPUT_DIRECTORY "$<TARGET_FILE_DIR:musikcore>")
 add_dependencies(musikcube_tests musikcore_empty_plugin_session_test)
 add_dependencies(musikcube_integration_tests musikcore_empty_plugin_session_test)
 add_test(NAME musikcore.integration.plugins.empty_session

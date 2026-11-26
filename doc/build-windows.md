@@ -81,4 +81,4 @@ The benchmark reports startup, search and filter latency, idle and playback CPU,
 
 For the optional MilkDrop visualizer, clone the plugin into `../milkdrop2-musikcube` next to the musikcube checkout. After building the vendor libraries, run `script\build-win.bat` from the VS 2026 Developer PowerShell. It builds Release x64 and, when the sibling solution is present, restores MilkDrop's D3DX dependency and builds the plugin with the VS 2026 v145 toolset.
 
-From the checkout root, run `bash script/archive-win.sh <version>` in a shell with Bash and 7-Zip available. The ZIP includes the staged MilkDrop plugin, resources, and DirectX runtime DLLs.
+From the checkout root, run `bash script/archive-win.sh <version>` in a shell with Bash, CMake, and 7-Zip available. The application ZIP includes the staged MilkDrop plugin, resources, and DirectX runtime DLLs. A separate `musikcore_sdk_<version>_win64.zip` contains the C SDK, including `lib/musikcore.lib`, the headers and CMake package, and `musikcore.dll` with its curl and OpenSSL dependencies in `bin/`. CMake consumers can set `CMAKE_PREFIX_PATH` to the extracted SDK directory and link `musikcore::musikcore`.

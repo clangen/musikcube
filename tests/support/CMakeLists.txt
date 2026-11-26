@@ -884,6 +884,7 @@ endif()
 add_test(NAME musikcore.integration.plugins.installed COMMAND "${CMAKE_COMMAND}"
   "-DBUILD_DIR=${PROJECT_BINARY_DIR}" "-DSOURCE=${PROJECT_SOURCE_DIR}" "-DTEST_CONFIG=$<CONFIG>"
   "-DHOST=$<TARGET_FILE:musikcore_plugin_registry_test>" "-DNM=${CMAKE_NM}"
+  "-DLINKER=${CMAKE_LINKER}" "-DNO_ENTRY=$<TARGET_FILE:musikcore_provider_no_entry>"
   "-DTEST_GENERATOR=${CMAKE_GENERATOR}" "-DTEST_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
   "-DOUTPUT_HOST=$<TARGET_FILE:musikcore_null_output_test>"
   "-DCONSUMER_SANITIZERS=${sanitizers_flags}"
