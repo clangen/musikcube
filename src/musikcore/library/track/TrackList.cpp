@@ -181,6 +181,55 @@ TrackPtr TrackList::GetWithTimeout(size_t index, size_t timeoutMs) const {
     return TrackPtr();
 }
 
+TrackPtr TrackList::GetCached(size_t index) const {
+    return index < this->ids.size() ? this->GetFromCache(this->ids[index]) : TrackPtr {};
+}
+
+void TrackList::CancelPendingLookup() noexcept {
+    this->pendingLookup.reset();
+}
+
+void TrackList::GetAsync(size_t index, std::function<void(TrackPtr)> ready) {
+    this->CancelPendingLookup();
+    if (auto cached = this->GetCached(index)) {
+        ready(std::move(cached));
+        return;
+    }
+    if (index >= this->ids.size()) {
+        ready({});
+        return;
+    }
+
+    const auto id = this->ids[index];
+    auto track = std::make_shared<LibraryTrack>(id, this->library);
+    auto query = std::make_shared<TrackMetadataQuery>(track, this->library);
+    this->pendingLookup = std::make_shared<std::function<void(TrackPtr)>>(std::move(ready));
+    std::weak_ptr<std::function<void(TrackPtr)>> pending = this->pendingLookup;
+    if (this->library->Enqueue(query,
+            [this, pending, id](LibraryBackend::QueryPtr completed) {
+                /* cancellation and destruction expire this callback before a late
+                reply can touch the list or its caller. delivery is on the owner thread. */
+                auto ready = pending.lock();
+                if (!ready) {
+                    return;
+                }
+                this->pendingLookup.reset();
+                auto query = std::static_pointer_cast<TrackMetadataQuery>(completed);
+                auto track = query->GetStatus() == IQuery::Finished ? query->Result() : TrackPtr {};
+                if (track && track->GetId() == id) {
+                    this->AddToCache(id, track);
+                }
+                else {
+                    track.reset();
+                }
+                (*ready)(std::move(track));
+            }) < 0)
+    {
+        auto failed = std::move(this->pendingLookup);
+        (*failed)({});
+    }
+}
+
 int64_t TrackList::GetId(size_t index) const {
     return this->ids.at(index);
 }
@@ -211,6 +260,7 @@ void TrackList::Clear() noexcept {
 }
 
 void TrackList::ClearCache() noexcept {
+    this->CancelPendingLookup();
     this->cacheList.clear();
     this->cacheMap.clear();
 }
@@ -223,6 +273,8 @@ void TrackList::ResetForLibrary(LibraryBackend::Shared library) noexcept {
 }
 
 void TrackList::Swap(TrackList& tl) noexcept {
+    this->CancelPendingLookup();
+    tl.CancelPendingLookup();
     std::swap(tl.ids, this->ids);
 }
 

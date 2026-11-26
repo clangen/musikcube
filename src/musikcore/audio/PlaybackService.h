@@ -47,6 +47,7 @@
 
 #include <mutex>
 #include <thread>
+#include <functional>
 
 namespace musik { namespace core { namespace library { class Library; } } }
 
@@ -72,6 +73,7 @@ namespace musik { namespace core { namespace audio {
             MESSAGE_NEXT_TRACK_EDITED = 1013,
             MESSAGE_MARK_TRACK_PLAYING = 1014,
             MESSAGE_NOTIFY_API_CHANGED = 1015,
+            MESSAGE_METADATA_TIMEOUT = 1016,
         };
 
         class StreamMessage;
@@ -104,7 +106,7 @@ namespace musik { namespace core { namespace audio {
             bool Next();
             bool Previous();
             void Shutdown();
-            void Stop()  { transport->Stop(); }
+            void Stop();
             musik::core::audio::RepeatMode GetRepeatMode()  { return this->repeatMode; }
             void SetRepeatMode(musik::core::audio::RepeatMode mode);
             void ToggleRepeatMode();
@@ -195,6 +197,9 @@ namespace musik { namespace core { namespace audio {
             void OnIndexerFinished(int trackCount);
 
             void PrepareNextTrack();
+            void PrepareTrack(size_t index);
+            void LoadPlaybackMetadata(size_t index, std::function<void()> ready);
+            void CancelMetadataLoad();
             void MarkTrackAsPlayed(int64_t trackId);
 
             void PlayAt(size_t index, ITransport::StartMode mode);

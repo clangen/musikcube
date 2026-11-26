@@ -157,7 +157,9 @@ MC_API mc_result MC_CALL mc_playback_set_changed_callback(
    returns MC_ERROR_WRONG_THREAD on another thread or MC_ERROR_NOT_FOUND after the session ends. */
 MC_API mc_result MC_CALL mc_playback_control(mc_playback *playback, mc_playback_command command, double value);
 
-/* Replace the queue with the ordered result and play from row on the owner thread.
+/* Replace the queue with the ordered result and request playback from row on the owner thread.
+   Remote metadata is fetched asynchronously before starting audio. Stop or another play
+   request cancels pending startup; observe playback events for the resulting state.
    Returns MC_ERROR_NOT_FOUND if the row or its original library session is unavailable. */
 MC_API mc_result MC_CALL mc_playback_play_result(mc_playback *playback, const mc_track_result *result, size_t row);
 

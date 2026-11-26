@@ -2,6 +2,8 @@
 
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/library/query/TrackMetadataQuery.h>
+#include <atomic>
 #include <musikcore/library/query/GetPlaylistQuery.h>
 #include <musikcore/library/query/CategoryTrackListQuery.h>
 #include <musikcore/library/query/DirectoryTrackListQuery.h>
@@ -132,6 +134,13 @@ namespace {
                         {
                             this->HoldReply(connection, reply);
                             return;
+                        }
+                        if (query.at("name") == "TrackMetadataQuery") {
+                            auto expected = query.at("options").at("track").at("id").get<int64_t>();
+                            if (this->heldMetadataId.compare_exchange_strong(expected, 0)) {
+                                this->HoldReply(connection, reply);
+                                return;
+                            }
                         }
                         this->Send(connection, reply);
                     }
@@ -271,6 +280,8 @@ namespace {
                 return this->heldChanged.wait_for(lock, std::chrono::seconds(5), [this] { return this->httpHeld; });
             }
 
+            void HoldMetadata(int64_t id) { this->heldMetadataId = id; }
+
             bool WaitForHeldReply() {
                 std::unique_lock<std::mutex> lock(this->heldMutex);
                 return this->heldChanged.wait_for(lock, std::chrono::seconds(5), [this] {
@@ -341,6 +352,7 @@ namespace {
             bool heldProjection = false;
             bool httpHeld = false;
             bool released = false;
+            std::atomic<int64_t> heldMetadataId { 0 };
     };
 
     /* Owns observations shared by the test and client threads. Neither copyable nor movable. */
@@ -1629,13 +1641,191 @@ namespace {
             return failure(__LINE__);
         }
 
+        /* hold the next metadata response until the owner has returned from
+        dispatch. an old synchronous lookup needs the deadline to escape. */
+        TrackResult startupTracks;
+        const auto startupExpected = calls + 1;
+        OpenTrackSearch(context, *playbackLibrary, {}, receiveResult(startupTracks));
+        if (!dispatch(startupExpected) || startupTracks.Size() < 2) {
+            return failure(__LINE__);
+        }
+        const int64_t startupIds[] { startupTracks.Id(0), startupTracks.Id(1) };
+        mc_track_result* startupRaw = nullptr;
+        if (mc_library_make_track_result(playbackLibrary->Get(), startupIds, 2, &startupRaw) != MC_OK) {
+            return failure(__LINE__);
+        }
+        TrackResult startup(startupRaw);
+        /* asynchronous lookups populate the same cache on local and remote backends. */
+        for (LibraryBackend::Shared backend :
+            { LibraryBackend::Shared(library::DefaultLocalBackend()), LibraryBackend::Shared(appRemote) })
+        {
+            TrackList tracks(backend, startupIds, 2);
+            const auto owner = std::this_thread::get_id();
+            bool completed = false;
+            bool valid = false;
+            tracks.GetAsync(0, [&](TrackPtr track) {
+                completed = true;
+                valid = track && track == tracks.GetCached(0) && track->GetId() == startupIds[0] &&
+                    std::this_thread::get_id() == owner;
+            });
+            if (!AwaitTestHost(host,
+                    [&] {
+                        return completed;
+                    }) ||
+                !valid)
+            {
+                return failure(__LINE__);
+            }
+        }
+        const auto startupCount = transport->starts;
+        if (playback.Play(startup, 0) != MC_OK ||
+            !AwaitTestHost(host,
+                [&] {
+                    playbackMessages.Dispatch();
+                    return transport->starts == startupCount + 1;
+                }))
+        {
+            return failure(__LINE__);
+        }
+        server.HoldMetadata(startupIds[1]);
+        std::mutex gateMutex;
+        std::condition_variable gateChanged;
+        bool returned = false;
+        bool releasedWithoutTimeout = false;
+        bool receivedMetadata = false;
+        std::thread release([&] {
+            receivedMetadata = server.WaitForHeldReply();
+            std::unique_lock lock(gateMutex);
+            releasedWithoutTimeout = gateChanged.wait_for(lock, std::chrono::seconds(2), [&] {
+                return returned;
+            });
+            lock.unlock();
+            if (receivedMetadata) {
+                server.ReleaseHeld(false);
+            }
+        });
+        transport->stream = musik::core::audio::StreamState::Playing;
+        transport->StreamEvent.Publish(musik::core::audio::StreamState::Playing, transport->Uri());
+        playbackMessages.Dispatch();
+        {
+            std::lock_guard lock(gateMutex);
+            returned = true;
+            gateChanged.notify_all();
+        }
+        release.join();
+        if (!receivedMetadata || !releasedWithoutTimeout) {
+            return failure(__LINE__);
+        }
+        if (!AwaitTestHost(host,
+                [&] {
+                    playbackMessages.Dispatch();
+                    return !transport->preparedUri.empty();
+                }))
+        {
+            return failure(__LINE__);
+        }
+        service.Stop();
+        transport->PlaybackEvent.Publish(musik::core::audio::PlaybackState::Stopped);
+        playbackMessages.Dispatch();
+        playbackMessages.Dispatch();
+
+        /* stopping, replacement, and the deadline must retire the continuation,
+        even though the network can still deliver the cancelled request's reply. */
+        bool lateMetadata = false;
+        auto metadataObserver = appRemote->QueryCompleted.Subscribe([&](db::IQuery* result) {
+            auto* metadata = dynamic_cast<library::query::TrackMetadataQuery*>(result);
+            if (metadata && metadata->Result() && metadata->Result()->GetId() == startupIds[1]) {
+                lateMetadata = true;
+            }
+        });
+        for (unsigned scenario = 0; scenario < 3; ++scenario) {
+            lateMetadata = false;
+            server.HoldMetadata(startupIds[1]);
+            const auto beforeStarts = transport->starts;
+            if (scenario == 2) {
+                settings->SetInt(prefs::keys::PlaybackTrackQueryTimeoutMs, 100);
+            }
+            const auto requested = Clock::now();
+            if (playback.Play(startup, 1) != MC_OK || !server.WaitForHeldReply()) {
+                return failure(__LINE__);
+            }
+            if (scenario == 0) {
+                service.Stop();
+            }
+            else if (scenario == 1) {
+                if (playback.Play(startup, 0) != MC_OK ||
+                    !AwaitTestHost(host,
+                        [&] {
+                            playbackMessages.Dispatch();
+                            return transport->starts == beforeStarts + 1;
+                        }))
+                {
+                    return failure(__LINE__);
+                }
+            }
+            else {
+                while (Clock::now() - requested < std::chrono::milliseconds(150)) {
+                    playbackMessages.Dispatch();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+            }
+            const auto expectedStarts = beforeStarts + (scenario == 1 ? 1 : 0);
+            if (!server.ReleaseHeld(false) ||
+                !AwaitTestHost(host,
+                    [&] {
+                        playbackMessages.Dispatch();
+                        return lateMetadata;
+                    }) ||
+                transport->starts != expectedStarts)
+            {
+                return failure(__LINE__);
+            }
+            service.Stop();
+        }
+        /* destroying the track list must also suppress a queued reply. */
+        lateMetadata = false;
+        bool destroyedRequestCalled = false;
+        server.HoldMetadata(startupIds[1]);
+        {
+            TrackList tracks(appRemote, startupIds, 2);
+            tracks.GetAsync(1, [&](TrackPtr) {
+                destroyedRequestCalled = true;
+            });
+            if (!server.WaitForHeldReply()) {
+                return failure(__LINE__);
+            }
+        }
+        if (!server.ReleaseHeld(false) ||
+            !AwaitTestHost(host,
+                [&] {
+                    playbackMessages.Dispatch();
+                    return lateMetadata;
+                }) ||
+            destroyedRequestCalled)
+        {
+            return failure(__LINE__);
+        }
+        metadataObserver.Reset();
+        settings->SetInt(prefs::keys::PlaybackTrackQueryTimeoutMs, 30000);
+        transport->PlaybackEvent.Publish(musik::core::audio::PlaybackState::Stopped);
+        playbackMessages.Dispatch();
+        playbackMessages.Dispatch();
+
         /* A lost catalog must clear a buffering track even without a stop event. */
         unsigned trackChanges = 0;
+        const auto bufferingStart = transport->starts;
         const std::vector trackEvents { MC_PLAYBACK_CHANGED_TRACK };
-        if (playback.SetChangedCallback([](void* data, mc_playback_event) {
-                ++*static_cast<unsigned*>(data);
-            }, &trackChanges, trackEvents) != MC_OK ||
-            playback.Play(queueTracks, 0) != MC_OK || transport->Uri().empty())
+        if (playback.SetChangedCallback(
+                [](void* data, mc_playback_event) {
+                    ++*static_cast<unsigned*>(data);
+                },
+                &trackChanges, trackEvents) != MC_OK ||
+            playback.Play(queueTracks, 0) != MC_OK ||
+            !AwaitTestHost(host,
+                [&] {
+                    playbackMessages.Dispatch();
+                    return transport->starts == bufferingStart + 1;
+                }))
         {
             return failure(__LINE__);
         }

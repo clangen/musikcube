@@ -130,7 +130,8 @@ static inline void savePreferences(PlaybackService& playback, Preferences& prefs
 tracks are a special in that they are heavy-weight so aggressively exjected
 from caches... sometimes we may have to query for them. if they take more than
 the specified timeout we consider it a failure and stop playback. */
-#define TRACK_TIMEOUT_MS() (size_t) this->appPrefs->GetInt(keys::PlaybackTrackQueryTimeoutMs, 5000)
+#define TRACK_TIMEOUT_MS()                                                                                             \
+    static_cast<size_t>(std::max<int64_t>(1, this->appPrefs->GetInt(keys::PlaybackTrackQueryTimeoutMs, 30000)))
 
 PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
@@ -190,6 +191,7 @@ void PlaybackService::Shutdown() {
         return;
     }
     this->stopped = true;
+    this->CancelMetadataLoad();
 
     this->transportConnections = {};
     this->indexFinished.Reset();
@@ -200,6 +202,54 @@ void PlaybackService::Shutdown() {
     savePreferences(*this, *playbackPrefs);
     this->lastFm.Stop();
     this->transport->Destroy();
+}
+
+void PlaybackService::CancelMetadataLoad() {
+    this->playlist.CancelPendingLookup();
+    this->messageQueue.Remove(this, MESSAGE_METADATA_TIMEOUT);
+}
+
+void PlaybackService::Stop() {
+    std::lock_guard lock(this->playlistMutex);
+    this->CancelMetadataLoad();
+    this->nextIndex = NO_POSITION;
+    this->transport->Stop();
+}
+
+void PlaybackService::LoadPlaybackMetadata(size_t index, std::function<void()> ready) {
+    this->CancelMetadataLoad();
+    if (this->TrackAtIndexWithTimeout(index)) {
+        ready();
+        return;
+    }
+    if (index >= this->playlist.Count() || this->library->GetType() == LibraryBackend::Type::Local) {
+        return;
+    }
+
+    const auto revision = this->queueRevision;
+    const auto id = this->playlist.GetId(index);
+    this->messageQueue.Post(Message::Create(this, MESSAGE_METADATA_TIMEOUT), TRACK_TIMEOUT_MS());
+    this->playlist.GetAsync(index, [this, index, id, revision, ready = std::move(ready)](TrackPtr track) {
+        std::lock_guard lock(this->playlistMutex);
+        this->messageQueue.Remove(this, MESSAGE_METADATA_TIMEOUT);
+        if (this->stopped || revision != this->queueRevision || index >= this->playlist.Count() ||
+            this->playlist.GetId(index) != id || (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)))
+        {
+            return;
+        }
+        if (track) {
+            ready();
+        }
+        else {
+            musik::debug::warning("PlaybackService", "could not load remote playback metadata");
+        }
+    });
+}
+
+void PlaybackService::PrepareTrack(size_t index) {
+    this->LoadPlaybackMetadata(index, [this, index] {
+        this->transport->PrepareNextTrack(this->UriAtIndex(index), this->GainAtIndex(index));
+    });
 }
 
 void PlaybackService::SelectLibrary(LibraryBackend::Shared library) {
@@ -251,9 +301,7 @@ void PlaybackService::PrepareNextTrack() {
         /* repeat track, just keep playing the same thing over and over */
         if (this->repeatMode == RepeatMode::Track) {
             this->nextIndex = this->index;
-            this->transport->PrepareNextTrack(
-                this->UriAtIndex(this->index),
-                this->GainAtIndex(this->index));
+            this->PrepareTrack(this->index);
         }
         else {
             /* annoying and confusing special case -- the user edited the
@@ -263,27 +311,21 @@ void PlaybackService::PrepareNextTrack() {
                 if (this->playlist.Count() > 0) {
                     this->index = NO_POSITION;
                     this->nextIndex = 0;
-                    this->transport->PrepareNextTrack(
-                        this->UriAtIndex(nextIndex),
-                        this->GainAtIndex(nextIndex));
+                    this->PrepareTrack(nextIndex);
                 }
             }
             /* normal case, just move forward */
             else if (this->playlist.Count() > this->index + 1) {
                 if (this->nextIndex != this->index + 1) {
                     this->nextIndex = this->index + 1;
-                    this->transport->PrepareNextTrack(
-                        this->UriAtIndex(nextIndex),
-                        this->GainAtIndex(nextIndex));
+                    this->PrepareTrack(nextIndex);
                 }
             }
             /* repeat list case, wrap around to the beginning if necessary */
             else if (this->repeatMode == RepeatMode::List) {
                 if (this->nextIndex != 0) {
                     this->nextIndex = 0;
-                    this->transport->PrepareNextTrack(
-                        this->UriAtIndex(nextIndex),
-                        this->GainAtIndex(nextIndex));
+                    this->PrepareTrack(nextIndex);
                 }
             }
             else {
@@ -350,7 +392,11 @@ void PlaybackService::ToggleShuffle() {
 
 void PlaybackService::ProcessMessage(IMessage &message) {
     const int type = message.Type();
-    if (type == MESSAGE_NOTIFY_API_CHANGED) {
+    if (type == MESSAGE_METADATA_TIMEOUT) {
+        this->CancelMetadataLoad();
+        musik::debug::warning("PlaybackService", "remote playback metadata request timed out");
+    }
+    else if (type == MESSAGE_NOTIFY_API_CHANGED) {
         DeliverPlaybackNotification(message);
     }
     else if (type == MESSAGE_LOAD_PLAYBACK_CONTEXT) {
@@ -776,6 +822,14 @@ void PlaybackService::CopyFrom(const TrackList& source) {
 void PlaybackService::PlayAt(size_t index, ITransport::StartMode mode) {
     index = std::min(this->Count(), index);
 
+    this->CancelMetadataLoad();
+    if (this->library->GetType() == LibraryBackend::Type::Remote && !this->TrackAtIndexWithTimeout(index)) {
+        this->LoadPlaybackMetadata(index, [this, index, mode] {
+            this->PlayAt(index, mode);
+        });
+        return;
+    }
+
     std::string uri = this->UriAtIndex(index);
     const auto gain = this->GainAtIndex(index);
 
@@ -907,7 +961,7 @@ TrackPtr PlaybackService::GetTrack(size_t index) {
     {
         return {};
     }
-    return this->playlist.GetWithTimeout(index, TRACK_TIMEOUT_MS() * 10);
+    return this->TrackAtIndexWithTimeout(index);
 }
 
 TrackPtr PlaybackService::GetPlaying() {
@@ -921,13 +975,24 @@ TrackPtr PlaybackService::TrackAtIndexWithTimeout(size_t index) {
         return TrackPtr();
     }
 
-    if (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)) return {};
+    if (this->queueOrigin && !this->MatchesOrigin(*this->queueOrigin)) {
+        return {};
+    }
 
     if (index >= this->playlist.Count()) {
         return TrackPtr();
     }
 
-    return this->playlist.GetWithTimeout(index, TRACK_TIMEOUT_MS());
+    if (auto cached = this->playlist.GetCached(index)) {
+        return cached;
+    }
+    if (this->playingTrack && this->playingTrack->GetId() == this->playlist.GetId(index)) {
+        return this->playingTrack;
+    }
+    /* remote metadata is loaded by LoadPlaybackMetadata(), never by a UI-side getter. */
+    return this->library->GetType() == LibraryBackend::Type::Remote
+        ? TrackPtr {}
+        : this->playlist.GetWithTimeout(index, TRACK_TIMEOUT_MS());
 }
 
 Editor PlaybackService::Edit() {

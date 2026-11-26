@@ -48,6 +48,11 @@ namespace musik { namespace core {
         public:
             TrackList(LibraryBackend::Shared library);
             TrackList(LibraryBackend::Shared library, const int64_t* trackIds, size_t trackIdCount);
+            TrackList(const TrackList&) = delete;
+            TrackList(TrackList&&) = delete;
+
+            TrackList& operator=(const TrackList&) = delete;
+            TrackList& operator=(TrackList&&) = delete;
 
             /* track identities. */
             size_t Count() const noexcept;
@@ -66,6 +71,12 @@ namespace musik { namespace core {
             /* implementation specific */
             TrackPtr Get(size_t index, bool async = false) const;
             TrackPtr GetWithTimeout(size_t index, size_t timeoutMs) const;
+            /* owner-thread lookup. replaces the previous pending lookup. cached
+            results complete immediately; failures deliver an empty track.
+            cancellation or destruction suppresses delivery and cache updates. */
+            void GetAsync(size_t index, std::function<void(TrackPtr)> ready);
+            void CancelPendingLookup() noexcept;
+            TrackPtr GetCached(size_t index) const;
             void ClearCache() noexcept;
             /* Call after outstanding cache reads have settled. */
             void ResetForLibrary(LibraryBackend::Shared library) noexcept;
@@ -102,6 +113,7 @@ namespace musik { namespace core {
 
             std::vector<int64_t> ids;
             LibraryBackend::Shared library;
+            std::shared_ptr<std::function<void(TrackPtr)>> pendingLookup;
     };
 
 } }

@@ -458,6 +458,12 @@ service. Plugins use the C provider ABI and are built with the same release.
   repeated startup stream events do not repeat its track notification, and
   canceling startup clears the track before playback reaches Playing.
 - [x] **PUB-004** Add playback commands and ordered state events.
+  Remote startup and next-track preparation now fetch metadata asynchronously;
+  [ADR-0021](../docs/adr/0021-remote-playback-metadata.md) records the owner-thread
+  and cancellation rules. `musikcore.integration.api.backend_parity` holds a
+  metadata reply until the dispatcher returns and checks late replies after
+  Stop, another selection, deadline expiry, and destruction of the library
+  track list. Validation was run on macOS.
   The app's transport keys and controls use `mc_playback_control`.
   Explicit pause and resume commands are idempotent: pause affects playing
   transport, resume affects paused or prepared transport, and stopped playback

@@ -21,7 +21,7 @@ public:
         }
     }
     /* Ignore prefetch: these tests exercise playback commands and do not produce audio. */
-    void PrepareNextTrack(const std::string&, Gain) override {}
+    void PrepareNextTrack(const std::string& value, Gain) override { preparedUri = value; }
     /* Return the last started URI so the playback service can associate its current track. */
     std::string Uri() override { return uri; }
     /* Model an immediate stopped transport; engine notifications remain under the test's control. */
@@ -31,6 +31,7 @@ public:
     void Stop() override {
         state = PlaybackState::Stopped;
         stream = StreamState::Stopped;
+        preparedUri.clear();
     }
     /* Model a successful pause without asynchronous device work. */
     mc_result Pause() override { state = PlaybackState::Paused; return MC_OK; }
@@ -83,4 +84,5 @@ public:
     bool completeStartupOnStateRead = false;
     StartMode lastStartMode = StartMode::Immediate;
     std::string uri;
+    std::string preparedUri;
 };
