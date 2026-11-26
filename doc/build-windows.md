@@ -32,6 +32,12 @@ Open the generated `musikcube.slnx` (or `musikcube.sln`, depending on your CMake
 
 Both frontends import the C API from the same `musikcore.dll` in their configuration's runtime directory. The corresponding import library is `build/windows-x64/lib/<configuration>/musikcore.lib`.
 
+To build and stage the SDK and runtime plugins for another application, run
+`node script/build-and-stage-sdk.js --output=build/sdk`. The same command works
+on Linux and macOS with their standalone vendor prerequisites. The destination
+is refreshed with the current SDK so obsolete plugins and DLLs do not linger.
+Add `--clean` to clean the SDK build before rebuilding it.
+
 ```powershell
 node .\script\build-vendor-libraries.js --audit-directory .\bin64\Release
 node .\script\build-vendor-libraries.js --audit-directory .\bin64\Debug

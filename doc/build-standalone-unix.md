@@ -96,4 +96,9 @@ After the script has completed you should have a set of "relocatable" binaries i
 
 From the checkout, run `node ./script/build-and-archive.js --version=x.y.z`. The script automatically uses Zig and the sysroot staged in the Zig vendor directory. Use `--sysroot /path/to/sysroot` to override the staged copy. The script audits the Zig vendor libraries before building and checks the packaged ELF files against glibc 2.28.
 
+To build and stage the SDK and runtime plugins for another application, run
+`node ./script/build-and-stage-sdk.js --output=build/sdk`. Add `--clean` to
+clean the SDK build before rebuilding it. The same command works on macOS and
+Windows with their respective vendor prerequisites.
+
 For 32-bit ARM standalone packages, see [Raspberry Pi cross-compilation](crosscompile-rpi.md).
