@@ -226,14 +226,21 @@ namespace musik { namespace core { namespace plugin {
         }
 
         static mc_result MC_CALL Info(void* instance, mc_indexer_source_info* info) noexcept {
+            if (!info || info->struct_size < sizeof(*info)) {
+                return MC_ERROR_INVALID_ARGUMENT;
+            }
             try {
                 static_assert(std::is_lvalue_reference_v<decltype(Source::Key())>,
                     "IndexerSource key must refer to plugin-owned storage");
+                static_assert(std::is_lvalue_reference_v<decltype(Source::Label())>,
+                    "IndexerSource label must refer to plugin-owned storage");
                 const auto& key = Source::Key();
+                const auto& label = Source::Label();
                 auto& source = *static_cast<Source*>(instance);
                 info->source_key = { key.data(), key.size() };
                 info->stable_ids = source.HasStableIds();
                 info->validate_existing_tracks = source.NeedsTrackScan();
+                info->display_name = { label.data(), label.size() };
                 return MC_OK;
             }
             catch (...) {

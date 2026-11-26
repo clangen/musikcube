@@ -36,8 +36,19 @@ namespace {
 
     mc_result MC_CALL info(void*, mc_indexer_source_info* output) {
         output->source_key = { "index-gate", 10 };
+        output->display_name = { "Index fixture", 13 };
         output->stable_ids = 1;
-        output->validate_existing_tracks = 0;
+        const char* mode = std::getenv("MUSIKCORE_TEST_INDEX_MODE");
+        if (mode && std::strcmp(mode, "label-empty") == 0) {
+            output->display_name = { nullptr, 0 };
+        }
+        else if (mode && std::strcmp(mode, "label-invalid") == 0) {
+            output->display_name = { "\xff", 1 };
+        }
+        else if (mode && std::strcmp(mode, "label-long") == 0) {
+            output->display_name = { "oversized", MC_PLUGIN_METADATA_MAX_BYTES + 1 };
+        }
+        output->validate_existing_tracks = mode && std::strcmp(mode, "playlist-validation") == 0;
         return MC_OK;
     }
 
@@ -104,10 +115,26 @@ namespace {
         if (result == MC_OK) {
             result = writer->checkpoint(writer->context, 1);
         }
+        const char* mode = std::getenv("MUSIKCORE_TEST_INDEX_MODE");
+        if (result == MC_OK && mode && std::strcmp(mode, "playlist-validation") == 0) {
+            *decision = MC_INDEXER_SCAN_COMMIT;
+            return MC_OK;
+        }
+        if (result == MC_OK && mode && std::strcmp(mode, "playlist") == 0) {
+            log(source, "waiting");
+            std::unique_lock lock(source.mutex);
+            if (!source.changed.wait_for(lock, std::chrono::seconds(10),
+                    [&] {
+                        return source.interrupted;
+                    }))
+            {
+                return MC_ERROR_PLUGIN;
+            }
+            return MC_ERROR_PLUGIN;
+        }
         if (result == MC_OK) {
             result = save(*writer, "pending");
         }
-        const char* mode = std::getenv("MUSIKCORE_TEST_INDEX_MODE");
         if (result != MC_OK && mode && std::strcmp(mode, "ignore") == 0) {
             /* even a plugin that overlooks a failed write cannot commit it. */
             *decision = MC_INDEXER_SCAN_COMMIT;
@@ -128,7 +155,17 @@ namespace {
         return MC_ERROR_PLUGIN;
     }
 
-    mc_result MC_CALL validate(void*, mc_string_view, const mc_indexer_writer*, mc_error**) {
+    mc_result MC_CALL validate(void* instance, mc_string_view, const mc_indexer_writer*, mc_error**) {
+        auto& source = *static_cast<Source*>(instance);
+        log(source, "waiting");
+        std::unique_lock lock(source.mutex);
+        if (!source.changed.wait_for(lock, std::chrono::seconds(10),
+                [&] {
+                    return source.interrupted;
+                }))
+        {
+            return MC_ERROR_PLUGIN;
+        }
         return MC_OK;
     }
 

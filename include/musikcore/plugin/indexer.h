@@ -83,7 +83,8 @@ typedef struct mc_indexer_writer {
     mc_result (MC_CALL* last_modified)(void* context, mc_string_view external_id, int64_t* modified);
 
     /* commit the current batch and report up to MC_INDEXER_PROGRESS_MAX updates.
-    later rollback cannot undo this checkpoint, so scans must be resumable. */
+    release the write lock until the next mutation. later rollback cannot undo
+    this checkpoint, so scans must be resumable. */
     mc_result (MC_CALL* checkpoint)(void* context, uint64_t updated_tracks);
 } mc_indexer_writer;
 
@@ -103,9 +104,14 @@ typedef struct mc_indexer_source_info {
     /* one if the host should ask the source to validate existing tracks. */
     uint32_t validate_existing_tracks;
 
+    /* nonempty UTF-8 name shown in source selectors, at most
+    MC_PLUGIN_METADATA_MAX_BYTES bytes. plugin-owned; the host copies it
+    after get_info() returns. independent of source_key and plugin metadata. */
+    mc_string_view display_name;
+
 } mc_indexer_source_info;
 
-#define MC_INDEXER_SOURCE_INFO_DEFAULT { sizeof(mc_indexer_source_info), { NULL, 0 }, 0, 0 }
+#define MC_INDEXER_SOURCE_INFO_DEFAULT { sizeof(mc_indexer_source_info), { NULL, 0 }, 0, 0, { NULL, 0 } }
 
 /* a successful scan chooses whether to keep its uncheckpointed writes. */
 typedef uint32_t mc_indexer_scan_decision;

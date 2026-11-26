@@ -184,7 +184,9 @@ int main(void) {
         !visualizer_factory.create, "visualizer factory");
     /* an empty source cannot accidentally write, rescan, or claim an identity. */
     require(writer.struct_size == sizeof(writer) && !writer.create_record && !writer.save, "indexer writer");
-    require(source.struct_size == sizeof(source) && !source.source_key.length && !source.stable_ids, "indexer source");
+    require(source.struct_size == sizeof(source) && !source.source_key.length && !source.stable_ids &&
+            !source.display_name.length,
+        "indexer source");
     require(
         source_host.struct_size == sizeof(source_host) && !source_host.request_rescan && !source_host.schedule_async,
         "indexer source host");

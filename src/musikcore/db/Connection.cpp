@@ -57,15 +57,10 @@ Connection::~Connection() {
 }
 
 int Connection::Open(const std::string &database, unsigned int options, unsigned int cache) {
-    /* SQLite initializes on open. Keep it available for other in-process readers. */
-    int error;
-
-    #ifdef WIN32
-        std::wstring wdatabase = u8to16(database);
-        error = sqlite3_open16(wdatabase.c_str(), &this->connection);
-    #else
-        error = sqlite3_open(database.c_str(), &this->connection);
-    #endif
+    /* private caches let competing catalog writers use the busy timeout.
+    shared-cache table locks return SQLITE_LOCKED without waiting. */
+    const int error = sqlite3_open_v2(database.c_str(), &this->connection,
+        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_PRIVATECACHE, nullptr);
 
     if (error == SQLITE_OK) {
         this->Initialize(cache);
@@ -118,7 +113,6 @@ int Connection::LastModifiedRowCount() noexcept {
 void Connection::Initialize(unsigned int cache) {
     SqliteExtensions::Register(this->connection);
 
-    sqlite3_enable_shared_cache(1);
     sqlite3_busy_timeout(this->connection, 10000);
 
     sqlite3_exec(this->connection, "PRAGMA optimize", nullptr, nullptr, nullptr);           // Optimize the database when applicable

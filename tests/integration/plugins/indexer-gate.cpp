@@ -93,7 +93,42 @@ int main(int argc, char** argv) {
     Indexer indexer(context);
     require(indexer.SetCallback(Events::Index, &events) == MC_OK &&
         indexer.Schedule(MC_INDEXER_SCAN_ALL) == MC_OK, "schedule gated scan");
-    if (cancel) {
+    const bool playlist = std::string_view(argv[1]) == "playlist" ||
+        std::string_view(argv[1]) == "playlist-validation";
+    if (playlist) {
+        wait(context, *event, [&] {
+            return events.waiting;
+        });
+        mc_library* library = nullptr;
+        require(mc_context_get_library(context.Get(), &library) == MC_OK, "get playlist library");
+        bool done = false;
+        mc_result saved = MC_ERROR_BUSY;
+        struct Reply {
+            bool& done;
+            mc_result& status;
+        } reply {
+            .done = done,
+            .status = saved,
+        };
+        mc_request_id request = 0;
+        const auto submitted = Clock::now();
+        require(mc_library_save_playlist_async(
+                    context.Get(), library, 0, { "During scan", 11 }, nullptr, 0,
+                    [](mc_result result, int64_t, const mc_error*, void* data) {
+                        auto& reply = *static_cast<Reply*>(data);
+                        reply.status = result;
+                        reply.done = true;
+                    },
+                    &reply, &request) == MC_OK,
+            "submit empty playlist during paused scan");
+        wait(context, *event, [&] {
+            return done;
+        });
+        require(saved == MC_OK && Clock::now() - submitted < 2s,
+            "checkpoint must release the write lock before slow source i/o");
+        mc_library_destroy(&library);
+    }
+    if (cancel || playlist) {
         wait(context, *event, [&] { return events.waiting; });
         require(indexer.Cancel() == MC_OK, "interrupt active source");
     }

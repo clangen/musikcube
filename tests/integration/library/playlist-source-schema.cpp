@@ -80,7 +80,7 @@ int main() {
     require(sources.Run(database), "list catalog sources");
     const auto rows = sources.GetResult();
     require(std::any_of(rows.begin(), rows.end(), [](const auto& row) {
-        return row.id == 0 && row.label == "Files";
+        return row.id == 0 && row.label == "Music files";
     }), "discover ordinary files");
     require(std::any_of(rows.begin(), rows.end(), [](const auto& row) {
         return row.id == 7 && row.label == "Source 7";

@@ -56,6 +56,7 @@
 #include <atomic>
 #include <set>
 #include <map>
+#include <chrono>
 
 namespace musik { namespace core {
 
@@ -177,6 +178,7 @@ namespace musik { namespace core {
                 const std::string& pathId);
 
             bool Bail() noexcept;
+            void BeginSourceBatch();
 
             db::Connection dbConnection;
             std::string libraryPath;
@@ -199,6 +201,7 @@ namespace musik { namespace core {
             IndexerSourceList sources;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
+            std::chrono::steady_clock::time_point lastBatchCommit;
             bool refreshMetadata { false };
             std::vector<std::string> paths;
             std::shared_ptr<musik::core::plugin::IndexerSource> currentSource;

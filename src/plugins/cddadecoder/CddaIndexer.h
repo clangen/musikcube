@@ -20,6 +20,7 @@ public:
     ~CddaIndexer();
 
     static const std::string& Key();
+    static const std::string& Label();
     void OnBeforeScan();
     void OnAfterScan();
     bool Scan(musik::core::plugin::IndexerWriter* writer, const char** paths, size_t count);

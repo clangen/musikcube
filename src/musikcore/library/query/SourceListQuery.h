@@ -68,7 +68,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
     protected:
         bool OnRun(db::Connection& database) override {
-            std::map<int32_t, std::string> sources { { 0, "Files" } };
+            std::map<int32_t, std::string> sources { { 0, "Music files" } };
             db::Statement statement("SELECT source_id FROM tracks WHERE source_id>=0 "
                 "UNION SELECT source_id FROM playlist_tracks WHERE source_id>=0 "
                 "UNION SELECT source_id FROM playlists WHERE source_id>=0", database);

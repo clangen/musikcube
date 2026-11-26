@@ -39,6 +39,11 @@ CddaIndexer::CddaIndexer(const mc_host_api&, const mc_plugin_services& services)
 
 CddaIndexer::~CddaIndexer() = default;
 
+const std::string& CddaIndexer::Label() {
+    static const std::string label = "Audio CDs";
+    return label;
+}
+
 const std::string& CddaIndexer::Key() {
     static const std::string key = "CD Audio IDecoder, IDataStream";
     return key;

@@ -48,9 +48,17 @@
 
 using namespace musik::core::sdk;
 
+constexpr size_t kMaxBatchFiles = 300;
+constexpr auto kMaxBatchDuration = std::chrono::milliseconds(250);
+
 
 GmeIndexerSource::GmeIndexerSource(const mc_host_api& host, const mc_plugin_services& services)
 : services(host, services) {}
+
+const std::string& GmeIndexerSource::Label() {
+    static const std::string label = "Game music (GME)";
+    return label;
+}
 
 const std::string& GmeIndexerSource::Key() {
     static const std::string key = PLUGIN_NAME;
@@ -61,6 +69,7 @@ const std::string& GmeIndexerSource::Key() {
 
 void GmeIndexerSource::OnBeforeScan() {
     this->filesIndexed = this->tracksIndexed = 0;
+    this->lastCheckpoint = std::chrono::steady_clock::now();
     this->interrupt = false;
     this->paths.clear();
 }
@@ -238,10 +247,12 @@ void GmeIndexerSource::UpdateMetadata(
 
     }
 
-    /* we commit progress every so often */
-    if (++this->filesIndexed % 300 == 0) {
+    /* keep slow reads from extending a batch to the file-count limit. */
+    const auto now = std::chrono::steady_clock::now();
+    if (++this->filesIndexed >= kMaxBatchFiles || now - this->lastCheckpoint >= kMaxBatchDuration) {
         indexer->CommitProgress(std::min<unsigned>(
             bounded_unsigned_sum(this->filesIndexed, this->tracksIndexed), MC_INDEXER_PROGRESS_MAX));
         this->filesIndexed = this->tracksIndexed = 0;
+        this->lastCheckpoint = now;
     }
 }

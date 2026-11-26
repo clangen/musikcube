@@ -37,6 +37,7 @@
 
 #include <musikcore/plugin/indexer.hpp>
 #include <atomic>
+#include <chrono>
 #include <set>
 #include <string>
 
@@ -45,6 +46,7 @@ public:
     OpenMptIndexerSource(const mc_host_api& host, const mc_plugin_services& services);
 
     static const std::string& Key();
+    static const std::string& Label();
 
     void OnBeforeScan();
     void OnAfterScan();
@@ -61,6 +63,7 @@ private:
     musik::core::plugin::IndexerServices services;
     std::set<std::string> invalidFiles;
     std::set<std::string> paths;
+    std::chrono::steady_clock::time_point lastCheckpoint;
     size_t filesIndexed { 0 };
     size_t tracksIndexed { 0 };
     std::atomic<bool> interrupt { false };

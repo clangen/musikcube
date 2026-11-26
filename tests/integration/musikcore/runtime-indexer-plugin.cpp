@@ -31,6 +31,11 @@ namespace {
             return key;
         }
 
+        static const std::string& Label() {
+            static const std::string label = "Runtime fixture";
+            return label;
+        }
+
         void OnBeforeScan() {
             std::lock_guard lock(mutex);
             interrupted = false;

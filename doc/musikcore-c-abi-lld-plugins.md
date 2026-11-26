@@ -465,11 +465,23 @@ cutover gate is complete.
   commit/rollback tables.
   The C source, source-scoped writer, rescan notification, and timestamp
   lookup contracts are implemented; [ADR-0013](../docs/adr/0013-indexer-source-identity-and-checkpoints.md)
-  records the identity and checkpoint decisions. Platform use is accepted by
+  records the identity and checkpoint decisions. Source info now requires an
+  independent UTF-8 display name; experimental indexer plugins must rebuild and
+  supply it. `plugins.indexer_gme` and `plugins.indexer_openmpt` verify published
+  names; `plugins.indexer_label-empty`, `plugins.indexer_label-invalid`, and
+  `plugins.indexer_label-long` reject invalid labels before scanning.
+  Platform use is accepted by
   the maintainer.
 - [x] **IDX-002** Implement adapters and fixture source.
   `plugins.indexer_cancel` and `plugins.indexer_fail` exercise cancellation,
   checkpoints, rollback, and foreign-record rejection through the real runtime.
+  `plugins.indexer_playlist` pauses a source after a checkpoint and creates an
+  empty playlist through the C API before allowing the source to continue. It
+  regressed on the previous implementation, which retained the writer lock.
+  `plugins.indexer_playlist-validation` checks the same boundary while the source
+  validates an existing track; no SQLite read statement spans that callback.
+  Source batches now release that lock at checkpoints; GME/OpenMPT and ordinary
+  file indexing check a 250 ms interval between files as well as the track limit.
   The host uses the C source boundary directly. The provider cancellation
   fixture has been converted to exercise the same boundary. The C++ registration
   helper receives the plugin-specific host through instance services;

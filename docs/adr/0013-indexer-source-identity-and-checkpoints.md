@@ -21,12 +21,33 @@ every indexer startup resolve a historical identity mapping.
 Give each source a writer scoped to its own scan and records. It can save and
 remove its tracks, inspect their stored modification times, and commit a
 checkpoint; it cannot issue arbitrary SQL or address another source's tracks.
+Each source also supplies a nonempty UTF-8 display name, independently of its
+stable key and the plugin's decoder metadata. The host validates and copies the
+name before publishing source lists; changing it does not change persistent IDs.
+Source selectors show that name locally and over the library protocol. The
+built-in file source is named "Music files".
+
 Keep existing modification-time values in the source's units and epoch, and
 report a missing value separately from a negative timestamp.
 
 A checkpoint commits the current batch. Cancellation, a provider failure, or
 an indexer writer's i/o or internal error rolls back the uncommitted batch;
-earlier checkpoints remain.
+earlier checkpoints remain. A checkpoint ends the transaction and releases its
+write lock; the next mutation starts another batch. Source startup and filesystem
+reads after a checkpoint do not reserve the database writer. The built-in GME
+and OpenMPT sources checkpoint after a short elapsed interval or their record
+limit, whichever is reached first. The interval is checked between files, so one
+slow file can exceed it. Ordinary file indexing also checks elapsed time between
+completed files while retaining its batched writes. Existing-track validation
+releases each read statement before calling the source and checkpoints mutations
+between entries, so filesystem checks do not retain a catalog reader or reserve
+its writer.
+
+Use private SQLite caches for catalog connections. Competing writes can wait
+through the busy handler instead of failing immediately on shared-cache table
+locks. This leaves SQLite responsible for writer exclusion and avoids adding
+application locks around network or plugin calls.
+
 A provider can request another scan through a source-scoped host service. Stop
 its worker and destroy the source instance before unloading its plugin.
 

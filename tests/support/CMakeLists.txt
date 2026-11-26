@@ -640,7 +640,7 @@ endif()
 add_dependencies(musikcore_indexer_gate_test musikcore_indexer_gate)
 add_dependencies(musikcube_tests musikcore_indexer_gate_test)
 add_dependencies(musikcube_integration_tests musikcore_indexer_gate_test)
-foreach(mode IN ITEMS cancel fail database ignore)
+foreach(mode IN ITEMS cancel fail database ignore playlist playlist-validation)
   add_test(NAME musikcore.integration.plugins.indexer_${mode}
     COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
     "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_indexer_gate_test>" --stage
@@ -660,6 +660,20 @@ add_test(NAME musikcore.integration.plugins.indexer_create-fail
     -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-indexer-source-fatal.cmake")
 set_tests_properties(musikcore.integration.plugins.indexer_create-fail PROPERTIES
   LABELS "integration;musikcore;plugins;indexer;contract" TIMEOUT 30)
+
+foreach(mode IN ITEMS label-empty label-invalid label-long)
+  add_test(NAME musikcore.integration.plugins.indexer_${mode}
+    COMMAND "${CMAKE_COMMAND}"
+      "-DNODE=${MUSIKCORE_TEST_NODE}"
+      "-DRUNNER=${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+      "-DROOT=${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+      "-DTEST_BINARY=$<TARGET_FILE:musikcore_indexer_gate_test>"
+      "-DPLUGIN=$<TARGET_FILE:musikcore_indexer_gate>"
+      "-DMODE=${mode}"
+      -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-indexer-source-fatal.cmake")
+  set_tests_properties(musikcore.integration.plugins.indexer_${mode} PROPERTIES
+    LABELS "integration;musikcore;plugins;indexer;contract" TIMEOUT 30)
+endforeach()
 
 if(TARGET gmedecoder OR TARGET openmptdecoder OR TARGET libopenmptdecoder)
   add_executable(musikcore_indexer_providers_test

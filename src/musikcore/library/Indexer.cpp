@@ -70,6 +70,7 @@
 
 constexpr const char* TAG = "Indexer";
 constexpr size_t TRANSACTION_INTERVAL = 300;
+constexpr auto MAX_BATCH_DURATION = std::chrono::milliseconds(250);
 static FILE* logFile = nullptr;
 
 #ifdef __arm__
@@ -402,14 +403,19 @@ void Indexer::Synchronize(const SyncContext& context, asio::io_context* io) {
             it->OnAfterScan();
             break;
         }
-        if (this->SyncSource(it.get(), paths) == musik::core::ScanRollback) {
+        if (this->SyncSource(it.get(), paths) == musik::core::ScanRollback && this->trackTransaction) {
             this->trackTransaction->Cancel();
         }
         {
             std::lock_guard lock(this->stateMutex);
             this->currentSource.reset();
         }
-        this->trackTransaction->CommitAndRestart();
+        if (this->trackTransaction) {
+            this->trackTransaction->CommitAndRestart();
+        }
+        else {
+            this->BeginSourceBatch();
+        }
 
         if (sourceId != 0) {
             break; /* done with the one we were asked to scan */
@@ -570,8 +576,12 @@ inline void Indexer::IncrementTracksScanned(int delta) {
     const int interval = prefs->GetInt(
         prefs::keys::IndexerTransactionInterval, TRANSACTION_INTERVAL);
 
-    if (this->incrementalUrisScanned > std::max(1, interval)) {
-        this->trackTransaction->CommitAndRestart();
+    const auto now = std::chrono::steady_clock::now();
+    if (this->incrementalUrisScanned >= std::max(1, interval) || now - this->lastBatchCommit >= MAX_BATCH_DURATION) {
+        if (this->trackTransaction) {
+            this->trackTransaction->CommitAndRestart();
+        }
+        this->lastBatchCommit = now;
         this->Progress.Publish(this->totalUrisScanned);
         this->incrementalUrisScanned = 0;
     }
@@ -664,6 +674,9 @@ musik::core::ScanResult Indexer::SyncSource(
         /* now tell it to do a wide-open scan. it can use this opportunity to
         remove old tracks, or add new ones. */
         try {
+            /* finish setup before entering plugin code that may read slow files.
+            the first mutation starts a new batch. */
+            this->trackTransaction.reset();
             result = source->Scan(this, pathsList, (unsigned int) paths.size());
         }
         catch (...) {
@@ -681,15 +694,29 @@ musik::core::ScanResult Indexer::SyncSource(
         {
             if (result == musik::core::ScanCommit && !this->Bail() && source->NeedsTrackScan()) {
                 db::Statement tracks(
-                    "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
+                    "SELECT id, filename, external_id FROM tracks WHERE source_id=? AND id>? ORDER BY id LIMIT 1",
                     this->dbConnection);
-
-                tracks.BindInt32(0, source->SourceId());
-                while (!this->Bail() && tracks.Step() == db::Row) {
+                int64_t previousId = 0;
+                while (!this->Bail()) {
+                    tracks.BindInt32(0, source->SourceId());
+                    tracks.BindInt64(1, previousId);
+                    if (tracks.Step() != db::Row) {
+                        break;
+                    }
+                    previousId = tracks.ColumnInt64(0);
                     if (logFile) {
                         fprintf(logFile, "    - %s\n", tracks.ColumnText(1));
                     }
-                    source->ScanTrack(this, tracks.ColumnText(2));
+                    const std::string externalId = tracks.ColumnText(2);
+                    /* release the read statement before plugin i/o or writes.
+                    keyset traversal also permits removing the current track. */
+                    tracks.ResetAndUnbind();
+                    source->ScanTrack(this, externalId.c_str());
+                    if (this->trackTransaction &&
+                        std::chrono::steady_clock::now() - this->lastBatchCommit >= MAX_BATCH_DURATION)
+                    {
+                        this->CommitProgress(source, 0);
+                    }
                 }
             }
         }
@@ -754,6 +781,7 @@ void Indexer::ThreadLoop() {
 
         const auto previousErrors = this->dbConnection.ErrorCount();
         this->trackTransaction = std::make_shared<db::ScopedTransaction>(this->dbConnection);
+        this->lastBatchCommit = std::chrono::steady_clock::now();
 
         /* Earlier batches may have committed file times before a later
         metadata write failed. Pending migrations revisit those tracks too. */
@@ -1201,6 +1229,13 @@ std::unique_ptr<IndexerTrack> Indexer::CreateWriter() {
     return std::make_unique<IndexerTrack>(0);
 }
 
+void Indexer::BeginSourceBatch() {
+    if (!this->trackTransaction) {
+        this->trackTransaction = std::make_shared<db::ScopedTransaction>(this->dbConnection);
+        this->lastBatchCommit = std::chrono::steady_clock::now();
+    }
+}
+
 bool Indexer::Save(musik::core::plugin::IndexerSource* source, IndexerTrack* track, const char* externalId) {
     if (!source || source->SourceId() == 0 || !track || !externalId || !*externalId) {
         return false;
@@ -1208,6 +1243,7 @@ bool Indexer::Save(musik::core::plugin::IndexerSource* source, IndexerTrack* tra
     track->SetValue(constants::Track::EXTERNAL_ID, externalId);
     track->SetValue(constants::Track::SOURCE_ID, std::to_string(source->SourceId()).c_str());
     const auto errors = this->dbConnection.ErrorCount();
+    this->BeginSourceBatch();
     const bool saved = track->Save(this->dbConnection, this->libraryPath);
     return saved && this->dbConnection.ErrorCount() == errors;
 }
@@ -1221,6 +1257,7 @@ bool Indexer::RemoveByUri(musik::core::plugin::IndexerSource* source, const char
         return false;
     }
 
+    this->BeginSourceBatch();
     db::Statement stmt(
         "DELETE FROM tracks WHERE source_id=? AND filename=?",
         this->dbConnection);
@@ -1240,6 +1277,7 @@ bool Indexer::RemoveByExternalId(musik::core::plugin::IndexerSource* source, con
         return false;
     }
 
+    this->BeginSourceBatch();
     db::Statement stmt(
         "DELETE FROM tracks WHERE source_id=? AND external_id=?",
         this->dbConnection);
@@ -1256,7 +1294,11 @@ int Indexer::RemoveAll(musik::core::plugin::IndexerSource* source) {
     }
 
     const auto id = source->SourceId();
-    return (id != 0) ? this->RemoveAllForSourceId(id) : 0;
+    if (id != 0) {
+        this->BeginSourceBatch();
+        return this->RemoveAllForSourceId(id);
+    }
+    return 0;
 }
 
 int Indexer::RemoveAllForSourceId(int sourceId) {
@@ -1269,11 +1311,12 @@ int Indexer::RemoveAllForSourceId(int sourceId) {
 }
 
 void Indexer::CommitProgress(musik::core::plugin::IndexerSource* source, unsigned updatedTracks) {
-    if (!source || !this->currentSource || this->currentSource->SourceId() != source->SourceId() || !trackTransaction) {
+    if (!source || !this->currentSource || this->currentSource->SourceId() != source->SourceId()) {
         throw std::runtime_error("indexer checkpoint is outside an active source scan");
     }
     const auto errors = this->dbConnection.ErrorCount();
-    trackTransaction->CommitAndRestart();
+    this->trackTransaction.reset();
+    this->lastBatchCommit = std::chrono::steady_clock::now();
     if (this->dbConnection.ErrorCount() != errors) {
         throw std::runtime_error("indexer checkpoint failed");
     }

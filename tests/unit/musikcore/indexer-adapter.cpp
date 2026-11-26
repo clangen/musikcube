@@ -17,6 +17,10 @@ static_assert(!CanRegisterEncoder<mc_encoder_factory&&>::value);
 struct TestSource {
     explicit TestSource(const mc_host_api& host, const mc_plugin_services&) : host(&host) {}
     static const std::string& Key() { static const std::string key = "test"; return key; }
+    static const std::string& Label() {
+        static const std::string label = "Test music";
+        return label;
+    }
     void OnBeforeScan() {}
     void OnAfterScan() {}
     bool Scan(musik::core::plugin::IndexerWriter*, const char**, size_t) { return true; }
@@ -67,6 +71,20 @@ int main() {
     if (!firstFactory || !secondFactory ||
         firstFactory->create(firstFactory->context, &firstServices, &firstSource, nullptr) != MC_OK ||
         secondFactory->create(secondFactory->context, &secondServices, &secondSource, nullptr) != MC_OK) {
+        return EXIT_FAILURE;
+    }
+    mc_indexer_source_info truncated = MC_INDEXER_SOURCE_INFO_DEFAULT;
+    truncated.struct_size = offsetof(mc_indexer_source_info, display_name);
+    if (firstFactory->instance_api->get_info(firstSource, nullptr) != MC_ERROR_INVALID_ARGUMENT ||
+        firstFactory->instance_api->get_info(firstSource, &truncated) != MC_ERROR_INVALID_ARGUMENT ||
+        truncated.source_key.length != 0)
+    {
+        return EXIT_FAILURE;
+    }
+    mc_indexer_source_info info = MC_INDEXER_SOURCE_INFO_DEFAULT;
+    if (firstFactory->instance_api->get_info(firstSource, &info) != MC_OK ||
+        std::string(info.display_name.data, info.display_name.length) != "Test music")
+    {
         return EXIT_FAILURE;
     }
     const bool correct = static_cast<TestSource*>(firstSource)->host == &first &&

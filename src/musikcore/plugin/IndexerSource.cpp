@@ -190,8 +190,7 @@ namespace musik { namespace core { namespace plugin {
     , services MC_PLUGIN_SERVICES_DEFAULT
     , sourceHost MC_PLUGIN_INDEXER_SERVICE_DEFAULT
     , dataDirectory(GetDataDirectory())
-    , pluginId(pluginId)
-    , label(name) {
+    , pluginId(pluginId) {
         /* the source may retain these services until its instance is destroyed. */
         this->services.preferences = &this->preferences;
         this->services.data_directory = { this->dataDirectory.data(), this->dataDirectory.size() };
@@ -225,12 +224,16 @@ namespace musik { namespace core { namespace plugin {
                 if (inspected != MC_OK || info.struct_size < sizeof(info) ||
                     info.source_key.length > MC_PLUGIN_METADATA_MAX_BYTES || !ffi::valid_text(info.source_key, false) ||
                     !utf8::is_valid(info.source_key.data, info.source_key.data + info.source_key.length) ||
-                    info.stable_ids > 1 || info.validate_existing_tracks > 1)
+                    info.stable_ids > 1 || info.validate_existing_tracks > 1 ||
+                    info.display_name.length > MC_PLUGIN_METADATA_MAX_BYTES ||
+                    !ffi::valid_text(info.display_name, false) ||
+                    !utf8::is_valid(info.display_name.data, info.display_name.data + info.display_name.length))
                 {
                     return MC_ERROR_PLUGIN;
                 }
 
                 this->sourceKey.assign(info.source_key.data, info.source_key.length);
+                this->label.assign(info.display_name.data, info.display_name.length);
                 this->sourceId = library::IndexerSourceId(this->pluginId, this->sourceKey);
                 this->stableIds = info.stable_ids != 0;
                 this->validateTracks = info.validate_existing_tracks != 0;

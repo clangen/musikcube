@@ -49,7 +49,7 @@ namespace runtime_tests {
     }
 
     /* migrate without Indexer, then exit while the required scan remains pending.
-    a current-schema fixture with an older version exercises the real v6->v11
+    a current-schema fixture with an older version exercises the real v6->v12
     migration path without duplicating its full historical schema in tests. */
     bool prepareMigration() {
         auto options = mc_context_options MC_CONTEXT_OPTIONS_DEFAULT;
@@ -67,7 +67,7 @@ namespace runtime_tests {
                 return false;
             }
         }
-        return TEST_CHECK(readMigrationValue("SELECT version FROM version") == 11) &&
+        return TEST_CHECK(readMigrationValue("SELECT version FROM version") == 12) &&
             TEST_CHECK(readMigrationValue("SELECT count(*) FROM pending_migration_scan") == 1);
     }
 
