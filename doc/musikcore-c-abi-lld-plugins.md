@@ -371,15 +371,26 @@ behavior complete. Those remain the unchecked tasks above.
   passing platform results. This completes the bootstrap scope; typed providers,
   application-facing C-provider catalog/settings integration, and decoder migration
   are not claimed complete.
-- [ ] **SDK-LINUX** Run lifecycle, installed-provider/export checks, shared-runtime
+- [x] **SDK-LINUX** Run lifecycle, installed-provider/export checks, shared-runtime
   restart, and ASan/UBSan on native Linux. Verify ELF visibility, loader search
   paths, and actual `dlclose` after workers/instances finish, including passive
   capability views that must not delay unload. Linux ASan/UBSan lifecycle,
   discovery, installed-provider, output and remote lifecycle checks passed with
   isolated provider fixtures. Loading the host's system FFmpeg dependency also
   loads `libgomp`; a standalone `dlopen()`/`dlclose()` of that system library
-  reproduces a 104-byte LeakSanitizer report. Resolve or explicitly accept this
-  environment-specific sanitizer limitation before closing the gate.
+  reproduces a 104-byte LeakSanitizer report. On 2026-11-26 the maintainer
+  accepted this external-library limitation for the gate. The dependency chain
+  is system FFmpeg to `libsoxr` to `libgomp`.
+  On 2026-11-26, native Arch Linux x86-64 at code commit `e0e63ae38`
+  passed provider lifecycle, playback reload, playback-remote lifecycle,
+  installed SDK, frontend boundary, and configured binary export tests in a
+  system-compiler build without an explicit CMake build type. Installed-provider,
+  discovery, shared-runtime restart, and passive-view unload checks also passed.
+  A native GCC Debug ASan/UBSan build passed sanitizer probes, lifecycle,
+  discovery, output host, installed-provider, shared-runtime, null-output and
+  playback-remote tests with leak detection enabled. Playback reload failed during
+  fixture setup on the accepted 104-byte system-library leak, then passed with
+  `ASAN_OPTIONS=detect_leaks=0`; address and undefined-behavior checks stayed on.
 - [ ] **SDK-WINDOWS** Run the same provider checks on native Windows. Verify cdecl
   function tables, DLL exports/imports/search paths, and UTF-8/Unicode filenames.
   The intentionally missing-entry fixture must not advertise the provider export.
@@ -410,7 +421,9 @@ cutover gate is complete.
   The server transcode tests exercise the real factory on macOS.
 - [x] **ENC-004** Convert `stockencoders`. `server.transcode_body` covers
   flush and output failure, and `api.remote_transcode` exercises the real
-  MP3 and FFmpeg providers on macOS. Windows and Linux remain to be verified.
+  MP3 and FFmpeg providers on macOS. Windows remains to be verified.
+  Native Linux `server.transcode_body` and all five `api.remote_transcode.*`
+  cases passed on 2026-11-26 at code commit `e0e63ae38`.
 - [x] **DST-001** Define data-stream factory capability and creation tables.
 - [x] **DST-002** Implement data-stream factory adapters and fixtures.
 - [x] **DST-003** Convert `httpdatastream` alongside local file and FFmpeg
@@ -554,8 +567,12 @@ cutover gate is complete.
   output provider using an appropriate device or deterministic fixture. Null,
   WASAPI, ALSA, DirectSound and PortAudio already use them. CoreAudio, PulseAudio
   and PipeWire are now wired into the shared checks as well. CoreAudio and
-  PortAudio passed on macOS in Debug/Release and Release respectively; native
-  Linux/Windows runs and sndio shared-contract coverage remain open.
+  PortAudio passed on macOS in Debug/Release and Release respectively.
+  Native Linux ALSA, PulseAudio and PipeWire fixture and runtime tests passed
+  on 2026-11-26 at code commit `e0e63ae38`. `plugins.sndio_output` runs the
+  shared contract against the loadable sndio provider and a deterministic
+  device fixture on Linux; it passed in the system build and Debug ASan/UBSan.
+  Native Windows shared-contract runs remain open.
 - [x] **OUT-004** Convert `nullout` as the first production output.
   - [x] Ship a C-only shared library with synchronous, interruptible producer pacing.
     `plugins.null_output` exercises its factory/instances and native unload;
@@ -630,6 +647,8 @@ cutover gate is complete.
   sndio without `sio_flush()`, a seek uses the host's stop-and-reprepare path;
   closing the device can drain queued audio and delay stop or seek. The
   `plugins.sndio_no_flush` and `plugins.output_host` tests cover this fallback.
+  `plugins.sndio_output` exercises the shared output contract using a Linux
+  device fixture; it does not resolve the intermittent physical-output silence.
 - [ ] **OUT-011** Validate the converted Windows `directsoundout`.
   The provider registers a C output factory; `plugins.directsound_output` and
   `plugins.directsound_ring` are present. Native Windows execution remains open.
@@ -665,8 +684,9 @@ cutover gate is complete.
 - [x] **DSP-002** Convert `supereqdsp`. `plugins.dsp_processing` checks two
   active processors created by the media host and live equalizer changes on macOS.
   `plugins.dsp_failure` verifies that a partly modified buffer is discarded.
-  Windows and Linux
-  remain to be verified.
+  Windows remains to be verified.
+  Native Linux `plugins.dsp_processing`, `plugins.analyzer`, and
+  `plugins.analyzer_cancel` passed on 2026-11-26 at code commit `e0e63ae38`.
 - [x] Implement the analyzer factory and metadata writer on the indexer worker.
   `plugins.analyzer` checks real indexing with successful and failing C
   providers. Analyzer changes for a track are saved only when all participants
@@ -674,8 +694,8 @@ cutover gate is complete.
   call to return. `plugins.analyzer_cancel` covers cancellation and shutdown
   during blocked stream open. The analyzer currently uses the internal Stream
   pipeline over the C stream and decoder primitives. Reassess that remaining
-  C++ interface when consolidating decoded-audio consumers. Windows and Linux
-  remain to be verified.
+  C++ interface when consolidating decoded-audio consumers. Windows remains to
+  be verified.
 - [x] **EXT-001** Design schema/configuration descriptors as data. The C
   settings descriptors and scoped preference services are implemented;
   `api.uri_player` exercises their application-facing reads and writes.
@@ -717,8 +737,8 @@ cutover gate is complete.
   `api.managed_remote` checks local and remote identities and cancellation.
   The lifecycle and stop-order tests passed under ThreadSanitizer on macOS and
   ordinary Linux integration tests passed in the current run. Native Windows
-  behavior is accepted based on platform use; Linux sanitizer checks remain
-  under SDK-LINUX.
+  behavior is accepted based on platform use; Linux sanitizer evidence is
+  recorded under SDK-LINUX.
 - [x] **EXT-004** Validate migrated server integration through the C interfaces.
   Server media helpers consume the C media and scratch-buffer services directly;
   `server.transcode_body` and `api.remote_transcode` cover that path on macOS.
@@ -865,4 +885,4 @@ replace the separate native-platform acceptance checks.
   `BUILD_TESTING=OFF` builds, installed consumer/provider checks, and a full
   Zig/glibc 2.28 standalone dependency scan passed. The maintainer accepts
   Windows and macOS platform use; these platforms were not rebuilt in this run.
-  The separate SDK-LINUX sanitizer limitation remains open.
+  The separate SDK-LINUX sanitizer limitation is accepted as recorded above.

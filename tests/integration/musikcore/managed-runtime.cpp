@@ -675,7 +675,7 @@ namespace {
                                 json::parse(response.at("options").at("raw_query_data").template get<std::string>());
                             bool files = false;
                             for (const auto& source : raw.at("result")) {
-                                files |= source.at("id") == 0 && source.at("label") == "Files";
+                                files |= source.at("id") == 0 && source.at("label") == "Music files";
                             }
                             if (!files) {
                                 finish(false);

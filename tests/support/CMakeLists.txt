@@ -1341,6 +1341,17 @@ if(UNIX AND TARGET sndioout)
     COMMAND musikcore_sndio_devices_test "$<TARGET_FILE:sndioout>")
   set_tests_properties(musikcore.integration.plugins.sndio_devices PROPERTIES
     LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_library(musikcore_sndio_device_fixture SHARED plugins/sndio-device.cpp)
+    set_target_properties(musikcore_sndio_device_fixture PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/sndio")
+    add_dependencies(musikcore_sndio_devices_test musikcore_sndio_device_fixture)
+    add_test(NAME musikcore.integration.plugins.sndio_output
+      COMMAND musikcore_sndio_devices_test "$<TARGET_FILE:sndioout>"
+        "$<TARGET_FILE:musikcore_sndio_device_fixture>")
+    set_tests_properties(musikcore.integration.plugins.sndio_output PROPERTIES
+      LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
+  endif()
 endif()
 
 if((CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE OR WIN32) AND TARGET projectm)

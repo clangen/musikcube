@@ -1,5 +1,6 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/output.h>
+#include "../../support/plugins/OutputContract.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -31,7 +32,12 @@ namespace {
 }
 
 int main(int argc, char** argv) {
-    require(argc == 2, "plugin path supplied");
+    require(argc == 2 || argc == 3, "plugin path supplied");
+    void* fixture = nullptr;
+    if (argc == 3) {
+        fixture = dlopen(argv[2], RTLD_NOW | RTLD_GLOBAL);
+        require(fixture, "load device fixture");
+    }
     void* library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
     require(library, "load plugin");
     auto entry = reinterpret_cast<mc_plugin_get_api_fn>(dlsym(library, "mc_plugin_get_api"));
@@ -50,6 +56,19 @@ int main(int argc, char** argv) {
         "device enumeration does not duplicate the host's default option");
     require(output->read_default_device(output->context, countDevice, &devices) == MC_OK && devices == 1,
         "default device remains discoverable");
+    if (argc == 3) {
+        auto opens = reinterpret_cast<unsigned (*)()>(dlsym(RTLD_DEFAULT, "musikcore_test_sndio_opens"));
+        require(opens, "device fixture loaded");
+        mc_output_options options = MC_OUTPUT_OPTIONS_DEFAULT;
+        options.format.sample_rate = 48000;
+        options.format.channels = 2;
+        options.queue_capacity_frames = 512;
+        output_contract::Check(*output, nullptr, options);
+        require(opens() == 2, "device fixture handled both preparations");
+    }
     plugin.shutdown(state);
     dlclose(library);
+    if (fixture) {
+        dlclose(fixture);
+    }
 }

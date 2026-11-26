@@ -151,6 +151,13 @@ External C decoder build/load checks (PKG-003/PKG-004) are tracked with the
   `musikcore.integration.runtime.indexer_provider_cancel` on native Linux and
   Windows, together with public-header, exported-symbol and installed C/C++
   consumer checks. No new Linux/Windows scope acceptance is claimed by that exception.
+  Native Arch Linux x86-64, code commit `e0e63ae38` plus the corrected
+  `remote_audio` test expectation, passed all seven named scope tests on
+  2026-11-26, along with the public-header, ABI export and installed SDK tests.
+  The initial `remote_audio` run exposed a stale `Files` label expectation;
+  it passed after updating the expectation to `Music files`. This build used
+  the system compiler with no explicit CMake build type; Windows and final
+  release artifact acceptance remain open.
 - [ ] **FIN-009** Freeze and publish the export allowlist and public layout
   baseline after the library query scope contract and acceptance are complete.
   Include the renamed plugin service tables and indexer/playback service layout
