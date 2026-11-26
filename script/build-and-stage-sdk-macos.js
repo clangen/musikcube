@@ -1,4 +1,4 @@
-/* build and stage the sibling musikcube SDK for the Rust bindings and example.
+/* build and stage this checkout's SDK for external consumers.
 keep compiler selection in musikcube's shared profile and dependencies beside
 its runtime so the Rust app does not need Homebrew libraries at launch. */
 const { spawnSync } = require('child_process');
@@ -9,12 +9,11 @@ if (process.platform !== 'darwin') {
   throw new Error('This staging entry point is for native macOS. See README.md for Linux.');
 }
 
-const project = resolve(__dirname, '..');
-const source = resolve(process.env.MUSIKCUBE_SOURCE || join(project, '../../musikcube'));
-const build = join(source, 'build/egui-sdk-release');
+const source = resolve(__dirname, '..');
+const build = resolve(process.env.MUSIKCORE_SDK_BUILD || join(source, 'build/sdk-macos'));
 const runtime = join(build, 'bin');
-const sdk = join(project, 'sdk');
-const log = join(project, 'build/sdk-stage.log');
+const sdk = resolve(process.env.MUSIKCORE_SDK_OUTPUT || join(source, 'build/sdk'));
+const log = join(build, 'sdk-stage.log');
 const { buildArchiveConfiguration } = require(join(source, 'script/unix-build-config'));
 const config = buildArchiveConfiguration(dirname(source));
 mkdirSync(dirname(log), { recursive: true });
