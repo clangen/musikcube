@@ -38,7 +38,9 @@
 #include <musikcore/plugin/TagReader.h>
 #include <musikcore/plugin/IndexerSource.h>
 
-#include <musikcore/library/IIndexer.h>
+#include <musikcore/subscriptions.hpp>
+#include <cstdint>
+#include <utility>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/ThreadGroup.h>
 
@@ -61,27 +63,41 @@ namespace musik { namespace core {
 
     namespace audio { class Stream; }
 
-    class Indexer :
-        public musik::core::IIndexer
-    {
+    /* owns the local catalog's indexing worker and provider sources. callers
+    schedule work here and observe progress through its notifications; remote
+    libraries have no indexer. */
+    class Indexer final {
         public:
+            enum State {
+                StateIdle = 0,
+                StateIndexing = 1,
+                StateStopping = 2,
+                StateStopped = 3
+            };
+
+            enum class SyncType {
+                All = 0,
+                Local = 1,
+                Rebuild = 2,
+                Sources = 3
+            };
+
             Indexer(
                 const std::string& libraryPath,
                 const std::string& dbFilename);
 
             Indexer(const Indexer&) = delete;
 
-            virtual ~Indexer();
+            ~Indexer();
 
-            /* IIndexer */
-            void AddPath(const std::string& path) override;
-            void RemovePath(const std::string& path) override;
-            void GetPaths(std::vector<std::string>& paths) override;
-            void Schedule(SyncType type) override;
-            void Cancel() override;
-            void Shutdown() override;
+            void AddPath(const std::string& path);
+            void RemovePath(const std::string& path);
+            void GetPaths(std::vector<std::string>& paths);
+            void Schedule(SyncType type);
+            void Cancel();
+            void Shutdown();
 
-            State GetState() noexcept override {
+            State GetState() noexcept {
                 return this->state;
             }
 
@@ -99,6 +115,12 @@ namespace musik { namespace core {
 
             bool ScheduleRescan(musik::core::plugin::IndexerSource* source);
             void StartPendingSourceScans();
+            std::vector<std::pair<int32_t, std::string>> GetSources() const { return this->sourceDescriptions; }
+
+            api::Subscriptions<> Started;
+            api::Subscriptions<int> Finished;
+            api::Subscriptions<int> Cancelled;
+            api::Subscriptions<int> Progress;
 
         private:
             struct AddRemoveContext {
@@ -158,6 +180,7 @@ namespace musik { namespace core {
 
             db::Connection dbConnection;
             std::string libraryPath;
+            std::vector<std::pair<int32_t, std::string>> sourceDescriptions;
             std::string dbFilename;
             std::atomic<State> state;
             std::atomic<bool> cancelRequested { false };

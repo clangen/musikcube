@@ -1,3 +1,6 @@
+#include <musikcore/library/Indexer.h>
+#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/query/SourceListQuery.h>
 #include "runtime-hardening-cases.h"
 #include "../../support/ApiHost.h"
 #include "../../support/check.h"
@@ -130,7 +133,39 @@ namespace runtime_tests {
         const bool drained = AwaitTestHost(host, [&] {
             return context.Dispatch() == MC_OK && events.cancelled == 1 && events.finished == 1;
         });
-        return TEST_CHECK(drained) && TEST_CHECK(fenced());
+        if (!TEST_CHECK(drained) || !TEST_CHECK(fenced())) {
+            return false;
+        }
+        /* source discovery can be constructed after shutdown. it must retain
+        descriptions for loaded providers even when they had no catalog rows. */
+        auto library = LibraryFactory::Instance().DefaultLocalLibrary();
+        const auto sources = library->Sources();
+        if (!TEST_CHECK(!sources.empty())) {
+            return false;
+        }
+        started.Reset();
+        if (!TEST_CHECK(context.Shutdown() == MC_OK)) {
+            return false;
+        }
+        db::Connection database;
+        if (!TEST_CHECK(database.Open(":memory:") == db::Okay)) {
+            return false;
+        }
+        library::LocalLibrary::CreateDatabase(database);
+        library::query::SourceListQuery discovery(library);
+        if (!TEST_CHECK(discovery.Run(database))) {
+            return false;
+        }
+        for (const auto& source : sources) {
+            if (!TEST_CHECK(std::any_of(discovery.GetResult().begin(), discovery.GetResult().end(),
+                    [&](const auto& entry) {
+                        return entry.id == source.first && entry.label == source.second;
+                    })))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     /* exercise cancellation admission, queue ordering, terminal state, reuse, and shutdown. */
@@ -161,7 +196,7 @@ namespace runtime_tests {
         });
         std::atomic<bool> idleAtTerminal { true };
         auto cancelled = native->Cancelled.Subscribe([&](int) {
-            if (native->GetState() != IIndexer::StateIdle) {
+            if (native->GetState() != musik::core::Indexer::StateIdle) {
                 idleAtTerminal = false;
             }
         });

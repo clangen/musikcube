@@ -34,6 +34,8 @@
 
 #include "pch.hpp"
 #include "AlbumListQuery.h"
+#include <musikcore/plugin/library_query_names.h>
+#include "util/SourcePredicate.h"
 
 #include <musikcore/db/Statement.h>
 #include <musikcore/library/LocalLibraryConstants.h>
@@ -53,7 +55,7 @@ using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
 using namespace musik::core::library::constants;
 
-const std::string AlbumListQuery::kQueryName = "AlbumListQuery";
+const std::string AlbumListQuery::kQueryName = MC_LIBRARY_QUERY_ALBUMS;
 
 AlbumListQuery::AlbumListQuery(const std::string& filter)
 : AlbumListQuery(category::PredicateList(), filter)
@@ -100,6 +102,8 @@ std::shared_ptr<std::vector<AlbumRecord>> AlbumListQuery::GetResult() noexcept {
 
 bool AlbumListQuery::OnRun(Connection& db) {
     result = std::make_shared<std::vector<AlbumRecord>>();
+    if (this->scope.MatchesNoTracks()) { return true; }
+
 
     category::ArgumentList args;
 
@@ -120,6 +124,7 @@ bool AlbumListQuery::OnRun(Connection& db) {
     category::ReplaceAll(query, "{{regular_predicates}}", regular);
     category::ReplaceAll(query, "{{album_list_filter}}", albumFilter);
 
+    category::ApplySourceScope(query, this->scope, "tracks.source_id", args);
     Statement stmt(query.c_str(), db);
     Apply(stmt, args);
 
@@ -155,6 +160,7 @@ std::string AlbumListQuery::SerializeQuery() {
         { "regularPredicateList", PredicateListToJson(this->regular) },
         { "extendedPredicateList", PredicateListToJson(this->extended) }
     };
+    query["options"]["scope"] = EncodeScope(this->scope);
     return query.dump();
 }
 
@@ -179,5 +185,6 @@ std::shared_ptr<AlbumListQuery> AlbumListQuery::DeserializeQuery(const std::stri
     result->filter = options.value("filter", "");
     PredicateListFromJson(options["regularPredicateList"], result->regular);
     PredicateListFromJson(options["extendedPredicateList"], result->extended);
+    result->SetScope(DecodeScope(options));
     return result;
 }

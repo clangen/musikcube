@@ -190,7 +190,8 @@ namespace musik { namespace core { namespace plugin {
     , services MC_PLUGIN_SERVICES_DEFAULT
     , sourceHost MC_INDEXER_SOURCE_HOST_API_DEFAULT
     , dataDirectory(GetDataDirectory())
-    , pluginId(pluginId) {
+    , pluginId(pluginId)
+    , label(name) {
         /* the source may retain these services until its instance is destroyed. */
         this->services.preferences = &this->preferences;
         this->services.data_directory = { this->dataDirectory.data(), this->dataDirectory.size() };

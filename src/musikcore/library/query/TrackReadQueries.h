@@ -2,6 +2,7 @@
 #define MUSIKCORE_TRACK_READ_QUERIES_H
 
 #include "util/TrackSort.h"
+#include "LibraryQueryScope.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -18,16 +19,21 @@ namespace musik { namespace core { namespace library { namespace query {
     };
 
     struct TrackSearchQuery {
-        TrackSearchQuery(const std::string &filter, bool regex, TrackSortType order,
-            int limit = -1, int offset = 0, const std::string &unknownAlbum = {})
-            : filter(filter), regex(regex), order(order), limit(limit), offset(offset), unknownAlbum(unknownAlbum) {}
+        TrackSearchQuery(const std::string& filter, bool regex, TrackSortType order, int limit = -1, int offset = 0)
+        : filter(filter)
+        , regex(regex)
+        , order(order)
+        , limit(limit)
+        , offset(offset) {
+        }
 
         std::string filter;
         bool regex;
         TrackSortType order;
         int limit = -1;
         int offset = 0;
-        std::string unknownAlbum;
+
+        LibraryQueryScope scope;
 
         bool Run(sqlite3 *database, TrackSearchRows &result) const;
     };
@@ -61,6 +67,7 @@ namespace musik { namespace core { namespace library { namespace query {
         const int64_t *ids = nullptr;
         bool keepMissing = true;
         TrackVisibility visibility = TrackVisibility::VisibleOnly;
+        LibraryQueryScope scope;
 
         bool Run(sqlite3 *database, ProjectedTrackPage &page) const;
     };

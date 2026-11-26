@@ -1,4 +1,5 @@
 #include <musikcore/abi.h>
+#include <musikcore/library.h>
 #include <stdio.h>
 #include <float.h>
 #include <string.h>
@@ -72,6 +73,16 @@ static int check_errors(void) {
 int main(void) {
     const char data[] = { 'm', 'c' };
     const mc_string_view view = { data, sizeof(data) };
+    const mc_library_scope scope = MC_LIBRARY_SCOPE_DEFAULT;
+    const mc_library_source_filter sources = MC_LIBRARY_SOURCE_FILTER_DEFAULT;
+    const mc_playlist_create_options playlist = MC_PLAYLIST_CREATE_OPTIONS_DEFAULT;
+    if (scope.struct_size != sizeof(scope) || scope.sources || sources.struct_size != sizeof(sources) || sources.ids ||
+        sources.count || playlist.struct_size != sizeof(playlist) || playlist.name.data || playlist.name.length ||
+        playlist.ownership != MC_PLAYLIST_GLOBAL || playlist.source_id)
+    {
+        fputs("library scope and playlist defaults failed\n", stderr);
+        return 1;
+    }
     const mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
     const mc_audio_buffer_view buffer = MC_AUDIO_BUFFER_VIEW_DEFAULT;
     if (format.struct_size != sizeof(format) || format.sample_rate || format.channels ||

@@ -1,11 +1,12 @@
 #pragma once
 
 #include <musikcore/library.h>
+#include "library-scope.h"
 #include <musikcore/library/query/TrackReadBackend.h>
 
 namespace musik { namespace core { class ILibrary; } }
 
-struct LibraryIdentity;
+struct LibraryInstance;
 
 /* Neither copyable nor movable. Identifies an app backend and its connection, if applicable. */
 struct PlaybackOrigin {
@@ -20,7 +21,7 @@ struct PlaybackOrigin {
 
 /* Inherits origin ownership. Network reads complete without using the context worker. */
 struct AsyncTrackReader : PlaybackOrigin {
-    virtual mc_result Search(mc_context *, const std::shared_ptr<const LibraryIdentity> &,
+    virtual mc_result Search(mc_context *, const std::shared_ptr<const LibraryInstance> &,
         const musik::core::library::query::TrackSearchQuery &, mc_track_search_completion_fn, void *, mc_request_id *) const = 0;
     virtual mc_result ReadPage(mc_context *, std::vector<int64_t>, std::vector<std::string>, bool,
         mc_track_query_completion_fn, void *, mc_request_id *, const void* owner = nullptr) const = 0;
@@ -31,13 +32,14 @@ struct mc_track_page : musik::core::library::query::ProjectedTrackPage {};
 /* Implementations retain their backend and inherit its copy and move restrictions. */
 struct LibraryQueries {
     virtual ~LibraryQueries() = default;
-    virtual mc_result OpenPlaylist(mc_context*, const std::shared_ptr<const LibraryIdentity>&,
+    virtual mc_result OpenPlaylist(mc_context*, const std::shared_ptr<const LibraryInstance>&,
         int64_t, mc_track_search_completion_fn, void*, mc_request_id*) const = 0;
-    virtual mc_result OpenSelection(mc_context*, const std::shared_ptr<const LibraryIdentity>&,
+    virtual mc_result OpenSelection(mc_context*, const std::shared_ptr<const LibraryInstance>&,
         std::string, std::string, int64_t, musik::core::library::query::TrackSortType, mc_track_search_completion_fn, void*, mc_request_id*) const = 0;
-    virtual mc_result ListPlaylists(mc_context*, mc_playlist_list_completion_fn, void*, mc_request_id*) const = 0;
+    virtual mc_result ListSources(mc_context*, mc_library_sources_completion_fn, void*, mc_request_id*) const = 0;
+    virtual mc_result ListPlaylists(mc_context*, mc_playlist_list_completion_fn, void*, mc_request_id*, std::shared_ptr<LibraryScopeState>) const = 0;
     virtual mc_result SavePlaylist(mc_context*, int64_t, std::string, std::vector<int64_t>, bool append,
-        mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;
+        mc_playlist_write_completion_fn, void*, mc_request_id*, std::optional<int32_t> owner = {}) const = 0;
     virtual mc_result RenamePlaylist(mc_context*, int64_t, std::string,
         mc_playlist_write_completion_fn, void*, mc_request_id*) const = 0;
     virtual mc_result DeletePlaylist(mc_context*, int64_t,
@@ -46,28 +48,29 @@ struct LibraryQueries {
         void*, mc_request_id*) const = 0;
     virtual mc_result ListCategoryFields(mc_context*, mc_category_fields_completion_fn, void*, mc_request_id*) const = 0;
     virtual mc_result ListCategories(mc_context*, std::string, std::string, mc_track_search_mode,
-        mc_category_list_completion_fn, void*, mc_request_id*) const = 0;
+        mc_category_list_completion_fn, void*, mc_request_id*, std::shared_ptr<LibraryScopeState>) const = 0;
     virtual mc_result ListFacets(mc_context*, std::string, std::string,
-        std::vector<std::pair<std::string, int64_t>>, mc_category_list_completion_fn, void*, mc_request_id*) const = 0;
-    virtual mc_result ListAlbums(mc_context*, std::string, mc_album_list_completion_fn, void*, mc_request_id*) const = 0;
+        std::vector<std::pair<std::string, int64_t>>, mc_category_list_completion_fn, void*, mc_request_id*, std::shared_ptr<LibraryScopeState>) const = 0;
+    virtual mc_result ListAlbums(mc_context*, std::string, mc_album_list_completion_fn, void*, mc_request_id*, std::shared_ptr<LibraryScopeState>) const = 0;
     virtual mc_result ReadThumbnail(int64_t, std::vector<uint8_t>&, const std::atomic_bool&) const = 0;
 };
 
-struct LibraryIdentity {
+struct LibraryInstance {
     std::string locator;
     std::shared_ptr<const musik::core::library::query::TrackReadBackend> backend;
     std::shared_ptr<const AsyncTrackReader> async;
     std::shared_ptr<const PlaybackOrigin> playbackOrigin;
     std::shared_ptr<const LibraryQueries> queries;
     mc_library_kind kind = MC_LIBRARY_LOCAL;
+    std::shared_ptr<LibraryScopeState> scope = std::make_shared<LibraryScopeState>();
 };
 
 struct mc_library {
-    std::shared_ptr<const LibraryIdentity> identity;
+    std::shared_ptr<const LibraryInstance> instance;
 };
 
 struct TrackResultData : musik::core::library::query::TrackSearchRows {
-    std::shared_ptr<const LibraryIdentity> library;
+    std::shared_ptr<const LibraryInstance> library;
 };
 
 struct mc_track_result {
@@ -75,6 +78,6 @@ struct mc_track_result {
 };
 
 struct mc_track_ref {
-    std::shared_ptr<const LibraryIdentity> library;
+    std::shared_ptr<const LibraryInstance> library;
     int64_t id;
 };

@@ -69,17 +69,6 @@ using namespace std::chrono;
 #define MESSAGE_RECONNECT_SOCKET 5001
 #define MESSAGE_UPDATE_CONNECTION_STATE 5002
 
-class NullIndexer: public musik::core::IIndexer {
-    public:
-        void AddPath(const std::string& path) noexcept override { }
-        void RemovePath(const std::string& path) noexcept override { }
-        void GetPaths(std::vector<std::string>& paths) noexcept override { }
-        void Schedule(SyncType type) noexcept override { }
-        void Cancel() noexcept override { }
-        void Shutdown() noexcept override { }
-        State GetState() noexcept override { return StateIdle; }
-} kNullIndexer;
-
 class RemoteLibrary::QueryCompletedMessage: public Message {
     public:
         using QueryContextPtr = RemoteLibrary::QueryContextPtr;
@@ -394,8 +383,8 @@ void RemoteLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) 
     this->wsc.SetMessageQueue(messageQueue);
 }
 
-musik::core::IIndexer* RemoteLibrary::Indexer() {
-    return &kNullIndexer;
+musik::core::Indexer* RemoteLibrary::Indexer() {
+    return nullptr;
 }
 
 /* IMessageTarget */

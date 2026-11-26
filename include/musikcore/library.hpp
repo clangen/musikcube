@@ -277,6 +277,27 @@ namespace musik { namespace core { namespace api {
        local database directory or adopt a handle bound by the app. An endpoint
        alone does not connect a remote session. Move-only; accepted requests
        and derived track identities retain the state they need. */
+    /* owns a captured C scope. copies are disabled; moves transfer ownership. */
+    class LibraryScope {
+    public:
+        explicit LibraryScope(mc_library_scope_snapshot* value) noexcept : value(value) {}
+        LibraryScope(const LibraryScope&) = delete;
+        LibraryScope(LibraryScope&& other) noexcept : value(std::exchange(other.value, nullptr)) {}
+        ~LibraryScope() { mc_library_scope_destroy(&this->value); }
+        LibraryScope& operator=(const LibraryScope&) = delete;
+        LibraryScope& operator=(LibraryScope&& other) noexcept {
+            if (this != &other) {
+                mc_library_scope_destroy(&this->value);
+                this->value = std::exchange(other.value, nullptr);
+            }
+            return *this;
+        }
+        const mc_library_scope* Get() const noexcept { return mc_library_scope_read(this->value); }
+
+    private:
+        mc_library_scope_snapshot* value;
+    };
+
     class Library {
     public:
         explicit Library(std::string_view locator, mc_library_kind kind = MC_LIBRARY_LOCAL) {
@@ -299,6 +320,52 @@ namespace musik { namespace core { namespace api {
 
         /* Wrapper-owned handle. Do not destroy it; valid until this wrapper releases it. */
         const mc_library *Get() const noexcept { return library.get(); }
+
+        /* entries and labels are borrowed only during the completion callback. */
+        mc_request_id ListSources(Context& context, mc_library_sources_completion_fn completion,
+            void* userData = nullptr) const {
+            mc_request_id request = 0;
+            const auto status = mc_library_list_sources_async(context.Get(), this->Get(), completion, userData, &request);
+            if (status != MC_OK) {
+                throw Error(status);
+            }
+            return request;
+        }
+
+        LibraryScope GetScope() const {
+            mc_library_scope_snapshot* scope = nullptr;
+            const auto status = mc_library_get_scope(this->Get(), &scope);
+            if (status != MC_OK) { throw Error(status); }
+            return LibraryScope(scope);
+        }
+
+        void SetScope(const mc_library_scope& scope) {
+            const auto status = mc_library_set_scope(this->library.get(), &scope);
+            if (status != MC_OK) { throw Error(status); }
+        }
+
+        void SelectSources(const std::vector<int32_t>& ids) {
+            mc_library_scope scope = MC_LIBRARY_SCOPE_DEFAULT;
+            mc_library_source_filter sources = MC_LIBRARY_SOURCE_FILTER_DEFAULT;
+            sources.ids = ids.data();
+            sources.count = ids.size();
+            scope.sources = &sources;
+            this->SetScope(scope);
+        }
+
+        void ClearScope() {
+            const auto status = mc_library_clear_scope(this->library.get());
+            if (status != MC_OK) { throw Error(status); }
+        }
+
+        mc_request_id CreatePlaylist(Context& context, const mc_playlist_create_options& options,
+            const std::vector<int64_t>& tracks, mc_playlist_write_completion_fn completion, void* data = nullptr) {
+            mc_request_id request = 0;
+            const auto status = mc_library_create_playlist_async(context.Get(), this->Get(), &options,
+                tracks.data(), tracks.size(), completion, data, &request);
+            if (status != MC_OK) { throw Error(status); }
+            return request;
+        }
 
     private:
         /* Releases the C library handle when this wrapper releases ownership.
@@ -531,6 +598,8 @@ namespace musik { namespace core { namespace api {
     struct PlaylistEntry {
         int64_t id;
         std::string name;
+        /* no owner means global; zero means ordinary files. */
+        std::optional<int32_t> sourceId;
     };
 
     /* List callbacks receive owned names/entries; write callbacks receive an
@@ -600,7 +669,8 @@ namespace musik { namespace core { namespace api {
                     std::vector<PlaylistEntry> playlists;
                     playlists.reserve(count);
                     for (size_t i = 0; i < count; ++i) {
-                        playlists.push_back({entries[i].id, std::string(AsStringView(entries[i].name))});
+                        playlists.push_back({ entries[i].id, std::string(AsStringView(entries[i].name)),
+                            entries[i].ownership == MC_PLAYLIST_SOURCE ? std::optional<int32_t>(entries[i].source_id) : std::nullopt });
                     }
                     (*callback)(status, std::move(playlists), AsStringView(mc_error_get_message(error)));
                 }, state, request);

@@ -89,7 +89,7 @@ LibraryHost::LibraryHost(mc_context& context, musik::core::ILibraryPtr library,
     musik::core::ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory)
 : context(context)
 , library(library)
-, identity(musik::core::ffi::CaptureLibrary(library))
+, instance(musik::core::ffi::CreateLibraryInstance(library))
 , factory(std::move(factory))
 , hostApi {
     .struct_size = sizeof(mc_library_host_api),
@@ -127,9 +127,9 @@ void LibraryHost::CancelReads() noexcept {
 }
 
 namespace {
-    /* the result owns its library identity, so it remains usable after the
+    /* the result owns its library instance, so it remains usable after the
     plugin releases the host service. */
-    mc_result trackResult(const std::shared_ptr<const LibraryIdentity>& identity,
+    mc_result trackResult(const std::shared_ptr<const LibraryInstance>& instance,
         const std::shared_ptr<TrackListQueryBase>& query, mc_track_result** out)
     {
         const auto tracks = query->GetResult();
@@ -137,7 +137,7 @@ namespace {
             return MC_ERROR_IO;
         }
         auto data = std::make_shared<TrackResultData>();
-        data->library = identity;
+        data->library = instance;
         data->ids = tracks->GetIds();
         data->albumStarts.resize(data->ids.size());
         if (const auto headers = query->GetHeaders()) {
@@ -203,7 +203,7 @@ mc_result MC_CALL LibraryHost::SearchTracks(void* context, const mc_track_search
         if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
-        return trackResult(self.identity, query, result);
+        return trackResult(self.instance, query, result);
     });
 }
 
@@ -216,7 +216,7 @@ mc_result MC_CALL LibraryHost::TracksByIds(void* context, const int64_t* ids,
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         auto& self = *static_cast<LibraryHost*>(context);
         auto data = std::make_shared<TrackResultData>();
-        data->library = self.identity;
+        data->library = self.instance;
         if (count) {
             data->ids.assign(ids, ids + count);
         }
@@ -256,7 +256,7 @@ mc_result MC_CALL LibraryHost::TracksByExternalIds(void* context, const mc_strin
         if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
-        return trackResult(self.identity, query, result);
+        return trackResult(self.instance, query, result);
     });
 }
 
@@ -288,7 +288,7 @@ mc_result MC_CALL LibraryHost::TracksByCategory(void* context, mc_string_view fi
         if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
-        return trackResult(self.identity, query, result);
+        return trackResult(self.instance, query, result);
     });
 }
 
@@ -312,7 +312,7 @@ mc_result MC_CALL LibraryHost::TracksByCategories(void* context,
         if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
-        return trackResult(self.identity, query, result);
+        return trackResult(self.instance, query, result);
     });
 }
 
@@ -327,7 +327,7 @@ mc_result MC_CALL LibraryHost::ReadTracks(void* context, const mc_track_result* 
     }
     auto& self = *static_cast<LibraryHost*>(context);
     const auto origin = tracks->data->library;
-    if (origin != self.identity || !origin || !origin->backend) {
+    if (origin != self.instance || !origin || !origin->backend) {
         return MC_ERROR_UNSUPPORTED;
     }
     for (size_t i = 0; i < range->field_count; ++i) {
@@ -448,16 +448,6 @@ mc_result MC_CALL LibraryHost::RunQuery(void* context, mc_string_view queryJson,
                 return MC_ERROR_INVALID_ARGUMENT;
             }
         }
-        if (name == SavePlaylistQuery::kQueryName) {
-            constexpr int firstOperation = 1;
-            constexpr int lastOperation = 4;
-            const auto operation = options.find("op");
-            if (operation == options.end() || !operation->is_number_integer() ||
-                *operation < firstOperation || *operation > lastOperation)
-            {
-                return MC_ERROR_INVALID_ARGUMENT;
-            }
-        }
         const auto regular = options.find("regularPredicateList");
         if (regular != options.end() && !regular->is_null()) {
             if (!regular->is_array()) {
@@ -499,7 +489,8 @@ mc_result MC_CALL LibraryHost::RunQuery(void* context, mc_string_view queryJson,
         if (!query) {
             return MC_ERROR_UNSUPPORTED;
         }
-        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+        if (self.library->EnqueueAndWait(query) < 0 ||
+            query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
         const auto output = query->SerializeResult();
@@ -708,7 +699,7 @@ mc_result MC_CALL LibraryHost::ReadThumbnail(void* context, int64_t thumbnailId,
         auto& self = *static_cast<LibraryHost*>(context);
         std::vector<uint8_t> bytes;
         const std::atomic_bool canceled { false };
-        const auto status = self.identity->queries->ReadThumbnail(thumbnailId, bytes, canceled);
+        const auto status = self.instance->queries->ReadThumbnail(thumbnailId, bytes, canceled);
         if (status != MC_OK) {
             return status;
         }
@@ -725,7 +716,7 @@ mc_result MC_CALL LibraryHost::ReadThumbnail(void* context, int64_t thumbnailId,
 mc_result MC_CALL LibraryHost::ReadLibraryThumbnail(void* context, const mc_library* library, int64_t thumbnailId,
     mc_thumbnail_completion_fn completion, void* userData)
 {
-    if (!context || !library || !library->identity || thumbnailId <= 0 || !completion) {
+    if (!context || !library || !library->instance || thumbnailId <= 0 || !completion) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
@@ -733,11 +724,11 @@ mc_result MC_CALL LibraryHost::ReadLibraryThumbnail(void* context, const mc_libr
         if (self.cancelled.load()) {
             return MC_ERROR_CANCELLED;
         }
-        if (!library->identity->queries) {
+        if (!library->instance->queries) {
             return MC_ERROR_UNSUPPORTED;
         }
         std::vector<uint8_t> bytes;
-        const auto status = library->identity->queries->ReadThumbnail(thumbnailId, bytes, self.cancelled);
+        const auto status = library->instance->queries->ReadThumbnail(thumbnailId, bytes, self.cancelled);
         if (self.cancelled.load()) {
             return MC_ERROR_CANCELLED;
         }
@@ -775,11 +766,17 @@ mc_result MC_CALL LibraryHost::SavePlaylistHost(void* context, int64_t playlistI
         if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
+        if (query->ResultCode() != MC_OK) {
+            return query->ResultCode();
+        }
         if (playlistId && !title.empty()) {
             query = SavePlaylistQuery::Rename(self.library, playlistId, title);
             if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
                 return MC_ERROR_IO;
             }
+        }
+        if (query->ResultCode() != MC_OK) {
+            return query->ResultCode();
         }
         *savedId = playlistId ? playlistId : query->GetPlaylistId();
         return *savedId > 0 ? MC_OK : MC_ERROR_IO;
@@ -793,8 +790,10 @@ mc_result MC_CALL LibraryHost::RenamePlaylistHost(void* context, int64_t playlis
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         auto& self = *static_cast<LibraryHost*>(context);
         auto query = SavePlaylistQuery::Rename(self.library, playlistId, std::string(name.data, name.length));
-        return self.library->EnqueueAndWait(query) >= 0 && query->GetStatus() == IQuery::Finished
-            ? MC_OK : MC_ERROR_IO;
+        if (self.library->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
+            return MC_ERROR_IO;
+        }
+        return query->ResultCode();
     });
 }
 

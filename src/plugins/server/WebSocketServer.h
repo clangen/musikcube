@@ -46,6 +46,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+#include <optional>
 
 class WebSocketServer {
     public:
@@ -98,10 +99,15 @@ class WebSocketServer {
         };
 
         /* typedefs */
+        struct Session {
+            bool authenticated = false;
+            nlohmann::json scope = { { "sources", nullptr } };
+        };
+
         using server = websocketpp::server<asio_with_deflate>;
         using connection_hdl = websocketpp::connection_hdl;
         using message_ptr = server::message_ptr;
-        using ConnectionList = std::map<connection_hdl, bool, std::owner_less<connection_hdl>>;
+        using ConnectionList = std::map<connection_hdl, Session, std::owner_less<connection_hdl>>;
         using json = nlohmann::json;
 
         struct QueueResponse;
@@ -142,6 +148,8 @@ class WebSocketServer {
         void RespondWithFailure(connection_hdl connection, json& request);
         void RespondWithSuccess(connection_hdl connection, const std::string& name, const std::string& id);
 
+        std::optional<json> RunLibraryQuery(const json& query);
+        mc_track_result* QueryTrackResult(json query);
         void RespondWithLibraryQuery(connection_hdl connection, json& request);
         void RespondWithSetVolume(connection_hdl connection, json& request);
         void RespondWithPlaybackOverview(connection_hdl connection, json& request);

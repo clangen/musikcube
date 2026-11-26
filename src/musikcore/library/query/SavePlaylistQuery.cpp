@@ -58,7 +58,7 @@ using namespace musik::core::runtime;
 const std::string SavePlaylistQuery::kQueryName = "SavePlaylistQuery";
 
 static std::string CREATE_PLAYLIST_QUERY =
-    "INSERT INTO playlists (name) VALUES (?);";
+    "INSERT INTO playlists (name,source_id) VALUES (?,?);";
 
 static std::string INSERT_PLAYLIST_TRACK_QUERY =
     "INSERT INTO playlist_tracks (track_external_id, source_id, playlist_id, sort_order) VALUES (?, ?, ?, ?);";
@@ -242,7 +242,7 @@ bool SavePlaylistQuery::AddTracksToPlaylist(
             insertTrack.BindInt64(2, playlistId);
             insertTrack.BindInt32(3, offset++);
 
-            if (insertTrack.Step() == db::Error) {
+            if (insertTrack.Step() != db::Done) {
                 return false;
             }
         }
@@ -274,8 +274,14 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
     /* create playlist */
     Statement createPlaylist(CREATE_PLAYLIST_QUERY.c_str(), db);
     createPlaylist.BindText(0, this->playlistName);
+    if (this->ownerSource) {
+        createPlaylist.BindInt32(1, *this->ownerSource);
+    }
+    else {
+        createPlaylist.BindNull(1);
+    }
 
-    if (createPlaylist.Step() == db::Error) {
+    if (createPlaylist.Step() != db::Done) {
         transaction.Cancel();
         return false;
     }
@@ -303,7 +309,7 @@ bool SavePlaylistQuery::RenamePlaylist(musik::core::db::Connection &db) {
     Statement renamePlaylist(RENAME_PLAYLIST_QUERY.c_str(), db);
     renamePlaylist.BindText(0, this->playlistName);
     renamePlaylist.BindInt64(1, this->playlistId);
-    return (renamePlaylist.Step() != db::Error);
+    return (renamePlaylist.Step() == db::Done);
 }
 
 bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
@@ -313,7 +319,7 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
     Statement createPlaylist(DELETE_PLAYLIST_TRACKS_QUERY.c_str(), db);
     createPlaylist.BindInt64(0, this->playlistId);
 
-    if (createPlaylist.Step() == db::Error) {
+    if (createPlaylist.Step() != db::Done) {
         transaction.Cancel();
         return false;
     }
@@ -341,13 +347,76 @@ bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
     return result;
 }
 
-bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::CreateOwned(ILibraryPtr library,
+    const std::string& name, std::shared_ptr<TrackList> tracks, std::optional<int32_t> source)
+{
+    auto query = SavePlaylistQuery::Save(library, name, std::move(tracks));
+    query->ownerSource = source;
+    return query;
+}
+
+bool SavePlaylistQuery::ValidateMembership(Connection& db) {
+    auto owner = this->ownerSource;
+    if (this->op != Operation::Create) {
+        Statement playlist("SELECT source_id FROM playlists WHERE id=?", db);
+        playlist.BindInt64(0, this->playlistId);
+        if (playlist.Step() != Row) {
+            this->failure = MC_ERROR_NOT_FOUND;
+            return false;
+        }
+        if (!playlist.IsNull(0)) {
+            owner = playlist.ColumnInt32(0);
+        }
+    }
+    if (!owner || this->op == Operation::Rename) {
+        return true;
+    }
+    /* source-owned writes use explicit track identities; validate the entire
+    batch before inserting a playlist or deleting its previous entries. */
+    if (!this->tracks) {
+        this->failure = MC_ERROR_INVALID_ARGUMENT;
+        return false;
+    }
+    Statement track("SELECT source_id FROM tracks WHERE id=?", db);
+    for (size_t i = 0; i < this->tracks->Count(); ++i) {
+        track.ResetAndUnbind();
+        track.BindInt64(0, this->tracks->GetId(i));
+        if (track.Step() != Row || track.IsNull(0) || track.ColumnInt32(0) != *owner) {
+            this->failure = MC_ERROR_INVALID_ARGUMENT;
+            return false;
+        }
+    }
+    return true;
+}
+
+bool SavePlaylistQuery::OnRun(Connection& db) {
     this->result = false;
-    switch (this->op) {
-        case Operation::Rename: this->result = this->RenamePlaylist(db); break;
-        case Operation::Replace: this->result = this->ReplacePlaylist(db); break;
-        case Operation::Create: this->result = this->CreatePlaylist(db); break;
-        case Operation::Append: this->result = this->AppendToPlaylist(db); break;
+    this->failure = MC_ERROR_IO;
+    {
+        ScopedTransaction transaction(db);
+        if (!this->ValidateMembership(db)) {
+            transaction.Cancel();
+            /* the request was processed; its result describes the rejected
+            mutation. transport failure remains a separate query failure. */
+            return this->failure == MC_ERROR_INVALID_ARGUMENT || this->failure == MC_ERROR_NOT_FOUND;
+        }
+        switch (this->op) {
+            case Operation::Rename:
+                this->result = this->RenamePlaylist(db);
+                break;
+            case Operation::Replace:
+                this->result = this->ReplacePlaylist(db);
+                break;
+            case Operation::Create:
+                this->result = this->CreatePlaylist(db);
+                break;
+            case Operation::Append:
+                this->result = this->AppendToPlaylist(db);
+                break;
+        }
+        if (!this->result) {
+            transaction.Cancel();
+        }
     }
     if (this->result) {
         this->SendPlaylistMutationBroadcast();
@@ -393,19 +462,22 @@ std::string SavePlaylistQuery::SerializeQuery() {
             { "tracks", tracksJson }
         }}
     };
+    output["options"]["owner_source"] = this->ownerSource ? nlohmann::json(*this->ownerSource) : nlohmann::json();
     return output.dump();
 }
 
 std::string SavePlaylistQuery::SerializeResult() {
-    nlohmann::json output = { { "result", this->result }, { "playlistId", this->playlistId } };
+    nlohmann::json output = { { "result", this->result }, { "playlistId", this->playlistId }, { "failure", this->failure } };
     return output.dump();
 }
 
 void SavePlaylistQuery::DeserializeResult(const std::string& data) {
     auto input = nlohmann::json::parse(data);
     this->result = input["result"].get<bool>();
+    this->failure = input.value("failure", MC_ERROR_IO);
     this->playlistId = input.value("playlistId", this->playlistId);
-    this->SetStatus(result ? IQuery::Finished : IQuery::Failed);
+    const bool processed = result || this->failure == MC_ERROR_INVALID_ARGUMENT || this->failure == MC_ERROR_NOT_FOUND;
+    this->SetStatus(processed ? IQuery::Finished : IQuery::Failed);
     if (result) {
         SendPlaylistMutationBroadcast();
     }
@@ -416,7 +488,23 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::DeserializeQuery(
 {
     auto options = nlohmann::json::parse(data)["options"];
     auto output = std::shared_ptr<SavePlaylistQuery>(new SavePlaylistQuery(library));
-    output->op = options["op"].get<Operation>();
+    const auto& operation = options.at("op");
+    if (!operation.is_number_integer() || operation < static_cast<int>(Operation::Create) ||
+        operation > static_cast<int>(Operation::Append))
+    {
+        throw std::invalid_argument("invalid playlist operation");
+    }
+    output->op = operation.get<Operation>();
+    if (options.contains("owner_source") && !options["owner_source"].is_null()) {
+        if (!options["owner_source"].is_number_integer()) {
+            throw std::invalid_argument("playlist source ID must be an integer");
+        }
+        const auto id = options["owner_source"].get<int64_t>();
+        if (output->op != Operation::Create || id < 0 || id > INT32_MAX) {
+            throw std::invalid_argument("invalid playlist owner");
+        }
+        output->ownerSource = static_cast<int32_t>(id);
+    }
     output->playlistName = options["playlistName"].get<std::string>();
     output->categoryType = options["categoryType"].get<std::string>();
     output->playlistId = options["playlistId"].get<int64_t>();

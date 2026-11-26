@@ -37,7 +37,6 @@
 #include <string>
 #include <vector>
 
-#include <musikcore/library/IIndexer.h>
 #include <musikcore/db/Connection.h>
 #include <common/DeleteDefaults.h>
 

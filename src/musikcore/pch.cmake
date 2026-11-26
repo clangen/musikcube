@@ -29,7 +29,6 @@ target_precompile_headers(musikcore_objects
     "$<$<COMPILE_LANGUAGE:CXX>:db/SqliteExtensions.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:db/Statement.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:debug.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:library/IIndexer.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:library/ILibrary.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:library/Indexer.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:library/IQuery.h>"

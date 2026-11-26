@@ -3,15 +3,19 @@
 #include <musikcore/library.h>
 #include <musikcore/library/ILibrary.h>
 
-struct LibraryIdentity;
+struct LibraryInstance;
 
 namespace musik { namespace core { namespace ffi {
     struct LibraryStatus;
 
-    /* Retain a concrete catalog and connection generation for typed queries. */
-    std::shared_ptr<const LibraryIdentity> CaptureLibrary(const ILibraryPtr& library);
+    /* create the shared state behind a handle, choosing local or remote execution.
+    existing results retain this instance when the app selects another library. */
+    std::shared_ptr<const LibraryInstance> CreateLibraryInstance(const ILibraryPtr& library);
+
+    /* read the selected library's current connection and configuration status. */
     LibraryStatus CaptureLibraryStatus(const ILibraryPtr& library);
-    /* Native core entry point also used by injected-transport tests. */
+
+    /* open a consumer handle for a native library; also used by transport fixtures. */
 #if defined(__GNUC__)
     __attribute__((visibility("default")))
 #endif

@@ -4,7 +4,6 @@
 #include "../common/error.h"
 #include "../common/primitives.h"
 #include "request.h"
-#include <musikcore/library/IIndexer.h>
 
 #include <atomic>
 #include <algorithm>
@@ -76,7 +75,7 @@ struct mc_context {
     std::thread worker;
     std::shared_ptr<std::atomic_bool> active_cancel;
     std::thread::id dispatcher;
-    std::shared_ptr<const LibraryIdentity> library;
+    std::shared_ptr<const LibraryInstance> library;
     musik::core::ffi::LibraryStatus libraryStatus;
     std::unique_ptr<musik::core::ffi::ContextRuntime> runtime;
     mc_indexer_event_fn indexerCallback = nullptr;
@@ -110,7 +109,7 @@ struct mc_context {
     size_t wakeups_in_flight = 0;
 };
 
-std::shared_ptr<const LibraryIdentity> musik::core::ffi::context_library(const mc_context& context) {
+std::shared_ptr<const LibraryInstance> musik::core::ffi::context_library(const mc_context& context) {
     std::lock_guard<std::mutex> lock(context.mutex);
     return context.library;
 }
@@ -383,7 +382,7 @@ void musik::core::ffi::wake_context(mc_context& context) {
 }
 
 namespace {
-    mc_result update_library(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
+    mc_result update_library(mc_context& context, std::shared_ptr<const LibraryInstance> library,
         musik::core::ffi::LibraryStatus status, bool managed, bool selectionChanged)
     {
         bool wake = false;
@@ -424,7 +423,7 @@ namespace {
 }
 
 mc_result musik::core::ffi::set_context_library(mc_context& context,
-    std::shared_ptr<const LibraryIdentity> library, LibraryStatus status)
+    std::shared_ptr<const LibraryInstance> library, LibraryStatus status)
 {
     if (context.services & MC_SERVICE_LIBRARY) {
         ContextRuntime* runtime;
@@ -444,7 +443,7 @@ mc_result musik::core::ffi::set_context_library(mc_context& context,
 }
 
 mc_result musik::core::ffi::publish_library_selection(mc_context& context,
-    std::shared_ptr<const LibraryIdentity> library, LibraryStatus status, bool selectionChanged)
+    std::shared_ptr<const LibraryInstance> library, LibraryStatus status, bool selectionChanged)
 {
     return update_library(context, std::move(library), std::move(status), true, selectionChanged);
 }
@@ -582,11 +581,7 @@ namespace {
                 }
                 runtime = context->runtime.get();
             }
-            if (!runtime || !runtime->LocalIndexer()) {
-                return MC_ERROR_UNSUPPORTED;
-            }
-            operation(*runtime->LocalIndexer());
-            return MC_OK;
+            return runtime ? operation(*runtime) : MC_ERROR_UNSUPPORTED;
         });
     }
 }
@@ -595,8 +590,8 @@ mc_result MC_CALL mc_indexer_get_state(const mc_context* context, mc_indexer_sta
     if (!state) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
-        *state = static_cast<mc_indexer_state>(indexer.GetState());
+    return with_indexer(context, [&](musik::core::ffi::ContextRuntime& runtime) {
+        return runtime.IndexerState(state);
     });
 }
 
@@ -604,15 +599,8 @@ mc_result MC_CALL mc_indexer_read_paths(const mc_context* context, mc_indexer_pa
     if (!read) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
-        std::vector<std::string> paths;
-        indexer.GetPaths(paths);
-        std::vector<mc_string_view> views;
-        views.reserve(paths.size());
-        for (const auto& path : paths) {
-            views.push_back({ path.data(), path.size() });
-        }
-        read(userData, views.data(), views.size());
+    return with_indexer(context, [&](musik::core::ffi::ContextRuntime& runtime) {
+        return runtime.IndexerPaths(read, userData);
     });
 }
 
@@ -620,8 +608,8 @@ mc_result MC_CALL mc_indexer_add_path(mc_context* context, mc_string_view path) 
     if (!musik::core::ffi::valid_text(path, false)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
-        indexer.AddPath(std::string(path.data, path.length));
+    return with_indexer(context, [&](musik::core::ffi::ContextRuntime& runtime) {
+        return runtime.AddIndexerPath(std::string(path.data, path.length));
     });
 }
 
@@ -629,8 +617,8 @@ mc_result MC_CALL mc_indexer_remove_path(mc_context* context, mc_string_view pat
     if (!musik::core::ffi::valid_text(path, false)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
-        indexer.RemovePath(std::string(path.data, path.length));
+    return with_indexer(context, [&](musik::core::ffi::ContextRuntime& runtime) {
+        return runtime.RemoveIndexerPath(std::string(path.data, path.length));
     });
 }
 
@@ -638,14 +626,14 @@ mc_result MC_CALL mc_indexer_schedule(mc_context* context, mc_indexer_scan scan)
     if (scan > MC_INDEXER_REBUILD) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
-    return with_indexer(context, [&](musik::core::IIndexer& indexer) {
-        indexer.Schedule(static_cast<musik::core::IIndexer::SyncType>(scan));
+    return with_indexer(context, [&](musik::core::ffi::ContextRuntime& runtime) {
+        return runtime.ScheduleIndexer(scan);
     });
 }
 
 mc_result MC_CALL mc_indexer_cancel(mc_context* context) {
-    return with_indexer(context, [](musik::core::IIndexer& indexer) {
-        indexer.Cancel();
+    return with_indexer(context, [](musik::core::ffi::ContextRuntime& runtime) {
+        return runtime.CancelIndexer();
     });
 }
 
@@ -792,7 +780,9 @@ namespace musik { namespace core { namespace ffi {
             /* Shutdown waits for the selected wakeup before destroying host state. */
             lock.unlock();
             lifetime.unlock();
-            if (notify) signal_host(*context);
+            if (notify) {
+                signal_host(*context);
+            }
         };
 
         context->requests.push_back({ id, {}, std::move(completion), user_data, RequestState::running, MC_OK,
@@ -1076,39 +1066,61 @@ mc_result MC_CALL mc_context_dispatch(mc_context *context) {
     });
 }
 
-mc_result MC_CALL mc_request_cancel(mc_context *context, mc_request_id id) {
-    return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
-        if (!context || !id) return MC_ERROR_INVALID_ARGUMENT;
+namespace {
+    mc_result cancelRequest(const std::shared_ptr<ExternalRequests>& external, mc_request_id id) {
+        return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
+            std::unique_lock lifetime(external->mutex);
+            auto* context = external->context;
+            if (!context || !id) {
+                return MC_ERROR_NOT_FOUND;
+            }
 
-        std::unique_lock<std::mutex> lock(context->mutex);
-        const auto request = find_request(*context, id);
-        if (request == context->requests.end() || request->state == RequestState::ready) {
-            return MC_ERROR_NOT_FOUND;
-        }
+            std::unique_lock<std::mutex> lock(context->mutex);
+            const auto request = find_request(*context, id);
+            if (request == context->requests.end() || request->state == RequestState::ready) {
+                return MC_ERROR_NOT_FOUND;
+            }
 
-        if (request->state == RequestState::running &&
-            request->effect == musik::core::ffi::RequestEffect::Mutation)
-        {
-            return MC_ERROR_IN_FLIGHT;
-        }
+            if (request->state == RequestState::running && request->effect == musik::core::ffi::RequestEffect::Mutation)
+            {
+                return MC_ERROR_IN_FLIGHT;
+            }
 
-        /* copy the hook before changing state; it runs outside the context lock. */
-        const auto cancelExternal = request->cancel_external;
-        /* Select the terminal result under lock, then notify the host outside it. */
-        request->state = RequestState::ready;
-        request->result = MC_ERROR_CANCELLED;
-        if (request->cancel) {
-            request->cancel->store(true);
-        }
-        const bool notify = select_wakeup(*context);
+            /* copy the hook before changing state; it runs outside the context lock. */
+            const auto cancelExternal = request->cancel_external;
+            /* Select the terminal result under lock, then notify the host outside it. */
+            request->state = RequestState::ready;
+            request->result = MC_ERROR_CANCELLED;
+            if (request->cancel) {
+                request->cancel->store(true);
+            }
+            const bool notify = select_wakeup(*context);
 
-        lock.unlock();
-        if (cancelExternal) {
-            cancelExternal();
-        }
-        if (notify) signal_host(*context);
-        return MC_OK;
-    });
+            lock.unlock();
+            lifetime.unlock();
+            if (cancelExternal) {
+                cancelExternal();
+            }
+            if (notify) {
+                signal_host(*context);
+            }
+            return MC_OK;
+        });
+    }
+
+}
+
+mc_result MC_CALL mc_request_cancel(mc_context* context, mc_request_id id) {
+    if (!context || !id) {
+        return MC_ERROR_INVALID_ARGUMENT;
+    }
+    return cancelRequest(context->external, id);
+}
+
+std::function<void()> musik::core::ffi::make_request_canceller(mc_context* context, mc_request_id id) {
+    return [external = context->external, id] {
+        cancelRequest(external, id);
+    };
 }
 
 mc_result MC_CALL mc_context_shutdown(mc_context *context) {

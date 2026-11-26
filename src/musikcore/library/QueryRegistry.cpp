@@ -36,6 +36,7 @@
 
 #include "QueryRegistry.h"
 #include <musikcore/library/query/AlbumListQuery.h>
+#include <musikcore/library/query/SourceListQuery.h>
 #include <musikcore/library/query/AllCategoriesQuery.h>
 #include <musikcore/library/query/AppendPlaylistQuery.h>
 #include <musikcore/library/query/GetPlaylistQuery.h>
@@ -63,6 +64,9 @@ namespace musik { namespace core { namespace library {
         std::shared_ptr<ISerializableQuery> CreateLocalQueryFor(
             const std::string& name, const std::string& data, ILibraryPtr library)
         {
+            if (name == SourceListQuery::kQueryName) {
+                return SourceListQuery::DeserializeQuery(data, library);
+            }
             if (name == AlbumListQuery::kQueryName) {
                 return AlbumListQuery::DeserializeQuery(data);
             }

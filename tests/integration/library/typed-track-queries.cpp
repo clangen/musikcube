@@ -17,15 +17,15 @@ namespace {
         "CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT);"
         "CREATE TABLE genres (id INTEGER PRIMARY KEY, name TEXT);"
         "CREATE TABLE tracks (id INTEGER PRIMARY KEY, title TEXT, visible INTEGER, duration INTEGER,"
-        " album_id INTEGER, visual_artist_id INTEGER, visual_genre_id INTEGER, disc INTEGER, track INTEGER);"
+        " album_id INTEGER, visual_artist_id INTEGER, visual_genre_id INTEGER, disc INTEGER, track INTEGER, source_id INTEGER);"
         "CREATE TABLE meta_keys (id INTEGER PRIMARY KEY, name TEXT);"
         "CREATE TABLE meta_values (id INTEGER PRIMARY KEY, meta_key_id INTEGER, sort_order INTEGER, content TEXT);"
         "CREATE TABLE track_meta (track_id INTEGER, meta_value_id INTEGER);"
         "INSERT INTO albums VALUES (1,'Blue'),(2,'Green');"
         "INSERT INTO artists VALUES (1,'Fixture Artist');"
         "INSERT INTO genres VALUES (1,'Ambient');"
-        "INSERT INTO tracks VALUES (30,'Ocean',1,7,1,1,1,1,1),(12,'Harbor',1,3,1,1,1,1,2),"
-        "(50,'Forest',1,11,2,1,1,1,1),(4,'Hidden',0,4,2,1,1,1,2);"
+        "INSERT INTO tracks VALUES (30,'Ocean',1,7,1,1,1,1,1,0),(12,'Harbor',1,3,1,1,1,1,2,7),"
+        "(50,'Forest',1,11,2,1,1,1,1,7),(4,'Hidden',0,4,2,1,1,1,2,7);"
         "INSERT INTO meta_keys VALUES (1,'composer'),(2,'empty');"
         "INSERT INTO meta_values VALUES (1,1,20,'Second'),(2,1,10,'First'),(3,2,1,'');"
         "INSERT INTO track_meta VALUES (30,1),(30,2),(30,3);";
@@ -52,9 +52,105 @@ namespace {
             rows.ids.empty();
     }
 
+    bool checkSourceSearch(sqlite3* database) {
+        TrackSearchRows rows;
+        TrackSearchQuery query("", false, TrackSortType::Album);
+        query.scope = LibraryQueryScope::ForSources({ 0 });
+        if (!query.Run(database, rows) || rows.ids != std::vector<int64_t> { firstTrack } ||
+            rows.albumDurations != std::map<size_t, uint64_t> { { 0, 7 } })
+        {
+            return false;
+        }
+
+        /* replacing a selection value cannot change the query's copied scope. */
+        std::vector<int32_t> selected { 7, 0, 7 };
+        auto currentScope = LibraryQueryScope::ForSources(selected);
+        query.scope = currentScope;
+        selected.clear();
+        currentScope = LibraryQueryScope::ForSources({});
+        if (query.scope.IsUnrestricted() || *query.scope.SourceIds() != std::vector<int32_t> { 0, 7 } ||
+            !query.Run(database, rows) || rows.ids != std::vector<int64_t> { firstTrack, secondTrack, thirdTrack })
+        {
+            return false;
+        }
+
+        bool rejected = false;
+        try {
+            query.scope = LibraryQueryScope::ForSources({ -1 });
+        }
+        catch (const std::invalid_argument&) {
+            rejected = true;
+        }
+        if (!rejected || !query.Run(database, rows) || rows.ids.size() != 3) {
+            return false;
+        }
+
+        query.scope = LibraryQueryScope::ForSources({ 7, 7 });
+        if (!query.Run(database, rows) || rows.ids != std::vector<int64_t> { secondTrack, thirdTrack } ||
+            rows.albumStarts != std::vector<bool> { true, true } ||
+            rows.albumDurations != std::map<size_t, uint64_t> { { 0, 3 }, { 1, 11 } })
+        {
+            return false;
+        }
+
+        /* filtering must happen before offset, not after taking a catalog page. */
+        query.limit = 1;
+        query.offset = 1;
+        if (!query.Run(database, rows) || rows.ids != std::vector<int64_t> { thirdTrack }) {
+            return false;
+        }
+
+        query.scope = LibraryQueryScope::ForSources({});
+        if (!query.Run(database, rows) || !rows.ids.empty() || !rows.albumDurations.empty()) {
+            return false;
+        }
+
+        query.scope = LibraryQueryScope::ForSources({ 0, 7 });
+        query.limit = -1;
+        query.offset = 0;
+        query.filter = "Harbor";
+        if (!query.Run(database, rows) || rows.ids != std::vector<int64_t> { secondTrack }) {
+            return false;
+        }
+
+        query.scope = LibraryQueryScope::ForSources({ 99 });
+        if (!query.Run(database, rows) || !rows.ids.empty()) {
+            return false;
+        }
+
+        query.scope = LibraryQueryScope {};
+        query.filter.clear();
+        return query.scope.IsUnrestricted() && query.Run(database, rows) &&
+            rows.ids == std::vector<int64_t> { firstTrack, secondTrack, thirdTrack };
+    }
+
+    bool checkAlbumIdentity(sqlite3* database) {
+        constexpr auto albums =
+            "INSERT INTO albums VALUES (3,'Blue'),(4,NULL),(5,NULL);"
+            "INSERT INTO tracks VALUES (70,'Other ocean',1,5,3,1,1,1,1,7),"
+            "(71,'Other harbor',1,6,3,1,1,1,2,7),"
+            "(80,'Untitled first',1,2,4,1,1,1,1,0),"
+            "(81,'Untitled second',1,3,5,1,1,1,1,0);";
+        if (sqlite3_exec(database, albums, nullptr, nullptr, nullptr) != SQLITE_OK) {
+            return false;
+        }
+        TrackSearchRows rows;
+        if (!TrackSearchQuery("Blue", false, TrackSortType::Album).Run(database, rows) ||
+            rows.ids != std::vector<int64_t> { firstTrack, secondTrack, 70, 71 } ||
+            rows.albumStarts != std::vector<bool> { true, false, true, false } ||
+            rows.albumDurations != std::map<size_t, uint64_t> { { 0, 10 }, { 2, 11 } })
+        {
+            return false;
+        }
+        return TrackSearchQuery("Untitled", false, TrackSortType::Album).Run(database, rows) &&
+            rows.ids == std::vector<int64_t> { 80, 81 } &&
+            rows.albumStarts == std::vector<bool> { true, true } &&
+            rows.albumDurations == std::map<size_t, uint64_t> { { 0, 2 }, { 1, 3 } };
+    }
+
     /* Read inside an existing transaction so projection cleanup cannot accidentally commit the caller's
        work or reorder missing/multivalue metadata. */
-    bool checkProjection(sqlite3 *database) {
+    bool checkProjection(sqlite3* database) {
         const std::vector<std::string> fields = { "composer", MC_TRACK_FIELD_TITLE, "empty" };
         const int64_t ids[] = { firstTrack, hiddenTrack, missingTrack, secondTrack };
         const std::string text;
@@ -90,8 +186,16 @@ int main() {
         std::fputs("Typed search failed\n", stderr);
         return 1;
     }
+    if (!checkSourceSearch(raw)) {
+        std::fputs("Source-scoped typed search failed\n", stderr);
+        return 1;
+    }
     if (!checkProjection(raw)) {
         std::fputs("Typed metadata projection failed\n", stderr);
+        return 1;
+    }
+    if (!checkAlbumIdentity(raw)) {
+        std::fputs("Album identity grouping failed\n", stderr);
         return 1;
     }
     return 0;

@@ -36,9 +36,9 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <cstdint>
 #include <limits>
 
-#include <musikcore/library/IIndexer.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/subscriptions.hpp>
 #include <common/runtime/IMessageQueue.h>
@@ -46,6 +46,7 @@
 namespace musik { namespace core {
 
     class Track;
+    class Indexer;
 
     static size_t kWaitIndefinite = std::numeric_limits<size_t>::max();
 
@@ -80,8 +81,9 @@ namespace musik { namespace core {
 
             virtual int Enqueue(QueryPtr query, Callback cb = Callback()) = 0;
             virtual int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
-            /* null when this catalog was opened without indexing services. */
-            virtual IIndexer *Indexer() = 0;
+            virtual musik::core::Indexer *Indexer() = 0;
+            /* immutable provider descriptions survive indexer shutdown. */
+            virtual std::vector<std::pair<int32_t, std::string>> Sources() const { return {}; }
             virtual int Id() = 0;
             virtual const std::string& Name() = 0;
             virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;

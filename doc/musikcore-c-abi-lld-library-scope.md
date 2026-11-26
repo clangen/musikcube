@@ -1,6 +1,6 @@
 # C ABI LLD adendum: library query scopes
 
-Status: **planned; required before application ABI v1 freeze**.
+Status: **implementation in review; acceptance checks remain before application ABI v1 freeze**.
 
 [LLD index](musikcore-c-abi-lld.md) · [C ABI design](musikcore-c-abi-design.md) ·
 [Release gates](musikcore-c-abi-lld-release.md#phase-10-migration-cleanup-and-abi-v1-freeze)
@@ -40,7 +40,13 @@ sentinels do not define the public filtering contract.
 
 ## Proposed shape and decisions
 
-Attach an optional, mutable scope to the existing `mc_library` handle. Provide
+Accepted lifecycle and playlist decisions are recorded in
+[ADR-0017](../docs/adr/0017-library-scope-query-lifetime.md).
+
+Attach an optional, mutable scope to the library instance exposed by the existing
+`mc_library` handle. Handles referring to the same instance share its scope;
+independently created instances do not share scope merely because they address
+the same catalog. Provide
 explicit operations to set, replace and clear that scope while the application
 is running; an unscoped library keeps its current behavior. Existing query
 entry points continue to receive `mc_library`. Do not introduce a separate
@@ -48,47 +54,60 @@ public scoped-library type. A sized C scope struct carries the selected source
 IDs and leaves room for future filter fields, and the header-only C++ wrapper
 may provide matching convenience methods.
 
-For forward-compatible scope updates, prefer a sized C struct with typed
-fields and a fixed-width enabled-filter bitmask over a generic ID/`void*` pair.
-For example, the initial version can contain `struct_size`, an enabled-filter
-mask, and a source-ID pointer/count. Future fields can be appended, with a new
-mask bit for each filter. An older caller supplies a shorter struct and newer
-libraries treat absent fields as unset. A newer caller sets the corresponding
-bit when it requests a future filter; an older library rejects an unknown bit
-rather than accepting the request without enforcing that filter. Validate that
-every enabled field is present within `struct_size` before reading it.
+The sized C scope struct contains nullable pointers to typed filters. Every
+non-null filter applies; the source filter owns an ID pointer/count for the
+call, copied on update. A null source filter is unrestricted, while a present
+empty filter matches no sources. No enabled-filter bitmask is used.
 
-This is a proposed compatibility pattern, not a finalized declaration. Confirm
-it against the repository's existing ABI versioning and struct-size rules,
-including the order of size and mask validation, before freezing the API. Do
-not require a generic pointer-based filter registry unless a concrete use case
-needs it. Carry the same reject-unknown rule through the remote protocol.
+Older-sized scope inputs default absent trailing pointers to null. Reject
+structs larger than the implementation understands, both for the scope and
+its filter structs: accepting unknown appended filters could silently widen a
+query. This deliberately trades forward-sized acceptance for strict filtering
+semantics. The remote scope object likewise rejects unknown filter keys, and
+uses a null `sources` field for unrestricted selection or an array for a source
+selection. Validate sizes before reading pointer or count fields.
 
-Each accepted request captures an immutable snapshot of the library's scope at
-submission. Updating the attached scope changes subsequent operations rather
-than retargeting accepted work or modifying previously returned results. The
-current `mc_library` stores a shared immutable `LibraryIdentity`; determine how
-to add mutable scope state and snapshots while preserving backend ownership,
-remote routing, context selection and the result/track lifetimes. Specify
-whether updates are visible through aliases or separately obtained handles,
-and how they affect operations using the context's selected library. Different
+Each accepted scope-filtered request captures an immutable scope snapshot at
+submission. Never retarget accepted work to a new selection. An effective scope
+change invalidates pending scope-filtered requests from the previous selection:
+they complete through the existing cancellation contract, never as successful
+stale results. Interrupt backend work where practical; invalidation must still
+suppress stale success when interruption cannot stop that work. Playlist-content requests are unaffected; playlist discovery is scope-filtered.
+
+Already delivered results retain their original snapshot, including subsequent
+page reads and track references derived from them. Completion admission and scope
+replacement are ordered under the same lock. A completion admitted first may
+finish after the update; otherwise it completes with cancellation. Invalidation
+cancels requests promptly and discards pending remote queries without waiting for
+replies. Scope-change notifications follow invalidation. Snapshot
+capture, pending-request registration and invalidation must agree on that ordering
+so a concurrent submission cannot escape invalidation. Callers need not manage
+public scope revisions; an internal generation may enforce this contract.
+
+The current `mc_library` stores a shared immutable `LibraryInstance`; preserve
+backend ownership, remote routing, context selection and result/track lifetimes
+when adding instance-owned mutable scope state. Operations using the context's
+selected library observe that instance's scope. Different library instances and
 catalogs must not share scope state accidentally.
 
 A successful scope change must publish a library scope-changed event so
-multiple observers can requery and redraw without polling. Delivery must occur
+multiple API consumers can requery without polling. Delivery must occur
 after the new scope is visible to subsequent queries. Reuse existing event or
 subscription primitives where their ownership and threading semantics fit;
 define the typed event, its originating library, callback thread and lifetime,
 unsubscribe/shutdown behavior, and behavior for rejected or unchanged updates.
-Provide a way for an observer to associate a refresh with the scope snapshot
-and reject stale query completions. Specify how registration and the initial
+Pending-query invalidation prevents successful stale completions; observers
+refresh on the event without managing public scope revisions. Specify how registration and the initial
 scope read avoid missing a concurrent change. Do not call observers while
 holding a lock they could need to query or update the scope.
 
 The default must preserve today's unfiltered behavior. The contract must
 separately represent no restriction, an explicitly empty source selection,
-and selection of source ID zero. Decide whether empty selection means no
-matches or is rejected; do not silently treat it as all sources. Validate IDs,
+and selection of source ID zero. An explicitly empty selection returns no
+matches for scope-filtered operations; clearing the restriction selects all
+sources, including newly added sources. Playlist contents remain unaffected; empty selection lists only global playlists.
+Treat source IDs as a set: order and duplicates do not change the selection,
+invalidate requests or publish events. Validate IDs,
 counts and pointer/count pairs at the owning boundary and copy caller-owned
 arrays before returning from a scope update or query submission. Specify supported
 ID range and a bounded selection size.
@@ -103,71 +122,170 @@ splitting its catalog identity or double-counting it.
 Define semantics explicitly for each operation, especially:
 
 - Searches, category and facet lists, albums, directories and track pages.
-- Saved playlists: whether a scoped read omits out-of-scope entries while
-  retaining order and duplicates, and how membership changes between reads.
+- Playlist discovery shows global playlists plus those owned by selected
+  sources; unrestricted shows all and an empty selection shows only global.
+  Contents remain unfiltered and preserve order and duplicates. Creation must
+  explicitly choose global or source ownership; source-owned playlists only
+  accept tracks from that source. Reject mixed invalid batches atomically.
+  Replacement and append preserve ownership. Scope updates invalidate discovery
+  requests but not playlist-content reads.
 - Direct track references, caller-supplied IDs and artwork: whether each is
   scope-limited or explicitly catalog-wide, including missing/out-of-scope IDs.
-- Playlist and metadata mutations: whether they are catalog-wide, rejected on
+- Metadata mutations: whether they are catalog-wide, rejected on
   scoped libraries, or have another explicit contract. Filtering must not silently
   change or delete entries outside the user's intended operation.
 - Result and track-reference lifetimes, equality/identity, cancellation, backend
   changes and shutdown. Existing accepted operations keep their original scope
-  snapshot, even when the attached library scope changes.
+  snapshot; pending scope-filtered requests are invalidated when the scope changes.
 
 A scope is a query facility, not an authorization boundary. Server access
 control remains independent. Do not infer visibility, offline availability,
 source ownership or write permission from a source filter.
 
+## Operation inventory and source discovery
+
+The operation classifications below apply to both local and remote backends.
+
+| Public operation family | Scope behavior | Existing typed path |
+| --- | --- | --- |
+| Track search | filtered | `TrackSearchQuery`, local `TrackReadBackend`, remote `SearchTrackListQuery` |
+| Category and directory track results | filtered | `LibraryQueries::OpenSelection()` |
+| Category values and facets | filtered before grouping | `LibraryQueries::ListCategories()` / `ListFacets()` |
+| Albums | filtered before grouping | `LibraryQueries::ListAlbums()` |
+| Metadata field discovery | catalog-wide schema | `LibraryQueries::ListCategoryFields()` |
+| Direct page query | title browsing filtered; explicit ID projection catalog-wide | `TrackPageQuery` / `AsyncTrackReader::ReadPage()` |
+| Playlist listing | global plus selected source owners | `LibraryQueries::ListPlaylists()` |
+| Playlist contents and writes | contents unfiltered; source-owned writes enforce matching sources | `LibraryQueries` playlist operations |
+| Existing result pages and derived references | retain original membership/snapshot; playlist pages remain catalog-wide | `mc_track_result_read_async()`, `mc_track_result_get_ref()` |
+| Caller-supplied result IDs | catalog-wide explicit selection | `mc_library_make_track_result()` |
+| Track metadata reads and rating writes | catalog-wide explicit identity operations | `mc_track_ref_read_async()`, `mc_track_set_rating_async()` |
+| Artwork by cover ID | catalog-wide explicit identity | `LibraryQueries::ReadThumbnail()` |
+
+The public API must let the UX enumerate sources with catalog-stable IDs and
+human-readable labels. Discovery is catalog-wide regardless of the attached
+scope, so deselected sources remain available to turn back on. It must use the
+same library/context selection and asynchronous completion conventions as other
+library lists, with callback-borrowed entries and explicit error/cancellation
+semantics. The C++ wrapper must expose the same operation. Carry discovery
+through a typed local query and the server query registry for remote catalogs.
+
+Source zero represents ordinary files and is labelled Files. As agreed during
+review, do not add a separate source metadata table. Discovery combines immutable
+source descriptions from loaded plugins with IDs referenced by tracks and
+playlists. Loaded providers include empty sources. An absent provider's referenced
+IDs remain discoverable with a fallback label (`Source N`); its historical display
+label and never-populated unreferenced sources are not persisted. Stable source
+IDs continue to derive from plugin ID and source key, never from labels. Source
+descriptions live on `LocalLibrary`, independently of indexer shutdown.
+
+## Implementation progress and acceptance evidence
+
+The C API and header-only C++ wrapper expose instance-owned scope mutation,
+snapshots, notifications, source discovery and explicit playlist ownership.
+Local and remote executors share query construction/result adapters; execution
+and transport stay in separate files. Typed queries carry copied scope values
+and apply bound source predicates before grouping and pagination. Explicit IDs,
+existing results, artwork, playlist contents and writes remain catalog-wide.
+
+Schema version 12 adds nullable playlist ownership and membership triggers;
+existing playlists migrate as global. Typed mutations validate entire batches,
+retain ownership on replace/append and report query-specific rejection results.
+The server exposes session-local get/set/clear scope operations and notifications.
+Both typed queries and legacy browsing handlers apply the session selection.
+
+Named acceptance tests:
+
+- `musikcore.integration.api.library_scope`: public validation, copied storage,
+  normalized updates, aliases, independent instances, observers, queued
+  cancellation, completion admission and source-zero/empty selection.
+- `musikcore.abi.typed_track_queries`: local predicates, shared album identities,
+  source-zero/unknown/empty selections, hidden tracks, ordering and pagination.
+- `musikcore.integration.library.playlist_source_schema`: fresh/version-11
+  migration, ownership triggers, duplicate preservation and source wire data.
+- `musikcore.integration.api.backend_parity`: local/remote scoped browsing and
+  owned playlist creation/discovery/rejection.
+- `musikcore.integration.api.managed_remote`: cancellation before held replies,
+  prompt reuse of a bounded remote request slot, and rejected host playlist writes.
+- `musikcore.abi.remote_query_transport`: transport cancellation and teardown.
+- `musikcore.integration.api.remote_audio`: actual server browsing under an empty
+  session scope, typed queries, restoration and rejection of malformed scope objects.
+- `musikcore.integration.runtime.indexer_provider_cancel`: source discovery after
+  indexer shutdown retains descriptions of loaded providers with no catalog rows.
+
+Native macOS validation also includes `musikcore.abi.header`,
+`musikcore.abi.shared_c`, `musikcore.abi.exports`, and the C++ query/search
+consumer tests. Independently compiled public C/C++ headers build successfully.
+New regressions for rejected host playlist writes and source discovery after
+shutdown fail when their respective fixes are temporarily removed.
+
+Remaining acceptance work is recorded under SCOPE-009/010/011/013/014/016/017.
+Named tests cover the listed cases, not every required permutation in those tasks:
+
+- Boundary and identity coverage: malformed creation options, retained result
+  paging across updates, and separate catalogs with overlapping source IDs.
+- Concurrency coverage: submission racing replacement, subscription registration
+  racing updates, and concurrent observer teardown. Completion admission and
+  cancellation before held remote replies are covered.
+- Playlist coverage: mixed batches, missing tracks and duplicate entries through
+  both public local and remote mutation entry points, beyond schema checks.
+- Session coverage: simultaneous clients with different selections and reconnect
+  reset, beyond one real session changing and restoring scope.
+- Linux/Windows acceptance and installed-consumer validation remain open.
+
+There are no frontend implementation or UI test tasks in this LLD; the removed SCOPE-012
+identifier is intentionally not reused.
+
 ## Implementation checklist
 
-- [ ] **SCOPE-001** Inventory the public library operations and their typed
+- [x] **SCOPE-001** Inventory the public library operations and their typed
   local/remote query paths. Classify each as scope-filtered, catalog-wide, or
   unsupported on scoped libraries; resolve the operation semantics above before
   changing public declarations. Record the decision and alternatives in an
   individual numbered ADR, linked from the HLD and this adendum.
-- [ ] **SCOPE-002** Define the application C library-attached scope contract,
+- [x] **SCOPE-002** Define the application C library-attached scope contract,
   including set, replace, clear, initialization, source ID zero, unrestricted
   versus empty, input limits, validation, copying, aliasing and lifetime.
   Add only fields required for the initial source filter; design extension
-  through the existing sized-struct rules. Evaluate the typed-field and
-  enabled-filter mask pattern above; define how missing fields default and how
-  older libraries reject unknown requested filters rather than silently
-  widening results. Keep ABI versions experimental.
-- [ ] **SCOPE-003** Provide a usable catalog-scoped source-discovery operation
+  through the existing sized-struct rules. Use nullable typed-filter pointers; default absent fields to null and
+  reject oversized unknown scope/filter layouts instead of silently widening
+  results. Keep ABI versions experimental.
+- [x] **SCOPE-003** Provide a usable catalog-scoped source-discovery operation
   or identify an existing public operation that supplies stable IDs and human
   labels. Specify ordinary file tracks, disabled or absent providers, sources
   with no tracks, and remote catalogs. Do not infer IDs from display labels.
-- [ ] **SCOPE-004** Implement runtime source-selection changes and propagate
+- [x] **SCOPE-004** Implement runtime source-selection changes and propagate
   immutable scope snapshots through library identities, async submissions,
   results and track references. Update the existing library handle; do not
   require creating another library type. A change applies to subsequent
   operations without restarting or rescanning. Specify and test how separately
   obtained handles and the context-selected library observe updates. Publish
-  a scope-changed event after each effective change.
-- [ ] **SCOPE-005** Apply the filter to local typed queries for track search,
+  a scope-changed event after each effective change. Invalidate pending
+  scope-filtered requests atomically with that change; equivalent selections
+  (including reordered or repeated source IDs) cause no event or invalidation.
+- [x] **SCOPE-005** Apply the filter to local typed queries for track search,
   projections, category/facet and album browsing, directory reads and any
   other scope-filtered operations from SCOPE-001. Share predicate construction
   where it simplifies callers; bind every source ID, including each `IN` value,
   and choose SQL identifiers from fixed fragments. Do not push application
   query types into the generic database wrapper.
-- [ ] **SCOPE-006** Implement the decided playlist, direct-ID, artwork and
+- [x] **SCOPE-006** Implement the decided playlist, direct-ID, artwork and
   mutation behavior. Preserve playlist order and duplicates, missing-row
   behavior, track identity and explicit catalog-wide operations as specified.
-- [ ] **SCOPE-007** Carry scopes through remote typed queries and the existing
+- [x] **SCOPE-007** Carry scopes through remote typed queries and the existing
   server query registry. Validate inputs on the boundary that owns them;
   unsupported/malformed filters must fail explicitly, never silently broaden a
   request. Leave a structured extension point for future filter fields without
   requiring a new wire operation for each filter. Clients and servers update in
   lockstep for 4.0; do not add an old
   server fallback or expose raw SQL.
-- [ ] **SCOPE-008** Update the header-only C++ convenience API and real callers
+- [x] **SCOPE-008** Update the header-only C++ convenience API for callers
   that require source filtering. Keep ownership explicit and wrappers dependent
   only on the public C ABI. Do not add unrelated filters to this task.
 - [ ] **SCOPE-009** Add boundary tests for invalid sizes, ID/count limits,
   null/count mismatches, empty and unrestricted selection, source zero, copied
   caller storage, ownership, cancellation and shutdown. Test older-sized input
-  against a newer library and an unknown enabled-filter bit against the current
-  library, including a set bit whose field lies beyond `struct_size`. Assert
+  against a newer library and a larger unknown scope/filter struct against the
+  current library, including truncated present filter fields. Assert
   rejection occurs before backend/provider work and scoped requests cannot
   escape their catalog.
 - [ ] **SCOPE-010** Add local and real remote parity tests with multiple sources,
@@ -176,25 +294,46 @@ source ownership or write permission from a source filter.
   boundaries.
   Test the explicitly decided ID, artwork and mutation semantics. Gate and
   reverse request completions while changing sources to prove older responses
-  cannot overwrite newer selections or mix scope membership.
+  complete with cancellation rather than successful stale results. Cover queued
+  completions, concurrent submission and update, and already delivered result
+  paging. Verify playlist-content requests remain unaffected and playlist discovery is invalidated.
 - [ ] **SCOPE-011** Update public header/default-initializer checks, exported
   symbols, ABI-only and installed C/C++ consumer tests, wire fixtures, examples
   and contract documentation. Validate named-platform builds and tests under
   the normal project gates; keep missing platform evidence open rather than
   assuming it from another platform.
-- [ ] **SCOPE-012** Add a user-facing source selector to the TUI so users can
-  toggle the active sources while browsing. Specify all-sources and empty-set
-  behavior, how selection changes refresh dependent results, and whether a
-  selection persists across restarts. Observe scope-changed events to refresh
-  results and redraw. Keep existing content visible during refresh when
-  practical, without presenting stale results as the new scope.
-  Add a UI scenario for switching sources and rejecting late old results.
 - [ ] **SCOPE-013** Implement and test library scope-changed notifications.
   Cover multiple observers, update ordering, unchanged and rejected updates,
   reentrant queries, subscription lifetime and shutdown, registration racing
-  an update, and identifying stale asynchronous results. Verify callbacks run
+  an update, and pending-query invalidation before refresh delivery. Verify callbacks run
   outside internal locks and no observer sees an event for an uncommitted scope.
 - [ ] **SCOPE-014** Complete the scope acceptance gate: all applicable tasks
   above are complete, the ADR and public contract match implementation, and
   the maintainer has reviewed any SDK/API contract decisions. Only then may the
   application ABI v1 freeze proceed under FIN-008/FIN-009 and GATE-1000.
+
+## Additional public and remote requirements
+
+- [x] **SCOPE-015** Add explicit playlist ownership to the public C creation API
+  and playlist discovery results. Use a sized creation-options struct with a
+  default initializer; distinguish global ownership from source zero. Do not
+  infer ownership from the current scope. Preserve ownership on append/replace.
+  Define matching C++ convenience operations and remote wire fields. Existing
+  creation callers continue to create global playlists.
+- [ ] **SCOPE-016** Enforce same-source membership for source-owned playlists at
+  the API mutation boundary and in catalog constraints. Reject whole invalid
+  create/append/replace batches without changes or success events. Test local
+  and real remote behavior, missing tracks, source zero, duplicates and mixed
+  sources; global playlists continue to accept mixed sources.
+- [ ] **SCOPE-017** Add WebSocket get/set/clear library-scope operations and
+  committed scope-change notifications. Scope state is client-session-local,
+  not shared mutable state on the server catalog. Validate the same sized/typed
+  filter contract and reject unsupported filters. Define ordering with typed
+  query snapshots and pending invalidation, disconnect/reconnect reset behavior,
+  and tests proving one client's selection cannot affect another. Retain scope
+  snapshots on each typed request so queued work cannot be retargeted by a later
+  server-side selection. Include source discovery and playlist ownership fields.
+
+The acceptance gate includes SCOPE-015 through SCOPE-017. Schema support alone
+does not complete the API, remote and integration requirements. Checked tasks
+record implemented contracts; unchecked validation tasks remain release gates.

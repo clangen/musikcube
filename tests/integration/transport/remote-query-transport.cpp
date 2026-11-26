@@ -205,7 +205,10 @@ namespace {
                         if (holdFirstProjection) {
                             /* hold only the first metadata reply, so a second
                             remote read can prove the canceled slot is reusable. */
-                            if (!this->heldProjection && query.at("name") == "TrackMetadataBatchQuery") {
+                            if (heldSearch) {
+                                this->HoldReply(connection, reply);
+                            }
+                            else if (!this->heldProjection && query.at("name") == "TrackMetadataBatchQuery") {
                                 this->heldProjection = true;
                                 this->HoldReply(connection, reply);
                             }
@@ -416,7 +419,7 @@ namespace {
         }
 
         /* The local indexer remains addressable with a remote catalog selected. */
-        Indexer indexer(context);
+        api::Indexer indexer(context);
         const auto originalPaths = indexer.Paths();
         const auto testPath = GetDataDirectory() + "/indexer-contract-path";
         if (indexer.AddPath(testPath) != MC_OK) {
@@ -698,10 +701,10 @@ namespace {
             return failure(__LINE__);
         }
 
-        /* Keep one accepted read pending through shutdown; cancel the rest while
-           replies are held, until the transport reports its bounded admission. */
-        constexpr unsigned acceptedQueries = 64;
-        for (unsigned i = 0; i <= acceptedQueries; ++i) {
+        /* keep one live read through shutdown. cancelled requests must release
+        transport slots even while the server withholds every reply. */
+        constexpr unsigned cancelledQueries = 64;
+        for (unsigned i = 0; i <= cancelledQueries; ++i) {
             const auto request = OpenTrackSearch(context, *reconnected, TrackSearch { "Origin" },
                 [&](mc_result result, TrackResult, std::string_view) {
                     status = result;
@@ -711,24 +714,18 @@ namespace {
                 continue;
             }
             const auto before = calls;
-            const auto cancelled = context.Cancel(request);
-            if (!dispatch(before + 1)) {
-                return failure(__LINE__);
-            }
-            if (status == MC_ERROR_BUSY) {
-                if (i != acceptedQueries || cancelled != MC_ERROR_NOT_FOUND || context.Shutdown() != MC_OK ||
-                    calls != before + 2 || status != MC_ERROR_CANCELLED || !server.ReleaseHeld(true))
-                {
-                    return failure(__LINE__);
-                }
-                const auto settled = calls;
-                return context.Dispatch() == MC_OK && calls == settled;
-            }
-            if (status != MC_ERROR_CANCELLED || cancelled != MC_OK) {
+            if (context.Cancel(request) != MC_OK || !dispatch(before + 1) || status != MC_ERROR_CANCELLED) {
                 return failure(__LINE__);
             }
         }
-        return failure(__LINE__);
+        const auto before = calls;
+        if (context.Shutdown() != MC_OK || calls != before + 1 || status != MC_ERROR_CANCELLED ||
+            !server.ReleaseHeld(true))
+        {
+            return failure(__LINE__);
+        }
+        const auto settled = calls;
+        return context.Dispatch() == MC_OK && calls == settled;
     }
     /* Use the same typed backend on both sides of a real socket to expose serialization losses
        independently of catalog differences. */
@@ -767,6 +764,9 @@ namespace {
             return failure(__LINE__);
         }
         const auto remote = std::make_shared<const Library>(session.OpenLibrary());
+        if (LibraryFactory::Instance().DefaultRemoteLibrary()->Indexer() != nullptr) {
+            return failure(__LINE__);
+        }
 
         for (const auto& library : { local, remote }) {
             context.SetLibrary(*library);
@@ -813,6 +813,93 @@ namespace {
             {
                 return failure(__LINE__);
             }
+            mc_library* selected = nullptr;
+            if (mc_context_get_library(context.Get(), &selected) != MC_OK) { return failure(__LINE__); }
+            const auto selectedOwner = std::unique_ptr<mc_library, void(*)(mc_library*)>(selected,
+                [](mc_library* handle) { mc_library_destroy(&handle); });
+            mc_library_source_filter sources = MC_LIBRARY_SOURCE_FILTER_DEFAULT;
+            mc_library_scope scope = MC_LIBRARY_SCOPE_DEFAULT;
+            scope.sources = &sources;
+            if (mc_library_set_scope(selected, &scope) != MC_OK) { return failure(__LINE__); }
+            facets = {};
+            if (mc_library_list_categories_async(context.Get(), nullptr, { "artist", 6 }, { nullptr, 0 },
+                MC_TRACK_SEARCH_SUBSTRING, deliver, &facets, &request) != MC_OK || !ready() || !facets.rows.empty()) {
+                return failure(__LINE__);
+            }
+            int32_t fileSource = 0;
+            sources.ids = &fileSource;
+            sources.count = 1;
+            if (mc_library_set_scope(selected, &scope) != MC_OK) { return failure(__LINE__); }
+            facets = {};
+            if (mc_library_list_categories_async(context.Get(), nullptr, { "artist", 6 }, { "Fixture", 7 },
+                MC_TRACK_SEARCH_SUBSTRING, deliver, &facets, &request) != MC_OK || !ready() || facets.rows.size() != 1) {
+                return failure(__LINE__);
+            }
+            struct Saved {
+                bool done = false;
+                mc_result status = MC_ERROR_INTERNAL;
+                int64_t id = 0;
+            } saved;
+            const auto savedCallback = [](mc_result result, int64_t id, const mc_error*, void* data) {
+                auto& saved = *static_cast<Saved*>(data);
+                saved = { true, result, id };
+            };
+            const auto waitSaved = [&] {
+                return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && saved.done; });
+            };
+            auto create = mc_playlist_create_options MC_PLAYLIST_CREATE_OPTIONS_DEFAULT;
+            create.name = { "Owned scope fixture", 19 };
+            create.ownership = MC_PLAYLIST_SOURCE;
+            create.source_id = 7;
+            if (mc_library_create_playlist_async(context.Get(), selected, &create, nullptr, 0,
+                savedCallback, &saved, &request) != MC_OK || !waitSaved() || saved.status != MC_OK || saved.id <= 0) {
+                return failure(__LINE__);
+            }
+            const auto ownedId = saved.id;
+            struct Listed { bool done = false; bool found = false; mc_result status = MC_ERROR_INTERNAL; } listed;
+            const auto listedCallback = [](mc_result status, const mc_playlist_entry* rows, size_t count,
+                const mc_error*, void* data) {
+                auto& listed = *static_cast<Listed*>(data);
+                listed.status = status;
+                for (size_t i = 0; i < count; ++i) {
+                    if (rows[i].ownership == MC_PLAYLIST_SOURCE && rows[i].source_id == 7) { listed.found = true; }
+                }
+                listed.done = true;
+            };
+            const auto waitListed = [&] {
+                return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && listed.done; }) && listed.status == MC_OK;
+            };
+            if (mc_library_list_playlists_async(context.Get(), selected, listedCallback, &listed, &request) != MC_OK ||
+                !waitListed() || listed.found) { return failure(__LINE__); }
+            int32_t providerSource = 7;
+            sources.ids = &providerSource;
+            if (mc_library_set_scope(selected, &scope) != MC_OK) { return failure(__LINE__); }
+            listed = {};
+            if (mc_library_list_playlists_async(context.Get(), selected, listedCallback, &listed, &request) != MC_OK ||
+                !waitListed() || !listed.found) { return failure(__LINE__); }
+            TrackResult originalTracks;
+            bool searchDone = false;
+            mc_result searchStatus = MC_ERROR_INTERNAL;
+            if (mc_library_clear_scope(selected) != MC_OK) { return failure(__LINE__); }
+            OpenTrackSearch(context, *library, {}, [&](mc_result status, TrackResult rows, std::string_view) {
+                searchStatus = status; originalTracks = std::move(rows); searchDone = true;
+            });
+            if (!AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && searchDone; }) ||
+                searchStatus != MC_OK || originalTracks.Size() == 0) { return failure(__LINE__); }
+            const auto fileId = originalTracks.Id(0);
+            saved = {};
+            if (mc_library_append_playlist_async(context.Get(), selected, ownedId, &fileId, 1,
+                savedCallback, &saved, &request) != MC_OK || !waitSaved() || saved.status != MC_ERROR_INVALID_ARGUMENT) {
+                return failure(__LINE__);
+            }
+            saved = {};
+            if (mc_library_create_playlist_async(context.Get(), selected, &create, &fileId, 1,
+                savedCallback, &saved, &request) != MC_OK || !waitSaved() || saved.status != MC_ERROR_INVALID_ARGUMENT) {
+                return failure(__LINE__);
+            }
+            saved = {};
+            if (mc_library_delete_playlist_async(context.Get(), selected, ownedId, savedCallback, &saved, &request) != MC_OK ||
+                !waitSaved() || saved.status != MC_OK) { return failure(__LINE__); }
         }
         context.ClearLibrary();
 
@@ -1328,6 +1415,43 @@ namespace {
             return failure(__LINE__);
         }
 
+        /* invalidation must complete before a held reply and free the sole
+        transport slot. a late response must not deliver a second callback. */
+        unsigned scopeCallbacks = 0;
+        searched.reset();
+        OpenTrackSearch(context, remoteLibrary, { kHeldSearch }, [&](mc_result status, TrackResult, std::string_view) {
+            searched = status;
+            ++scopeCallbacks;
+        });
+        auto emptyScope = mc_library_scope MC_LIBRARY_SCOPE_DEFAULT;
+        auto emptySources = mc_library_source_filter MC_LIBRARY_SOURCE_FILTER_DEFAULT;
+        emptyScope.sources = &emptySources;
+        if (!server.WaitForHeldReply()) {
+            return failure(__LINE__);
+        }
+        remoteLibrary.SetScope(emptyScope);
+        if (!wait([&] {
+                return searched.has_value();
+            }) ||
+            searched != MC_ERROR_CANCELLED || scopeCallbacks != 1)
+        {
+            return failure(__LINE__);
+        }
+        searched.reset();
+        OpenTrackSearch(context, remoteLibrary, {}, [&](mc_result status, TrackResult, std::string_view) {
+            searched = status;
+        });
+        if (!wait([&] {
+                return searched.has_value();
+            }) ||
+            searched != MC_OK || !server.ReleaseHeld(false) || !server.WaitForReleasedReply() ||
+            context.Dispatch() != MC_OK || scopeCallbacks != 1)
+        {
+            return failure(__LINE__);
+        }
+
+        remoteLibrary.ClearScope();
+
         /* callback storage outlives both hosts, even when an assertion fails. */
         struct Outcome {
             std::mutex mutex;
@@ -1375,6 +1499,28 @@ namespace {
             return failure(__LINE__);
         }
         const auto& hiddenHost = first.HostApi();
+        /* rejected replacement must neither report success nor rename the
+        source-owned playlist after its contents fail validation. */
+        if (fixtureDb.Execute("INSERT INTO playlists (id, name, source_id) VALUES (987655, 'Keep title', 7)") !=
+            db::Okay)
+        {
+            return failure(__LINE__);
+        }
+        const int64_t mismatchedId = 987654;
+        int64_t savedId = -1;
+        if (hiddenHost.save_playlist(hiddenHost.context, 987655, { "Wrong title", 11 }, &mismatchedId, 1, &savedId) !=
+                MC_ERROR_INVALID_ARGUMENT ||
+            savedId != 0 ||
+            hiddenHost.rename_playlist(hiddenHost.context, 987656, { "Missing", 7 }) != MC_ERROR_NOT_FOUND)
+        {
+            return failure(__LINE__);
+        }
+        {
+            db::Statement unchanged("SELECT name FROM playlists WHERE id=987655", fixtureDb);
+            if (unchanged.Step() != db::Row || std::string(unchanged.ColumnText(0)) != "Keep title") {
+                return failure(__LINE__);
+            }
+        }
         const mc_string_view externalId { "hidden-fixture", 14 };
         const mc_string_view titleField { MC_TRACK_FIELD_TITLE, sizeof(MC_TRACK_FIELD_TITLE) - 1 };
         auto hiddenRange = mc_track_range MC_TRACK_RANGE_DEFAULT;

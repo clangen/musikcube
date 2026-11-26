@@ -132,18 +132,18 @@ void PlaybackService::DeliverPlaybackNotification(IMessage& message) {
     static_cast<PlaybackNotification&>(message).deliver();
 }
 
-bool PlaybackService::MatchesOrigin(const LibraryIdentity& origin) const {
+bool PlaybackService::MatchesOrigin(const LibraryInstance& origin) const {
     return origin.playbackOrigin && origin.playbackOrigin->Matches(this->library.get());
 }
 
-std::shared_ptr<const LibraryIdentity> PlaybackService::CaptureOrigin(int libraryId) const {
+std::shared_ptr<const LibraryInstance> PlaybackService::CaptureOrigin(int libraryId) const {
     if (this->library->Id() != libraryId) {
         return {};
     }
 
-    std::shared_ptr<const LibraryIdentity> origin;
+    std::shared_ptr<const LibraryInstance> origin;
     ffi::exception_barrier(nullptr, [&] {
-        origin = ffi::CaptureLibrary(this->library);
+        origin = ffi::CreateLibraryInstance(this->library);
         return MC_OK;
     });
     return origin;
@@ -461,7 +461,7 @@ public:
     }
 
 private:
-    bool PlayingTrackAvailable(const TrackPtr& track, const std::shared_ptr<const LibraryIdentity>& origin) const {
+    bool PlayingTrackAvailable(const TrackPtr& track, const std::shared_ptr<const LibraryInstance>& origin) const {
         if (!track || !origin || !this->service.MatchesOrigin(*origin)) {
             return false;
         }
@@ -497,7 +497,7 @@ private:
         this->queueObserver->pending = true;
     }
 
-    mc_result InsertOrderedIds(const std::shared_ptr<const LibraryIdentity>& origin,
+    mc_result InsertOrderedIds(const std::shared_ptr<const LibraryInstance>& origin,
         const int64_t* ids, size_t count, mc_playback_track_action action)
     {
         if (!origin->playbackOrigin) {
@@ -531,7 +531,7 @@ private:
         return MC_OK;
     }
 
-    mc_result PlayOrderedIds(const std::shared_ptr<const LibraryIdentity>& origin,
+    mc_result PlayOrderedIds(const std::shared_ptr<const LibraryInstance>& origin,
         const int64_t* ids, size_t count, size_t row) {
         if (!origin->playbackOrigin) return MC_ERROR_UNSUPPORTED;
         if (!this->service.MatchesOrigin(*origin)) return MC_ERROR_NOT_FOUND;

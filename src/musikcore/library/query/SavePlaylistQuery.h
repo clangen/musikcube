@@ -33,6 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <optional>
+#include <musikcore/library.h>
 
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/track/TrackList.h>
@@ -79,6 +81,11 @@ namespace musik { namespace core { namespace library { namespace query {
                 int64_t categoryId);
 
             DELETE_CLASS_DEFAULTS(SavePlaylistQuery)
+
+            static std::shared_ptr<SavePlaylistQuery> CreateOwned(musik::core::ILibraryPtr library,
+                const std::string& name, std::shared_ptr<musik::core::TrackList> tracks,
+                std::optional<int32_t> source);
+            mc_result ResultCode() const { return this->result ? MC_OK : this->failure; }
 
             int64_t GetPlaylistId() const noexcept;
 
@@ -147,6 +154,9 @@ namespace musik { namespace core { namespace library { namespace query {
                 int64_t playlistId,
                 const std::shared_ptr<musik::core::TrackList>& tracks);
 
+            bool ValidateMembership(musik::core::db::Connection& db);
+            std::optional<int32_t> ownerSource;
+            mc_result failure { MC_ERROR_IO };
             bool result{ false };
             Operation op;
             musik::core::ILibraryPtr library;

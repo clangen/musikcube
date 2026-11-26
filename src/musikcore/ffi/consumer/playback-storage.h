@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-struct LibraryIdentity;
+struct LibraryInstance;
 struct TrackResultData;
 
 enum class QueueEdit { Move, Remove, Clear };

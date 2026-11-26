@@ -74,7 +74,6 @@
 #include <musikcore/db/SqliteExtensions.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/debug.h>
-#include <musikcore/library/IIndexer.h>
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/library/Indexer.h>
 #include <musikcore/library/IQuery.h>

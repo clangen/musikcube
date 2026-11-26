@@ -6,6 +6,7 @@
 #include <common/runtime/MessageQueue.h>
 #include <musikcore/library/query/SearchTrackListQuery.h>
 #include <musikcore/library/track/Track.h>
+#include <musikcore/library/Indexer.h>
 #include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>

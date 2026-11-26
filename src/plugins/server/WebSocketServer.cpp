@@ -37,11 +37,14 @@
 #include "ServerControls.h"
 
 #include <musikcore/playback.hpp>
+#include <musikcore/plugin/library_query_names.h>
 #include <common/version.h>
 #include <common/String.h>
 #include <array>
 #include <limits>
 #include <charconv>
+#include <string_view>
+#include <unordered_set>
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -54,6 +57,30 @@ static int nextId = 0;
 static const char* TAG = "WebSocketServer";
 
 namespace {
+    const std::unordered_set<std::string_view> ScopedLibraryQueries {
+        MC_LIBRARY_QUERY_SEARCH_TRACKS,
+        MC_LIBRARY_QUERY_CATEGORY_TRACKS,
+        MC_LIBRARY_QUERY_DIRECTORY_TRACKS,
+        MC_LIBRARY_QUERY_CATEGORIES,
+        MC_LIBRARY_QUERY_FACETS,
+        MC_LIBRARY_QUERY_ALBUMS,
+    };
+
+    bool regularCategory(std::string_view field) {
+        return field == "album" || field == "artist" || field == "album_artist" || field == "genre" ||
+            field == "directory";
+    }
+
+    std::pair<json, json> queryPredicates(const json& input) {
+        json regular = json::array(), extended = json::array();
+        for (const auto& predicate : input) {
+            const auto field = predicate.at("category").get<std::string>();
+            const auto id = predicate.at("id").get<int64_t>();
+            (regularCategory(field) ? regular : extended).push_back({ field, id });
+        }
+        return { regular, extended };
+    }
+
     mc_string_view view(std::string_view text) { return { text.data(), text.size() }; }
 
     std::string string(mc_string_view value) {
@@ -393,7 +420,7 @@ void WebSocketServer::DispatchCommand(connection_hdl connection, json request,
     this->DispatchPlayback(std::move(operation), [this, connection, request = std::move(request)](mc_result status) mutable {
         const auto lock = this->connectionLock.Read();
         const auto found = this->connections.find(connection);
-        if (found == this->connections.end() || !found->second) {
+        if (found == this->connections.end() || !found->second.authenticated) {
             return;
         }
         if (status == MC_OK) {
@@ -448,7 +475,7 @@ void MC_CALL WebSocketServer::QueueResponseCompleted(mc_result status, mc_track_
             try {
                 const auto lock = owner.connectionLock.Read();
                 const auto connection = owner.connections.find(reply->connection);
-                if (connection == owner.connections.end() || !connection->second) {
+                if (connection == owner.connections.end() || !connection->second.authenticated) {
                     return;
                 }
                 if (reply->status != MC_OK || !reply->page) {
@@ -549,7 +576,7 @@ void WebSocketServer::HandleAuthentication(connection_hdl connection, json& requ
         std::string actual = context.settings.Text(serverprefs::Password, defaults::password);
 
         if (sent == actual) {
-            this->connections[connection] = true; /* mark as authed */
+            this->connections[connection].authenticated = true; /* mark as authed */
 
             this->RespondWithOptions(
                 connection, request, json({
@@ -568,7 +595,7 @@ void WebSocketServer::HandleAuthentication(connection_hdl connection, json& requ
 }
 
 void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
-    if (this->connections[connection] == false) {
+    if (this->connections[connection].authenticated == false) {
         this->HandleAuthentication(connection, request);
         return;
     }
@@ -591,6 +618,52 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
         }
 
         const json& options = request[message::options];
+
+        if (name == request::get_library_scope || name == request::set_library_scope || name == request::clear_library_scope) {
+            auto& session = this->connections.at(connection);
+            if (name != request::get_library_scope) {
+                json next = name == request::clear_library_scope ? json { { "sources", nullptr } } : options;
+                if (!next.is_object()) {
+                    this->RespondWithFailure(connection, request);
+                    return;
+                }
+                for (auto it = next.begin(); it != next.end(); ++it) {
+                    if (it.key() != "sources") {
+                        this->RespondWithFailure(connection, request);
+                        return;
+                    }
+                }
+                if (next.contains("sources") && !next.at("sources").is_null()) {
+                    auto& sources = next.at("sources");
+                    if (!sources.is_array() || sources.size() > MC_LIBRARY_SCOPE_MAX_SOURCES) {
+                        this->RespondWithFailure(connection, request);
+                        return;
+                    }
+                    std::vector<int32_t> ids;
+                    for (const auto& source : sources) {
+                        if (!source.is_number_integer() || source.get<int64_t>() < 0 || source.get<int64_t>() > INT32_MAX) {
+                            this->RespondWithFailure(connection, request);
+                            return;
+                        }
+                        ids.push_back(source.get<int32_t>());
+                    }
+                    std::sort(ids.begin(), ids.end());
+                    ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+                    next = { { "sources", ids } };
+                }
+                else {
+                    next = { { "sources", nullptr } };
+                }
+                if (next != session.scope) {
+                    session.scope = std::move(next);
+                    json event = { { message::name, broadcast::library_scope_changed }, { message::options, session.scope } };
+                    this->wss->send(connection, event.dump(), websocketpp::frame::opcode::text);
+                }
+            }
+            this->RespondWithOptions(connection, request, session.scope);
+            return;
+        }
+        request[message::options]["scope"] = this->connections.at(connection).scope;
 
         if (name == request::ping) {
             this->RespondWithSuccess(connection, request);
@@ -881,15 +954,14 @@ void WebSocketServer::RespondWithFailure(connection_hdl connection, json& reques
     wss->send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
 }
 
-void WebSocketServer::RespondWithLibraryQuery(connection_hdl connection, json& request) {
-    json& options = request[message::options];
-    const auto data = options.value(key::raw_query_data, std::string());
+std::optional<WebSocketServer::json> WebSocketServer::RunLibraryQuery(const json& query) {
+    const auto input = query.dump();
     struct Result {
         std::string text;
-        bool failed { false };
+        bool failed = false;
     } result;
-    const auto receive = [](void* context, mc_string_view text) {
-        auto& result = *static_cast<Result*>(context);
+    const auto receive = [](void* data, mc_string_view text) {
+        auto& result = *static_cast<Result*>(data);
         try {
             result.text.assign(text.data ? text.data : "", text.length);
         }
@@ -898,9 +970,40 @@ void WebSocketServer::RespondWithLibraryQuery(connection_hdl connection, json& r
         }
     };
     const auto& library = *this->context.library;
-    const auto status = library.run_query(library.context, view(data), receive, &result);
-    if (status == MC_OK && !result.failed && !result.text.empty()) {
-        this->RespondWithOptions(connection, request, { { key::raw_query_data, result.text } });
+    if (library.run_query(library.context, view(input), receive, &result) != MC_OK || result.failed) {
+        return std::nullopt;
+    }
+    auto output = json::parse(result.text, nullptr, false);
+    return output.is_discarded() ? std::nullopt : std::optional<json>(std::move(output));
+}
+
+mc_track_result* WebSocketServer::QueryTrackResult(json query) {
+    const auto output = this->RunLibraryQuery(query);
+    if (!output) {
+        return nullptr;
+    }
+    const auto& values = output->at("result").at("trackList");
+    const auto ids = values.is_null() ? std::vector<int64_t> {} : values.get<std::vector<int64_t>>();
+    mc_track_result* tracks = nullptr;
+    const auto& library = *this->context.library;
+    return library.tracks_by_ids(library.context, ids.data(), ids.size(), &tracks) == MC_OK ? tracks : nullptr;
+}
+
+void WebSocketServer::RespondWithLibraryQuery(connection_hdl connection, json& request) {
+    auto query = json::parse(request[message::options].value(key::raw_query_data, std::string()), nullptr, false);
+    if (!query.is_object() || !query.contains("name") || !query.at("name").is_string() ||
+        (query.contains("options") && !query.at("options").is_null() && !query.at("options").is_object()))
+    {
+        this->RespondWithFailure(connection, request);
+        return;
+    }
+    const auto name = query.at("name").get<std::string>();
+    if (ScopedLibraryQueries.contains(name) && !query["options"].contains("scope")) {
+        query["options"]["scope"] = this->connections.at(connection).scope;
+    }
+    const auto output = this->RunLibraryQuery(query);
+    if (output) {
+        this->RespondWithOptions(connection, request, { { key::raw_query_data, output->dump() } });
         return;
     }
     this->RespondWithFailure(connection, request);
@@ -938,7 +1041,7 @@ void WebSocketServer::RespondWithPlaybackOverview(connection_hdl connection, jso
     }, [this, connection, request, options](mc_result status) mutable {
         const auto lock = this->connectionLock.Read();
         const auto found = this->connections.find(connection);
-        if (found == this->connections.end() || !found->second) {
+        if (found == this->connections.end() || !found->second.authenticated) {
             return;
         }
         if (status == MC_OK) {
@@ -996,20 +1099,16 @@ void WebSocketServer::GetLimitAndOffset(json& options, int& limit, int& offset) 
 }
 
 mc_track_result* WebSocketServer::QueryTracks(json& request, int& limit, int& offset) {
-    if (request.find(message::options) == request.end()) {
+    if (!request.contains(message::options)) {
         return nullptr;
     }
     auto& options = request[message::options];
-    const std::string filter = options.value(key::filter, "");
     this->GetLimitAndOffset(options, limit, offset);
-    auto search = mc_track_search MC_TRACK_SEARCH_DEFAULT;
-    search.text = view(filter);
-    mc_track_result* tracks = nullptr;
-    const auto& library = *context.library;
-    if (library.search_tracks(library.context, &search, limit, offset, &tracks) != MC_OK) {
-        return nullptr;
-    }
-    return tracks;
+    return this->QueryTrackResult({ { "name", MC_LIBRARY_QUERY_SEARCH_TRACKS },
+        { "options",
+            { { "filter", options.value(key::filter, "") }, { "matchType", 1 }, { "sortType", MC_TRACK_SEARCH_ALBUM },
+                { "limit", limit }, { "offset", offset },
+                { "scope", options.value("scope", json { { "sources", nullptr } }) } } } });
 }
 
 void WebSocketServer::RespondWithQueryTracks(connection_hdl connection, json& request) {
@@ -1070,7 +1169,7 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
         }, [this, connection, request, queue](mc_result status) mutable {
             const auto lock = this->connectionLock.Read();
             const auto found = this->connections.find(connection);
-            if (found == this->connections.end() || !found->second) {
+            if (found == this->connections.end() || !found->second.authenticated) {
                 return;
             }
             if (status == MC_OK) {
@@ -1153,37 +1252,34 @@ void WebSocketServer::SendQueueTracks(connection_hdl connection, json& request, 
 
 void WebSocketServer::RespondWithQueryAlbums(connection_hdl connection, json& request) {
     const auto& options = request[message::options];
-    const std::string filter = options.value(key::filter, "");
-    const std::string category = options.value(key::category, "");
-    const int64_t id = options.value<int64_t>(key::category_id, -1);
-    const mc_library_category_selection selection { .field = view(category), .id = id };
-    JsonRows result;
-    const auto collect = [](void* data, const mc_library_album* albums, size_t count) {
-        auto& output = *static_cast<JsonRows*>(data);
-        try {
-            for (size_t i = 0; i < count; ++i) {
-                const auto& album = albums[i];
-                output.rows.push_back({
-                    { key::title, string(album.title) }, { key::id, album.id },
-                    { key::thumbnail_id, album.has_thumbnail_id ? album.thumbnail_id : 0 },
-                    { key::album_artist_id, album.has_artist_id ? album.artist_id : 0 },
-                    { key::album_artist, string(album.artist) },
-                });
-            }
-        }
-        catch (...) {
-            output.failed = true;
-        }
-    };
-    const auto& library = *context.library;
-    const bool hasSelection = !category.empty() && id >= 0;
-    const auto status = library.list_albums(library.context, view(filter),
-        hasSelection ? &selection : nullptr, hasSelection ? 1 : 0, collect, &result);
-    if (status != MC_OK || result.failed) {
-        this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
+    const auto category = options.value(key::category, "");
+    const auto id = options.value<int64_t>(key::category_id, -1);
+    json predicates = json::array();
+    if (!category.empty() && id >= 0) {
+        predicates.push_back({ { "category", category }, { "id", id } });
+    }
+    const auto [regular, extended] = queryPredicates(predicates);
+    const auto output = this->RunLibraryQuery({ { "name", MC_LIBRARY_QUERY_ALBUMS },
+        { "options",
+            { { "filter", options.value(key::filter, "") }, { "regularPredicateList", regular },
+                { "extendedPredicateList", extended },
+                { "scope", options.value("scope", json { { "sources", nullptr } }) } } } });
+    if (!output) {
+        this->RespondWithFailure(connection, request);
         return;
     }
-    this->RespondWithOptions(connection, request, { { key::category, key::album }, { key::data, result.rows } });
+    json rows = json::array();
+    for (const auto& album : output->at("result")) {
+        const auto& metadata = album.at("metadata");
+        const auto integer = [&](const char* name) -> int64_t {
+            const auto value = metadata.value(name, std::string());
+            return value.empty() ? int64_t { 0 } : std::stoll(value);
+        };
+        rows.push_back({ { key::title, album.at("value") }, { key::id, album.at("id") },
+            { key::thumbnail_id, integer("thumbnail_id") }, { key::album_artist_id, integer("album_artist_id") },
+            { key::album_artist, metadata.value("album_artist", "") } });
+    }
+    this->RespondWithOptions(connection, request, { { key::category, key::album }, { key::data, rows } });
 }
 
 void WebSocketServer::RespondWithPlayTracks(connection_hdl connection, json& request) {
@@ -1217,35 +1313,26 @@ mc_track_result* WebSocketServer::QueryTracksByCategory(json& request, int& limi
     if (!request.contains(message::options)) {
         return nullptr;
     }
-    const auto& options = request[message::options];
-    const std::string category = options.value(key::category, "");
-    const int64_t selectedId = options.value<int64_t>(key::id, -1);
-    const auto predicates = options.value(key::predicates, json::array());
-    const std::string filter = options.value(key::filter, "");
+    auto& options = request[message::options];
     limit = -1;
     offset = 0;
-    auto& mutableOptions = request[message::options];
-    this->GetLimitAndOffset(mutableOptions, limit, offset);
-    const auto& library = *context.library;
-    mc_track_result* tracks = nullptr;
-    mc_result status;
-    if (!predicates.empty()) {
-        std::vector<std::string> fields;
-        std::vector<mc_library_category_selection> selections;
-        fields.reserve(predicates.size());
-        selections.reserve(predicates.size());
-        for (const auto& predicate : predicates) {
-            fields.push_back(predicate.at("category").get<std::string>());
-            selections.push_back({ .field = view(fields.back()), .id = predicate.at("id").get<int64_t>() });
-        }
-        status = library.tracks_by_categories(library.context, selections.data(), selections.size(),
-            view(filter), MC_TRACK_SEARCH_ALBUM, limit, offset, &tracks);
+    this->GetLimitAndOffset(options, limit, offset);
+    const auto category = options.value(key::category, "");
+    const auto id = options.value<int64_t>(key::id, -1);
+    if (category == "playlists" && id > 0) {
+        return this->QueryTrackResult({ { "name", "GetPlaylistQuery" },
+            { "options", { { "playlistId", id }, { "limit", limit }, { "offset", offset } } } });
     }
-    else {
-        status = library.tracks_by_category(library.context, view(category), std::max<int64_t>(0, selectedId),
-            view(filter), limit, offset, &tracks);
+    auto predicates = options.value(key::predicates, json::array());
+    if (predicates.empty() && !category.empty() && id > 0) {
+        predicates.push_back({ { "category", category }, { "id", id } });
     }
-    return status == MC_OK ? tracks : nullptr;
+    const auto [regular, extended] = queryPredicates(predicates);
+    return this->QueryTrackResult({ { "name", MC_LIBRARY_QUERY_CATEGORY_TRACKS },
+        { "options",
+            { { "filter", options.value(key::filter, "") }, { "sortType", MC_TRACK_SEARCH_ALBUM },
+                { "regularPredicateList", regular }, { "extendedPredicateList", extended }, { "limit", limit },
+                { "offset", offset }, { "scope", options.value("scope", json { { "sources", nullptr } }) } } } });
 }
 
 void WebSocketServer::RespondWithQueryTracksByCategory(connection_hdl connection, json& request) {
@@ -1288,57 +1375,38 @@ void WebSocketServer::RespondWithListCategories(connection_hdl connection, json&
 
 void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& request) {
     const auto& options = request[message::options];
-    const std::string category = options.value(key::category, "");
-    const std::string filter = options.value(key::filter, "");
+    const auto category = options.value(key::category, "");
     if (category.empty()) {
-        this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
+        this->RespondWithFailure(connection, request);
         return;
     }
-    std::vector<std::string> fields;
-    std::vector<mc_library_category_selection> selections;
-    const auto predicates = options.value(key::predicates, json::array());
-    fields.reserve(predicates.size() + 1);
-    selections.reserve(predicates.size() + 1);
-    for (const auto& predicate : predicates) {
-        fields.push_back(predicate.at("category").get<std::string>());
-        selections.push_back({ .field = view(fields.back()), .id = predicate.at("id").get<int64_t>() });
-    }
-    if (selections.empty()) {
-        auto predicate = options.value(key::predicate_category, "");
+    auto predicates = options.value(key::predicates, json::array());
+    if (predicates.empty()) {
+        const auto field = options.value(key::predicate_category, "");
         const auto id = options.value<int64_t>(key::predicate_id, -1);
-        if (!predicate.empty() && id >= 0) {
-            fields.push_back(std::move(predicate));
-            selections.push_back({ .field = view(fields.back()), .id = id });
+        if (!field.empty() && id >= 0) {
+            predicates.push_back({ { "category", field }, { "id", id } });
         }
     }
-    JsonRows result;
-    const auto collect = [](mc_result status, const mc_category_entry* entries, size_t count,
-        const mc_error*, void* data) {
-        auto& output = *static_cast<JsonRows*>(data);
-        try {
-            if (status != MC_OK) {
-                output.failed = true;
-                return;
-            }
-            for (size_t i = 0; i < count; ++i) {
-                output.rows.push_back({ { key::id, entries[i].id }, { key::value, string(entries[i].value) } });
-            }
-        }
-        catch (...) {
-            output.failed = true;
-        }
-    };
-    const auto& library = *context.library;
-    const auto status = selections.empty()
-        ? library.list_categories(library.context, view(category), view(filter), MC_TRACK_SEARCH_SUBSTRING,
-            collect, &result)
-        : library.list_filtered_categories(library.context, view(category), selections.data(), selections.size(),
-            view(filter), MC_TRACK_SEARCH_SUBSTRING, false, { nullptr, 0 }, collect, &result);
-    if (status != MC_OK || result.failed) {
-        this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
+    const auto [regular, extended] = queryPredicates(predicates);
+    const auto output = this->RunLibraryQuery({ { "name", MC_LIBRARY_QUERY_CATEGORIES },
+        { "options",
+            { { "trackField", category }, { "filter", options.value(key::filter, "") }, { "matchType", 1 },
+                { "outputType",
+                    category == "playlists"         ? 3
+                        : regularCategory(category) ? 1
+                                                    : 2 },
+                { "regularPredicateList", regular }, { "extendedPredicateList", extended },
+                { "scope", options.value("scope", json { { "sources", nullptr } }) } } } });
+    if (!output) {
+        this->RespondWithFailure(connection, request);
         return;
     }
-    this->RespondWithOptions(connection, request, { { key::category, category }, { key::data, result.rows } });
+    json rows = json::array();
+    for (const auto& row : output->at("result")) {
+        rows.push_back({ { key::id, row.at("id") }, { key::value, row.at("value") } });
+    }
+    this->RespondWithOptions(connection, request, { { key::category, category }, { key::data, rows } });
 }
 
 /* the result must stay alive until the owner executes the playback request. */
@@ -1420,7 +1488,7 @@ void WebSocketServer::RespondWithCurrentTime(connection_hdl connection, json& re
     }, [this, connection, request, output](mc_result status) mutable {
         const auto lock = this->connectionLock.Read();
         const auto found = this->connections.find(connection);
-        if (found == this->connections.end() || !found->second) {
+        if (found == this->connections.end() || !found->second.authenticated) {
             return;
         }
         if (status == MC_OK) {
@@ -1447,6 +1515,7 @@ mc_track_result* WebSocketServer::ResolvePlaylistTracks(json& options) {
     }
     if (options.contains(key::subquery) && options[key::subquery].is_object()) {
         auto& subquery = options[key::subquery];
+        subquery[message::options]["scope"] = options.value("scope", json { { "sources", nullptr } });
         const auto type = subquery.value(key::type, "");
         int limit = -1;
         int offset = 0;
@@ -1543,7 +1612,7 @@ void WebSocketServer::RespondWithControl(connection_hdl connection, json& reques
     }, [this, connection, request, output, includeOptions](mc_result status) mutable {
         const auto lock = this->connectionLock.Read();
         const auto found = this->connections.find(connection);
-        if (found == this->connections.end() || !found->second) {
+        if (found == this->connections.end() || !found->second.authenticated) {
             return;
         }
         if (status != MC_OK) {
@@ -1565,7 +1634,7 @@ void WebSocketServer::RespondWithRunIndexer(connection_hdl connection, json& req
                 this->PostToIo([this, connection, request = std::move(request), result]() mutable {
                     const auto lock = this->connectionLock.Read();
                     const auto found = this->connections.find(connection);
-                    if (found == this->connections.end() || !found->second) {
+                    if (found == this->connections.end() || !found->second.authenticated) {
                         return;
                     }
                     if (result == MC_OK) {
@@ -1627,7 +1696,7 @@ void WebSocketServer::RespondWithSnapshotPlayQueue(connection_hdl connection, js
     }, [this, connection, request, queue](mc_result status) mutable {
         const auto lock = this->connectionLock.Read();
         const auto found = this->connections.find(connection);
-        if (found == this->connections.end() || !found->second) {
+        if (found == this->connections.end() || !found->second.authenticated) {
             return;
         }
         if (status == MC_OK) {
@@ -1739,7 +1808,7 @@ void WebSocketServer::BuildPlaybackOverview(json& options, mc_playback* playback
 
 void WebSocketServer::OnOpen(connection_hdl connection) {
     auto wl = connectionLock.Write();
-    connections[connection] = false;
+    connections[connection] = Session {};
 }
 
 void WebSocketServer::OnClose(connection_hdl connection) {

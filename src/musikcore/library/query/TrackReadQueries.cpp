@@ -46,6 +46,7 @@ namespace musik { namespace core { namespace library { namespace query {
         enum TagColumn { tagTrackIdColumn, tagKeyColumn, tagValueColumn };
         enum TrackParameter { searchParameter = 1, limitParameter, offsetParameter };
         constexpr int firstTagParameter = 1;
+        constexpr int firstSourceParameter = offsetParameter + 1;
 
         using TagFields = std::map<std::string, std::vector<size_t>>;
         using Statement = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>;
@@ -131,8 +132,12 @@ namespace musik { namespace core { namespace library { namespace query {
         /* Both library backends use the same matching, ordering and grouping rules. */
         const auto sort = kTrackListSortOrderBy.find(order);
         if (sort == kTrackListSortOrderBy.end()) return false;
+        if (this->scope.MatchesNoTracks()) {
+            result = {};
+            return true;
+        }
         const auto predicate = kTrackSearchSortOrderByPredicate.find(order);
-        std::string sql = "SELECT tracks.id, al.name, tracks.duration FROM tracks "
+        std::string sql = "SELECT tracks.id, tracks.album_id, tracks.duration FROM tracks "
             "JOIN albums al ON tracks.album_id=al.id "
             "JOIN artists ar ON tracks.visual_artist_id=ar.id "
             "JOIN genres gn ON tracks.visual_genre_id=gn.id WHERE tracks.visible=1";
@@ -144,39 +149,58 @@ namespace musik { namespace core { namespace library { namespace query {
                 ? " AND (tracks.title REGEXP ?1 OR al.name REGEXP ?1 OR ar.name REGEXP ?1 OR gn.name REGEXP ?1)"
                 : " AND (tracks.title LIKE ?1 OR al.name LIKE ?1 OR ar.name LIKE ?1 OR gn.name LIKE ?1)";
         }
+        const auto& sourceIds = this->scope.SourceIds();
+        if (sourceIds) {
+            sql += " AND tracks.source_id IN (";
+            for (size_t i = 0; i < sourceIds->size(); ++i) {
+                if (i != 0) { sql += ","; }
+                sql += "?" + std::to_string(firstSourceParameter + i);
+            }
+            sql += ")";
+        }
         sql += " ORDER BY " + sort->second + ", tracks.id";
         const bool paged = limit > 0 && offset >= 0;
-        if (paged) sql += " LIMIT ?2 OFFSET ?3";
+        if (paged) {
+            sql += " LIMIT ?2 OFFSET ?3";
+        }
 
         /* Bind the filter and range instead of interpolating input into SQL. */
         std::string pattern = filter;
         if (!regex && !filter.empty()) {
             const auto begin = filter.find_first_not_of(" \t\n\r\f\v");
-            pattern = begin == std::string::npos ? "%%" :
-                "%" + filter.substr(begin, filter.find_last_not_of(" \t\n\r\f\v") - begin + 1) + "%";
+            pattern = begin == std::string::npos
+                ? "%%"
+                : "%" + filter.substr(begin, filter.find_last_not_of(" \t\n\r\f\v") - begin + 1) + "%";
         }
         const auto statement = prepare(database, sql);
         if (!statement || (!filter.empty() && bindString(statement.get(), searchParameter, pattern) != SQLITE_OK) ||
             (paged && (sqlite3_bind_int(statement.get(), limitParameter, limit) != SQLITE_OK ||
                        sqlite3_bind_int(statement.get(), offsetParameter, offset) != SQLITE_OK))) return false;
 
+        if (sourceIds) {
+            for (size_t i = 0; i < sourceIds->size(); ++i) {
+                if (sqlite3_bind_int64(statement.get(), static_cast<int>(firstSourceParameter + i),
+                    (*sourceIds)[i]) != SQLITE_OK)
+                {
+                    return false;
+                }
+            }
+        }
+
         TrackSearchRows rows;
         const bool grouped = kTrackSortTypeWithAlbumGrouping.count(order) != 0;
-        std::string previousAlbum;
+        int64_t previousAlbum = 0;
         auto currentAlbum = rows.albumDurations.end();
         int status;
         while ((status = sqlite3_step(statement.get())) == SQLITE_ROW) {
             if (grouped) {
-                std::string album;
-                if (!readString(statement.get(), searchAlbumColumn, album) &&
-                    sqlite3_column_type(statement.get(), searchAlbumColumn) != SQLITE_NULL) return false;
-                if (album.empty()) album = unknownAlbum;
+                const auto album = sqlite3_column_int64(statement.get(), searchAlbumColumn);
                 const bool startsAlbum = rows.ids.empty() || album != previousAlbum;
                 rows.albumStarts.push_back(startsAlbum);
                 if (startsAlbum) {
                     currentAlbum = rows.albumDurations.emplace(rows.ids.size(), 0).first;
                 }
-                previousAlbum = std::move(album);
+                previousAlbum = album;
                 const auto seconds = sqlite3_column_int64(statement.get(), searchDurationColumn);
                 if (seconds > 0) currentAlbum->second += static_cast<uint64_t>(seconds);
             }
@@ -190,6 +214,10 @@ namespace musik { namespace core { namespace library { namespace query {
     bool TrackPageQuery::Run(sqlite3 *database, ProjectedTrackPage &result) const {
         ProjectedTrackPage page;
         page.names = fields;
+        if (!ids && this->scope.MatchesNoTracks()) {
+            result = std::move(page);
+            return true;
+        }
         const ReadTransaction transaction(database);
         if (!transaction.ready) return false;
 
@@ -210,8 +238,22 @@ namespace musik { namespace core { namespace library { namespace query {
         sql += visibility == TrackVisibility::IncludeHidden
             ? " FROM tracks t WHERE "
             : " FROM tracks t WHERE t.visible = 1 AND ";
-        if (ids) sql += "t.id IN (" + placeholders(limit) + ") ORDER BY t.id";
-        else sql += "(?1 = '' OR instr(t.title, ?1) > 0) ORDER BY t.id LIMIT ?2 OFFSET ?3";
+        if (ids) {
+            sql += "t.id IN (" + placeholders(limit) + ") ORDER BY t.id";
+        }
+        else {
+            sql += "(?1 = '' OR instr(t.title, ?1) > 0)";
+            if (this->scope.SourceIds()) {
+                const auto& selected = *this->scope.SourceIds();
+                sql += " AND t.source_id IN (";
+                for (size_t i = 0; i < selected.size(); ++i) {
+                    if (i != 0) { sql += ","; }
+                    sql += "?" + std::to_string(firstSourceParameter + i);
+                }
+                sql += ")";
+            }
+            sql += " ORDER BY t.id LIMIT ?2 OFFSET ?3";
+        }
 
         auto statement = prepare(database, sql);
         if (!statement) return false;
@@ -222,6 +264,15 @@ namespace musik { namespace core { namespace library { namespace query {
         } else if (bindString(statement.get(), searchParameter, search) != SQLITE_OK ||
             sqlite3_bind_int64(statement.get(), limitParameter, limit) != SQLITE_OK ||
             sqlite3_bind_int64(statement.get(), offsetParameter, offset) != SQLITE_OK) return false;
+
+        if (!ids && this->scope.SourceIds()) {
+            const auto& selected = *this->scope.SourceIds();
+            for (size_t i = 0; i < selected.size(); ++i) {
+                if (sqlite3_bind_int64(statement.get(), static_cast<int>(firstSourceParameter + i), selected[i]) != SQLITE_OK) {
+                    return false;
+                }
+            }
+        }
 
         /* Page tracks before expanding tags so repeated values never consume page slots. */
         int status;

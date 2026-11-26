@@ -39,7 +39,7 @@
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <mutex>
 
-struct LibraryIdentity;
+struct LibraryInstance;
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -118,7 +118,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             mc_context& context;
             musik::core::ILibraryPtr library;
-            std::shared_ptr<const LibraryIdentity> identity;
+            std::shared_ptr<const LibraryInstance> instance;
             musik::core::ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory;
             std::mutex admissionMutex;
             bool stopping { false };

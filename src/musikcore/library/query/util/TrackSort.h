@@ -60,19 +60,19 @@ namespace musik { namespace core { namespace library { namespace query {
 
     static const std::map<TrackSortType, std::string> kTrackListSortOrderBy = {
         { TrackSortType::Title, "tracks.title, ar.name, al.name" },
-        { TrackSortType::Album, "al.name, disc, track, ar.name" },
-        { TrackSortType::Artist, "ar.name, al.name, disc, track" },
-        { TrackSortType::DateAddedAsc, "date(tracks.date_added) ASC, al.name, disc, track, ar.name" },
-        { TrackSortType::DateAddedDesc, "date(tracks.date_added) DESC, al.name, disc, track, ar.name" },
-        { TrackSortType::DateUpdatedAsc, "date(tracks.date_updated) ASC, al.name, disc, track, ar.name" },
-        { TrackSortType::DateUpdatedDesc, "date(tracks.date_updated) DESC, al.name, disc, track, ar.name" },
+        { TrackSortType::Album, "al.name, tracks.album_id, disc, track, ar.name" },
+        { TrackSortType::Artist, "ar.name, al.name, tracks.album_id, disc, track" },
+        { TrackSortType::DateAddedAsc, "date(tracks.date_added) ASC, al.name, tracks.album_id, disc, track, ar.name" },
+        { TrackSortType::DateAddedDesc, "date(tracks.date_added) DESC, al.name, tracks.album_id, disc, track, ar.name" },
+        { TrackSortType::DateUpdatedAsc, "date(tracks.date_updated) ASC, al.name, tracks.album_id, disc, track, ar.name" },
+        { TrackSortType::DateUpdatedDesc, "date(tracks.date_updated) DESC, al.name, tracks.album_id, disc, track, ar.name" },
         { TrackSortType::LastPlayedAsc, "datetime(tracks.last_played) ASC" },
         { TrackSortType::LastPlayedDesc, "datetime(tracks.last_played) DESC" },
         { TrackSortType::RatingAsc, "tracks.rating ASC" },
         { TrackSortType::RatingDesc, "tracks.rating DESC" },
         { TrackSortType::PlayCountAsc, "tracks.play_count ASC" },
         { TrackSortType::PlayCountDesc, "tracks.play_count DESC" },
-        { TrackSortType::Genre, "gn.name, al.name, disc, track, ar.name" },
+        { TrackSortType::Genre, "gn.name, al.name, tracks.album_id, disc, track, ar.name" },
         { TrackSortType::Duration, "tracks.duration ASC, tracks.title, ar.name, al.name" },
     };
 

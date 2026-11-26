@@ -38,7 +38,6 @@
 #include <musikcore/db/Connection.h>
 
 #include <musikcore/library/ILibrary.h>
-#include <musikcore/library/IIndexer.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/library/QueryBase.h>
 
@@ -59,7 +58,6 @@ namespace musik { namespace core { namespace library {
             using LocalQuery = musik::core::library::query::QueryBase;
             using LocalQueryPtr = std::shared_ptr<LocalQuery>;
             using MessageQueue = musik::core::runtime::IMessageQueue;
-            using IIndexer = musik::core::IIndexer;
 
             static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue, bool enableIndexer = true);
 
@@ -69,7 +67,8 @@ namespace musik { namespace core { namespace library {
             /* ILibrary */
             int Enqueue(QueryPtr query, Callback cb = Callback()) override;
             int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) override;
-            IIndexer *Indexer() override;
+            musik::core::Indexer *Indexer() override;
+            std::vector<std::pair<int32_t, std::string>> Sources() const override { return this->sources; }
             int Id() override;
             const std::string& Name() override;
             void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
@@ -127,7 +126,8 @@ namespace musik { namespace core { namespace library {
             std::recursive_mutex mutex;
             std::atomic<bool> exit;
 
-            core::IIndexer *indexer;
+            std::vector<std::pair<int32_t, std::string>> sources;
+            core::Indexer *indexer;
             core::db::Connection db;
     };
 

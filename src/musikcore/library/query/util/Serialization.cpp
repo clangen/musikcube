@@ -97,6 +97,7 @@ namespace musik { namespace core { namespace library { namespace query {
                     { "value", value.value },
                     { "id", value.id },
                     { "type", value.type },
+                    { "source_id", value.sourceId ? nlohmann::json(*value.sourceId) : nlohmann::json() },
                 });
             }
             return result;
@@ -109,6 +110,8 @@ namespace musik { namespace core { namespace library { namespace query {
                     .value = value["value"].get<std::string>(),
                     .id = value["id"].get<int64_t>(),
                     .type = value["type"].get<std::string>(),
+                    .sourceId = value.contains("source_id") && !value["source_id"].is_null()
+                        ? std::optional<int32_t>(value["source_id"].get<int32_t>()) : std::nullopt,
                 });
             }
         }

@@ -3,6 +3,7 @@
 
 #include <musikcore/context.h>
 #include <stdbool.h>
+#include <musikcore/subscriptions.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,84 @@ enum { MC_TRACK_RATING_MAX = 5 };
    Error details may be null on allocation failure; status is authoritative.
    Error is null on success and otherwise valid only during the callback. */
 
+enum { MC_LIBRARY_SCOPE_MAX_SOURCES = 256 };
+
+/* restrict browsing to any of the selected catalog sources. */
+typedef struct mc_library_source_filter {
+    /* supplied bytes; all fields must be present. */
+    uint32_t struct_size;
+    /* nonnegative catalog IDs, copied on update; zero identifies Files. */
+    const int32_t* ids;
+    /* at most MC_LIBRARY_SCOPE_MAX_SOURCES; zero matches no sources.
+       ids may be NULL only when count is zero. duplicates are normalized. */
+    size_t count;
+} mc_library_source_filter;
+
+#define MC_LIBRARY_SOURCE_FILTER_DEFAULT { sizeof(mc_library_source_filter), NULL, 0 }
+
+/* replacement browsing selection; every non-NULL filter is applied. */
+typedef struct mc_library_scope {
+    /* supplied bytes; absent trailing fields default to NULL. larger structs
+       are rejected so future filters cannot be silently ignored. */
+    uint32_t struct_size;
+    /* optional source restriction, copied on update. NULL means all sources,
+       including newly added sources. a present empty filter matches nothing. */
+    const mc_library_source_filter* sources;
+} mc_library_scope;
+
+#define MC_LIBRARY_SCOPE_DEFAULT { sizeof(mc_library_scope), NULL }
+
+typedef struct mc_library_scope_snapshot mc_library_scope_snapshot;
+
+/* notification for the subscribed instance, borrowed during the callback. */
+typedef struct mc_library_scope_change {
+    /* originating library alias; valid only during delivery. */
+    const mc_library* library;
+} mc_library_scope_change;
+
+/* replace or clear the instance selection. aliases share updates. effective
+   changes cancel pending browsing requests without waiting for backend replies.
+   completion admission is ordered with scope replacement: a completion admitted
+   first may finish its callback after the update; otherwise it is cancelled.
+   delivered results retain their membership. observers run on the updating thread outside internal locks.
+   unchanged or rejected selections publish nothing. */
+MC_API mc_result MC_CALL mc_library_set_scope(mc_library* library, const mc_library_scope* scope);
+
+MC_API mc_result MC_CALL mc_library_clear_scope(mc_library* library);
+
+/* capture a caller-owned selection in an empty output slot. */
+MC_API mc_result MC_CALL mc_library_get_scope(const mc_library* library, mc_library_scope_snapshot** out_scope);
+
+/* return a snapshot-owned view, valid until snapshot destruction; NULL for NULL. */
+MC_API const mc_library_scope* MC_CALL mc_library_scope_read(const mc_library_scope_snapshot* scope);
+
+MC_API void MC_CALL mc_library_scope_destroy(mc_library_scope_snapshot** scope);
+
+/* subscribe before capturing the initial selection to avoid missing changes.
+   callback receives mc_library_scope_change. use mc_subscription_destroy() to
+   unsubscribe; the existing subscription delivery/lifetime rules apply.
+   concurrent updates may deliver concurrently; requery the current selection.
+   subscriptions belong to the library instance, independently of a context;
+   context shutdown does not destroy library-owned subscriptions. */
+MC_API mc_result MC_CALL mc_library_subscribe_scope(const mc_library* library, mc_event_fn callback,
+    void* user_data, mc_subscription** out_subscription);
+
+/* a catalog source available for selection, including sources with no tracks. */
+typedef struct mc_library_source {
+    /* catalog-scoped nonnegative ID; zero identifies ordinary files. */
+    int32_t id;
+    /* UTF-8 display label borrowed until the callback returns. */
+    mc_string_view label;
+} mc_library_source;
+
+typedef void (MC_CALL *mc_library_sources_completion_fn)(mc_result status,
+    const mc_library_source* sources, size_t count, const mc_error* error, void* user_data);
+
+/* enumerate the complete catalog independently of its active scope. entries and
+   labels are callback-borrowed; failure supplies NULL entries and zero count. */
+MC_API mc_result MC_CALL mc_library_list_sources_async(mc_context* context, const mc_library* library,
+    mc_library_sources_completion_fn completion, void* user_data, mc_request_id* out_request);
+
 typedef struct mc_library_options {
     /* Size of this struct in bytes. */
     uint32_t struct_size;
@@ -49,7 +128,7 @@ typedef struct mc_library_options {
 
 #define MC_LIBRARY_OPTIONS_DEFAULT { sizeof(mc_library_options), MC_LIBRARY_LOCAL, { NULL, 0 } }
 
-/* Create a library identity. The output slot must be empty.
+/* Create a library instance. The output slot must be empty.
    Creating a remote handle by endpoint does not open a connection. Remote reads require a core-bound
    session. */
 MC_API mc_result MC_CALL mc_library_create(const mc_library_options *options, mc_library **out_library);
@@ -263,11 +342,31 @@ MC_API mc_result MC_CALL mc_library_open_directory_async(
 MC_API mc_result MC_CALL mc_library_make_track_result(
     const mc_library *library, const int64_t *ids, size_t count, mc_track_result **out_result);
 
+enum { MC_PLAYLIST_GLOBAL = 0, MC_PLAYLIST_SOURCE = 1 };
+
+/* explicit ownership for creating a playlist; existing entries are never filtered. */
+typedef struct mc_playlist_create_options {
+    /* supplied bytes; trailing absent fields use zero defaults. */
+    uint32_t struct_size;
+    /* UTF-8 name, copied on submission. */
+    mc_string_view name;
+    /* MC_PLAYLIST_GLOBAL by default, or MC_PLAYLIST_SOURCE. */
+    uint32_t ownership;
+    /* nonnegative catalog source ID when ownership is SOURCE; zero means Files. */
+    int32_t source_id;
+} mc_playlist_create_options;
+
+#define MC_PLAYLIST_CREATE_OPTIONS_DEFAULT { sizeof(mc_playlist_create_options), { NULL, 0 }, MC_PLAYLIST_GLOBAL, 0 }
+
 typedef struct mc_playlist_entry {
     /* ID scoped to the library used for the request. */
     int64_t id;
     /* UTF-8 name owned by core, valid only during the completion callback. */
     mc_string_view name;
+    /* GLOBAL or SOURCE ownership; source zero is distinct from global. */
+    uint32_t ownership;
+    /* owning catalog source ID when ownership is SOURCE; otherwise zero. */
+    int32_t source_id;
 } mc_playlist_entry;
 
 typedef uint32_t mc_playlist_event;
@@ -366,6 +465,12 @@ MC_API mc_result MC_CALL mc_library_list_playlists_async(
    returns MC_ERROR_OUTCOME_UNKNOWN, reread the playlist before retrying. */
 /* Zero playlist_id creates a playlist using name. A positive ID overwrites its tracks.
    IDs belong to library. Core copies their order, including duplicates, before returning. */
+/* create with explicit ownership. source-owned playlists reject missing or
+   mismatched tracks atomically. IDs and options are copied before return. */
+MC_API mc_result MC_CALL mc_library_create_playlist_async(mc_context* context, const mc_library* library,
+    const mc_playlist_create_options* options, const int64_t* track_ids, size_t track_count,
+    mc_playlist_write_completion_fn completion, void* user_data, mc_request_id* out_request);
+
 MC_API mc_result MC_CALL mc_library_save_playlist_async(
     mc_context *context, const mc_library *library, int64_t playlist_id, mc_string_view name,
     const int64_t *track_ids, size_t track_count, mc_playlist_write_completion_fn completion,

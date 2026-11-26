@@ -26,6 +26,20 @@ endif()
 
 if(BUILD_TESTING)
 
+  add_executable(musikcore_playlist_source_schema_test ../integration/library/playlist-source-schema.cpp)
+  target_include_directories(musikcore_playlist_source_schema_test PRIVATE
+    "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})
+  target_link_libraries(musikcore_playlist_source_schema_test PRIVATE ${core_fixture_library} Threads::Threads)
+  if(WIN32)
+    target_link_libraries(musikcore_playlist_source_schema_test PRIVATE
+      musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+  endif()
+  add_dependencies(musikcube_tests musikcore_playlist_source_schema_test)
+  add_dependencies(musikcube_integration_tests musikcore_playlist_source_schema_test)
+  add_test(NAME musikcore.integration.library.playlist_source_schema COMMAND musikcore_playlist_source_schema_test)
+  set_tests_properties(musikcore.integration.library.playlist_source_schema PROPERTIES
+    LABELS "integration;musikcore;library;contract")
+
   add_executable(musikcore_playlist_track_queries_test ../integration/library/playlist-track-queries.cpp)
   target_include_directories(musikcore_playlist_track_queries_test PRIVATE
     "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})

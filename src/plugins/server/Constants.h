@@ -156,6 +156,9 @@ namespace type {
 }
 
 namespace request {
+    static const std::string get_library_scope = "get_library_scope";
+    static const std::string set_library_scope = "set_library_scope";
+    static const std::string clear_library_scope = "clear_library_scope";
     static const std::string authenticate = "authenticate";
     static const std::string ping = "ping";
     static const std::string send_raw_query = "send_raw_query";
@@ -210,6 +213,7 @@ namespace fragment {
 }
 
 namespace broadcast {
+    static const std::string library_scope_changed = "library_scope_changed";
     static const std::string playback_overview_changed = "playback_overview_changed";
     static const std::string play_queue_changed = "play_queue_changed";
 }

@@ -25,6 +25,7 @@ namespace musik { namespace core { namespace plugin {
         void Interrupt();
         bool HasStableIds();
         int SourceId();
+        const std::string& Label() const { return this->label; }
         bool Failed() const;
         void Abort();
 
@@ -39,6 +40,7 @@ namespace musik { namespace core { namespace plugin {
         std::string dataDirectory;
         std::string pluginId;
         std::string sourceKey;
+        std::string label;
         void* instance { nullptr };
         int sourceId { 0 };
         bool stableIds { false };

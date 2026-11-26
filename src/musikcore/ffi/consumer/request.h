@@ -10,8 +10,7 @@
 #include <atomic>
 #include <string>
 
-struct LibraryIdentity;
-namespace musik { namespace core { class IIndexer; } }
+struct LibraryInstance;
 
 namespace musik { namespace core { namespace ffi {
 
@@ -34,11 +33,16 @@ namespace musik { namespace core { namespace ffi {
         virtual mc_result CreatePlayer(mc_player**) { return MC_ERROR_UNSUPPORTED; }
         virtual mc_result OpenPlayback(mc_playback** out) = 0;
         virtual mc_result SelectLibrary(mc_library_kind kind) = 0;
-        virtual mc_result SelectLibrary(const std::shared_ptr<const LibraryIdentity>&) {
+        virtual mc_result SelectLibrary(const std::shared_ptr<const LibraryInstance>&) {
             return MC_ERROR_UNSUPPORTED;
         }
         virtual mc_result ReconnectRemote() = 0;
-        virtual IIndexer* LocalIndexer() const = 0;
+        virtual mc_result IndexerState(mc_indexer_state* state) const = 0;
+        virtual mc_result IndexerPaths(mc_indexer_paths_fn callback, void* data) = 0;
+        virtual mc_result AddIndexerPath(std::string path) = 0;
+        virtual mc_result RemoveIndexerPath(std::string path) = 0;
+        virtual mc_result ScheduleIndexer(mc_indexer_scan scan) = 0;
+        virtual mc_result CancelIndexer() = 0;
         virtual void Stop() = 0;
     };
 
@@ -67,13 +71,13 @@ namespace musik { namespace core { namespace ffi {
         std::string serverVersion;
     };
 
-    std::shared_ptr<const LibraryIdentity> context_library(const mc_context& context);
-    mc_result set_context_library(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
+    std::shared_ptr<const LibraryInstance> context_library(const mc_context& context);
+    mc_result set_context_library(mc_context& context, std::shared_ptr<const LibraryInstance> library,
         LibraryStatus status);
     void publish_indexer_event(mc_context& context, mc_indexer_event event, int updates);
     void publish_playlist_event(mc_context& context, mc_playlist_event event, int64_t playlistId);
     void publish_equalizer_event(mc_context& context);
-    mc_result publish_library_selection(mc_context& context, std::shared_ptr<const LibraryIdentity> library,
+    mc_result publish_library_selection(mc_context& context, std::shared_ptr<const LibraryInstance> library,
         LibraryStatus status, bool selectionChanged);
 
     using RequestCompletion = std::function<void(mc_result, void *)>;
@@ -98,6 +102,9 @@ namespace musik { namespace core { namespace ffi {
         void *user_data, mc_request_id *out_request, std::function<void(mc_result)> &finish,
         RequestEffect effect = RequestEffect::Read, std::shared_ptr<std::atomic_bool> cancel = {},
         const void* owner = nullptr, std::function<void()> cancel_external = {});
+
+    /* cancellation token remains safe after context shutdown/destruction. */
+    std::function<void()> make_request_canceller(mc_context* context, mc_request_id request);
 
     /* settle one plugin's requests on the owner thread before it is unloaded. */
     void cancel_owned_requests(mc_context& context, const void* owner) noexcept;

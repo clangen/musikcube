@@ -37,6 +37,8 @@
 #include <musikcore/library/query/util/Serialization.h>
 #include <musikcore/i18n/Locale.h>
 #include "DirectoryTrackListQuery.h"
+#include <musikcore/plugin/library_query_names.h>
+#include "util/SourcePredicate.h"
 #include "CategoryTrackListQuery.h"
 
 using musik::core::db::Statement;
@@ -48,7 +50,7 @@ using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
 using namespace musik::core::library;
 
-const std::string DirectoryTrackListQuery::kQueryName = "DirectoryTrackListQuery";
+const std::string DirectoryTrackListQuery::kQueryName = MC_LIBRARY_QUERY_DIRECTORY_TRACKS;
 
 DirectoryTrackListQuery::DirectoryTrackListQuery(
     ILibraryPtr library,
@@ -69,18 +71,22 @@ bool DirectoryTrackListQuery::OnRun(Connection& db) {
     this->headers = std::make_shared<std::set<size_t>>();
     this->durations = std::make_shared<std::map<size_t, size_t>>();
 
+    if (this->scope.MatchesNoTracks()) { return true; }
+
     std::string query =
         " SELECT t.id, t.duration, al.name "
         " FROM tracks t, albums al, artists ar, genres gn "
         " WHERE t.visible=1 AND directory_id IN ("
         "   SELECT id FROM directories WHERE name LIKE ?)"
         " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-        " ORDER BY al.name, disc, track, ar.name ";
+        " {{source_predicate}} ORDER BY al.name, disc, track, ar.name ";
 
+    category::ArgumentList args { category::StringArgument(this->directory + "%") };
+    category::ApplySourceScope(query, this->scope, "t.source_id", args);
     query += this->GetLimitAndOffset();
 
     Statement select(query.c_str(), db);
-    select.BindText(0, this->directory + "%");
+    category::Apply(select, args);
 
     std::string lastAlbum;
     size_t lastHeaderIndex = 0;
@@ -130,6 +136,7 @@ std::string DirectoryTrackListQuery::SerializeQuery() {
             { "filter", filter },
         }}
     };
+    output["options"]["scope"] = EncodeScope(this->scope);
     return FinalizeSerializedQueryWithLimitAndOffset(output);
 }
 
@@ -153,5 +160,6 @@ std::shared_ptr<DirectoryTrackListQuery> DirectoryTrackListQuery::DeserializeQue
         options["directory"].get<std::string>(),
         options["filter"].get<std::string>());
     result->ExtractLimitAndOffsetFromDeserializedQuery(options);
+    result->SetScope(DecodeScope(options));
     return result;
 }

@@ -34,8 +34,8 @@
 
 #include "pch.hpp"
 #include "SearchTrackListQuery.h"
+#include <musikcore/plugin/library_query_names.h>
 
-#include <musikcore/i18n/Locale.h>
 #include "TrackReadQueries.h"
 #include <musikcore/library/query/util/Serialization.h>
 
@@ -54,7 +54,7 @@ using namespace musik::core::db;
 using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
 
-const std::string SearchTrackListQuery::kQueryName = "SearchTrackListQuery";
+const std::string SearchTrackListQuery::kQueryName = MC_LIBRARY_QUERY_SEARCH_TRACKS;
 
 SearchTrackListQuery::SearchTrackListQuery(
     ILibraryPtr library,
@@ -92,8 +92,9 @@ size_t SearchTrackListQuery::GetQueryHash() noexcept {
 
 bool SearchTrackListQuery::OnRun(Connection& db) {
     TrackSearchRows rows;
-    const TrackSearchQuery query(this->filter, this->matchType == MatchType::Regex,
-        this->sortType, this->GetLimit(), this->GetOffset(), _TSTR("tracklist_unknown_album"));
+    TrackSearchQuery query(this->filter, this->matchType == MatchType::Regex,
+        this->sortType, this->GetLimit(), this->GetOffset());
+    query.scope = this->scope;
     if (!query.Run(db.NativeHandle(), rows)) return false;
 
     /* Adapt the shared search result to the existing serialized query contract. */
@@ -118,6 +119,7 @@ std::string SearchTrackListQuery::SerializeQuery() {
             { "sortType", sortType }
         }}
     };
+    output["options"]["scope"] = EncodeScope(this->scope);
     return FinalizeSerializedQueryWithLimitAndOffset(output);
 }
 
@@ -140,5 +142,6 @@ std::shared_ptr<SearchTrackListQuery> SearchTrackListQuery::DeserializeQuery(mus
         options["filter"].get<std::string>(),
         options["sortType"].get<TrackSortType>());
     result->ExtractLimitAndOffsetFromDeserializedQuery(options);
+    result->SetScope(DecodeScope(options));
     return result;
 }

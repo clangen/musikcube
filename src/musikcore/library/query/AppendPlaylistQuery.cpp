@@ -115,7 +115,8 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
         updateOffsets.BindInt64(1, playlistId);
         updateOffsets.BindInt32(2, offset);
 
-        if (updateOffsets.Step() == db::Error) {
+        if (updateOffsets.Step() != db::Done) {
+            transaction.Cancel();
             return false;
         }
     }
@@ -142,8 +143,9 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
             insertTrack.BindInt64(2, playlistId);
             insertTrack.BindInt32(3, offset++);
 
-            if (insertTrack.Step() == db::Error) {
-                return false;
+            if (insertTrack.Step() != db::Done) {
+                transaction.Cancel();
+            return false;
             }
         }
     }

@@ -18,6 +18,8 @@ function(musikcore_add_consumer_api target remote_session_source)
   if(target STREQUAL "musikcore" OR target STREQUAL "musikcore_objects")
     list(APPEND sources
       "${ffi}/consumer/library-query-backends.cpp"
+      "${ffi}/consumer/library-query-local.cpp"
+      "${ffi}/consumer/library-query-remote.cpp"
       "${ffi}/plugin_abi/AudioScratchBuffers.cpp")
   else()
     list(APPEND sources "${ffi}/consumer/audio-abi-only.cpp")

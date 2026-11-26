@@ -115,6 +115,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "{{regular_predicates}} "
             "{{regular_filter}} "
             "{{facet_filter}} "
+            "{{source_predicate}} "
             "ORDER BY {{table}}.sort_order";
 
         /* EXTENDED_PROPERTY_QUERY is similar to REGULAR_PROPERTY_QUERY, but is used to
@@ -153,6 +154,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "WHERE "
             "  extended_metadata.key=? "
             "  {{extended_filter}} "
+            "{{source_predicate}} "
             "ORDER BY extended_metadata.value ASC";
 
         /* used to select all tracks that match a specified set of predicates. both
@@ -186,6 +188,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "  tracks.visual_artist_id=ar.id "
             "  {{regular_predicates}} "
             "  {{tracklist_filter}} "
+            "{{source_predicate}} "
             "{{order_by}} "
             "{{limit_and_offset}} ";
 
@@ -211,6 +214,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "  tracks.visible=1 "
             "  {{regular_predicates}} "
             "  {{album_list_filter}} "
+            "{{source_predicate}} "
             "ORDER BY albums.name ASC ";
 
         /* data types */

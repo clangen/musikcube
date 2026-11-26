@@ -1,4 +1,5 @@
 #include <musikcore/abi.h>
+#include <musikcore/library.h>
 
 #include <type_traits>
 #include "primitives.h"
@@ -9,6 +10,20 @@ static_assert(std::is_standard_layout<mc_string_view>::value, "string layout");
 static_assert(std::is_standard_layout<mc_byte_view>::value, "byte layout");
 static_assert(std::is_standard_layout<mc_audio_format>::value, "audio format layout");
 static_assert(std::is_standard_layout<mc_audio_buffer_view>::value, "audio buffer view layout");
+static_assert(std::is_standard_layout<mc_library_scope>::value, "scope layout");
+static_assert(std::is_standard_layout<mc_library_source_filter>::value, "source filter layout");
+static_assert(std::is_standard_layout<mc_playlist_create_options>::value, "playlist options layout");
+constexpr mc_library_scope default_scope = MC_LIBRARY_SCOPE_DEFAULT;
+constexpr mc_library_source_filter default_sources = MC_LIBRARY_SOURCE_FILTER_DEFAULT;
+constexpr mc_playlist_create_options default_playlist = MC_PLAYLIST_CREATE_OPTIONS_DEFAULT;
+static_assert(
+    default_scope.struct_size == sizeof(mc_library_scope) && !default_scope.sources, "unrestricted scope default");
+static_assert(
+    default_sources.struct_size == sizeof(mc_library_source_filter) && !default_sources.ids && !default_sources.count,
+    "empty source filter default");
+static_assert(default_playlist.struct_size == sizeof(mc_playlist_create_options) &&
+        default_playlist.ownership == MC_PLAYLIST_GLOBAL && !default_playlist.source_id,
+    "global playlist default");
 constexpr mc_audio_buffer_view default_audio_buffer = MC_AUDIO_BUFFER_VIEW_DEFAULT;
 static_assert(default_audio_buffer.format.struct_size == sizeof(mc_audio_format), "nested format size");
 

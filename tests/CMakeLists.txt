@@ -242,7 +242,7 @@ target_include_directories(musikcore_typed_track_queries_test PRIVATE
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/src/3rdparty/include"
 )
-target_compile_features(musikcore_typed_track_queries_test PRIVATE cxx_std_11)
+target_compile_features(musikcore_typed_track_queries_test PRIVATE cxx_std_17)
 target_link_libraries(musikcore_typed_track_queries_test PRIVATE musikcore_abi0_sqlite)
 set_target_properties(musikcore_typed_track_queries_test PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
@@ -429,3 +429,11 @@ add_dependencies(musikcube_tests musikcube_special_members_test)
 add_dependencies(musikcube_unit_tests musikcube_special_members_test)
 add_test(NAME common.unit.special_members COMMAND musikcube_special_members_test)
 set_tests_properties(common.unit.special_members PROPERTIES LABELS "unit;common;contract")
+
+add_executable(musikcore_library_scope_test integration/api/library-scope.cpp)
+target_link_libraries(musikcore_library_scope_test PRIVATE musikcore_cpp_abi0 musikcore_abi0_sqlite Threads::Threads)
+target_compile_features(musikcore_library_scope_test PRIVATE cxx_std_17)
+set_target_properties(musikcore_library_scope_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_library_scope_test)
+add_test(NAME musikcore.integration.api.library_scope COMMAND musikcore_library_scope_test "${CMAKE_CURRENT_BINARY_DIR}/bin/scope-fixtures")
+set_tests_properties(musikcore.integration.api.library_scope PROPERTIES LABELS "integration;musikcore;library;contract" TIMEOUT 15)

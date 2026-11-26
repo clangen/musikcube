@@ -35,6 +35,8 @@
 #include <iterator>
 #include "pch.hpp"
 #include "CategoryListQuery.h"
+#include <musikcore/plugin/library_query_names.h>
+#include "util/SourcePredicate.h"
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/util/Serialization.h>
 #include <common/String.h>
@@ -62,8 +64,8 @@ static const std::string kFilteredPlaylistsQuery =
     "WHERE LOWER(name) {{match_type}} ? "
     "ORDER BY name;";
 
-const std::string CategoryListQuery::kQueryName = "CategoryListQuery";
-const std::string CategoryListQuery::kFacetQueryName = "FacetListQuery";
+const std::string CategoryListQuery::kQueryName = MC_LIBRARY_QUERY_CATEGORIES;
+const std::string CategoryListQuery::kFacetQueryName = MC_LIBRARY_QUERY_FACETS;
 
 static std::string getMatchType(CategoryListQuery::MatchType matchType) {
     return matchType == CategoryListQuery::MatchType::Regex ? "REGEXP" : "LIKE";
@@ -135,21 +137,25 @@ int CategoryListQuery::GetIndexOf(int64_t id) {
 }
 
 void CategoryListQuery::QueryPlaylist(musik::core::db::Connection& db) {
-    const bool filtered = this->filter.size();
-
-    std::string query = filtered
-        ? kFilteredPlaylistsQuery
-        : kUnfilteredPlaylistsQuery;
-
-    category::ReplaceAll(query, "{{match_type}}", getMatchType(matchType));
-
-    Statement stmt(query.c_str() , db);
-
-    if (filtered) {
-        stmt.BindText(0, this->filter);
+    category::ArgumentList args;
+    std::string query = "SELECT id,name,source_id FROM playlists WHERE 1";
+    if (!this->filter.empty()) {
+        query += " AND LOWER(name) " + getMatchType(this->matchType) + " ?";
+        args.push_back(category::StringArgument(this->filter));
     }
-
-    ProcessResult(stmt);
+    query += category::SourcePredicate(this->scope, "source_id", args, true);
+    query += " ORDER BY name,id";
+    Statement stmt(query.c_str(), db);
+    category::Apply(stmt, args);
+    while (stmt.Step() == Row) {
+        CategoryValue value {
+            .value = stmt.ColumnText(1),
+            .id = stmt.ColumnInt64(0),
+            .type = this->trackField,
+            .sourceId = stmt.IsNull(2) ? std::nullopt : std::optional<int32_t>(stmt.ColumnInt32(2)),
+        };
+        this->result->push_back(std::move(value));
+    }
 }
 
 void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
@@ -188,6 +194,7 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
     }
     category::ReplaceAll(query, "{{facet_filter}}", facetFilter);
 
+    category::ApplySourceScope(query, this->scope, "tracks.source_id", args);
     Statement stmt(query.c_str(), db);
     Apply(stmt, args);
     ProcessResult(stmt);
@@ -215,6 +222,7 @@ void CategoryListQuery::QueryExtended(musik::core::db::Connection &db) {
 
     args.push_back(category::StringArgument(this->trackField));
 
+    category::ApplySourceScope(query, this->scope, "extended_metadata.source_id", args);
     Statement stmt(query.c_str(), db);
     Apply(stmt, args);
     ProcessResult(stmt);
@@ -250,6 +258,8 @@ void CategoryListQuery::ProcessResult(musik::core::db::Statement &stmt) {
 
 bool CategoryListQuery::OnRun(Connection& db) {
     result = std::make_shared<CategoryValues>();
+    if (this->scope.MatchesNoTracks() && this->outputType != OutputType::Playlist) { return true; }
+
 
     switch (this->outputType) {
         case OutputType::Playlist: QueryPlaylist(db); break;
@@ -276,6 +286,7 @@ std::string CategoryListQuery::SerializeQuery() {
     if (this->facet) {
         query["options"]["trackSearch"] = this->trackSearch;
     }
+    query["options"]["scope"] = EncodeScope(this->scope);
     return query.dump();
 }
 
@@ -307,5 +318,6 @@ std::shared_ptr<CategoryListQuery> CategoryListQuery::DeserializeQuery(const std
     result->outputType = static_cast<OutputType>(options.value("outputType", OutputType::Regular));
     PredicateListFromJson(options["regularPredicateList"], result->regular);
     PredicateListFromJson(options["extendedPredicateList"], result->extended);
+    result->SetScope(DecodeScope(options));
     return result;
 }

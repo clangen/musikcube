@@ -514,6 +514,64 @@ namespace {
                                 finish(false);
                                 return;
                             }
+                            send(connection, "set_library_scope", "empty-scope", { { "sources", json::array() } });
+                        }
+                        else if (id == "empty-scope") {
+                            if (response.at("options").at("sources") != json::array()) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "set_library_scope", "malformed-scope", json::array());
+                        }
+                        else if (id == "malformed-scope") {
+                            if (response.at("options").value("success", true)) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "query_tracks", "empty-tracks", json::object());
+                        }
+                        else if (id == "empty-tracks" || id == "empty-category" || id == "empty-albums" ||
+                            id == "empty-category-tracks")
+                        {
+                            if (response.at("options").at("data") != json::array()) {
+                                finish(false);
+                                return;
+                            }
+                            if (id == "empty-tracks") {
+                                send(connection, "query_category", "empty-category", { { "category", "artist" } });
+                            }
+                            else if (id == "empty-category") {
+                                send(connection, "query_albums", "empty-albums", json::object());
+                            }
+                            else if (id == "empty-albums") {
+                                send(connection, "query_tracks_by_category", "empty-category-tracks",
+                                    { { "category", "artist" } });
+                            }
+                            else {
+                                send(connection, "send_raw_query", "empty-raw",
+                                    {
+                                        { "raw_query_data",
+                                            R"({"name":"SearchTrackListQuery","options":{"filter":"","sortType":0}})" },
+                                    });
+                            }
+                        }
+                        else if (id == "empty-raw") {
+                            const auto raw =
+                                json::parse(response.at("options").at("raw_query_data").template get<std::string>());
+                            if (!raw.at("result").at("trackList").empty()) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "clear_library_scope", "clear-scope", json::object());
+                        }
+                        else if (id == "clear-scope") {
+                            send(connection, "query_tracks", "restored-tracks", json::object());
+                        }
+                        else if (id == "restored-tracks") {
+                            if (response.at("options").at("data").empty()) {
+                                finish(false);
+                                return;
+                            }
                             send(connection, "send_raw_query", "unknown-query", {
                                 { "raw_query_data", R"({"name":"UnknownQuery","options":{}})" },
                             });

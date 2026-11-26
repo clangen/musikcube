@@ -156,6 +156,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
         if (!sourceIds.insert(source->SourceId()).second) {
             throw std::runtime_error("indexer source IDs must be unique");
         }
+        this->sourceDescriptions.emplace_back(source->SourceId(), source->Label());
     }
     db::Statement stmt("SELECT path FROM paths ORDER BY id", connection);
     while (stmt.Step() == db::Row) {

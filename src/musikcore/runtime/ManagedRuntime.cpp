@@ -274,8 +274,47 @@ namespace musik { namespace core { namespace ffi {
             return MC_OK;
         }
 
-        IIndexer* LocalIndexer() const override {
-            return this->indexer;
+        mc_result IndexerState(mc_indexer_state* state) const override {
+            if (!this->indexer) { return MC_ERROR_UNSUPPORTED; }
+            *state = static_cast<mc_indexer_state>(this->indexer->GetState());
+            return MC_OK;
+        }
+
+        mc_result IndexerPaths(mc_indexer_paths_fn callback, void* data) override {
+            if (!this->indexer) { return MC_ERROR_UNSUPPORTED; }
+            std::vector<std::string> paths;
+            this->indexer->GetPaths(paths);
+            std::vector<mc_string_view> views;
+            views.reserve(paths.size());
+            for (const auto& path : paths) {
+                views.push_back({ .data = path.data(), .length = path.size(), });
+            }
+            callback(data, views.data(), views.size());
+            return MC_OK;
+        }
+
+        mc_result AddIndexerPath(std::string path) override {
+            if (!this->indexer) { return MC_ERROR_UNSUPPORTED; }
+            this->indexer->AddPath(path);
+            return MC_OK;
+        }
+
+        mc_result RemoveIndexerPath(std::string path) override {
+            if (!this->indexer) { return MC_ERROR_UNSUPPORTED; }
+            this->indexer->RemovePath(path);
+            return MC_OK;
+        }
+
+        mc_result ScheduleIndexer(mc_indexer_scan scan) override {
+            if (!this->indexer) { return MC_ERROR_UNSUPPORTED; }
+            this->indexer->Schedule(static_cast<Indexer::SyncType>(scan));
+            return MC_OK;
+        }
+
+        mc_result CancelIndexer() override {
+            if (!this->indexer) { return MC_ERROR_UNSUPPORTED; }
+            this->indexer->Cancel();
+            return MC_OK;
         }
 
         void Stop() override {
@@ -374,7 +413,7 @@ namespace musik { namespace core { namespace ffi {
             return MC_OK;
         }
 
-        mc_result SelectLibrary(const std::shared_ptr<const LibraryIdentity>& library) override {
+        mc_result SelectLibrary(const std::shared_ptr<const LibraryInstance>& library) override {
             const auto& origin = library->playbackOrigin;
             if (!origin) {
                 return MC_ERROR_UNSUPPORTED;
@@ -433,7 +472,7 @@ namespace musik { namespace core { namespace ffi {
 
         void PublishSelection(bool selectionChanged) {
             auto status = CaptureLibraryStatus(this->active);
-            auto identity = status.state == MC_LIBRARY_CONNECTED ? CaptureLibrary(this->active) : nullptr;
+            auto identity = status.state == MC_LIBRARY_CONNECTED ? CreateLibraryInstance(this->active) : nullptr;
             publish_library_selection(*this->context, std::move(identity), std::move(status), selectionChanged);
         }
 
@@ -462,7 +501,7 @@ namespace musik { namespace core { namespace ffi {
         ILibraryPtr local;
         std::shared_ptr<library::RemoteLibrary> remote;
         ILibraryPtr active;
-        std::shared_ptr<const LibraryIdentity> explicitLibrary;
+        std::shared_ptr<const LibraryInstance> explicitLibrary;
         bool explicitInvalid = false;
         std::shared_ptr<CoreNotifications> notifications;
         mc_context* context = nullptr;
@@ -472,7 +511,7 @@ namespace musik { namespace core { namespace ffi {
         std::mutex mutex;
         std::condition_variable changed;
         uint64_t dispatches = 0;
-        IIndexer* indexer = nullptr;
+        Indexer* indexer = nullptr;
         api::Subscriptions<ILibrary::ConnectionState>::Connection remoteStateChanged;
         api::Subscriptions<ILibrary::ConnectionState>::Connection explicitStateChanged;
         api::Subscriptions<>::Connection indexStarted;

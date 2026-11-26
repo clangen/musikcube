@@ -35,6 +35,8 @@
 #include "pch.hpp"
 
 #include "CategoryTrackListQuery.h"
+#include <musikcore/plugin/library_query_names.h>
+#include "util/SourcePredicate.h"
 #include "GetPlaylistQuery.h"
 
 #include <musikcore/library/track/LibraryTrack.h>
@@ -53,7 +55,7 @@ using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
 using namespace musik::core::library::constants;
 
-const std::string CategoryTrackListQuery::kQueryName = "CategoryTrackListQuery";
+const std::string CategoryTrackListQuery::kQueryName = MC_LIBRARY_QUERY_CATEGORY_TRACKS;
 
 CategoryTrackListQuery::CategoryTrackListQuery(
     musik::core::ILibraryPtr library,
@@ -162,6 +164,7 @@ void CategoryTrackListQuery::RegularQuery(musik::core::db::Connection &db) {
     category::ReplaceAll(query, "{{order_by}}", this->orderBy);
     category::ReplaceAll(query, "{{limit_and_offset}}", limitAndOffset);
 
+    category::ApplySourceScope(query, this->scope, "tracks.source_id", args);
     Statement stmt(query.c_str(), db);
     category::Apply(stmt, args);
     this->ProcessResult(stmt);
@@ -207,6 +210,9 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
         headers = std::make_shared<std::set<size_t>>();
     }
 
+    this->durations = std::make_shared<std::map<size_t, size_t>>();
+    if (this->scope.MatchesNoTracks() && this->type != Type::Playlist) { return true; }
+
     switch (this->type) {
         case Type::Playlist: this->PlaylistQuery(db); break;
         case Type::Regular: this->RegularQuery(db); break;
@@ -227,6 +233,7 @@ std::string CategoryTrackListQuery::SerializeQuery() {
             { "sortType", sortType }
         }}
     };
+    output["options"]["scope"] = EncodeScope(this->scope);
     return FinalizeSerializedQueryWithLimitAndOffset(output);
 }
 
@@ -253,5 +260,6 @@ std::shared_ptr<CategoryTrackListQuery> CategoryTrackListQuery::DeserializeQuery
     PredicateListFromJson(options["regularPredicateList"], result->regular);
     PredicateListFromJson(options["extendedPredicateList"], result->extended);
     result->ScanPredicateListsForQueryType();
+    result->SetScope(DecodeScope(options));
     return result;
 }

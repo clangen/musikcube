@@ -39,6 +39,7 @@
 #include <musikcore/db/Connection.h>
 
 #include <mutex>
+#include <musikcore/library/query/ScopeWire.h>
 #include <atomic>
 
 namespace musik { namespace core { namespace library { namespace query {
@@ -58,6 +59,9 @@ namespace musik { namespace core { namespace library { namespace query {
             , options(0)
             , cancel(false) {
             }
+
+            /* take a value snapshot, including owned source IDs. */
+            void SetScope(LibraryQueryScope value) { this->scope = std::move(value); }
 
             bool Run(musik::core::db::Connection &db) {
                 this->SetStatus(Running);
@@ -121,6 +125,8 @@ namespace musik { namespace core { namespace library { namespace query {
             }
 
         protected:
+            LibraryQueryScope scope;
+
             void SetStatus(int status) {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 this->status = status;

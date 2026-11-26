@@ -48,7 +48,7 @@
 #include <mutex>
 #include <thread>
 
-struct LibraryIdentity;
+struct LibraryInstance;
 
 namespace musik { namespace core { namespace audio {
 
@@ -209,8 +209,8 @@ namespace musik { namespace core { namespace audio {
             static std::shared_ptr<PlaybackEvents> CreatePlaybackEvents();
             void NotifyPlaybackChanged(mc_playback_event event);
             void DeliverPlaybackNotification(runtime::IMessage& message);
-            bool MatchesOrigin(const LibraryIdentity& origin) const;
-            std::shared_ptr<const LibraryIdentity> CaptureOrigin(int libraryId) const;
+            bool MatchesOrigin(const LibraryInstance& origin) const;
+            std::shared_ptr<const LibraryInstance> CaptureOrigin(int libraryId) const;
 
             ITransport::Connections transportConnections;
             api::Subscriptions<int>::Connection indexFinished;
@@ -219,8 +219,8 @@ namespace musik { namespace core { namespace audio {
             bool stopped = false;
             musik::core::TrackList playlist;
             uint64_t queueRevision = 0;
-            std::shared_ptr<const LibraryIdentity> queueOrigin;
-            std::shared_ptr<const LibraryIdentity> playingOrigin;
+            std::shared_ptr<const LibraryInstance> queueOrigin;
+            std::shared_ptr<const LibraryInstance> playingOrigin;
             std::shared_ptr<PlaybackEvents> apiEvents;
             const std::thread::id apiOwner = std::this_thread::get_id();
             musik::core::TrackList unshuffled;

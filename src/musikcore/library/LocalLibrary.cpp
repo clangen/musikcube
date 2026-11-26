@@ -64,7 +64,7 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace std::chrono;
 
-#define DATABASE_VERSION 11
+#define DATABASE_VERSION 12
 #define VERBOSE_LOGGING 1
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -120,6 +120,7 @@ LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue,
     std::unique_ptr<core::Indexer> indexer;
     if (enableIndexer) {
         indexer = std::make_unique<core::Indexer>(this->GetLibraryDirectory(), this->GetDatabaseFilename());
+        this->sources = indexer->GetSources();
     }
 
     /* register only once schema and optional indexer startup have succeeded. */
@@ -182,7 +183,7 @@ void LocalLibrary::ResumePendingMigrationScan() {
         return;
     }
 
-    static_cast<core::Indexer*>(this->indexer)->StartPendingSourceScans();
+    this->indexer->StartPendingSourceScans();
 
     auto pending = std::make_shared<query::MigrationScanQuery>();
     this->EnqueueAndWait(pending);
@@ -190,7 +191,7 @@ void LocalLibrary::ResumePendingMigrationScan() {
         throw std::system_error(std::make_error_code(std::errc::io_error), "Could not read pending migration scan");
     }
     if (pending->IsPending()) {
-        this->indexer->Schedule(IIndexer::SyncType::Local);
+        this->indexer->Schedule(core::Indexer::SyncType::Local);
     }
 }
 
@@ -359,7 +360,7 @@ void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
 }
 
-musik::core::IIndexer* LocalLibrary::Indexer() {
+musik::core::Indexer* LocalLibrary::Indexer() {
     return this->indexer;
 }
 
@@ -645,6 +646,32 @@ static void createSchema(db::Connection& db) {
             "source_id INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0"
             ")");
+
+    /* null ownership preserves existing global playlists; source zero owns
+    file playlists. enforce membership even for writes outside the consumer API. */
+    if (!hasColumn(db, "playlists", "source_id")) {
+        executeSchema(db, "ALTER TABLE playlists ADD COLUMN source_id INTEGER DEFAULT NULL CHECK(source_id>=0)");
+    }
+    executeSchema(db,
+        "CREATE TRIGGER IF NOT EXISTS playlist_source_insert BEFORE INSERT ON playlist_tracks "
+        "WHEN EXISTS (SELECT 1 FROM playlists p WHERE p.id=NEW.playlist_id "
+        "AND p.source_id IS NOT NULL AND NEW.source_id IS NOT p.source_id) "
+        "BEGIN SELECT RAISE(ABORT,'playlist track source does not match owner'); END");
+    executeSchema(db,
+        "CREATE TRIGGER IF NOT EXISTS playlist_source_update BEFORE UPDATE OF playlist_id,source_id ON playlist_tracks "
+        "WHEN EXISTS (SELECT 1 FROM playlists p WHERE p.id=NEW.playlist_id "
+        "AND p.source_id IS NOT NULL AND NEW.source_id IS NOT p.source_id) "
+        "BEGIN SELECT RAISE(ABORT,'playlist track source does not match owner'); END");
+    executeSchema(db,
+        "CREATE TRIGGER IF NOT EXISTS playlist_owner_update BEFORE UPDATE OF source_id,id ON playlists "
+        "WHEN NEW.source_id IS NOT NULL AND EXISTS (SELECT 1 FROM playlist_tracks t "
+        "WHERE t.playlist_id=NEW.id AND t.source_id IS NOT NEW.source_id) "
+        "BEGIN SELECT RAISE(ABORT,'playlist owner does not match existing tracks'); END");
+    executeSchema(db,
+        "CREATE TRIGGER IF NOT EXISTS playlist_owner_insert BEFORE INSERT ON playlists "
+        "WHEN NEW.source_id IS NOT NULL AND EXISTS (SELECT 1 FROM playlist_tracks t "
+        "WHERE t.playlist_id=NEW.id AND t.source_id IS NOT NEW.source_id) "
+        "BEGIN SELECT RAISE(ABORT,'playlist owner does not match existing tracks'); END");
 
     /* replay gain */
     executeSchema(db,
