@@ -1,3 +1,6 @@
 [submodule "src/3rdparty/asio"]
 	path = src/3rdparty/asio
 	url = https://github.com/chriskohlhoff/asio/
+[submodule "src/3rdparty/asio-wintls"]
+	path = src/3rdparty/asio-wintls
+	url = https://github.com/laudrup/boost-wintls.git

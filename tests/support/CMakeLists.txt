@@ -26,6 +26,24 @@ endif()
 
 if(BUILD_TESTING)
 
+  if(WIN32)
+    add_executable(musikcore_windows_websocket_tls_test
+      ../integration/transport/windows-websocket-tls.cpp
+      "${PROJECT_SOURCE_DIR}/src/musikcore/net/RawWebSocketClient.cpp")
+    target_include_directories(musikcore_windows_websocket_tls_test PRIVATE "${PROJECT_SOURCE_DIR}/src/musikcore")
+    target_compile_features(musikcore_windows_websocket_tls_test PRIVATE cxx_std_20)
+    target_link_libraries(musikcore_windows_websocket_tls_test PRIVATE musikcube_windows Threads::Threads crypt32 secur32 ws2_32)
+    add_dependencies(musikcube_tests musikcore_windows_websocket_tls_test)
+    add_dependencies(musikcube_integration_tests musikcore_windows_websocket_tls_test)
+    add_test(NAME musikcore.integration.transport.windows_websocket_tls COMMAND "${MUSIKCORE_TEST_NODE}"
+      "${PROJECT_SOURCE_DIR}/tests/scripts/check-windows-websocket-tls.js"
+      "$<TARGET_FILE:musikcore_windows_websocket_tls_test>"
+      "${PROJECT_SOURCE_DIR}/tests/support/tls/localhost-cert.pem"
+      "${PROJECT_SOURCE_DIR}/tests/support/tls/localhost-key.pem")
+    set_tests_properties(musikcore.integration.transport.windows_websocket_tls PROPERTIES
+      LABELS "integration;musikcore;transport;contract" TIMEOUT 25)
+  endif()
+
   add_executable(musikcore_playlist_source_schema_test ../integration/library/playlist-source-schema.cpp)
   target_include_directories(musikcore_playlist_source_schema_test PRIVATE
     "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})

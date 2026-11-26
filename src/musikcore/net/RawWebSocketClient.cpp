@@ -39,23 +39,6 @@
 using namespace musik::core;
 using namespace musik::core::net;
 
-static inline RawWebSocketClient::SslContext createSslContext() {
-    RawWebSocketClient::SslContext ctx =
-        std::make_shared<asio::ssl::context>(asio::ssl::context::sslv23);
-
-    try {
-        ctx->set_options(asio::ssl::context::default_workarounds |
-            asio::ssl::context::no_sslv2 |
-            asio::ssl::context::no_sslv3 |
-            asio::ssl::context::single_dh_use |
-            asio::ssl::context::verify_none);
-    }
-    catch (std::exception& e) {
-        std::cerr << "Error in context pointer: " << e.what() << std::endl;
-    }
-    return ctx;
-}
-
 RawWebSocketClient::RawWebSocketClient(asio::io_context& io) {
     websocketpp::lib::error_code ec;
 
@@ -67,7 +50,7 @@ RawWebSocketClient::RawWebSocketClient(asio::io_context& io) {
     tlsClient->clear_access_channels(websocketpp::log::alevel::all);
     tlsClient->init_asio(&io, ec);
     tlsClient->set_tls_init_handler([](Connection connection) -> SslContext {
-        return createSslContext();
+        return websocket_tls::CreateContext();
     });
 }
 

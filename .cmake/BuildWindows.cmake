@@ -66,11 +66,12 @@ target_include_directories(musikcube_windows INTERFACE
   "${windows_vendor}/include"
   "${PROJECT_SOURCE_DIR}/src"
   "${PROJECT_SOURCE_DIR}/src/3rdparty/include"
+  "${PROJECT_SOURCE_DIR}/src/3rdparty/asio-wintls/include"
   "${PROJECT_SOURCE_DIR}/src/3rdparty/win32_include"
   "${PROJECT_SOURCE_DIR}/src/3rdparty/asio/asio/include")
 target_compile_definitions(musikcube_windows INTERFACE
   WIN32 UNICODE _UNICODE _SCL_SECURE_NO_WARNINGS
-  BOOST_DATE_TIME_NO_LIB BOOST_REGEX_NO_LIB ASIO_STANDALONE
+  BOOST_DATE_TIME_NO_LIB BOOST_REGEX_NO_LIB ASIO_STANDALONE MUSIKCORE_USE_ASIO_WINTLS
   _WEBSOCKETPP_CPP11_TYPE_TRAITS_ _WEBSOCKETPP_CPP11_RANDOM_DEVICE_)
 target_compile_options(musikcube_windows INTERFACE
   "$<$<COMPILE_LANGUAGE:C,CXX>:/bigobj;/MP>"
@@ -106,7 +107,7 @@ target_compile_definitions(musikcore_objects PRIVATE _CRT_SECURE_NO_DEPRECATE)
 target_precompile_headers(musikcore_objects PRIVATE src/musikcore/pch.hpp)
 
 set(windows_core_libraries musikcube_thirdparty Threads::Threads
-  vendor::curl vendor::ssl vendor::crypto shell32 ws2_32 wldap32)
+  vendor::curl shell32 ws2_32 wldap32 crypt32 secur32)
 add_library(musikcore SHARED $<TARGET_OBJECTS:musikcore_objects>)
 set_target_properties(musikcore PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS OFF)
 target_include_directories(musikcore PUBLIC "${PROJECT_SOURCE_DIR}/include")
@@ -323,9 +324,7 @@ windows_project_sources(musikcore_objects src/musikcore)
 set(MUSIKCORE_INSTALL_RUNTIME_DIR bin)
 include("${CMAKE_CURRENT_LIST_DIR}/InstallMusikcoreSdk.cmake")
 set(windows_core_dlls
-  "${windows_vendor}/win64/dll/libcurl/libcurl.dll"
-  "${windows_vendor}/win64/dll/openssl/libcrypto-3-x64.dll"
-  "${windows_vendor}/win64/dll/openssl/libssl-3-x64.dll")
+  "${windows_vendor}/win64/dll/libcurl/libcurl.dll")
 install(FILES ${windows_core_dlls} DESTINATION bin COMPONENT musikcoreSDK)
 set(windows_plugin_dlls ${windows_dlls})
 list(REMOVE_ITEM windows_plugin_dlls ${windows_core_dlls})

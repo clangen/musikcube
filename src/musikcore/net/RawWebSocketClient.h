@@ -44,7 +44,7 @@
 #pragma warning(push, 0)
 #endif
 #include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/config/asio_client.hpp>
+#include <musikcore/net/WebSocketTls.h>
 #include <websocketpp/client.hpp>
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -61,9 +61,9 @@ namespace musik { namespace core { namespace net {
         public:
             using PlainTextClient = websocketpp::client<websocketpp::config::asio_client>;
             using PlainTextClientPtr = std::unique_ptr<PlainTextClient>;
-            using TlsClient = websocketpp::client<websocketpp::config::asio_tls_client>;
+            using TlsClient = websocket_tls::Client;
             using TlsClientPtr = std::unique_ptr<TlsClient>;
-            using SslContext = std::shared_ptr<asio::ssl::context>;
+            using SslContext = websocket_tls::Context;
             using Message = websocketpp::config::asio_client::message_type::ptr;
             using Connection = websocketpp::connection_hdl;
 

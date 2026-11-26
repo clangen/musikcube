@@ -48,7 +48,6 @@
 #pragma warning(push, 0)
 #endif
 #include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/client.hpp>
 #include <nlohmann/json.hpp>
 #ifdef _MSC_VER
