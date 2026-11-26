@@ -34,12 +34,12 @@
 
 #pragma once
 
-#include <atomic>
+#include <stop_token>
 
 #include <functional>
 #include <string>
 
 namespace musik { namespace core { namespace auddio {
     using LyricsCallback = std::function<void(std::string)>;
-    extern void FindLyrics(std::string artist, std::string title, const std::atomic_bool& cancelled, LyricsCallback callback);
+    extern void FindLyrics(std::string artist, std::string title, std::stop_token cancelled, LyricsCallback callback);
 } } }

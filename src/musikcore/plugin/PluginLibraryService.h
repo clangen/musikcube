@@ -38,6 +38,7 @@
 #include <musikcore/plugin/library.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <mutex>
+#include <stop_token>
 
 namespace musik { namespace core { namespace library {
     class Library;
@@ -121,7 +122,7 @@ namespace musik { namespace core { namespace plugin {
         musik::core::ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory;
         std::mutex admissionMutex;
         bool stopping { false };
-        std::atomic_bool cancelled { false };
+        std::stop_source cancelled;
         mc_plugin_library_service api;
     };
 

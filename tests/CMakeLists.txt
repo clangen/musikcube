@@ -86,7 +86,7 @@ if(MSVC)
   target_compile_definitions(musikcore_abi_dispatch_test PRIVATE _ITERATOR_DEBUG_LEVEL=0)
 endif()
 set_target_properties(musikcore_abi_dispatch_test PROPERTIES
-  CXX_STANDARD 17
+  CXX_STANDARD 20
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"

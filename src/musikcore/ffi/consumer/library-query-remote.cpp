@@ -108,7 +108,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
 
 
         mc_result ReadThumbnail(
-            int64_t id, std::vector<uint8_t>& bytes, const std::atomic_bool& canceled) const override {
+            int64_t id, std::vector<uint8_t>& bytes, std::stop_token canceled) const override {
             if (!this->Matches(this->library.get()) ||
                 !this->library->ReadThumbnail(id, bytes, MaxThumbnailBytes, canceled) ||
                 !this->Matches(this->library.get()))

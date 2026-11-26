@@ -46,9 +46,16 @@ function(windows_vendor_library name release)
   endforeach()
 endfunction()
 
-windows_vendor_library(curl libcurl)
-windows_vendor_library(ssl libssl)
-windows_vendor_library(crypto libcrypto)
+option(MUSIKCORE_USE_ASIO_WINTLS "Use Windows TLS for the WebSocket client" ON)
+option(MUSIKCORE_USE_WINDOWS_HTTP_CLIENT "Use the Windows HTTP client" ON)
+if(NOT MUSIKCORE_USE_WINDOWS_HTTP_CLIENT OR
+    (EXISTS "${windows_vendor_lib}/libcurl.lib" AND EXISTS "${windows_vendor}/win64/dll/libcurl/libcurl.dll"))
+  windows_vendor_library(curl libcurl)
+endif()
+if(NOT MUSIKCORE_USE_ASIO_WINTLS)
+  windows_vendor_library(ssl libssl)
+  windows_vendor_library(crypto libcrypto)
+endif()
 windows_vendor_library(lame libmp3lame)
 windows_vendor_library(openmpt libopenmpt)
 windows_vendor_library(gme gme gmeD)
@@ -61,6 +68,13 @@ endforeach()
 set(windows_ffmpeg vendor::avcodec vendor::avformat vendor::avutil vendor::swresample)
 
 add_library(musikcube_windows INTERFACE)
+if(MUSIKCORE_USE_ASIO_WINTLS)
+  target_compile_definitions(musikcube_windows INTERFACE MUSIKCORE_USE_ASIO_WINTLS)
+endif()
+if(MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+  target_compile_definitions(musikcube_windows INTERFACE MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+  target_link_libraries(musikcube_windows INTERFACE winhttp)
+endif()
 target_include_directories(musikcube_windows INTERFACE
   "${PROJECT_SOURCE_DIR}/include"
   "${windows_vendor}/include"
@@ -71,7 +85,7 @@ target_include_directories(musikcube_windows INTERFACE
   "${PROJECT_SOURCE_DIR}/src/3rdparty/asio/asio/include")
 target_compile_definitions(musikcube_windows INTERFACE
   WIN32 UNICODE _UNICODE _SCL_SECURE_NO_WARNINGS
-  BOOST_DATE_TIME_NO_LIB BOOST_REGEX_NO_LIB ASIO_STANDALONE MUSIKCORE_USE_ASIO_WINTLS
+  BOOST_DATE_TIME_NO_LIB BOOST_REGEX_NO_LIB ASIO_STANDALONE
   _WEBSOCKETPP_CPP11_TYPE_TRAITS_ _WEBSOCKETPP_CPP11_RANDOM_DEVICE_)
 target_compile_options(musikcube_windows INTERFACE
   "$<$<COMPILE_LANGUAGE:C,CXX>:/bigobj;/MP>"
@@ -107,7 +121,13 @@ target_compile_definitions(musikcore_objects PRIVATE _CRT_SECURE_NO_DEPRECATE)
 target_precompile_headers(musikcore_objects PRIVATE src/musikcore/pch.hpp)
 
 set(windows_core_libraries musikcube_thirdparty Threads::Threads
-  vendor::curl shell32 ws2_32 wldap32 crypt32 secur32)
+  shell32 ws2_32 wldap32 crypt32 secur32)
+if(NOT MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+  list(APPEND windows_core_libraries vendor::curl)
+endif()
+if(NOT MUSIKCORE_USE_ASIO_WINTLS)
+  list(APPEND windows_core_libraries vendor::ssl vendor::crypto)
+endif()
 add_library(musikcore SHARED $<TARGET_OBJECTS:musikcore_objects>)
 set_target_properties(musikcore PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS OFF)
 target_include_directories(musikcore PUBLIC "${PROJECT_SOURCE_DIR}/include")
@@ -125,6 +145,16 @@ endif()
 
 # Use one runtime target for both frontends and for the C SDK demo.
 file(GLOB windows_dlls CONFIGURE_DEPENDS "${windows_vendor}/win64/dll/*/*.dll")
+set(windows_excluded_dlls)
+if(MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+  list(FILTER windows_dlls EXCLUDE REGEX "/libcurl/[^/]+[.]dll$")
+  list(APPEND windows_excluded_dlls "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libcurl.dll")
+endif()
+if(MUSIKCORE_USE_ASIO_WINTLS)
+  list(FILTER windows_dlls EXCLUDE REGEX "/openssl/[^/]+[.]dll$")
+  list(APPEND windows_excluded_dlls "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libssl-3-x64.dll"
+    "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libcrypto-3-x64.dll")
+endif()
 if(NOT windows_dlls)
   message(FATAL_ERROR "Missing Windows vendor DLLs. Run node script/build-vendor-libraries.js first.")
 endif()
@@ -140,6 +170,10 @@ add_custom_target(musikcube_runtime
           "${windows_assets}/fonts" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/fonts"
   DEPENDS ${windows_dlls}
   VERBATIM)
+if(windows_excluded_dlls)
+  add_custom_command(TARGET musikcube_runtime PRE_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E rm -f ${windows_excluded_dlls} VERBATIM)
+endif()
 
 function(windows_project_sources target directory)
   file(GLOB_RECURSE headers CONFIGURE_DEPENDS
@@ -172,7 +206,10 @@ endfunction()
 windows_plugin(cddadecoder CddaStream.cpp CddaPcmDecoder.cpp CddaIndexer.cpp CddaMetadata.cpp
   CddaMediaMonitor.cpp plugin.cpp)
 musikcube_configure_c_plugin(cddadecoder)
-target_link_libraries(cddadecoder PRIVATE bcrypt vendor::curl)
+target_link_libraries(cddadecoder PRIVATE bcrypt)
+if(NOT MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+  target_link_libraries(cddadecoder PRIVATE vendor::curl)
+endif()
 
 windows_plugin(directsoundout DirectSoundOutput.cpp DirectSoundDevices.cpp plugin.cpp)
 musikcube_configure_c_plugin(directsoundout)
@@ -191,7 +228,10 @@ target_compile_definitions(gmedecoder PRIVATE NOMINMAX)
 windows_plugin(httpdatastream HttpDataStream.cpp httpdatastream_plugin.cpp LruDiskCache.cpp)
 musikcube_configure_c_plugin(httpdatastream)
 target_compile_features(httpdatastream PRIVATE cxx_std_20)
-target_link_libraries(httpdatastream PRIVATE shlwapi vendor::curl)
+target_link_libraries(httpdatastream PRIVATE shlwapi)
+if(NOT MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+  target_link_libraries(httpdatastream PRIVATE vendor::curl)
+endif()
 
 windows_plugin(libopenmptdecoder OpenMptDecoder.cpp plugin.cpp Utility.cpp IndexerPlugin.cpp OpenMptIndexerSource.cpp)
 musikcube_configure_c_plugin(libopenmptdecoder)
@@ -292,8 +332,11 @@ foreach(target musikcube musikcube-cmd)
   windows_project_sources(${target} src/musikcube)
   target_include_directories(${target} PRIVATE src/musikcube src/musikcube/cursespp)
   target_precompile_headers(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${PROJECT_SOURCE_DIR}/src/musikcube/stdafx.h>")
-  target_link_libraries(${target} PRIVATE musikcube_windows musikcore musikcube_ui_runtime vendor::curl
+  target_link_libraries(${target} PRIVATE musikcube_windows musikcore musikcube_ui_runtime
     dwmapi windowsapp pdh psapi ws2_32 wldap32 comctl32 winmm)
+  if(NOT MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+    target_link_libraries(${target} PRIVATE vendor::curl)
+  endif()
   add_dependencies(${target} musikcube_runtime)
 endforeach()
 
@@ -301,6 +344,8 @@ if(BUILD_TESTING)
   add_test(NAME musikcube.integration.windows_core_dll COMMAND "${CMAKE_COMMAND}"
     "-DLINKER=${CMAKE_LINKER}" "-DLIBRARY=$<TARGET_FILE:musikcore>"
     "-DGUI=$<TARGET_FILE:musikcube>" "-DCONSOLE=$<TARGET_FILE:musikcube-cmd>"
+    "-DEXPECT_SYSTEM_TLS=${MUSIKCORE_USE_ASIO_WINTLS}"
+    "-DEXPECT_SYSTEM_HTTP=${MUSIKCORE_USE_WINDOWS_HTTP_CLIENT}"
     "-DALLOWLIST=${PROJECT_SOURCE_DIR}/src/musikcore/ffi/exports.txt"
     -P "${PROJECT_SOURCE_DIR}/tests/scripts/check-windows-core-dll.cmake")
   set_tests_properties(musikcube.integration.windows_core_dll PROPERTIES
@@ -323,9 +368,18 @@ windows_project_sources(musikcore_objects src/musikcore)
 
 set(MUSIKCORE_INSTALL_RUNTIME_DIR bin)
 include("${CMAKE_CURRENT_LIST_DIR}/InstallMusikcoreSdk.cmake")
-set(windows_core_dlls
-  "${windows_vendor}/win64/dll/libcurl/libcurl.dll")
-install(FILES ${windows_core_dlls} DESTINATION bin COMPONENT musikcoreSDK)
+set(windows_core_dlls)
+if(NOT MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+  list(APPEND windows_core_dlls "${windows_vendor}/win64/dll/libcurl/libcurl.dll")
+endif()
+if(NOT MUSIKCORE_USE_ASIO_WINTLS)
+  list(APPEND windows_core_dlls
+    "${windows_vendor}/win64/dll/openssl/libcrypto-3-x64.dll"
+    "${windows_vendor}/win64/dll/openssl/libssl-3-x64.dll")
+endif()
+if(windows_core_dlls)
+  install(FILES ${windows_core_dlls} DESTINATION bin COMPONENT musikcoreSDK)
+endif()
 set(windows_plugin_dlls ${windows_dlls})
 list(REMOVE_ITEM windows_plugin_dlls ${windows_core_dlls})
 install(FILES ${windows_plugin_dlls} DESTINATION bin COMPONENT musikcorePlugins)

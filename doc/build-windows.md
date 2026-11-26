@@ -12,7 +12,7 @@ node .\script\build-vendor-libraries.js
 
 For an existing checkout, run `git submodule update --init --recursive` before building. The vendor script downloads pinned sources and portable build tools, so the first run needs internet access. It uses MSVC to compile the libraries and a repo-local MSYS2 shell for FFmpeg's build. It installs no system-wide tools. Sources, caches, headers, libraries, and runtime DLLs are stored under the ignored `vendor\` directory.
 
-The Node script uses only built-in modules. Run it with `--preflight` to check the tools or `--help` to see the available options.
+The Node script uses only built-in modules. Run it with `--preflight` to check the tools or `--help` to see the available options. Windows uses WinHTTP and Schannel by default. To build with the optional curl or OpenSSL backends, first run the vendor script with `--library curl` or `--library openssl`, then configure with `MUSIKCORE_USE_WINDOWS_HTTP_CLIENT=OFF` or `MUSIKCORE_USE_ASIO_WINTLS=OFF`, respectively.
 
 Pass `--clean-work` to remove `vendor/.build/` after the script publishes the headers, libraries, and DLLs. This also removes cached downloads and portable build tools. A later vendor rebuild will download them again.
 
@@ -81,4 +81,4 @@ The benchmark reports startup, search and filter latency, idle and playback CPU,
 
 For the optional MilkDrop visualizer, clone the plugin into `../milkdrop2-musikcube` next to the musikcube checkout. After building the vendor libraries, run `script\build-win.bat` from the VS 2026 Developer PowerShell. It builds Release x64 and, when the sibling solution is present, restores MilkDrop's D3DX dependency and builds the plugin with the VS 2026 v145 toolset.
 
-From the checkout root, run `bash script/archive-win.sh <version>` in a shell with Bash, CMake, and 7-Zip available. The application ZIP includes the staged MilkDrop plugin, resources, and DirectX runtime DLLs. A separate `musikcore_sdk_<version>_win64.zip` contains the C SDK, including `lib/musikcore.lib`, the headers and CMake package, and `musikcore.dll` with its curl dependency in `bin/`. CMake consumers can set `CMAKE_PREFIX_PATH` to the extracted SDK directory and link `musikcore::musikcore`.
+From the checkout root, run `bash script/archive-win.sh <version>` in a shell with Bash, CMake, and 7-Zip available. The application ZIP includes the staged MilkDrop plugin, resources, and DirectX runtime DLLs. A separate `musikcore_sdk_<version>_win64.zip` contains the C SDK, including `lib/musikcore.lib`, the headers and CMake package, and `musikcore.dll` in `bin/`. CMake consumers can set `CMAKE_PREFIX_PATH` to the extracted SDK directory and link `musikcore::musikcore`.

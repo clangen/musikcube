@@ -45,9 +45,13 @@
 #include <common/runtime/Message.h>
 #include <common/NarrowCast.h>
 #include <musikcore/debug.h>
-#include <musikcore/support/OnlineTransfer.h>
+#include <common/HttpClient.h>
+#include <websocketpp/base64/base64.hpp>
 
 #include <chrono>
+#include <charconv>
+#include <cctype>
+#include <optional>
 
 #ifdef _MSC_VER
 #pragma warning(push, 0)
@@ -488,60 +492,56 @@ std::string RemoteLibraryBackend::GetTrackUri(musik::core::Track* track, const s
 }
 
 bool RemoteLibraryBackend::ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes, size_t limit,
-    const std::atomic_bool& canceled)
+    std::stop_token canceled)
 {
-    const std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), &curl_easy_cleanup);
-    if (!curl) {
-        return false;
-    }
+    struct Sink {
+        std::vector<uint8_t>* bytes { nullptr };
+        size_t limit { 0 };
+        bool good { true };
+
+        Sink& write(const char* data, size_t size) {
+            if (this->bytes->size() > this->limit || size > this->limit - this->bytes->size()) {
+                this->good = false;
+                return *this;
+            }
+            const auto* begin = reinterpret_cast<const uint8_t*>(data);
+            this->bytes->insert(this->bytes->end(), begin, begin + size);
+            return *this;
+        }
+
+        explicit operator bool() const { return this->good; }
+    };
+    using Client = musik::core::sdk::HttpClient<Sink>;
     const auto config = this->options();
     const auto host = config.host.find(':') == std::string::npos ? config.host : "[" + config.host + "]";
     const auto uri = (config.httpTls ? "https://" : "http://") + host + ":" +
         std::to_string(config.httpPort) + "/thumbnail/" + std::to_string(id);
-    struct Transfer {
-        std::vector<uint8_t>& bytes;
-        size_t limit;
-    } transfer { bytes, limit };
-    auto* handle = curl.get();
-    curl_easy_setopt(handle, CURLOPT_URL, uri.c_str());
-    if (config.httpTls && config.httpTlsAllowUntrustedCertificate) {
-        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0L);
-    }
-    curl_easy_setopt(handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-    curl_easy_setopt(handle, CURLOPT_USERNAME, "default");
-    curl_easy_setopt(handle, CURLOPT_PASSWORD, config.password.c_str());
-    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
-    musik::core::ConfigureOnlineTransfer(handle, canceled);
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, &transfer);
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION,
-        +[](char* data, size_t size, size_t count, void* opaque) -> size_t {
-            auto& transfer = *static_cast<Transfer*>(opaque);
-            const auto length = size * count;
-            if (length > transfer.limit - transfer.bytes.size()) {
-                return 0;
+    auto client = Client::Create(Sink { &bytes, limit });
+    std::optional<uint64_t> length;
+    int response = 0;
+    bool success = false;
+    client->Url(uri).Mode(Client::Thread::Current).Cancellation(canceled)
+        .VerifyTls(true).AllowUntrustedAuthority(config.httpTlsAllowUntrustedCertificate)
+        .FollowRedirects(false)
+        .Header("Authorization", "Basic " + websocketpp::base64_encode("default:" + config.password))
+        .Headers([&](std::string key, std::string value) {
+            std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            });
+            if (key == "content-length") {
+                uint64_t parsed = 0;
+                const auto result = std::from_chars(value.data(), value.data() + value.size(), parsed);
+                if (result.ec == std::errc() && result.ptr == value.data() + value.size()) {
+                    length = parsed;
+                }
             }
-            try {
-                const auto* begin = reinterpret_cast<const uint8_t*>(data);
-                transfer.bytes.insert(transfer.bytes.end(), begin, begin + length);
-                return length;
-            }
-            catch (...) {
-                return 0;
-            }
-        });
-    const auto result = curl_easy_perform(handle);
-    long response = 0;
-    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response);
+        })
+        .Run([&](Client*, int code, bool ok) { response = code; success = ok; });
     if (response == 404) {
         bytes.clear();
         return true;
     }
-    curl_off_t length = 0;
-    curl_easy_getinfo(handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T, &length);
-    /* Older thumbnail responses advertised an extra byte. */
-    return response == 200 && (result == CURLE_OK ||
-        (result == CURLE_PARTIAL_FILE && length == static_cast<curl_off_t>(bytes.size() + 1)));
+    return response == 200 && success && (!length || *length == bytes.size());
 }
 
 /* RemoteLibraryBackend */

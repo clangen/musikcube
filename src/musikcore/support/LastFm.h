@@ -37,6 +37,7 @@
 #include <atomic>
 #include <future>
 #include <mutex>
+#include <stop_token>
 #include <vector>
 
 #include <musikcore/library/track/Track.h>
@@ -50,9 +51,9 @@ namespace musik { namespace core { namespace lastfm {
     using TokenCallback = std::function<void(std::string)>;
     using SessionCallback = std::function<void(Session)>;
 
-    void CreateAccountLinkToken(const std::atomic_bool& cancelled, TokenCallback callback);
+    void CreateAccountLinkToken(std::stop_token cancelled, TokenCallback callback);
     const std::string CreateAccountLinkUrl(const std::string& token);
-    void CreateSession(const std::string& token, const std::atomic_bool& cancelled, SessionCallback session);
+    void CreateSession(const std::string& token, std::stop_token cancelled, SessionCallback session);
     /* Owns playback reports until they finish or playback shuts down. */
     class PlaybackReports {
     public:
@@ -66,7 +67,7 @@ namespace musik { namespace core { namespace lastfm {
         void Submit(const TrackPtr& track, bool scrobble);
 
         std::mutex mutex;
-        std::atomic_bool cancelled { false };
+        std::stop_source cancelled;
         std::vector<std::future<void>> transfers;
     };
 

@@ -123,21 +123,15 @@ bool UpdateCheck::Run(Callback callback) {
         client->Url(UPDATE_CHECK_URL)
             .UserAgent(getUserAgent())
             .Mode(HttpClient::Thread::Current)
-            .Decorator([&stop](CURL* curl) {
-                curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, UPDATE_CHECK_TIMEOUT_MS);
-                curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &stop);
-                curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION,
-                    +[](void* data, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int {
-                        return static_cast<std::stop_token*>(data)->stop_requested();
-                    });
-            })
-            .Run([this, &stop](HttpClient* client, int, CURLcode status) {
+            .Timeout(UPDATE_CHECK_TIMEOUT_MS)
+            .Cancellation(stop)
+            .Run([this, &stop](HttpClient* client, int, bool success) {
                 if (stop.stop_requested()) {
                     return;
                 }
 
                 bool needsUpdate = false;
-                if (status == CURLE_OK) {
+                if (success) {
                     try {
                         const auto platform = json::parse(client->Stream().str())[LATEST][PLATFORM];
                         const short major = platform[MAJOR];

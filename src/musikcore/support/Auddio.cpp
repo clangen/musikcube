@@ -34,10 +34,9 @@
 
 #include "pch.hpp"
 #include "Auddio.h"
-#include "OnlineTransfer.h"
 #include "Common.h"
-#include <common/NarrowCast.h>
 #include <common/HttpClient.h>
+#include <common/HttpUrl.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <sstream>
@@ -46,7 +45,6 @@
 #pragma warning(push, 0)
 #endif
 #include <nlohmann/json.hpp>
-#include <curl/curl.h>
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -63,19 +61,7 @@ static std::shared_ptr<AuddioClient> createClient() {
 }
 
 static std::string encode(std::string value) {
-    const std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), &curl_easy_cleanup);
-    if (curl) {
-        char* encoded = curl_easy_escape(
-            curl.get(),
-            value.c_str(),
-            narrow_cast<int>(value.size()));
-
-        if (encoded) {
-            value = encoded;
-            curl_free(encoded);
-        }
-    }
-    return value;
+    return musik::core::sdk::EncodeUrlValue(value);
 }
 
 static std::string getApiToken() {
@@ -84,7 +70,7 @@ static std::string getApiToken() {
 }
 
 namespace musik { namespace core { namespace auddio {
-    void FindLyrics(std::string artist, std::string title, const std::atomic_bool& cancelled, LyricsCallback callback) {
+    void FindLyrics(std::string artist, std::string title, std::stop_token cancelled, LyricsCallback callback) {
         std::string apiToken = getApiToken();
 
         if (!apiToken.size()) {
@@ -102,8 +88,8 @@ namespace musik { namespace core { namespace auddio {
         auto client = createClient();
         client->Url(url)
             .Mode(AuddioClient::Thread::Current)
-            .Decorator([&](CURL* curl) { ConfigureOnlineTransfer(curl, cancelled); })
-            .Run([callback = std::move(callback)](AuddioClient* client, int statusCode, CURLcode curlCode) {
+            .Cancellation(cancelled)
+            .Run([callback = std::move(callback)](AuddioClient* client, int statusCode, bool) {
                 std::string lyrics;
                 if (statusCode == 200) {
                     try {

@@ -50,6 +50,8 @@ const std::string& CddaIndexer::Key() {
 }
 
 void CddaIndexer::OnBeforeScan() {
+    std::lock_guard lock(this->activeMutex);
+    this->metadataStop = std::stop_source {};
     this->interrupted.store(false);
     this->present.clear();
     this->uncertainDrives.clear();
@@ -135,7 +137,12 @@ bool CddaIndexer::Scan(musik::core::plugin::IndexerWriter* writer, const char**,
         auto metadata = this->metadataCache.find(discId);
         if (metadata == this->metadataCache.end()) {
             CddaMetadata found;
-            if (LookupCddaMetadata(disc, this->interrupted, found)) {
+            std::stop_token token;
+            {
+                std::lock_guard lock(this->activeMutex);
+                token = this->metadataStop.get_token();
+            }
+            if (LookupCddaMetadata(disc, token, found)) {
                 metadata = this->metadataCache.emplace(discId, std::move(found)).first;
             }
         }
@@ -213,6 +220,7 @@ void CddaIndexer::ScanTrack(musik::core::plugin::IndexerWriter* writer, const ch
 void CddaIndexer::Interrupt() noexcept {
     this->interrupted.store(true);
     std::lock_guard lock(this->activeMutex);
+    this->metadataStop.request_stop();
     if (this->active) {
         this->active->Interrupt();
     }

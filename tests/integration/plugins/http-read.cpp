@@ -121,6 +121,16 @@ int checkProgressiveHttpRead(const char* pluginPath) {
         require(read() == MC_OK && bytes == Chunk && state == MC_READ_MORE &&
             std::string_view(buffer.data(), bytes) == std::string(Chunk, 'A'), "read a short published prefix");
 
+        mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+        require(stream.api->get_info(stream.instance, &info) == MC_OK &&
+            !(info.flags & MC_STREAM_LENGTH_KNOWN), "open-ended response has unknown length");
+        require(stream.api->seek(stream.instance, Chunk + 1, nullptr) == MC_ERROR_UNSUPPORTED,
+            "unknown-length stream cannot seek beyond published bytes");
+        require(stream.api->seek(stream.instance, 0, nullptr) == MC_OK &&
+            read() == MC_OK && bytes == Chunk &&
+            std::string_view(buffer.data(), bytes) == std::string(Chunk, 'A'),
+            "seek and reread published bytes while download is active");
+
         /* launch the read before releasing the server. a premature zero-byte
         result fails here; a reader waiting for EOF misses the next deadline. */
         std::promise<void> started;
@@ -140,6 +150,166 @@ int checkProgressiveHttpRead(const char* pluginPath) {
         require(read() == MC_OK && !bytes && state == MC_READ_END, "EOF after the final byte");
         writer.join();
     });
+
+    /* an interrupted stream must wake readers and seekers waiting for bytes
+    the server has not yet sent. the server gate makes the stall reproducible. */
+    withHttpStream(files.Directory(), data, [&](const mc_stream& stream) {
+        asio::io_context sockets;
+        using Tcp = asio::ip::tcp;
+        Tcp::acceptor listener(sockets, { asio::ip::address_v4::loopback(), 0 });
+        const auto url = "http://127.0.0.1:" + std::to_string(listener.local_endpoint().port()) + "/stalled";
+        std::promise<void> release;
+        auto released = release.get_future();
+        std::thread server([&] {
+            Tcp::iostream socket;
+            listener.accept(socket.rdbuf()->socket());
+            std::string line;
+            while (std::getline(socket, line) && line != "\r") {}
+            socket << "HTTP/1.0 200 OK\r\nContent-Length: 65536\r\nContent-Type: audio/test\r\n\r\n"
+                   << std::string(Chunk, 'A') << std::flush;
+            require(released.wait_for(5s) == std::future_status::ready, "release stalled server");
+        });
+
+        require(stream.api->open(stream.instance, { url.data(), url.size() }, MC_STREAM_OPEN_READ, nullptr) == MC_OK,
+            "open published prefix before stall");
+        mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+        const auto infoStatus = stream.api->get_info(stream.instance, &info);
+        require(infoStatus == MC_OK &&
+            (info.flags & MC_STREAM_LENGTH_KNOWN) && info.length_bytes == 2 * Chunk &&
+            std::string_view(info.content_type.data, info.content_type.length) == "audio/test",
+            "publish response length and content type");
+        std::array<char, Chunk> buffer;
+        size_t bytes = 0;
+        mc_read_state state = MC_READ_MORE;
+        require(stream.api->read(stream.instance, buffer.data(), buffer.size(), &bytes, &state, nullptr) == MC_OK &&
+            bytes == Chunk, "consume published prefix");
+        std::promise<void> reading, seeking;
+        auto reader = std::async(std::launch::async, [&] {
+            size_t count = 0;
+            mc_read_state readState = MC_READ_MORE;
+            reading.set_value();
+            return stream.api->read(stream.instance, buffer.data(), buffer.size(), &count, &readState, nullptr);
+        });
+        auto seeker = std::async(std::launch::async, [&] {
+            seeking.set_value();
+            return stream.api->seek(stream.instance, Chunk + 1, nullptr);
+        });
+        reading.get_future().wait();
+        seeking.get_future().wait();
+        require(reader.wait_for(50ms) == std::future_status::timeout &&
+            seeker.wait_for(50ms) == std::future_status::timeout, "read and seek wait for missing bytes");
+        stream.api->interrupt(stream.instance);
+        require(reader.wait_for(2s) == std::future_status::ready && reader.get() == MC_ERROR_CANCELLED,
+            "interrupt wakes blocked read");
+        require(seeker.wait_for(2s) == std::future_status::ready && seeker.get() == MC_ERROR_CANCELLED,
+            "interrupt wakes blocked seek");
+        release.set_value();
+        server.join();
+    });
+
+    /* redirects must publish metadata from the final response, not the
+    intermediate response, and leave the complete body readable. */
+    withHttpStream(files.Directory(), data, [&](const mc_stream& stream) {
+        asio::io_context sockets;
+        using Tcp = asio::ip::tcp;
+        Tcp::acceptor listener(sockets, { asio::ip::address_v4::loopback(), 0 });
+        const auto base = "http://127.0.0.1:" + std::to_string(listener.local_endpoint().port());
+        const auto url = base + "/redirect";
+        std::thread server([&] {
+            for (int index = 0; index < 2; ++index) {
+                Tcp::iostream socket;
+                listener.accept(socket.rdbuf()->socket());
+                std::string line;
+                while (std::getline(socket, line) && line != "\r") {}
+                if (index == 0) {
+                    socket << "HTTP/1.0 302 Found\r\nLocation: " << base
+                           << "/final\r\nContent-Type: audio/wrong\r\nContent-Length: 0\r\n\r\n" << std::flush;
+                }
+                else {
+                    socket << "HTTP/1.0 200 OK\r\nContent-Type: audio/final\r\nContent-Length: "
+                           << Chunk << "\r\n\r\n" << std::string(Chunk, 'R') << std::flush;
+                }
+            }
+        });
+        require(stream.api->open(stream.instance, { url.data(), url.size() }, MC_STREAM_OPEN_READ, nullptr) == MC_OK,
+            "open redirected response");
+        mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+        require(stream.api->get_info(stream.instance, &info) == MC_OK &&
+            (info.flags & MC_STREAM_LENGTH_KNOWN) && info.length_bytes == Chunk &&
+            std::string_view(info.content_type.data, info.content_type.length) == "audio/final",
+            "publish final response metadata after redirect");
+        std::array<char, Chunk> buffer;
+        size_t bytes = 0;
+        mc_read_state state = MC_READ_MORE;
+        require(stream.api->read(stream.instance, buffer.data(), buffer.size(), &bytes, &state, nullptr) == MC_OK &&
+            bytes == Chunk && std::string_view(buffer.data(), bytes) == std::string(Chunk, 'R'),
+            "read redirected response body");
+        server.join();
+    });
+
+    /* remote-track selectors carry credentials and media identity separately
+    from the URL used for the network transfer. */
+    withHttpStream(files.Directory(), data, [&](const mc_stream& stream) {
+        asio::io_context sockets;
+        using Tcp = asio::ip::tcp;
+        Tcp::acceptor listener(sockets, { asio::ip::address_v4::loopback(), 0 });
+        const auto url = "http://127.0.0.1:" + std::to_string(listener.local_endpoint().port()) + "/private";
+        const auto selector = "musikcore://remote-track/{\"uri\":\"" + url +
+            "\",\"originalUri\":\"original.flac\",\"type\":\".flac\",\"password\":\"password\"}";
+        bool authorized = false;
+        std::thread server([&] {
+            Tcp::iostream socket;
+            listener.accept(socket.rdbuf()->socket());
+            std::string line;
+            while (std::getline(socket, line) && line != "\r") {
+                if (line == "Authorization: Basic ZGVmYXVsdDpwYXNzd29yZA==\r") {
+                    authorized = true;
+                }
+            }
+            socket << "HTTP/1.0 200 OK\r\nContent-Length: " << Chunk << "\r\n\r\n"
+                   << std::string(Chunk, 'P') << std::flush;
+        });
+        require(stream.api->open(stream.instance, { selector.data(), selector.size() }, MC_STREAM_OPEN_READ, nullptr) == MC_OK,
+            "open authenticated remote track");
+        server.join();
+        require(authorized, "remote track supplies basic credentials");
+        mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+        require(stream.api->get_info(stream.instance, &info) == MC_OK &&
+            std::string_view(info.uri.data, info.uri.length) == "original.flac" &&
+            std::string_view(info.extension.data, info.extension.length) == "flac",
+            "remote track preserves original identity and media type");
+    });
+
+    /* opening waits for the first published chunk. cancellation must return
+    even when a server sends headers but never sends the body. */
+    withHttpStream(files.Directory(), data, [&](const mc_stream& stream) {
+        asio::io_context sockets;
+        using Tcp = asio::ip::tcp;
+        Tcp::acceptor listener(sockets, { asio::ip::address_v4::loopback(), 0 });
+        const auto url = "http://127.0.0.1:" + std::to_string(listener.local_endpoint().port()) + "/open-stall";
+        std::promise<void> accepted, release;
+        auto released = release.get_future();
+        std::thread server([&] {
+            Tcp::iostream socket;
+            listener.accept(socket.rdbuf()->socket());
+            std::string line;
+            while (std::getline(socket, line) && line != "\r") {}
+            socket << "HTTP/1.0 200 OK\r\nContent-Length: 65536\r\n\r\n" << std::flush;
+            accepted.set_value();
+            require(released.wait_for(5s) == std::future_status::ready, "release stalled open server");
+        });
+        auto opening = std::async(std::launch::async, [&] {
+            return stream.api->open(stream.instance, { url.data(), url.size() }, MC_STREAM_OPEN_READ, nullptr);
+        });
+        require(accepted.get_future().wait_for(2s) == std::future_status::ready, "server received open request");
+        require(opening.wait_for(50ms) == std::future_status::timeout, "open waits for published bytes");
+        stream.api->interrupt(stream.instance);
+        require(opening.wait_for(2s) == std::future_status::ready && opening.get() == MC_ERROR_CANCELLED,
+            "interrupt wakes blocked open");
+        release.set_value();
+        server.join();
+    });
+
     std::string diagnostic;
     std::mutex diagnosticMutex;
     auto logger = [&](mc_log_level level, mc_string_view, mc_string_view message) {

@@ -1,4 +1,8 @@
 set(core_fixture_library musikcore)
+set(windows_test_ssl)
+if(WIN32 AND NOT MUSIKCORE_USE_ASIO_WINTLS)
+  set(windows_test_ssl vendor::ssl vendor::crypto)
+endif()
 if(TARGET musikcore_internal)
   set(core_fixture_library musikcore_internal)
 endif()
@@ -9,7 +13,7 @@ target_compile_features(musikcube_seed_library PRIVATE cxx_std_17)
 target_link_libraries(musikcube_seed_library PRIVATE musikcore Threads::Threads)
 
 if(WIN32)
-  target_link_libraries(musikcube_seed_library PRIVATE musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+  target_link_libraries(musikcube_seed_library PRIVATE musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
   add_dependencies(musikcube_seed_library musikcube_runtime)
 else()
   foreach(plugin IN ITEMS taglibreader ffmpegdecoder)
@@ -27,11 +31,42 @@ endif()
 if(BUILD_TESTING)
 
   if(WIN32)
+    set(http_test_backends windows)
+    if(TARGET vendor::curl)
+      list(APPEND http_test_backends curl)
+    endif()
+    foreach(backend IN LISTS http_test_backends)
+      set(target musikcore_http_client_${backend}_test)
+      add_executable(${target} ../integration/transport/http-client.cpp)
+      target_compile_features(${target} PRIVATE cxx_std_20)
+      target_link_libraries(${target} PRIVATE musikcube_windows)
+      if(backend STREQUAL "curl")
+        target_compile_definitions(${target} PRIVATE MUSIKCORE_HTTP_TEST_CURL)
+        target_link_libraries(${target} PRIVATE vendor::curl)
+        set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/http-curl/$<CONFIG>")
+        add_custom_command(TARGET ${target} POST_BUILD
+          COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${PROJECT_SOURCE_DIR}/vendor/win64/dll/libcurl/libcurl.dll" "$<TARGET_FILE_DIR:${target}>" VERBATIM)
+      else()
+        target_compile_definitions(${target} PRIVATE MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+        target_link_libraries(${target} PRIVATE winhttp)
+      endif()
+      add_dependencies(musikcube_tests ${target})
+      add_dependencies(musikcube_integration_tests ${target})
+      add_test(NAME musikcore.integration.transport.http_client_${backend} COMMAND "${MUSIKCORE_TEST_NODE}"
+        "${PROJECT_SOURCE_DIR}/tests/scripts/check-http-client.js" "$<TARGET_FILE:${target}>"
+        "${PROJECT_SOURCE_DIR}/tests/support/tls/localhost-cert.pem"
+        "${PROJECT_SOURCE_DIR}/tests/support/tls/localhost-key.pem")
+      set_tests_properties(musikcore.integration.transport.http_client_${backend} PROPERTIES
+        LABELS "integration;musikcore;transport;contract" TIMEOUT 20)
+    endforeach()
+
     add_executable(musikcore_windows_websocket_tls_test
       ../integration/transport/windows-websocket-tls.cpp
       "${PROJECT_SOURCE_DIR}/src/musikcore/net/RawWebSocketClient.cpp")
     target_include_directories(musikcore_windows_websocket_tls_test PRIVATE "${PROJECT_SOURCE_DIR}/src/musikcore")
     target_compile_features(musikcore_windows_websocket_tls_test PRIVATE cxx_std_20)
+    target_compile_definitions(musikcore_windows_websocket_tls_test PRIVATE MUSIKCORE_USE_ASIO_WINTLS)
     target_link_libraries(musikcore_windows_websocket_tls_test PRIVATE musikcube_windows Threads::Threads crypt32 secur32 ws2_32)
     add_dependencies(musikcube_tests musikcore_windows_websocket_tls_test)
     add_dependencies(musikcube_integration_tests musikcore_windows_websocket_tls_test)
@@ -44,13 +79,28 @@ if(BUILD_TESTING)
       LABELS "integration;musikcore;transport;contract" TIMEOUT 25)
   endif()
 
+  if(NOT WIN32)
+    add_executable(musikcore_http_client_curl_test ../integration/transport/http-client.cpp)
+    target_include_directories(musikcore_http_client_curl_test PRIVATE "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})
+    target_compile_features(musikcore_http_client_curl_test PRIVATE cxx_std_20)
+    target_link_libraries(musikcore_http_client_curl_test PRIVATE ${musikcube_LINK_LIBS} Threads::Threads)
+    add_dependencies(musikcube_tests musikcore_http_client_curl_test)
+    add_dependencies(musikcube_integration_tests musikcore_http_client_curl_test)
+    add_test(NAME musikcore.integration.transport.http_client_curl COMMAND "${MUSIKCORE_TEST_NODE}"
+      "${PROJECT_SOURCE_DIR}/tests/scripts/check-http-client.js" "$<TARGET_FILE:musikcore_http_client_curl_test>"
+      "${PROJECT_SOURCE_DIR}/tests/support/tls/localhost-cert.pem"
+      "${PROJECT_SOURCE_DIR}/tests/support/tls/localhost-key.pem")
+    set_tests_properties(musikcore.integration.transport.http_client_curl PROPERTIES
+      LABELS "integration;musikcore;transport;contract" TIMEOUT 20)
+  endif()
+
   add_executable(musikcore_playlist_source_schema_test ../integration/library/playlist-source-schema.cpp)
   target_include_directories(musikcore_playlist_source_schema_test PRIVATE
     "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})
   target_link_libraries(musikcore_playlist_source_schema_test PRIVATE ${core_fixture_library} Threads::Threads)
   if(WIN32)
     target_link_libraries(musikcore_playlist_source_schema_test PRIVATE
-      musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+      musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
   endif()
   add_dependencies(musikcube_tests musikcore_playlist_source_schema_test)
   add_dependencies(musikcube_integration_tests musikcore_playlist_source_schema_test)
@@ -64,7 +114,7 @@ if(BUILD_TESTING)
   target_link_libraries(musikcore_playlist_track_queries_test PRIVATE ${core_fixture_library} Threads::Threads)
   if(WIN32)
     target_link_libraries(musikcore_playlist_track_queries_test PRIVATE
-      musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+      musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
   endif()
   add_dependencies(musikcube_tests musikcore_playlist_track_queries_test)
   add_dependencies(musikcube_integration_tests musikcore_playlist_track_queries_test)
@@ -110,7 +160,7 @@ if(BUILD_TESTING)
     DISABLE_PRECOMPILE_HEADERS ON)
   if(WIN32)
     target_link_libraries(musikcore_remote_query_transport_test PRIVATE
-      musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+      musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
   endif()
   add_dependencies(musikcube_tests musikcore_remote_query_transport_test)
   add_dependencies(musikcube_integration_tests musikcore_remote_query_transport_test)
@@ -149,7 +199,7 @@ if(BUILD_TESTING)
     target_compile_features(musikcore_production_api_test PRIVATE cxx_std_20)
     target_link_libraries(musikcore_production_api_test PRIVATE ${core_fixture_library} Threads::Threads)
     if(WIN32)
-      target_link_libraries(musikcore_production_api_test PRIVATE musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+      target_link_libraries(musikcore_production_api_test PRIVATE musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
     endif()
     add_dependencies(musikcube_tests musikcube_seed_library musikcore_production_api_test)
     add_dependencies(musikcube_integration_tests musikcube_seed_library musikcore_production_api_test)
@@ -490,7 +540,7 @@ target_include_directories(musikcore_runtime_hardening_test PRIVATE "${PROJECT_S
 target_link_libraries(musikcore_runtime_hardening_test PRIVATE ${core_fixture_library} Threads::Threads)
 set_target_properties(musikcore_runtime_hardening_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
 if(WIN32)
-  target_link_libraries(musikcore_runtime_hardening_test PRIVATE musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+  target_link_libraries(musikcore_runtime_hardening_test PRIVATE musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
 endif()
 add_dependencies(musikcube_tests musikcore_runtime_hardening_test)
 add_dependencies(musikcube_integration_tests musikcore_runtime_hardening_test)
@@ -653,7 +703,7 @@ target_compile_features(musikcore_indexer_gate_test PRIVATE cxx_std_20)
 set_target_properties(musikcore_indexer_gate_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
 if(WIN32)
   target_link_libraries(musikcore_indexer_gate_test PRIVATE
-    musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+    musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
 endif()
 add_dependencies(musikcore_indexer_gate_test musikcore_indexer_gate)
 add_dependencies(musikcube_tests musikcore_indexer_gate_test)
@@ -703,7 +753,7 @@ if(TARGET gmedecoder OR TARGET openmptdecoder OR TARGET libopenmptdecoder)
   set_target_properties(musikcore_indexer_providers_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
   if(WIN32)
     target_link_libraries(musikcore_indexer_providers_test PRIVATE
-      musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+      musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
   endif()
   add_dependencies(musikcube_tests musikcore_indexer_providers_test)
   add_dependencies(musikcube_integration_tests musikcore_indexer_providers_test)
@@ -760,7 +810,10 @@ if(WIN32)
   target_include_directories(musikcore_cdda_stream_test PRIVATE "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src/3rdparty/include")
   target_compile_features(musikcore_cdda_stream_test PRIVATE cxx_std_20)
-  target_link_libraries(musikcore_cdda_stream_test PRIVATE musikcube_windows bcrypt vendor::curl)
+  target_link_libraries(musikcore_cdda_stream_test PRIVATE musikcube_windows bcrypt)
+  if(NOT MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
+    target_link_libraries(musikcore_cdda_stream_test PRIVATE vendor::curl)
+  endif()
   add_dependencies(musikcube_tests musikcore_cdda_stream_test)
   add_dependencies(musikcube_integration_tests musikcore_cdda_stream_test)
   add_test(NAME musikcore.integration.plugins.cdda_stream COMMAND musikcore_cdda_stream_test)
@@ -849,7 +902,7 @@ target_compile_features(musikcore_runtime_local_startup_test PRIVATE cxx_std_17)
 set_target_properties(musikcore_runtime_local_startup_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
 if(WIN32)
   target_link_libraries(musikcore_runtime_local_startup_test PRIVATE
-    musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+    musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
 endif()
 add_dependencies(musikcube_tests musikcore_runtime_local_startup_test)
 add_dependencies(musikcube_integration_tests musikcore_runtime_local_startup_test)
@@ -868,7 +921,7 @@ target_compile_features(musikcore_remote_facets_test PRIVATE cxx_std_17)
 set_target_properties(musikcore_remote_facets_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
 if(WIN32)
   target_link_libraries(musikcore_remote_facets_test PRIVATE
-    musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+    musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
 endif()
 add_dependencies(musikcube_tests musikcore_remote_facets_test)
 add_dependencies(musikcube_integration_tests musikcore_remote_facets_test)
@@ -903,6 +956,8 @@ add_test(NAME musikcore.integration.plugins.installed COMMAND "${CMAKE_COMMAND}"
   "-DBUILD_DIR=${PROJECT_BINARY_DIR}" "-DSOURCE=${PROJECT_SOURCE_DIR}" "-DTEST_CONFIG=$<CONFIG>"
   "-DHOST=$<TARGET_FILE:musikcore_plugin_registry_test>" "-DNM=${CMAKE_NM}"
   "-DLINKER=${CMAKE_LINKER}" "-DNO_ENTRY=$<TARGET_FILE:musikcore_provider_no_entry>"
+  "-DEXPECT_SYSTEM_TLS=${MUSIKCORE_USE_ASIO_WINTLS}"
+  "-DEXPECT_SYSTEM_HTTP=${MUSIKCORE_USE_WINDOWS_HTTP_CLIENT}"
   "-DTEST_GENERATOR=${CMAKE_GENERATOR}" "-DTEST_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
   "-DOUTPUT_HOST=$<TARGET_FILE:musikcore_null_output_test>"
   "-DCONSUMER_SANITIZERS=${sanitizers_flags}"
@@ -1087,7 +1142,7 @@ target_compile_features(musikcore_playback_remote_lifecycle_test PRIVATE cxx_std
 target_link_libraries(musikcore_playback_remote_lifecycle_test PRIVATE ${core_fixture_library} Threads::Threads)
 if(WIN32)
   target_link_libraries(musikcore_playback_remote_lifecycle_test PRIVATE
-    musikcube_windows vendor::ssl pdh psapi ws2_32 wldap32 comctl32)
+    musikcube_windows ${windows_test_ssl} pdh psapi ws2_32 wldap32 comctl32)
 endif()
 add_dependencies(musikcore_playback_remote_lifecycle_test musikcore_playback_remote_fixture musikcore_playback_remote_peer
   musikcore_legacy_entry_fixture nullout)

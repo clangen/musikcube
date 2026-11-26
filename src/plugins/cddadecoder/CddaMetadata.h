@@ -2,7 +2,7 @@
 
 #include "CddaStream.h"
 
-#include <atomic>
+#include <stop_token>
 #include <map>
 #include <string>
 
@@ -17,4 +17,4 @@ std::string CddaMusicBrainzDiscId(const CddaDiscInfo& disc);
 bool ParseCddaMusicBrainzResponse(const std::string& response, size_t trackCount, CddaMetadata& metadata);
 
 /* A failed lookup leaves the caller free to use local track labels. */
-bool LookupCddaMetadata(const CddaDiscInfo& disc, const std::atomic<bool>& interrupted, CddaMetadata& metadata);
+bool LookupCddaMetadata(const CddaDiscInfo& disc, std::stop_token interrupted, CddaMetadata& metadata);

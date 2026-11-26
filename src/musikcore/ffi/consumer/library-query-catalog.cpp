@@ -161,18 +161,15 @@ namespace musik { namespace core { namespace ffi { namespace detail {
     mc_result SubmitCatalogThumbnail(mc_context* context, musik::core::library::Library::Shared instance, int64_t id,
         mc_thumbnail_completion_fn completion, void* data, mc_request_id* request) {
         using Image = std::vector<uint8_t>;
-        return submitLibraryRequest<Image>(
-            context, "Load album artwork",
-            [instance, id](auto& output, const auto& cancelled) {
-                output = std::make_unique<Image>();
-                return instance->ReadThumbnail(id, *output, cancelled);
-            },
-            [completion](mc_result status, Image* bytes, const mc_error* error, void* data) {
-                const std::unique_ptr<Image> owned(bytes);
-                completion(
-                    status, bytes ? mc_byte_view { bytes->data(), bytes->size() } : mc_byte_view {}, error, data);
-            },
-            data, request);
+        const auto output = std::make_shared<Image>();
+        const auto stop = std::make_shared<std::stop_source>();
+        return submit_request(context,
+            [instance, id, output, stop] { return instance->ReadThumbnail(id, *output, stop->get_token()); },
+            [completion, output](mc_result status, void* userData) {
+                const CompletionError error(status, "Load album artwork");
+                completion(status, status == MC_OK ? mc_byte_view { output->data(), output->size() } : mc_byte_view {},
+                    error.Get(), userData);
+            }, data, request, {}, RequestEffect::Read, nullptr, [stop] { stop->request_stop(); });
     }
 
     musik::core::library::Library::Shared CreateCatalogLibrary(std::string locator, mc_library_kind kind) {

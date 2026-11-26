@@ -138,9 +138,9 @@ int main(int argc, char** argv) {
     Require(stream.Open({ path.data(), path.size() }, MC_STREAM_OPEN_READ) == MC_OK, "open audio track");
 
     if (argc > 2 && std::strcmp(argv[2], "--metadata") == 0) {
-        std::atomic<bool> interrupted { false };
+        std::stop_source interrupted;
         CddaMetadata metadata;
-        if (LookupCddaMetadata(stream.Disc(), interrupted, metadata)) {
+        if (LookupCddaMetadata(stream.Disc(), interrupted.get_token(), metadata)) {
             std::printf("MusicBrainz: %s - %s (%zu tracks; genre: %s)\n", metadata.artist.c_str(),
                 metadata.album.c_str(), metadata.titles.size(), metadata.genre.c_str());
         }

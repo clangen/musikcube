@@ -38,10 +38,10 @@
 #include <musikcore/plugin/services.h>
 #include <musikcore/plugin/settings.h>
 #include <musikcore/plugin/stream.h>
-#include <curl/curl.h>
 #include <atomic>
 #include <condition_variable>
 #include <optional>
+#include <stop_token>
 #include <string_view>
 #include <thread>
 
@@ -80,9 +80,6 @@ private:
     mc_result Transfer();
     size_t WriteBytes(const char* data, size_t size);
     void ReadHeader(std::string_view header);
-    static size_t CurlWrite(char* data, size_t size, size_t count, void* context);
-    static size_t CurlHeader(char* data, size_t size, size_t count, void* context);
-    static int CurlProgress(void* context, curl_off_t, curl_off_t, curl_off_t, curl_off_t);
 
     LruDiskCache& cache;
     const mc_host_api& host;
@@ -97,6 +94,7 @@ private:
     FILE* writer = nullptr;
     std::thread worker;
     std::atomic<bool> cancelled { false };
+    std::stop_source stop;
     std::mutex mutex;
     std::condition_variable changed;
     uint64_t received = 0, available = 0, position = 0;

@@ -35,10 +35,10 @@
 #include "pch.hpp"
 
 #include "LastFm.h"
-#include "OnlineTransfer.h"
 
 #include <musikcore/support/Preferences.h>
 #include <common/HttpClient.h>
+#include <common/HttpUrl.h>
 #include <musikcore/support/PreferenceKeys.h>
 
 #include <sstream>
@@ -47,7 +47,6 @@
 #ifdef _MSC_VER
 #pragma warning(push, 0)
 #endif
-#include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -87,15 +86,7 @@ static void validate(musik::core::lastfm::Session& session) {
 }
 
 static std::string encode(std::string value) {
-    static CURL* curl = curl_easy_init();
-    if (curl && value.c_str()) {
-        char* encoded = curl_easy_escape(curl, value.c_str(), (int) value.size());
-        if (encoded) {
-            value = encoded;
-            curl_free(encoded);
-        }
-    }
-    return value;
+    return musik::core::sdk::EncodeUrlValue(value);
 }
 
 static std::string gernateSignedUrlParams(
@@ -150,14 +141,14 @@ static inline Prefs settings() {
 
 namespace musik { namespace core { namespace lastfm {
 
-    void CreateAccountLinkToken(const std::atomic_bool& cancelled, TokenCallback callback) {
+    void CreateAccountLinkToken(std::stop_token cancelled, TokenCallback callback) {
         std::string url = generateSignedUrl(GET_TOKEN);
 
         auto client = createClient();
         client->Url(url)
             .Mode(LastFmClient::Thread::Current)
-            .Decorator([&](CURL* curl) { ConfigureOnlineTransfer(curl, cancelled); })
-            .Run([callback](LastFmClient* client, int statusCode, CURLcode curlCode) {
+            .Cancellation(cancelled)
+            .Run([callback](LastFmClient* client, int statusCode, bool) {
                 std::string token;
                 if (statusCode == 200) {
                     try {
@@ -172,14 +163,14 @@ namespace musik { namespace core { namespace lastfm {
         });
     }
 
-    extern void CreateSession(const std::string& token, const std::atomic_bool& cancelled, SessionCallback callback) {
+    extern void CreateSession(const std::string& token, std::stop_token cancelled, SessionCallback callback) {
         std::string url = generateSignedUrl(GET_SESSION, { { "token", token } });
 
         auto client = createClient();
         client->Url(url)
             .Mode(LastFmClient::Thread::Current)
-            .Decorator([&](CURL* curl) { ConfigureOnlineTransfer(curl, cancelled); })
-            .Run([token, callback](LastFmClient* client, int statusCode, CURLcode curlCode) {
+            .Cancellation(cancelled)
+            .Run([token, callback](LastFmClient* client, int statusCode, bool) {
                 Session session;
                 session.token = token;
 
@@ -237,7 +228,7 @@ namespace musik { namespace core { namespace lastfm {
         std::vector<std::future<void>> transfers;
         {
             std::lock_guard lock(this->mutex);
-            this->cancelled.store(true);
+            this->cancelled.request_stop();
             transfers.swap(this->transfers);
         }
         /* Destruction of the saved futures joins the transfers outside the lock. */
@@ -252,7 +243,7 @@ namespace musik { namespace core { namespace lastfm {
     }
 
     void PlaybackReports::Submit(const TrackPtr& track, bool scrobble) {
-        if (!track || this->cancelled.load()) {
+        if (!track || this->cancelled.stop_requested()) {
             return;
         }
         const auto session = LoadSession();
@@ -276,7 +267,7 @@ namespace musik { namespace core { namespace lastfm {
         }
 
         std::lock_guard lock(this->mutex);
-        if (this->cancelled.load()) {
+        if (this->cancelled.stop_requested()) {
             return;
         }
         std::erase_if(this->transfers, [](const auto& transfer) {
@@ -284,10 +275,10 @@ namespace musik { namespace core { namespace lastfm {
         });
         auto body = gernateSignedUrlParams(scrobble ? UPDATE_RECENT : UPDATE_NOW_PLAYING, std::move(fields));
         this->transfers.push_back(std::async(std::launch::async, [this, body = std::move(body)] {
-            if (!this->cancelled.load()) {
+            if (!this->cancelled.stop_requested()) {
                 createClient()->Url(URL_BASE)
                     .Mode(LastFmClient::Thread::Current)
-                    .Decorator([this](CURL* curl) { ConfigureOnlineTransfer(curl, this->cancelled); })
+                    .Cancellation(this->cancelled.get_token())
                     .Header("Content-Type", "application/x-www-form-urlencoded")
                     .Method(LastFmClient::HttpMethod::Post)
                     .PostBody(body)

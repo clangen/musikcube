@@ -47,6 +47,7 @@
 #include <condition_variable>
 #include <unordered_map>
 #include <string>
+#include <stop_token>
 #include <functional>
 
 namespace musik { namespace core { namespace library {
@@ -107,7 +108,7 @@ namespace musik { namespace core { namespace library {
             void Close() override;
 
             bool ReadThumbnail(int64_t id, std::vector<uint8_t>& bytes, size_t limit,
-                const std::atomic_bool& canceled);
+                std::stop_token canceled);
 
             /* IMessageTarget */
             void ProcessMessage(musik::core::runtime::IMessage &message) override;

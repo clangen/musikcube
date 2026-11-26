@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stop_token>
 #include <string>
 
 /* One source scans connected drives and owns the cancellation state for its
@@ -33,6 +34,7 @@ private:
     bool ReadDisc(char letter, CddaDiscInfo& disc, bool& uncertain);
     std::atomic<bool> interrupted { false };
     std::mutex activeMutex;
+    std::stop_source metadataStop;
     CddaStream* active = nullptr;
     std::set<std::string> present;
     std::set<char> uncertainDrives;

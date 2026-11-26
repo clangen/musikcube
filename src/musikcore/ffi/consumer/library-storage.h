@@ -3,6 +3,7 @@
 #include <musikcore/library.h>
 #include "library-scope.h"
 #include <musikcore/library/query/TrackReadBackend.h>
+#include <stop_token>
 
 namespace musik { namespace core {
     class LibraryBackend;
@@ -113,7 +114,7 @@ namespace musik { namespace core { namespace library {
             return MC_ERROR_UNSUPPORTED;
         }
 
-        virtual mc_result ReadThumbnail(int64_t, std::vector<uint8_t>&, const std::atomic_bool&) const {
+        virtual mc_result ReadThumbnail(int64_t, std::vector<uint8_t>&, std::stop_token) const {
             return MC_ERROR_UNSUPPORTED;
         }
 

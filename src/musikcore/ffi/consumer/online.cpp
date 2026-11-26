@@ -22,12 +22,12 @@ namespace {
     template<class Reply, class Start, class Complete>
     mc_result submitOnline(mc_context& context, Start start, Complete complete, void* userData, mc_request_id& request) {
         const auto output = std::make_shared<Reply>();
-        const auto cancelled = std::make_shared<std::atomic_bool>(false);
+        const auto cancelled = std::make_shared<std::stop_source>();
 
         /* The context joins this transfer before destroying the runtime. */
         return submit_request(&context, [output, cancelled, start = std::move(start)] {
             mc_result result = MC_ERROR_INTERNAL;
-            start(*cancelled, [&](mc_result status, Reply reply) {
+            start(cancelled->get_token(), [&](mc_result status, Reply reply) {
                 if (status == MC_OK) {
                     *output = std::move(reply);
                 }
@@ -36,7 +36,7 @@ namespace {
             return result;
         }, [output, complete](mc_result status, void* data) {
             complete(status, status == MC_OK ? output.get() : nullptr, data);
-        }, userData, &request, cancelled);
+        }, userData, &request, {}, RequestEffect::Read, nullptr, [cancelled] { cancelled->request_stop(); });
     }
 
     struct LastFmLink {
@@ -57,7 +57,7 @@ mc_result MC_CALL mc_lyrics_find_async(mc_context* context, mc_string_view artis
 
     return exception_barrier(nullptr, [&] {
         return submitOnline<std::string>(*context, [artist = std::string(artist.data ? artist.data : "", artist.length),
-            title = std::string(title.data, title.length)](const std::atomic_bool& cancelled, auto finish) {
+            title = std::string(title.data, title.length)](std::stop_token cancelled, auto finish) {
             auddio::FindLyrics(artist, title, cancelled, [finish](std::string text) {
                 const auto status = text.empty() ? MC_ERROR_NOT_FOUND : MC_OK;
                 finish(status, std::move(text));
@@ -79,7 +79,7 @@ mc_result MC_CALL mc_lastfm_request_link_async(mc_context* context, mc_lastfm_li
     }
 
     return exception_barrier(nullptr, [&] {
-        return submitOnline<LastFmLink>(*context, [](const std::atomic_bool& cancelled, auto finish) {
+        return submitOnline<LastFmLink>(*context, [](std::stop_token cancelled, auto finish) {
             lastfm::CreateAccountLinkToken(cancelled, [finish](std::string token) {
                 if (token.empty()) {
                     finish(MC_ERROR_IO, {});
@@ -112,7 +112,7 @@ mc_result MC_CALL mc_lastfm_complete_link_async(mc_context* context, mc_string_v
     }
 
     return exception_barrier(nullptr, [&] {
-        return submitOnline<lastfm::Session>(*context, [token = std::string(token.data, token.length)](const std::atomic_bool& cancelled, auto finish) {
+        return submitOnline<lastfm::Session>(*context, [token = std::string(token.data, token.length)](std::stop_token cancelled, auto finish) {
             lastfm::CreateSession(token, cancelled, [finish](lastfm::Session session) {
                 const auto status = session.valid ? MC_OK : MC_ERROR_IO;
                 finish(status, std::move(session));

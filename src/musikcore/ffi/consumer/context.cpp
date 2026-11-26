@@ -752,7 +752,8 @@ namespace musik { namespace core { namespace ffi {
 
     mc_result submit_request(mc_context *context, std::function<mc_result()> work,
         RequestCompletion completion, void *user_data, mc_request_id *out_request,
-        std::shared_ptr<std::atomic_bool> cancel, RequestEffect effect, const void* owner)
+        std::shared_ptr<std::atomic_bool> cancel, RequestEffect effect, const void* owner,
+        std::function<void()> cancel_external)
     {
         return exception_barrier(nullptr, [&]() -> mc_result {
             if (!out_request) return MC_ERROR_INVALID_ARGUMENT;
@@ -767,7 +768,7 @@ namespace musik { namespace core { namespace ffi {
             if (!context->worker.joinable()) context->worker = std::thread(run_worker, std::ref(*context));
             const auto id = context->next_request;
             context->requests.push_back({ id, std::move(work), std::move(completion), user_data,
-                RequestState::queued, MC_OK, std::move(cancel), effect, false, owner, {} });
+                RequestState::queued, MC_OK, std::move(cancel), effect, false, owner, std::move(cancel_external) });
 
             *out_request = id;
             ++context->next_request;
@@ -1155,6 +1156,8 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
         if (!enter_dispatch(*context)) {
             return MC_ERROR_BUSY;
         }
+        std::vector<std::function<void()>> cancelHooks;
+        cancelHooks.reserve(context->requests.size());
         context->stopping = true;
         for (const auto& weak : context->notifications) {
             if (const auto notification = weak.lock()) {
@@ -1183,11 +1186,22 @@ mc_result MC_CALL mc_context_shutdown(mc_context *context) {
                 }
             }
             request.state = RequestState::ready;
+            if (request.cancel_external) {
+                cancelHooks.push_back(std::move(request.cancel_external));
+            }
         }
         context->changed.notify_all();
 
         /* Let the worker and in-flight wakeups finish before calling host code. */
         lock.unlock();
+        for (const auto& cancel : cancelHooks) {
+            try {
+                cancel();
+            }
+            catch (...) {
+                failPluginScope("request cancellation hook failed during shutdown");
+            }
+        }
         if (context->worker.joinable()) {
             context->worker.join();
         }

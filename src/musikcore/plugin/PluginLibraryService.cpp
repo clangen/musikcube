@@ -117,7 +117,7 @@ PluginLibraryService::PluginLibraryService(mc_context& context, musik::core::Lib
 }
 
 void PluginLibraryService::CancelReads() noexcept {
-    this->cancelled.store(true);
+    this->cancelled.request_stop();
     {
         std::lock_guard lock(this->admissionMutex);
         this->stopping = true;
@@ -684,7 +684,7 @@ mc_result MC_CALL PluginLibraryService::ReadThumbnail(
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         auto& self = *static_cast<PluginLibraryService*>(context);
         std::vector<uint8_t> bytes;
-        const std::atomic_bool canceled { false };
+        const std::stop_token canceled;
         const auto status = self.instance->ReadThumbnail(thumbnailId, bytes, canceled);
         if (status != MC_OK) {
             return status;
@@ -706,15 +706,15 @@ mc_result MC_CALL PluginLibraryService::ReadLibraryThumbnail(void* context, cons
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         auto& self = *static_cast<PluginLibraryService*>(context);
-        if (self.cancelled.load()) {
+        if (self.cancelled.stop_requested()) {
             return MC_ERROR_CANCELLED;
         }
         if (!library->instance) {
             return MC_ERROR_UNSUPPORTED;
         }
         std::vector<uint8_t> bytes;
-        const auto status = library->instance->ReadThumbnail(thumbnailId, bytes, self.cancelled);
-        if (self.cancelled.load()) {
+        const auto status = library->instance->ReadThumbnail(thumbnailId, bytes, self.cancelled.get_token());
+        if (self.cancelled.stop_requested()) {
             return MC_ERROR_CANCELLED;
         }
         if (status != MC_OK) {

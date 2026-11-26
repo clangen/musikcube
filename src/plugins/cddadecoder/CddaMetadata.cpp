@@ -1,12 +1,13 @@
 #include "CddaMetadata.h"
 
 #include <bcrypt.h>
-#include <curl/curl.h>
+#include <common/HttpClient.h>
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <condition_variable>
 #include <cstdio>
 #include <mutex>
 #include <thread>
@@ -14,6 +15,7 @@
 namespace {
     using Clock = std::chrono::steady_clock;
     std::mutex rateMutex;
+    std::condition_variable_any rateChanged;
     Clock::time_point lastRequest;
 
     /* MusicBrainz hashes the leadout and all 99 track offsets as uppercase
@@ -81,27 +83,19 @@ namespace {
 
     struct Response {
         std::string body;
-        const std::atomic<bool>* interrupted;
+        bool good { true };
+
+        Response& write(const char* data, size_t size) {
+            if (size > 1024 * 1024 - this->body.size()) {
+                this->good = false;
+            }
+            else {
+                this->body.append(data, size);
+            }
+            return *this;
+        }
+        explicit operator bool() const { return this->good; }
     };
-
-    size_t Write(char* data, size_t size, size_t count, void* context) noexcept {
-        auto& response = *static_cast<Response*>(context);
-        if (size && count > (1024 * 1024 - response.body.size()) / size) {
-            return 0;
-        }
-        const size_t bytes = size * count;
-        try {
-            response.body.append(data, bytes);
-            return bytes;
-        }
-        catch (...) {
-            return 0;
-        }
-    }
-
-    int Progress(void* context, curl_off_t, curl_off_t, curl_off_t, curl_off_t) noexcept {
-        return static_cast<Response*>(context)->interrupted->load() ? 1 : 0;
-    }
 
     std::string Artist(const nlohmann::json& credits) {
         std::string artist;
@@ -144,54 +138,38 @@ std::string CddaMusicBrainzDiscId(const CddaDiscInfo& disc) {
     return DiscId(disc);
 }
 
-bool LookupCddaMetadata(const CddaDiscInfo& disc, const std::atomic<bool>& interrupted, CddaMetadata& metadata) {
+bool LookupCddaMetadata(const CddaDiscInfo& disc, std::stop_token interrupted, CddaMetadata& metadata) {
     const auto id = CddaMusicBrainzDiscId(disc);
-    if (id.empty() || interrupted.load()) {
+    if (id.empty() || interrupted.stop_requested()) {
         return false;
     }
 
     const auto url = "https://musicbrainz.org/ws/2/discid/" + id +
         "?inc=artists%2Brecordings%2Brelease-groups%2Bgenres&fmt=json";
-    Response response { {}, &interrupted };
+    std::string response;
+    using Client = musik::core::sdk::HttpClient<Response>;
+    using Error = musik::core::sdk::HttpError;
     bool fetched = false;
-    for (unsigned attempt = 0; attempt < 2 && !interrupted.load(); ++attempt) {
+    for (unsigned attempt = 0; attempt < 2 && !interrupted.stop_requested(); ++attempt) {
         /* MusicBrainz asks clients to make at most one request per second. */
         {
             std::unique_lock lock(rateMutex);
-            while (!interrupted.load() && Clock::now() < lastRequest + std::chrono::seconds(1)) {
-                lock.unlock();
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                lock.lock();
-            }
-            if (interrupted.load()) {
+            rateChanged.wait_until(lock, interrupted, lastRequest + std::chrono::seconds(1), [] { return false; });
+            if (interrupted.stop_requested()) {
                 return false;
             }
             lastRequest = Clock::now();
         }
 
-        CURL* request = curl_easy_init();
-        if (!request) {
-            return false;
-        }
-        response.body.clear();
-        curl_easy_setopt(request, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(request, CURLOPT_USERAGENT, "musikcube/1.0 (https://musikcube.com)");
-        curl_easy_setopt(request, CURLOPT_FOLLOWLOCATION, 1L);
-        curl_easy_setopt(request, CURLOPT_FAILONERROR, 1L);
-        curl_easy_setopt(request, CURLOPT_CONNECTTIMEOUT, 4L);
-        curl_easy_setopt(request, CURLOPT_TIMEOUT, 8L);
-        curl_easy_setopt(request, CURLOPT_NOSIGNAL, 1L);
-        curl_easy_setopt(request, CURLOPT_WRITEFUNCTION, &Write);
-        curl_easy_setopt(request, CURLOPT_WRITEDATA, &response);
-        curl_easy_setopt(request, CURLOPT_NOPROGRESS, 0L);
-        curl_easy_setopt(request, CURLOPT_XFERINFOFUNCTION, &Progress);
-        curl_easy_setopt(request, CURLOPT_XFERINFODATA, &response);
-        const auto status = curl_easy_perform(request);
-        long httpStatus = 0;
-        curl_easy_getinfo(request, CURLINFO_RESPONSE_CODE, &httpStatus);
-        curl_easy_cleanup(request);
-
-        if (status == CURLE_OK) {
+        auto client = Client::Create(Response {});
+        int httpStatus = 0;
+        bool success = false;
+        client->Url(url).UserAgent("musikcube/1.0 (https://musikcube.com)")
+            .Mode(Client::Thread::Current).ConnectTimeout(4000).Timeout(8000)
+            .VerifyTls(true).Cancellation(interrupted)
+            .Run([&](Client*, int status, bool ok) { httpStatus = status; success = ok; });
+        if (success) {
+            response = client->Stream().body;
             fetched = true;
             break;
         }
@@ -199,17 +177,16 @@ bool LookupCddaMetadata(const CddaDiscInfo& disc, const std::atomic<bool>& inter
         /* Retry temporary service or connection failures once. A not-found
         response is a real no-match and should not cause repeated requests. */
         const bool retryable = httpStatus == 429 || httpStatus >= 500 ||
-            status == CURLE_COULDNT_CONNECT || status == CURLE_COULDNT_RESOLVE_HOST ||
-            status == CURLE_OPERATION_TIMEDOUT;
+            client->Error() == Error::Connection || client->Error() == Error::Timeout;
         if (!retryable) {
             break;
         }
     }
-    if (!fetched || interrupted.load()) {
+    if (!fetched || interrupted.stop_requested()) {
         return false;
     }
 
-    return ParseCddaMusicBrainzResponse(response.body, disc.tracks.size(), metadata);
+    return ParseCddaMusicBrainzResponse(response, disc.tracks.size(), metadata);
 }
 
 bool ParseCddaMusicBrainzResponse(const std::string& response, size_t trackCount, CddaMetadata& metadata) {

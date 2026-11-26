@@ -99,7 +99,8 @@ namespace musik { namespace core { namespace ffi {
     /* Work owns its inputs because cancellation can dispatch before the worker returns. */
     mc_result submit_request(mc_context *context, std::function<mc_result()> work,
         RequestCompletion completion, void *user_data, mc_request_id *out_request, std::shared_ptr<std::atomic_bool> cancel = {},
-        RequestEffect effect = RequestEffect::Read, const void* owner = nullptr);
+        RequestEffect effect = RequestEffect::Read, const void* owner = nullptr,
+        std::function<void()> cancel_external = {});
 
     /* Reserves a request for an external producer. Late replies may outlive the context. */
     mc_result reserve_external_request(mc_context *context, RequestCompletion completion,

@@ -72,6 +72,14 @@ namespace {
                         connection->set_status(websocketpp::http::status_code::ok);
                         connection->set_body("remote artwork");
                     }
+                    else if (connection->get_resource() == "/thumbnail/987657")
+                    {
+                        connection->set_status(websocketpp::http::status_code::ok);
+                        connection->set_body("remote artwork");
+                        connection->replace_header("Content-Length",
+                            "15");
+                        connection->replace_header("Connection", "close");
+                    }
                     else if (connection->get_resource() == "/thumbnail/987655") {
                         connection->defer_http_response();
                         std::lock_guard lock(this->heldMutex);
@@ -2012,6 +2020,16 @@ namespace {
         });
         if (remoteRead.wait_for(std::chrono::seconds(5)) != std::future_status::ready || remoteRead.get() != MC_OK ||
             remoteArtwork.callbacks != 1 || remoteArtwork.bytes != "remote artwork")
+        {
+            return failure(__LINE__);
+        }
+        Artwork shortArtwork;
+        auto shortRead = std::async(std::launch::async, [&] {
+            return hiddenHost.read_library_thumbnail(hiddenHost.context, remoteLibrary.Get(), 987657,
+                receiveArtwork, &shortArtwork);
+        });
+        if (shortRead.wait_for(std::chrono::seconds(5)) != std::future_status::ready || shortRead.get() != MC_ERROR_IO ||
+            shortArtwork.callbacks != 0)
         {
             return failure(__LINE__);
         }

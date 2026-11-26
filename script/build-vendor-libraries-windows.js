@@ -247,7 +247,7 @@ function stageBundle(installed, ffmpeg, library, dumpbin) {
     dll: mkdir(join(dir, 'win64', 'dll')),
   };
 
-  const includes = name => library === 'all' || library === name;
+  const includes = name => library === 'all' ? name !== 'curl' && name !== 'openssl' : library === name;
   if (installed) cpSync(join(installed, 'include'), stage.headers, { recursive: true });
 
   for (const [packageName, libraries] of Object.entries(sharedLibraries)) {
@@ -396,7 +396,7 @@ function main() {
   if (values.help) {
     console.log([
       'Usage: node script/build-vendor-libraries.js [options]',
-      '  --library <all|curl|openssl|lame|libopenmpt|ffmpeg|static>',
+      '  --library <all|curl|openssl|lame|libopenmpt|ffmpeg|static>  (curl and openssl are optional)',
       '  --msys-root <path>       Use an existing MSYS2 installation',
       '  --ffmpeg-install <path>  Stage a completed FFmpeg installation',
       '  --preflight              Check tools without downloading or building',
@@ -440,7 +440,7 @@ function main() {
   if (needsFfmpeg && !reuse) provisionMsys2(msys, portable);
 
   /* Build the selected packages and any codecs FFmpeg needs. */
-  const packages = library === 'all' ? [...Object.values(sharedPackages), ...staticPackages]
+  const packages = library === 'all' ? [sharedPackages.lame, sharedPackages.libopenmpt, ...staticPackages]
     : library === 'static' ? [...staticPackages] : sharedPackages[library] ? [sharedPackages[library]] : [];
   if (needsFfmpeg && !reuse) packages.push('opus', 'libvorbis');
 

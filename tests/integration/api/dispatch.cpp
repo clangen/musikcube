@@ -428,6 +428,43 @@ static bool check_shutdown_cancellable_worker(State& state) {
     return started && shutdown == MC_OK && exited.load() && state.completions == 1 && state.result == MC_ERROR_CANCELLED;
 }
 
+/* cancellation wakes a worker through its hook before shutdown joins it. */
+static bool check_stop_hook(State& state, bool shutdown) {
+    using namespace musik::core::ffi;
+    bool stopped = false;
+    bool observed = false;
+    mc_request_id request = 0;
+    if (submit_request(state.context, [&] {
+        std::unique_lock lock(state.mutex);
+        state.work_started = true;
+        state.changed.notify_all();
+        observed = state.changed.wait_for(lock, deadline, [&] { return stopped; });
+        return MC_OK;
+    }, dispatch_test_completion, &state, &request, {}, RequestEffect::Read, nullptr,
+        [&] {
+            std::lock_guard guard(state.mutex);
+            stopped = true;
+            state.changed.notify_all();
+        }) != MC_OK)
+    {
+        return false;
+    }
+    if (!wait_for_work(state)) {
+        std::lock_guard guard(state.mutex);
+        stopped = true;
+        state.changed.notify_all();
+        return false;
+    }
+    const auto result = shutdown ? mc_context_shutdown(state.context) : mc_request_cancel(state.context, request);
+    if (!shutdown && result == MC_OK) {
+        mc_context_shutdown(state.context);
+    }
+    return result == MC_OK && observed && state.completions == 1 && state.result == MC_ERROR_CANCELLED;
+}
+
+static bool check_cancel_stop_hook(State& state) { return check_stop_hook(state, false); }
+static bool check_shutdown_stop_hook(State& state) { return check_stop_hook(state, true); }
+
 static bool check_mutation_cancellation(State& state) {
     using namespace musik::core::ffi;
     mc_request_id request = 0;
@@ -530,6 +567,8 @@ int main() {
         run_check("completion and cancellation terminal selection races", check_terminal_races) &&
         run_check("external reply after cancellation and destruction", check_external_reply) &&
         run_check("shutdown cancels and joins active work", check_shutdown_cancellable_worker) &&
+        run_check("cancel signals active worker", check_cancel_stop_hook) &&
+        run_check("shutdown signals active worker", check_shutdown_stop_hook) &&
         run_check("mutation cancellation", check_mutation_cancellation) &&
         run_check("online request rejection", check_online_rejection) &&
         run_check("playlist order and selection changes", check_playlist_dispatch) ? 0 : 1;

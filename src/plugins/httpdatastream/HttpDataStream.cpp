@@ -40,6 +40,7 @@ interfaces before any system header declares stat or seek. */
 
 #include "config.h"
 #include "HttpDataStream.h"
+#include <common/HttpClient.h>
 #include <common/String.h>
 #include <musikcore/plugin.h>
 #include <../../3rdparty/include/nlohmann/json.hpp>
@@ -93,7 +94,6 @@ namespace {
 #endif
     }
 }
-
 const mc_configuration_api& HttpDataStream::Configuration() {
     static constexpr mc_configuration_api schema {
         .struct_size = sizeof(mc_configuration_api),
@@ -170,8 +170,7 @@ mc_result HttpDataStream::Open(mc_string_view uri, mc_stream_open_flags flags) {
                 explicitContentType = !type.empty();
             }
             allowUntrusted = url.compare(0, 8, "https://") == 0 && payload.value("allowUntrustedCertificate", false);
-            authorization =
-                "Authorization: Basic " + websocketpp::base64_encode("default:" + payload.value("password", ""));
+            authorization = "Basic " + websocketpp::base64_encode("default:" + payload.value("password", ""));
         }
         catch (const nlohmann::json::exception&) {
             return MC_ERROR_INVALID_ARGUMENT;
@@ -223,6 +222,7 @@ void HttpDataStream::Interrupt() {
         std::lock_guard lock(mutex);
         cancelled = true;
     }
+    this->stop.request_stop();
     changed.notify_all();
 }
 
@@ -368,65 +368,48 @@ void HttpDataStream::Download() noexcept {
 }
 
 mc_result HttpDataStream::Transfer() {
-    std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> curl(curl_easy_init(), curl_easy_cleanup);
-    if (!curl) {
-        return MC_ERROR_IO;
-    }
-    auto* handle = curl.get();
-    char curlError[CURL_ERROR_SIZE] {};
-    std::unique_ptr<curl_slist, decltype(&curl_slist_free_all)> headers(
-        authorization.empty() ? nullptr : curl_slist_append(nullptr, authorization.c_str()), curl_slist_free_all);
-    if (!authorization.empty() && !headers) {
-        return MC_ERROR_IO;
-    }
-    curl_easy_setopt(handle, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, curlError);
-    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers.get());
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, allowUntrusted ? 0L : 1L);
-    if (allowUntrusted) {
-        curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 0L);
-    }
-#if LIBCURL_VERSION_NUM >= 0x075500
-    curl_easy_setopt(handle, CURLOPT_PROTOCOLS_STR, "http,https");
-    curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
-#else
-    curl_easy_setopt(handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
-    curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
-#endif
-    curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1L);
-    curl_easy_setopt(handle, CURLOPT_USERAGENT, "musikcube HttpDataStream");
-    curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
-    curl_easy_setopt(handle, CURLOPT_CONNECTTIMEOUT, static_cast<long>(options.connectionTimeout));
-    curl_easy_setopt(handle, CURLOPT_LOW_SPEED_TIME, static_cast<long>(options.readTimeout));
-    curl_easy_setopt(handle, CURLOPT_LOW_SPEED_LIMIT, 1L);
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, &CurlWrite);
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, this);
-    curl_easy_setopt(handle, CURLOPT_HEADERFUNCTION, &CurlHeader);
-    curl_easy_setopt(handle, CURLOPT_HEADERDATA, this);
-    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, &CurlProgress);
-    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, this);
+    struct Sink {
+        HttpDataStream* stream { nullptr };
+        bool good { true };
+        Sink& write(const char* data, size_t size) {
+            this->good = this->stream->WriteBytes(data, size) == size;
+            return *this;
+        }
+        explicit operator bool() const { return this->good; }
+    };
+    using Client = musik::core::sdk::HttpClient<Sink>;
+    using Error = musik::core::sdk::HttpError;
+    const auto milliseconds = [](int seconds) {
+        return static_cast<long>((std::min)(static_cast<int64_t>(seconds) * 1000, static_cast<int64_t>(LONG_MAX)));
+    };
 
     int retryWeight = 0;
     while (!cancelled) {
-        const auto status = curl_easy_perform(handle);
-        long response = 0;
-        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response);
-        if (status == CURLE_OK && response == 200) {
+        auto client = Client::Create(Sink { this });
+        client->Url(url).Mode(Client::Thread::Current).UserAgent("musikcube HttpDataStream")
+            .Timeout(0).ConnectTimeout(milliseconds(options.connectionTimeout))
+            .ReadTimeout(milliseconds(options.readTimeout)).Cancellation(this->stop.get_token())
+            .VerifyTls(true).AllowUntrustedAuthority(allowUntrusted).FollowRedirects(!allowUntrusted)
+            .Response([this] { this->ReadHeader("HTTP/"); })
+            .Headers([this](const auto& key, const auto& value) { this->ReadHeader(key + ": " + value); });
+        if (!authorization.empty()) {
+            client->Header("Authorization", authorization);
+        }
+        int response = 0;
+        bool success = false;
+        client->Run([&](Client*, int status, bool ok) { response = status; success = ok; });
+        if (success && response == 200) {
             return MC_OK;
         }
         /* retry transient failures only before consuming body bytes. a second
         response appended to a partial track would corrupt the decoder's input. */
         std::unique_lock lock(mutex);
         if (received || retryWeight >= 10 || (response >= 400 && response < 500 && response != 429) ||
-            status == CURLE_PEER_FAILED_VERIFICATION)
+            client->Error() == Error::Certificate)
         {
             if (!cancelled && this->host.log) {
                 std::string message = "HTTP transfer failed: ";
-                message += curl_easy_strerror(status);
-                if (status == CURLE_PEER_FAILED_VERIFICATION && std::strstr(curlError, "certificate has expired")) {
-                    message += " (certificate has expired)";
-                }
+                message += client->ErrorMessage();
                 if (response) {
                     message += " (HTTP " + std::to_string(response) + ")";
                 }
@@ -482,6 +465,11 @@ void HttpDataStream::ReadHeader(std::string_view header) {
     auto key = std::string(header.substr(0, separator));
     std::transform(key.begin(), key.end(), key.begin(), lower);
     auto value = musik::core::sdk::str::Trim(std::string(header.substr(separator + 1)));
+    /* curl includes the line ending in each header callback. remove it before
+    parsing numeric values or publishing the content type. */
+    while (!value.empty() && musik::core::sdk::str::IsSpace(value.back())) {
+        value.pop_back();
+    }
     std::lock_guard lock(mutex);
     if (received) {
         return;
@@ -496,22 +484,4 @@ void HttpDataStream::ReadHeader(std::string_view header) {
     else if (key == "content-type" && contentType.empty()) {
         contentType = value.substr(0, value.find(';'));
     }
-}
-
-size_t HttpDataStream::CurlWrite(char* data, size_t size, size_t count, void* context) {
-    return static_cast<HttpDataStream*>(context)->WriteBytes(data, size * count);
-}
-
-size_t HttpDataStream::CurlHeader(char* data, size_t size, size_t count, void* context) {
-    try {
-        static_cast<HttpDataStream*>(context)->ReadHeader({ data, size * count });
-        return size * count;
-    }
-    catch (...) {
-        return 0;
-    }
-}
-
-int HttpDataStream::CurlProgress(void* context, curl_off_t, curl_off_t, curl_off_t, curl_off_t) {
-    return static_cast<HttpDataStream*>(context)->cancelled.load() ? 1 : 0;
 }

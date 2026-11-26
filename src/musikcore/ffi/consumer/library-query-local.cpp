@@ -124,7 +124,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         }
 
         mc_result ReadThumbnail(
-            int64_t id, std::vector<uint8_t>& bytes, const std::atomic_bool& canceled) const override {
+            int64_t id, std::vector<uint8_t>& bytes, std::stop_token canceled) const override {
             const auto file = musik::core::sdk::fs::pathFromUtf8(this->library->GetLibraryDirectory()) / "thumbs" /
                 (std::to_string(id) + ".jpg");
             std::ifstream stream(file, std::ios::binary | std::ios::ate);
@@ -135,7 +135,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
             if (size <= 0 || size > static_cast<std::streamoff>(MaxThumbnailBytes)) {
                 return MC_ERROR_IO;
             }
-            if (canceled.load()) {
+            if (canceled.stop_requested()) {
                 return MC_ERROR_CANCELLED;
             }
             bytes.resize(static_cast<size_t>(size));
