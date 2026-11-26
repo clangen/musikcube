@@ -95,15 +95,33 @@ External C decoder build/load checks (PKG-003/PKG-004) are tracked with the
   and console/GUI imports. Preserve this evidence through final cleanup.
   `musikcore.integration.binary.exports.*` checks the shipped Unix core,
   executable, and plugin export lists, including symbols pulled in by static
-  libraries. Linux frontend boundary and export checks passed during FIN-004;
-  repeat the final audit after the remaining cleanup on each platform.
+  libraries. Linux frontend boundary and export checks passed during FIN-004.
+  Fresh macOS Release audit on 2026-11-25 (code commit `84938c075`): both frontend
+  boundary checks, the retired-SDK source check, all 16 shipped core/frontend/
+  plugin export checks, the Mach-O package regression, and installed SDK/provider
+  checks passed (22 CTests). A full install was archived and extracted at a new
+  prefix. Both archived frontends import `mc_context_create` and only public
+  `mc_*` core operations; the archived core's 186 exports match the allowlist.
+  Source inspection found only public musikcore headers in the two frontends.
+  No implementation fixes were needed. Repeat final acceptance on native Linux
+  and Windows before closing this task.
 - [ ] **FIN-002** Confirm every shipped plugin has left the C++ SDK ABI.
   Source discovery now uses only C entry points, and old plugin interfaces and
-  hooks are removed. Complete native-platform build/export and package checks
-  before closing the shipped-artifact claim; some plugins still use shared
-  SDK-directory utilities internally. Linux export and installed-provider
-  checks passed during FIN-004; native macOS/Windows package revalidation
-  remains open.
+  hooks are removed. The retired `src/musikcore/sdk` directory is absent; the
+  earlier SDK-directory utility note is obsolete. Linux export and
+  installed-provider checks passed during FIN-004.
+  Fresh macOS Release audit on 2026-11-25 (code commit `84938c075`): all 13
+  rebuilt plugins in the relocated install archive export only
+  `mc_plugin_get_api` and import no private musikcore C++ symbols or unlisted
+  `mc_*` operations. The independently rebuilt installed providers and C/C++
+  consumers passed, including application media shutdown/retained-handle tests.
+  The extracted runtime passed `script/scan-standalone.js`, and all 29 shipped
+  Mach-O signatures verified. The existing optional Homebrew PortAudio
+  dependency allowance remains unchanged.
+  Local evidence is retained under `tests/bin/final-artifact-audit/` (archive,
+  extracted install and symbol/signature report), with CTest and scan logs in
+  `tests/bin/final-artifact-*.log`. No new Linux/Windows artifact acceptance is
+  claimed; their final build/export/package checks remain open.
 - [x] **FIN-003** Remove or archive `musikcore_c.h`, `c_context.cpp`, and
   `c_interface_wrappers.cpp` after their consumers are gone. The fixture
   seeder uses the public indexer and is exercised by `musikcore.abi.indexed_query`.
