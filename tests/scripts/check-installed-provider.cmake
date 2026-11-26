@@ -73,4 +73,12 @@ if(DECODER_HOST AND CAPTURE_OUTPUT)
     "${root}/runs" "${DECODER_HOST}" --stage-minimal --plugin "${decoder_fixture}"
     --plugin "${CAPTURE_OUTPUT}" decoder_contract "${capture_name}" @origin)
 endif()
+file(READ "${external}/encoder-artifact-${TEST_CONFIG}.txt" encoder_fixture)
+file(READ "${external}/application_media-artifact-${TEST_CONFIG}.txt" application_media_fixture)
+file(READ "${external}/media-consumer-${TEST_CONFIG}.txt" media_consumer)
+file(COPY "${encoder_fixture}" "${application_media_fixture}" DESTINATION "${decoder_plugins}")
+get_filename_component(application_media_name "${application_media_fixture}" NAME)
+run("${CMAKE_COMMAND}" -E env ${isolated_environment}
+  "${media_consumer}" "${decoder_plugins}" "${decoder_plugins}/${application_media_name}"
+  "${root}/application.bytes" "${root}/encoded.bytes")
 file(REMOVE_RECURSE "${root}")

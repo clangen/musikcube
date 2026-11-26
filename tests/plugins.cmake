@@ -360,3 +360,13 @@ add_test(NAME musikcore.integration.plugins.empty_session
     --stage @origin)
 set_tests_properties(musikcore.integration.plugins.empty_session PROPERTIES
   LABELS "integration;musikcore;plugins;contract" TIMEOUT 30)
+
+add_library(musikcore_application_media_fixture MODULE support/plugins/application-media.cpp)
+target_include_directories(musikcore_application_media_fixture PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_definitions(musikcore_application_media_fixture PRIVATE MC_BUILDING_PLUGIN)
+target_compile_features(musikcore_application_media_fixture PRIVATE cxx_std_20)
+target_link_libraries(musikcore_application_media_fixture PRIVATE Threads::Threads)
+set_target_properties(musikcore_application_media_fixture PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "${provider_output_directory}" RUNTIME_OUTPUT_DIRECTORY "${provider_output_directory}"
+  SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+musikcube_restrict_exports(musikcore_application_media_fixture mc_plugin_get_api test_media_control)

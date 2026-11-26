@@ -45,3 +45,37 @@ endif()
 target_link_libraries(decoder_consumer PRIVATE musikcore::musikcore Threads::Threads)
 file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/decoder-consumer-$<CONFIG>.txt"
   CONTENT "$<TARGET_FILE:decoder_consumer>")
+
+# application consumers and providers are independently rebuilt against the
+# relocated package. the controller symbols belong only to the test fixture.
+foreach(kind IN ITEMS encoder application_media)
+  if(kind STREQUAL "encoder")
+    set(fixture_source byte-encoder.c)
+  else()
+    set(fixture_source application-media.cpp)
+  endif()
+  add_library(${kind}_fixture MODULE "${fixture_source}")
+  target_include_directories(${kind}_fixture PRIVATE ${public_headers})
+  target_compile_definitions(${kind}_fixture PRIVATE MC_BUILDING_PLUGIN)
+  target_compile_features(${kind}_fixture PRIVATE cxx_std_20)
+  target_link_libraries(${kind}_fixture PRIVATE Threads::Threads)
+  set_target_properties(${kind}_fixture PROPERTIES
+    C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+    C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${kind}-artifact-$<CONFIG>.txt"
+    CONTENT "$<TARGET_FILE:${kind}_fixture>")
+endforeach()
+add_executable(media_consumer ../../integration/binary/consumer/media.c
+  ../../integration/binary/consumer/media.cpp ../media-test.cpp)
+target_include_directories(media_consumer PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_link_libraries(media_consumer PRIVATE musikcore::musikcore Threads::Threads ${CMAKE_DL_LIBS})
+set_target_properties(media_consumer PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF
+  CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+if(CONSUMER_SANITIZERS)
+  target_compile_options(media_consumer PRIVATE "$<$<CONFIG:Debug>:-fsanitize=${CONSUMER_SANITIZERS}>")
+  target_link_options(media_consumer PRIVATE "$<$<CONFIG:Debug>:-fsanitize=${CONSUMER_SANITIZERS}>")
+endif()
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/media-consumer-$<CONFIG>.txt"
+  CONTENT "$<TARGET_FILE:media_consumer>")

@@ -2,6 +2,7 @@
 #include <musikcore/ffi/consumer/library-storage.h>
 #include <musikcore/ffi/consumer/request.h>
 #include <musikcore/ffi/consumer/player-handle.h>
+#include <musikcore/ffi/consumer/media-session.h>
 #include <musikcore/ffi/common/error.h>
 
 #include <musikcore/audio/PlaybackService.h>
@@ -260,6 +261,19 @@ namespace musik { namespace core { namespace ffi {
             return MC_OK;
         }
 
+        mc_result CreateMediaStream(mc_string_view uri, mc_media_open_flags flags,
+            mc_media_stream** output, mc_error** error) override
+        {
+            if (!this->pluginsInitialized) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            if (!this->mediaSession) {
+                this->mediaSession = std::make_unique<MediaSession>(
+                    musik::core::plugin::Media(), musik::core::plugin::AudioScratch());
+            }
+            return this->mediaSession->CreateStream(uri, flags, output, error);
+        }
+
         mc_result OpenPlayback(mc_playback** out) override {
             return this->playback ? this->playback->OpenHandle(out) : MC_ERROR_UNSUPPORTED;
         }
@@ -331,6 +345,10 @@ namespace musik { namespace core { namespace ffi {
             }
 
             bool failure = false;
+            if (this->mediaSession) {
+                this->mediaSession->Shutdown();
+                this->mediaSession.reset();
+            }
             musik::core::plugin::UnbindPlaybackRemotes();
             this->playbackRemotes.reset();
             for (auto& weak : this->players) {
@@ -507,6 +525,7 @@ namespace musik { namespace core { namespace ffi {
         std::unique_ptr<audio::PlaybackService> playback;
         std::unique_ptr<plugin::PlaybackRemotes> playbackRemotes;
         std::vector<std::weak_ptr<UriPlayerSession>> players;
+        std::unique_ptr<MediaSession> mediaSession;
         std::mutex mutex;
         std::condition_variable changed;
         uint64_t dispatches = 0;

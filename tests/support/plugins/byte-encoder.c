@@ -20,10 +20,20 @@ typedef struct fixture {
 typedef struct owned_encoder {
     byte_encoder encoder;
     fixture* owner;
+    const mc_stream* output;
+    int file_mode;
+    int fail_finalize;
 } owned_encoder;
 
 static void MC_CALL destroy(void* opaque) {
     owned_encoder* encoder = opaque;
+    if (encoder->output) {
+        mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+        const mc_result status = encoder->output->api->get_info(encoder->output->instance, &info);
+        if (status != MC_OK && status != MC_ERROR_CANCELLED) {
+            abort();
+        }
+    }
     --encoder->owner->instances;
     free(encoder);
 }
@@ -32,10 +42,35 @@ static mc_result MC_CALL initialize(
     void* opaque, const mc_stream* output, uint32_t rate, uint32_t channels, uint32_t bitrate)
 {
     owned_encoder* encoder = opaque;
-    if (output || rate != 8 || channels != 1 || bitrate != 32) {
+    if ((!encoder->file_mode && output) || (encoder->file_mode && !output) || rate != 8 || channels != 1 ||
+        bitrate != 32)
+    {
         return MC_ERROR_INVALID_ARGUMENT;
     }
+    encoder->output = output;
     encoder->encoder.initialized = 1;
+    return MC_OK;
+}
+
+static mc_result emit(owned_encoder* encoder, size_t length, mc_encoded_block* block) {
+    if (!encoder->file_mode) {
+        block->data = (const char*) encoder->encoder.bytes;
+        block->length = length;
+        return MC_OK;
+    }
+    size_t offset = 0;
+    while (offset < length) {
+        size_t count = 0;
+        const mc_result status = encoder->output->api->write(
+            encoder->output->instance, encoder->encoder.bytes + offset, length - offset, &count, NULL);
+        if (status != MC_OK) {
+            return status;
+        }
+        if (!count || count > length - offset) {
+            return MC_ERROR_PLUGIN;
+        }
+        offset += count;
+    }
     return MC_OK;
 }
 
@@ -48,37 +83,50 @@ static mc_result MC_CALL encode(void* opaque, const mc_pcm_view* pcm, mc_encoded
         encoder->encoder.bytes[i] = (unsigned char) (pcm->data[i] * 10.0f + encoder->encoder.calls);
     }
     ++encoder->encoder.calls;
-    output->data = (const char*) encoder->encoder.bytes;
-    output->length = pcm->frame_count;
-    return MC_OK;
+    return emit(encoder, pcm->frame_count, output);
 }
 
 static mc_result MC_CALL flush(void* opaque, mc_encoded_block* output) {
     owned_encoder* encoder = opaque;
     encoder->encoder.bytes[0] = '!';
-    output->data = (const char*) encoder->encoder.bytes;
-    output->length = 1;
-    return MC_OK;
+    return emit(encoder, 1, output);
 }
 
 static mc_result MC_CALL finalize(void* opaque, mc_string_view uri) {
-    (void) opaque;
     (void) uri;
-    return MC_OK;
+    return ((owned_encoder*) opaque)->fail_finalize ? MC_ERROR_IO : MC_OK;
 }
 
 static const mc_encoder_vtable methods = {
-    sizeof(mc_encoder_vtable), destroy, 1, initialize, encode, flush, finalize
+    .struct_size = sizeof(mc_encoder_vtable),
+    .destroy = destroy,
+    .streaming = 1,
+    .initialize = initialize,
+    .encode = encode,
+    .flush = flush,
+    .finalize = finalize,
+};
+
+static const mc_encoder_vtable file_methods = {
+    .struct_size = sizeof(mc_encoder_vtable),
+    .destroy = destroy,
+    .streaming = 0,
+    .initialize = initialize,
+    .encode = encode,
+    .flush = flush,
+    .finalize = finalize,
 };
 
 static mc_result MC_CALL can_handle(void* context, mc_string_view format, uint32_t* supported) {
     (void) context;
-    *supported = format.length == 6 && memcmp(format.data, ".bytes", 6) == 0;
+    *supported = (format.length == 6 && memcmp(format.data, ".bytes", 6) == 0) ||
+        (format.length == 10 && memcmp(format.data, ".filebytes", 10) == 0) ||
+        (format.length == 10 && memcmp(format.data, ".failbytes", 10) == 0);
     return MC_OK;
 }
 
-static mc_result MC_CALL create(void* context, const mc_plugin_services* services, mc_string_view format,
-    mc_encoder* output, mc_error** error)
+static mc_result MC_CALL create(
+    void* context, const mc_plugin_services* services, mc_string_view format, mc_encoder* output, mc_error** error)
 {
     (void) services;
     (void) format;
@@ -90,7 +138,9 @@ static mc_result MC_CALL create(void* context, const mc_plugin_services* service
     encoder->owner = context;
     ++encoder->owner->instances;
     output->instance = encoder;
-    output->api = &methods;
+    encoder->file_mode = format.length == 10 && memcmp(format.data, ".filebytes", 10) == 0;
+    encoder->fail_finalize = format.length == 10 && memcmp(format.data, ".failbytes", 10) == 0;
+    output->api = encoder->file_mode ? &file_methods : &methods;
     return MC_OK;
 }
 
@@ -101,9 +151,7 @@ static mc_result MC_CALL start(const mc_host_api* host, void** context, mc_error
         return MC_ERROR_INTERNAL;
     }
     *context = state;
-    state->factory = (mc_encoder_factory) {
-        sizeof(mc_encoder_factory), state, can_handle, create
-    };
+    state->factory = (mc_encoder_factory) { sizeof(mc_encoder_factory), state, can_handle, create };
     mc_plugin_capability capability = MC_PLUGIN_CAPABILITY_DEFAULT;
     capability.id = (mc_string_view) { MC_PLUGIN_CAPABILITY_ENCODER, sizeof(MC_PLUGIN_CAPABILITY_ENCODER) - 1 };
     capability.api = &state->factory;

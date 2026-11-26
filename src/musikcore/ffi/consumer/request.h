@@ -3,6 +3,7 @@
 
 #include <musikcore/context.h>
 #include <musikcore/player.h>
+#include <musikcore/media.h>
 #include <musikcore/indexer.h>
 #include <musikcore/library.h>
 #include <functional>
@@ -31,6 +32,9 @@ namespace musik { namespace core { namespace ffi {
         virtual void Dispatch() = 0;
         virtual void AcknowledgeDispatch() = 0;
         virtual mc_result CreatePlayer(mc_player**) { return MC_ERROR_UNSUPPORTED; }
+        virtual mc_result CreateMediaStream(mc_string_view, mc_media_open_flags, mc_media_stream**, mc_error**) {
+            return MC_ERROR_UNSUPPORTED;
+        }
         virtual mc_result OpenPlayback(mc_playback** out) = 0;
         virtual mc_result SelectLibrary(mc_library_kind kind) = 0;
         virtual mc_result SelectLibrary(const std::shared_ptr<const musik::core::library::Library>&) {

@@ -9,6 +9,7 @@
 #include <musikcore/library.hpp>
 #include <musikcore/playback.hpp>
 #include <musikcore/player.hpp>
+#include <musikcore/media.hpp>
 #include <musikcore/output.hpp>
 #include <musikcore/equalizer.hpp>
 #include <musikcore/indexer.hpp>

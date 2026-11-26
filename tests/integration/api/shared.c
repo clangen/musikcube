@@ -138,6 +138,13 @@ static int check_context_lifecycle(void) {
     options.struct_size = sizeof(options);
     options.services = MC_SERVICE_NONE;
     if (mc_context_create(&options, &context, &error) != MC_OK || !context || error) goto cleanup;
+    mc_media_stream* media = NULL;
+    const mc_string_view media_uri = { "fixture.bytes", 13 };
+    if (mc_media_stream_create(context, media_uri, 0, &media, NULL) != MC_ERROR_INVALID_ARGUMENT || media ||
+        mc_media_stream_create(context, media_uri, MC_MEDIA_OPEN_READ, &media, NULL) != MC_ERROR_UNSUPPORTED || media)
+    {
+        goto cleanup;
+    }
     /* A second context cannot silently share process-global services. The
        original remains valid and releasing it makes admission possible again. */
     if (mc_context_create(NULL, &second, &error) != MC_ERROR_BUSY ||

@@ -1,5 +1,6 @@
 #include <musikcore/abi.h>
 #include <musikcore/library.h>
+#include <musikcore/media.h>
 #include <stdio.h>
 #include <float.h>
 #include <string.h>
@@ -71,6 +72,19 @@ static int check_errors(void) {
 
 /* Verify C layouts/defaults/version encoding and invoke the cross-language primitive contract cases. */
 int main(void) {
+    const mc_media_stream_info media_info = MC_MEDIA_STREAM_INFO_DEFAULT;
+    const mc_media_pcm_view media_pcm = MC_MEDIA_PCM_VIEW_DEFAULT;
+    const mc_media_encoder_options media_encoder = MC_MEDIA_ENCODER_OPTIONS_DEFAULT;
+    if (media_info.struct_size != sizeof(media_info) || media_info.flags || media_info.length_bytes ||
+        media_info.uri.data || media_info.uri.length || media_info.content_type.data || media_info.extension.data ||
+        media_pcm.struct_size != sizeof(media_pcm) || media_pcm.data || media_pcm.frame_count ||
+        media_pcm.format.struct_size != sizeof(mc_audio_format) || media_pcm.format.channels ||
+        media_encoder.struct_size != sizeof(media_encoder) || media_encoder.bitrate_kbps != MC_MEDIA_DEFAULT_BITRATE_KBPS ||
+        media_encoder.format.struct_size != sizeof(mc_audio_format) || media_encoder.format.sample_rate)
+    {
+        fputs("media defaults failed\n", stderr);
+        return 1;
+    }
     const char data[] = { 'm', 'c' };
     const mc_string_view view = { data, sizeof(data) };
     const mc_library_scope scope = MC_LIBRARY_SCOPE_DEFAULT;

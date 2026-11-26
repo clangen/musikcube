@@ -83,8 +83,7 @@ static void MC_CALL interrupt(void* instance) {
 /* publish the actual byte count. a read at EOF clears previous scratch frames
 so the caller cannot accidentally replay the tail of the track. */
 static mc_result MC_CALL decode(
-    void* instance, mc_audio_scratch_buffer* buffer, mc_decode_state* state, mc_error** error)
-{
+    void* instance, mc_audio_scratch_buffer* buffer, mc_decode_state* state, mc_error** error) {
     byte_decoder* decoder = instance;
     if (atomic_load(&decoder->cancelled)) {
         return MC_ERROR_CANCELLED;
@@ -164,7 +163,18 @@ static mc_result MC_CALL prefer_rate(void* instance, uint32_t rate) {
 }
 
 /* the host retains the input stream and scratch storage. */
-static void MC_CALL destroy(void* instance) { free(instance); }
+static void MC_CALL destroy(void* instance) {
+    byte_decoder* decoder = instance;
+    if (decoder->stream) {
+        mc_stream_info info = MC_STREAM_INFO_DEFAULT;
+        /* the input must still exist and be open while the decoder is freed. */
+        const mc_result status = decoder->stream->api->get_info(decoder->stream->instance, &info);
+        if (status != MC_OK && status != MC_ERROR_CANCELLED) {
+            abort();
+        }
+    }
+    free(instance);
+}
 
 /* publish one immutable factory for all independent test decoder instances. */
 static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_error** error) {
@@ -196,12 +206,13 @@ static mc_result MC_CALL initialize(const mc_host_api* host, void** context, mc_
 }
 
 /* the fixture has no session resources once the host destroys its instances. */
-static void MC_CALL shutdown_decoder(void* context) { (void) context; }
+static void MC_CALL shutdown_decoder(void* context) {
+    (void) context;
+}
 
 /* expose only the public C entry point, as an installed third-party codec would. */
 MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
-    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error)
-{
+    uint32_t version, const mc_host_api* host, mc_plugin_api* plugin, mc_error** error) {
     const mc_result status = mc_plugin_validate_host_api(version, host, plugin, error);
     if (status != MC_OK) {
         return status;

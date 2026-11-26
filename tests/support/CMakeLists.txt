@@ -1347,3 +1347,25 @@ if((CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE OR WIN32) AND TARGET projectm)
     set_tests_properties(musikcore.integration.plugins.projectm PROPERTIES ENVIRONMENT "SDL_VIDEODRIVER=dummy")
   endif()
 endif()
+
+add_executable(musikcore_application_media_test ../integration/binary/consumer/media.c
+  ../integration/binary/consumer/media.cpp media-test.cpp)
+target_include_directories(musikcore_application_media_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_features(musikcore_application_media_test PRIVATE cxx_std_17)
+target_link_libraries(musikcore_application_media_test PRIVATE musikcore Threads::Threads ${CMAKE_DL_LIBS})
+set_target_properties(musikcore_application_media_test PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF DISABLE_PRECOMPILE_HEADERS ON)
+add_dependencies(musikcore_application_media_test musikcore_application_media_fixture musikcore_byte_decoder musikcore_byte_encoder)
+set(media_http)
+if(TARGET httpdatastream)
+  add_dependencies(musikcore_application_media_test httpdatastream)
+  set(media_http "$<TARGET_FILE:httpdatastream>")
+endif()
+add_dependencies(musikcube_tests musikcore_application_media_test)
+add_dependencies(musikcube_integration_tests musikcore_application_media_test)
+add_test(NAME musikcore.integration.api.media COMMAND "${MUSIKCORE_TEST_NODE}"
+  "${PROJECT_SOURCE_DIR}/tests/scripts/check-application-media.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+  "$<TARGET_FILE:musikcore_application_media_test>" "$<TARGET_FILE:musikcore_application_media_fixture>"
+  "$<TARGET_FILE:musikcore_byte_decoder>" "$<TARGET_FILE:musikcore_byte_encoder>" ${media_http})
+set_tests_properties(musikcore.integration.api.media PROPERTIES
+  LABELS "integration;musikcore;media;contract" TIMEOUT 35)

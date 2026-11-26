@@ -13,6 +13,7 @@ function(musikcore_add_consumer_api target remote_session_source)
     "${remote_session_source}"
     "${ffi}/consumer/playback.cpp"
     "${ffi}/consumer/player.cpp"
+    "${ffi}/consumer/media.cpp"
     "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadQueries.cpp"
     "${PROJECT_SOURCE_DIR}/src/musikcore/library/query/TrackReadBackend.cpp"
   )

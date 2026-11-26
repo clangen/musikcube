@@ -523,3 +523,5 @@ The modernization is complete when:
 - [ADR-0017: Library scope and query lifetime](../docs/adr/0017-library-scope-query-lifetime.md)
 
 - [ADR-0018: Library layers and plugin services](../docs/adr/0018-library-layers-and-plugin-services.md)
+
+- [ADR-0019: Application media ownership](../docs/adr/0019-application-media-ownership.md)

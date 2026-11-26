@@ -769,23 +769,40 @@ cutover gate is complete.
 The application-facing media API is separate from the C plugin SDK. This work
 was moved from the core migration LLD because it builds on provider services.
 
-- [ ] **PUB-008** Expose stream, decoder, and encoder operations to application
+- [x] **PUB-008** Expose stream, decoder, and encoder operations to application
   C consumers. The existing `mc_plugin_media_service` and scratch buffer table are
   provider-session services, not application-owned APIs: their function tables
   and instances can become invalid at plugin shutdown. Do not return them
   directly from `mc_context`.
-  - [ ] Define application-owned C handles and operations for stream IO,
+  - [x] Define application-owned C handles and operations for stream IO,
     decoding to PCM, and encoding, including units, ownership, blocking and
     interrupt behavior, EOF/finalization, diagnostics, and buffer lifetimes.
     Keep the application and plugin ABI/version boundaries separate.
-  - [ ] Bind handles and in-flight operations to context shutdown. Ensure
+  - [x] Bind handles and in-flight operations to context shutdown. Ensure
     decoder/input and encoder/output ordering; quiesce blocked work before
     destroying providers, and make retained handles safe after shutdown.
-  - [ ] Prove invalid inputs are rejected before provider calls. Exercise
+  - [x] Prove invalid inputs are rejected before provider calls. Exercise
     local/remote streams, decode, encode, cancellation, failed creation,
     retained handles and teardown through an independently built C consumer;
     update public header, export, ABI-only, and installed-consumer checks.
-  Application-facing media operations are not implemented by this task entry.
+  Implemented in `media.h` / `media.hpp` and the context-owned `MediaSession`;
+  [ADR-0019](../docs/adr/0019-application-media-ownership.md) records ownership,
+  cancellation, PCM copies and explicit encoder finish. Creation consumes an
+  opened input/output only on success. Retained handles cannot reach provider
+  callbacks after shutdown.
+
+  Acceptance: `musikcore.integration.api.media` exercises the public C API and
+  C++ owners against local files, loopback HTTP, byte decoders, streaming/file
+  encoders, partial writes, factory/open/write/finalize/close failures, invalid
+  inputs before provider calls, cancellation before open, blocked open/read/
+  decode/write shutdown, cleanup order, and retained PCM/handles. The independent
+  relocated C consumer is also built/run by `musikcore.integration.plugins.installed`.
+  `musikcore.abi.header`, `shared_c`, `exports`, `link_boundary` and individually
+  compiled public C11/C++17 headers cover defaults, ABI-only availability and
+  the export surface. Native Linux/Windows acceptance remains in the existing
+  open platform gates. On macOS Release (2026-11-25), all nine targeted CTests
+  passed, including the installed-provider/consumer check and URI-player
+  regression, and the independent public-header build passed.
 - [x] **PKG-003** Build an external C decoder plugin against the installed SDK.
   `plugins.installed` builds the C decoder using only relocated SDK headers and
   checks its exports and imports.
