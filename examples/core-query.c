@@ -7,6 +7,8 @@ use core-engine.c/cpp instead to let the context own the configured engine. */
 #include "host-wakeup.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 
 struct query_state { int done; mc_result result; };
 static void MC_CALL completed(mc_result result, mc_track_page* page, const mc_error* error, void* data) {
@@ -25,7 +27,27 @@ static void MC_CALL completed(mc_result result, mc_track_page* page, const mc_er
     mc_track_page_destroy(&page);
 }
 int main(int argc, char** argv) {
-    if (argc != 2) return 1;
+    /* optional source selection: a nonnegative catalog ID, or none for empty. */
+    if (argc < 2 || argc > 3) {
+        return 1;
+    }
+    int32_t source_id = 0;
+    mc_library_source_filter sources = MC_LIBRARY_SOURCE_FILTER_DEFAULT;
+    mc_library_scope scope = MC_LIBRARY_SCOPE_DEFAULT;
+    if (argc == 3) {
+        scope.sources = &sources;
+        if (strcmp(argv[2], "none") != 0) {
+            char* end = NULL;
+            errno = 0;
+            const long id = strtol(argv[2], &end, 10);
+            if (errno || end == argv[2] || *end || id < 0 || id > INT32_MAX) {
+                return 1;
+            }
+            source_id = (int32_t) id;
+            sources.ids = &source_id;
+            sources.count = 1;
+        }
+    }
     test_host_event* event = test_host_event_create();
     if (!event) return 1;
     mc_context* context = NULL;
@@ -40,8 +62,9 @@ int main(int argc, char** argv) {
     mc_request_id request = 0;
     struct query_state state = { 0, MC_ERROR_INTERNAL };
     if (mc_context_create(&options, &context, NULL) == MC_OK &&
-        mc_library_create(&library_options, &library) == MC_OK &&
-        mc_library_query_tracks_async(context, library, &query, completed, &state, &request) == MC_OK) {
+        mc_library_create(&library_options, &library) == MC_OK && mc_library_set_scope(library, &scope) == MC_OK &&
+        mc_library_query_tracks_async(context, library, &query, completed, &state, &request) == MC_OK)
+    {
         while (!state.done && test_host_event_wait(event)) {
             if (mc_context_dispatch(context) != MC_OK) break;
         }

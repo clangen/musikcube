@@ -124,7 +124,15 @@ External C decoder build/load checks (PKG-003/PKG-004) are tracked with the
   entry does not claim the target or its fixtures have been removed.
 - [ ] **FIN-008** Assign ABI major version 1 and platform SONAME/install-name/DLL
   versioning. Complete the [library query scope adendum](musikcore-c-abi-lld-library-scope.md)
-  and its SCOPE-014 acceptance gate before application ABI v1 freeze.
+  and its SCOPE-014 acceptance gate before application ABI v1 freeze. The scope
+  feature gate is complete under the maintainer-approved 2026-11-25 macOS
+  acceptance exception. Before freeze, rerun `musikcore.integration.api.library_scope`,
+  `musikcore.integration.api.backend_parity`, `musikcore.integration.api.managed_remote`,
+  `musikcore.integration.api.remote_audio`, `musikcore.integration.api.installed_sdk`,
+  `musikcore.integration.library.playlist_source_schema`, and
+  `musikcore.integration.runtime.indexer_provider_cancel` on native Linux and
+  Windows, together with public-header, exported-symbol and installed C/C++
+  consumer checks. No new Linux/Windows scope acceptance is claimed by that exception.
 - [ ] **FIN-009** Freeze and publish the export allowlist and public layout
   baseline after the library query scope contract and acceptance are complete.
 - [ ] **FIN-010** Preserve a v1 C consumer binary/source fixture.

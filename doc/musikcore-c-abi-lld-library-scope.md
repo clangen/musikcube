@@ -1,6 +1,6 @@
 # C ABI LLD adendum: library query scopes
 
-Status: **implementation in review; acceptance checks remain before application ABI v1 freeze**.
+Status: **complete; native macOS acceptance passed, with the maintainer-approved platform exception below**.
 
 [LLD index](musikcore-c-abi-lld.md) · [C ABI design](musikcore-c-abi-design.md) ·
 [Release gates](musikcore-c-abi-lld-release.md#phase-10-migration-cleanup-and-abi-v1-freeze)
@@ -38,7 +38,7 @@ catalog IDs derived from their plugin ID and stable source key. Source IDs
 belong to a catalog, not to all libraries globally. The indexer's scan-source
 sentinels do not define the public filtering contract.
 
-## Proposed shape and decisions
+## Contract and decisions
 
 Accepted lifecycle and playlist decisions are recorded in
 [ADR-0017](../docs/adr/0017-library-scope-query-lifetime.md).
@@ -215,25 +215,72 @@ Named acceptance tests:
 Native macOS validation also includes `musikcore.abi.header`,
 `musikcore.abi.shared_c`, `musikcore.abi.exports`, and the C++ query/search
 consumer tests. Independently compiled public C/C++ headers build successfully.
+`musikcore.integration.api.installed_sdk` verifies the relocated SDK and both
+scoped example consumers. The final 2026-11-25 native macOS run passed all 16
+selected CTest checks, including runtime services and indexer cancellation.
+The three affected remote suites also passed after the final timeout-lifetime
+review fix; accepted test callbacks cannot outlive borrowed state on timeout.
 New regressions for rejected host playlist writes and source discovery after
 shutdown fail when their respective fixes are temporarily removed.
 
-Remaining acceptance work is recorded under SCOPE-009/010/011/013/014/016/017.
-Named tests cover the listed cases, not every required permutation in those tasks:
+The final acceptance additions cover:
 
-- Boundary and identity coverage: malformed creation options, retained result
-  paging across updates, and separate catalogs with overlapping source IDs.
-- Concurrency coverage: submission racing replacement, subscription registration
-  racing updates, and concurrent observer teardown. Completion admission and
-  cancellation before held remote replies are covered.
-- Playlist coverage: mixed batches, missing tracks and duplicate entries through
-  both public local and remote mutation entry points, beyond schema checks.
-- Session coverage: simultaneous clients with different selections and reconnect
-  reset, beyond one real session changing and restoring scope.
-- Linux/Windows acceptance and installed-consumer validation remain open.
+- malformed creation options rejected before backend admission; separate catalogs
+  with overlapping IDs; retained result pages and references after scope changes;
+- concurrent submission/replacement, subscription registration during delivery,
+  reentrant observer removal while another callback runs, and context shutdown;
+- invalidation before refresh notifications and reentrant refresh queries;
+- shared artists/albums and scoped grouped durations/facets on both backends;
+- mixed-source and missing-track create/append/replace batches, source zero and
+  provider ownership, duplicate ordering, unchanged contents and playlist counts,
+  and absence of mutation notifications after rejected writes;
+- playlist contents surviving scope changes while discovery is cancelled;
+- actual server clients with independent selections, unchanged/rejected updates,
+  correctly addressed broadcast notifications, reconnect reset, catalog-wide
+  source discovery, and legacy playlist pagination under empty scope;
+- independently installed C/C++ examples querying empty and source-zero scopes.
 
-There are no frontend implementation or UI test tasks in this LLD; the removed SCOPE-012
-identifier is intentionally not reused.
+The new real-server regression failed because scope notifications lacked the
+standard broadcast type and message ID. Those fields are now present; only the
+originating session receives the committed update.
+
+### WebSocket ordering and ownership
+
+`get_library_scope`, `set_library_scope` and `clear_library_scope` operate on the
+authenticated connection's selection. New/reconnected sessions start unrestricted.
+The options object uses `sources: null` or an array of nonnegative IDs; absent
+sources means unrestricted. Unknown keys, non-object options, negative IDs and
+oversized selections are rejected without changing scope or publishing events.
+Equivalent normalized selections publish nothing.
+
+An effective update sends a `library_scope_changed` broadcast to that connection,
+with the standard message ID/type and the committed scope in `options`. Other
+connections receive neither that selection nor its scope event. A typed request
+with an explicit scope owns that snapshot; otherwise the handler copies the
+current session selection before query submission. Legacy browsing uses that
+same selection. Explicit IDs and playlist contents remain catalog-wide.
+
+Server handlers serialize query admission and session updates on the I/O thread.
+The synchronous typed-query response is admitted before a subsequent session
+update; the update cannot retarget that query. Client library scope replacement
+uses normal cancellation/discard for requests still pending on the client, with
+late replies ignored. This matches the completion admission rule in ADR-0017.
+
+### Accepted platform exception — 2026-11-25
+
+Native macOS builds, public C/C++ header compilation, installed/relocated consumer
+checks and the named scope tests pass. No native Linux/Windows run is claimed.
+Those runners are unavailable in this workspace.
+
+The maintainer explicitly approved closing this feature LLD on native macOS
+acceptance evidence. Native Linux/Windows revalidation of the same named scope
+and installed-SDK tests remains mandatory before ABI v1 freeze under FIN-008,
+FIN-009 and GATE-1000. This closes SCOPE-011 and SCOPE-014 for the accepted feature
+scope; it does not freeze the experimental ABI or waive release-platform checks.
+The release LLD records the remaining native-platform requirement.
+
+There are no frontend implementation or UI test tasks in this LLD; the removed
+SCOPE-012 identifier is intentionally not reused.
 
 ## Implementation checklist
 
@@ -281,14 +328,14 @@ identifier is intentionally not reused.
 - [x] **SCOPE-008** Update the header-only C++ convenience API for callers
   that require source filtering. Keep ownership explicit and wrappers dependent
   only on the public C ABI. Do not add unrelated filters to this task.
-- [ ] **SCOPE-009** Add boundary tests for invalid sizes, ID/count limits,
+- [x] **SCOPE-009** Add boundary tests for invalid sizes, ID/count limits,
   null/count mismatches, empty and unrestricted selection, source zero, copied
   caller storage, ownership, cancellation and shutdown. Test older-sized input
   against a newer library and a larger unknown scope/filter struct against the
   current library, including truncated present filter fields. Assert
   rejection occurs before backend/provider work and scoped requests cannot
   escape their catalog.
-- [ ] **SCOPE-010** Add local and real remote parity tests with multiple sources,
+- [x] **SCOPE-010** Add local and real remote parity tests with multiple sources,
   shared artists/albums, duplicate playlist entries, hidden or missing tracks,
   distinct library handles, scope updates, grouped counts, ordering and page
   boundaries.
@@ -297,17 +344,17 @@ identifier is intentionally not reused.
   complete with cancellation rather than successful stale results. Cover queued
   completions, concurrent submission and update, and already delivered result
   paging. Verify playlist-content requests remain unaffected and playlist discovery is invalidated.
-- [ ] **SCOPE-011** Update public header/default-initializer checks, exported
+- [x] **SCOPE-011** Update public header/default-initializer checks, exported
   symbols, ABI-only and installed C/C++ consumer tests, wire fixtures, examples
   and contract documentation. Validate named-platform builds and tests under
   the normal project gates; keep missing platform evidence open rather than
   assuming it from another platform.
-- [ ] **SCOPE-013** Implement and test library scope-changed notifications.
+- [x] **SCOPE-013** Implement and test library scope-changed notifications.
   Cover multiple observers, update ordering, unchanged and rejected updates,
   reentrant queries, subscription lifetime and shutdown, registration racing
   an update, and pending-query invalidation before refresh delivery. Verify callbacks run
   outside internal locks and no observer sees an event for an uncommitted scope.
-- [ ] **SCOPE-014** Complete the scope acceptance gate: all applicable tasks
+- [x] **SCOPE-014** Complete the scope acceptance gate: all applicable tasks
   above are complete, the ADR and public contract match implementation, and
   the maintainer has reviewed any SDK/API contract decisions. Only then may the
   application ABI v1 freeze proceed under FIN-008/FIN-009 and GATE-1000.
@@ -320,12 +367,12 @@ identifier is intentionally not reused.
   infer ownership from the current scope. Preserve ownership on append/replace.
   Define matching C++ convenience operations and remote wire fields. Existing
   creation callers continue to create global playlists.
-- [ ] **SCOPE-016** Enforce same-source membership for source-owned playlists at
+- [x] **SCOPE-016** Enforce same-source membership for source-owned playlists at
   the API mutation boundary and in catalog constraints. Reject whole invalid
   create/append/replace batches without changes or success events. Test local
   and real remote behavior, missing tracks, source zero, duplicates and mixed
   sources; global playlists continue to accept mixed sources.
-- [ ] **SCOPE-017** Add WebSocket get/set/clear library-scope operations and
+- [x] **SCOPE-017** Add WebSocket get/set/clear library-scope operations and
   committed scope-change notifications. Scope state is client-session-local,
   not shared mutable state on the server catalog. Validate the same sized/typed
   filter contract and reject unsupported filters. Define ordering with typed
@@ -334,6 +381,6 @@ identifier is intentionally not reused.
   snapshots on each typed request so queued work cannot be retargeted by a later
   server-side selection. Include source discovery and playlist ownership fields.
 
-The acceptance gate includes SCOPE-015 through SCOPE-017. Schema support alone
-does not complete the API, remote and integration requirements. Checked tasks
-record implemented contracts; unchecked validation tasks remain release gates.
+The acceptance gate includes SCOPE-015 through SCOPE-017. Checked tasks record
+implemented contracts and the named executable acceptance evidence above. The
+accepted platform exception is explicit and does not imply ABI v1 freeze approval.

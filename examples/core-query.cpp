@@ -8,7 +8,10 @@ use core-engine.c/cpp instead to let the context own the configured engine. */
 #include <memory>
 
 int main(int argc, char** argv) {
-    if (argc != 2) return 1;
+    /* optional source selection: a nonnegative catalog ID, or none for empty. */
+    if (argc < 2 || argc > 3) {
+        return 1;
+    }
     std::unique_ptr<test_host_event, decltype(&test_host_event_destroy)>
         event(test_host_event_create(), test_host_event_destroy);
     if (!event) return 1;
@@ -22,6 +25,20 @@ int main(int argc, char** argv) {
         mc_result result = MC_ERROR_INTERNAL;
         api::Context context(options);
         api::Library library(argv[1]);
+        if (argc == 3) {
+            const std::string selection(argv[2]);
+            if (selection == "none") {
+                library.SelectSources({});
+            }
+            else {
+                size_t consumed = 0;
+                const auto id = std::stoll(selection, &consumed);
+                if (consumed != selection.size() || id < 0 || id > INT32_MAX) {
+                    return 1;
+                }
+                library.SelectSources({ static_cast<int32_t>(id) });
+            }
+        }
         api::QueryTracks(context, library, {}, [&](mc_result status, api::TrackPage page, std::string_view error) {
             done = true;
             result = status;

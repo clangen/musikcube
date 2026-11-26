@@ -56,8 +56,10 @@ the linked task entries for current evidence and remaining limitations.
 
 ## Active next steps
 
-1. Complete the [library query scope adendum](musikcore-c-abi-lld-library-scope.md)
-   before freezing the application ABI v1.
+1. The [library query scope adendum](musikcore-c-abi-lld-library-scope.md) is
+   complete under its maintainer-approved native macOS acceptance exception.
+   Complete native Linux/Windows scope revalidation recorded under FIN-008 before
+   freezing the application ABI v1.
 2. Preserve the named runtime, provider, consumer, and platform acceptance
    checks in the linked task documents; track unresolved failures and missing
    native validation explicitly.

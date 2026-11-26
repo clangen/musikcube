@@ -15,6 +15,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
+#include <cstdlib>
 #include <mutex>
 #include <thread>
 
@@ -421,6 +422,29 @@ namespace {
             return false;
         }
         const auto port = configuration->metadataPort;
+        auto library = context.GetLibrary();
+        std::optional<mc_result> saved;
+        int64_t playlistId = 0;
+        const auto awaitSaved = [&] {
+            if (!waitFor(context, host, [&] { return saved.has_value(); })) {
+                /* the accepted completion borrows saved and playlistId. a
+                timeout must stop before these captures leave scope. */
+                std::fputs("scope session playlist request exceeded its completion deadline\n", stderr);
+                std::abort();
+            }
+            return saved == MC_OK;
+        };
+        if (!library) {
+            return false;
+        }
+        SavePlaylist(context, *library, 0, "Scope session paging", { expectedId, expectedId, expectedId },
+            [&](mc_result status, int64_t id, std::string_view) {
+                saved = status;
+                playlistId = id;
+            });
+        if (!awaitSaved() || playlistId <= 0) {
+            return false;
+        }
         std::atomic<bool> finished { false };
         std::atomic<bool> succeeded { false };
         std::thread probe([&] {
@@ -433,8 +457,12 @@ namespace {
                 client.init_asio();
                 asio::steady_timer deadline(client.get_io_context());
                 deadline.expires_after(15s);
+                std::string lastReply;
                 const auto finish = [&](bool passed) {
                     if (!finished.load()) {
+                        if (!passed) {
+                            std::fprintf(stderr, "scope session probe failed after reply %s\n", lastReply.c_str());
+                        }
                         succeeded.store(passed);
                         finished.store(true);
                         Host::Wake(&host);
@@ -463,15 +491,51 @@ namespace {
                         finish(false);
                     }
                 };
+                unsigned opened = 0, scopeEvents = 0;
+                bool reconnecting = false;
+                websocketpp::connection_hdl scopedConnection;
+                const auto connectPeer = [&] {
+                    websocketpp::lib::error_code error;
+                    auto next = client.get_connection("ws://127.0.0.1:" + std::to_string(port), error);
+                    if (error) {
+                        finish(false);
+                        return;
+                    }
+                    client.connect(next);
+                };
                 client.set_open_handler([&](auto connection) {
-                    send(connection, "authenticate", "auth", { { "password", fixturePassword } });
+                    ++opened;
+                    if (opened != 2) {
+                        scopedConnection = connection;
+                    }
+                    const char* id = opened == 1 ? "auth" : opened == 2 ? "peer-auth" : "reconnect-auth";
+                    send(connection, "authenticate", id, { { "password", fixturePassword } });
                 });
                 client.set_fail_handler([&](auto) { finish(false); });
-                client.set_close_handler([&](auto) { finish(false); });
+                client.set_close_handler([&](auto connection) {
+                    if (reconnecting && connection.lock() == scopedConnection.lock()) {
+                        reconnecting = false;
+                        connectPeer();
+                    }
+                    else {
+                        finish(false);
+                    }
+                });
                 client.set_message_handler([&](auto connection, auto message) {
                     try {
                         const auto response = json::parse(message->get_payload());
                         const auto id = response.value("id", std::string());
+                        lastReply = id;
+                        if (response.value("name", std::string()) == "library_scope_changed") {
+                            if (connection.lock() != scopedConnection.lock() ||
+                                response.value("type", std::string()) != "broadcast" || id.empty())
+                            {
+                                finish(false);
+                                return;
+                            }
+                            ++scopeEvents;
+                            return;
+                        }
                         if (id == "auth") {
                             if (!response.at("options").value("authenticated", false)) {
                                 finish(false);
@@ -521,6 +585,13 @@ namespace {
                                 finish(false);
                                 return;
                             }
+                            send(connection, "set_library_scope", "unchanged-scope", { { "sources", json::array() } });
+                        }
+                        else if (id == "unchanged-scope") {
+                            if (scopeEvents != 1 || response.at("options").at("sources") != json::array()) {
+                                finish(false);
+                                return;
+                            }
                             send(connection, "set_library_scope", "malformed-scope", json::array());
                         }
                         else if (id == "malformed-scope") {
@@ -528,7 +599,24 @@ namespace {
                                 finish(false);
                                 return;
                             }
-                            send(connection, "query_tracks", "empty-tracks", json::object());
+                            send(
+                                connection, "set_library_scope", "unsupported-filter", { { "future", json::array() } });
+                        }
+                        else if (id == "unsupported-filter" || id == "negative-source" || id == "oversized-selection") {
+                            if (response.at("options").value("success", true)) {
+                                finish(false);
+                                return;
+                            }
+                            if (id == "unsupported-filter") {
+                                send(connection, "set_library_scope", "negative-source", { { "sources", { -1 } } });
+                            }
+                            else if (id == "negative-source") {
+                                send(connection, "set_library_scope", "oversized-selection",
+                                    { { "sources", std::vector<int>(MC_LIBRARY_SCOPE_MAX_SOURCES + 1, 0) } });
+                            }
+                            else {
+                                send(connection, "query_tracks", "empty-tracks", json::object());
+                            }
                         }
                         else if (id == "empty-tracks" || id == "empty-category" || id == "empty-albums" ||
                             id == "empty-category-tracks")
@@ -562,12 +650,104 @@ namespace {
                                 finish(false);
                                 return;
                             }
+                            if (scopeEvents != 1) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "send_raw_query", "invalid-query-scope",
+                                {
+                                    { "raw_query_data",
+                                        R"({"name":"SearchTrackListQuery","options":{"filter":"","sortType":0,"scope":{"future":[]}}})" },
+                                });
+                        }
+                        else if (id == "invalid-query-scope") {
+                            if (response.at("options").value("success", true)) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "send_raw_query", "scope-sources",
+                                {
+                                    { "raw_query_data", R"({"name":"SourceListQuery","options":{}})" },
+                                });
+                        }
+                        else if (id == "scope-sources") {
+                            const auto raw =
+                                json::parse(response.at("options").at("raw_query_data").template get<std::string>());
+                            bool files = false;
+                            for (const auto& source : raw.at("result")) {
+                                files |= source.at("id") == 0 && source.at("label") == "Files";
+                            }
+                            if (!files) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "query_tracks_by_category", "scoped-playlist-page",
+                                {
+                                    { "category", "playlists" },
+                                    { "id", playlistId },
+                                    { "limit", 1 },
+                                    { "offset", 1 },
+                                });
+                        }
+                        else if (id == "scoped-playlist-page") {
+                            const auto& options = response.at("options");
+                            if (options.at("data").size() != 1 || options.at("data")[0].at("id") != expectedId ||
+                                options.at("limit") != 1 || options.at("offset") != 1)
+                            {
+                                finish(false);
+                                return;
+                            }
+                            connectPeer();
+                        }
+                        else if (id == "peer-auth" || id == "reconnect-auth") {
+                            if (!response.at("options").value("authenticated", false)) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "get_library_scope", id == "peer-auth" ? "peer-scope" : "reconnect-scope",
+                                json::object());
+                        }
+                        else if (id == "peer-scope" || id == "reconnect-scope") {
+                            if (!response.at("options").at("sources").is_null()) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "query_tracks", id == "peer-scope" ? "peer-tracks" : "reconnect-tracks",
+                                json::object());
+                        }
+                        else if (id == "peer-tracks") {
+                            if (response.at("options").at("data").empty()) {
+                                finish(false);
+                                return;
+                            }
+                            send(scopedConnection, "get_library_scope", "original-scope", json::object());
+                        }
+                        else if (id == "original-scope") {
+                            if (response.at("options").at("sources") != json::array()) {
+                                finish(false);
+                                return;
+                            }
                             send(connection, "clear_library_scope", "clear-scope", json::object());
                         }
                         else if (id == "clear-scope") {
                             send(connection, "query_tracks", "restored-tracks", json::object());
                         }
                         else if (id == "restored-tracks") {
+                            if (response.at("options").at("data").empty()) {
+                                finish(false);
+                                return;
+                            }
+                            send(connection, "set_library_scope", "before-reconnect", { { "sources", json::array() } });
+                        }
+                        else if (id == "before-reconnect") {
+                            if (scopeEvents != 3) {
+                                finish(false);
+                                return;
+                            }
+                            reconnecting = true;
+                            client.close(connection, websocketpp::close::status::normal, "scope reconnect test");
+                        }
+                        else if (id == "reconnect-tracks") {
                             if (response.at("options").at("data").empty()) {
                                 finish(false);
                                 return;
@@ -618,7 +798,11 @@ namespace {
             std::fputs("Self-remote queue, category, or invalid-query check failed\n", stderr);
             return false;
         }
-        return true;
+        saved.reset();
+        DeletePlaylist(context, *library, playlistId, [&](mc_result status, int64_t, std::string_view) {
+            saved = status;
+        });
+        return awaitSaved();
     }
 
     bool checkRemoteAudio(Context& context, Host& host, Playback& playback, std::string_view format, bool rangeFallback) {

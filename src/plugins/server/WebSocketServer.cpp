@@ -656,7 +656,12 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
                 }
                 if (next != session.scope) {
                     session.scope = std::move(next);
-                    json event = { { message::name, broadcast::library_scope_changed }, { message::options, session.scope } };
+                    json event = {
+                        { message::name, broadcast::library_scope_changed },
+                        { message::type, type::broadcast },
+                        { message::id, nextMessageId() },
+                        { message::options, session.scope },
+                    };
                     this->wss->send(connection, event.dump(), websocketpp::frame::opcode::text);
                 }
             }

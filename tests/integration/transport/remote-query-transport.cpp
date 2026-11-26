@@ -27,12 +27,14 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/Common.h>
+#include <musikcore/support/Messages.h>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <filesystem>
 #include <future>
@@ -727,8 +729,402 @@ namespace {
         const auto settled = calls;
         return context.Dispatch() == MC_OK && calls == settled;
     }
-    /* Use the same typed backend on both sides of a real socket to expose serialization losses
-       independently of catalog differences. */
+    /* counts mutation broadcasts so rejected writes cannot announce success. */
+    class PlaylistEvents final : public musik::core::runtime::IMessageTarget {
+    public:
+        void ProcessMessage(musik::core::runtime::IMessage& input) override {
+            using namespace musik::core;
+            if (input.Type() == message::PlaylistCreated || input.Type() == message::PlaylistModified ||
+                input.Type() == message::PlaylistRenamed || input.Type() == message::PlaylistDeleted)
+            {
+                ++this->count;
+            }
+        }
+
+        unsigned count = 0;
+    };
+
+    bool checkScopeAcceptance(musik::core::api::Context& context, musik::core::runtime::MessageQueue& host,
+        const musik::core::api::Library& local, const musik::core::api::Library& remote, const char* database)
+    {
+        using namespace musik::core;
+        using namespace musik::core::api;
+        constexpr int64_t fileId = 900001, providerId = 900002, hiddenId = 900003;
+        const auto events = std::make_shared<PlaylistEvents>();
+        host.RegisterForBroadcasts(events);
+        db::Connection fixture;
+        if (fixture.Open(database) != db::Okay ||
+            fixture.Execute(
+                "INSERT INTO tracks(id,title,source_id,external_id,visible,album_id,visual_artist_id,"
+                "visual_genre_id,album_artist_id,path_id,directory_id,duration,track) "
+                "SELECT 900001,'Scope acceptance Files',0,'scope-files',1,album_id,visual_artist_id,"
+                "visual_genre_id,album_artist_id,path_id,directory_id,12,1 FROM tracks WHERE visible=1 LIMIT 1") !=
+                db::Okay ||
+            fixture.Execute(
+                "INSERT INTO tracks(id,title,source_id,external_id,visible,album_id,visual_artist_id,"
+                "visual_genre_id,album_artist_id,path_id,directory_id,duration,track) "
+                "SELECT 900002,'Scope acceptance Provider',7,'scope-provider',1,album_id,visual_artist_id,"
+                "visual_genre_id,album_artist_id,path_id,directory_id,18,2 FROM tracks WHERE id=900001") != db::Okay ||
+            fixture.Execute("INSERT INTO tracks(id,title,source_id,external_id,visible) "
+                            "VALUES(900003,'Scope acceptance Hidden',7,'scope-hidden',0)") != db::Okay)
+        {
+            return failure(__LINE__);
+        }
+        for (const auto* library : { &local, &remote }) {
+            context.SetLibrary(*library);
+            mc_library* raw = nullptr;
+            if (mc_context_get_library(context.Get(), &raw) != MC_OK) {
+                return failure(__LINE__);
+            }
+            Library selected(raw);
+            const auto await = [&](auto predicate) {
+                const bool completed = AwaitTestHost(host, [&] {
+                    return context.Dispatch() == MC_OK && predicate();
+                });
+                if (!completed) {
+                    /* accepted callbacks borrow this function's stack. stop
+                    before unwinding can leave those callbacks dangling. */
+                    std::fputs("scope acceptance request exceeded its completion deadline\n", stderr);
+                    std::abort();
+                }
+                return completed;
+            };
+            mc_result status = MC_ERROR_INTERNAL;
+            bool done = false;
+            TrackResult retained;
+            OpenTrackSearch(
+                context, selected, { "Scope acceptance" }, [&](mc_result result, TrackResult tracks, std::string_view) {
+                    status = result;
+                    retained = std::move(tracks);
+                    done = true;
+                });
+            if (!await([&] {
+                    return done;
+                }) ||
+                status != MC_OK || retained.Size() != 2 || retained.Id(0) != fileId || retained.Id(1) != providerId ||
+                !retained.StartsAlbum(0) || retained.StartsAlbum(1) || retained.AlbumDurationSeconds(0) != 30)
+            {
+                return failure(__LINE__);
+            }
+            for (const int32_t source : { 0, 7 }) {
+                selected.SelectSources({ source });
+                done = false;
+                TrackResult filtered;
+                OpenTrackSearch(context, selected, { "Scope acceptance" },
+                    [&](mc_result result, TrackResult rows, std::string_view) {
+                        status = result;
+                        filtered = std::move(rows);
+                        done = true;
+                    });
+                if (!await([&] {
+                        return done;
+                    }) ||
+                    status != MC_OK || filtered.Size() != 1 || filtered.Id(0) != (source == 0 ? fileId : providerId) ||
+                    filtered.AlbumDurationSeconds(0) != (source == 0 ? 12 : 18))
+                {
+                    return failure(__LINE__);
+                }
+                struct Categories {
+                    bool done = false;
+                    mc_result status = MC_ERROR_INTERNAL;
+                    size_t count = 0;
+                } categories;
+                mc_request_id request = 0;
+                const auto receiveCategories = [](mc_result result, const mc_category_entry*, size_t count,
+                                                   const mc_error*, void* data) {
+                    auto& categories = *static_cast<Categories*>(data);
+                    categories = { true, result, count };
+                };
+                for (const auto field : { MC_FACET_GENRE, MC_FACET_ARTIST, MC_FACET_ALBUM }) {
+                    categories = {};
+                    if (mc_library_list_facets_async(context.Get(), selected.Get(), field, { "Scope acceptance", 16 },
+                            nullptr, 0, receiveCategories, &categories, &request) != MC_OK ||
+                        !await([&] {
+                            return categories.done;
+                        }) ||
+                        categories.status != MC_OK || categories.count != 1)
+                    {
+                        return failure(__LINE__);
+                    }
+                }
+                if (source == 7) {
+                    categories = {};
+                    if (mc_library_list_albums_async(
+                            context.Get(), selected.Get(), { nullptr, 0 },
+                            [](mc_result result, const mc_album_entry*, size_t count, const mc_error*, void* data) {
+                                auto& categories = *static_cast<Categories*>(data);
+                                categories = { true, result, count };
+                            },
+                            &categories, &request) != MC_OK ||
+                        !await([&] {
+                            return categories.done;
+                        }) ||
+                        categories.status != MC_OK || categories.count != 1)
+                    {
+                        return failure(__LINE__);
+                    }
+                }
+            }
+            selected.SelectSources({});
+            done = false;
+            TrackPage page;
+            ReadTracks(context, retained, { 1, 1, { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_SOURCE_ID } },
+                [&](mc_result result, TrackPage rows, std::string_view) {
+                    status = result;
+                    page = std::move(rows);
+                    done = true;
+                });
+            if (!await([&] {
+                    return done;
+                }) ||
+                status != MC_OK || page.Size() != 1 || page.Id(0) != providerId ||
+                page.Value(0, 0) != "Scope acceptance Provider" || page.Value(0, 1) != "7")
+            {
+                return failure(__LINE__);
+            }
+            auto retainedRef = retained.Track(0);
+            retained = TrackResult();
+            done = false;
+            ReadTrack(context, retainedRef, { MC_TRACK_FIELD_TITLE },
+                [&](mc_result result, TrackPage rows, std::string_view) {
+                    status = result;
+                    page = std::move(rows);
+                    done = true;
+                });
+            if (!await([&] {
+                    return done;
+                }) ||
+                status != MC_OK || page.Size() != 1 || page.Id(0) != fileId ||
+                page.Value(0, 0) != "Scope acceptance Files")
+            {
+                return failure(__LINE__);
+            }
+            done = false;
+            SetTrackRating(context, retainedRef, 3, [&](mc_result result, std::string_view) {
+                status = result;
+                done = true;
+            });
+            if (!await([&] {
+                    return done;
+                }) ||
+                status != MC_OK)
+            {
+                return failure(__LINE__);
+            }
+            const int64_t directIds[] { hiddenId, fileId, INT64_MAX, fileId };
+            auto direct = MakeTrackResult(selected, directIds, 4);
+            done = false;
+            ReadTracks(context, direct, { 0, 4, { MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_RATING } },
+                [&](mc_result result, TrackPage rows, std::string_view) {
+                    status = result;
+                    page = std::move(rows);
+                    done = true;
+                });
+            if (!await([&] {
+                    return done;
+                }) ||
+                status != MC_OK || page.Size() != 4 || page.Id(0) != hiddenId || page.Id(2) != INT64_MAX ||
+                page.Value(2, 0).data() || page.Value(1, 1) != "3" || page.Id(3) != fileId)
+            {
+                return failure(__LINE__);
+            }
+
+            struct Write {
+                bool done = false;
+                mc_result status = MC_ERROR_INTERNAL;
+                int64_t id = 0;
+            } write;
+            const auto receiveWrite = [](mc_result status, int64_t id, const mc_error*, void* data) {
+                auto& write = *static_cast<Write*>(data);
+                write = { true, status, id };
+            };
+            mc_request_id request = 0;
+            const auto writeMatches = [&](mc_result expected) {
+                return await([&] {
+                    return write.done;
+                }) &&
+                    write.status == expected && (expected == MC_OK ? write.id > 0 : write.id == 0);
+            };
+            const auto contents = [&](int64_t id, const std::vector<int64_t>& expected) {
+                done = false;
+                TrackResult tracks;
+                OpenPlaylist(context, selected, id, [&](mc_result result, TrackResult rows, std::string_view) {
+                    status = result;
+                    tracks = std::move(rows);
+                    done = true;
+                });
+                if (!await([&] {
+                        return done;
+                    }) ||
+                    status != MC_OK || tracks.Size() != expected.size())
+                {
+                    return false;
+                }
+                for (size_t i = 0; i < expected.size(); ++i) {
+                    if (tracks.Id(i) != expected[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+            auto create = mc_playlist_create_options MC_PLAYLIST_CREATE_OPTIONS_DEFAULT;
+            create.name = { "Scope acceptance playlist", 25 };
+            const int64_t mixed[] { fileId, providerId, fileId };
+            if (mc_library_create_playlist_async(
+                    context.Get(), selected.Get(), &create, mixed, 3, receiveWrite, &write, &request) != MC_OK ||
+                !writeMatches(MC_OK))
+            {
+                return failure(__LINE__);
+            }
+            const auto globalId = write.id;
+            if (!contents(globalId, { fileId, providerId, fileId })) {
+                return failure(__LINE__);
+            }
+            done = false;
+            TrackResult pendingContents;
+            OpenPlaylist(context, selected, globalId, [&](mc_result result, TrackResult rows, std::string_view) {
+                status = result;
+                pendingContents = std::move(rows);
+                done = true;
+            });
+            selected.SelectSources({ 7 });
+            if (!await([&] {
+                    return done;
+                }) ||
+                status != MC_OK || pendingContents.Size() != 3)
+            {
+                return failure(__LINE__);
+            }
+            done = false;
+            ListPlaylists(context, selected, [&](mc_result result, std::vector<PlaylistEntry>, std::string_view) {
+                status = result;
+                done = true;
+            });
+            selected.SelectSources({});
+            if (!await([&] {
+                    return done;
+                }) ||
+                status != MC_ERROR_CANCELLED)
+            {
+                return failure(__LINE__);
+            }
+
+
+            for (const int32_t source : { 0, 7 }) {
+                const int64_t matchingId = source == 0 ? fileId : providerId;
+                const int64_t duplicates[] { matchingId, matchingId };
+                create.ownership = MC_PLAYLIST_SOURCE;
+                create.source_id = source;
+                write = {};
+                if (mc_library_create_playlist_async(context.Get(), selected.Get(), &create, duplicates, 2,
+                        receiveWrite, &write, &request) != MC_OK ||
+                    !writeMatches(MC_OK))
+                {
+                    return failure(__LINE__);
+                }
+                const auto ownedId = write.id;
+                for (const std::vector<int64_t> invalid : { std::vector<int64_t> { matchingId, INT64_MAX },
+                         std::vector<int64_t> { matchingId, source == 0 ? providerId : fileId } })
+                {
+                    for (unsigned operation = 0; operation < 3; ++operation) {
+                        int64_t before = 0;
+                        {
+                            db::Statement count("SELECT COUNT(*) FROM playlists", fixture);
+                            if (count.Step() != db::Row) {
+                                return failure(__LINE__);
+                            }
+                            before = count.ColumnInt64(0);
+                        }
+                        host.Dispatch();
+                        const auto notificationsBefore = events->count;
+                        write = {};
+                        const auto submitted = operation == 0
+                            ? mc_library_create_playlist_async(context.Get(), selected.Get(), &create, invalid.data(),
+                                  invalid.size(), receiveWrite, &write, &request)
+                            : operation == 1
+                            ? mc_library_append_playlist_async(context.Get(), selected.Get(), ownedId, invalid.data(),
+                                  invalid.size(), receiveWrite, &write, &request)
+                            : mc_library_save_playlist_async(context.Get(), selected.Get(), ownedId, { nullptr, 0 },
+                                  invalid.data(), invalid.size(), receiveWrite, &write, &request);
+                        if (submitted != MC_OK || !writeMatches(MC_ERROR_INVALID_ARGUMENT) ||
+                            !contents(ownedId, { matchingId, matchingId }))
+                        {
+                            return failure(__LINE__);
+                        }
+                        host.Dispatch();
+                        db::Statement count("SELECT COUNT(*) FROM playlists", fixture);
+                        if (count.Step() != db::Row || count.ColumnInt64(0) != before ||
+                            events->count != notificationsBefore)
+                        {
+                            return failure(__LINE__);
+                        }
+                    }
+                }
+                write = {};
+                if (mc_library_append_playlist_async(context.Get(), selected.Get(), ownedId, duplicates, 2,
+                        receiveWrite, &write, &request) != MC_OK ||
+                    !writeMatches(MC_OK) || !contents(ownedId, { matchingId, matchingId, matchingId, matchingId }))
+                {
+                    return failure(__LINE__);
+                }
+                write = {};
+                if (mc_library_save_playlist_async(context.Get(), selected.Get(), ownedId, { nullptr, 0 }, duplicates,
+                        2, receiveWrite, &write, &request) != MC_OK ||
+                    !writeMatches(MC_OK) || !contents(ownedId, { matchingId, matchingId }))
+                {
+                    return failure(__LINE__);
+                }
+                struct Listed {
+                    bool done = false;
+                    bool found = false;
+                } listed;
+                const auto receiveList = [](mc_result result, const mc_playlist_entry* rows, size_t count,
+                                             const mc_error*, void* data) {
+                    auto& listed = *static_cast<Listed*>(data);
+                    if (result == MC_OK) {
+                        for (size_t i = 0; i < count; ++i) {
+                            listed.found |= rows[i].ownership == MC_PLAYLIST_SOURCE && rows[i].source_id == 0;
+                        }
+                    }
+                    listed.done = true;
+                };
+                if (mc_library_list_playlists_async(context.Get(), selected.Get(), receiveList, &listed, &request) !=
+                        MC_OK ||
+                    !await([&] {
+                        return listed.done;
+                    }) ||
+                    listed.found)
+                {
+                    return failure(__LINE__);
+                }
+                selected.SelectSources({ source });
+                if (!contents(ownedId, { matchingId, matchingId })) {
+                    return failure(__LINE__);
+                }
+                selected.SelectSources({});
+                write = {};
+                if (mc_library_delete_playlist_async(
+                        context.Get(), selected.Get(), ownedId, receiveWrite, &write, &request) != MC_OK ||
+                    !writeMatches(MC_OK))
+                {
+                    return failure(__LINE__);
+                }
+            }
+            write = {};
+            if (mc_library_delete_playlist_async(
+                    context.Get(), selected.Get(), globalId, receiveWrite, &write, &request) != MC_OK ||
+                !writeMatches(MC_OK))
+            {
+                return failure(__LINE__);
+            }
+            selected.ClearScope();
+        }
+        context.ClearLibrary();
+        return true;
+    }
+
+    /* use the same typed backend on both sides of a real socket to expose
+    serialization losses independently of catalog differences. */
     bool checkBackendParity(const char* database) {
         using namespace musik::core;
         using namespace musik::core::api;
@@ -1221,6 +1617,10 @@ namespace {
         report("remote_playlist_10000", remotePlaylistTimes);
         report("replace_queue_10000", queueTimes);
 
+        if (!checkScopeAcceptance(context, host, *local, *remote, database)) {
+            return failure(__LINE__);
+        }
+
         /* A lost catalog must clear a buffering track even without a stop event. */
         unsigned trackChanges = 0;
         const std::vector trackEvents { MC_PLAYBACK_CHANGED_TRACK };
@@ -1591,6 +1991,10 @@ namespace {
             }
             ++output.callbacks;
         };
+        remoteLibrary.SelectSources({});
+        if (mc_library_set_scope(localOrigin, &emptyScope) != MC_OK) {
+            return failure(__LINE__);
+        }
         Artwork localArtwork;
         auto localRead = std::async(std::launch::async, [&] {
             return hiddenHost.read_library_thumbnail(hiddenHost.context, localOrigin, hiddenId,

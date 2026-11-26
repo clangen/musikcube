@@ -5,6 +5,9 @@
 #include <cstdlib>
 #include <filesystem>
 #include <thread>
+#include <condition_variable>
+#include <mutex>
+#include <atomic>
 
 namespace {
     void require(bool value, const char* message) {
@@ -34,6 +37,204 @@ namespace {
         }
         require(reply.done, "completion deadline");
     }
+    /* rendezvous at the public call boundary without assuming worker timing. */
+    class Gate {
+    public:
+        void Open() {
+            std::lock_guard lock(this->mutex);
+            this->open = true;
+            this->changed.notify_all();
+        }
+
+        void Wait() {
+            std::unique_lock lock(this->mutex);
+            require(this->changed.wait_for(lock, std::chrono::seconds(3),
+                        [&] {
+                            return this->open;
+                        }),
+                "synchronization deadline");
+        }
+
+    private:
+        std::mutex mutex;
+        std::condition_variable changed;
+        bool open = false;
+    };
+
+    void selectFiles(mc_library* library) {
+        int32_t id = 0;
+        auto sources = mc_library_source_filter MC_LIBRARY_SOURCE_FILTER_DEFAULT;
+        sources.ids = &id;
+        sources.count = 1;
+        auto scope = mc_library_scope MC_LIBRARY_SCOPE_DEFAULT;
+        scope.sources = &sources;
+        require(mc_library_set_scope(library, &scope) == MC_OK, "select files");
+    }
+
+    void checkConcurrentSubmission(mc_context* context, mc_library* library) {
+        for (unsigned iteration = 0; iteration < 40; ++iteration) {
+            require(mc_library_clear_scope(library) == MC_OK, "reset racing selection");
+            Gate start;
+            Reply reply;
+            mc_result submitted = MC_ERROR_INTERNAL;
+            std::thread caller([&] {
+                start.Wait();
+                auto query = mc_track_query MC_TRACK_QUERY_DEFAULT;
+                mc_request_id request = 0;
+                submitted = mc_library_query_tracks_async(context, library, &query, completed, &reply, &request);
+            });
+            std::thread updater([&] {
+                start.Wait();
+                selectFiles(library);
+            });
+            start.Open();
+            caller.join();
+            updater.join();
+            require(submitted == MC_OK, "concurrent submission accepted");
+            wait(context, reply);
+            /* dispatch follows both calls: old membership may only be cancelled. */
+            require(reply.status == MC_ERROR_CANCELLED || (reply.status == MC_OK && reply.rows == 1),
+                "submission cannot escape concurrent invalidation");
+        }
+    }
+
+    void checkObserverLifetime(mc_library* library) {
+        require(mc_library_clear_scope(library) == MC_OK, "reset observer selection");
+        struct Observer {
+            Gate entered;
+            Gate release;
+            unsigned calls = 0;
+        } observer;
+        mc_subscription* blocked = nullptr;
+        require(mc_library_subscribe_scope(
+                    library,
+                    [](void* data, const void*) {
+                        auto& observer = *static_cast<Observer*>(data);
+                        ++observer.calls;
+                        observer.entered.Open();
+                        observer.release.Wait();
+                    },
+                    &observer, &blocked) == MC_OK,
+            "subscribe blocked observer");
+        std::thread updater([&] {
+            selectFiles(library);
+        });
+        observer.entered.Wait();
+
+        /* registration can miss an already admitted publish. subscribing before
+        the initial read still observes the committed selection. */
+        std::atomic<unsigned> newerCalls { 0 };
+        mc_subscription* newer = nullptr;
+        require(mc_library_subscribe_scope(
+                    library,
+                    [](void* data, const void*) {
+                        ++*static_cast<std::atomic<unsigned>*>(data);
+                    },
+                    &newerCalls, &newer) == MC_OK,
+            "register during update delivery");
+        mc_library_scope_snapshot* current = nullptr;
+        require(mc_library_get_scope(library, &current) == MC_OK && mc_library_scope_read(current)->sources &&
+                mc_library_scope_read(current)->sources->count == 1,
+            "subscribe then read cannot miss concurrent replacement");
+        mc_library_scope_destroy(&current);
+
+        /* reentrant removal cannot wait for callbacks on another thread.
+        borrowed callback data stays alive until that admitted callback exits. */
+        mc_event_source* unrelated = nullptr;
+        mc_subscription* remover = nullptr;
+        require(mc_event_source_create(&unrelated) == MC_OK &&
+                mc_event_source_subscribe(
+                    unrelated,
+                    [](void* data, const void*) {
+                        mc_subscription_destroy(static_cast<mc_subscription**>(data));
+                    },
+                    &blocked, &remover) == MC_OK,
+            "subscribe reentrant removal");
+        mc_event_source_publish(unrelated, nullptr);
+        require(!blocked, "reentrant removal returned while another callback is admitted");
+        observer.release.Open();
+        updater.join();
+        const auto before = newerCalls.load();
+        require(mc_library_clear_scope(library) == MC_OK && newerCalls == before + 1 && observer.calls == 1,
+            "only connected observers receive subsequent changes");
+        mc_subscription_destroy(&newer);
+        mc_subscription_destroy(&remover);
+        mc_event_source_destroy(&unrelated);
+    }
+
+    void checkInvalidationBeforeRefresh(mc_context* context, mc_library* library) {
+        require(mc_library_clear_scope(library) == MC_OK, "reset refresh selection");
+        struct Refresh {
+            mc_context* context;
+            Reply old;
+            Reply fresh;
+            bool notified = false;
+        } refresh { context, {}, {}, false };
+        auto query = mc_track_query MC_TRACK_QUERY_DEFAULT;
+        mc_request_id request = 0;
+        require(mc_library_query_tracks_async(context, library, &query, completed, &refresh.old, &request) == MC_OK,
+            "submit before refresh notification");
+        mc_subscription* observer = nullptr;
+        require(mc_library_subscribe_scope(
+                    library,
+                    [](void* data, const void* value) {
+                        auto& refresh = *static_cast<Refresh*>(data);
+                        const auto& event = *static_cast<const mc_library_scope_change*>(value);
+                        require(mc_context_dispatch(refresh.context) == MC_OK && refresh.old.done &&
+                                refresh.old.status == MC_ERROR_CANCELLED,
+                            "pending invalidation precedes refresh delivery");
+                        auto query = mc_track_query MC_TRACK_QUERY_DEFAULT;
+                        mc_request_id request = 0;
+                        require(mc_library_query_tracks_async(refresh.context, event.library, &query, completed,
+                                    &refresh.fresh, &request) == MC_OK,
+                            "reentrant refresh submission");
+                        refresh.notified = true;
+                    },
+                    &refresh, &observer) == MC_OK,
+            "subscribe refresh");
+        selectFiles(library);
+        require(refresh.notified, "committed update delivered");
+        mc_subscription_destroy(&observer);
+        wait(context, refresh.fresh);
+        require(refresh.fresh.status == MC_OK && refresh.fresh.rows == 1, "refresh sees committed selection");
+    }
+
+    void checkCreationBoundary(mc_context* context, mc_library* library) {
+        auto options = mc_playlist_create_options MC_PLAYLIST_CREATE_OPTIONS_DEFAULT;
+        options.name = { "Boundary", 8 };
+        unsigned callbacks = 0;
+        const auto completion = [](mc_result, int64_t, const mc_error*, void* data) {
+            ++*static_cast<unsigned*>(data);
+        };
+        const auto reject = [&] {
+            mc_request_id request = 99;
+            require(mc_library_create_playlist_async(context, library, &options, nullptr, 0, completion, &callbacks,
+                        &request) == MC_ERROR_INVALID_ARGUMENT &&
+                    request == 0 && callbacks == 0,
+                "reject malformed creation before backend admission");
+        };
+        options.struct_size = 0;
+        reject();
+        options.struct_size = sizeof(options);
+        options.ownership = UINT32_MAX;
+        reject();
+        options.ownership = MC_PLAYLIST_SOURCE;
+        options.source_id = -1;
+        reject();
+        options.struct_size = offsetof(mc_playlist_create_options, source_id);
+        reject();
+        options.struct_size = sizeof(options);
+        options.source_id = 0;
+        options.name = { nullptr, 8 };
+        reject();
+        options.name = { "Boundary", 8 };
+        mc_request_id request = 99;
+        require(mc_library_create_playlist_async(
+                    context, library, &options, nullptr, 0, completion, &callbacks, &request) == MC_ERROR_UNSUPPORTED &&
+                request == 0 && callbacks == 0,
+            "valid creation reaches the unsupported backend only after validation");
+    }
+
     void MC_CALL changed(void* data, const void* event) {
         ++*static_cast<int*>(data);
         auto& change = *static_cast<const mc_library_scope_change*>(event);
@@ -164,8 +365,55 @@ int main(int argc, char** argv) {
     require(mc_library_scope_read(captured)->sources->count == 2, "snapshot survives updates");
     mc_subscription_destroy(&one);
     mc_subscription_destroy(&two);
+    checkCreationBoundary(context, library);
+    checkConcurrentSubmission(context, library);
+    checkObserverLifetime(library);
+    checkInvalidationBeforeRefresh(context, library);
+    const auto otherDirectory = directory / "other";
+    std::filesystem::create_directories(otherDirectory);
+    require(
+        sqlite3_open((otherDirectory / "musik.db").string().c_str(), &database) == SQLITE_OK, "open second catalog");
+    require(sqlite3_exec(database,
+                "CREATE TABLE tracks(id INTEGER PRIMARY KEY,title TEXT,visible INTEGER,source_id INTEGER);"
+                "INSERT INTO tracks VALUES(1,'Other catalog',1,0);",
+                nullptr, nullptr, nullptr) == SQLITE_OK,
+        "seed overlapping catalog identity");
+    sqlite3_close(database);
+    const auto otherLocator = otherDirectory.string();
+    options.locator = { otherLocator.data(), otherLocator.size() };
+    mc_library* other = nullptr;
+    require(mc_library_create(&options, &other) == MC_OK, "create separate catalog");
+    Reply otherReply;
+    require(mc_library_query_tracks_async(
+                context, other, &query,
+                [](mc_result status, mc_track_page* page, const mc_error*, void* data) {
+                    const auto title = mc_track_page_get_string(page, 0, 0);
+                    require(status == MC_OK && std::string(title.data, title.length) == "Other catalog",
+                        "overlapping IDs stay in their originating catalog");
+                    completed(status, page, nullptr, data);
+                },
+                &otherReply, &request) == MC_OK,
+        "query separate catalog");
+    wait(context, otherReply);
+    mc_library_destroy(&other);
     mc_library_scope_destroy(&captured);
-    mc_context_shutdown(context);
+
+    int afterShutdown = 0;
+    mc_subscription* survivor = nullptr;
+    require(mc_library_subscribe_scope(library, changed, &afterShutdown, &survivor) == MC_OK,
+        "library observer independent of context lifetime");
+    require(mc_library_clear_scope(library) == MC_OK, "reset shutdown selection");
+    afterShutdown = 0;
+    Reply shutdown;
+    require(mc_library_query_tracks_async(context, library, &query, completed, &shutdown, &request) == MC_OK,
+        "submit before shutdown");
+    selectFiles(library);
+    afterShutdown = 0;
+    require(mc_context_shutdown(context) == MC_OK && shutdown.done && shutdown.status == MC_ERROR_CANCELLED,
+        "shutdown drains pending scoped request exactly once");
+    require(mc_library_clear_scope(library) == MC_OK, "scope remains mutable after context shutdown");
+    require(afterShutdown == 1, "context shutdown preserves library observers");
+    mc_subscription_destroy(&survivor);
     mc_context_destroy(&context);
     mc_library_destroy(&alias);
     mc_library_destroy(&library);
