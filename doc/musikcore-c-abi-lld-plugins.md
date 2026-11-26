@@ -574,7 +574,7 @@ cutover gate is complete.
   device retires only its tail. PCM tests also verify that a seek from pause
   restores the selected track's gain and that a stopped or
   failed replacement cannot bring back the previous track.
-- [ ] Run the shared `tests/support/plugins/OutputContract.h` checks for each
+- [x] Run the shared `tests/support/plugins/OutputContract.h` checks for each
   output provider using an appropriate device or deterministic fixture. Null,
   WASAPI, ALSA, DirectSound and PortAudio already use them. CoreAudio, PulseAudio
   and PipeWire are now wired into the shared checks as well. CoreAudio and
@@ -583,7 +583,11 @@ cutover gate is complete.
   on 2026-11-26 at code commit `e0e63ae38`. `plugins.sndio_output` runs the
   shared contract against the loadable sndio provider and a deterministic
   device fixture on Linux; it passed in the system build and Debug ASan/UBSan.
-  Native Windows shared-contract runs remain open.
+  Native Windows x64 Debug and Release `plugins.null_output`,
+  `plugins.wasapi_output`, and `plugins.directsound_output` passed on
+  2026-11-26 at code commit `166684488`; both device providers exercised the
+  default playback endpoint. `plugins.output_host` and
+  `plugins.directsound_ring` passed in both configurations as well.
 - [x] **OUT-004** Convert `nullout` as the first production output.
   - [x] Ship a C-only shared library with synchronous, interruptible producer pacing.
     `plugins.null_output` exercises its factory/instances and native unload;
