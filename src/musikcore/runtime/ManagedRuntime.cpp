@@ -8,6 +8,7 @@
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/audio/Visualizer.h>
 #include <musikcore/library/LibraryBackends.h>
+#include <musikcore/library/Indexer.h>
 #include <musikcore/library/RemoteLibraryBackend.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/plugin/PlaybackRemotes.h>

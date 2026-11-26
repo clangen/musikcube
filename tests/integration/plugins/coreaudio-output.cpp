@@ -2,6 +2,7 @@
 #include <musikcore/audio/Output.h>
 #include <musikcore/musikcore.hpp>
 #include "../../support/host-wakeup.h"
+#include "../../support/plugins/OutputContract.h"
 #include <fstream>
 #include <chrono>
 #include "../../support/plugins/PluginCandidates.h"
@@ -167,6 +168,15 @@ int main(int argc, char** argv) {
         return 77;
     }
     require(!nativeDefault.empty(), "default device metadata remains usable");
+
+    mc_output_options sharedOptions = MC_OUTPUT_OPTIONS_DEFAULT;
+    sharedOptions.format.sample_rate = 48000;
+    sharedOptions.format.channels = 2;
+    sharedOptions.queue_capacity_frames = 4096;
+    require(factory.Invoke([&](const mc_output_factory& api) {
+        output_contract::Check(api, nullptr, sharedOptions);
+        return MC_OK;
+    }) == MC_OK, "shared CoreAudio output contract");
 
     /* explicitly select the reported UID as well as using the default path.
     repeat construction/destruction with queued and paused audio. */

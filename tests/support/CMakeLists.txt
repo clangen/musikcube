@@ -1369,3 +1369,38 @@ add_test(NAME musikcore.integration.api.media COMMAND "${MUSIKCORE_TEST_NODE}"
   "$<TARGET_FILE:musikcore_byte_decoder>" "$<TARGET_FILE:musikcore_byte_encoder>" ${media_http})
 set_tests_properties(musikcore.integration.api.media PROPERTIES
   LABELS "integration;musikcore;media;contract" TIMEOUT 35)
+
+if(TARGET ffmpegdecoder)
+  add_library(musikcore_copied_output MODULE plugins/copied-output.cpp)
+  target_include_directories(musikcore_copied_output PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_copied_output PRIVATE cxx_std_20)
+  target_compile_definitions(musikcore_copied_output PRIVATE MC_BUILDING_PLUGIN)
+  target_link_libraries(musikcore_copied_output PRIVATE Threads::Threads)
+  musikcube_restrict_exports(musikcore_copied_output mc_plugin_get_api
+    ReadCopiedOutputState AdvanceCopiedOutputDevice WaitCopiedOutputBlocked)
+  set_target_properties(musikcore_copied_output PROPERTIES
+    CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures")
+  add_executable(musikcore_copied_output_timing_test ../integration/transport/copied-output-timing.cpp)
+  target_include_directories(musikcore_copied_output_timing_test PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_copied_output_timing_test PRIVATE cxx_std_20)
+  target_link_libraries(musikcore_copied_output_timing_test PRIVATE ${core_fixture_library} Threads::Threads ${CMAKE_DL_LIBS})
+  if(WIN32)
+    target_link_libraries(musikcore_copied_output_timing_test PRIVATE musikcube_windows)
+    add_dependencies(musikcore_copied_output_timing_test musikcube_runtime)
+  endif()
+  set_target_properties(musikcore_copied_output_timing_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+  add_dependencies(musikcore_copied_output_timing_test musikcore_copied_output ffmpegdecoder)
+  add_dependencies(musikcube_tests musikcore_copied_output_timing_test)
+  add_dependencies(musikcube_integration_tests musikcore_copied_output_timing_test)
+  foreach(mode IN ITEMS known unknown)
+    add_test(NAME musikcore.integration.transport.copied_output_${mode} COMMAND "${MUSIKCORE_TEST_NODE}"
+      "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+      "$<TARGET_FILE:musikcore_copied_output_timing_test>" --stage-minimal
+      --plugin "$<TARGET_FILE:musikcore_copied_output>" --plugin "$<TARGET_FILE:ffmpegdecoder>"
+      "$<TARGET_FILE_NAME:musikcore_copied_output>" "${mode}" @origin)
+    set_tests_properties(musikcore.integration.transport.copied_output_${mode} PROPERTIES
+      LABELS "integration;musikcore;transport;audio;contract" TIMEOUT 20)
+  endforeach()
+endif()

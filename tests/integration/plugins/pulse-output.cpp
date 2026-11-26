@@ -1,3 +1,4 @@
+#include "../../support/plugins/OutputContract.h"
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/output.h>
 #include <musikcore/plugin/services.h>
@@ -159,6 +160,7 @@ int main(int argc, char** argv) {
         close(gate[1]);
     }
     api->destroy(instance);
+    output_contract::Check(*factory, &services, options);
     plugin.shutdown(state);
     dlclose(library);
 }

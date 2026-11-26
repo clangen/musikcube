@@ -525,3 +525,5 @@ The modernization is complete when:
 - [ADR-0018: Library layers and plugin services](../docs/adr/0018-library-layers-and-plugin-services.md)
 
 - [ADR-0019: Application media ownership](../docs/adr/0019-application-media-ownership.md)
+
+- [ADR-0020: Playback position and mix points](../docs/adr/0020-playback-position-and-mix-points.md)

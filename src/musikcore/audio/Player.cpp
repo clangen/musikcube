@@ -462,7 +462,9 @@ void Player::OnBufferProcessed(Buffer *buffer) {
         std::lock_guard lock(this->mixPointMutex);
         if (this->seekToPosition.load() < 0) {
             this->currentPosition.store(position);
-            const auto audible = std::max(0.0, round(position - latency));
+            /* display rounding can move a mix point up to half a second early.
+            compare the latency-adjusted position before rounding for the UI. */
+            const auto audible = std::max(0.0, position - latency);
             auto point = this->pendingMixPoints.begin();
             while (point != this->pendingMixPoints.end()) {
                 if (audible >= point->time) {

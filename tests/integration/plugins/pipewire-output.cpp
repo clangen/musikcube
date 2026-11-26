@@ -1,3 +1,4 @@
+#include "../../support/plugins/OutputContract.h"
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/output.h>
 #include <dlfcn.h>
@@ -101,6 +102,7 @@ int main(int argc, char** argv) {
         "stop returns paused PCM once");
     require(api->queue_audio_buffer(instance, &block) == MC_ERROR_CANCELLED, "stopped output rejects audio");
     api->destroy(instance);
+    output_contract::Check(*factory, nullptr, options);
     plugin.shutdown(state);
     dlclose(library);
     close(results.event);

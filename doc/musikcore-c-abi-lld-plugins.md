@@ -54,8 +54,10 @@ calls the retired C++ `GetPlugin()` entry point.
      Output timing, native validation and ABI freeze remain tracked under
      OUT-001, SDK-LINUX/SDK-WINDOWS and phase 10.
      The former blanket contract-review task is retired; targeted malformed
-     provider coverage is recorded under SDK-013 and teardown work remains
-     under SDK-014. This does not claim an independent review of every interface.
+     provider coverage is recorded under SDK-013. Existing lifecycle tests and
+     playback benchmarks cover teardown and performance; additional tests should
+     address concrete gaps. This does not claim an independent review of every
+     interface.
 2. **Replace each family's engine path with the new loading contract.**
    The output-first staging is complete. All in-tree providers use the C plugin
    boundary; no former C++ provider path is retained. Native-platform and
@@ -507,14 +509,21 @@ cutover gate is complete.
   verifies the first samples after buffered and post-EOF fractional seeks.
   `transport.seek_tail_pcm` covers a seek accepted while the last output buffers play.
   `api.uri_player` keeps one session blocked while its peer plays and closes.
-- [ ] Before freezing output timing, distinguish when a buffer can be reused
-  from when its samples become audible. Specify a media-to-output timeline and
-  fallback for unknown device timing, including seek and crossfade overlap.
-  Exercise a backend that returns copied PCM before playback.
-- [ ] Implement device timing for output ports where reliable, and document
-  backend-specific deferrals. Timing snapshots must stay bounded, nonblocking,
-  and allocation-free; test validity flags, generation changes, pause/resume,
-  and the distinction between returned buffers and audible playback.
+- [x] Audit playback position and mix points when an output copies and returns
+  buffers before its device consumes them. Keep optional backend latency and
+  the existing unknown-timing fallback; do not require a new timeline system or
+  device-clock implementations across backends.
+  `transport.copied_output_known` uses a bounded copied-PCM queue and explicit
+  device advancement to verify that buffer reuse does not advance audible
+  position and that the mix point fires once, after its target is reached.
+  It reproduced an early mix point caused by whole-second rounding. The player
+  now compares unrounded latency-adjusted time while retaining display rounding.
+  `transport.copied_output_unknown` verifies bounded approximate progress when
+  timing is absent, including ignoring unflagged NaN values.
+  Both tests and the existing crossfade, gapless, post-EOF seek and tail-seek
+  PCM tests passed on macOS Release (2026-11-25).
+  [ADR-0020](../docs/adr/0020-playback-position-and-mix-points.md) records the
+  position and mix-point policy.
 - [x] Keep Stop reachable during a blocking write. Pause and resume give a
   paced write a short time to finish, then return `MC_ERROR_IN_FLIGHT` if the
   device is still busy. A rejected pause or resume preserves the prior state
@@ -529,10 +538,12 @@ cutover gate is complete.
   device retires only its tail. PCM tests also verify that a seek from pause
   restores the selected track's gain and that a stopped or
   failed replacement cannot bring back the previous track.
-- [ ] **OUT-003** Add debug instrumentation for forbidden real-time host calls.
 - [ ] Run the shared `tests/support/plugins/OutputContract.h` checks for each
-  output provider using an appropriate device or deterministic fixture. Null
-  and WASAPI currently run them; other backends retain their specific tests.
+  output provider using an appropriate device or deterministic fixture. Null,
+  WASAPI, ALSA, DirectSound and PortAudio already use them. CoreAudio, PulseAudio
+  and PipeWire are now wired into the shared checks as well. CoreAudio and
+  PortAudio passed on macOS in Debug/Release and Release respectively; native
+  Linux/Windows runs and sndio shared-contract coverage remain open.
 - [x] **OUT-004** Convert `nullout` as the first production output.
   - [x] Ship a C-only shared library with synchronous, interruptible producer pacing.
     `plugins.null_output` exercises its factory/instances and native unload;
@@ -569,8 +580,9 @@ cutover gate is complete.
   store was named `PipeWire IOutput`; the new provider uses `PipeWire`, so
   existing scoped preferences and pinned devices are not migrated. Both isolated
   sink tests passed on Linux; physical playback is accepted based on maintainer
-  use. Device-loss testing is tracked under OUT-DEVICE-LOSS.
-- [ ] **OUT-008** Validate the converted `portaudioout`.
+  use.
+- [x] **OUT-008** Validate the converted `portaudioout`.
+  Accepted by the maintainer on 2026-11-25 with the recorded limitations.
   The PortAudio provider now registers the C output factory and uses a bounded
   preallocated queue. `plugins.portaudio_output` runs the shared output contract
   against the default macOS device when available. `plugins.portaudio_failure`
@@ -588,7 +600,6 @@ cutover gate is complete.
   `PulseAudio`; existing plugin-scoped settings and pinned device selection are
   not automatically migrated. The PulseAudio fixture, no-wait and runtime tests
   passed on Linux; physical playback is accepted based on maintainer use.
-  Device-loss testing is tracked under OUT-DEVICE-LOSS.
   A failed open of a pinned ALSA or PulseAudio device retries the system default.
   PulseAudio pause, resume, and volume submit operations without waiting for a
   server response because the host serializes controls with stop. Immediate
@@ -597,9 +608,8 @@ cutover gate is complete.
   real server. Follow-up: revisit whether
   `pulse_blocking_stream.c` is needed; using the PulseAudio API directly may
   simplify the provider.
-- [ ] **OUT-DEVICE-LOSS** Exercise physical-device disconnection and recovery
-  for PipeWire and PulseAudio. Automated null sinks do not cover hardware loss.
-- [ ] **OUT-010** Validate the converted `sndioout`.
+- [x] **OUT-010** Validate the converted `sndioout`.
+  Accepted by the maintainer on 2026-11-25 with the recorded limitations.
   The provider is named `sndio`; settings saved under the previous
   `Sndio IOutput` name are not migrated automatically.
   An intermittent silence after switching outputs was observed with sndio and
@@ -748,7 +758,6 @@ cutover gate is complete.
   provider family. `plugins.lifecycle` rejects incomplete output, stream,
   decoder, encoder, DSP, indexer, settings, playback-remote, tag-reader,
   analyzer and visualizer factories before their callbacks run.
-- [ ] **SDK-014** Add provider-family performance and teardown tests.
 
 #### Phase 8 gate
 
