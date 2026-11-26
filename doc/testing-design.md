@@ -950,6 +950,18 @@ reference build. The runner alternates the order of the two builds and reports
 the median and range of paired changes. Comparing a build with itself first
 shows how much the metric moves under the same workload.
 
+Run `node tests/scripts/benchmark-indexer.js <build-dir> --baseline <file>`
+to compare incremental indexing against a saved baseline. It creates batches
+of 5,000 WAV files with distinct comments, uses an isolated catalog and the
+production indexer, and records each scan under `<build-dir>/indexer-benchmark`.
+Each timing includes a three-second idle wait and rechecks the existing files.
+Save a baseline locally and compare on the same machine, accounting for
+filesystem cache and background load.
+Use `--workload gme` for 1,000 synthetic NSF containers with 16 tracks each
+per batch, or `--workload openmpt` for 2,500 two-subsong MOD containers per
+batch. These workloads isolate the respective source and can be compared with
+separately captured baselines.
+
 ```sh
 node tests/ui/scenarios/playlists.js --build-dir build/test --bin-dir build/test/bin
 node tests/ui/scenarios/standalone.js --build-dir build/test --bin-dir build/test/bin --tracks 1000 --windows

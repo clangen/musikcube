@@ -28,6 +28,23 @@ if(NOT BUILD_TESTING)
   return()
 endif()
 
+add_executable(musikcube_indexer_benchmark indexer-benchmark.cpp)
+target_compile_features(musikcube_indexer_benchmark PRIVATE cxx_std_20)
+target_link_libraries(musikcube_indexer_benchmark PRIVATE musikcore Threads::Threads)
+add_dependencies(musikcube_tests musikcube_indexer_benchmark)
+file(GENERATE OUTPUT "${PROJECT_BINARY_DIR}/indexer-benchmark-$<CONFIG>.txt"
+  CONTENT "$<TARGET_FILE:musikcube_indexer_benchmark>")
+if(WIN32)
+  target_link_libraries(musikcube_indexer_benchmark PRIVATE musikcube_windows)
+  add_dependencies(musikcube_indexer_benchmark musikcube_runtime)
+else()
+  foreach(provider IN ITEMS taglibreader gmedecoder openmptdecoder libopenmptdecoder)
+    if(TARGET ${provider})
+      add_dependencies(musikcube_indexer_benchmark ${provider})
+    endif()
+  endforeach()
+endif()
+
 if(BUILD_TESTING)
 
   if(WIN32)
