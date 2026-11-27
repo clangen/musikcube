@@ -6,7 +6,7 @@ The sections below describe the target design, including future surfaces. The
 implemented experimental contract and foundation gate are recorded in the
 [low-level plan](musikcore-c-abi-lld.md#current-experimental-core-contracts).
 The [high-level plan](musikcore-c-abi-hld.md) owns delivery sequencing and links
-the architectural decision records in `docs/adr/`. These distinguish supported
+the architectural decision records in `doc/adr/`. These distinguish supported
 operations from proposals. The core foundation gate takes precedence over the
 original sequence: finish and stabilize the core application C API before
 beginning plugin/provider ABI work. Legacy `mcsdk_*` declarations are already
@@ -368,10 +368,11 @@ Initialize `mc_context_options options = MC_CONTEXT_OPTIONS_DEFAULT;`, then over
 fields. Null options and omitted sized fields use defaults. A zero requested
 ABI version selects the current version; explicit requests must match the
 current major and specify a minor no newer than the library's. Plugin directory
-storage is copied during creation; discovery fixes that directory for the process.
-An omitted directory reuses that selection on later contexts; the first discovery
-uses the host default if no directory is supplied.
-[`context.h`](../include/musikcore/context.h) defines the complete options layout.
+storage is copied during creation. The first validated directory selection is
+retained across sessions; omitted directories reuse it, and changing it within
+the process is rejected. Provider images still unload at session shutdown;
+persisted directory selection does not extend their lifetime.
+[`context.h`](../../include/musikcore/context.h) defines the complete options layout.
 
 The context owns all engine services by default. Set `options.services` to the
 services the host needs; prerequisite expansion is automatic and acyclic:
@@ -400,12 +401,12 @@ If an upgrade requires reindexing, the catalog records that requirement durably;
 a later context with Indexer enabled resumes the scan automatically. This does
 not enable Indexer implicitly in a library-only or playback-only context.
 Plugins alone initialize discovery and the generic provider environment (paths,
-buffers, codecs, diagnostics). Legacy metadata/indexer bindings require Library,
+buffers, codecs, diagnostics). Metadata/indexer bindings require Library,
 and playback remotes require Playback. They do not implicitly start
 missing host services. Service selection controls context-owned startup; it does
-not disable existing process-wide configuration/discovery functions or unload
-previously discovered modules. Explicit caller-owned remote sessions remain independent
-of the configured catalog service.
+not unload individual plugins during an active session. Provider modules retire
+only after their session has quiesced. Explicit caller-owned remote sessions
+remain independent of the configured catalog service.
 
 `MC_CONTEXT_START_LOCAL` starts with the local catalog without changing the
 saved selection or connecting the configured remote. Selecting Remote or
@@ -443,13 +444,29 @@ second create returns `MC_ERROR_BUSY` until successful destruction releases it.
 The ABI-only test library supports `MC_SERVICE_NONE`; engine requests there return
 `MC_ERROR_UNSUPPORTED` rather than silently degrading.
 
+Startup restores local playback preferences and the saved queue before exposing
+the context, so a later dispatch cannot overwrite newly submitted commands.
+Remote restoration is asynchronous because its transport requires host dispatch.
+Provider caches retire after their users stop, including when visualizers acquired
+providers without catalog Playback. Concurrent factory use retains a synchronized
+cache snapshot. Shutdown drains callbacks and joins workers before provider
+cleanup and native unload; a failed provider cleanup cannot be treated as a
+recoverable status permitting unload. Recoverable runtime errors may be reported
+only when ownership and quiescence remain valid.
+
+Migration-required indexing is catalog state, not a process-local startup flag.
+Schema upgrades record the requirement transactionally even without Indexer.
+A later indexing session resumes after service bindings and subscriptions are
+ready. Completion retires the marker with its scan transaction, so failed writes,
+shutdown, or a later process cannot lose required indexing.
+
 Working C and header-only C++ examples:
 
-- [`core-engine.c`](../examples/core-engine.c) and
-  [`core-engine.cpp`](../examples/core-engine.cpp): context-owned startup and shutdown.
-- [`core-query.c`](../examples/core-query.c) and
-  [`core-query.cpp`](../examples/core-query.cpp): no engine, explicitly opened catalog.
-- [`core-remote.c`](../examples/core-remote.c): no engine, caller-owned remote session.
+- [`core-engine.c`](../../examples/core-engine.c) and
+  [`core-engine.cpp`](../../examples/core-engine.cpp): context-owned startup and shutdown.
+- [`core-query.c`](../../examples/core-query.c) and
+  [`core-query.cpp`](../../examples/core-query.cpp): no engine, explicitly opened catalog.
+- [`core-remote.c`](../../examples/core-remote.c): no engine, caller-owned remote session.
 
 ### Explicit URI players
 
@@ -480,17 +497,14 @@ callback state must remain alive through removal or shutdown. Preferences and
 provider discovery remain process-wide; distinct players do not promise mixing
 or isolated hardware clocks.
 
-The current C++ plugin SDK requires `IDataStreamFactory::Create()` and
-`IEnvironment::CreateDataStream(uri)` to return owned, unopened streams without
-blocking I/O. The caller retains/publishes the resource before calling `Open`,
-so shutdown can call `Interrupt` during startup. Stream implementations must
-handle interruption before and during `Open`, and release safely without opening.
-SDK 23 replaces the old factory `Open` and environment `GetDataStream` contracts;
-plugins built against SDK 22 must be rebuilt. There is no optional creation export
-or compatibility fallback. The experimental public C ABI version is unchanged.
+Stream factories create owned, unopened resources without blocking I/O. The
+caller publishes the resource before opening it so interruption can reach startup,
+including nested provider streams. Interruption latches before or during open;
+cleanup must also support an instance that never opened. These contracts apply
+through the C plugin SDK; legacy C++ SDK migration is recorded in the LLD.
 
-[`core-player.c`](../examples/core-player.c) and
-[`core-player.cpp`](../examples/core-player.cpp) demonstrate an event-driven host.
+[`core-player.c`](../../examples/core-player.c) and
+[`core-player.cpp`](../../examples/core-player.cpp) demonstrate an event-driven host.
 Build the normal example targets `musikcore_example_player_c` or
 `musikcore_example_player_cpp`, then run `<example> <URI> [plugin-directory]`.
 The installed-SDK test also compiles and runs both examples after relocation.
@@ -511,9 +525,9 @@ MC_API mc_result MC_CALL mc_context_dispatch(mc_context *context);
 MC_API mc_result MC_CALL mc_context_shutdown(mc_context *context);
 ```
 
-`mc_context_dispatch` never waits for work to become ready. The first dispatch
-or notification poll establishes the dispatcher thread. Dispatch invokes ready
-completion callbacks inline. Worker threads enqueue results.
+`mc_context_dispatch` never waits for work to become ready. Engine creation binds
+the dispatcher thread; with no services, first dispatch or shutdown binds it.
+Dispatch invokes ready completion callbacks inline. Worker threads enqueue results.
 Callbacks run outside internal locks and may submit or cancel requests.
 Nested dispatch returns `MC_ERROR_BUSY`; dispatch from another thread returns
 `MC_ERROR_WRONG_THREAD`. Shutdown and
@@ -666,6 +680,43 @@ Standard metadata names remain UTF-8 strings so plugins and future versions can
 add fields without extending an ABI enum. Wrappers may provide enums or typed
 constants for common fields.
 
+#### Library scope and source-owned playlists
+
+Scope is attached to the library instance; aliases share it and independent
+instances do not. Filtered requests copy immutable scope at submission. Effective
+changes cancel pending requests immediately, without waiting for a remote reply,
+and discard pending transport work so it does not occupy a slot until timeout.
+Equivalent source sets ignore ordering and duplicates and publish no change.
+Completion admission and replacement are ordered together; an admitted completion
+may finish after a change, but user callbacks never run under the admission lock.
+Delivered results and their derived reads retain original scope and membership.
+
+A null source filter is unrestricted and includes newly discovered sources.
+A present empty filter matches no scope-filtered tracks and lists only global
+playlists. The C scope applies every non-null typed filter; absent sized fields
+default to null. Unknown larger scope/filter layouts are rejected so unsupported
+filters cannot silently disappear. Wire scope objects use null-versus-array
+semantics and reject unknown filter keys. Internal typed queries own a shared
+read-only scope value, independent of the public header-only C++ wrapper.
+
+Playlist discovery includes all playlists when unrestricted, and global plus
+selected-source playlists otherwise. Contents and paging never filter saved
+entries: order and duplicates survive selection changes. Creation explicitly
+specifies global or single-source ownership. Replacement and append preserve it
+and validate an entire batch before writes. Source-owned playlists reject every
+track whose source ID differs from the owner. Ownership does not imply a
+provider-managed or read-only playlist.
+
+Persist ownership as nullable `playlists.source_id`: NULL is global, zero is
+ordinary files. Existing playlists migrate to global. Database constraints guard
+entry inserts, updates, and ownership changes; public C and WebSocket operations
+report invalid input without partial mutation. Discovery requests follow scope
+invalidation; playlist-content operations preserve the saved contents.
+
+Consumers have no raw database or SQL extension, including a separately unstable
+one. They use typed local/remote operations as established in
+[ADR-0003](../adr/0003-origin-bound-results-and-paged-metadata.md).
+
 ### Track lists and UI cache windows
 
 Persistent track lists represent ordered track identities. Metadata loading is
@@ -704,6 +755,34 @@ event for every timer tick.
 
 A playback snapshot groups related fields so wrappers do not observe a state,
 track, duration, and queue index from different transitions.
+
+#### Remote metadata and playback controls
+
+Initial remote playback and next-track preparation fetch metadata asynchronously.
+Getters read cached metadata and never wait for remote I/O. A successful play
+submission may precede stream startup; observe playback events rather than
+assuming audio started on return. Metadata and stream buffering are separate,
+so responsiveness does not guarantee gapless progress on a slow server.
+
+The native track list fetches metadata into its existing cache through
+`TrackList::GetAsync()`. Each list owns one pending lookup. Replacement,
+cancellation, cache clearing, or destruction suppresses late delivery and cache
+updates. Playback cancels on Stop, replacement selection, library change,
+disconnect, or shutdown. It checks queue revision, track ID, and originating
+session before acting. The default `PlaybackTrackQueryTimeoutMs` is 30 seconds;
+a delayed owner-queue message retires the continuation without blocking audio.
+A late successful preparation can start a successor after a short track ends.
+
+During a crossfade, the selected track determines whether Pause or Resume
+succeeded. If its device refuses, the outgoing audio keeps its prior state.
+Once it accepts, an outgoing device that cannot follow is stopped. Losing a
+short fade tail on a device error is preferable to rolling back a successful
+command on the track the listener selected.
+
+Volume changes keep only the latest requested gain. If the device is busy,
+the caller returns immediately and a later write applies that gain. This lets
+manual controls and fade ticks share one output operation. The crossfader
+stops the outgoing track if it cannot confirm silence at the end of a fade.
 
 ### Indexer
 
@@ -744,37 +823,47 @@ immutable snapshot owned by the preference result.
 
 ### Advanced audio API
 
-The public API may expose data streams, decoders, encoders, audio outputs, and
-buffers for advanced consumers. These types use the same formats as the plugin
-SDK but remain opaque application handles.
+Applications use opaque `mc_media_stream`, `mc_media_decoder`, `mc_media_encoder`,
+and `mc_media_pcm` handles. They are context-owned session children with public C
+operations and header-only C++ owners; plugin service tables and plugin PCM types
+remain separate. They require Plugins, not Library or catalog Playback. See
+[ADR-0006](../adr/0006-explicit-uri-player-resources.md) for the ownership rationale.
 
-PCM transfer must be frame-oriented and zero-copy:
+Stream creation selects a provider without blocking I/O on the context owner.
+Opening is a separate worker operation so the caller can publish the handle before
+blocking and cancel it from a controller. Decoder/encoder creation consumes an
+opened stream only on success; separate codec open permits the same interruption
+sequence. Always destroy the codec before its stream. Factories do not probe by
+performing I/O, and a claiming provider's failure is returned rather than trying
+another decoder on potentially consumed input.
 
-```c
-typedef struct mc_audio_format {
-    uint32_t struct_size;
-    uint32_t sample_rate;
-    uint32_t channels;
-    uint32_t channel_layout;
-} mc_audio_format;
+Serialize ordinary operations on each resource; concurrent attempts return BUSY.
+Interruption can race an operation and latches cancellation. Decoders interrupt
+both codec and input. Encoders interrupt output I/O; CPU work must finish before
+cleanup because the encoder SDK has no interrupt callback. Destroy and ownership
+transfer require synchronization with callers using the same handle. Blocking
+operations belong off event and real-time audio threads.
 
-typedef struct mc_audio_buffer_view {
-    uint32_t struct_size;
-    float *data;
-    size_t frame_count;
-    size_t frame_capacity;
-    mc_audio_format format;
-} mc_audio_buffer_view;
-```
+A context media session retains ownership-chain roots and admits calls. Shutdown
+closes admission, interrupts roots, waits for admitted calls, and destroys codecs
+before streams and provider unload. Replacing a stream root with a codec root is
+atomic with shutdown. Retained handles own stopped state and return NOT_FOUND
+without touching provider tables. Each decoded PCM block owns copied interleaved
+float samples; its views remain valid until block destruction, including across
+later reads or context shutdown. Stream metadata strings similarly live with the
+application handle. Playback and plugin scratch retain their separate borrowed
+buffer contracts; application PCM does not promise zero-copy transfer.
 
-`begin_write` grants exclusive writable access and keeps the buffer's storage
-stable until `end_write`. The API must distinguish frame count from
-samples-per-channel and byte capacity.
+Streaming encoders write returned blocks to their owned output and account for
+partial writes; file encoders receive that output directly. Explicit finish flushes,
+finalizes, destroys the codec, and closes output, reporting the first failure.
+Finish caches its result and never implicitly retries a failed write. Destruction
+without finish aborts without flushing/finalization. Expected I/O failures are
+ordinary results; provider exceptions crossing C or escaped native cleanup violate
+the ownership contract and terminate the process.
 
-Raw database connections and statements should not be part of the initial
-stable surface. They expose implementation details and create a long-term ABI
-commitment. If retained, they belong in an explicitly advanced module with
-separate stability guarantees.
+Raw database connections and arbitrary SQL are excluded, including a separately
+unstable advanced module. New storage needs require typed library operations.
 
 ### Public C++ wrapper
 
@@ -904,7 +993,9 @@ then invokes plugin cleanup and unloads each DLL on its owner thread without
 waiting for handles or calls. Individual plugin unloading during a session is
 not supported. Lifecycle reentry into the same active session is fatal before
 mutation or unload; wrong-thread lifecycle calls return an error without
-changing state. Typed factory invocation detects owner-thread reentry and
+changing state. Destruction cannot return that status: destroying a registry or
+plugin on the wrong thread or during an active provider call is a fatal ownership
+violation before cleanup or unload. Typed factory invocation detects owner-thread reentry and
 propagates host callback exceptions; it does not schedule, serialize, count
 workers, or extend calls beyond the engine session. Actual plugin entry/initialization
 exceptions become contextual plugin errors. Throwing shutdown is fatal before
@@ -943,7 +1034,7 @@ before further fallible work. Shutdown receives that context (possibly null).
 This allows provider-owned allocation without an entry-time allocation or a
 mutable global host pointer. Failed registrations are never published. Shutdown must join provider workers before
 returning, because the host context and native image may then be released.
-See [ADR-0008](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md).
+See [ADR-0007](../adr/0007-c-provider-bootstrap-and-unload-lifetime.md).
 
 A sidecar manifest may be added for discovery without executing plugin code.
 The entry point remains authoritative for ABI validation.
@@ -951,7 +1042,7 @@ The entry point remains authoritative for ABI validation.
 ### Host API
 
 The bootstrap host table in
-[`plugin.h`](../include/musikcore/plugin.h) exposes logging, host-owned error
+[`plugin.h`](../../include/musikcore/plugin.h) exposes logging, host-owned error
 creation/destruction, and capability registration. It contains a byte size,
 provider ABI version, and opaque host context passed to every callback.
 Providers use these function pointers without linking private core targets or
@@ -1166,8 +1257,9 @@ return host-created `mc_error` details on non-real-time calls. Real-time calls
 return status only and may not allocate an error, log, block, or invoke arbitrary
 application callbacks. UTF-8 views expire at return unless a longer lifetime is
 explicitly stated. Counts use bytes or frames as named; seconds are finite
-`double`, rates are Hz, bitrates are bits/second, and modification timestamps
-are signed Unix nanoseconds with an explicit presence flag.
+`double`, rates are Hz, and bitrates are bits/second. Source modification times
+are signed values in the source's own units and epoch, with an explicit presence
+flag; negative values are distinct from an absent timestamp.
 
 All PCM crossing these audio interfaces is interleaved native-endian float32.
 There is no sample-encoding selector or per-block encoding check. Writable
@@ -1196,7 +1288,7 @@ than allocating. Rebuilding a pool requires quiescing output and reclaiming all
 outstanding slices first. Decoder scratch reuse is measured by PERF-002.
 
 The canonical cancellation token, read-only PCM view, media hint, and buffer
-host declarations are in [plugin/audio.h](../include/musikcore/plugin/audio.h),
+host declarations are in [plugin/audio.h](../../include/musikcore/plugin/audio.h),
 including field documentation and default initializers. `mc_audio_scratch_buffer` stays
 opaque; only the core stores its format, capacity, and populated frame count.
 Changing a returned view cannot change that bookkeeping.
@@ -1229,11 +1321,11 @@ interrupt operation that actually wakes a blocked read.
 #### Streams and decoders
 
 The SDK defines the byte-stream operations and factory in
-[plugin/stream.h](../include/musikcore/plugin/stream.h) and the decoder operations
-and factory in [plugin/decoder.h](../include/musikcore/plugin/decoder.h).
+[plugin/stream.h](../../include/musikcore/plugin/stream.h) and the decoder operations
+and factory in [plugin/decoder.h](../../include/musikcore/plugin/decoder.h).
 An opened stream supplies the MIME type or normalized filename extension when known.
 A decoder receives the host's scratch operations through
-[plugin/services.h](../include/musikcore/plugin/services.h).
+[plugin/services.h](../../include/musikcore/plugin/services.h).
 The host keeps the stream alive until the decoder is destroyed.
 
 The open flags distinguish read, write, create, truncate, and append. No seek is attempted when unsupported. Reads may
@@ -1313,7 +1405,7 @@ the protocol/configuration edge rather than changing their wire units silently.
 
 The canonical output instance, callbacks, options, audio buffer, timing, device,
 and factory tables are in
-[plugin/output.h](../include/musikcore/plugin/output.h). They include explicit
+[plugin/output.h](../../include/musikcore/plugin/output.h). They include explicit
 `MC_OUTPUT_TIMING_*` validity bits and default initializers.
 
 Audio-buffer acceptance is all-or-nothing. `MC_OK` transfers use of the PCM until exactly one
@@ -1357,7 +1449,7 @@ unknown. There is no separate built-in null backend. Missing outputs leave
 startup/query/idle usable while playback reports unavailable.
 
 C++ output authors may include
-[plugin/output.hpp](../include/musikcore/plugin/output.hpp) and call
+[plugin/output.hpp](../../include/musikcore/plugin/output.hpp) and call
 `musik::core::plugin::RegisterOutput<T>(host)` during initialization. This optional
 header-only adapter generates the immutable C factory/vtable, construction,
 destruction, pointer conversion, and exception mapping.
@@ -1378,6 +1470,14 @@ left null. Optional const/noexcept GetTiming reports unknown when absent.
 Only mc_plugin_get_api is exported; the ABI remains C regardless of implementation
 language. Add other family helpers as their C contracts and implementations exist.
 
+Output-buffer completion permits storage reuse; it is not an audible device
+position. Combine only finite, nonnegative latency values with validity flags.
+Without valid timing, progress and mix points are approximate. Compare mix points
+with unrounded latency-adjusted buffer position, while preserving whole-second
+rounding for the displayed position. Worker-side buffer processing determines
+notification resolution. No media-to-device timeline or device-clock guarantee
+is implied; implementing one requires a concrete need beyond fixing rounding.
+
 #### DSP, metadata writers, tag readers, and analyzers
 
 The implemented DSP and analyzer contracts are in `plugin/dsp.h` and
@@ -1386,9 +1486,20 @@ receive settings reload notifications. Analyzers receive call-scoped PCM and
 metadata writers on the indexer worker. The current metadata store uses 1.0
 as the unset replay-gain sentinel and does not preserve empty text values.
 
-Analyzer changes are saved per track only when every participating analyzer
-succeeds, as recorded in ADR-0011. Indexer cancellation waits for the current
-analyzer call to return.
+Analyzer metadata is saved for a track only when every participating analyzer
+succeeds. Failure or cancellation discards all analyzer changes for that track;
+other tracks continue unless indexing was cancelled. If an enabled analyzer
+cannot be created, skip analysis for the scan and report the failure. A factory
+reporting success without an instance violates its contract. Cancellation waits
+for the current analyzer call to return and for an already-started track save;
+it prevents later analyzer saves. All-or-nothing
+results avoid isolating or selectively rolling back analyzers that share one
+mutable track, at the cost of recomputing successful analysis after another fails.
+
+If in-place DSP processing fails, discard that buffer and stop playback with the
+plugin error. Audio already accepted follows the normal playback failure path.
+Partially modified samples cannot be played safely; maintaining backup buffers
+solely to recover from plugin failure would add copies to every successful call.
 
 Tag readers still need a C contract and can reuse the metadata writer as their
 real requirements are established.
@@ -1396,7 +1507,7 @@ real requirements are established.
 #### Indexer sources and source-scoped writes
 
 The source, writer, metadata-record, and rescan contracts are declared in
-[`indexer.h`](../include/musikcore/plugin/indexer.h). A source instance remains
+[`indexer.h`](../../include/musikcore/plugin/indexer.h). A source instance remains
 alive for the indexer session and resets its cancellation state before each scan.
 Paths and writers are valid only for their calls; writes are serialized on the
 scan worker. Writer operations cannot address another source or arbitrary SQL.
@@ -1414,6 +1525,31 @@ units, avoiding a separate lookup for each track. This changes the experimental
 indexer callback signature, so existing indexer plugins must rebuild. A
 source-scoped host operation requests a later rescan without exposing a C++
 object across the boundary.
+
+Source discovery combines loaded provider descriptions and catalog references
+without a sources table. Loaded sources appear even when empty. Referenced IDs
+remain selectable when their provider is absent, with `Source N` fallback labels;
+unreferenced absent sources and historical display names are not persisted.
+Provider display names are nonempty UTF-8 copied by the host before publication
+and independent of stable source keys or decoder metadata. Labels are presentation
+data, not architectural identifiers; the current built-in file label is
+"Music files". Descriptions remain immutable library data and do not borrow the
+indexer during shutdown.
+
+Built-in GME/OpenMPT identity migration uses virtual URI prefixes to rewrite track
+and playlist IDs. Unknown legacy IDs have no universal migration guarantee.
+Modification times keep the source's units and epoch; a missing value is distinct
+from a negative timestamp. A source's scoped rescan callback cannot schedule other
+sources. Stop its worker and destroy its instance before provider unload.
+
+Checkpointing ends the transaction and releases the write lock; the next mutation
+begins a fresh batch. Built-in sources checkpoint between completed files using
+an elapsed interval or record bound. One slow file can exceed the interval.
+Validation releases each reader before provider filesystem checks, passes stored
+modification time to avoid another lookup, and checkpoints writes between entries.
+Catalog connections use private SQLite caches, letting the busy handler wait on
+competing writers rather than shared-cache table locks. Do not introduce an
+application lock spanning plugin or network reads.
 
 #### Visualizers and playback remotes
 
@@ -1540,6 +1676,29 @@ typedef struct mc_playback_remote_factory {
 
 ```
 
+Playback remotes submit bounded commands to the owner dispatcher. Rejection
+produces no callback; accepted commands keep completion state until delivery even
+if their client disconnects. Disconnect discards a response rather than retracting
+a command already accepted. A user may therefore hear its effect after the
+controlling connection disappears. This plugin-command policy is separate from
+application request cancellation.
+
+Shutdown rejects new commands and cancels queued ones before joining remote
+workers and unloading code. A remote may acquire an owned playback handle through
+the same bounded dispatch, releasing it afterward; cancelled acquisition yields
+no handle. Completion runs on the owner and can race the submitting worker.
+Callbacks must not wait on another owner completion. Keep network threads free
+while commands execute, and correlate responses that can arrive out of order.
+Owned clients wait for queue snapshot creation before using it. Asynchronous
+metadata preparation does not relax this nonblocking network-thread rule.
+
+If one remote fails startup, stop and join that remote independently while leaving
+healthy remotes running. It must detach external callbacks and wake its workers
+without depending on another remote stopping. Workers waiting on its accepted
+host commands can finish because shutdown cancels those before joining. Per-client
+execution cancellation would require additional identities and coordination with
+disconnect/execution races; the accepted-command policy avoids that machinery.
+
 #### Scoped services and configuration
 
 Host-provided per-instance tables use `mc_plugin_library_service`,
@@ -1548,9 +1707,15 @@ Host-provided per-instance tables use `mc_plugin_library_service`,
 `mc_plugin_audio_scratch_service`. The service bundle exposes `playback` and
 `indexer`; bootstrap logging/registration remains `mc_host_api`. General scans
 use `indexer.schedule_async`; source plugins receive only their own
-`indexer.request_rescan` callback. See
-[ADR-0018](../docs/adr/0018-library-layers-and-plugin-services.md) for ownership,
-source/layout compatibility and the experimental SDK rebuild requirement.
+`indexer.request_rescan` callback. Application wrappers and plugin services are
+separate ownership boundaries. The existing private C++ adapter owners are
+`PluginLibraryService` and `PluginMediaService`; there is no C++ class solely to
+mirror every C table. Bootstrap remains `mc_host_api`, while capability IDs and
+provider factory names identify provider roles. General scheduling is absent for
+source-only services and uses the same owner-command queue, completion, and
+shutdown cancellation when granted to playback remotes. Experimental SDK renames
+and layout changes require rebuilding plugins, without compatibility aliases;
+the LLD records the migration.
 
 The instance service bundle holds pointers to narrow, sized, typed tables. It
 is immutable and valid until that instance is destroyed; absent optional tables
@@ -1561,9 +1726,9 @@ remain inside the engine session. Core owns and destroys peer-provider objects
 before registry shutdown; these objects do not carry per-plugin lifetime leases.
 
 The implemented service bundle, media operations, and plugin preferences are
-defined in [services.h](../include/musikcore/plugin/services.h),
-[media.h](../include/musikcore/plugin/media.h), and
-[settings.h](../include/musikcore/plugin/settings.h). A worker creates a stream
+defined in [services.h](../../include/musikcore/plugin/services.h),
+[media.h](../../include/musikcore/plugin/media.h), and
+[settings.h](../../include/musikcore/plugin/settings.h). A worker creates a stream
 from a URI, opens it, then selects its decoder from the opened stream's metadata.
 Both playback and server transcoding follow this sequence. The server passes
 the decoded PCM view to the encoder before reading another block.

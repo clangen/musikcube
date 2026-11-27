@@ -14,6 +14,13 @@
 - C++ plugins in this repository may use the public header-only C++ RAII and convenience wrappers when they simplify ownership or calls; plugin ABI boundaries remain C.
 - Surface problems with existing SDK APIs to the maintainer immediately, with the proposed contract change and compatibility impact. Do not add workarounds, adapters, or legacy compatibility by default; let the maintainer audit and decide those tradeoffs. During explicitly autonomous work, resolve necessary SDK issues within the authorized scope, then report every such decision at completion and wait for maintainer acknowledgment before proceeding beyond that work.
 
+## Documentation
+
+- Keep repository documentation under `doc/`: design documents and implementation
+  plans in `doc/design/`, architectural decision records in `doc/adr/`, and build
+  guides, migration history, and other documentation in the `doc/` root. Update
+  links and references when moving documents.
+
 ## Formatting
 
 - Always brace control-flow bodies, including single-statement branches and loops.
@@ -53,10 +60,10 @@
 - For a reproducible bug, write a regression test at the smallest reliable seam before fixing it. Confirm it fails for the expected reason on the unfixed code, then apply the fix and rerun it to confirm it passes. Use synchronization gates and bounded deadlines for concurrency regressions.
 - For transient UI regressions, identify which region changes and compare the same interaction with a known-good build and another frontend when practical. Inspect intermediate frames and data requests during the interaction. Keep already loaded content visible while resizing or relaying out a view, retain cached rows across geometry-only changes, and fetch missing rows without clearing the overlap. Assert that existing content stays visible during the interaction as well as after it settles.
 - Keep tests top-level under `tests/unit/`, `tests/integration/`, and `tests/ui/`. Group unit tests by owning project and native helpers under `tests/support/`. Each CTest entry gets exactly one level label (`unit`, `integration`, or `ui`), plus owner/subsystem labels; `contract` is an additional guarantee label.
-- Keep test orchestration, fixture generation, build checks, and benchmarks in `tests/scripts/`; TUI scenarios in `tests/ui/scenarios/` and reusable drivers in `tests/ui/support/`. Keep test binaries and fixtures in shared, gitignored build-output directories. Follow [the testing design](doc/testing-design.md).
+- Keep test orchestration, fixture generation, build checks, and benchmarks in `tests/scripts/`; TUI scenarios in `tests/ui/scenarios/` and reusable drivers in `tests/ui/support/`. Keep test binaries and fixtures in shared, gitignored build-output directories. Follow [the testing design](doc/design/testing-design.md).
 - Run independent objective reviews only when the maintainer requests one or agrees after it is suggested. For a major C/C++ refactor, suggest one at a natural checkpoint without blocking other authorized work. Require concrete pros/cons, before-and-after examples, meaningful measurements where available, and remaining risks/verification gaps. Challenge incidental or accidental complexity explicitly, especially new nested bookkeeping objects collected in containers, their checks, and associated locks: trace it to its root cause, assess the system as a whole, and propose simpler designs and their tradeoffs instead of accumulating local fixes. Pair substantive criticisms with practical improvements and tradeoffs; a verdict alone is insufficient.
 - When an unusual failure would require substantial recovery machinery, bring the user a simpler safe policy and its observable tradeoff before implementing it. Record agreed architectural tradeoffs in the relevant ADR and test the promised behavior. Review against that decision and reopen it when new evidence changes the tradeoff.
-- Capture meaningful architectural decisions when completing backlog sections as individual numbered Markdown ADRs under `docs/adr/`, linked from the relevant design. Include status, context, alternatives, rationale, and architectural consequences. Keep each decision cohesive and avoid duplication. Put tasks, progress, transitional implementation routes, temporary workarounds, build/artifact wiring, and validation exceptions in the LLD. Update accepted ADRs when decisions change, not whenever implementation advances.
+- Capture meaningful architectural decisions when completing backlog sections as individual numbered Markdown ADRs under `doc/adr/`, linked from the relevant design. Include status, context, alternatives, rationale, and architectural consequences. Keep each decision cohesive and avoid duplication. Put tasks, progress, transitional implementation routes, temporary workarounds, build/artifact wiring, and validation exceptions in the LLD. Update accepted ADRs when decisions change, not whenever implementation advances.
 
 ## Build scripts
 
@@ -69,7 +76,7 @@
 
 ## musikcore C ABI
 
-- Follow [the C ABI design](doc/musikcore-c-abi-design.md), [the HLD](doc/musikcore-c-abi-hld.md), and [the LLD/task checklist and foundation gate](doc/musikcore-c-abi-lld.md). ADRs linked from the HLD record architectural decisions.
+- Follow [the C ABI design](doc/design/musikcore-c-abi-design.md), [the HLD](doc/design/musikcore-c-abi-hld.md), and [the LLD/task checklist and foundation gate](doc/design/musikcore-c-abi-lld.md). ADRs linked from the HLD record architectural decisions.
 - Complete the foundation gate before adding feature families, migrating more app functionality, or beginning provider work. Core API/app work may follow a scoped maintainer-approved exception recorded in the LLD; deferred checks stay open. Provider work follows the core-first sequence in the HLD/LLD.
 - Keep the application API and plugin SDK separate, with explicit boundary ownership and lifetime.
 - Group public C declarations into independently compilable subsystem headers, included by `musikcore.h`.

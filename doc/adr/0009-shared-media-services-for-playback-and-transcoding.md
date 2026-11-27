@@ -1,6 +1,6 @@
-# ADR-0010 — Shared media services for playback and transcoding
+# ADR-0009: share media services across playback and transcoding
 
-**Status** Accepted
+Status: accepted
 
 ## Context
 
@@ -29,7 +29,7 @@ Playback copies the frames into its fixed output buffers, whose lifetime
 extends through device completion. Each consumer owns the storage it needs
 beyond the next decode.
 
-## Alternatives and consequences
+## Alternatives considered
 
 Keeping the old decoder interface behind an adapter would require translating
 EOF, cancellation and ownership at every server call. Implementing separate
@@ -38,7 +38,12 @@ track support depend on which component opened the file. Using the same media
 service gives all three callers the same behavior when a provider is missing,
 the input ends, or a read fails.
 
+## Consequences
+
 Changing the server's input contract also changes what its encoders consume.
 An encoder receives frames and a format, and a file-writing encoder receives a
 writable stream. Encoder discovery and compression algorithms can evolve
 independently of that handoff.
+
+The [media and playback design](../design/musikcore-c-abi-design.md) owns the
+operation contracts and implementation details.

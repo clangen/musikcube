@@ -27,7 +27,7 @@ such, and application media API work continues in the plugin LLD.
   in the current scope and is not implemented by the current headers.
 - [x] **DEC-005** Version the application and plugin ABIs independently.
   Changes to one boundary do not by themselves advance the other; see
-  [ADR-0016](../docs/adr/0016-independent-application-and-plugin-abi-versions.md).
+  [ADR-0007](../adr/0007-c-provider-bootstrap-and-unload-lifetime.md).
   Both versions remain experimental until their respective freeze gates.
 - [x] **DEC-006** Retain CTest, existing named native harnesses, shared C11
   diagnostics, and Node's test runner. ADR-0004 records why a new C++ framework
@@ -35,7 +35,7 @@ such, and application media API work continues in the plugin LLD.
 - [x] **DEC-007** Keep raw database handles and SQL out of the public API.
   Typed library operations abstract local and remote storage, allowing database
   implementation and public API to evolve independently. See
-  [ADR-0015](../docs/adr/0015-database-behind-library-api.md).
+  [ADR-0003](../adr/0003-origin-bound-results-and-paged-metadata.md).
 
 #### Decision gate
 
@@ -321,7 +321,7 @@ This completed pilot is not a second migration backlog.
 
 ### Phase 6: decoder SDK vertical slice
 
-[ADR-0010](../docs/adr/0010-shared-media-services-for-playback-and-transcoding.md)
+[ADR-0009](../adr/0009-shared-media-services-for-playback-and-transcoding.md)
 records why playback, server transcoding, and nested sources share one media
 service. Plugins use the C provider ABI and are built with the same release.
 
@@ -459,8 +459,8 @@ service. Plugins use the C provider ABI and are built with the same release.
   canceling startup clears the track before playback reaches Playing.
 - [x] **PUB-004** Add playback commands and ordered state events.
   Remote startup and next-track preparation now fetch metadata asynchronously;
-  [ADR-0021](../docs/adr/0021-remote-playback-metadata.md) records the owner-thread
-  and cancellation rules. `musikcore.integration.api.backend_parity` holds a
+  the [playback contract](musikcore-c-abi-design.md#remote-metadata-and-playback-controls)
+  records the owner-thread and cancellation rules. `musikcore.integration.api.backend_parity` holds a
   metadata reply until the dispatcher returns and checks late replies after
   Stop, another selection, deadline expiry, and destruction of the library
   track list. Validation was run on macOS.
@@ -586,7 +586,7 @@ The open **PUB-008** media-consumer API work is tracked in the
 - [x] **MIG-009** Remove private musikcore headers from musikcube targets.
   `musikcube.integration.core_boundary` checks app includes and the executable's imports.
 - [x] **MIG-010** Link the normal frontend only through the public C ABI.
-  The executable uses the full production runtime. See [ADR-0006](../docs/adr/0006-enforce-the-frontend-consumer-boundary.md).
+  The executable uses the full production runtime. See [ADR-0001](../adr/0001-c-abi-and-core-first-refactor.md).
   `musikcore.integration.api.managed_runtime` starts production services
   through public headers, exercises blocking-host wakeups and delayed playback
   work, then destroys and restarts the runtime with a retained catalog handle.
@@ -633,7 +633,7 @@ The open **PUB-008** media-consumer API work is tracked in the
 
 Selection is immutable for the context lifetime; ordinary scan and playback
 commands remain available. The dependency graph and rationale are in
-[ADR-0005](../docs/adr/0005-context-owned-production-runtime.md). Validation for
+[ADR-0005](../adr/0005-context-owned-production-runtime.md). Validation for
 this slice targets native macOS; Linux/Windows parity remains deferred by the
 maintainer. No plugin C SDK work is included.
 
@@ -655,7 +655,7 @@ restoration. Logs are under `build/services-*.log`.
 Maintainer-approved core API slice: provide manually constructed URI players
 without catalogs/indexing, using native macOS validation while platform parity
 remains deferred. This does not begin the new plugin C SDK. See
-[ADR-0007](../docs/adr/0007-explicit-uri-player-resources.md).
+[ADR-0006](../adr/0006-explicit-uri-player-resources.md).
 
 - [x] **API-URI-001** Add the public `mc_player` ownership, control, snapshot, and
   dispatch callback contract, plus a strictly header-only movable C++ wrapper.
@@ -816,8 +816,8 @@ production startup failure was established.
 
 ## Library layers and plugin service names
 
-The accepted boundaries and compatibility impact are recorded in
-[ADR-0018](../docs/adr/0018-library-layers-and-plugin-services.md).
+The [HLD](musikcore-c-abi-hld.md#library-routing-and-identity) owns library
+boundaries; this checklist records compatibility changes and their validation.
 
 - [x] **LIBLAY-001** Merge consumer library state and operation dispatch into
   `musik::core::library::Library`. Remove `LibraryInstance`, `PlaybackOrigin`,
@@ -861,3 +861,26 @@ The accepted boundaries and compatibility impact are recorded in
   The dormant `src/musikwin` GUI still uses historical private APIs and is outside
   the supported CMake targets; it was not migrated or validated by this change.
   This does not limit the supported Windows TUI's public context/library boundary.
+
+## Historical boundary migration notes
+
+The public-only frontend cutover used the production runtime, private core PCHs,
+and import-manifest checks rather than a second production engine. Its original
+record reported Linux verification with macOS pending and Windows deferred;
+that was a checkpoint, not current platform acceptance. The platform gates in
+this LLD and release checklist remain the authority.
+
+The URI-player migration first changed the legacy C++ SDK to create-before-open
+in SDK 23, replacing SDK 22 factory/environment opening methods and requiring
+plugin rebuilds. That historical SDK is no longer the current provider contract.
+The C provider SDK retains create-before-open and interruption semantics without
+old-entry compatibility fallbacks.
+
+Library consolidation removed `LibraryInstance`, `PlaybackOrigin`,
+`AsyncTrackReader`, and `LibraryQueries` in favor of one core `Library`. Namespace
+default-backend functions replaced the factory/vector/map, preserving persisted
+IDs/names, conflicting-ID repair, lazy initialization, retained queue ownership,
+and shutdown ordering. Plugin-service renames and moving scheduling from playback
+to indexer tables changed experimental source names and layouts. Rebuild affected
+plugins; no compatibility aliases are retained, and ABI versions stay experimental.
+The LIBLAY tasks above own implementation and validation evidence.

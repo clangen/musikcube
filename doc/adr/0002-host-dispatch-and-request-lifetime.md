@@ -55,13 +55,11 @@ request completion does not depend on notification polling.
 - A mandatory runtime-specific future or scheduler would privilege one host
   model. Optional adapters can be layered over the dispatch contract instead.
 
-## Consequences and implementation
+## Consequences
 
 The host must service dispatch and retain its callback data until completion.
-Wakeups need coalescing and race-safe rearming. Admission reserves terminal
-capacity so shutdown/cancellation can still complete accepted work under pressure.
-Request IDs are context-local and nonzero; the registry selects terminal state
-under synchronization, then invokes callbacks and hooks outside its locks.
+Wakeups must not lose pending work. Accepted requests must retain enough delivery
+capacity to complete under pressure, including during cancellation and shutdown.
 
 Owner-thread shutdown is a real constraint, including for C++ RAII destruction.
 Raw request IDs plus explicit cancellation remain preferable to a request object
@@ -69,6 +67,6 @@ that appears to retain a context but actually cannot keep it alive. The current
 single-context restriction is an implementation limit, not a reason to expose
 shared singleton state as an implicit public contract.
 
-The [LLD runtime design](../../doc/musikcore-c-abi-lld.md#runtime-component-design)
+The [LLD runtime design](../design/musikcore-c-abi-lld.md#runtime-component-design)
 records the state machines and implementation work. `musikcore.abi.dispatch` and
 `musikcore.abi.remote_query_transport` exercise the races and teardown contract.

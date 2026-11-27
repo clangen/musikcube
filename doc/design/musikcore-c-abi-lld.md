@@ -92,4 +92,4 @@ with its completed and still-open work distinguished in the checklist.
 
 - [Detailed public API and C SDK design](musikcore-c-abi-design.md)
 - [Testing design](testing-design.md)
-- [Migration journal](musikcore-migration-journal.md)
+- [Migration journal](../musikcore-migration-journal.md)

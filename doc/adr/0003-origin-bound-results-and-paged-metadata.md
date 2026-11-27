@@ -40,8 +40,15 @@ Use the existing typed batch query for optional lossless metadata projection.
 Projected remote requests require a projected response so that NULL and empty
 values remain distinct.
 
+Do not expose database handles or arbitrary SQL, including as a separately
+unstable extension. Such an escape hatch would create a second storage-specific
+contract that remote libraries cannot naturally implement. Add typed operations
+when a concrete consumer needs additional behavior.
+
 ## Alternatives considered
 
+- Offer raw SQL for storage-specific tools: callers become coupled to schema
+  and local storage, defeating the shared local/remote operation boundary.
 - Return all metadata with every search: unnecessary work and memory for rows
   that may never be displayed.
 - Query individual fields or return owning strings from every accessor: extra
@@ -66,7 +73,7 @@ allocation-free wrapper. Network serialization and initial page construction
 still copy data; the goal is to avoid redundant per-access metadata copies.
 
 Playback edits validate origin and captured queue revision before mutating the
-live queue. The [LLD](../../doc/musikcore-c-abi-lld.md#library-result-and-playback-semantics)
+live queue. The [LLD](../design/musikcore-c-abi-lld.md#library-result-and-playback-semantics)
 records backend limits and current commands; its baseline section owns measured
 budgets. Result, library-switch, indexed-query, and loopback tests verify this
 contract through real consumers.

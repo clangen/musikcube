@@ -165,7 +165,7 @@ External C decoder build/load checks (PKG-003/PKG-004) are tracked with the
 - [ ] **FIN-009** Freeze and publish the export allowlist and public layout
   baseline after the library query scope contract and acceptance are complete.
   Include the renamed plugin service tables and indexer/playback service layout
-  changes from [ADR-0018](../docs/adr/0018-library-layers-and-plugin-services.md).
+  changes recorded in the [library migration checklist](musikcore-c-abi-lld-core.md#library-layers-and-plugin-service-names).
   LIBLAY-PLATFORMS was closed by maintainer acceptance on 2026-11-25 without
   additional native Linux/Windows runs. Broader provider and release-platform
   gates retain their own requirements; no new platform results are claimed.
@@ -254,7 +254,7 @@ When completing a task:
 
 1. Check its box in this document in the same commit as the implementation.
 2. Add or update the named contract/unit/integration test.
-3. Record meaningful architectural decisions as individual ADRs in `docs/adr/`,
+3. Record meaningful architectural decisions as individual ADRs in `doc/adr/`,
    linked from the HLD, with status,
    context, rationale, and consequences; link the affected task. Do not add a
    progress diary or duplicate an existing decision record.

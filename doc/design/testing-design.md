@@ -10,7 +10,7 @@ Apply the same approach to the C SDK after the core API is integrated into the
 app; provider implementation remains deferred by the HLD/LLD sequence.
 
 The rationale, alternatives, and scope of that choice are recorded in
-[ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md). This document
+[ADR-0004](../adr/0004-test-the-public-boundary-first.md). This document
 specifies the harness and test layers; it does not maintain a second decision
 record.
 
@@ -147,12 +147,14 @@ from a different host's results.
 
 ## Test directory layout
 
-The accepted organization and rationale are in
-[ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md#organization-and-execution).
+The boundary-first rationale is in
+[ADR-0004](../adr/0004-test-the-public-boundary-first.md). This section owns
+the test organization.
 Tests live at the monorepo root under `tests/unit/`, `tests/integration/`, and
 `tests/ui/`; unit directories identify their owning project. Shared native
 fixtures and `check.h` live in `tests/support/`. Runners and build checks live
 in `tests/scripts/`; TUI scenarios and driver support stay together in `tests/ui/`.
+Captured comparison baselines belong in `tests/baselines/`.
 
 Do not keep executable test cases in a directory called `fixtures`. The remote
 transport suite lives in `tests/integration/transport/`; its reusable host and
@@ -880,9 +882,27 @@ Coverage reports are used to find important untested branches. A global
 percentage should not encourage tests of trivial accessors while concurrency
 and error paths remain untested.
 
+## Runner and failure artifacts
+
+Use `node tests/scripts/run-tests.js` as the normal entry point. `--suite` selects
+a test level, `--list` lists checks, and arguments after `--` pass through to CTest.
+Native ABI consumers remain separately compiled; CTest remains the outer runner
+and C11 consumers stay C11. Framework selection is described above.
+
+Keep broad native and UI workflows independently selectable with fresh state;
+a combined UI flow supplements individual search, queue, playlist, and browse
+checks. Large-catalog and repeated timing comparisons run explicitly. Fix focus
+ordering rather than adding input sleeps when a rendered view is not ready.
+The terminal driver tests parsing, cursor/erase/scroll, styling, resize, CJK width,
+and combining marks; emoji/ZWJ presentation is not a universal width guarantee.
+
+Failed scenarios retain isolated configuration/runtime, indexer logs, terminal
+output, visible text, and SVG under the build root and report their location.
+Successful runs clean up; harness failures must preserve diagnostic evidence.
+
 ## Execution and remaining work
 
-The [LLD](musikcore-c-abi-lld.md#test-infrastructure) tracks completed harness
+The [LLD](musikcore-c-abi-lld-foundation.md#test-infrastructure) tracks completed harness
 work and remaining native-platform acceptance. Do not maintain a second progress
 checklist here. Extend unit, integration, and UI coverage alongside the behavior
 being changed; there is no backfill requirement for untouched code and no rule

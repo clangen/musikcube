@@ -41,7 +41,7 @@ sentinels do not define the public filtering contract.
 ## Contract and decisions
 
 Accepted lifecycle and playlist decisions are recorded in
-[ADR-0017](../docs/adr/0017-library-scope-query-lifetime.md).
+[ADR-0011](../adr/0011-library-scope-query-lifetime.md).
 
 Attach an optional, mutable scope to the library instance exposed by the existing
 `mc_library` handle. Handles referring to the same instance share its scope;
@@ -169,14 +169,15 @@ library lists, with callback-borrowed entries and explicit error/cancellation
 semantics. The C++ wrapper must expose the same operation. Carry discovery
 through a typed local query and the server query registry for remote catalogs.
 
-Source zero represents ordinary files and is labelled Files. As agreed during
+Source zero represents ordinary files; its current display name is "Music files".
+As agreed during
 review, do not add a separate source metadata table. Discovery combines immutable
 source descriptions from loaded plugins with IDs referenced by tracks and
 playlists. Loaded providers include empty sources. An absent provider's referenced
 IDs remain discoverable with a fallback label (`Source N`); its historical display
 label and never-populated unreferenced sources are not persisted. Stable source
 IDs continue to derive from plugin ID and source key, never from labels. Source
-descriptions live on `LocalLibrary`, independently of indexer shutdown.
+descriptions live on the local backend, independently of indexer shutdown.
 
 ## Implementation progress and acceptance evidence
 
@@ -264,7 +265,7 @@ Server handlers serialize query admission and session updates on the I/O thread.
 The synchronous typed-query response is admitted before a subsequent session
 update; the update cannot retarget that query. Client library scope replacement
 uses normal cancellation/discard for requests still pending on the client, with
-late replies ignored. This matches the completion admission rule in ADR-0017.
+late replies ignored. This matches the completion admission rule in ADR-0011.
 
 ### Accepted platform exception — 2026-11-25
 

@@ -11,7 +11,7 @@ consumers, and reach core release-candidate quality before beginning
 plugin/provider API work.
 
 This document owns architecture and sequencing, and links the decision records
-in `docs/adr/`.
+in `doc/adr/`.
 The [LLD](musikcore-c-abi-lld.md) owns the implemented contract, acceptance
 criteria, task status, and validation commands. Public headers define individual
 parameters and lifetimes; tests verify their behavior. The detailed API/SDK
@@ -43,7 +43,7 @@ At the start of this refactor, musikcore had two boundary mechanisms:
 - Plugin entry points with C linkage that return C++ interface pointers.
 
 Those boundaries motivated the replacement described in
-[ADR-0001](../docs/adr/0001-c-abi-and-core-first-refactor.md). The previous C API
+[ADR-0001](../adr/0001-c-abi-and-core-first-refactor.md). The previous C API
 had ambiguous ownership, inconsistent errors, incomplete async behavior, and
 callback/threading hazards. Its declarations are now retired. Existing plugin
 entry points still expose C++ vtables and compiler ABI despite their C linkage.
@@ -274,6 +274,23 @@ Consumer operations pass typed queries through that handle and return the
 same owned results for either backend. Discovery, connection settings, and
 library selection expose the backend distinction.
 
+The library has four roles, without an extra wrapper beneath the C API:
+
+1. `api::Library` is the public header-only C++ owner and calls the C ABI.
+2. C entry points validate inputs and forward operations into the core.
+3. `musik::core::library::Library` owns instance scope, origin validation, and
+   asynchronous operation dispatch; handles, results, and references retain it.
+4. Private `LibraryBackend`, `LocalLibraryBackend`, and `RemoteLibraryBackend`
+   own catalogs/connections and execute typed queries.
+
+Frontends obtain a library from their context, without selecting native classes.
+Local and remote executors share query construction and result conversion without
+an extra runtime delegation layer. Standalone read-only readers retain their
+supported subset. Native reads stay ordered with writes; remote reads retain
+connection generation. Plugin services are separate adapters, not application
+library wrappers. Default backend lifecycle/accessors remain private core setup;
+the public API does not expose a general native catalog registry.
+
 Search results and track identities stay bound to their originating library.
 The result retains a stable order for page reads. A deleted track keeps
 its position. The client retains remote result IDs and uses the existing
@@ -329,12 +346,12 @@ of Library, Plugins, Indexer, and Playback services at creation; prerequisite
 expansion starts Library and Plugins for either Indexer or Playback. Playback
 does not require indexing. An explicit empty set retains request processing
 for caller-owned catalogs/sessions. See [the lifecycle contract](musikcore-c-abi-design.md#context-and-runtime-lifecycle)
-and [ADR-0005](../docs/adr/0005-context-owned-production-runtime.md).
+and [ADR-0005](../adr/0005-context-owned-production-runtime.md).
 
 Explicit URI player resources can be constructed within a Plugins-only context,
 without Library or Indexer. Their transport lifetime ends at explicit destruction
 or context shutdown; catalog playback remains a separate origin-bound contract.
-See [ADR-0007](../docs/adr/0007-explicit-uri-player-resources.md).
+See [ADR-0006](../adr/0006-explicit-uri-player-resources.md).
 
 ### Plugin loading and ownership
 
@@ -359,7 +376,7 @@ services are ready. Stop integrations, interrupt I/O, drain scoped host callback
 join workers, and destroy instances before final registry teardown. Private C++
 wrappers may simplify calls internally, but do not implement the former SDK as a
 compatibility layer. See
-[ADR-0008](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md).
+[ADR-0007](../adr/0007-c-provider-bootstrap-and-unload-lifetime.md).
 
 ### C++ wrappers
 
@@ -504,26 +521,19 @@ The modernization is complete when:
 
 ## Architectural decision records
 
-- [ADR-0001: C ABI choice and core-first refactor](../docs/adr/0001-c-abi-and-core-first-refactor.md)
-- [ADR-0002: host dispatch and request lifetime](../docs/adr/0002-host-dispatch-and-request-lifetime.md)
-- [ADR-0003: origin-bound results and paged metadata](../docs/adr/0003-origin-bound-results-and-paged-metadata.md)
-- [ADR-0004: testing at the public boundary](../docs/adr/0004-test-the-public-boundary-first.md)
-- [ADR-0005: context-owned production runtime](../docs/adr/0005-context-owned-production-runtime.md)
-- [ADR-0006: enforce the frontend consumer boundary](../docs/adr/0006-enforce-the-frontend-consumer-boundary.md)
-- [ADR-0007: explicit URI player resources](../docs/adr/0007-explicit-uri-player-resources.md)
-- [ADR-0008: C provider bootstrap and unload lifetime](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md)
-- [ADR-0009: Playback threading model](../docs/adr/0009-playback-threading-model.md)
-- [ADR-0010: Shared media services](../docs/adr/0010-shared-media-services-for-playback-and-transcoding.md)
-- [ADR-0011: Analyzer track results](../docs/adr/0011-analyzer-track-results.md)
-- [ADR-0012: DSP processing failure](../docs/adr/0012-dsp-processing-failure.md)
-- [ADR-0013: Indexer source identity and checkpoints](../docs/adr/0013-indexer-source-identity-and-checkpoints.md)
-- [ADR-0014: Playback remote command lifetime](../docs/adr/0014-playback-remote-command-lifetime.md)
-- [ADR-0015: Database behind the library API](../docs/adr/0015-database-behind-library-api.md)
-- [ADR-0016: Independent application and plugin ABI versions](../docs/adr/0016-independent-application-and-plugin-abi-versions.md)
-- [ADR-0017: Library scope and query lifetime](../docs/adr/0017-library-scope-query-lifetime.md)
+ADRs record durable choices and their alternatives. Operation contracts live in
+the detailed design and public headers; tasks, migration status, and acceptance
+evidence live in the LLD. A bug fix, rename, or additional operation does not by
+itself require another ADR.
 
-- [ADR-0018: Library layers and plugin services](../docs/adr/0018-library-layers-and-plugin-services.md)
-
-- [ADR-0019: Application media ownership](../docs/adr/0019-application-media-ownership.md)
-
-- [ADR-0020: Playback position and mix points](../docs/adr/0020-playback-position-and-mix-points.md)
+- [ADR-0001: use a C ABI and migrate the core application API first](../adr/0001-c-abi-and-core-first-refactor.md)
+- [ADR-0002: deliver async completions through host-controlled dispatch](../adr/0002-host-dispatch-and-request-lifetime.md)
+- [ADR-0003: separate origin-bound result membership from paged metadata](../adr/0003-origin-bound-results-and-paged-metadata.md)
+- [ADR-0004: test contracts at the public boundary](../adr/0004-test-the-public-boundary-first.md)
+- [ADR-0005: let the context own the runtime and its selected services](../adr/0005-context-owned-production-runtime.md)
+- [ADR-0006: own media resources independently of catalogs](../adr/0006-explicit-uri-player-resources.md)
+- [ADR-0007: use a C plugin boundary with session-owned lifetime](../adr/0007-c-provider-bootstrap-and-unload-lifetime.md)
+- [ADR-0008: own playback workers within their sessions](../adr/0008-playback-threading-model.md)
+- [ADR-0009: share media services across playback and transcoding](../adr/0009-shared-media-services-for-playback-and-transcoding.md)
+- [ADR-0010: give source-scoped indexing stable identity and durable checkpoints](../adr/0010-indexer-source-identity-and-checkpoints.md)
+- [ADR-0011: bind library scope and query intent to the library instance](../adr/0011-library-scope-query-lifetime.md)

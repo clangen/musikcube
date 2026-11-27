@@ -1,6 +1,6 @@
-# ADR-0009 — Playback threading model
+# ADR-0008: own playback workers within their sessions
 
-**Status** Accepted
+Status: accepted
 
 ## Context
 
@@ -17,8 +17,8 @@ and finding every output that could keep a worker blocked.
 ## Decision
 
 Each transport or standalone URI player owns and joins its own track jobs.
-A job reports to the playback session that launched it. The receiver checks the identity of the sending
-track before changing its selection. A crossfade holds a reference for as long
+A job reports to the playback session that launched it. The receiver checks the
+sending track's identity before changing its selection. A crossfade holds a reference for as long
 as it needs to adjust the track's gain. The worker owns the decoder and buffer
 pool. Controls can interrupt a source and read published track information
 while that worker is blocked.
@@ -30,18 +30,7 @@ a device queue. Terminal shutdown closes admission, interrupts all jobs in the
 session, including retired tails, and joins them before their receiver or plugin
 factories are released.
 
-During a crossfade, the selected track determines whether Pause or Resume
-succeeded. If its device refuses, the outgoing audio keeps its prior state.
-Once it accepts, an outgoing device that cannot follow is stopped. Losing a
-short fade tail on a device error is preferable to rolling back a successful
-command on the track the listener selected.
-
-Volume changes keep only the latest requested gain. If the device is busy,
-the caller returns immediately and a later write applies that gain. This lets
-manual controls and fade ticks share one output operation. The crossfader
-stops the outgoing track if it cannot confirm silence at the end of a fade.
-
-## Alternatives and consequences
+## Alternatives considered
 
 A single playback thread would make selection state easy to serialize, but a
 blocking open, decode or device write would also delay other work assigned to
@@ -50,8 +39,13 @@ at the cost of a second lifetime protocol for their callbacks. Session-owned
 jobs preserve independent progress with a concrete join point. A backend still
 has to honor interruption for shutdown to finish.
 
+## Consequences
+
 The ownership decision allows either a retained-buffer output or a write that
 consumes PCM during the call. It also allows separate device outputs or a
 software mixer. Introducing a mixer would require an explicit format conversion,
 channel mapping, fade lookahead and playback timing policy. Those choices can
 be evaluated independently.
+
+The [media and playback design](../design/musikcore-c-abi-design.md) owns the
+operation contracts and implementation details.

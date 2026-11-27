@@ -188,7 +188,7 @@ calls the retired C++ `GetPlugin()` entry point.
 
 #### Output integration mechanics
 
-Each transport owns its joinable track jobs ([ADR-0009: Playback threading model](../docs/adr/0009-playback-threading-model.md)).
+Each transport owns its joinable track jobs ([ADR-0008: Playback threading model](../adr/0008-playback-threading-model.md)).
 The track worker opens and reads the decoder, applies gain and owns the fixed PCM
 pool. The transport reads duration and capabilities from snapshots. Closing the
 session interrupts active, prepared and retired jobs before joining any one of
@@ -343,7 +343,7 @@ The per-session-state regression failed with the initial global-host fixture:
 closing one host affected the other's callbacks. Returning state from initialize
 removes that coupling without changing the application runtime's existing
 process-wide ownership policy. See
-[ADR-0008](../docs/adr/0008-c-provider-bootstrap-and-unload-lifetime.md).
+[ADR-0007](../adr/0007-c-provider-bootstrap-and-unload-lifetime.md).
 
 The missing-entry fixture has no instrumented globals. It exposed a link failure
 in the AppleClang 21 unload helper, which now supplies a hidden weak zero flag
@@ -488,7 +488,7 @@ cutover gate is complete.
 - [x] **IDX-001** Define indexer source, writer, cancellation, and
   commit/rollback tables.
   The C source, source-scoped writer, rescan notification, and timestamp
-  lookup contracts are implemented; [ADR-0013](../docs/adr/0013-indexer-source-identity-and-checkpoints.md)
+  lookup contracts are implemented; [ADR-0010](../adr/0010-indexer-source-identity-and-checkpoints.md)
   records the identity and checkpoint decisions. Source info now requires an
   independent UTF-8 display name; experimental indexer plugins must rebuild and
   supply it. `plugins.indexer_gme` and `plugins.indexer_openmpt` verify published
@@ -564,7 +564,7 @@ cutover gate is complete.
   timing is absent, including ignoring unflagged NaN values.
   Both tests and the existing crossfade, gapless, post-EOF seek and tail-seek
   PCM tests passed on macOS Release (2026-11-25).
-  [ADR-0020](../docs/adr/0020-playback-position-and-mix-points.md) records the
+  [Output timing contract](musikcore-c-abi-design.md#outputs-and-devices) records the
   position and mix-point policy.
 - [x] Keep Stop reachable during a blocking write. Pause and resume give a
   paced write a short time to finish, then return `MC_ERROR_IN_FLIGHT` if the
@@ -714,8 +714,8 @@ cutover gate is complete.
 - [x] Implement the analyzer factory and metadata writer on the indexer worker.
   `plugins.analyzer` checks real indexing with successful and failing C
   providers. Analyzer changes for a track are saved only when all participants
-  succeed, as recorded in ADR-0011. Cancellation waits for the current analyzer
-  call to return. `plugins.analyzer_cancel` covers cancellation and shutdown
+  succeed, following the [analyzer contract](musikcore-c-abi-design.md#dsp-metadata-writers-tag-readers-and-analyzers).
+  Cancellation waits for the current analyzer call to return. `plugins.analyzer_cancel` covers cancellation and shutdown
   during blocked stream open. The analyzer currently uses the internal Stream
   pipeline over the C stream and decoder primitives. Reassess that remaining
   C++ interface when consolidating decoded-audio consumers. Windows remains to
@@ -744,9 +744,10 @@ cutover gate is complete.
   fatal containment before touching an uncertain instance. The initial command
   host supports bounded owner-thread control requests; individual request
   cancellation is deliberately omitted for disconnects as recorded in
-  [ADR-0014](../docs/adr/0014-playback-remote-command-lifetime.md). Provider
+  [Playback remote contract](musikcore-c-abi-design.md#visualizers-and-playback-remotes). Provider
   migrations are complete. Failed remotes must wake their own
-  workers independently, so healthy remotes can remain active; see ADR-0014.
+  workers independently, so healthy remotes can remain active under the same
+  contract.
   `plugins.playback_remote_startup_rollback` exercises that failure policy on
   Unix while a healthy remote continues processing commands.
   The macOS media-keys provider uses the C playback remote and joins its event
@@ -851,7 +852,8 @@ was moved from the core migration LLD because it builds on provider services.
     retained handles and teardown through an independently built C consumer;
     update public header, export, ABI-only, and installed-consumer checks.
   Implemented in `media.h` / `media.hpp` and the context-owned `MediaSession`;
-  [ADR-0019](../docs/adr/0019-application-media-ownership.md) records ownership,
+  [ADR-0006](../adr/0006-explicit-uri-player-resources.md) records ownership;
+  the [media contract](musikcore-c-abi-design.md#advanced-audio-api) defines
   cancellation, PCM copies and explicit encoder finish. Creation consumes an
   opened input/output only on success. Retained handles cannot reach provider
   callbacks after shutdown.

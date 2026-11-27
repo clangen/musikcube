@@ -133,7 +133,7 @@ BLD-001 tracks consolidation separately from the implemented Unix object reuse.
 ### Process isolation rule
 
 Implement the single-core-per-process decision in
-[ADR-0001](../docs/adr/0001-c-abi-and-core-first-refactor.md) with
+[ADR-0001](../adr/0001-c-abi-and-core-first-refactor.md) with
 `.cmake/VerifyCoreBoundary.cmake` and the positive/negative `link_boundary`
 fixtures. A consumer must not combine production `musikcore`, the reduced
 `musikcore_abi0`, or `musikcore_internal`. Each test selects one implementation;
@@ -178,7 +178,7 @@ A packaging test compares actual exports with the allowlist.
 ### Context
 
 Lifecycle and delivery decisions are in
-[ADR-0002](../docs/adr/0002-host-dispatch-and-request-lifetime.md).
+[ADR-0002](../adr/0002-host-dispatch-and-request-lifetime.md).
 
 The production context owns the managed runtime, request registry, dispatch
 queue, selected library, playback service, and explicit URI-player children.
@@ -257,7 +257,7 @@ even if a detailed error object cannot be created.
 ### Metadata pages
 
 Implement the page ownership and range-read decision in
-[ADR-0003](../docs/adr/0003-origin-bound-results-and-paged-metadata.md) with
+[ADR-0003](../adr/0003-origin-bound-results-and-paged-metadata.md) with
 immutable `mc_track_page` storage containing:
 
 - Row count.
@@ -325,7 +325,7 @@ shutdown order keeps their code and scoped services alive until cleanup finishes
 ## Test target design
 
 The strategy and alternatives are recorded in
-[ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md). The roles below
+[ADR-0004](../adr/0004-test-the-public-boundary-first.md). The roles below
 describe target responsibilities; current executable names and registration
 live in `tests/CMakeLists.txt` and `tests/support/CMakeLists.txt`.
 
@@ -439,7 +439,7 @@ than maintaining a second symbol list or per-export prose table.
 ### Requests, dispatch, and shutdown
 
 Implement the delivery and lifetime contract in
-[ADR-0002](../docs/adr/0002-host-dispatch-and-request-lifetime.md). Current ABI
+[ADR-0002](../adr/0002-host-dispatch-and-request-lifetime.md). Current ABI
 bindings return `MC_ERROR_BUSY` for nested/concurrent dispatch or shutdown; a
 busy/failed destroy leaves the handle intact. Rejected submissions clear their
 request-ID output and deliver no callback.
@@ -458,7 +458,7 @@ callback exceptions but currently has no public diagnostic channel for them.
 ### Library, result, and playback semantics
 
 The read model and identity decision is in
-[ADR-0003](../docs/adr/0003-origin-bound-results-and-paged-metadata.md).
+[ADR-0003](../adr/0003-origin-bound-results-and-paged-metadata.md).
 A direct missing-track reference read returns `MC_ERROR_NOT_FOUND`. Plain queries
 use a literal title substring; ordered search keeps typed-backend LIKE wildcards
 or explicit regex matching across metadata fields.
@@ -499,7 +499,8 @@ future adapters remain optional and header-only.
 ## Test infrastructure
 
 The organization/tooling decision is in
-[ADR-0004](../docs/adr/0004-test-the-public-boundary-first.md#organization-and-execution).
+[testing design](testing-design.md#test-directory-layout), following
+[ADR-0004](../adr/0004-test-the-public-boundary-first.md).
 This is the implementation checklist; there is no separate application-testing
 proposal to reconcile.
 

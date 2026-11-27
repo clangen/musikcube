@@ -78,7 +78,7 @@ if you're interested in writing your own frontend, [api documentation is availab
 
 # sdk
 
-the plugin sdk provides a C ABI and header-only C++ conveniences. see the [public headers](include/musikcore/plugin/) and [SDK design](doc/musikcore-c-abi-design.md).
+the plugin sdk provides a C ABI and header-only C++ conveniences. see the [public headers](include/musikcore/plugin/) and [SDK design](doc/design/musikcore-c-abi-design.md).
 
 # dependencies
 

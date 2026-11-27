@@ -49,10 +49,10 @@ Keep synchronous access on rows already in an owned page. Move arbitrary
 position reads to the async range API before the ABI freezes. During
 migration, the core can retain a bounded eager identity list for
 existing actions that require the whole list.
-[Current library API](../include/musikcore/library.h)
-[Local backend](../src/musikcore/library/LocalLibrary.cpp)
-[Remote backend](../src/musikcore/library/RemoteLibrary.cpp)
-[Query registry](../src/musikcore/library/QueryRegistry.cpp)
+[Current library API](../../include/musikcore/library.h)
+[Local backend](../../src/musikcore/library/LocalLibraryBackend.cpp)
+[Remote backend](../../src/musikcore/library/RemoteLibraryBackend.cpp)
+[Query registry](../../src/musikcore/library/QueryRegistry.cpp)
 
 ## Lifetime and failures
 
@@ -70,7 +70,7 @@ affected requests. Materialized pages remain readable. Retained remote
 results and references stay bound to their originating connection. After
 reconnect, the app opens a fresh search. Shutdown closes transports and
 drains callbacks before releasing wakeup state.
-[Context contract](../include/musikcore/context.h)
+[Context contract](../../include/musikcore/context.h)
 
 ## What the current app already protects
 
@@ -79,14 +79,14 @@ cache fetches metadata by ID, so deleting a track cannot shift later
 rows. The view checks that a query completion belongs to its current
 query. On a library switch, the app stops playback and rebuilds the
 library view.
-[Legacy row cache](../src/musikcore/library/track/TrackList.cpp)
-[Library switching](../src/musikcube/app/layout/MainLayout.cpp)
+[Legacy row cache](../../src/musikcore/library/track/TrackList.cpp)
+[Library switching](../../src/musikcube/app/layout/MainLayout.cpp)
 
 The new API makes those guarantees hold for callers that retain a result
 or track reference across a library switch. Legacy playback resolves
 media through the active library. An API track reference resolves media
 through its originating library.
-[Legacy playback](../src/musikcore/audio/PlaybackService.cpp)
+[Legacy playback](../../src/musikcore/audio/PlaybackService.cpp)
 
 ## Routing by operation
 
@@ -97,7 +97,7 @@ Playback uses the client queue, decoder, output, and DSP. A remote track
 resolves to a stream from its originating library. Controlling playback
 on another machine targets an explicit playback session, independent of
 the library supplying the track.
-[Existing media routing](../src/musikcore/library/RemoteLibrary.cpp)
+[Existing media routing](../../src/musikcore/library/RemoteLibraryBackend.cpp)
 
 ## Migration and tests
 
