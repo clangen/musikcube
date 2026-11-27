@@ -208,9 +208,10 @@ namespace {
             error.clear();
 
             const auto current = generation;
-            searchRequest = OpenTrackSearch(context, library, TrackSearch{ filter },
+            searchRequest = OpenTrackSearch(context, library, TrackSearch { { filter } },
                 [this, current](mc_result status, TrackResult tracks, std::string_view message) {
-                    if (current != generation) return;
+                    if (current != generation)
+                        return;
                     searchRequest = 0;
                     if (status != MC_OK) {
                         error = message.empty() ? "Search failed" : std::string(message);

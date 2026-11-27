@@ -114,10 +114,10 @@ typedef struct mc_plugin_library_service {
         mc_category_list_completion_fn completion, void* user_data);
 
     /* list category values constrained by the supplied selections. */
-    mc_result (MC_CALL* list_filtered_categories)(void* context, mc_string_view field,
-        const mc_library_category_selection* selections, size_t selection_count,
-        mc_string_view filter, mc_track_search_mode mode, bool facet, mc_string_view track_search,
-        mc_category_list_completion_fn completion, void* user_data);
+    mc_result(MC_CALL* list_filtered_categories)(void* context, mc_string_view field,
+        const mc_library_category_selection* selections, size_t selection_count, mc_string_view filter,
+        mc_track_search_mode mode, mc_string_view track_search, mc_category_list_completion_fn completion,
+        void* user_data);
 
     /* list albums, optionally restricted by category selections. */
     mc_result (MC_CALL* list_albums)(void* context, mc_string_view filter,

@@ -16,10 +16,10 @@ namespace musik {
 
     public:
         FixedRingQueue() = default;
-        FixedRingQueue(const FixedRingQueue&) = delete;
-        FixedRingQueue(FixedRingQueue&&) = delete;
-        FixedRingQueue& operator=(const FixedRingQueue&) = delete;
-        FixedRingQueue& operator=(FixedRingQueue&&) = delete;
+        FixedRingQueue(const FixedRingQueue& other) = delete;
+        FixedRingQueue(FixedRingQueue&& other) = delete;
+        FixedRingQueue& operator=(const FixedRingQueue& other) = delete;
+        FixedRingQueue& operator=(FixedRingQueue&& other) = delete;
 
         bool Empty() const noexcept {
             return this->size == 0;

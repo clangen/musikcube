@@ -118,9 +118,9 @@ namespace musik { namespace core { namespace ffi { namespace detail {
 
         mc_result ReadPage(mc_context* context, std::vector<int64_t> ids, std::vector<std::string> fields,
             bool keepMissing, mc_track_query_completion_fn completion, void* data, mc_request_id* request,
-            const void* owner) const override {
+            const void* owner, size_t total) const override {
             return SubmitCatalogPage(context, this->shared_from_this(), *this, std::move(ids), std::move(fields),
-                keepMissing, completion, data, request, owner);
+                keepMissing, completion, data, request, owner, total);
         }
 
         mc_result ReadThumbnail(

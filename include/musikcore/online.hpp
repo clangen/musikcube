@@ -7,8 +7,8 @@
 #include <functional>
 
 namespace musik { namespace core { namespace api {
-    using OnlineTextCompletion = std::function<void(mc_result, std::string_view)>;
-    using LastFmLinkCompletion = std::function<void(mc_result, std::string_view, std::string_view)>;
+    using OnlineTextCompletion = std::function<void(mc_result status, std::string_view text)>;
+    using LastFmLinkCompletion = std::function<void(mc_result status, std::string_view token, std::string_view url)>;
 
     namespace detail {
         inline void MC_CALL onlineTextCompleted(mc_result status, mc_string_view text, void* data) {

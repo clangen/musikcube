@@ -132,7 +132,7 @@ static mc_library *open_local_library(const char *directory) {
 /* Verify hidden tracks retain their old result positions while direct reference reads report NOT_FOUND. */
 static int check_stable_range(mc_context *context, const mc_library *library, const char *directory) {
     mc_track_search search = MC_TRACK_SEARCH_DEFAULT;
-    search.text = (mc_string_view)STRING_VIEW("The Band");
+    search.filter.track_filter = (mc_string_view) STRING_VIEW("The Band");
     mc_track_result *tracks = NULL;
     mc_track_ref *track = NULL;
     struct completion range = { 0 };
@@ -213,8 +213,8 @@ static int check_indexed_library(const char *directory) {
         [indexed_language] = STRING_VIEW("language"),
     };
     mc_track_query query = MC_TRACK_QUERY_DEFAULT;
-    query.search.data = indexed_title_value;
-    query.search.length = sizeof(indexed_title_value) - 1;
+    query.filter.track_filter.data = indexed_title_value;
+    query.filter.track_filter.length = sizeof(indexed_title_value) - 1;
     query.fields = fields;
     query.field_count = indexed_field_count;
 
@@ -248,7 +248,8 @@ static int check_indexed_library(const char *directory) {
         mc_track_page_get_value_count(page, 0, indexed_writer) == 0 &&
         equals(mc_track_page_get_string(page, 0, indexed_language), "eng");
     mc_track_page_destroy(&result.page);
-    if (!passed) fputs("indexed track query failed\n", stderr);
+    if (!passed) fprintf(stderr, "indexed track query failed: reject=%d dispatched=%d calls=%u status=%d count=%zu total=%zu\n",
+        rejects_large_page, dispatched, result.calls, result.result, mc_track_page_get_count(page), mc_track_page_get_total(page));
     return passed ? 0 : 1;
 }
 
@@ -311,8 +312,8 @@ int main(int argc, char **argv) {
 
     query.fields = fields;
     query.field_count = fixture_field_count;
-    query.search.data = term;
-    query.search.length = sizeof(term) - 1;
+    query.filter.track_filter.data = term;
+    query.filter.track_filter.length = sizeof(term) - 1;
     query.offset = 1;
     query.limit = 1;
 

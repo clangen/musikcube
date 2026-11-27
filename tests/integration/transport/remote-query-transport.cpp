@@ -505,8 +505,8 @@ namespace {
             return wait([&] { return context.Dispatch() == MC_OK && calls == expected; });
         };
 
-        OpenTrackSearch(context, TrackSearch { "Origin" },
-            [&](mc_result result, TrackResult found, std::string_view) {
+        OpenTrackSearch(
+            context, TrackSearch { { "Origin" } }, [&](mc_result result, TrackResult found, std::string_view) {
                 status = result;
                 tracks = std::move(found);
                 ++calls;
@@ -578,7 +578,7 @@ namespace {
         if (context.GetLibraryStatus().kind != MC_LIBRARY_LOCAL || !context.GetLibrary()) {
             return failure(__LINE__);
         }
-        QueryTracks(context, TrackQuery { "" }, receive);
+        QueryTracks(context, TrackQuery { { "" } }, receive);
         if (!dispatch(3) || status != MC_OK) {
             std::fprintf(stderr, "Local handoff: status=%d calls=%u\n", status, calls);
             return failure(__LINE__);
@@ -678,7 +678,7 @@ namespace {
             return failure(__LINE__);
         }
 
-        OpenTrackSearch(context, *reconnected, TrackSearch { "Invalid IDs" }, receiveSelection);
+        OpenTrackSearch(context, *reconnected, TrackSearch { { "Invalid IDs" } }, receiveSelection);
         if (!server.ReleaseHeld(false) || !dispatch(13) || status != MC_ERROR_IO || tracks) {
             return failure(__LINE__);
         }
@@ -727,7 +727,7 @@ namespace {
         transport slots even while the server withholds every reply. */
         constexpr unsigned cancelledQueries = 64;
         for (unsigned i = 0; i <= cancelledQueries; ++i) {
-            const auto request = OpenTrackSearch(context, *reconnected, TrackSearch { "Origin" },
+            const auto request = OpenTrackSearch(context, *reconnected, TrackSearch { { "Origin" } },
                 [&](mc_result result, TrackResult, std::string_view) {
                     status = result;
                     ++calls;
@@ -850,15 +850,20 @@ namespace {
                     size_t count = 0;
                 } categories;
                 mc_request_id request = 0;
-                const auto receiveCategories = [](mc_result result, const mc_category_entry*, size_t count,
-                                                   const mc_error*, void* data) {
+                const auto receiveCategories = [](mc_result result, const mc_category_page* page, const mc_error*,
+                                                   void* data) {
                     auto& categories = *static_cast<Categories*>(data);
-                    categories = { true, result, count };
+                    categories = { true, result, page ? page->count : 0 };
                 };
-                for (const auto field : { MC_FACET_GENRE, MC_FACET_ARTIST, MC_FACET_ALBUM }) {
+                for (const mc_string_view field :
+                    { mc_string_view { "genre", 5 }, mc_string_view { "artist", 6 }, mc_string_view { "album", 5 } })
+                {
                     categories = {};
-                    if (mc_library_list_facets_async(context.Get(), selected.Get(), field, { "Scope acceptance", 16 },
-                            nullptr, 0, receiveCategories, &categories, &request) != MC_OK ||
+                    auto query = mc_related_categories_query MC_RELATED_CATEGORIES_QUERY_DEFAULT;
+                    query.field = field;
+                    query.filter.track_filter = { "Scope acceptance", 16 };
+                    if (mc_library_get_related_categories_async(
+                            context.Get(), selected.Get(), &query, receiveCategories, &categories, &request) != MC_OK ||
                         !await([&] {
                             return categories.done;
                         }) ||
@@ -1187,8 +1192,12 @@ namespace {
         for (const auto& library : { local, remote }) {
             context.SetLibrary(*library);
             auto matches = std::make_shared<std::optional<bool>>();
-            ListCategories(context, MC_TRACK_FIELD_ARTIST, "Fixture", MC_TRACK_SEARCH_SUBSTRING,
-                [matches](mc_result status, std::vector<CategoryEntry> categories, std::string_view) {
+            CategoryNameQuery initialCategory;
+            initialCategory.field = MC_TRACK_FIELD_ARTIST;
+            initialCategory.nameFilter = "Fixture";
+            FilterCategoriesByName(
+                context, initialCategory, [matches](mc_result status, CategoryPage page, std::string_view) {
+                    const auto& categories = page.entries;
                     *matches = status == MC_OK && categories.size() == 1 &&
                         categories.front().value == "Fixture Artist";
                 });
@@ -1197,36 +1206,70 @@ namespace {
             {
                 return failure(__LINE__);
             }
-            struct Facets {
+            struct Categories {
                 mc_result status = MC_ERROR_INTERNAL;
                 std::vector<std::pair<int64_t, std::string>> rows;
                 bool done = false;
-            } facets;
-            const auto deliver = [](mc_result result, const mc_category_entry* rows, size_t count,
-                const mc_error*, void* userData) {
-                auto& output = *static_cast<Facets*>(userData);
+            } categories;
+            const auto deliver = [](mc_result result, const mc_category_page* page, const mc_error*, void* userData) {
+                auto& output = *static_cast<Categories*>(userData);
+                const auto* rows = page ? page->entries : nullptr;
+                const auto count = page ? page->count : 0;
                 output.status = result;
                 for (size_t i = 0; i < count; ++i) {
-                    output.rows.emplace_back(rows[i].id, std::string(rows[i].value.data, rows[i].value.length));
+                    output.rows.emplace_back(rows[i].key, std::string(rows[i].value.data, rows[i].value.length));
                 }
                 output.done = true;
             };
             mc_request_id request = 0;
             const auto ready = [&] {
-                return AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && facets.done; }) &&
-                    facets.status == MC_OK;
+                return AwaitTestHost(host,
+                           [&] {
+                               return context.Dispatch() == MC_OK && categories.done;
+                           }) &&
+                    categories.status == MC_OK;
             };
-            if (mc_library_list_facets_async(context.Get(), nullptr, MC_FACET_GENRE, { "Evening", 7 },
-                nullptr, 0, deliver, &facets, &request) != MC_OK || !ready() ||
-                facets.rows.size() != 1 || facets.rows[0].second != "Electronic")
+            auto categoryQuery = mc_related_categories_query MC_RELATED_CATEGORIES_QUERY_DEFAULT;
+            categoryQuery.field = { "genre", 5 };
+            categoryQuery.filter.track_filter = { "Evening", 7 };
+            if (mc_library_get_related_categories_async(
+                    context.Get(), nullptr, &categoryQuery, deliver, &categories, &request) != MC_OK ||
+                !ready() || categories.rows.size() != 1 || categories.rows[0].second != "Electronic")
             {
                 return failure(__LINE__);
             }
-            const mc_facet_selection selection { MC_FACET_GENRE, facets.rows[0].first };
-            facets = {};
-            if (mc_library_list_facets_async(context.Get(), nullptr, MC_FACET_ALBUM, { "Morning", 7 },
-                &selection, 1, deliver, &facets, &request) != MC_OK || !ready() || !facets.rows.empty())
+            const mc_category_selection selection { { "genre", 5 }, categories.rows[0].first };
+            categories = {};
+            categoryQuery.field = { "album", 5 };
+            categoryQuery.filter.track_filter = { "Morning", 7 };
+            categoryQuery.filter.selections = &selection;
+            categoryQuery.filter.selection_count = 1;
+            if (mc_library_get_related_categories_async(
+                    context.Get(), nullptr, &categoryQuery, deliver, &categories, &request) != MC_OK ||
+                !ready() || !categories.rows.empty())
             {
+                return failure(__LINE__);
+            }
+            /* a custom output constrained by another custom field must work
+            through both local and remote query execution. */
+            categories = {};
+            categoryQuery.field = { "composer", 8 };
+            categoryQuery.filter.track_filter = { "Morning", 7 };
+            categoryQuery.filter.selections = nullptr;
+            categoryQuery.filter.selection_count = 0;
+            if (mc_library_get_related_categories_async(
+                    context.Get(), nullptr, &categoryQuery, deliver, &categories, &request) != MC_OK ||
+                !ready() || categories.rows.empty()) {
+                return failure(__LINE__);
+            }
+            const mc_category_selection composer { { "composer", 8 }, categories.rows.front().first };
+            categories = {};
+            categoryQuery.field = { "language", 8 };
+            categoryQuery.filter.selections = &composer;
+            categoryQuery.filter.selection_count = 1;
+            if (mc_library_get_related_categories_async(
+                    context.Get(), nullptr, &categoryQuery, deliver, &categories, &request) != MC_OK ||
+                !ready() || categories.rows.size() != 1 || categories.rows.front().second != "eng") {
                 return failure(__LINE__);
             }
             mc_library* selected = nullptr;
@@ -1237,18 +1280,27 @@ namespace {
             mc_library_scope scope = MC_LIBRARY_SCOPE_DEFAULT;
             scope.sources = &sources;
             if (mc_library_set_scope(selected, &scope) != MC_OK) { return failure(__LINE__); }
-            facets = {};
-            if (mc_library_list_categories_async(context.Get(), nullptr, { "artist", 6 }, { nullptr, 0 },
-                MC_TRACK_SEARCH_SUBSTRING, deliver, &facets, &request) != MC_OK || !ready() || !facets.rows.empty()) {
+            categories = {};
+            categoryQuery.field = { "artist", 6 };
+            categoryQuery.filter.track_filter = { nullptr, 0 };
+            categoryQuery.filter.selections = nullptr;
+            categoryQuery.filter.selection_count = 0;
+            if (mc_library_get_related_categories_async(
+                    context.Get(), nullptr, &categoryQuery, deliver, &categories, &request) != MC_OK ||
+                !ready() || !categories.rows.empty())
+            {
                 return failure(__LINE__);
             }
             int32_t fileSource = 0;
             sources.ids = &fileSource;
             sources.count = 1;
             if (mc_library_set_scope(selected, &scope) != MC_OK) { return failure(__LINE__); }
-            facets = {};
-            if (mc_library_list_categories_async(context.Get(), nullptr, { "artist", 6 }, { "Fixture", 7 },
-                MC_TRACK_SEARCH_SUBSTRING, deliver, &facets, &request) != MC_OK || !ready() || facets.rows.size() != 1) {
+            categories = {};
+            categoryQuery.filter.track_filter = { "Fixture", 7 };
+            if (mc_library_get_related_categories_async(
+                    context.Get(), nullptr, &categoryQuery, deliver, &categories, &request) != MC_OK ||
+                !ready() || categories.rows.size() != 1)
+            {
                 return failure(__LINE__);
             }
             struct Saved {
@@ -2149,7 +2201,7 @@ namespace {
             return failure(__LINE__);
         }
         auto search = mc_track_search MC_TRACK_SEARCH_DEFAULT;
-        search.text = { "Hidden fixture", 14 };
+        search.filter.track_filter = { "Hidden fixture", 14 };
         mc_track_result* searchResult = nullptr;
         if (hiddenHost.search_tracks(hiddenHost.context, &search, -1, 0, &searchResult) != MC_OK ||
             !searchResult || mc_track_result_get_count(searchResult) != 0)
@@ -2639,8 +2691,9 @@ namespace {
             return failure(__LINE__);
         }
         completed.reset();
-        OpenTrackSearch(context, TrackSearch { kHeldSearch },
-            [&](mc_result result, TrackResult, std::string_view) { completed = result; });
+        OpenTrackSearch(context, TrackSearch { { kHeldSearch } }, [&](mc_result result, TrackResult, std::string_view) {
+            completed = result;
+        });
         if (!explicitServer.WaitForHeldReply()) {
             return failure(__LINE__);
         }

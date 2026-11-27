@@ -20,6 +20,8 @@ set(musikcore_sources
   src/musikcore/audio/Dsp.cpp
   src/musikcore/audio/Visualizer.cpp
   src/musikcore/db/Connection.cpp
+  src/musikcore/db/Connection.cpp
+  src/musikcore/db/Statement.cpp
   src/musikcore/db/ScopedTransaction.cpp
   src/musikcore/db/SqliteExtensions.cpp
   src/musikcore/db/Statement.cpp
@@ -31,6 +33,10 @@ set(musikcore_sources
   src/musikcore/plugin/PluginLibraryService.cpp
   src/musikcore/library/QueryRegistry.cpp
   src/musikcore/library/RemoteLibraryBackend.cpp
+  src/musikcore/library/query/AllCategoriesQuery.cpp
+  src/musikcore/library/query/CategoryListQuery.cpp
+  src/musikcore/library/query/util/CategoryQueryUtil.cpp
+  src/musikcore/library/query/util/CategorySerialization.cpp
   src/musikcore/library/query/AlbumListQuery.cpp
   src/musikcore/library/query/AllCategoriesQuery.cpp
   src/musikcore/library/query/AppendPlaylistQuery.cpp
@@ -47,9 +53,11 @@ set(musikcore_sources
   src/musikcore/library/query/SearchTrackListQuery.cpp
   src/musikcore/library/query/SetTrackRatingQuery.cpp
   src/musikcore/library/query/TrackMetadataBatchQuery.cpp
+  src/musikcore/library/query/TrackProjectedPageQuery.cpp
   src/musikcore/library/query/TrackMetadataQuery.cpp
   src/musikcore/library/query/util/CategoryQueryUtil.cpp
   src/musikcore/library/query/util/Serialization.cpp
+  src/musikcore/library/query/util/CategorySerialization.cpp
   src/musikcore/library/track/IndexerTrack.cpp
   src/musikcore/library/track/LibraryTrack.cpp
   src/musikcore/library/track/TrackList.cpp

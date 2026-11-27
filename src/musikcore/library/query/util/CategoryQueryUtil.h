@@ -52,14 +52,32 @@ namespace musik { namespace core { namespace library { namespace query {
 
         enum class PropertyType: int { Regular, Extended };
 
+        /* escape SQL LIKE metacharacters so substring input stays literal. */
+        inline std::string SubstringPattern(const std::string& value) {
+            std::string result = "%";
+            for (const char c : value) {
+                if (c == '%' || c == '_' || c == '\\') {
+                    result += '\\';
+                }
+                result += c;
+            }
+            return result + "%";
+        }
+
+
+
         /* property name to foreign key id */
+        // clang-format off
         static std::map<std::string, std::string> PREDICATE_TO_COLUMN_MAP = {
             { constants::Track::ALBUM, "album_id" },
             { constants::Track::ARTIST, "visual_artist_id" },
             { constants::Track::ALBUM_ARTIST, "album_artist_id" },
             { constants::Track::GENRE, "visual_genre_id" },
-            { constants::Track::DIRECTORY, "directory_id" }
+            { constants::Track::DIRECTORY, "directory_id" },
+            { constants::Track::DURATION, constants::Track::DURATION },
+            { constants::Track::RATING, constants::Track::RATING },
         };
+        // clang-format on
 
         /* resource type to a pair { <table_name>, <track_table_fk_name> } */
         static std::map<std::string, std::pair<std::string, std::string>> REGULAR_PROPERTY_MAP = {
@@ -83,7 +101,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "  WHERE {{extended_predicates}} "
             "  GROUP BY track_id "
             "  HAVING COUNT(track_id)={{extended_predicate_count}} "
-            ") AS md ON tracks.id=md.track_id ";
+            ") AS md ON {{track_id}}=md.track_id ";
 
         /* REGULAR_PROPERTY_QUERY is used to return a list of property values and their
         respective IDs for regular properties, that is, albums, artists, album artists,
@@ -114,7 +132,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "WHERE {{table}}.id=tracks.{{fk_id}} AND tracks.visible=1 "
             "{{regular_predicates}} "
             "{{regular_filter}} "
-            "{{facet_filter}} "
+            "{{track_filter}} "
             "{{source_predicate}} "
             "ORDER BY {{table}}.sort_order";
 
@@ -148,7 +166,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "INNER JOIN ( "
             "  SELECT id AS track_id "
             "  FROM tracks "
-            "  WHERE tracks.visible=1 {{regular_predicates}} "
+            "  WHERE tracks.visible=1 {{regular_predicates}} {{track_filter}} "
             ") AS reg on extended_metadata.id=reg.track_id "
             "{{extended_predicates}} "
             "WHERE "
@@ -249,7 +267,8 @@ namespace musik { namespace core { namespace library { namespace query {
             const std::string& prefix = "");
 
         extern std::string InnerJoinExtended(
-            const PredicateList& pred, ArgumentList& args);
+            const PredicateList& pred, ArgumentList& args,
+            const char* trackId = "tracks.id");
 
         extern std::string JoinExtended(
             const PredicateList& pred, ArgumentList& args);

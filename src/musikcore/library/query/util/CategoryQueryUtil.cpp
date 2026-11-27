@@ -101,11 +101,11 @@ namespace musik { namespace core { namespace library { namespace query { namespa
         PredicateList& regular,
         PredicateList& extended)
     {
-        auto end = REGULAR_PROPERTY_MAP.end();
+        auto end = PREDICATE_TO_COLUMN_MAP.end();
 
         for (auto p : input) {
-            if (p.first.size() && p.second != 0 && p.second != -1) {
-                if (REGULAR_PROPERTY_MAP.find(p.first) != end) {
+            if (p.first.size() && p.second >= 0) {
+                if (PREDICATE_TO_COLUMN_MAP.find(p.first) != end) {
                     regular.push_back(p);
                 }
                 else {
@@ -126,8 +126,8 @@ namespace musik { namespace core { namespace library { namespace query { namespa
                 if (i > 0) { result += " AND "; }
                 auto p = pred[i];
                 auto str = REGULAR_PREDICATE;
-                auto map = REGULAR_PROPERTY_MAP[p.first];
-                ReplaceAll(str, "{{fk_id}}", map.second);
+                auto column = PREDICATE_TO_COLUMN_MAP[p.first];
+                ReplaceAll(str, "{{fk_id}}", column);
                 result += str;
                 args.push_back(std::make_shared<Id>(p.second));
             }
@@ -140,7 +140,7 @@ namespace musik { namespace core { namespace library { namespace query { namespa
     }
 
     std::string InnerJoinExtended(
-        const PredicateList& pred, ArgumentList& args)
+        const PredicateList& pred, ArgumentList& args, const char* trackId)
     {
         std::string result;
 
@@ -149,6 +149,7 @@ namespace musik { namespace core { namespace library { namespace query { namespa
             result = EXTENDED_INNER_JOIN;
             ReplaceAll(result, "{{extended_predicates}}", joined);
             ReplaceAll(result, "{{extended_predicate_count}}", std::to_string(pred.size()));
+            ReplaceAll(result, "{{track_id}}", trackId);
         }
 
         return result;

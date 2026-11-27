@@ -92,9 +92,11 @@ size_t SearchTrackListQuery::GetQueryHash() noexcept {
 
 bool SearchTrackListQuery::OnRun(Connection& db) {
     TrackSearchRows rows;
-    TrackSearchQuery query(this->filter, this->matchType == MatchType::Regex,
-        this->sortType, this->GetLimit(), this->GetOffset());
+    TrackSearchQuery query(this->filter,
+        this->matchType == MatchType::Regex ? TrackMatchMode::Regex : TrackMatchMode::Substring, this->sortType,
+        this->GetLimit(), this->GetOffset());
     query.scope = this->scope;
+    query.selections = this->selections;
     if (!query.Run(db.NativeHandle(), rows)) return false;
 
     /* Adapt the shared search result to the existing serialized query contract. */
@@ -111,14 +113,17 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
 /* ISerializableQuery */
 
 std::string SearchTrackListQuery::SerializeQuery() {
+    // clang-format off
     nlohmann::json output = {
         { "name", kQueryName },
         { "options", {
             { "filter", filter },
             { "matchType", matchType },
-            { "sortType", sortType }
-        } }
+            { "sortType", sortType },
+            { "selections", EncodeSelections(selections) },
+        } },
     };
+    // clang-format on
     output["options"]["scope"] = EncodeScope(this->scope);
     return FinalizeSerializedQueryWithLimitAndOffset(output);
 }
@@ -141,6 +146,8 @@ std::shared_ptr<SearchTrackListQuery> SearchTrackListQuery::DeserializeQuery(mus
         options.value("matchType", MatchType::Substring),
         options["filter"].get<std::string>(),
         options["sortType"].get<TrackSortType>());
+    result->SetSelections(
+        DecodeSelections(options.value("selections", std::vector<std::pair<std::string, int64_t>> {})));
     result->ExtractLimitAndOffsetFromDeserializedQuery(options);
     result->SetScope(DecodeScope(options));
     return result;

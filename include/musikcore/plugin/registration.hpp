@@ -72,16 +72,16 @@ namespace musik { namespace core { namespace plugin {
     }
 
     /* the host keeps each table, so a temporary would immediately dangle. */
-    mc_result RegisterStream(const mc_host_api&, const mc_stream_factory&&) = delete;
-    mc_result RegisterDecoder(const mc_host_api&, const mc_decoder_factory&&) = delete;
-    mc_result RegisterOutput(const mc_host_api&, const mc_output_factory&&) = delete;
-    mc_result RegisterVisualizer(const mc_host_api&, const mc_visualizer_factory&&) = delete;
-    mc_result RegisterDsp(const mc_host_api&, const mc_dsp_factory&&) = delete;
-    mc_result RegisterPlaybackRemote(const mc_host_api&, const mc_playback_remote_factory&&) = delete;
-    mc_result RegisterEncoder(const mc_host_api&, const mc_encoder_factory&&) = delete;
-    mc_result RegisterTagReader(const mc_host_api&, const mc_tag_reader_factory&&) = delete;
-    mc_result RegisterAnalyzer(const mc_host_api&, const mc_analyzer_factory&&) = delete;
-    mc_result RegisterIndexerSource(const mc_host_api&, const mc_indexer_source_factory&&) = delete;
-    mc_result RegisterConfiguration(const mc_host_api&, const mc_configuration_api&&) = delete;
+    mc_result RegisterStream(const mc_host_api& host, const mc_stream_factory&& factory) = delete;
+    mc_result RegisterDecoder(const mc_host_api& host, const mc_decoder_factory&& factory) = delete;
+    mc_result RegisterOutput(const mc_host_api& host, const mc_output_factory&& factory) = delete;
+    mc_result RegisterVisualizer(const mc_host_api& host, const mc_visualizer_factory&& factory) = delete;
+    mc_result RegisterDsp(const mc_host_api& host, const mc_dsp_factory&& factory) = delete;
+    mc_result RegisterPlaybackRemote(const mc_host_api& host, const mc_playback_remote_factory&& factory) = delete;
+    mc_result RegisterEncoder(const mc_host_api& host, const mc_encoder_factory&& factory) = delete;
+    mc_result RegisterTagReader(const mc_host_api& host, const mc_tag_reader_factory&& factory) = delete;
+    mc_result RegisterAnalyzer(const mc_host_api& host, const mc_analyzer_factory&& factory) = delete;
+    mc_result RegisterIndexerSource(const mc_host_api& host, const mc_indexer_source_factory&& factory) = delete;
+    mc_result RegisterConfiguration(const mc_host_api& host, const mc_configuration_api&& configuration) = delete;
 
 } } }

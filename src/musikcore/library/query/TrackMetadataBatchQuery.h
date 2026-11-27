@@ -43,7 +43,9 @@
 
 namespace musik { namespace core { namespace library { namespace query {
 
-class TrackMetadataBatchQuery: public QueryBase {
+    /* fetch metadata for known track IDs, for example when filling visible rows
+from an already opened playback result. */
+    class TrackMetadataBatchQuery : public QueryBase {
     public:
         static const std::string kQueryName;
 
@@ -91,5 +93,6 @@ class TrackMetadataBatchQuery: public QueryBase {
         ProjectedTrackPage page;
         bool hasProjectedPage = false;
 };
+
 
 } } } }

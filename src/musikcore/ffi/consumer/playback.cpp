@@ -28,6 +28,7 @@ mc_result MC_CALL mc_playback_get_current_track_metadata(const mc_playback* play
         auto page = std::unique_ptr<mc_track_page>(new mc_track_page);
         const auto status = playback->CurrentTrackMetadata(*page);
         if (status == MC_OK) {
+            page->total = page->rows.size();
             *out_page = page.release();
         }
         return status;

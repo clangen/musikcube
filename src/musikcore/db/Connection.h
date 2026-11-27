@@ -62,6 +62,9 @@ namespace musik { namespace core { namespace db {
             Connection() noexcept;
             ~Connection();
 
+            enum OpenOption : unsigned int { ReadOnly = 1U };
+
+            /* defaults to read-write/create; ReadOnly opens an existing database. */
             int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);
             int Close() noexcept;
             int Execute(const char* sql);

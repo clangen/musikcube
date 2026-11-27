@@ -44,10 +44,10 @@ namespace musik { namespace core { namespace api {
         }
 
         ~TrackResultWindow() { this->Clear(); }
-        TrackResultWindow(const TrackResultWindow&) = delete;
-        TrackResultWindow& operator=(const TrackResultWindow&) = delete;
-        TrackResultWindow(TrackResultWindow&&) = delete;
-        TrackResultWindow& operator=(TrackResultWindow&&) = delete;
+        TrackResultWindow(const TrackResultWindow& other) = delete;
+        TrackResultWindow& operator=(const TrackResultWindow& other) = delete;
+        TrackResultWindow(TrackResultWindow&& other) = delete;
+        TrackResultWindow& operator=(TrackResultWindow&& other) = delete;
 
         const TrackResult& Result() const noexcept { return this->result; }
         bool Pending() const noexcept { return this->request != 0; }

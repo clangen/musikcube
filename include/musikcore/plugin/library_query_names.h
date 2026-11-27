@@ -7,7 +7,8 @@
 #define MC_LIBRARY_QUERY_CATEGORY_TRACKS "CategoryTrackListQuery"
 #define MC_LIBRARY_QUERY_DIRECTORY_TRACKS "DirectoryTrackListQuery"
 #define MC_LIBRARY_QUERY_CATEGORIES "CategoryListQuery"
-#define MC_LIBRARY_QUERY_FACETS "FacetListQuery"
+#define MC_LIBRARY_QUERY_CATEGORY_PAGE "CategoryPageQuery"
+#define MC_LIBRARY_QUERY_TRACK_PAGE "TrackPageQuery"
 #define MC_LIBRARY_QUERY_ALBUMS "AlbumListQuery"
 
 #endif

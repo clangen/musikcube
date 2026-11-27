@@ -43,7 +43,7 @@ namespace wrapper_tests {
         options.wakeup = query_test_wakeup;
         api::Context context(options);
         const auto wakes = query_test_wakeup_count();
-        api::OpenTrackSearch(context, *source, api::TrackSearch{ "Fixture Artist" },
+        api::OpenTrackSearch(context, *source, api::TrackSearch{ { "Fixture Artist" } },
             [&](mc_result status, api::TrackResult tracks, std::string_view) {
                 if (status == MC_OK) result = std::move(tracks);
             });

@@ -79,6 +79,8 @@ bool AllCategoriesQuery::OnRun(Connection& db) {
     add("artist");
     add("album_artist");
     add("genre");
+    add("duration");
+    add("rating");
 
     while (stmt.Step() == db::Row) {
         add(stmt.ColumnText(0));

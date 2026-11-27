@@ -16,7 +16,7 @@ to change the selected source set while the application is running, without
 restarting the application or rescanning the library.
 
 The initial scope contains only a set of source IDs. Visibility, directory,
-metadata facets, playlist membership, rating, time and availability are
+related categories, playlist membership, rating, time and availability are
 possible future filters and are outside this adendum. Do not add them to the
 initial implementation or turn this into a general-purpose query language.
 The shared mechanism must be extensible: adding a later filter should not
@@ -28,7 +28,7 @@ or inventing a separate filtering API.
 Library operations already receive an opaque `mc_library` or derive a library
 identity from a result or track reference. They are not all parameterized the
 same way: track search and page query use different structs, while category,
-facet, album, directory and playlist operations use other arguments. Their
+category, album, directory and playlist operations use other arguments. Their
 local implementations use several typed queries; remote operations serialize
 those queries to the server. `MC_TRACK_FIELD_SOURCE_ID` exposes a track's
 source ID, but there is no public source-listing operation.
@@ -112,7 +112,7 @@ counts and pointer/count pairs at the owning boundary and copy caller-owned
 arrays before returning from a scope update or query submission. Specify supported
 ID range and a bounded selection size.
 
-Define how a scope combines with existing search, category, facet and directory
+Define how a scope combines with existing search, category and directory
 predicates. Source selections normally mean any of the selected sources;
 other query conditions narrow that result. Apply restrictions before grouping,
 counts, album-boundary calculations, sorting, offset and limit. A category or
@@ -121,7 +121,7 @@ splitting its catalog identity or double-counting it.
 
 Define semantics explicitly for each operation, especially:
 
-- Searches, category and facet lists, albums, directories and track pages.
+- Searches, category lists, albums, directories and track pages.
 - Playlist discovery shows global playlists plus those owned by selected
   sources; unrestricted shows all and an empty selection shows only global.
   Contents remain unfiltered and preserve order and duplicates. Creation must
@@ -150,7 +150,7 @@ The operation classifications below apply to both local and remote backends.
 | --- | --- | --- |
 | Track search | filtered | `TrackSearchQuery`, local `TrackReadBackend`, remote `SearchTrackListQuery` |
 | Category and directory track results | filtered | `LibraryQueries::OpenSelection()` |
-| Category values and facets | filtered before grouping | `LibraryQueries::ListCategories()` / `ListFacets()` |
+| Category values | filtered before grouping | `FilterCategoriesByName()` / `GetRelatedCategories()` |
 | Albums | filtered before grouping | `LibraryQueries::ListAlbums()` |
 | Metadata field discovery | catalog-wide schema | `LibraryQueries::ListCategoryFields()` |
 | Direct page query | title browsing filtered; explicit ID projection catalog-wide | `TrackPageQuery` / `AsyncTrackReader::ReadPage()` |
@@ -231,7 +231,7 @@ The final acceptance additions cover:
 - concurrent submission/replacement, subscription registration during delivery,
   reentrant observer removal while another callback runs, and context shutdown;
 - invalidation before refresh notifications and reentrant refresh queries;
-- shared artists/albums and scoped grouped durations/facets on both backends;
+- shared artists/albums and scoped grouped durations/categories on both backends;
 - mixed-source and missing-track create/append/replace batches, source zero and
   provider ownership, duplicate ordering, unchanged contents and playlist counts,
   and absence of mutation notifications after rejected writes;
@@ -311,7 +311,7 @@ SCOPE-012 identifier is intentionally not reused.
   scope-filtered requests atomically with that change; equivalent selections
   (including reordered or repeated source IDs) cause no event or invalidation.
 - [x] **SCOPE-005** Apply the filter to local typed queries for track search,
-  projections, category/facet and album browsing, directory reads and any
+  projections, category and album browsing, directory reads and any
   other scope-filtered operations from SCOPE-001. Share predicate construction
   where it simplifies callers; bind every source ID, including each `IN` value,
   and choose SQL identifiers from fixed fragments. Do not push application

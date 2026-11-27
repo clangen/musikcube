@@ -182,18 +182,38 @@ namespace {
 mc_result MC_CALL PluginLibraryService::SearchTracks(
     void* context, const mc_track_search* search, int32_t limit, int32_t offset, mc_track_result** result) {
     if (!context || !search || search->struct_size < sizeof(*search) || !result || *result ||
-        !musik::core::ffi::valid_text(search->text) || search->mode > MC_TRACK_SEARCH_REGEX ||
-        search->order > MC_TRACK_SEARCH_DURATION || limit < -1 || offset < 0)
+        !musik::core::ffi::valid_text(search->filter.track_filter) ||
+        search->filter.track_match_mode > MC_TRACK_SEARCH_REGEX || search->order > MC_TRACK_SEARCH_DURATION ||
+        limit < -1 || offset < 0 || search->filter.selection_count > 64 ||
+        (search->filter.selection_count && !search->filter.selections))
     {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return musik::core::ffi::exception_barrier(nullptr, [&]() -> mc_result {
         auto& self = *static_cast<PluginLibraryService*>(context);
-        const auto match = search->mode == MC_TRACK_SEARCH_REGEX ? SearchTrackListQuery::MatchType::Regex
-                                                                 : SearchTrackListQuery::MatchType::Substring;
-        const std::string filter(search->text.data ? search->text.data : "", search->text.length);
+        const auto match = search->filter.track_match_mode == MC_TRACK_SEARCH_REGEX
+            ? SearchTrackListQuery::MatchType::Regex
+            : SearchTrackListQuery::MatchType::Substring;
+        const std::string filter(search->filter.track_filter.data ? search->filter.track_filter.data : "",
+            search->filter.track_filter.length);
         auto query = std::make_shared<SearchTrackListQuery>(
             self.instance->NativeBackend(), match, filter, static_cast<TrackSortType>(search->order));
+        std::vector<CategorySelection> selections;
+        for (size_t i = 0; i < search->filter.selection_count; ++i) {
+            const auto& selection = search->filter.selections[i];
+            if (!musik::core::ffi::valid_text(selection.field, false) || selection.key < 0) {
+                return MC_ERROR_INVALID_ARGUMENT;
+            }
+            std::string field(selection.field.data, selection.field.length);
+            if (std::any_of(selections.begin(), selections.end(), [&](const auto& item) { return item.field == field; })) {
+                return MC_ERROR_INVALID_ARGUMENT;
+            }
+            selections.push_back({
+                .field = std::move(field),
+                .key = selection.key,
+            });
+        }
+        query->SetSelections(std::move(selections));
         if (limit >= 0) {
             query->SetLimitAndOffset(limit, offset);
         }
@@ -353,6 +373,7 @@ mc_result MC_CALL PluginLibraryService::ReadTracks(
         else {
             output->names = fields;
         }
+        output->total = ids.size();
         *page = output.release();
         return MC_OK;
     });
@@ -440,6 +461,44 @@ mc_result MC_CALL PluginLibraryService::RunQuery(
                 return MC_ERROR_INVALID_ARGUMENT;
             }
         }
+        if (name == "TrackPageQuery") {
+            const auto fields = options.find("fields"), offset = options.find("offset"), limit = options.find("limit");
+            const auto filter = options.find("filter"), regex = options.find("regex");
+            if (fields == options.end() || !fields->is_array() || fields->empty() ||
+                fields->size() > MC_TRACK_QUERY_MAX_FIELDS || offset == options.end() ||
+                !offset->is_number_unsigned() || offset->get<uint64_t>() > INT64_MAX || limit == options.end() ||
+                !limit->is_number_unsigned() || limit->get<uint64_t>() == 0 ||
+                limit->get<uint64_t>() > MC_TRACK_QUERY_MAX_LIMIT || filter == options.end() || !filter->is_string() ||
+                regex == options.end() || !regex->is_boolean())
+            {
+                return MC_ERROR_INVALID_ARGUMENT;
+            }
+            for (const auto& field : *fields) {
+                if (!field.is_string() || field.get_ref<const std::string&>().empty()) {
+                    return MC_ERROR_INVALID_ARGUMENT;
+                }
+            }
+        }
+        if (name == "TrackPageQuery" || name == SearchTrackListQuery::kQueryName) {
+            const auto selections = options.find("selections");
+            if (selections != options.end()) {
+                if (!selections->is_array() || selections->size() > 64) {
+                    return MC_ERROR_INVALID_ARGUMENT;
+                }
+                std::set<std::string> seen;
+                for (const auto& selection : *selections) {
+                    if (!selection.is_array() || selection.size() != 2 || !selection[0].is_string() ||
+                        !selection[1].is_number_integer() || selection[1].get<int64_t>() < 0)
+                    {
+                        return MC_ERROR_INVALID_ARGUMENT;
+                    }
+                    const auto key = selection[0].get<std::string>();
+                    if (key.empty() || !seen.insert(key).second) {
+                        return MC_ERROR_INVALID_ARGUMENT;
+                    }
+                }
+            }
+        }
         const auto regular = options.find("regularPredicateList");
         if (regular != options.end() && !regular->is_null()) {
             if (!regular->is_array()) {
@@ -448,22 +507,36 @@ mc_result MC_CALL PluginLibraryService::RunQuery(
             for (const auto& predicate : *regular) {
                 if (!predicate.is_array() || predicate.size() != 2 || !predicate[0].is_string() ||
                     !predicate[1].is_number_integer() ||
-                    !category::REGULAR_PROPERTY_MAP.contains(predicate[0].get<std::string>()))
+                    !category::PREDICATE_TO_COLUMN_MAP.contains(predicate[0].get<std::string>()))
                 {
                     return MC_ERROR_INVALID_ARGUMENT;
                 }
             }
         }
-        if (name == CategoryListQuery::kQueryName || name == CategoryListQuery::kFacetQueryName) {
+        if (name == CategoryListQuery::kQueryName || name == CategoryListQuery::kCategoryPageQueryName) {
             const auto field = options.find("trackField");
             const auto type = options.find("outputType");
             if (field == options.end() || !field->is_string() || type == options.end() || !type->is_number_integer()) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
             const auto& value = field->get_ref<const std::string&>();
-            const int expected = value == "playlists" ? 3 : category::REGULAR_PROPERTY_MAP.contains(value) ? 1 : 2;
+            const int expected = value == "playlists"            ? 3
+                : value == "duration" || value == "rating"       ? 4
+                : category::REGULAR_PROPERTY_MAP.contains(value) ? 1
+                                                                 : 2;
             if (*type != expected) {
                 return MC_ERROR_INVALID_ARGUMENT;
+            }
+            if (name == CategoryListQuery::kCategoryPageQueryName) {
+                const auto offset = options.find("offset"), limit = options.find("limit"),
+                           anchor = options.find("anchorId");
+                if (offset == options.end() || limit == options.end() || anchor == options.end() ||
+                    !offset->is_number_unsigned() || !limit->is_number_unsigned() || !anchor->is_number_integer() ||
+                    *anchor < -1 || limit->get<uint64_t>() == 0 ||
+                    limit->get<uint64_t>() > MC_CATEGORY_QUERY_MAX_LIMIT || offset->get<uint64_t>() > INT64_MAX)
+                {
+                    return MC_ERROR_INVALID_ARGUMENT;
+                }
             }
         }
         auto& self = *static_cast<PluginLibraryService*>(context);
@@ -523,7 +596,7 @@ mc_result MC_CALL PluginLibraryService::ListCategoriesHost(void* context, mc_str
         entries.reserve(text.size());
         for (size_t i = 0; i < text.size(); ++i) {
             entries.push_back({
-                .id = values->at(i).id,
+                .key = values->at(i).id,
                 .value = { text[i].data(), text[i].size() },
             });
         }
@@ -584,8 +657,7 @@ mc_result MC_CALL PluginLibraryService::ListCategoryFields(
 
 mc_result MC_CALL PluginLibraryService::ListFilteredCategories(void* context, mc_string_view field,
     const mc_library_category_selection* selections, size_t selectionCount, mc_string_view filter,
-    mc_track_search_mode mode, bool facet, mc_string_view trackSearch, mc_category_list_completion_fn completion,
-    void* userData) {
+    mc_track_search_mode mode, mc_string_view trackSearch, mc_category_list_completion_fn completion, void* userData) {
     if (!context || !completion || !musik::core::ffi::valid_text(field, false) ||
         !musik::core::ffi::valid_text(filter) || !musik::core::ffi::valid_text(trackSearch) ||
         mode > MC_TRACK_SEARCH_REGEX || !validSelections(selections, selectionCount))
@@ -598,9 +670,7 @@ mc_result MC_CALL PluginLibraryService::ListFilteredCategories(void* context, mc
                                                          : CategoryListQuery::MatchType::Substring;
         auto query = std::make_shared<CategoryListQuery>(match, std::string(field.data, field.length),
             copySelections(selections, selectionCount), std::string(filter.data ? filter.data : "", filter.length));
-        if (facet) {
-            query->SetFacetSearch(std::string(trackSearch.data ? trackSearch.data : "", trackSearch.length));
-        }
+        query->SetTrackFilter(std::string(trackSearch.data ? trackSearch.data : "", trackSearch.length));
         if (self.instance->NativeBackend()->EnqueueAndWait(query) < 0 || query->GetStatus() != IQuery::Finished) {
             return MC_ERROR_IO;
         }
@@ -614,7 +684,7 @@ mc_result MC_CALL PluginLibraryService::ListFilteredCategories(void* context, mc
         entries.reserve(text.size());
         for (size_t i = 0; i < text.size(); ++i) {
             entries.push_back({
-                .id = values->at(i).id,
+                .key = values->at(i).id,
                 .value = { .data = text[i].data(), .length = text[i].size() },
             });
         }

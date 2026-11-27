@@ -56,17 +56,23 @@ Connection::~Connection() {
     this->Close();
 }
 
-int Connection::Open(const std::string &database, unsigned int options, unsigned int cache) {
-    /* private caches let competing catalog writers use the busy timeout.
-    shared-cache table locks return SQLITE_LOCKED without waiting. */
-    const int error = sqlite3_open_v2(database.c_str(), &this->connection,
-        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_PRIVATECACHE, nullptr);
-
-    if (error == SQLITE_OK) {
-        this->Initialize(cache);
+int Connection::Open(const std::string& database, unsigned int options, unsigned int cache) {
+    const bool readOnly = (options & ReadOnly) != 0;
+    const int flags = readOnly ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    const int result = sqlite3_open_v2(database.c_str(), &this->connection, flags | SQLITE_OPEN_PRIVATECACHE, nullptr);
+    if (result != SQLITE_OK) {
+        return result;
     }
-
-    return error;
+    if (!readOnly) {
+        this->Initialize(cache);
+        return result;
+    }
+    sqlite3_busy_timeout(this->connection, 10000);
+    if (SqliteExtensions::Register(this->connection) != SQLITE_OK) {
+        this->Close();
+        return Error;
+    }
+    return Okay;
 }
 
 int Connection::Close() noexcept {
@@ -79,7 +85,7 @@ int Connection::Close() noexcept {
 }
 
 int Connection::Execute(const char* sql) {
-    sqlite3_stmt *stmt  = nullptr;
+    sqlite3_stmt* stmt = nullptr;
 
     if (this->PrepareStatement(sql, &stmt) != SQLITE_OK) {
         sqlite3_finalize(stmt);

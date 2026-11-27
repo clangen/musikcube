@@ -35,6 +35,7 @@
 #pragma once
 
 #include "TrackListQueryBase.h"
+#include "TrackReadQueries.h"
 #include <musikcore/library/query/util/TrackSort.h>
 
 namespace musik { namespace core { namespace library { namespace query {
@@ -51,6 +52,8 @@ namespace musik { namespace core { namespace library { namespace query {
                 const std::string& filter,
                 TrackSortType sort);
 
+
+            void SetSelections(std::vector<CategorySelection> value) { this->selections = std::move(value); }
 
             /* IQuery */
             std::string Name() override { return kQueryName; }
@@ -80,6 +83,7 @@ namespace musik { namespace core { namespace library { namespace query {
             /* serialized query fields */
             std::string filter;
             TrackSortType sortType;
+            std::vector<CategorySelection> selections;
 
             /* serialized result fields */
             Result result;

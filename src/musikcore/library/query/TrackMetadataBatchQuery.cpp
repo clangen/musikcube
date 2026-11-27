@@ -129,7 +129,16 @@ std::string TrackMetadataBatchQuery::SerializeResult() {
         for (const auto& row : this->page.rows) {
             rows.push_back({{"id", row.id}, {"values", row.fields}});
         }
-        return nlohmann::json{{"projectedPage", {{"fields", this->page.names}, {"rows", rows}}}}.dump();
+        // clang-format off
+        nlohmann::json output = {
+            { "projectedPage", {
+                { "fields", this->page.names },
+                { "rows", rows },
+                { "total", this->page.total },
+            } },
+        };
+        // clang-format on
+        return output.dump();
     }
     nlohmann::json idToTrackMap;
     for (auto& kv : this->result) {

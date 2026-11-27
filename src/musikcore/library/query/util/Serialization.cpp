@@ -44,20 +44,6 @@ namespace musik { namespace core { namespace library { namespace query {
 
     namespace serialization {
 
-        nlohmann::json PredicateListToJson(const category::PredicateList& input) {
-            nlohmann::json result;
-            for (auto& it : input) {
-                result.push_back({ it.first, it.second });
-            }
-            return result;
-        }
-
-        void PredicateListFromJson(const nlohmann::json& input, category::PredicateList& output) {
-            for (auto& it : input) {
-                output.push_back({ it[0], it[1] });
-            }
-        }
-
         nlohmann::json MetadataMapsToJson(const std::vector<AlbumRecord>& input) {
             nlohmann::json result;
             for (const auto& album : input) {
@@ -90,33 +76,7 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         }
 
-        nlohmann::json ValueListToJson(const CategoryValues& input) {
-            nlohmann::json result;
-            for (const auto& value : input) {
-                result.push_back({
-                    { "value", value.value },
-                    { "id", value.id },
-                    { "type", value.type },
-                    { "source_id", value.sourceId ? nlohmann::json(*value.sourceId) : nlohmann::json() },
-                });
-            }
-            return result;
-        }
-
-        void ValueListFromJson(const nlohmann::json& input, CategoryValues& output) {
-            output.clear();
-            for (const auto& value : input) {
-                output.push_back({
-                    .value = value["value"].get<std::string>(),
-                    .id = value["id"].get<int64_t>(),
-                    .type = value["type"].get<std::string>(),
-                    .sourceId = value.contains("source_id") && !value["source_id"].is_null()
-                        ? std::optional<int32_t>(value["source_id"].get<int32_t>()) : std::nullopt,
-                });
-            }
-        }
-
-        #define COPY_TRACK_FIELD_TO_JSON(track, json, field) \
+#define COPY_TRACK_FIELD_TO_JSON(track, json, field) \
             json[field] = track->GetString(field);
 
         nlohmann::json TrackToJson(const TrackPtr input, bool onlyIds) {

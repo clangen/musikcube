@@ -158,11 +158,11 @@ int main(void) {
     CHECK(mc_library_query_tracks_async(context, library, &query, page_done, NULL, NULL) == MC_ERROR_INVALID_ARGUMENT);
     /* Invalid text, reserved flags, and absent field arrays must not reach a
        worker that could dereference caller storage after this function returns. */
-    query.search = oversized;
+    query.filter.track_filter = oversized;
     REJECT(mc_library_query_tracks_async(context, library, &query, page_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
-    query.search = malformed;
+    query.filter.track_filter = malformed;
     REJECT(mc_library_query_tracks_async(context, library, &query, page_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
-    query.search = (mc_string_view){NULL, 0};
+    query.filter.track_filter = (mc_string_view) { NULL, 0 };
     query.flags = 1;
     REJECT(mc_library_query_tracks_async(context, library, &query, page_done, NULL, &request), MC_ERROR_UNSUPPORTED);
     query.flags = 0;
@@ -181,9 +181,10 @@ int main(void) {
 
     /* Search/selection entry points must share text/enum validation rather
        than admitting inputs that only one backend happens to understand. */
-    search.text = oversized;
+    search.filter.track_filter = oversized;
     REJECT(mc_library_open_track_search_async(context, library, &search, result_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
-    search.text = name; search.order = UINT32_MAX;
+    search.filter.track_filter = name;
+    search.order = UINT32_MAX;
     REJECT(mc_library_open_track_search_async(context, library, &search, result_done, NULL, &request), MC_ERROR_UNSUPPORTED);
     REJECT(mc_library_open_category_async(context, library, oversized, 1, MC_TRACK_SEARCH_ALBUM, result_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);
     REJECT(mc_library_open_directory_async(context, library, malformed, result_done, NULL, &request), MC_ERROR_INVALID_ARGUMENT);

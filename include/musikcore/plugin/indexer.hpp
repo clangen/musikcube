@@ -58,10 +58,10 @@ namespace musik { namespace core { namespace plugin {
             }
         }
 
-        IndexerRecord(const IndexerRecord&) = delete;
-        IndexerRecord& operator=(const IndexerRecord&) = delete;
-        IndexerRecord(IndexerRecord&&) = delete;
-        IndexerRecord& operator=(IndexerRecord&&) = delete;
+        IndexerRecord(const IndexerRecord& other) = delete;
+        IndexerRecord& operator=(const IndexerRecord& other) = delete;
+        IndexerRecord(IndexerRecord&& other) = delete;
+        IndexerRecord& operator=(IndexerRecord&& other) = delete;
 
         ~IndexerRecord() {
             this->writer.destroy_record(this->writer.context, &this->record);

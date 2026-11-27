@@ -57,8 +57,8 @@ namespace musik { namespace core { namespace api {
         class Connection {
         public:
             Connection() = default;
-            Connection(Connection&&) noexcept = default;
-            Connection(const Connection&) = delete;
+            Connection(Connection&& other) noexcept = default;
+            Connection(const Connection& other) = delete;
 
             ~Connection() { this->Reset(); }
 
@@ -69,7 +69,7 @@ namespace musik { namespace core { namespace api {
                 }
                 return *this;
             }
-            Connection& operator=(const Connection&) = delete;
+            Connection& operator=(const Connection& other) = delete;
 
             void Reset() {
                 auto slot = std::move(this->slot);
@@ -93,11 +93,11 @@ namespace musik { namespace core { namespace api {
         };
 
         Subscriptions() = default;
-        Subscriptions(const Subscriptions&) = delete;
-        Subscriptions(Subscriptions&&) = delete;
+        Subscriptions(const Subscriptions& other) = delete;
+        Subscriptions(Subscriptions&& other) = delete;
 
-        Subscriptions& operator=(const Subscriptions&) = delete;
-        Subscriptions& operator=(Subscriptions&&) = delete;
+        Subscriptions& operator=(const Subscriptions& other) = delete;
+        Subscriptions& operator=(Subscriptions&& other) = delete;
 
         [[nodiscard]] Connection Subscribe(Callback callback) {
             if (!callback) {

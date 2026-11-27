@@ -1,4 +1,7 @@
 #include "library-query-catalog.h"
+#include "library-query-adapter.h"
+#include <musikcore/db/Connection.h>
+#include <musikcore/db/ScopedQueryCancellation.h>
 #include "request.h"
 #include "../common/error.h"
 #include "../common/primitives.h"
@@ -77,6 +80,89 @@ namespace {
         : musik::core::library::Library(std::move(locator), kind)
         , reader(kind == MC_LIBRARY_LOCAL ? query::OpenTrackReadBackend(this->Locator() + "/musik.db") : nullptr) {}
 
+        mc_result ListCategoryFields(mc_context* context, mc_category_fields_completion_fn completion, void* data,
+            mc_request_id* request) const override
+        {
+            if (this->Kind() != MC_LIBRARY_LOCAL) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            const auto instance = this->shared_from_this();
+            return submitLibraryRequest<detail::CategoryFields>(
+                context, "List category types",
+                [instance](auto& output, const auto& canceled) -> mc_result {
+                    if (canceled.load()) {
+                        return MC_ERROR_CANCELLED;
+                    }
+                    musik::core::db::Connection db;
+                    if (db.Open(instance->Locator() + "/musik.db", musik::core::db::Connection::ReadOnly) !=
+                        musik::core::db::Okay)
+                    {
+                        return MC_ERROR_IO;
+                    }
+                    musik::core::db::ScopedQueryCancellation control { db.NativeHandle(), canceled };
+                    query::AllCategoriesQuery command;
+                    if (!command.Run(db)) {
+                        return MC_ERROR_IO;
+                    }
+                    return detail::collectFields(command, output);
+                },
+                detail::deliverFields(completion), data, request);
+        }
+
+        mc_result QueryCategories(mc_context* context, std::string field, std::string filter, mc_track_search_mode mode,
+            std::string search, mc_track_search_mode trackMode, query::category::PredicateList selections,
+            int64_t anchor, size_t offset, size_t limit, mc_category_page_completion_fn completion, void* data,
+            mc_request_id* request) const override {
+            if (this->Kind() != MC_LIBRARY_LOCAL) {
+                return MC_ERROR_UNSUPPORTED;
+            }
+            const auto instance = this->shared_from_this();
+            const auto scope = instance->GetScopeState();
+            const auto snapshot = scope->Capture();
+            const auto match = mode == MC_TRACK_SEARCH_REGEX ? query::CategoryListQuery::MatchType::Regex
+                                                             : query::CategoryListQuery::MatchType::Substring;
+            auto command = std::make_shared<query::CategoryListQuery>(match, field, selections, filter);
+            command->SetTrackFilter(std::move(search),
+                trackMode == MC_TRACK_SEARCH_REGEX ? query::CategoryListQuery::MatchType::Regex
+                                                   : query::CategoryListQuery::MatchType::Substring);
+            command->SetPage(anchor, offset, limit);
+            command->SetScope(*snapshot);
+            return submitLibraryRequest<detail::CategoryPageEntries>(
+                context, "List category page",
+                [instance, command](auto& output, const auto& canceled) -> mc_result {
+                    if (canceled.load()) {
+                        return MC_ERROR_CANCELLED;
+                    }
+                    musik::core::db::Connection db;
+                    if (db.Open(instance->Locator() + "/musik.db", musik::core::db::Connection::ReadOnly) !=
+                        musik::core::db::Okay)
+                    {
+                        return MC_ERROR_IO;
+                    }
+                    musik::core::db::ScopedQueryCancellation control { db.NativeHandle(), canceled };
+                    if (!command->Run(db)) {
+                        return MC_ERROR_IO;
+                    }
+                    const auto status = detail::collectEntries<detail::CategoryPageEntries>(*command, output);
+                    if (status == MC_OK) {
+                        output->total = command->GetTotal();
+                        output->anchorIndex = command->GetAnchorIndex();
+                    }
+                    return status;
+                },
+                [completion](mc_result status, detail::CategoryPageEntries* page, const mc_error* error, void* user) {
+                    std::unique_ptr<detail::CategoryPageEntries> owned(page);
+                    const mc_category_page view {
+                        .entries = page ? page->entries.data() : nullptr,
+                        .count = page ? page->entries.size() : 0,
+                        .total = page ? page->total : 0,
+                        .anchor_index = page ? page->anchorIndex : SIZE_MAX,
+                    };
+                    completion(status, page ? &view : nullptr, error, user);
+                },
+                data, request, nullptr, scope, snapshot);
+        }
+
         mc_result QueryTracks(mc_context* context, const query::TrackPageQuery& query,
             mc_track_query_completion_fn completion, void* data, mc_request_id* request) const override {
             return this->reader ? detail::SubmitCatalogQuery(context, this->shared_from_this(), *this->reader, query,
@@ -93,10 +179,11 @@ namespace {
 
         mc_result ReadPage(mc_context* context, std::vector<int64_t> ids, std::vector<std::string> fields,
             bool keepMissing, mc_track_query_completion_fn completion, void* data, mc_request_id* request,
-            const void* owner) const override {
-            return this->reader ? detail::SubmitCatalogPage(context, this->shared_from_this(), *this->reader,
-                                      std::move(ids), std::move(fields), keepMissing, completion, data, request, owner)
-                                : MC_ERROR_UNSUPPORTED;
+            const void* owner, size_t total) const override {
+            return this->reader
+                ? detail::SubmitCatalogPage(context, this->shared_from_this(), *this->reader, std::move(ids),
+                      std::move(fields), keepMissing, completion, data, request, owner, total)
+                : MC_ERROR_UNSUPPORTED;
         }
 
     private:
@@ -113,8 +200,13 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         return submitLibraryRequest<mc_track_page>(
             context, "Read track details",
             [instance, &reader, search = std::string(query.search), fields = std::vector<std::string>(query.fields),
-                offset = query.offset, limit = query.limit, snapshot](auto& page, const auto& cancelled) {
+                offset = query.offset, limit = query.limit, includeTotal = query.includeTotal,
+                matchMode = query.matchMode, selections = query.selections,
+                snapshot](auto& page, const auto& cancelled) {
                 query::TrackPageQuery command(search, fields, offset, limit);
+                command.includeTotal = includeTotal;
+                command.matchMode = matchMode;
+                command.selections = selections;
                 command.scope = *snapshot;
                 return readPage(reader, command, page, cancelled);
             },
@@ -138,14 +230,15 @@ namespace musik { namespace core { namespace ffi { namespace detail {
     mc_result SubmitCatalogPage(mc_context* context, musik::core::library::Library::Shared instance,
         const query::TrackReadBackend& reader, std::vector<int64_t> ids, std::vector<std::string> fields,
         bool keepMissing, mc_track_query_completion_fn completion, void* data, mc_request_id* request,
-        const void* owner) {
+        const void* owner, size_t total) {
         return submitLibraryRequest<mc_track_page>(
             context, "Read track details",
-            [instance, &reader, ids = std::move(ids), fields = std::move(fields), keepMissing](
+            [instance, &reader, ids = std::move(ids), fields = std::move(fields), keepMissing, total](
                 auto& page, const auto& cancelled) -> mc_result {
                 if (ids.empty()) {
                     page = std::make_unique<mc_track_page>();
                     page->names = fields;
+                    page->total = total;
                     return MC_OK;
                 }
                 const auto status =
@@ -153,6 +246,7 @@ namespace musik { namespace core { namespace ffi { namespace detail {
                 if (status != MC_OK) {
                     return status;
                 }
+                page->total = total;
                 return !keepMissing && page->rows.empty() ? MC_ERROR_NOT_FOUND : MC_OK;
             },
             completion, data, request, owner);

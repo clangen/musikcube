@@ -1,3 +1,4 @@
+#include <musikcore/library/query/TrackProjectedPageQuery.h>
 #include "library-query-adapter.h"
 #include "library-query-executors.h"
 #include <musikcore/library/RemoteLibraryBackend.h>
@@ -92,12 +93,34 @@ namespace musik { namespace core { namespace ffi { namespace detail {
         LibraryBackend::Shared NativeBackend() const override { return this->library; }
 
 
+        mc_result QueryTracks(mc_context* context, const query::TrackPageQuery& request,
+            mc_track_query_completion_fn completion, void* user_data, mc_request_id* out_request) const override {
+            const auto instance = this->shared_from_this();
+            auto scoped = request;
+            const auto scopeState = instance->GetScopeState();
+            scoped.scope = *scopeState->Capture();
+            const auto command = std::make_shared<query::TrackProjectedPageQuery>(this->library, scoped);
+            return submitRemote<mc_track_page>(
+                context, this->library, this->generation, "Query track page", command,
+                [](auto& result, auto& output) -> mc_result {
+                    auto page = std::make_unique<mc_track_page>();
+                    page->names = result.Page().names;
+                    page->rows = result.Page().rows;
+                    page->total = result.Page().total;
+                    output = std::move(page);
+                    return MC_OK;
+                },
+                completion, user_data, out_request, RequestEffect::Read, scopeState);
+        }
+
         mc_result Search(mc_context* context, const query::TrackSearchQuery& request,
             mc_track_search_completion_fn completion, void* user_data, mc_request_id* out_request) const override {
             const auto instance = this->shared_from_this();
             using Match = query::SearchTrackListQuery::MatchType;
-            const auto command = std::make_shared<query::SearchTrackListQuery>(
-                this->library, request.regex ? Match::Regex : Match::Substring, request.filter, request.order);
+            const auto command = std::make_shared<query::SearchTrackListQuery>(this->library,
+                request.matchMode == query::TrackMatchMode::Regex ? Match::Regex : Match::Substring, request.filter,
+                request.order);
+            command->SetSelections(request.selections);
             return submitRemote<mc_track_result>(
                 context, this->library, this->generation, "Search library", command,
                 [instance](auto& search, auto& output) {
@@ -121,11 +144,12 @@ namespace musik { namespace core { namespace ffi { namespace detail {
 
         mc_result ReadPage(mc_context* context, std::vector<int64_t> ids, std::vector<std::string> fields,
             bool keepMissing, mc_track_query_completion_fn completion, void* user_data, mc_request_id* out_request,
-            const void* owner = nullptr) const override {
+            const void* owner, size_t total) const override {
             if (ids.empty()) {
                 /* Empty projections still honor field support and the origin generation. */
                 const auto output = std::make_shared<std::unique_ptr<mc_track_page>>(std::make_unique<mc_track_page>());
                 (*output)->names = std::move(fields);
+                (*output)->total = total;
                 return submit_request(
                     context,
                     [library = this->library, generation = this->generation]() -> mc_result {
@@ -142,10 +166,11 @@ namespace musik { namespace core { namespace ffi { namespace detail {
                 std::unordered_set<int64_t>(ids.begin(), ids.end()), this->library, fields);
             return submitRemote<mc_track_page>(
                 context, this->library, this->generation, "Read track details", command,
-                [ids = std::move(ids), fields = std::move(fields), keepMissing](
+                [ids = std::move(ids), fields = std::move(fields), keepMissing, total](
                     auto& batch, auto& output) -> mc_result {
                     auto page = std::make_unique<mc_track_page>();
                     page->names = fields;
+                    page->total = total;
                     if (!batch.HasProjectedPage()) {
                         return MC_ERROR_IO;
                     }

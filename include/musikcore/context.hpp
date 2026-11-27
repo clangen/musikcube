@@ -38,10 +38,10 @@ namespace musik { namespace core { namespace api {
                 ? "musikcore error " + std::to_string(result) : std::string(message)),
               resultCode(result) {}
 
-        Error(const Error &) = default;
-        Error &operator=(const Error &) = default;
-        Error(Error &&) noexcept = default;
-        Error &operator=(Error &&) noexcept = default;
+        Error(const Error& other) = default;
+        Error &operator=(const Error& other) = default;
+        Error(Error&& other) noexcept = default;
+        Error &operator=(Error&& other) noexcept = default;
 
         mc_result Result() const noexcept { return resultCode; }
 
@@ -61,10 +61,10 @@ namespace musik { namespace core { namespace api {
         explicit Context(const mc_context_options &options) : Context(&options) {}
         ~Context() { mc_context_destroy(&context); }
 
-        Context(const Context &) = delete;
-        Context &operator=(const Context &) = delete;
-        Context(Context &&) = delete;
-        Context &operator=(Context &&) = delete;
+        Context(const Context& other) = delete;
+        Context &operator=(const Context& other) = delete;
+        Context(Context&& other) = delete;
+        Context &operator=(Context&& other) = delete;
 
         /* Wrapper-owned handle. Do not destroy it; valid until wrapper destruction. */
         mc_context *Get() noexcept { return context; }

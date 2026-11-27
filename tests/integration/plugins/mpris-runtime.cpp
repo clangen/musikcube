@@ -99,7 +99,7 @@ int main() {
 
     TrackResult tracks;
     std::optional<mc_result> searched;
-    OpenTrackSearch(context, TrackSearch { "Fixture Artist" }, [&](mc_result status, TrackResult result, std::string_view) {
+    OpenTrackSearch(context, TrackSearch{ { "Fixture Artist" } }, [&](mc_result status, TrackResult result, std::string_view) {
         searched = status;
         tracks = std::move(result);
     });

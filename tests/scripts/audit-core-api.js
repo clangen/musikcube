@@ -4,7 +4,7 @@
 const { readFileSync } = require('fs');
 const { resolve, join } = require('path');
 const root = resolve(__dirname, '../..');
-const headers = ['abi.h', 'context.h', 'equalizer.h', 'indexer.h', 'library.h', 'output.h', 'playback.h', 'player.h',
+const headers = ['abi.h', 'context.h', 'equalizer.h', 'indexer.h', 'library.h', 'media.h', 'output.h', 'playback.h', 'player.h',
   'visualizer.h', 'settings.h', 'plugins.h', 'paths.h', 'locale.h', 'log.h', 'online.h', 'subscriptions.h', 'musikcore.h'];
 const exportedSymbols = readFileSync(join(root, 'src/musikcore/ffi/exports.txt'), 'utf8').trim().split(/\s+/).sort();
 const declared = [];

@@ -35,6 +35,7 @@
 #include "pch.hpp"
 
 #include "QueryRegistry.h"
+#include <musikcore/library/query/TrackProjectedPageQuery.h>
 #include <musikcore/library/query/AlbumListQuery.h>
 #include <musikcore/library/query/SourceListQuery.h>
 #include <musikcore/library/query/AllCategoriesQuery.h>
@@ -58,71 +59,64 @@ using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 
-namespace musik { namespace core { namespace library {
-
-    namespace QueryRegistry {
-        std::shared_ptr<ISerializableQuery> CreateLocalQueryFor(
-            const std::string& name, const std::string& data, LibraryBackend::Shared library)
-        {
-            if (name == SourceListQuery::kQueryName) {
-                return SourceListQuery::DeserializeQuery(data, library);
-            }
-            if (name == AlbumListQuery::kQueryName) {
-                return AlbumListQuery::DeserializeQuery(data);
-            }
-            if (name == AllCategoriesQuery::kQueryName) {
-                return AllCategoriesQuery::DeserializeQuery(data);
-            }
-            if (name == AppendPlaylistQuery::kQueryName) {
-                return AppendPlaylistQuery::DeserializeQuery(library, data);
-            }
-            if (name == GetPlaylistQuery::kQueryName) {
-                return GetPlaylistQuery::DeserializeQuery(library, data);
-            }
-            if (name == CategoryListQuery::kQueryName || name == CategoryListQuery::kFacetQueryName) {
-                return CategoryListQuery::DeserializeQuery(data);
-            }
-            if (name == CategoryTrackListQuery::kQueryName) {
-                return CategoryTrackListQuery::DeserializeQuery(library, data);
-            }
-            if (name == DeletePlaylistQuery::kQueryName) {
-                return DeletePlaylistQuery::DeserializeQuery(library, data);
-            }
-            if (name == DirectoryTrackListQuery::kQueryName) {
-                return DirectoryTrackListQuery::DeserializeQuery(library, data);
-            }
-            if (name == LyricsQuery::kQueryName) {
-                return LyricsQuery::DeserializeQuery(data);
-            }
-            if (name == MarkTrackPlayedQuery::kQueryName) {
-                return MarkTrackPlayedQuery::DeserializeQuery(data);
-            }
-            if (name == SavePlaylistQuery::kQueryName) {
-                return SavePlaylistQuery::DeserializeQuery(library, data);
-            }
-            if (name == SearchTrackListQuery::kQueryName) {
-                return SearchTrackListQuery::DeserializeQuery(library, data);
-            }
-            if (name == SetTrackRatingQuery::kQueryName) {
-                return SetTrackRatingQuery::DeserializeQuery(data);
-            }
-            if (name == TrackMetadataBatchQuery::kQueryName) {
-                return TrackMetadataBatchQuery::DeserializeQuery(library, data);
-            }
-            if (name == TrackMetadataQuery::kQueryName) {
-                return TrackMetadataQuery::DeserializeQuery(library, data);
-            }
-            return std::shared_ptr<ISerializableQuery>();
+namespace musik { namespace core { namespace library { namespace QueryRegistry {
+    std::shared_ptr<ISerializableQuery> CreateLocalQueryFor(
+        const std::string& name, const std::string& data, LibraryBackend::Shared library) {
+        if (name == SourceListQuery::kQueryName) {
+            return SourceListQuery::DeserializeQuery(data, library);
         }
-
-        bool IsLocalOnlyQuery(const std::string& queryName) {
-            static const std::set<std::string> sLocalOnlyQuerys = {
-                NowPlayingTrackListQuery::kQueryName,
-                PersistedPlayQueueQuery::kQueryName
-            };
-
-            return sLocalOnlyQuerys.find(queryName) != sLocalOnlyQuerys.end();
+        if (name == AlbumListQuery::kQueryName) {
+            return AlbumListQuery::DeserializeQuery(data);
         }
+        if (name == AllCategoriesQuery::kQueryName) {
+            return AllCategoriesQuery::DeserializeQuery(data);
+        }
+        if (name == AppendPlaylistQuery::kQueryName) {
+            return AppendPlaylistQuery::DeserializeQuery(library, data);
+        }
+        if (name == GetPlaylistQuery::kQueryName) {
+            return GetPlaylistQuery::DeserializeQuery(library, data);
+        }
+        if (name == CategoryListQuery::kQueryName || name == CategoryListQuery::kCategoryPageQueryName) {
+            return CategoryListQuery::DeserializeQuery(data);
+        }
+        if (name == CategoryTrackListQuery::kQueryName) {
+            return CategoryTrackListQuery::DeserializeQuery(library, data);
+        }
+        if (name == DeletePlaylistQuery::kQueryName) {
+            return DeletePlaylistQuery::DeserializeQuery(library, data);
+        }
+        if (name == DirectoryTrackListQuery::kQueryName) {
+            return DirectoryTrackListQuery::DeserializeQuery(library, data);
+        }
+        if (name == LyricsQuery::kQueryName) {
+            return LyricsQuery::DeserializeQuery(data);
+        }
+        if (name == MarkTrackPlayedQuery::kQueryName) {
+            return MarkTrackPlayedQuery::DeserializeQuery(data);
+        }
+        if (name == SavePlaylistQuery::kQueryName) {
+            return SavePlaylistQuery::DeserializeQuery(library, data);
+        }
+        if (name == SearchTrackListQuery::kQueryName) {
+            return SearchTrackListQuery::DeserializeQuery(library, data);
+        }
+        if (name == SetTrackRatingQuery::kQueryName) {
+            return SetTrackRatingQuery::DeserializeQuery(data);
+        }
+        if (name == TrackMetadataBatchQuery::kQueryName || name == "TrackPageQuery") {
+            return TrackMetadataBatchQuery::DeserializeQuery(library, data);
+        }
+        if (name == TrackMetadataQuery::kQueryName) {
+            return TrackMetadataQuery::DeserializeQuery(library, data);
+        }
+        return std::shared_ptr<ISerializableQuery>();
     }
 
-} } }
+    bool IsLocalOnlyQuery(const std::string& queryName) {
+        static const std::set<std::string> sLocalOnlyQuerys = { NowPlayingTrackListQuery::kQueryName,
+            PersistedPlayQueueQuery::kQueryName };
+
+        return sLocalOnlyQuerys.find(queryName) != sLocalOnlyQuerys.end();
+    }
+} } } }

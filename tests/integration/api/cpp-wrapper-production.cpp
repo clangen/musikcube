@@ -225,7 +225,7 @@ namespace wrapper_tests {
             return false;
         }
 
-        OpenTrackSearch(context, *library, TrackSearch{ "Fixture Artist" },
+        OpenTrackSearch(context, *library, TrackSearch{ { "Fixture Artist" } },
             [&](mc_result status, TrackResult result, std::string_view) {
                 if (status == MC_OK) tracks = std::move(result);
             });
@@ -233,7 +233,7 @@ namespace wrapper_tests {
 
         /* Closing the origin rejects reads even while its database file is present. */
         musik::core::library::DefaultLocalBackend()->Close();
-        OpenTrackSearch(context, *library, TrackSearch{ "Fixture Artist" },
+        OpenTrackSearch(context, *library, TrackSearch{ { "Fixture Artist" } },
             [&](mc_result status, TrackResult, std::string_view) { completed = status; });
         return query_test_wait_for_wakeup(wakes + 2) && context.Dispatch() == MC_OK && completed == MC_ERROR_IO;
     }

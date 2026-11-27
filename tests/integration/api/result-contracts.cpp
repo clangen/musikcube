@@ -2,6 +2,7 @@
 #include "host-wakeup.h"
 #include <sqlite3.h>
 #include <cstdio>
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -22,17 +23,34 @@ namespace {
         if (sqlite3_open((std::string(root) + "/musik.db").c_str(), &raw) != SQLITE_OK) return false;
         const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> database(raw, sqlite3_close);
         if (sqlite3_exec(raw,
-            "CREATE TABLE tracks(id INTEGER PRIMARY KEY, title TEXT, visible INTEGER, duration INTEGER,"
-            "visual_artist_id INTEGER, album_id INTEGER, visual_genre_id INTEGER, disc INTEGER, track INTEGER);"
-            "INSERT INTO tracks VALUES(1,'',1,2,1,1,1,1,1),(2,'',1,1,1,1,1,1,2),"
-            "(3,'',1,3,1,2,1,1,1),(4,'Hidden',0,4,1,2,1,1,2);"
-            "CREATE TABLE artists(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO artists VALUES(1,'Artist');"
-            "CREATE TABLE albums(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO albums VALUES(1,'A'),(2,'B');"
-            "CREATE TABLE genres(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO genres VALUES(1,'Genre');"
-            "CREATE TABLE meta_keys(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO meta_keys VALUES(1,'empty'),(2,'multi');"
-            "CREATE TABLE meta_values(id INTEGER PRIMARY KEY,meta_key_id INTEGER,sort_order INTEGER,content TEXT);"
-            "INSERT INTO meta_values VALUES(1,1,0,''),(2,2,0,'First'),(3,2,1,'Second');"
-            "CREATE TABLE track_meta(track_id INTEGER,meta_value_id INTEGER); INSERT INTO track_meta VALUES(1,1),(1,2),(1,3);",
+                "CREATE TABLE tracks(id INTEGER PRIMARY KEY, title TEXT, visible INTEGER, duration INTEGER,"
+                "visual_artist_id INTEGER, album_id INTEGER, visual_genre_id INTEGER, disc INTEGER, track INTEGER);"
+                "INSERT INTO tracks VALUES(1,'',1,2,1,1,1,1,1),(2,'',1,1,1,1,1,1,2),"
+                "(3,'',1,3,0,2,1,1,1),(4,'Hidden',0,4,1,2,1,1,2);"
+                "ALTER TABLE tracks ADD COLUMN rating INTEGER DEFAULT 0;"
+                "ALTER TABLE tracks ADD COLUMN source_id INTEGER DEFAULT 0;"
+            "ALTER TABLE tracks ADD COLUMN last_played TEXT DEFAULT NULL;"
+            "ALTER TABLE tracks ADD COLUMN play_count INTEGER DEFAULT 0;"
+                "CREATE TABLE artists(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO artists VALUES(1,'Artist');"
+                "CREATE TABLE albums(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO albums VALUES(1,'A'),(2,'B');"
+                "CREATE TABLE genres(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO genres VALUES(1,'Genre');"
+                "CREATE TABLE meta_keys(id INTEGER PRIMARY KEY,name TEXT); INSERT INTO meta_keys "
+                "VALUES(1,'empty'),(2,'multi'),(3,'year');"
+                "CREATE TABLE meta_values(id INTEGER PRIMARY KEY,meta_key_id INTEGER,sort_order INTEGER,content TEXT);"
+                "INSERT INTO meta_values VALUES(1,1,0,''),(2,2,0,'First'),(3,2,1,'Second'),(4,3,0,'1995');"
+                "CREATE TABLE track_meta(track_id INTEGER,meta_value_id INTEGER); INSERT INTO track_meta "
+                "VALUES(1,1),(1,2),(1,3),(2,4);",
+                nullptr, nullptr, nullptr) != SQLITE_OK)
+        {
+            return false;
+        }
+        if (sqlite3_exec(raw,
+            "ALTER TABLE artists ADD COLUMN sort_order INTEGER DEFAULT 0;"
+            "ALTER TABLE albums ADD COLUMN sort_order INTEGER DEFAULT 0;"
+            "ALTER TABLE genres ADD COLUMN sort_order INTEGER DEFAULT 0;"
+            "CREATE VIEW extended_metadata AS SELECT tracks.id,tracks.source_id,meta_values.id AS meta_value_id,"
+            "meta_keys.name AS key,meta_values.content AS value FROM tracks JOIN track_meta ON tracks.id=track_meta.track_id "
+            "JOIN meta_values ON meta_values.id=track_meta.meta_value_id JOIN meta_keys ON meta_keys.id=meta_values.meta_key_id;",
             nullptr, nullptr, nullptr) != SQLITE_OK) return false;
         /* Bound UTF-8 and 64 KiB text detect truncation and byte/character length
            confusion without embedding large values in SQL source text. */
@@ -78,14 +96,51 @@ namespace {
         };
         /* Missing and explicit-empty metadata must remain distinguishable so
            bindings can represent absence without guessing from string length. */
-        api::QueryTracks(context, library, {"", {MC_TRACK_FIELD_TITLE, "empty", "multi", "missing"}}, receive);
-        if (!dispatch(1) || status != MC_OK || page.Size() != 2 || page.Track(0).Title() != unicode ||
-            page.Track(1).Title() != longTitle || page.Value(0, 1).data() == nullptr || !page.Value(0, 1).empty() ||
-            page.ValueCount(0, 2) != 2 || page.Value(0, 2, 1) != "Second" || page.Value(0, 3).data() ||
-            page.Value(SIZE_MAX, 0).data() || page.Value(0, SIZE_MAX).data()) return false;
+        api::QueryTracks(context, library, { {}, { MC_TRACK_FIELD_TITLE, "empty", "multi", "missing" } }, receive);
+        if (!dispatch(1) || status != MC_OK || page.Size() != 2 || page.Total() != 3 ||
+            page.Track(0).Title() != unicode || page.Track(1).Title() != longTitle ||
+            page.Value(0, 1).data() == nullptr || !page.Value(0, 1).empty() || page.ValueCount(0, 2) != 2 ||
+            page.Value(0, 2, 1) != "Second" || page.Value(0, 3).data() || page.Value(SIZE_MAX, 0).data() ||
+            page.Value(0, SIZE_MAX).data())
+        {
+            return false;
+        }
         /* Retain a view now and use it after replacing all page owners below;
            copying the strings here would conceal a broken view lifetime. */
         auto retained = page.Track(0);
+
+        /* explicit catalog handles support categories on a read-only connection. */
+        struct FieldState { unsigned* calls; mc_result* status; bool found; } fieldState { &calls, &status, false };
+        mc_request_id fieldRequest = 0;
+        const auto fieldsCallback = [](mc_result result, const mc_string_view* fields, size_t count,
+            const mc_error*, void* data) {
+            auto& state = *static_cast<FieldState*>(data);
+            ++*state.calls; *state.status = result;
+            for (size_t i = 0; i < count; ++i) {
+                if (std::string_view(fields[i].data, fields[i].length) == "year") state.found = true;
+            }
+        };
+        auto next = calls + 1;
+        if (mc_library_list_category_fields_async(context.Get(), library.Get(), fieldsCallback, &fieldState, &fieldRequest) != MC_OK ||
+            !dispatch(next) || status != MC_OK || !fieldState.found) return false;
+        api::RelatedCategoriesQuery categoryQuery;
+        categoryQuery.field = "year";
+        categoryQuery.filter.selections = { { "artist", 1 } };
+        categoryQuery.anchorKey = 4;
+        api::CategoryPage categoryPage;
+        next = calls + 1;
+        api::GetRelatedCategories(context, library, categoryQuery, [&](mc_result result, api::CategoryPage value, std::string_view) {
+            ++calls; status = result; categoryPage = std::move(value);
+        });
+        if (!dispatch(next) || status != MC_OK || categoryPage.total != 1 || categoryPage.anchorIndex != 0 ||
+            categoryPage.entries.size() != 1 || categoryPage.entries[0].key != 4 || categoryPage.entries[0].value != "1995") return false;
+        const auto missingPath = std::string(root) + "/missing-catalog";
+        api::Library missing(missingPath);
+        next = calls + 1;
+        api::GetRelatedCategories(context, missing, categoryQuery, [&](mc_result result, api::CategoryPage, std::string_view) {
+            ++calls; status = result;
+        });
+        if (!dispatch(next) || status != MC_ERROR_IO || std::filesystem::exists(missingPath)) return false;
 
         /* Album boundaries/durations belong to the result snapshot, rather
            than being recomputed from each later page of current metadata. */
@@ -94,19 +149,19 @@ namespace {
             status = result;
             search = std::move(value);
         });
-        if (!dispatch(2) || status != MC_OK || search.Size() != 3 || search.Id(0) != 1 || search.Id(1) != 2 ||
+        if (!dispatch(5) || status != MC_OK || search.Size() != 3 || search.Id(0) != 1 || search.Id(1) != 2 ||
             search.Id(2) != 3 || !search.StartsAlbum(0) || search.StartsAlbum(1) || !search.StartsAlbum(2) ||
             search.AlbumDurationSeconds(0) != 3 || search.AlbumDurationSeconds(2) != 3) return false;
         /* Reordered duplicates and a nonexistent positive ID detect SQL order
            leaking through the public result's saved membership. */
         api::TrackResult byDuration;
-        api::OpenTrackSearch(context, library, { "", MC_TRACK_SEARCH_SUBSTRING, MC_TRACK_SEARCH_DURATION },
+        api::OpenTrackSearch(context, library, { {}, MC_TRACK_SEARCH_DURATION },
             [&](mc_result result, api::TrackResult value, std::string_view) {
                 ++calls;
                 status = result;
                 byDuration = std::move(value);
             });
-        if (!dispatch(3) || status != MC_OK || byDuration.Size() != 3 ||
+        if (!dispatch(6) || status != MC_OK || byDuration.Size() != 3 ||
             byDuration.Id(0) != 2 || byDuration.Id(1) != 1 || byDuration.Id(2) != 3)
         {
             return false;
@@ -118,7 +173,9 @@ namespace {
         for (const auto offset : {size_t{0}, size_t{3}, size_t{5}, SIZE_MAX}) {
             const auto expected = calls + 1;
             api::ReadTracks(context, ordered, {offset, 3, {MC_TRACK_FIELD_TITLE}}, receive);
-            if (!dispatch(expected) || status != MC_OK) return false;
+            if (!dispatch(expected) || status != MC_OK || page.Total() != 5) {
+                return false;
+            }
             /* Maximum-sized pages must preserve duplicates, not deduplicate
                to match the SQL IN result that implements the read. */
             if (offset == 0 && (page.Size() != 3 || page.Id(0) != 2 || page.Id(1) != 1 || page.Id(2) != 2 ||
@@ -136,7 +193,9 @@ namespace {
         const auto empty = api::MakeTrackResult(library, nullptr, 0);
         auto expected = calls + 1;
         api::ReadTracks(context, empty, {0, 0, {MC_TRACK_FIELD_TITLE, MC_TRACK_FIELD_ALBUM}}, receive);
-        if (!dispatch(expected) || status != MC_OK || page.Size() || page.FieldCount() != 2) return false;
+        if (!dispatch(expected) || status != MC_OK || page.Size() || page.Total() != 0 || page.FieldCount() != 2) {
+            return false;
+        }
         /* Release inputs before dispatch: accepted work must retain everything
            it needs, and a zero limit must use the context default of two. */
         expected = calls + 1;
@@ -166,12 +225,63 @@ namespace {
         }
         expected = calls + 1;
         api::ReadTracks(context, search, {0, 3, {MC_TRACK_FIELD_TITLE}}, receive);
-        if (!dispatch(expected) || status != MC_OK || page.Size() != 3 || page.Id(0) != 1 ||
-            page.Value(0, 0).data() || search.AlbumDurationSeconds(0) != 3) return false;
+        if (!dispatch(expected) || status != MC_OK || page.Size() != 3 || page.Id(0) != 1 || page.Total() != 3 ||
+            page.Value(0, 0).data() || search.AlbumDurationSeconds(0) != 3)
+        {
+            return false;
+        }
+        api::Library reopened(root);
+        expected = calls + 1;
+        api::QueryTracks(context, reopened, { {}, { MC_TRACK_FIELD_TITLE }, 100, 2 }, receive);
+        if (!dispatch(expected) || status != MC_OK || page.Size() != 0 || page.Total() != 2) {
+            return false;
+        }
+        /* The same browse filter must select the same tracks for projected
+           pages and stable playback results, including regex and category IDs. */
+        reopened.SelectSources({ 0 });
+        api::LibraryFilter browse { "^Artist$", MC_TRACK_SEARCH_REGEX,
+            { { "album", 1 }, { "year", 4 }, { "rating", 0 } } };
+        api::TrackQuery filtered;
+        filtered.filter = browse;
+        expected = calls + 1;
+        api::QueryTracks(context, reopened, filtered, receive);
+        if (!dispatch(expected) || status != MC_OK || page.Total() != 1 || page.Size() != 1 || page.Id(0) != 2) {
+            return false;
+        }
+        expected = calls + 1;
+        api::TrackResult matching;
+        api::TrackSearch filteredSearch { browse, MC_TRACK_SEARCH_ALBUM };
+        api::OpenTrackSearch(
+            context, reopened, filteredSearch, [&](mc_result result, api::TrackResult value, std::string_view) {
+                ++calls;
+                status = result;
+                matching = std::move(value);
+            });
+        if (!dispatch(expected) || status != MC_OK || matching.Size() != 1 || matching.Id(0) != 2) {
+            return false;
+        }
+        for (const auto order : { MC_TRACK_SEARCH_RATING_ASC, MC_TRACK_SEARCH_RATING_DESC,
+                 MC_TRACK_SEARCH_PLAY_COUNT_ASC, MC_TRACK_SEARCH_PLAY_COUNT_DESC,
+                 MC_TRACK_SEARCH_LAST_PLAYED_ASC, MC_TRACK_SEARCH_LAST_PLAYED_DESC }) {
+            api::TrackSearch orderedSearch { {}, static_cast<mc_track_search_order>(order) };
+            api::TrackResult orderedValues;
+            expected = calls + 1;
+            api::OpenTrackSearch(context, reopened, orderedSearch, [&](mc_result result, api::TrackResult value, std::string_view) {
+                ++calls; status = result; orderedValues = std::move(value);
+            });
+            if (!dispatch(expected) || status != MC_OK || orderedValues.Size() != 2 ||
+                orderedValues.Id(0) != 2 || orderedValues.Id(1) != 3) return false;
+        }
+        reopened.ClearScope();
         /* Corrupt backend data must report IO instead of publishing zero,
            which callers reserve as the missing/invalid identity sentinel. */
-        if (sqlite3_exec(raw, "INSERT INTO tracks VALUES(0,'Invalid ID',1,1,1,1,1,1,0)", nullptr, nullptr, nullptr) != SQLITE_OK) return false;
-        api::Library reopened(root);
+        if (sqlite3_exec(raw,
+                "INSERT INTO tracks(id,title,visible,duration,visual_artist_id,album_id,visual_genre_id,disc,track) "
+                "VALUES(0,'Invalid ID',1,1,1,1,1,1,0)",
+                nullptr, nullptr, nullptr) != SQLITE_OK)
+        {
+            return false;
+        }
         expected = calls + 1;
         api::QueryTracks(context, reopened, {}, receive);
         if (!dispatch(expected) || status != MC_ERROR_IO || page) return false;

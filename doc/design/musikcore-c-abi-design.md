@@ -1847,24 +1847,19 @@ struct mc_catalog_host_api {
         void *user_data,
         mc_request_id *out_request);
 
-    mc_result (MC_CALL *list_categories_async)(
+    mc_result (MC_CALL *filter_categories_by_name_async)(
         void *context,
         const mc_library *library,
-        mc_string_view field,
-        mc_string_view filter,
-        mc_track_search_mode mode,
-        mc_category_list_completion_fn completion,
+        const mc_category_name_query *query,
+        mc_category_page_completion_fn completion,
         void *user_data,
         mc_request_id *out_request);
 
-    mc_result (MC_CALL *list_facets_async)(
+    mc_result (MC_CALL *get_related_categories_async)(
         void *context,
         const mc_library *library,
-        mc_facet_field field,
-        mc_string_view search,
-        const mc_facet_selection *selections,
-        size_t selection_count,
-        mc_category_list_completion_fn completion,
+        const mc_related_categories_query *query,
+        mc_category_page_completion_fn completion,
         void *user_data,
         mc_request_id *out_request);
 

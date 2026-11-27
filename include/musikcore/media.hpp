@@ -13,12 +13,12 @@ namespace musik { namespace core { namespace api {
     class MediaPcm {
     public:
         MediaPcm() noexcept = default;
-        MediaPcm(const MediaPcm&) = delete;
+        MediaPcm(const MediaPcm& other) = delete;
         MediaPcm(MediaPcm&& other) noexcept
         : pcm(std::exchange(other.pcm, nullptr)) {}
         ~MediaPcm() { mc_media_pcm_destroy(&this->pcm); }
 
-        MediaPcm& operator=(const MediaPcm&) = delete;
+        MediaPcm& operator=(const MediaPcm& other) = delete;
         MediaPcm& operator=(MediaPcm&& other) noexcept {
             if (this != &other) {
                 mc_media_pcm_destroy(&this->pcm);
@@ -58,7 +58,7 @@ namespace musik { namespace core { namespace api {
                 throw Error(status);
             }
         }
-        MediaStream(const MediaStream&) = delete;
+        MediaStream(const MediaStream& other) = delete;
         MediaStream(MediaStream&& other) noexcept
         : stream(std::exchange(other.stream, nullptr)) {}
         ~MediaStream() {
@@ -68,7 +68,7 @@ namespace musik { namespace core { namespace api {
             }
         }
 
-        MediaStream& operator=(const MediaStream&) = delete;
+        MediaStream& operator=(const MediaStream& other) = delete;
         MediaStream& operator=(MediaStream&& other) {
             if (this != &other) {
                 const auto status = this->Close();
@@ -123,7 +123,7 @@ namespace musik { namespace core { namespace api {
                 throw Error(status);
             }
         }
-        MediaDecoder(const MediaDecoder&) = delete;
+        MediaDecoder(const MediaDecoder& other) = delete;
         MediaDecoder(MediaDecoder&& other) noexcept
         : decoder(std::exchange(other.decoder, nullptr)) {}
         ~MediaDecoder() {
@@ -133,7 +133,7 @@ namespace musik { namespace core { namespace api {
             }
         }
 
-        MediaDecoder& operator=(const MediaDecoder&) = delete;
+        MediaDecoder& operator=(const MediaDecoder& other) = delete;
         MediaDecoder& operator=(MediaDecoder&& other) {
             if (this != &other) {
                 const auto status = this->Close();
@@ -181,7 +181,7 @@ namespace musik { namespace core { namespace api {
                 throw Error(status);
             }
         }
-        MediaEncoder(const MediaEncoder&) = delete;
+        MediaEncoder(const MediaEncoder& other) = delete;
         MediaEncoder(MediaEncoder&& other) noexcept
         : encoder(std::exchange(other.encoder, nullptr)) {}
         ~MediaEncoder() {
@@ -191,7 +191,7 @@ namespace musik { namespace core { namespace api {
             }
         }
 
-        MediaEncoder& operator=(const MediaEncoder&) = delete;
+        MediaEncoder& operator=(const MediaEncoder& other) = delete;
         MediaEncoder& operator=(MediaEncoder&& other) {
             if (this != &other) {
                 const auto status = this->Close();

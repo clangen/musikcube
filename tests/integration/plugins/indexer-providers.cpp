@@ -213,33 +213,22 @@ int main(int argc, char** argv) {
             database.assign(encodedDatabase.begin(), encodedDatabase.end());
         }
         Indexer indexer(context);
-        struct Labels {
-            bool done = false;
-            bool files = false;
-            bool provider = false;
-            std::string expected;
-        } labels {
-            .expected = gme ? "Game music" : "Tracker modules",
-        };
         auto library = context.GetLibrary();
         require(library.has_value(), "get source catalog");
-        library->ListSources(
-            context,
-            [](mc_result result, const mc_library_source* sources, size_t count, const mc_error*, void* data) {
-                auto& labels = *static_cast<Labels*>(data);
-                require(result == MC_OK, "list source labels");
-                for (size_t i = 0; i < count; ++i) {
-                    const std::string_view label(sources[i].label.data, sources[i].label.length);
-                    labels.files |= sources[i].id == 0 && label == "Music files";
-                    labels.provider |= label == labels.expected;
-                }
-                labels.done = true;
-            },
-            &labels);
-        wait(context, *event, [&] {
-            return labels.done;
+        std::optional<std::vector<SourceEntry>> sources;
+        ListSources(context, *library, [&](mc_result result, std::vector<SourceEntry> entries, std::string_view) {
+            require(result == MC_OK, "list source labels");
+            sources = std::move(entries);
         });
-        require(labels.files && labels.provider, "show source names independently of decoder names");
+        wait(context, *event, [&] { return sources.has_value(); });
+        /* inspect the owned labels after dispatch releases the native list. */
+        bool files = false;
+        bool provider = false;
+        for (const auto& source : *sources) {
+            files |= source.id == 0 && source.label == "Music files";
+            provider |= source.label == (gme ? "Game music" : "Tracker modules");
+        }
+        require(files && provider, "show source names independently of decoder names");
         if (gme) {
             mc_setting_entry setting {};
             setting.key = { "enable_m3u_support", 18 };

@@ -18,10 +18,10 @@ namespace musik { namespace core { namespace api {
     class PlayQueue {
     public:
         explicit PlayQueue(mc_play_queue* queue) noexcept : queue(queue) {}
-        PlayQueue(const PlayQueue&) = delete;
-        PlayQueue& operator=(const PlayQueue&) = delete;
-        PlayQueue(PlayQueue&&) noexcept = default;
-        PlayQueue& operator=(PlayQueue&&) noexcept = default;
+        PlayQueue(const PlayQueue& other) = delete;
+        PlayQueue& operator=(const PlayQueue& other) = delete;
+        PlayQueue(PlayQueue&& other) noexcept = default;
+        PlayQueue& operator=(PlayQueue&& other) noexcept = default;
 
         /* The returned array is owned by this snapshot. */
         const int64_t* Ids(size_t& count) const & noexcept {
@@ -67,10 +67,10 @@ namespace musik { namespace core { namespace api {
     public:
         /* Takes ownership of a handle supplied by core. */
         explicit Playback(mc_playback* handle) noexcept : handle(handle) {}
-        Playback(const Playback&) = delete;
-        Playback& operator=(const Playback&) = delete;
-        Playback(Playback&&) noexcept = default;
-        Playback& operator=(Playback&&) noexcept = default;
+        Playback(const Playback& other) = delete;
+        Playback& operator=(const Playback& other) = delete;
+        Playback(Playback&& other) noexcept = default;
+        Playback& operator=(Playback&& other) noexcept = default;
 
         /* Wrapper-owned C handle. Do not destroy it; valid until this wrapper releases it. */
         mc_playback* Get() noexcept { return this->handle.get(); }
@@ -183,7 +183,7 @@ namespace musik { namespace core { namespace api {
        Neither copyable nor movable; the callback uses this object's address. */
     class PlaybackEventSubscription {
     public:
-        using Callback = std::function<void(mc_playback_event)>;
+        using Callback = std::function<void(mc_playback_event event)>;
 
         PlaybackEventSubscription(Playback playback, Callback callback, const std::vector<mc_playback_event>& events = {})
             : callback(std::make_shared<Callback>(std::move(callback))), playback(std::move(playback))
@@ -196,11 +196,11 @@ namespace musik { namespace core { namespace api {
                 throw Error(status);
             }
         }
-        PlaybackEventSubscription(const PlaybackEventSubscription&) = delete;
-        PlaybackEventSubscription(PlaybackEventSubscription&&) = delete;
+        PlaybackEventSubscription(const PlaybackEventSubscription& other) = delete;
+        PlaybackEventSubscription(PlaybackEventSubscription&& other) = delete;
 
-        PlaybackEventSubscription& operator=(const PlaybackEventSubscription&) = delete;
-        PlaybackEventSubscription& operator=(PlaybackEventSubscription&&) = delete;
+        PlaybackEventSubscription& operator=(const PlaybackEventSubscription& other) = delete;
+        PlaybackEventSubscription& operator=(PlaybackEventSubscription&& other) = delete;
 
     private:
         static void MC_CALL Notify(void* data, mc_playback_event event) {

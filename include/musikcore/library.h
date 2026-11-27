@@ -118,7 +118,7 @@ MC_API mc_result MC_CALL mc_library_list_sources_async(mc_context* context, cons
     mc_library_sources_completion_fn completion, void* user_data, mc_request_id* out_request);
 
 typedef struct mc_library_options {
-    /* Size of this struct in bytes. */
+    /* size of this struct in bytes. */
     uint32_t struct_size;
     /* A value from mc_library_kind. */
     uint32_t kind;
@@ -229,18 +229,40 @@ enum {
     MC_TRACK_SEARCH_DURATION = 14
 };
 
+/* select a category value returned by a page to constrain subsequent queries. */
+typedef struct mc_category_selection {
+    /* category field that produced the key; copied during submission. */
+    mc_string_view field;
+    /* opaque field-scoped key from the result; zero is valid. */
+    int64_t key;
+} mc_category_selection;
+
+/* select tracks for a track query or related-category query. */
+typedef struct mc_library_filter {
+    /* optional title, artist, album, or genre text; copied during submission. */
+    mc_string_view track_filter;
+    /* match mode for track_filter; defaults to substring. */
+    mc_track_search_mode track_match_mode;
+    /* category selections to intersect; copied during submission. */
+    const mc_category_selection* selections;
+    /* number of selections; zero omits category constraints. */
+    size_t selection_count;
+} mc_library_filter;
+
+#define MC_LIBRARY_FILTER_DEFAULT { { NULL, 0 }, MC_TRACK_SEARCH_SUBSTRING, NULL, 0 }
+
+/* open a stable track result with a shared filter and ordering. */
 typedef struct mc_track_search {
     /* Size of this struct in bytes. */
     uint32_t struct_size;
-    /* UTF-8 title, album, artist, or genre search. Copied during submission. */
-    mc_string_view text;
-    /* A value from mc_track_search_mode. Empty text matches every track in the sort. */
-    uint32_t mode;
-    /* A value from mc_track_search_order. Zero sorts by album. */
+    /* track text and category constraints; copied during submission. */
+    mc_library_filter filter;
+    /* ordering does not filter tracks; defaults to album. missing values sort
+       first ascending and last descending, with track ID as a tie-breaker. */
     uint32_t order;
 } mc_track_search;
 
-#define MC_TRACK_SEARCH_DEFAULT { sizeof(mc_track_search), { NULL, 0 }, MC_TRACK_SEARCH_SUBSTRING, MC_TRACK_SEARCH_ALBUM }
+#define MC_TRACK_SEARCH_DEFAULT { sizeof(mc_track_search), MC_LIBRARY_FILTER_DEFAULT, MC_TRACK_SEARCH_ALBUM }
 
 typedef struct mc_track_range {
     /* Size of this struct in bytes. */
@@ -294,11 +316,12 @@ typedef void (MC_CALL *mc_track_search_completion_fn)(
 /* Category key for browsing saved playlists. */
 #define MC_LIBRARY_CATEGORY_PLAYLISTS "playlists"
 
+/* request one projected track page and its full matching count. */
 typedef struct mc_track_query {
     /* Size of this struct in bytes. */
     uint32_t struct_size;
-    /* Literal title substring. An empty view matches all visible tracks. */
-    mc_string_view search;
+    /* Track text and category constraints. */
+    mc_library_filter filter;
     /* Requested UTF-8 metadata keys in result order. Copied during submission. */
     const mc_string_view *fields;
     /* Number of keys, up to the context's field limit. Zero selects title. */
@@ -311,7 +334,7 @@ typedef struct mc_track_query {
     uint32_t flags;
 } mc_track_query;
 
-#define MC_TRACK_QUERY_DEFAULT { sizeof(mc_track_query), { NULL, 0 }, NULL, 0, 0, 0, 0 }
+#define MC_TRACK_QUERY_DEFAULT { sizeof(mc_track_query), MC_LIBRARY_FILTER_DEFAULT, NULL, 0, 0, 0, 0 }
 
 /* Success transfers the page to the callback. Release it with mc_track_page_destroy.
    Core owns error details and message bytes; they are valid until the callback returns. */
@@ -385,9 +408,10 @@ typedef void (MC_CALL *mc_playlist_changed_fn)(void* user_data, mc_playlist_even
 MC_API mc_result MC_CALL mc_context_set_playlist_changed_callback(
     mc_context* context, mc_playlist_changed_fn callback, void* user_data);
 
+/* one named category value, valid during a category callback. */
 typedef struct mc_category_entry {
-    /* ID scoped to the library and category field. */
-    int64_t id;
+    /* opaque key scoped to this library and category field; zero is valid. */
+    int64_t key;
     /* UTF-8 category name, valid only during the completion callback. */
     mc_string_view value;
 } mc_category_entry;
@@ -396,34 +420,79 @@ typedef struct mc_category_entry {
 typedef void (MC_CALL *mc_category_list_completion_fn)(mc_result status, const mc_category_entry* entries,
     size_t count, const mc_error* error, void* user_data);
 
+/* describe one category page during its completion callback. */
+typedef struct mc_category_page {
+    /* entries borrowed until the callback returns. */
+    const mc_category_entry* entries;
+    /* number of entries in this page. */
+    size_t count;
+    /* exact number of matching values, including those outside this page. */
+    size_t total;
+    /* full-result position of the requested anchor, or SIZE_MAX if absent. */
+    size_t anchor_index;
+} mc_category_page;
+/* the page is null on failure; the page and diagnostic are callback-borrowed. */
+typedef void(MC_CALL* mc_category_page_completion_fn)(
+    mc_result status, const mc_category_page* page, const mc_error* error, void* user_data);
+
 typedef void (MC_CALL *mc_category_fields_completion_fn)(mc_result status, const mc_string_view* fields,
     size_t count, const mc_error* error, void* user_data);
 /* List available metadata fields. Entries live through the completion callback. */
 MC_API mc_result MC_CALL mc_library_list_category_fields_async(mc_context* context, const mc_library* library,
     mc_category_fields_completion_fn completion, void* user_data, mc_request_id* out_request);
 
-/* List values for a metadata field, filtered by substring or regular expression. */
-typedef uint32_t mc_facet_field;
-enum { MC_FACET_GENRE = 1, MC_FACET_ARTIST = 2, MC_FACET_ALBUM = 3 };
+enum { MC_CATEGORY_QUERY_DEFAULT_LIMIT = 100, MC_CATEGORY_QUERY_MAX_LIMIT = 1000 };
 
-typedef struct mc_facet_selection {
-    /* Category column to constrain. */
-    mc_facet_field field;
-    /* Positive category ID from a facet or category result in this library. */
-    int64_t id;
-} mc_facet_selection;
+/* search category names for any metadata field and return a bounded page. */
+typedef struct mc_category_name_query {
+    /* size of this struct in bytes. */
+    uint32_t struct_size;
+    /* metadata category key; copied during submission. */
+    mc_string_view field;
+    /* optional category-name text; copied during submission. */
+    mc_string_view name_filter;
+    /* category-name match mode; defaults to substring. */
+    mc_track_search_mode name_match_mode;
+    /* optional field-scoped anchor key; copied during submission, including zero. */
+    const int64_t* anchor_key;
+    /* zero-based starting position. */
+    size_t offset;
+    /* maximum rows; zero selects MC_CATEGORY_QUERY_DEFAULT_LIMIT. */
+    size_t limit;
+} mc_category_name_query;
+#define MC_CATEGORY_NAME_QUERY_DEFAULT                                                                                 \
+    { sizeof(mc_category_name_query), { NULL, 0 }, { NULL, 0 }, MC_TRACK_SEARCH_SUBSTRING, NULL, 0,                    \
+        MC_CATEGORY_QUERY_DEFAULT_LIMIT }
 
-/* List values that occur in matching tracks. Text uses the same title, artist,
-   album and genre substring matching as track search. Constraints are intersected.
-   Pass the other columns' selections to keep this facet's alternatives visible.
-   Each field may be constrained once. Callback rows are borrowed during delivery. */
-MC_API mc_result MC_CALL mc_library_list_facets_async(mc_context* context, const mc_library* library,
-    mc_facet_field field, mc_string_view search, const mc_facet_selection* selections, size_t selection_count,
-    mc_category_list_completion_fn completion, void* user_data, mc_request_id* out_request);
+/* list distinct category values related to the supplied library filter. */
+typedef struct mc_related_categories_query {
+    /* size of this struct in bytes. */
+    uint32_t struct_size;
+    /* category key, including custom metadata; duration groups exact seconds
+       and rating groups exact values from 0 through MC_TRACK_RATING_MAX. */
+    mc_string_view field;
+    /* track text and category selections; copied during submission. */
+    mc_library_filter filter;
+    /* optional field-scoped anchor key; copied during submission, including zero. */
+    const int64_t* anchor_key;
+    /* zero-based starting position. */
+    size_t offset;
+    /* maximum rows; zero selects MC_CATEGORY_QUERY_DEFAULT_LIMIT. */
+    size_t limit;
+} mc_related_categories_query;
+#define MC_RELATED_CATEGORIES_QUERY_DEFAULT                                                                            \
+    { sizeof(mc_related_categories_query), { NULL, 0 }, MC_LIBRARY_FILTER_DEFAULT, NULL, 0,                            \
+        MC_CATEGORY_QUERY_DEFAULT_LIMIT }
 
-MC_API mc_result MC_CALL mc_library_list_categories_async(mc_context* context, const mc_library* library,
-    mc_string_view field, mc_string_view filter, mc_track_search_mode mode,
-    mc_category_list_completion_fn completion, void* user_data, mc_request_id* out_request);
+/* Pages contain exact total and anchor index; absent anchors use SIZE_MAX.
+   anchor_key is optional, copied during submission, and may point to zero.
+   Each page is a fresh snapshot and offsets can shift after catalog changes. */
+MC_API mc_result MC_CALL mc_library_filter_categories_by_name_async(mc_context* context, const mc_library* library,
+    const mc_category_name_query* query, mc_category_page_completion_fn completion, void* user_data,
+    mc_request_id* out_request);
+MC_API mc_result MC_CALL mc_library_get_related_categories_async(mc_context* context, const mc_library* library,
+    const mc_related_categories_query* query, mc_category_page_completion_fn completion, void* user_data,
+    mc_request_id* out_request);
 
 typedef struct mc_album_entry {
     /* ID scoped to the catalog. */
@@ -523,6 +592,8 @@ MC_API mc_result MC_CALL mc_library_query_tracks_async(
     mc_context *context, const mc_library *library, const mc_track_query *query, mc_track_query_completion_fn completion,
     void *user_data, mc_request_id *out_request);
 MC_API size_t MC_CALL mc_track_page_get_count(const mc_track_page *page);
+/* Read the total number of matching rows or the size of the originating result. */
+MC_API size_t MC_CALL mc_track_page_get_total(const mc_track_page* page);
 /* Returns zero for a missing row. */
 MC_API int64_t MC_CALL mc_track_page_get_id(const mc_track_page *page, size_t row);
 /* Returns a view into page-owned storage, valid until page destruction. Null data means missing. */

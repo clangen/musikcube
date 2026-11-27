@@ -71,7 +71,7 @@ namespace {
         }
         query_test_release_wakeup();
 
-        OpenTrackSearch(context, TrackSearch { originTitle },
+        OpenTrackSearch(context, TrackSearch{ { originTitle } },
             [&](mc_result status, TrackResult result, std::string_view) {
                 if (status == MC_OK) {
                     initial = std::move(result);
@@ -84,7 +84,7 @@ namespace {
 
         const auto search = [&](std::string_view title) {
             const auto token = generation->CurrentToken();
-            return OpenTrackSearch(context, TrackSearch { title },
+            return OpenTrackSearch(context, TrackSearch{ { title } },
                 [&, token](mc_result status, TrackResult result, std::string_view) {
                     if (!token.IsCurrent()) {
                         if (status == MC_OK) {

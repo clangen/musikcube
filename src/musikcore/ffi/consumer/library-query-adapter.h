@@ -53,6 +53,10 @@ namespace musik { namespace core { namespace ffi { namespace detail {
 
     using PlaylistEntries = LibraryEntries<mc_playlist_entry>;
     using CategoryEntries = LibraryEntries<mc_category_entry>;
+    struct CategoryPageEntries : CategoryEntries {
+        size_t total = 0;
+        size_t anchorIndex = SIZE_MAX;
+    };
     constexpr size_t MaxThumbnailBytes = 8 * 1024 * 1024;
 
     /* owns album titles and artist names behind the C callback's borrowed views.
@@ -269,27 +273,37 @@ namespace musik { namespace core { namespace ffi { namespace detail {
                 std::make_shared<query::AllCategoriesQuery>(), collectFields, deliverFields(completion), data, request);
         }
 
-        mc_result ListCategories(mc_context* context, std::string field, std::string filter, mc_track_search_mode mode,
-            mc_category_list_completion_fn completion, void* data, mc_request_id* request) const override {
-            const auto scopeState = this->GetScopeState();
-            using MatchType = query::CategoryListQuery::MatchType;
-            const auto match = mode == MC_TRACK_SEARCH_REGEX ? MatchType::Regex : MatchType::Substring;
-            const auto command = std::make_shared<query::CategoryListQuery>(match, field, filter);
-            return this->Self().template Submit<CategoryEntries>(context, "List categories", command,
-                collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request,
-                RequestEffect::Read, scopeState);
-        }
-
-        mc_result ListFacets(mc_context* context, std::string field, std::string search,
-            query::category::PredicateList selections, mc_category_list_completion_fn completion, void* data,
+        mc_result QueryCategories(mc_context* context, std::string field, std::string filter, mc_track_search_mode mode,
+            std::string search, mc_track_search_mode trackMode, query::category::PredicateList selections,
+            int64_t anchor, size_t offset, size_t limit, mc_category_page_completion_fn completion, void* data,
             mc_request_id* request) const override {
             const auto scopeState = this->GetScopeState();
-            auto command = std::make_shared<query::CategoryListQuery>(
-                query::CategoryListQuery::MatchType::Substring, field, std::move(selections));
-            command->SetFacetSearch(std::move(search));
-            return this->Self().template Submit<CategoryEntries>(context, "List matching categories", command,
-                collectEntries<CategoryEntries>, deliverEntries<CategoryEntries>(completion), data, request,
-                RequestEffect::Read, scopeState);
+            const auto match = mode == MC_TRACK_SEARCH_REGEX ? query::CategoryListQuery::MatchType::Regex
+                                                             : query::CategoryListQuery::MatchType::Substring;
+            auto command = std::make_shared<query::CategoryListQuery>(match, field, selections, filter);
+            if (!search.empty() || !selections.empty()) {
+                command->SetTrackFilter(std::move(search),
+                    trackMode == MC_TRACK_SEARCH_REGEX ? query::CategoryListQuery::MatchType::Regex
+                                                       : query::CategoryListQuery::MatchType::Substring);
+            }
+            command->SetPage(anchor, offset, limit);
+            return this->Self().template Submit<CategoryPageEntries>(
+                context, "List category page", command,
+                [](auto& query, std::unique_ptr<CategoryPageEntries>& output) {
+                    auto status = collectEntries<CategoryPageEntries>(query, output);
+                    if (status == MC_OK) {
+                        output->total = query.GetTotal();
+                        output->anchorIndex = query.GetAnchorIndex();
+                    }
+                    return status;
+                },
+                [completion](mc_result status, CategoryPageEntries* page, const mc_error* error, void* user) {
+                    std::unique_ptr<CategoryPageEntries> owned(page);
+                    const mc_category_page view { page ? page->entries.data() : nullptr,
+                        page ? page->entries.size() : 0, page ? page->total : 0, page ? page->anchorIndex : SIZE_MAX };
+                    completion(status, page ? &view : nullptr, error, user);
+                },
+                data, request, RequestEffect::Read, scopeState);
         }
 
         mc_result ListAlbums(mc_context* context, std::string filter, mc_album_list_completion_fn completion,

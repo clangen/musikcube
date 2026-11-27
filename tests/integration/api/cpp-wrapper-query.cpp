@@ -63,7 +63,7 @@ namespace wrapper_tests {
             }
 
             /* Hold the worker after its first query so the second is cancelled while queued. */
-            const TrackQuery query{ "Morning Light", { MC_TRACK_FIELD_TITLE, "composer" } };
+            const TrackQuery query { { "Morning Light" }, { MC_TRACK_FIELD_TITLE, "composer" } };
             const auto first = QueryTracks(context, *library, query,
                 [&](mc_result result, TrackPage received, std::string_view) {
                     ++completed;
@@ -120,7 +120,7 @@ namespace wrapper_tests {
 
         const auto search = [&](std::string_view text, size_t offset = 0) {
             const auto current = ++generation;
-            return QueryTracks(context, *library, TrackQuery{ text, { MC_TRACK_FIELD_TITLE }, offset, 1 },
+            return QueryTracks(context, *library, TrackQuery { { text }, { MC_TRACK_FIELD_TITLE }, offset, 1 },
                 [&, current](mc_result status, TrackPage page, std::string_view) {
                     if (current != generation) {
                         ++stale;
@@ -135,8 +135,9 @@ namespace wrapper_tests {
         /* A rejected request must release the wrapper's captured callback state. */
         const auto marker = std::make_shared<int>(0);
         try {
-            QueryTracks(context, *library, TrackQuery{ "", {}, 0, 2 },
-                [marker](mc_result, TrackPage, std::string_view) {});
+            QueryTracks(
+                context, *library, TrackQuery { { "" }, {}, 0, 2 }, [marker](mc_result, TrackPage, std::string_view) {
+                });
             return false;
         } catch (const Error &error) {
             if (error.Result() != MC_ERROR_INVALID_ARGUMENT || marker.use_count() != 1) return false;
@@ -195,7 +196,7 @@ namespace wrapper_tests {
         };
 
         /* Artist matching reaches records whose titles do not contain the term. */
-        OpenTrackSearch(context, *library, TrackSearch{ "  fixture artist  " }, receive_tracks);
+        OpenTrackSearch(context, *library, TrackSearch { { "  fixture artist  " } }, receive_tracks);
         if (!dispatch() || tracks.Size() != 2 || !tracks.StartsAlbum(0) || tracks.StartsAlbum(1) ||
             tracks.AlbumDurationSeconds(0) != 2 || tracks.AlbumDurationSeconds(1) != 0) return false;
 
@@ -213,8 +214,8 @@ namespace wrapper_tests {
             row.Album() != "Fixture Album" || row.Duration() != std::chrono::seconds(1)) return false;
 
         /* Title sort reverses the fixture's track-number order and drops grouping. */
-        OpenTrackSearch(context, *library, TrackSearch{ "Light|Flight", MC_TRACK_SEARCH_REGEX, MC_TRACK_SEARCH_TITLE },
-            receive_tracks);
+        OpenTrackSearch(context, *library,
+            TrackSearch { { "Light|Flight", MC_TRACK_SEARCH_REGEX }, MC_TRACK_SEARCH_TITLE }, receive_tracks);
         if (!dispatch() || tracks.Size() != 2 || tracks.Id(0) != second || tracks.StartsAlbum(0)) return false;
 
         ReadTracks(context, tracks, TrackRange{ 0, 2, { MC_TRACK_FIELD_TRACK, MC_TRACK_FIELD_TITLE } }, receive_page);
@@ -232,8 +233,8 @@ namespace wrapper_tests {
             bounded.SetViewport(0, 0, 0) != Update::InvalidRange ||
             bounded.SetViewport(0, 0, 1) != Update::Unchanged) return false;
 
-        OpenTrackSearch(context, *library, TrackSearch{ "Light|Flight", MC_TRACK_SEARCH_REGEX, MC_TRACK_SEARCH_TITLE },
-            receive_tracks);
+        OpenTrackSearch(context, *library,
+            TrackSearch { { "Light|Flight", MC_TRACK_SEARCH_REGEX }, MC_TRACK_SEARCH_TITLE }, receive_tracks);
         if (!dispatch() || tracks.Size() != 2) return false;
 
         unsigned changes = 0;
@@ -269,8 +270,9 @@ namespace wrapper_tests {
         try {
             constexpr size_t queueCapacity = 64;
             for (size_t i = 0; i < queueCapacity; ++i) {
-                queued.push_back(QueryTracks(context, *library, TrackQuery{ "" },
-                    [](mc_result, TrackPage, std::string_view) {}));
+                queued.push_back(
+                    QueryTracks(context, *library, TrackQuery { { "" } }, [](mc_result, TrackPage, std::string_view) {
+                    }));
             }
         } catch (const Error&) {
             return false;

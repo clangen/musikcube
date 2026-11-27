@@ -76,15 +76,6 @@ namespace musik { namespace core { namespace library { namespace query {
         { TrackSortType::Duration, "tracks.duration ASC, tracks.title, ar.name, al.name" },
     };
 
-    static const std::map<TrackSortType, std::string> kTrackSearchSortOrderByPredicate {
-        { TrackSortType::LastPlayedAsc, "tracks.last_played IS NOT NULL" },
-        { TrackSortType::LastPlayedDesc, "tracks.last_played IS NOT NULL" },
-        { TrackSortType::RatingAsc, "tracks.rating IS NOT NULL AND tracks.rating > 0" },
-        { TrackSortType::RatingDesc, "tracks.rating IS NOT NULL AND tracks.rating > 0" },
-        { TrackSortType::PlayCountAsc, "tracks.play_count IS NOT NULL AND tracks.play_count > 0" },
-        { TrackSortType::PlayCountDesc, "tracks.play_count IS NOT NULL AND tracks.play_count > 0" },
-    };
-
     static const std::set<TrackSortType> kTrackSortTypeWithAlbumGrouping = {
         TrackSortType::Album,
         TrackSortType::Artist,

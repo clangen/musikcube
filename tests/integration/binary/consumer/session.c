@@ -139,11 +139,11 @@ int main(int argc, char** argv) {
     /* The fixture withholds this reply until the client selects the local catalog. */
     CHECK(mc_context_set_library_changed_callback(state.context, library_changed, &state) == MC_OK);
     mc_track_search query = MC_TRACK_SEARCH_DEFAULT;
-    query.text = text("Held remote search");
+    query.filter.track_filter = text("Held remote search");
     CHECK(mc_library_open_track_search_async(state.context, NULL, &query, search_done, &remote, &request) == MC_OK);
     CHECK(mc_context_set_library(state.context, local_library) == MC_OK);
     mc_library_destroy(&local_library);
-    query.text = text("Morning Light");
+    query.filter.track_filter = text("Morning Light");
     CHECK(mc_library_open_track_search_async(state.context, NULL, &query, search_done, &local, &request) == MC_OK);
     CHECK(puts("release") >= 0 && fflush(stdout) == 0);
 
@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
     CHECK(mc_context_dispatch(state.context) == MC_OK && state.notifications == 1);
 
     /* Shut down on the owner thread with a remote reply still withheld. */
-    query.text = text("Held remote search");
+    query.filter.track_filter = text("Held remote search");
     CHECK(mc_library_open_track_search_async(state.context, NULL, &query, search_done, &pending, &request) == MC_OK);
     CHECK(mc_context_shutdown(state.context) == MC_OK);
     CHECK(pending.calls == 1 && pending.on_owner && pending.status == MC_ERROR_CANCELLED && !pending.tracks);

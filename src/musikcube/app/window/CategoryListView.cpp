@@ -124,19 +124,44 @@ void CategoryListView::RequeryWithField(
     this->selectAfterQuery = selectAfterQuery;
     this->filter = filter;
     try {
-        this->activeQuery = api::ListCategories(this->musikcore, fieldName, filter, matchType,
-            this->categoryWork.Wrap([this](mc_result status, std::vector<api::CategoryEntry> categories, std::string_view) {
-                this->activeQuery = 0;
-                if (status == MC_OK) {
-                    this->ApplyCategories(std::move(categories));
-                }
-            }));
+        this->ReadCategoryPage(std::make_shared<std::vector<api::CategoryEntry>>());
     }
     catch (const api::Error& error) {
         if (error.Result() == MC_ERROR_NOT_FOUND) {
             this->ApplyCategories({});
         }
     }
+}
+
+void CategoryListView::ReadCategoryPage(std::shared_ptr<std::vector<api::CategoryEntry>> categories) {
+    api::CategoryNameQuery query;
+    query.field = this->fieldName;
+    query.nameFilter = this->filter;
+    query.nameMatchMode = this->matchType;
+    query.offset = categories->size();
+    query.limit = MC_CATEGORY_QUERY_MAX_LIMIT;
+    this->activeQuery = api::FilterCategoriesByName(this->musikcore, query,
+        this->categoryWork.Wrap([this, categories](mc_result status, api::CategoryPage result, std::string_view) {
+            auto& page = result.entries;
+            this->activeQuery = 0;
+            if (status != MC_OK) {
+                return;
+            }
+            const bool complete = page.empty() || categories->size() + page.size() >= result.total;
+            categories->insert(
+                categories->end(), std::make_move_iterator(page.begin()), std::make_move_iterator(page.end()));
+            if (complete) {
+                this->ApplyCategories(std::move(*categories));
+            }
+            else {
+                try {
+                    this->ReadCategoryPage(categories);
+                }
+                catch (const api::Error&) {
+                    this->activeQuery = 0;
+                }
+            }
+        }));
 }
 
 void CategoryListView::RequeryWithField(
@@ -176,7 +201,7 @@ void CategoryListView::Reset() {
 int64_t CategoryListView::GetSelectedId() {
     size_t index = this->GetSelectedIndex();
     if (index != NO_SELECTION && index < this->metadata.size()) {
-        return this->metadata[index].id;
+        return this->metadata[index].key;
     }
     return this->metadata.empty() ? this->selectAfterQuery : -1LL;
 }
@@ -245,9 +270,8 @@ void CategoryListView::RefreshPlayingCategory() {
 }
 
 bool CategoryListView::IsPlayingCategory(const api::CategoryEntry& entry) const {
-    return this->fieldIdColumn.empty()
-        ? !this->playingCategoryName.empty() && entry.value == this->playingCategoryName
-        : this->playingCategoryId == entry.id;
+    return this->fieldIdColumn.empty() ? !this->playingCategoryName.empty() && entry.value == this->playingCategoryName
+                                       : this->playingCategoryId == entry.key;
 }
 
 void CategoryListView::SetFieldName(const std::string& fieldName) {
@@ -316,7 +340,7 @@ void CategoryListView::ApplyCategories(std::vector<api::CategoryEntry> categorie
     this->metadata = std::move(categories);
     if (this->selectAfterQuery != -1LL) {
         const auto selected = std::find_if(this->metadata.begin(), this->metadata.end(), [this](const auto& entry) {
-            return entry.id == this->selectAfterQuery;
+            return entry.key == this->selectAfterQuery;
         });
         const auto index = selected == this->metadata.end() ? 0 : std::distance(this->metadata.begin(), selected);
         this->SetSelectedIndex(index);
@@ -342,6 +366,9 @@ size_t CategoryListView::Adapter::GetEntryCount() {
 
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     std::string value = parent.metadata[index].value;
+    if (musik::core::sdk::str::Trim(value).empty()) {
+        value = "(unknown)";
+    }
 
     const bool playing = parent.IsPlayingCategory(parent.metadata[index]);
 

@@ -18,12 +18,12 @@ namespace musik { namespace core { namespace api {
                     throw Error(status);
                 }
             }
-            Player(const Player&) = delete;
+            Player(const Player& other) = delete;
             Player(Player&& other) noexcept
             : player(std::exchange(other.player, nullptr)) {}
             ~Player() { mc_player_destroy(&this->player); }
 
-            Player& operator=(const Player&) = delete;
+            Player& operator=(const Player& other) = delete;
             Player& operator=(Player&& other) {
                 if (this != &other) {
                     const auto status = this->Close();

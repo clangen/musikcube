@@ -115,9 +115,10 @@ int main(int argc, char** argv) {
         for (size_t i = 0; i < samples; ++i) {
             ProfilePhase searchProfile(i + 1 == samples ? "search_10000_ids" : nullptr);
             auto start = Clock::now();
-            api::OpenTrackSearch(context, library, {"", MC_TRACK_SEARCH_SUBSTRING, MC_TRACK_SEARCH_TITLE},
+            api::OpenTrackSearch(context, library, { {}, MC_TRACK_SEARCH_TITLE },
                 [&](mc_result status, api::TrackResult value, std::string_view) {
-                    completed = status; result = std::move(value);
+                    completed = status;
+                    result = std::move(value);
                 });
             drain();
             if (result.Size() != rows) return 1;

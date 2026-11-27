@@ -819,7 +819,7 @@ namespace {
 
         TrackResult remoteTrack;
         std::optional<mc_result> opened;
-        OpenTrackSearch(context, TrackSearch { "Morning Light" },
+        OpenTrackSearch(context, TrackSearch{ { "Morning Light" } },
             [&](mc_result status, TrackResult result, std::string_view) {
                 opened = status;
                 remoteTrack = std::move(result);
@@ -860,7 +860,7 @@ namespace {
             supplies their metadata while playback notifications are pending. */
             TrackResult nextTrack;
             std::optional<mc_result> nextOpened;
-            OpenTrackSearch(context, TrackSearch { "Evening Flight" },
+            OpenTrackSearch(context, TrackSearch{ { "Evening Flight" } },
                 [&](mc_result status, TrackResult result, std::string_view) {
                     nextOpened = status;
                     nextTrack = std::move(result);
@@ -1048,7 +1048,7 @@ namespace {
             return false;
         }
 
-        OpenTrackSearch(context, TrackSearch { "Morning Light" },
+        OpenTrackSearch(context, TrackSearch{ { "Morning Light" } },
             [&](mc_result status, TrackResult result, std::string_view) {
                 wrongThread = std::this_thread::get_id() != owner;
                 complete = status;
@@ -1348,7 +1348,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     std::optional<mc_result> readStatus;
-    OpenTrackSearch(reopened, TrackSearch { "Morning Light" },
+    OpenTrackSearch(reopened, TrackSearch{ { "Morning Light" } },
         [&](mc_result status, TrackResult tracks, std::string_view) {
             readStatus = status == MC_OK && tracks.Size() ? MC_OK : MC_ERROR_INTERNAL;
         });

@@ -110,6 +110,7 @@ namespace musik {
                 bool OnEntryContextMenu(size_t index) override;
 
                 void ApplyCategories(std::vector<musik::core::api::CategoryEntry> categories);
+                void ReadCategoryPage(std::shared_ptr<std::vector<musik::core::api::CategoryEntry>> categories);
                 void ShowContextMenu();
                 class Adapter : public cursespp::ScrollAdapterBase {
                 public:

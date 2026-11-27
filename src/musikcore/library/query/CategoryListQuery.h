@@ -47,7 +47,7 @@ namespace musik { namespace core { namespace library { namespace query {
     class CategoryListQuery : public musik::core::library::query::QueryBase {
         public:
             static const std::string kQueryName;
-            static const std::string kFacetQueryName;
+            static const std::string kCategoryPageQueryName;
 
             using Result = std::shared_ptr<CategoryValues>;
 
@@ -70,13 +70,16 @@ namespace musik { namespace core { namespace library { namespace query {
                 const category::PredicateList predicate,
                 const std::string& filter = "");
 
-            void SetFacetSearch(std::string search);
+            void SetTrackFilter(std::string search, MatchType mode = MatchType::Substring);
+            void SetPage(int64_t anchor, size_t offset, size_t limit);
+            size_t GetTotal() const noexcept { return this->total; }
+            size_t GetAnchorIndex() const noexcept { return this->anchorIndex; }
 
             Result GetResult() noexcept;
             int GetIndexOf(int64_t id);
 
             /* IQuery */
-            std::string Name() override { return this->facet ? kFacetQueryName : kQueryName; }
+            std::string Name() override { return this->paged ? kCategoryPageQueryName : kQueryName; }
 
             /* ISerializableQuery */
             std::string SerializeQuery() override;
@@ -88,19 +91,22 @@ namespace musik { namespace core { namespace library { namespace query {
             /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
-            enum class OutputType: int {
-                Regular = 1,
-                Extended = 2,
-                Playlist = 3
-            };
+            enum class OutputType : int { Regular = 1, Extended = 2, Playlist = 3, Numeric = 4 };
 
             void QueryPlaylist(musik::core::db::Connection &db);
             void QueryRegular(musik::core::db::Connection &db);
             void QueryExtended(musik::core::db::Connection &db);
+            void QueryNumeric(musik::core::db::Connection& db);
             void ProcessResult(musik::core::db::Statement &stmt);
+            void QueryPage(musik::core::db::Connection& db, std::string sql,
+                category::ArgumentList args);
 
-            bool facet = false;
+            bool paged = false;
+            size_t pageOffset = 0, pageLimit = 0, total = 0;
+            int64_t anchorId = -1;
+            size_t anchorIndex = SIZE_MAX;
             std::string trackSearch;
+            MatchType trackMatchMode = MatchType::Substring;
             std::string trackField;
             std::string filter;
             MatchType matchType;

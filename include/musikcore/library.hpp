@@ -26,10 +26,10 @@ namespace musik { namespace core { namespace api {
        retain storage, so keep a page or TrackView alive while using them. */
     class TrackView {
     public:
-        TrackView(const TrackView&) = default;
-        TrackView& operator=(const TrackView&) = default;
-        TrackView(TrackView&&) noexcept = default;
-        TrackView& operator=(TrackView&&) noexcept = default;
+        TrackView(const TrackView& other) = default;
+        TrackView& operator=(const TrackView& other) = default;
+        TrackView(TrackView&& other) noexcept = default;
+        TrackView& operator=(TrackView&& other) noexcept = default;
         int64_t Id() const noexcept { return mc_track_page_get_id(page.get(), rowIndex); }
         explicit operator bool() const noexcept { return Id() != 0; }
 
@@ -104,13 +104,14 @@ namespace musik { namespace core { namespace api {
             if (page) this->page = std::shared_ptr<mc_track_page>(page, Destroy{});
         }
 
-        TrackPage(const TrackPage &) = delete;
-        TrackPage &operator=(const TrackPage &) = delete;
-        TrackPage(TrackPage &&) noexcept = default;
-        TrackPage &operator=(TrackPage &&) noexcept = default;
+        TrackPage(const TrackPage& other) = delete;
+        TrackPage& operator=(const TrackPage& other) = delete;
+        TrackPage(TrackPage&& other) noexcept = default;
+        TrackPage& operator=(TrackPage&& other) noexcept = default;
 
         explicit operator bool() const noexcept { return static_cast<bool>(page); }
         size_t Size() const noexcept { return mc_track_page_get_count(page.get()); }
+        size_t Total() const noexcept { return mc_track_page_get_total(page.get()); }
         int64_t Id(size_t row) const noexcept { return mc_track_page_get_id(page.get(), row); }
         size_t FieldCount() const noexcept { return mc_track_page_get_field_count(page.get()); }
         TrackView Track(size_t row) const & noexcept { return TrackView(page, row); }
@@ -138,20 +139,31 @@ namespace musik { namespace core { namespace api {
         std::shared_ptr<mc_track_page> page;
     };
 
-    /* Describes one page of a literal title-substring query. Use with
-       QueryTracks when the caller needs metadata immediately, rather than a
-       stable full result for later paging. Copyable and movable; caller-owned
-       search/field strings must remain alive through submission. */
+    /* retain a field and its opaque category key for later queries.
+    the field view must remain valid through submission. */
+    struct CategorySelection {
+        std::string_view field;
+        int64_t key;
+    };
+
+    /* select tracks by text and category values. text and field views must
+    remain valid through submission; accepted requests copy them. */
+    struct LibraryFilter {
+        std::string_view trackFilter;
+        mc_track_search_mode trackMatchMode = MC_TRACK_SEARCH_SUBSTRING;
+        std::vector<CategorySelection> selections;
+    };
+
+    /* project one page and its total; use TrackSearch for a stable result. */
     struct TrackQuery {
-        /* Title substring and field names are copied during submission. */
-        std::string_view search;
+        LibraryFilter filter;
         std::vector<std::string_view> fields;
         size_t offset = 0;
         size_t limit = 0;
     };
 
     /* The callback owns its page; the error message is valid only until it returns. */
-    using TrackQueryCompletion = std::function<void(mc_result, TrackPage, std::string_view)>;
+    using TrackQueryCompletion = std::function<void(mc_result status, TrackPage page, std::string_view diagnostic)>;
 
     /* Identifies one track in its original library. Keep a TrackRef for later
        metadata reads or playback actions after releasing a result/page; it does
@@ -161,10 +173,10 @@ namespace musik { namespace core { namespace api {
     public:
         TrackRef() = default;
         explicit TrackRef(mc_track_ref *track) noexcept : identity(track) {}
-        TrackRef(const TrackRef &) = delete;
-        TrackRef &operator=(const TrackRef &) = delete;
-        TrackRef(TrackRef &&) noexcept = default;
-        TrackRef &operator=(TrackRef &&) noexcept = default;
+        TrackRef(const TrackRef& other) = delete;
+        TrackRef& operator=(const TrackRef& other) = delete;
+        TrackRef(TrackRef&& other) noexcept = default;
+        TrackRef& operator=(TrackRef&& other) noexcept = default;
 
         explicit operator bool() const noexcept { return static_cast<bool>(identity); }
         int64_t Id() const noexcept { return mc_track_ref_get_id(Get()); }
@@ -189,10 +201,10 @@ namespace musik { namespace core { namespace api {
         TrackResult() = default;
         explicit TrackResult(mc_track_result *tracks) noexcept : tracks(tracks) {}
 
-        TrackResult(const TrackResult &) = delete;
-        TrackResult &operator=(const TrackResult &) = delete;
-        TrackResult(TrackResult &&) noexcept = default;
-        TrackResult &operator=(TrackResult &&) noexcept = default;
+        TrackResult(const TrackResult& other) = delete;
+        TrackResult& operator=(const TrackResult& other) = delete;
+        TrackResult(TrackResult&& other) noexcept = default;
+        TrackResult& operator=(TrackResult&& other) noexcept = default;
 
         explicit operator bool() const noexcept { return static_cast<bool>(tracks); }
         const mc_track_result *Get() const noexcept { return tracks.get(); }
@@ -223,8 +235,7 @@ namespace musik { namespace core { namespace api {
        metadata. Copyable and movable; caller-owned text must remain alive
        through submission. */
     struct TrackSearch {
-        std::string_view text;
-        mc_track_search_mode mode = MC_TRACK_SEARCH_SUBSTRING;
+        LibraryFilter filter;
         mc_track_search_order order = MC_TRACK_SEARCH_ALBUM;
     };
 
@@ -242,7 +253,8 @@ namespace musik { namespace core { namespace api {
 
     /* Receives ownership of the stable result. The diagnostic string is valid
        only during this callback, which runs when the Context dispatches. */
-    using TrackSearchCompletion = std::function<void(mc_result, TrackResult, std::string_view)>;
+    using TrackSearchCompletion =
+        std::function<void(mc_result status, TrackResult result, std::string_view diagnostic)>;
 
     namespace detail {
         /* Shared C-to-C++ callback adapter. Adopt the transferred handle before
@@ -281,10 +293,10 @@ namespace musik { namespace core { namespace api {
     class LibraryScope {
     public:
         explicit LibraryScope(mc_library_scope_snapshot* value) noexcept : value(value) {}
-        LibraryScope(const LibraryScope&) = delete;
+        LibraryScope(const LibraryScope& other) = delete;
         LibraryScope(LibraryScope&& other) noexcept : value(std::exchange(other.value, nullptr)) {}
         ~LibraryScope() { mc_library_scope_destroy(&this->value); }
-        LibraryScope& operator=(const LibraryScope&) = delete;
+        LibraryScope& operator=(const LibraryScope& other) = delete;
         LibraryScope& operator=(LibraryScope&& other) noexcept {
             if (this != &other) {
                 mc_library_scope_destroy(&this->value);
@@ -315,10 +327,10 @@ namespace musik { namespace core { namespace api {
         /* Takes ownership of a handle created by the C API. */
         explicit Library(mc_library *handle) noexcept : library(handle) {}
 
-        Library(const Library &) = delete;
-        Library &operator=(const Library &) = delete;
-        Library(Library &&) noexcept = default;
-        Library &operator=(Library &&) noexcept = default;
+        Library(const Library& other) = delete;
+        Library& operator=(const Library& other) = delete;
+        Library(Library&& other) noexcept = default;
+        Library& operator=(Library&& other) noexcept = default;
 
         /* Wrapper-owned handle. Do not destroy it; valid until this wrapper releases it. */
         const mc_library *Get() const noexcept { return library.get(); }
@@ -425,7 +437,8 @@ namespace musik { namespace core { namespace api {
        OpenLibrary returns the same wrapper used for a local catalog. */
     class RemoteSession {
     public:
-        using ConnectCompletion = std::function<void(mc_result, mc_remote_state, std::string_view)>;
+        using ConnectCompletion =
+            std::function<void(mc_result status, mc_remote_state state, std::string_view diagnostic)>;
 
         explicit RemoteSession(const mc_remote_options& options) {
             mc_remote_session* handle = nullptr;
@@ -436,9 +449,9 @@ namespace musik { namespace core { namespace api {
             this->session.reset(handle);
         }
 
-        RemoteSession(const RemoteSession&) = delete;
-        RemoteSession(RemoteSession&&) noexcept = default;
-        RemoteSession& operator=(const RemoteSession&) = delete;
+        RemoteSession(const RemoteSession& other) = delete;
+        RemoteSession(RemoteSession&& other) noexcept = default;
+        RemoteSession& operator=(const RemoteSession& other) = delete;
         RemoteSession& operator=(RemoteSession&& other) noexcept {
             if (this != &other) {
                 this->session.reset();
@@ -456,7 +469,7 @@ namespace musik { namespace core { namespace api {
         }
 
         /* observers run only on context dispatch and may remove themselves. */
-        mc_result SetCallback(Context& context, std::function<void(mc_remote_state)> callback) {
+        mc_result SetCallback(Context& context, std::function<void(mc_remote_state state)> callback) {
             auto next = callback ? std::make_unique<std::function<void(mc_remote_state)>>(std::move(callback)) : nullptr;
             const auto status = mc_remote_session_set_callback(context.Get(), this->session.get(),
                 next ? Changed : nullptr, next.get());
@@ -507,7 +520,7 @@ namespace musik { namespace core { namespace api {
        Context::Dispatch or shutdown. Input strings/arrays are copied during
        submission; callback error strings are valid only until the callback returns. */
 
-    using LibraryCompletion = std::function<void(mc_result, std::string_view)>;
+    using LibraryCompletion = std::function<void(mc_result status, std::string_view diagnostic)>;
 
     inline mc_request_id SetTrackRating(Context& context, const TrackRef& track, uint32_t rating,
         LibraryCompletion completion)
@@ -527,8 +540,13 @@ namespace musik { namespace core { namespace api {
         Context &context, const Library &library, const TrackQuery &query, TrackQueryCompletion completion) {
         const auto fields = detail::fieldViews(query.fields);
 
+        std::vector<mc_category_selection> selections;
+        for (const auto& item : query.filter.selections) {
+            selections.push_back({ { item.field.data(), item.field.size() }, item.key });
+        }
         mc_track_query options = MC_TRACK_QUERY_DEFAULT;
-        options.search = { query.search.data(), query.search.size() };
+        options.filter = { { query.filter.trackFilter.data(), query.filter.trackFilter.size() },
+            query.filter.trackMatchMode, selections.data(), selections.size() };
         options.fields = fields.data();
         options.field_count = fields.size();
         options.offset = query.offset;
@@ -544,9 +562,13 @@ namespace musik { namespace core { namespace api {
        is loaded separately, so large searches need not copy every track's tags. */
     inline mc_request_id OpenTrackSearch(Context &context, const Library &library, const TrackSearch &search,
         TrackSearchCompletion completion) {
+        std::vector<mc_category_selection> selections;
+        for (const auto& item : search.filter.selections) {
+            selections.push_back({ { item.field.data(), item.field.size() }, item.key });
+        }
         mc_track_search options = MC_TRACK_SEARCH_DEFAULT;
-        options.text = { search.text.data(), search.text.size() };
-        options.mode = search.mode;
+        options.filter = { { search.filter.trackFilter.data(), search.filter.trackFilter.size() },
+            search.filter.trackMatchMode, selections.data(), selections.size() };
         options.order = search.order;
         return detail::submitRequest(std::move(completion), [&](void *state, mc_request_id *request) {
             return mc_library_open_track_search_async(context.Get(), library.Get(), &options,
@@ -606,8 +628,9 @@ namespace musik { namespace core { namespace api {
 
     /* List callbacks receive owned names/entries; write callbacks receive an
        ID. Both report status and a diagnostic valid only during the callback. */
-    using PlaylistListCompletion = std::function<void(mc_result, std::vector<PlaylistEntry>, std::string_view)>;
-    using PlaylistWriteCompletion = std::function<void(mc_result, int64_t, std::string_view)>;
+    using PlaylistListCompletion =
+        std::function<void(mc_result status, std::vector<PlaylistEntry> playlists, std::string_view diagnostic)>;
+    using PlaylistWriteCompletion = std::function<void(mc_result status, int64_t id, std::string_view diagnostic)>;
 
     namespace detail {
         /* Reuse one terminal adapter for playlist writes so callback state is
@@ -618,15 +641,160 @@ namespace musik { namespace core { namespace api {
         }
     }
 
-    /* Owns the category name. Copyable and movable. */
+    /* owns the category name and field-scoped key. copyable and movable. */
     struct CategoryEntry {
-        int64_t id;
+        int64_t key;
         std::string value;
     };
 
-    using CategoryListCompletion = std::function<void(mc_result, std::vector<CategoryEntry>, std::string_view)>;
 
-    using CategoryFieldsCompletion = std::function<void(mc_result, std::vector<std::string>, std::string_view)>;
+    /* a catalog source and its owned UTF-8 display label. ID zero identifies ordinary files. */
+    struct SourceEntry {
+        int32_t id;
+        std::string label;
+    };
+
+    using SourceListCompletion =
+        std::function<void(mc_result status, std::vector<SourceEntry> sources, std::string_view diagnostic)>;
+    /* filter category names in one field and request a bounded page. */
+    struct CategoryNameQuery {
+        std::string_view field;
+        std::string_view nameFilter;
+        mc_track_search_mode nameMatchMode = MC_TRACK_SEARCH_SUBSTRING;
+        std::optional<int64_t> anchorKey;
+        size_t offset = 0;
+        size_t limit = MC_CATEGORY_QUERY_DEFAULT_LIMIT;
+    };
+    /* list values for one field related to the supplied library filter. */
+    struct RelatedCategoriesQuery {
+        std::string_view field;
+        LibraryFilter filter;
+        std::optional<int64_t> anchorKey;
+        size_t offset = 0;
+        size_t limit = MC_CATEGORY_QUERY_DEFAULT_LIMIT;
+    };
+    /* own one page, its total, and an optional full-result anchor position. */
+    struct CategoryPage {
+        std::vector<CategoryEntry> entries;
+        size_t total = 0;
+        std::optional<size_t> anchorIndex;
+    };
+    using CategoryPageCompletion =
+        std::function<void(mc_result status, CategoryPage page, std::string_view diagnostic)>;
+
+    namespace detail {
+        inline void MC_CALL completeCategoryPage(
+            mc_result status, const mc_category_page* page, const mc_error* error, void* data)
+        {
+            std::unique_ptr<CategoryPageCompletion> callback(static_cast<CategoryPageCompletion*>(data));
+            CategoryPage result;
+            try {
+                if (page) {
+                    result.total = page->total;
+                    if (page->anchor_index != SIZE_MAX) {
+                        result.anchorIndex = page->anchor_index;
+                    }
+                    result.entries.reserve(page->count);
+                    for (size_t i = 0; i < page->count; ++i) {
+                        result.entries.push_back(
+                            { page->entries[i].key, std::string(AsStringView(page->entries[i].value)) });
+                    }
+                }
+            }
+            catch (const std::bad_alloc&) {
+                (*callback)(MC_ERROR_INTERNAL, {}, "Could not retain category page");
+                return;
+            }
+            (*callback)(status, std::move(result), AsStringView(mc_error_get_message(error)));
+        }
+    }
+    inline mc_request_id FilterCategoriesByName(
+        Context& context, const Library& library, const CategoryNameQuery& query, CategoryPageCompletion completion)
+    {
+        auto options = mc_category_name_query MC_CATEGORY_NAME_QUERY_DEFAULT;
+        options.field = { query.field.data(), query.field.size() };
+        options.name_filter = { query.nameFilter.data(), query.nameFilter.size() };
+        options.name_match_mode = query.nameMatchMode;
+        options.anchor_key = query.anchorKey ? &*query.anchorKey : nullptr;
+        options.offset = query.offset;
+        options.limit = query.limit;
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_filter_categories_by_name_async(
+                context.Get(), library.Get(), &options, detail::completeCategoryPage, state, request);
+        });
+    }
+    inline mc_request_id GetRelatedCategories(Context& context, const Library& library,
+        const RelatedCategoriesQuery& query, CategoryPageCompletion completion)
+    {
+        std::vector<mc_category_selection> selections;
+        for (const auto& item : query.filter.selections) {
+            selections.push_back({ { item.field.data(), item.field.size() }, item.key });
+        }
+        auto options = mc_related_categories_query MC_RELATED_CATEGORIES_QUERY_DEFAULT;
+        options.field = { query.field.data(), query.field.size() };
+        options.filter = { { query.filter.trackFilter.data(), query.filter.trackFilter.size() },
+            query.filter.trackMatchMode, selections.data(), selections.size() };
+        options.anchor_key = query.anchorKey ? &*query.anchorKey : nullptr;
+        options.offset = query.offset;
+        options.limit = query.limit;
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_get_related_categories_async(
+                context.Get(), library.Get(), &options, detail::completeCategoryPage, state, request);
+        });
+    }
+    inline mc_request_id FilterCategoriesByName(
+        Context& context, const CategoryNameQuery& query, CategoryPageCompletion completion)
+    {
+        return FilterCategoriesByName(context, detail::activeLibrary(), query, std::move(completion));
+    }
+    inline mc_request_id GetRelatedCategories(
+        Context& context, const RelatedCategoriesQuery& query, CategoryPageCompletion completion)
+    {
+        return GetRelatedCategories(context, detail::activeLibrary(), query, std::move(completion));
+    }
+
+    namespace detail {
+        inline SourceEntry copyEntry(const mc_library_source& source) {
+            return { source.id, std::string(AsStringView(source.label)) };
+        }
+
+        inline CategoryEntry copyEntry(const mc_category_entry& category) {
+            return { category.key, std::string(AsStringView(category.value)) };
+        }
+
+        template<typename Entry, typename NativeEntry>
+        inline void MC_CALL completeEntryList(
+            mc_result status, const NativeEntry* entries, size_t count, const mc_error* error, void* data) {
+            using Completion =
+                std::function<void(mc_result status, std::vector<Entry> entries, std::string_view diagnostic)>;
+            std::unique_ptr<Completion> callback(static_cast<Completion*>(data));
+            std::vector<Entry> owned;
+            try {
+                owned.reserve(count);
+                for (size_t i = 0; i < count; ++i) {
+                    owned.push_back(copyEntry(entries[i]));
+                }
+            }
+            catch (const std::bad_alloc&) {
+                (*callback)(MC_ERROR_INTERNAL, {}, "Could not retain library entries");
+                return;
+            }
+            (*callback)(status, std::move(owned), AsStringView(mc_error_get_message(error)));
+        }
+    }
+
+    /* enumerate all sources in this catalog, including empty sources, independently of its current
+       selection. dispatch delivers owned entries; the diagnostic is borrowed during the callback.
+       returns a cancellable request ID and throws Error if the request is rejected. */
+    inline mc_request_id ListSources(Context& context, const Library& library, SourceListCompletion completion) {
+        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
+            return mc_library_list_sources_async(context.Get(), library.Get(),
+                detail::completeEntryList<SourceEntry, mc_library_source>, state, request);
+        });
+    }
+
+    using CategoryFieldsCompletion =
+        std::function<void(mc_result status, std::vector<std::string> fields, std::string_view diagnostic)>;
 
     inline mc_request_id ListCategoryFields(Context& context, CategoryFieldsCompletion completion) {
         return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
@@ -639,24 +807,6 @@ namespace musik { namespace core { namespace api {
                         names.emplace_back(AsStringView(fields[i]));
                     }
                     (*callback)(status, std::move(names), AsStringView(mc_error_get_message(error)));
-                }, state, request);
-        });
-    }
-
-    inline mc_request_id ListCategories(Context& context, std::string_view field, std::string_view filter,
-        mc_track_search_mode mode, CategoryListCompletion completion)
-    {
-        return detail::submitRequest(std::move(completion), [&](void* state, mc_request_id* request) {
-            return mc_library_list_categories_async(context.Get(), nullptr,
-                { field.data(), field.size() }, { filter.data(), filter.size() }, mode,
-                [](mc_result status, const mc_category_entry* entries, size_t count, const mc_error* error, void* data) {
-                    const std::unique_ptr<CategoryListCompletion> callback(static_cast<CategoryListCompletion*>(data));
-                    std::vector<CategoryEntry> categories;
-                    categories.reserve(count);
-                    for (size_t row = 0; row < count; ++row) {
-                        categories.push_back({ entries[row].id, std::string(AsStringView(entries[row].value)) });
-                    }
-                    (*callback)(status, std::move(categories), AsStringView(mc_error_get_message(error)));
                 }, state, request);
         });
     }

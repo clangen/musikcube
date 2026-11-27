@@ -170,8 +170,8 @@ void TrackSearchLayout::FocusInput() {
 }
 
 mc_request_id TrackSearchLayout::SearchQuery::Open(api::Context& context, api::TrackSearchCompletion completion) const {
-    return api::OpenTrackSearch(context, this->library,
-        { this->filter, this->mode, this->order }, std::move(completion));
+    return api::OpenTrackSearch(
+        context, this->library, { { this->filter, this->mode }, this->order }, std::move(completion));
 }
 
 void TrackSearchLayout::Requery() {

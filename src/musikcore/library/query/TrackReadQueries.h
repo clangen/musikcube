@@ -18,22 +18,47 @@ namespace musik { namespace core { namespace library { namespace query {
         std::map<size_t, uint64_t> albumDurations;
     };
 
+    enum class TrackMatchMode { Substring, Regex };
+
+    struct CategorySelection {
+        std::string field;
+        int64_t key;
+    };
+
+    inline std::vector<std::pair<std::string, int64_t>> EncodeSelections(
+        const std::vector<CategorySelection>& selections) {
+        std::vector<std::pair<std::string, int64_t>> result;
+        for (const auto& selection : selections) {
+            result.emplace_back(selection.field, selection.key);
+        }
+        return result;
+    }
+    inline std::vector<CategorySelection> DecodeSelections(
+        const std::vector<std::pair<std::string, int64_t>>& selections) {
+        std::vector<CategorySelection> result;
+        for (const auto& selection : selections) {
+            result.push_back({ selection.first, selection.second });
+        }
+        return result;
+    }
+
     struct TrackSearchQuery {
-        TrackSearchQuery(const std::string& filter, bool regex, TrackSortType order, int limit = -1, int offset = 0)
+        TrackSearchQuery(
+            const std::string& filter, TrackMatchMode matchMode, TrackSortType order, int limit = -1, int offset = 0)
         : filter(filter)
-        , regex(regex)
+        , matchMode(matchMode)
         , order(order)
         , limit(limit)
-        , offset(offset) {
-        }
+        , offset(offset) {}
 
         std::string filter;
-        bool regex;
+        TrackMatchMode matchMode;
         TrackSortType order;
         int limit = -1;
         int offset = 0;
 
         LibraryQueryScope scope;
+        std::vector<CategorySelection> selections;
 
         bool Run(sqlite3 *database, TrackSearchRows &result) const;
     };
@@ -45,6 +70,7 @@ namespace musik { namespace core { namespace library { namespace query {
         };
         std::vector<std::string> names;
         std::vector<Row> rows;
+        size_t total = 0;
     };
 
     enum class TrackVisibility {
@@ -68,6 +94,9 @@ namespace musik { namespace core { namespace library { namespace query {
         bool keepMissing = true;
         TrackVisibility visibility = TrackVisibility::VisibleOnly;
         LibraryQueryScope scope;
+        bool includeTotal = false;
+        TrackMatchMode matchMode = TrackMatchMode::Substring;
+        std::vector<CategorySelection> selections;
 
         bool Run(sqlite3 *database, ProjectedTrackPage &page) const;
     };

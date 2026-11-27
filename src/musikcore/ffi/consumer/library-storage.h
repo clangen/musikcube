@@ -49,7 +49,8 @@ namespace musik { namespace core { namespace library {
             mc_track_search_completion_fn, void*, mc_request_id*) const = 0;
 
         virtual mc_result ReadPage(mc_context*, std::vector<int64_t>, std::vector<std::string>, bool,
-            mc_track_query_completion_fn, void*, mc_request_id*, const void* owner = nullptr) const = 0;
+            mc_track_query_completion_fn, void*, mc_request_id*, const void* owner = nullptr,
+            size_t total = 0) const = 0;
 
         virtual mc_result OpenPlaylist(
             mc_context*, int64_t, mc_track_search_completion_fn, void*, mc_request_id*) const {
@@ -94,13 +95,9 @@ namespace musik { namespace core { namespace library {
             return MC_ERROR_UNSUPPORTED;
         }
 
-        virtual mc_result ListCategories(mc_context*, std::string, std::string, mc_track_search_mode,
-            mc_category_list_completion_fn, void*, mc_request_id*) const {
-            return MC_ERROR_UNSUPPORTED;
-        }
-
-        virtual mc_result ListFacets(mc_context*, std::string, std::string,
-            std::vector<std::pair<std::string, int64_t>>, mc_category_list_completion_fn, void*, mc_request_id*) const {
+        virtual mc_result QueryCategories(mc_context*, std::string, std::string, mc_track_search_mode, std::string,
+            mc_track_search_mode, std::vector<std::pair<std::string, int64_t>>, int64_t, size_t, size_t,
+            mc_category_page_completion_fn, void*, mc_request_id*) const {
             return MC_ERROR_UNSUPPORTED;
         }
 

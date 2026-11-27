@@ -91,8 +91,8 @@ namespace musik { namespace core { namespace plugin {
 
         static mc_result MC_CALL ListFilteredCategories(void* context, mc_string_view field,
             const mc_library_category_selection* selections, size_t selectionCount, mc_string_view filter,
-            mc_track_search_mode mode, bool facet, mc_string_view trackSearch,
-            mc_category_list_completion_fn completion, void* userData);
+            mc_track_search_mode mode, mc_string_view trackSearch, mc_category_list_completion_fn completion,
+            void* userData);
 
         static mc_result MC_CALL ListAlbumsHost(void* context, mc_string_view filter,
             const mc_library_category_selection* selections, size_t selectionCount, mc_library_album_list_fn completion,
