@@ -97,6 +97,10 @@ function configureStaticDependencies(config, out, sysroot) {
       debianPluginDependencies.stage({ destination, download, run, work, target: config.rpi?.manifest });
       debianPluginDependencies.stage({ destination, download, run, work,
         target: config.rpi ? 'projectm-armhf' : 'projectm-amd64' });
+      /* Wayland's pkg-config metadata requires target libffi, even for shared linking. */
+      const ffiTarget = config.rpi?.arch === 'armv6' ? 'projectm-libffi-raspbian-armhf'
+        : config.rpi ? 'projectm-libffi-armhf' : 'projectm-libffi-amd64';
+      debianPluginDependencies.stage({ destination, download, run, work, target: ffiTarget });
       relocateSysrootLinks(destination);
     },
     sourceSysroot: sysroot ? undefined : destination,

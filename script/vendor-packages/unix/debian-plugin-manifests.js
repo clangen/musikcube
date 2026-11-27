@@ -200,6 +200,18 @@ const debian = 'https://archive.debian.org/debian';
 const raspbian = 'https://archive.raspbian.org/raspbian';
 
 module.exports = {
+  'projectm-libffi-amd64': { archive: debian, packages: [
+    ['pool/main/libf/libffi/libffi-dev_3.3-6_amd64.deb', 'ca2c71d9c68b1944b689606f12acf8023bad1b5083e8413894fd41ad0b977d20'],
+    ['pool/main/libf/libffi/libffi7_3.3-6_amd64.deb', '30ca89bfddae5fa6e0a2a044f22b6e50cd17c4bc6bc850c579819aeab7101f0f'],
+  ] },
+  'projectm-libffi-armhf': { archive: debian, packages: [
+    ['pool/main/libf/libffi/libffi-dev_3.3-6_armhf.deb', 'beaee29c2f9dc7149549f39938abede8f230ebb9c16ec25a7fdc6a7e790eba0f'],
+    ['pool/main/libf/libffi/libffi7_3.3-6_armhf.deb', 'c18d4ad579a4e88f3da20eb523ecc5a850a61bf37091b316c9d3f668cf9838fa'],
+  ] },
+  'projectm-libffi-raspbian-armhf': { archive: raspbian, cachePrefix: 'raspbian-', packages: [
+    ['pool/main/libf/libffi/libffi-dev_3.3-6_armhf.deb', 'c31745d547be78fab5ac58af4e6367233b7f8c6a63c4871e1073662b291fef8d'],
+    ['pool/main/libf/libffi/libffi7_3.3-6_armhf.deb', '0b7208c2864ec8d523839b2fd89b5dc3a1bf03ce9a53cb464b88656cf5866053'],
+  ] },
   'projectm-amd64': { archive: debian, packages: [...projectmGraphics.amd64, projectmX11Headers] },
   'projectm-armhf': { archive: debian, packages: [...projectmGraphics.armhf, projectmX11Headers] },
   amd64: { archive: debian, packages: amd64 },
