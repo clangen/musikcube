@@ -246,6 +246,15 @@ target_link_libraries(nullout PRIVATE Threads::Threads)
 target_compile_features(nullout PRIVATE cxx_std_20)
 
 windows_vendor_library(projectm projectM-4 projectM-4D)
+set(MUSIKCUBE_PROJECTM_ROOT "" CACHE PATH "Optional patched projectM installation")
+if(MUSIKCUBE_PROJECTM_ROOT)
+  if(NOT EXISTS "${MUSIKCUBE_PROJECTM_ROOT}/lib/libprojectM-4.lib" OR
+     NOT EXISTS "${MUSIKCUBE_PROJECTM_ROOT}/include/projectM-4/projectM.h")
+    message(FATAL_ERROR "MUSIKCUBE_PROJECTM_ROOT must contain the projectM library and headers")
+  endif()
+  set_target_properties(vendor::projectm PROPERTIES
+    IMPORTED_LOCATION_RELEASE "${MUSIKCUBE_PROJECTM_ROOT}/lib/libprojectM-4.lib")
+endif()
 windows_vendor_library(projectm_eval projectM-eval projectM-evalD)
 windows_vendor_library(projectm_eel projectM-eel projectM-eelD)
 windows_vendor_library(glew glew32 glew32D)
@@ -263,6 +272,9 @@ target_sources(projectm PRIVATE
 musikcube_configure_c_plugin(projectm)
 target_compile_definitions(projectm PRIVATE PROJECTM_STATIC_DEFINE GLEW_STATIC NOMINMAX _CRT_SECURE_NO_WARNINGS)
 target_include_directories(projectm PRIVATE "${projectm_imgui}" "${windows_vendor}/include/SDL2")
+if(MUSIKCUBE_PROJECTM_ROOT)
+  target_include_directories(projectm BEFORE PRIVATE "${MUSIKCUBE_PROJECTM_ROOT}/include")
+endif()
 target_link_libraries(projectm PRIVATE vendor::projectm vendor::projectm_eval vendor::projectm_eel vendor::glew vendor::sdl2
   opengl32 imm32 version winmm setupapi)
 add_custom_command(TARGET projectm POST_BUILD

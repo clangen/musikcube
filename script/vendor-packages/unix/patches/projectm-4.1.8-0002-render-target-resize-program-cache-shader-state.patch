@@ -1,7 +1,8 @@
 Source: https://github.com/johnneerdael/ProjectM-Android/blob/2ac06c7253fb2956df3645779bf688c07d617419/tools/projectm-patches/0002-render-target-resize-program-cache-shader-state.patch
 Author: John Neerdael
 License: LGPL-2.1 (same as projectM)
-Local change: advertise the optional transition controls with a feature macro.
+Local changes: advertise the optional transition controls with a feature macro;
+allow a divisor of zero to reuse the outgoing frame for the entire transition.
 
 Subject: [PATCH] projectM TV: smooth switches and blends on TV hardware
 
@@ -30,12 +31,13 @@ diff --git a/src/api/include/projectM-4/render_opengl.h b/src/api/include/projec
 index 0a061f765..6fd68e863 100644
 --- a/src/api/include/projectM-4/render_opengl.h
 +++ b/src/api/include/projectM-4/render_opengl.h
-@@ -41,6 +41,42 @@ extern "C" {
+@@ -41,6 +41,43 @@ extern "C" {
   */
  PROJECTM_EXPORT void projectm_opengl_render_frame(projectm_handle instance);
  
 +/* identifies the optional transition controls in this patched build. */
 +#define PROJECTM_HAS_TRANSITION_CONTROLS 1
++#define PROJECTM_HAS_FROZEN_OUTGOING_TRANSITION 1
 +
 +/**
 + * @brief Renders a single frame into the given framebuffer object instead of the default one.
@@ -63,10 +65,10 @@ index 0a061f765..6fd68e863 100644
 + * @brief During a soft-cut transition, renders the outgoing preset only every n-th frame.
 + *
 + * The outgoing preset fades out and its last frame is blended in between, so a divisor of 2 halves
-+ * its cost with little visible difference. 1 (the default) renders it every frame.
++ * its cost with little visible difference. 1 renders every frame; 0 freezes the last frame.
 + *
 + * @param instance The projectM instance handle.
-+ * @param divisor Render the outgoing preset every divisor-th frame, at least 1.
++ * @param divisor Render every divisor-th frame, or 0 to reuse its last frame.
 + */
 +PROJECTM_EXPORT void projectm_opengl_set_outgoing_preset_frame_divisor(projectm_handle instance, uint32_t divisor);
 +
@@ -104,10 +106,10 @@ index 88fa014ba..bc6097647 100644
  
 -    // ToDo: Call the to-be-implemented render method in Renderer
 -    m_activePreset->RenderFrame(audioData, renderContext);
-+    // During a transition the outgoing preset may render at a fraction of the frame rate: it is
-+    // fading out, and its last frame is blended meanwhile. This saves most of its (CPU) cost.
++    // During a transition reuse the outgoing frame when requested, or render it at a reduced rate.
++    // The incoming preset continues to animate and the transition shader blends both images.
 +    bool inTransition = m_transition != nullptr && m_transitioningPreset != nullptr;
-+    if (!inTransition || m_outgoingPresetFrameDivisor <= 1 || m_frameCount % m_outgoingPresetFrameDivisor == 0)
++    if (!inTransition || m_outgoingPresetFrameDivisor == 1 || (m_outgoingPresetFrameDivisor > 1 && m_frameCount % m_outgoingPresetFrameDivisor == 0))
 +    {
 +        // ToDo: Call the to-be-implemented render method in Renderer
 +        m_activePreset->RenderFrame(audioData, renderContext);
@@ -151,7 +153,7 @@ index 88fa014ba..bc6097647 100644
  
 +void ProjectM::SetOutgoingPresetFrameDivisor(uint32_t divisor)
 +{
-+    m_outgoingPresetFrameDivisor = divisor > 0 ? divisor : 1;
++    m_outgoingPresetFrameDivisor = divisor;
 +}
 +
  auto ProjectM::WindowWidth() -> int
@@ -172,7 +174,7 @@ index b84e29335..72fd2292f 100644
 +    void RenderFrame(uint32_t targetFramebufferObject = 0);
 +
 +    /**
-+     * @brief During a transition, renders the outgoing preset only every n-th frame (1: every frame).
++     * @brief Render the outgoing preset every n-th frame, or freeze it when n is zero.
 +     */
 +    void SetOutgoingPresetFrameDivisor(uint32_t divisor);
  

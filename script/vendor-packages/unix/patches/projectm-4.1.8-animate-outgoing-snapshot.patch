@@ -1,0 +1,198 @@
+diff --git a/src/libprojectM/ProjectM.cpp b/src/libprojectM/ProjectM.cpp
+index df0d0c4..4422bf4 100644
+--- a/src/libprojectM/ProjectM.cpp
++++ b/src/libprojectM/ProjectM.cpp
+@@ -189,7 +189,8 @@ void ProjectM::RenderFrame(uint32_t targetFramebufferObject)
+ 
+     if (m_transition != nullptr && m_transitioningPreset != nullptr)
+     {
+-        m_transition->Draw(*m_activePreset, *m_transitioningPreset, renderContext, audioData);
++        m_transition->Draw(*m_activePreset, *m_transitioningPreset, renderContext, audioData,
++                           m_outgoingPresetFrameDivisor == 0);
+     }
+     else
+     {
+diff --git a/src/libprojectM/Renderer/PresetTransition.cpp b/src/libprojectM/Renderer/PresetTransition.cpp
+index 2a27f00..89c6ff8 100644
+--- a/src/libprojectM/Renderer/PresetTransition.cpp
++++ b/src/libprojectM/Renderer/PresetTransition.cpp
+@@ -42,7 +42,8 @@ auto PresetTransition::IsDone() const -> bool
+ void PresetTransition::Draw(const Preset& oldPreset,
+                             const Preset& newPreset,
+                             const RenderContext& context,
+-                            const libprojectM::Audio::FrameAudioData& audioData)
++                            const libprojectM::Audio::FrameAudioData& audioData,
++                            bool animateOutgoingSnapshot)
+ {
+     using namespace std::chrono_literals;
+ 
+@@ -83,6 +84,8 @@ void PresetTransition::Draw(const Preset& oldPreset,
+     m_transitionShader->SetUniformFloat2("timeParams", {secondsSinceStart,
+                                                         std::chrono::duration<float>(std::chrono::system_clock::now() - m_lastFrameTime).count()});
+ 
++    m_transitionShader->SetUniformFloat("outgoingSnapshotMotion", animateOutgoingSnapshot ? 1.0f : 0.0f);
++
+     m_transitionShader->SetUniformInt4("iRandStatic", m_staticRandomValues);
+ 
+     m_transitionShader->SetUniformInt4("iRandFrame", {rand32(),
+diff --git a/src/libprojectM/Renderer/PresetTransition.hpp b/src/libprojectM/Renderer/PresetTransition.hpp
+index 2623324..6c21c29 100644
+--- a/src/libprojectM/Renderer/PresetTransition.hpp
++++ b/src/libprojectM/Renderer/PresetTransition.hpp
+@@ -42,7 +42,8 @@ public:
+     void Draw(const Preset& oldPreset,
+               const Preset& newPreset,
+               const RenderContext& context,
+-              const libprojectM::Audio::FrameAudioData& audioData);
++              const libprojectM::Audio::FrameAudioData& audioData,
++              bool animateOutgoingSnapshot);
+ 
+ private:
+     std::vector<std::string> m_noiseTextureNames{"noise_lq",
+diff --git a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInCircleGlsl330.frag b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInCircleGlsl330.frag
+index d940625..796fc0f 100644
+--- a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInCircleGlsl330.frag
++++ b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInCircleGlsl330.frag
+@@ -12,13 +12,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
+     vec3 imgInner, imgOuter;
+     if (inOrOut < 1.)
+     {
+-        imgInner = texture(iChannel0, uv).xyz;
++        imgInner = sampleOutgoing(uv).xyz;
+         imgOuter = texture(iChannel1, uv).xyz;
+         progress = iProgressCosine;
+     }
+     else
+     {
+-        imgOuter = texture(iChannel0, uv).xyz;
++        imgOuter = sampleOutgoing(uv).xyz;
+         imgInner = texture(iChannel1, uv).xyz;
+         progress = 1. - iProgressCosine;
+     }
+diff --git a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInPlasmaGlsl330.frag b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInPlasmaGlsl330.frag
+index be2181a..26175f9 100644
+--- a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInPlasmaGlsl330.frag
++++ b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInPlasmaGlsl330.frag
+@@ -27,7 +27,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
+     // Normalized pixel coordinates (from 0 to 1)
+     vec2 uv = fragCoord/iResolution.xy;
+ 
+-    vec3 imgOld = texture(iChannel0, uv).xyz;
++    vec3 imgOld = sampleOutgoing(uv).xyz;
+     vec3 imgNew = texture(iChannel1, uv).xyz;
+ 
+     uv.y /= iResolution.x/iResolution.y;
+diff --git a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInSimpleBlendGlsl330.frag b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInSimpleBlendGlsl330.frag
+index 2526b8f..f967fb3 100644
+--- a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInSimpleBlendGlsl330.frag
++++ b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInSimpleBlendGlsl330.frag
+@@ -4,7 +4,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
+     vec2 uv = fragCoord / iResolution.xy;
+ 
+     // Blending
+-    fragColor = vec4(mix(texture(iChannel0, uv).xyz,
++    fragColor = vec4(mix(sampleOutgoing(uv).xyz,
+                          texture(iChannel1, uv).xyz,
+                          iProgressCosine), 1.0);
+ }
+diff --git a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInSweepGlsl330.frag b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInSweepGlsl330.frag
+index 72f750b..e0880ea 100644
+--- a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInSweepGlsl330.frag
++++ b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInSweepGlsl330.frag
+@@ -11,7 +11,7 @@ float atan_y_over_x(float y, float x)
+ void mainImage( out vec4 fragColor, in vec2 fragCoord )
+ {
+     vec2 uv = fragCoord / iResolution.xy;
+-    vec3 imgOld = texture(iChannel0, uv).xyz;
++    vec3 imgOld = sampleOutgoing(uv).xyz;
+     vec3 imgNew = texture(iChannel1, uv).xyz;
+ 
+     // Blending
+diff --git a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInWarpGlsl330.frag b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInWarpGlsl330.frag
+index 073a89b..94db013 100644
+--- a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInWarpGlsl330.frag
++++ b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInWarpGlsl330.frag
+@@ -3,7 +3,7 @@
+ void mainImage( out vec4 fragColor, in vec2 fragCoord )
+ {
+     vec2 uv = fragCoord / iResolution.xy;
+-    vec3 imgOld = texture(iChannel0, uv).xyz;
++    vec3 imgOld = sampleOutgoing(uv).xyz;
+     vec3 imgNew = texture(iChannel1, uv).xyz;
+ 
+     // Randomize direction
+@@ -16,5 +16,5 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
+ 
+     // Blending
+     float x = smoothstep(.0,1.0,(iProgressCosine * 2.0 + coord - 1.0));
+-    fragColor = mix(texture(iChannel0, (uv - .5) * (1. - x) + .5), texture(iChannel1, (uv - .5) * x + .5), x);
++    fragColor = mix(sampleOutgoing((uv - .5) * (1. - x) + .5), texture(iChannel1, (uv - .5) * x + .5), x);
+ }
+diff --git a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInZoomBlurGlsl330.frag b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInZoomBlurGlsl330.frag
+index b7ffe17..0a219aa 100644
+--- a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInZoomBlurGlsl330.frag
++++ b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderBuiltInZoomBlurGlsl330.frag
+@@ -25,7 +25,7 @@ float random(in vec3 scale, in float seed) {
+ }
+ 
+ vec3 crossFade(in vec2 uv, in float dissolve) {
+-    return mix(texture(iChannel0, uv).rgb, texture(iChannel1, uv).rgb, dissolve);
++    return mix(sampleOutgoing(uv).rgb, texture(iChannel1, uv).rgb, dissolve);
+ }
+ 
+ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+diff --git a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderHeaderGlsl330.frag b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderHeaderGlsl330.frag
+index 251a7d6..c53511a 100644
+--- a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderHeaderGlsl330.frag
++++ b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderHeaderGlsl330.frag
+@@ -28,6 +28,50 @@ uniform vec3 iBeatAttValues;
+ // Samplers
+ uniform sampler2D iChannel0;
+ uniform sampler2D iChannel1;
++uniform float outgoingSnapshotMotion;
++
++// Animate the frozen outgoing image without running the old preset again.
++vec4 sampleOutgoing(vec2 uv)
++{
++    float progress = clamp(iProgressLinear, 0.0, 1.0) * outgoingSnapshotMotion;
++    float motion = 1.0 - (1.0 - progress) * (1.0 - progress);
++    float angle = 0.40 * motion;
++    float cs = cos(angle);
++    float sn = sin(angle);
++    float aspect = iResolution.x / max(iResolution.y, 1.0);
++    float edgeScale = 1.0 / (cs + abs(sn) * max(aspect, 1.0 / aspect));
++    vec2 point = uv - vec2(0.5);
++    point.x *= aspect;
++    point = mat2(cs, sn, -sn, cs) * point;
++    point.x /= aspect;
++    point *= edgeScale * exp(-0.55 * motion);
++    vec2 samplePoint = point + vec2(0.5);
++    vec4 color = texture(iChannel0, samplePoint);
++    if (progress > 0.001)
++    {
++        vec2 blur = vec2(12.0 * progress) / vec2(textureSize(iChannel0, 0));
++        vec4 softened = color * 0.28;
++        softened += texture(iChannel0, samplePoint + vec2(blur.x, 0.0)) * 0.12;
++        softened += texture(iChannel0, samplePoint - vec2(blur.x, 0.0)) * 0.12;
++        softened += texture(iChannel0, samplePoint + vec2(0.0, blur.y)) * 0.12;
++        softened += texture(iChannel0, samplePoint - vec2(0.0, blur.y)) * 0.12;
++        softened += texture(iChannel0, samplePoint + blur) * 0.06;
++        softened += texture(iChannel0, samplePoint - blur) * 0.06;
++        softened += texture(iChannel0, samplePoint + vec2(blur.x, -blur.y)) * 0.06;
++        softened += texture(iChannel0, samplePoint + vec2(-blur.x, blur.y)) * 0.06;
++        color = softened;
++    }
++
++    float hue = 0.70 * motion;
++    vec3 axis = normalize(vec3(1.0));
++    vec3 shifted = color.rgb * cos(hue) + cross(axis, color.rgb) * sin(hue)
++        + axis * dot(axis, color.rgb) * (1.0 - cos(hue));
++    float luminance = dot(shifted, vec3(0.2126, 0.7152, 0.0722));
++    float saturation = 1.0 + 0.45 * progress * sin(iTime * 4.0);
++    float pulse = 1.0 + 0.20 * progress * sin(iTime * 5.0 + clamp(iBeatValues.x, 0.0, 2.0));
++    color.rgb = max(vec3(0.0), mix(vec3(luminance), shifted, saturation) * pulse);
++    return color;
++}
+ 
+ // These are named as in Milkdrop shaders so we can reuse the code.
+ uniform sampler2D sampler_noise_lq;

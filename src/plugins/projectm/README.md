@@ -23,6 +23,11 @@ The toolbar fades when the pointer is idle and returns when it moves. Controls
 stay visible while a panel is open. Use Find to search preset names, or Settings
 to change the directory, gain, and duration.
 
+On builds using the bundled projectM patches, **Reduce transition work** lets
+the incoming preset animate while the outgoing snapshot zooms, rotates and
+pulses as it fades away over one second. Disable it to render both presets
+throughout the three-second transition.
+
 Use the left and right arrow keys to change presets, Space for a random preset,
 F for fullscreen, and Tab to hide or show the controls. Escape closes a visible
 panel first, then asks for confirmation when no panel is visible. Choose Yes to

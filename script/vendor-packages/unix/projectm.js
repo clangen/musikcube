@@ -68,6 +68,7 @@ const patches = [
   'projectm-4.1.8-0003-hlslparser-classic-locale.patch',
   'projectm-4.1.8-0005-cache-translated-preset-shaders.patch',
   'projectm-4.1.8-custom-shapes.patch',
+  'projectm-4.1.8-animate-outgoing-snapshot.patch',
 ];
 
 /* compile Dear ImGui with the plugin so its C++ ABI stays inside that binary. */

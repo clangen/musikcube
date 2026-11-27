@@ -95,6 +95,11 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
     std::mt19937 random { std::random_device {}() };
 #ifdef PROJECTM_HAS_TRANSITION_CONTROLS
     auto& reduceTransitionWork = settings.reduceTransitionWork;
+#ifdef PROJECTM_HAS_FROZEN_OUTGOING_TRANSITION
+    constexpr uint32_t reducedTransitionDivisor = 0;
+#else
+    constexpr uint32_t reducedTransitionDivisor = 2;
+#endif
 #endif
     auto& fullscreen = settings.fullscreen;
     auto& duration = settings.duration;
@@ -178,9 +183,10 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
             &advanceRequested);
         loadPresets();
 #ifdef PROJECTM_HAS_TRANSITION_CONTROLS
-        /* two presets render during a fade. update the outgoing one at half rate
-        to leave more time for the incoming preset and controls. */
-        projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, reduceTransitionWork ? 2 : 1);
+        /* the incoming preset starts from the outgoing image. keep that image
+        fixed during a short blend so only one preset renders each frame. */
+        projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, reduceTransitionWork ? reducedTransitionDivisor : 1);
+        projectm_set_soft_cut_duration(visualizer, reduceTransitionWork && reducedTransitionDivisor == 0 ? 1.0 : 3.0);
 #endif
         SDL_GL_SetSwapInterval(1);
     }
@@ -333,7 +339,10 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
                         }
 #ifdef PROJECTM_HAS_TRANSITION_CONTROLS
                         if (ImGui::Checkbox("Reduce transition work", &reduceTransitionWork)) {
-                            projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, reduceTransitionWork ? 2 : 1);
+                            projectm_opengl_set_outgoing_preset_frame_divisor(
+                                visualizer, reduceTransitionWork ? reducedTransitionDivisor : 1);
+                            projectm_set_soft_cut_duration(
+                                visualizer, reduceTransitionWork && reducedTransitionDivisor == 0 ? 1.0 : 3.0);
                         }
 #endif
                         ImGui::SliderFloat("Audio gain", &inputGain, 1.0f, 8.0f, "%.2fx");
