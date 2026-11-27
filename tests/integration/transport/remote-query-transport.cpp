@@ -26,8 +26,8 @@
 #include <common/runtime/MessageQueue.h>
 #include <common/version.h>
 #include <common/Filesystem.h>
-#include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/SettingKeys.h>
+#include <musikcore/support/Settings.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Messages.h>
 #include <websocketpp/config/asio_no_tls.hpp>
@@ -272,7 +272,7 @@ namespace {
                 this->worker.join();
             }
 
-            /* Expose the dynamically allocated listener port for isolated client preferences. */
+            /* Expose the dynamically allocated listener port for isolated client settings. */
             unsigned short Port() const { return this->port; }
 
             bool WaitForArtworkRequest() {
@@ -413,7 +413,7 @@ namespace {
         using namespace musik::core::api;
 
         Server server(true);
-        const auto settings = musik::core::Preferences::ForComponent(prefs::components::Settings);
+        const auto settings = musik::core::Settings::ForComponent(prefs::components::Settings);
         settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
         settings->SetInt(prefs::keys::RemoteLibraryWssPort, server.Port());
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(LibraryBackend::Type::Remote));
@@ -1150,7 +1150,7 @@ namespace {
         using namespace musik::core::api;
         CoreRuntime runtime;
         auto& host = runtime.Queue();
-        const auto settings = musik::core::Preferences::ForComponent(prefs::components::Settings);
+        const auto settings = musik::core::Settings::ForComponent(prefs::components::Settings);
         settings->SetInt(prefs::keys::LibraryType, static_cast<int>(LibraryBackend::Type::Local));
         const auto local = OpenFixtureLibrary();
         if (!local) {
@@ -2414,11 +2414,11 @@ namespace {
         using namespace musik::core::api;
 
         Server server(true);
-        api::Preferences settings { MC_PREFERENCE_SETTINGS };
+        api::Settings settings { MC_SETTINGS_APPLICATION };
         settings.Write({
-            Preference(prefs::keys::RemoteLibraryHostname, "127.0.0.1"),
-            Preference(prefs::keys::RemoteLibraryWssPort, static_cast<int32_t>(server.Port())),
-            Preference(prefs::keys::RemoteLibraryViewed, true)
+            Setting(prefs::keys::RemoteLibraryHostname, "127.0.0.1"),
+            Setting(prefs::keys::RemoteLibraryWssPort, static_cast<int32_t>(server.Port())),
+            Setting(prefs::keys::RemoteLibraryViewed, true)
         });
 
         TrackResult tracks;

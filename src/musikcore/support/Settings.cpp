@@ -34,10 +34,10 @@
 
 #include "pch.hpp"
 
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/ffi/consumer/preferences-shape.h>
+#include <musikcore/support/SettingKeys.h>
+#include <musikcore/ffi/consumer/settings-shape.h>
 #include <musikcore/ffi/common/error.h>
 #include <musikcore/debug.h>
 #include <unordered_map>
@@ -46,9 +46,9 @@ using nlohmann::json;
 using namespace musik;
 using namespace musik::core;
 
-static const char* TAG = "Preferences";
-static std::unordered_map<std::string, std::weak_ptr<Preferences>> componentCache;
-static std::unordered_map<std::string, std::shared_ptr<Preferences>> pluginCache;
+static const char* TAG = "Settings";
+static std::unordered_map<std::string, std::weak_ptr<Settings>> componentCache;
+static std::unordered_map<std::string, std::shared_ptr<Settings>> pluginCache;
 static std::mutex cacheMutex;
 
 #define CACHE_KEY(name, mode) u8fmt("%s-%d", name.c_str(), mode)
@@ -108,8 +108,8 @@ static std::string pluginFilename(std::string name) {
     return name;
 }
 
-void Preferences::SavePluginPreferences() {
-    std::vector<std::shared_ptr<Preferences>> stores;
+void Settings::SavePluginSettings() {
+    std::vector<std::shared_ptr<Settings>> stores;
     {
         std::lock_guard lock(cacheMutex);
         stores.reserve(pluginCache.size());
@@ -118,26 +118,26 @@ void Preferences::SavePluginPreferences() {
         }
     }
 
-    /* Providers keep borrowed preference pointers until their modules unload. */
+    /* Providers keep borrowed setting pointers until their modules unload. */
     for (const auto& store : stores) {
         store->Save();
     }
 }
 
-std::shared_ptr<Preferences> Preferences::ForPlugin(const std::string& pluginName) {
+std::shared_ptr<Settings> Settings::ForPlugin(const std::string& pluginName) {
     std::string name = pluginFilename(pluginName);
     std::lock_guard lock(cacheMutex);
 
     if (pluginCache.find(name) == pluginCache.end()) {
-        pluginCache[name] = std::shared_ptr<Preferences>(
-            new Preferences(name, Preferences::ModeAutoSave));
+        pluginCache[name] = std::shared_ptr<Settings>(
+            new Settings(name, Settings::ModeAutoSave));
     }
 
     return pluginCache[name];
 }
 
-std::shared_ptr<Preferences> Preferences::ForComponent(
-    const std::string& c, Preferences::Mode mode)
+std::shared_ptr<Settings> Settings::ForComponent(
+    const std::string& c, Settings::Mode mode)
 {
     std::unique_lock<std::mutex> lock(cacheMutex);
 
@@ -157,18 +157,18 @@ std::shared_ptr<Preferences> Preferences::ForComponent(
         }
     }
 
-    std::shared_ptr<Preferences> prefs(new Preferences(c, mode));
+    std::shared_ptr<Settings> prefs(new Settings(c, mode));
     componentCache[key] = prefs;
     return prefs;
 }
 
-Preferences::Preferences(const std::string& component, Mode mode) {
+Settings::Settings(const std::string& component, Mode mode) {
     this->mode = mode;
     this->component = component;
     this->Load();
 }
 
-Preferences::~Preferences() {
+Settings::~Settings() {
     if (this->mode == ModeAutoSave) {
         this->Save();
     }
@@ -189,22 +189,22 @@ Preferences::~Preferences() {
     } \
 }
 
-bool Preferences::GetBool(const std::string& key, bool defaultValue) {
+bool Settings::GetBool(const std::string& key, bool defaultValue) {
     std::unique_lock<std::mutex> lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }
 
-int Preferences::GetInt(const std::string& key, int defaultValue) {
+int Settings::GetInt(const std::string& key, int defaultValue) {
     std::unique_lock<std::mutex> lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }
 
-double Preferences::GetDouble(const std::string& key, double defaultValue) {
+double Settings::GetDouble(const std::string& key, double defaultValue) {
     std::unique_lock<std::mutex> lock(this->mutex);
     RETURN_VALUE(defaultValue);
 }
 
-std::string Preferences::GetString(const std::string& key, const std::string& defaultValue) {
+std::string Settings::GetString(const std::string& key, const std::string& defaultValue) {
     std::unique_lock<std::mutex> lock(this->mutex);
     try {
         auto it = json.find(key);
@@ -224,27 +224,27 @@ std::string Preferences::GetString(const std::string& key, const std::string& de
     }
 }
 
-void Preferences::SetBool(const std::string& key, bool value) {
+void Settings::SetBool(const std::string& key, bool value) {
     std::unique_lock<std::mutex> lock(this->mutex);
     json[key] = value;
 }
 
-void Preferences::SetInt(const std::string& key, int value) {
+void Settings::SetInt(const std::string& key, int value) {
     std::unique_lock<std::mutex> lock(this->mutex);
     json[key] = value;
 }
 
-void Preferences::SetDouble(const std::string& key, double value) {
+void Settings::SetDouble(const std::string& key, double value) {
     std::unique_lock<std::mutex> lock(this->mutex);
     json[key] = value;
 }
 
-void Preferences::SetString(const std::string& key, const char* value) {
+void Settings::SetString(const std::string& key, const char* value) {
     std::unique_lock<std::mutex> lock(this->mutex);
     json[key] = value;
 }
 
-bool Preferences::SetValues(const nlohmann::json& values, bool persist) {
+bool Settings::SetValues(const nlohmann::json& values, bool persist) {
     std::lock_guard lock(this->mutex);
     auto updated = this->json.is_object() ? this->json : json::object();
     updated.update(values);
@@ -257,7 +257,7 @@ bool Preferences::SetValues(const nlohmann::json& values, bool persist) {
     return true;
 }
 
-void Preferences::GetKeys(std::vector<std::string>& target) {
+void Settings::GetKeys(std::vector<std::string>& target) {
     std::lock_guard lock(this->mutex);
     auto it = json.begin();
     for (; it != json.end(); it++) {
@@ -265,18 +265,18 @@ void Preferences::GetKeys(std::vector<std::string>& target) {
     }
 }
 
-bool Preferences::HasKey(const std::string& key) {
+bool Settings::HasKey(const std::string& key) {
     return json.find(key) != json.end();
 }
 
-void Preferences::Remove(const std::string& key) {
+void Settings::Remove(const std::string& key) {
     auto it = json.find(key);
     if (it != json.end()) {
         json.erase(it);
     }
 }
 
-void Preferences::Load() {
+void Settings::Load() {
     std::string str = fileToString(FILENAME(this->component));
     if (str.size()) {
         try {
@@ -289,14 +289,14 @@ void Preferences::Load() {
     }
 }
 
-void Preferences::Save() {
+void Settings::Save() {
     if (this->mode == ModeReadOnly) {
-        throw std::runtime_error("cannot save a ModeReadOnly Preference!");
+        throw std::runtime_error("cannot save a ModeReadOnly Setting!");
     }
     this->Flush();
 }
 
-bool Preferences::Flush() {
+bool Settings::Flush() {
     std::lock_guard lock(this->mutex);
     if (this->mode == ModeReadOnly) {
         return false;
@@ -305,82 +305,82 @@ bool Preferences::Flush() {
 }
 
 namespace {
-    Preferences& preferenceStore(mc_preference_scope scope) {
-        if (scope == MC_PREFERENCE_SETTINGS) {
-            static const auto settings = Preferences::ForComponent(prefs::components::Settings);
+    Settings& settingStore(mc_settings_scope scope) {
+        if (scope == MC_SETTINGS_APPLICATION) {
+            static const auto settings = Settings::ForComponent(prefs::components::Settings);
             return *settings;
         }
 
-        if (scope == MC_PREFERENCE_SESSION) {
-            static const auto session = Preferences::ForComponent(prefs::components::Session);
+        if (scope == MC_SETTINGS_SESSION) {
+            static const auto session = Settings::ForComponent(prefs::components::Session);
             return *session;
         }
 
-        static const auto hotkeys = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
+        static const auto hotkeys = Settings::ForComponent("hotkeys", Settings::ModeReadWrite);
         return *hotkeys;
     }
 
-    std::string preferenceText(mc_string_view view) {
+    std::string settingText(mc_string_view view) {
         return std::string(view.data ? view.data : "", view.length);
     }
 
 }
 
-json Preferences::EncodeValue(const mc_preference_value& value) {
+json Settings::EncodeValue(const mc_setting_value& value) {
     switch (value.type) {
-        case MC_PREFERENCE_BOOLEAN:
+        case MC_SETTING_BOOLEAN:
             return value.data.boolean;
-        case MC_PREFERENCE_INTEGER:
+        case MC_SETTING_INTEGER:
             return value.data.integer;
-        case MC_PREFERENCE_NUMBER:
+        case MC_SETTING_NUMBER:
             return value.data.number;
-        case MC_PREFERENCE_TEXT:
-            return preferenceText(value.data.text);
+        case MC_SETTING_TEXT:
+            return settingText(value.data.text);
     }
     return nullptr;
 }
 
-mc_preference_value Preferences::ReadValue(
-    const std::string& key, mc_preference_value value, std::string& text)
+mc_setting_value Settings::ReadValue(
+    const std::string& key, mc_setting_value value, std::string& text)
 {
     switch (value.type) {
-        case MC_PREFERENCE_BOOLEAN:
+        case MC_SETTING_BOOLEAN:
             value.data.boolean = this->GetBool(key, value.data.boolean);
             break;
-        case MC_PREFERENCE_INTEGER:
+        case MC_SETTING_INTEGER:
             value.data.integer = this->GetInt(key, value.data.integer);
             break;
-        case MC_PREFERENCE_NUMBER:
+        case MC_SETTING_NUMBER:
             value.data.number = this->GetDouble(key, value.data.number);
             break;
-        case MC_PREFERENCE_TEXT:
-            text = this->GetString(key, preferenceText(value.data.text));
+        case MC_SETTING_TEXT:
+            text = this->GetString(key, settingText(value.data.text));
             value.data.text = { text.data(), text.size() };
             break;
     }
     return value;
 }
 
-mc_result MC_CALL mc_preferences_read(mc_preference_scope scope, mc_string_view key,
-    const mc_preference_value* fallback, mc_preference_read_fn read, void* data)
+mc_result MC_CALL mc_settings_read(mc_settings_scope scope, mc_string_view key,
+    const mc_setting_value* fallback, mc_setting_read_fn read, void* data)
 {
-    if (!ffi::valid_preference_scope(scope) || !ffi::valid_text(key, false) || !read ||
-        !fallback || !ffi::valid_preference_value(*fallback))
+    if (!ffi::valid_setting_scope(scope) || !ffi::valid_text(key, false) || !read ||
+        !fallback || !ffi::valid_setting_value(*fallback))
     {
         return MC_ERROR_INVALID_ARGUMENT;
     }
 
     return ffi::exception_barrier(nullptr, [&] {
-        auto& store = preferenceStore(scope);
+        auto& store = settingStore(scope);
         std::string text;
-        const auto value = store.ReadValue(preferenceText(key), *fallback, text);
+        const auto value = store.ReadValue(settingText(key), *fallback, text);
         read(data, &value);
         return MC_OK;
     });
 }
 
-mc_result MC_CALL mc_preferences_write(mc_preference_scope scope, const mc_preference_entry* entries, size_t count) {
-    if (!ffi::valid_preference_scope(scope) || !ffi::valid_preference_entries(entries, count)) {
+mc_result MC_CALL mc_settings_write(mc_settings_scope scope, const mc_setting_entry* entries, size_t count) {
+    if (!ffi::valid_setting_scope(scope) || !ffi::valid_setting_entries(entries, count)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     if (!count) {
@@ -390,29 +390,29 @@ mc_result MC_CALL mc_preferences_write(mc_preference_scope scope, const mc_prefe
     return ffi::exception_barrier(nullptr, [&] {
         auto values = json::object();
         for (size_t i = 0; i < count; ++i) {
-            values[preferenceText(entries[i].key)] = Preferences::EncodeValue(entries[i].value);
+            values[settingText(entries[i].key)] = Settings::EncodeValue(entries[i].value);
         }
-        preferenceStore(scope).SetValues(values);
+        settingStore(scope).SetValues(values);
         return MC_OK;
     });
 }
 
-mc_result MC_CALL mc_preferences_save(mc_preference_scope scope) {
-    if (!ffi::valid_preference_scope(scope)) {
+mc_result MC_CALL mc_settings_save(mc_settings_scope scope) {
+    if (!ffi::valid_setting_scope(scope)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return ffi::exception_barrier(nullptr, [&] {
-        return preferenceStore(scope).Flush() ? MC_OK : MC_ERROR_IO;
+        return settingStore(scope).Flush() ? MC_OK : MC_ERROR_IO;
     });
 }
 
-mc_result MC_CALL mc_preferences_list_keys(mc_preference_scope scope, mc_preference_key_fn read, void* data) {
-    if (!ffi::valid_preference_scope(scope) || !read) {
+mc_result MC_CALL mc_settings_list_keys(mc_settings_scope scope, mc_setting_key_fn read, void* data) {
+    if (!ffi::valid_setting_scope(scope) || !read) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return ffi::exception_barrier(nullptr, [&] {
         std::vector<std::string> keys;
-        preferenceStore(scope).GetKeys(keys);
+        settingStore(scope).GetKeys(keys);
         for (const auto& key : keys) {
             read(data, { key.data(), key.size() });
         }

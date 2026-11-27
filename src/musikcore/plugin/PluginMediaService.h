@@ -27,7 +27,7 @@ namespace musik { namespace core { namespace plugin {
             ffi::PluginRegistry::Factory<mc_decoder_factory> decoders;
             ffi::PluginRegistry::Factory<mc_encoder_factory> encoders;
             ffi::PluginRegistry::Factory<mc_dsp_factory> dsp;
-            mc_plugin_preferences_service preferences;
+            mc_plugin_settings_service settings;
             mc_plugin_services services;
         };
 

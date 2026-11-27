@@ -12,7 +12,7 @@
 #include <musikcore/equalizer.h>
 #include <musikcore/indexer.h>
 #include <musikcore/visualizer.h>
-#include <musikcore/preferences.h>
+#include <musikcore/settings.h>
 #include <musikcore/plugins.h>
 
 #include <musikcore/paths.h>

@@ -1,5 +1,5 @@
 #include <musikcore/musikcore.hpp>
-#include <plugins/server/ServerPreferences.h>
+#include <plugins/server/ServerSettings.h>
 #include <asio/io_context.hpp>
 #include <asio/ip/tcp.hpp>
 #include <asio/steady_timer.hpp>
@@ -91,30 +91,30 @@ namespace {
         return passed && restored;
     }
 
-    bool checkPreferences() {
+    bool checkSettings() {
         constexpr char name[] = "RuntimeFixtureName";
         constexpr char length[] = "RuntimeFixtureLength";
         constexpr char enabled[] = "RuntimeFixtureEnabled";
         constexpr char gain[] = "RuntimeFixtureGain";
-        Preferences session { MC_PREFERENCE_SESSION };
+        Settings session { MC_SETTINGS_SESSION };
         if (session.GetInt(length, 3) != 3 || session.GetString(name, "default") != "default") {
             return false;
         }
 
         std::string text = "public";
-        mc_preference_entry values[] = {
-            { { name, sizeof(name) - 1 }, { MC_PREFERENCE_TEXT, {} } },
-            { { length, sizeof(length) - 1 }, { MC_PREFERENCE_INTEGER, {} } }
+        mc_setting_entry values[] = {
+            { { name, sizeof(name) - 1 }, { MC_SETTING_TEXT, {} } },
+            { { length, sizeof(length) - 1 }, { MC_SETTING_INTEGER, {} } }
         };
         values[0].value.data.text = { text.data(), text.size() };
         values[1].value.data.integer = 42;
-        if (mc_preferences_write(MC_PREFERENCE_SESSION, values, std::size(values)) != MC_OK) {
+        if (mc_settings_write(MC_SETTINGS_SESSION, values, std::size(values)) != MC_OK) {
             return false;
         }
 
         text[0] = 'X';
         values[1].value.type = UINT32_MAX;
-        if (mc_preferences_write(MC_PREFERENCE_SESSION, values, std::size(values)) != MC_ERROR_INVALID_ARGUMENT ||
+        if (mc_settings_write(MC_SETTINGS_SESSION, values, std::size(values)) != MC_ERROR_INVALID_ARGUMENT ||
             session.GetString(name) != "public" || session.GetInt(length) != 42)
         {
             return false;
@@ -122,7 +122,7 @@ namespace {
 
         session.SetBool(enabled, true);
         session.SetDouble(gain, 10.25);
-        const Preferences settings { MC_PREFERENCE_SETTINGS };
+        const Settings settings { MC_SETTINGS_APPLICATION };
         const auto keys = session.Keys();
         return session.GetBool(enabled) && session.GetDouble(gain) == 10.25 && !settings.GetBool(enabled) &&
             std::ranges::find(keys, name) != keys.end() && session.Save() == MC_OK;
@@ -212,7 +212,7 @@ namespace {
     }
 
     mc_result ConfigureServer(const ServerConfiguration& value) {
-        const std::pair<std::string_view, api::PreferenceValue> fields[] {
+        const std::pair<std::string_view, api::SettingValue> fields[] {
             { "websocket_server_enabled", value.metadataEnabled },
             { "http_server_enabled", value.audioEnabled },
             { "use_ipv6", value.ipv6 },
@@ -284,19 +284,19 @@ namespace {
         metadata.close();
         audio.close();
 
-        auto settings = Preferences { MC_PREFERENCE_SETTINGS };
+        auto settings = Settings { MC_SETTINGS_APPLICATION };
         if (ConfigureServer(*configuration) != MC_OK) {
             return false;
         }
         settings.Write({
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HOSTNAME, "127.0.0.1"),
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT, static_cast<int32_t>(configuration->metadataPort)),
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_HTTP_PORT, static_cast<int32_t>(configuration->audioPort)),
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_PASSWORD, configuration->password),
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_VIEWED, true),
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED, !format.empty()),
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE, format.empty() ? 0 : 128),
-            Preference(MC_PREFERENCE_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT, format)
+            Setting(MC_SETTING_KEY_REMOTE_LIBRARY_HOSTNAME, "127.0.0.1"),
+            Setting(MC_SETTING_KEY_REMOTE_LIBRARY_WSS_PORT, static_cast<int32_t>(configuration->metadataPort)),
+            Setting(MC_SETTING_KEY_REMOTE_LIBRARY_HTTP_PORT, static_cast<int32_t>(configuration->audioPort)),
+            Setting(MC_SETTING_KEY_REMOTE_LIBRARY_PASSWORD, configuration->password),
+            Setting(MC_SETTING_KEY_REMOTE_LIBRARY_VIEWED, true),
+            Setting(MC_SETTING_KEY_REMOTE_LIBRARY_TRANSCODER_ENABLED, !format.empty()),
+            Setting(MC_SETTING_KEY_REMOTE_LIBRARY_TRANSCODER_BITRATE, format.empty() ? 0 : 128),
+            Setting(MC_SETTING_KEY_REMOTE_LIBRARY_TRANSCODER_FORMAT, format)
         });
         return true;
     }
@@ -1009,7 +1009,7 @@ namespace {
 
         /* The isolated fixture has no online credentials. It must complete
            through the dispatcher without attempting a network request. */
-        Preferences { MC_PREFERENCE_SETTINGS }.SetString(MC_PREFERENCE_KEY_AUDDIO_API_TOKEN, "");
+        Settings { MC_SETTINGS_APPLICATION }.SetString(MC_SETTING_KEY_AUDDIO_API_TOKEN, "");
         std::optional<mc_result> lyricsStatus;
         const auto lyricsRequest = FindLyrics(context, "Fixture artist", "Fixture title",
             [&](mc_result status, std::string_view text) {
@@ -1214,7 +1214,7 @@ namespace {
         }
 
         if (remoteAudio) {
-            const auto port = Preferences { MC_PREFERENCE_SETTINGS }.GetInt(MC_PREFERENCE_KEY_REMOTE_LIBRARY_WSS_PORT);
+            const auto port = Settings { MC_SETTINGS_APPLICATION }.GetInt(MC_SETTING_KEY_REMOTE_LIBRARY_WSS_PORT);
             asio::io_context sockets;
             asio::ip::tcp::socket socket(sockets);
             asio::error_code error;
@@ -1252,8 +1252,8 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (!checkPreferences()) {
-        std::fputs("Preference values did not round trip atomically through the public API\n", stderr);
+    if (!checkSettings()) {
+        std::fputs("Setting values did not round trip atomically through the public API\n", stderr);
         return 1;
     }
 

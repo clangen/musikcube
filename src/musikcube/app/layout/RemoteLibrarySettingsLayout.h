@@ -39,7 +39,7 @@
 #include <cursespp/TextInput.h>
 #include <cursespp/Checkbox.h>
 #include <musikcore/context.hpp>
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 namespace musik { namespace cube {
     class RemoteLibrarySettingsLayout: public cursespp::LayoutBase, public sigslot::has_slots<>  {
@@ -49,15 +49,15 @@ namespace musik { namespace cube {
             explicit RemoteLibrarySettingsLayout(musik::core::api::Context& musikcore);
             virtual ~RemoteLibrarySettingsLayout();
 
-            void LoadPreferences();
-            void SavePreferences();
+            void LoadSettings();
+            void SaveSettings();
 
             /* IWindow */
             void OnLayout() override;
 
         private:
             void InitializeWindows();
-            void SyncPreferencesAndLayout();
+            void SyncSettingsAndLayout();
 
             void OnTlsCheckboxChanged(cursespp::Checkbox* cb, bool checked);
             void OnActivateTranscoderFormat(cursespp::TextLabel* tl);
@@ -65,7 +65,7 @@ namespace musik { namespace cube {
 
             musik::core::api::Context& musikcore;
 
-            musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
+            musik::core::api::Settings prefs { MC_SETTINGS_APPLICATION };
             std::shared_ptr<cursespp::TextLabel> httpPortLabel, wssPortLabel, hostLabel, pwLabel;
             std::shared_ptr<cursespp::TextInput> httpPortInput, wssPortInput, hostInput, pwInput;
             std::shared_ptr<cursespp::Checkbox> wssTlsCheckbox, httpTlsCheckbox, untrustedHttpCheckbox, transcoderCheckbox;

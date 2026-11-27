@@ -197,9 +197,9 @@ mc_result wasapi::OpenClient(mc_string_view id, IAudioClient** client) {
 
 mc_result wasapi::GetDefaultFormat(const mc_plugin_services* services, mc_string_view id, mc_audio_format& format) {
     bool resampling = DecoderResampling.default_value;
-    if (services && services->preferences) {
-        const auto* preferences = services->preferences;
-        const auto result = preferences->read_boolean(preferences->context, DecoderResampling.key,
+    if (services && services->settings) {
+        const auto* settings = services->settings;
+        const auto result = settings->read_boolean(settings->context, DecoderResampling.key,
             DecoderResampling.default_value, &resampling);
         if (result != MC_OK) {
             return result;

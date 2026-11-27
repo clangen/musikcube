@@ -405,7 +405,7 @@ namespace {
 }
 
 /* exercise the shipped provider through both registered factories. the test
-injects only the host's source creator and preferences, as an embedded host can. */
+injects only the host's source creator and settings, as an embedded host can. */
 int main(int argc, char** argv) {
     check(argc == 3, "expected fixture directory and family");
     const std::string_view family = argv[2];
@@ -424,7 +424,7 @@ int main(int argc, char** argv) {
     media.create_stream = [](void*, mc_string_view, mc_stream* stream, mc_error**) {
         return musik::core::io::CreateLocalFileSource(*stream);
     };
-    mc_plugin_preferences_service prefs = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
+    mc_plugin_settings_service prefs = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
     prefs.read_number = readNumber;
     prefs.read_boolean = [](void*, mc_string_view, bool fallback, bool* result) -> mc_result {
         *result = fallback;
@@ -433,7 +433,7 @@ int main(int argc, char** argv) {
     mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
     services.audio_scratch = &scratch::Host();
     services.media = &media;
-    services.preferences = &prefs;
+    services.settings = &prefs;
     PluginRegistry registry;
     const auto plugins = (musik::core::sdk::fs::pathFromUtf8(argv[0]).parent_path() / "plugins").u8string();
     check(registry.Initialize(std::string(plugins.begin(), plugins.end()),

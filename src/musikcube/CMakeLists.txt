@@ -34,7 +34,7 @@ set (CUBE_SRCS
     ./app/util/GlobalHotkeys.cpp
     ./app/util/Hotkeys.cpp
     ./app/util/MagicConstants.cpp
-    ./app/util/PreferenceKeys.cpp
+    ./app/util/SettingKeys.cpp
     ./app/util/Rating.cpp
     ./app/util/TrackRowRenderers.cpp
     ./app/util/OpenUrl.cpp

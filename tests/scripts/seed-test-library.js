@@ -204,7 +204,7 @@ function main() {
   console.log(`Generating ${count} fixture tracks under ${root}`);
   writeMedia(media, count, seconds, values['embedded-lyrics'], values.stereo, values['embedded-artwork']);
 
-  /* Stage plugins and redirect preferences before starting production code so
+  /* Stage plugins and redirect settings before starting production code so
      indexing cannot discover user paths or unrelated installed audio plugins. */
   const executable = values.indexer ? resolve(values.indexer) : windows
     ? join(source, 'bin64', config, 'musikcube_seed_library.exe')

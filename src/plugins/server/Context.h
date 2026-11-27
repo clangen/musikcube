@@ -86,8 +86,8 @@ struct Context {
     const mc_plugin_audio_scratch_service* scratch { nullptr };
     const mc_plugin_playback_service* playback { nullptr };
     const mc_plugin_indexer_service* indexer { nullptr };
-    mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
-    ServerSettings settings { preferences };
+    mc_plugin_settings_service settingsService = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
+    ServerSettings settings { settingsService };
     ReadWriteLock lock;
     std::atomic<bool> stopping { false };
 };

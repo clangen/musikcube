@@ -8,7 +8,7 @@
 namespace musik { namespace core { namespace plugin {
 
     /* registers a C++ processor as a C plugin. each stream receives a fresh
-    Processor, and Reload notifies existing instances of preference changes. */
+    Processor, and Reload notifies existing instances of setting changes. */
     template<typename Processor> mc_result RegisterDsp(const mc_host_api& host) {
         static_assert(std::is_nothrow_destructible_v<Processor>, "DSP destruction must not throw");
         static_assert(noexcept(Processor::NotifyChanged()), "DSP notification must not throw");

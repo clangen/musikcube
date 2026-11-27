@@ -28,7 +28,7 @@ contains the current inventory. No old-interface adapter is authorized.
 | Caller group | Current dependency | Replacement work |
 | --- | --- | --- |
 | `runtime/ManagedRuntime`, `plugin/Plugins`, `plugin/PluginFactory` | Old discovery, process registry, session flags, and `Get*`/`Set*` hooks | Retain explicit context directory/service selection; use only `PluginRegistry`, then remove old discovery and global service setters. |
-| `support/Preferences`, plugin catalog/settings C entry points | `IPreferences`, `ISchema`, plugin-name stores, reload calls | Use scoped preference/configuration tables. Decide persistence identity before changing filenames; render data descriptors without plugin-owned UI. |
+| `support/Settings`, plugin catalog/settings C entry points | `ISettings`, `ISchema`, plugin-name stores, reload calls | Use scoped setting/configuration tables. Decide persistence identity before changing filenames; render data descriptors without plugin-owned UI. |
 | `io/DataStreamFactory`, `io/LocalFileStream`, `audio/Streams`, `audio/Stream` | `IDataStream`, decoder/encoder factories, DSP enumeration and caches | Use C stream/factory contracts and engine-owned instances. Preserve create-before-open publication and interruption; absent families report unsupported or bypass DSP. |
 | `audio/Buffer`, `audio/Player`, `audio/Outputs`, transport headers, `audio/Crossfader` | SDK buffer/provider/output types and callbacks | Use opaque host buffers, typed output factories, explicit submission tokens, and core-owned playback state. Discover the bundled null-output DLL through the same loader as native outputs. |
 | `audio/PlaybackService`, `audio/Visualizer` | Playback-remotes, visualizer interfaces, borrowed playback-service pointers | Deliver owner-thread C snapshots and bounded read-only PCM/spectrum views. Playback remotes stop and join any workers they own. |
@@ -154,7 +154,7 @@ calls the retired C++ `GetPlugin()` entry point.
        `plugins.output_duplicate_completion`, and `plugins.output_stale_completion`
        prevent unsafe reuse or destruction after broken plugin contracts.
      - [x] Connect engine output selection and plugin catalog/settings to the C
-       factory. Saved device preferences, no-schema settings, plugin enablement,
+       factory. Saved device settings, no-schema settings, plugin enablement,
        reload, and missing-output behavior use the actual engine path. Restore
        the playback/UI and installed-consumer scenarios listed below.
    - [x] **PLG-NULL-002** No additional fallback is needed. The core-owned
@@ -416,7 +416,7 @@ cutover gate is complete.
 
 #### Provider discovery and configuration
 
-- [x] **PLG-MGMT-001** Include C provider metadata, enable preferences, and
+- [x] **PLG-MGMT-001** Include C provider metadata, enable settings, and
   typed configuration/settings in the application catalog. `runtime.windows_plugins`
   covers listing, disabling, rediscovery and re-enabling; `runtime.visualizer_session`
   covers disabled rediscovery through the C registry. `api.uri_player` exercises
@@ -530,7 +530,7 @@ cutover gate is complete.
 #### Audio outputs
 
 - [x] **OUT-001** Define real-time-safe output and device contracts.
-  Output creation now receives instance-lifetime plugin-scoped preference
+  Output creation now receives instance-lifetime plugin-scoped setting
   services; `plugins.output_host` checks that a provider can read them. This
   strengthens the experimental output factory contract: hosts which previously
   passed null must provide the service before loading providers that require it.
@@ -626,9 +626,9 @@ cutover gate is complete.
   storage. `plugins.pipewire_output` exercises a real isolated PipeWire null
   sink, including pause, drain, and cancellation. `plugins.pipewire_output_runtime`
   exercises the production decoder and player against an isolated null sink.
-  The historical preference
+  The historical setting
   store was named `PipeWire IOutput`; the new provider uses `PipeWire`, so
-  existing scoped preferences and pinned devices are not migrated. Both isolated
+  existing scoped settings and pinned devices are not migrated. Both isolated
   sink tests passed on Linux; physical playback is accepted based on maintainer
   use.
 - [x] **OUT-008** Validate the converted `portaudioout`.
@@ -640,12 +640,12 @@ cutover gate is complete.
   supported platforms and physical device removal remain open.
 - [x] **OUT-009** Validate the converted `pulseout`.
   The PulseAudio provider now uses the C output factory and receives scoped
-  preferences. `plugins.pulse_output` covers PCM return, drain/reuse, the linear
-  volume preference, and gated cancellation of stalled writes and drains using
+  settings. `plugins.pulse_output` covers PCM return, drain/reuse, the linear
+  volume setting, and gated cancellation of stalled writes and drains using
   a deterministic backend. The real provider was also exercised manually on a
   temporary PulseAudio-compatible null sink. `plugins.pulse_output_runtime`
   exercises the production decoder and player against an isolated null sink.
-  The historical preference store
+  The historical setting store
   was named for `PulseAudio IOutput`, while the C provider is named
   `PulseAudio`; existing plugin-scoped settings and pinned device selection are
   not automatically migrated. The PulseAudio fixture, no-wait and runtime tests
@@ -688,7 +688,7 @@ cutover gate is complete.
   the old endpoint when possible; a disconnected endpoint can discard audio
   already copied to it. Exclusive mode may be a separate plugin; defer that
   decision until its format negotiation and device behavior are designed.
-  The legacy preferences scope was `Wasapi IOutput`; the C provider uses
+  The legacy settings scope was `Wasapi IOutput`; the C provider uses
   `WASAPI`, and old scoped settings and pinned device IDs are not migrated.
   Shared-mode playback now waits on WASAPI's buffer event, a stop event, and
   device notifications. WASAPI chooses the shared-mode event buffer size, so
@@ -697,7 +697,7 @@ cutover gate is complete.
   The host creates an unopened output before querying its preferred format;
   the instance reads scoped services supplied at creation. Moving this query
   from the factory to the instance changes the experimental output plugin ABI;
-  providers must be rebuilt. `plugins.output_host` exercises preferences before
+  providers must be rebuilt. `plugins.output_host` exercises settings before
   playback and `plugins.wasapi_output` checks the WASAPI setting and lifecycle.
 - [x] **OUT-013** Retire the legacy Windows `waveout` plugin; WASAPI and
   DirectSound remain available as Windows outputs.
@@ -721,7 +721,7 @@ cutover gate is complete.
   C++ interface when consolidating decoded-audio consumers. Windows remains to
   be verified.
 - [x] **EXT-001** Design schema/configuration descriptors as data. The C
-  settings descriptors and scoped preference services are implemented;
+  settings descriptors and scoped setting services are implemented;
   `api.uri_player` exercises their application-facing reads and writes.
 - [x] **EXT-002** Validate migrated visualizer providers across platforms.
   The C visualizer contract is used by the runtime, and the Windows GDI provider
@@ -888,7 +888,7 @@ replace the separate native-platform acceptance checks.
 - [x] **SDK-REMOVE-001** Inventory remaining interface callers, ownership,
   backend/thread boundaries, and old-only adapters and select the smallest
   useful replacements; characterize affected public/runtime behavior.
-- [x] **SDK-REMOVE-002** Remove unused preference/utility surfaces and move
+- [x] **SDK-REMOVE-002** Remove unused setting/utility surfaces and move
   genuinely shared helpers to an appropriate internal/common owner. Update
   in-tree plugins, build manifests, and direct includes across platforms.
   Shared helpers are private; the fixed ring queue is an installed C++ utility.
@@ -912,3 +912,39 @@ replace the separate native-platform acceptance checks.
   Zig/glibc 2.28 standalone dependency scan passed. The maintainer accepts
   Windows and macOS platform use; these platforms were not rebuilt in this run.
   The separate SDK-LINUX sanitizer limitation is accepted as recorded above.
+
+## Plugin settings writes and projectM state
+
+- [x] **SET-001** Add a plugin-scoped batch write operation backed by the existing
+  settings store. `musikcore.integration.plugins.settings` checks real persistence,
+  plugin isolation, whole-batch input rejection and memory rollback on I/O failure;
+  `musikcore.unit.plugins.contract_headers` checks the sized table initializer.
+- [x] **SET-002** Persist projectM controls and selection through the SDK, including
+  the macOS helper. `musikcore.integration.plugins.projectm` restores saved values,
+  renders a frame, receives the helper's live state, and verifies reopening.
+  Selection uses paths rather than list indices; missing files fall back to the
+  first available preset. macOS uses the existing socket and audio sender worker;
+  settings never enter the real-time PCM callback. Small chunks respect macOS's
+  2048-byte local datagram limit. No additional worker or preference-file parser
+  is introduced.
+- [x] **SET-003** Standardize C/C++ application and plugin APIs, filenames, exports,
+  native callers, and Rust/.NET binding sources on settings. Shared scalar types
+  live in `setting_types.h`; plugin headers remain independent of application
+  operations. Experimental application exports and plugin table layout change;
+  rebuild clients/plugins together with fixed experimental ABI versions. Native
+  Windows and Linux revalidation remain in their existing release gates.
+
+The new write service persists one complete update per settings change. If saving
+fails, projectM logs the error and keeps rendering; subsequent changes can retry.
+An environment-selected preset directory overrides a saved directory without
+turning the temporary override into the saved collection. Panel/search/confirmation
+state is transient. Source display names now omit decoder suffixes; existing
+indexer-provider contracts verify "Game music" and "Tracker modules".
+
+Validation on macOS (2026-11-26): native TUI/daemon and standalone Release SDK
+builds pass; the eight focused projectM/settings/header/managed-runtime/source
+provider/core-boundary checks pass. Rust workspace tests, isolated fixture checks,
+and real-renderer UI checks pass against the staged SDK, and the optimized app is
+rebuilt. The Linux renderer translation unit passes a host syntax check; that is
+not native Linux acceptance. .NET binding sources are renamed but no .NET SDK is
+installed here, so .NET/Windows builds remain unverified by this change.

@@ -185,8 +185,8 @@ mc_result PulseOut::Prepare(const mc_output_options& options, const mc_output_ca
     }
 
     this->linearVolume = false;
-    if (this->services && this->services->preferences) {
-        const auto* prefs = this->services->preferences;
+    if (this->services && this->services->settings) {
+        const auto* prefs = this->services->settings;
         const mc_string_view key { LinearVolumeKey, sizeof(LinearVolumeKey) - 1 };
         const auto status = prefs->read_boolean(prefs->context, key, false, &this->linearVolume);
         if (status != MC_OK) {

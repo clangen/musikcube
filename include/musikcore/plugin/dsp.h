@@ -38,7 +38,7 @@ typedef struct mc_dsp_factory {
     const mc_dsp_vtable* instance_api;
 
     /* create an instance in an empty slot. failure leaves the slot empty.
-    services and their referenced preference store remain valid until destroy. */
+    services and their referenced setting store remain valid until destroy. */
     mc_result (MC_CALL* create)(
         void* context, const mc_plugin_services* services, void** out_instance, mc_error** error);
 

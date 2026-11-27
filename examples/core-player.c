@@ -1,6 +1,6 @@
 /* play one filesystem path, file:// URI, or provider URI without a catalog.
 build against the installed C SDK and the small host-wakeup event adapter.
-usage: core-player <URI> [plugin-directory]. output uses saved preferences. */
+usage: core-player <URI> [plugin-directory]. output uses saved settings. */
 #include <musikcore/musikcore.h>
 #include "host-wakeup.h"
 #include <stdio.h>

@@ -68,7 +68,7 @@ set(musikcore_sources
   src/musikcore/support/Common.cpp
   src/musikcore/support/LastFm.cpp
   src/musikcore/support/Playback.cpp
-  src/musikcore/support/Preferences.cpp
-  src/musikcore/support/PreferenceKeys.cpp
+  src/musikcore/support/Settings.cpp
+  src/musikcore/support/SettingKeys.cpp
 )
 list(TRANSFORM musikcore_sources PREPEND "${PROJECT_SOURCE_DIR}/")

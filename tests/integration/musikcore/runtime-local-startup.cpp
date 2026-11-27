@@ -4,8 +4,8 @@ then proves that explicit selection/reconnect and persisted remote startup still
 #include <musikcore/musikcore.hpp>
 #include <musikcore/library/LibraryBackends.h>
 #include <musikcore/library/track/LibraryTrack.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include "../../support/check.h"
 
 #include <asio/io_context.hpp>
@@ -94,7 +94,7 @@ namespace {
 from the local override into a later normal remote session. */
 int main() {
     ConnectionProbe probe;
-    const auto settings = Preferences::ForComponent(prefs::components::Settings);
+    const auto settings = Settings::ForComponent(prefs::components::Settings);
     settings->SetString(prefs::keys::RemoteLibraryHostname, "127.0.0.1");
     settings->SetInt(prefs::keys::RemoteLibraryWssPort, probe.Port());
     settings->SetBool(prefs::keys::RemoteLibraryWssTls, false);

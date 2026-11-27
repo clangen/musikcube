@@ -57,9 +57,9 @@ namespace {
 
         Visualizer(Factory factory, const std::string& pluginName)
         : factory(std::move(factory))
-        , preferences(plugin::ReadSettingsService(pluginName))
+        , settings(plugin::SettingsService(pluginName))
         , directory(GetDataDirectory()) {
-            services.preferences = &preferences;
+            services.settings = &settings;
             services.host = this->factory.Host();
             services.media = &plugin::Media();
             services.audio_scratch = &plugin::AudioScratch();
@@ -86,7 +86,7 @@ namespace {
         }
 
         Factory factory;
-        mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
+        mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
         std::string directory;
         mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
         std::string name;

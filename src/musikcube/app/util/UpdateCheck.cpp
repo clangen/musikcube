@@ -35,7 +35,7 @@
 #include <stdafx.h>
 #include <app/util/OpenUrl.h>
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 #include "UpdateCheck.h"
 
 #include <nlohmann/json.hpp>
@@ -49,7 +49,7 @@
 #include <common/version.h>
 
 #include <app/util/Messages.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 
 #include <sstream>
 #include <utility>
@@ -182,7 +182,7 @@ void UpdateCheck::ProcessMessage(IMessage &message) {
 void UpdateCheck::ShowUpgradeAvailableOverlay(
     const std::string& version, const std::string& url, bool silent)
 {
-    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
+    auto prefs = api::Settings { MC_SETTINGS_APPLICATION };
     std::string prefKey = prefs::keys::LastAcknowledgedUpdateVersion;
     std::string acknowledged = prefs.GetString(prefKey);
     if (!silent || acknowledged != version) {

@@ -35,7 +35,7 @@
 #pragma once
 
 #include <musikcore/config.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 #include <cstdint>
 #include <mutex>
 
@@ -74,7 +74,7 @@ namespace musik { namespace core { namespace i18n {
             std::mutex mutex;
 
             std::vector<std::string> locales;
-            std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<musik::core::Settings> prefs;
             std::string selectedLocale;
             std::string localePath;
             nlohmann::json localeData;

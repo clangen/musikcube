@@ -171,17 +171,17 @@ add_dependencies(musikcubed musikcore)
 # tag readers
 add_plugin("src/plugins/taglib_plugin" "taglibreader")
 # outputs
-add_plugin("src/plugins/alsaout" "alsaout" GetAudioOutput SetPreferences)
+add_plugin("src/plugins/alsaout" "alsaout" GetAudioOutput SetSettings)
 add_plugin("src/plugins/coreaudioout" "coreaudioout")
 add_plugin("src/plugins/nullout" "nullout")
-add_plugin("src/plugins/pipewireout" "pipewireout" GetAudioOutput GetSchema SetDebug SetPreferences)
+add_plugin("src/plugins/pipewireout" "pipewireout" GetAudioOutput GetSchema SetDebug SetSettings)
 add_plugin("src/plugins/portaudioout" "portaudioout")
-add_plugin("src/plugins/pulseout" "pulseout" GetAudioOutput SetPreferences)
+add_plugin("src/plugins/pulseout" "pulseout" GetAudioOutput SetSettings)
 add_plugin("src/plugins/sndioout" "sndioout")
 # remotes
 add_plugin("src/plugins/macosmediakeys" "macosmediakeys")
 add_plugin("src/plugins/mpris" "mpris" GetPlaybackRemote SetEnvironment)
-add_plugin("src/plugins/server" "server" GetPlaybackRemote SetDebug SetEnvironment SetMetadataProxy SetPreferences)
+add_plugin("src/plugins/server" "server" GetPlaybackRemote SetDebug SetEnvironment SetMetadataProxy SetSettings)
 # streams
 add_plugin("src/plugins/httpdatastream" "httpdatastream")
 # decoders

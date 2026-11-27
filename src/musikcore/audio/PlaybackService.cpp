@@ -45,7 +45,7 @@
 #include <musikcore/library/query/MarkTrackPlayedQuery.h>
 #include <common/runtime/MessageQueue.h>
 #include <common/runtime/Message.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/SettingKeys.h>
 #include <musikcore/support/Playback.h>
 #include <cstdlib>
 #include <thread>
@@ -102,7 +102,7 @@ class PlaybackService::StreamMessage: public Message {
     this->messageQueue.Post( \
         musik::core::runtime::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
-static inline void loadPreferences(ITransport& transport, PlaybackService& playback, Preferences& prefs) {
+static inline void loadSettings(ITransport& transport, PlaybackService& playback, Settings& prefs) {
     double volume = prefs.GetDouble(keys::Volume, 1.0f);
     volume = std::max(0.0f, std::min(1.0f, (float)volume));
     transport.SetVolume(volume);
@@ -120,7 +120,7 @@ static inline void loadPreferences(ITransport& transport, PlaybackService& playb
     playback.SetTimeChangeMode(timeChangeMode);
 }
 
-static inline void savePreferences(PlaybackService& playback, Preferences& prefs) {
+static inline void saveSettings(PlaybackService& playback, Settings& prefs) {
     prefs.SetDouble(keys::Volume, playback.GetVolume());
     prefs.SetInt(keys::RepeatMode, static_cast<int>(playback.GetRepeatMode()));
     prefs.SetInt(keys::TimeChangeMode, static_cast<int>(playback.GetTimeChangeMode()));
@@ -139,8 +139,8 @@ PlaybackService::PlaybackService(
     std::shared_ptr<ITransport> transport)
 : playlist(library)
 , unshuffled(library)
-, playbackPrefs(Preferences::ForComponent(components::Playback))
-, appPrefs(Preferences::ForComponent(components::Settings))
+, playbackPrefs(Settings::ForComponent(components::Playback))
+, appPrefs(Settings::ForComponent(components::Settings))
 , library(library)
 , transport(transport)
 , index(NO_POSITION)
@@ -180,7 +180,7 @@ PlaybackService::~PlaybackService() {
 
 void PlaybackService::Initialize(bool synchronousRestore) {
     this->messageQueue.Remove(this, MESSAGE_LOAD_PLAYBACK_CONTEXT);
-    loadPreferences(*this->transport, *this, *playbackPrefs);
+    loadSettings(*this->transport, *this, *playbackPrefs);
     /* remote work needs the host dispatcher; never wait on an unconnected catalog. */
     playback::LoadPlaybackContext(library, *this,
         synchronousRestore && this->library->GetType() == LibraryBackend::Type::Local);
@@ -199,7 +199,7 @@ void PlaybackService::Shutdown() {
     this->ClosePlaybackHandles();
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
-    savePreferences(*this, *playbackPrefs);
+    saveSettings(*this, *playbackPrefs);
     this->lastFm.Stop();
     this->transport->Destroy();
 }
@@ -1195,7 +1195,7 @@ std::string PlaybackService::UriAtIndex(size_t index) {
     return "";
 }
 
-static mc_playback_gain_settings readGainSettings(Preferences& prefs) {
+static mc_playback_gain_settings readGainSettings(Settings& prefs) {
     const auto mode = prefs.GetInt(keys::ReplayGainMode, MC_REPLAY_GAIN_DISABLED);
     mc_replay_gain_mode replayGain = MC_REPLAY_GAIN_DISABLED;
     if (mode == MC_REPLAY_GAIN_ALBUM) {
@@ -1212,7 +1212,7 @@ mc_result MC_CALL mc_playback_get_gain_settings(mc_playback_gain_settings* setti
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return ffi::exception_barrier(nullptr, [&] {
-        *settings = readGainSettings(*Preferences::ForComponent(components::Playback));
+        *settings = readGainSettings(*Settings::ForComponent(components::Playback));
         return MC_OK;
     });
 }
@@ -1222,7 +1222,7 @@ mc_result MC_CALL mc_playback_set_preamp(double decibels) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return ffi::exception_barrier(nullptr, [&] {
-        const auto prefs = Preferences::ForComponent(components::Playback);
+        const auto prefs = Settings::ForComponent(components::Playback);
         prefs->SetDouble(keys::PreampDecibels, decibels);
         prefs->Save();
         return MC_OK;
@@ -1234,7 +1234,7 @@ mc_result MC_CALL mc_playback_set_replay_gain(mc_replay_gain_mode mode) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return ffi::exception_barrier(nullptr, [&] {
-        const auto prefs = Preferences::ForComponent(components::Playback);
+        const auto prefs = Settings::ForComponent(components::Playback);
         prefs->SetInt(keys::ReplayGainMode, static_cast<int>(mode));
         prefs->Save();
         return MC_OK;

@@ -91,14 +91,14 @@ namespace musik { namespace core { namespace plugin {
             provider.decoders = decoders;
             provider.encoders = encoders;
             provider.dsp = dsp;
-            provider.preferences = ReadSettingsService(plugin.name);
+            provider.settings = SettingsService(plugin.name);
             provider.services = {
                 .struct_size = sizeof(mc_plugin_services),
                 .cancel = nullptr,
                 .audio_scratch = &ffi::audio_scratch_buffers::Host(),
                 .media = &this->api,
                 .data_directory = { this->dataDirectory.data(), this->dataDirectory.size() },
-                .preferences = &provider.preferences,
+                .settings = &provider.settings,
             };
         }
     }

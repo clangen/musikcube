@@ -9,10 +9,10 @@ namespace musik { namespace core { namespace plugin {
 
     TagReader::TagReader(ffi::PluginRegistry::Factory<mc_tag_reader_factory> factory, const std::string& name)
     : factory(std::move(factory))
-    , preferences(ReadSettingsService(name))
+    , settings(SettingsService(name))
     , services MC_PLUGIN_SERVICES_DEFAULT
     , dataDirectory(GetDataDirectory()) {
-        this->services.preferences = &this->preferences;
+        this->services.settings = &this->settings;
         this->services.data_directory = { this->dataDirectory.data(), this->dataDirectory.size() };
         this->services.media = &Media();
     }

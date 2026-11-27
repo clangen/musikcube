@@ -36,9 +36,9 @@
 
 #include "ColorThemeOverlay.h"
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
@@ -75,7 +75,7 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
-    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
+    auto prefs = api::Settings { MC_SETTINGS_APPLICATION };
 
     std::string currentTheme = prefs.GetString(cube::prefs::keys::ColorTheme);
     bool disableCustomColors = prefs.GetBool(cube::prefs::keys::DisableCustomColors);
@@ -107,8 +107,8 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) mutable {
                 if (index == 0) {
                     prefs.Write({
-                        api::Preference(cube::prefs::keys::ColorTheme, ""),
-                        api::Preference(cube::prefs::keys::DisableCustomColors, true)
+                        api::Setting(cube::prefs::keys::ColorTheme, ""),
+                        api::Setting(cube::prefs::keys::DisableCustomColors, true)
                     });
 
                     if (!disableCustomColors) {
@@ -119,8 +119,8 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
                     std::string selected = themes.at(index - 1);
                     if (selected != currentTheme) {
                         prefs.Write({
-                            api::Preference(cube::prefs::keys::ColorTheme, selected),
-                            api::Preference(cube::prefs::keys::DisableCustomColors, false)
+                            api::Setting(cube::prefs::keys::ColorTheme, selected),
+                            api::Setting(cube::prefs::keys::DisableCustomColors, false)
                         });
                         Colors::SetTheme(selected);
                         if (disableCustomColors) {
@@ -140,7 +140,7 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
 }
 
 void ColorThemeOverlay::Show256ColorsInfo(bool enabled, std::function<void()> callback) {
-    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
+    auto prefs = api::Settings { MC_SETTINGS_APPLICATION };
 
     if (enabled) {
         prefs.SetBool(cube::prefs::keys::UsePaletteColors, enabled);

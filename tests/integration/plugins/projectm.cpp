@@ -3,11 +3,14 @@
 #include "../../../src/plugins/projectm/Pcm.h"
 #include "../../../src/plugins/projectm/PresetDirectory.h"
 #include "../../../src/plugins/projectm/PresetSearch.h"
+#include "../../../src/plugins/projectm/Settings.h"
+#include <algorithm>
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <chrono>
+#include <atomic>
 #include <thread>
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -16,6 +19,8 @@
 
 namespace {
     const mc_visualizer_factory* visualizer = nullptr;
+    std::atomic<unsigned> settingReads { 0 };
+    std::atomic<bool> settingsRestored { false };
 
     void require(bool condition, const char* message) {
         if (!condition) {
@@ -78,6 +83,96 @@ int main(int argc, char** argv) {
     require(plugin.initialize(&host, &state, nullptr) == MC_OK && visualizer, "register visualizer");
     require(visualizer->inputs == MC_VISUALIZER_INPUT_PCM, "request PCM only");
     mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
+    std::vector<std::string> available;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(presets)) {
+        if (entry.path().extension() == ".milk") {
+            available.push_back(entry.path().string());
+        }
+    }
+    std::sort(available.begin(), available.end());
+    require(available.size() > 1, "fixture has selectable presets");
+    ProjectMSettings expected;
+    expected.automatic = false;
+    expected.controlsVisible = false;
+    expected.duration = 73.5f;
+    expected.gain = 2.25f;
+    expected.width = 700;
+    expected.height = 480;
+    expected.reduceTransitionWork = false;
+    const auto selected = std::filesystem::path(available.back()).lexically_relative(presets).string();
+    std::strncpy(expected.preset.data(), selected.c_str(), expected.preset.size() - 1);
+    mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
+    settings.context = &expected;
+    settings.read_integer = [](void* data, const mc_integer_setting* setting, int32_t* value) -> mc_result {
+        ++settingReads;
+        auto& expected = *static_cast<ProjectMSettings*>(data);
+        *value = std::string_view(setting->key.data, setting->key.length) == "window_width" ? expected.width
+                                                                                            : expected.height;
+        return MC_OK;
+    };
+    settings.read_boolean = [](void* data, mc_string_view key, bool fallback, bool* value) -> mc_result {
+        auto& expected = *static_cast<ProjectMSettings*>(data);
+        const std::string_view name(key.data, key.length);
+        *value = name == "automatic"           ? expected.automatic
+            : name == "controls_visible"       ? expected.controlsVisible
+            : name == "reduce_transition_work" ? expected.reduceTransitionWork
+                                               : fallback;
+        return MC_OK;
+    };
+    settings.read_number = [](void* data, mc_string_view key, double, double* value) -> mc_result {
+        auto& expected = *static_cast<ProjectMSettings*>(data);
+        *value = std::string_view(key.data, key.length) == "audio_gain" ? expected.gain : expected.duration;
+        return MC_OK;
+    };
+    settings.read_text = [](void* data, mc_string_view key, mc_string_view fallback, mc_setting_text_fn callback,
+                             void* user) -> mc_result {
+        auto& expected = *static_cast<ProjectMSettings*>(data);
+        if (std::string_view(key.data, key.length) == "preset") {
+            callback(user, { expected.preset.data(), std::strlen(expected.preset.data()) });
+        }
+        else {
+            callback(user, fallback);
+        }
+        return MC_OK;
+    };
+    settings.write_values = [](void* data, const mc_setting_entry* entries, size_t count) -> mc_result {
+        auto& expected = *static_cast<ProjectMSettings*>(data);
+        bool matches = count == 10;
+        for (size_t i = 0; i < count; ++i) {
+            const std::string_view key(entries[i].key.data, entries[i].key.length);
+            const auto& value = entries[i].value;
+            if (key == "automatic") {
+                matches &= value.data.boolean == expected.automatic;
+            }
+            if (key == "controls_visible") {
+                matches &= value.data.boolean == expected.controlsVisible;
+            }
+            if (key == "fullscreen") {
+                matches &= value.data.boolean == expected.fullscreen;
+            }
+            if (key == "reduce_transition_work") {
+                matches &= value.data.boolean == expected.reduceTransitionWork;
+            }
+            if (key == "duration_seconds") {
+                matches &= value.data.number == expected.duration;
+            }
+            if (key == "audio_gain") {
+                matches &= value.data.number == expected.gain;
+            }
+            if (key == "window_width") {
+                matches &= value.data.integer == expected.width;
+            }
+            if (key == "window_height") {
+                matches &= value.data.integer == expected.height;
+            }
+            if (key == "preset") {
+                matches &= std::string_view(value.data.text.data, value.data.text.length) == expected.preset.data();
+            }
+        }
+        settingsRestored.store(matches);
+        return MC_OK;
+    };
+    services.settings = &settings;
     void* instance = nullptr;
     require(visualizer->create(visualizer->context, &services, &instance, nullptr) == MC_OK && instance,
         "create visualizer");
@@ -93,8 +188,20 @@ int main(int argc, char** argv) {
     view.format.channels = 2;
     view.format.sample_rate = 44100;
     require(visualizer->instance_api->write_pcm(instance, &view) == MC_OK, "accept PCM");
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (!settingsRestored.load() && std::chrono::steady_clock::now() < deadline) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    require(settingsRestored.load(), "helper restores locked preset and settings before saving its live state");
     require(visualizer->instance_api->hide(instance) == MC_OK, "close helper");
+    require(settingReads.load() > 0, "restore renderer settings when opening the window");
+    settingsRestored.store(false);
     require(visualizer->instance_api->show(instance) == MC_OK, "reopen helper");
+    const auto reopenedDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (!settingsRestored.load() && std::chrono::steady_clock::now() < reopenedDeadline) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    require(settingsRestored.load(), "reopened helper retains its last settings and preset");
     require(visualizer->instance_api->hide(instance) == MC_OK, "close reopened helper");
 #else
     const bool opengl = argc == 3;

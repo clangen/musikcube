@@ -28,9 +28,9 @@ struct mc_plugin_services {
     /* UTF-8 application data directory. the host owns the bytes. empty if unavailable. */
     mc_string_view data_directory;
 
-    /* saved preferences for this plugin. required for output and indexer
+    /* saved settings for this plugin. required for output and indexer
     source instances and valid for the instance lifetime. */
-    const mc_plugin_preferences_service* preferences;
+    const mc_plugin_settings_service* settings;
 
     /* granted indexing operations. sources receive source-bound rescans;
     playback remotes may receive general scan scheduling. */

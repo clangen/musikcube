@@ -42,7 +42,7 @@
 #include <app/window/TrackListView.h>
 
 #include <musikcore/context.h>
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <sigslot/sigslot.h>
 
@@ -116,7 +116,7 @@ namespace musik { namespace cube {
             void ShowTrackSortOverlay();
 
             mc_track_search_mode matchType { MC_TRACK_SEARCH_SUBSTRING };
-            musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
+            musik::core::api::Settings prefs { MC_SETTINGS_APPLICATION };
             std::shared_ptr<TrackListView> trackList;
             std::shared_ptr<cursespp::TextInput> input;
             musik::core::api::Context& musikcore;

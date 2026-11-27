@@ -86,7 +86,7 @@ target_precompile_headers(musikcube
     "$<$<COMPILE_LANGUAGE:CXX>:app/util/Hotkeys.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:app/util/MagicConstants.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:app/util/Messages.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:app/util/PreferenceKeys.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:app/util/SettingKeys.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:app/util/Rating.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:app/util/TrackRowRenderers.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:app/util/UpdateCheck.h>"

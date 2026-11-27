@@ -35,7 +35,7 @@
 #include <stdafx.h>
 #include <musikcore/paths.hpp>
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <stdlib.h>
 #include <time.h>
@@ -50,7 +50,7 @@
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 
 #include <common/runtime/Message.h>
 #include <app/util/Locale.h>
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     freopen(errorFn.c_str(), "w", stderr);
 #endif
 
-    auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
+    auto prefs = api::Settings { MC_SETTINGS_APPLICATION };
 
 #if defined(BUILD_STANDALONE) && !defined(__APPLE__)
     /* when we build a standalone binary we make sure to also package the terminfo used
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
         app.SetQuitKey(prefs.GetString(keys::AppQuitKey, "^D"));
 
         /* fire up the indexer if configured to run on startup */
-        if (prefs.GetBool(MC_PREFERENCE_KEY_SYNC_ON_STARTUP, true) &&
+        if (prefs.GetBool(MC_SETTING_KEY_SYNC_ON_STARTUP, true) &&
             musikcore.GetLibraryStatus().kind == MC_LIBRARY_LOCAL)
         {
             api::Indexer(musikcore).Schedule(MC_INDEXER_SCAN_ALL);

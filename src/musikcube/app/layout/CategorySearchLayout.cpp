@@ -45,7 +45,7 @@
 
 #include <app/util/Messages.h>
 #include <app/util/Hotkeys.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 
 
 using namespace musik::core;
@@ -80,7 +80,7 @@ void CategorySearchLayout::CancelSearchRequests() {
 }
 
 void CategorySearchLayout::LoadLastSession() {
-    api::Preferences session { MC_PREFERENCE_SESSION };
+    api::Settings session { MC_SETTINGS_SESSION };
 
     const std::string lastFilter = session.GetString(keys::LastCategoryFilter);
     if (lastFilter.size()) {
@@ -93,7 +93,7 @@ void CategorySearchLayout::LoadLastSession() {
 }
 
 void CategorySearchLayout::SaveSession() {
-    api::Preferences session { MC_PREFERENCE_SESSION };
+    api::Settings session { MC_SETTINGS_SESSION };
     session.SetString(keys::LastCategoryFilter, this->input->GetText());
     session.SetInt(keys::LastCategoryFilterMatchType,
         this->matchType == MC_TRACK_SEARCH_REGEX ? musik::cube::prefs::SearchRegex : musik::cube::prefs::SearchSubstring);

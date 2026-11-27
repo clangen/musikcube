@@ -75,11 +75,11 @@ int main(int argc, char** argv) {
     require(configuration->boolean_count == 2 && configuration->number_count == 0,
         "event-driven output has no device buffer-length setting");
     bool resample = false;
-    mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
-    preferences.context = &resample;
-    preferences.read_boolean = readBoolean;
+    mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
+    settings.context = &resample;
+    settings.read_boolean = readBoolean;
     mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
-    services.preferences = &preferences;
+    services.settings = &settings;
     void* instance = nullptr;
     require(factory->create(factory->context, &services, &instance, nullptr) == MC_OK && instance,
         "create unopened instance");

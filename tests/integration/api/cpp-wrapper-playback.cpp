@@ -8,8 +8,8 @@
 #include <musikcore/library/track/Track.h>
 #include <musikcore/library/Indexer.h>
 #include <musikcore/library/query/SetTrackRatingQuery.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 
 #include <algorithm>
 #include <array>
@@ -49,7 +49,7 @@ namespace wrapper_tests {
             });
         if (!query_test_wait_for_wakeup(wakes + 1) || context.Dispatch() != MC_OK || result.Size() != 2) return playbackFailure(__LINE__);
 
-        Preferences::ForComponent(musik::core::prefs::components::Settings)
+        Settings::ForComponent(musik::core::prefs::components::Settings)
             ->SetBool(musik::core::prefs::keys::SaveSessionOnExit, false);
 
         /* hold startup before its playback-state transition so output reload always overlaps the

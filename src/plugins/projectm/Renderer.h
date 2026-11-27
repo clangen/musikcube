@@ -2,6 +2,7 @@
 
 #include "PresetDirectory.h"
 #include "PresetSearch.h"
+#include "Settings.h"
 #include <projectM-4/projectM.h>
 #ifdef _WIN32
 #include <GL/glew.h>
@@ -22,6 +23,10 @@
 
 /* renders a window on the calling thread; input supplies audio and lifecycle. */
 template<typename Input> void RunProjectMRenderer(Input& input, const void* symbol) {
+    auto settings = input.LoadSettings();
+    NormalizeProjectMSettings(settings);
+    auto savedSettings = settings;
+    bool settingsSaved = false;
     constexpr char Preset[] = R"([preset00]
 fRating=3.0
 fDecay=0.97
@@ -45,7 +50,8 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-        window = SDL_CreateWindow("musikcube - projectM", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960, 540,
+        window = SDL_CreateWindow("musikcube - projectM", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            settings.width, settings.height,
             SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
         if (window) {
             context = SDL_GL_CreateContext(window);
@@ -79,29 +85,40 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
     std::vector<std::string> presets;
     size_t current = 0;
     bool advanceRequested = false;
-    bool controlsVisible = true;
+    auto& controlsVisible = settings.controlsVisible;
     bool confirmClose = false;
-    bool automatic = true;
+    auto& automatic = settings.automatic;
     enum class Panel { None, Settings, Find };
     Panel panel = Panel::None;
     float controlsAlpha = 1.0f;
     std::array<char, 256> search {};
     std::mt19937 random { std::random_device {}() };
 #ifdef PROJECTM_HAS_TRANSITION_CONTROLS
-    bool reduceTransitionWork = true;
+    auto& reduceTransitionWork = settings.reduceTransitionWork;
 #endif
-    bool fullscreen = false;
-    float duration = 30.0f;
-    float inputGain = 1.0f;
+    auto& fullscreen = settings.fullscreen;
+    auto& duration = settings.duration;
+    auto& inputGain = settings.gain;
     std::array<char, 4096> presetDirectory {};
     if (const char* path = std::getenv("MUSIKCUBE_PROJECTM_PRESETS")) {
         std::strncpy(presetDirectory.data(), path, presetDirectory.size() - 1);
+    }
+    else if (settings.directory[0]) {
+        presetDirectory = settings.directory;
     }
     else {
         const auto bundled = ProjectMPresetDirectory(symbol).string();
         std::strncpy(presetDirectory.data(), bundled.c_str(), presetDirectory.size() - 1);
     }
 
+    auto rememberPreset = [&] {
+        settings.preset.fill(0);
+        if (!presets.empty()) {
+            const auto selected =
+                std::filesystem::path(presets[current]).lexically_relative(presetDirectory.data()).string();
+            std::strncpy(settings.preset.data(), selected.c_str(), settings.preset.size() - 1);
+        }
+    };
     auto loadPresets = [&] {
         presets.clear();
         std::error_code error;
@@ -115,14 +132,16 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
             entry.increment(error);
         }
         std::sort(presets.begin(), presets.end());
-        current = 0;
+        current = FindProjectMPreset(presets, presetDirectory.data(), settings.preset.data());
         if (!presets.empty()) {
             projectm_load_preset_file(visualizer, presets[current].c_str(), false);
         }
+        rememberPreset();
     };
     auto selectPreset = [&](size_t index) {
         if (index < presets.size()) {
             current = index;
+            rememberPreset();
             projectm_load_preset_file(visualizer, presets[current].c_str(), true);
         }
     };
@@ -149,6 +168,8 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
     if (success) {
         projectm_load_preset_data(visualizer, Preset, false);
         projectm_set_preset_duration(visualizer, duration);
+        projectm_set_preset_locked(visualizer, !automatic);
+        SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
         projectm_set_preset_switch_requested_event_callback(
             visualizer,
             [](bool, void* user) {
@@ -159,7 +180,7 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
 #ifdef PROJECTM_HAS_TRANSITION_CONTROLS
         /* two presets render during a fade. update the outgoing one at half rate
         to leave more time for the incoming preset and controls. */
-        projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, 2);
+        projectm_opengl_set_outgoing_preset_frame_divisor(visualizer, reduceTransitionWork ? 2 : 1);
 #endif
         SDL_GL_SetSwapInterval(1);
     }
@@ -168,6 +189,10 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL2_ProcessEvent(&event);
+            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED && !fullscreen) {
+                settings.width = event.window.data1;
+                settings.height = event.window.data2;
+            }
             if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEWHEEL ||
                 event.type == SDL_KEYDOWN || event.type == SDL_TEXTINPUT)
             {
@@ -298,6 +323,7 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
                         ImGui::SetNextItemWidth(360.0f);
                         ImGui::InputText("Preset directory", presetDirectory.data(), presetDirectory.size());
                         if (ImGui::Button("Load presets")) {
+                            settings.directory = presetDirectory;
                             loadPresets();
                         }
                         ImGui::SameLine();
@@ -387,6 +413,12 @@ per_frame_1=wave_r=0.5+0.5*sin(time*0.7);wave_g=0.5+0.5*sin(time*0.9);wave_b=0.5
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             SDL_GL_SwapWindow(window);
+            NormalizeProjectMSettings(settings);
+            if (!settingsSaved || !(settings == savedSettings)) {
+                input.SaveSettings(settings);
+                savedSettings = settings;
+                settingsSaved = true;
+            }
             input.Presented();
         }
         SDL_Delay(8);

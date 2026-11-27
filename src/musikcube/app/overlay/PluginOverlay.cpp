@@ -88,7 +88,7 @@ namespace {
             auto title = _TSTR("settings_configure_plugin_title");
             u8replace(title, "{{name}}", plugin.name);
             SchemaOverlay::Show(title, std::move(*fields),
-                [id = plugin.id](std::string_view key, const api::PreferenceValue& value) {
+                [id = plugin.id](std::string_view key, const api::SettingValue& value) {
                     return api::WritePluginSetting(id, key, value);
                 });
         }

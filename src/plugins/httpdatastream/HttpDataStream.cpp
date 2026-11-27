@@ -106,14 +106,14 @@ const mc_configuration_api& HttpDataStream::Configuration() {
 mc_result HttpDataStream::Create(
     LruDiskCache& cache, const mc_host_api& host, const mc_plugin_services& services, void** instance)
 {
-    if (!services.preferences || !services.data_directory.length) {
+    if (!services.settings || !services.data_directory.length) {
         return MC_ERROR_UNSUPPORTED;
     }
     Options options {};
     mc_result status = MC_OK;
     auto load = [&](const mc_integer_setting& field, int& value) {
         if (status == MC_OK) {
-            const auto prefs = services.preferences;
+            const auto prefs = services.settings;
             status = prefs->read_integer(prefs->context, &field, &value);
         }
     };

@@ -42,7 +42,7 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 #include <app/util/WindowUtil.h>
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/overlay/TrackOverlays.h>
@@ -59,7 +59,7 @@ namespace keys = musik::cube::prefs::keys;
 constexpr int kSearchHeight = 3;
 constexpr int kRequeryIntervalMs = 300;
 
-static mc_track_search_order getDefaultTrackSort(const api::Preferences& prefs) {
+static mc_track_search_order getDefaultTrackSort(const api::Settings& prefs) {
     const auto sort = (mc_track_search_order) prefs.GetInt(
         keys::TrackSearchSortOrder, (int) MC_TRACK_SEARCH_ALBUM);
     return sort <= MC_TRACK_SEARCH_GENRE ? sort : MC_TRACK_SEARCH_ALBUM;
@@ -95,7 +95,7 @@ TrackSearchLayout::~TrackSearchLayout() {
 }
 
 void TrackSearchLayout::LoadLastSession() {
-    api::Preferences session { MC_PREFERENCE_SESSION };
+    api::Settings session { MC_SETTINGS_SESSION };
 
     const std::string lastFilter = session.GetString(keys::LastTrackFilter);
     if (lastFilter.size()) {
@@ -108,7 +108,7 @@ void TrackSearchLayout::LoadLastSession() {
 }
 
 void TrackSearchLayout::SaveSession() {
-    api::Preferences session { MC_PREFERENCE_SESSION };
+    api::Settings session { MC_SETTINGS_SESSION };
     session.SetString(keys::LastTrackFilter, this->input->GetText());
     session.SetInt(keys::LastTrackFilterMatchType,
         this->matchType == MC_TRACK_SEARCH_REGEX ? musik::cube::prefs::SearchRegex : musik::cube::prefs::SearchSubstring);

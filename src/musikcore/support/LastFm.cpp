@@ -36,10 +36,10 @@
 
 #include "LastFm.h"
 
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 #include <common/HttpClient.h>
 #include <common/HttpUrl.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/SettingKeys.h>
 
 #include <sstream>
 #include <map>
@@ -71,8 +71,8 @@ using namespace musik;
 using namespace musik::core::prefs;
 
 using LastFmClient = musik::core::sdk::HttpClient<std::stringstream>;
-using Preferences = musik::core::Preferences;
-using Prefs = std::shared_ptr<Preferences>;
+using Settings = musik::core::Settings;
+using Prefs = std::shared_ptr<Settings>;
 
 static std::shared_ptr<LastFmClient> createClient() {
     return LastFmClient::Create(std::stringstream());
@@ -136,7 +136,7 @@ static std::string generateSignedUrl(
 static std::mutex sessionMutex;
 
 static inline Prefs settings() {
-    return Preferences::ForComponent(components::Settings);
+    return Settings::ForComponent(components::Settings);
 }
 
 namespace musik { namespace core { namespace lastfm {

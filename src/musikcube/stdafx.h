@@ -155,7 +155,7 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/MagicConstants.h>
 #include <app/util/Messages.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 #include <app/util/Rating.h>
 #include <app/util/TrackRowRenderers.h>
 #include <app/util/UpdateCheck.h>

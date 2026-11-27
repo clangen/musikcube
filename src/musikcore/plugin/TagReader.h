@@ -21,7 +21,7 @@ namespace musik { namespace core { namespace plugin {
 
     private:
         ffi::PluginRegistry::Factory<mc_tag_reader_factory> factory;
-        mc_plugin_preferences_service preferences;
+        mc_plugin_settings_service settings;
         mc_plugin_services services;
         std::string dataDirectory;
     };

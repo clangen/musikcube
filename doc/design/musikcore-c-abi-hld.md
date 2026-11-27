@@ -105,7 +105,7 @@ running library connection, plugin loader, or audio session.
 | Remote queries and projected reads | Identity only; no public connection factory | Live connection-generation adapter; projection limits in `library.h` |
 | Category/directory selection and playlists | Unsupported without adapter | Typed local/remote queries |
 | Playback and queues | No public session factory | Handle bound to the application's session |
-| Plugin loading, notifications, preferences, indexing | No public surface yet | Private implementation services |
+| Plugin loading, notifications, settings, indexing | No public surface yet | Private implementation services |
 
 Existing bound operations are migration steps, not a finished embedding API.
 Public runtime/session ownership and the remaining application consumers must
@@ -338,7 +338,7 @@ The application-facing runtime owns:
 - Library queries and metadata pages.
 - Track lists and async cache windows.
 - Playback and queue commands and snapshots.
-- Indexer and preferences.
+- Indexer and settings.
 - Advanced audio handles where justified.
 
 The default context starts the complete engine. Callers can select a fixed set

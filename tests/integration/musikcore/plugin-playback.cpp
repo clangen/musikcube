@@ -5,8 +5,8 @@
 #include <musikcore/output.hpp>
 #include <musikcore/playback.hpp>
 #include <musikcore/visualizer.hpp>
-#include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/SettingKeys.h>
+#include <musikcore/support/Settings.h>
 
 #include <chrono>
 #include <cstdio>
@@ -87,7 +87,7 @@ namespace {
         }
 
         /* Reload the output while a decoder worker still owns buffers. */
-        const auto prefs = Preferences::ForComponent(prefs::components::Playback);
+        const auto prefs = Settings::ForComponent(prefs::components::Playback);
         prefs->SetString(prefs::keys::OutputPlugin, unavailableOutput);
         transport.ReloadOutput();
         if (transport.GetPlaybackState() != State::Stopped ||

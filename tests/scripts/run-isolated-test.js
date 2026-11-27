@@ -67,7 +67,7 @@ const fixtures = ['origin', 'destination'].map(name => {
 const expanded = args.map(value => value === '@origin' ? fixtures[0]
   : value === '@destination' ? fixtures[1] : value);
 
-/* Bound the child lifetime and redirect both Unix and Windows preference roots. */
+/* Bound the child lifetime and redirect both Unix and Windows setting roots. */
 const result = spawnSync(command, expanded, {
   stdio: 'inherit',
   env: {

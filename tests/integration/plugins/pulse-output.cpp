@@ -52,15 +52,15 @@ int main(int argc, char** argv) {
     require(entry(MC_PLUGIN_ABI_VERSION, &host, &plugin, nullptr) == MC_OK, "negotiate plugin");
     void* state = nullptr;
     require(plugin.initialize(&host, &state, nullptr) == MC_OK && factory, "register output");
-    mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
-    preferences.read_boolean = [](void*, mc_string_view key, bool, bool* value) -> mc_result {
+    mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
+    settings.read_boolean = [](void*, mc_string_view key, bool, bool* value) -> mc_result {
         require(key.length == 19 && std::memcmp(key.data, "force_linear_volume", 19) == 0,
-            "read PulseAudio preference");
+            "read PulseAudio setting");
         *value = true;
         return MC_OK;
     };
     mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
-    services.preferences = &preferences;
+    services.settings = &settings;
     void* instance = nullptr;
     require(factory->create(factory->context, &services, &instance, nullptr) == MC_OK && instance, "create output");
     const auto* api = factory->instance_api;
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
     if (argc == 3 && std::strcmp(argv[2], "fixture") == 0) {
         int volume = 0;
         require(read(volumeGate[0], &volume, sizeof(volume)) == sizeof(volume) && volume == 32768,
-            "linear volume preference applies during prepare");
+            "linear volume setting applies during prepare");
         unsetenv("MUSIKCUBE_TEST_PULSE_VOLUME_FD");
         close(volumeGate[0]);
         close(volumeGate[1]);

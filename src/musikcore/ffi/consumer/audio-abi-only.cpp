@@ -12,36 +12,36 @@
 
 #include "../common/primitives.h"
 #include "request.h"
-#include "preferences-shape.h"
+#include "settings-shape.h"
 
 std::unique_ptr<musik::core::ffi::ContextRuntime> musik::core::ffi::make_context_runtime() {
     return {};
 }
 
-mc_result MC_CALL mc_preferences_read(mc_preference_scope scope, mc_string_view key,
-    const mc_preference_value* fallback, mc_preference_read_fn read, void*)
+mc_result MC_CALL mc_settings_read(mc_settings_scope scope, mc_string_view key,
+    const mc_setting_value* fallback, mc_setting_read_fn read, void*)
 {
     using namespace musik::core::ffi;
-    return valid_preference_scope(scope) && valid_text(key, false) && read &&
-        fallback && valid_preference_value(*fallback)
+    return valid_setting_scope(scope) && valid_text(key, false) && read &&
+        fallback && valid_setting_value(*fallback)
         ? MC_ERROR_UNSUPPORTED
         : MC_ERROR_INVALID_ARGUMENT;
 }
 
-mc_result MC_CALL mc_preferences_write(mc_preference_scope scope, const mc_preference_entry* entries, size_t count) {
+mc_result MC_CALL mc_settings_write(mc_settings_scope scope, const mc_setting_entry* entries, size_t count) {
     using namespace musik::core::ffi;
-    if (!valid_preference_scope(scope) || !valid_preference_entries(entries, count)) {
+    if (!valid_setting_scope(scope) || !valid_setting_entries(entries, count)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return count ? MC_ERROR_UNSUPPORTED : MC_OK;
 }
 
-mc_result MC_CALL mc_preferences_save(mc_preference_scope scope) {
-    return musik::core::ffi::valid_preference_scope(scope) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+mc_result MC_CALL mc_settings_save(mc_settings_scope scope) {
+    return musik::core::ffi::valid_setting_scope(scope) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }
 
-mc_result MC_CALL mc_preferences_list_keys(mc_preference_scope scope, mc_preference_key_fn read, void*) {
-    return read && musik::core::ffi::valid_preference_scope(scope) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
+mc_result MC_CALL mc_settings_list_keys(mc_settings_scope scope, mc_setting_key_fn read, void*) {
+    return read && musik::core::ffi::valid_setting_scope(scope) ? MC_ERROR_UNSUPPORTED : MC_ERROR_INVALID_ARGUMENT;
 }
 
 mc_result MC_CALL mc_plugins_list(mc_plugin_info_fn read, void*) {
@@ -56,16 +56,16 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
     return read && musik::core::ffi::valid_text(id, false) ? MC_ERROR_NOT_FOUND : MC_ERROR_INVALID_ARGUMENT;
 }
 
-mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference_entry* entry) {
+mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_setting_entry* entry) {
     using namespace musik::core::ffi;
-    return entry && valid_text(id, false) && valid_preference_entries(entry, 1)
+    return entry && valid_text(id, false) && valid_setting_entries(entry, 1)
         ? MC_ERROR_NOT_FOUND
         : MC_ERROR_INVALID_ARGUMENT;
 }
 
-mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preference_entry* entries, size_t count) {
+mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_setting_entry* entries, size_t count) {
     using namespace musik::core::ffi;
-    return valid_text(id, false) && valid_preference_entries(entries, count) ? MC_ERROR_NOT_FOUND : MC_ERROR_INVALID_ARGUMENT;
+    return valid_text(id, false) && valid_setting_entries(entries, count) ? MC_ERROR_NOT_FOUND : MC_ERROR_INVALID_ARGUMENT;
 }
 
 mc_result MC_CALL mc_output_read_configuration(mc_output_configuration_fn read, void*) {

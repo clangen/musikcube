@@ -9,7 +9,7 @@
 class GmeDecoder {
 public:
     explicit GmeDecoder(const mc_plugin_services& services)
-    : preferences(services.preferences) {}
+    : settings(services.settings) {}
     ~GmeDecoder();
 
     MUSIK_DELETE_COPY_AND_MOVE(GmeDecoder);
@@ -30,7 +30,7 @@ private:
     static constexpr size_t Channels = 2;
     static constexpr size_t BlockFrames = 1024;
 
-    const mc_plugin_preferences_service* preferences;
+    const mc_plugin_settings_service* settings;
     Music_Emu* emu = nullptr;
     std::array<short, BlockFrames * Channels> samples;
     int64_t durationFrames = -1;

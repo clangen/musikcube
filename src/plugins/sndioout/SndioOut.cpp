@@ -87,11 +87,11 @@ mc_result SndioOut::Prepare(const mc_output_options& options, const mc_output_ca
     std::string device = options.device_id.length
         ? std::string(options.device_id.data, options.device_id.length)
         : "default";
-    /* preserve the legacy custom-device preference when the default is selected. */
-    if (device == "default" && this->services && this->services->preferences) {
-        struct Preference { std::string value; bool failed = false; } preference;
+    /* preserve the legacy custom-device setting when the default is selected. */
+    if (device == "default" && this->services && this->services->settings) {
+        struct Setting { std::string value; bool failed = false; } setting;
         const auto read = [](void* context, mc_string_view value) {
-            auto& result = *static_cast<Preference*>(context);
+            auto& result = *static_cast<Setting*>(context);
             try {
                 result.value.assign(value.data ? value.data : "", value.length);
             }
@@ -99,14 +99,14 @@ mc_result SndioOut::Prepare(const mc_output_options& options, const mc_output_ca
                 result.failed = true;
             }
         };
-        const auto* preferences = this->services->preferences;
-        const auto status = preferences->read_text(preferences->context, { "device_id", 9 },
-            { "", 0 }, read, &preference);
-        if (status != MC_OK || preference.failed) {
+        const auto* settings = this->services->settings;
+        const auto status = settings->read_text(settings->context, { "device_id", 9 },
+            { "", 0 }, read, &setting);
+        if (status != MC_OK || setting.failed) {
             return MC_ERROR_INTERNAL;
         }
-        if (!preference.value.empty()) {
-            device = std::move(preference.value);
+        if (!setting.value.empty()) {
+            device = std::move(setting.value);
         }
     }
     this->handle = sio_open(device == "default" ? SIO_DEVANY : device.c_str(), SIO_PLAY, 1);

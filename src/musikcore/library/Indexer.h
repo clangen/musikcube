@@ -41,7 +41,7 @@
 #include <musikcore/subscriptions.hpp>
 #include <cstdint>
 #include <utility>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 #include <musikcore/support/ThreadGroup.h>
 
 #pragma warning(push, 0)
@@ -199,7 +199,7 @@ namespace musik { namespace core {
             std::deque<SyncContext> syncQueue;
             TagReaderList tagReaders;
             IndexerSourceList sources;
-            std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<musik::core::Settings> prefs;
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
             std::chrono::steady_clock::time_point lastBatchCommit;
             bool refreshMetadata { false };

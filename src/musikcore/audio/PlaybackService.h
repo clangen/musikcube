@@ -41,7 +41,7 @@
 #include <musikcore/library/track/TrackList.h>
 #include <musikcore/library/LibraryBackend.h>
 #include <musikcore/audio/MasterTransport.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 #include <common/runtime/IMessageQueue.h>
 #include <musikcore/playback.h>
 
@@ -231,8 +231,8 @@ namespace musik { namespace core { namespace audio {
             musik::core::TrackList unshuffled;
             std::recursive_mutex playlistMutex;
 
-            std::shared_ptr<musik::core::Preferences> playbackPrefs;
-            std::shared_ptr<musik::core::Preferences> appPrefs;
+            std::shared_ptr<musik::core::Settings> playbackPrefs;
+            std::shared_ptr<musik::core::Settings> appPrefs;
             musik::core::TrackPtr playingTrack;
 
             musik::core::LibraryBackend::Shared library;

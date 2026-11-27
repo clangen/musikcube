@@ -56,7 +56,7 @@ src/musikcore/
             track_list.cpp
             playback.cpp
             indexer.cpp
-            preferences.cpp
+            settings.cpp
             audio.cpp
         plugin_abi/
             PluginRegistry.h/.cpp
@@ -186,7 +186,7 @@ Creation selects a fixed service mask; prerequisites expand automatically and
 the default enables all services. Library and plugin services are independent;
 indexing and catalog playback each add both. URI players require plugins only.
 
-Plugin discovery, service registries, preferences, and path configuration retain
+Plugin discovery, service registries, settings, and path configuration retain
 process-level constraints; this is not isolated multi-engine hosting. The
 reduced `musikcore_abi0` target does not instantiate the production runtime.
 
@@ -373,7 +373,7 @@ never sleeps.
 1. Context, errors, events, requests.
 2. Metadata query and immutable page.
 3. Track identity/list and cache window.
-4. Preferences.
+4. Settings.
 5. Category and directory queries.
 6. Playback snapshots and commands.
 7. Queue batch editing.

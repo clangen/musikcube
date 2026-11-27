@@ -58,7 +58,7 @@ GmeIndexerSource::GmeIndexerSource(const mc_host_api& host, const mc_plugin_serv
 : services(host, services) {}
 
 const std::string& GmeIndexerSource::Label() {
-    static const std::string label = "Game music (GME)";
+    static const std::string label = "Game music";
     return label;
 }
 

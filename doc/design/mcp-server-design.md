@@ -476,7 +476,7 @@ The agent can follow this workflow:
 2. Interpret "exercise" into candidate traits such as energy, tempo, genre,
    familiarity, target duration, and desired variety.
 3. Query tracks with known high BPM, relevant genres, strong ratings, or recent
-   play history according to the user's likely preferences.
+   play history according to the user's likely settings.
 4. If BPM or mood coverage is poor, sample plausible candidates and use an
    independently authorized web-search tool to research tempo or style.
 5. Call `library_match_tracks` with researched titles to verify which candidates

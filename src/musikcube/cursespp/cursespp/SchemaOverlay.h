@@ -34,15 +34,15 @@
 
 #pragma once
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <functional>
 
 namespace cursespp {
     class SchemaOverlay {
     public:
-        using Field = musik::core::api::PreferenceField;
-        using Value = musik::core::api::PreferenceValue;
+        using Field = musik::core::api::SettingField;
+        using Value = musik::core::api::SettingValue;
         using Write = std::function<mc_result(std::string_view, const Value&)>;
 
         static void Show(const std::string& title, std::vector<Field> fields, Write write,

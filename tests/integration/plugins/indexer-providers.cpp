@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
             bool provider = false;
             std::string expected;
         } labels {
-            .expected = gme ? "Game music (GME)" : "Tracker modules (OpenMPT)",
+            .expected = gme ? "Game music" : "Tracker modules",
         };
         auto library = context.GetLibrary();
         require(library.has_value(), "get source catalog");
@@ -241,18 +241,18 @@ int main(int argc, char** argv) {
         });
         require(labels.files && labels.provider, "show source names independently of decoder names");
         if (gme) {
-            mc_preference_entry setting {};
+            mc_setting_entry setting {};
             setting.key = { "enable_m3u_support", 18 };
-            setting.value.type = MC_PREFERENCE_BOOLEAN;
+            setting.value.type = MC_SETTING_BOOLEAN;
             setting.value.data.boolean = true;
             require(mc_plugin_write_setting({ "org.musikcube.decoder.gme", 25 }, &setting) == MC_OK,
                 "enable M3U playlists");
         }
         if (!gme) {
             /* a user-supplied default is text, not a printf format string. */
-            mc_preference_entry setting {};
+            mc_setting_entry setting {};
             setting.key = { "default_artist_name", 19 };
-            setting.value.type = MC_PREFERENCE_TEXT;
+            setting.value.type = MC_SETTING_TEXT;
             setting.value.data.text = { "literal %n", 10 };
             require(mc_plugin_write_setting({ "org.musikcube.decoder.openmpt", 29 }, &setting) == MC_OK,
                 "save source text setting");

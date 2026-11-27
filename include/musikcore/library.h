@@ -178,7 +178,7 @@ typedef void (MC_CALL *mc_remote_connect_fn)(mc_result status, mc_remote_state s
     const mc_error *error, void *user_data);
 typedef void (MC_CALL *mc_remote_state_fn)(void* user_data, mc_remote_state state);
 
-/* Own a remote connection independently of app preferences. Use session operations on one
+/* Own a remote connection independently of app settings. Use session operations on one
    host thread. The ABI-only build returns MC_ERROR_UNSUPPORTED. */
 MC_API mc_result MC_CALL mc_remote_session_create(const mc_remote_options *options, mc_remote_session **out_session);
 /* Disconnect and release the session. Existing library handles retain their original generation. */

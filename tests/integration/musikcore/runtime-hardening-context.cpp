@@ -2,8 +2,8 @@
 #include <musikcore/musikcore.hpp>
 #include "../../support/check.h"
 #include <musikcore/library/LibraryBackends.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 
 #include <thread>
 
@@ -139,10 +139,10 @@ namespace runtime_tests {
         return true;
     }
 
-    /* successful startup must finish restoring preferences before a caller
+    /* successful startup must finish restoring settings before a caller
     changes playback; dispatch must not silently overwrite that new command. */
     bool checkStartup() {
-        const auto settings = Preferences::ForComponent(prefs::components::Settings);
+        const auto settings = Settings::ForComponent(prefs::components::Settings);
         const auto remote = static_cast<int>(LibraryBackend::Type::Remote);
         settings->SetInt(prefs::keys::LibraryType, remote);
 

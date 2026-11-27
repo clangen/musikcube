@@ -1,6 +1,8 @@
 #include "ProjectMBackend.h"
 #include "PcmPacket.h"
 #include "PcmQueue.h"
+#include "SettingsPacket.h"
+#include <musikcore/plugin.h>
 
 #include <algorithm>
 #include <array>
@@ -29,7 +31,9 @@ class ProjectMBackend::Impl {
 public:
     static constexpr mc_visualizer_inputs Inputs = MC_VISUALIZER_INPUT_PCM;
     static const char* Name() { return "projectM"; }
-    Impl() = default;
+    explicit Impl(const mc_plugin_services& services)
+    : settingsService(services.settings)
+    , host(services.host) {}
     ~Impl() noexcept { Hide(); }
 
     mc_result Show() {
@@ -93,6 +97,12 @@ public:
         }
         this->socket = sockets[0];
         this->child = child;
+        auto settings = LoadProjectMSettings(this->settingsService);
+        size_t sent = 0;
+        if (!SendProjectMSettings(this->socket, settings, sent, 0)) {
+            this->Stop();
+            return MC_ERROR_IO;
+        }
         pollfd descriptor { .fd = this->socket, .events = POLLIN, .revents = 0 };
         char response = 0;
         if (poll(&descriptor, 1, 10000) <= 0 || recv(this->socket, &response, 1, 0) != 1 || response != 1) {
@@ -130,6 +140,28 @@ public:
     }
 
 private:
+    bool ReadSettings() noexcept {
+        ProjectMSettingsChunk chunk {};
+        ssize_t count;
+        while ((count = recv(this->socket, &chunk, sizeof(chunk), MSG_DONTWAIT)) > 0) {
+            if (count == 1) {
+                return false;
+            }
+            if (ReceiveProjectMSettings(
+                    chunk, static_cast<size_t>(count), this->incomingSettings, this->receivedSettings))
+            {
+                if (SaveProjectMSettings(this->settingsService, this->incomingSettings) != MC_OK && this->host &&
+                    this->host->log)
+                {
+                    const char message[] = "could not save visualizer settings";
+                    this->host->log(
+                        this->host->host_context, MC_LOG_WARNING, { "projectM", 8 }, { message, sizeof(message) - 1 });
+                }
+            }
+        }
+        return count < 0 && (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR);
+    }
+
     void SendAudio() noexcept {
         while (this->visible.load(std::memory_order_acquire)) {
             /* poll only while the window is open, keeping socket operations
@@ -143,8 +175,7 @@ private:
                 break;
             }
             if (status > 0 && (descriptor.revents & POLLIN)) {
-                char ignored;
-                if (recv(this->socket, &ignored, 1, MSG_DONTWAIT) <= 0) {
+                if (!this->ReadSettings()) {
                     break;
                 }
             }
@@ -169,13 +200,12 @@ private:
 
     void Stop() noexcept {
         this->visible.store(false, std::memory_order_release);
-        if (this->socket >= 0) {
-            shutdown(this->socket, SHUT_RDWR);
-        }
         if (this->sender.joinable()) {
             this->sender.join();
         }
         if (this->socket >= 0) {
+            this->ReadSettings();
+            shutdown(this->socket, SHUT_RDWR);
             close(this->socket);
             this->socket = -1;
         }
@@ -193,6 +223,10 @@ private:
         }
     }
 
+    const mc_plugin_settings_service* settingsService;
+    const mc_host_api* host;
+    ProjectMSettings incomingSettings;
+    size_t receivedSettings { 0 };
     std::mutex control;
     std::thread sender;
     std::atomic<bool> visible { false };
@@ -202,7 +236,9 @@ private:
 };
 
 
-ProjectMBackend::ProjectMBackend(const mc_plugin_services&) : impl(std::make_unique<Impl>()) {}
+ProjectMBackend::ProjectMBackend(const mc_plugin_services& services)
+: impl(std::make_unique<Impl>(services)) {
+}
 ProjectMBackend::~ProjectMBackend() noexcept = default;
 mc_result ProjectMBackend::Show() { return impl->Show(); }
 mc_result ProjectMBackend::Hide() noexcept { return impl->Hide(); }

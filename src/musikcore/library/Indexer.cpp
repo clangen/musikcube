@@ -49,8 +49,8 @@
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include <musikcore/plugin/analyzer.h>
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/plugin/MetadataWriter.h>
@@ -118,7 +118,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , thread(nullptr)
 , incrementalUrisScanned(0)
 , totalUrisScanned(0)
-, prefs(Preferences::ForComponent(prefs::components::Settings)) {
+, prefs(Settings::ForComponent(prefs::components::Settings)) {
     if (prefs->GetBool(prefs::keys::IndexerLogEnabled, false) && !logFile) {
         openLogFile();
     }
@@ -1086,7 +1086,7 @@ namespace {
     struct AnalyzerInstance {
         void* instance = nullptr;
         const mc_analyzer_vtable* api = nullptr;
-        mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
+        mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
         mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
 
         ~AnalyzerInstance() {
@@ -1106,9 +1106,9 @@ void Indexer::RunAnalyzers() {
             continue;
         }
         auto analyzer = std::make_unique<AnalyzerInstance>();
-        analyzer->preferences = musik::core::plugin::ReadSettingsService(plugin.name);
+        analyzer->settings = musik::core::plugin::SettingsService(plugin.name);
         analyzer->services.data_directory = { dataDirectory.data(), dataDirectory.size() };
-        analyzer->services.preferences = &analyzer->preferences;
+        analyzer->services.settings = &analyzer->settings;
         analyzer->services.media = &musik::core::plugin::Media();
         const auto status = factory.Invoke([&](const mc_analyzer_factory& table) {
             analyzer->api = table.instance_api;

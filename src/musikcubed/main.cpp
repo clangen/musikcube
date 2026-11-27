@@ -334,8 +334,8 @@ int main(int argc, char** argv) {
         options.log = foreground ? logToConsole : nullptr;
         api::Context context(options);
 
-        const api::Preferences prefs { MC_PREFERENCE_SETTINGS };
-        if (prefs.GetBool(MC_PREFERENCE_KEY_SYNC_ON_STARTUP, true)) {
+        const api::Settings prefs { MC_SETTINGS_APPLICATION };
+        if (prefs.GetBool(MC_SETTING_KEY_SYNC_ON_STARTUP, true)) {
             api::Indexer(context).Schedule(MC_INDEXER_SCAN_ALL);
         }
 

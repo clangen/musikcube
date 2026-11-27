@@ -661,7 +661,7 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, MetadataWriter *
                 else if (description.compare("MusicMatch_Mood") == 0) {
                     this->SetTagValue("mood", comment->toString(), track);
                 }
-                else if (description.compare("MusicMatch_Preference") == 0) {
+                else if (description.compare("MusicMatch_Setting") == 0) {
                     this->SetTagValue("textrating", comment->toString(), track);
                 }
             }

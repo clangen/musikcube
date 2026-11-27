@@ -101,12 +101,12 @@ mc_result GmeDecoder::ConfigureTrack(const std::string& path, int track) {
     bool m3u = DEFAULT_ENABLE_M3U;
     double minimum = DEFAULT_MINIMUM_TRACK_LENGTH, duration = DEFAULT_TRACK_LENGTH, fade = DEFAULT_FADE_OUT_LENGTH;
     const auto readBool = [&](const char* key, bool& value) {
-        return !preferences ||
-            preferences->read_boolean(preferences->context, { key, strlen(key) }, value, &value) == MC_OK;
+        return !settings ||
+            settings->read_boolean(settings->context, { key, strlen(key) }, value, &value) == MC_OK;
     };
     const auto readNumber = [&](const char* key, double& value) {
-        return !preferences ||
-            preferences->read_number(preferences->context, { key, strlen(key) }, value, &value) == MC_OK;
+        return !settings ||
+            settings->read_number(settings->context, { key, strlen(key) }, value, &value) == MC_OK;
     };
     if (!readBool(KEY_ENABLE_M3U, m3u) || !readBool(KEY_ALWAYS_LOOP_FOREVER, loop) ||
         !readBool(KEY_IGNORE_EMBEDDED_TRACK_LENGTH, ignoreLength) || !readNumber(KEY_MINIMUM_TRACK_LENGTH, minimum) ||

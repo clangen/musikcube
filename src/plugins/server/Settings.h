@@ -11,11 +11,11 @@
 /* reads the server's saved settings through the host-provided service. */
 class ServerSettings {
 public:
-    explicit ServerSettings(const mc_plugin_preferences_service& preferences) : preferences(preferences) {}
+    explicit ServerSettings(const mc_plugin_settings_service& settings) : settings(settings) {}
 
     bool Boolean(std::string_view key, bool fallback = false) const {
         bool value = fallback;
-        if (this->preferences.read_boolean(this->preferences.context, View(key), fallback, &value) != MC_OK) {
+        if (this->settings.read_boolean(this->settings.context, View(key), fallback, &value) != MC_OK) {
             throw std::runtime_error("could not read server setting");
         }
         return value;
@@ -29,7 +29,7 @@ public:
             .maximum = std::numeric_limits<int32_t>::max(),
         };
         int32_t value = fallback;
-        if (this->preferences.read_integer(this->preferences.context, &setting, &value) != MC_OK) {
+        if (this->settings.read_integer(this->settings.context, &setting, &value) != MC_OK) {
             throw std::runtime_error("could not read server setting");
         }
         return value;
@@ -49,7 +49,7 @@ public:
                 result.failed = true;
             }
         };
-        if (this->preferences.read_text(this->preferences.context, View(key), View(fallback), read, &result) != MC_OK ||
+        if (this->settings.read_text(this->settings.context, View(key), View(fallback), read, &result) != MC_OK ||
             result.failed)
         {
             throw std::runtime_error("could not read server setting");
@@ -65,5 +65,5 @@ private:
         };
     }
 
-    const mc_plugin_preferences_service& preferences;
+    const mc_plugin_settings_service& settings;
 };

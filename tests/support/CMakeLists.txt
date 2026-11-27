@@ -991,7 +991,7 @@ if(TARGET nullout)
 endif()
 
 # native hardware coverage also drives the public URI player through the
-# existing decoder. the isolated runner protects user catalogs/preferences.
+# existing decoder. the isolated runner protects user catalogs/settings.
 if(APPLE AND TARGET coreaudioout AND TARGET ffmpegdecoder)
   add_executable(musikcore_coreaudio_output_test ../integration/plugins/coreaudio-output.cpp host-wakeup.cpp)
   target_include_directories(musikcore_coreaudio_output_test PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
@@ -1449,7 +1449,7 @@ if((CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE OR WIN32) AND TARGET projectm)
   add_executable(musikcore_projectm_test ../integration/plugins/projectm.cpp)
   target_include_directories(musikcore_projectm_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
   target_link_libraries(musikcore_projectm_test PRIVATE ${CMAKE_DL_LIBS})
-  target_compile_features(musikcore_projectm_test PRIVATE cxx_std_17)
+  target_compile_features(musikcore_projectm_test PRIVATE cxx_std_20)
   set_target_properties(musikcore_projectm_test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
   add_dependencies(musikcore_projectm_test projectm)
@@ -1520,3 +1520,15 @@ if(TARGET ffmpegdecoder)
       LABELS "integration;musikcore;transport;audio;contract" TIMEOUT 20)
   endforeach()
 endif()
+
+add_executable(musikcore_plugin_settings_test ../integration/plugins/plugin-settings.cpp)
+target_include_directories(musikcore_plugin_settings_test PRIVATE "${PROJECT_SOURCE_DIR}/src" ${VENDOR_INCLUDE_DIRECTORIES})
+target_compile_features(musikcore_plugin_settings_test PRIVATE cxx_std_20)
+target_link_libraries(musikcore_plugin_settings_test PRIVATE ${core_fixture_library} Threads::Threads)
+set_target_properties(musikcore_plugin_settings_test PROPERTIES DISABLE_PRECOMPILE_HEADERS ON)
+add_dependencies(musikcube_integration_tests musikcore_plugin_settings_test)
+add_test(NAME musikcore.integration.plugins.settings
+  COMMAND "${MUSIKCORE_TEST_NODE}" "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js"
+    "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated" "$<TARGET_FILE:musikcore_plugin_settings_test>")
+set_tests_properties(musikcore.integration.plugins.settings PROPERTIES
+  LABELS "integration;musikcore;plugins;settings;contract" TIMEOUT 20)

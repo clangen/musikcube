@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <musikcore/library.h>
 
@@ -48,7 +48,7 @@
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 #include <app/util/MagicConstants.h>
 
 #include "LibraryLayout.h"
@@ -66,7 +66,7 @@ namespace keys = musik::cube::prefs::keys;
         (this->shortcuts && !this->shortcuts->IsFocused())
 
 static void rememberSessionValue(std::string_view key, std::string_view value) {
-    api::Preferences session { MC_PREFERENCE_SESSION };
+    api::Settings session { MC_SETTINGS_SESSION };
     session.SetString(key, value);
     session.Save();
 }
@@ -110,7 +110,7 @@ void LibraryLayout::OnVisibilityChanged(bool visible) {
 
     const auto status = this->musikcore.GetLibraryStatus();
     if (visible && status.kind == MC_LIBRARY_REMOTE && status.state == MC_LIBRARY_CONNECTED) {
-        prefs.SetBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_VIEWED, true);
+        prefs.SetBool(MC_SETTING_KEY_REMOTE_LIBRARY_VIEWED, true);
     }
 }
 
@@ -228,8 +228,8 @@ void LibraryLayout::InitializeWindows(musik::core::api::Context& musikcore) {
 }
 
 void LibraryLayout::LoadLastSession() {
-    if (this->prefs.GetBool(MC_PREFERENCE_KEY_SAVE_SESSION_ON_EXIT, true)) {
-        auto session = api::Preferences { MC_PREFERENCE_SESSION };
+    if (this->prefs.GetBool(MC_SETTING_KEY_SAVE_SESSION_ON_EXIT, true)) {
+        auto session = api::Settings { MC_SETTINGS_SESSION };
         const std::string type = session.GetString(keys::LastLibraryView, type::Browse);
         if (type == type::Directory) {
             const std::string lastDirectoryRoot =

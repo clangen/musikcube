@@ -28,14 +28,14 @@ namespace musik { namespace core { namespace plugin {
             const std::string& id)
         : factory(std::move(factory))
         , id(id)
-        , preferences(ReadSettingsService(name))
+        , settings(SettingsService(name))
         , directory(GetDataDirectory())
         , queue(queue)
         , service(playback)
         , context(context)
         , libraryService(context, std::move(local), this->factory)
         {
-            this->services.preferences = &this->preferences;
+            this->services.settings = &this->settings;
             this->services.media = &Media();
             this->services.audio_scratch = &AudioScratch();
             this->services.host = this->factory.Host();
@@ -388,7 +388,7 @@ namespace musik { namespace core { namespace plugin {
 
         ffi::PluginRegistry::Factory<mc_playback_remote_factory> factory;
         std::string id;
-        mc_plugin_preferences_service preferences;
+        mc_plugin_settings_service settings;
         std::string directory;
         runtime::IMessageQueue& queue;
         audio::PlaybackService& service;

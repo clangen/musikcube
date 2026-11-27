@@ -63,7 +63,7 @@ OpenMptIndexerSource::OpenMptIndexerSource(const mc_host_api& host, const mc_plu
 : services(host, services) {}
 
 const std::string& OpenMptIndexerSource::Label() {
-    static const std::string label = "Tracker modules (OpenMPT)";
+    static const std::string label = "Tracker modules";
     return label;
 }
 

@@ -1,4 +1,5 @@
 #include "ProjectMBackend.h"
+#include <musikcore/plugin.h>
 #include "Pcm.h"
 #include "PcmQueue.h"
 #include "Renderer.h"
@@ -16,7 +17,18 @@ namespace {
 /* Linux and Windows own the renderer on its own worker thread. */
 class ProjectMBackend::Impl {
 public:
+    explicit Impl(const mc_plugin_services& services)
+    : settingsService(services.settings)
+    , host(services.host) {}
     ~Impl() noexcept { Hide(); }
+
+    ProjectMSettings LoadSettings() { return LoadProjectMSettings(settingsService); }
+    void SaveSettings(const ProjectMSettings& settings) {
+        if (SaveProjectMSettings(settingsService, settings) != MC_OK && host && host->log) {
+            host->log(
+                host->host_context, MC_LOG_WARNING, { "projectM", 8 }, { "could not save visualizer settings", 33 });
+        }
+    }
 
     mc_result Show() {
         std::lock_guard lock(control);
@@ -84,6 +96,8 @@ public:
     }
 
 private:
+    const mc_plugin_settings_service* settingsService;
+    const mc_host_api* host;
     std::mutex control;
     std::mutex startup;
     std::condition_variable changed;
@@ -95,7 +109,9 @@ private:
     ProjectMPcmQueue queue;
 };
 
-ProjectMBackend::ProjectMBackend(const mc_plugin_services&) : impl(std::make_unique<Impl>()) {}
+ProjectMBackend::ProjectMBackend(const mc_plugin_services& services)
+: impl(std::make_unique<Impl>(services)) {
+}
 ProjectMBackend::~ProjectMBackend() noexcept = default;
 mc_result ProjectMBackend::Show() { return impl->Show(); }
 mc_result ProjectMBackend::Hide() noexcept { return impl->Hide(); }

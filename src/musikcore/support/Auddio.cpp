@@ -37,8 +37,8 @@
 #include "Common.h"
 #include <common/HttpClient.h>
 #include <common/HttpUrl.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include <sstream>
 
 #ifdef _MSC_VER
@@ -65,7 +65,7 @@ static std::string encode(std::string value) {
 }
 
 static std::string getApiToken() {
-    auto prefs = Preferences::ForComponent(components::Settings);
+    auto prefs = Settings::ForComponent(components::Settings);
     return prefs->GetString(keys::AuddioApiToken);
 }
 

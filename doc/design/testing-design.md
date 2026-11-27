@@ -49,7 +49,7 @@ requiring a complete build-system rewrite before the first test can run.
 - Make async tests deterministic and deadline-based, without arbitrary sleeps.
 - Run the default suite without real audio hardware, network access, or user
   library data.
-- Isolate every test from user preferences and production databases.
+- Isolate every test from user settings and production databases.
 - Support Windows, macOS, and Linux through the same CTest interface.
 - Make fast tests easy to run locally during development.
 - Add integration tests for SQLite, workers, plugins, playback, indexing, and
@@ -279,7 +279,7 @@ façade, not a shared build of the current public C++ surface.
 ### Temporary directories
 
 Every test that creates a context receives a unique temporary root containing
-explicit data, cache, preferences, plugin, and media directories. Tests must
+explicit data, cache, settings, plugin, and media directories. Tests must
 not read or write the user's home directory or normal musikcube database.
 
 The test context builder deletes its temporary directory on success. It may
@@ -454,13 +454,13 @@ the internal implementation.
 These tests use a deterministic decoder and fake output. They verify frames and
 state rather than requiring audible playback.
 
-### Indexer and preferences
+### Indexer and settings
 
 - Indexer path operations and scan types.
 - Progress coalescing and lossless terminal state.
 - Cancellation commits or rolls back according to the contract.
-- Typed preference defaults, updates, batches, persistence, and isolation.
-- Plugin and application preference namespaces do not collide.
+- Typed setting defaults, updates, batches, persistence, and isolation.
+- Plugin and application setting namespaces do not collide.
 
 ### Advanced audio API
 
@@ -493,7 +493,7 @@ behavior.
 
 - Bootstrap logging and error construction are usable at the documented time.
 - Other services are unavailable before initialization begins.
-- Plugin-scoped preferences use the correct namespace.
+- Plugin-scoped settings use the correct namespace.
 - Host-created audio buffers can be mapped and unmapped by a provider.
 - Optional host functions are checked through `struct_size` or feature
   discovery before use.
@@ -580,7 +580,7 @@ Component tests should then combine these units with controlled dependencies:
 - Query scheduler plus fake clock and event sink.
 - Playback service plus deterministic provider fixtures.
 - Indexer plus fake source and tag writer.
-- Preferences plus temporary persistence.
+- Settings plus temporary persistence.
 
 ## Integration and system tests
 
@@ -594,7 +594,7 @@ plugin loader with a temporary runtime root. They verify complete workflows:
 - Load a C decoder plugin, use it from playback, destroy all instances, and
   unload cleanly.
 - Cancel indexing or queries during context shutdown.
-- Reopen a context and verify persisted preferences and library state.
+- Reopen a context and verify persisted settings and library state.
 
 ### Application smoke tests
 

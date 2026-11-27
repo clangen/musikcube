@@ -95,7 +95,7 @@ namespace musik { namespace core { namespace audio {
 
         Output() = default;
         Output(ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name,
-            std::string device, mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT);
+            std::string device, mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT);
         ~Output();
 
         static size_t InstanceCount() noexcept;
@@ -145,7 +145,7 @@ namespace musik { namespace core { namespace audio {
         std::string id;
         std::string name = "NoOutput";
         std::string device;
-        mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
+        mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
         mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
         mutable std::timed_mutex ordinary;
         std::atomic<unsigned> waitingControls { 0 };

@@ -37,7 +37,7 @@
 #include <string>
 #include <unordered_map>
 #include "Util.h"
-#include "ServerPreferences.h"
+#include "ServerSettings.h"
 
 namespace serverprefs = musik::core::serverprefs;
 

@@ -15,8 +15,8 @@
 #include <common/runtime/MessageQueue.h>
 #include <common/runtime/Message.h>
 #include <musikcore/debug.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include <musikcore/support/Messages.h>
 
 #include <condition_variable>
@@ -162,7 +162,7 @@ namespace musik { namespace core { namespace ffi {
                 this->remote = std::static_pointer_cast<library::RemoteLibraryBackend>(musik::core::library::DefaultRemoteBackend());
                 this->indexer = this->local->Indexer();
 
-                const auto prefs = Preferences::ForComponent(prefs::components::Settings);
+                const auto prefs = Settings::ForComponent(prefs::components::Settings);
                 const auto catalog = prefs->GetInt(prefs::keys::LibraryType, static_cast<int>(LibraryBackend::Type::Local));
                 const bool selectRemote = !(flags & MC_CONTEXT_START_LOCAL) &&
                     catalog == static_cast<int>(LibraryBackend::Type::Remote);
@@ -418,7 +418,7 @@ namespace musik { namespace core { namespace ffi {
                 this->PublishSelection(true);
             }
 
-            Preferences::ForComponent(prefs::components::Settings)
+            Settings::ForComponent(prefs::components::Settings)
                 ->SetInt(prefs::keys::LibraryType, static_cast<int>(selected->GetType()));
 
             /* a local-only startup has never connected this remote. selection is

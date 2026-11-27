@@ -18,7 +18,7 @@ file(GLOB_RECURSE sources
   "${SOURCE}/src/plugins/*.c" "${SOURCE}/src/plugins/*.mm")
 foreach(path IN LISTS sources)
   file(READ "${path}" contents)
-  if(contents MATCHES "(^|[^A-Za-z0-9_])(GetPlugin|SetEnvironment|SetPreferences|SetDebug)[ \t\r\n]*\\(")
+  if(contents MATCHES "(^|[^A-Za-z0-9_])(GetPlugin|SetEnvironment|SetSettings|SetDebug)[ \t\r\n]*\\(")
     message(FATAL_ERROR "Retired plugin entry point referenced in ${path}")
   endif()
 endforeach()

@@ -36,9 +36,9 @@
 
 #include "Rating.h"
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 #include <common/Utf8.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 
 #include <string>
 #include <map>
@@ -67,7 +67,7 @@ namespace musik { namespace cube {
 
     extern void updateDefaultRatingSymbols() {
         initialized = true;
-        auto prefs = api::Preferences { MC_PREFERENCE_SETTINGS };
+        auto prefs = api::Settings { MC_SETTINGS_APPLICATION };
         std::string filled = prefs.GetString(musik::cube::prefs::keys::RatingPositiveChar, kFilledStar);
         if (!filled.size()) filled = kFilledStar;
         std::string empty = prefs.GetString(musik::cube::prefs::keys::RatingNegativeChar, kEmptyStar);

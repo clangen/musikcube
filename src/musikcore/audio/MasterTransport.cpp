@@ -38,8 +38,8 @@
 
 #include <musikcore/audio/GaplessTransport.h>
 #include <musikcore/audio/CrossfadeTransport.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 
 using namespace musik::core::audio;
 using namespace musik::core;
@@ -47,7 +47,7 @@ using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 
 MasterTransport::MasterTransport()
-: prefs(Preferences::ForComponent(components::Playback)) {
+: prefs(Settings::ForComponent(components::Playback)) {
     this->type = static_cast<Type>(this->prefs->GetInt(
         keys::Transport, static_cast<int>(Type::Gapless)));
 

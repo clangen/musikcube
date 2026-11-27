@@ -348,7 +348,7 @@ after the terminal callback.
 `musikcore.h` includes the application-facing subsystem headers. Each
 subsystem header declares its own dependencies. `context.h` covers runtime
 lifecycle and request dispatch, and `library.h` covers library queries and
-metadata pages. Playback and queue, indexing, preferences, and advanced audio
+metadata pages. Playback and queue, indexing, settings, and advanced audio
 can get their own headers as those APIs are introduced. The provider SDK has
 its own entry point in `plugin.h`.
 
@@ -381,7 +381,7 @@ services the host needs; prerequisite expansion is automatic and acyclic:
 | -------------------------- | ----------------------- | ------------------------------------------------------------ |
 | `MC_SERVICE_NONE`          | None                    | Request processing, cancellation, wakeups, and dispatch only |
 | `MC_SERVICE_LIBRARY`       | None                    | Configured local/remote catalogs and their query work        |
-| `MC_SERVICE_PLUGINS`       | None                    | Provider discovery, preferences, and a provider session      |
+| `MC_SERVICE_PLUGINS`       | None                    | Provider discovery, settings, and a provider session      |
 | `MC_SERVICE_INDEXER`       | Library, Plugins        | Local scanner and its providers                              |
 | `MC_SERVICE_PLAYBACK`      | Library, Plugins        | Player and its providers; no scanner                         |
 | `MC_SERVICE_ALL` (default) | All above               | Full engine used by musikcube and musikcubed                 |
@@ -444,7 +444,7 @@ second create returns `MC_ERROR_BUSY` until successful destruction releases it.
 The ABI-only test library supports `MC_SERVICE_NONE`; engine requests there return
 `MC_ERROR_UNSUPPORTED` rather than silently degrading.
 
-Startup restores local playback preferences and the saved queue before exposing
+Startup restores local playback settings and the saved queue before exposing
 the context, so a later dispatch cannot overwrite newly submitted commands.
 Remote restoration is asynchronous because its transport requires host dispatch.
 Provider caches retire after their users stop, including when visualizers acquired
@@ -493,7 +493,7 @@ Destroying one player does not stop or wait on other players. Context shutdown
 stops all children before provider teardown, unregisters callbacks, and leaves
 retained handles safely invalidated (NOT_FOUND) but still destroyable. Callbacks
 are coalesced current-state notifications, dispatched only on the host thread;
-callback state must remain alive through removal or shutdown. Preferences and
+callback state must remain alive through removal or shutdown. Settings and
 provider discovery remain process-wide; distinct players do not promise mixing
 or isolated hardware clocks.
 
@@ -811,15 +811,15 @@ State returns to `MC_INDEXER_IDLE` before terminal publication, though a later
 scan may already be running when the dispatcher delivers the event. Shutdown
 remains a separate operation that stops and joins the indexer.
 
-### Preferences
+### Settings
 
-Preferences expose typed getters and setters for booleans, fixed-width
-integers, doubles, and UTF-8 strings. A preference namespace is an owned or
+Settings expose typed getters and setters for booleans, fixed-width
+integers, doubles, and UTF-8 strings. A setting namespace is an owned or
 context-borrowed handle with documented lifetime.
 
 Batch updates are preferred so a wrapper can make several changes and save
 once. String reads use either caller buffers with required-size semantics or an
-immutable snapshot owned by the preference result.
+immutable snapshot owned by the setting result.
 
 ### Advanced audio API
 
@@ -935,7 +935,7 @@ MC_PLUGIN_API mc_result MC_CALL mc_plugin_get_api(
 
 The entry point negotiates the ABI and returns plugin metadata plus lifecycle
 functions. It replaces `GetPlugin`, `GetDecoderFactory`, `SetEnvironment`,
-`SetPreferences`, `SetDebug`, and similar exported symbols.
+`SetSettings`, `SetDebug`, and similar exported symbols.
 
 Before calling the entry point, the host zero-initializes `out_plugin` and sets
 its `struct_size` to the size understood by the host. The plugin writes no more
@@ -1056,7 +1056,7 @@ to the negotiated provider ABI, without another contract identifier or version.
 Only initialization on the owner thread may register capabilities. Publication
 happens atomically after initialization succeeds; duplicate IDs are rejected.
 
-Audio-buffer, stream, decoder, and preference services are defined with their
+Audio-buffer, stream, decoder, and setting services are defined with their
 typed provider families. They are not required bootstrap callbacks. Future
 host services use sized optional tails/sub-tables so a plugin can check support
 before accessing them. The application umbrella header does not include the
@@ -1092,7 +1092,7 @@ ABI is frozen.
 
 Plan family headers under `include/musikcore/plugin/`, included as needed by
 plugins. Keep the application umbrella separate. Reuse `abi.h` primitives and
-existing public library/playback/preference value types instead of defining a
+existing public library/playback/setting value types instead of defining a
 second model of a track, playlist, or playback state.
 
 #### Existing interfaces and their disposition
@@ -1112,9 +1112,9 @@ second model of a track, playlist, or playback state.
 | `IAnalyzer` (`GetAudioAnalyzer`)                                                                               | Analyzer factory and begin/process/finish object                                          | Preserve the core's analysis hook even though a production implementation may be absent; writes use the metadata writer.                                |
 | `IVisualizer`, `IPcmVisualizer`, `ISpectrumVisualizer`                                                         | Visualizer factory/object and bounded PCM/spectrum views                                  | Keep show/hide/visible/name plus frame delivery; no transient audio pointer retained.                                                                   |
 | `IPlaybackRemote`                                                                                              | Playback remote factory and instance                                                      | Keep track/state/time/volume/mode/queue notifications and typed host commands; stop and join workers owned by the remote.                               |
-| `IPreferences`, `ISchema`, `Configure`/`Reload`                                                                | Plugin-scoped preference table and data-driven configuration capability                   | Keep typed values/defaults/ranges/choices/persistence; activation/restart effects are explicit.                                                         |
+| `ISettings`, `ISchema`, `Configure`/`Reload`                                                                | Plugin-scoped setting table and data-driven configuration capability                   | Keep typed values/defaults/ranges/choices/persistence; activation/restart effects are explicit.                                                         |
 | `IMetadataProxy`, `ITrack`, `ITrackList`, editor/map/value interfaces                                          | Existing C identities/results/pages and typed catalog/playback host calls                 | Preserve useful operations without recreating the C++ object graph. Identify missing typed operations before server conversion.                         |
-| `IEnvironment`, `IDebug`, `SetEnvironment`/`SetDebug`/`SetPreferences`/`SetMetadataProxy`/`SetIndexerNotifier` | Bootstrap diagnostics and scoped, typed instance services                                 | No global setter protocol. Factories register first; runtime services are supplied when an instance is created.                                         |
+| `IEnvironment`, `IDebug`, `SetEnvironment`/`SetDebug`/`SetSettings`/`SetMetadataProxy`/`SetIndexerNotifier` | Bootstrap diagnostics and scoped, typed instance services                                 | No global setter protocol. Factories register first; runtime services are supplied when an instance is created.                                         |
 | `String`, `DataBuffer`, `Filesystem`, `HttpClient`, constants/version helpers                                  | Implementation helpers or shared C primitives, according to actual callers                | Header-only C++ helpers are not binary interfaces to transliterate. Audit their engine dependencies before removing the old SDK directory.              |
 
 `SendRawQuery` needs special care in this inventory: despite its name, the
@@ -1703,7 +1703,7 @@ disconnect/execution races; the accepted-command policy avoids that machinery.
 
 Host-provided per-instance tables use `mc_plugin_library_service`,
 `mc_plugin_playback_service`, `mc_plugin_indexer_service`,
-`mc_plugin_media_service`, `mc_plugin_preferences_service`, and
+`mc_plugin_media_service`, `mc_plugin_settings_service`, and
 `mc_plugin_audio_scratch_service`. The service bundle exposes `playback` and
 `indexer`; bootstrap logging/registration remains `mc_host_api`. General scans
 use `indexer.schedule_async`; source plugins receive only their own
@@ -1725,7 +1725,7 @@ read services before they exist. All instances and their scoped host callbacks
 remain inside the engine session. Core owns and destroys peer-provider objects
 before registry shutdown; these objects do not carry per-plugin lifetime leases.
 
-The implemented service bundle, media operations, and plugin preferences are
+The implemented service bundle, media operations, and plugin settings are
 defined in [services.h](../../include/musikcore/plugin/services.h),
 [media.h](../../include/musikcore/plugin/media.h), and
 [settings.h](../../include/musikcore/plugin/settings.h). A worker creates a stream
@@ -1733,14 +1733,35 @@ from a URI, opens it, then selects its decoder from the opened stream's metadata
 Both playback and server transcoding follow this sequence. The server passes
 the decoded PCM view to the encoder before reading another block.
 
-A plugin receives its own preference store and the application data directory.
+The settings names are consistent across both boundaries: application operations
+use `mc_settings_*` in `settings.h`, shared values use `mc_setting_*` in
+`setting_types.h`, and plugins receive `mc_plugin_settings_service` through
+`services.settings`. The header-only application owner is `api::Settings`.
+Shared value types contain no application entry points, so plugin headers do not
+depend on the application API. Existing on-disk file names and keys are preserved.
+
+Applications can write declared plugin configuration through
+`mc_plugin_write_settings`. A plugin with its own controls can use the scoped
+service's `write_values` callback. It validates the entire batch and persists
+before publishing the in-memory update; rejected input and I/O failure leave
+in-memory values unchanged. Physical file replacement is not guaranteed atomic
+on an I/O failure. These calls are thread-safe, perform disk I/O off real-time
+callbacks, and do not implicitly reload active instances. Only the owning plugin's
+store is accessible through this service.
+
+The settings API names and appended plugin write callback change experimental
+source names, application exports, and the plugin table layout. Rebuild clients
+and plugins; there are no old-name aliases or ABI version increments before
+freeze. This changes naming and write access, not stored configuration keys.
+
+A plugin receives its own setting store and the application data directory.
 The HTTP source registers its integer settings with defaults and bounds. Its
-display name still selects the original preference file, preserving saved
+display name still selects the original setting file, preserving saved
 values. Each new transfer reads the current settings. GME and OpenMPT retain
-their existing component preferences and register their decoder, stream,
+their existing component settings and register their decoder, stream,
 indexer source, and settings together from one plugin each.
 
-The remaining design calls for media encoder factories, preference writes and
+The remaining design calls for media encoder factories, setting writes and
 saves, richer schema types and apply/restart semantics, and system, catalog,
 playback and indexer services. Add these tables with their first concrete users.
 A system service should supply file modification times and other paths when
@@ -2076,7 +2097,7 @@ once. No new scheduling or callback ABI is needed merely to rename an interface.
 
 #### Shape review and first implementation checks
 
-Before materializing the headers, resolve the persisted source/time/preference
+Before materializing the headers, resolve the persisted source/time/setting
 mapping decisions, shared enum types, async wrapper details, and typed host-call
 gaps identified above. Compile the sketches
 as C11 and C++ using existing public primitive headers; that checks syntax and
@@ -2200,7 +2221,7 @@ will expose assumptions hidden by the C++ adapters.
 
 ### Phase 3: application feature coverage
 
-- Add playback, queue, preferences, and indexer APIs.
+- Add playback, queue, settings, and indexer APIs.
 - Migrate musikcube feature by feature.
 - Add advanced audio consumer APIs only where an identified consumer needs
   them.

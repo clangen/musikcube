@@ -85,8 +85,8 @@ target_precompile_headers(musikcore_objects
     "$<$<COMPILE_LANGUAGE:CXX>:support/Messages.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:../common/NarrowCast.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:support/Playback.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:support/PreferenceKeys.h>"
-    "$<$<COMPILE_LANGUAGE:CXX>:support/Preferences.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:support/SettingKeys.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:support/Settings.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:../common/Utf8.h>"
 )
 

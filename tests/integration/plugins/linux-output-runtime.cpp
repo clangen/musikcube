@@ -60,9 +60,9 @@ int main(int argc, char** argv) {
     if (std::string_view(argv[1]) == "AlsaOut") {
         constexpr char pluginId[] = "668a75e6-1816-4c75-a361-a9d48906f23f";
         constexpr char key[] = "latency_ms";
-        mc_preference_entry setting {};
+        mc_setting_entry setting {};
         setting.key = { key, sizeof(key) - 1 };
-        setting.value.type = MC_PREFERENCE_INTEGER;
+        setting.value.type = MC_SETTING_INTEGER;
         setting.value.data.integer = 5001;
         require(mc_plugin_write_setting({ pluginId, sizeof(pluginId) - 1 }, &setting) == MC_ERROR_INVALID_ARGUMENT,
             "reject latency above the declared range");

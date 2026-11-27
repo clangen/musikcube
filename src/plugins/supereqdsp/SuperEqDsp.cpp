@@ -54,7 +54,7 @@ void SuperEqDsp::NotifyChanged() noexcept {
 
 SuperEqDsp::SuperEqDsp(const mc_plugin_services& services)
 : enabled(false)
-, preferences(*services.preferences) {}
+, settings(*services.settings) {}
 
 SuperEqDsp::~SuperEqDsp() {
     if (this->supereq) {
@@ -68,7 +68,7 @@ mc_result SuperEqDsp::Process(mc_audio_buffer_view& buffer) {
     const auto current = ::currentState.load();
 
     if (!this->supereq || this->lastUpdated != current) {
-        this->preferences.read_boolean(this->preferences.context, { "enabled", 7 }, false, &this->enabled);
+        this->settings.read_boolean(this->settings.context, { "enabled", 7 }, false, &this->enabled);
         this->lastUpdated = current;
 
         if (!this->supereq) {
@@ -81,7 +81,7 @@ mc_result SuperEqDsp::Process(mc_audio_buffer_view& buffer) {
 
         for (size_t i = 0; i < BANDS.size(); i++) {
             double dB = 0.0;
-            this->preferences.read_number(this->preferences.context,
+            this->settings.read_number(this->settings.context,
                 { BANDS[i].data(), BANDS[i].size() }, 0.0, &dB);
             double amp = pow(10, dB / 20.f);
             bands[i] = (float) amp;

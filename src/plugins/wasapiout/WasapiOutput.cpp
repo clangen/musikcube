@@ -688,9 +688,9 @@ WasapiOutput::~WasapiOutput() noexcept = default;
 
 mc_result WasapiOutput::Prepare(const mc_output_options& options, const mc_output_callbacks& callbacks) {
     bool routing = wasapi::EndpointRouting.default_value;
-    if (this->services && this->services->preferences) {
-        const auto* preferences = this->services->preferences;
-        const auto routeResult = preferences->read_boolean(preferences->context, wasapi::EndpointRouting.key,
+    if (this->services && this->services->settings) {
+        const auto* settings = this->services->settings;
+        const auto routeResult = settings->read_boolean(settings->context, wasapi::EndpointRouting.key,
             routing, &routing);
         if (routeResult != MC_OK) {
             return routeResult;

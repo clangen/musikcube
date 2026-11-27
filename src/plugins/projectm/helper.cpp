@@ -1,5 +1,6 @@
 #include "Pcm.h"
 #include "PcmPacket.h"
+#include "SettingsPacket.h"
 #include "Renderer.h"
 
 #include <algorithm>
@@ -13,6 +14,42 @@ namespace {
     class HelperInput {
     public:
         explicit HelperInput(int socket) : socket(socket) {}
+
+        ProjectMSettings LoadSettings() {
+            ProjectMSettings settings;
+            size_t received = 0;
+            for (;;) {
+                ProjectMSettingsChunk chunk {};
+                const auto count = recv(socket, &chunk, sizeof(chunk), 0);
+                if (count < 0 && errno == EINTR) {
+                    continue;
+                }
+                if (count <= 0) {
+                    stopping = true;
+                    return settings;
+                }
+                if (ReceiveProjectMSettings(chunk, static_cast<size_t>(count), settings, received)) {
+                    return settings;
+                }
+            }
+        }
+
+        void SaveSettings(const ProjectMSettings& settings) noexcept {
+            latestSettings = settings;
+            settingsChanged = true;
+        }
+
+        void FlushSettings() noexcept {
+            if (!sendingSettings && settingsChanged) {
+                outgoingSettings = latestSettings;
+                sentSettings = 0;
+                sendingSettings = true;
+                settingsChanged = false;
+            }
+            if (sendingSettings && SendProjectMSettings(socket, outgoingSettings, sentSettings, MSG_DONTWAIT)) {
+                sendingSettings = false;
+            }
+        }
 
         void Started(bool success) noexcept {
             if (!success) {
@@ -28,11 +65,16 @@ namespace {
                 (void) send(socket, &response, 1, 0);
                 ready = true;
             }
+            FlushSettings();
         }
 
         bool Stopping() const noexcept { return stopping; }
         void Stop() noexcept { stopping = true; }
-        void Finished() noexcept {}
+        void Finished() noexcept {
+            FlushSettings();
+            const char response = 0;
+            (void) send(socket, &response, 1, MSG_DONTWAIT);
+        }
 
         void ReadAudio(projectm_handle visualizer, float gain) noexcept {
             for (unsigned packets = 0; packets < 128; ++packets) {
@@ -60,6 +102,11 @@ namespace {
         }
 
     private:
+        ProjectMSettings latestSettings;
+        ProjectMSettings outgoingSettings;
+        size_t sentSettings { 0 };
+        bool settingsChanged { false };
+        bool sendingSettings { false };
         int socket;
         bool ready { false };
         bool stopping { false };
@@ -73,7 +120,6 @@ int main(int argc, char** argv) {
         return 1;
     }
     const int socket = std::atoi(argv[1]);
-    fcntl(socket, F_SETFL, fcntl(socket, F_GETFL) | O_NONBLOCK);
     HelperInput input(socket);
     RunProjectMRenderer(input, reinterpret_cast<void*>(&HelperLocation));
     return 0;

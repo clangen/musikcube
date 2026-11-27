@@ -107,7 +107,7 @@ namespace {
         : httpServer(this->context)
         , webSocketServer(this->context)
         {
-            this->context.preferences = *services.preferences;
+            this->context.settingsService = *services.settings;
             this->context.dataDirectory.assign(services.data_directory.data ? services.data_directory.data : "",
                 services.data_directory.length);
             this->context.host = services.host;

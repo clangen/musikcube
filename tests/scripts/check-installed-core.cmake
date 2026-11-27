@@ -88,7 +88,7 @@ if(INSTALLED_TEST_PLUGIN)
     "${consumer_bin}/managed${exe}" "${plugins}")
 endif()
 
-# share the indexed fixture, but isolate preferences and load only null output.
+# share the indexed fixture, but isolate settings and load only null output.
 get_filename_component(config_directory "${CATALOG}/../.." ABSOLUTE)
 foreach(language IN ITEMS c cpp)
   run("${CMAKE_COMMAND}" -E env "HOME=${config_directory}" "XDG_CONFIG_HOME=${config_directory}" "APPDATA=${config_directory}"

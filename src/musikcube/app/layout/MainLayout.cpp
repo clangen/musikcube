@@ -35,7 +35,7 @@
 #include <stdafx.h>
 #include <musikcore/log.hpp>
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
@@ -45,7 +45,7 @@
 #include <common/version.h>
 
 #include <app/util/Messages.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LyricsLayout.h>
 #include <app/layout/LibraryLayout.h>

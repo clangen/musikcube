@@ -79,7 +79,7 @@ namespace musik { namespace core { namespace plugin {
 
     ffi::PluginRegistry::Factory<mc_configuration_api> FindConfiguration(std::string_view pluginId);
 
-    mc_plugin_preferences_service ReadSettingsService(const std::string& pluginName);
+    mc_plugin_settings_service SettingsService(const std::string& pluginName);
 
     void ValidateShutdown();
     void UnbindServices();

@@ -38,7 +38,7 @@
 #include <musikcore/library/query/PersistedPlayQueueQuery.h>
 #include <musikcore/audio/PlaybackTypes.h>
 #include <musikcore/library/IndexingTypes.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/SettingKeys.h>
 #include <cmath>
 
 using namespace musik::core;
@@ -47,14 +47,14 @@ using namespace musik::core::library::query;
 using namespace musik::core::sdk;
 
 namespace keys = musik::core::prefs::keys;
-using Prefs = std::shared_ptr<Preferences>;
+using Prefs = std::shared_ptr<Settings>;
 
 static Prefs Session() {
-    return Preferences::ForComponent(prefs::components::Session);
+    return Settings::ForComponent(prefs::components::Session);
 }
 
-static Prefs Settings() {
-    return Preferences::ForComponent(prefs::components::Settings);
+static Prefs applicationSettings() {
+    return Settings::ForComponent(prefs::components::Settings);
 }
 
 namespace musik {
@@ -100,7 +100,7 @@ namespace musik {
             }
 
             void LoadPlaybackContext(LibraryBackend::Shared library, PlaybackService& playback, bool synchronous) {
-                if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
+                if (applicationSettings()->GetBool(keys::SaveSessionOnExit, true)) {
                     auto prefs = Session();
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
                         PersistedPlayQueueQuery::Restore(library, playback, prefs->GetInt(keys::LastPlayQueueIndex, -1)));
@@ -116,7 +116,7 @@ namespace musik {
                             playback.QueueEdited.Publish(); /* hack to get the play queue view to scroll
                                 to the track we just prepared. */
 
-                            if (Settings()->GetBool(keys::ResumePlaybackOnStartup, false)) {
+                            if (applicationSettings()->GetBool(keys::ResumePlaybackOnStartup, false)) {
                                 playback.GetTransport().Resume();
                             }
                         }
@@ -136,7 +136,7 @@ namespace musik {
             }
 
             void SavePlaybackContext(LibraryBackend::Shared library, PlaybackService& playback) {
-                if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
+                if (applicationSettings()->GetBool(keys::SaveSessionOnExit, true)) {
                     auto prefs = Session();
                     if (playback.GetPlaybackState() != PlaybackState::Stopped) {
                         prefs->SetInt(keys::LastPlayQueueIndex, (int)playback.GetIndex());

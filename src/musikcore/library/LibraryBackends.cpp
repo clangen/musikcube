@@ -1,8 +1,8 @@
 #include "pch.hpp"
 #include "LibraryBackends.h"
 #include <common/Contract.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include <limits>
 #include <stdexcept>
 
@@ -30,7 +30,7 @@ namespace {
     }
 
     int identifierFor(const std::string& name, int reservedId) {
-        const auto settings = Preferences::ForComponent(prefs::components::Libraries);
+        const auto settings = Settings::ForComponent(prefs::components::Libraries);
         std::vector<std::string> names;
         settings->GetKeys(names);
         int existing = 0, maximum = 0;
@@ -51,10 +51,10 @@ namespace {
         return maximum;
     }
 
-    static library::RemoteLibraryBackend::ConnectionOptions remoteOptionsFromPreferences() {
+    static library::RemoteLibraryBackend::ConnectionOptions remoteOptionsFromSettings() {
         using Remote = library::RemoteLibraryBackend;
         using namespace musik::core::prefs;
-        const auto prefs = Preferences::ForComponent(components::Settings);
+        const auto prefs = Settings::ForComponent(components::Settings);
         const auto port = [&](const std::string& key, unsigned short fallback) {
             const auto value = prefs->GetInt(key, fallback);
             return value > 0 && value <= UINT16_MAX ? static_cast<unsigned short>(value) : fallback;
@@ -88,7 +88,7 @@ namespace {
         auto local = std::static_pointer_cast<library::LocalLibraryBackend>(library::LocalLibraryBackend::Create(
             "default-local-library", identifierFor("default-local-library", 0), messageQueue, enableIndexer));
         auto remote = std::make_shared<library::RemoteLibraryBackend>("default-remote-library",
-            identifierFor("default-remote-library", local->Id()), messageQueue, remoteOptionsFromPreferences, true);
+            identifierFor("default-remote-library", local->Id()), messageQueue, remoteOptionsFromSettings, true);
         localBackend = retainQueue(std::move(local));
         remoteBackend = retainQueue(std::move(remote));
         if (connectRemote) {

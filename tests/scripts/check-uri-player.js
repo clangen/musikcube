@@ -36,7 +36,7 @@ async function main() {
   const liveMedia = wave(16);
   const filename = join(root, '音楽 # 100%.wav');
   writeFileSync(filename, media);
-  /* lookup and later edits must target the C provider preference store. */
+  /* lookup and later edits must target the C provider setting store. */
   mkdirSync(join(root, 'musikcube'), { recursive: true });
   writeFileSync(join(root, 'musikcube', 'plugin_httpstream.json'), JSON.stringify({ max_cache_files: 0 }));
   const cacheRequests = new Map();

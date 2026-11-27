@@ -36,7 +36,7 @@
 
 #include <musikcore/audio/PlaybackTypes.h>
 #include <musikcore/audio/ITransport.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 
 namespace musik { namespace core { namespace audio {
     class MasterTransport : public musik::core::audio::ITransport {
@@ -82,7 +82,7 @@ namespace musik { namespace core { namespace audio {
             void OnTimeChanged(double time);
 
             std::shared_ptr<musik::core::audio::ITransport> transport;
-            std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<musik::core::Settings> prefs;
             Type type;
             Connections transportConnections;
     };

@@ -37,15 +37,15 @@ struct Settings {
 static void MC_CALL recordSetting(void* data, const mc_plugin_setting* setting) {
     auto& settings = *static_cast<Settings*>(data);
     const std::string key(setting->key.data, setting->key.length);
-    if (key == "enabled" && setting->value.type == MC_PREFERENCE_BOOLEAN) {
+    if (key == "enabled" && setting->value.type == MC_SETTING_BOOLEAN) {
         settings.enabled = setting->value.data.boolean;
         ++settings.count;
     }
-    else if (key == "seconds" && setting->value.type == MC_PREFERENCE_NUMBER) {
+    else if (key == "seconds" && setting->value.type == MC_SETTING_NUMBER) {
         settings.seconds = setting->value.data.number;
         ++settings.count;
     }
-    else if (key == "label" && setting->value.type == MC_PREFERENCE_TEXT) {
+    else if (key == "label" && setting->value.type == MC_SETTING_TEXT) {
         settings.label.assign(setting->value.data.text.data, setting->value.data.text.length);
         ++settings.count;
     }
@@ -58,23 +58,23 @@ static void checkSettings() {
     require(mc_plugin_read_settings(plugin, recordSetting, &defaults) == MC_OK && defaults.count == 3 &&
         defaults.enabled && defaults.seconds == 2.5 && defaults.label == "default", "read mixed defaults");
 
-    mc_preference_entry entry {};
+    mc_setting_entry entry {};
     entry.key = { "seconds", 7 };
-    entry.value.type = MC_PREFERENCE_NUMBER;
+    entry.value.type = MC_SETTING_NUMBER;
     entry.value.data.number = 11.0;
     require(mc_plugin_write_setting(plugin, &entry) == MC_ERROR_INVALID_ARGUMENT, "reject out-of-range setting");
-    entry.value.type = MC_PREFERENCE_BOOLEAN;
+    entry.value.type = MC_SETTING_BOOLEAN;
     entry.value.data.boolean = true;
     require(mc_plugin_write_setting(plugin, &entry) == MC_ERROR_INVALID_ARGUMENT, "reject wrong setting type");
-    entry.value.type = MC_PREFERENCE_NUMBER;
+    entry.value.type = MC_SETTING_NUMBER;
     entry.value.data.number = 3.5;
     require(mc_plugin_write_setting(plugin, &entry) == MC_OK, "save number");
     entry.key = { "enabled", 7 };
-    entry.value.type = MC_PREFERENCE_BOOLEAN;
+    entry.value.type = MC_SETTING_BOOLEAN;
     entry.value.data.boolean = false;
     require(mc_plugin_write_setting(plugin, &entry) == MC_OK, "save boolean");
     entry.key = { "label", 5 };
-    entry.value.type = MC_PREFERENCE_TEXT;
+    entry.value.type = MC_SETTING_TEXT;
     entry.value.data.text = { "saved", 5 };
     require(mc_plugin_write_setting(plugin, &entry) == MC_OK, "save text");
     Settings saved;

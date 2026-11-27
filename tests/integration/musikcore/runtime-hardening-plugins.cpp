@@ -6,7 +6,7 @@
 #include <musikcore/audio/Visualizer.h>
 #include <musikcore/plugin/media.h>
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 
 #include <algorithm>
 #include <cstdlib>

@@ -49,7 +49,7 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 #include <app/overlay/ColorThemeOverlay.h>
 #include <app/overlay/LastFmOverlay.h>
 #include <app/overlay/SettingsOverlays.h>
@@ -94,8 +94,8 @@ using EntryPtr = IScrollAdapter::EntryPtr;
 
 static const std::string arrow = "> ";
 
-static std::vector<api::PreferenceField> advancedSettings(const api::Preferences& prefs) {
-    std::vector<api::PreferenceField> fields;
+static std::vector<api::SettingField> advancedSettings(const api::Settings& prefs) {
+    std::vector<api::SettingField> fields;
     const auto addBool = [&](const std::string& key, bool fallback) {
         fields.push_back({ key, prefs.GetBool(key, fallback) });
     };
@@ -105,7 +105,7 @@ static std::vector<api::PreferenceField> advancedSettings(const api::Preferences
             static_cast<double>(std::numeric_limits<int32_t>::max()) });
     };
     const auto addText = [&](const std::string& key, std::string_view fallback) {
-        api::PreferenceField field { key, prefs.GetString(key, fallback) };
+        api::SettingField field { key, prefs.GetString(key, fallback) };
         field.allowEmpty = !fallback.empty();
         fields.push_back(std::move(field));
     };
@@ -118,19 +118,19 @@ static std::vector<api::PreferenceField> advancedSettings(const api::Preferences
     addBool(cube::prefs::keys::StartMinimized, false);
 #endif
     addBool(cube::prefs::keys::AutoHideCommandBar, false);
-    addInt(MC_PREFERENCE_KEY_REMOTE_LIBRARY_LATENCY_TIMEOUT_MS, 5000);
-    addBool(MC_PREFERENCE_KEY_REMOTE_LIBRARY_IGNORE_VERSION_MISMATCH, false);
-    addInt(MC_PREFERENCE_KEY_PLAYBACK_TRACK_QUERY_TIMEOUT_MS, 5000);
-    addBool(MC_PREFERENCE_KEY_ASYNC_TRACK_LIST_QUERIES, true);
+    addInt(MC_SETTING_KEY_REMOTE_LIBRARY_LATENCY_TIMEOUT_MS, 5000);
+    addBool(MC_SETTING_KEY_REMOTE_LIBRARY_IGNORE_VERSION_MISMATCH, false);
+    addInt(MC_SETTING_KEY_PLAYBACK_TRACK_QUERY_TIMEOUT_MS, 5000);
+    addBool(MC_SETTING_KEY_ASYNC_TRACK_LIST_QUERIES, true);
     addBool(cube::prefs::keys::DisableRatingColumn, false);
     addBool(cube::prefs::keys::DisableWindowTitleUpdates, cube::prefs::defaults::DisableWindowTitleUpdates);
     addText(cube::prefs::keys::RatingPositiveChar, kFilledStar);
     addText(cube::prefs::keys::RatingNegativeChar, kEmptyStar);
-    addBool(MC_PREFERENCE_KEY_INDEXER_LOG_ENABLED, false);
-    addInt(MC_PREFERENCE_KEY_INDEXER_THREAD_COUNT, DEFAULT_MAX_INDEXER_THREADS);
-    addInt(MC_PREFERENCE_KEY_INDEXER_TRANSACTION_INTERVAL, 300);
-    addText(MC_PREFERENCE_KEY_AUDDIO_API_TOKEN, "");
-    addBool(MC_PREFERENCE_KEY_RESUME_PLAYBACK_ON_STARTUP, false);
+    addBool(MC_SETTING_KEY_INDEXER_LOG_ENABLED, false);
+    addInt(MC_SETTING_KEY_INDEXER_THREAD_COUNT, DEFAULT_MAX_INDEXER_THREADS);
+    addInt(MC_SETTING_KEY_INDEXER_TRANSACTION_INTERVAL, 300);
+    addText(MC_SETTING_KEY_AUDDIO_API_TOKEN, "");
+    addBool(MC_SETTING_KEY_RESUME_PLAYBACK_ON_STARTUP, false);
     return fields;
 }
 
@@ -157,11 +157,11 @@ SettingsLayout::~SettingsLayout() {
 
 void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     if (cb == syncOnStartupCheckbox.get()) {
-        this->prefs.SetBool(MC_PREFERENCE_KEY_SYNC_ON_STARTUP, checked);
+        this->prefs.SetBool(MC_SETTING_KEY_SYNC_ON_STARTUP, checked);
         this->prefs.Save();
     }
     else if (cb == removeCheckbox.get()) {
-        this->prefs.SetBool(MC_PREFERENCE_KEY_REMOVE_MISSING_FILES, checked);
+        this->prefs.SetBool(MC_SETTING_KEY_REMOVE_MISSING_FILES, checked);
         this->prefs.Save();
     }
     else if (cb == dotfileCheckbox.get()) {
@@ -172,7 +172,7 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         ColorThemeOverlay::Show256ColorsInfo(
             checked,
             [this]() {
-                this->LoadPreferences();
+                this->LoadSettings();
             });
     }
     else if (cb == enableTransparencyCheckbox.get()) {
@@ -182,7 +182,7 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     }
 #endif
     else if (cb == saveSessionCheckbox.get()) {
-        this->prefs.SetBool(MC_PREFERENCE_KEY_SAVE_SESSION_ON_EXIT, checked);
+        this->prefs.SetBool(MC_SETTING_KEY_SAVE_SESSION_ON_EXIT, checked);
     }
 }
 
@@ -190,13 +190,13 @@ void SettingsLayout::OnLibraryTypeDropdownActivated(cursespp::TextLabel* label) 
     SettingsOverlays::ShowLibraryTypeOverlay(this->musikcore.GetLibraryStatus().kind,
         [this](mc_library_kind kind) {
             if (this->musikcore.SelectLibrary(kind) == MC_OK) {
-                this->LoadPreferences();
+                this->LoadSettings();
             }
         });
 }
 
 void SettingsLayout::OnLocaleDropdownActivate(cursespp::TextLabel* label) {
-    SettingsOverlays::ShowLocaleOverlay([this](){ this->LoadPreferences(); });
+    SettingsOverlays::ShowLocaleOverlay([this](){ this->LoadSettings(); });
 }
 
 void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label) {
@@ -207,7 +207,7 @@ void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label)
             const auto newName = api::ReadOutputConfiguration().selectedDriver;
 
             if (currentName != newName) {
-                this->LoadPreferences();
+                this->LoadSettings();
                 this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
             }
         });
@@ -218,20 +218,20 @@ void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label)
     PlaybackOverlays::ShowOutputDeviceOverlay([this, currentDevice] {
         const auto selected = api::ReadOutputConfiguration().selectedDevice;
         if (currentDevice.id != selected.id) {
-            this->LoadPreferences();
+            this->LoadSettings();
             this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
         }
     });
 }
 
 void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
-    PreampOverlay::Show(this->musikcore.GetPlayback(), [this]() { this->LoadPreferences(); });
+    PreampOverlay::Show(this->musikcore.GetPlayback(), [this]() { this->LoadSettings(); });
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
     PlaybackOverlays::ShowTransportOverlay([this] {
         this->playback.Control(MC_PLAYBACK_RELOAD_OUTPUT);
-        this->LoadPreferences();
+        this->LoadSettings();
     });
 }
 
@@ -255,9 +255,9 @@ void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
     SchemaOverlay::Show(
         _TSTR("settings_advanced_settings"),
         advancedSettings(this->prefs),
-        [this](std::string_view key, const api::PreferenceValue& value) {
+        [this](std::string_view key, const api::SettingValue& value) {
             try {
-                this->prefs.Write({ std::visit([key](const auto& item) { return api::Preference(key, item); }, value) });
+                this->prefs.Write({ std::visit([key](const auto& item) { return api::Setting(key, item); }, value) });
                 return this->prefs.Save();
             }
             catch (const api::Error& error) {
@@ -288,7 +288,7 @@ void SettingsLayout::OnUpdateDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnThemeDropdownActivate(cursespp::TextLabel* label) {
-    ColorThemeOverlay::Show([this]() { this->LoadPreferences(); });
+    ColorThemeOverlay::Show([this]() { this->LoadSettings(); });
 }
 
 void SettingsLayout::OnLayout() {
@@ -533,11 +533,11 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        this->LoadPreferences();
+        this->LoadSettings();
         SettingsOverlays::CheckShowFirstRunDialog();
     }
     else {
-        this->remoteLibraryLayout->SavePreferences();
+        this->remoteLibraryLayout->SaveSettings();
     }
 }
 
@@ -549,9 +549,9 @@ void SettingsLayout::OnRemovedFromParent(IWindow* parent) {
     MessageQueue().UnregisterForBroadcasts(this);
 }
 
-void SettingsLayout::LoadPreferences() {
-    this->syncOnStartupCheckbox->SetChecked(this->prefs.GetBool(MC_PREFERENCE_KEY_SYNC_ON_STARTUP, true));
-    this->removeCheckbox->SetChecked(this->prefs.GetBool(MC_PREFERENCE_KEY_REMOVE_MISSING_FILES, true));
+void SettingsLayout::LoadSettings() {
+    this->syncOnStartupCheckbox->SetChecked(this->prefs.GetBool(MC_SETTING_KEY_SYNC_ON_STARTUP, true));
+    this->removeCheckbox->SetChecked(this->prefs.GetBool(MC_SETTING_KEY_REMOVE_MISSING_FILES, true));
 
     /* locale */
     this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + musik::core::api::ReadSelectedLocale());
@@ -580,7 +580,7 @@ void SettingsLayout::LoadPreferences() {
     this->enableTransparencyCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 #endif
 
-    this->saveSessionCheckbox->SetChecked(this->prefs.GetBool(MC_PREFERENCE_KEY_SAVE_SESSION_ON_EXIT, true));
+    this->saveSessionCheckbox->SetChecked(this->prefs.GetBool(MC_SETTING_KEY_SAVE_SESSION_ON_EXIT, true));
 
     /* output driver */
     const auto output = api::ReadOutputConfiguration();
@@ -610,8 +610,8 @@ void SettingsLayout::LoadPreferences() {
 
     this->libraryTypeDropdown->SetText(arrow + _TSTR("settings_library_type") + libraryTypeLabel);
 
-    this->localLibraryLayout->LoadPreferences();
-    this->remoteLibraryLayout->LoadPreferences();
+    this->localLibraryLayout->LoadSettings();
+    this->remoteLibraryLayout->LoadSettings();
 
     /* version, status */
     std::string version = u8fmt("%s %s", MUSIKCUBE_VERSION, MUSIKCUBE_VERSION_COMMIT_HASH);

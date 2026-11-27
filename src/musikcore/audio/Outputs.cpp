@@ -37,8 +37,8 @@
 #include "../ffi/common/error.h"
 #include "../ffi/common/primitives.h"
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include <algorithm>
 
 using namespace musik::core;
@@ -64,7 +64,7 @@ namespace musik { namespace core { namespace audio { namespace outputs {
         }
 
         std::shared_ptr<Output> selectedOutput(const std::vector<std::shared_ptr<Output>>& list) {
-            const auto prefs = Preferences::ForComponent(components::Playback);
+            const auto prefs = Settings::ForComponent(components::Playback);
             auto selected = findByName(prefs->GetString(keys::OutputPlugin), list);
             if (!selected) {
                 selected = findByName(DefaultOutput, list);
@@ -95,13 +95,13 @@ namespace musik { namespace core { namespace audio { namespace outputs {
         if (plugins.empty()) {
             return result;
         }
-        const auto prefs = Preferences::ForComponent(components::Playback);
+        const auto prefs = Settings::ForComponent(components::Playback);
         for (const auto& info : plugins) {
             const auto factory = musik::core::plugin::FindOutputFactory(info.id);
             if (factory) {
                 result.push_back(
                     std::make_shared<Output>(factory, info.id, info.name, prefs->GetString(deviceKey(info.id)),
-                        musik::core::plugin::ReadSettingsService(info.name)));
+                        musik::core::plugin::SettingsService(info.name)));
             }
         }
         std::sort(result.begin(), result.end(), [](const auto& left, const auto& right) {
@@ -116,7 +116,7 @@ namespace musik { namespace core { namespace audio { namespace outputs {
 
     void SelectOutput(const std::shared_ptr<Output>& output) {
         if (output) {
-            Preferences::ForComponent(components::Playback)->SetString(keys::OutputPlugin, output->Name());
+            Settings::ForComponent(components::Playback)->SetString(keys::OutputPlugin, output->Name());
         }
     }
 
@@ -130,8 +130,8 @@ namespace musik { namespace core { namespace audio { namespace outputs {
             if (!output || !output->SetDefaultDevice(selected.c_str())) {
                 return MC_ERROR_NOT_FOUND;
             }
-            /* validate both selections before committing either preference. */
-            return Preferences::ForComponent(components::Playback)
+            /* validate both selections before committing either setting. */
+            return Settings::ForComponent(components::Playback)
                        ->SetValues({ { keys::OutputPlugin, std::string(output->Name()) },
                                        { deviceKey(output->Id()), selected } },
                            true)
@@ -166,7 +166,7 @@ namespace musik { namespace core { namespace audio { namespace outputs {
                     selectedDevice = info;
                 }
             }
-            const auto transport = Preferences::ForComponent(components::Playback)->GetInt(keys::Transport, 0);
+            const auto transport = Settings::ForComponent(components::Playback)->GetInt(keys::Transport, 0);
             const mc_output_configuration configuration { drivers.data(), drivers.size(), text(selected->Name()),
                 devices.data(), devices.size(), selectedDevice, static_cast<mc_output_transport>(transport) };
             read(data, &configuration);
@@ -222,7 +222,7 @@ mc_result MC_CALL mc_output_select_device(mc_string_view driver, mc_string_view 
         if (!output->SetDefaultDevice(id.c_str())) {
             return MC_ERROR_NOT_FOUND;
         }
-        Preferences::ForComponent(components::Playback)->SetString(outputs::deviceKey(output->Id()), id.c_str());
+        Settings::ForComponent(components::Playback)->SetString(outputs::deviceKey(output->Id()), id.c_str());
         return MC_OK;
     });
 }
@@ -232,7 +232,7 @@ mc_result MC_CALL mc_output_set_transport(mc_output_transport transport) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return ffi::exception_barrier(nullptr, [&] {
-        Preferences::ForComponent(components::Playback)->SetInt(keys::Transport, static_cast<int>(transport));
+        Settings::ForComponent(components::Playback)->SetInt(keys::Transport, static_cast<int>(transport));
         return MC_OK;
     });
 }

@@ -35,7 +35,7 @@
 #include "pch.hpp"
 #include "common/Filesystem.h"
 
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/SettingKeys.h>
 #include <musikcore/support/Common.h>
 
 #include <filesystem>
@@ -77,7 +77,7 @@ static nlohmann::json loadLocaleData(const std::string& fn) {
 }
 
 Locale::Locale() noexcept {
-    this->prefs = Preferences::ForComponent(components::Settings);
+    this->prefs = Settings::ForComponent(components::Settings);
     this->selectedLocale = prefs->GetString(keys::Locale, DEFAULT_LOCALE);
 }
 

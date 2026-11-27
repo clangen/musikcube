@@ -49,7 +49,7 @@ static void MC_CALL completed(void* context, uint64_t token, mc_result status) {
 static void MC_CALL ready(void*) {}
 
 static mc_result MC_CALL readLatency(void* context, const mc_integer_setting* setting, int32_t* value) {
-    require(std::string_view(setting->key.data, setting->key.length) == "latency_ms", "latency preference key");
+    require(std::string_view(setting->key.data, setting->key.length) == "latency_ms", "latency setting key");
     const auto saved = *static_cast<int32_t*>(context);
     *value = saved >= setting->minimum && saved <= setting->maximum ? saved : setting->default_value;
     return MC_OK;
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
     require(api->stop(instance) == MC_OK && api->stop(instance) == MC_OK, "stop is idempotent");
     require(api->queue_audio_buffer(instance, &block) == MC_ERROR_CANCELLED, "stopped output rejects audio");
     int32_t savedLatency = 125;
-    mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
+    mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
     mc_plugin_services services = MC_PLUGIN_SERVICES_DEFAULT;
     /* the shim makes ALSA return EAGAIN and holds its poll descriptor quiet.
     stop must wake the blocked producer and return its accepted token. */
@@ -136,11 +136,11 @@ int main(int argc, char** argv) {
         auto requestedLatency = reinterpret_cast<unsigned (*)()>(dlsym(RTLD_DEFAULT, "mc_test_alsa_latency"));
         require(requestedLatency && requestedLatency() == 500000, "default latency reaches ALSA in microseconds");
         api->destroy(instance);
-        preferences.context = &savedLatency;
-        preferences.read_integer = readLatency;
-        services.preferences = &preferences;
+        settings.context = &savedLatency;
+        settings.read_integer = readLatency;
+        services.settings = &settings;
         require(factory->create(factory->context, &services, &instance, nullptr) == MC_OK,
-            "create output with preferences");
+            "create output with settings");
         require(api->prepare(instance, &options, &callbacks, nullptr) == MC_OK && requestedLatency() == 125000,
             "configured latency reaches ALSA in microseconds");
         require(api->stop(instance) == MC_OK, "stop configured output");

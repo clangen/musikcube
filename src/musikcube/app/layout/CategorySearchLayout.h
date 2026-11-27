@@ -41,7 +41,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <sigslot/sigslot.h>
 

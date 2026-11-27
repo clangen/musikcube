@@ -50,7 +50,7 @@ open in the LLD; Linux test results do not establish those guarantees.
    existing public/runtime entry points. Identify wrapper allocations, retain/
    release pairs, proxy editors, duplicate representations and lookup caches;
    keep only those justified by an observed requirement.
-2. **Leaf cleanup.** Remove unused preference and helper surfaces after tracing
+2. **Leaf cleanup.** Remove unused setting and helper surfaces after tracing
    all platforms. Move genuinely shared implementation helpers to a clearly
    owned internal/common location, with direct includes and no SDK umbrella.
 3. **Audio ownership.** Convert buffer storage and its stream/player/output
@@ -91,7 +91,7 @@ checks, a full application build, and relevant standalone dependency scanning.
 The highest risks are buffer reuse while an output still borrows data, stale
 track or metadata references during async work, lost remote-backend routing,
 changed queue/editor notification order, and inadvertent persisted identity or
-preference changes. Test these behaviors rather than testing the replacement
+setting changes. Test these behaviors rather than testing the replacement
 class layout. Do not promise performance gains without measuring representative
 paths. Physical-device and platform-specific validation cannot be inferred from
 a Linux headless test.

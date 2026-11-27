@@ -186,13 +186,13 @@ namespace musik { namespace core { namespace plugin {
         const std::string& pluginId, const std::string& name, Indexer& indexer)
     : factory(std::move(factory))
     , indexer(indexer)
-    , preferences(ReadSettingsService(name))
+    , settings(SettingsService(name))
     , services MC_PLUGIN_SERVICES_DEFAULT
     , sourceHost MC_PLUGIN_INDEXER_SERVICE_DEFAULT
     , dataDirectory(GetDataDirectory())
     , pluginId(pluginId) {
         /* the source may retain these services until its instance is destroyed. */
-        this->services.preferences = &this->preferences;
+        this->services.settings = &this->settings;
         this->services.data_directory = { this->dataDirectory.data(), this->dataDirectory.size() };
         this->services.media = &Media();
 

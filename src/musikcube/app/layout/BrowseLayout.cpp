@@ -43,7 +43,7 @@
 #include <app/util/Locale.h>
 
 #include <app/util/Hotkeys.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 #include <app/util/Messages.h>
 #include <app/util/WindowUtil.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -99,7 +99,7 @@ static inline std::string getTitleForCategory(const std::string& fieldName) {
         ? _TSTR(fieldName) : _TSTR(FIELD_TO_TITLE[fieldName]);
 }
 
-static mc_track_search_order getDefaultTrackSort(const api::Preferences& prefs) {
+static mc_track_search_order getDefaultTrackSort(const api::Settings& prefs) {
     const auto sort = (mc_track_search_order) prefs.GetInt(
         keys::CategoryTrackListSortOrder,
         static_cast<int>(MC_TRACK_SEARCH_ALBUM));
@@ -199,7 +199,7 @@ void BrowseLayout::InitializeWindows() {
 }
 
 void BrowseLayout::LoadLastSession() {
-    api::Preferences session { MC_PREFERENCE_SESSION };
+    api::Settings session { MC_SETTINGS_SESSION };
     const std::string field = session.GetString(keys::LastBrowseCategoryType, "");
     const int64_t id = static_cast<int64_t>(session.GetDouble(keys::LastBrowseCategoryId, -1.0));
     if (field.size()) {
@@ -216,7 +216,7 @@ void BrowseLayout::LoadLastSession() {
 }
 
 void BrowseLayout::SaveSession() {
-    api::Preferences session { MC_PREFERENCE_SESSION };
+    api::Settings session { MC_SETTINGS_SESSION };
     const std::string type = this->categoryList->GetFieldName().c_str();
     const double id = static_cast<double>(this->categoryList->GetSelectedId());
     session.SetString(keys::LastBrowseCategoryType, type);

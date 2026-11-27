@@ -96,12 +96,12 @@ async function checkWorkflow(runtime, database, screenshots,
   const fixture = dirname(dirname(dirname(database)));
   /* Keep startup from reindexing the fixture. */
   const settings = join(fixture, 'musikcube', 'settings.json');
-  const preferences = fs.existsSync(settings) ? JSON.parse(fs.readFileSync(settings, 'utf8')) : {};
-  preferences.SyncOnStartup = false;
-  preferences.FirstRunSettingsDisplayed = true;
-  preferences.AutoUpdateCheck = false;
-  delete preferences.TrackSearchSortOrder;
-  fs.writeFileSync(settings, JSON.stringify(preferences));
+  const settings = fs.existsSync(settings) ? JSON.parse(fs.readFileSync(settings, 'utf8')) : {};
+  settings.SyncOnStartup = false;
+  settings.FirstRunSettingsDisplayed = true;
+  settings.AutoUpdateCheck = false;
+  delete settings.TrackSearchSortOrder;
+  fs.writeFileSync(settings, JSON.stringify(settings));
   if (scenario === 'transport') {
     const transport = playbackMode === 'crossfade' ? 1 : 0;
     fs.writeFileSync(join(fixture, 'musikcube', 'playback.json'), JSON.stringify({ Transport: transport }));

@@ -25,7 +25,7 @@ get_filename_component(directory "${database}" DIRECTORY)
 get_filename_component(config_directory "${directory}/../.." ABSOLUTE)
 
 # Each selected case gets its own catalog and process so an earlier assertion
-# cannot hide a later contract or leak preferences into another test.
+# cannot hide a later contract or leak settings into another test.
 if(DEFINED INSTALLED_SDK_SOURCE)
   execute_process(COMMAND "${CMAKE_COMMAND}" "-DBUILD_DIR=${BUILD_DIR}" "-DSOURCE=${INSTALLED_SDK_SOURCE}"
     "-DCATALOG=${directory}" "-DINSTALLED_TEST_PLUGIN=${INSTALLED_TEST_PLUGIN}"
@@ -56,7 +56,7 @@ elseif(DEFINED MANAGED_RUNTIME_TEST)
     list(APPEND managed_runtime_plugins --plugin "${ENCODER_PLUGIN}")
     list(APPEND managed_runtime_options "--transcode=${TRANSCODE_FORMAT}")
     if(RANGE_FALLBACK)
-      # Exercise the persisted server-plugin preference before the runtime reads it.
+      # Exercise the persisted server-plugin setting before the runtime reads it.
       file(WRITE "${config_directory}/musikcube/plugin_musikcubeserver(wss,http).json"
         [=[{"transcoder_synchronous_fallback":true}]=])
       list(APPEND managed_runtime_options --range-fallback)

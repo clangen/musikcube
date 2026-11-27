@@ -42,7 +42,7 @@
 #include <cursespp/TextLabel.h>
 
 #include <musikcore/playback.hpp>
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 #include <common/runtime/IMessageTarget.h>
 #include <musikcore/indexer.hpp>
 
@@ -90,7 +90,7 @@ namespace musik {
                 void UpdateTopBannerText();
 
 
-                musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
+                musik::core::api::Settings prefs { MC_SETTINGS_APPLICATION };
                 std::shared_ptr<cursespp::TextLabel> topBanner;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout;
                 std::shared_ptr<LibraryLayout> libraryLayout;

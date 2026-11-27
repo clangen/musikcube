@@ -41,6 +41,7 @@
 #include <musikcore/equalizer.h>
 #include "../ffi/common/error.h"
 #include "../ffi/common/primitives.h"
+#include <musikcore/ffi/consumer/settings-shape.h>
 #include <cmath>
 #include <filesystem>
 #include <mutex>
@@ -52,12 +53,12 @@
 #include <common/Contract.h>
 #include <common/version.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 #include <musikcore/audio/Buffer.h>
 #include <musikcore/audio/Dsp.h>
 #include <musikcore/audio/Outputs.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include <musikcore/plugin/PluginLibraryService.h>
 #include <musikcore/library/LibraryBackends.h>
 #include <common/runtime/Message.h>
@@ -89,14 +90,12 @@ static void broadcastEqualizerUpdated() {
 }
 
 static void getEqualizerPluginAndPrefs(
-    musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory>& plugin,
-    std::shared_ptr<Preferences>& prefs)
-{
+    musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory>& plugin, std::shared_ptr<Settings>& prefs) {
     plugin = musik::core::plugin::FindDspFactory(SUPEREQ_PLUGIN_GUID);
     if (plugin) {
         for (const auto& info : musik::core::plugin::ListPlugins()) {
             if (info.id == SUPEREQ_PLUGIN_GUID) {
-                prefs = Preferences::ForPlugin(info.name);
+                prefs = Settings::ForPlugin(info.name);
                 break;
             }
         }
@@ -118,7 +117,7 @@ static_assert(std::size(EqualizerBands) == MC_EQUALIZER_BAND_COUNT);
 
 static bool writeEqualizerGains(const double* gains) {
     musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> plugin;
-    std::shared_ptr<Preferences> prefs;
+    std::shared_ptr<Settings> prefs;
     getEqualizerPluginAndPrefs(plugin, prefs);
     if (!prefs) {
         return false;
@@ -138,7 +137,7 @@ mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
 
     return ffi::exception_barrier(nullptr, [&] {
         musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> plugin;
-        std::shared_ptr<Preferences> prefs;
+        std::shared_ptr<Settings> prefs;
         getEqualizerPluginAndPrefs(plugin, prefs);
         if (!prefs) {
             return MC_ERROR_UNSUPPORTED;
@@ -160,7 +159,7 @@ mc_result MC_CALL mc_equalizer_get_state(mc_equalizer_state* state) {
 mc_result MC_CALL mc_equalizer_set_enabled(bool enabled) {
     return ffi::exception_barrier(nullptr, [&] {
         musik::core::ffi::PluginRegistry::Factory<mc_dsp_factory> plugin;
-        std::shared_ptr<Preferences> prefs;
+        std::shared_ptr<Settings> prefs;
         getEqualizerPluginAndPrefs(plugin, prefs);
         if (!prefs) {
             return MC_ERROR_UNSUPPORTED;
@@ -251,10 +250,10 @@ namespace musik { namespace core { namespace plugin {
             [](mc_log_level level, mc_string_view tag, mc_string_view text) {
                 mc_log_write(level, tag, text);
             });
-        const auto preferences = Preferences::ForComponent(prefs::components::Plugins);
+        const auto settings = Settings::ForComponent(prefs::components::Plugins);
         const auto status = pluginRegistry->Initialize(directory, [&](const auto& plugin) {
             const auto leaf = musik::core::sdk::fs::pathToUtf8(std::filesystem::u8path(plugin.filename).filename());
-            return preferences->GetBool(leaf, true);
+            return settings->GetBool(leaf, true);
         });
         if (status != MC_OK) {
             throw std::runtime_error("Could not initialize C plugin registry: " + std::to_string(status));
@@ -347,7 +346,7 @@ namespace musik { namespace core { namespace plugin {
         }
         return ffi::exception_barrier(nullptr, [&] {
             const std::string key(setting->key.data, setting->key.length);
-            const auto saved = static_cast<Preferences*>(context)->GetInt(key, setting->default_value);
+            const auto saved = static_cast<Settings*>(context)->GetInt(key, setting->default_value);
             *value = saved >= setting->minimum && saved <= setting->maximum ? saved : setting->default_value;
             return MC_OK;
         });
@@ -358,7 +357,7 @@ namespace musik { namespace core { namespace plugin {
             return MC_ERROR_INVALID_ARGUMENT;
         }
         return ffi::exception_barrier(nullptr, [&] {
-            *value = static_cast<Preferences*>(context)->GetBool(std::string(key.data, key.length), fallback);
+            *value = static_cast<Settings*>(context)->GetBool(std::string(key.data, key.length), fallback);
             return MC_OK;
         });
     }
@@ -368,35 +367,52 @@ namespace musik { namespace core { namespace plugin {
             return MC_ERROR_INVALID_ARGUMENT;
         }
         return ffi::exception_barrier(nullptr, [&] {
-            const auto saved = static_cast<Preferences*>(context)->GetDouble(std::string(key.data, key.length), fallback);
+            const auto saved = static_cast<Settings*>(context)->GetDouble(std::string(key.data, key.length), fallback);
             *value = std::isfinite(saved) ? saved : fallback;
             return MC_OK;
         });
     }
 
-    static mc_result MC_CALL readText(void* context, mc_string_view key, mc_string_view fallback,
-        mc_preference_text_fn read, void* userData)
-    {
+    static mc_result MC_CALL readText(
+        void* context, mc_string_view key, mc_string_view fallback, mc_setting_text_fn read, void* userData) {
         if (!read || !ffi::valid_text(key, false) || !ffi::valid_text(fallback)) {
             return MC_ERROR_INVALID_ARGUMENT;
         }
         return ffi::exception_barrier(nullptr, [&] {
             const std::string keyText(key.data, key.length);
             const std::string fallbackText(fallback.data ? fallback.data : "", fallback.length);
-            const auto value = static_cast<Preferences*>(context)->GetString(keyText, fallbackText);
+            const auto value = static_cast<Settings*>(context)->GetString(keyText, fallbackText);
             read(userData, { value.data(), value.size() });
             return MC_OK;
         });
     }
 
-    mc_plugin_preferences_service ReadSettingsService(const std::string& pluginName) {
+    static mc_result MC_CALL writeValues(void* context, const mc_setting_entry* entries, size_t count) {
+        if (!ffi::valid_setting_entries(entries, count)) {
+            return MC_ERROR_INVALID_ARGUMENT;
+        }
+        if (!count) {
+            return MC_OK;
+        }
+        return ffi::exception_barrier(nullptr, [&] {
+            auto values = nlohmann::json::object();
+            for (size_t i = 0; i < count; ++i) {
+                values[std::string(entries[i].key.data, entries[i].key.length)] =
+                    Settings::EncodeValue(entries[i].value);
+            }
+            return static_cast<Settings*>(context)->SetValues(values, true) ? MC_OK : MC_ERROR_IO;
+        });
+    }
+
+    mc_plugin_settings_service SettingsService(const std::string& pluginName) {
         return {
-            .struct_size = sizeof(mc_plugin_preferences_service),
-            .context = Preferences::ForPlugin(pluginName).get(),
+            .struct_size = sizeof(mc_plugin_settings_service),
+            .context = Settings::ForPlugin(pluginName).get(),
             .read_integer = readInteger,
             .read_boolean = readBoolean,
             .read_number = readNumber,
             .read_text = readText,
+            .write_values = writeValues,
         };
     }
 
@@ -413,7 +429,11 @@ namespace musik { namespace core { namespace plugin {
     void Shutdown() {
         musik::core::plugin::ValidateShutdown();
         bool failure = false;
-        cleanup([] { Preferences::SavePluginPreferences(); }, failure);
+        cleanup(
+            [] {
+                Settings::SavePluginSettings();
+            },
+            failure);
         /* workers have stopped, so cached factories can release provider state. */
         mediaHost.reset();
         musik::contract::Assert(audio::Output::InstanceCount() == 0,

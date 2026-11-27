@@ -121,7 +121,7 @@ namespace {
     }
 
     mc_result configureServer(const ServerConfiguration& value) {
-        const std::pair<std::string_view, api::PreferenceValue> fields[] {
+        const std::pair<std::string_view, api::SettingValue> fields[] {
             { "websocket_server_enabled", value.metadataEnabled },
             { "http_server_enabled", value.audioEnabled },
             { "use_ipv6", value.ipv6 },
@@ -132,10 +132,10 @@ namespace {
             { "transcoder_max_active_count", value.activeTranscodeLimit },
             { "password", value.password },
         };
-        std::vector<mc_preference_entry> entries;
+        std::vector<mc_setting_entry> entries;
         entries.reserve(std::size(fields));
         for (const auto& [key, setting] : fields) {
-            entries.push_back(std::visit([key](const auto& item) { return api::Preference(key, item); }, setting));
+            entries.push_back(std::visit([key](const auto& item) { return api::Setting(key, item); }, setting));
         }
         const auto status = api::WritePluginSettings(serverPluginId, entries);
         if (status != MC_OK) {

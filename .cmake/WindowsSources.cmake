@@ -32,7 +32,7 @@ set(windows_app_sources
   src/musikcube/app/util/GlobalHotkeys.cpp
   src/musikcube/app/util/Hotkeys.cpp
   src/musikcube/app/util/MagicConstants.cpp
-  src/musikcube/app/util/PreferenceKeys.cpp
+  src/musikcube/app/util/SettingKeys.cpp
   src/musikcube/app/util/Rating.cpp
   src/musikcube/app/util/TrackRowRenderers.cpp
   src/musikcube/app/util/OpenUrl.cpp

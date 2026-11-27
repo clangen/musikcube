@@ -133,7 +133,7 @@ namespace {
     }
 
     /* replay a short chunked track first with disk caching disabled in the
-    saved preference file, then with caching enabled through the public API.
+    saved setting file, then with caching enabled through the public API.
     the loopback server counts requests to verify that the provider sees both. */
     bool checkHttpSettings(api::Context& context, test_host_event* event, mc_player* player, const std::string& http) {
         constexpr mc_string_view id { "b153adad-ee98-4331-ad32-4ff7f34828cd", 36 };
@@ -161,9 +161,9 @@ namespace {
             const auto read = [](void* data, const mc_plugin_setting*) {
                 ++*static_cast<unsigned*>(data);
             };
-            mc_preference_entry entry {};
+            mc_setting_entry entry {};
             entry.key = { "max_cache_files", 15 };
-            entry.value.type = MC_PREFERENCE_INTEGER;
+            entry.value.type = MC_SETTING_INTEGER;
             entry.value.data.integer = 1;
             readStatus = mc_plugin_read_settings(id, read, &workerCallbacks);
             writeStatus = mc_plugin_write_setting(id, &entry);
@@ -177,12 +177,12 @@ namespace {
         }
 
         /* reject the entire batch when a later value violates the schema. */
-        mc_preference_entry batch[2] {};
+        mc_setting_entry batch[2] {};
         batch[0].key = { "max_cache_files", 15 };
-        batch[0].value.type = MC_PREFERENCE_INTEGER;
+        batch[0].value.type = MC_SETTING_INTEGER;
         batch[0].value.data.integer = 4;
         batch[1].key = { "read_timeout_seconds", 20 };
-        batch[1].value.type = MC_PREFERENCE_INTEGER;
+        batch[1].value.type = MC_SETTING_INTEGER;
         batch[1].value.data.integer = 0;
         if (!TEST_CHECK(mc_plugin_write_settings(id, batch, 2) == MC_ERROR_INVALID_ARGUMENT)) {
             return false;
@@ -242,9 +242,9 @@ namespace {
             return true;
         };
 
-        mc_preference_entry change {};
+        mc_setting_entry change {};
         change.key = { "read_timeout_seconds", 20 };
-        change.value.type = MC_PREFERENCE_INTEGER;
+        change.value.type = MC_SETTING_INTEGER;
         change.value.data.integer = 0;
         if (!TEST_CHECK(mc_plugin_write_setting(id, &change) == MC_ERROR_INVALID_ARGUMENT) || !replay("/uncached")) {
             return false;

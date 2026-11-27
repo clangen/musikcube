@@ -221,11 +221,11 @@ mc_result PipeWireOut::Prepare(const mc_output_options& options, const mc_output
     this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : DefaultCapacity;
     int32_t bufferSize = Settings[0].default_value;
     int32_t bufferCount = Settings[1].default_value;
-    if (this->services && this->services->preferences) {
-        const auto* preferences = this->services->preferences;
-        auto status = preferences->read_integer(preferences->context, &Settings[0], &bufferSize);
+    if (this->services && this->services->settings) {
+        const auto* settings = this->services->settings;
+        auto status = settings->read_integer(settings->context, &Settings[0], &bufferSize);
         if (status == MC_OK) {
-            status = preferences->read_integer(preferences->context, &Settings[1], &bufferCount);
+            status = settings->read_integer(settings->context, &Settings[1], &bufferCount);
         }
         if (status != MC_OK) {
             return status;

@@ -176,12 +176,12 @@ namespace {
             return MC_OK;
         }
         mc_result GetDefaultFormat(mc_string_view id, mc_audio_format& format) {
-            if (environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES")) {
-                if (!services || !services->preferences) {
+            if (environmentFlag("MUSIKCORE_TEST_OUTPUT_SETTINGS")) {
+                if (!services || !services->settings) {
                     return MC_ERROR_INVALID_ARGUMENT;
                 }
                 bool enabled = false;
-                const auto* prefs = services->preferences;
+                const auto* prefs = services->settings;
                 const auto result = prefs->read_boolean(prefs->context, { "fixture", 7 }, false, &enabled);
                 if (result != MC_OK || !enabled) {
                     return MC_ERROR_INVALID_ARGUMENT;
@@ -219,13 +219,13 @@ namespace {
     /* emulate the C contract that permits a Stop-safe partial object on
     failed creation; the ordinary C++ helper always cleans constructor failure. */
     mc_result MC_CALL create(void* context, const mc_plugin_services* services, void** instance, mc_error** error) {
-        if (environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES")) {
-            if (!services || !services->preferences || !services->preferences->read_boolean) {
+        if (environmentFlag("MUSIKCORE_TEST_OUTPUT_SETTINGS")) {
+            if (!services || !services->settings || !services->settings->read_boolean) {
                 return MC_ERROR_PLUGIN;
             }
             bool value = false;
             const mc_string_view key { "fixture", 7 };
-            if (services->preferences->read_boolean(services->preferences->context, key, false, &value) != MC_OK ||
+            if (services->settings->read_boolean(services->settings->context, key, false, &value) != MC_OK ||
                 !value)
             {
                 return MC_ERROR_PLUGIN;

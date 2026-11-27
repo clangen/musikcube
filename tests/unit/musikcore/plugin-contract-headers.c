@@ -152,7 +152,7 @@ int main(void) {
     const mc_plugin_indexer_service source_host = MC_PLUGIN_INDEXER_SERVICE_DEFAULT;
     const mc_plugin_playback_service playback_service = MC_PLUGIN_PLAYBACK_SERVICE_DEFAULT;
     const mc_plugin_library_service library_service = MC_PLUGIN_LIBRARY_SERVICE_DEFAULT;
-    const mc_plugin_preferences_service preferences_service = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
+    const mc_plugin_settings_service settings_service = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
     const mc_plugin_media_service media_service = MC_PLUGIN_MEDIA_SERVICE_DEFAULT;
     const mc_indexer_source_vtable source_methods = MC_INDEXER_SOURCE_VTABLE_DEFAULT;
     const mc_indexer_source_factory source_factory = MC_INDEXER_SOURCE_FACTORY_DEFAULT;
@@ -196,8 +196,9 @@ int main(void) {
     require(library_service.struct_size == sizeof(library_service) && !library_service.search_tracks &&
             !library_service.read_tracks_async && !library_service.run_query,
         "library service");
-    require(preferences_service.struct_size == sizeof(preferences_service) && !preferences_service.context,
-        "preferences service");
+    require(settings_service.struct_size == sizeof(settings_service) && !settings_service.context &&
+            !settings_service.write_values,
+        "settings service");
     require(media_service.struct_size == sizeof(media_service) && !media_service.create_stream &&
             !media_service.create_decoder,
         "media service");

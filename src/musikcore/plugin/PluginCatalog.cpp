@@ -1,10 +1,10 @@
 #include "pch.hpp"
 #include <musikcore/plugins.hpp>
 #include <musikcore/ffi/common/error.h>
-#include <musikcore/ffi/consumer/preferences-shape.h>
+#include <musikcore/ffi/consumer/settings-shape.h>
 #include <musikcore/plugin/Plugins.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include <common/Filesystem.h>
 #include <algorithm>
 #include <filesystem>
@@ -15,7 +15,7 @@ using musik::core::sdk::fs::pathToUtf8;
 
 namespace {
     std::vector<api::PluginInfo> pluginCatalog() {
-        const auto settings = Preferences::ForComponent(prefs::components::Plugins);
+        const auto settings = Settings::ForComponent(prefs::components::Plugins);
         std::vector<api::PluginInfo> plugins;
         for (const auto& plugin : musik::core::plugin::ListPlugins()) {
             const auto filename = pathToUtf8(musik::core::sdk::fs::pathFromUtf8(plugin.filename).filename());
@@ -69,7 +69,7 @@ mc_result MC_CALL mc_plugin_set_enabled(mc_string_view filename, bool enabled) {
         if (!std::ranges::any_of(plugins, [key](const auto& plugin) { return plugin.filename == key; })) {
             return MC_ERROR_NOT_FOUND;
         }
-        auto prefs = Preferences::ForComponent(prefs::components::Plugins);
+        auto prefs = Settings::ForComponent(prefs::components::Plugins);
         return prefs->SetValues({ { std::string(key), enabled } }, true) ? MC_OK : MC_ERROR_IO;
     });
 }
@@ -91,7 +91,7 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
             if (item == catalog.end()) {
                 return MC_ERROR_NOT_FOUND;
             }
-            auto preferences = plugin::ReadSettingsService(item->name);
+            auto settings = plugin::SettingsService(item->name);
             return configuration.Invoke([&](const mc_configuration_api& schema) -> mc_result {
                 for (size_t i = 0; i < schema.integer_count; ++i) {
                     const auto& field = schema.integers[i];
@@ -99,8 +99,8 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
                     row.key = field.key;
                     row.minimum = field.minimum;
                     row.maximum = field.maximum;
-                    row.value.type = MC_PREFERENCE_INTEGER;
-                    const auto status = preferences.read_integer(preferences.context, &field, &row.value.data.integer);
+                    row.value.type = MC_SETTING_INTEGER;
+                    const auto status = settings.read_integer(settings.context, &field, &row.value.data.integer);
                     if (status != MC_OK) {
                         return status;
                     }
@@ -110,9 +110,9 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
                     const auto& field = schema.booleans[i];
                     mc_plugin_setting row {};
                     row.key = field.key;
-                    row.value.type = MC_PREFERENCE_BOOLEAN;
-                    const auto status = preferences.read_boolean(
-                        preferences.context, field.key, field.default_value, &row.value.data.boolean);
+                    row.value.type = MC_SETTING_BOOLEAN;
+                    const auto status = settings.read_boolean(
+                        settings.context, field.key, field.default_value, &row.value.data.boolean);
                     if (status != MC_OK) {
                         return status;
                     }
@@ -125,9 +125,9 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
                     row.minimum = field.minimum;
                     row.maximum = field.maximum;
                     row.precision = field.precision;
-                    row.value.type = MC_PREFERENCE_NUMBER;
-                    const auto status = preferences.read_number(
-                        preferences.context, field.key, field.default_value, &row.value.data.number);
+                    row.value.type = MC_SETTING_NUMBER;
+                    const auto status = settings.read_number(
+                        settings.context, field.key, field.default_value, &row.value.data.number);
                     if (status != MC_OK) {
                         return status;
                     }
@@ -136,7 +136,7 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
                     }
                     read(data, &row);
                 }
-                const auto store = Preferences::ForPlugin(item->name);
+                const auto store = Settings::ForPlugin(item->name);
                 for (size_t i = 0; i < schema.text_count; ++i) {
                     const auto& field = schema.texts[i];
                     const std::string key(field.key.data, field.key.length);
@@ -145,7 +145,7 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
                     const auto value = store->GetString(key, fallback);
                     mc_plugin_setting row {};
                     row.key = field.key;
-                    row.value.type = MC_PREFERENCE_TEXT;
+                    row.value.type = MC_SETTING_TEXT;
                     row.value.data.text = { value.data(), value.size() };
                     row.allow_empty = !fallback.empty();
                     read(data, &row);
@@ -159,8 +159,8 @@ mc_result MC_CALL mc_plugin_read_settings(mc_string_view id, mc_plugin_setting_f
     });
 }
 
-mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preference_entry* entries, size_t count) {
-    if (!ffi::valid_text(id, false) || !ffi::valid_preference_entries(entries, count)) {
+mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_setting_entry* entries, size_t count) {
+    if (!ffi::valid_text(id, false) || !ffi::valid_setting_entries(entries, count)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     const auto thread = plugin::ValidateCallingThread();
@@ -188,7 +188,7 @@ mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preferenc
                     for (size_t i = 0; i < schema.integer_count; ++i) {
                         const auto& field = schema.integers[i];
                         if (pluginText(field.key) == key) {
-                            if (entry.value.type != MC_PREFERENCE_INTEGER || entry.value.data.integer < field.minimum ||
+                            if (entry.value.type != MC_SETTING_INTEGER || entry.value.data.integer < field.minimum ||
                                 entry.value.data.integer > field.maximum)
                             {
                                 return MC_ERROR_INVALID_ARGUMENT;
@@ -199,7 +199,7 @@ mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preferenc
                     }
                     for (size_t i = 0; !found && i < schema.boolean_count; ++i) {
                         if (pluginText(schema.booleans[i].key) == key) {
-                            if (entry.value.type != MC_PREFERENCE_BOOLEAN) {
+                            if (entry.value.type != MC_SETTING_BOOLEAN) {
                                 return MC_ERROR_INVALID_ARGUMENT;
                             }
                             found = true;
@@ -208,7 +208,7 @@ mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preferenc
                     for (size_t i = 0; !found && i < schema.number_count; ++i) {
                         const auto& field = schema.numbers[i];
                         if (pluginText(field.key) == key) {
-                            if (entry.value.type != MC_PREFERENCE_NUMBER || entry.value.data.number < field.minimum ||
+                            if (entry.value.type != MC_SETTING_NUMBER || entry.value.data.number < field.minimum ||
                                 entry.value.data.number > field.maximum)
                             {
                                 return MC_ERROR_INVALID_ARGUMENT;
@@ -218,7 +218,7 @@ mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preferenc
                     }
                     for (size_t i = 0; !found && i < schema.text_count; ++i) {
                         if (pluginText(schema.texts[i].key) == key) {
-                            if (entry.value.type != MC_PREFERENCE_TEXT) {
+                            if (entry.value.type != MC_SETTING_TEXT) {
                                 return MC_ERROR_INVALID_ARGUMENT;
                             }
                             found = true;
@@ -227,14 +227,14 @@ mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preferenc
                     if (!found) {
                         return MC_ERROR_NOT_FOUND;
                     }
-                    updates[std::string(key)] = Preferences::EncodeValue(entry.value);
+                    updates[std::string(key)] = Settings::EncodeValue(entry.value);
                 }
                 return MC_OK;
             });
             if (valid != MC_OK) {
                 return valid;
             }
-            return !count || Preferences::ForPlugin(item->name)->SetValues(updates, true) ? MC_OK : MC_ERROR_IO;
+            return !count || Settings::ForPlugin(item->name)->SetValues(updates, true) ? MC_OK : MC_ERROR_IO;
         }
         const auto catalog = pluginCatalog();
         return std::ranges::any_of(catalog, [&](const auto& item) { return item.id == pluginId; })
@@ -242,7 +242,7 @@ mc_result MC_CALL mc_plugin_write_settings(mc_string_view id, const mc_preferenc
     });
 }
 
-mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_preference_entry* entry) {
+mc_result MC_CALL mc_plugin_write_setting(mc_string_view id, const mc_setting_entry* entry) {
     if (!entry) {
         return MC_ERROR_INVALID_ARGUMENT;
     }

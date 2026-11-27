@@ -40,7 +40,7 @@
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <sigslot/sigslot.h>
 
@@ -123,7 +123,7 @@ namespace musik {
                 std::string currentFilter;
                 musik::core::api::Context& musikcore;
                 AsyncCallbackScope playlistWork;
-                musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
+                musik::core::api::Settings prefs { MC_SETTINGS_APPLICATION };
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<cursespp::TextInput> categoryListFilter;
                 std::shared_ptr<TrackListView> trackList;

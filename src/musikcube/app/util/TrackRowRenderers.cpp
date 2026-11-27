@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include "TrackRowRenderers.h"
 #include <cursespp/Colors.h>
@@ -42,7 +42,7 @@
 #include <cursespp/Text.h>
 #include <common/Duration.h>
 #include <app/util/Rating.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 #include <math.h>
 
 using namespace musik::core;
@@ -61,7 +61,7 @@ static inline std::string getRatingForTrack(const api::TrackView& track, size_t 
     if (width <= kRatingBreakpointWidth) {
         return "";
     }
-    auto p = api::Preferences { MC_PREFERENCE_SETTINGS };
+    auto p = api::Settings { MC_SETTINGS_APPLICATION };
     if (p.GetBool(musik::cube::prefs::keys::DisableRatingColumn, false)) {
         return "";
     }

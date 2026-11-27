@@ -38,8 +38,8 @@
 #include <musikcore/library/track/IndexerTrack.h>
 
 #include <musikcore/support/Common.h>
-#include <musikcore/support/Preferences.h>
-#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Settings.h>
+#include <musikcore/support/SettingKeys.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
 #include <musikcore/library/LocalLibraryBackend.h>
@@ -803,7 +803,7 @@ void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename
 
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
     static bool disableAlbumArtistFallback =
-        Preferences::ForComponent("settings")
+        Settings::ForComponent("settings")
             ->GetBool(prefs::keys::DisableAlbumArtistFallback, false);
 
     std::unique_lock<std::mutex> lock(sharedWriteMutex);

@@ -116,9 +116,9 @@ mc_result AlsaOut::Prepare(const mc_output_options& options, const mc_output_cal
     }
 
     int32_t latencyMs = LatencySetting.default_value;
-    if (this->services && this->services->preferences) {
-        const auto* preferences = this->services->preferences;
-        const auto result = preferences->read_integer(preferences->context, &LatencySetting, &latencyMs);
+    if (this->services && this->services->settings) {
+        const auto* settings = this->services->settings;
+        const auto result = settings->read_integer(settings->context, &LatencySetting, &latencyMs);
         if (result != MC_OK) {
             return result;
         }

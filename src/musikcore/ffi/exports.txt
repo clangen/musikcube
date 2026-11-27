@@ -118,10 +118,10 @@ mc_plugin_set_enabled
 mc_plugin_write_setting
 mc_plugin_write_settings
 mc_plugins_list
-mc_preferences_list_keys
-mc_preferences_read
-mc_preferences_save
-mc_preferences_write
+mc_settings_list_keys
+mc_settings_read
+mc_settings_save
+mc_settings_write
 mc_remote_session_connect_async
 mc_remote_session_create
 mc_remote_session_destroy

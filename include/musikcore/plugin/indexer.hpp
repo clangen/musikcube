@@ -128,11 +128,11 @@ namespace musik { namespace core { namespace plugin {
     class IndexerServices {
     public:
         IndexerServices(const mc_host_api& host, const mc_plugin_services& services)
-        : host(host), preferences(*services.preferences) {}
+        : host(host), settings(*services.settings) {}
 
         bool Boolean(const char* key, bool fallback) const {
             bool value = fallback;
-            if (this->preferences.read_boolean(this->preferences.context,
+            if (this->settings.read_boolean(this->settings.context,
                 { key, std::strlen(key) }, fallback, &value) != MC_OK)
             {
                 throw std::runtime_error("could not read indexer setting");
@@ -142,7 +142,7 @@ namespace musik { namespace core { namespace plugin {
 
         double Number(const char* key, double fallback) const {
             double value = fallback;
-            if (this->preferences.read_number(this->preferences.context,
+            if (this->settings.read_number(this->settings.context,
                 { key, std::strlen(key) }, fallback, &value) != MC_OK)
             {
                 throw std::runtime_error("could not read indexer setting");
@@ -164,7 +164,7 @@ namespace musik { namespace core { namespace plugin {
                     result.failed = true;
                 }
             };
-            if (this->preferences.read_text(this->preferences.context, { key, std::strlen(key) },
+            if (this->settings.read_text(this->settings.context, { key, std::strlen(key) },
                 { fallback, std::strlen(fallback) }, read, &result) != MC_OK || result.failed)
             {
                 throw std::runtime_error("could not read indexer setting");
@@ -184,7 +184,7 @@ namespace musik { namespace core { namespace plugin {
 
     private:
         const mc_host_api& host;
-        const mc_plugin_preferences_service& preferences;
+        const mc_plugin_settings_service& settings;
     };
 
     /* converts a compatible C++ source into C callbacks at compile time,

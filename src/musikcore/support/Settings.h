@@ -41,7 +41,7 @@
 #include <mutex>
 
 #include <musikcore/config.h>
-#include <musikcore/preferences.h>
+#include <musikcore/settings.h>
 #include <musikcore/db/Connection.h>
 
 #pragma warning(push, 0)
@@ -49,7 +49,7 @@
 #pragma warning(pop)
 
 namespace musik { namespace core {
-    class Preferences {
+    class Settings {
         public:
             enum Mode {
                 ModeReadOnly,
@@ -57,15 +57,15 @@ namespace musik { namespace core {
                 ModeAutoSave
             };
 
-            static void SavePluginPreferences();
+            static void SavePluginSettings();
 
-            static std::shared_ptr<Preferences>
+            static std::shared_ptr<Settings>
                 ForPlugin(const std::string& pluginName);
 
-            static std::shared_ptr<Preferences>
+            static std::shared_ptr<Settings>
                 ForComponent(const std::string& c, Mode mode = ModeAutoSave);
 
-            ~Preferences();
+            ~Settings();
 
             void Save();
 
@@ -92,8 +92,8 @@ namespace musik { namespace core {
             double GetDouble(const std::string& key, double defaultValue = 0.0f);
             std::string GetString(const std::string& key, const std::string& defaultValue = "");
             /* Text values borrow the caller's output storage. */
-            mc_preference_value ReadValue(const std::string& key, mc_preference_value fallback, std::string& text);
-            static nlohmann::json EncodeValue(const mc_preference_value& value);
+            mc_setting_value ReadValue(const std::string& key, mc_setting_value fallback, std::string& text);
+            static nlohmann::json EncodeValue(const mc_setting_value& value);
 
             void SetBool(const std::string& key, bool value);
             void SetInt(const std::string& key, int value);
@@ -107,7 +107,7 @@ namespace musik { namespace core {
             void Remove(const std::string& key);
 
         private:
-            Preferences(const std::string& component, Mode mode);
+            Settings(const std::string& component, Mode mode);
             void Load();
 
             std::mutex mutex;

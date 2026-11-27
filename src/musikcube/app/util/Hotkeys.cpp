@@ -35,7 +35,7 @@
 #include <stdafx.h>
 #include <musikcore/log.hpp>
 #include "Hotkeys.h"
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <iostream>
@@ -43,7 +43,7 @@
 using namespace musik::cube;
 using namespace musik::core;
 
-#define ENSURE_LOADED() { if (!preferencesLoaded) { loadPreferences(); } }
+#define ENSURE_LOADED() { if (!settingsLoaded) { loadSettings(); } }
 
 using Id = Hotkeys::Id;
 
@@ -239,38 +239,38 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
 /* custom keys */
 static std::unordered_map<Id, std::string, EnumHasher> customIdToKey;
 
-/* preferences file */
-static musik::core::api::Preferences preferences { MC_PREFERENCE_HOTKEYS };
-static bool preferencesLoaded = false;
+/* settings file */
+static musik::core::api::Settings settings { MC_SETTINGS_HOTKEYS };
+static bool settingsLoaded = false;
 
-static void savePreferences() {
+static void saveSettings() {
     std::vector<std::string> keys;
-    std::vector<mc_preference_entry> entries;
+    std::vector<mc_setting_entry> entries;
     keys.reserve(NAME_TO_ID.size());
     entries.reserve(NAME_TO_ID.size());
 
     for (const auto& pair : NAME_TO_ID) {
         keys.push_back(Hotkeys::Get(pair.second));
-        entries.push_back(musik::core::api::Preference(pair.first, keys.back()));
+        entries.push_back(musik::core::api::Setting(pair.first, keys.back()));
     }
 
-    preferences.Write(entries);
-    preferences.Save();
+    settings.Write(entries);
+    settings.Save();
 }
 
-static void loadPreferences() {
-    preferencesLoaded = true;
+static void loadSettings() {
+    settingsLoaded = true;
     try {
-        for (const auto& name : preferences.Keys()) {
+        for (const auto& name : settings.Keys()) {
             const auto it = NAME_TO_ID.find(name);
             if (it != NAME_TO_ID.end()) {
-                customIdToKey[it->second] = preferences.GetString(name);
+                customIdToKey[it->second] = settings.GetString(name);
             }
         }
 
         /* write back to disk; this way any new hotkey defaults are picked
         up and saved so the user can edit them easily. */
-        savePreferences();
+        saveSettings();
     }
     catch (...) {
         musik::core::api::WriteLog(MC_LOG_ERROR, TAG, "failed to load hotkeys.json! default hotkeys selected.");
@@ -333,13 +333,13 @@ std::string Hotkeys::Get(Id id) {
 
 void Hotkeys::Set(Id id, const std::string& kn) {
     customIdToKey[id] = kn;
-    savePreferences();
+    saveSettings();
 }
 
 void Hotkeys::Reset() {
     customIdToKey.clear();
-    savePreferences();
-    loadPreferences();
+    saveSettings();
+    loadSettings();
 }
 
 std::string Hotkeys::Existing(const std::string& kn) {

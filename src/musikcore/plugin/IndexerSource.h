@@ -34,7 +34,7 @@ namespace musik { namespace core { namespace plugin {
 
         ffi::PluginRegistry::Factory<mc_indexer_source_factory> factory;
         Indexer& indexer;
-        mc_plugin_preferences_service preferences;
+        mc_plugin_settings_service settings;
         mc_plugin_services services;
         mc_plugin_indexer_service sourceHost;
         std::string dataDirectory;

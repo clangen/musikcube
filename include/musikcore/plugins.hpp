@@ -2,7 +2,7 @@
 #define MUSIKCORE_PLUGINS_HPP
 
 #include <musikcore/plugins.h>
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <vector>
 
@@ -35,27 +35,27 @@ namespace musik { namespace core { namespace api {
         return mc_plugin_set_enabled({ filename.data(), filename.size() }, enabled);
     }
 
-    inline std::optional<std::vector<PreferenceField>> ReadPluginSettings(std::string_view id) {
-        std::vector<PreferenceField> fields;
+    inline std::optional<std::vector<SettingField>> ReadPluginSettings(std::string_view id) {
+        std::vector<SettingField> fields;
         const auto status = mc_plugin_read_settings({ id.data(), id.size() },
             [](void* data, const mc_plugin_setting* setting) {
-                PreferenceField field;
+                SettingField field;
                 field.key = AsStringView(setting->key);
                 field.minimum = setting->minimum;
                 field.maximum = setting->maximum;
                 field.precision = setting->precision;
                 field.allowEmpty = setting->allow_empty;
                 switch (setting->value.type) {
-                    case MC_PREFERENCE_BOOLEAN:
+                    case MC_SETTING_BOOLEAN:
                         field.value = setting->value.data.boolean;
                         break;
-                    case MC_PREFERENCE_INTEGER:
+                    case MC_SETTING_INTEGER:
                         field.value = setting->value.data.integer;
                         break;
-                    case MC_PREFERENCE_NUMBER:
+                    case MC_SETTING_NUMBER:
                         field.value = setting->value.data.number;
                         break;
-                    case MC_PREFERENCE_TEXT:
+                    case MC_SETTING_TEXT:
                         field.value = std::string(AsStringView(setting->value.data.text));
                         break;
                 }
@@ -63,7 +63,7 @@ namespace musik { namespace core { namespace api {
                 for (size_t i = 0; i < setting->choice_count; ++i) {
                     field.choices.emplace_back(AsStringView(setting->choices[i]));
                 }
-                static_cast<std::vector<PreferenceField>*>(data)->push_back(std::move(field));
+                static_cast<std::vector<SettingField>*>(data)->push_back(std::move(field));
             }, &fields);
         if (status == MC_ERROR_NOT_FOUND || status == MC_ERROR_UNSUPPORTED) {
             return std::nullopt;
@@ -78,12 +78,12 @@ namespace musik { namespace core { namespace api {
         return mc_plugin_apply_settings({ id.data(), id.size() });
     }
 
-    inline mc_result WritePluginSettings(std::string_view id, const std::vector<mc_preference_entry>& entries) {
+    inline mc_result WritePluginSettings(std::string_view id, const std::vector<mc_setting_entry>& entries) {
         return mc_plugin_write_settings({ id.data(), id.size() }, entries.data(), entries.size());
     }
 
-    inline mc_result WritePluginSetting(std::string_view id, std::string_view key, const PreferenceValue& value) {
-        const auto entry = std::visit([key](const auto& data) { return Preference(key, data); }, value);
+    inline mc_result WritePluginSetting(std::string_view id, std::string_view key, const SettingValue& value) {
+        const auto entry = std::visit([key](const auto& data) { return Setting(key, data); }, value);
         return mc_plugin_write_setting({ id.data(), id.size() }, &entry);
     }
 } } }

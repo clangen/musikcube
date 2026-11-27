@@ -43,7 +43,7 @@
 #include <musikcore/library/query/ConfiguredPathsQuery.h>
 #include <musikcore/library/query/MigrationScanQuery.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 #include <musikcore/library/Indexer.h>
 #include <musikcore/library/IndexerSourceId.h>
 #include <common/runtime/Message.h>

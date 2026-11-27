@@ -155,27 +155,27 @@ int main(int argc, char** argv) {
     Sink sink;
     const auto factory = registry.Find<mc_output_factory>("output.test");
     if (!fatal) {
-        /* output instances need their plugin-scoped preferences during creation. */
-        environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES", true);
+        /* output instances need their plugin-scoped settings during creation. */
+        environmentFlag("MUSIKCORE_TEST_OUTPUT_SETTINGS", true);
         {
-            mc_plugin_preferences_service preferences = MC_PLUGIN_PREFERENCES_SERVICE_DEFAULT;
-            preferences.read_boolean = [](void*, mc_string_view key, bool, bool* value) -> mc_result {
+            mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
+            settings.read_boolean = [](void*, mc_string_view key, bool, bool* value) -> mc_result {
                 if (std::string_view(key.data, key.length) != "fixture") {
                     return MC_ERROR_INVALID_ARGUMENT;
                 }
                 *value = true;
                 return MC_OK;
             };
-            Output output(factory, "output.test", "Recording", "", preferences);
+            Output output(factory, "output.test", "Recording", "", settings);
             require(output.GetDefaultSampleRate() == 44100,
-                "format query receives scoped preferences before playback");
+                "format query receives scoped settings before playback");
             require(Output::InstanceCount() == 1, "format query creates one unopened output");
             Output::Writer writer(output, sink);
             output.Resume();
-            require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "output receives preferences at creation");
+            require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "output receives settings at creation");
             writer.ProcessCompletions();
         }
-        environmentFlag("MUSIKCORE_TEST_OUTPUT_PREFERENCES", false);
+        environmentFlag("MUSIKCORE_TEST_OUTPUT_SETTINGS", false);
         require(Output::InstanceCount() == 0, "queried output is destroyed at scope exit");
         sink.returnedBuffers.clear();
         sink.completed = 0;

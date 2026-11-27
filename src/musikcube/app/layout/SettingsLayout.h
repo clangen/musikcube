@@ -48,7 +48,7 @@
 
 #include <musikcore/playback.hpp>
 #include <musikcore/context.hpp>
-#include <musikcore/preferences.hpp>
+#include <musikcore/settings.hpp>
 
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
@@ -86,7 +86,7 @@ namespace musik { namespace cube {
 
         private:
             void InitializeWindows();
-            void LoadPreferences();
+            void LoadSettings();
             void UpdateServerAvailability();
             void CreateCheckbox(std::shared_ptr<cursespp::Checkbox>& cb, const std::string& caption);
 
@@ -110,7 +110,7 @@ namespace musik { namespace cube {
             musik::core::api::Context& musikcore;
             musik::core::api::Playback playback;
 
-            musik::core::api::Preferences prefs { MC_PREFERENCE_SETTINGS };
+            musik::core::api::Settings prefs { MC_SETTINGS_APPLICATION };
 
             using Text = std::shared_ptr<cursespp::TextLabel>;
             Text libraryTypeDropdown;

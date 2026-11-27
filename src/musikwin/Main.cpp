@@ -43,7 +43,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/audio/PlaybackService.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/Settings.h>
 #include <musikcore/audio/Visualizer.h>
 
 #include <app/view/MainWindow.h>
@@ -76,7 +76,7 @@ int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR co
         app.Run(mainWindow);
     }
 
-    Preferences::SavePluginPreferences();
+    Settings::SavePluginSettings();
     LibraryFactory::Instance().Shutdown();
 
     return 0;

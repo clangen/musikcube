@@ -129,7 +129,7 @@
 #include <musikcore/support/Messages.h>
 #include <common/NarrowCast.h>
 #include <musikcore/support/Playback.h>
-#include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/Preferences.h>
+#include <musikcore/support/SettingKeys.h>
+#include <musikcore/support/Settings.h>
 #include <common/Utf8.h>
 #include <common/version.h>

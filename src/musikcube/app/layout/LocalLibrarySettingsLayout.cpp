@@ -44,7 +44,7 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
-#include <app/util/PreferenceKeys.h>
+#include <app/util/SettingKeys.h>
 
 using namespace std::placeholders;
 using namespace musik;
@@ -76,7 +76,7 @@ void LocalLibrarySettingsLayout::OnLayout() {
     this->addedPathsList->MoveAndResize(rightX, 1, rightWidth, pathsHeight);
 }
 
-void LocalLibrarySettingsLayout::LoadPreferences() {
+void LocalLibrarySettingsLayout::LoadSettings() {
     this->addedPathsAdapter->Clear();
 
     const auto paths = this->indexer.Paths();
@@ -153,7 +153,7 @@ void LocalLibrarySettingsLayout::AddSelectedDirectory() {
 
     if (path.size()) {
         this->indexer.AddPath(path);
-        this->LoadPreferences();
+        this->LoadSettings();
         this->indexer.Schedule(MC_INDEXER_SCAN_LOCAL);
     }
 }
@@ -164,7 +164,7 @@ void LocalLibrarySettingsLayout::RemoveSelectedDirectory() {
     const size_t index = this->addedPathsList->GetSelectedIndex();
     if (index < paths.size()) {
         this->indexer.RemovePath(paths.at(index));
-        this->LoadPreferences();
+        this->LoadSettings();
         this->indexer.Schedule(MC_INDEXER_SCAN_LOCAL);
     }
 }

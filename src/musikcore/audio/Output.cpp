@@ -67,15 +67,15 @@ namespace musik { namespace core { namespace audio {
 
     Output::Output(
         ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name, std::string device,
-        mc_plugin_preferences_service preferences)
+        mc_plugin_settings_service settings)
     : factory(std::move(factory))
     , id(std::move(id))
     , name(std::move(name))
     , device(std::move(device))
-    , preferences(preferences)
+    , settings(settings)
     {
-        if (this->preferences.read_boolean) {
-            this->services.preferences = &this->preferences;
+        if (this->settings.read_boolean) {
+            this->services.settings = &this->settings;
         }
     }
 

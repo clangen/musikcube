@@ -48,7 +48,7 @@ namespace musik { namespace cube {
             explicit LocalLibrarySettingsLayout(musik::core::api::Context& musikcore);
 
             void ToggleShowDotFiles();
-            void LoadPreferences();
+            void LoadSettings();
 
             /* IWindow */
             bool KeyPress(const std::string& key) override;

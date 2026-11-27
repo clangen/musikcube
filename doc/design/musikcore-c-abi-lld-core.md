@@ -425,7 +425,7 @@ service. Plugins use the C provider ABI and are built with the same release.
   `musikcore.integration.runtime.local_startup` verifies no initial connection
   and explicit opt-in against loopback on macOS; Linux/Windows runs are pending.
 
-- [x] **PUB-001** Add preference namespace, typed values, batch updates, and
+- [x] **PUB-001** Add setting namespace, typed values, batch updates, and
   persistence contracts.
   Settings and Session support typed reads, atomic in-memory batches, and
   explicit saving through the C ABI. `musikcore.integration.api.managed_runtime`
@@ -543,9 +543,9 @@ The open **PUB-008** media-consumer API work is tracked in the
   alongside implementation; deferred APIs are not claimed as covered.
 - [x] **CPP-003** Wrap the public feature families used by Cube.
   `musikcore.public_headers` builds each wrapper as a standalone include.
-- [x] **MIG-003** Migrate preferences and settings consumers.
-  Search and Browse use the public preferences API for sort and session state.
-  Startup, layout and theme preferences, and remote endpoint settings also
+- [x] **MIG-003** Migrate settings and settings consumers.
+  Search and Browse use the public settings API for sort and session state.
+  Startup, layout and theme settings, and remote endpoint settings also
   use the public store. `musikcore.integration.api.managed_remote` starts
   from endpoint settings written as a single public batch.
   The remote settings include an opt-in for untrusted HTTPS certificates;
@@ -553,7 +553,7 @@ The open **PUB-008** media-consumer API work is tracked in the
   resulting remote track policy.
   The FFmpeg, GME, libopenmpt, CD Audio, TagLib, SuperEq, and HTTP stream
   provider display names no longer contain legacy interface names. Their
-  plugin-scoped preferences use the new names; existing settings under the old
+  plugin-scoped settings use the new names; existing settings under the old
   names are not migrated automatically. Indexer identity keys remain unchanged.
 - [x] **MIG-004** Migrate remaining library/category/directory views.
   Browse receives local playlist mutations through context dispatch.
