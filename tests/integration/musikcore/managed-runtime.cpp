@@ -866,8 +866,22 @@ namespace {
                     nextTrack = std::move(result);
                 });
             if (!waitFor(context, host, [&] { return nextOpened.has_value(); }) ||
-                nextOpened != MC_OK || nextTrack.Size() != 1 || playback.Play(nextTrack, 0) != MC_OK ||
+                nextOpened != MC_OK || nextTrack.Size() != 1 || playback.Play(remoteTrack, 0) != MC_OK ||
                 !waitFor(context, host, [&] {
+                    const auto state = playback.Snapshot();
+                    return state && state->state == MC_PLAYBACK_PLAYING && state->position > 0;
+                }))
+            {
+                std::fputs("Could not prime the outgoing remote track\n", stderr);
+                return false;
+            }
+            if (playback.Play(nextTrack, 0) != MC_OK) return false;
+            const auto switching = playback.Snapshot();
+            if (!switching || switching->state == MC_PLAYBACK_PLAYING) {
+                std::fputs("Outgoing audio remained active during remote metadata lookup\n", stderr);
+                return false;
+            }
+            if (!waitFor(context, host, [&] {
                     const auto current = playback.CurrentTrackMetadata();
                     return current && current->Id() == nextTrack.Id(0);
                 }))

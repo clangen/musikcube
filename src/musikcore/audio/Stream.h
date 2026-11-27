@@ -70,6 +70,8 @@ namespace musik { namespace core { namespace audio {
             double SetPosition(double seconds);
             double GetDuration();
             bool OpenStream(std::string uri, musik::core::audio::Output* output);
+            bool OpenDecoder(std::string uri, musik::core::audio::Output* output);
+            bool Prebuffer();
             void Interrupt();
             int GetCapabilities();
             bool GetInitialFormat(mc_audio_format& format) const;

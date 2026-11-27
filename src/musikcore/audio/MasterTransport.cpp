@@ -111,6 +111,10 @@ std::string MasterTransport::Uri() {
     return this->transport->Uri();
 }
 
+void MasterTransport::StopForReplacement() {
+    this->transport->StopForReplacement();
+}
+
 void MasterTransport::Stop() {
     this->transport->Stop();
 }

@@ -101,6 +101,7 @@ void GaplessTransport::Start(const std::string& uri, Gain gain, StartMode mode) 
     LockT lock(this->stateMutex);
     musik::contract::Assert(!this->destroyed.load(), "starting a destroyed transport");
     musik::debug::info(TAG, "starting track at " + uri);
+    this->RetireForReplacement();
     auto newPlayer = this->playbackWorkers.Start(
         uri,
         this->output,
@@ -111,12 +112,9 @@ void GaplessTransport::Start(const std::string& uri, Gain gain, StartMode mode) 
 
 void GaplessTransport::StartWithPlayer(Player::Shared newPlayer, StartMode mode) {
     if (newPlayer) {
-        bool playingNext = false;
-
         {
             LockT lock(this->stateMutex);
 
-            playingNext = (newPlayer == nextPlayer);
             if (newPlayer != nextPlayer) {
                 this->ResetNextPlayer();
             }
@@ -131,11 +129,6 @@ void GaplessTransport::StartWithPlayer(Player::Shared newPlayer, StartMode mode)
                 this->RaiseStreamEvent(newPlayer->GetStreamState(), newPlayer.get());
             }
 
-            /* first argument suppresses the "Stop" event from getting triggered,
-            the second param is used for gapless playback -- we won't stop the output
-            and will allow pending buffers to finish if we're not automatically
-            playing the next track. */
-            this->StopInternal(true, !playingNext, newPlayer.get());
             this->SetNextCanStart(false);
             if (this->output && this->output->Resume() != MC_OK) {
                 this->OnPlayerOpenFailed(newPlayer.get());
@@ -164,6 +157,22 @@ void GaplessTransport::ReloadOutput() {
     this->output->SetVolume(volume);
 }
 
+void GaplessTransport::RetireForReplacement() {
+    LockT lock(this->stateMutex);
+    if (this->activePlayer || this->nextPlayer || this->nextCanStart) {
+        this->ResetNextPlayer();
+        this->ResetActivePlayer();
+        this->nextCanStart = false;
+        this->output->FlushForReplacement();
+    }
+}
+
+void GaplessTransport::StopForReplacement() {
+    LockT lock(this->stateMutex);
+    this->RetireForReplacement();
+    this->SetPlaybackState(PlaybackState::Stopped);
+}
+
 void GaplessTransport::Stop() {
     this->StopInternal(false, true);
 }
@@ -176,8 +185,7 @@ std::string GaplessTransport::Uri() {
 
 void GaplessTransport::StopInternal(
     bool suppressStopEvent,
-    bool stopOutput,
-    Player const* exclude)
+    bool stopOutput)
 {
     musik::debug::info(TAG, "stop");
 
@@ -191,9 +199,7 @@ void GaplessTransport::StopInternal(
             output = this->output;
 
             this->ResetNextPlayer();
-            if (this->activePlayer.get() != exclude) {
-                this->ResetActivePlayer();
-            }
+            this->ResetActivePlayer();
         }
 
         /* stopping the transport will stop any buffers that are currently in

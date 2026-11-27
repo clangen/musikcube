@@ -52,6 +52,7 @@ namespace musik { namespace core { namespace audio {
             std::string Uri() override;
 
             void Stop() override;
+            void StopForReplacement() override;
             void Destroy() override;
             mc_result Pause() override;
             mc_result Resume() override;

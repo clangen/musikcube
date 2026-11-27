@@ -69,6 +69,7 @@ namespace musik { namespace core { namespace audio {
             virtual std::string Uri() = 0;
 
             virtual void Stop() = 0;
+            virtual void StopForReplacement() { this->Stop(); }
             virtual void Destroy() = 0;
             virtual mc_result Pause() = 0;
             virtual mc_result Resume() = 0;

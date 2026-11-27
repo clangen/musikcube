@@ -38,6 +38,9 @@ typedef struct {
     int channels;
     int enable;
     int fft_bits;
+    int *fft_indices;
+    REAL *fft_weights;
+    REAL dither_error;
 } SuperEqState;
 
 void *paramlist_alloc (void);

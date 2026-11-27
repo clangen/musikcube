@@ -57,6 +57,7 @@ public:
     mc_result Decode(musik::core::plugin::DecoderBuffer& target, mc_decode_state& state);
     mc_result Seek(double seconds, double& actual);
     mc_result GetDuration(double& seconds) const;
+    mc_result GetFormat(mc_audio_format& format) const;
     mc_result SetPreferredSampleRate(uint32_t rate);
 
 private:

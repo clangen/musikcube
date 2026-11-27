@@ -314,8 +314,19 @@ if(BUILD_TESTING)
         DEPENDS musikcore_playback_pcm_test
         USES_TERMINAL VERBATIM)
 
+      if(TARGET httpdatastream)
+        add_dependencies(musikcore_playback_pcm_test httpdatastream)
+        foreach(mode IN ITEMS replace_playing_gapless replace_paused_gapless)
+          add_test(NAME musikcore.integration.transport.http_${mode}_pcm COMMAND "${MUSIKCUBE_TEST_NODE}"
+            "${PROJECT_SOURCE_DIR}/tests/scripts/http-pcm-switch.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
+            "$<TARGET_FILE:musikcore_playback_pcm_test>" "$<TARGET_FILE:musikcore_pcm_capture_output>"
+            "$<TARGET_FILE:httpdatastream>" "${mode}")
+          set_tests_properties(musikcore.integration.transport.http_${mode}_pcm PROPERTIES
+            LABELS "integration;musikcore;transport;playback" TIMEOUT 35)
+        endforeach()
+      endif()
       foreach(mode IN ITEMS
-          gapless crossfade teardown seek seek_eof seek_tail completion replace_next
+          replace_playing_gapless replace_paused_gapless gapless crossfade teardown seek seek_eof seek_tail completion replace_next
           paused_crossfade paused_runtime paused_short_runtime retired_crossfade failed_next_crossfade
           replace_paused_crossfade replace_stopped_crossfade replace_failed_crossfade seek_paused_crossfade
           cancel_open output_queue_failure output_callback_failure

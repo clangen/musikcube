@@ -149,6 +149,10 @@ bool Stream::GetInitialFormat(mc_audio_format& format) const {
 }
 
 bool Stream::OpenStream(std::string uri, Output* output) {
+    return this->OpenDecoder(std::move(uri), output) && this->Prebuffer();
+}
+
+bool Stream::OpenDecoder(std::string uri, Output* output) {
     const auto& media = musik::core::plugin::Media();
     const mc_string_view path { uri.data(), uri.size() };
     const auto failed = [](const char* operation, mc_result status) {
@@ -217,10 +221,19 @@ bool Stream::OpenStream(std::string uri, Output* output) {
     }
     if (info.flags & MC_STREAM_CAN_PREFETCH) {
         this->capabilities |= (int) Capability::Prebuffer;
+    }
+    return true;
+}
+
+bool Stream::Prebuffer() {
+    if (this->capabilities & (int) Capability::Prebuffer) {
         this->RefillInternalBuffers();
     }
     if (this->decodeStatus != MC_OK) {
-        return failed("initial decode", this->decodeStatus);
+        if (this->decodeStatus != MC_ERROR_CANCELLED) {
+            musik::debug::error(TAG, "initial decode failed (status " + std::to_string(this->decodeStatus) + ")");
+        }
+        return false;
     }
     return true;
 }
@@ -318,12 +331,8 @@ inline Buffer* Stream::GetEmptyBuffer() {
 }
 
 Buffer* Stream::GetNextProcessedOutputBuffer() {
-    /* Do not repeatedly fill the entire pool before the output has had a
-    chance to play it. In particular, a slow source can block the player
-    thread even though decoded audio is already waiting here. Refill in the
-    existing quarter-pool batches when the ready queue falls below one eighth. */
-    const auto lowWater = static_cast<size_t>(std::max(1, this->bufferCount / 8));
-    if (!this->rawBuffer || this->filledBuffers.size() < lowWater) {
+    /* Submit decoded PCM before another decoder read can block on HTTP. */
+    if (this->filledBuffers.empty()) {
         this->RefillInternalBuffers();
     }
 
@@ -358,10 +367,9 @@ void Stream::RefillInternalBuffers() {
         count = -1;
     }
     else {
-        /* fill another chunk -- most of the time for file-based
-        streams this will only be a single buffer. note the - 1
-        part is to leave space for any potential remainder. */
-        count = std::min(recycled - 1, std::max(1, this->bufferCount / 4));
+        /* During playback, return the first complete block to the writer.
+        Keep one slice free for any decoder remainder. */
+        count = recycled > 1 ? 1 : 0;
     }
 
     Buffer* target = nullptr;

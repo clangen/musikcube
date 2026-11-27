@@ -87,6 +87,11 @@ int main(int argc, char** argv) {
         require(api.resume(instance) == MC_OK && api.drain(instance, nullptr) == MC_OK,
             "resume drains pending block slots");
         require(record.ready.load() > readyBeforeResume, "slot release wakes the producer");
+        require(api.pause(instance) == MC_OK, "pause before replacing a track");
+        require(api.flush && api.flush(instance) == MC_OK, "flush the prepared endpoint");
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        require(api.queue_audio_buffer(instance, &buffer) == MC_OK, "submit replacement without preparing again");
+        require(api.drain(instance, nullptr) == MC_OK, "drain replacement PCM");
         require(api.stop(instance) == MC_OK, "stop");
 
         options.queue_capacity_frames = 96000;

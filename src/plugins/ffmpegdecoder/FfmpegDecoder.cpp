@@ -213,6 +213,14 @@ mc_result FfmpegDecoder::GetDuration(double& seconds) const {
     return MC_OK;
 }
 
+mc_result FfmpegDecoder::GetFormat(mc_audio_format& format) const {
+    if (outputRate <= 0 || channels <= 0) {
+        return MC_ERROR_UNSUPPORTED;
+    }
+    format = { sizeof(mc_audio_format), static_cast<uint32_t>(outputRate), static_cast<uint32_t>(channels), 0 };
+    return MC_OK;
+}
+
 mc_result FfmpegDecoder::SetPreferredSampleRate(uint32_t rate) {
     if (rate == 0 || rate > INT_MAX || resampler) {
         return MC_ERROR_INVALID_ARGUMENT;

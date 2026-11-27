@@ -59,6 +59,7 @@ namespace musik { namespace core { namespace audio {
             std::string Uri() override;
 
             void Stop() override;
+            void StopForReplacement() override;
             void Destroy() override;
             mc_result Pause() override;
             mc_result Resume() override;
@@ -84,10 +85,10 @@ namespace musik { namespace core { namespace audio {
 
             void StartWithPlayer(Player::Shared player, StartMode mode = StartMode::Immediate);
 
+            void RetireForReplacement();
             void StopInternal(
                 bool suppressStopEvent,
-                bool stopOutput,
-                Player const* exclude = nullptr);
+                bool stopOutput);
 
             void SetNextCanStart(bool nextCanStart);
 

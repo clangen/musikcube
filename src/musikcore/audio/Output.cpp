@@ -161,25 +161,31 @@ namespace musik { namespace core { namespace audio {
         }
         /* keep reset and reopening one operation. an obsolete seek must never
         flush a replacement track or reopen admission after transport Stop. */
-        if (this->output.prepared.load() &&
-            this->output.api->struct_size >= offsetof(mc_output_vtable, flush) + sizeof(this->output.api->flush) &&
-            this->output.api->flush)
+        const auto result = this->output.FlushBackend();
+        if (result != MC_OK) return result;
+        this->output.paused = false;
+        this->output.NotifyWriters();
+        return MC_OK;
+    }
+
+    mc_result Output::FlushBackend() {
+        if (this->prepared.load() &&
+            this->api->struct_size >= offsetof(mc_output_vtable, flush) + sizeof(this->api->flush) &&
+            this->api->flush)
         {
-            const auto result = this->output.factory.Invoke([&](const auto&) {
-                return this->output.api->flush(this->output.instance);
+            const auto result = this->factory.Invoke([&](const auto&) {
+                return this->api->flush(this->instance);
             });
             if (result == MC_ERROR_UNSUPPORTED) {
-                this->output.StopBackend();
+                this->StopBackend();
             }
             else if (result != MC_OK) {
                 return result;
             }
         }
         else {
-            this->output.StopBackend();
+            this->StopBackend();
         }
-        this->output.paused = false;
-        this->output.NotifyWriters();
         return MC_OK;
     }
 
@@ -320,6 +326,20 @@ namespace musik { namespace core { namespace audio {
             musik::contract::Assert(result == MC_OK, "output Stop failed; callbacks and ownership are not safe");
         }
         this->prepared.store(false);
+    }
+
+    void Output::FlushForReplacement() {
+        auto ordinary = this->LockForControl();
+        if (!ordinary.owns_lock()) {
+            this->Stop();
+            return;
+        }
+        std::lock_guard lock(this->lifecycle);
+        if (this->prepared.load() && this->FlushBackend() != MC_OK) {
+            this->StopBackend();
+        }
+        this->paused = false;
+        this->NotifyWriters();
     }
 
     void Output::Stop() {

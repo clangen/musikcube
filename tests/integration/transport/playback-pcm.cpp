@@ -1128,7 +1128,9 @@ namespace {
         seeking must discard scratch PCM even before either layer reaches EOF. */
         {
             auto buffered = Stream::Create(257, 0.05);
-            if (!buffered->OpenStream(file.string(), nullptr) || buffered->Eof() ||
+            mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
+            if (!buffered->OpenDecoder(file.string(), nullptr) || !buffered->GetInitialFormat(format) ||
+                format.sample_rate != sampleRate || format.channels != 2 || !buffered->Prebuffer() || buffered->Eof() ||
                 buffered->SetPosition(seconds) != seconds)
             {
                 std::fputs("Could not seek a stream with prefetched decoder PCM\n", stderr);
@@ -1214,13 +1216,14 @@ int main(int argc, char** argv) {
     const bool outputFailure = mode == "output_queue_failure" || mode == "output_callback_failure";
     const bool controlFailure = mode == "gapless_control_failure" || mode == "crossfade_control_failure" ||
         mode == "uri_control_failure";
+    const bool manualGapless = mode == "replace_playing_gapless" || mode == "replace_paused_gapless";
     const bool pausedReplacement = mode == "replace_paused_crossfade" || mode == "replace_stopped_crossfade" ||
         mode == "replace_failed_crossfade";
     const bool pausedSeek = mode == "seek_paused_crossfade";
     const bool blockedControl = mode == "blocked_control";
     const bool retiredFade = mode == "retired_crossfade";
     const bool failedNextFade = mode == "failed_next_crossfade";
-    if (!crossfade && mode != "gapless" && mode != "decoder_contract" && mode != "decoder_drain" &&
+    if (!manualGapless && !crossfade && mode != "gapless" && mode != "decoder_contract" && mode != "decoder_drain" &&
         !seekEof && !seekTail && !stress && !benchmark && !pausedFade && !sourceOpen && !outputFailure && !retiredFade && !failedNextFade &&
         !controlFailure && !blockedControl && !pausedReplacement && !pausedSeek)
     {
@@ -1250,7 +1253,7 @@ int main(int argc, char** argv) {
     }
     const auto first = std::filesystem::path(argv[3]) / "first.wav";
     const auto second = std::filesystem::path(argv[3]) / "second.wav";
-    const bool longTracks = crossfade || retiredFade || failedNextFade || pausedReplacement || pausedSeek ||
+    const bool longTracks = manualGapless || crossfade || retiredFade || failedNextFade || pausedReplacement || pausedSeek ||
         (pausedFade && !shortPaused);
     if (!stress && !sourceOpen && !outputFailure && !prepareMedia(first, second, longTracks)) {
         std::fputs("Could not generate the PCM fixtures\n", stderr);
@@ -1280,6 +1283,43 @@ int main(int argc, char** argv) {
             return 1;
         }
         return inject && checkDeviceControls(first, crossfadeControls, runtime, inject) ? 0 : 1;
+    }
+    if (manualGapless) {
+        const auto waitFrames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");
+        GaplessTransport transport;
+        const char* server = std::getenv("MUSIKCORE_PCM_TEST_SERVER");
+        const auto uri = [server](const std::filesystem::path& path) {
+            return server ? std::string(server) + "/" + path.filename().string() : path.string();
+        };
+        transport.Start(uri(first), {}, ITransport::StartMode::Immediate);
+        if (!waitFrames || !waitFrames(sampleRate / 4, 3000)) return 1;
+        transport.PrepareNextTrack(uri(first), {});
+        if (mode == "replace_paused_gapless" && transport.Pause() != MC_OK) return 1;
+        const auto before = read(nullptr, 0);
+        transport.Start(uri(second), {}, ITransport::StartMode::Immediate);
+        const auto after = read(nullptr, 0);
+        if (!waitFrames(after + 2 * sampleRate, 6000)) return 1;
+        std::vector<CapturedFrame> frames(read(nullptr, 0));
+        read(frames.data(), frames.size());
+        const auto boundary = mode == "replace_paused_gapless" ? before : after;
+        const auto begin = frames.begin() + boundary;
+        const bool stale = std::any_of(begin, frames.end(), [](const auto& f) { return std::abs(f.left) > 0.001f; });
+        const bool audible = std::any_of(begin, frames.end(), [](const auto& f) { return f.right > 0.05f; });
+        const auto onset = std::find_if(frames.begin() + before, frames.end(),
+            [](const auto& frame) { return frame.right != 0.0f; });
+        const float expected = static_cast<float>(signalLevel) / pcmScale;
+        if (onset == frames.end() || std::abs(onset->right - expected) > sampleTolerance) {
+            std::fputs("Replacement onset differs from the source PCM\n", stderr);
+            return 1;
+        }
+        if (std::any_of(onset, frames.end(), [expected](const auto& frame) {
+            return frame.underrun || std::abs(frame.right - expected) > sampleTolerance;
+        })) {
+            std::fputs("Missing or altered replacement PCM after onset\n", stderr);
+            return 1;
+        }
+        if (stale || !audible) std::fputs("Unexpected PCM after manual track replacement\n", stderr);
+        return audible && !stale ? 0 : 1;
     }
     if (pausedReplacement) {
         const auto frames = moduleSymbol<WaitCaptureFrames>(module.get(), "WaitPcmCaptureFrames");

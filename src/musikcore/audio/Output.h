@@ -112,6 +112,7 @@ namespace musik { namespace core { namespace audio {
         mc_result SetVolume(double volume);
         double GetVolume() const;
         void Stop();
+        void FlushForReplacement();
         double Latency() const;
 
         void NotifyWriters() noexcept;
@@ -140,6 +141,7 @@ namespace musik { namespace core { namespace audio {
         mc_result SetPaused(bool pause);
         mc_result ApplyVolume();
         void StopBackend();
+        mc_result FlushBackend();
 
         ffi::PluginRegistry::Factory<mc_output_factory> factory;
         std::string id;

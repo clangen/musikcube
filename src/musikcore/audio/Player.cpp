@@ -155,7 +155,24 @@ void Player::Run() {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 #endif
 
-    if (this->stream->OpenStream(this->url, this->output.get())) {
+    auto prewarm = [this]() {
+        mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
+        if (this->stream->GetInitialFormat(format)) {
+            const auto result = this->writer.PrewarmOutput(format, 2048);
+            if (result != MC_OK && result != MC_ERROR_CANCELLED) {
+                this->FailPlayback(result, "output preparation");
+            }
+        }
+    };
+
+    const bool opened = this->stream->OpenDecoder(this->url, this->output.get());
+    // Give the endpoint the network prefetch interval to settle. Idle players
+    // may prefetch the next track, but must wait for Play before preparing output.
+    const bool prewarmed = opened && this->state.load() == State::Playing;
+    if (prewarmed) {
+        prewarm();
+    }
+    if (opened && !this->Exited() && !this->playbackFailed && this->stream->Prebuffer()) {
         /* controls read snapshots while the worker may be blocked in the decoder. */
         this->duration.store(this->stream->GetDuration());
         this->capabilities.store(this->stream->GetCapabilities());
@@ -164,14 +181,8 @@ void Player::Run() {
             this->listener.OnPlayerBuffered(this);
         }
         this->state.wait(State::Idle);
-        if (!this->Exited()) {
-            mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
-            if (this->stream->GetInitialFormat(format)) {
-                const auto result = this->writer.PrewarmOutput(format, 2048);
-                if (result != MC_OK && result != MC_ERROR_CANCELLED) {
-                    this->FailPlayback(result, "output preparation");
-                }
-            }
+        if (!prewarmed && !this->Exited()) {
+            prewarm();
         }
         for (;;) {
             this->WriteTrack();
@@ -208,7 +219,7 @@ void Player::Run() {
             std::lock_guard lock(this->mixPointMutex);
             this->acceptingSeeks = false;
         }
-        if (!this->Exited()) {
+        if (!this->Exited() && !this->playbackFailed) {
             this->streamState = StreamState::OpenFailed;
             this->listener.OnPlayerOpenFailed(this);
         }

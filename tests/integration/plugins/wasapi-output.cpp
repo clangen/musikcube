@@ -157,6 +157,11 @@ int main(int argc, char** argv) {
             require(timing.generation && timing.frames_played_timestamp_ns, "device clock has a generation and timestamp");
         }
         const auto generation = timing.generation;
+        require(api->pause(instance) == MC_OK, "pause before replacing a track");
+        require(api->flush && api->flush(instance) == MC_OK, "flush the prepared endpoint");
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        require(api->queue_audio_buffer(instance, &buffer) == MC_OK, "submit replacement without preparing again");
+        require(api->drain(instance, nullptr) == MC_OK, "drain replacement PCM");
         require(api->stop(instance) == MC_OK, "stop the first device generation");
         timing = MC_OUTPUT_TIMING_DEFAULT;
         require(api->get_timing(instance, &timing) == MC_OK && timing.valid_flags == 0,

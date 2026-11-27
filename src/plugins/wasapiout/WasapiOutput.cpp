@@ -268,6 +268,8 @@ struct WasapiOutput::State {
     }
 
     void Close() {
+        this->waitingForPcm = false;
+        this->timingPending = false;
         const mc_output_timing unknown = MC_OUTPUT_TIMING_DEFAULT;
         this->timing.Publish(unknown);
         if (this->notification && this->enumerator) {
@@ -405,16 +407,29 @@ struct WasapiOutput::State {
         this->timingPending = false;
         this->generation = this->generation == UINT16_MAX ? 1 : this->generation + 1;
         result = this->SetVolume(options.initial_volume);
-        if (result != MC_OK || FAILED(this->client->Start())) {
+        if (result != MC_OK || !this->FillStartupSilence() || FAILED(this->client->Start())) {
             return MC_ERROR_IO;
         }
+        this->waitingForPcm = true;
         this->UpdateTiming();
         return MC_OK;
     }
 
+    // Keep the endpoint clock running while the decoder waits for its first
+    // network read. Silence precedes all submitted music within this generation.
+    bool FillStartupSilence() {
+        UINT32 padding = 0;
+        if (FAILED(this->client->GetCurrentPadding(&padding)) || padding > this->capacity) return false;
+        UINT32 available = this->capacity - padding;
+        if (!available) return true;
+        BYTE* destination = nullptr;
+        return SUCCEEDED(this->render->GetBuffer(available, &destination)) &&
+            SUCCEEDED(this->render->ReleaseBuffer(available, AUDCLNT_BUFFERFLAGS_SILENT));
+    }
+
     void UpdateTiming() noexcept {
         UINT32 padding = 0;
-        if (!this->client || FAILED(this->client->GetCurrentPadding(&padding)) || padding > this->submittedFrames) {
+        if (!this->client || FAILED(this->client->GetCurrentPadding(&padding)) || padding > this->capacity) {
             return;
         }
         const auto now = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -422,13 +437,13 @@ struct WasapiOutput::State {
         if (now <= 0) {
             return;
         }
-        this->timingPending = padding != 0;
+        this->timingPending = padding != 0 && this->submittedFrames != 0;
         mc_output_timing snapshot = MC_OUTPUT_TIMING_DEFAULT;
         /* Padding counts frames not yet consumed by the audio engine. Some
         consumed frames may still be in the device pipeline, so this is an estimate. */
         snapshot.valid_flags = MC_OUTPUT_TIMING_PLAYED | MC_OUTPUT_TIMING_ESTIMATED;
         snapshot.generation = this->generation;
-        snapshot.frames_played_by_driver = this->submittedFrames - padding;
+        snapshot.frames_played_by_driver = this->submittedFrames - std::min<uint64_t>(padding, this->submittedFrames);
         snapshot.frames_played_timestamp_ns = static_cast<uint64_t>(now);
         this->timing.Publish(snapshot);
     }
@@ -502,7 +517,8 @@ struct WasapiOutput::State {
                 break;
             }
 
-            const auto available = padding < this->queueLimit ? this->queueLimit - padding : 0;
+            const auto musicPadding = static_cast<UINT32>(std::min<uint64_t>(padding, this->submittedFrames));
+            const auto available = std::min<UINT32>(this->capacity - padding, this->queueLimit - musicPadding);
             this->UpdateTiming();
 
             /* A paused device cannot free space until the host resumes it. */
@@ -542,6 +558,7 @@ struct WasapiOutput::State {
             }
 
             written += frames;
+            this->waitingForPcm = false;
             this->submittedFrames += frames;
             this->UpdateTiming();
         }
@@ -562,7 +579,7 @@ struct WasapiOutput::State {
             if (!this->client || FAILED(this->client->GetCurrentPadding(&padding))) {
                 return MC_ERROR_IO;
             }
-            if (!padding) {
+            if (!padding || !this->submittedFrames) {
                 this->UpdateTiming();
                 return MC_OK;
             }
@@ -604,10 +621,11 @@ struct WasapiOutput::State {
                 /* Reset requires a stopped client. Restart it immediately so
                 the endpoint stays open while the decoder seeks. */
                 if (!this->client || FAILED(this->client->Stop()) || FAILED(this->client->Reset()) ||
-                    FAILED(this->client->Start())) {
+                    !this->FillStartupSilence() || FAILED(this->client->Start())) {
                     return MC_ERROR_IO;
                 }
                 this->paused = false;
+                this->waitingForPcm = true;
                 this->submittedFrames = 0;
                 this->timingPending = false;
                 this->generation = this->generation == UINT16_MAX ? 1 : this->generation + 1;
@@ -623,9 +641,13 @@ struct WasapiOutput::State {
         const HRESULT apartment = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
         for (;;) {
             const HANDLE events[] { this->sync.requestEvent, this->sync.audioEvent };
-            const DWORD count = this->timingPending && !this->paused && this->sync.audioEvent ? 2 : 1;
+            const DWORD count = (this->waitingForPcm || this->timingPending) && !this->paused && this->sync.audioEvent ? 2 : 1;
             const DWORD wake = WaitForMultipleObjects(count, events, FALSE, INFINITE);
             if (wake == WAIT_OBJECT_0 + 1) {
+                if (this->waitingForPcm && !this->FillStartupSilence()) {
+                    // Queue handles endpoint invalidation and default-device rerouting.
+                    this->waitingForPcm = false;
+                }
                 this->UpdateTiming();
                 continue;
             }
@@ -675,6 +697,7 @@ struct WasapiOutput::State {
     UINT32 capacity = 0;
     UINT32 queueLimit = 0;
     uint64_t submittedFrames = 0;
+    bool waitingForPcm = false;
     bool timingPending = false;
     uint64_t generation = 0;
     bool paused = false;

@@ -414,6 +414,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         const StreamState eventType = static_cast<StreamState>(streamMessage->GetEventType());
 
         if (eventType == StreamState::Buffering || eventType == StreamState::Buffered || eventType == StreamState::Playing) {
+            if (streamMessage->GetUri() != this->transport->Uri()) return;
             TrackPtr track;
 
             {
@@ -824,6 +825,14 @@ void PlaybackService::PlayAt(size_t index, ITransport::StartMode mode) {
 
     this->CancelMetadataLoad();
     if (this->library->GetType() == LibraryBackend::Type::Remote && !this->TrackAtIndexWithTimeout(index)) {
+        if (index >= this->Count()) return;
+        /* Silence the old stream while retaining its endpoint during lookup. */
+        this->nextIndex = NO_POSITION;
+        this->transport->StopForReplacement();
+        for (const auto type : { MESSAGE_PREPARE_NEXT_TRACK, MESSAGE_NEXT_TRACK_EDITED, MESSAGE_SEEK }) {
+            this->messageQueue.Remove(this, type);
+        }
+        this->seekPosition = -1.0;
         this->LoadPlaybackMetadata(index, [this, index, mode] {
             this->PlayAt(index, mode);
         });

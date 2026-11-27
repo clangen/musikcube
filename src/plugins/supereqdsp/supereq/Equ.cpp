@@ -21,39 +21,14 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <mutex>
 #include "paramlist.hpp"
 #include "Equ.h"
 
 extern "C" void rdft(int, int, REAL *, int *, REAL *);
-void rfft(int n,int isign,REAL *x)
+static void rfft(SuperEqState *state, int sign, REAL *samples)
 {
-    static int ipsize = 0,wsize=0;
-    static int *ip = NULL;
-    static REAL *w = NULL;
-    int newipsize,newwsize;
-    if (n == 0) {
-        free(ip); ip = NULL; ipsize = 0;
-        free(w);  w  = NULL; wsize  = 0;
-        return;
-    }
-
-    n = 1 << n;
-
-
-    newipsize = 2+sqrt(n/2);
-    if (newipsize > ipsize) {
-        ipsize = newipsize;
-        ip = (int *)realloc(ip,sizeof(int)*ipsize);
-        ip[0] = 0;
-    }
-
-    newwsize = n/2;
-    if (newwsize > wsize) {
-        wsize = newwsize;
-        w = (REAL *)realloc(w,sizeof(REAL)*wsize);
-    }
-
-    rdft(n,isign,x,ip,w);
+    rdft(state->tabsize, sign, samples, state->fft_indices, state->fft_weights);
 }
 
 #define PI 3.1415926535897932384626433832795
@@ -104,7 +79,7 @@ void equ_free (void *mem) {
 
 extern "C" void equ_init(SuperEqState *state, int wb, int channels)
 {
-  int i,j;
+  int i;
 
   if (state->lires1 != NULL)   free(state->lires1);
   if (state->lires2 != NULL)   free(state->lires2);
@@ -115,6 +90,8 @@ extern "C" void equ_init(SuperEqState *state, int wb, int channels)
   if (state->ditherbuf != NULL) free(state->ditherbuf);
 
 
+  free(state->fft_indices);
+  free(state->fft_weights);
   memset (state, 0, sizeof (SuperEqState));
   state->channels = channels;
   state->enable = 1;
@@ -123,6 +100,8 @@ extern "C" void equ_init(SuperEqState *state, int wb, int channels)
   state->winlenbit = wb;
   state->tabsize  = 1 << wb;
   state->fft_bits = wb;
+  state->fft_indices = (int *)calloc(2 + (size_t)sqrt(state->tabsize/2), sizeof(int));
+  state->fft_weights = (REAL *)equ_malloc(sizeof(REAL) * state->tabsize/2);
 
   state->lires1   = (REAL *)equ_malloc(sizeof(REAL)*state->tabsize * state->channels);
   state->lires2   = (REAL *)equ_malloc(sizeof(REAL)*state->tabsize * state->channels);
@@ -147,14 +126,15 @@ extern "C" void equ_init(SuperEqState *state, int wb, int channels)
   for(i=0;i<DITHERLEN;i++)
 	state->ditherbuf[i] = (static_cast<double>(rand()) / RAND_MAX - 0.5);
 
-  if (fact[0] < 1) {
-      for(i=0;i<=M;i++)
+  static std::once_flag coefficients;
+  std::call_once(coefficients, [] {
+      for(int i=0;i<=M;i++)
       {
           fact[i] = 1;
-          for(j=1;j<=i;j++) fact[i] *= j;
+          for(int j=1;j<=i;j++) fact[i] *= j;
       }
       iza = izero(alpha(aa));
-  }
+  });
 }
 
 // -(N-1)/2 <= n <= (N-1)/2
@@ -299,7 +279,7 @@ extern "C" void equ_makeTable(SuperEqState *state, REAL *lbc,void *_param,REAL f
       for(;i<state->tabsize;i++)
           state->irest[i] = 0;
 
-      rfft(state->fft_bits,1,state->irest);
+      rfft(state,1,state->irest);
 
       nires = cires == 1 ? state->lires2 : state->lires1;
       nires += ch * state->tabsize;
@@ -327,7 +307,11 @@ extern "C" void equ_quit(SuperEqState *state)
   state->finbuf    = NULL;
   state->outbuf   = NULL;
 
-  rfft(0,0,NULL);
+  free(state->fft_indices);
+  free(state->fft_weights);
+  state->fft_indices = NULL;
+  state->fft_weights = NULL;
+  state->ditherbuf = NULL;
 }
 
 extern "C" void equ_clearbuf(SuperEqState *state)
@@ -344,7 +328,6 @@ extern "C" int equ_modifySamples_float (SuperEqState *state, char *buf,int nsamp
   REAL *ires;
   float amax = 1.0f;
   float amin = -1.0f;
-  static float hm1 = 0, hm2 = 0;
 
   if (state->chg_ires) {
 	  state->cur_ires = state->chg_ires;
@@ -384,7 +367,7 @@ extern "C" int equ_modifySamples_float (SuperEqState *state, char *buf,int nsamp
 				state->fsamples[i] = 0;
 
 			if (state->enable) {
-				rfft(state->fft_bits,1,state->fsamples);
+				rfft(state,1,state->fsamples);
 
 				state->fsamples[0] = ires[0]*state->fsamples[0];
 				state->fsamples[1] = ires[1]*state->fsamples[1]; 
@@ -400,7 +383,7 @@ extern "C" int equ_modifySamples_float (SuperEqState *state, char *buf,int nsamp
 						state->fsamples[i*2+1] = im;
 					}
 
-				rfft(state->fft_bits,-1,state->fsamples);
+				rfft(state,-1,state->fsamples);
 			} else {
 				for(i=state->winlen-1+state->winlen/2;i>=state->winlen/2;i--) state->fsamples[i] = state->fsamples[i-state->winlen/2]*state->tabsize/2;
 				for(;i>=0;i--) state->fsamples[i] = 0;
@@ -418,12 +401,12 @@ extern "C" int equ_modifySamples_float (SuperEqState *state, char *buf,int nsamp
 				float s = state->outbuf[state->nbufsamples*nch+i];
 				if (state->dither) {
 					float u;
-					s -= hm1;
+					s -= state->dither_error;
 					u = s;
 //					s += ditherbuf[(ditherptr++) & (DITHERLEN-1)];
 					if (s < amin) s = amin;
 					if (amax < s) s = amax;
-					hm1 = s - u;
+					state->dither_error = s - u;
 					((float *)buf)[i+p*nch] = s;
 				} else {
 					if (s < amin) s = amin;
