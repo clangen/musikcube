@@ -399,7 +399,7 @@ add_dependencies(musikcube_tests musikcore_output_timing_estimator_test)
 add_dependencies(musikcube_unit_tests musikcore_output_timing_estimator_test)
 add_test(NAME musikcore.unit.plugins.output_timing_estimator COMMAND musikcore_output_timing_estimator_test)
 set_tests_properties(musikcore.unit.plugins.output_timing_estimator PROPERTIES
-  LABELS "unit;musikcore;plugins;audio;contract" TIMEOUT 10 SKIP_RETURN_CODE 77)
+  LABELS "unit;musikcore;plugins;audio;contract" TIMEOUT 10)
 
 # one normalized audible cursor drives track position and visualization.
 add_executable(musikcore_audible_playback_position_test unit/musikcore/audible-playback-position.cpp

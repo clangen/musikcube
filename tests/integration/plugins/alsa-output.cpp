@@ -108,6 +108,11 @@ int main(int argc, char** argv) {
     require(api->get_volume(instance, &reportedVolume) == MC_OK && reportedVolume == 0.5,
         "reported volume remains the requested level");
     require(api->drain(instance, nullptr) == MC_OK, "drain output");
+    auto timing = mc_output_timing MC_OUTPUT_TIMING_DEFAULT;
+    require(api->get_timing(instance, &timing) == MC_OK &&
+        (timing.valid_flags & MC_OUTPUT_TIMING_ESTIMATED) &&
+        timing.frames_played_by_driver == block.pcm.frame_count && timing.queued_seconds == 0,
+        "drain reaches the accepted PCM tail");
     require(api->set_volume(instance, 1.0) == MC_OK, "set full volume");
     block.token = 8;
     require(api->queue_audio_buffer(instance, &block) == MC_OK && results.count == 2 &&
@@ -126,6 +131,8 @@ int main(int argc, char** argv) {
     require(api->queue_audio_buffer(instance, &block) == MC_ERROR_BUFFER_TOO_SMALL && results.count == 3,
         "oversized PCM remains with the host");
     require(api->stop(instance) == MC_OK && api->stop(instance) == MC_OK, "stop is idempotent");
+    require(api->get_timing(instance, &timing) == MC_OK && timing.valid_flags == 0,
+        "stop clears the timing snapshot");
     require(api->queue_audio_buffer(instance, &block) == MC_ERROR_CANCELLED, "stopped output rejects audio");
     int32_t savedLatency = 125;
     mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;

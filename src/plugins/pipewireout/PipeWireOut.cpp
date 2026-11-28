@@ -54,6 +54,8 @@ queue until PipeWire calls `Process()`. that callback copies samples into a
 PipeWire buffer and returns each completed block to musikcore after the buffer
 is accepted. `Stop()` cancels remaining blocks and shuts down the stream. */
 
+using musik::plugins::OutputTimingEstimator;
+
 namespace {
     constexpr size_t DefaultCapacity = 32768;
     constexpr int TimeoutSeconds = 5;
@@ -254,6 +256,7 @@ mc_result PipeWireOut::Prepare(const mc_output_options& options, const mc_output
     this->volume.store(static_cast<float>(options.initial_volume));
     musik::contract::Assert(this->queuedBuffers.Empty(), "PipeWire prepared with buffers still owned");
     this->queuedFrames = 0;
+    this->scheduledFrames = 0;
     this->paused = this->failed = this->draining = this->drained = false;
     this->stopped = false;
     this->events = {};
@@ -310,6 +313,9 @@ mc_result PipeWireOut::Prepare(const mc_output_options& options, const mc_output
         }
     }
     const auto result = timed == 0 && !this->failed ? MC_OK : MC_ERROR_IO;
+    if (result == MC_OK) {
+        this->timingEstimator.Reset(this->format.sample_rate);
+    }
     pw_thread_loop_unlock(this->loop);
     return result;
 }
@@ -318,6 +324,7 @@ void PipeWireOut::StateChanged(void* user, pw_stream_state, pw_stream_state stat
     auto& output = *static_cast<PipeWireOut*>(user);
     if (state == PW_STREAM_STATE_ERROR) {
         output.failed = true;
+        output.timingEstimator.Reset(0);
         output.ReturnPending(MC_ERROR_IO);
         if (output.callbacks.ready) {
             output.callbacks.ready(output.callbacks.context);
@@ -349,6 +356,7 @@ void PipeWireOut::Process(void* user) noexcept {
         !buffer->buffer->datas[0].chunk || buffer->buffer->datas[0].maxsize < output.format.channels * sizeof(float))
     {
         output.failed = true;
+        output.timingEstimator.Reset(0);
         output.ReturnPending(MC_ERROR_IO);
         if (output.callbacks.ready) {
             output.callbacks.ready(output.callbacks.context);
@@ -388,22 +396,50 @@ void PipeWireOut::Process(void* user) noexcept {
         }
     }
 
-    const bool madeSpace = frames > 0;
+    const size_t pcmFrames = frames;
+    const bool madeSpace = pcmFrames > 0;
+    pw_time time {};
+    bool haveTiming = false;
+    if (madeSpace) {
+#if PW_CHECK_VERSION(0, 3, 50)
+        haveTiming = pw_stream_get_time_n(output.stream, &time, sizeof(time)) >= 0;
+#else
+        haveTiming = pw_stream_get_time(output.stream, &time) >= 0;
+#endif
+    }
     if (!frames && !output.draining) {
         std::memset(destination, 0, maximum * stride);
         frames = maximum;
     }
+    buffer->size = frames;
     data.chunk->offset = 0;
     data.chunk->stride = static_cast<int32_t>(stride);
     data.chunk->size = static_cast<uint32_t>(frames * stride);
 
     /* only report success once PipeWire has accepted the copied samples. */
     const bool accepted = pw_stream_queue_buffer(output.stream, buffer) >= 0;
+    if (accepted && madeSpace) {
+        output.scheduledFrames += pcmFrames;
+        if (haveTiming && time.now > 0 && time.rate.num && time.rate.denom) {
+            const auto now = OutputTimingEstimator::Now();
+            const auto observed = static_cast<uint64_t>(time.now);
+            const double elapsed = now > observed ? now - observed : 0;
+            const double graphDelay = time.delay * 1e9 * time.rate.num / time.rate.denom;
+            double streamFrames = static_cast<double>(time.queued) + pcmFrames;
+#if PW_CHECK_VERSION(0, 3, 50)
+            streamFrames += time.buffered;
+#endif
+            /* queued silence affects the deadline, but only PCM advances the cursor. */
+            const auto lead = streamFrames * 1e9 / output.format.sample_rate + std::max(0.0, graphDelay - elapsed);
+            output.timingEstimator.Publish(output.scheduledFrames, now + static_cast<uint64_t>(lead));
+        }
+    }
     for (size_t i = 0; i < completedCount; ++i) {
         output.callbacks.completed(output.callbacks.context, completed[i], accepted ? MC_OK : MC_ERROR_IO);
     }
     if (!accepted) {
         output.failed = true;
+        output.timingEstimator.Reset(0);
         output.ReturnPending(MC_ERROR_IO);
     }
     if ((madeSpace || !accepted) && output.callbacks.ready) {
@@ -416,6 +452,9 @@ void PipeWireOut::Process(void* user) noexcept {
 
 void PipeWireOut::Drained(void* user) noexcept {
     auto& output = *static_cast<PipeWireOut*>(user);
+    if (!output.stopped && !output.failed && output.draining) {
+        output.timingEstimator.Publish(output.scheduledFrames, OutputTimingEstimator::Now());
+    }
     output.drained = true;
     pw_thread_loop_signal(output.loop, false);
 }
@@ -450,6 +489,7 @@ mc_result PipeWireOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept 
             .framesCopied = 0,
         };
         if (this->queuedBuffers.TryPush(queuedBuffer)) {
+            this->timingEstimator.Submit(block.pcm.frame_count);
             this->queuedFrames += block.pcm.frame_count;
         }
         else {
@@ -468,6 +508,7 @@ mc_result PipeWireOut::Pause() {
     pw_thread_loop_lock(this->loop);
     const int result = pw_stream_set_active(this->stream, false);
     if (result >= 0) {
+        this->timingEstimator.Pause();
         this->paused = true;
     }
     pw_thread_loop_unlock(this->loop);
@@ -482,6 +523,7 @@ mc_result PipeWireOut::Resume() {
     pw_thread_loop_lock(this->loop);
     const int result = pw_stream_set_active(this->stream, true);
     if (result >= 0) {
+        this->timingEstimator.Resume();
         this->paused = false;
         if (this->callbacks.ready && this->queuedBuffers.Size() < this->maxQueuedBuffers &&
             this->queuedFrames < this->capacity)
@@ -532,6 +574,7 @@ mc_result PipeWireOut::Stop() noexcept {
     }
     pw_thread_loop_destroy(this->loop);
     this->loop = nullptr;
+    this->timingEstimator.Reset(0);
     return MC_OK;
 }
 
@@ -583,6 +626,8 @@ mc_result PipeWireOut::Flush() {
     const int stopped = pw_stream_set_active(this->stream, false);
     const int flushed = stopped < 0 ? stopped : pw_stream_flush(this->stream, false);
     if (flushed >= 0) {
+        this->scheduledFrames = 0;
+        this->timingEstimator.Reset(this->format.sample_rate);
         this->ReturnPending(MC_ERROR_CANCELLED);
     }
     const int resumed = flushed < 0 ? flushed : pw_stream_set_active(this->stream, true);

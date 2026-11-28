@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "../common/OutputTimingEstimator.h"
 #include <musikcore/plugin/fixed_ring_queue.hpp>
 #include <musikcore/plugin/output.hpp>
 #include <musikcore/plugin/services.h>
@@ -61,6 +62,7 @@ public:
     double GetVolume() const;
     mc_result Stop() noexcept;
     mc_result Drain();
+    mc_result GetTiming(mc_output_timing& timing) const noexcept { return this->timingEstimator.Read(timing); }
     mc_result Flush();
 
     static mc_result VisitDevices(mc_output_device_fn, void*);
@@ -81,6 +83,8 @@ private:
     static void Drained(void*) noexcept;
     void ReturnPending(mc_result) noexcept;
 
+    musik::plugins::OutputTimingEstimator timingEstimator;
+    uint64_t scheduledFrames = 0;
     const mc_plugin_services* services;
     std::mutex lifecycle;
     std::condition_variable finished;

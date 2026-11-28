@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <type_traits>
 
 namespace musik { namespace plugins {
 
@@ -73,12 +74,9 @@ namespace musik { namespace plugins {
         /* start a new generation at zero frames; rate is frames/second. pass
         zero after shutdown to make subsequent snapshots unknown. */
         void Reset(uint32_t rate) noexcept {
-            if constexpr (!Supported) {
-                return;
-            }
             this->version.fetch_add(1);
             this->rate.store(rate);
-            this->generation.fetch_add(1);
+            this->generation.store(this->generation.load() + 1);
             this->submitted.store(0);
             this->scheduled.store(0);
             this->audibleFloor.store(0);
@@ -90,25 +88,23 @@ namespace musik { namespace plugins {
         /* reserve accepted PCM before making it visible to the scheduling writer.
         returns its exclusive end-frame index. undo failed admission with `Reject()`. */
         uint64_t Submit(size_t frames) noexcept {
-            if constexpr (!Supported) {
-                return 0;
-            }
-            return this->submitted.fetch_add(frames) + frames;
+            this->submissionVersion.fetch_add(1);
+            const auto end = this->submitted.load() + frames;
+            this->submitted.store(end);
+            this->submissionVersion.fetch_add(1);
+            return end;
         }
 
         /* undo the producer's latest failed admission; those frames were never scheduled. */
         void Reject(size_t frames) noexcept {
-            if constexpr (Supported) {
-                this->submitted.fetch_sub(frames);
-            }
+            this->submissionVersion.fetch_add(1);
+            this->submitted.store(this->submitted.load() - frames);
+            this->submissionVersion.fetch_add(1);
         }
 
         /* associate an exclusive cumulative frame count with its audible end time.
         publish after scheduling PCM; never include trailing silence in frames. */
         void Publish(uint64_t frames, uint64_t audibleEnd) noexcept {
-            if constexpr (!Supported) {
-                return;
-            }
             this->version.fetch_add(1);
             const auto now = this->readTime();
             const auto frozen = this->frozen.load();
@@ -131,23 +127,18 @@ namespace musik { namespace plugins {
         call this when a backend pauses by generating silence but still lets
         its previously scheduled PCM reach the device. repeated calls are safe. */
         void Pause() noexcept {
-            if constexpr (!Supported) {
-                return;
-            }
             this->version.fetch_add(1);
-            uint64_t running = 0;
-            this->frozen.compare_exchange_strong(running, this->readTime());
+            if (!this->frozen.load()) {
+                this->frozen.store(this->readTime());
+            }
             this->version.fetch_add(1);
         }
         /* shift the pending deadline by the paused duration, then unfreeze it. */
         void Resume() noexcept {
-            if constexpr (!Supported) {
-                return;
-            }
             const auto frozen = this->frozen.load();
             if (frozen) {
                 this->version.fetch_add(1);
-                this->deadline.fetch_add(this->readTime() - frozen);
+                this->deadline.store(this->deadline.load() + this->readTime() - frozen);
                 this->frozen.store(0);
                 this->version.fetch_add(1);
             }
@@ -157,11 +148,9 @@ namespace musik { namespace plugins {
         device latency is already in the deadline, so it is not reported again. */
         mc_result Read(mc_output_timing& timing) const noexcept {
             timing = MC_OUTPUT_TIMING_DEFAULT;
-            if constexpr (!Supported) {
-                return MC_OK;
-            }
             const auto version = this->version.load();
-            if (version & 1) {
+            const auto submissionVersion = this->submissionVersion.load();
+            if ((version | submissionVersion) & 1) {
                 return MC_ERROR_BUSY;
             }
             const auto rate = this->rate.load();
@@ -173,7 +162,7 @@ namespace musik { namespace plugins {
             const auto frozen = this->frozen.load();
             const auto now = this->readTime();
             const auto observationTime = frozen ? frozen : now;
-            if (version != this->version.load()) {
+            if (submissionVersion != this->submissionVersion.load() || version != this->version.load()) {
                 return MC_ERROR_BUSY;
             }
             if (!rate) {
@@ -198,19 +187,39 @@ namespace musik { namespace plugins {
             return scheduled - pending;
         }
 
-        /* optional timing must stay allocation-free and lock-free, including
-        targets whose standard library implements 64-bit atomics with a mutex. */
-        static constexpr bool Supported = std::atomic<uint64_t>::is_always_lock_free;
+        /* ARMv6 lacks lock-free 64-bit atomics. the snapshot versions let
+        readers reject a value assembled across two writes to a split counter. */
+        class SplitCounter {
+        public:
+            uint64_t load() const noexcept {
+                const auto highWord = this->high.load();
+                return (static_cast<uint64_t>(highWord) << 32) | this->low.load();
+            }
+
+            void store(uint64_t value) noexcept {
+                this->high.store(static_cast<uint32_t>(value >> 32));
+                this->low.store(static_cast<uint32_t>(value));
+            }
+
+        private:
+            std::atomic<uint32_t> high { 0 };
+            std::atomic<uint32_t> low { 0 };
+        };
+
+        static_assert(std::atomic<uint32_t>::is_always_lock_free);
+        using Counter = std::conditional_t<std::atomic<uint64_t>::is_always_lock_free,
+            std::atomic<uint64_t>, SplitCounter>;
 
         TimeSource& readTime;
-        std::atomic<uint64_t> version { 0 };
+        std::atomic<uint32_t> version { 0 };
+        std::atomic<uint32_t> submissionVersion { 0 };
         std::atomic<uint32_t> rate { 0 };
-        std::atomic<uint64_t> generation { 0 };
-        std::atomic<uint64_t> submitted { 0 };
-        std::atomic<uint64_t> scheduled { 0 };
-        std::atomic<uint64_t> audibleFloor { 0 };
-        std::atomic<uint64_t> deadline { 0 };
-        std::atomic<uint64_t> frozen { 0 };
+        Counter generation {};
+        Counter submitted {};
+        Counter scheduled {};
+        Counter audibleFloor {};
+        Counter deadline {};
+        Counter frozen {};
     };
 
 } }

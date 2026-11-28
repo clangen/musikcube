@@ -45,6 +45,8 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 
+using musik::plugins::OutputTimingEstimator;
+
 namespace {
     constexpr size_t DefaultCapacity = 32768;
     constexpr char LatencyKey[] = "latency_ms";
@@ -163,6 +165,8 @@ mc_result AlsaOut::Prepare(const mc_output_options& options, const mc_output_cal
     this->callbacks = outputCallbacks;
     this->volume = options.initial_volume;
     this->paused = false;
+    this->scheduledFrames = 0;
+    this->timingEstimator.Reset(this->format.sample_rate);
     this->stopped = false;
     return MC_OK;
 }
@@ -178,6 +182,19 @@ mc_result AlsaOut::WaitForDevice() {
 void AlsaOut::EndOperation() noexcept {
     this->operationActive = false;
     this->operationEndedEvent.notify_all();
+}
+
+void AlsaOut::PublishTiming() noexcept {
+    /* prepared PCM does not move until ALSA starts playback or drains it. */
+    const auto state = snd_pcm_state(this->pcm);
+    snd_pcm_sframes_t delay = 0;
+    if ((state == SND_PCM_STATE_RUNNING || state == SND_PCM_STATE_DRAINING) &&
+        snd_pcm_delay(this->pcm, &delay) >= 0)
+    {
+        const auto lead = std::max<snd_pcm_sframes_t>(0, delay) * 1e9 / this->format.sample_rate;
+        this->timingEstimator.Publish(this->scheduledFrames,
+            OutputTimingEstimator::Now() + static_cast<uint64_t>(lead));
+    }
 }
 
 mc_result AlsaOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
@@ -227,6 +244,8 @@ mc_result AlsaOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
                 block.pcm.frame_count - written);
             if (result > 0) {
                 written += static_cast<size_t>(result);
+                this->scheduledFrames = this->timingEstimator.Submit(static_cast<size_t>(result));
+                this->PublishTiming();
             }
             else if (result == -EAGAIN || result == 0) {
                 wait = true;
@@ -234,6 +253,10 @@ mc_result AlsaOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
             else if (snd_pcm_recover(this->pcm, static_cast<int>(result), 1) < 0) {
                 outcome = MC_ERROR_IO;
                 break;
+            }
+            else if (result == -EPIPE) {
+                /* an underrun means the previous run has already reached its tail. */
+                this->timingEstimator.Publish(this->scheduledFrames, OutputTimingEstimator::Now());
             }
         }
 
@@ -274,6 +297,7 @@ mc_result AlsaOut::Pause() {
     if (snd_pcm_pause(this->pcm, 1) < 0) {
         return MC_ERROR_IO;
     }
+    this->timingEstimator.Pause();
     this->paused = true;
     return MC_OK;
 }
@@ -286,6 +310,7 @@ mc_result AlsaOut::Resume() {
     if (this->paused && snd_pcm_pause(this->pcm, 0) < 0) {
         return MC_ERROR_IO;
     }
+    this->timingEstimator.Resume();
     this->paused = false;
     if (this->callbacks.ready) {
         this->callbacks.ready(this->callbacks.context);
@@ -322,6 +347,7 @@ mc_result AlsaOut::Stop() noexcept {
     }
     this->operationEndedEvent.wait(lock, [this] { return !this->operationActive; });
 
+    this->timingEstimator.Reset(0);
     if (this->pcm) {
         snd_pcm_drop(this->pcm);
         if (snd_pcm_close(this->pcm) < 0) {
@@ -365,6 +391,7 @@ mc_result AlsaOut::Drain() {
                 outcome = MC_ERROR_IO;
                 break;
             }
+            this->PublishTiming();
         }
 
         outcome = this->WaitForDevice();
@@ -379,8 +406,11 @@ mc_result AlsaOut::Drain() {
         if (this->stopped) {
             outcome = MC_ERROR_CANCELLED;
         }
-        else if (outcome == MC_OK && snd_pcm_prepare(this->pcm) < 0) {
-            outcome = MC_ERROR_IO;
+        else if (outcome == MC_OK) {
+            this->timingEstimator.Publish(this->scheduledFrames, OutputTimingEstimator::Now());
+            if (snd_pcm_prepare(this->pcm) < 0) {
+                outcome = MC_ERROR_IO;
+            }
         }
         this->EndOperation();
     }
@@ -396,7 +426,12 @@ mc_result AlsaOut::Flush() {
         return MC_ERROR_IN_FLIGHT;
     }
     /* Drop queued frames and return the existing PCM handle to PREPARED. */
-    if (snd_pcm_drop(this->pcm) < 0 || snd_pcm_prepare(this->pcm) < 0) {
+    if (snd_pcm_drop(this->pcm) < 0) {
+        return MC_ERROR_IO;
+    }
+    this->scheduledFrames = 0;
+    this->timingEstimator.Reset(this->format.sample_rate);
+    if (snd_pcm_prepare(this->pcm) < 0) {
         return MC_ERROR_IO;
     }
     this->paused = false;

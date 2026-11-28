@@ -47,6 +47,8 @@ struct pa_blocking {
 
     int operation_success;
     int cancelled;
+    pa_blocking_timing_fn timing;
+    void *timing_user;
 };
 
 #define CHECK_VALIDITY_RETURN_ANY(rerror, expression, error, ret)       \
@@ -128,11 +130,25 @@ static void stream_request_cb(pa_stream *s, size_t length, void *userdata) {
     pa_threaded_mainloop_signal(p->mainloop, 0);
 }
 
+static void report_playback_timing(pa_blocking *p, size_t bytes) {
+    if (p->timing && !p->cancelled) {
+        pa_usec_t latency;
+        int negative;
+        if (pa_stream_get_latency(p->stream, &latency, &negative) < 0) {
+            latency = (pa_usec_t) -1;
+        } else if (negative) {
+            latency = 0;
+        }
+        p->timing(p->timing_user, bytes, latency);
+    }
+}
+
 static void stream_latency_update_cb(pa_stream *s, void *userdata) {
     pa_blocking *p = userdata;
 
     assert(p);
 
+    report_playback_timing(p, 0);
     pa_threaded_mainloop_signal(p->mainloop, 0);
 }
 
@@ -289,7 +305,8 @@ void pa_blocking_free(pa_blocking *s) {
     pa_xfree(s);
 }
 
-int pa_blocking_write(pa_blocking *p, const void*data, size_t length, int *rerror) {
+int pa_blocking_write(pa_blocking *p, const void*data, size_t length,
+                      pa_blocking_timing_fn timing, void *user, int *rerror) {
     assert(p);
 
     CHECK_VALIDITY_RETURN_ANY(rerror, p->direction == PA_STREAM_PLAYBACK, PA_ERR_BADSTATE, -1);
@@ -300,6 +317,8 @@ int pa_blocking_write(pa_blocking *p, const void*data, size_t length, int *rerro
 
     CHECK_DEAD_GOTO(p, rerror, unlock_and_fail);
 
+    p->timing = timing;
+    p->timing_user = user;
     while (length > 0) {
         size_t l;
         int r;
@@ -318,6 +337,7 @@ int pa_blocking_write(pa_blocking *p, const void*data, size_t length, int *rerro
         r = pa_stream_write(p->stream, data, l, NULL, 0LL, PA_SEEK_RELATIVE);
         CHECK_SUCCESS_GOTO(p, rerror, r >= 0, unlock_and_fail);
 
+        report_playback_timing(p, l);
         data = (const uint8_t*) data + l;
         length -= l;
     }

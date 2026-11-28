@@ -59,8 +59,14 @@ static int stall(pa_blocking* stream, const char* mode) {
     return -1;
 }
 
-extern "C" int pa_blocking_write(pa_blocking* stream, const void*, size_t, int*) {
-    return stall(stream, "write");
+extern "C" int pa_blocking_write(pa_blocking* stream, const void*, size_t bytes,
+    pa_blocking_timing_fn timing, void* user, int*)
+{
+    const int result = stall(stream, "write");
+    if (result == 0 && timing) {
+        timing(user, bytes, 1000000);
+    }
+    return result;
 }
 
 extern "C" int pa_blocking_drain(pa_blocking* stream, int*) {

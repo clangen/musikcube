@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "../common/OutputTimingEstimator.h"
 #include <musikcore/plugin/output.hpp>
 #include <alsa/asoundlib.h>
 #include <condition_variable>
@@ -60,6 +61,7 @@ public:
     double GetVolume() const;
     mc_result Stop() noexcept;
     mc_result Drain();
+    mc_result GetTiming(mc_output_timing& timing) const noexcept { return this->timingEstimator.Read(timing); }
     mc_result Flush();
 
     static mc_result VisitDevices(mc_output_device_fn, void*);
@@ -69,7 +71,10 @@ public:
 private:
     mc_result WaitForDevice();
     void EndOperation() noexcept;
+    void PublishTiming() noexcept;
 
+    musik::plugins::OutputTimingEstimator timingEstimator;
+    uint64_t scheduledFrames = 0;
     mutable std::mutex mutex;
     std::condition_variable operationEndedEvent;
     const mc_plugin_services* services = nullptr;

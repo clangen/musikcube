@@ -1,4 +1,4 @@
-#include "../../support/plugins/OutputContract.h"
+#include "../../support/plugins/OutputTiming.h"
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/output.h>
 #include <dlfcn.h>
@@ -92,17 +92,28 @@ int main(int argc, char** argv) {
         results.count.load() == 1 && results.token.load() == 7 && results.status.load() == MC_OK,
         "return PCM once");
     require(api->drain(instance, nullptr) == MC_OK, "drain output");
+    auto timing = mc_output_timing MC_OUTPUT_TIMING_DEFAULT;
+    require(api->get_timing(instance, &timing) == MC_OK &&
+        (timing.valid_flags & MC_OUTPUT_TIMING_ESTIMATED) &&
+        timing.frames_played_by_driver == block.pcm.frame_count && timing.queued_seconds == 0,
+        "drain reaches the accepted PCM tail");
     require(api->pause(instance) == MC_OK, "pause output");
     block.token = 8;
     require(api->queue_audio_buffer(instance, &block) == MC_OK && results.count.load() == 1,
         "paused output retains PCM");
+    require(api->get_timing(instance, &timing) == MC_OK &&
+        timing.frames_played_by_driver == block.pcm.frame_count && timing.queued_seconds > 0,
+        "paused audio remains queued without moving the clock");
     require(api->drain(instance, nullptr) == MC_ERROR_IN_FLIGHT, "paused drain does not wait");
     require(api->stop(instance) == MC_OK && api->stop(instance) == MC_OK, "stop is idempotent");
+    require(api->get_timing(instance, &timing) == MC_OK && timing.valid_flags == 0,
+        "stop clears the timing snapshot");
     require(results.count.load() == 2 && results.token.load() == 8 && results.status.load() == MC_ERROR_CANCELLED,
         "stop returns paused PCM once");
     require(api->queue_audio_buffer(instance, &block) == MC_ERROR_CANCELLED, "stopped output rejects audio");
     api->destroy(instance);
     output_contract::Check(*factory, nullptr, options);
+    output_contract::CheckTiming(*factory, options);
     plugin.shutdown(state);
     dlclose(library);
     close(results.event);

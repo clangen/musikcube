@@ -58,7 +58,11 @@ int pa_blocking_cork(pa_blocking *s, bool cork, int *error);
 void pa_blocking_free(pa_blocking *s);
 
 /** Write some data to the server. */
-int pa_blocking_write(pa_blocking *s, const void *data, size_t bytes, int *error);
+/* called under the mainloop lock after a write or a timing update.
+ * bytes is zero on a timing-only update; latency is -1 when unavailable. */
+typedef void (*pa_blocking_timing_fn)(void *user, size_t bytes, pa_usec_t latency);
+int pa_blocking_write(pa_blocking *s, const void *data, size_t bytes,
+                      pa_blocking_timing_fn timing, void *user, int *error);
 
 /** Wait until all data already written is played by the daemon. */
 int pa_blocking_drain(pa_blocking *s, int *error);

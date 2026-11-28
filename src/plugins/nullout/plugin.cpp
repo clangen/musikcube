@@ -1,6 +1,8 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/output.hpp>
 
+#include "../common/OutputTimingEstimator.h"
+
 #include <chrono>
 #include <cmath>
 #include <condition_variable>
@@ -43,6 +45,7 @@ namespace {
             this->volume = options.initial_volume;
             this->callbacks = callbacks;
             this->paused = false;
+            this->timingEstimator.Reset(this->format.sample_rate);
             this->stopped = false;
             return MC_OK;
         }
@@ -68,21 +71,25 @@ namespace {
                 return MC_ERROR_IN_FLIGHT;
             }
 
-            /* validate the deadline before accepting ownership. no buffer,
-            token, or clock state needs to survive this producer call. */
+            /* validate the deadline before accepting ownership. */
             const auto now = Clock::now();
             const auto ticks = std::ceil(static_cast<long double>(pcm.frame_count) * Clock::period::den /
                 this->format.sample_rate / Clock::period::num);
             if (ticks > (Clock::time_point::max() - now).count()) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
+            const auto deadline = now + Clock::duration(static_cast<Clock::rep>(ticks));
             this->active = true;
+            const auto endFrame = this->timingEstimator.Submit(pcm.frame_count);
+            this->timingEstimator.Publish(endFrame,
+                std::chrono::duration_cast<std::chrono::nanoseconds>(deadline.time_since_epoch()).count());
             try {
-                this->wake.wait_until(lock, now + Clock::duration(static_cast<Clock::rep>(ticks)), [&] {
+                this->wake.wait_until(lock, deadline, [&] {
                     return this->stopped;
                 });
             }
             catch (...) {
+                this->timingEstimator.Reset(this->format.sample_rate);
                 this->active = false;
                 this->wake.notify_all();
                 return MC_ERROR_INTERNAL;
@@ -125,6 +132,7 @@ namespace {
             this->wake.wait(lock, [&] {
                 return !this->active;
             });
+            this->timingEstimator.Reset(0);
             return MC_OK;
         }
 
@@ -142,9 +150,12 @@ namespace {
             if (this->active) {
                 return MC_ERROR_IN_FLIGHT;
             }
+            this->timingEstimator.Reset(this->format.sample_rate);
             this->paused = false;
             return MC_OK;
         }
+
+        mc_result GetTiming(mc_output_timing& timing) const noexcept { return this->timingEstimator.Read(timing); }
 
         mc_result SetVolume(double value) {
             this->volume = value;
@@ -176,6 +187,7 @@ namespace {
             this->callbacks.completed(this->callbacks.context, token, outcome);
         }
 
+        musik::plugins::OutputTimingEstimator timingEstimator;
         double volume = 1;
         std::mutex mutex;
         std::condition_variable wake;

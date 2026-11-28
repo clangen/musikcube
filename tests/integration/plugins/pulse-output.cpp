@@ -99,7 +99,18 @@ int main(int argc, char** argv) {
     block.pcm = { sizeof(mc_pcm_view), samples, 256, options.format };
     require(api->queue_audio_buffer(instance, &block) == MC_OK, "write PCM");
     require(results.count == 1 && results.token == 7 && results.status == MC_OK, "return PCM once");
+    auto timing = mc_output_timing MC_OUTPUT_TIMING_DEFAULT;
+    if (argc == 3 && std::strcmp(argv[2], "fixture") == 0) {
+        require(api->get_timing(instance, &timing) == MC_OK &&
+            (timing.valid_flags & MC_OUTPUT_TIMING_QUEUED) &&
+            timing.frames_played_by_driver == 0 && timing.queued_seconds > 0,
+            "native write latency keeps accepted PCM pending");
+    }
     require(api->drain(instance, nullptr) == MC_OK, "drain output");
+    require(api->get_timing(instance, &timing) == MC_OK &&
+        (timing.valid_flags & MC_OUTPUT_TIMING_ESTIMATED) &&
+        timing.frames_played_by_driver == block.pcm.frame_count && timing.queued_seconds == 0,
+        "drain reaches the accepted PCM tail");
     auto forbidWait = reinterpret_cast<void (*)(int)>(dlsym(RTLD_DEFAULT, "mc_test_pulse_forbid_wait"));
     if (argc == 3 && std::strcmp(argv[2], "no-wait") == 0) {
         require(forbidWait != nullptr, "PulseAudio wait fixture loaded");
@@ -122,6 +133,8 @@ int main(int argc, char** argv) {
     require(api->queue_audio_buffer(instance, &block) == MC_ERROR_BUFFER_TOO_SMALL && results.count == 2,
         "oversized PCM remains with the host");
     require(api->stop(instance) == MC_OK && api->stop(instance) == MC_OK, "stop is idempotent");
+    require(api->get_timing(instance, &timing) == MC_OK && timing.valid_flags == 0,
+        "stop clears the timing snapshot");
     require(api->queue_audio_buffer(instance, &block) == MC_ERROR_CANCELLED, "stopped output rejects audio");
     if (argc == 3 && std::strcmp(argv[2], "fixture") == 0) {
         options.device_id = { "unavailable", 11 };

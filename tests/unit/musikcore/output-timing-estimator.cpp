@@ -32,10 +32,6 @@ namespace {
 }
 
 int main() {
-    if constexpr (!std::atomic<uint64_t>::is_always_lock_free) {
-        std::puts("optional timing estimates require lock-free 64-bit atomics");
-        return 77;
-    }
     musik::plugins::OutputTimingEstimator estimator(clockTime);
     estimator.Reset(48000);
     estimator.Submit(4800);
@@ -99,6 +95,14 @@ int main() {
     auto contested = mc_output_timing MC_OUTPUT_TIMING_DEFAULT;
     CHECK(estimator.Read(contested) == MC_ERROR_BUSY);
     CHECK(contested.valid_flags == 0);
+    /* the cursor must carry into the high word even on a 32-bit target. */
+    constexpr size_t half = 0x8000'0000;
+    estimator.Submit(half);
+    const auto end = estimator.Submit(half + 1);
+    CHECK(end == 0x1'0000'0001);
+    estimator.Reject(1);
+    estimator.Publish(end - 1, now);
+    CHECK(read(estimator).frames_played_by_driver == end - 1);
     estimator.Reset(0);
     CHECK(read(estimator).valid_flags == 0);
 }

@@ -42,6 +42,8 @@
 #include <utility>
 #include <vector>
 
+using musik::plugins::OutputTimingEstimator;
+
 namespace {
     constexpr size_t DefaultCapacity = 32768;
     constexpr char LinearVolumeKey[] = "force_linear_volume";
@@ -222,8 +224,22 @@ mc_result PulseOut::Prepare(const mc_output_options& options, const mc_output_ca
         return MC_ERROR_IO;
     }
     this->paused = false;
+    this->scheduledFrames = 0;
+    this->timingPaused = false;
+    this->timingEstimator.Reset(this->format.sample_rate);
     this->stopped = false;
     return MC_OK;
+}
+
+void PulseOut::UpdateTiming(void* user, size_t bytes, pa_usec_t latency) noexcept {
+    auto& output = *static_cast<PulseOut*>(user);
+    std::lock_guard lock(output.timingMutex);
+    if (bytes) {
+        output.scheduledFrames = output.timingEstimator.Submit(bytes / (output.format.channels * sizeof(float)));
+    }
+    if (output.scheduledFrames && !output.timingPaused && latency != static_cast<pa_usec_t>(-1)) {
+        output.timingEstimator.Publish(output.scheduledFrames, OutputTimingEstimator::Now() + latency * 1000);
+    }
 }
 
 mc_result PulseOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
@@ -254,7 +270,7 @@ mc_result PulseOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
     lock.unlock();
     int error = 0;
     const int result = pa_blocking_write(connection, block.pcm.data,
-        block.pcm.frame_count * this->format.channels * sizeof(float), &error);
+        block.pcm.frame_count * this->format.channels * sizeof(float), UpdateTiming, this, &error);
     lock.lock();
 
     const auto outcome = this->stopped ? MC_ERROR_CANCELLED : result < 0 ? MC_ERROR_IO : MC_OK;
@@ -288,6 +304,11 @@ mc_result PulseOut::Pause() {
     if (result < 0) {
         return MC_ERROR_IO;
     }
+    {
+        std::lock_guard timingLock(this->timingMutex);
+        this->timingPaused = true;
+        this->timingEstimator.Pause();
+    }
     this->paused = true;
     return MC_OK;
 }
@@ -314,6 +335,11 @@ mc_result PulseOut::Resume() {
     }
     if (result < 0) {
         return MC_ERROR_IO;
+    }
+    {
+        std::lock_guard timingLock(this->timingMutex);
+        this->timingEstimator.Resume();
+        this->timingPaused = false;
     }
     this->paused = false;
     if (this->callbacks.ready) {
@@ -371,6 +397,7 @@ mc_result PulseOut::Stop() noexcept {
         pa_blocking_free(this->connection);
         this->connection = nullptr;
     }
+    this->timingEstimator.Reset(0);
     return MC_OK;
 }
 
@@ -391,6 +418,10 @@ mc_result PulseOut::Drain() {
     lock.lock();
 
     const auto outcome = this->stopped ? MC_ERROR_CANCELLED : result < 0 ? MC_ERROR_IO : MC_OK;
+    if (outcome == MC_OK) {
+        std::lock_guard timingLock(this->timingMutex);
+        this->timingEstimator.Publish(this->scheduledFrames, OutputTimingEstimator::Now());
+    }
     this->active = false;
     this->finished.notify_all();
     return outcome;
@@ -415,6 +446,12 @@ mc_result PulseOut::Flush() {
     this->finished.notify_all();
     if (this->stopped) {
         return MC_ERROR_CANCELLED;
+    }
+    if (result >= 0) {
+        std::lock_guard timingLock(this->timingMutex);
+        this->scheduledFrames = 0;
+        this->timingPaused = resumed < 0;
+        this->timingEstimator.Reset(this->format.sample_rate);
     }
     if (result < 0 || resumed < 0) {
         return MC_ERROR_IO;

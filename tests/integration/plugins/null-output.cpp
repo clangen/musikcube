@@ -150,7 +150,6 @@ public:
     /* synchronous deliveries leave no device queue to drain. */
     mc_result Drain() { return this->api.drain(this->instance, nullptr); }
 
-    /* unsupported timing is an empty validity mask, even during teardown. */
     mc_result Timing(mc_output_timing& timing) const { return this->api.get_timing(this->instance, &timing); }
 
 private:
@@ -173,7 +172,11 @@ static void checkPacing(const mc_output_factory& factory) {
     require(returned.records[0].thread == std::this_thread::get_id(), "completion runs on the calling producer");
     require(returned.records[0].completed - submitted >= milliseconds(20), "sink sleeps for the buffer duration");
     mc_output_timing timing = MC_OUTPUT_TIMING_DEFAULT;
-    require(output.Timing(timing) == MC_OK && !timing.valid_flags, "null sink claims no device-clock measurement");
+    require(output.Timing(timing) == MC_OK && (timing.valid_flags & MC_OUTPUT_TIMING_ESTIMATED) &&
+        timing.frames_played_by_driver == 20 && timing.queued_seconds == 0,
+        "the paced clock reaches the accepted PCM tail");
+    require(output.Stop() == MC_OK && output.Timing(timing) == MC_OK && timing.valid_flags == 0,
+        "stop clears the timing snapshot");
 }
 
 /* pause rejects delivery without retaining storage. oversized blocks stay

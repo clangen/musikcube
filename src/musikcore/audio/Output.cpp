@@ -3,6 +3,7 @@
 #include <limits>
 #include <algorithm>
 #include <climits>
+#include <cmath>
 #include <chrono>
 
 namespace musik { namespace core { namespace audio {
