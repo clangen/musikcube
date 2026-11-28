@@ -145,7 +145,7 @@ diff --git a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderHeaderGl
 index 251a7d6..c53511a 100644
 --- a/src/libprojectM/Renderer/TransitionShaders/TransitionShaderHeaderGlsl330.frag
 +++ b/src/libprojectM/Renderer/TransitionShaders/TransitionShaderHeaderGlsl330.frag
-@@ -28,6 +28,50 @@ uniform vec3 iBeatAttValues;
+@@ -28,6 +28,51 @@ uniform vec3 iBeatAttValues;
  // Samplers
  uniform sampler2D iChannel0;
  uniform sampler2D iChannel1;
@@ -191,7 +191,8 @@ index 251a7d6..c53511a 100644
 +    float saturation = 1.0 + 0.45 * progress * sin(iTime * 4.0);
 +    float pulse = 1.0 + 0.20 * progress * sin(iTime * 5.0 + clamp(iBeatValues.x, 0.0, 2.0));
 +    color.rgb = max(vec3(0.0), mix(vec3(luminance), shifted, saturation) * pulse);
-+    return color;
++    // Fade the animated snapshot into the incoming image, including during wipe transitions.
++    return mix(color, texture(iChannel1, uv), smoothstep(0.0, 1.0, progress));
 +}
  
  // These are named as in Milkdrop shaders so we can reuse the code.
