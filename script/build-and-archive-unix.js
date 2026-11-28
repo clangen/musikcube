@@ -81,9 +81,8 @@ function stageArchive(config, output) {
   const lib = readdirSync(join(bin, 'lib'))
     .filter((file) => lstatSync(join(bin, 'lib', file)).isFile())
     .map((file) => join('lib', file));
-  const plugins = readdirSync(join(bin, 'plugins'))
-    .filter((file) => file.endsWith(extension)).map((file) => join('plugins', file));
-  const helpers = ['plugins/musikcube-projectm'].filter((file) => existsSync(join(bin, file)));
+  const plugins = readFileSync(join(config.buildDirectory, 'CMakeFiles', 'runtime-plugins-Release.txt'), 'utf8')
+    .split(/\r?\n/).filter(Boolean);
 
   rmSync(output, { recursive: true, force: true });
   for (const directory of ['lib', 'plugins', 'locales', 'themes', 'share/terminfo']) {
@@ -94,11 +93,11 @@ function stageArchive(config, output) {
       files.push(join(directory, file));
     }
   }
-  for (const file of [...files, ...lib, ...plugins, ...helpers]) {
+  for (const file of [...files, ...lib, ...plugins]) {
     copyFileSync(join(bin, file), join(output, file));
   }
   const presets = join(bin, 'plugins/projectM');
-  if (existsSync(presets)) {
+  if (plugins.includes('plugins/libprojectm' + extension) && existsSync(presets)) {
     cpSync(presets, join(output, 'plugins/projectM'), { recursive: true });
   }
   run('cp', ['-Rp', join(bin, 'share/terminfo') + '/.', join(output, 'share/terminfo')], config.env);
@@ -110,7 +109,7 @@ function stageArchive(config, output) {
   }
 
   console.log('Stripping staged binaries');
-  const binaries = [...files.slice(0, 3), ...lib, ...plugins, ...helpers].map((file) => join(output, file));
+  const binaries = [...files.slice(0, 3), ...lib, ...plugins].map((file) => join(output, file));
   run(strip, [...stripArguments, ...binaries], config.env);
   if (config.codesign) {
     console.log('Signing staged binaries');

@@ -1,10 +1,3 @@
-# plugin dynamic libraries
-if (APPLE)
-  set(plugin_extension dylib)
-else ()
-  set(plugin_extension so)
-endif ()
-
 if (${BUILD_STANDALONE} MATCHES "true")
   install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/lib/"
     DESTINATION share/musikcube/lib COMPONENT musikcoreSDK OPTIONAL)
@@ -12,8 +5,18 @@ if (${BUILD_STANDALONE} MATCHES "true")
     DESTINATION share/musikcube/share OPTIONAL)
 endif()
 
-install(DIRECTORY "${MUSIKCUBE_RUNTIME_OUTPUT_DIRECTORY}/plugins/"
-  DESTINATION share/musikcube/plugins COMPONENT musikcorePlugins OPTIONAL FILES_MATCHING PATTERN "*.${plugin_extension}")
+# Use the production targets for both SDK installs and standalone archives.
+get_property(runtime_plugins GLOBAL PROPERTY MUSIKCUBE_RUNTIME_PLUGINS)
+set(plugin_manifest "")
+foreach(plugin IN LISTS runtime_plugins)
+  string(APPEND plugin_manifest "plugins/$<TARGET_FILE_NAME:${plugin}>\n")
+  install(FILES "$<TARGET_FILE:${plugin}>"
+    DESTINATION share/musikcube/plugins COMPONENT musikcorePlugins)
+endforeach()
+if(TARGET projectm_helper)
+  string(APPEND plugin_manifest "plugins/$<TARGET_FILE_NAME:projectm_helper>\n")
+endif()
+file(GENERATE OUTPUT "${PROJECT_BINARY_DIR}/CMakeFiles/runtime-plugins-$<CONFIG>.txt" CONTENT "${plugin_manifest}")
 
 # resources
 file(GLOB themes "src/musikcube/data/themes/*.json")
