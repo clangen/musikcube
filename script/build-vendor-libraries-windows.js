@@ -30,8 +30,6 @@ const staticPackages = ['libgme', 'taglib', 'zlib', 'libmicrohttpd', 'projectm',
 const sharedLibraries = {
   curl: [['libcurl', 'libcurl', 'libcurl_imp', 'curl']],
   openssl: [['openssl', 'libssl', 'ssl'], ['openssl', 'libcrypto', 'crypto']],
-  lame: [['lame', 'libmp3lame', 'mp3lame', 'lame', 'lame_enc']],
-  libopenmpt: [['libopenmpt', 'libopenmpt', 'openmpt']],
 };
 const staticLibraries = {
   'gme.lib': ['lib/gme.lib'],
@@ -186,7 +184,7 @@ function cloneTag(url, tag, destination) {
   }
 }
 
-function buildPackages(packages, env) {
+function buildPackages(packages, env, targetTriplet = triplet) {
   const root = join(work, 'vcpkg-' + vcpkgTag);
   cloneTag('https://github.com/microsoft/vcpkg.git', vcpkgTag, root);
 
@@ -195,12 +193,21 @@ function buildPackages(packages, env) {
     runBatch('call bootstrap-vcpkg.bat -disableMetrics', { cwd: root, env });
   }
 
+  // Replace older DLL builds when switching these ports to static linkage.
+  for (const [port, archive] of [['libopenmpt', 'openmpt.lib'], ['mp3lame', 'libmp3lame.lib']]) {
+    const path = join(root, 'installed', targetTriplet, 'lib', archive);
+    if (packages.includes(port) && existsSync(path) &&
+        readFileSync(path).includes(Buffer.from('__IMPORT_DESCRIPTOR_'))) {
+      run(vcpkg, ['remove', '--classic', '--vcpkg-root=' + root, port + ':' + targetTriplet], { cwd: root, env });
+    }
+  }
+
   run(vcpkg, [
-    'install', '--classic', '--triplet=' + triplet, '--host-triplet=x64-windows',
+    'install', '--classic', '--triplet=' + targetTriplet, '--host-triplet=x64-windows',
     '--vcpkg-root=' + root, '--overlay-triplets=' + join(support, 'triplets'), ...packages,
   ], { cwd: root, env });
 
-  return join(root, 'installed', triplet);
+  return join(root, 'installed', targetTriplet);
 }
 
 function buildFfmpeg(msys, installed, tools, env) {
@@ -239,7 +246,7 @@ function stageShared(stage, dumpbin, prefix, [group, name, ...aliases]) {
   copyFileSync(library, join(stage.lib, name + '.lib'));
 }
 
-function stageBundle(installed, ffmpeg, library, dumpbin) {
+function stageBundle(installed, ffmpeg, library, dumpbin, debugCodecs) {
   const dir = mkdtempSync(join(work, 'stage-'));
   const stage = {
     headers: mkdir(join(dir, 'include')),
@@ -255,16 +262,39 @@ function stageBundle(installed, ffmpeg, library, dumpbin) {
     for (const spec of libraries) stageShared(stage, dumpbin, installed, spec);
   }
 
-  if (includes('lame')) copyFileSync(join(stage.lib, 'libmp3lame.lib'), join(stage.lib, 'libmp3lameD.lib'));
-
-  const openmptConfig = join(stage.headers, 'libopenmpt', 'libopenmpt_config.h');
-  if (existsSync(openmptConfig)) {
-    // The decoder uses the C API. The header still disables C++ API imports.
-    const config = readFileSync(openmptConfig, 'utf8').replace(
-      /^#error "C\+\+ interface is disabled if libopenmpt is built as a DLL and the runtime is statically linked\.[^\r\n]*"/m,
-      '/* Allow the C API in C++ translation units. */',
-    );
-    writeFileSync(openmptConfig, config);
+  const staticCodecs = [];
+  if (includes('lame')) {
+    staticCodecs.push(['libmp3lame.lib', 'libmp3lame-static.lib'], ['libmpghip.lib', 'libmpghip-static.lib']);
+  }
+  if (includes('libopenmpt')) {
+    staticCodecs.push(['libopenmpt.lib', 'openmpt.lib'], ['mpg123.lib', 'mpg123.lib'],
+      ['ogg.lib', 'ogg.lib'], ['vorbis.lib', 'vorbis.lib'], ['vorbisfile.lib', 'vorbisfile.lib']);
+  }
+  for (const [target, name] of staticCodecs) {
+    const source = join(installed, 'lib', name);
+    if (!existsSync(source)) throw new Error('Missing static archive: ' + source);
+    if (readFileSync(source).includes(Buffer.from('__IMPORT_DESCRIPTOR_'))) {
+      throw new Error('Expected a static archive, found an import library: ' + source);
+    }
+    copyFileSync(source, join(stage.lib, target));
+  }
+  const debugLibraries = [];
+  if (includes('lame')) {
+    debugLibraries.push(['libmp3lameD.lib', ['libmp3lame-static.lib']],
+      ['libmpghipD.lib', ['libmpghip-static.lib']]);
+  }
+  if (includes('libopenmpt')) {
+    debugLibraries.push(['libopenmptD.lib', ['openmpt.lib', 'openmptd.lib']],
+      ['mpg123D.lib', ['mpg123.lib', 'mpg123d.lib']], ['oggD.lib', ['oggd.lib', 'ogg.lib']],
+      ['vorbisD.lib', ['vorbisd.lib', 'vorbis.lib']], ['vorbisfileD.lib', ['vorbisfiled.lib', 'vorbisfile.lib']]);
+  }
+  for (const [target, candidates] of debugLibraries) {
+    const source = candidates.map(name => join(debugCodecs, 'debug', 'lib', name)).find(existsSync);
+    if (!source) throw new Error('Missing debug archive for ' + target);
+    if (readFileSync(source).includes(Buffer.from('__IMPORT_DESCRIPTOR_'))) {
+      throw new Error('Expected a static archive, found an import library: ' + source);
+    }
+    copyFileSync(source, join(stage.lib, target));
   }
 
   if (ffmpeg) {
@@ -445,11 +475,13 @@ function main() {
   if (needsFfmpeg && !reuse) packages.push('opus', 'libvorbis');
 
   const installed = packages.length ? buildPackages(packages, env) : null;
+  const debugPackages = packages.filter(name => name === 'libopenmpt' || name === 'mp3lame');
+  const debugCodecs = debugPackages.length ? buildPackages(debugPackages, env, 'musikcube-x64-codec-debug') : null;
   const ffmpeg = needsFfmpeg ? reuse ?? buildFfmpeg(msys, installed, tools, env) : null;
 
   /* Audit the staged DLLs before publishing the vendor bundle. */
-  const stage = stageBundle(installed, ffmpeg, library, tools.dumpbin);
-  if (library !== 'static') auditImports(tools.dumpbin, stage.dll);
+  const stage = stageBundle(installed, ffmpeg, library, tools.dumpbin, debugCodecs);
+  if (binariesIn(stage.dll).length) auditImports(tools.dumpbin, stage.dll);
   publishBundle(stage);
 
   if (values['clean-work']) cleanWorkDirectory();

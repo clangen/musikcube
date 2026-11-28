@@ -56,8 +56,13 @@ if(NOT MUSIKCORE_USE_ASIO_WINTLS)
   windows_vendor_library(ssl libssl)
   windows_vendor_library(crypto libcrypto)
 endif()
-windows_vendor_library(lame libmp3lame)
-windows_vendor_library(openmpt libopenmpt)
+windows_vendor_library(lame libmp3lame libmp3lameD)
+windows_vendor_library(mpghip libmpghip libmpghipD)
+windows_vendor_library(openmpt libopenmpt libopenmptD)
+windows_vendor_library(mpg123 mpg123 mpg123D)
+windows_vendor_library(ogg ogg oggD)
+windows_vendor_library(vorbis vorbis vorbisD)
+windows_vendor_library(vorbisfile vorbisfile vorbisfileD)
 windows_vendor_library(gme gme gmeD)
 windows_vendor_library(taglib tag tagD)
 windows_vendor_library(zlib zlibstatic zlibstaticd)
@@ -145,7 +150,9 @@ endif()
 
 # Use one runtime target for both frontends and for the C SDK demo.
 file(GLOB windows_dlls CONFIGURE_DEPENDS "${windows_vendor}/win64/dll/*/*.dll")
-set(windows_excluded_dlls)
+list(FILTER windows_dlls EXCLUDE REGEX "/(lame|libopenmpt)/[^/]+[.]dll$")
+set(windows_excluded_dlls "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmp3lame.DLL"
+  "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openmpt.dll")
 if(MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
   list(FILTER windows_dlls EXCLUDE REGEX "/libcurl/[^/]+[.]dll$")
   list(APPEND windows_excluded_dlls "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libcurl.dll")
@@ -237,8 +244,8 @@ endif()
 
 windows_plugin(libopenmptdecoder OpenMptDecoder.cpp plugin.cpp Utility.cpp IndexerPlugin.cpp OpenMptIndexerSource.cpp)
 musikcube_configure_c_plugin(libopenmptdecoder)
-target_compile_definitions(libopenmptdecoder PRIVATE LIBOPENMPT_USE_DLL)
-target_link_libraries(libopenmptdecoder PRIVATE vendor::openmpt)
+target_link_libraries(libopenmptdecoder PRIVATE vendor::openmpt vendor::mpg123 vendor::vorbisfile
+  vendor::vorbis vendor::ogg vendor::zlib shlwapi)
 
 windows_plugin(nullout plugin.cpp)
 musikcube_configure_c_plugin(nullout)
@@ -293,7 +300,7 @@ target_link_libraries(server PRIVATE musikcore vendor::zlib vendor::microhttpd w
 
 windows_plugin(stockencoders FfmpegEncoder.cpp LameEncoder.cpp main.cpp)
 musikcube_configure_c_plugin(stockencoders)
-target_link_libraries(stockencoders PRIVATE vendor::lame ${windows_ffmpeg})
+target_link_libraries(stockencoders PRIVATE vendor::lame vendor::mpghip ${windows_ffmpeg})
 
 windows_plugin(supereqdsp SuperEqDsp.cpp supereqdsp_plugin.cpp supereq/Equ.cpp supereq/Fftsg_fl.c)
 musikcube_configure_c_plugin(supereqdsp)
