@@ -566,6 +566,48 @@ cutover gate is complete.
   PCM tests passed on macOS Release (2026-11-25).
   [Output timing contract](musikcore-c-abi-design.md#outputs-and-devices) records the
   position and mix-point policy.
+- [x] Synchronize visualization with audible PCM rather than storage completion.
+  `audio::VisualizationAudioQueue` captures only for active consumers,
+  bounds retained PCM, and selects current audible windows from the standard output
+  timing snapshot. Seek/stop/reprepare clear queued audio; pause holds it.
+  CoreAudio and PortAudio supply estimated audible cursors from scheduled native
+  timestamps without changing the ABI. Other outputs retain their timing API
+  and optional completion-based fallback. `unit.audio.visualization_audio_queue` covers
+  delayed copied PCM, stale-window skipping, pause/resume, reset and oversize rejection.
+  `plugins.output_host` verifies immediate storage return does not dispatch
+  before the simulated device advances and inactive visualization captures no
+  further PCM. `unit.plugins.portaudio_failure` reproduced missing timing before
+  the fix and covers callback DAC delay and generation reset. Both native
+  `plugins.coreaudio_output` and `plugins.portaudio_output` cover queued PCM,
+  pause, audible tail, silence exclusion, stop and fresh generations on macOS
+  Release (2026-11-27). Physical speaker/display latency has not been measured;
+  native Linux/Windows acceptance is not claimed by these macOS tests.
+- [x] Resolve the 2026-11-27 C++/audio audit findings and unify timing concepts.
+  The private plugin `OutputTimingEstimator` preserves an audible floor through
+  underruns; `unit.plugins.output_timing_estimator` reproduces cursor rewind and
+  covers gaps, changed lead, pause and contested snapshots. sndio preserves
+  cumulative PCM across draining resume/drain; `unit.plugins.sndio_timing`
+  covers its zero startup movement, resume/drain, flush and stop through a mock
+  native library. Native sndio acceptance remains unclaimed on this Mac.
+  Core `AudiblePlaybackPosition` replaces loose Output counters and track-position
+  arithmetic with one audible frame domain. `transport.copied_output_callback`
+  reproduced software-queue double subtraction before the fix and verifies
+  rounded position and mix-point lateness with callback-time buffer returns.
+  The visualization queue consumes only the normalized cursor. Following
+  maintainer review, it selects one current audio window every 10 ms rather
+  than replaying every overdue chunk. This removes partial-buffer offsets,
+  catch-up loops and explicit waiter-priority bookkeeping. Allocation/thread
+  failures remain optional capture failures, without failing playback.
+  `unit.audio.visualization_audio_queue` covers stale-window skipping,
+  reset during delivery, allocation failure/recovery and inactive no-copy.
+  The maintainer approved the explicit bounded, thread-safe `is_visible()`
+  contract on 2026-11-27. Vtable layout and ABI version are unchanged; external
+  providers that marshal visibility reads to a UI thread must adapt.
+  `runtime.visualizer_session` reads visibility from a worker without owner
+  dispatch and overlaps those reads with owner-thread show/hide controls.
+  Native timing probes now also exercise running CoreAudio/PortAudio, including
+  the valid AudioQueue timestamp path after startup. Physical speaker/display
+  latency and native Linux/Windows acceptance are not claimed.
 - [x] Keep Stop reachable during a blocking write. Pause and resume give a
   paced write a short time to finish, then return `MC_ERROR_IN_FLIGHT` if the
   device is still busy. A rejected pause or resume preserves the prior state

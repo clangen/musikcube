@@ -53,6 +53,7 @@ private:
     bool paused = false;
     bool operationActive = false;
     /* `sio_onmove()` updates the last device-clock observation. */
+    std::atomic<uint32_t> timingVersion { 0 };
     std::atomic<uint64_t> generation { 0 };
     std::atomic<uint64_t> played { 0 };
     std::atomic<uint64_t> playedTime { 0 };

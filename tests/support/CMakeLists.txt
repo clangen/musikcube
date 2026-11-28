@@ -1003,6 +1003,12 @@ endif()
 
 # native hardware coverage also drives the public URI player through the
 # existing decoder. the isolated runner protects user catalogs/settings.
+# the older audible output need not be the first constructed output.
+if(TEST musikcore.integration.transport.paused_crossfade_pcm)
+  set_tests_properties(musikcore.integration.transport.paused_crossfade_pcm PROPERTIES
+    ENVIRONMENT "MUSIKCORE_TEST_NEWEST_CHANNEL_FIRST=1")
+endif()
+
 if(APPLE AND TARGET coreaudioout AND TARGET ffmpegdecoder)
   add_executable(musikcore_coreaudio_output_test ../integration/plugins/coreaudio-output.cpp host-wakeup.cpp)
   target_include_directories(musikcore_coreaudio_output_test PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
@@ -1418,6 +1424,21 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET mpris)
 endif()
 
 if(UNIX AND TARGET sndioout)
+  add_executable(musikcore_sndio_timing_test ../unit/musikcore/sndio-timing.cpp
+    "${PROJECT_SOURCE_DIR}/src/plugins/sndioout/SndioOut.cpp")
+  target_include_directories(musikcore_sndio_timing_test PRIVATE
+    "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+  target_compile_features(musikcore_sndio_timing_test PRIVATE cxx_std_20)
+  target_compile_definitions(musikcore_sndio_timing_test PRIVATE MUSIKCUBE_SNDIO_HAS_FLUSH=1)
+  target_link_libraries(musikcore_sndio_timing_test PRIVATE Threads::Threads)
+  set_target_properties(musikcore_sndio_timing_test PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+  add_dependencies(musikcube_tests musikcore_sndio_timing_test)
+  add_dependencies(musikcube_unit_tests musikcore_sndio_timing_test)
+  add_test(NAME musikcore.unit.plugins.sndio_timing COMMAND musikcore_sndio_timing_test)
+  set_tests_properties(musikcore.unit.plugins.sndio_timing PROPERTIES
+    LABELS "unit;musikcore;plugins;audio;contract" TIMEOUT 10)
+
   add_executable(musikcore_sndio_no_flush_test ../unit/musikcore/sndio-no-flush.cpp
     "${PROJECT_SOURCE_DIR}/src/plugins/sndioout/SndioOut.cpp")
   target_include_directories(musikcore_sndio_no_flush_test PRIVATE "${PROJECT_SOURCE_DIR}/src/plugins")
@@ -1521,7 +1542,7 @@ if(TARGET ffmpegdecoder)
   add_dependencies(musikcore_copied_output_timing_test musikcore_copied_output ffmpegdecoder)
   add_dependencies(musikcube_tests musikcore_copied_output_timing_test)
   add_dependencies(musikcube_integration_tests musikcore_copied_output_timing_test)
-  foreach(mode IN ITEMS known unknown)
+  foreach(mode IN ITEMS known unknown callback)
     add_test(NAME musikcore.integration.transport.copied_output_${mode} COMMAND "${MUSIKCORE_TEST_NODE}"
       "${PROJECT_SOURCE_DIR}/tests/scripts/run-isolated-test.js" "${CMAKE_CURRENT_BINARY_DIR}/bin/isolated"
       "$<TARGET_FILE:musikcore_copied_output_timing_test>" --stage-minimal

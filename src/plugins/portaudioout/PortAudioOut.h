@@ -3,6 +3,7 @@ queue keeps allocation and locks out of the hardware callback. */
 #pragma once
 
 #include <musikcore/plugin/output.hpp>
+#include <plugins/common/OutputTimingEstimator.h>
 #include <portaudio.h>
 
 #include <array>
@@ -28,6 +29,7 @@ public:
     mc_result Stop() noexcept;
     mc_result Drain();
     mc_result Flush();
+    mc_result GetTiming(mc_output_timing& timing) const noexcept { return this->timingEstimator.Read(timing); }
     mc_result GetDefaultFormat(mc_string_view, mc_audio_format&);
 
     static mc_result VisitDevices(mc_output_device_fn, void*);
@@ -45,8 +47,8 @@ private:
         uint64_t token = 0;
     };
 
-    static int Callback(const void*, void*, unsigned long, const PaStreamCallbackTimeInfo*,
-        PaStreamCallbackFlags, void*) noexcept;
+    static int Callback(
+        const void*, void*, unsigned long, const PaStreamCallbackTimeInfo*, PaStreamCallbackFlags, void*) noexcept;
     static void Finished(void*) noexcept;
     mc_result StartStream();
     void ReturnPending(mc_result) noexcept;
@@ -60,6 +62,9 @@ private:
     std::atomic<size_t> queuedFrames { 0 };
     size_t offset = 0;
     size_t capacity = DefaultCapacity;
+    musik::plugins::OutputTimingEstimator timingEstimator;
+    uint64_t scheduledFrames = 0;
+    double outputLatency = 0.0;
     mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
     mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
     std::mutex streamMutex;

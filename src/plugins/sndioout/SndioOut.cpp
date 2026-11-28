@@ -46,27 +46,41 @@ mc_result SndioOut::GetDefaultFormat(mc_string_view, mc_audio_format&) {
 }
 
 void SndioOut::ResetTiming() noexcept {
+    this->timingVersion.fetch_add(1);
     this->played.store(0);
     this->playedTime.store(0);
     this->generation.fetch_add(1);
+    this->timingVersion.fetch_add(1);
 }
 
 void SndioOut::OnMove(void* context, int delta) noexcept {
     auto& self = *static_cast<SndioOut*>(context);
+    self.timingVersion.fetch_add(1);
     if (delta > 0) {
         self.played.fetch_add(static_cast<uint64_t>(delta));
     }
     const auto now = std::chrono::steady_clock::now().time_since_epoch();
     self.playedTime.store(static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(now).count()));
+    self.timingVersion.fetch_add(1);
 }
 
 mc_result SndioOut::GetTiming(mc_output_timing& timing) const noexcept {
+    timing = MC_OUTPUT_TIMING_DEFAULT;
+    const auto version = this->timingVersion.load();
+    if (version & 1) {
+        return MC_ERROR_BUSY;
+    }
     const auto timestamp = this->playedTime.load();
+    const auto generation = this->generation.load();
+    const auto played = this->played.load();
+    if (version != this->timingVersion.load()) {
+        return MC_ERROR_BUSY;
+    }
     if (timestamp) {
         timing.valid_flags = MC_OUTPUT_TIMING_PLAYED;
-        timing.generation = this->generation.load();
-        timing.frames_played_by_driver = this->played.load();
+        timing.generation = generation;
+        timing.frames_played_by_driver = played;
         timing.frames_played_timestamp_ns = timestamp;
     }
     return MC_OK;
@@ -267,7 +281,8 @@ mc_result SndioOut::Resume() {
         return MC_ERROR_CANCELLED;
     }
     if (this->paused) {
-        this->ResetTiming();
+        /* stop drained the previous run. the next run begins with a zero
+        movement delta, so keep cumulative PCM counts in this generation. */
         if (!sio_start(this->handle)) {
             return MC_ERROR_IO;
         }
@@ -324,6 +339,7 @@ mc_result SndioOut::Stop() noexcept {
         descriptor = -1;
     }
     this->started = false;
+    this->ResetTiming();
     return MC_OK;
 }
 
@@ -342,7 +358,8 @@ mc_result SndioOut::Drain() {
         return MC_ERROR_IO;
     }
     this->started = false;
-    this->ResetTiming();
+    /* drain returns no discarded frames. keep the cumulative cursor so a
+    same-format successor can use the existing output frame numbering. */
     if (!sio_start(this->handle)) {
         return MC_ERROR_IO;
     }

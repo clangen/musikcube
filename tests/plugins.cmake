@@ -278,6 +278,8 @@ musikcube_restrict_exports(musikcore_output_recording mc_plugin_get_api)
 add_executable(musikcore_output_host_test integration/plugins/output-host.cpp
   "${PROJECT_SOURCE_DIR}/src/musikcore/audio/Buffer.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/audio/Output.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/audio/AudiblePlaybackPosition.cpp"
+  "${PROJECT_SOURCE_DIR}/src/musikcore/audio/VisualizationAudioQueue.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/Plugin.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/plugin_abi/PluginRegistry.cpp"
   "${PROJECT_SOURCE_DIR}/src/musikcore/ffi/common/error.cpp")
@@ -373,3 +375,39 @@ set_target_properties(musikcore_application_media_fixture PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${provider_output_directory}" RUNTIME_OUTPUT_DIRECTORY "${provider_output_directory}"
   SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
 musikcube_restrict_exports(musikcore_application_media_fixture mc_plugin_get_api test_media_control)
+
+# delayed visualization owns its PCM and follows the audible cursor across pause/reset.
+add_executable(musikcore_visualization_audio_queue_test unit/musikcore/visualization-audio-queue.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/audio/VisualizationAudioQueue.cpp")
+target_include_directories(musikcore_visualization_audio_queue_test PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_visualization_audio_queue_test PRIVATE cxx_std_20)
+target_link_libraries(musikcore_visualization_audio_queue_test PRIVATE Threads::Threads)
+set_target_properties(musikcore_visualization_audio_queue_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_visualization_audio_queue_test)
+add_dependencies(musikcube_unit_tests musikcore_visualization_audio_queue_test)
+add_test(NAME musikcore.unit.audio.visualization_audio_queue COMMAND musikcore_visualization_audio_queue_test)
+set_tests_properties(musikcore.unit.audio.visualization_audio_queue PROPERTIES LABELS "unit;musikcore;audio;contract" TIMEOUT 10)
+
+# tests/plugins.cmake (always available; no backend or hardware dependency).
+add_executable(musikcore_output_timing_estimator_test unit/musikcore/output-timing-estimator.cpp)
+target_include_directories(musikcore_output_timing_estimator_test PRIVATE
+  "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_output_timing_estimator_test PRIVATE cxx_std_20)
+set_target_properties(musikcore_output_timing_estimator_test PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_output_timing_estimator_test)
+add_dependencies(musikcube_unit_tests musikcore_output_timing_estimator_test)
+add_test(NAME musikcore.unit.plugins.output_timing_estimator COMMAND musikcore_output_timing_estimator_test)
+set_tests_properties(musikcore.unit.plugins.output_timing_estimator PROPERTIES
+  LABELS "unit;musikcore;plugins;audio;contract" TIMEOUT 10 SKIP_RETURN_CODE 77)
+
+# one normalized audible cursor drives track position and visualization.
+add_executable(musikcore_audible_playback_position_test unit/musikcore/audible-playback-position.cpp
+  "${PROJECT_SOURCE_DIR}/src/musikcore/audio/AudiblePlaybackPosition.cpp")
+target_include_directories(musikcore_audible_playback_position_test PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(musikcore_audible_playback_position_test PRIVATE cxx_std_20)
+set_target_properties(musikcore_audible_playback_position_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+add_dependencies(musikcube_tests musikcore_audible_playback_position_test)
+add_dependencies(musikcube_unit_tests musikcore_audible_playback_position_test)
+add_test(NAME musikcore.unit.audio.audible_playback_position COMMAND musikcore_audible_playback_position_test)
+set_tests_properties(musikcore.unit.audio.audible_playback_position PROPERTIES LABELS "unit;musikcore;audio;contract" TIMEOUT 10)

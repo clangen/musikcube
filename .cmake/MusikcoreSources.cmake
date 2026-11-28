@@ -8,6 +8,7 @@ set(musikcore_sources
   src/musikcore/audio/GaplessTransport.cpp
   src/musikcore/audio/MasterTransport.cpp
   src/musikcore/audio/Output.cpp
+  src/musikcore/audio/AudiblePlaybackPosition.cpp
   src/musikcore/audio/Outputs.cpp
   src/musikcore/audio/PlaybackWorkers.cpp
   src/musikcore/audio/PlaybackService.cpp
@@ -18,6 +19,7 @@ set(musikcore_sources
   src/musikcore/audio/Player.cpp
   src/musikcore/audio/Stream.cpp
   src/musikcore/audio/Dsp.cpp
+  src/musikcore/audio/VisualizationAudioQueue.cpp
   src/musikcore/audio/Visualizer.cpp
   src/musikcore/db/Connection.cpp
   src/musikcore/db/Connection.cpp

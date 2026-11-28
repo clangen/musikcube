@@ -1437,8 +1437,8 @@ accepted audio to finish and is cancellable. Paused asynchronous output with
 pending PCM reports in-flight rather than waiting for a serialized resume call.
 Completion/ready callbacks cannot throw, block, or call stop/destroy. Device views
 are callback-scoped snapshots copied by the core. Timing flags distinguish
-unknown/estimated latency from device measurements; presentation-aligned
-visualization remains a separate implementation/validation task.
+unknown/estimated latency from device measurements. Visualization follows the
+output timing snapshot independently of buffer storage completion.
 
 The bundled `nullout` shared library paces and completes audio synchronously on
 the calling producer thread. It owns no worker, pending queue, retained token,
@@ -1471,12 +1471,56 @@ Only mc_plugin_get_api is exported; the ABI remains C regardless of implementati
 language. Add other family helpers as their C contracts and implementations exist.
 
 Output-buffer completion permits storage reuse; it is not an audible device
-position. Combine only finite, nonnegative latency values with validity flags.
-Without valid timing, progress and mix points are approximate. Compare mix points
-with unrounded latency-adjusted buffer position, while preserving whole-second
-rounding for the displayed position. Worker-side buffer processing determines
-notification resolution. No media-to-device timeline or device-clock guarantee
-is implied; implementing one requires a concrete need beyond fixing rounding.
+position. `AudiblePlaybackPosition` owns accepted/completed frame accounting and
+normalizes the backend's `mc_output_timing` to one optional audible frame
+cursor. It applies validity flags, device latency, clock generations and
+queue/completion fallback once. A busy snapshot stays unavailable instead of
+falling back to an early storage completion. An unexpected native counter reset
+uses approximate fallback until reprepare; unrelated frame generations are never
+compared directly.
+
+Each writer owns track position data tying its first accepted output frame to media
+seconds. Displayed position and mix points use the same audible cursor through
+that mapping, clipped to the track's accepted range; software queue latency is
+not subtracted from a completed buffer's starting media position. Mix points
+compare unrounded seconds, while displayed position retains whole-second
+rounding. Without a measured native clock, progress remains approximate.
+
+`VisualizationAudioQueue` owns copied PCM independently of decoder storage.
+Output passes accepted PCM to `Enqueue()` unconditionally; the queue checks for
+a visible visualizer or application spectrum-meter consumer before copying or
+starting its worker. It receives only the normalized optional frame cursor,
+not raw plugin timing fields. A worker selects the latest audible window of at
+most 512 frames every 10 ms. Windows skipped between readings are discarded
+rather than replayed. Visualization aims for perceptual alignment with music,
+not sample-accurate presentation: backend timing may be estimated, and brief
+transients can be missed when scheduling falls behind. Capture allocation or
+worker-start failure skips visualization and emits at most one diagnostic per
+reset; already accepted audio remains successful.
+
+The queue retains at most 1,048,576 float samples (4 MiB). Excess backlog drops
+oldest visual frames, and a single block exceeding that budget is skipped.
+Pause holds queued visualization; seek, stop, and format/device replacement
+clear it before frame numbering changes. Reset waits for at most the current
+plugin delivery; each delivery is followed by a timed wait that releases the
+queue mutex. The worker sleeps while empty or paused, otherwise samples
+progress every 10 ms because outputs do not signal individual audible sample
+boundaries. Output destruction joins the worker before plugin services are
+released. FFT computation and plugin delivery run there, never on an output's
+real-time callback.
+
+CoreAudio estimates the audible cursor from scheduled AudioQueue buffer times;
+PortAudio uses callback DAC timestamps. Their private `OutputTimingEstimator`
+converts scheduled PCM deadlines to `mc_output_timing`, marks estimates, and
+includes hardware delay in the deadline rather than adding it again. It retains
+already-audible progress through gaps so old PCM cannot become pending again.
+When device lead grows while a tail is still in flight, the estimate may hold
+that tail conservatively; it does not retain a history of all scheduled spans.
+Startup uses queued-duration estimates until the native timeline is available.
+Existing backends with native played-frame counters need not use the estimator.
+Targets without lock-free 64-bit atomics leave these optional estimates unknown
+rather than introduce a hidden callback lock. sndio retains cumulative counts
+through draining pause/resume and drain; flush/reprepare start fresh generations.
 
 #### DSP, metadata writers, tag readers, and analyzers
 
@@ -1595,9 +1639,12 @@ struct mc_playback_remote_vtable {
 ```
 
 Visualizer format flags in its factory identify PCM and/or spectrum support;
-only those delivery callbacks may be null. Window controls run on the runtime
-owner/control thread; providers marshal to their own platform UI threads and
-join them before destruction. Frame delivery is off the hardware callback,
+only those delivery callbacks may be null. Show/hide window controls run on
+the runtime owner/control thread; providers marshal to their own platform UI
+threads and join them before destruction. `is_visible()` is a bounded,
+thread-safe snapshot callable by playback workers concurrently with show/hide
+and user-initiated window closes. It must not wait for rendering, dispatch to
+the UI thread, or call host playback controls. Frame delivery is off the hardware callback,
 bounded, and droppable when busy. Views are read-only and expire at return.
 For the initial spectrum scale preserve existing behavior: values are dB above
 an -80 dBFS display floor, clamped to [0,80], with N/2 bins omitting Nyquist and

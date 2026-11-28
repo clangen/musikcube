@@ -13,6 +13,24 @@
 #include <exception>
 #include <future>
 
+namespace {
+    std::atomic<bool> captureAudio { false };
+    std::mutex visualizationMutex;
+    std::condition_variable visualizationChanged;
+    size_t visualizedFrames = 0;
+}
+
+/* capture delivery at the production output boundary without a window or FFT. */
+namespace musik { namespace core { namespace audio { namespace vis {
+    bool HasAudioConsumers() { return captureAudio.load(); }
+    void ReportCaptureFailure(mc_result) noexcept {}
+    void DeliverAudio(const mc_pcm_view& pcm) {
+        std::lock_guard lock(visualizationMutex);
+        visualizedFrames += pcm.frame_count;
+        visualizationChanged.notify_one();
+    }
+} } } }
+
 using musik::core::audio::Output;
 /* fixed test storage exercises the host boundary without decoder or catalog
 services. metadata may be changed deliberately to test malformed views. */
@@ -104,6 +122,11 @@ int main(int argc, char** argv) {
     bool holdDrain = false;
     bool enteredDrain = false;
     bool releaseDrain = false;
+    std::mutex prepareMutex;
+    std::condition_variable prepareChanged;
+    bool holdPrepare = false;
+    bool enteredPrepare = false;
+    bool releasePrepare = false;
     PluginRegistry registry([&](mc_log_level, mc_string_view tag, mc_string_view text) {
         if (std::string(tag.data, tag.length) == "output-test") {
             const std::string message(text.data, text.length);
@@ -132,6 +155,16 @@ int main(int argc, char** argv) {
                 std::lock_guard lock(capacityMutex);
                 capacityReturned = true;
                 capacityChanged.notify_all();
+            }
+            if (message == "prepare") {
+                std::unique_lock lock(prepareMutex);
+                if (holdPrepare) {
+                    enteredPrepare = true;
+                    prepareChanged.notify_all();
+                    require(prepareChanged.wait_for(lock, std::chrono::seconds(5), [&] {
+                        return releasePrepare;
+                    }), "test releases prepare before cleanup");
+                }
             }
             if (message == "drain") {
                 std::unique_lock lock(drainMutex);
@@ -215,6 +248,131 @@ int main(int argc, char** argv) {
         }
         return 79;
     }
+    {
+        /* position snapshots run on UI readers too. an output still opening
+        its device must not make those readers wait for the backend. */
+        Output output(factory, "output.test", "Recording", "");
+        Sink returned;
+        Output::Writer writer(output, returned);
+        output.Resume();
+        {
+            std::lock_guard lock(prepareMutex);
+            holdPrepare = true;
+        }
+        mc_result admitted = MC_ERROR_INTERNAL;
+        std::thread producer([&] { admitted = writer.TryQueueAudioBuffer(buffer); });
+        {
+            std::unique_lock lock(prepareMutex);
+            require(prepareChanged.wait_for(lock, std::chrono::seconds(2), [&] {
+                return enteredPrepare;
+            }), "producer reached the blocked output preparation");
+        }
+        std::promise<void> readerStarted;
+        auto started = readerStarted.get_future();
+        auto reading = std::async(std::launch::async, [&] {
+            readerStarted.set_value();
+            return writer.GetPosition();
+        });
+        require(started.wait_for(std::chrono::seconds(2)) == std::future_status::ready,
+            "position reader started while preparation remained blocked");
+        const bool ready = reading.wait_for(std::chrono::milliseconds(200)) == std::future_status::ready;
+        {
+            std::lock_guard lock(prepareMutex);
+            releasePrepare = true;
+            holdPrepare = false;
+            prepareChanged.notify_all();
+        }
+        producer.join();
+        const auto position = reading.get();
+        writer.ProcessCompletions();
+        require(admitted == MC_OK, "device preparation resumes after the gate opens");
+        require(ready, "position reader must not wait for blocked output preparation");
+        require(!position, "busy output position is unavailable rather than guessed");
+        require(writer.GetPosition().has_value(), "position reads recover after preparation");
+    }
+    calls.clear();
+    {
+        /* immediate storage completion must not display audio before the
+        device clock advances. exercise the actual output admission path. */
+        std::atomic<uint64_t> played { UINT64_MAX };
+        mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT;
+        settings.context = &played;
+        settings.read_boolean = [](void*, mc_string_view, bool fallback, bool* value) -> mc_result {
+            *value = fallback;
+            return MC_OK;
+        };
+        settings.read_number = [](void* data, mc_string_view, double, double* value) -> mc_result {
+            const auto played = static_cast<std::atomic<uint64_t>*>(data)->load();
+            if (played == UINT64_MAX) {
+                return MC_ERROR_BUSY;
+            }
+            *value = played;
+            return MC_OK;
+        };
+        Output output(factory, "output.test", "Recording", "", settings);
+        Sink returned;
+        Output::Writer writer(output, returned);
+        output.Resume();
+        captureAudio.store(true);
+        require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "clock-controlled output accepts PCM");
+        writer.ProcessCompletions();
+        require(returned.completed == 1, "output returns storage immediately");
+        {
+            std::unique_lock lock(visualizationMutex);
+            require(!visualizationChanged.wait_for(lock, std::chrono::milliseconds(40), [&] {
+                return visualizedFrames != 0;
+            }), "busy clock must not fall back to early storage completion");
+        }
+        played.store(0);
+        {
+            std::unique_lock lock(visualizationMutex);
+            require(!visualizationChanged.wait_for(lock, std::chrono::milliseconds(40), [&] {
+                return visualizedFrames != 0;
+            }), "valid zero cursor still holds inaudible PCM");
+        }
+        played.store(16);
+        {
+            std::unique_lock lock(visualizationMutex);
+            require(visualizationChanged.wait_for(lock, std::chrono::seconds(2), [&] {
+                return visualizedFrames == 16;
+            }), "audible PCM dispatches after the device clock advances");
+        }
+        captureAudio.store(false);
+        require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "inactive visualizer does not block audio");
+        writer.ProcessCompletions();
+        played.store(32);
+        output.Stop();
+        require(visualizedFrames == 16, "inactive visualization captures no further PCM");
+    }
+    {
+        /* delayed recycling from before a seek must not advance the new
+        generation when this backend has no timing measurements. */
+        Output output(factory, "output.test", "Recording", "");
+        Sink returned;
+        Output::Writer writer(output, returned);
+        output.Resume();
+        captureAudio.store(true);
+        const auto before = visualizedFrames;
+        require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "queue old fallback generation");
+        require(writer.ResetForSeek() == MC_OK, "seek resets fallback generation");
+        writer.ProcessCompletions();
+        require(writer.TryQueueAudioBuffer(buffer) == MC_OK, "queue fresh fallback generation");
+        {
+            std::unique_lock lock(visualizationMutex);
+            require(!visualizationChanged.wait_for(lock, std::chrono::milliseconds(40), [&] {
+                return visualizedFrames != before;
+            }), "old completion cannot dispatch new-generation PCM early");
+        }
+        writer.ProcessCompletions();
+        {
+            std::unique_lock lock(visualizationMutex);
+            require(visualizationChanged.wait_for(lock, std::chrono::seconds(2), [&] {
+                return visualizedFrames == before + 16;
+            }), "new completion advances the fallback cursor");
+        }
+        captureAudio.store(false);
+    }
+    calls.clear();
     {
         Output output(factory, "output.test", "Recording", "");
         Output::Writer writer(output, sink);

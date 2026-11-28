@@ -34,23 +34,38 @@
 
 #pragma once
 
-#include <musikcore/config.h>
 #include <musikcore/plugin/audio.h>
 
-/* Internal playback-facing helpers for the runtime's selected visualizer and
-shared spectrum meter. The runtime owns discovery, selection, and provider
-lifetimes in Visualizer.cpp; player workers only deliver borrowed audio here.
+/* internal playback-facing helpers for the runtime's selected visualizer and
+shared spectrum meter. the runtime owns discovery, selection, and provider
+lifetimes in Visualizer.cpp; output visualization workers deliver borrowed
+audio here.
 
-This is distinct from include/musikcore/visualizer.h, which exposes controls
+this is distinct from include/musikcore/visualizer.h, which exposes controls
 to applications, and include/musikcore/plugin/visualizer.h, which defines the
 C ABI implemented and registered by visualizer plugins. */
 namespace musik { namespace core { namespace audio { namespace vis {
 
-    bool WantsSpectrum();
-    void WritePcm(const mc_pcm_view& pcm) noexcept;
-    void WriteSpectrum(const float* bins, size_t count, uint32_t sampleRate) noexcept;
-    bool SpectrumEnabled();
-    void PublishSpectrum(const float* bins, uint32_t sampleRate);
+    /* check before copying output PCM for visualization. true when a visible
+    plugin or the application spectrum meter needs audio; false lets playback
+    skip capture, scheduling, and FFT work entirely. call on a worker, not an
+    audio callback. a plugin may close its own window between checks. */
+    bool HasAudioConsumers();
+
+    /* deliver an already synchronized PCM chunk from an output visualization
+    worker. forwards borrowed samples to the selected plugin and computes FFT
+    bins only for consumers that need them: the plugin and/or the application
+    spectrum meter. does nothing if all consumers have become inactive. */
+    void DeliverAudio(const mc_pcm_view& pcm);
+
+    /* report a skipped visualization capture without changing accepted audio.
+    the audio queue calls this at most once per reset after an allocation or
+    worker-start failure. diagnostic allocation failures are contained. */
+    void ReportCaptureFailure(mc_result result) noexcept;
+
+    /* hide and destroy plugin instances and disable spectrum capture. the
+    runtime calls this after stopping/joining every output visualization worker,
+    before unloading plugins; the next session can rediscover them. */
     void Shutdown();
 
 } } } }

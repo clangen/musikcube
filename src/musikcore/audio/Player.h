@@ -44,7 +44,6 @@
 
 namespace musik { namespace core { namespace audio {
 
-    struct FftContext;
     class Stream;
 
     /* decodes one track and sends its samples to an output. a URI player or
@@ -137,7 +136,6 @@ namespace musik { namespace core { namespace audio {
         /* only Run and the completions it dispatches touch these fields. */
         bool notifiedStarted = false;
         bool playbackFailed = false;
-        std::unique_ptr<FftContext> fftContext;
     };
 
 } } }

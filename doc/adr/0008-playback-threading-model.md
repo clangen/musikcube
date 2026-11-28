@@ -30,6 +30,25 @@ a device queue. Terminal shutdown closes admission, interrupts all jobs in the
 session, including retired tails, and joins them before their receiver or plugin
 factories are released.
 
+Each output also owns and joins its visualization audio queue. It keeps
+bounded PCM copies only while a visualizer or spectrum meter needs audio, and
+selects the latest audible audio window at a regular interval. Skipped windows
+are discarded rather than replayed; visualization is a current picture of the
+audio, not a lossless consumer. Approximate output timing is sufficient for
+perceptual synchronization; sample-accurate visual presentation is not a
+requirement. Returning an output buffer permits storage reuse, independently
+of visualization delivery.
+Seek, stop and output replacement discard pending visual frames before changing
+the clock; the queue is joined before plugin factories can be released.
+
+Output plugins expose timing through the C `mc_output_timing` contract. A
+backend may use the private `OutputTimingEstimator` helper or provide a native
+counter directly. Core `AudiblePlaybackPosition` owns the shared frame domain and
+normalizes it once for both per-writer track position and visualization delivery.
+The queue consumes an audible frame index rather than independently interpreting
+device latency and native clock generations. Playback progress works without a
+visualization worker when no visual consumers are active.
+
 ## Alternatives considered
 
 A single playback thread would make selection state easy to serialize, but a
@@ -38,6 +57,17 @@ that thread. Keeping the self-owned workers would preserve independent progress
 at the cost of a second lifetime protocol for their callbacks. Session-owned
 jobs preserve independent progress with a concrete join point. A backend still
 has to honor interruption for shutdown to finish.
+
+Holding decoder buffers until visualization catches up would tie decoder
+capacity to visualizer progress. Dispatching only on storage completion would
+make synchronization depend on each backend's copying policy. Bounded separate
+copies cost memory and one worker per active output, but allow storage to return
+promptly and visual delivery to follow the sound. Overload drops visual frames
+instead of retaining an unbounded history. Delivering every successive audible
+chunk would preserve every transient for analysis, but would also require
+catch-up scheduling and coordination with producers and controls. Selecting
+the current window accepts missed transients after a scheduling delay in
+exchange for bounded work and timely pictures.
 
 ## Consequences
 

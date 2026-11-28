@@ -35,6 +35,7 @@
 #pragma once
 
 #include <musikcore/plugin/output.hpp>
+#include <plugins/common/OutputTimingEstimator.h>
 #include <AudioToolbox/AudioQueue.h>
 #include <array>
 #include <atomic>
@@ -61,6 +62,7 @@ public:
     mc_result Stop() noexcept;
     mc_result Drain();
     mc_result Flush();
+    mc_result GetTiming(mc_output_timing& timing) const noexcept { return this->timingEstimator.Read(timing); }
 
     static mc_result VisitDevices(mc_output_device_fn read, void* data);
     static mc_result ReadDefaultDevice(mc_output_device_fn read, void* data);
@@ -81,6 +83,7 @@ private:
     void FinishProducer() noexcept;
 
     AudioQueueRef queue = nullptr;
+    musik::plugins::OutputTimingEstimator timingEstimator;
     mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
     mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
     std::array<Slot, BufferCount> slots;

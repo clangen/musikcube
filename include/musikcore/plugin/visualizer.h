@@ -21,6 +21,10 @@ typedef struct mc_plugin_visualizer_vtable {
     void (MC_CALL* destroy)(void* instance);
     mc_result (MC_CALL* show)(void* instance);
     mc_result (MC_CALL* hide)(void* instance);
+    /* return a bounded, thread-safe visibility snapshot. musikcore may call
+    this from playback workers concurrently with show/hide and user-initiated
+    window closes. do not wait for rendering, dispatch to the UI thread, or
+    call host playback controls. audio callbacks do not call this operation. */
     mc_result (MC_CALL* is_visible)(void* instance, bool* visible);
     /* Audio views are borrowed for the call only. Calls can originate from
     multiple playback workers and can overlap show/hide or a user closing the

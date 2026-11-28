@@ -22,8 +22,8 @@
 namespace {
     using namespace musik::core::audio;
     using output_contract::Require;
-    constexpr uint32_t Rate = 48000;
-    constexpr uint32_t TrackFrames = Rate * 4;
+    constexpr uint32_t Rate = CopiedOutputSampleRate;
+    constexpr uint32_t TrackFrames = CopiedOutputTrackFrames;
     constexpr uint32_t MixFrame = Rate;
 
     struct Listener : Player::EventListener {
@@ -137,14 +137,15 @@ int main(int argc, char** argv) {
         player->Play();
         Require(wait(0, 5000), "device copied buffers and reached bounded capacity");
         auto state = read();
-        const bool known = std::strcmp(argv[2], "known") == 0;
+        const bool known = std::strcmp(argv[2], "unknown") != 0;
+        const bool callbackCompletion = std::strcmp(argv[2], "callback") == 0;
         Require(state.playedFrames == 0 && state.returnedBuffers > 0 && state.queuedFrames > 0,
             "buffer reuse precedes audible playback");
         if (known) {
             Require(player->GetPosition() == 0, "copied buffers do not advance audible position");
         }
         else {
-            Require(output->Latency() == 0, "unknown timing ignores unflagged NaN values");
+            Require(std::isfinite(player->GetPosition()), "unknown timing ignores unflagged NaN values");
         }
         while (state.playedFrames < TrackFrames) {
             const auto before = state.acceptedFrames;
@@ -158,9 +159,17 @@ int main(int argc, char** argv) {
             if (known) {
                 Require(std::abs(position - static_cast<double>(state.playedFrames) / Rate) <= 1,
                     "second-resolution position follows consumption rather than returned buffers");
+                if (callbackCompletion) {
+                    Require(position == std::round(static_cast<double>(state.playedFrames) / Rate),
+                        "callback-time completion position follows audible frames without subtracting the software queue");
+                }
                 std::lock_guard lock(listener.mutex);
                 Require(!listener.mixCount || listener.mixFrame >= MixFrame,
                     "latency-adjusted mix point cannot fire before its audible position");
+                if (callbackCompletion) {
+                    Require(!listener.mixCount || listener.mixFrame <= MixFrame + 4096,
+                        "callback-time completion mix point is not delayed by the software queue");
+                }
             }
         }
         {

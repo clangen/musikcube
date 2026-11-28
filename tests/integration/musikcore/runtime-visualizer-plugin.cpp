@@ -23,12 +23,12 @@ namespace {
         mc_result Hide() { visible.store(false); Record('H'); return MC_OK; }
         mc_result IsVisible(bool& value) { value = visible.load(); return MC_OK; }
         mc_result WritePcm(const mc_pcm_view& pcm) {
-            if (pcm.frame_count != 1 || pcm.format.channels != 2) return MC_ERROR_INVALID_ARGUMENT;
+            if (pcm.frame_count != 512 || pcm.format.channels != 2) return MC_ERROR_INVALID_ARGUMENT;
             Record('P');
             return MC_OK;
         }
         mc_result WriteSpectrum(const float*, size_t count, uint32_t rate) {
-            if (count != 2 || rate != 44100) return MC_ERROR_INVALID_ARGUMENT;
+            if (count != 256 || rate != 44100) return MC_ERROR_INVALID_ARGUMENT;
             Record('S');
             return MC_OK;
         }

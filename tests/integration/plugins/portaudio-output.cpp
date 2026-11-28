@@ -1,6 +1,7 @@
 #include <musikcore/plugin.h>
 #include <musikcore/plugin/output.h>
 #include "../../support/plugins/OutputContract.h"
+#include "../../support/plugins/OutputTiming.h"
 
 #include <dlfcn.h>
 #include <cstdio>
@@ -64,6 +65,7 @@ int main(int argc, char** argv) {
     options.format = format;
     options.queue_capacity_frames = 128;
     output_contract::Check(*factory, nullptr, options);
+    output_contract::CheckTiming(*factory, options);
     plugin.shutdown(state);
     require(dlclose(image) == 0, "unload plugin");
     return 0;

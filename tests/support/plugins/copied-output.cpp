@@ -10,7 +10,7 @@
 #include <vector>
 
 namespace {
-    constexpr uint32_t Rate = 48000;
+    constexpr uint32_t Rate = CopiedOutputSampleRate;
     constexpr uint32_t Channels = 2;
     std::mutex mutex;
     std::condition_variable changed;
@@ -21,6 +21,14 @@ namespace {
     uint64_t returned = 0;
     std::atomic<size_t> queued { 0 };
     std::atomic_bool knownTiming { true };
+    std::atomic_bool callbackCompletion { false };
+    std::atomic<uint64_t> playedSnapshot { 0 };
+    struct Pending {
+        uint64_t token;
+        uint64_t endFrame;
+    };
+    std::vector<Pending> pending;
+    constexpr uint64_t DeviceLeadFrames = 2048;
     bool full = false;
     bool draining = false;
     bool stopped = true;
@@ -35,6 +43,10 @@ namespace {
             samples.resize(options.queue_capacity_frames * Channels);
             callbacks = supplied;
             knownTiming = std::string_view(options.device_id.data, options.device_id.length) != "unknown";
+            callbackCompletion = std::string_view(options.device_id.data, options.device_id.length) == "callback";
+            playedSnapshot = 0;
+            pending.clear();
+            pending.reserve(64);
             accepted = played = returned = 0;
             queued = 0;
             full = draining = stopped = false;
@@ -61,16 +73,25 @@ namespace {
                 }
                 accepted += buffer.pcm.frame_count;
                 queued = accepted - played;
+                if (callbackCompletion && accepted > played + DeviceLeadFrames) {
+                    pending.push_back({ .token = buffer.token, .endFrame = accepted });
+                    return MC_OK;
+                }
                 ++returned;
             }
             callbacks.completed(callbacks.context, buffer.token, MC_OK);
             return MC_OK;
         }
         mc_result Stop() noexcept {
-            std::lock_guard lock(mutex);
+            std::unique_lock lock(mutex);
             stopped = true;
             queued = 0;
+            auto cancelled = std::move(pending);
             changed.notify_all();
+            lock.unlock();
+            for (const auto& block : cancelled) {
+                callbacks.completed(callbacks.context, block.token, MC_ERROR_CANCELLED);
+            }
             return MC_OK;
         }
         mc_result Drain() {
@@ -88,6 +109,12 @@ namespace {
             if (knownTiming.load()) {
                 timing.valid_flags = MC_OUTPUT_TIMING_QUEUED;
                 timing.queued_seconds = static_cast<double>(queued.load()) / Rate;
+                if (callbackCompletion) {
+                    timing.valid_flags |= MC_OUTPUT_TIMING_PLAYED;
+                    timing.generation = 1;
+                    timing.frames_played_by_driver = playedSnapshot.load();
+                    timing.frames_played_timestamp_ns = 1;
+                }
             }
             return MC_OK;
         }
@@ -109,7 +136,7 @@ namespace {
         }
         mc_result Flush() { return MC_ERROR_UNSUPPORTED; }
         static mc_result VisitDevices(mc_output_device_fn read, void* data) {
-            for (const std::string_view id : { "known", "unknown" }) {
+            for (const std::string_view id : { "known", "unknown", "callback" }) {
                 const mc_output_device device {
                     .id = { id.data(), id.size() },
                     .name = { id.data(), id.size() },
@@ -146,11 +173,13 @@ extern "C" MC_PLUGIN_API CopiedOutputSnapshot ReadCopiedOutputState() {
 extern "C" MC_PLUGIN_API bool WaitCopiedOutputBlocked(uint64_t previousAccepted, unsigned milliseconds) {
     std::unique_lock lock(mutex);
     return changed.wait_for(lock, std::chrono::milliseconds(milliseconds), [&] {
-        return (full || draining) && accepted > previousAccepted;
+        return ((full || draining) && accepted > previousAccepted) ||
+            (callbackCompletion && accepted == CopiedOutputTrackFrames);
     });
 }
 
 extern "C" MC_PLUGIN_API void AdvanceCopiedOutputDevice(size_t frames) {
+    std::vector<uint64_t> completed;
     {
         std::lock_guard lock(mutex);
         const auto count = std::min(frames, queued.load());
@@ -162,9 +191,18 @@ extern "C" MC_PLUGIN_API void AdvanceCopiedOutputDevice(size_t frames) {
             }
         }
         played += count;
+        playedSnapshot = played;
         queued = accepted - played;
+        while (!pending.empty() && pending.front().endFrame <= played + DeviceLeadFrames) {
+            completed.push_back(pending.front().token);
+            pending.erase(pending.begin());
+            ++returned;
+        }
         full = false;
         changed.notify_all();
+    }
+    for (const auto token : completed) {
+        callbacks.completed(callbacks.context, token, MC_OK);
     }
     callbacks.ready(callbacks.context);
 }

@@ -5,18 +5,28 @@
 #include <latch>
 #include <thread>
 
-#define CHECK(condition) do { \
-    if (!(condition)) { \
-        std::fprintf(stderr, "PortAudio test failed at line %d: %s\n", __LINE__, #condition); \
-        std::abort(); \
-    } \
-} while (false)
+#define CHECK(condition)                                                                                               \
+    do {                                                                                                               \
+        if (!(condition)) {                                                                                            \
+            std::fprintf(stderr, "PortAudio test failed at line %d: %s\n", __LINE__, #condition);                      \
+            std::abort();                                                                                              \
+        }                                                                                                              \
+    } while (false)
 
 namespace {
     void* streamContext = nullptr;
     PaStreamFinishedCallback* finishedCallback = nullptr;
+    PaStreamCallback* streamCallback = nullptr;
     int fakeStream = 0;
     PaDeviceInfo device {};
+
+    template<class T> mc_output_timing timingOf(const T& output) {
+        auto timing = mc_output_timing MC_OUTPUT_TIMING_DEFAULT;
+        if constexpr (musik::core::plugin::detail::HasOutputTiming<T>::value) {
+            CHECK(output.GetTiming(timing) == MC_OK);
+        }
+        return timing;
+    }
 
     struct Callbacks {
         unsigned ready = 0;
@@ -36,29 +46,48 @@ namespace {
 }
 
 extern "C" {
-    PaError Pa_Initialize() { return paNoError; }
-    PaError Pa_Terminate() { return paNoError; }
-    PaDeviceIndex Pa_GetDeviceCount() { return 1; }
-    PaDeviceIndex Pa_GetDefaultOutputDevice() { return 0; }
-    const PaDeviceInfo* Pa_GetDeviceInfo(PaDeviceIndex) { return &device; }
-    PaError Pa_OpenStream(PaStream** stream, const PaStreamParameters*, const PaStreamParameters*, double,
-        unsigned long, PaStreamFlags, PaStreamCallback*, void* context)
-    {
-        streamContext = context;
-        *stream = &fakeStream;
-        return paNoError;
-    }
-    PaError Pa_SetStreamFinishedCallback(PaStream*, PaStreamFinishedCallback* callback) {
-        finishedCallback = callback;
-        return paNoError;
-    }
-    PaError Pa_StartStream(PaStream*) { return paNoError; }
-    PaError Pa_StopStream(PaStream*) { return paNoError; }
-    PaError Pa_AbortStream(PaStream*) {
-        finishedCallback(streamContext);
-        return paNoError;
-    }
-    PaError Pa_CloseStream(PaStream*) { return paNoError; }
+PaError Pa_Initialize() {
+    return paNoError;
+}
+PaError Pa_Terminate() {
+    return paNoError;
+}
+PaDeviceIndex Pa_GetDeviceCount() {
+    return 1;
+}
+PaDeviceIndex Pa_GetDefaultOutputDevice() {
+    return 0;
+}
+const PaDeviceInfo* Pa_GetDeviceInfo(PaDeviceIndex) {
+    return &device;
+}
+PaError Pa_OpenStream(PaStream** stream, const PaStreamParameters*, const PaStreamParameters*, double, unsigned long,
+    PaStreamFlags, PaStreamCallback* callback, void* context) {
+    streamContext = context;
+    streamCallback = callback;
+    *stream = &fakeStream;
+    return paNoError;
+}
+PaError Pa_SetStreamFinishedCallback(PaStream*, PaStreamFinishedCallback* callback) {
+    finishedCallback = callback;
+    return paNoError;
+}
+const PaStreamInfo* Pa_GetStreamInfo(PaStream*) {
+    return nullptr;
+}
+PaError Pa_StartStream(PaStream*) {
+    return paNoError;
+}
+PaError Pa_StopStream(PaStream*) {
+    return paNoError;
+}
+PaError Pa_AbortStream(PaStream*) {
+    finishedCallback(streamContext);
+    return paNoError;
+}
+PaError Pa_CloseStream(PaStream*) {
+    return paNoError;
+}
 }
 
 int main() {
@@ -86,6 +115,25 @@ int main() {
     buffer.pcm.format = options.format;
     CHECK(output.QueueAudioBuffer(buffer) == MC_OK);
     CHECK(output.QueueAudioBuffer(buffer) == MC_ERROR_QUEUE_FULL);
+
+    /* queued storage is not audible yet. the callback reports 100 ms until
+    its first sample reaches the DAC, even though it returns the token now. */
+    CHECK(timingOf(output).valid_flags & MC_OUTPUT_TIMING_QUEUED);
+    float rendered[2] {};
+    PaStreamCallbackTimeInfo clock { 0.0, 10.0, 10.1 };
+    CHECK(streamCallback(nullptr, rendered, 1, &clock, 0, streamContext) == paContinue);
+    const auto scheduled = timingOf(output);
+    CHECK(scheduled.valid_flags & MC_OUTPUT_TIMING_PLAYED);
+    CHECK(scheduled.valid_flags & MC_OUTPUT_TIMING_ESTIMATED);
+    CHECK(scheduled.frames_played_by_driver == 0);
+    CHECK(scheduled.queued_seconds > 0);
+    CHECK(!(scheduled.valid_flags & MC_OUTPUT_TIMING_DEVICE_LATENCY));
+    CHECK(observations.completed == 1);
+    CHECK(output.Stop() == MC_OK);
+    observations = {};
+    CHECK(output.Prepare(options, callbacks) == MC_OK);
+    CHECK(timingOf(output).generation != scheduled.generation);
+    CHECK(output.QueueAudioBuffer(buffer) == MC_OK);
 
     /* a lost device must wake a producer and reject its retry. */
     finishedCallback(streamContext);

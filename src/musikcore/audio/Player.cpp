@@ -34,7 +34,6 @@
 
 #include "pch.hpp"
 
-#include <kiss_fftr.h>
 #include <musikcore/debug.h>
 #include <musikcore/audio/Stream.h>
 #include <musikcore/audio/Player.h>
@@ -48,8 +47,6 @@
 
 #include <musikcore/visualizer.h>
 
-#define FFT_N (2 * MC_VISUALIZER_SPECTRUM_BINS)
-#define PI 3.14159265358979323846
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
@@ -58,19 +55,6 @@ using std::min;
 using std::max;
 
 static std::string TAG = "Player";
-namespace musik { namespace core { namespace audio {
-    struct FftContext {
-        FftContext() : cfg(kiss_fftr_alloc(FFT_N, false, nullptr, nullptr)) {}
-
-        ~FftContext() { kiss_fftr_free(cfg); }
-
-        kiss_fftr_cfg cfg;
-        std::array<kiss_fft_scalar, FFT_N> input;
-        std::array<kiss_fft_cpx, (FFT_N / 2) + 1> output;
-        std::array<float, FFT_N / 2> spectrum;
-    };
-} } }
-
 Player::Player(const std::string& url, std::shared_ptr<Output> output, Drain drain, EventListener& listener, Gain gain)
 : output(std::move(output))
 , stream(Stream::Create())
@@ -79,7 +63,6 @@ Player::Player(const std::string& url, std::shared_ptr<Output> output, Drain dra
 , url(url)
 , gain(gain)
 , drain(drain)
-, fftContext(std::make_unique<FftContext>())
 {
 }
 
@@ -104,8 +87,8 @@ void Player::RequestStop(Drain drain) {
 
 double Player::GetPosition() const {
     const auto seek = this->seekToPosition.load();
-    const auto position = seek >= 0 ? seek : this->currentPosition.load();
-    return std::max(0.0, round(position - this->output->Latency()));
+    const auto position = seek >= 0 ? seek : this->writer.GetPosition().value_or(this->currentPosition.load());
+    return std::max(0.0, round(position));
 }
 
 bool Player::SetPosition(double seconds) {
@@ -323,89 +306,6 @@ void Player::WriteTrack() {
     }
 }
 
-struct HammingWindow {
-    std::array<float, FFT_N> values;
-    double sum;
-};
-
-static const HammingWindow& getHammingWindow() {
-    static const HammingWindow window = []() {
-        HammingWindow result = {};
-        for (int i = 0; i < FFT_N; i++) {
-            result.values[i] =
-                0.54f - 0.46f * (float) cos((2 * PI * i) / (FFT_N - 1));
-            result.sum += result.values[i];
-        }
-        return result;
-    }();
-
-    return window;
-}
-
-static inline bool performFft(Buffer* buffer, FftContext* fft, float* output, int outputSize) {
-    if (!buffer || !fft || !fft->cfg || !output || outputSize != FFT_N / 2) {
-        return false;
-    }
-
-    long samples = buffer->Samples();
-    int channels = buffer->Channels();
-    if (channels <= 0 || samples <= 0 || !buffer->BufferPointer()) {
-        return false;
-    }
-
-    const long samplesPerChannel = samples / channels;
-    const long windowsPerChannel = samplesPerChannel / FFT_N;
-    if (windowsPerChannel == 0) {
-        return false;
-    }
-
-    memset(output, 0, outputSize * sizeof(float));
-
-    float* input = buffer->BufferPointer();
-    const HammingWindow& window = getHammingWindow();
-    std::array<double, FFT_N / 2> accumulatedPower = {};
-
-    for (int channel = 0; channel < channels; channel++) {
-        for (long block = 0; block < windowsPerChannel; block++) {
-            const long firstFrame = block * FFT_N;
-            for (int i = 0; i < FFT_N; i++) {
-                const long source = ((firstFrame + i) * channels) + channel;
-                fft->input[i] = input[source] * window.values[i];
-            }
-
-            kiss_fftr(fft->cfg, fft->input.data(), fft->output.data());
-
-            for (int bin = 0; bin < outputSize; bin++) {
-                const double real = fft->output[bin].r;
-                const double imaginary = fft->output[bin].i;
-                accumulatedPower[bin] += (real * real) + (imaginary * imaginary);
-            }
-        }
-    }
-
-    /*
-     * Convert average power to a single-sided, window-normalized amplitude.
-     * The visualizer API historically expects positive bar heights, so expose
-     * decibels above an -80 dBFS display floor: 0 is at/below the floor and 80
-     * represents 0 dBFS. DC is not doubled; the omitted Nyquist bin would use
-     * the same treatment.
-     */
-    constexpr double floorDb = -80.0;
-    const double iterations = (double)(channels * windowsPerChannel);
-    for (int bin = 0; bin < outputSize; bin++) {
-        const double averagePower = accumulatedPower[bin] / iterations;
-        const double singleSidedScale = (bin == 0) ? 1.0 : 2.0;
-        const double amplitude = singleSidedScale * sqrt(averagePower) / window.sum;
-
-        if (amplitude > 0.0) {
-            const double dbfs = 20.0 * log10(amplitude);
-            output[bin] = (float) std::clamp(dbfs - floorDb, 0.0, -floorDb);
-        }
-    }
-
-    return true;
-}
-
 void Player::ReturnUnusedBuffer(Buffer* buffer) {
     this->stream->RecycleBuffer(buffer);
 }
@@ -442,40 +342,16 @@ void Player::FailPlayback(mc_result status, const char* operation) {
 void Player::OnBufferProcessed(Buffer *buffer) {
     std::list<MixPoint> mixPointsHit;
 
-    /* process visualizer data, and write to the selected plugin, if applicable */
-
-    const bool renderSpectrum = vis::WantsSpectrum();
-    const bool captureSpectrum = vis::SpectrumEnabled();
-    if ((renderSpectrum || captureSpectrum) && performFft(buffer, this->fftContext.get(), this->fftContext->spectrum.data(), FFT_N / 2)) {
-        if (renderSpectrum) {
-            vis::WriteSpectrum(this->fftContext->spectrum.data(), FFT_N / 2,
-                static_cast<uint32_t>(buffer->SampleRate()));
-        }
-        if (captureSpectrum) {
-            vis::PublishSpectrum(this->fftContext->spectrum.data(), static_cast<uint32_t>(buffer->SampleRate()));
-        }
-    }
-    if (buffer->Channels() > 0 && buffer->SampleRate() > 0 && buffer->Samples() >= 0 &&
-        buffer->Samples() % buffer->Channels() == 0) {
-        const mc_pcm_view pcm {
-            sizeof(mc_pcm_view), buffer->BufferPointer(),
-            static_cast<size_t>(buffer->Samples() / buffer->Channels()),
-            { sizeof(mc_audio_format), static_cast<uint32_t>(buffer->SampleRate()),
-                static_cast<uint32_t>(buffer->Channels()), 0 },
-        };
-        vis::WritePcm(pcm);
-    }
-
-    const auto position = buffer->Position();
     this->ReturnUnusedBuffer(buffer);
-    const auto latency = this->output->Latency();
+    /* a busy device leaves the last audible position intact. the returned
+    buffer can still be ahead of the speakers and must not trigger mix points. */
+    const auto audible = this->writer.GetPosition().value_or(this->currentPosition.load());
     {
         std::lock_guard lock(this->mixPointMutex);
         if (this->seekToPosition.load() < 0) {
-            this->currentPosition.store(position);
+            this->currentPosition.store(audible);
             /* display rounding can move a mix point up to half a second early.
-            compare the latency-adjusted position before rounding for the UI. */
-            const auto audible = std::max(0.0, position - latency);
+            compare the same audible cursor used for position, without rounding. */
             auto point = this->pendingMixPoints.begin();
             while (point != this->pendingMixPoints.end()) {
                 if (audible >= point->time) {

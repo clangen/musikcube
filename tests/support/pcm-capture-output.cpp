@@ -46,6 +46,7 @@ namespace {
         bool stopped { true };
         size_t callbacksInFlight {};
         size_t admitted {};
+        uint64_t startOrder {};
     };
 
     class Capture {
@@ -91,6 +92,13 @@ namespace {
         void SetControlFailure(ControlFailure failure) {
             std::lock_guard lock(this->mutex);
             this->controlFailure = failure;
+            if (failure == ControlFailure::PauseOutgoing && std::getenv("MUSIKCORE_TEST_NEWEST_CHANNEL_FIRST")) {
+                /* prefetch may construct the incoming output first. force that
+                order so failure injection cannot rely on vector position. */
+                std::ranges::sort(this->channels, [](const Channel* left, const Channel* right) {
+                    return left->startOrder > right->startOrder;
+                });
+            }
         }
 
         bool Wait(CaptureEvent event, unsigned timeoutMs) {
@@ -252,6 +260,7 @@ namespace {
                         continue;
                     }
                     channel->started = true;
+                    channel->startOrder = ++this->startedOutputs;
                 }
 
                 active = true;
@@ -313,6 +322,7 @@ namespace {
         std::size_t frameCount {};
         std::size_t audibleFrames {};
         std::size_t returned {};
+        uint64_t startedOutputs {};
         bool storeFrames { true };
         bool watchOverlap {};
         bool overlap {};
@@ -408,8 +418,18 @@ namespace {
         mc_result Pause() {
             auto& sink = capture();
             std::lock_guard lock(sink.mutex);
+            Channel* outgoing = nullptr;
+            for (auto* candidate : sink.channels) {
+                if (candidate->started && !candidate->stopped &&
+                    (!outgoing || candidate->startOrder < outgoing->startOrder))
+                {
+                    outgoing = candidate;
+                }
+            }
+            /* decoder prefetch can create the selected output first. the
+            outgoing tail is the older audible output, regardless of that order. */
             if (sink.controlFailure == ControlFailure::Pause ||
-                (sink.controlFailure == ControlFailure::PauseOutgoing && sink.channels.front() == &this->channel))
+                (sink.controlFailure == ControlFailure::PauseOutgoing && outgoing == &this->channel))
             {
                 return MC_ERROR_IO;
             }

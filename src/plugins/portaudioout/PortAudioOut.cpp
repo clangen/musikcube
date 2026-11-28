@@ -1,6 +1,7 @@
 #include "PortAudioOut.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <exception>
@@ -49,7 +50,9 @@ namespace {
     }
 }
 
-PortAudioOut::PortAudioOut() : initialized(initialize() == paNoError) {}
+PortAudioOut::PortAudioOut()
+: initialized(initialize() == paNoError) {
+}
 
 PortAudioOut::~PortAudioOut() {
     if (this->stream) {
@@ -131,6 +134,11 @@ mc_result PortAudioOut::Prepare(const mc_output_options& options, const mc_outpu
     if (Pa_SetStreamFinishedCallback(this->stream, Finished) != paNoError) {
         return MC_ERROR_IO;
     }
+    this->timingEstimator.Reset(options.format.sample_rate);
+    this->scheduledFrames = 0;
+    const auto* infoTiming = Pa_GetStreamInfo(this->stream);
+    this->outputLatency =
+        infoTiming && std::isfinite(infoTiming->outputLatency) ? std::max(0.0, infoTiming->outputLatency) : 0.0;
     this->format = options.format;
     this->callbacks = callbacks;
     this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : DefaultCapacity;
@@ -180,6 +188,7 @@ mc_result PortAudioOut::QueueAudioBuffer(const mc_output_buffer& buffer) noexcep
         this->FinishProducer();
         return MC_ERROR_QUEUE_FULL;
     }
+    this->timingEstimator.Submit(buffer.pcm.frame_count);
     this->queuedFrames.fetch_add(buffer.pcm.frame_count, std::memory_order_relaxed);
     this->slots[head % SlotCount] = { buffer.pcm.data, buffer.pcm.frame_count, buffer.token };
     this->head.store(head + 1, std::memory_order_release);
@@ -187,9 +196,8 @@ mc_result PortAudioOut::QueueAudioBuffer(const mc_output_buffer& buffer) noexcep
     return MC_OK;
 }
 
-int PortAudioOut::Callback(const void*, void* output, unsigned long frames,
-    const PaStreamCallbackTimeInfo*, PaStreamCallbackFlags, void* context) noexcept
-{
+int PortAudioOut::Callback(const void*, void* output, unsigned long frames, const PaStreamCallbackTimeInfo* timing,
+    PaStreamCallbackFlags, void* context) noexcept {
     auto& self = *static_cast<PortAudioOut*>(context);
     auto* target = static_cast<float*>(output);
     const auto channels = self.format.channels;
@@ -198,6 +206,7 @@ int PortAudioOut::Callback(const void*, void* output, unsigned long frames,
         std::fill_n(target, remaining * channels, 0.0f);
         return paContinue;
     }
+    const auto callbackTime = musik::plugins::OutputTimingEstimator::Now();
     const float gain = self.volume.load(std::memory_order_relaxed);
     while (remaining) {
         const auto tail = self.tail.load(std::memory_order_relaxed);
@@ -227,6 +236,17 @@ int PortAudioOut::Callback(const void*, void* output, unsigned long frames,
             entire slot has finished playing. */
             self.callbacks.ready(self.callbacks.context);
         }
+    }
+    const auto copied = frames - remaining;
+    if (copied) {
+        self.scheduledFrames += copied;
+        /* PortAudio's DAC timestamp is the first sample, not the end of this
+        callback. include only actual PCM, not any underrun silence after it. */
+        const auto latency = timing && std::isfinite(timing->outputBufferDacTime) && std::isfinite(timing->currentTime)
+            ? std::max(0.0, timing->outputBufferDacTime - timing->currentTime)
+            : self.outputLatency;
+        const auto delay = latency + static_cast<double>(copied) / self.format.sample_rate;
+        self.timingEstimator.Publish(self.scheduledFrames, callbackTime + static_cast<uint64_t>(delay * 1e9));
     }
     if (self.draining.load(std::memory_order_acquire) &&
         self.head.load(std::memory_order_acquire) == self.tail.load(std::memory_order_acquire))
@@ -326,6 +346,7 @@ mc_result PortAudioOut::Stop() noexcept {
         return MC_ERROR_IO;
     }
     this->stream = nullptr;
+    this->timingEstimator.Reset(0);
     return MC_OK;
 }
 
@@ -379,6 +400,8 @@ mc_result PortAudioOut::Flush() {
         return MC_ERROR_IO;
     }
     this->ReturnPending(MC_ERROR_CANCELLED);
+    this->timingEstimator.Reset(this->format.sample_rate);
+    this->scheduledFrames = 0;
     this->draining.store(false, std::memory_order_release);
     return this->StartStream();
 }

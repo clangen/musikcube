@@ -3,11 +3,14 @@
 #include <common/DeleteDefaults.h>
 #include <musikcore/ffi/plugin_abi/PluginRegistry.h>
 #include <musikcore/audio/Buffer.h>
+#include <musikcore/audio/AudiblePlaybackPosition.h>
+#include <musikcore/audio/VisualizationAudioQueue.h>
 #include <musikcore/plugin/services.h>
 #include <array>
 #include <atomic>
 #include <cstdint>
 #include <mutex>
+#include <optional>
 
 namespace musik { namespace core { namespace audio {
 
@@ -63,6 +66,12 @@ namespace musik { namespace core { namespace audio {
             void ProcessCompletions();
             bool HasPending() const noexcept;
 
+            /* return this track's audible media time in seconds, even when
+            another track shares the output. return no position before its
+            first queued buffer, including after a seek, or while a device
+            control is busy. UI snapshots never wait for device work. */
+            std::optional<double> GetPosition() const;
+
             /* when the worker needs storage back, wait before checking
             ProcessCompletions again. a playback command can also wake it. */
             void WaitForReturnedBuffer() noexcept { this->WaitForBufferChange(); }
@@ -89,11 +98,12 @@ namespace musik { namespace core { namespace audio {
             std::array<uint8_t, CompletionCapacity> pendingSlots;
             size_t firstPending = 0;
             size_t pendingCount = 0;
+            mutable AudiblePlaybackPosition::TrackPosition trackPosition;
         };
 
         MUSIK_DELETE_COPY_AND_MOVE(Output);
 
-        Output() = default;
+        Output();
         Output(ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name,
             std::string device, mc_plugin_settings_service settings = MC_PLUGIN_SETTINGS_SERVICE_DEFAULT);
         ~Output();
@@ -113,7 +123,6 @@ namespace musik { namespace core { namespace audio {
         double GetVolume() const;
         void Stop();
         void FlushForReplacement();
-        double Latency() const;
 
         void NotifyWriters() noexcept;
 
@@ -129,6 +138,7 @@ namespace musik { namespace core { namespace audio {
             std::atomic<uint64_t> token { Empty };
             musik::core::audio::Buffer* buffer = nullptr;
             mc_result outcome = MC_OK;
+            AudiblePlaybackPosition::BufferPosition bufferPosition;
         };
 
         static_assert(CompletionCapacity > Completion::Returned);
@@ -142,6 +152,10 @@ namespace musik { namespace core { namespace audio {
         mc_result ApplyVolume();
         void StopBackend();
         mc_result FlushBackend();
+        /* read how far playback has actually reached the speakers.
+        keep the output locked while converting this reading to track seconds,
+        so a seek cannot combine the old frame count with the new track position. */
+        std::optional<uint64_t> ReadAudibleFrame();
 
         ffi::PluginRegistry::Factory<mc_output_factory> factory;
         std::string id;
@@ -161,6 +175,8 @@ namespace musik { namespace core { namespace audio {
         const mc_output_vtable* api = nullptr;
         mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
         size_t capacity = 0;
+        AudiblePlaybackPosition playbackPosition;
+        VisualizationAudioQueue visualization;
         uint64_t nextToken = 1;
         std::array<Completion, CompletionCapacity> completions;
         std::atomic<uint64_t> completionFailures { 0 };

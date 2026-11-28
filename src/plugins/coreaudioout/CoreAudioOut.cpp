@@ -36,6 +36,7 @@
 #include <CoreAudio/CoreAudio.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <cmath>
+#include <algorithm>
 #include <cstring>
 #include <limits>
 #include <string>
@@ -132,6 +133,7 @@ mc_result CoreAudioOut::Prepare(const mc_output_options& options, const mc_outpu
     if (findDevice(options.device_id) == kAudioObjectUnknown) {
         return MC_ERROR_NOT_FOUND;
     }
+    this->timingEstimator.Reset(options.format.sample_rate);
     this->format = options.format;
     this->callbacks = callbacks;
     this->capacity = options.queue_capacity_frames ? options.queue_capacity_frames : 32768;
@@ -223,8 +225,25 @@ mc_result CoreAudioOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept
         slot.buffer->mAudioDataByteSize = static_cast<UInt32>(bytes);
         this->queuedFrames.fetch_add(pcm.frame_count);
         slot.queued.store(true, std::memory_order_release);
-        const auto result = AudioQueueEnqueueBuffer(this->queue, slot.buffer, 0, nullptr);
+        const auto submitted = this->timingEstimator.Submit(pcm.frame_count);
+        AudioTimeStamp start {};
+        const auto result = AudioQueueEnqueueBufferWithParameters(
+            this->queue, slot.buffer, 0, nullptr, 0, 0, 0, nullptr, nullptr, &start);
+        if (result == noErr) {
+            double delay = static_cast<double>(this->queuedFrames.load()) / this->format.sample_rate;
+            AudioTimeStamp current {};
+            const auto now = musik::plugins::OutputTimingEstimator::Now();
+            if (!this->paused.load() && (start.mFlags & kAudioTimeStampSampleTimeValid) &&
+                AudioQueueGetCurrentTime(this->queue, nullptr, &current, nullptr) == noErr &&
+                (current.mFlags & kAudioTimeStampSampleTimeValid))
+            {
+                delay = std::max(
+                    0.0, (start.mSampleTime + pcm.frame_count - current.mSampleTime) / this->format.sample_rate);
+            }
+            this->timingEstimator.Publish(submitted, now + static_cast<uint64_t>(delay * 1e9));
+        }
         if (result != noErr) {
+            this->timingEstimator.Reject(pcm.frame_count);
             slot.queued.store(false, std::memory_order_release);
             this->queuedFrames.fetch_sub(pcm.frame_count);
         }
@@ -277,6 +296,7 @@ mc_result CoreAudioOut::Stop() noexcept {
         active = this->producers.load();
     }
     if (!this->queue) {
+        this->timingEstimator.Reset(0);
         return MC_OK;
     }
     /* never hold a callback-visible lock while stopping/disposal synchronously
@@ -294,6 +314,7 @@ mc_result CoreAudioOut::Stop() noexcept {
         slot.buffer = nullptr;
     }
     this->queuedFrames.store(0);
+    this->timingEstimator.Reset(0);
     this->NotifyDrainWaiter();
     /* successful disposal establishes quiescence even when Stop reported a
     device that was already unavailable or a queue that never started. */
@@ -311,6 +332,7 @@ mc_result CoreAudioOut::Pause() {
     if (!this->queue || AudioQueuePause(this->queue) != noErr) {
         return MC_ERROR_IO;
     }
+    this->timingEstimator.Pause();
     this->paused.store(true);
     this->NotifyDrainWaiter();
     return MC_OK;
@@ -320,6 +342,7 @@ mc_result CoreAudioOut::Resume() {
     if (!this->queue || AudioQueueStart(this->queue, nullptr) != noErr) {
         return MC_ERROR_IO;
     }
+    this->timingEstimator.Resume();
     this->restartAfterDrain = false;
     this->paused.store(false);
     this->NotifyDrainWaiter();

@@ -1,6 +1,5 @@
 #include "Output.h"
 #include <common/Contract.h>
-#include <cmath>
 #include <limits>
 #include <algorithm>
 #include <climits>
@@ -65,14 +64,24 @@ namespace musik { namespace core { namespace audio {
         }
     }
 
-    Output::Output(
-        ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name, std::string device,
-        mc_plugin_settings_service settings)
+    Output::Output()
+    : visualization([this] {
+        std::lock_guard lock(this->lifecycle);
+        return this->ReadAudibleFrame();
+    }) {
+    }
+
+    Output::Output(ffi::PluginRegistry::Factory<mc_output_factory> factory, std::string id, std::string name,
+        std::string device, mc_plugin_settings_service settings)
     : factory(std::move(factory))
     , id(std::move(id))
     , name(std::move(name))
     , device(std::move(device))
     , settings(settings)
+    , visualization([this] {
+        std::lock_guard lock(this->lifecycle);
+        return this->ReadAudibleFrame();
+    })
     {
         if (this->settings.read_boolean) {
             this->services.settings = &this->settings;
@@ -83,8 +92,7 @@ namespace musik { namespace core { namespace audio {
     : output(output)
     , sink(sink)
     , lastWakeSeen(output.wakeCount.load())
-    , lastFailureSeen(output.completionFailures.load())
-    {
+    , lastFailureSeen(output.completionFailures.load()) {
     }
 
     Output::Writer::~Writer() {
@@ -137,6 +145,12 @@ namespace musik { namespace core { namespace audio {
                 break;
             }
 
+            /* returned storage can be collected after a seek or stop. only
+            completions from the current clock may advance its fallback cursor. */
+            if (completion.outcome == MC_OK) {
+                std::lock_guard lifecycle(this->output.lifecycle);
+                this->output.playbackPosition.RecordReturnedBuffer(completion.bufferPosition);
+            }
             auto* buffer = completion.buffer;
             const auto outcome = completion.outcome;
             this->firstPending = (this->firstPending + 1) % CompletionCapacity;
@@ -153,6 +167,15 @@ namespace musik { namespace core { namespace audio {
         return this->pendingCount != 0;
     }
 
+    std::optional<double> Output::Writer::GetPosition() const {
+        std::unique_lock lifecycle(this->output.lifecycle, std::try_to_lock);
+        if (!lifecycle.owns_lock()) {
+            /* UI snapshots must not wait for a device opening or stopping. */
+            return std::nullopt;
+        }
+        return this->output.playbackPosition.GetTrackSeconds(this->trackPosition, this->output.ReadAudibleFrame());
+    }
+
     mc_result Output::Writer::ResetForSeek() {
         std::lock_guard ordinary(this->output.ordinary);
         std::lock_guard lifecycle(this->output.lifecycle);
@@ -162,22 +185,25 @@ namespace musik { namespace core { namespace audio {
         /* keep reset and reopening one operation. an obsolete seek must never
         flush a replacement track or reopen admission after transport Stop. */
         const auto result = this->output.FlushBackend();
-        if (result != MC_OK) return result;
+        if (result != MC_OK) {
+            return result;
+        }
         this->output.paused = false;
         this->output.NotifyWriters();
         return MC_OK;
     }
 
     mc_result Output::FlushBackend() {
+        this->visualization.Reset();
         if (this->prepared.load() &&
-            this->api->struct_size >= offsetof(mc_output_vtable, flush) + sizeof(this->api->flush) &&
-            this->api->flush)
+            this->api->struct_size >= offsetof(mc_output_vtable, flush) + sizeof(this->api->flush) && this->api->flush)
         {
             const auto result = this->factory.Invoke([&](const auto&) {
                 return this->api->flush(this->instance);
             });
             if (result == MC_ERROR_UNSUPPORTED) {
                 this->StopBackend();
+                return MC_OK;
             }
             else if (result != MC_OK) {
                 return result;
@@ -185,7 +211,9 @@ namespace musik { namespace core { namespace audio {
         }
         else {
             this->StopBackend();
+            return MC_OK;
         }
+        this->playbackPosition.Reset();
         return MC_OK;
     }
 
@@ -242,8 +270,8 @@ namespace musik { namespace core { namespace audio {
         /* Stop interrupts a blocking queue/drain before joining ordinary calls. */
         std::lock_guard lock(this->ordinary);
         for (const auto& completion : this->completions) {
-            musik::contract::Assert(
-                completion.token.load() == Completion::Empty, "output destroyed before players recycled completed buffers");
+            musik::contract::Assert(completion.token.load() == Completion::Empty,
+                "output destroyed before players recycled completed buffers");
         }
         if (this->instance) {
             this->factory.Invoke([&](const auto&) {
@@ -319,6 +347,8 @@ namespace musik { namespace core { namespace audio {
     }
 
     void Output::StopBackend() {
+        /* prevent old visual frames from appearing while the backend stops. */
+        this->visualization.Reset();
         if (this->instance) {
             const auto result = this->factory.Invoke([&](const auto&) {
                 return this->api->stop(this->instance);
@@ -326,6 +356,9 @@ namespace musik { namespace core { namespace audio {
             musik::contract::Assert(result == MC_OK, "output Stop failed; callbacks and ownership are not safe");
         }
         this->prepared.store(false);
+        /* returned buffers can still be collected after stop. their old reset
+        IDs must not advance playback when new audio is queued. */
+        this->playbackPosition.Reset();
     }
 
     void Output::FlushForReplacement() {
@@ -381,6 +414,7 @@ namespace musik { namespace core { namespace audio {
                 return result;
             }
         }
+        this->visualization.SetPaused(pause);
         this->paused = pause;
         if (!pause) {
             this->stopped.store(false);
@@ -569,6 +603,7 @@ namespace musik { namespace core { namespace audio {
                 output.nextToken < UINT64_MAX / CompletionCapacity, "output token identity exhausted");
             const auto token = output.nextToken++ * CompletionCapacity + i;
             completion.buffer = &buffer;
+            completion.bufferPosition = {};
             completion.token.store(token, std::memory_order_release);
             const mc_output_buffer block {
                 .struct_size = sizeof(mc_output_buffer),
@@ -582,43 +617,32 @@ namespace musik { namespace core { namespace audio {
                 const auto tail = (this->firstPending + this->pendingCount) % CompletionCapacity;
                 this->pendingSlots[tail] = static_cast<uint8_t>(i);
                 ++this->pendingCount;
+                std::lock_guard lifecycle(output.lifecycle);
+                if (!output.stopped.load() && output.prepared.load()) {
+                    completion.bufferPosition =
+                        output.playbackPosition.RecordQueuedBuffer(this->trackPosition, pcm, buffer.Position());
+                    output.visualization.Enqueue(pcm, completion.bufferPosition.FirstFrame());
+                }
             }
             else {
                 auto pending = token;
                 const bool unclaimed = completion.token.compare_exchange_strong(pending, Completion::Empty);
-                musik::contract::Assert(unclaimed,
-                    "output completed a buffer whose admission failed");
+                musik::contract::Assert(unclaimed, "output completed a buffer whose admission failed");
             }
             return result;
         }
         return MC_ERROR_QUEUE_FULL;
     }
 
-    double Output::Latency() const {
-        if (!this->prepared.load()) {
-            return 0.0;
+    std::optional<uint64_t> Output::ReadAudibleFrame() {
+        if (!this->prepared.load() || this->stopped.load()) {
+            return std::nullopt;
         }
         mc_output_timing timing = MC_OUTPUT_TIMING_DEFAULT;
-        const auto status = this->factory.Invoke([&](const auto&) {
+        const auto result = this->factory.Invoke([&](const auto&) {
             return this->api->get_timing(this->instance, &timing);
         });
-        if (status != MC_OK) {
-            return 0.0;
-        }
-        /* timing is optional. combine only valid bounded measurements;
-        unknown values must not invent a device clock or poison progress. */
-        double latency = 0.0;
-        if ((timing.valid_flags & MC_OUTPUT_TIMING_QUEUED) && std::isfinite(timing.queued_seconds) &&
-            timing.queued_seconds >= 0)
-        {
-            latency += timing.queued_seconds;
-        }
-        if ((timing.valid_flags & MC_OUTPUT_TIMING_DEVICE_LATENCY) && std::isfinite(timing.device_latency_seconds) &&
-            timing.device_latency_seconds >= 0)
-        {
-            latency += timing.device_latency_seconds;
-        }
-        return std::isfinite(latency) ? latency : 0.0;
+        return this->playbackPosition.UpdateAudibleFrame(result, timing);
     }
 
     void MC_CALL Output::Completed(void* state, uint64_t token, mc_result outcome) noexcept {

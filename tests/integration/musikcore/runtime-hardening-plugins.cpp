@@ -15,6 +15,8 @@
 #include <exception>
 #include <iterator>
 #include <thread>
+#include <future>
+#include <barrier>
 
 namespace runtime_tests {
     using namespace musik::core;
@@ -118,10 +120,44 @@ namespace runtime_tests {
         {
             return false;
         }
-        const float samples[] { 0.0f, 0.0f };
-        const mc_pcm_view pcm { sizeof(mc_pcm_view), samples, 1, { sizeof(mc_audio_format), 44100, 2, 0 } };
-        musik::core::audio::vis::WritePcm(pcm);
-        musik::core::audio::vis::WriteSpectrum(samples, 2, 44100);
+        /* visibility reads must finish while the owner waits, without an
+        owner-thread dispatch, and may overlap normal show/hide controls. */
+        std::promise<bool> queried;
+        auto result = queried.get_future();
+        std::thread query([&] {
+            queried.set_value(audio::vis::HasAudioConsumers());
+        });
+        if (result.wait_for(std::chrono::seconds(2)) != std::future_status::ready) {
+            std::abort();
+        }
+        query.join();
+        if (!TEST_CHECK(result.get())) {
+            return false;
+        }
+        std::barrier visibilityStep(2);
+        std::thread reader([&] {
+            for (unsigned i = 0; i < 64; ++i) {
+                visibilityStep.arrive_and_wait();
+                (void) audio::vis::HasAudioConsumers();
+                visibilityStep.arrive_and_wait();
+            }
+        });
+        bool controlsOk = true;
+        for (unsigned i = 0; i < 64; ++i) {
+            visibilityStep.arrive_and_wait();
+            controlsOk = (mc_visualizer_hide() == MC_OK) && controlsOk;
+            controlsOk = (mc_visualizer_show(0) == MC_OK) && controlsOk;
+            visibilityStep.arrive_and_wait();
+        }
+        reader.join();
+        if (!TEST_CHECK(controlsOk) || !TEST_CHECK(mc_visualizer_is_visible(&visible) == MC_OK && visible)) {
+            return false;
+        }
+        /* discard the stress-test hide events before checking final teardown. */
+        std::ofstream(marker, std::ios::trunc).close();
+        const float samples[1024] {};
+        const mc_pcm_view pcm { sizeof(mc_pcm_view), samples, 512, { sizeof(mc_audio_format), 44100, 2, 0 } };
+        musik::core::audio::vis::DeliverAudio(pcm);
         const auto plugins = api::ListPlugins();
         const auto plugin = std::find_if(plugins.begin(), plugins.end(), [](const auto& item) {
             return item.name == "RuntimeVisualizer";
@@ -129,7 +165,7 @@ namespace runtime_tests {
         if (!TEST_CHECK(plugin != plugins.end()) || !TEST_CHECK(api::SetPluginEnabled(plugin->filename, false) == MC_OK)) {
             return false;
         }
-        if (!TEST_CHECK(musik::core::audio::vis::WantsSpectrum()) ||
+        if (!TEST_CHECK(musik::core::audio::vis::HasAudioConsumers()) ||
             !TEST_CHECK(context.Close() == MC_OK) ||
             !TEST_CHECK([&] { std::ifstream in(marker); std::string events; in >> events; return events == "PSHR"; }()) ||
             !TEST_CHECK(mc_visualizer_hide() == MC_ERROR_NOT_FOUND) ||

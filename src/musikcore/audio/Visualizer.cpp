@@ -39,8 +39,14 @@
 #include <musikcore/plugin/Plugins.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/visualizer.h>
+#include <musikcore/log.h>
 
 #include <algorithm>
+#include <kiss_fftr.h>
+#include <cmath>
+
+#define FFT_N (2 * MC_VISUALIZER_SPECTRUM_BINS)
+#define PI 3.14159265358979323846
 #include <atomic>
 #include <array>
 #include <cctype>
@@ -81,7 +87,10 @@ namespace {
 
         ~Visualizer() {
             if (instance) {
-                factory.Invoke([&](const auto&) { api->destroy(instance); return MC_OK; });
+                factory.Invoke([&](const auto&) {
+                    api->destroy(instance);
+                    return MC_OK;
+                });
             }
         }
 
@@ -138,54 +147,65 @@ namespace {
     }
 }
 
-bool vis::WantsSpectrum() {
-    const auto* selected = selectedVisualizer.load();
-    return selected && (selected->inputs & MC_VISUALIZER_INPUT_SPECTRUM);
-}
+namespace {
+    /* whether the selected plugin needs FFT input in addition to raw PCM. */
+    bool pluginNeedsSpectrum() {
+        const auto* selected = selectedVisualizer.load();
+        return selected && (selected->inputs & MC_VISUALIZER_INPUT_SPECTRUM);
+    }
 
-void vis::WritePcm(const mc_pcm_view& pcm) noexcept {
-    auto* selected = selectedVisualizer.load();
-    if (selected && (selected->inputs & MC_VISUALIZER_INPUT_PCM)) {
-        try {
-            selected->factory.Invoke([&](const auto&) { return selected->api->write_pcm(selected->instance, &pcm); });
+    /* borrowed PCM goes directly to the selected plugin; no application PCM cache exists. */
+    void deliverPluginPcm(const mc_pcm_view& pcm) noexcept {
+        auto* selected = selectedVisualizer.load();
+        if (selected && (selected->inputs & MC_VISUALIZER_INPUT_PCM)) {
+            try {
+                selected->factory.Invoke([&](const auto&) {
+                    return selected->api->write_pcm(selected->instance, &pcm);
+                });
+            }
+            catch (...) {
+            }
         }
-        catch (...) {}
     }
-}
 
-void vis::WriteSpectrum(const float* bins, size_t count, uint32_t sampleRate) noexcept {
-    auto* selected = selectedVisualizer.load();
-    if (selected && (selected->inputs & MC_VISUALIZER_INPUT_SPECTRUM)) {
-        try {
-            selected->factory.Invoke([&](const auto&) {
-                return selected->api->write_spectrum(selected->instance, bins, count, sampleRate);
-            });
+    /* deliver FFT bins to the selected plugin, independently of the application meter. */
+    void deliverPluginSpectrum(const float* bins, size_t count, uint32_t sampleRate) noexcept {
+        auto* selected = selectedVisualizer.load();
+        if (selected && (selected->inputs & MC_VISUALIZER_INPUT_SPECTRUM)) {
+            try {
+                selected->factory.Invoke([&](const auto&) {
+                    return selected->api->write_spectrum(selected->instance, bins, count, sampleRate);
+                });
+            }
+            catch (...) {
+            }
         }
-        catch (...) {}
     }
-}
 
-bool vis::SpectrumEnabled() {
-    return spectrumEnabled.load(std::memory_order_relaxed);
-}
+    /* application opt-in for mc_visualizer_read_spectrum(), independent of plugins. */
+    bool spectrumCaptureEnabled() {
+        return spectrumEnabled.load(std::memory_order_relaxed);
+    }
 
-void vis::PublishSpectrum(const float* bins, uint32_t sampleRate) {
-    auto version = spectrumVersion.load(std::memory_order_relaxed);
-    /* Concurrent crossfade workers skip a frame when another writer is active. */
-    if ((version & 1) || !spectrumVersion.compare_exchange_strong(version, version + 1,
-        std::memory_order_acq_rel))
-    {
-        return;
+    /* cache one FFT snapshot for application readers; this does not call a plugin. */
+    void publishSpectrumMeter(const float* bins, uint32_t sampleRate) {
+        auto version = spectrumVersion.load(std::memory_order_relaxed);
+        /* Concurrent crossfade workers skip a frame when another writer is active. */
+        if ((version & 1) || !spectrumVersion.compare_exchange_strong(version, version + 1, std::memory_order_acq_rel))
+        {
+            return;
+        }
+        spectrumSampleRate.store(sampleRate, std::memory_order_relaxed);
+        for (size_t i = 0; i < spectrum.size(); ++i) {
+            spectrum[i].store(bins[i], std::memory_order_relaxed);
+        }
+        spectrumVersion.store(version + 2, std::memory_order_release);
     }
-    spectrumSampleRate.store(sampleRate, std::memory_order_relaxed);
-    for (size_t i = 0; i < spectrum.size(); ++i) {
-        spectrum[i].store(bins[i], std::memory_order_relaxed);
-    }
-    spectrumVersion.store(version + 2, std::memory_order_release);
+
 }
 
 mc_result MC_CALL mc_visualizer_set_spectrum_enabled(bool enabled) {
-    if (enabled && !vis::SpectrumEnabled()) {
+    if (enabled && !spectrumCaptureEnabled()) {
         enabledVersion = spectrumVersion.load(std::memory_order_acquire);
     }
     spectrumEnabled.store(enabled, std::memory_order_relaxed);
@@ -197,7 +217,7 @@ mc_result MC_CALL mc_visualizer_read_spectrum(float* bins, size_t capacity, uint
         return MC_ERROR_INVALID_ARGUMENT;
     }
     const auto version = spectrumVersion.load(std::memory_order_acquire);
-    if (!vis::SpectrumEnabled() || version == enabledVersion) {
+    if (!spectrumCaptureEnabled() || version == enabledVersion) {
         return MC_ERROR_NOT_FOUND;
     }
     if (version & 1) {
@@ -221,7 +241,9 @@ mc_result MC_CALL mc_visualizer_read_spectrum(float* bins, size_t capacity, uint
 void vis::Shutdown() {
     spectrumEnabled.store(false, std::memory_order_relaxed);
     if (auto* selected = selectedVisualizer.exchange(nullptr)) {
-        selected->factory.Invoke([&](const auto&) { return selected->api->hide(selected->instance); });
+        selected->factory.Invoke([&](const auto&) {
+            return selected->api->hide(selected->instance);
+        });
     }
     /* worker users have stopped; the next session rediscovers enabled providers. */
     visualizers.clear();
@@ -256,13 +278,17 @@ mc_result MC_CALL mc_visualizer_show(size_t index) {
         auto* visualizer = visualizers[index].get();
         auto* previous = selectedVisualizer.exchange(nullptr);
         if (previous && previous != visualizer) {
-            const auto hidden = previous->factory.Invoke([&](const auto&) { return previous->api->hide(previous->instance); });
+            const auto hidden = previous->factory.Invoke([&](const auto&) {
+                return previous->api->hide(previous->instance);
+            });
             if (hidden != MC_OK) {
                 selectedVisualizer.store(previous);
                 return hidden;
             }
         }
-        const auto shown = visualizer->factory.Invoke([&](const auto&) { return visualizer->api->show(visualizer->instance); });
+        const auto shown = visualizer->factory.Invoke([&](const auto&) {
+            return visualizer->api->show(visualizer->instance);
+        });
         if (shown != MC_OK) {
             if (previous == visualizer) {
                 selectedVisualizer.store(previous);
@@ -291,7 +317,9 @@ mc_result MC_CALL mc_visualizer_hide() {
         if (!visible) {
             return MC_ERROR_NOT_FOUND;
         }
-        return selected->factory.Invoke([&](const auto&) { return selected->api->hide(selected->instance); });
+        return selected->factory.Invoke([&](const auto&) {
+            return selected->api->hide(selected->instance);
+        });
     });
 }
 
@@ -304,6 +332,153 @@ mc_result MC_CALL mc_visualizer_is_visible(bool* outVisible) {
         *outVisible = false;
         return selected ? selected->factory.Invoke([&](const auto&) {
             return selected->api->is_visible(selected->instance, outVisible);
-        }) : MC_OK;
+        })
+                        : MC_OK;
     });
+}
+
+namespace musik { namespace core { namespace audio {
+    struct FftContext {
+        FftContext()
+        : cfg(kiss_fftr_alloc(FFT_N, false, nullptr, nullptr)) {}
+
+        ~FftContext() { kiss_fftr_free(cfg); }
+
+        kiss_fftr_cfg cfg;
+        std::array<kiss_fft_scalar, FFT_N> input;
+        std::array<kiss_fft_cpx, (FFT_N / 2) + 1> output;
+        std::array<float, FFT_N / 2> spectrum;
+    };
+} } }
+
+struct HammingWindow {
+    std::array<float, FFT_N> values;
+    double sum;
+};
+
+static const HammingWindow& getHammingWindow() {
+    static const HammingWindow window = []() {
+        HammingWindow result = {};
+        for (int i = 0; i < FFT_N; i++) {
+            result.values[i] = 0.54f - 0.46f * (float) cos((2 * PI * i) / (FFT_N - 1));
+            result.sum += result.values[i];
+        }
+        return result;
+    }();
+
+    return window;
+}
+
+static inline bool performFft(const mc_pcm_view& pcm, FftContext* fft, float* output, int outputSize) {
+    if (!fft || !fft->cfg || !output || outputSize != FFT_N / 2) {
+        return false;
+    }
+
+    long samples = static_cast<long>(pcm.frame_count * pcm.format.channels);
+    int channels = static_cast<int>(pcm.format.channels);
+    if (channels <= 0 || samples <= 0 || !pcm.data) {
+        return false;
+    }
+
+    const long samplesPerChannel = samples / channels;
+    const long windowsPerChannel = samplesPerChannel / FFT_N;
+    if (windowsPerChannel == 0) {
+        return false;
+    }
+
+    memset(output, 0, outputSize * sizeof(float));
+
+    const float* input = pcm.data;
+    const HammingWindow& window = getHammingWindow();
+    std::array<double, FFT_N / 2> accumulatedPower = {};
+
+    for (int channel = 0; channel < channels; channel++) {
+        for (long block = 0; block < windowsPerChannel; block++) {
+            const long firstFrame = block * FFT_N;
+            for (int i = 0; i < FFT_N; i++) {
+                const long source = ((firstFrame + i) * channels) + channel;
+                fft->input[i] = input[source] * window.values[i];
+            }
+
+            kiss_fftr(fft->cfg, fft->input.data(), fft->output.data());
+
+            for (int bin = 0; bin < outputSize; bin++) {
+                const double real = fft->output[bin].r;
+                const double imaginary = fft->output[bin].i;
+                accumulatedPower[bin] += (real * real) + (imaginary * imaginary);
+            }
+        }
+    }
+
+    /*
+     * Convert average power to a single-sided, window-normalized amplitude.
+     * The visualizer API historically expects positive bar heights, so expose
+     * decibels above an -80 dBFS display floor: 0 is at/below the floor and 80
+     * represents 0 dBFS. DC is not doubled; the omitted Nyquist bin would use
+     * the same treatment.
+     */
+    constexpr double floorDb = -80.0;
+    const double iterations = (double) (channels * windowsPerChannel);
+    for (int bin = 0; bin < outputSize; bin++) {
+        const double averagePower = accumulatedPower[bin] / iterations;
+        const double singleSidedScale = (bin == 0) ? 1.0 : 2.0;
+        const double amplitude = singleSidedScale * sqrt(averagePower) / window.sum;
+
+        if (amplitude > 0.0) {
+            const double dbfs = 20.0 * log10(amplitude);
+            output[bin] = (float) std::clamp(dbfs - floorDb, 0.0, -floorDb);
+        }
+    }
+
+    return true;
+}
+
+bool vis::HasAudioConsumers() {
+    if (spectrumCaptureEnabled()) {
+        return true;
+    }
+    auto* selected = selectedVisualizer.load();
+    if (!selected) {
+        return false;
+    }
+    bool visible = false;
+    return selected->factory.Invoke([&](const auto&) {
+        return selected->api->is_visible(selected->instance, &visible);
+    }) == MC_OK &&
+        visible;
+}
+
+void vis::DeliverAudio(const mc_pcm_view& pcm) {
+    if (!vis::HasAudioConsumers()) {
+        return;
+    }
+    deliverPluginPcm(pcm);
+    const bool renderSpectrum = pluginNeedsSpectrum();
+    const bool captureSpectrum = spectrumCaptureEnabled();
+    if (renderSpectrum || captureSpectrum) {
+        thread_local FftContext fft;
+        if (performFft(pcm, &fft, fft.spectrum.data(), FFT_N / 2)) {
+            if (renderSpectrum) {
+                deliverPluginSpectrum(fft.spectrum.data(), FFT_N / 2, pcm.format.sample_rate);
+            }
+            if (captureSpectrum) {
+                publishSpectrumMeter(fft.spectrum.data(), pcm.format.sample_rate);
+            }
+        }
+    }
+}
+
+void vis::ReportCaptureFailure(mc_result result) noexcept {
+    const char* message = result == MC_ERROR_IO
+        ? "visualization worker unavailable; audio continues"
+        : "visualization capture allocation failed; audio continues";
+    const mc_string_view tag {
+        .data = "Visualizer",
+        .length = sizeof("Visualizer") - 1,
+    };
+    const mc_string_view detail {
+        .data = message,
+        .length = std::char_traits<char>::length(message),
+    };
+    (void) mc_log_write(MC_LOG_WARNING, tag, detail);
 }

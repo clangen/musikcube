@@ -150,6 +150,21 @@ namespace {
             return MC_OK;
         }
         double GetVolume() const { return 1.0; }
+        mc_result GetTiming(mc_output_timing& timing) const noexcept {
+            if (this->services && this->services->settings && this->services->settings->read_number) {
+                double played = 0;
+                const auto* settings = this->services->settings;
+                const auto result = settings->read_number(settings->context, { "played", 6 }, 0, &played);
+                if (result != MC_OK) {
+                    return result;
+                }
+                timing.valid_flags = MC_OUTPUT_TIMING_PLAYED;
+                timing.generation = 1;
+                timing.frames_played_by_driver = static_cast<uint64_t>(played);
+                timing.frames_played_timestamp_ns = 1;
+            }
+            return MC_OK;
+        }
         mc_result Flush() { return MC_ERROR_UNSUPPORTED; }
         mc_result Drain() {
             record("drain", 5);

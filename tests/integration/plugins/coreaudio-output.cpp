@@ -3,6 +3,7 @@
 #include <musikcore/musikcore.hpp>
 #include "../../support/host-wakeup.h"
 #include "../../support/plugins/OutputContract.h"
+#include "../../support/plugins/OutputTiming.h"
 #include <fstream>
 #include <chrono>
 #include "../../support/plugins/PluginCandidates.h"
@@ -175,6 +176,7 @@ int main(int argc, char** argv) {
     sharedOptions.queue_capacity_frames = 4096;
     require(factory.Invoke([&](const mc_output_factory& api) {
         output_contract::Check(api, nullptr, sharedOptions);
+        output_contract::CheckTiming(api, sharedOptions);
         return MC_OK;
     }) == MC_OK, "shared CoreAudio output contract");
 
