@@ -668,6 +668,7 @@ namespace musik { namespace core { namespace api {
     /* list values for one field related to the supplied library filter. */
     struct RelatedCategoriesQuery {
         std::string_view field;
+        std::string_view nameFilter;
         LibraryFilter filter;
         std::optional<int64_t> anchorKey;
         size_t offset = 0;
@@ -732,6 +733,7 @@ namespace musik { namespace core { namespace api {
         }
         auto options = mc_related_categories_query MC_RELATED_CATEGORIES_QUERY_DEFAULT;
         options.field = { query.field.data(), query.field.size() };
+        options.name_filter = { query.nameFilter.data(), query.nameFilter.size() };
         options.filter = { { query.filter.trackFilter.data(), query.filter.trackFilter.size() },
             query.filter.trackMatchMode, selections.data(), selections.size() };
         options.anchor_key = query.anchorKey ? &*query.anchorKey : nullptr;

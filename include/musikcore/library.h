@@ -483,10 +483,12 @@ typedef struct mc_related_categories_query {
     size_t offset;
     /* maximum rows; zero selects MC_CATEGORY_QUERY_DEFAULT_LIMIT. */
     size_t limit;
+    /* Optional substring to match category names. */
+    mc_string_view name_filter;
 } mc_related_categories_query;
 #define MC_RELATED_CATEGORIES_QUERY_DEFAULT                                                                            \
     { sizeof(mc_related_categories_query), { NULL, 0 }, MC_LIBRARY_FILTER_DEFAULT, NULL, 0,                            \
-        MC_CATEGORY_QUERY_DEFAULT_LIMIT }
+        MC_CATEGORY_QUERY_DEFAULT_LIMIT, { NULL, 0 } }
 
 /* Pages contain exact total and anchor index; absent anchors use SIZE_MAX.
    anchor_key is optional, copied during submission, and may point to zero.

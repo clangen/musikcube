@@ -323,11 +323,13 @@ mc_result MC_CALL mc_library_get_related_categories_async(mc_context* context, c
         return MC_ERROR_INVALID_ARGUMENT;
     }
     *request = 0;
-    if (!context || !query || !completion || query->struct_size < sizeof(*query)) {
+    if (!context || !query || !completion || query->struct_size < offsetof(mc_related_categories_query, name_filter)) {
         return MC_ERROR_INVALID_ARGUMENT;
     }
     return exception_barrier(nullptr, [&]() -> mc_result {
-        if (!valid_text(query->field, false) || (query->anchor_key && *query->anchor_key < 0) ||
+        const auto nameFilter = read_option(query, &mc_related_categories_query::name_filter,
+            offsetof(mc_related_categories_query, name_filter));
+        if (!valid_text(query->field, false) || !valid_text(nameFilter) || (query->anchor_key && *query->anchor_key < 0) ||
             query->offset > static_cast<size_t>(INT64_MAX) || query->limit > MC_CATEGORY_QUERY_MAX_LIMIT)
         {
             return MC_ERROR_INVALID_ARGUMENT;
@@ -350,7 +352,9 @@ mc_result MC_CALL mc_library_get_related_categories_async(mc_context* context, c
         for (const auto& item : predicates) {
             categoryPredicates.emplace_back(item.field, item.key);
         }
-        return instance->QueryCategories(context, field, "", MC_TRACK_SEARCH_SUBSTRING, std::move(term),
+        return instance->QueryCategories(context, field,
+            std::string(nameFilter.data ? nameFilter.data : "", nameFilter.length),
+            MC_TRACK_SEARCH_SUBSTRING, std::move(term),
             query->filter.track_match_mode, std::move(categoryPredicates), query->anchor_key ? *query->anchor_key : -1,
             query->offset, query->limit ? query->limit : MC_CATEGORY_QUERY_DEFAULT_LIMIT, completion, data, request);
     });
