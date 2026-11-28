@@ -104,7 +104,10 @@ namespace musik { namespace core { namespace library { namespace QueryRegistry {
         if (name == SetTrackRatingQuery::kQueryName) {
             return SetTrackRatingQuery::DeserializeQuery(data);
         }
-        if (name == TrackMetadataBatchQuery::kQueryName || name == "TrackPageQuery") {
+        if (name == TrackProjectedPageQuery::kQueryName) {
+            return TrackProjectedPageQuery::DeserializeQuery(library, data);
+        }
+        if (name == TrackMetadataBatchQuery::kQueryName) {
             return TrackMetadataBatchQuery::DeserializeQuery(library, data);
         }
         if (name == TrackMetadataQuery::kQueryName) {

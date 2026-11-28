@@ -100,7 +100,7 @@ namespace musik { namespace core { namespace library { namespace query {
             "  FROM extended_metadata "
             "  WHERE {{extended_predicates}} "
             "  GROUP BY track_id "
-            "  HAVING COUNT(track_id)={{extended_predicate_count}} "
+            "  HAVING COUNT(DISTINCT key)={{extended_predicate_count}} "
             ") AS md ON {{track_id}}=md.track_id ";
 
         /* REGULAR_PROPERTY_QUERY is used to return a list of property values and their
@@ -239,6 +239,28 @@ namespace musik { namespace core { namespace library { namespace query {
 
         using Predicate = std::pair<std::string, int64_t>;
         using PredicateList = std::vector<Predicate>;
+        using PredicateGroups = std::map<std::string, std::vector<int64_t>>;
+
+        /* values are data, passed to SQLite as one JSON array per field. */
+        inline std::string SelectionArray(const std::vector<int64_t>& keys) {
+            std::string result = "[";
+            for (const auto key : keys) {
+                if (result.size() > 1) {
+                    result += ',';
+                }
+                result += std::to_string(key);
+            }
+            return result + "]";
+        }
+
+        inline PredicateGroups GroupPredicates(const PredicateList& selections) {
+            PredicateGroups groups;
+            for (const auto& selection : selections) {
+                groups[selection.first].push_back(selection.second);
+            }
+            return groups;
+        }
+
         struct Argument { virtual void Bind(musik::core::db::Statement& stmt, int pos) const = 0; };
         using ArgumentList = std::vector<std::shared_ptr<Argument>>;
 

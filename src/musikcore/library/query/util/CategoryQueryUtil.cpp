@@ -116,27 +116,18 @@ namespace musik { namespace core { namespace library { namespace query { namespa
     }
 
     std::string JoinRegular(
-        const PredicateList& pred,
-        ArgumentList& args,
-        const std::string& prefix)
+        const PredicateList& pred, ArgumentList& args, const std::string& prefix)
     {
         std::string result;
-        if (pred.size()) {
-            for (size_t i = 0; i < pred.size(); i++) {
-                if (i > 0) { result += " AND "; }
-                auto p = pred[i];
-                auto str = REGULAR_PREDICATE;
-                auto column = PREDICATE_TO_COLUMN_MAP[p.first];
-                ReplaceAll(str, "{{fk_id}}", column);
-                result += str;
-                args.push_back(std::make_shared<Id>(p.second));
+        for (const auto& [field, keys] : GroupPredicates(pred)) {
+            if (!result.empty()) {
+                result += " AND ";
             }
-
-            if (prefix.size()) {
-                result = prefix + result;
-            }
+            result += "tracks." + PREDICATE_TO_COLUMN_MAP.at(field) +
+                " IN (SELECT value FROM json_each(?))";
+            args.push_back(StringArgument(SelectionArray(keys)));
         }
-        return result;
+        return result.empty() ? result : prefix + result;
     }
 
     std::string InnerJoinExtended(
@@ -148,23 +139,22 @@ namespace musik { namespace core { namespace library { namespace query { namespa
         if (joined.size()) {
             result = EXTENDED_INNER_JOIN;
             ReplaceAll(result, "{{extended_predicates}}", joined);
-            ReplaceAll(result, "{{extended_predicate_count}}", std::to_string(pred.size()));
+            ReplaceAll(result, "{{extended_predicate_count}}", std::to_string(GroupPredicates(pred).size()));
             ReplaceAll(result, "{{track_id}}", trackId);
         }
 
         return result;
     }
 
-    std::string JoinExtended(
-        const PredicateList& pred, ArgumentList& args)
-    {
+    std::string JoinExtended(const PredicateList& pred, ArgumentList& args) {
         std::string result;
-        for (size_t i = 0; i < pred.size(); i++) {
-            if (i > 0) { result += " OR "; }
-            result += EXTENDED_PREDICATE;
-            auto p = pred[i];
-            args.push_back(std::make_shared<String>(p.first));
-            args.push_back(std::make_shared<Id>(p.second));
+        for (const auto& [field, keys] : GroupPredicates(pred)) {
+            if (!result.empty()) {
+                result += " OR ";
+            }
+            result += "(key=? AND meta_value_id IN (SELECT value FROM json_each(?)))";
+            args.push_back(StringArgument(field));
+            args.push_back(StringArgument(SelectionArray(keys)));
         }
         return result;
     }

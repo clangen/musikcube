@@ -1240,6 +1240,61 @@ namespace {
             }
             const mc_category_selection selection { { "genre", 5 }, categories.rows[0].first };
             categories = {};
+            categoryQuery.filter.track_filter = { "Morning", 7 };
+            if (mc_library_get_related_categories_async(
+                    context.Get(), nullptr, &categoryQuery, deliver, &categories, &request) != MC_OK ||
+                !ready() || categories.rows.size() != 1 || categories.rows[0].second != "Ambient") {
+                return failure(__LINE__);
+            }
+            LibraryFilter multiFilter;
+            multiFilter.selections = { { "genre", selection.key }, { "genre", categories.rows[0].first },
+                { "genre", selection.key } };
+            for (int64_t key = 100000; key < 101000; ++key) {
+                multiFilter.selections.push_back({ "genre", key });
+            }
+            TrackQuery multiQuery;
+            multiQuery.filter = multiFilter;
+            multiQuery.limit = 10;
+            std::optional<mc_result> multiStatus;
+            TrackPage multiPage;
+            QueryTracks(context, *library, multiQuery, [&](mc_result result, TrackPage page, std::string_view) {
+                multiStatus = result;
+                multiPage = std::move(page);
+            });
+            if (!AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && multiStatus.has_value(); }) ||
+                multiStatus != MC_OK || multiPage.Total() != 2 || multiPage.Size() != 2) {
+                std::fprintf(stderr, "multi page kind=%d status=%d total=%zu rows=%zu\n",
+                    library == local ? 0 : 1, multiStatus.value_or(-1), multiPage.Total(), multiPage.Size());
+                return failure(__LINE__);
+            }
+            multiStatus.reset();
+            TrackResult multiTracks;
+            OpenTrackSearch(context, *library, TrackSearch { multiFilter },
+                [&](mc_result result, TrackResult tracks, std::string_view) {
+                    multiStatus = result;
+                    multiTracks = std::move(tracks);
+                });
+            if (!AwaitTestHost(host, [&] { return context.Dispatch() == MC_OK && multiStatus.has_value(); }) ||
+                multiStatus != MC_OK || multiTracks.Size() != 2) {
+                return failure(__LINE__);
+            }
+            std::vector<mc_category_selection> alternatives;
+            alternatives.reserve(multiFilter.selections.size());
+            for (const auto& item : multiFilter.selections) {
+                alternatives.push_back({ { item.field.data(), item.field.size() }, item.key });
+            }
+            categories = {};
+            categoryQuery.field = { "artist", 6 };
+            categoryQuery.filter.track_filter = { nullptr, 0 };
+            categoryQuery.filter.selections = alternatives.data();
+            categoryQuery.filter.selection_count = alternatives.size();
+            if (mc_library_get_related_categories_async(
+                    context.Get(), nullptr, &categoryQuery, deliver, &categories, &request) != MC_OK ||
+                !ready() || categories.rows.size() != 1 || categories.rows[0].second != "Fixture Artist") {
+                return failure(__LINE__);
+            }
+
+            categories = {};
             categoryQuery.field = { "album", 5 };
             categoryQuery.filter.track_filter = { "Morning", 7 };
             categoryQuery.filter.selections = &selection;

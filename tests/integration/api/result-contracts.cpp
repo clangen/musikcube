@@ -241,6 +241,11 @@ namespace {
         reopened.SelectSources({ 0 });
         api::LibraryFilter browse { "^Artist$", MC_TRACK_SEARCH_REGEX,
             { { "album", 1 }, { "year", 4 }, { "rating", 0 } } };
+        browse.selections.push_back({ "album", 2 });
+        browse.selections.push_back({ "year", 4 });
+        for (int64_t key = 1000; key < 2000; ++key) {
+            browse.selections.push_back({ "year", key });
+        }
         api::TrackQuery filtered;
         filtered.filter = browse;
         expected = calls + 1;

@@ -120,6 +120,29 @@ namespace {
             custom.GetResult()->at(0).id != 7) {
             return false;
         }
+        /* values in a field are alternatives; distinct fields intersect. */
+        query::category::PredicateList multi {
+            { "artist", 77 }, { "artist", 99 }, { "album", 88 },
+            { "year", 5 }, { "year", 6 }, { "year", 5 },
+        };
+        query::CategoryListQuery multiple(query::CategoryListQuery::MatchType::Substring, "genre", multi);
+        multiple.SetPage(-1, 0, 10);
+        if (!multiple.Run(db) || multiple.GetTotal() != 3) {
+            return false;
+        }
+        query::CategoryListQuery customMulti(query::CategoryListQuery::MatchType::Substring, "composer", multi);
+        customMulti.SetPage(-1, 0, 10);
+        if (!customMulti.Run(db) || customMulti.GetTotal() != 1 || customMulti.GetResult()->at(0).id != 7) {
+            return false;
+        }
+        for (int64_t i = 1000; i < 2000; ++i) {
+            multi.emplace_back("artist", i);
+        }
+        query::CategoryListQuery large(query::CategoryListQuery::MatchType::Substring, "genre", multi);
+        large.SetPage(-1, 0, 10);
+        if (!large.Run(db) || large.GetTotal() != 3) {
+            return false;
+        }
         query::CategoryListQuery years(query::CategoryListQuery::MatchType::Substring, "year", selections);
         years.SetTrackFilter("needle");
         years.SetPage(5, 0, 10);
@@ -377,7 +400,7 @@ int main() {
     try {
         RelatedCategoriesQuery invalid;
         invalid.field = "genre";
-        invalid.filter.selections = { { "album", 1 }, { "album", 2 } };
+        invalid.filter.selections = { { "album", -1 } };
         GetRelatedCategories(context, library, invalid, receive);
         return 1;
     }

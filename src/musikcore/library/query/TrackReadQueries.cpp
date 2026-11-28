@@ -41,31 +41,41 @@ namespace musik { namespace core { namespace library { namespace query {
             { MC_TRACK_FIELD_DIRECTORY, "(SELECT name FROM directories WHERE id = t.directory_id)" },
         };
 
-        std::string selectionPredicate(
-            const CategorySelection& selection, const char* alias, size_t index, size_t first) {
-            const auto value = "?" + std::to_string(first + index * 2 + 1);
-            const auto column = category::PREDICATE_TO_COLUMN_MAP.find(selection.field);
+        category::PredicateGroups groupSelections(const std::vector<CategorySelection>& selections) {
+            category::PredicateGroups groups;
+            for (const auto& selection : selections) {
+                groups[selection.field].push_back(selection.key);
+            }
+            return groups;
+        }
+
+        std::string selectionPredicate(const std::string& fieldName, const char* alias, size_t index, size_t first) {
+            const auto values = "?" + std::to_string(first + index * 2 + 1);
+            const auto column = category::PREDICATE_TO_COLUMN_MAP.find(fieldName);
             if (column != category::PREDICATE_TO_COLUMN_MAP.end()) {
-                return " AND " + std::string(alias) + "." + column->second + "=" + value;
+                return " AND " + std::string(alias) + "." + column->second +
+                    " IN (SELECT value FROM json_each(" + values + "))";
             }
             const auto field = "?" + std::to_string(first + index * 2);
             return " AND EXISTS (SELECT 1 FROM track_meta tm JOIN meta_values mv ON mv.id=tm.meta_value_id "
-                   "JOIN meta_keys mk ON mk.id=mv.meta_key_id WHERE tm.track_id=" +
-                std::string(alias) + ".id AND mk.name=" + field + " AND mv.id=" + value + ")";
+                "JOIN meta_keys mk ON mk.id=mv.meta_key_id WHERE tm.track_id=" + std::string(alias) +
+                ".id AND mk.name=" + field + " AND mv.id IN (SELECT value FROM json_each(" + values + ")))";
         }
-        bool bindSelections(sqlite3_stmt* statement, const std::vector<CategorySelection>& selections, size_t first) {
-            for (size_t i = 0; i < selections.size(); ++i) {
-                if (sqlite3_bind_int64(statement, static_cast<int>(first + i * 2 + 1), selections[i].key) != SQLITE_OK)
-                {
+
+        bool bindSelections(sqlite3_stmt* statement, const category::PredicateGroups& groups, size_t first) {
+            size_t index = 0;
+            for (const auto& [field, keys] : groups) {
+                const auto values = category::SelectionArray(keys);
+                if (sqlite3_bind_text64(statement, static_cast<int>(first + index * 2 + 1), values.c_str(),
+                        values.size(), SQLITE_TRANSIENT, SQLITE_UTF8) != SQLITE_OK) {
                     return false;
                 }
-                if (category::PREDICATE_TO_COLUMN_MAP.find(selections[i].field) ==
-                        category::PREDICATE_TO_COLUMN_MAP.end() &&
-                    sqlite3_bind_text64(statement, static_cast<int>(first + i * 2), selections[i].field.c_str(),
-                        selections[i].field.size(), SQLITE_TRANSIENT, SQLITE_UTF8) != SQLITE_OK)
-                {
+                if (category::PREDICATE_TO_COLUMN_MAP.find(field) == category::PREDICATE_TO_COLUMN_MAP.end() &&
+                    sqlite3_bind_text64(statement, static_cast<int>(first + index * 2), field.c_str(),
+                        field.size(), SQLITE_TRANSIENT, SQLITE_UTF8) != SQLITE_OK) {
                     return false;
                 }
+                ++index;
             }
             return true;
         }
@@ -207,10 +217,12 @@ namespace musik { namespace core { namespace library { namespace query {
                 ? " AND (tracks.title REGEXP ?1 OR al.name REGEXP ?1 OR ar.name REGEXP ?1 OR gn.name REGEXP ?1)"
                 : " AND (tracks.title LIKE ?1 ESCAPE '\\' OR al.name LIKE ?1 ESCAPE '\\' OR ar.name LIKE ?1 ESCAPE '\\' OR gn.name LIKE ?1 ESCAPE '\\')";
         }
+        const auto selectionGroups = groupSelections(selections);
         const size_t firstSelection =
             firstSourceParameter + (this->scope.SourceIds() ? this->scope.SourceIds()->size() : 0);
-        for (size_t i = 0; i < selections.size(); ++i) {
-            sql += selectionPredicate(selections[i], "tracks", i, firstSelection);
+        size_t selectionIndex = 0;
+        for (const auto& [field, keys] : selectionGroups) {
+            sql += selectionPredicate(field, "tracks", selectionIndex++, firstSelection);
         }
         const auto& sourceIds = this->scope.SourceIds();
         if (sourceIds) {
@@ -256,7 +268,7 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         }
 
-        if (!bindSelections(statement.get(), selections,
+        if (!bindSelections(statement.get(), selectionGroups,
                 firstSourceParameter + (this->scope.SourceIds() ? this->scope.SourceIds()->size() : 0)))
         {
             return false;
@@ -293,6 +305,7 @@ namespace musik { namespace core { namespace library { namespace query {
     bool TrackPageQuery::Run(sqlite3* database, ProjectedTrackPage& result) const {
         ProjectedTrackPage page;
         page.names = fields;
+        const auto selectionGroups = groupSelections(selections);
         if (!ids && includeTotal) {
             page.total = 0;
         }
@@ -340,8 +353,9 @@ namespace musik { namespace core { namespace library { namespace query {
                 op + " ?1" + escape + "))";
             const size_t firstSelection =
                 firstSourceParameter + (this->scope.SourceIds() ? this->scope.SourceIds()->size() : 0);
-            for (size_t i = 0; i < selections.size(); ++i) {
-                matching += selectionPredicate(selections[i], "t", i, firstSelection);
+            size_t selectionIndex = 0;
+            for (const auto& [field, keys] : selectionGroups) {
+                matching += selectionPredicate(field, "t", selectionIndex++, firstSelection);
             }
             if (this->scope.SourceIds()) {
                 const auto& selected = *this->scope.SourceIds();
@@ -399,7 +413,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
         /* Page tracks before expanding tags so repeated values never consume page slots. */
         if (!ids &&
-            !bindSelections(statement.get(), selections,
+            !bindSelections(statement.get(), selectionGroups,
                 firstSourceParameter + (this->scope.SourceIds() ? this->scope.SourceIds()->size() : 0)))
         {
             return false;

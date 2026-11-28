@@ -11,6 +11,7 @@
 #include <cstring>
 #include <map>
 #include <memory>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -37,7 +38,7 @@ namespace {
 
     mc_result validateAndCopyLibraryFilter(
         const mc_library_filter& filter, std::string& text, std::vector<query::CategorySelection>& selections) {
-        if (!valid_text(filter.track_filter) || filter.selection_count > 64 ||
+        if (!valid_text(filter.track_filter) || filter.selection_count > MC_LIBRARY_FILTER_MAX_SELECTIONS ||
             (filter.selection_count && !filter.selections))
         {
             return MC_ERROR_INVALID_ARGUMENT;
@@ -48,20 +49,20 @@ namespace {
         text.assign(filter.track_filter.data ? filter.track_filter.data : "", filter.track_filter.length);
         const auto first = text.find_first_not_of(" \t\n\r\f\v");
         text = first == std::string::npos ? "" : text.substr(first, text.find_last_not_of(" \t\n\r\f\v") - first + 1);
+        std::map<std::string, std::set<int64_t>> seen;
         for (size_t i = 0; i < filter.selection_count; ++i) {
             const auto& selection = filter.selections[i];
             if (!valid_text(selection.field, false) || selection.key < 0) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
             const std::string key(selection.field.data, selection.field.length);
-            if (std::any_of(selections.begin(), selections.end(),
-                    [&](const auto& item) {
-                        return item.field == key;
-                    }))
-            {
+            auto& keys = seen[key];
+            if (seen.size() > MC_LIBRARY_FILTER_MAX_FIELDS) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
-            selections.push_back({ std::move(key), selection.key });
+            if (keys.insert(selection.key).second) {
+                selections.push_back({ std::move(key), selection.key });
+            }
         }
         return MC_OK;
     }

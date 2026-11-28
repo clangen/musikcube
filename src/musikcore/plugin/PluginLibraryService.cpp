@@ -184,7 +184,7 @@ mc_result MC_CALL PluginLibraryService::SearchTracks(
     if (!context || !search || search->struct_size < sizeof(*search) || !result || *result ||
         !musik::core::ffi::valid_text(search->filter.track_filter) ||
         search->filter.track_match_mode > MC_TRACK_SEARCH_REGEX || search->order > MC_TRACK_SEARCH_DURATION ||
-        limit < -1 || offset < 0 || search->filter.selection_count > 64 ||
+        limit < -1 || offset < 0 || search->filter.selection_count > MC_LIBRARY_FILTER_MAX_SELECTIONS ||
         (search->filter.selection_count && !search->filter.selections))
     {
         return MC_ERROR_INVALID_ARGUMENT;
@@ -199,19 +199,23 @@ mc_result MC_CALL PluginLibraryService::SearchTracks(
         auto query = std::make_shared<SearchTrackListQuery>(
             self.instance->NativeBackend(), match, filter, static_cast<TrackSortType>(search->order));
         std::vector<CategorySelection> selections;
+        std::map<std::string, std::set<int64_t>> seen;
         for (size_t i = 0; i < search->filter.selection_count; ++i) {
             const auto& selection = search->filter.selections[i];
             if (!musik::core::ffi::valid_text(selection.field, false) || selection.key < 0) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
             std::string field(selection.field.data, selection.field.length);
-            if (std::any_of(selections.begin(), selections.end(), [&](const auto& item) { return item.field == field; })) {
+            auto& keys = seen[field];
+            if (seen.size() > MC_LIBRARY_FILTER_MAX_FIELDS) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
-            selections.push_back({
-                .field = std::move(field),
-                .key = selection.key,
-            });
+            if (keys.insert(selection.key).second) {
+                selections.push_back({
+                    .field = std::move(field),
+                    .key = selection.key,
+                });
+            }
         }
         query->SetSelections(std::move(selections));
         if (limit >= 0) {
@@ -482,7 +486,7 @@ mc_result MC_CALL PluginLibraryService::RunQuery(
         if (name == "TrackPageQuery" || name == SearchTrackListQuery::kQueryName) {
             const auto selections = options.find("selections");
             if (selections != options.end()) {
-                if (!selections->is_array() || selections->size() > 64) {
+                if (!selections->is_array() || selections->size() > MC_LIBRARY_FILTER_MAX_SELECTIONS) {
                     return MC_ERROR_INVALID_ARGUMENT;
                 }
                 std::set<std::string> seen;
@@ -493,22 +497,37 @@ mc_result MC_CALL PluginLibraryService::RunQuery(
                         return MC_ERROR_INVALID_ARGUMENT;
                     }
                     const auto key = selection[0].get<std::string>();
-                    if (key.empty() || !seen.insert(key).second) {
+                    seen.insert(key);
+                    if (key.empty() || seen.size() > MC_LIBRARY_FILTER_MAX_FIELDS) {
                         return MC_ERROR_INVALID_ARGUMENT;
                     }
                 }
             }
         }
-        const auto regular = options.find("regularPredicateList");
-        if (regular != options.end() && !regular->is_null()) {
-            if (!regular->is_array()) {
+        size_t categorySelectionCount = 0;
+        std::set<std::string> categoryFields;
+        for (const char* listName : { "regularPredicateList", "extendedPredicateList" }) {
+            const auto list = options.find(listName);
+            if (list == options.end() || list->is_null()) {
+                continue;
+            }
+            if (!list->is_array() || list->size() > MC_LIBRARY_FILTER_MAX_SELECTIONS - categorySelectionCount) {
                 return MC_ERROR_INVALID_ARGUMENT;
             }
-            for (const auto& predicate : *regular) {
+            categorySelectionCount += list->size();
+            for (const auto& predicate : *list) {
                 if (!predicate.is_array() || predicate.size() != 2 || !predicate[0].is_string() ||
-                    !predicate[1].is_number_integer() ||
-                    !category::PREDICATE_TO_COLUMN_MAP.contains(predicate[0].get<std::string>()))
-                {
+                    !predicate[1].is_number_integer() || predicate[1].get<int64_t>() < 0) {
+                    return MC_ERROR_INVALID_ARGUMENT;
+                }
+                const auto& field = predicate[0].get_ref<const std::string&>();
+                if (field.empty() || field.find('\0') != std::string::npos ||
+                    (std::strcmp(listName, "regularPredicateList") == 0 &&
+                        !category::PREDICATE_TO_COLUMN_MAP.contains(field))) {
+                    return MC_ERROR_INVALID_ARGUMENT;
+                }
+                categoryFields.insert(field);
+                if (categoryFields.size() > MC_LIBRARY_FILTER_MAX_FIELDS) {
                     return MC_ERROR_INVALID_ARGUMENT;
                 }
             }

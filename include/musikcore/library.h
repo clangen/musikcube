@@ -237,15 +237,19 @@ typedef struct mc_category_selection {
     int64_t key;
 } mc_category_selection;
 
+enum { MC_LIBRARY_FILTER_MAX_SELECTIONS = 65536, MC_LIBRARY_FILTER_MAX_FIELDS = 64 };
+
 /* select tracks for a track query or related-category query. */
 typedef struct mc_library_filter {
     /* optional title, artist, album, or genre text; copied during submission. */
     mc_string_view track_filter;
     /* match mode for track_filter; defaults to substring. */
     mc_track_search_mode track_match_mode;
-    /* category selections to intersect; copied during submission. */
+    /* selections for one field are alternatives; different fields intersect.
+       duplicate field/key pairs are ignored. copied during submission. */
     const mc_category_selection* selections;
-    /* number of selections; zero omits category constraints. */
+    /* number of selections; zero omits category constraints. bounded by
+       MC_LIBRARY_FILTER_MAX_SELECTIONS and MC_LIBRARY_FILTER_MAX_FIELDS. */
     size_t selection_count;
 } mc_library_filter;
 
