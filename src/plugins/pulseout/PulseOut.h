@@ -37,11 +37,13 @@
 #include "../common/OutputTimingEstimator.h"
 #include <musikcore/plugin/output.hpp>
 #include <musikcore/plugin/services.h>
-#include "pulse_blocking_stream.h"
+#include <pulse/pulseaudio.h>
 #include <condition_variable>
 #include <mutex>
+#include <optional>
 
-/* owns a PulseAudio stream; stop cancels its mainloop waits before release. */
+/* libpulse's mainloop owns the stream, the pending PCM block and the timing
+writer. lifecycle pins the loop through host calls, including a cancellable drain. */
 class PulseOut {
 public:
     explicit PulseOut(const mc_plugin_services* services) : services(services) {}
@@ -67,24 +69,43 @@ public:
     mc_result GetDefaultFormat(mc_string_view, mc_audio_format&);
 
 private:
-    static void UpdateTiming(void*, size_t, pa_usec_t) noexcept;
+    static void ContextChanged(pa_context*, void*) noexcept;
+    static void StreamChanged(pa_stream*, void*) noexcept;
+    static void Writable(pa_stream*, size_t, void*) noexcept;
+    static void DeferredWrite(pa_mainloop_api*, pa_defer_event*, void*) noexcept;
+    static void LatencyChanged(pa_stream*, void*) noexcept;
+    static void OperationComplete(pa_stream*, int, void*) noexcept;
 
-    /* serializes clock updates from the PulseAudio loop with lifecycle changes. */
-    std::mutex timingMutex;
-    musik::plugins::OutputTimingEstimator timingEstimator;
-    bool timingPaused = false;
-    uint64_t scheduledFrames = 0;
+    bool ConnectStream(const pa_sample_spec&, const char*);
+    void CloseStream() noexcept;
+    void PublishTiming() noexcept;
+    void WritePending(size_t) noexcept;
+    void CompletePending(mc_result) noexcept;
+    void Fail() noexcept;
+    mc_result SetPaused(bool);
+    bool RequestVolume(double);
+    mc_result WaitForOperation(pa_operation*);
+
     const mc_plugin_services* services;
-    mutable std::mutex mutex;
+    mutable std::mutex lifecycle;
     std::condition_variable finished;
-    pa_blocking* connection = nullptr;
+    pa_threaded_mainloop* loop = nullptr;
+    pa_context* context = nullptr;
+    pa_stream* stream = nullptr;
+    pa_defer_event* writeEvent = nullptr;
+    bool loopStarted = false;
+    bool draining = false;
+    bool stopped = true;
+    bool paused = false;
+    bool failed = false;
+    bool operationSucceeded = false;
     mc_output_callbacks callbacks = MC_OUTPUT_CALLBACKS_DEFAULT;
     mc_audio_format format = MC_AUDIO_FORMAT_DEFAULT;
     size_t capacity = 0;
     double volume = 1.0;
     bool linearVolume = false;
-    bool stopped = true;
-    bool paused = false;
-    bool active = false;
-    bool controlActive = false;
+    std::optional<mc_output_buffer> pending;
+    size_t writtenFrames = 0;
+    uint64_t scheduledFrames = 0;
+    musik::plugins::OutputTimingEstimator timingEstimator;
 };

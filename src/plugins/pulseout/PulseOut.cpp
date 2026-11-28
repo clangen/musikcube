@@ -34,7 +34,7 @@
 
 #include "PulseOut.h"
 
-#include <pulse/pulseaudio.h>
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -47,6 +47,14 @@ using musik::plugins::OutputTimingEstimator;
 namespace {
     constexpr size_t DefaultCapacity = 32768;
     constexpr char LinearVolumeKey[] = "force_linear_volume";
+
+    struct PulseLoopLock {
+        explicit PulseLoopLock(pa_threaded_mainloop* loop) : loop(loop) { pa_threaded_mainloop_lock(loop); }
+        ~PulseLoopLock() { pa_threaded_mainloop_unlock(this->loop); }
+        PulseLoopLock(const PulseLoopLock&) = delete;
+        PulseLoopLock& operator=(const PulseLoopLock&) = delete;
+        pa_threaded_mainloop* const loop;
+    };
 
     struct Discovery {
         pa_threaded_mainloop* loop = nullptr;
@@ -177,7 +185,7 @@ mc_result PulseOut::GetDefaultFormat(mc_string_view, mc_audio_format&) {
 }
 
 mc_result PulseOut::Prepare(const mc_output_options& options, const mc_output_callbacks& outputCallbacks) {
-    std::lock_guard lock(this->mutex);
+    std::lock_guard lock(this->lifecycle);
     if (options.format.channels > PA_CHANNELS_MAX) {
         return MC_ERROR_UNSUPPORTED;
     }
@@ -201,51 +209,202 @@ mc_result PulseOut::Prepare(const mc_output_options& options, const mc_output_ca
         .rate = options.format.sample_rate,
         .channels = static_cast<uint8_t>(options.format.channels),
     };
-    const std::string device(options.device_id.data ? options.device_id.data : "", options.device_id.length);
-    int error = 0;
-    this->connection = pa_blocking_new(nullptr, "musikcube", PA_STREAM_PLAYBACK,
-        device.empty() ? nullptr : device.c_str(), "musikcube", &spec, nullptr, nullptr, &error);
-    if (!this->connection && !device.empty()) {
-        /* a listed device can disappear or become unavailable before open. */
-        this->connection = pa_blocking_new(nullptr, "musikcube", PA_STREAM_PLAYBACK,
-            nullptr, "musikcube", &spec, nullptr, nullptr, &error);
-    }
-    if (!this->connection) {
-        return MC_ERROR_IO;
-    }
-
     this->format = options.format;
     this->callbacks = outputCallbacks;
     this->volume = options.initial_volume;
-    const int normalized = this->linearVolume
-        ? static_cast<int>(std::round(PA_VOLUME_NORM * this->volume))
-        : static_cast<int>(pa_sw_volume_from_linear(this->volume));
-    if (pa_blocking_set_volume(this->connection, normalized, &error) < 0) {
+
+    this->loop = pa_threaded_mainloop_new();
+    if (!this->loop) {
+        return MC_ERROR_INTERNAL;
+    }
+    this->context = pa_context_new(pa_threaded_mainloop_get_api(this->loop), "musikcube");
+    if (!this->context) {
+        return MC_ERROR_INTERNAL;
+    }
+
+    auto* mainloop = pa_threaded_mainloop_get_api(this->loop);
+    this->writeEvent = mainloop->defer_new(mainloop, DeferredWrite, this);
+    if (!this->writeEvent) {
+        return MC_ERROR_INTERNAL;
+    }
+    mainloop->defer_enable(this->writeEvent, 0);
+    pa_context_set_state_callback(this->context, ContextChanged, this);
+    if (pa_context_connect(this->context, nullptr, PA_CONTEXT_NOFLAGS, nullptr) < 0 ||
+        pa_threaded_mainloop_start(this->loop) < 0)
+    {
         return MC_ERROR_IO;
     }
-    this->paused = false;
+    this->loopStarted = true;
+    PulseLoopLock loopLock(this->loop);
+    while (PA_CONTEXT_IS_GOOD(pa_context_get_state(this->context)) &&
+        pa_context_get_state(this->context) != PA_CONTEXT_READY)
+    {
+        pa_threaded_mainloop_wait(this->loop);
+    }
+    if (pa_context_get_state(this->context) != PA_CONTEXT_READY) {
+        return MC_ERROR_IO;
+    }
+
+    const std::string device(options.device_id.data ? options.device_id.data : "", options.device_id.length);
+    if (!this->ConnectStream(spec, device.empty() ? nullptr : device.c_str()) &&
+        (device.empty() || !this->ConnectStream(spec, nullptr)))
+    {
+        return MC_ERROR_IO;
+    }
+    if (!this->RequestVolume(this->volume)) {
+        return MC_ERROR_IO;
+    }
+
     this->scheduledFrames = 0;
-    this->timingPaused = false;
     this->timingEstimator.Reset(this->format.sample_rate);
+    this->failed = false;
+    this->paused = false;
     this->stopped = false;
     return MC_OK;
 }
 
-void PulseOut::UpdateTiming(void* user, size_t bytes, pa_usec_t latency) noexcept {
-    auto& output = *static_cast<PulseOut*>(user);
-    std::lock_guard lock(output.timingMutex);
-    if (bytes) {
-        output.scheduledFrames = output.timingEstimator.Submit(bytes / (output.format.channels * sizeof(float)));
+bool PulseOut::ConnectStream(const pa_sample_spec& spec, const char* device) {
+    this->stream = pa_stream_new(this->context, "musikcube", &spec, nullptr);
+    if (!this->stream) {
+        return false;
     }
-    if (output.scheduledFrames && !output.timingPaused && latency != static_cast<pa_usec_t>(-1)) {
-        output.timingEstimator.Publish(output.scheduledFrames, OutputTimingEstimator::Now() + latency * 1000);
+    pa_stream_set_state_callback(this->stream, StreamChanged, this);
+    constexpr auto flags = static_cast<pa_stream_flags_t>(
+        PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_ADJUST_LATENCY | PA_STREAM_AUTO_TIMING_UPDATE);
+    if (pa_stream_connect_playback(this->stream, device, nullptr, flags, nullptr, nullptr) >= 0) {
+        while (PA_STREAM_IS_GOOD(pa_stream_get_state(this->stream)) &&
+            pa_stream_get_state(this->stream) != PA_STREAM_READY)
+        {
+            pa_threaded_mainloop_wait(this->loop);
+        }
+        if (pa_stream_get_state(this->stream) == PA_STREAM_READY) {
+            pa_stream_set_write_callback(this->stream, Writable, this);
+            pa_stream_set_latency_update_callback(this->stream, LatencyChanged, this);
+            return true;
+        }
+    }
+    this->CloseStream();
+    return false;
+}
+
+void PulseOut::CloseStream() noexcept {
+    if (this->stream) {
+        pa_stream_set_state_callback(this->stream, nullptr, nullptr);
+        pa_stream_set_write_callback(this->stream, nullptr, nullptr);
+        pa_stream_set_latency_update_callback(this->stream, nullptr, nullptr);
+        pa_stream_disconnect(this->stream);
+        pa_stream_unref(this->stream);
+        this->stream = nullptr;
+    }
+}
+
+void PulseOut::ContextChanged(pa_context* context, void* user) noexcept {
+    auto& output = *static_cast<PulseOut*>(user);
+    if (!output.stopped && !PA_CONTEXT_IS_GOOD(pa_context_get_state(context))) {
+        output.Fail();
+    }
+    pa_threaded_mainloop_signal(output.loop, 0);
+}
+
+void PulseOut::StreamChanged(pa_stream* stream, void* user) noexcept {
+    auto& output = *static_cast<PulseOut*>(user);
+    if (!output.stopped && !PA_STREAM_IS_GOOD(pa_stream_get_state(stream))) {
+        output.Fail();
+    }
+    pa_threaded_mainloop_signal(output.loop, 0);
+}
+
+void PulseOut::Writable(pa_stream*, size_t bytes, void* user) noexcept {
+    static_cast<PulseOut*>(user)->WritePending(bytes);
+}
+
+void PulseOut::DeferredWrite(pa_mainloop_api* mainloop, pa_defer_event* event, void* user) noexcept {
+    mainloop->defer_enable(event, 0);
+    auto& output = *static_cast<PulseOut*>(user);
+    if (!output.stopped && !output.paused && !output.failed && output.pending) {
+        output.WritePending(pa_stream_writable_size(output.stream));
+    }
+}
+
+void PulseOut::LatencyChanged(pa_stream*, void* user) noexcept {
+    static_cast<PulseOut*>(user)->PublishTiming();
+}
+
+void PulseOut::PublishTiming() noexcept {
+    if (!this->stopped && !this->failed && !this->paused && this->scheduledFrames) {
+        pa_usec_t latency = 0;
+        int negative = 0;
+        if (pa_stream_get_latency(this->stream, &latency, &negative) >= 0) {
+            this->timingEstimator.Publish(this->scheduledFrames,
+                OutputTimingEstimator::Now() + (negative ? 0 : latency * 1000));
+        }
+    }
+}
+
+void PulseOut::WritePending(size_t writableBytes) noexcept {
+    if (this->stopped || this->paused || this->failed || !this->pending) {
+        return;
+    }
+    if (writableBytes == static_cast<size_t>(-1)) {
+        this->Fail();
+        return;
+    }
+
+    const size_t channels = this->format.channels;
+    const size_t stride = channels * sizeof(float);
+    const size_t frames = std::min(writableBytes / stride, this->pending->pcm.frame_count - this->writtenFrames);
+    if (!frames) {
+        return;
+    }
+    if (pa_stream_write(this->stream, this->pending->pcm.data + this->writtenFrames * channels,
+        frames * stride, nullptr, 0, PA_SEEK_RELATIVE) < 0)
+    {
+        this->Fail();
+        return;
+    }
+    this->writtenFrames += frames;
+    this->scheduledFrames += frames;
+    this->PublishTiming();
+    if (this->writtenFrames == this->pending->pcm.frame_count) {
+        this->CompletePending(MC_OK);
+        if (this->callbacks.ready) {
+            this->callbacks.ready(this->callbacks.context);
+        }
+    }
+}
+
+void PulseOut::CompletePending(mc_result result) noexcept {
+    if (this->pending) {
+        const auto token = this->pending->token;
+        this->pending.reset();
+        this->writtenFrames = 0;
+        this->callbacks.completed(this->callbacks.context, token, result);
+        pa_threaded_mainloop_signal(this->loop, 0);
+    }
+}
+
+void PulseOut::Fail() noexcept {
+    if (!this->failed) {
+        this->failed = true;
+        this->timingEstimator.Reset(0);
+        this->CompletePending(MC_ERROR_IO);
+        if (this->callbacks.ready) {
+            this->callbacks.ready(this->callbacks.context);
+        }
     }
 }
 
 mc_result PulseOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
-    std::unique_lock lock(this->mutex);
+    std::lock_guard lock(this->lifecycle);
+    if (!this->loopStarted) {
+        return MC_ERROR_CANCELLED;
+    }
+    PulseLoopLock loopLock(this->loop);
     if (this->stopped) {
         return MC_ERROR_CANCELLED;
+    }
+    if (this->failed) {
+        return MC_ERROR_IO;
     }
     if (block.pcm.format.sample_rate != this->format.sample_rate ||
         block.pcm.format.channels != this->format.channels ||
@@ -256,209 +415,222 @@ mc_result PulseOut::QueueAudioBuffer(const mc_output_buffer& block) noexcept {
     if (block.pcm.frame_count > this->capacity) {
         return MC_ERROR_BUFFER_TOO_SMALL;
     }
-    if (this->paused) {
+    if (this->pending) {
         return MC_ERROR_QUEUE_FULL;
     }
-    if (this->active) {
-        return MC_ERROR_IN_FLIGHT;
-    }
 
-    /* `Stop()` can cancel the write while the mutex is released. the connection
-    remains alive until the completion callback returns. */
-    this->active = true;
-    auto* connection = this->connection;
-    lock.unlock();
-    int error = 0;
-    const int result = pa_blocking_write(connection, block.pcm.data,
-        block.pcm.frame_count * this->format.channels * sizeof(float), UpdateTiming, this, &error);
-    lock.lock();
-
-    const auto outcome = this->stopped ? MC_ERROR_CANCELLED : result < 0 ? MC_ERROR_IO : MC_OK;
-    const auto callback = this->callbacks;
-    lock.unlock();
-    callback.completed(callback.context, block.token, outcome);
-    lock.lock();
-    this->active = false;
-    this->finished.notify_all();
+    this->timingEstimator.Submit(block.pcm.frame_count);
+    this->pending = block;
+    /* an earlier writable callback may have fired before PCM arrived. */
+    pa_threaded_mainloop_get_api(this->loop)->defer_enable(this->writeEvent, 1);
     return MC_OK;
 }
 
 mc_result PulseOut::Pause() {
-    pa_blocking* connection;
-    {
-        std::lock_guard lock(this->mutex);
-        if (this->stopped) {
-            return MC_ERROR_CANCELLED;
-        }
-        this->controlActive = true;
-        connection = this->connection;
-    }
-
-    const int result = pa_blocking_cork(connection, true, nullptr);
-    std::lock_guard lock(this->mutex);
-    this->controlActive = false;
-    this->finished.notify_all();
-    if (this->stopped) {
+    std::lock_guard lock(this->lifecycle);
+    if (!this->loopStarted) {
         return MC_ERROR_CANCELLED;
     }
-    if (result < 0) {
-        return MC_ERROR_IO;
-    }
-    {
-        std::lock_guard timingLock(this->timingMutex);
-        this->timingPaused = true;
-        this->timingEstimator.Pause();
-    }
-    this->paused = true;
-    return MC_OK;
+    PulseLoopLock loopLock(this->loop);
+    return this->SetPaused(true);
 }
 
 mc_result PulseOut::Resume() {
-    pa_blocking* connection;
-    bool paused;
-    {
-        std::lock_guard lock(this->mutex);
-        if (this->stopped) {
-            return MC_ERROR_CANCELLED;
-        }
-        this->controlActive = true;
-        connection = this->connection;
-        paused = this->paused;
+    std::lock_guard lock(this->lifecycle);
+    if (!this->loopStarted) {
+        return MC_ERROR_CANCELLED;
     }
+    PulseLoopLock loopLock(this->loop);
+    return this->SetPaused(false);
+}
 
-    const int result = paused ? pa_blocking_cork(connection, false, nullptr) : 0;
-    std::lock_guard lock(this->mutex);
-    this->controlActive = false;
-    this->finished.notify_all();
+mc_result PulseOut::SetPaused(bool value) {
     if (this->stopped) {
         return MC_ERROR_CANCELLED;
     }
-    if (result < 0) {
+    if (this->failed) {
         return MC_ERROR_IO;
     }
-    {
-        std::lock_guard timingLock(this->timingMutex);
-        this->timingEstimator.Resume();
-        this->timingPaused = false;
+    if (this->paused == value) {
+        return MC_OK;
     }
-    this->paused = false;
-    if (this->callbacks.ready) {
-        this->callbacks.ready(this->callbacks.context);
+    auto* operation = pa_stream_cork(this->stream, value, nullptr, nullptr);
+    if (!operation) {
+        return MC_ERROR_IO;
+    }
+    pa_operation_unref(operation);
+    this->paused = value;
+    if (value) {
+        this->timingEstimator.Pause();
+    }
+    else {
+        this->timingEstimator.Resume();
+        pa_threaded_mainloop_get_api(this->loop)->defer_enable(this->writeEvent, 1);
+        if (!this->pending && this->callbacks.ready) {
+            this->callbacks.ready(this->callbacks.context);
+        }
     }
     return MC_OK;
 }
 
-mc_result PulseOut::SetVolume(double value) {
-    pa_blocking* connection;
-    int normalized;
-    {
-        std::lock_guard lock(this->mutex);
-        if (!this->connection || this->stopped) {
-            this->volume = value;
-            return MC_OK;
-        }
-        this->controlActive = true;
-        connection = this->connection;
-        normalized = this->linearVolume
-            ? static_cast<int>(std::round(PA_VOLUME_NORM * value))
-            : static_cast<int>(pa_sw_volume_from_linear(value));
+bool PulseOut::RequestVolume(double value) {
+    const auto normalized = this->linearVolume
+        ? static_cast<pa_volume_t>(std::round(PA_VOLUME_NORM * value))
+        : pa_sw_volume_from_linear(value);
+    pa_cvolume levels {};
+    pa_cvolume_set(&levels, this->format.channels, normalized);
+    auto* operation = pa_context_set_sink_input_volume(this->context, pa_stream_get_index(this->stream),
+        &levels, nullptr, nullptr);
+    if (!operation) {
+        return false;
     }
+    pa_operation_unref(operation);
+    return true;
+}
 
-    const int result = pa_blocking_set_volume(connection, normalized, nullptr);
-    std::lock_guard lock(this->mutex);
-    this->controlActive = false;
-    this->finished.notify_all();
-    if (this->stopped) {
-        return MC_ERROR_CANCELLED;
-    }
-    if (result < 0) {
-        return MC_ERROR_IO;
+mc_result PulseOut::SetVolume(double value) {
+    std::lock_guard lock(this->lifecycle);
+    if (this->loopStarted) {
+        PulseLoopLock loopLock(this->loop);
+        if (!this->stopped && (this->failed || !this->RequestVolume(value))) {
+            return MC_ERROR_IO;
+        }
     }
     this->volume = value;
     return MC_OK;
 }
 
 double PulseOut::GetVolume() const {
-    std::lock_guard lock(this->mutex);
+    std::lock_guard lock(this->lifecycle);
     return this->volume;
 }
 
 mc_result PulseOut::Stop() noexcept {
-    std::unique_lock lock(this->mutex);
-    this->stopped = true;
-
-    /* unblock a writer or drain before freeing the connection they use. */
-    if (this->connection) {
-        pa_blocking_cancel(this->connection);
+    std::unique_lock lock(this->lifecycle);
+    if (!this->loop) {
+        return MC_OK;
     }
-    this->finished.wait(lock, [this] { return !this->active && !this->controlActive; });
 
-    if (this->connection) {
-        pa_blocking_free(this->connection);
-        this->connection = nullptr;
+    {
+        PulseLoopLock loopLock(this->loop);
+        this->stopped = true;
+        this->timingEstimator.Reset(0);
+        this->CompletePending(MC_ERROR_CANCELLED);
+        pa_threaded_mainloop_signal(this->loop, 0);
     }
-    this->timingEstimator.Reset(0);
+    /* the drain still needs the loop to cancel its native operation. */
+    this->finished.wait(lock, [this] { return !this->draining; });
+    if (!this->loop) {
+        return MC_OK;
+    }
+
+    {
+        PulseLoopLock loopLock(this->loop);
+        this->CloseStream();
+        if (this->context) {
+            pa_context_set_state_callback(this->context, nullptr, nullptr);
+            pa_context_disconnect(this->context);
+            pa_context_unref(this->context);
+            this->context = nullptr;
+        }
+        if (this->writeEvent) {
+            pa_threaded_mainloop_get_api(this->loop)->defer_free(this->writeEvent);
+            this->writeEvent = nullptr;
+        }
+    }
+    if (this->loopStarted) {
+        pa_threaded_mainloop_stop(this->loop);
+        this->loopStarted = false;
+    }
+    pa_threaded_mainloop_free(this->loop);
+    this->loop = nullptr;
     return MC_OK;
+}
+
+void PulseOut::OperationComplete(pa_stream*, int success, void* user) noexcept {
+    auto& output = *static_cast<PulseOut*>(user);
+    output.operationSucceeded = success != 0;
+    pa_threaded_mainloop_signal(output.loop, 0);
+}
+
+mc_result PulseOut::WaitForOperation(pa_operation* operation) {
+    if (!operation) {
+        return MC_ERROR_IO;
+    }
+    while (!this->stopped && !this->failed && pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_threaded_mainloop_wait(this->loop);
+    }
+    if (pa_operation_get_state(operation) == PA_OPERATION_RUNNING) {
+        pa_operation_cancel(operation);
+    }
+    pa_operation_unref(operation);
+    return this->stopped ? MC_ERROR_CANCELLED : this->failed || !this->operationSucceeded ? MC_ERROR_IO : MC_OK;
 }
 
 mc_result PulseOut::Drain() {
-    std::unique_lock lock(this->mutex);
-    if (this->stopped) {
+    std::unique_lock lock(this->lifecycle);
+    if (!this->loopStarted) {
         return MC_ERROR_CANCELLED;
     }
-    if (this->paused || this->active) {
-        return MC_ERROR_IN_FLIGHT;
-    }
 
-    /* keep the connection alive while `Stop()` interrupts the unlocked drain. */
-    this->active = true;
-    auto* connection = this->connection;
-    lock.unlock();
-    const int result = pa_blocking_drain(connection, nullptr);
+    mc_result result;
+    {
+        PulseLoopLock loopLock(this->loop);
+        if (this->stopped) {
+            return MC_ERROR_CANCELLED;
+        }
+        if (this->paused || this->draining) {
+            return MC_ERROR_IN_FLIGHT;
+        }
+        this->draining = true;
+        lock.unlock();
+        while (this->pending && !this->stopped && !this->failed) {
+            pa_threaded_mainloop_wait(this->loop);
+        }
+        if (this->stopped || this->failed) {
+            result = this->stopped ? MC_ERROR_CANCELLED : MC_ERROR_IO;
+        }
+        else {
+            this->operationSucceeded = false;
+            result = this->WaitForOperation(pa_stream_drain(this->stream, OperationComplete, this));
+            if (result == MC_OK) {
+                this->timingEstimator.Publish(this->scheduledFrames, OutputTimingEstimator::Now());
+            }
+        }
+    }
     lock.lock();
-
-    const auto outcome = this->stopped ? MC_ERROR_CANCELLED : result < 0 ? MC_ERROR_IO : MC_OK;
-    if (outcome == MC_OK) {
-        std::lock_guard timingLock(this->timingMutex);
-        this->timingEstimator.Publish(this->scheduledFrames, OutputTimingEstimator::Now());
-    }
-    this->active = false;
+    this->draining = false;
     this->finished.notify_all();
-    return outcome;
+    return result;
 }
 
 mc_result PulseOut::Flush() {
-    std::unique_lock lock(this->mutex);
-    if (this->stopped || !this->connection) {
+    std::lock_guard lock(this->lifecycle);
+    if (!this->loopStarted) {
         return MC_ERROR_CANCELLED;
     }
-    if (this->active) {
-        return MC_ERROR_IN_FLIGHT;
-    }
-    this->controlActive = true;
-    auto* connection = this->connection;
-    const bool paused = this->paused;
-    lock.unlock();
-    const int result = pa_blocking_flush(connection, nullptr);
-    const int resumed = result >= 0 && paused ? pa_blocking_cork(connection, false, nullptr) : 0;
-    lock.lock();
-    this->controlActive = false;
-    this->finished.notify_all();
+    PulseLoopLock loopLock(this->loop);
     if (this->stopped) {
         return MC_ERROR_CANCELLED;
     }
-    if (result >= 0) {
-        std::lock_guard timingLock(this->timingMutex);
-        this->scheduledFrames = 0;
-        this->timingPaused = resumed < 0;
-        this->timingEstimator.Reset(this->format.sample_rate);
-    }
-    if (result < 0 || resumed < 0) {
+    if (this->failed) {
         return MC_ERROR_IO;
     }
-    this->paused = false;
-    if (this->callbacks.ready) {
+
+    /* pending PCM must not enter the server while its queue is being flushed. */
+    this->scheduledFrames = 0;
+    this->timingEstimator.Reset(this->format.sample_rate);
+    this->CompletePending(MC_ERROR_CANCELLED);
+    this->operationSucceeded = false;
+    const auto result = this->WaitForOperation(pa_stream_flush(this->stream, OperationComplete, this));
+    if (result != MC_OK) {
+        this->Fail();
+        return result;
+    }
+    const bool wasPaused = this->paused;
+    const auto resumed = this->SetPaused(false);
+    if (resumed == MC_OK && !wasPaused && this->callbacks.ready) {
         this->callbacks.ready(this->callbacks.context);
     }
-    return MC_OK;
+    return resumed;
 }

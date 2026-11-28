@@ -696,10 +696,10 @@ cutover gate is complete.
   PulseAudio pause, resume, and volume submit operations without waiting for a
   server response because the host serializes controls with stop. Immediate
   submission failures are reported; later server-side failures cannot be
-  returned to the caller. `plugins.pulse_control_nowait` checks this against a
-  real server. Follow-up: revisit whether
-  `pulse_blocking_stream.c` is needed; using the PulseAudio API directly may
-  simplify the provider.
+  returned to the caller. PulseAudio's native callbacks consume a bounded
+  pending PCM block and publish latency updates. The producer returns after
+  admission, and stop can cancel a native drain. `plugins.pulse_control_nowait`
+  checks these contracts against a PipeWire PulseAudio server.
 - [x] **OUT-010** Validate the converted `sndioout`.
   Accepted by the maintainer on 2026-11-25 with the recorded limitations.
   The provider is named `sndio`; settings saved under the previous

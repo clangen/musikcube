@@ -86,7 +86,8 @@ async function main() {
     args = [driver, driver === 'PulseAudio' ? 'musikcube_plugin_test' : ''];
   }
   const result = spawnSync(command, args, {
-    env: { ...env, MUSIKCUBE_TEST_PIPEWIRE_DEVICE: id, ...(preload ? { LD_PRELOAD: preload } : {}) }, encoding: 'utf8', timeout: 15000,
+    env: { ...env, MUSIKCUBE_TEST_PIPEWIRE_DEVICE: id, MUSIKCUBE_TEST_PULSE_DEVICE: 'musikcube_plugin_test',
+      ...(preload ? { LD_PRELOAD: preload } : {}) }, encoding: 'utf8', timeout: 15000,
   });
   if (result.status !== 0) throw new Error(`PipeWire output failed: ${result.stderr || result.signal || result.error}`);
   passed = true;

@@ -1,6 +1,5 @@
 set (pulseout_SOURCES
   pulseout_plugin.cpp
-  pulse_blocking_stream.c
   PulseOut.cpp
 )
 

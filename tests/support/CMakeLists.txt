@@ -1280,27 +1280,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET alsaout)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET pulseout)
-  add_library(musikcore_pulse_output_fixture SHARED
-    "${PROJECT_SOURCE_DIR}/src/plugins/pulseout/pulseout_plugin.cpp"
-    "${PROJECT_SOURCE_DIR}/src/plugins/pulseout/PulseOut.cpp"
-    plugins/pulse-stall.cpp)
-  target_include_directories(musikcore_pulse_output_fixture PRIVATE "${PROJECT_SOURCE_DIR}/src/plugins")
-  target_compile_features(musikcore_pulse_output_fixture PRIVATE cxx_std_20)
-  target_link_libraries(musikcore_pulse_output_fixture PRIVATE ${LIBPULSE} Threads::Threads)
-  musikcube_configure_c_plugin(musikcore_pulse_output_fixture)
-  set_target_properties(musikcore_pulse_output_fixture PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/fixtures/pulse-output")
   add_executable(musikcore_pulse_output_test ../integration/plugins/pulse-output.cpp)
   target_include_directories(musikcore_pulse_output_test PRIVATE "${PROJECT_SOURCE_DIR}/include")
   target_compile_features(musikcore_pulse_output_test PRIVATE cxx_std_20)
   target_link_libraries(musikcore_pulse_output_test PRIVATE ${CMAKE_DL_LIBS} Threads::Threads)
-  add_dependencies(musikcore_pulse_output_test musikcore_pulse_output_fixture)
   add_dependencies(musikcube_tests musikcore_pulse_output_test)
   add_dependencies(musikcube_integration_tests musikcore_pulse_output_test)
-  add_test(NAME musikcore.integration.plugins.pulse_output
-    COMMAND musikcore_pulse_output_test "$<TARGET_FILE:musikcore_pulse_output_fixture>" fixture)
-  set_tests_properties(musikcore.integration.plugins.pulse_output PROPERTIES
-    LABELS "integration;musikcore;plugins;audio;contract" TIMEOUT 20)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND TARGET pipewireout)
