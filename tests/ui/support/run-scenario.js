@@ -8,7 +8,7 @@ const { parseArgs } = require('node:util');
 const { sampleVariants, printMetrics, cpuMillisecondsPerTick } = require('./benchmark');
 const { Terminal } = require('./terminal');
 const { withRuntime } = require('./artifacts');
-const { copyRuntimeLibraries } = require('../../scripts/test-runtime');
+const { copyRuntimeLibraries, isWindowsPluginDependency } = require('../../scripts/test-runtime');
 
 const SOURCE = resolve(__dirname, '../../..');
 const TRACK_COUNT = 10000;
@@ -43,7 +43,7 @@ function stageRuntime(runtime, binaryDir, { settings, lyrics }) {
 
   fs.mkdirSync(join(runtime, 'plugins'));
   for (const name of fs.readdirSync(join(binaryDir, 'plugins'))) {
-    if (/^(?:lib)?(?:taglibreader|taglib_plugin|ffmpegdecoder)\./.test(name) ||
+    if (isWindowsPluginDependency(name) || /^(?:lib)?(?:taglibreader|taglib_plugin|ffmpegdecoder)\./.test(name) ||
         (settings && /^(?:lib)?(?:nullout|supereqdsp|server|gmedecoder)\./.test(name)) ||
         (lyrics && /^(?:lib)?nullout\./.test(name))) {
       stage(join(binaryDir, 'plugins', name), join(runtime, 'plugins', name));

@@ -101,7 +101,7 @@ endforeach()
 # playback needs an output consumable by the engine. query/session consumers
 # above remain useful while output integration is pending.
 if(INSTALLED_TEST_PLUGIN)
-  file(GLOB installed_decoders "${runtime}/plugins/*ffmpegdecoder*")
+  file(GLOB installed_decoders "${runtime}/plugins/*ffmpegdecoder*" "${runtime}/plugins/*-musikcube-*.dll")
   file(COPY ${installed_decoders} DESTINATION "${plugins}")
   foreach(language IN ITEMS c cpp)
     run("${CMAKE_COMMAND}" -E env "XDG_CONFIG_HOME=${root}/player-${language}" "APPDATA=${root}/player-${language}"

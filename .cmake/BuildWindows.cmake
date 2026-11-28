@@ -150,7 +150,7 @@ endif()
 
 # Use one runtime target for both frontends and for the C SDK demo.
 file(GLOB windows_dlls CONFIGURE_DEPENDS "${windows_vendor}/win64/dll/*/*.dll")
-list(FILTER windows_dlls EXCLUDE REGEX "/(lame|libopenmpt)/[^/]+[.]dll$")
+list(FILTER windows_dlls EXCLUDE REGEX "/(lame|libopenmpt)/")
 set(windows_excluded_dlls "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmp3lame.DLL"
   "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openmpt.dll")
 if(MUSIKCORE_USE_WINDOWS_HTTP_CLIENT)
@@ -162,21 +162,31 @@ if(MUSIKCORE_USE_ASIO_WINTLS)
   list(APPEND windows_excluded_dlls "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libssl-3-x64.dll"
     "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libcrypto-3-x64.dll")
 endif()
-if(NOT windows_dlls)
+file(GLOB windows_ffmpeg_dlls CONFIGURE_DEPENDS "${windows_vendor}/win64/dll/ffmpeg/*.dll")
+list(REMOVE_ITEM windows_dlls ${windows_ffmpeg_dlls})
+foreach(dll IN LISTS windows_ffmpeg_dlls)
+  get_filename_component(name "${dll}" NAME)
+  list(APPEND windows_excluded_dlls "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${name}")
+endforeach()
+if(NOT windows_ffmpeg_dlls)
   message(FATAL_ERROR "Missing Windows vendor DLLs. Run node script/build-vendor-libraries.js first.")
 endif()
 add_custom_target(musikcube_runtime
-  COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-  COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${windows_dlls}
-          "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+  COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins"
+  COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${windows_ffmpeg_dlls}
+          "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/plugins"
   COMMAND "${CMAKE_COMMAND}" -E copy_directory
           "${windows_assets}/themes" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/themes"
   COMMAND "${CMAKE_COMMAND}" -E copy_directory
           "${windows_assets}/locales" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/locales"
   COMMAND "${CMAKE_COMMAND}" -E copy_directory
           "${windows_assets}/fonts" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/fonts"
-  DEPENDS ${windows_dlls}
+  DEPENDS ${windows_dlls} ${windows_ffmpeg_dlls}
   VERBATIM)
+if(windows_dlls)
+  add_custom_command(TARGET musikcube_runtime POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${windows_dlls} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" VERBATIM)
+endif()
 if(windows_excluded_dlls)
   add_custom_command(TARGET musikcube_runtime PRE_BUILD
     COMMAND "${CMAKE_COMMAND}" -E rm -f ${windows_excluded_dlls} VERBATIM)
@@ -404,6 +414,7 @@ endif()
 set(windows_plugin_dlls ${windows_dlls})
 list(REMOVE_ITEM windows_plugin_dlls ${windows_core_dlls})
 install(FILES ${windows_plugin_dlls} DESTINATION bin COMPONENT musikcorePlugins)
+install(FILES ${windows_ffmpeg_dlls} DESTINATION bin/plugins COMPONENT musikcorePlugins)
 
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT musikcube)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

@@ -5,6 +5,10 @@
 const { copyFileSync, existsSync, mkdirSync, readdirSync } = require('fs');
 const { basename, dirname, join } = require('path');
 
+function isWindowsPluginDependency(name) {
+  return /^(avcodec|avformat|avutil|swresample)-musikcube-\d+\.dll$/i.test(name);
+}
+
 function copyRuntimeLibraries(source, destination) {
   mkdirSync(destination, { recursive: true });
   for (const entry of readdirSync(source, { withFileTypes: true })) {
@@ -33,8 +37,9 @@ function stageTestRuntime(executable, root, includeDefaultPlugins = true) {
 
   /* An allowlist prevents unrelated output/device plugins from affecting tests. */
   const plugins = join(source, 'plugins');
-  for (const entry of includeDefaultPlugins && existsSync(plugins) ? readdirSync(plugins, { withFileTypes: true }) : []) {
-    if (!entry.isDirectory() && /^(lib)?(taglibreader|taglib_plugin|ffmpegdecoder)\.(dll|dylib|so)$/.test(entry.name)) {
+  for (const entry of existsSync(plugins) ? readdirSync(plugins, { withFileTypes: true }) : []) {
+    const decoder = /^(lib)?(taglibreader|taglib_plugin|ffmpegdecoder)\.(dll|dylib|so)$/.test(entry.name);
+    if (!entry.isDirectory() && (isWindowsPluginDependency(entry.name) || (includeDefaultPlugins && decoder))) {
       copyFileSync(join(source, 'plugins', entry.name), join(runtime, 'plugins', entry.name));
     }
   }
@@ -42,4 +47,4 @@ function stageTestRuntime(executable, root, includeDefaultPlugins = true) {
   return staged;
 }
 
-module.exports = { copyRuntimeLibraries, stageTestRuntime };
+module.exports = { copyRuntimeLibraries, isWindowsPluginDependency, stageTestRuntime };
